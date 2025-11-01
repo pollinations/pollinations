@@ -3,24 +3,20 @@ import {
     defineWorkersConfig,
     readD1Migrations,
 } from "@cloudflare/vitest-pool-workers/config";
-import viteConfig from "./vite.config";
 
 export default defineWorkersConfig(async () => {
-    const migrationsPath = path.join(__dirname, "drizzle");
+    const migrationsPath = path.join(__dirname, "../drizzle");
     const migrations = await readD1Migrations(migrationsPath);
 
     return {
-        ...viteConfig,
         test: {
             setupFiles: ["./test/apply-migrations.ts"],
-            // Exclude gen tests - they have their own config in gen.pollinations.ai/
-            exclude: ["**/node_modules/**", "**/gen.pollinations.ai/**"],
             poolOptions: {
                 workers: {
                     singleWorker: true,
                     wrangler: {
-                        configPath: "./wrangler.toml",
-                        environment: "test",
+                        // Use gen service config
+                        configPath: "../wrangler.gen.toml",
                     },
                     miniflare: {
                         bindings: {

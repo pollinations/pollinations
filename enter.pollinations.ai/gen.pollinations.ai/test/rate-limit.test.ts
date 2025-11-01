@@ -1,10 +1,8 @@
 import { SELF } from "cloudflare:test";
-import { test } from "../fixtures.ts";
+import { test } from "./fixtures.ts";
 import { expect } from "vitest";
 
-// Gen service runs on port 3001 (see wrangler.gen.toml)
-const GEN_SERVICE_URL = "http://localhost:3001";
-const endpoint = `${GEN_SERVICE_URL}/api/generate/openai`;
+const endpoint = "http://localhost/api/generate/openai";
 
 test("rate limit middleware is active and returns rate limit headers", { timeout: 15000 }, async ({ apiKey }) => {
     const testIp = "192.0.2.100"; // Use unique IP for this test

@@ -1,13 +1,10 @@
 import { isFreeService, getTextServices } from "@shared/registry/registry.ts";
 import { SELF } from "cloudflare:test";
-import { test } from "../fixtures.ts";
+import { test } from "./fixtures.ts";
 import { describe, beforeEach, expect } from "vitest";
 import { env } from "cloudflare:workers";
 
 const DISABLE_CACHE = false;
-
-// Gen service runs on port 3001 (see wrangler.gen.toml)
-const GEN_SERVICE_URL = "http://localhost:3001";
 
 const anonymousTestCases = (allowAnoymous: boolean) => {
     return getTextServices().map((serviceId) => [
@@ -40,7 +37,7 @@ describe.for([true, false])(
             { timeout: 30000 },
             async ([serviceId, expectedStatus]) => {
                 const response = await SELF.fetch(
-                    `${GEN_SERVICE_URL}/api/generate/openai`,
+                    `http://localhost/api/generate/openai`,
                     {
                         method: "POST",
                         headers: {
@@ -69,7 +66,7 @@ test.for(getTextServices())(
     { timeout: 30000 },
     async (serviceId, { apiKey }) => {
         const response = await SELF.fetch(
-            `${GEN_SERVICE_URL}/api/generate/openai`,
+            `http://localhost/api/generate/openai`,
             {
                 method: "POST",
                 headers: {
@@ -98,7 +95,7 @@ test.for(getTextServices())(
     { timeout: 30000 },
     async (serviceId, { apiKey }) => {
         const response = await SELF.fetch(
-            `${GEN_SERVICE_URL}/api/generate/openai`,
+            `http://localhost/api/generate/openai`,
             {
                 method: "POST",
                 headers: {

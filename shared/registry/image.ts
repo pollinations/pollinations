@@ -28,6 +28,7 @@ export const IMAGE_COSTS = {
         // Gemini 2.5 Flash Image via Vertex AI (currently disabled)
         {
             date: PRICING_START_DATE,
+            perToken: true, // Pricing is per actual token count from Vertex AI API (~1290 tokens/image)
             promptTextTokens: perMillion(0.30), // $0.30 per 1M input tokens
             promptImageTokens: perMillion(0.30), // $0.30 per 1M input tokens
             completionImageTokens: perMillion(30), // $30 per 1M tokens × 1290 tokens/image = $0.039 per image
@@ -44,6 +45,7 @@ export const IMAGE_COSTS = {
         // Azure gpt-image-1-mini
         {
             date: PRICING_START_DATE,
+            perToken: true, // Pricing is per actual token count from Azure OpenAI API (variable per image)
             promptTextTokens: perMillion(2.0), // $2.00 per 1M text input tokens
             promptCachedTokens: perMillion(0.20), // $0.20 per 1M cached text input tokens
             promptImageTokens: perMillion(2.50), // $2.50 per 1M image input tokens

@@ -2,7 +2,7 @@ import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { requestId } from "hono/request-id";
 import type { Env } from "../../src/env";
-import { proxyRoutes } from "../../src/routes/proxy";
+import { proxyRoutes } from "./routes/proxy";
 import { llmRouterRoutes } from "./routes/llmRouter";
 import { logger } from "../../src/middleware/logger";
 import { auth } from "../../src/middleware/auth";

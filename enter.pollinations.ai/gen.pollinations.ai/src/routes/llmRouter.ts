@@ -25,23 +25,33 @@ Otherwise respond "text".`;
         return c.json({ error: "Authentication required" }, 401);
     }
 
-    // Call text service directly to route
-    const textServiceUrl = c.env.TEXT_SERVICE_URL || "https://text.pollinations.ai";
-    const routerResponse = await fetch(`${textServiceUrl}/${encodeURIComponent(routerPrompt)}?model=openai-fast`);
+    // Call gen's /text endpoint for routing decision (uses openai-fast model)
+    // This calls /text/:prompt which goes through proxy routes, not the catch-all router
+    // This prevents infinite loops since we're using a specific route, not the catch-all
+    const genServiceUrl = c.env.GEN_SERVICE_URL || "https://gen.pollinations.ai";
+    const routerResponse = await fetch(`${genServiceUrl}/text/${encodeURIComponent(routerPrompt)}?model=openai-fast`, {
+        headers: {
+            'Authorization': `Bearer ${token}`
+        }
+    });
     
     const decision = (await routerResponse.text()).trim().toLowerCase();
     
-    // Proxy directly to backend services
-    const imageServiceUrl = c.env.IMAGE_SERVICE_URL || "https://image.pollinations.ai";
-    
-    // Add auth token back to params for backend
-    params.set("key", token);
-    
+    // Route to gen's proxy endpoints (not backend services directly)
+    // This keeps everything within gen's architecture
     if (decision.includes("image")) {
-        // Route to image service (prepend /prompt)
-        return fetch(`${imageServiceUrl}/prompt${path}?${params.toString()}`);
+        // Route to gen's /image endpoint
+        return fetch(`${genServiceUrl}/image${path}?${params.toString()}`, {
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
     } else {
-        // Route to text service
-        return fetch(`${textServiceUrl}${path}?${params.toString()}`);
+        // Route to gen's /text endpoint
+        return fetch(`${genServiceUrl}/text${path}?${params.toString()}`, {
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
     }
 });

@@ -37,7 +37,7 @@ describe.for([true, false])(
             { timeout: 30000 },
             async ([serviceId, expectedStatus]) => {
                 const response = await SELF.fetch(
-                    `http://localhost/api/generate/openai`,
+                    `http://localhost/v1/chat/completions`,
                     {
                         method: "POST",
                         headers: {

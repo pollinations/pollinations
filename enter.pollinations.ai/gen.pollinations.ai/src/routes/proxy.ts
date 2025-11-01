@@ -91,14 +91,80 @@ export const proxyRoutes = new Hono<Env>()
     // TODO: Temporarily disabled due to timestamp issues with client tokens
     // .use(frontendKeyRateLimit)
     .use(polar)
-    // .use(alias({ "/openai/chat/completions": "/openai" }))
     .post(
         "/openai",
         track("generate.text"),
         describeRoute({
             description: [
                 "OpenAI compatible endpoint for text generation.",
-                "Also available under `/openai/chat/completions`.",
+                "Also available under `/v1/chat/completions`.",
+                "",
+                "**Authentication (Secret Keys Only):**",
+                "",
+                "Include your API key in the `Authorization` header as a Bearer token:",
+                "",
+                "`Authorization: Bearer YOUR_API_KEY`",
+                "",
+                "API keys can be created from your dashboard at enter.pollinations.ai.",
+                "Secret keys provide the best rate limits and can spend Pollen.",
+            ].join("\n"),
+            responses: {
+                200: {
+                    description: "Success",
+                    content: {
+                        "application/json": {
+                            schema: resolver(
+                                CreateChatCompletionResponseSchema,
+                            ),
+                        },
+                    },
+                },
+                ...errorResponses(400, 401, 500),
+            },
+        }),
+        validator("json", CreateChatCompletionRequestSchema),
+        async (c) => {
+            await c.var.auth.requireAuthorization({
+                allowAnonymous:
+                    c.var.track.isFreeUsage && c.env.ALLOW_ANONYMOUS_USAGE,
+            });
+            const textServiceUrl =
+                c.env.TEXT_SERVICE_URL || "https://text.pollinations.ai";
+            const targetUrl = proxyUrl(c, `${textServiceUrl}/openai`);
+            const requestBody = await c.req.json();
+            const response = await proxy(targetUrl, {
+                method: c.req.method,
+                headers: {
+                    ...proxyHeaders(c),
+                    ...generationHeaders(c.env.ENTER_TOKEN, c.var.auth.user),
+                },
+                body: JSON.stringify(requestBody),
+            });
+            if (!response.ok || !response.body) {
+                throw new HTTPException(
+                    response.status as ContentfulStatusCode,
+                );
+            }
+            const responseJson = await response.clone().json();
+            const parsedResponse =
+                CreateChatCompletionResponseSchema.parse(responseJson);
+            const contentFilterHeaders =
+                contentFilterResultsToHeaders(parsedResponse);
+            return new Response(response.body, {
+                headers: {
+                    ...Object.fromEntries(response.headers),
+                    ...contentFilterHeaders,
+                },
+            });
+        },
+    )
+    .post(
+        "/v1/chat/completions",
+        track("generate.text"),
+        describeRoute({
+            description: [
+                "OpenAI compatible endpoint for text generation (standard OpenAI path).",
+                "Alias for `/openai`.",
                 "",
                 "**Authentication (Secret Keys Only):**",
                 "",

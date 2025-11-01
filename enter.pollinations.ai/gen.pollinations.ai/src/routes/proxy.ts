@@ -1,15 +1,15 @@
 import { Context, Hono } from "hono";
 import { proxy } from "hono/proxy";
 import { cors } from "hono/cors";
-import { auth } from "@/middleware/auth.ts";
-import type { User } from "@/auth.ts";
-import { polar } from "@/middleware/polar.ts";
-import type { Env } from "../env.ts";
-import { track } from "@/middleware/track.ts";
-import { removeUnset } from "@/util.ts";
-import { frontendKeyRateLimit } from "@/middleware/frontendRateLimit.ts";
+import { auth } from "../../../src/middleware/auth.ts";
+import type { User } from "../../../src/auth.ts";
+import { polar } from "../../../src/middleware/polar.ts";
+import type { Env } from "../../../src/env.ts";
+import { track } from "../middleware/track.ts";
+import { removeUnset } from "../../../src/util.ts";
+import { frontendKeyRateLimit } from "../middleware/frontendRateLimit.ts";
 import { describeRoute, resolver } from "hono-openapi";
-import { validator } from "@/middleware/validator.ts";
+import { validator } from "../../../src/middleware/validator.ts";
 import {
     CreateChatCompletionResponseSchema,
     CreateChatCompletionRequestSchema,
@@ -87,18 +87,16 @@ export const proxyRoutes = new Hono<Env>()
             });
         },
     )
-    .use(auth({ allowApiKey: true, allowSessionCookie: true }))
+    .use(auth({ allowApiKey: true, allowSessionCookie: false }))
     // TODO: Temporarily disabled due to timestamp issues with client tokens
     // .use(frontendKeyRateLimit)
     .use(polar)
-    // .use(alias({ "/openai/chat/completions": "/openai" }))
     .post(
-        "/openai",
+        "/v1/chat/completions",
         track("generate.text"),
         describeRoute({
             description: [
                 "OpenAI compatible endpoint for text generation.",
-                "Also available under `/openai/chat/completions`.",
                 "",
                 "**Authentication (Secret Keys Only):**",
                 "",

@@ -1,0 +1,38 @@
+name = "pollinations-gen"
+main = "gen.pollinations.ai/src/index.ts"
+compatibility_date = "2025-09-01"
+compatibility_flags = [ "nodejs_compat" ]
+
+[dev]
+port = 3001
+
+# Share the same D1 database as enter.pollinations.ai
+[[d1_databases]]
+binding = "DB"
+database_name = "development-pollinations-enter-db"
+database_id = "6345cb3c-e57a-4aab-bdd4-bca0de7bd930"
+migrations_dir = "../drizzle"
+
+[vars]
+ENVIRONMENT = "development"
+ALLOW_ANONYMOUS_USAGE = false
+TEXT_SERVICE_URL = "http://ec2-3-80-56-235.compute-1.amazonaws.com:16385"
+IMAGE_SERVICE_URL = "http://ec2-3-80-56-235.compute-1.amazonaws.com:16384"
+GEN_SERVICE_URL = "http://localhost:3001"
+
+# Production environment
+[env.production]
+name = "pollinations-gen-production"
+route = { pattern = "gen.pollinations.ai/*", zone_name = "pollinations.ai" }
+
+[[env.production.d1_databases]]
+binding = "DB"
+database_name = "staging-pollinations-enter-db"
+database_id = "073195b4-d99e-4b67-9575-eb5efe6d3234"
+
+[env.production.vars]
+ENVIRONMENT = "production"
+ALLOW_ANONYMOUS_USAGE = false
+TEXT_SERVICE_URL = "http://ec2-3-80-56-235.compute-1.amazonaws.com:16385"
+IMAGE_SERVICE_URL = "http://ec2-3-80-56-235.compute-1.amazonaws.com:16384"
+GEN_SERVICE_URL = "https://gen.pollinations.ai"

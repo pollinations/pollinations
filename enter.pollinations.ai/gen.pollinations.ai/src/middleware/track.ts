@@ -1,4 +1,4 @@
-import { processEvents, storeEvents } from "@/events.ts";
+import { processEvents, storeEvents } from "../../../src/events.ts";
 import {
     resolveServiceId,
     isFreeService,
@@ -7,32 +7,30 @@ import {
     calculatePrice,
     ServiceId,
     ModelId,
-} from "@shared/registry/registry.ts";
-import { parseUsageHeaders } from "@shared/registry/usage-headers.ts";
+    TokenUsage,
+} from "../../../../shared/registry/registry.js";
+import { parseUsageHeaders } from "../../../../shared/registry/usage-headers.js";
 import {
     ContentFilterSeveritySchema,
     CreateChatCompletionResponseSchema,
     type CreateChatCompletionResponse,
-} from "@/schemas/openai.ts";
-import { generateRandomId } from "@/util.ts";
+} from "../../../src/schemas/openai.ts";
+import { generateRandomId } from "../../../src/util.ts";
 import { createMiddleware } from "hono/factory";
-import type { LoggerVariables } from "./logger.ts";
+import type { LoggerVariables } from "../../../src/middleware/logger.ts";
 import {
     contentFilterResultsToEventParams,
     priceToEventParams,
     usageToEventParams,
-} from "@/db/schema/event.ts";
-import { drizzle } from "drizzle-orm/d1";
-import { Context } from "hono";
-import type {
     EventType,
     GenerationEventContentFilterParams,
-} from "@/db/schema/event.ts";
-import type { AuthVariables } from "@/middleware/auth.ts";
-import { PolarVariables } from "./polar.ts";
+} from "../../../src/db/schema/event.ts";
+import { drizzle } from "drizzle-orm/d1";
+import { Context } from "hono";
+import type { AuthVariables } from "../../../src/middleware/auth.ts";
+import { PolarVariables } from "../../../src/middleware/polar.ts";
 import { z } from "zod";
-import { TokenUsage } from "../../../shared/registry/registry.js";
-import { removeUnset } from "@/util.ts";
+import { removeUnset } from "../../../src/util.ts";
 
 export type ModelUsage = {
     model: ModelId;

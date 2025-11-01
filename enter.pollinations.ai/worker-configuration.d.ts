@@ -18,6 +18,7 @@ declare namespace Cloudflare {
 		POLAR_PRODUCT_ID_NECTAR: string;
 		IMAGE_SERVICE_URL: string;
 		TEXT_SERVICE_URL: string;
+		GEN_SERVICE_URL: string;
 		BETTER_AUTH_SECRET: string;
 		POLAR_ACCESS_TOKEN: string;
 		GITHUB_CLIENT_ID: string;
@@ -33,7 +34,7 @@ type StringifyValues<EnvType extends Record<string, unknown>> = {
 	[Binding in keyof EnvType]: EnvType[Binding] extends string ? EnvType[Binding] : string;
 };
 declare namespace NodeJS {
-	interface ProcessEnv extends StringifyValues<Pick<Cloudflare.Env, "ENVIRONMENT" | "LOG_LEVEL" | "ALLOW_ANONYMOUS_USAGE" | "POLAR_SUCCESS_URL" | "POLAR_SERVER" | "TINYBIRD_INGEST_URL" | "POLAR_PRODUCT_ID_SEED" | "POLAR_PRODUCT_ID_FLOWER" | "POLAR_PRODUCT_ID_NECTAR" | "IMAGE_SERVICE_URL" | "TEXT_SERVICE_URL" | "BETTER_AUTH_SECRET" | "POLAR_ACCESS_TOKEN" | "GITHUB_CLIENT_ID" | "GITHUB_CLIENT_SECRET" | "TINYBIRD_ACCESS_TOKEN" | "TESTING_REFERRER" | "ENTER_TOKEN">> {}
+	interface ProcessEnv extends StringifyValues<Pick<Cloudflare.Env, "ENVIRONMENT" | "LOG_LEVEL" | "ALLOW_ANONYMOUS_USAGE" | "POLAR_SUCCESS_URL" | "POLAR_SERVER" | "TINYBIRD_INGEST_URL" | "POLAR_PRODUCT_ID_SEED" | "POLAR_PRODUCT_ID_FLOWER" | "POLAR_PRODUCT_ID_NECTAR" | "IMAGE_SERVICE_URL" | "TEXT_SERVICE_URL" | "GEN_SERVICE_URL" | "BETTER_AUTH_SECRET" | "POLAR_ACCESS_TOKEN" | "GITHUB_CLIENT_ID" | "GITHUB_CLIENT_SECRET" | "TINYBIRD_ACCESS_TOKEN" | "TESTING_REFERRER" | "ENTER_TOKEN">> {}
 }
 
 // Begin runtime types

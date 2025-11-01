@@ -57,24 +57,33 @@ function RouteComponent() {
 
     const handleCreateApiKey = async (formState: CreateApiKey) => {
         const keyType = formState.keyType || "secret";
+        
+        // Build metadata object once - better-auth will JSON.stringify it automatically
+        const metadata: Record<string, string> = {
+            description: formState.description || "",
+            keyType,
+        };
+        
         const result = await auth.apiKey.create({
             name: formState.name,
             prefix: keyType === "publishable" ? "pk" : "sk",
-            metadata: { description: formState.description, keyType },
+            metadata,
         });
+        
         if (result.error) {
             // TODO: handle it
             console.error(result.error);
         }
         
-        // For publishable keys, store the plaintext key in metadata for easy retrieval
+        // For publishable keys, store the plaintext key in metadata
+        // Update metadata to include the plaintext key (better-auth handles JSON.stringify)
         if (keyType === "publishable" && result.data) {
             const apiKey = result.data as CreateApiKeyResponse;
             await auth.apiKey.update({
                 keyId: apiKey.id,
                 metadata: {
-                    plaintextKey: apiKey.key, // Store plaintext key in metadata
-                    keyType,
+                    ...metadata,
+                    plaintextKey: apiKey.key, // Store plaintext key for display
                 },
             });
         }

@@ -11,16 +11,11 @@ export const createDocsRoutes = (apiRouter: Hono<Env>) => {
                 title: "Pollinations.AI API Docs",
                 theme: "saturn",
                 sources: [
-                    { url: "/api/docs/open-api/generate-schema", title: "API" },
-                    // Include better-auth docs only in development mode
-                    ...(c.env.ENVIRONMENT === "development"
-                        ? [
-                              {
-                                  url: "/api/auth/open-api/generate-schema",
-                                  title: "Auth",
-                              },
-                          ]
-                        : []),
+                    { 
+                        url: "/api/docs/open-api/generate-schema", 
+                        title: "Enter API (Auth & Billing)",
+                        default: true,
+                    },
                 ],
                 authentication: {
                     preferredSecurityScheme: "bearerAuth",

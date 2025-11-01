@@ -3,8 +3,9 @@ Provides authentication, payment infrastructure and authorizing API gateway that
 
 ## Documentation
 
+- **[API Documentation](https://enter.pollinations.ai/api/docs)** - Interactive API reference (unified view of enter + gen services)
 - **[API Authentication Guide](./API_AUTHENTICATION.md)** - How to use API keys for server-to-server requests
-- **[API Documentation](https://enter.pollinations.ai/api/docs)** - Interactive API reference
+- **[Testing Cheatsheet](./AGENTS.md)** - Curl examples and testing guide
 - **[FAQ](./POLLEN_FAQ.md)** - Frequently asked questions about Pollen and pricing 
 
 # Local development

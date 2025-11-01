@@ -2,7 +2,7 @@ import { SELF } from "cloudflare:test";
 import { test } from "./fixtures.ts";
 import { expect } from "vitest";
 
-const endpoint = "http://localhost:3000/api/generate/openai";
+const endpoint = "http://localhost/api/generate/openai";
 
 test("rate limit middleware is active and returns rate limit headers", { timeout: 15000 }, async ({ apiKey }) => {
     const testIp = "192.0.2.100"; // Use unique IP for this test

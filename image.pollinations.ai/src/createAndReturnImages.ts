@@ -813,7 +813,6 @@ const generateImage = async (
     progress: ProgressManager,
     requestId: string,
     userInfo: AuthResult,
-    fromEnter: boolean,
 ): Promise<ImageGenerationResult> => {
     // Model selection strategy using a more functional approach
     
@@ -839,22 +838,8 @@ const generateImage = async (
             throw error;
         }
 
-        // Restrict GPT Image model to users with seed tier or higher
-        // NOTE: Skip tier check for enter.pollinations.ai requests
-        if (!fromEnter && !hasSufficientTier(userInfo.tier, "seed")) {
-            const errorText =
-                "Access to gptimage (gpt-image-1-mini) is currently limited to users in the seed tier or higher. Please authenticate at https://auth.pollinations.ai for tier upgrade information.";
-            logError(errorText);
-            progress.updateBar(
-                requestId,
-                35,
-                "Auth",
-                "GPT Image requires seed tier",
-            );
-            const error: any = new Error(errorText);
-            error.status = 403;
-            throw error;
-        } else {
+        // All requests assumed to come from enter.pollinations.ai - tier checks bypassed
+        {
             // For gptimage model, always throw errors instead of falling back
             progress.updateBar(
                 requestId,
@@ -939,22 +924,7 @@ const generateImage = async (
                 : "No userInfo provided",
         );
 
-        // Restrict Nano Banana model to enter.pollinations.ai requests ONLY
-        if (!fromEnter) {
-            const errorText =
-                "Access to nanobanana is currently limited to enter.pollinations.ai. Direct access is not available.";
-            logError(errorText);
-            progress.updateBar(
-                requestId,
-                35,
-                "Auth",
-                "Nano Banana requires enter.pollinations.ai access",
-            );
-            const error: any = new Error(errorText);
-            error.status = 403;
-            throw error;
-        }
-
+        // All requests assumed to come from enter.pollinations.ai
         // For nanobanana model, always throw errors instead of falling back
         progress.updateBar(
             requestId,
@@ -1022,23 +992,7 @@ const generateImage = async (
     }
 
     if (safeParams.model === "kontext") {
-        // Azure Flux Kontext model requires seed tier or higher
-        // NOTE: Allow bypass for enter.pollinations.ai requests
-        if (!fromEnter && !hasSufficientTier(userInfo.tier, "seed")) {
-            const errorText =
-                "Access to kontext model is limited to users in the seed tier or higher. Please authenticate at https://auth.pollinations.ai to get a token or add a referrer.";
-            logError(errorText);
-            progress.updateBar(
-                requestId,
-                35,
-                "Auth",
-                "Kontext model requires seed tier",
-            );
-            const error: any = new Error(errorText);
-            error.status = 403;
-            throw error;
-        }
-
+        // All requests assumed to come from enter.pollinations.ai - tier checks bypassed
         try {
             // Check prompt safety
             progress.updateBar(
@@ -1065,22 +1019,7 @@ const generateImage = async (
     }
 
     if (safeParams.model === "seedream") {
-        // Seedream model is only available from enter.pollinations.ai
-        if (!fromEnter) {
-            const errorText =
-                "Seedream model is only available from enter.pollinations.ai";
-            logError(errorText);
-            progress.updateBar(
-                requestId,
-                35,
-                "Auth",
-                "Seedream only available from enter",
-            );
-            const error: any = new Error(errorText);
-            error.status = 403;
-            throw error;
-        }
-
+        // All requests assumed to come from enter.pollinations.ai
         try {
             // Use ByteDance ARK Seedream API for high-quality image generation
             return await callSeedreamAPI(prompt, safeParams, progress, requestId);
@@ -1235,7 +1174,6 @@ const processImageBuffer = async (
  * @param {string} requestId - Request ID for progress tracking.
  * @param {boolean} wasTransformedForBadDomain - Flag indicating if the prompt was transformed due to bad domain.
  * @param {Object} userInfo - Complete user authentication info object with authenticated, userId, tier, etc.
- * @param {boolean} fromEnter - Whether the request is from enter.pollinations.ai (bypasses tier checks).
  * @returns {Promise<{buffer: Buffer, isChild: boolean, isMature: boolean}>}
  */
 export async function createAndReturnImageCached(
@@ -1247,7 +1185,6 @@ export async function createAndReturnImageCached(
     requestId: string,
     wasTransformedForBadDomain: boolean = false,
     userInfo: AuthResult,
-    fromEnter: boolean,
 ): Promise<ImageGenerationResult> {
     try {
         // Update generation progress
@@ -1261,7 +1198,6 @@ export async function createAndReturnImageCached(
             progress,
             requestId,
             userInfo,
-            fromEnter,
         );
         progress.updateBar(requestId, 70, "Generation", "API call complete");
         progress.updateBar(requestId, 75, "Processing", "Checking safety...");

@@ -11,7 +11,6 @@
     "generate:all": "node generate-assets.js --app=all"
   },
   "dependencies": {
-    "sharp": "^0.33.5",
-    "pwa-asset-generator": "^6.3.2"
+    "sharp": "^0.33.5"
   }
 }

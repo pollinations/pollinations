@@ -153,10 +153,9 @@ async function generateFavicon(svgBuffer, outputPath, backgroundConfig = 'transp
       .toBuffer();
   }
   
-  // Note: sharp doesn't support ICO directly, so we generate PNG
-  // For now, we'll generate a 32x32 PNG and rename it
-  // A proper ICO converter could be added later if needed
-  await sharp(resized).toFile(outputPath);
+  // Generate 32x32 PNG as favicon.ico
+  // (Modern browsers support PNG in .ico files)
+  await sharp(resized).png().toFile(outputPath);
 }
 
 /**
@@ -217,12 +216,13 @@ async function generateAssetsForApp(appKey, appConfig) {
   console.log(`\n📦 Generating assets for ${appConfig.name}...`);
   console.log(`   Source: ${appConfig.sourceSvg}`);
   
-  const svgBuffer = readFileSync(appConfig.sourceSvg);
-  const outputDir = appConfig.outputDir;
-  const iconConfig = appConfig.icons || {};
-  
-  // Ensure output directory exists
-  mkdirSync(outputDir, { recursive: true });
+  try {
+    const svgBuffer = readFileSync(appConfig.sourceSvg);
+    const outputDir = appConfig.outputDir;
+    const iconConfig = appConfig.icons || {};
+    
+    // Ensure output directory exists
+    mkdirSync(outputDir, { recursive: true });
   
   // Generate favicons
   console.log('\n🎨 Favicons:');
@@ -239,13 +239,7 @@ async function generateAssetsForApp(appKey, appConfig) {
   const maskableBg = iconConfig.maskable?.background || '#000000';
   
   for (const size of ICON_SIZES.pwa) {
-    // Standard icon
-    const standardName = appKey === 'pollinations' 
-      ? `android-chrome-${size}x${size}.png`  // pollinations.ai uses android-chrome naming
-      : `icon-${size}.png`;                     // enter/auth use icon naming
-    await generateIcon(svgBuffer, size, join(outputDir, standardName), pwaBg, logoColor);
-    
-    // Maskable icon
+    await generateIcon(svgBuffer, size, join(outputDir, `icon-${size}.png`), pwaBg, logoColor);
     await generateMaskableIcon(svgBuffer, size, join(outputDir, `icon-${size}-maskable.png`), maskableBg, logoColor);
   }
   
@@ -291,6 +285,10 @@ async function generateAssetsForApp(appKey, appConfig) {
   }
   
   console.log(`\n✅ Done generating assets for ${appConfig.name}`);
+  } catch (error) {
+    console.error(`\n❌ Error generating assets for ${appConfig.name}:`, error.message);
+    throw error;
+  }
 }
 
 /**

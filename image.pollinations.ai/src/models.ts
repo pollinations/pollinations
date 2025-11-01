@@ -59,6 +59,14 @@ export const IMAGE_CONFIG: ImageModelsConfig = {
         defaultSideLength: 1024, // Default to 1K when not specified
     },
 
+    // Gemini 2.5 Flash Image via Vertex AI - image-to-image generation
+    nanobanana: {
+        type: "vertex-ai",
+        enhance: false,
+        maxSideLength: 2048, // Gemini supports up to 2K
+        defaultSideLength: 1024,
+    },
+
     // Azure GPT Image model - gpt-image-1-minica
     gptimage: {
         type: "azure",

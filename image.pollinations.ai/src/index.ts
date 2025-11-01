@@ -37,7 +37,7 @@ import { sleep } from "./util.ts";
 
 // Queue configuration for image service
 const QUEUE_CONFIG = {
-    interval: 15000, // 15 seconds between requests per IP (no auth)
+    interval: 30000, // 30 seconds between requests per IP (no auth)
     cap: 1, // Max 1 concurrent request per IP
 };
 
@@ -446,20 +446,26 @@ const checkCacheAndGenerate = async (
                 // NOTE: ipQueue.js handles enter.pollinations.ai bypass automatically
                 const modelName = safeParams.model as string;
                 if (modelName === "nanobanana") {
-                    // Check hourly limit for nanobanana
-                    const ip = getIp(req);
-                    const { allowed, remaining, resetIn } = checkHourlyLimit(ip);
+                    // Check hourly limit for nanobanana (skip for enter.pollinations.ai requests)
+                    const fromEnter = isEnterRequest(req);
+                    let remaining = HOURLY_LIMIT;
                     
-                    if (!allowed) {
-                        const minutesLeft = Math.ceil(resetIn / 60000);
-                        throw new Error(
-                            `Hourly limit reached for ${modelName}. You can generate ${remaining} more images. Limit resets in ${minutesLeft} minutes.`
-                        );
+                    if (!fromEnter) {
+                        const ip = getIp(req);
+                        const { allowed, remaining: rem, resetIn } = checkHourlyLimit(ip);
+                        remaining = rem;
+                        
+                        if (!allowed) {
+                            const minutesLeft = Math.ceil(resetIn / 60000);
+                            throw new Error(
+                                `Hourly limit reached for ${modelName}. You can generate ${remaining} more images. Limit resets in ${minutesLeft} minutes.`
+                            );
+                        }
                     }
                     
                     // 90 second interval, 10 images per hour max
                     queueConfig = { interval: 90000 }; // 90 second interval
-                    logAuth(`${modelName} model - 90 second interval, ${remaining}/${HOURLY_LIMIT} images remaining this hour`);
+                    logAuth(`${modelName} model - 90 second interval, ${remaining}/${HOURLY_LIMIT} images remaining this hour${fromEnter ? ' (enter request - no hourly limit)' : ''}`);
                 } else if (modelName === "kontext") {
                     // Kontext model requires seed tier or higher (checked via registry)
                     // NOTE: Skip tier check for enter.pollinations.ai requests

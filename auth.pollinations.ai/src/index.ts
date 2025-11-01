@@ -100,12 +100,10 @@ export default {
             }
 
             if (url.pathname.startsWith("/media/")) {
-                // Attempt to fetch the requested media file from the repository's media directory
-                // In production these can be served by a proper asset pipeline / KV binding.
-                const assetUrl = `https://raw.githubusercontent.com/pollinations/auth.pollinations.ai/main${url.pathname}`;
+                // Serve media files from GitHub
+                const assetUrl = `https://raw.githubusercontent.com/pollinations/pollinations/main${url.pathname.replace('/media/', '/auth.pollinations.ai/media/')}`;
                 const assetResponse = await fetch(assetUrl);
                 if (assetResponse.ok) {
-                    // Clone headers to ensure proper CORS
                     const newHeaders = new Headers(assetResponse.headers);
                     corsHeaders &&
                         Object.entries(corsHeaders).forEach(([k, v]) =>

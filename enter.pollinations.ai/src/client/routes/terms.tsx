@@ -17,8 +17,8 @@ function TermsComponent() {
             <div className="flex justify-center mb-12">
                 <img
                     src="/logo_text_black.svg"
-                    alt="Pollinations.AI"
-                    className="h-16 sm:h-20 max-w-[90%]"
+                    alt="pollinations.ai"
+                    className="h-16 sm:h-20 max-w-[90%] invert"
                 />
             </div>
 

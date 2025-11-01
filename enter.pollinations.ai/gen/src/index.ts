@@ -20,18 +20,6 @@ const app = new Hono<Env>()
     .use("*", auth({ allowApiKey: true, allowSessionCookie: false }))
     .route("/", proxyRoutes)
     .get("/health", (c) => c.json({ status: "ok" }))
-    .get("/debug-secrets", (c) => {
-        const hasGithubId = !!c.env.GITHUB_CLIENT_ID;
-        const hasGithubSecret = !!c.env.GITHUB_CLIENT_SECRET;
-        const hasJwtSecret = !!c.env.JWT_SECRET;
-        console.log("DEBUG: Secrets check", { hasGithubId, hasGithubSecret, hasJwtSecret });
-        return c.json({ 
-            hasGithubId, 
-            hasGithubSecret, 
-            hasJwtSecret,
-            githubIdPrefix: c.env.GITHUB_CLIENT_ID?.substring(0, 4)
-        });
-    })
     .get("*", async (c) => {
         // Catch-all router: extract path + query params (excluding 'key')
         const path = c.req.path;

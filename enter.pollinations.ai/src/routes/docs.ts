@@ -7,8 +7,8 @@ export const createDocsRoutes = (apiRouter: Hono<Env>) => {
     return new Hono<Env>()
         .get("/", (c, next) =>
             Scalar<Env>({
-                pageTitle: "pollinations.ai API docs",
-                title: "pollinations.ai API docs",
+                pageTitle: "Pollinations.AI API Docs",
+                title: "Pollinations.AI API Docs",
                 theme: "saturn",
                 sources: [
                     { url: "/api/docs/open-api/generate-schema", title: "API" },
@@ -38,7 +38,7 @@ export const createDocsRoutes = (apiRouter: Hono<Env>) => {
                 documentation: {
                     servers: [{ url: "/api" }],
                     info: {
-                        title: "pollinations.ai API",
+                        title: "Pollinations.AI API",
                         version: "0.3.0",
                         description: [
                             "Documentation for `enter.pollinations.ai`.",

@@ -1,0 +1,16 @@
+{
+  "name": "@pollinations/pwa-assets",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Centralized PWA asset generation for Pollinations apps",
+  "scripts": {
+    "generate": "node generate-assets.js",
+    "generate:enter": "node generate-assets.js --app=enter",
+    "generate:pollinations": "node generate-assets.js --app=pollinations",
+    "generate:auth": "node generate-assets.js --app=auth",
+    "generate:all": "node generate-assets.js --app=all"
+  },
+  "dependencies": {
+    "sharp": "^0.33.5"
+  }
+}

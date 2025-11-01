@@ -1,7 +1,7 @@
 {
-    "name": "pollinations.ai",
+    "name": "pollinations.ai - beta",
     "short_name": "pollinations",
-    "description": "Free 🐝 Open Source 🌸 Gen AI 🤖 API",
+    "description": "authentication and API gateway for pollinations.ai",
     "icons": [
         {
             "src": "/icon-192.png",
@@ -14,8 +14,8 @@
             "type": "image/png"
         }
     ],
-    "theme_color": "#d6379e",
-    "background_color": "#d6379e",
+    "theme_color": "#5b2dd8",
+    "background_color": "#5b2dd8",
     "display": "standalone",
     "start_url": "/"
 }

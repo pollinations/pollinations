@@ -13,22 +13,9 @@ export const createDocsRoutes = (apiRouter: Hono<Env>) => {
                 sources: [
                     { 
                         url: "/api/docs/open-api/generate-schema", 
-                        title: "Enter API (Images + Auth)",
+                        title: "Enter API (Auth & Billing)",
                         default: true,
                     },
-                    { 
-                        url: `${c.env.GEN_SERVICE_URL}/api/docs/open-api/generate-schema`, 
-                        title: "Gen API (Text)",
-                    },
-                    // Include better-auth docs only in development mode
-                    ...(c.env.ENVIRONMENT === "development"
-                        ? [
-                              {
-                                  url: "/api/auth/open-api/generate-schema",
-                                  title: "Auth (Dev)",
-                              },
-                          ]
-                        : []),
                 ],
                 authentication: {
                     preferredSecurityScheme: "bearerAuth",

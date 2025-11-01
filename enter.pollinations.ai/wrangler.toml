@@ -38,6 +38,7 @@ POLAR_PRODUCT_ID_FLOWER = "2bfbe9e0-8395-489f-a7a1-6821d835cc08"
 POLAR_PRODUCT_ID_NECTAR = "d67b2a25-c4d7-47fa-9d64-4b2a27f0908f"
 IMAGE_SERVICE_URL = "http://ec2-3-80-56-235.compute-1.amazonaws.com:16384"
 TEXT_SERVICE_URL = "http://ec2-3-80-56-235.compute-1.amazonaws.com:16385"
+GEN_SERVICE_URL = "http://localhost:3001"
 
 
 [[env.staging.routes]]

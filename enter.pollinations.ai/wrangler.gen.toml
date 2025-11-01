@@ -18,6 +18,7 @@ ENVIRONMENT = "development"
 ALLOW_ANONYMOUS_USAGE = false
 TEXT_SERVICE_URL = "https://text.pollinations.ai"
 IMAGE_SERVICE_URL = "https://image.pollinations.ai"
+GEN_SERVICE_URL = "http://localhost:3001"
 
 [env.staging]
 route = { pattern = "gen.pollinations.ai/*", zone_name = "pollinations.ai" }
@@ -32,6 +33,7 @@ ENVIRONMENT = "staging"
 ALLOW_ANONYMOUS_USAGE = false
 TEXT_SERVICE_URL = "https://text.pollinations.ai"
 IMAGE_SERVICE_URL = "https://image.pollinations.ai"
+GEN_SERVICE_URL = "https://gen.pollinations.ai"
 
 [env.production]
 route = { pattern = "gen.pollinations.ai/*", zone_name = "pollinations.ai" }
@@ -46,3 +48,4 @@ ENVIRONMENT = "production"
 ALLOW_ANONYMOUS_USAGE = false
 TEXT_SERVICE_URL = "https://text.pollinations.ai"
 IMAGE_SERVICE_URL = "https://image.pollinations.ai"
+GEN_SERVICE_URL = "https://gen.pollinations.ai"

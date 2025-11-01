@@ -6,6 +6,7 @@ import { proxyRoutes } from "../../src/routes/proxy";
 import { llmRouterRoutes } from "./routes/llmRouter";
 import { logger } from "../../src/middleware/logger";
 import { auth } from "../../src/middleware/auth";
+import { createDocsRoutes } from "../../src/routes/docs";
 
 const app = new Hono<Env>()
     .use("*", requestId())
@@ -22,5 +23,14 @@ const app = new Hono<Env>()
     .route("/", proxyRoutes)
     .get("/health", (c) => c.json({ status: "ok" }))
     .route("/", llmRouterRoutes);
+
+// Create API docs for gen service (text generation endpoints)
+const genApiRouter = new Hono<Env>()
+    .route("/", proxyRoutes)
+    .route("/", llmRouterRoutes);
+
+// Note: Docs are also available at enter.pollinations.ai/api/docs with unified view
+const docsRouter = createDocsRoutes(genApiRouter);
+app.route("/api/docs", docsRouter);
 
 export default app;

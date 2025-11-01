@@ -1,6 +1,8 @@
-# gen.pollinations.ai - API Gateway Service
+# gen.pollinations.ai - Text Generation Gateway
 
 Lightweight API gateway for text generation, extracted from enter.pollinations.ai.
+
+> **📖 Documentation**: See unified API docs at [enter.pollinations.ai/api/docs](https://enter.pollinations.ai/api/docs)
 
 ## Architecture
 

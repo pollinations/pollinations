@@ -1,6 +1,6 @@
-import React, { useState } from "react";
+import React from "react";
 import styled from "@emotion/styled"; // Added to style our ReactSVG icon
-import { Box, useTheme, Popover, IconButton } from "@mui/material";
+import { Box, useTheme } from "@mui/material";
 import { SectionBG, Colors, Fonts } from "../config/global";
 import { SectionContainer } from "../components/SectionContainer";
 import { NavLink } from "react-router-dom";
@@ -10,7 +10,6 @@ import { useMediaQuery } from "@mui/material";
 import { trackEvent } from "../config/analytics";
 import { GeneralButton } from "../components/GeneralButton";
 import { ICONS } from "../icons/icons.js"; // Import the ICONS map
-import InfoIcon from "@mui/icons-material/Info";
 import { ReactSVG } from "react-svg";
 
 // Styled icon component to control fill color
@@ -55,7 +54,6 @@ const AboutUsButton = styled(GeneralButton)(() => ({
 const Header = () => {
     const theme = useTheme(); // Use the useTheme hook to access the theme
     const isMobile = useMediaQuery(theme.breakpoints.down("md"));
-    const [anchorEl, setAnchorEl] = useState(null);
 
     const handleNavLinkClick = () => {
         trackEvent({
@@ -75,8 +73,6 @@ const Header = () => {
             "_blank",
         );
     };
-
-    const open = Boolean(anchorEl);
 
     return (
         <SectionContainer backgroundConfig={SectionBG.header}>
@@ -103,6 +99,7 @@ const Header = () => {
                         style={{
                             width: isMobile ? "300px" : "350px",
                             height: isMobile ? "auto" : "auto",
+                            filter: "invert(1)",
                         }}
                     />
                 </NavLink>

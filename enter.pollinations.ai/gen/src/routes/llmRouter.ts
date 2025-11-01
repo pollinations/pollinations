@@ -1,7 +1,7 @@
 import { Hono } from "hono";
 import type { Env } from "../../../src/env";
 
-export const routerRoutes = new Hono<Env>().get("*", async (c) => {
+export const llmRouterRoutes = new Hono<Env>().get("*", async (c) => {
     // Catch-all router: extract path + query params (excluding 'key')
     const path = c.req.path;
     const url = new URL(c.req.url);

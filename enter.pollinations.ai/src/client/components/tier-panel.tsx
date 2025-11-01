@@ -10,26 +10,13 @@ interface TierPanelProps {
     daily_pollen?: number;
 }
 
-const TIER_CONFIG = {
-    seed: {
-        emoji: "🌱",
-        name: "Seed",
-        pollen: 10,
-        badgeColors: "bg-emerald-100 border border-emerald-400 text-emerald-800",
-    },
-    flower: {
-        emoji: "🌸",
-        name: "Flower",
-        pollen: 15,
-        badgeColors: "bg-fuchsia-100 border border-fuchsia-400 text-fuchsia-800",
-    },
-    nectar: {
-        emoji: "🍯",
-        name: "Nectar",
-        pollen: 20,
-        badgeColors: "bg-amber-100 border border-amber-400 text-amber-800",
-    },
-} as const;
+// Badge colors for each tier level
+const TIER_BADGE_COLORS: Record<TierStatus, string> = {
+    none: "bg-gray-100 border border-gray-400 text-gray-800",
+    seed: "bg-emerald-100 border border-emerald-400 text-emerald-800",
+    flower: "bg-fuchsia-100 border border-fuchsia-400 text-fuchsia-800",
+    nectar: "bg-amber-100 border border-amber-400 text-amber-800",
+};
 
 const TIER_ORDER = ["seed", "flower", "nectar"] as const;
 
@@ -65,11 +52,11 @@ const NoTierScreen: FC = () => {
 };
 
 const TierScreen: FC<{
-    tier: keyof typeof TIER_CONFIG;
+    tier: TierStatus;
     assigned_tier: TierStatus;
     countdown: string;
-    product_name?: string;
-    daily_pollen?: number;
+    product_name: string;
+    daily_pollen: number;
 }> = ({
     tier,
     assigned_tier,
@@ -77,25 +64,23 @@ const TierScreen: FC<{
     product_name,
     daily_pollen,
 }) => {
-    const config = TIER_CONFIG[tier];
-    const displayName = product_name || config.name;
-    const pollenAmount = daily_pollen || config.pollen;
+    const badgeColors = TIER_BADGE_COLORS[tier];
 
     // Detect tier change
     const tierWillChange = assigned_tier !== "none" && assigned_tier !== tier;
-    const isUpgrade = tierWillChange && TIER_ORDER.indexOf(assigned_tier) > TIER_ORDER.indexOf(tier);
+    const isUpgrade = tierWillChange && 
+        TIER_ORDER.indexOf(assigned_tier as "seed" | "flower" | "nectar") > TIER_ORDER.indexOf(tier as "seed" | "flower" | "nectar");
     const assignedTierName = assigned_tier !== "none" ? capitalize(assigned_tier) : "";
 
     return (
         <div className="rounded-2xl p-6 border-2 border-gray-300 bg-gray-50/30">
             <div className="flex flex-col gap-3">
                 <div className="flex items-center gap-3 flex-wrap">
-                    <span className="text-3xl">{config.emoji}</span>
-                    <span className="text-xl font-subheading text-gray-900">
-                        {displayName}
+                    <span className="text-3xl font-bold text-gray-900">
+                        {product_name}
                     </span>
-                    <span className={`inline-flex items-center px-3 py-1 rounded-full font-semibold text-sm ${config.badgeColors}`}>
-                        {pollenAmount} pollen/day
+                    <span className={`inline-flex items-center px-3 py-1 rounded-full font-semibold text-sm ${badgeColors}`}>
+                        {daily_pollen} pollen/day
                     </span>
                     <span className="inline-flex items-center px-3 py-1 rounded-full font-semibold text-sm bg-blue-100 border border-blue-300 text-blue-800">
                         ⏱️ {countdown}
@@ -112,7 +97,7 @@ const TierScreen: FC<{
                             </>
                         ) : (
                             <>
-                                ✓ <strong>Active Subscription:</strong> Your tier subscription is active and will earn you {pollenAmount} pollen daily.
+                                ✓ <strong>Active Subscription:</strong> Your tier subscription is active and will earn you {daily_pollen} pollen daily.
                                 <br />
                                 Unused pollen does not carry over.
                             </>
@@ -141,6 +126,10 @@ export const TierPanel: FC<TierPanelProps> = ({
         return <NoTierScreen />;
     }
 
+    // These should always be defined when status !== "none", but provide fallbacks for type safety
+    const displayName = product_name || "Unknown Tier";
+    const displayPollen = daily_pollen ?? 0;
+
     const [countdown, setCountdown] = useState<string>(formatCountdown(next_refill_at_utc));
 
     useEffect(() => {
@@ -155,8 +144,8 @@ export const TierPanel: FC<TierPanelProps> = ({
             tier={status}
             assigned_tier={assigned_tier}
             countdown={countdown}
-            product_name={product_name}
-            daily_pollen={daily_pollen}
+            product_name={displayName}
+            daily_pollen={displayPollen}
         />
     );
 };

@@ -3,6 +3,7 @@
     "version": "1.0.0",
     "scripts": {
         "start": "tsx startServer.js",
+        "dev": "DEBUG=pollinations:* tsx --watch startServer.js",
         "type-check": "tsc --noEmit",
         "validate-configs": "tsx configs/validateConfigKeys.ts",
         "test": "echo \"Error: no test specified\" && exit 1",

@@ -144,7 +144,7 @@ const Footer = () => {
           <CopyrightText>
             <p>© 2025 pollinations.ai | All rights reserved.</p>
             <p style={{ marginTop: '8px' }}>
-              All content and materials on this site are protected by copyright and trademark laws and are the property of Pollinations.ai. Unauthorized use is prohibited.
+              Pollinations.AI is an open‑source generative‑AI platform on a mission to make creative tools accessible to everyone.
             </p>
           </CopyrightText>
         </LeftSection>

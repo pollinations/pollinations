@@ -20,16 +20,18 @@ TEXT_SERVICE_URL = "http://ec2-3-80-56-235.compute-1.amazonaws.com:16385"
 IMAGE_SERVICE_URL = "http://ec2-3-80-56-235.compute-1.amazonaws.com:16384"
 GEN_SERVICE_URL = "http://localhost:3001"
 
-[env.staging]
+# Production environment
+[env.production]
+name = "pollinations-gen-production"
 route = { pattern = "gen.pollinations.ai/*", zone_name = "pollinations.ai" }
 
-[[env.staging.d1_databases]]
+[[env.production.d1_databases]]
 binding = "DB"
 database_name = "staging-pollinations-enter-db"
 database_id = "073195b4-d99e-4b67-9575-eb5efe6d3234"
 
-[env.staging.vars]
-ENVIRONMENT = "staging"
+[env.production.vars]
+ENVIRONMENT = "production"
 ALLOW_ANONYMOUS_USAGE = false
 TEXT_SERVICE_URL = "http://ec2-3-80-56-235.compute-1.amazonaws.com:16385"
 IMAGE_SERVICE_URL = "http://ec2-3-80-56-235.compute-1.amazonaws.com:16384"

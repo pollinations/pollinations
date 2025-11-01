@@ -61,6 +61,9 @@ app.get(
     })
 );
 
+// Redirect root to API docs (no auth required)
+app.get("/", (c) => c.redirect("/api/docs"));
+
 // Add Scalar docs UI (public, no auth required)
 app.get(
     "/api/docs",

@@ -1099,13 +1099,8 @@ const generateImage = async (
     try {
         return await callComfyUI(prompt, safeParams, concurrentRequests);
     } catch (_error) {
-        progress.updateBar(
-            requestId,
-            35,
-            "Processing",
-            "Trying Cloudflare Dreamshaper...",
-        );
-        return await callCloudflareDreamshaper(prompt, safeParams);
+        // Cloudflare Flux fallback disabled
+        throw _error;
     }
 };
 

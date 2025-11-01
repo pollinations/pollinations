@@ -6,6 +6,8 @@ After=network.target
 ExecStart=/home/ubuntu/pollinations/image.pollinations.ai/serverConfigAndScripts/libretranslate-startup.sh
 User=ubuntu
 Restart=always
+StandardOutput=journal
+StandardError=journal
 
 [Install]
 WantedBy=multi-user.target

@@ -1,5 +1,5 @@
 import { SELF } from "cloudflare:test";
-import { test } from "./fixtures.ts";
+import { test } from "../fixtures.ts";
 import { expect } from "vitest";
 
 const endpoint = "http://localhost:3000/api/generate/openai";

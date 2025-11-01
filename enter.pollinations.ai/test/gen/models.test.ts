@@ -1,6 +1,6 @@
 import { isFreeService, getTextServices } from "@shared/registry/registry.ts";
 import { SELF } from "cloudflare:test";
-import { test } from "./fixtures.ts";
+import { test } from "../fixtures.ts";
 import { describe, beforeEach, expect } from "vitest";
 import { env } from "cloudflare:workers";
 

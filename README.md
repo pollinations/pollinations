@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="assets/pollinations_ai_logo_text_black.png" alt="Pollinations.AI Logo" width="100%"/>
+  <img src="assets/logo-text.svg" alt="pollinations.ai" width="100%"/>
 </div>
 
 ## 📢 Hacktoberfest News

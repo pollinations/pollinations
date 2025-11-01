@@ -1,11 +1,34 @@
 # PWA Asset Generator
 
-Centralized, **configurable** asset generation for all Pollinations apps.
+**Single source of truth for all logos and PWA assets.**
 
-## Usage
+## 📁 Source Files (Only 2!)
+
+```
+/assets/
+├── logo.svg          ← Bee logo only
+└── logo-text.svg     ← Bee logo + "pollinations.ai" text
+```
+
+**These are the ONLY logo files you should ever edit.**
+
+## 🎨 What Gets Generated
+
+From these 2 files, the script automatically generates:
+
+- **Favicons** (16x16, 32x32, .ico)
+- **PWA Icons** (192x192, 512x512, maskable)
+- **Apple Icons** (180x180, 152x152, 167x167)
+- **OG Images** (1200x630 social media previews)
+- **Component Logos** (copied for React imports)
+- **Watermark Logo** (for image.pollinations.ai)
+
+**Color transforms applied automatically** (black → white via code).
+
+## 🚀 Usage
 
 ```bash
-# Generate for all apps
+# Generate assets for all apps
 npm run generate
 
 # Generate for specific app
@@ -14,145 +37,46 @@ npm run generate:pollinations
 npm run generate:auth
 ```
 
-## What it generates
+## 📍 Output Locations
 
-- **Favicons:** 16x16, 32x32, favicon.ico
-- **PWA icons:** 192x192, 512x512 (standard + maskable variants)
-- **Apple touch icons:** 180x180, 152x152, 167x167
-- **Social media OG images:** 1200x630
-
-## 🎨 Flexible Configuration
-
-Each app's assets are configured in `app-configs.js` with **per-icon-type customization**:
-
-```javascript
-{
-  pollinations: {
-    name: 'pollinations.ai',
-    outputDir: 'pollinations.ai/public',
-    
-    // Source SVG to use
-    sourceSvg: 'source.svg',  // or 'source-white.svg', 'custom-logo.svg'
-    
-    // Per-icon-type customization
-    icons: {
-      favicons: {
-        background: 'transparent'  // Keep favicons transparent
-      },
-      pwa: {
-        background: '#000000'      // PWA icons with black background
-      },
-      apple: {
-        background: '#000000'      // Apple icons with black background
-      },
-      maskable: {
-        background: '#000000'      // Maskable icons need solid backgrounds
-      },
-      og: {
-        background: '#000000'      // Social preview background
-      }
-    }
-  }
-}
+```
+enter.pollinations.ai/public/     ← All enter assets
+pollinations.ai/public/           ← PWA/OG assets
+pollinations.ai/src/assets/logo/  ← React component logos
+auth.pollinations.ai/media/       ← Auth assets
+image.pollinations.ai/logo.png    ← Watermark logo
 ```
 
-## Customization Examples
+## ⚠️ Important Rules
 
-### 1. Transparent Favicons, Solid PWA Icons
+1. **Never edit generated files directly** - they'll be overwritten
+2. **Only edit the 2 source SVGs** in `/assets/`
+3. **Always regenerate after changing sources**
+4. **Commit generated files** with source changes
 
-```javascript
-pollinations: {
-  sourceSvg: 'source.svg',
-  icons: {
-    favicons: {
-      background: 'transparent'  // ✅ Favicon stays transparent
-    },
-    pwa: {
-      background: '#000000'      // ✅ PWA icons get black background
-    },
-    apple: {
-      background: '#000000'      // ✅ Apple icons get black background
-    }
-  }
-}
-```
+## 🔧 How It Works
 
-### 2. Different Source SVGs per App
+1. Reads black logos from `/assets/`
+2. Applies color transforms (black → white)
+3. Resizes for each target size
+4. Composites on colored backgrounds
+5. Copies to app directories
 
-```javascript
-enter: {
-  sourceSvg: 'source.svg',        // Black logo
-},
-pollinations: {
-  sourceSvg: 'source-white.svg',  // White logo variant
-}
-```
+**Configured in:** `app-configs.js`  
+**Generator:** `generate-assets.js`
 
-### 3. Custom Colors per Icon Type
+## 🎯 Per-App Configuration
 
-```javascript
-icons: {
-  favicons: {
-    background: 'transparent'
-  },
-  pwa: {
-    background: '#FFFFFF'  // White background for PWA
-  },
-  apple: {
-    background: '#FF0000'  // Red background for Apple icons
-  }
-}
-```
+Each app has its own colors and settings in `app-configs.js`:
 
-## Background Format Options
+- **enter**: Purple theme (`#5b2dd8`)
+- **pollinations**: Magenta theme (`#d6379e`)
+- **auth**: Orange theme (`#e67e00`)
 
-- `'transparent'` - Transparent background
-- `'#000000'` - Hex color (black)
-- `'#FFFFFF'` - Hex color (white)
-- `{ r: 255, g: 0, b: 0, alpha: 1 }` - RGB object
+## 📝 SEO Configuration
 
-## Adding New Source Assets
+SEO settings (title, description, URL) are also in `app-configs.js` under the `seo` property.
 
-1. Add your SVG to `/shared/pwa-assets/`:
-   ```bash
-   cp /path/to/your-logo.svg shared/pwa-assets/source-custom.svg
-   ```
+---
 
-2. Reference it in `app-configs.js`:
-   ```javascript
-   myApp: {
-     sourceSvg: 'source-custom.svg',
-     // ... rest of config
-   }
-   ```
-
-3. Run the generator:
-   ```bash
-   npm run generate:myApp
-   ```
-
-## Integration
-
-Add to your app's `package.json`:
-
-```json
-{
-  "scripts": {
-    "prebuild": "cd ../shared/pwa-assets && npm run generate:yourapp",
-    "build:pwa": "cd ../shared/pwa-assets && npm run generate:yourapp"
-  }
-}
-```
-
-## Output Directories
-
-- **enter.pollinations.ai**: `enter.pollinations.ai/public/`
-- **pollinations.ai**: `pollinations.ai/public/`
-- **auth.pollinations.ai**: `auth.pollinations.ai/media/`
-
-## Notes
-
-- Maskable icons include 20% safe zone padding
-- All PNG outputs are optimized with sharp
-- The favicon.ico is currently a 32x32 PNG (proper multi-resolution ICO support can be added if needed)
-- Default source: `source.svg` (from `/assets/pollinations_ai_logo_black.svg`)
+**Questions?** Check the code or ask in Discord!

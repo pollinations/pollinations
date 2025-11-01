@@ -5,12 +5,11 @@ import { SectionBG, Colors, Fonts } from "../config/global";
 import { SectionContainer } from "../components/SectionContainer";
 import { NavLink } from "react-router-dom";
 import { SocialLinks } from "../components/SocialLinks";
-import PollinationsLogo from "../assets/logo/logo-text.svg?react";
-import LogoIconBlack from "../assets/logo/logo-icon-black.svg?react";
+import PollinationsLogo from "../logo/logo-text.svg?react";
 import { useMediaQuery } from "@mui/material";
 import { trackEvent } from "../config/analytics";
 import { GeneralButton } from "../components/GeneralButton";
-import { ICONS } from "../assets/icons/icons.js"; // Import the ICONS map
+import { ICONS } from "../icons/icons.js"; // Import the ICONS map
 import InfoIcon from "@mui/icons-material/Info";
 import { ReactSVG } from "react-svg";
 
@@ -100,28 +99,12 @@ const Header = () => {
                         textDecoration: "none",
                     }}
                 >
-                    <Box
-                        sx={{
-                            display: "flex",
-                            flexDirection: { xs: "column-reverse", md: "row" },
-                            alignItems: "center",
+                    <PollinationsLogo
+                        style={{
+                            width: isMobile ? "300px" : "350px",
+                            height: isMobile ? "auto" : "auto",
                         }}
-                    >
-                        <LogoIconBlack
-                            style={{
-                                width: isMobile ? "50px" : "60px",
-                                height: isMobile ? "50px" : "60px",
-                                marginRight: isMobile ? "0em" : "1em",
-                            }}
-                        />
-                        <PollinationsLogo
-                            style={{
-                                width: isMobile ? "300px" : "350px",
-                                height: isMobile ? "auto" : "auto",
-                                marginBottom: isMobile ? "1em" : "0em",
-                            }}
-                        />
-                    </Box>
+                    />
                 </NavLink>
                 <Box
                     sx={{

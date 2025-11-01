@@ -8,11 +8,19 @@ export const APP_CONFIGS = {
     name: 'enter.pollinations.ai',
     outputDir: 'enter.pollinations.ai/public',
     
-    // SOURCE ASSETS (in sources/ folder)
-    sourceSvg: 'sources/logo.svg',      // White bee logo
-    ogSourceSvg: 'sources/logo-text.svg', // White logo + text for banners
+    // SOURCE ASSETS (from /assets/ - single source of truth)
+    sourceSvg: '../../assets/logo.svg',
+    ogSourceSvg: '../../assets/logo-text.svg',
+    logoColor: 'white',  // Color applied during generation
     themeColor: '#5b2dd8',  // Darker purple theme
     backgroundColor: '#5b2dd8',
+    
+    // SEO / META TAGS (Single Source of Truth)
+    seo: {
+      title: 'pollinations.ai - beta',
+      description: 'authentication and API gateway for pollinations.ai',
+      url: 'https://enter.pollinations.ai',
+    },
     
     // Per-icon-type customization
     icons: {
@@ -38,11 +46,19 @@ export const APP_CONFIGS = {
     name: 'pollinations.ai',
     outputDir: 'pollinations.ai/public',
     
-    // SOURCE ASSETS (in sources/ folder)
-    sourceSvg: 'sources/logo.svg',      // White bee logo
-    ogSourceSvg: 'sources/logo-text.svg', // White logo + text for banners
+    // SOURCE ASSETS (from /assets/ - single source of truth)
+    sourceSvg: '../../assets/logo.svg',
+    ogSourceSvg: '../../assets/logo-text.svg',
+    logoColor: 'white',  // Color applied during generation
     themeColor: '#d6379e',  // Darker pink/magenta theme
     backgroundColor: '#d6379e',
+    
+    // SEO / META TAGS (Single Source of Truth)
+    seo: {
+      title: 'pollinations.ai',
+      description: 'Free 🐝 Open Source 🌸 Gen AI 🤖 API',
+      url: 'https://pollinations.ai',
+    },
     
     icons: {
       favicons: {
@@ -67,8 +83,9 @@ export const APP_CONFIGS = {
     name: 'auth.pollinations.ai',
     outputDir: 'auth.pollinations.ai/media',
     
-    // SOURCE ASSETS (in sources/ folder)
-    sourceSvg: 'sources/logo.svg',      // White bee logo
+    // SOURCE ASSETS (from /assets/ - single source of truth)
+    sourceSvg: '../../assets/logo.svg',
+    logoColor: 'white',  // Color applied during generation
     themeColor: '#e67e00',  // Darker orange theme
     backgroundColor: '#e67e00',
     

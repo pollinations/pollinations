@@ -35,6 +35,36 @@ const appArg = args.find(arg => arg.startsWith('--app='));
 const targetApp = appArg ? appArg.split('=')[1] : 'all';
 
 /**
+ * Apply color tint to an image (e.g., black → white)
+ */
+async function applyColorTint(buffer, tintColor) {
+  const tint = resolveBackground(tintColor);
+  
+  // Extract the alpha channel
+  const alphaChannel = await sharp(buffer)
+    .extractChannel('alpha')
+    .toBuffer();
+  
+  // Create a solid color image with the tint color
+  const { width, height } = await sharp(buffer).metadata();
+  const coloredImage = await sharp({
+    create: {
+      width,
+      height,
+      channels: 3,
+      background: tint
+    }
+  })
+  .png()
+  .toBuffer();
+  
+  // Composite the colored image using the alpha channel as a mask
+  return await sharp(coloredImage)
+    .joinChannel(alphaChannel)
+    .toBuffer();
+}
+
+/**
  * Generate PNG from SVG at specified size
  */
 async function generateIcon(svgBuffer, size, outputPath, backgroundConfig = 'transparent', tintColor = null) {
@@ -49,30 +79,7 @@ async function generateIcon(svgBuffer, size, outputPath, backgroundConfig = 'tra
   
   // Apply tint if specified (for colorizing black logos)
   if (tintColor) {
-    const tint = resolveBackground(tintColor);
-    
-    // Extract the alpha channel
-    const alphaChannel = await sharp(resized)
-      .extractChannel('alpha')
-      .toBuffer();
-    
-    // Create a solid color image with the tint color
-    const { width, height } = await sharp(resized).metadata();
-    const coloredImage = await sharp({
-      create: {
-        width,
-        height,
-        channels: 3,
-        background: tint
-      }
-    })
-    .png()
-    .toBuffer();
-    
-    // Composite the colored image using the alpha channel as a mask
-    resized = await sharp(coloredImage)
-      .joinChannel(alphaChannel)
-      .toBuffer();
+    resized = await applyColorTint(resized, tintColor);
   }
   
   // If background is opaque, flatten the image
@@ -88,7 +95,7 @@ async function generateIcon(svgBuffer, size, outputPath, backgroundConfig = 'tra
 /**
  * Generate maskable icon (with safe zone padding)
  */
-async function generateMaskableIcon(svgBuffer, size, outputPath, backgroundConfig = '#000000') {
+async function generateMaskableIcon(svgBuffer, size, outputPath, backgroundConfig = '#000000', tintColor = null) {
   console.log(`  Generating ${size}x${size} maskable → ${outputPath}`);
   
   // Maskable icons need 20% padding (safe zone)
@@ -97,9 +104,18 @@ async function generateMaskableIcon(svgBuffer, size, outputPath, backgroundConfi
   
   const background = resolveBackground(backgroundConfig);
   
-  // Create icon with padding
-  await sharp(svgBuffer)
+  // Resize and optionally tint
+  let resized = await sharp(svgBuffer)
     .resize(paddedSize, paddedSize, { fit: 'contain', background: { r: 0, g: 0, b: 0, alpha: 0 } })
+    .toBuffer();
+    
+  // Apply tint if specified
+  if (tintColor) {
+    resized = await applyColorTint(resized, tintColor);
+  }
+  
+  // Create icon with padding
+  await sharp(resized)
     .extend({
       top: padding,
       bottom: padding,
@@ -122,35 +138,12 @@ async function generateFavicon(svgBuffer, outputPath, backgroundConfig = 'transp
   
   // First resize the image
   let resized = await sharp(svgBuffer)
-    .resize(size, size, { fit: 'contain', background })
+    .resize(size, size, { fit: 'contain', background: { r: 0, g: 0, b: 0, alpha: 0 } })
     .toBuffer();
   
   // Apply tint if specified
   if (tintColor) {
-    const tint = resolveBackground(tintColor);
-    
-    // Extract the alpha channel
-    const alphaChannel = await sharp(resized)
-      .extractChannel('alpha')
-      .toBuffer();
-    
-    // Create a solid color image with the tint color
-    const { width, height } = await sharp(resized).metadata();
-    const coloredImage = await sharp({
-      create: {
-        width,
-        height,
-        channels: 3,
-        background: tint
-      }
-    })
-    .png()
-    .toBuffer();
-    
-    // Composite the colored image using the alpha channel as a mask
-    resized = await sharp(coloredImage)
-      .joinChannel(alphaChannel)
-      .toBuffer();
+    resized = await applyColorTint(resized, tintColor);
   }
   
   // If background is opaque, flatten the image
@@ -169,7 +162,7 @@ async function generateFavicon(svgBuffer, outputPath, backgroundConfig = 'transp
 /**
  * Generate OG image (social media preview)
  */
-async function generateOGImage(svgBuffer, outputPath, width = 1200, height = 630, backgroundConfig = '#000000', textLogoBuffer = null) {
+async function generateOGImage(svgBuffer, outputPath, width = 1200, height = 630, backgroundConfig = '#000000', textLogoBuffer = null, tintColor = null) {
   console.log(`  Generating OG image ${width}x${height} → ${outputPath}`);
   
   const background = resolveBackground(backgroundConfig);
@@ -192,10 +185,15 @@ async function generateOGImage(svgBuffer, outputPath, width = 1200, height = 630
   .png()
   .toBuffer();
   
-  // Then resize logo with transparent background
-  const logo = await sharp(logoSource)
+  // Resize logo with transparent background
+  let logo = await sharp(logoSource)
     .resize(logoWidth, null, { fit: 'contain', background: { r: 0, g: 0, b: 0, alpha: 0 } })
     .toBuffer();
+    
+  // Apply tint if specified (e.g., black → white)
+  if (tintColor) {
+    logo = await applyColorTint(logo, tintColor);
+  }
   
   // Get logo dimensions to center it
   const logoMetadata = await sharp(logo).metadata();
@@ -229,10 +227,11 @@ async function generateAssetsForApp(appKey, appConfig) {
   // Generate favicons
   console.log('\n🎨 Favicons:');
   const faviconBg = iconConfig.favicons?.background || 'transparent';
+  const logoColor = appConfig.logoColor || null;  // Get color transform from config
   for (const size of ICON_SIZES.favicons) {
-    await generateIcon(svgBuffer, size, join(outputDir, `favicon-${size}x${size}.png`), faviconBg);
+    await generateIcon(svgBuffer, size, join(outputDir, `favicon-${size}x${size}.png`), faviconBg, logoColor);
   }
-  await generateFavicon(svgBuffer, join(outputDir, 'favicon.ico'), faviconBg);
+  await generateFavicon(svgBuffer, join(outputDir, 'favicon.ico'), faviconBg, logoColor);
   
   // Generate PWA icons (standard + maskable)
   console.log('\n📱 PWA Icons:');
@@ -244,10 +243,10 @@ async function generateAssetsForApp(appKey, appConfig) {
     const standardName = appKey === 'pollinations' 
       ? `android-chrome-${size}x${size}.png`  // pollinations.ai uses android-chrome naming
       : `icon-${size}.png`;                     // enter/auth use icon naming
-    await generateIcon(svgBuffer, size, join(outputDir, standardName), pwaBg);
+    await generateIcon(svgBuffer, size, join(outputDir, standardName), pwaBg, logoColor);
     
     // Maskable icon
-    await generateMaskableIcon(svgBuffer, size, join(outputDir, `icon-${size}-maskable.png`), maskableBg);
+    await generateMaskableIcon(svgBuffer, size, join(outputDir, `icon-${size}-maskable.png`), maskableBg, logoColor);
   }
   
   // Generate Apple touch icons
@@ -257,18 +256,38 @@ async function generateAssetsForApp(appKey, appConfig) {
     const filename = size === 180 
       ? 'apple-touch-icon.png'  // Primary icon
       : `apple-touch-icon-${size}x${size}.png`;
-    await generateIcon(svgBuffer, size, join(outputDir, filename), appleBg);
+    await generateIcon(svgBuffer, size, join(outputDir, filename), appleBg, logoColor);
   }
   
   // Generate OG image (only for enter and pollinations)
   if (appKey === 'enter' || appKey === 'pollinations') {
     console.log('\n🖼️  Social Media:');
     const ogBg = iconConfig.og?.background || '#000000';
-    // Use logo-text-white.svg from SOURCES for banners
+    // Use logo+text SVG for banners
     const ogSource = appConfig.ogSourceSvg ? join(__dirname, appConfig.ogSourceSvg) : null;
     const ogBuffer = ogSource ? readFileSync(ogSource) : null;
     await generateOGImage(svgBuffer, join(outputDir, 'og-image.png'), 
-      ICON_SIZES.og.width, ICON_SIZES.og.height, ogBg, ogBuffer);
+      ICON_SIZES.og.width, ICON_SIZES.og.height, ogBg, ogBuffer, logoColor);
+  }
+  
+  // Copy source SVGs for direct use
+  console.log('\n📋 Copying Source SVGs:');
+  if (appKey === 'enter') {
+    const logoTextSource = join(__dirname, appConfig.ogSourceSvg);
+    const logoTextDest = join(outputDir, 'logo_text_black.svg');
+    console.log(`  Copying logo-text → ${logoTextDest}`);
+    // Use writeFileSync for exact copy (sharp modifies SVG)
+    writeFileSync(logoTextDest, readFileSync(logoTextSource));
+  } else if (appKey === 'pollinations') {
+    // Copy both logos to src/logo for React imports
+    const srcLogoDir = join(outputDir, '../src/logo');
+    mkdirSync(srcLogoDir, { recursive: true });
+    const logoDest = join(srcLogoDir, 'logo.svg');
+    const logoTextDest = join(srcLogoDir, 'logo-text.svg');
+    console.log(`  Copying logo → ${logoDest}`);
+    console.log(`  Copying logo-text → ${logoTextDest}`);
+    writeFileSync(logoDest, readFileSync(appConfig.sourceSvg));
+    writeFileSync(logoTextDest, readFileSync(appConfig.ogSourceSvg));
   }
   
   console.log(`\n✅ Done generating assets for ${appConfig.name}`);

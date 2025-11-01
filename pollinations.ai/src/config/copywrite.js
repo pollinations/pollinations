@@ -1,13 +1,5 @@
 import { newsList } from "./newsList";
 
-import team1 from "../assets/team/Thomas.webp";
-import team2 from "../assets/team/Elliot.webp";
-import team3 from "../assets/team/Laurent.jpeg";
-import team4 from "../assets/team/Nico.jpeg";
-import team5 from "../assets/team/Portrait_XO.webp";
-import team6 from "../assets/team/Kalam.webp";
-import { rephrase } from "./llmTransforms";
-
 // 1) Base building blocks
 export const context = `The text appears on the website Pollinations.AI. Pollinations.AI is an open-source generative AI startup based in Berlin that allows creating different types of media using AI models.`;
 
@@ -85,20 +77,7 @@ export const COMMUNITY_GITHUB_CTO = "GitHub";
 export const ASCII_APP_TOOLTIP =
     "Incite the users to try out our ASCII art generator!";
 
-export const TEAM_TITLE = "Our Team";
-
-// Helper for team name formatting
-const formatTeamName = (name) =>
-    combine(rephrase)(`Write only the text '${name}' in bold and all caps`);
-
-export const TEAM_MEMBERS = [
-    { name: "Thomas Haferlach", function: "Lead visionary", image: team1 },
-    { name: "Elliot Fouchy", function: "Lead Production", image: team2 },
-    { name: "Laurent", function: "Developer", image: team3 },
-    { name: "Nico", function: "Designer", image: team4 },
-    { name: "Portrait XO", function: "Artist", image: team5 },
-    { name: "Kalam", function: "Researcher", image: team6 },
-];
+// Team section removed - will be re-implemented later
 
 export const SUPPORTER_TITLE = "Supporters";
 export const SUPPORTER_SUBTITLE = `We're grateful to our supporters for their contributions to our platform.`;

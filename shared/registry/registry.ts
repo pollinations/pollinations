@@ -33,6 +33,7 @@ export type UsagePrice = DollarConvertedUsage & {
 
 export type UsageConversionDefinition = {
     date: number;
+    perToken?: boolean; // If true, pricing is per actual token count from API; if false/undefined, pricing is per image (1 token)
 } & { [K in UsageType]?: number };
 
 export type CostDefinition = UsageConversionDefinition;

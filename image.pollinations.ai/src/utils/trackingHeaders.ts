@@ -4,13 +4,24 @@
  */
 
 import debug from "debug";
-import type { IMAGE_SERVICES } from "../../../shared/registry/image.ts";
+import { IMAGE_SERVICES, IMAGE_COSTS } from "../../../shared/registry/image.ts";
 import { buildUsageHeaders, createImageTokenUsage } from "../../../shared/registry/usage-headers.js";
 
 const log = debug("pollinations:tracking-headers");
 
 // Type constraint: model names must exist in registry
 type ValidServiceName = keyof typeof IMAGE_SERVICES;
+
+/**
+ * Check if a model uses per-token pricing (vs per-image)
+ */
+function isPerTokenPricing(model: ValidServiceName): boolean {
+    const serviceConfig = IMAGE_SERVICES[model];
+    const modelId = serviceConfig?.modelId as string;
+    const costHistory = IMAGE_COSTS[modelId as keyof typeof IMAGE_COSTS];
+    const latestCost = costHistory?.[0] as any;
+    return latestCost?.perToken === true;
+}
 
 export interface TrackingUsageData {
     // Vertex AI / Gemini usage format
@@ -49,8 +60,8 @@ export function buildTrackingHeaders(
     // Determine token count
     let completionTokens = 1; // Default for unit-based pricing models
     
-    if ((model === 'gptimage') && trackingData?.usage?.candidatesTokenCount) {
-        // For token-based models, use actual token count from API
+    if (isPerTokenPricing(model) && trackingData?.usage?.candidatesTokenCount) {
+        // For token-based models (defined in cost registry), use actual token count from API
         completionTokens = trackingData.usage.candidatesTokenCount;
         log(`${model} token count: ${completionTokens} (from candidatesTokenCount)`);
     } else {
@@ -73,7 +84,7 @@ export function buildTrackingHeaders(
  * @returns Token count for billing
  */
 export function extractTokenCount(model: ValidServiceName, usage?: TrackingUsageData): number {
-    if (model === 'gptimage' && usage?.candidatesTokenCount) {
+    if (isPerTokenPricing(model) && usage?.candidatesTokenCount) {
         return usage.candidatesTokenCount;
     }
     return 1; // Default for unit-based pricing

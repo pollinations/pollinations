@@ -349,8 +349,7 @@ async function callCloudflareModel(
         // JSON response with base64 encoded image (typical for Flux)
         const data = await response.json();
         logCloudflare(
-            `Received JSON response from Cloudflare ${modelPath}:`,
-            JSON.stringify(data, null, 2),
+            `Received JSON response from Cloudflare ${modelPath} (base64 data omitted)`,
         );
         if (!data.success) {
             logError(

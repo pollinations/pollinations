@@ -252,6 +252,14 @@ const ChatCompletionResponseMessageSchema = z.object({
         })
         .nullish(),
     content_blocks: z.array(ChatCompletionMessageContentBlockSchema).nullish(),
+    audio: z
+        .object({
+            transcript: z.string(),
+            data: z.string(), // base64 encoded audio
+            id: z.string().optional(),
+            expires_at: z.number().int().optional(),
+        })
+        .nullish(),
 });
 
 const ChatCompletionTokenTopLogprobSchema = z.object({

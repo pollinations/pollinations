@@ -160,13 +160,12 @@ async function handleRequest(req, res, requestData) {
         // Get user info from authentication if available
         const authResult = req.authResult || {};
 
-        // Tier gating
+        // Model lookup
         const model = availableModels.find(
             (m) =>
                 m.name === requestData.model ||
                 m.aliases?.includes(requestData.model),
         );
-        const userTier = authResult.tier || "anonymous";
 
         log(
             `Model lookup: model=${requestData.model}, found=${!!model}`,

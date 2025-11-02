@@ -237,9 +237,8 @@ export async function callVertexAIGemini(
             throw violationError;
         }
 
-        // Log usage metadata from Vertex AI for debugging token counts
+        // Log usage metadata from Vertex AI for debugging token counts (without full response to avoid base64 bloat)
         log("=== VERTEX AI USAGE METADATA ===");
-        log("Raw usage object:", JSON.stringify(result.usage, null, 2));
         log("candidatesTokenCount:", result.usage?.candidatesTokenCount);
         log("promptTokenCount:", result.usage?.promptTokenCount);
         log("totalTokenCount:", result.usage?.totalTokenCount);

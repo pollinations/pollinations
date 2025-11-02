@@ -13,14 +13,10 @@ const log = debug("pollinations:tracking-headers");
 type ValidServiceName = keyof typeof IMAGE_SERVICES;
 
 export interface TrackingUsageData {
-    // Vertex AI / Gemini usage format
-    candidatesTokenCount?: number;
+    // Unified usage format for all image models
+    completionImageTokens?: number;
     promptTokenCount?: number;
     totalTokenCount?: number;
-    candidatesTokensDetails?: Array<{
-        modality: string;
-        tokenCount: number;
-    }>;
 }
 
 export interface ContentSafetyFlags {
@@ -46,16 +42,13 @@ export function buildTrackingHeaders(
     model: ValidServiceName,
     trackingData?: TrackingData
 ): Record<string, string> {
-    // Determine token count
-    let completionTokens = 1; // Default for unit-based pricing models
-    
-    if ((model === 'gptimage') && trackingData?.usage?.candidatesTokenCount) {
-        // For token-based models, use actual token count from API
-        completionTokens = trackingData.usage.candidatesTokenCount;
-        log(`${model} token count: ${completionTokens} (from candidatesTokenCount)`);
-    } else {
-        log(`Using default token count: ${completionTokens} for model: ${model}`);
-    }
+    // Determine token count (works for both unit-based and token-based pricing)
+    // Unit-based models return 1, token-based models return actual count
+    const completionTokens = trackingData?.usage?.completionImageTokens || 1;
+    log(`=== TRACKING HEADERS FOR ${model} ===`);
+    log(`Raw trackingData.usage:`, JSON.stringify(trackingData?.usage, null, 2));
+    log(`Extracted completionImageTokens: ${completionTokens}`);
+    log(`===================================`);
     
     // Use shared utility to build headers
     const modelUsed = trackingData?.actualModel || model;
@@ -73,10 +66,7 @@ export function buildTrackingHeaders(
  * @returns Token count for billing
  */
 export function extractTokenCount(model: ValidServiceName, usage?: TrackingUsageData): number {
-    if (model === 'gptimage' && usage?.candidatesTokenCount) {
-        return usage.candidatesTokenCount;
-    }
-    return 1; // Default for unit-based pricing
+    return usage?.completionImageTokens || 1;
 }
 
 /**

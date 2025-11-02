@@ -555,11 +555,19 @@ const checkCacheAndGenerate = async (
         // Add authentication debug headers using shared utility
         addAuthDebugHeaders(headers, authResult.debugInfo);
 
+        // Debug: Log trackingData before building headers
+        logApi("=== TRACKING DATA BEFORE HEADERS ===");
+        logApi("bufferAndMaturity.trackingData:", JSON.stringify(bufferAndMaturity.trackingData, null, 2));
+        logApi("====================================");
+
         // Add tracking headers for enter service (GitHub issue #4170)
         const trackingHeaders = buildTrackingHeaders(
             safeParams.model,
             bufferAndMaturity.trackingData
         );
+        logApi("=== BUILT TRACKING HEADERS ===");
+        logApi("trackingHeaders:", JSON.stringify(trackingHeaders, null, 2));
+        logApi("===============================");
         Object.assign(headers, trackingHeaders);
 
         res.writeHead(200, headers);

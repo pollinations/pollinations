@@ -41,10 +41,6 @@ export interface VertexAIResponse {
         promptTokenCount: number;
         candidatesTokenCount: number;
         totalTokenCount: number;
-        candidatesTokensDetails: Array<{
-            modality: string;
-            tokenCount: number;
-        }>;
     };
 }
 

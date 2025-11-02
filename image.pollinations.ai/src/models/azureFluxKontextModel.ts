@@ -224,7 +224,7 @@ export async function callAzureFluxKontext(
         trackingData: {
             actualModel: "kontext",
             usage: {
-                candidatesTokenCount: 1,
+                completionImageTokens: 1,
                 totalTokenCount: 1
             }
         }

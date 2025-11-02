@@ -307,7 +307,12 @@ export async function callVertexAIGemini(
             // Include tracking data for enter service headers
             trackingData: {
                 actualModel: 'nanobanana',
-                usage: result.usage // Vertex AI usage metadata
+                usage: {
+                    // Convert Vertex AI format to unified format
+                    completionImageTokens: result.usage?.candidatesTokenCount || 1,
+                    promptTokenCount: result.usage?.promptTokenCount,
+                    totalTokenCount: result.usage?.totalTokenCount
+                }
             }
         };
 

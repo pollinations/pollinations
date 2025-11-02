@@ -41,7 +41,6 @@ interface ModelDefinition {
     input_modalities?: string[];
     output_modalities?: string[];
     tools?: boolean;
-    maxInputChars?: number;
     reasoning?: boolean;
     uncensored?: boolean;
     hidden?: boolean;
@@ -59,7 +58,6 @@ const models: ModelDefinition[] = [
         input_modalities: ["text", "image"],
         output_modalities: ["text"],
         tools: true,
-        maxInputChars: 7000,
     },
     {
         name: "openai-fast",
@@ -70,7 +68,6 @@ const models: ModelDefinition[] = [
         input_modalities: ["text", "image"],
         output_modalities: ["text"],
         tools: true,
-        maxInputChars: 5000,
     },
     {
         name: "openai-large",
@@ -81,7 +78,6 @@ const models: ModelDefinition[] = [
         input_modalities: ["text", "image"],
         output_modalities: ["text"],
         tools: true,
-        maxInputChars: 10000,
     },
     {
         name: "qwen-coder",
@@ -116,7 +112,6 @@ const models: ModelDefinition[] = [
     {
         name: "deepseek",
         description: "DeepSeek V3.1",
-        maxInputChars: 10000,
         config: portkeyConfig["myceli-deepseek-v3.1"],
         transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
         reasoning: true,
@@ -128,7 +123,6 @@ const models: ModelDefinition[] = [
     {
         name: "openai-audio",
         description: "OpenAI GPT-4o Mini Audio Preview",
-        maxInputChars: 5000,
         voices: [
             "alloy",
             "echo",

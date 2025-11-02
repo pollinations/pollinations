@@ -7,18 +7,13 @@ type ImageServiceName = keyof typeof IMAGE_SERVICES;
 /**
  * Image-specific configuration for each model
  * Model names are enforced to match IMAGE_SERVICES from the registry
- * Tier information comes from the registry - this only contains implementation details
+ * Tier gating is handled by enter.pollinations.ai - this only contains implementation details
  */
 interface ImageModelConfig {
     type: string;
     enhance: boolean;
     maxSideLength: number;
     defaultSideLength?: number; // Optional - defaults to maxSideLength if not specified
-    tierCaps?: {
-        seed?: number;
-        flower?: number;
-        nectar?: number;
-    };
 }
 
 type ImageModelsConfig = {
@@ -37,11 +32,6 @@ export const IMAGE_CONFIG: ImageModelsConfig = {
         type: "kontext",
         enhance: true,
         maxSideLength: 1024, // Azure Flux Kontext standard resolution
-        tierCaps: {
-            seed: 1,      // Base limit (minimum tier required)
-            flower: 2,    // Double the seed tier
-            nectar: 2,    // Same as flower tier
-        },
     },
 
     // Assuming 'turbo' is of type 'sd'

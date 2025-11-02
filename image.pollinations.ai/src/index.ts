@@ -14,7 +14,6 @@ import { buildTrackingHeaders } from "./utils/trackingHeaders.js";
 
 // Import shared utilities
 import { enqueue } from "../../shared/ipQueue.js";
-import { canAccessService } from "../../shared/registry/registry.ts";
 import { countFluxJobs, handleRegisterEndpoint } from "./availableServers.js";
 import { cacheImagePromise } from "./cacheGeneratedImages.js";
 import { IMAGE_CONFIG } from "./models.js";
@@ -446,29 +445,17 @@ const checkCacheAndGenerate = async (
                     queueConfig = { interval: 90000 }; // 90 second interval
                     logAuth(`${modelName} model - 90 second interval (enter request - no hourly limit)`);
                 } else if (modelName === "kontext") {
-                    // All requests from enter.pollinations.ai - tier checks bypassed
-                    // 30 second interval with tier-based cap from model config
-                    const cap = IMAGE_CONFIG.kontext.tierCaps?.[authResult.tier] || 1;
-                    queueConfig = { 
-                        interval: 30000,
-                        cap,
-                        forceCap: true
-                    };
-                    logAuth(`${modelName} model - 30 second interval, cap=${cap} for tier ${authResult.tier}`);
+                    // 30 second interval
+                    queueConfig = { interval: 30000 };
+                    logAuth(`${modelName} model - 30 second interval`);
                 } else if (modelName === "gptimage") {
-                    // GPTImage model - tier-based limits
-                    // Nectar tier: 60s interval, cap=3 | Other tiers: 150s interval, cap=1
-                    if (authResult.tier === "nectar") {
-                        queueConfig = { interval: 60000, cap: 3, forceCap: true };
-                        logAuth("GPTImage model (nectar tier) - 60 second interval, cap=3 (forced)");
-                    } else {
-                        queueConfig = { interval: 150000, cap: 1, forceCap: true };
-                        logAuth("GPTImage model - 150 second interval, cap=1 (forced)");
-                    }
+                    // 60 second interval
+                    queueConfig = { interval: 60000 };
+                    logAuth("GPTImage model - 60 second interval");
                 } else if (hasValidToken) {
-                    // Token authentication for other models - 7s minimum interval with tier-based caps
-                    queueConfig = { interval: 7000 }; // cap will be set by ipQueue based on tier
-                    logAuth("Token authenticated - using 7s minimum interval with tier-based concurrency");
+                    // Token authentication for other models - 7s minimum interval
+                    queueConfig = { interval: 7000 };
+                    logAuth("Token authenticated - using 7s minimum interval");
                 } else {
                     // Use default queue config for other models with no token
                     queueConfig = QUEUE_CONFIG;
@@ -642,11 +629,8 @@ const server = http.createServer((req, res) => {
             Expires: "0",
         });
         
-        // Filter out nectar-tier models from public /models list
-        // Users don't need to authenticate to see the list, so we only show accessible models
-        const publicModels = Object.entries(MODELS)
-            .filter(([_, config]) => config.tier !== "nectar")
-            .map(([name, _]) => name);
+        // Return all available models - enter.pollinations.ai handles access control
+        const publicModels = Object.keys(MODELS);
         
         res.end(JSON.stringify(publicModels));
         return;
@@ -662,7 +646,6 @@ const server = http.createServer((req, res) => {
         });
         const modelDetails = Object.entries(MODELS).map(([name, config]) => ({
             name,
-            tier: (config as any).tier || "seed", 
             enhance : config.enhance || false,
             maxSideLength: config.maxSideLength,
         }));

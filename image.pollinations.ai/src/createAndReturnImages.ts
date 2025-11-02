@@ -4,7 +4,6 @@ import { fileTypeFromBuffer } from "file-type";
 
 // Import shared authentication utilities
 import sharp from "sharp";
-import { hasSufficientTier } from "../../shared/tier-gating.js";
 import {
     fetchFromLeastBusyFluxServer,
     getNextTurboServerUrl,
@@ -545,14 +544,8 @@ const callAzureGPTImageWithEndpoint = async (
     // Map safeParams to Azure API parameters
     const size = `${safeParams.width}x${safeParams.height}`;
 
-    // Allow nectar users to use high quality, others get medium quality to reduce costs
-    const quality = userInfo?.tier === "nectar" && safeParams.quality === "high" 
-        ? "high" 
-        : "medium";
-    
-    if (quality === "high") {
-        logCloudflare(`Nectar tier user - using high quality for gptimage`);
-    }
+    // Use requested quality - enter.pollinations.ai handles tier-based access control
+    const quality = safeParams.quality === "high" ? "high" : "medium";
 
     // Set output format to png if model is gptimage, otherwise jpeg
     const outputFormat = "png";

@@ -815,7 +815,7 @@ const generateImage = async (
         logError(
             "GPT Image authentication check:",
             userInfo
-                ? `authenticated=${userInfo.authenticated}, tokenAuth=${userInfo.tokenAuth}, referrerAuth=${userInfo.referrerAuth}, reason=${userInfo.reason}, userId=${userInfo.userId || "none"}, tier=${userInfo.tier || "none"}`
+                ? `authenticated=${userInfo.authenticated}, tokenAuth=${userInfo.tokenAuth}, referrerAuth=${userInfo.referrerAuth}, reason=${userInfo.reason}, userId=${userInfo.userId || "none"}`
                 : "No userInfo provided",
         );
 
@@ -913,7 +913,7 @@ const generateImage = async (
         logError(
             "Nano Banana authentication check:",
             userInfo
-                ? `authenticated=${userInfo.authenticated}, tokenAuth=${userInfo.tokenAuth}, referrerAuth=${userInfo.referrerAuth}, reason=${userInfo.reason}, userId=${userInfo.userId || "none"}, tier=${userInfo.tier || "none"}`
+                ? `authenticated=${userInfo.authenticated}, tokenAuth=${userInfo.tokenAuth}, referrerAuth=${userInfo.referrerAuth}, reason=${userInfo.reason}, userId=${userInfo.userId || "none"}`
                 : "No userInfo provided",
         );
 

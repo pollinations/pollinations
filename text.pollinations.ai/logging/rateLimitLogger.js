@@ -119,7 +119,6 @@ export function logRateLimitError(error, authResult, req, options = {}) {
             user: {
                 username: authResult.username || null,
                 userId: authResult.userId || null,
-                tier: authResult.tier || "anonymous",
                 ip: ip,
                 authenticated: authResult.authenticated || false,
                 bypass_reason: authResult.reason || null,

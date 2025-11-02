@@ -75,7 +75,6 @@ export type AuthResult = {
     reason: string;
     userId: string | null;
     username: string | null;
-    tier: string;
     debugInfo: object;
 };
 

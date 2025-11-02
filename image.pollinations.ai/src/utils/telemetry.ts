@@ -31,7 +31,6 @@ export function sendImageTelemetry(data: ImageTelemetryData): void {
         user: data.authResult?.username || data.authResult?.userId || "anonymous",
         username: data.authResult?.username,
         organization: data.authResult?.userId ? "pollinations" : undefined,
-        tier: data.authResult?.tier,
         ...(data.error && { error: data.error }),
     }).catch(err => {
         // Silently fail telemetry - don't impact user experience

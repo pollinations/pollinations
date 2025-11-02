@@ -474,7 +474,6 @@ export async function sendErrorResponse(
         user: {
             username: authResult.username || null,
             userId: authResult.userId || null,
-            tier: authResult.tier || "anonymous",
             context: userContext,
         },
         model: error.model || requestData?.model || "unknown",

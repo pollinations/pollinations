@@ -66,16 +66,15 @@ export const IMAGE_CONFIG: ImageModelsConfig = {
 };
 
 /**
- * Legacy export for backward compatibility
- * Combines registry data (tier, pricing) with local config (enhance, maxSideLength)
- * @deprecated Use IMAGE_SERVICES from registry for tier info, IMAGE_CONFIG for implementation details
+ * Legacy MODELS export for backward compatibility
+ * Combines registry data with local config (enhance, maxSideLength)
+ * @deprecated Use IMAGE_SERVICES from registry, IMAGE_CONFIG for implementation details
  */
 export const MODELS = Object.fromEntries(
     Object.entries(IMAGE_CONFIG).map(([name, config]) => [
         name,
         {
             ...config,
-            tier: IMAGE_SERVICES[name as ImageServiceName].tier,
         },
     ])
-) as Record<ImageServiceName, ImageModelConfig & { tier: typeof IMAGE_SERVICES[ImageServiceName]["tier"] }>;
+) as Record<ImageServiceName, ImageModelConfig>;

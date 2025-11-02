@@ -45,7 +45,10 @@ export function buildTrackingHeaders(
     // Determine token count (works for both unit-based and token-based pricing)
     // Unit-based models return 1, token-based models return actual count
     const completionTokens = trackingData?.usage?.completionImageTokens || 1;
-    log(`${model} completion tokens: ${completionTokens}`);
+    log(`=== TRACKING HEADERS FOR ${model} ===`);
+    log(`Raw trackingData.usage:`, JSON.stringify(trackingData?.usage, null, 2));
+    log(`Extracted completionImageTokens: ${completionTokens}`);
+    log(`===================================`);
     
     // Use shared utility to build headers
     const modelUsed = trackingData?.actualModel || model;

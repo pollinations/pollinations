@@ -31,6 +31,11 @@ jobs:
             sops -d image.pollinations.ai/.encrypted.env > image.pollinations.ai/.env
             echo "✅ Decrypted image.pollinations.ai/.env"
           fi
+          
+          if [ -f "enter.pollinations.ai/.encrypted.staging.env" ]; then
+            sops -d enter.pollinations.ai/.encrypted.staging.env > enter.pollinations.ai/.dev.vars
+            echo "✅ Decrypted enter.pollinations.ai/.dev.vars"
+          fi
 
       - name: Copy decrypted .env files to server
         uses: appleboy/scp-action@v0.1.7
@@ -110,3 +115,33 @@ jobs:
             echo "🎉 Deployment complete!"
             echo "📊 Service Status:"
             sudo systemctl status text-pollinations.service image-pollinations.service --no-pager | grep -E "Active:|running"
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 8
+
+      - name: Deploy enter.pollinations.ai to Cloudflare
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        run: |
+          set -e
+          
+          echo "☁️ Deploying enter.pollinations.ai to Cloudflare Workers..."
+          
+          cd enter.pollinations.ai
+          
+          # Install dependencies
+          echo "📦 Installing dependencies..."
+          npm install
+          
+          # Deploy to staging
+          echo "🚀 Deploying to staging environment..."
+          npm run deploy:staging
+          
+          echo "✅ enter.pollinations.ai deployed to Cloudflare Workers!"

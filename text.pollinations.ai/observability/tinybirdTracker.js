@@ -146,7 +146,6 @@ export async function sendTinybirdEvent(eventData) {
 
             // User info
             user: eventData.user,
-            tier: eventData.tier ?? "anonymous",
             referrer: eventData.referrer ?? "unknown",
 
             // Status and caching flags

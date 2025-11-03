@@ -27,9 +27,8 @@ import {
 
 // Import shared utilities
 import { enqueue } from "../shared/ipQueue.js";
-import { handleAuthentication, isEnterRequest } from "../shared/auth-utils.js";
+import { handleAuthentication } from "../shared/auth-utils.js";
 import { getIp } from "../shared/extractFromRequest.js";
-import { hasSufficientTier } from "../shared/tier-gating.js";
 import {
     buildUsageHeaders,
     openaiUsageToTokenUsage,
@@ -161,36 +160,19 @@ async function handleRequest(req, res, requestData) {
         // Get user info from authentication if available
         const authResult = req.authResult || {};
 
-        // Tier gating
+        // Model lookup
         const model = availableModels.find(
             (m) =>
                 m.name === requestData.model ||
                 m.aliases?.includes(requestData.model),
         );
-        const userTier = authResult.tier || "anonymous";
 
         log(
-            `Tier gating check: model=${requestData.model}, found=${!!model}, modelTier=${model?.tier}, userTier=${userTier}`,
+            `Model lookup: model=${requestData.model}, found=${!!model}`,
         );
 
-        if (model) {
-            // Skip tier check for enter.pollinations.ai requests
-            const fromEnter = isEnterRequest(req);
-            const hasAccess =
-                fromEnter || hasSufficientTier(userTier, model.tier);
-            log(
-                `Access check: fromEnter=${fromEnter}, hasSufficientTier(${userTier}, ${model.tier}) = ${hasAccess}`,
-            );
-
-            if (!hasAccess) {
-                const error = new Error(
-                    `Model not found or tier not high enough. Your tier: ${userTier}, required tier: ${model.tier}. To get a token or add a referrer, visit https://auth.pollinations.ai`,
-                );
-                error.status = 402;
-                await sendErrorResponse(res, req, error, requestData, 402);
-                return;
-            }
-        } else {
+        // All requests from enter.pollinations.ai - tier checks bypassed
+        if (!model) {
             log(`Model not found: ${requestData.model}`);
             const error = new Error(`Model not found: ${requestData.model}`);
             error.status = 404;
@@ -260,9 +242,6 @@ async function handleRequest(req, res, requestData) {
 
         // Ensure completion has the request ID
         completion.id = requestId;
-
-        // Add user tier information to completion for tracking
-        completion.user_tier = authResult.tier || "anonymous";
 
         // Log user request/response if enabled
         if (authResult.username) {
@@ -495,7 +474,6 @@ export async function sendErrorResponse(
         user: {
             username: authResult.username || null,
             userId: authResult.userId || null,
-            tier: authResult.tier || "anonymous",
             context: userContext,
         },
         model: error.model || requestData?.model || "unknown",

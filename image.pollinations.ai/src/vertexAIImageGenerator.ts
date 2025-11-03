@@ -264,40 +264,35 @@ export async function callVertexAIGemini(
             // Build informative error message with all available information
             if (geminiExplanation) {
                 // Return Gemini's actual explanation to the user
-                const explanationError = new Error(`Gemini: ${geminiExplanation}`);
-                throw explanationError;
-            } else if ((finishReason === 'SAFETY' || finishReason === 'IMAGE_SAFETY') && safetyRatings) {
-                // Extract safety violation details
+                throw new Error(`Gemini: ${geminiExplanation}`);
+            }
+            
+            // If we have safety ratings, extract details
+            if (safetyRatings && safetyRatings.length > 0) {
                 const blockedCategories = safetyRatings
                     .filter((rating: any) => rating.blocked)
                     .map((rating: any) => rating.category)
                     .join(', ');
                 
-                // Also get high probability categories even if not explicitly blocked
                 const highProbCategories = safetyRatings
                     .filter((rating: any) => rating.probability === 'HIGH' || rating.probability === 'MEDIUM')
                     .map((rating: any) => `${rating.category} (${rating.probability})`)
                     .join(', ');
                 
                 if (blockedCategories) {
-                    const safetyError = new Error(`Content blocked by safety filters: ${blockedCategories}`);
-                    throw safetyError;
+                    throw new Error(`${finishReason || 'Content blocked'}: ${blockedCategories}`);
                 } else if (highProbCategories) {
-                    const safetyError = new Error(`Content flagged by safety filters: ${highProbCategories}`);
-                    throw safetyError;
-                } else {
-                    const safetyError = new Error(`Content blocked by safety filters (${finishReason})`);
-                    throw safetyError;
+                    throw new Error(`${finishReason || 'Content flagged'}: ${highProbCategories}`);
                 }
-            } else if (finishReason) {
-                // Return finish reason if available
-                const reasonError = new Error(`Content generation stopped: ${finishReason}`);
-                throw reasonError;
-            } else {
-                // Fallback for cases with no additional information
-                const noDataError = new Error("No image data returned from Vertex AI");
-                throw noDataError;
             }
+            
+            // Return finish reason if available
+            if (finishReason) {
+                throw new Error(`${finishReason}`);
+            }
+            
+            // Fallback for cases with no additional information
+            throw new Error("No image data returned from Vertex AI");
         }
 
         // Convert base64 to buffer

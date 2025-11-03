@@ -22,8 +22,13 @@ export type AuthVariables = {
     };
 };
 
-export type AuthEnv = {
+/** Environment requirements for API key authentication */
+export type ApiKeyEnv = {
     Bindings: CloudflareBindings;
+    Variables: LoggerVariables;
+};
+
+export type AuthEnv = ApiKeyEnv & {
     Variables: LoggerVariables & AuthVariables;
 };
 
@@ -45,7 +50,9 @@ type AuthResult = {
 };
 
 /** Extracts Bearer token from Authorization header (RFC 6750) or query parameter */
-function extractApiKey(c: Context<AuthEnv>): string | null {
+export function extractApiKey<E extends { Bindings: CloudflareBindings }>(
+    c: Context<E>
+): string | null {
     // Try Authorization header first (RFC 6750)
     const auth = c.req.header("authorization");
     const match = auth?.match(/^Bearer (.+)$/);
@@ -55,10 +62,53 @@ function extractApiKey(c: Context<AuthEnv>): string | null {
     return c.req.query("key") || null;
 }
 
+/** 
+ * Authenticates API key and returns user + apiKey metadata.
+ * Works with any environment that has DB access and logging support.
+ */
+export async function authenticateApiKey<E extends ApiKeyEnv>(
+    c: Context<E>
+): Promise<AuthResult | null> {
+    const apiKey = extractApiKey<E>(c);
+    c.get("log")?.debug("[AUTH] Extracted API key: {hasKey}", {
+        hasKey: !!apiKey,
+        keyPrefix: apiKey?.substring(0, 8),
+    });
+    if (!apiKey) return null;
+    
+    const client = createAuth(c.env) as Auth;
+    const keyResult = await client.api.verifyApiKey({
+        body: {
+            key: apiKey,
+        },
+    });
+    c.get("log")?.debug("[AUTH] API key verification result: {valid}", {
+        valid: keyResult.valid,
+    });
+    if (!keyResult.valid || !keyResult.key) return null;
+    
+    const db = drizzle(c.env.DB, { schema });
+    const user = await db.query.user.findFirst({
+        where: eq(schema.user.id, keyResult.key.userId),
+    });
+    c.get("log")?.debug("[AUTH] User lookup result: {found}", {
+        found: !!user,
+        userId: user?.id,
+    });
+    return {
+        user: user as User,
+        apiKey: {
+            name: keyResult.key.name || undefined,
+            permissions: keyResult.key.permissions || undefined,
+            metadata: keyResult.key.metadata || undefined,
+        },
+    };
+}
+
 export const auth = (options: AuthOptions) =>
     createMiddleware<AuthEnv>(async (c, next) => {
         const client = createAuth(c.env) as Auth;
-
+        
         const authenticateSession = async (): Promise<AuthResult | null> => {
             if (!options.allowSessionCookie) return null;
             const result = await client.api.getSession({
@@ -71,43 +121,8 @@ export const auth = (options: AuthOptions) =>
             };
         };
 
-        const authenticateApiKey = async (): Promise<AuthResult | null> => {
-            if (!options.allowApiKey) return null;
-            const apiKey = extractApiKey(c);
-            c.get("log")?.debug("[AUTH] Extracted API key: {hasKey}", {
-                hasKey: !!apiKey,
-                keyPrefix: apiKey?.substring(0, 8),
-            });
-            if (!apiKey) return null;
-            const keyResult = await client.api.verifyApiKey({
-                body: {
-                    key: apiKey,
-                },
-            });
-            c.get("log")?.debug("[AUTH] API key verification result: {valid}", {
-                valid: keyResult.valid,
-            });
-            if (!keyResult.valid || !keyResult.key) return null;
-            const db = drizzle(c.env.DB, { schema });
-            const user = await db.query.user.findFirst({
-                where: eq(schema.user.id, keyResult.key.userId),
-            });
-            c.get("log")?.debug("[AUTH] User lookup result: {found}", {
-                found: !!user,
-                userId: user?.id,
-            });
-            return {
-                user: user as User,
-                apiKey: {
-                    name: keyResult.key.name || undefined,
-                    permissions: keyResult.key.permissions || undefined,
-                    metadata: keyResult.key.metadata || undefined,
-                },
-            };
-        };
-
         const { user, session, apiKey } =
-            (await authenticateSession()) || (await authenticateApiKey()) || {};
+            (await authenticateSession()) || (await authenticateApiKey(c)) || {};
 
         c.get("log")?.debug("[AUTH] Authentication result: {authenticated}", {
             authenticated: !!user,

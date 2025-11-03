@@ -5,7 +5,7 @@ import type { Env } from "../../src/env";
 import { proxyRoutes } from "./routes/proxy";
 import { llmRouterRoutes } from "./routes/llmRouter";
 import { logger } from "../../src/middleware/logger";
-import { auth } from "../../src/middleware/auth";
+import { genAuth } from "./middleware/auth";
 import { openAPIRouteHandler } from "hono-openapi";
 import { Scalar } from "@scalar/hono-api-reference";
 
@@ -90,7 +90,7 @@ app.get(
 );
 
 // Apply auth middleware to all other routes
-app.use("*", auth({ allowApiKey: true, allowSessionCookie: false }))
+app.use("*", genAuth)
     .route("/", proxyRoutes)
     .get("/health", (c) => c.json({ status: "ok" }))
     .route("/", llmRouterRoutes);

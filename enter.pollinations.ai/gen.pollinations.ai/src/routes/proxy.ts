@@ -1,7 +1,7 @@
 import { Context, Hono } from "hono";
 import { proxy } from "hono/proxy";
 import { cors } from "hono/cors";
-import { auth } from "../../../src/middleware/auth.ts";
+import { genAuth } from "../middleware/auth.ts";
 import type { User } from "../../../src/auth.ts";
 import { polar } from "../../../src/middleware/polar.ts";
 import type { Env } from "../../../src/env.ts";
@@ -87,7 +87,7 @@ export const proxyRoutes = new Hono<Env>()
             });
         },
     )
-    .use(auth({ allowApiKey: true, allowSessionCookie: false }))
+    .use(genAuth)
     // TODO: Temporarily disabled due to timestamp issues with client tokens
     // .use(frontendKeyRateLimit)
     .use(polar)

@@ -3,7 +3,6 @@ import { cors } from "hono/cors";
 import { requestId } from "hono/request-id";
 import type { Env } from "../../src/env";
 import { proxyRoutes } from "./routes/proxy";
-import { llmRouterRoutes } from "./routes/llmRouter";
 import { logger } from "../../src/middleware/logger";
 import { genAuth } from "./middleware/auth";
 import { openAPIRouteHandler } from "hono-openapi";
@@ -23,8 +22,7 @@ const app = new Hono<Env>()
 
 // Create API docs for gen service (must be before auth middleware)
 const genApiRouter = new Hono<Env>()
-    .route("/", proxyRoutes)
-    .route("/", llmRouterRoutes);
+    .route("/", proxyRoutes);
 
 app.get(
     "/api/docs/open-api/generate-schema",
@@ -92,7 +90,6 @@ app.get(
 // Apply auth middleware to all other routes
 app.use("*", genAuth)
     .route("/", proxyRoutes)
-    .get("/health", (c) => c.json({ status: "ok" }))
-    .route("/", llmRouterRoutes);
+    .get("/health", (c) => c.json({ status: "ok" }));
 
 export default app;

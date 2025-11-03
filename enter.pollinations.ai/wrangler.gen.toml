@@ -18,7 +18,6 @@ ENVIRONMENT = "development"
 ALLOW_ANONYMOUS_USAGE = false
 TEXT_SERVICE_URL = "http://ec2-3-80-56-235.compute-1.amazonaws.com:16385"
 IMAGE_SERVICE_URL = "http://ec2-3-80-56-235.compute-1.amazonaws.com:16384"
-GEN_SERVICE_URL = "http://localhost:3001"
 
 # Production environment
 [env.production]
@@ -35,4 +34,3 @@ ENVIRONMENT = "production"
 ALLOW_ANONYMOUS_USAGE = false
 TEXT_SERVICE_URL = "http://ec2-3-80-56-235.compute-1.amazonaws.com:16385"
 IMAGE_SERVICE_URL = "http://ec2-3-80-56-235.compute-1.amazonaws.com:16384"
-GEN_SERVICE_URL = "https://gen.pollinations.ai"

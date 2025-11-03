@@ -40,9 +40,30 @@ function RouteComponent() {
     
     // Extract both tier and pack balances by meter ID
     const meters = customer?.activeMeters || [];
-    const tierBalance = meters.find(m => m.meterId === config.pollenMeterId)?.balance || 0;
-    const packBalance = meters.filter(m => m.meterId !== config.pollenMeterId)
+    
+    // IMPORTANT: config.pollenMeterId is the TIER meter (d78e4114...)
+    // The PACK meter is e5c7be95... (or any other meter that's not the tier meter)
+    const TIER_METER_ID = "d78e4114-8423-4006-9dda-a4f86d70c663"; // Subscription meter (daily refills)
+    
+    // Log RAW data from Polar for debugging
+    console.log("🔍 [FRONTEND] Raw meters from Polar:", meters.map(m => ({
+        meterId: m.meterId,
+        balance: m.balance,
+        credited: m.creditedUnits,
+        consumed: m.consumedUnits,
+        isTier: m.meterId === TIER_METER_ID
+    })));
+    
+    const tierBalance = meters.find(m => m.meterId === TIER_METER_ID)?.balance || 0;
+    const packBalance = meters.filter(m => m.meterId !== TIER_METER_ID)
         .reduce((sum, m) => sum + (m.balance || 0), 0); // Sum all pack meters
+    
+    console.log("💰 [FRONTEND] Calculated balances:", {
+        tierBalance,
+        packBalance,
+        total: tierBalance + packBalance,
+        tierMeterId: TIER_METER_ID
+    });
 
     const [isSigningOut, setIsSigningOut] = useState(false);
     const [isActivating, setIsActivating] = useState(false);

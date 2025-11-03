@@ -3,7 +3,12 @@ import { integer, real, sqliteTable, text } from "drizzle-orm/sqlite-core";
 import type { CreateChatCompletionResponse } from "@/schemas/openai";
 import { removeUnset } from "@/util.ts";
 
-const eventTypeValues = ["generate.text", "generate.image"] as const;
+const eventTypeValues = [
+    "generate.text", 
+    "generate.image",
+    "pack.generate.text",
+    "pack.generate.image",
+] as const;
 export type EventType = (typeof eventTypeValues)[number];
 
 const eventStatusValues = ["pending", "processing", "sent", "error"] as const;

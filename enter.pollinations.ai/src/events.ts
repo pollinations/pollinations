@@ -6,6 +6,7 @@ import { batches, generateRandomId, removeUnset } from "./util.ts";
 import {
     InsertGenerationEvent,
     SelectGenerationEvent,
+    EventType,
 } from "./db/schema/event.ts";
 import { omit } from "./util.ts";
 import { z } from "zod";
@@ -258,9 +259,9 @@ async function sendPolarEvents(
         
         // Spending Router Logic
         if (cost <= tierBalance) {
-            // Spend from tier only
+            // Spend from tier only - use original event name (no prefix) for backward compatibility
             polarEvents.push({
-                name: event.eventType,
+                name: event.eventType, // No prefix for tier events
                 externalCustomerId: event.userId,
                 metadata: {
                     ...baseMetadata,
@@ -278,8 +279,9 @@ async function sendPolarEvents(
             const fromTier = tierBalance;
             const fromPack = cost - tierBalance;
             
+            // Tier portion - use original event name (no prefix)
             polarEvents.push({
-                name: event.eventType,
+                name: event.eventType, // No prefix for tier events
                 externalCustomerId: event.userId,
                 metadata: {
                     ...baseMetadata,
@@ -287,8 +289,9 @@ async function sendPolarEvents(
                     totalPrice: fromTier,
                 },
             });
+            // Pack portion - add pack. prefix
             polarEvents.push({
-                name: event.eventType,
+                name: `pack.${event.eventType}` as EventType,
                 externalCustomerId: event.userId,
                 metadata: {
                     ...baseMetadata,
@@ -305,8 +308,13 @@ async function sendPolarEvents(
             // Use pack only (or default to tier if no pack meters found)
             const pollenType = packBalance > 0 ? "pack" : "tier";
             
+            // Use pack or tier: only pack gets prefix
+            const eventName = pollenType === "pack" 
+                ? `pack.${event.eventType}` as EventType
+                : event.eventType; // No prefix for tier
+            
             polarEvents.push({
-                name: event.eventType,
+                name: eventName,
                 externalCustomerId: event.userId,
                 metadata: {
                     ...baseMetadata,
@@ -327,10 +335,21 @@ async function sendPolarEvents(
     let ingested = 0;
     for (const batch of batches(polarEvents, INGEST_BATCH_SIZE)) {
         try {
+            // Debug: Log the exact events being sent
+            log.debug("📤 Sending events to Polar: count={count} events={events}", {
+                count: batch.length,
+                events: JSON.stringify(batch, null, 2),
+            });
+            
             const response = await polar.events.ingest({
                 events: batch,
             });
             ingested += response.inserted;
+            
+            log.debug("✅ Polar ingestion response: inserted={inserted} response={response}", {
+                inserted: response.inserted,
+                response: JSON.stringify(response, null, 2),
+            });
         } catch (error) {
             log.error("Failed to send Polar event batch: {error}", {
                 error,

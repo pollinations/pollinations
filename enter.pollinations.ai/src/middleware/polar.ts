@@ -33,48 +33,89 @@ export const polar = createMiddleware<PolarEnv>(async (c, next) => {
     const getCustomerState = cached(
         async (userId: string): Promise<CustomerState | null> => {
             try {
-                return await client.customers.getStateExternal({
+                log.info("🔍 [POLAR] Fetching customer state from Polar API: userId={userId}", { userId });
+                const state = await client.customers.getStateExternal({
                     externalId: userId,
                 });
+                log.info("✅ [POLAR] Received customer state: userId={userId} meters={meterCount}", { 
+                    userId, 
+                    meterCount: state?.activeMeters?.length || 0 
+                });
+                return state;
             } catch (error) {
-                log.error("Failed to get customer state: {error}", { error });
+                log.error("❌ [POLAR] Failed to get customer state: {error}", { error });
                 return null;
             }
         },
         {
             log,
-            ttl: 60, // 1 minute
+            ttl: 60, // 60 seconds - minimum allowed by Cloudflare KV
             kv: c.env.KV,
             keyGenerator: (userId) => `polar:customer:state:${userId}`,
         },
     );
 
     const requirePositiveBalance = async (userId: string, message?: string) => {
-        // CRITICAL: Bypass cache for authorization - always fetch fresh balance
-        // to prevent overdrafts from stale cached data
+        // Use cached balance check to avoid Polar API rate limits (300 req/min = 5 req/sec)
+        // Cache TTL: 60 seconds (Cloudflare KV minimum) - allows burst traffic while keeping balance reasonably fresh
+        // Trade-off: User can overdraft by ~60 seconds of usage (acceptable given low per-request costs)
+        
+        log.info("🔐 [BALANCE CHECK] Starting for userId={userId}", { userId });
+        
         let customerState;
         try {
-            customerState = await client.customers.getStateExternal({
-                externalId: userId,
-            });
+            customerState = await getCustomerState(userId);
         } catch (error) {
-            log.error("Failed to get fresh customer state for auth: {error}", { error });
+            log.error("❌ [BALANCE CHECK] Failed to get customer state: {error}", { error });
             throw new HTTPException(403, {
                 message: message || "Your pollen balance is too low.",
             });
         }
         
+        if (!customerState) {
+            log.error("❌ [BALANCE CHECK] No customer state returned for userId={userId}", { userId });
+            throw new HTTPException(403, {
+                message: message || "Your pollen balance is too low.",
+            });
+        }
+        
+        // Log detailed meter information
+        log.info("📊 [BALANCE CHECK] Customer meters: userId={userId} meters={meters}", {
+            userId,
+            meters: customerState.activeMeters.map(m => ({
+                meterId: m.meterId,
+                creditedUnits: m.creditedUnits,
+                consumedUnits: m.consumedUnits,
+                balance: m.balance,
+            }))
+        });
+        
         // Sum all active meters (supports dual-meter system: TierPollen + PackPollen)
-        const totalBalance = customerState?.activeMeters.reduce(
+        const totalBalance = customerState.activeMeters.reduce(
             (sum, meter) => sum + (meter.balance || 0),
             0
         ) || 0;
         
+        log.info("💰 [BALANCE CHECK] Total balance calculated: userId={userId} totalBalance={totalBalance}", {
+            userId,
+            totalBalance,
+            meterCount: customerState.activeMeters.length
+        });
+        
         if (totalBalance <= 0) {
+            log.warn("⛔ [BALANCE CHECK] DENIED - Insufficient balance: userId={userId} balance={balance}", {
+                userId,
+                balance: totalBalance
+            });
             throw new HTTPException(403, {
                 message: message || "Your pollen balance is too low.",
             });
         }
+        
+        log.info("✅ [BALANCE CHECK] APPROVED - Sufficient balance: userId={userId} balance={balance}", {
+            userId,
+            balance: totalBalance
+        });
     };
 
     c.set("polar", {

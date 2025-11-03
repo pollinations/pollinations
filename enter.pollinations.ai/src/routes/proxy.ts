@@ -201,6 +201,7 @@ export const proxyRoutes = new Hono<Env>()
                     c.var.track.freeModelRequested &&
                     c.env.ALLOW_ANONYMOUS_USAGE,
             });
+            await checkBalanceForPaidModel(c);
 
             const textServiceUrl =
                 c.env.TEXT_SERVICE_URL || "https://text.pollinations.ai";
@@ -221,9 +222,14 @@ export const proxyRoutes = new Hono<Env>()
                 },
             });
 
-            // return response as is if streaming
-            if (c.var.track.streamRequested) {
-                return response;
+            if (!response.ok) {
+                throw new UpstreamError(
+                    response.status as ContentfulStatusCode,
+                    {
+                        message: "The text service returned an error response",
+                        requestUrl: targetUrl,
+                    },
+                );
             }
 
             // Backend returns plain text for text models and raw audio for audio models

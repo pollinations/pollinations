@@ -51,8 +51,14 @@ export const polar = createMiddleware<PolarEnv>(async (c, next) => {
 
     const requirePositiveBalance = async (userId: string, message?: string) => {
         const customerState = await getCustomerState(userId);
-        const customerBalance = customerState?.activeMeters[0]?.balance || 0;
-        if (customerBalance <= 0) {
+        
+        // Sum all active meters (supports dual-meter system: TierPollen + PackPollen)
+        const totalBalance = customerState?.activeMeters.reduce(
+            (sum, meter) => sum + (meter.balance || 0),
+            0
+        ) || 0;
+        
+        if (totalBalance <= 0) {
             throw new HTTPException(403, {
                 message: message || "Your pollen balance is too low.",
             });

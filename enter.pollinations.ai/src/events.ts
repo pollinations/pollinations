@@ -146,54 +146,147 @@ async function sendPolarEvents(
         accessToken: polarAccessToken,
         server: polarServer,
     });
-    const polarEvents = events
-        .filter(
-            (event) => event.isBilledUsage && event.polarDeliveredAt == null,
-        )
-        .map((event) => {
-            if (!event.userId) {
-                throw new Error("Failed to create Polar event: missing userId");
-            }
-            if (!event.modelUsed) {
-                throw new Error(
-                    "Failed to create Polar event: missing modelUsed",
-                );
-            }
-            if (!event.totalPrice) {
-                throw new Error(
-                    "Failed to create Polar event: missing totalPrice",
-                );
-            }
-            const metadata = removeUnset({
-                model: event.modelUsed,
-                // token counts
-                tokenCountPromptText: event.tokenCountPromptText,
-                tokenCountPromptAudio: event.tokenCountPromptAudio,
-                tokenCountPromptCached: event.tokenCountPromptCached,
-                tokenCountPromptImage: event.tokenCountPromptImage,
-                tokenCountCompletionText: event.tokenCountCompletionText,
-                tokenCountCompletionReasoning:
-                    event.tokenCountCompletionReasoning,
-                // token prices
-                tokenPricePromptText: event.tokenPricePromptText,
-                tokenPricePromptCached: event.tokenPricePromptCached,
-                tokenPricePromptAudio: event.tokenPricePromptAudio,
-                tokenPricePromptImage: event.tokenPricePromptImage,
-                tokenPriceCompletionText: event.tokenPriceCompletionText,
-                tokenPriceCompletionReasoning:
-                    event.tokenPriceCompletionReasoning,
-                tokenPriceCompletionAudio: event.tokenPriceCompletionAudio,
-                tokenPriceCompletionImage: event.tokenPriceCompletionImage,
-                // calculated price
-                totalPrice: event.totalPrice,
+    
+    // Filter events that need to be sent
+    const billedEvents = events.filter(
+        (event) => event.isBilledUsage && event.polarDeliveredAt == null,
+    );
+    
+    if (billedEvents.length === 0) return "skipped";
+    
+    // Process events with spending router
+    const polarEvents = [];
+    
+    for (const event of billedEvents) {
+        if (!event.userId) {
+            throw new Error("Failed to create Polar event: missing userId");
+        }
+        if (!event.modelUsed) {
+            throw new Error("Failed to create Polar event: missing modelUsed");
+        }
+        if (!event.totalPrice) {
+            throw new Error("Failed to create Polar event: missing totalPrice");
+        }
+        
+        const cost = event.totalPrice;
+        
+        // Get customer state to determine meter balances
+        let tierBalance = 0;
+        let packBalance = 0;
+        
+        try {
+            const customerState = await polar.customers.getExternal({
+                externalId: event.userId,
             });
-            return {
+            
+            // Find TierPollen and PackPollen meters
+            // Type assertion for activeMeters which may not be in SDK types
+            const meters = (customerState as any).activeMeters || [];
+            for (const meter of meters) {
+                // Identify meters by checking if they match our meter patterns
+                // TierPollen has daily grants, PackPollen doesn't
+                if (meter.balance > 0) {
+                    // Simple heuristic: assume first meter is tier, second is pack
+                    // Or we could check meter names if accessible
+                    if (tierBalance === 0) {
+                        tierBalance = meter.balance;
+                    } else {
+                        packBalance = meter.balance;
+                    }
+                }
+            }
+        } catch (error) {
+            log.warn("Failed to get customer state for spending router: {error}, defaulting to tier", {
+                error,
+                userId: event.userId,
+            });
+        }
+        
+        // Create base metadata (without pollenType)
+        const baseMetadata = removeUnset({
+            model: event.modelUsed,
+            // token counts
+            tokenCountPromptText: event.tokenCountPromptText,
+            tokenCountPromptAudio: event.tokenCountPromptAudio,
+            tokenCountPromptCached: event.tokenCountPromptCached,
+            tokenCountPromptImage: event.tokenCountPromptImage,
+            tokenCountCompletionText: event.tokenCountCompletionText,
+            tokenCountCompletionReasoning: event.tokenCountCompletionReasoning,
+            // token prices
+            tokenPricePromptText: event.tokenPricePromptText,
+            tokenPricePromptCached: event.tokenPricePromptCached,
+            tokenPricePromptAudio: event.tokenPricePromptAudio,
+            tokenPricePromptImage: event.tokenPricePromptImage,
+            tokenPriceCompletionText: event.tokenPriceCompletionText,
+            tokenPriceCompletionReasoning: event.tokenPriceCompletionReasoning,
+            tokenPriceCompletionAudio: event.tokenPriceCompletionAudio,
+            tokenPriceCompletionImage: event.tokenPriceCompletionImage,
+        });
+        
+        // Spending Router Logic
+        if (cost <= tierBalance) {
+            // Spend from tier only
+            polarEvents.push({
                 name: event.eventType,
                 externalCustomerId: event.userId,
-                metadata,
-            };
-        });
-    if (polarEvents.length === 0) return "skipped";
+                metadata: {
+                    ...baseMetadata,
+                    pollenType: "tier",
+                    totalPrice: cost,
+                },
+            });
+            log.debug("Routing to tier: {cost} (tier: {tier}, pack: {pack})", {
+                cost,
+                tier: tierBalance,
+                pack: packBalance,
+            });
+        } else if (tierBalance > 0 && cost <= tierBalance + packBalance) {
+            // Split between tier and pack
+            const fromTier = tierBalance;
+            const fromPack = cost - tierBalance;
+            
+            polarEvents.push({
+                name: event.eventType,
+                externalCustomerId: event.userId,
+                metadata: {
+                    ...baseMetadata,
+                    pollenType: "tier",
+                    totalPrice: fromTier,
+                },
+            });
+            polarEvents.push({
+                name: event.eventType,
+                externalCustomerId: event.userId,
+                metadata: {
+                    ...baseMetadata,
+                    pollenType: "pack",
+                    totalPrice: fromPack,
+                },
+            });
+            log.debug("Splitting cost: {fromTier} tier + {fromPack} pack", {
+                fromTier,
+                fromPack,
+            });
+        } else {
+            // Use pack only (or default to tier if no meters found)
+            polarEvents.push({
+                name: event.eventType,
+                externalCustomerId: event.userId,
+                metadata: {
+                    ...baseMetadata,
+                    pollenType: packBalance > 0 ? "pack" : "tier",
+                    totalPrice: cost,
+                },
+            });
+            log.debug("Routing to pack: {cost} (tier: {tier}, pack: {pack})", {
+                cost,
+                tier: tierBalance,
+                pack: packBalance,
+            });
+        }
+    }
+    
+    // Send events to Polar
     let ingested = 0;
     for (const batch of batches(polarEvents, INGEST_BATCH_SIZE)) {
         try {

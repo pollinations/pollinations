@@ -48,11 +48,11 @@ export const test = base.extend<Fixtures>({
             polar: mockPolar,
             tinybird: mockTinybird,
         });
-        teardownFetchMock();
+        await teardownFetchMock();
     },
     auth: async ({}, use) => {
         const auth = createAuth();
-        use(auth);
+        await use(auth);
     },
     sessionToken: async ({ mocks: _ }, use) => {
         const signupUrl = new URL(
@@ -96,6 +96,7 @@ export const test = base.extend<Fixtures>({
             redirect: "manual",
         });
         expect(callbackResponse.status).toBe(302);
+        await callbackResponse.text();
 
         // extract session cookie
         const setCookieHeader = callbackResponse.headers.get("Set-Cookie");

@@ -854,20 +854,8 @@ function createUsageCaptureTransform(res) {
             callback();
         },
         flush(callback) {
-            // Add trailers when stream ends
-            if (finalUsage && finalModel) {
-                try {
-                    const tokenUsage = openaiUsageToTokenUsage(finalUsage);
-                    const usageHeaders = buildUsageHeaders(
-                        finalModel,
-                        tokenUsage,
-                    );
-                    res.addTrailers(usageHeaders);
-                    log("Added usage trailers:", Object.keys(usageHeaders));
-                } catch (err) {
-                    errorLog("Error adding trailers:", err);
-                }
-            }
+            // Removed trailers as they were causing issues
+            // TODO: Check if this function is still needed at all
             callback();
         },
     });
@@ -886,13 +874,6 @@ async function sendAsOpenAIStream(res, completion, req = null) {
     // Set standard SSE headers
     res.setHeader("Cache-Control", "no-cache");
     res.setHeader("Connection", "keep-alive");
-
-    // Declare trailers for usage headers (GitHub issue #4638)
-    res.setHeader(
-        "Trailer",
-        "x-model-used, x-usage-prompt-text-tokens, x-usage-completion-text-tokens, x-usage-total-tokens",
-    );
-
     res.flushHeaders();
 
     // Handle error responses in streaming mode
@@ -924,9 +905,6 @@ async function sendAsOpenAIStream(res, completion, req = null) {
         // Get jsonMode from request data
         const jsonMode = completion.requestData?.jsonMode || false;
 
-        // Create usage capture transform for trailers
-        const usageCapture = createUsageCaptureTransform(res);
-
         // Check if we have messages and should process the stream for ads
         if (req && messages.length > 0 && !jsonMode) {
             log("Processing stream for ads with", messages.length, "messages");
@@ -939,7 +917,7 @@ async function sendAsOpenAIStream(res, completion, req = null) {
             );
 
             // Pipe through usage capture to add trailers
-            wrappedStream.pipe(usageCapture).pipe(res);
+            wrappedStream.pipe(res);
 
             // Handle client disconnect
             if (req)
@@ -958,7 +936,7 @@ async function sendAsOpenAIStream(res, completion, req = null) {
                 "Skipping ad processing for stream" +
                     (jsonMode ? " (JSON mode)" : ""),
             );
-            responseStream.pipe(usageCapture).pipe(res);
+            responseStream.pipe(res);
 
             // Handle client disconnect
             if (req)

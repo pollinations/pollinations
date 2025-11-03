@@ -49,7 +49,7 @@ export interface VertexAIResponse {
  */
 export async function generateImageWithVertexAI(
     request: VertexAIImageRequest
-): Promise<{ imageData: string; mimeType: string; textResponse?: string; usage: any; fullResponse?: any }> {
+): Promise<{ imageData: string | null; mimeType: string | null; textResponse?: string; finishReason?: string; safetyRatings?: any[]; usage: any; fullResponse?: any }> {
     try {
         log("Starting Vertex AI image generation for prompt:", request.prompt.substring(0, 100));
 
@@ -149,7 +149,7 @@ export async function generateImageWithVertexAI(
             body: JSON.stringify(requestBody)
         });
 
-        const response = await Promise.race([fetchPromise, timeoutPromise]);
+        const response = await Promise.race([fetchPromise, timeoutPromise]) as Response;
 
         if (!response.ok) {
             const errorText = await response.text();
@@ -184,10 +184,12 @@ export async function generateImageWithVertexAI(
         };
         log("Response metadata:", JSON.stringify(sanitizedData, null, 2));
 
-        // Extract image data and text response
+        // Extract image data, text response, and safety information
         let imageData: string | null = null;
         let mimeType: string | null = null;
         let textResponse: string | null = null;
+        let finishReason: string | undefined = undefined;
+        let safetyRatings: any[] | undefined = undefined;
 
         log("Response structure check:");
         log("- data.candidates exists:", !!data.candidates);
@@ -196,6 +198,10 @@ export async function generateImageWithVertexAI(
         if (data.candidates && data.candidates.length > 0) {
             const candidate = data.candidates[0];
             log("First candidate:", JSON.stringify(candidate, null, 2));
+            
+            // Extract finish reason and safety ratings for error reporting
+            finishReason = candidate.finishReason;
+            safetyRatings = (candidate as any).safetyRatings;
             
             log("- candidate.content exists:", !!candidate.content);
             log("- candidate.content.parts exists:", !!candidate.content?.parts);
@@ -220,7 +226,17 @@ export async function generateImageWithVertexAI(
 
         if (!imageData || !mimeType) {
             errorLog("No image data found in response");
-            throw new Error("No image data returned from Vertex AI");
+            // Return all available information even without image data
+            // This allows the caller to provide informative error messages
+            return {
+                imageData: null,
+                mimeType: null,
+                textResponse: textResponse || undefined,
+                finishReason: finishReason,
+                safetyRatings: safetyRatings,
+                usage: data.usageMetadata,
+                fullResponse: data
+            };
         }
 
         log("Successfully generated image via Vertex AI");

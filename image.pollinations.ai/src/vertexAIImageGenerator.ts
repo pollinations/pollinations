@@ -249,9 +249,10 @@ export async function callVertexAIGemini(
             // Track violation for "No image data" cases (likely content policy violations)
             userStatsTracker.recordViolation(userInfo?.username);
             
-            // Extract refusal reason details for logging
+            // Extract all available information from the response
             const geminiExplanation = result.textResponse;
-            const finishReason = result.fullResponse?.candidates?.[0]?.finishReason;
+            const finishReason = result.finishReason;
+            const safetyRatings = result.safetyRatings;
             
             // Use the specialized error-only logger for "No image data" cases with refusal reasons
             await logNanoBananaErrorsOnly(prompt, safeParams, userInfo, result.fullResponse, {
@@ -260,19 +261,33 @@ export async function callVertexAIGemini(
                 finishReason: finishReason
             });
             
+            // Build informative error message with all available information
             if (geminiExplanation) {
                 // Return Gemini's actual explanation to the user
                 const explanationError = new Error(`Gemini: ${geminiExplanation}`);
                 throw explanationError;
-            } else {
-                // Fallback for cases without text response
-                if (finishReason) {
-                    const reasonError = new Error(`Content blocked: ${finishReason}`);
-                    throw reasonError;
+            } else if (finishReason === 'SAFETY' && safetyRatings) {
+                // Extract safety violation details
+                const blockedCategories = safetyRatings
+                    .filter((rating: any) => rating.blocked)
+                    .map((rating: any) => rating.category)
+                    .join(', ');
+                
+                if (blockedCategories) {
+                    const safetyError = new Error(`Content blocked by safety filters: ${blockedCategories}`);
+                    throw safetyError;
                 } else {
-                    const noDataError = new Error("No image data returned from Vertex AI");
-                    throw noDataError;
+                    const safetyError = new Error(`Content blocked by safety filters (${finishReason})`);
+                    throw safetyError;
                 }
+            } else if (finishReason) {
+                // Return finish reason if available
+                const reasonError = new Error(`Content generation stopped: ${finishReason}`);
+                throw reasonError;
+            } else {
+                // Fallback for cases with no additional information
+                const noDataError = new Error("No image data returned from Vertex AI");
+                throw noDataError;
             }
         }
 

@@ -41,10 +41,6 @@ export interface VertexAIResponse {
         promptTokenCount: number;
         candidatesTokenCount: number;
         totalTokenCount: number;
-        candidatesTokensDetails: Array<{
-            modality: string;
-            tokenCount: number;
-        }>;
     };
 }
 
@@ -176,9 +172,6 @@ export async function generateImageWithVertexAI(
 
         const data = await response.json() as VertexAIResponse;
         log("Received response from Vertex AI");
-        
-        // Log complete response structure for debugging
-        log("Full response structure:", JSON.stringify(data, null, 2));
         
         // Log response metadata without sensitive image data
         const sanitizedData = {

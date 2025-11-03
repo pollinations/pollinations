@@ -37,7 +37,7 @@ import type { ProgressManager } from "./progressBar.ts";
 // Import model handlers
 import { callBPAIGenWithKontextFallback } from "./models/bpaigenModel.ts";
 import { callSeedreamAPI } from "./models/seedreamModel.ts";
-import { callAzureFluxKontext } from "./models/azureFluxKontextModel.ts";
+import type { ImageGenerationResult as FluxImageGenerationResult } from "./models/azureFluxKontextModel.js";
 
 dotenv.config();
 
@@ -230,7 +230,7 @@ export const callComfyUI = async (
                 trackingData: {
                     actualModel: 'flux',
                     usage: {
-                        candidatesTokenCount: 1,
+                        completionImageTokens: 1,
                         totalTokenCount: 1
                     }
                 }
@@ -251,7 +251,7 @@ export const callComfyUI = async (
             trackingData: {
                 actualModel: 'flux',
                 usage: {
-                    candidatesTokenCount: 1,
+                    completionImageTokens: 1,
                     totalTokenCount: 1
                 }
             }
@@ -375,7 +375,7 @@ async function callCloudflareModel(
         trackingData: {
             actualModel: registryModelName,
             usage: {
-                candidatesTokenCount: 1,
+                completionImageTokens: 1,
                 totalTokenCount: 1
             }
         }
@@ -752,7 +752,7 @@ const callAzureGPTImageWithEndpoint = async (
     // Azure returns usage in format: { prompt_tokens, completion_tokens, total_tokens }
     const outputTokens = data.usage?.completion_tokens || data.usage?.total_tokens || 1;
     
-    logCloudflare(`GPT Image token usage: ${outputTokens} output tokens`);
+    logCloudflare(`GPT Image token usage: ${outputTokens} completion tokens`);
 
     // Azure doesn't provide content safety information directly, so we'll set defaults
     // In a production environment, you might want to use a separate content moderation service
@@ -763,7 +763,7 @@ const callAzureGPTImageWithEndpoint = async (
         trackingData: {
             actualModel: safeParams.model,
             usage: {
-                candidatesTokenCount: outputTokens, // Use actual token count from API
+                completionImageTokens: outputTokens,
                 totalTokenCount: outputTokens
             }
         }
@@ -1099,13 +1099,8 @@ const generateImage = async (
     try {
         return await callComfyUI(prompt, safeParams, concurrentRequests);
     } catch (_error) {
-        progress.updateBar(
-            requestId,
-            35,
-            "Processing",
-            "Trying Cloudflare Dreamshaper...",
-        );
-        return await callCloudflareDreamshaper(prompt, safeParams);
+        // Cloudflare Flux fallback disabled
+        throw _error;
     }
 };
 

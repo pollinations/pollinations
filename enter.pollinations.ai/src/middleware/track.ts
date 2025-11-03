@@ -35,6 +35,7 @@ import {
 import { drizzle } from "drizzle-orm/d1";
 import { HonoRequest } from "hono";
 import type {
+    ApiKeyType,
     EventType,
     GenerationEventContentFilterParams,
     InsertGenerationEvent,
@@ -46,6 +47,9 @@ import { TokenUsage } from "../../../shared/registry/registry.js";
 import { removeUnset } from "@/util.ts";
 import { EventSourceParserStream } from "eventsource-parser/stream";
 import { mergeContentFilterResults } from "@/content-filter.ts";
+import { getErrorCode, UpstreamError } from "@/error.ts";
+import { ValidationError } from "@/middleware/validator.ts";
+import { ErrorVariables } from "@/env.ts";
 
 export type ModelUsage = {
     model: ModelId;
@@ -85,7 +89,8 @@ export type TrackVariables = {
 
 export type TrackEnv = {
     Bindings: CloudflareBindings;
-    Variables: LoggerVariables &
+    Variables: ErrorVariables &
+        LoggerVariables &
         AuthVariables &
         PolarVariables &
         TrackVariables;
@@ -95,6 +100,7 @@ export const track = (eventType: EventType) =>
     createMiddleware<TrackEnv>(async (c, next) => {
         const log = c.get("log");
         const startTime = new Date();
+
         const requestTracking = await trackRequest(eventType, c.req);
         let responseOverride = null;
 
@@ -114,22 +120,32 @@ export const track = (eventType: EventType) =>
 
         c.executionCtx.waitUntil(
             (async () => {
+                const response = responseOverride || c.res;
                 const responseTracking = await trackResponse(
                     eventType,
                     requestTracking,
-                    responseOverride || c.res,
+                    response,
                 );
-                const user = c.var.auth.user;
+                const userTracking = {
+                    userId: c.var.auth.user?.id,
+                    userTier: c.var.auth.user?.tier,
+                    userGithubId: c.var.auth.user?.githubId,
+                    userGithubName: c.var.auth.user?.githubUsername,
+                    apiKeyId: c.var.auth.apiKey?.id,
+                    apiKeyType: c.var.auth.apiKey?.metadata
+                        ?.keyType as ApiKeyType,
+                };
                 const event = createTrackingEvent({
                     requestId: c.get("requestId"),
+                    requestPath: c.req.path,
                     startTime,
                     endTime,
                     environment: c.env.ENVIRONMENT,
                     eventType,
-                    userId: user?.id,
-                    userTier: user?.tier,
+                    userTracking,
                     requestTracking,
                     responseTracking,
+                    errorTracking: collectErrorData(response, c.get("error")),
                 });
                 log.trace("Event: {event}", { event });
                 const db = drizzle(c.env.DB);
@@ -245,32 +261,44 @@ async function* asyncIteratorStream<T>(
     }
 }
 
+type UserData = {
+    userId?: string;
+    userTier?: string;
+    userGithubId?: number;
+    userGithubName?: string;
+    apiKeyId?: string;
+    apiKeyType?: ApiKeyType;
+};
+
 type TrackingEventInput = {
     requestId: string;
+    requestPath: string;
     startTime: Date;
     endTime: Date;
     environment: string;
     eventType: EventType;
-    userId?: string;
-    userTier?: string;
+    userTracking: UserData;
     requestTracking: RequestTrackingData;
     responseTracking: ResponseTrackingData;
+    errorTracking?: ErrorData;
 };
 
 function createTrackingEvent({
     requestId,
+    requestPath,
     startTime,
     endTime,
     environment,
     eventType,
-    userId,
-    userTier,
+    userTracking,
     requestTracking,
     responseTracking,
+    errorTracking,
 }: TrackingEventInput): InsertGenerationEvent {
     return {
         id: generateRandomId(),
         requestId,
+        requestPath,
         startTime,
         endTime,
         responseTime: endTime.getTime() - startTime.getTime(),
@@ -278,9 +306,7 @@ function createTrackingEvent({
         environment,
         eventType,
 
-        userId,
-        userTier: userTier || "anonymous",
-
+        ...userTracking,
         ...requestTracking.referrerData,
         ...responseTracking.cacheData,
 
@@ -298,20 +324,9 @@ function createTrackingEvent({
         totalPrice: responseTracking.price?.totalPrice || 0,
 
         ...responseTracking.contentFilterResults,
+        ...errorTracking,
     };
 }
-
-// // TODO: track error events
-// log.info("Skipping response tracking for status: {status}", {
-//     status: response.status,
-// });
-// log.info(
-//     "Response was served from {cacheType} cache, skipping cost/price calculation",
-//     {
-//         ...cacheInfo,
-//         cacheType: cacheInfo.cacheType || "exact",
-//     },
-// );
 
 async function extractModelRequested(
     request: HonoRequest,
@@ -565,3 +580,34 @@ const ContentFilterResultHeadersSchema = z
         moderationCompletionProtectedMaterialCodeDetected:
             headers["x-moderation-completion-protected-material-code-detected"],
     }));
+
+type ErrorData = {
+    errorCode?: string;
+    errorSource?: string;
+    errorName?: string;
+    errorMessage?: string;
+    errorStack?: string;
+    errorDetails?: string;
+};
+
+function collectErrorData(response: Response, error?: Error): ErrorData {
+    if (response.ok && !error) return {};
+    let status, source, details;
+    if (error instanceof ValidationError) {
+        details = JSON.stringify(z.flattenError(error.zodError));
+    } else if (error instanceof UpstreamError) {
+        source = error.requestUrl?.hostname;
+        details = JSON.stringify({
+            requestUrl: error.requestUrl,
+            requestBody: error.requestBody,
+        });
+    }
+    return {
+        errorCode: getErrorCode(status || response.status),
+        errorSource: source,
+        errorName: error?.name,
+        errorMessage: error?.message,
+        errorStack: error?.stack,
+        errorDetails: details,
+    };
+}

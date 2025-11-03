@@ -33,6 +33,7 @@ export type AuthOptions = {
 };
 
 type ApiKey = {
+    id: string;
     name?: string;
     permissions?: Record<string, string[]>;
     metadata?: Record<string, unknown>;
@@ -50,13 +51,14 @@ function extractApiKey(c: Context<AuthEnv>): string | null {
     const auth = c.req.header("authorization");
     const match = auth?.match(/^Bearer (.+)$/);
     if (match?.[1]) return match[1];
-    
+
     // Fallback to query parameter for GET requests (browser-friendly)
     return c.req.query("key") || null;
 }
 
 export const auth = (options: AuthOptions) =>
     createMiddleware<AuthEnv>(async (c, next) => {
+        const log = c.get("log");
         const client = createAuth(c.env) as Auth;
 
         const authenticateSession = async (): Promise<AuthResult | null> => {
@@ -74,7 +76,7 @@ export const auth = (options: AuthOptions) =>
         const authenticateApiKey = async (): Promise<AuthResult | null> => {
             if (!options.allowApiKey) return null;
             const apiKey = extractApiKey(c);
-            c.get("log")?.debug("[AUTH] Extracted API key: {hasKey}", {
+            log.debug("[AUTH] Extracted API key: {hasKey}", {
                 hasKey: !!apiKey,
                 keyPrefix: apiKey?.substring(0, 8),
             });
@@ -84,7 +86,7 @@ export const auth = (options: AuthOptions) =>
                     key: apiKey,
                 },
             });
-            c.get("log")?.debug("[AUTH] API key verification result: {valid}", {
+            log.debug("[AUTH] API key verification result: {valid}", {
                 valid: keyResult.valid,
             });
             if (!keyResult.valid || !keyResult.key) return null;
@@ -92,13 +94,14 @@ export const auth = (options: AuthOptions) =>
             const user = await db.query.user.findFirst({
                 where: eq(schema.user.id, keyResult.key.userId),
             });
-            c.get("log")?.debug("[AUTH] User lookup result: {found}", {
+            log.debug("[AUTH] User lookup result: {found}", {
                 found: !!user,
                 userId: user?.id,
             });
             return {
                 user: user as User,
                 apiKey: {
+                    id: keyResult.key.id,
                     name: keyResult.key.name || undefined,
                     permissions: keyResult.key.permissions || undefined,
                     metadata: keyResult.key.metadata || undefined,
@@ -109,7 +112,7 @@ export const auth = (options: AuthOptions) =>
         const { user, session, apiKey } =
             (await authenticateSession()) || (await authenticateApiKey()) || {};
 
-        c.get("log")?.debug("[AUTH] Authentication result: {authenticated}", {
+        log.debug("[AUTH] Authentication result: {authenticated}", {
             authenticated: !!user,
             hasSession: !!session,
             hasApiKey: !!apiKey,
@@ -120,7 +123,7 @@ export const auth = (options: AuthOptions) =>
             allowAnonymous?: boolean;
             message?: string;
         }): Promise<void> => {
-            c.get("log")?.debug(
+            log.debug(
                 "[AUTH] Checking authorization: {hasUser}, {allowAnonymous}",
                 {
                     hasUser: !!user,
@@ -128,7 +131,9 @@ export const auth = (options: AuthOptions) =>
                 },
             );
             if (!user && !options?.allowAnonymous) {
-                c.get("log")?.warn("[AUTH] Authorization failed: No user and anonymous not allowed");
+                log.debug(
+                    "[AUTH] Authorization failed: No user and anonymous not allowed",
+                );
                 throw new HTTPException(401, {
                     message: options?.message,
                 });

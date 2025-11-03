@@ -207,17 +207,23 @@ export async function generateImageWithVertexAI(
             log("- parts length:", candidate.content?.parts?.length || 0);
             log("- finishReason:", finishReason);
             
-            for (const part of candidate.content.parts) {
-                if (part.inlineData) {
-                    imageData = part.inlineData.data;
-                    mimeType = part.inlineData.mimeType;
-                    log("Found image data:", mimeType, "size:", imageData.length);
-                } else if (part.text) {
-                    textResponse = part.text;
-                    log("Found text response:", part.text.substring(0, 100));
-                } else {
-                    log("Part has no inlineData or text:", Object.keys(part));
+            // Check if content and parts exist before iterating
+            // When safety blocks content, candidate.content or parts may be undefined
+            if (candidate.content?.parts) {
+                for (const part of candidate.content.parts) {
+                    if (part.inlineData) {
+                        imageData = part.inlineData.data;
+                        mimeType = part.inlineData.mimeType;
+                        log("Found image data:", mimeType, "size:", imageData.length);
+                    } else if (part.text) {
+                        textResponse = part.text;
+                        log("Found text response:", part.text.substring(0, 100));
+                    } else {
+                        log("Part has no inlineData or text:", Object.keys(part));
+                    }
                 }
+            } else {
+                log("No content.parts available - likely blocked by safety filters");
             }
         } else {
             log("No candidates found in response");

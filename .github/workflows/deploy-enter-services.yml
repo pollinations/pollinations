@@ -6,11 +6,28 @@ on:
       - staging
       - feature/encrypt-gptimage-env
   workflow_dispatch:
+    inputs:
+      test_mode:
+        description: 'Enable test mode (skips actual deployment)'
+        required: false
+        type: boolean
+        default: false
+      issue_number:
+        description: 'Issue number to test with (optional, for manual testing)'
+        required: false
+        type: string
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
+      - name: Display workflow inputs
+        run: |
+          echo "🔧 Workflow triggered with:"
+          echo "  Test Mode: ${{ github.event.inputs.test_mode || 'false' }}"
+          echo "  Issue Number: ${{ github.event.inputs.issue_number || 'none' }}"
+          echo "  Branch: ${{ github.ref_name }}"
+          
       - name: Checkout code
         uses: actions/checkout@v4
 
@@ -38,6 +55,7 @@ jobs:
           fi
 
       - name: Copy decrypted .env files to server
+        if: ${{ github.event.inputs.test_mode != 'true' }}
         uses: appleboy/scp-action@v0.1.7
         with:
           host: ${{ secrets.ENTER_SERVICES_HOST }}
@@ -49,6 +67,7 @@ jobs:
           strip_components: 0
 
       - name: Deploy via SSH
+        if: ${{ github.event.inputs.test_mode != 'true' }}
         uses: appleboy/ssh-action@v1.0.0
         with:
           host: ${{ secrets.ENTER_SERVICES_HOST }}
@@ -127,6 +146,7 @@ jobs:
           version: 8
 
       - name: Deploy enter.pollinations.ai to Cloudflare
+        if: ${{ github.event.inputs.test_mode != 'true' }}
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
         run: |
@@ -145,3 +165,12 @@ jobs:
           npm run deploy:staging
           
           echo "✅ enter.pollinations.ai deployed to Cloudflare Workers!"
+      
+      - name: Test mode summary
+        if: ${{ github.event.inputs.test_mode == 'true' }}
+        run: |
+          echo "🧪 Test mode enabled - deployment steps were skipped"
+          echo "✅ Workflow validation successful!"
+          if [ -n "${{ github.event.inputs.issue_number }}" ]; then
+            echo "📋 Testing with issue #${{ github.event.inputs.issue_number }}"
+          fi

@@ -541,7 +541,9 @@ const callAzureGPTImageWithEndpoint = async (
     }
 
     // Map safeParams to Azure API parameters
-    const size = `${safeParams.width}x${safeParams.height}`;
+    // Use "auto" if dimensions are at default (1021x1021 - prime number), otherwise use user-specified dimensions
+    const isDefaultSize = safeParams.width === 1021 && safeParams.height === 1021;
+    const size = isDefaultSize ? "auto" : `${safeParams.width}x${safeParams.height}`;
 
     // Use requested quality - enter.pollinations.ai handles tier-based access control
     const quality = safeParams.quality === "high" ? "high" : "medium";
@@ -554,7 +556,7 @@ const callAzureGPTImageWithEndpoint = async (
     // Build request body
     const requestBody = {
         prompt: sanitizeString(prompt),
-        size: size, // Use calculated size from width x height
+        size: size, // "auto" for default size, otherwise width×height
         quality,
         output_format: outputFormat,
         // output_compression: outputCompression,

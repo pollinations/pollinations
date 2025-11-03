@@ -1,18 +1,25 @@
 import { rateLimiter } from "hono-rate-limiter";
-import { WorkersKVStore } from "@hono-rate-limiter/cloudflare";
 import { createMiddleware } from "hono/factory";
 import type { AuthEnv } from "./auth.ts";
+import { TokenBucketKVStore } from "./rateLimit.store.ts";
 
 /**
  * Rate limiting middleware for publishable key requests.
  * 
+ * Uses token bucket algorithm for smooth, continuous rate limiting:
  * - Secret API keys (sk_): Skip rate limiting entirely
- * - Publishable keys (pk_) / anonymous: 24 requests per 2 minutes (1 request every 5 seconds)
+ * - Publishable keys (pk_) / anonymous: 3 token capacity, 1 token per 30 seconds
+ * 
+ * Token bucket benefits:
+ * - Allows bursts up to 3 requests
+ * - Tokens refill continuously (no hard 90-second lockout)
+ * - Better UX - users get tokens back gradually
+ * - Same protection as fixed window but smoother
  */
 export const frontendKeyRateLimit = createMiddleware<AuthEnv>(async (c, next) => {
     const limiter = rateLimiter<AuthEnv>({
-        windowMs: 2 * 60 * 1000, // 2 minutes (120 seconds)
-        limit: 24, // 24 requests per 2 minutes = 1 request every 5 seconds
+        windowMs: 30 * 1000, // 30 seconds (used for resetTime calculation)
+        limit: 3, // Max 3 tokens (capacity)
         standardHeaders: "draft-6",
         keyGenerator: (c) => c.req.header("cf-connecting-ip") || "unknown",
         skip: (c) => {
@@ -21,10 +28,13 @@ export const frontendKeyRateLimit = createMiddleware<AuthEnv>(async (c, next) =>
             const apiKey = c.var?.auth?.apiKey;
             return apiKey?.metadata?.keyType === "secret";
         },
-        store: new WorkersKVStore({ 
+        store: new TokenBucketKVStore({ 
             namespace: c.env.KV,
             prefix: "ratelimit:"
         }),
+        message: () => {
+            return "Rate limit exceeded for publishable key. Client-side keys (pk_*) are limited to 3 requests with 1 token refilling every 30 seconds. Use a secret key (sk_*) for server-side applications to bypass rate limits.";
+        },
     });
     
     return limiter(c, next);

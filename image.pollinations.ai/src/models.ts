@@ -57,11 +57,12 @@ export const IMAGE_CONFIG: ImageModelsConfig = {
         defaultSideLength: 1024,
     },
 
-    // Azure GPT Image model - gpt-image-1-minica
+    // Azure GPT Image model - gpt-image-1-mini
     gptimage: {
         type: "azure",
         enhance: false,
         maxSideLength: 1024,
+        defaultSideLength: 1021, // Prime number to detect default size for "auto" mode
     },
 };
 

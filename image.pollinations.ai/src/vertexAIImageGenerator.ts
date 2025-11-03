@@ -249,9 +249,10 @@ export async function callVertexAIGemini(
             // Track violation for "No image data" cases (likely content policy violations)
             userStatsTracker.recordViolation(userInfo?.username);
             
-            // Extract refusal reason details for logging
+            // Extract all available information from the response
             const geminiExplanation = result.textResponse;
-            const finishReason = result.fullResponse?.candidates?.[0]?.finishReason;
+            const finishReason = result.finishReason;
+            const safetyRatings = result.safetyRatings;
             
             // Use the specialized error-only logger for "No image data" cases with refusal reasons
             await logNanoBananaErrorsOnly(prompt, safeParams, userInfo, result.fullResponse, {
@@ -260,20 +261,38 @@ export async function callVertexAIGemini(
                 finishReason: finishReason
             });
             
+            // Build informative error message with all available information
             if (geminiExplanation) {
                 // Return Gemini's actual explanation to the user
-                const explanationError = new Error(`Gemini: ${geminiExplanation}`);
-                throw explanationError;
-            } else {
-                // Fallback for cases without text response
-                if (finishReason) {
-                    const reasonError = new Error(`Content blocked: ${finishReason}`);
-                    throw reasonError;
-                } else {
-                    const noDataError = new Error("No image data returned from Vertex AI");
-                    throw noDataError;
+                throw new Error(`Gemini: ${geminiExplanation}`);
+            }
+            
+            // If we have safety ratings, extract details
+            if (safetyRatings && safetyRatings.length > 0) {
+                const blockedCategories = safetyRatings
+                    .filter((rating: any) => rating.blocked)
+                    .map((rating: any) => rating.category)
+                    .join(', ');
+                
+                const highProbCategories = safetyRatings
+                    .filter((rating: any) => rating.probability === 'HIGH' || rating.probability === 'MEDIUM')
+                    .map((rating: any) => `${rating.category} (${rating.probability})`)
+                    .join(', ');
+                
+                if (blockedCategories) {
+                    throw new Error(`${finishReason || 'Content blocked'}: ${blockedCategories}`);
+                } else if (highProbCategories) {
+                    throw new Error(`${finishReason || 'Content flagged'}: ${highProbCategories}`);
                 }
             }
+            
+            // Return finish reason if available
+            if (finishReason) {
+                throw new Error(`${finishReason}`);
+            }
+            
+            // Fallback for cases with no additional information
+            throw new Error("No image data returned from Vertex AI");
         }
 
         // Convert base64 to buffer

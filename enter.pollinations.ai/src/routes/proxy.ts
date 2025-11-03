@@ -129,15 +129,6 @@ export const proxyRoutes = new Hono<Env>()
                 allowAnonymous:
                     c.var.track.isFreeUsage && c.env.ALLOW_ANONYMOUS_USAGE,
             });
-            
-            // Check balance for paid models
-            if (!c.var.track.isFreeUsage && c.var.auth.user?.id) {
-                await c.var.polar.requirePositiveBalance(
-                    c.var.auth.user.id,
-                    "Insufficient pollen balance to use this model"
-                );
-            }
-            
             const textServiceUrl =
                 c.env.TEXT_SERVICE_URL || "https://text.pollinations.ai";
             const targetUrl = proxyUrl(c, `${textServiceUrl}/openai`);
@@ -266,61 +257,104 @@ export const proxyRoutes = new Hono<Env>()
             ].join("\n"),
         }),
         validator("query", GenerateImageRequestQueryParamsSchema),
-        async (c) => {
-            await c.var.auth.requireAuthorization({
-                allowAnonymous:
-                    c.var.track.isFreeUsage && c.env.ALLOW_ANONYMOUS_USAGE,
-            });
-            
-            // Debug logging
-            c.get("log")?.debug("[BALANCE CHECK] isFreeUsage={isFree} hasUser={hasUser} model={model}", {
-                isFree: c.var.track.isFreeUsage,
-                hasUser: !!c.var.auth.user?.id,
-                model: c.var.track.modelRequested,
-            });
-            
-            // Check balance for paid models
-            if (!c.var.track.isFreeUsage && c.var.auth.user?.id) {
-                c.get("log")?.debug("[BALANCE CHECK] Calling requirePositiveBalance for user={userId}", {
-                    userId: c.var.auth.user.id,
-                });
-                await c.var.polar.requirePositiveBalance(
-                    c.var.auth.user.id,
-                    "Insufficient pollen balance to use this model"
-                );
-            } else {
-                c.get("log")?.warn("[BALANCE CHECK] SKIPPED - isFree={isFree} hasUser={hasUser}", {
-                    isFree: c.var.track.isFreeUsage,
-                    hasUser: !!c.var.auth.user?.id,
-                });
-            }
-            
-            const targetUrl = proxyUrl(c, `${c.env.IMAGE_SERVICE_URL}/prompt`);
-            targetUrl.pathname = joinPaths(
-                targetUrl.pathname,
-                c.req.param("prompt"),
-            );
-            
-            const genHeaders = generationHeaders(c.env.ENTER_TOKEN, c.var.auth.user);
-            const proxyRequestHeaders = {
                 ...proxyHeaders(c),
-                ...genHeaders,
-            };
-            
-            c.get("log")?.debug("[PROXY] Image generation headers: {headers}", {
-                headers: genHeaders,
+                ...generationHeaders(c.env.ENTER_TOKEN, c.var.auth.user),
+            },
+            body: JSON.stringify(requestBody),
+        });
+        if (!response.ok || !response.body) {
+            throw new HTTPException(
+                response.status as ContentfulStatusCode,
+            );
+        }
+        const responseJson = await response.clone().json();
+        const parsedResponse =
+            CreateChatCompletionResponseSchema.parse(responseJson);
+        const contentFilterHeaders =
+            contentFilterResultsToHeaders(parsedResponse);
+        return new Response(response.body, {
+            headers: {
+                ...Object.fromEntries(response.headers),
+                ...contentFilterHeaders,
+            },
+        });
+    },
+)
+.get(
+    "/text/:prompt",
+    describeRoute({
+        description: [
+            "Generates text from text prompts.",
+            "",
+            "**Authentication:**",
+            "",
+            "Include your API key either:",
+            "- In the `Authorization` header as a Bearer token: `Authorization: Bearer YOUR_API_KEY`",
+            "- As a query parameter: `?key=YOUR_API_KEY`",
+            "",
+            "API keys can be created from your dashboard at enter.pollinations.ai.",
+        ].join("\n"),
+    }),
+    track("generate.text"),
+    async (c) => {
+        await c.var.auth.requireAuthorization({
+            allowAnonymous: true,
+        });
+        const textServiceUrl =
+            c.env.TEXT_SERVICE_URL || "https://text.pollinations.ai";
+        const targetUrl = proxyUrl(c, `${textServiceUrl}/openai`);
+        const requestBody = {
+            model: c.req.query("model") || "openai",
+            messages: [{ role: "user", content: c.req.param("prompt") }],
+        };
+        const response = await fetch(targetUrl, {
+            method: "POST",
+            headers: {
+                "content-type": "application/json",
+                ...proxyHeaders(c),
+                ...generationHeaders(c.env.ENTER_TOKEN, c.var.auth.user),
+            },
+            body: JSON.stringify(requestBody),
+        });
+        const responseJson = await response.json();
+        const parsedResponse =
+            CreateChatCompletionResponseSchema.parse(responseJson);
+        const contentFilterHeaders =
+            contentFilterResultsToHeaders(parsedResponse);
+        const message = parsedResponse.choices[0].message.content;
+        if (!message) {
+            throw new HTTPException(500, {
+                message: "Provider didn't return any messages",
             });
-            c.get("log")?.debug("[PROXY] Proxying to: {url}", {
-                url: targetUrl.toString(),
-            });
-            
-            const response = await proxy(targetUrl.toString(), {
-                method: c.req.method,
-                headers: proxyRequestHeaders,
-                body: c.req.raw.body,
-            });
-            
-            if (!response.ok) {
+        }
+        return c.text(
+            parsedResponse.choices[0].message?.content || "",
+            200,
+            {
+                ...Object.fromEntries(response.headers),
+                ...contentFilterHeaders,
+            },
+        );
+    },
+)
+.get(
+    "/image/models",
+    describeRoute({
+        description: "Get available image models.",
+        responses: {
+            200: {
+                description: "Success",
+                content: {
+                    "application/json": {
+                        schema: resolver(
+                            z.array(z.string()).meta({
+                                description: "List of available models",
+                            }),
+                        ),
+                    },
+                },
+            },
+            ...errorResponses(400, 401, 500),
                 const responseText = await response.text();
                 c.get("log")?.warn("[PROXY] Error {status}: {body}", {
                     status: response.status,
@@ -426,4 +460,13 @@ export function contentFilterResultsToHeaders(
             completionFilterResults?.protected_material_code?.detected,
         ),
     });
+}
+
+async function checkBalanceForPaidModel(c: Context<Env & import("@/middleware/auth.ts").AuthEnv & import("@/middleware/polar.ts").PolarEnv & import("@/middleware/track.ts").TrackEnv>) {
+    if (!c.var.track.isFreeUsage && c.var.auth.user?.id) {
+        await c.var.polar.requirePositiveBalance(
+            c.var.auth.user.id,
+            "Insufficient pollen balance to use this model"
+        );
+    }
 }

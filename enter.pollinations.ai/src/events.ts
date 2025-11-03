@@ -202,18 +202,20 @@ async function sendPolarEvents(
             });
             ingested += response.inserted;
         } catch (error) {
-            log.error("Failed to send Polar event batch: {error}", {
+            log.error("CRITICAL: Failed to send Polar event batch - billing tracking failed: {error}", {
                 error,
             });
+            // Throw error to prevent requests from succeeding without billing tracking
+            // This prevents users from going into negative balance
+            throw new Error(`Polar billing tracking failed: ${error instanceof Error ? error.message : String(error)}`);
         }
     }
     log.debug("Sent events to Polar: {ingested}", { ingested });
     if (ingested !== polarEvents.length) {
-        log.error(
-            "Number of ingested Polar events did not match: {ingested}/{count}",
-            { count: polarEvents.length, ingested },
-        );
-        return "failed";
+        const errorMsg = `Polar event count mismatch: ${ingested}/${polarEvents.length} events ingested`;
+        log.error("CRITICAL: {message}", { message: errorMsg });
+        // Throw error to prevent partial billing tracking
+        throw new Error(errorMsg);
     }
     return "succeeded";
 }

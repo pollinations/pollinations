@@ -59,12 +59,12 @@ export function extractApiVersion(endpoint) {
     return version;
 }
 
-export /**
+/**
  * Generate Portkey headers from a configuration object
  * @param {Object} config - Model configuration object
  * @returns {Object} - Headers object with x-portkey prefixes
  */
-async function generatePortkeyHeaders(config) {
+export async function generatePortkeyHeaders(config) {
     if (!config) {
         errorLog("No configuration provided for header generation");
         throw new Error("No configuration provided for header generation");

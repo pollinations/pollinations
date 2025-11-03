@@ -69,6 +69,8 @@ IMAGE_SERVICE_URL = "http://localhost:16384"
 TEXT_SERVICE_URL = "http://localhost:16385"
 
 
+[env.staging]
+
 [[env.staging.routes]]
 pattern = "enter.pollinations.ai"
 zone_name = "pollinations.ai"
@@ -155,5 +157,5 @@ TINYBIRD_INGEST_URL = "http://localhost:7181/v0/events?name=generation_event"
 POLAR_PRODUCT_ID_SEED = "polar_product_id_seed"
 POLAR_PRODUCT_ID_FLOWER = "polar_product_id_flower"
 POLAR_PRODUCT_ID_NECTAR = "polar_product_id_nectar"
-IMAGE_SERVICE_URL = "http://127.0.0.1:16384"
-TEXT_SERVICE_URL = "http://127.0.0.1:16385"
+IMAGE_SERVICE_URL = "http://localhost:16384"
+TEXT_SERVICE_URL = "http://localhost:16385"

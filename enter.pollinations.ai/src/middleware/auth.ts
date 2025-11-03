@@ -50,7 +50,7 @@ function extractApiKey(c: Context<AuthEnv>): string | null {
     const auth = c.req.header("authorization");
     const match = auth?.match(/^Bearer (.+)$/);
     if (match?.[1]) return match[1];
-    
+
     // Fallback to query parameter for GET requests (browser-friendly)
     return c.req.query("key") || null;
 }
@@ -128,7 +128,9 @@ export const auth = (options: AuthOptions) =>
                 },
             );
             if (!user && !options?.allowAnonymous) {
-                c.get("log")?.warn("[AUTH] Authorization failed: No user and anonymous not allowed");
+                c.get("log")?.warn(
+                    "[AUTH] Authorization failed: No user and anonymous not allowed",
+                );
                 throw new HTTPException(401, {
                     message: options?.message,
                 });

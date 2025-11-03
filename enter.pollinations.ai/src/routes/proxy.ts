@@ -25,11 +25,8 @@ import {
 import { GenerateImageRequestQueryParamsSchema } from "@/schemas/image.ts";
 import { z } from "zod";
 import { HTTPException } from "hono/http-exception";
-import {
-    parseUsageHeaders,
-    USAGE_TYPE_HEADERS,
-} from "../../../shared/registry/usage-headers.ts";
 import { ContentfulStatusCode } from "hono/utils/http-status";
+import { createParser } from "eventsource-parser";
 
 const errorResponseDescriptions = Object.fromEntries(
     KNOWN_ERROR_STATUS_CODES.map((status) => [
@@ -127,8 +124,10 @@ export const proxyRoutes = new Hono<Env>()
         async (c) => {
             await c.var.auth.requireAuthorization({
                 allowAnonymous:
-                    c.var.track.isFreeUsage && c.env.ALLOW_ANONYMOUS_USAGE,
+                    c.var.track.freeModelRequested &&
+                    c.env.ALLOW_ANONYMOUS_USAGE,
             });
+
             const textServiceUrl =
                 c.env.TEXT_SERVICE_URL || "https://text.pollinations.ai";
             const targetUrl = proxyUrl(c, `${textServiceUrl}/openai`);
@@ -141,16 +140,23 @@ export const proxyRoutes = new Hono<Env>()
                 },
                 body: JSON.stringify(requestBody),
             });
+
             if (!response.ok || !response.body) {
                 throw new HTTPException(
                     response.status as ContentfulStatusCode,
                 );
             }
-            const responseJson = await response.clone().json();
-            const parsedResponse =
-                CreateChatCompletionResponseSchema.parse(responseJson);
-            const contentFilterHeaders =
-                contentFilterResultsToHeaders(parsedResponse);
+
+            // add content filter headers if not streaming
+            let contentFilterHeaders = {};
+            if (!c.var.track.streamRequested) {
+                const responseJson = await response.clone().json();
+                const parsedResponse =
+                    CreateChatCompletionResponseSchema.parse(responseJson);
+                contentFilterHeaders =
+                    contentFilterResultsToHeaders(parsedResponse);
+            }
+
             return new Response(response.body, {
                 headers: {
                     ...Object.fromEntries(response.headers),
@@ -177,8 +183,11 @@ export const proxyRoutes = new Hono<Env>()
         track("generate.text"),
         async (c) => {
             await c.var.auth.requireAuthorization({
-                allowAnonymous: true,
+                allowAnonymous:
+                    c.var.track.freeModelRequested &&
+                    c.env.ALLOW_ANONYMOUS_USAGE,
             });
+
             const textServiceUrl =
                 c.env.TEXT_SERVICE_URL || "https://text.pollinations.ai";
             const targetUrl = proxyUrl(c, `${textServiceUrl}/openai`);
@@ -186,6 +195,7 @@ export const proxyRoutes = new Hono<Env>()
                 model: c.req.query("model") || "openai",
                 messages: [{ role: "user", content: c.req.param("prompt") }],
             };
+
             const response = await fetch(targetUrl, {
                 method: "POST",
                 headers: {
@@ -195,17 +205,27 @@ export const proxyRoutes = new Hono<Env>()
                 },
                 body: JSON.stringify(requestBody),
             });
-            const responseJson = await response.json();
+
+            // return response as is if streaming
+            if (c.var.track.streamRequested) {
+                return response;
+            }
+
+            // extract content filter results
+            const responseJson = await response.clone().json();
             const parsedResponse =
                 CreateChatCompletionResponseSchema.parse(responseJson);
             const contentFilterHeaders =
                 contentFilterResultsToHeaders(parsedResponse);
+
+            // extract message
             const message = parsedResponse.choices[0].message.content;
             if (!message) {
                 throw new HTTPException(500, {
                     message: "Provider didn't return any messages",
                 });
             }
+
             return c.text(
                 parsedResponse.choices[0].message?.content || "",
                 200,
@@ -258,38 +278,44 @@ export const proxyRoutes = new Hono<Env>()
         }),
         validator("query", GenerateImageRequestQueryParamsSchema),
         async (c) => {
+            const log = c.get("log");
             await c.var.auth.requireAuthorization({
                 allowAnonymous:
-                    c.var.track.isFreeUsage && c.env.ALLOW_ANONYMOUS_USAGE,
+                    c.var.track.freeModelRequested &&
+                    c.env.ALLOW_ANONYMOUS_USAGE,
             });
+
             const targetUrl = proxyUrl(c, `${c.env.IMAGE_SERVICE_URL}/prompt`);
             targetUrl.pathname = joinPaths(
                 targetUrl.pathname,
                 c.req.param("prompt"),
             );
-            
-            const genHeaders = generationHeaders(c.env.ENTER_TOKEN, c.var.auth.user);
+            log.debug("[PROXY] Proxying to: {url}", {
+                url: targetUrl.toString(),
+            });
+
+            const genHeaders = generationHeaders(
+                c.env.ENTER_TOKEN,
+                c.var.auth.user,
+            );
+            log.debug("[PROXY] Image generation headers: {headers}", {
+                headers: genHeaders,
+            });
+
             const proxyRequestHeaders = {
                 ...proxyHeaders(c),
                 ...genHeaders,
             };
-            
-            c.get("log")?.debug("[PROXY] Image generation headers: {headers}", {
-                headers: genHeaders,
-            });
-            c.get("log")?.debug("[PROXY] Proxying to: {url}", {
-                url: targetUrl.toString(),
-            });
-            
+
             const response = await proxy(targetUrl.toString(), {
                 method: c.req.method,
                 headers: proxyRequestHeaders,
                 body: c.req.raw.body,
             });
-            
+
             if (!response.ok) {
                 const responseText = await response.text();
-                c.get("log")?.warn("[PROXY] Error {status}: {body}", {
+                log.warn("[PROXY] Error {status}: {body}", {
                     status: response.status,
                     body: responseText,
                 });
@@ -300,7 +326,7 @@ export const proxyRoutes = new Hono<Env>()
                     headers: response.headers,
                 });
             }
-            
+
             return response;
         },
     );

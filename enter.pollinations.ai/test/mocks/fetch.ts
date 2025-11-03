@@ -3,8 +3,9 @@ import { vi } from "vitest";
 import { getLogger } from "@logtape/logtape";
 
 const originalFetch = globalThis.fetch;
+const activeRequests = new Set<Promise<any>>();
 
-export type MockHandler = (request: Request) => Response | Promise<Response>;
+export type MockHandler = (request: Request) => Promise<Response>;
 export type MockHandlerMap = { [hostname: string]: MockHandler };
 
 export type MockAPI<TState> = {
@@ -14,7 +15,7 @@ export type MockAPI<TState> = {
 };
 
 export function createHonoMockHandler(handler: Hono): MockHandler {
-    return (request: Request) => {
+    return async (request: Request) => {
         const url = new URL(request.url);
         // trim trailing slashes
         const pathname = url.pathname.endsWith("/")
@@ -26,7 +27,7 @@ export function createHonoMockHandler(handler: Hono): MockHandler {
             headers: request.headers,
             body: request.body,
         });
-        return handler.fetch(mockRequest);
+        return await handler.fetch(mockRequest);
     };
 }
 
@@ -40,13 +41,6 @@ export function setupFetchMock(
 ) {
     const log = getLogger(["test", "mock"]);
     const opts = options ?? {};
-
-    const mockHandler = async (request: Request) => {
-        const url = new URL(request.url);
-        const handler = handlers[url.host];
-        if (!handler) return originalFetch(request);
-        return await handler(request);
-    };
 
     globalThis.fetch = vi
         .fn()
@@ -65,11 +59,26 @@ export function setupFetchMock(
                 if (opts.logRequests) {
                     log.debug(`[FETCH] ${request.method} ${request.url}`);
                 }
-                return await mockHandler(request);
+
+                const handler = handlers[url.host];
+                const responsePromise = handler
+                    ? handler(request)
+                    : originalFetch(request);
+                activeRequests.add(responsePromise);
+
+                const response = await responsePromise;
+                activeRequests.delete(responsePromise);
+
+                return response;
             },
         );
 }
 
-export function teardownFetchMock() {
-    globalThis.fetch = originalFetch; // Restore original fetch
+export async function teardownFetchMock() {
+    // Wait for active requests to complete
+    await Promise.allSettled(Array.from(activeRequests));
+    activeRequests.clear();
+
+    globalThis.fetch = originalFetch;
+    vi.restoreAllMocks();
 }

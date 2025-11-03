@@ -266,15 +266,24 @@ export async function callVertexAIGemini(
                 // Return Gemini's actual explanation to the user
                 const explanationError = new Error(`Gemini: ${geminiExplanation}`);
                 throw explanationError;
-            } else if (finishReason === 'SAFETY' && safetyRatings) {
+            } else if ((finishReason === 'SAFETY' || finishReason === 'IMAGE_SAFETY') && safetyRatings) {
                 // Extract safety violation details
                 const blockedCategories = safetyRatings
                     .filter((rating: any) => rating.blocked)
                     .map((rating: any) => rating.category)
                     .join(', ');
                 
+                // Also get high probability categories even if not explicitly blocked
+                const highProbCategories = safetyRatings
+                    .filter((rating: any) => rating.probability === 'HIGH' || rating.probability === 'MEDIUM')
+                    .map((rating: any) => `${rating.category} (${rating.probability})`)
+                    .join(', ');
+                
                 if (blockedCategories) {
                     const safetyError = new Error(`Content blocked by safety filters: ${blockedCategories}`);
+                    throw safetyError;
+                } else if (highProbCategories) {
+                    const safetyError = new Error(`Content flagged by safety filters: ${highProbCategories}`);
                     throw safetyError;
                 } else {
                     const safetyError = new Error(`Content blocked by safety filters (${finishReason})`);

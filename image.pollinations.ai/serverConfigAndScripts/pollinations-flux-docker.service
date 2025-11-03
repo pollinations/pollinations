@@ -11,6 +11,8 @@ ExecStart=/usr/bin/docker run --name flux-svdquant --gpus all -p 8765:8765 -e PO
 ExecStop=/usr/bin/docker stop flux-svdquant
 Restart=always
 RestartSec=10
+StandardOutput=journal
+StandardError=journal
 
 [Install]
 WantedBy=multi-user.target

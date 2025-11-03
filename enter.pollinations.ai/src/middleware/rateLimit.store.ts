@@ -4,28 +4,29 @@ import type { Store } from "hono-rate-limiter";
  * Token Bucket rate limiter store for Cloudflare Workers KV
  * 
  * Implements a token bucket algorithm that provides smooth, continuous rate limiting:
- * - Tokens refill continuously at a fixed rate (1 token every 15 seconds)
- * - Max capacity prevents abuse (3 tokens max)
+ * - Tokens refill continuously at a fixed rate
+ * - Max capacity prevents abuse
  * - No hard resets - users get tokens back gradually
  * - Much better UX than fixed window approach
- * 
- * Configuration:
- * - Capacity: 3 tokens (max burst)
- * - Refill rate: 1 token per 15 seconds
- * - Average rate: 4 requests per minute
  */
 export class TokenBucketKVStore implements Store {
     namespace: KVNamespace;
     prefix: string;
-    windowMs: number = 60000;
     
     // Token bucket configuration
-    private readonly CAPACITY = 3;            // Max tokens in bucket
-    private readonly REFILL_RATE_MS = 15000;  // 15 seconds per token
+    private readonly capacity: number;
+    private readonly refillRateMs: number;
 
-    constructor(options: { namespace: KVNamespace; prefix?: string }) {
+    constructor(options: { 
+        namespace: KVNamespace; 
+        prefix?: string;
+        capacity?: number;
+        refillRateMs?: number;
+    }) {
         this.namespace = options.namespace;
         this.prefix = options.prefix ?? "hrl:";
+        this.capacity = options.capacity ?? 3;
+        this.refillRateMs = options.refillRateMs ?? 15000;
     }
 
     prefixKey(key: string): string {
@@ -33,7 +34,7 @@ export class TokenBucketKVStore implements Store {
     }
 
     init(options: { windowMs: number }): void {
-        this.windowMs = options.windowMs;
+        // windowMs not used in token bucket - we use refillRateMs instead
     }
 
     async get(key: string): Promise<{ totalHits: number; resetTime: Date } | undefined> {
@@ -44,8 +45,8 @@ export class TokenBucketKVStore implements Store {
             const lastRefill = value.lastRefill as number;
             
             return {
-                totalHits: this.CAPACITY - tokens, // Convert tokens to hits
-                resetTime: new Date(lastRefill + this.REFILL_RATE_MS),
+                totalHits: this.capacity - tokens, // Convert tokens to hits
+                resetTime: new Date(lastRefill + this.refillRateMs),
             };
         }
         return undefined;
@@ -63,12 +64,12 @@ export class TokenBucketKVStore implements Store {
             const storedTokens = stored.tokens as number;
             const storedLastRefill = stored.lastRefill as number;
             const elapsedMs = now - storedLastRefill;
-            const tokensToAdd = Math.floor(elapsedMs / this.REFILL_RATE_MS);
+            const tokensToAdd = Math.floor(elapsedMs / this.refillRateMs);
             
             if (tokensToAdd > 0) {
                 // Refill tokens (up to capacity) and update lastRefill
-                tokens = Math.min(this.CAPACITY, storedTokens + tokensToAdd);
-                lastRefill = storedLastRefill + (tokensToAdd * this.REFILL_RATE_MS);
+                tokens = Math.min(this.capacity, storedTokens + tokensToAdd);
+                lastRefill = storedLastRefill + (tokensToAdd * this.refillRateMs);
             } else {
                 // No refill yet
                 tokens = storedTokens;
@@ -76,7 +77,7 @@ export class TokenBucketKVStore implements Store {
             }
         } else {
             // New bucket - start with full capacity
-            tokens = this.CAPACITY;
+            tokens = this.capacity;
             lastRefill = now;
         }
         
@@ -89,7 +90,7 @@ export class TokenBucketKVStore implements Store {
             tokens -= 1;
             
             // Store updated bucket state
-            const ttlSeconds = Math.max(Math.ceil((this.CAPACITY * this.REFILL_RATE_MS) / 1000) + 10, 60);
+            const ttlSeconds = Math.max(Math.ceil((this.capacity * this.refillRateMs) / 1000) + 10, 60);
             await this.namespace.put(
                 this.prefixKey(key),
                 JSON.stringify({
@@ -100,18 +101,18 @@ export class TokenBucketKVStore implements Store {
             );
         }
         
-        const resetTime = new Date(lastRefill + this.REFILL_RATE_MS);
-        return { totalHits, resetTime };
+        const resetTime = new Date(lastRefill + this.refillRateMs);
+        return { totalHits: this.capacity - tokens, resetTime };
     }
 
     async decrement(key: string): Promise<void> {
         // Add a token back to the bucket
         const stored = await this.namespace.get(this.prefixKey(key), "json");
         if (stored && typeof stored === "object" && "tokens" in stored && "lastRefill" in stored) {
-            const tokens = Math.min(this.CAPACITY, (stored.tokens as number) + 1);
+            const tokens = Math.min(this.capacity, (stored.tokens as number) + 1);
             const lastRefill = stored.lastRefill as number;
             
-            const ttlSeconds = Math.max(Math.ceil((this.CAPACITY * this.REFILL_RATE_MS) / 1000) + 10, 60);
+            const ttlSeconds = Math.max(Math.ceil((this.capacity * this.refillRateMs) / 1000) + 10, 60);
             await this.namespace.put(
                 this.prefixKey(key),
                 JSON.stringify({

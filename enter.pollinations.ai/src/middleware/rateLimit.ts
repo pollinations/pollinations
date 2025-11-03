@@ -30,7 +30,9 @@ export const frontendKeyRateLimit = createMiddleware<AuthEnv>(async (c, next) =>
         },
         store: new TokenBucketKVStore({ 
             namespace: c.env.KV,
-            prefix: "ratelimit:"
+            prefix: "ratelimit:",
+            capacity: 3,
+            refillRateMs: 15000, // 15 seconds per token (4 req/min average)
         }),
         message: () => {
             return "Rate limit exceeded for publishable key. Client-side keys (pk_*) are limited to 3 requests with 1 token refilling every 15 seconds. Use a secret key (sk_*) for server-side applications to bypass rate limits.";

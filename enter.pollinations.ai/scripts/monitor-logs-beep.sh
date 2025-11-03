@@ -1,3 +1,4 @@
+@ -0,0 +1,23 @@
 #!/bin/bash
 # Monitor wrangler logs and play sounds for different events
 # Usage: ./scripts/monitor-logs-beep.sh [env] [--midi]
@@ -15,7 +16,7 @@ fi
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-echo "Monitoring logs for environment: $ENV"
+echo "Monitoring logs for environment: $ENV"  
 if [ "$USE_MIDI" = true ]; then
     echo "Mode: MIDI notes (use without --midi for system sounds)"
     echo "  ✅ Success (200) - C3 (MIDI 60)"

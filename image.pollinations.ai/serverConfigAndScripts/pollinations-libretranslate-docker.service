@@ -11,6 +11,8 @@ ExecStart=/home/ubuntu/pollinations/image.pollinations.ai/serverConfigAndScripts
 ExecStop=/usr/bin/docker stop libretranslate
 Restart=always
 RestartSec=10
+StandardOutput=journal
+StandardError=journal
 
 [Install]
 WantedBy=multi-user.target

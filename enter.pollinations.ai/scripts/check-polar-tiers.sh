@@ -2,10 +2,19 @@
 # Check Polar subscriptions for all Enter users and compare with DB tiers
 #
 # Usage: 
-# 1. Enter the nix develop shell (from pollinations root): nix develop
-# 2. Then run: bash enter.pollinations.ai/scripts/check-polar-tiers.sh
+# 1. From enter.pollinations.ai directory: bash scripts/check-polar-tiers.sh
+# 2. Or from nix develop shell: nix develop && bash enter.pollinations.ai/scripts/check-polar-tiers.sh
 
 set -e
+
+# Try to load .env file if it exists
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+ENV_FILE="$SCRIPT_DIR/../.env"
+if [ -f "$ENV_FILE" ]; then
+    set -a
+    source "$ENV_FILE"
+    set +a
+fi
 
 POLAR_SERVER="sandbox"  # or "production"
 POLAR_API="https://sandbox-api.polar.sh"  # sandbox API
@@ -15,19 +24,23 @@ PRODUCT_ID_SEED="82ee54e1-5b69-447b-82aa-3c76bccae193"
 PRODUCT_ID_FLOWER="2bfbe9e0-8395-489f-a7a1-6821d835cc08"
 PRODUCT_ID_NECTAR="d67b2a25-c4d7-47fa-9d64-4b2a27f0908f"
 
-# Check if POLAR_ACCESS_TOKEN is available (from nix develop)
-if [ -z "$POLAR_ACCESS_TOKEN" ]; then
-    echo "❌ POLAR_ACCESS_TOKEN environment variable is required"
+# Check if POLAR_ACCESS_TOKEN is available (from .env or nix develop)
+# Accept either ENTER_TOKEN or POLAR_ACCESS_TOKEN
+POLAR_TOKEN="${ENTER_TOKEN:-$POLAR_ACCESS_TOKEN}"
+
+if [ -z "$POLAR_TOKEN" ]; then
+    echo "❌ POLAR_ACCESS_TOKEN or ENTER_TOKEN environment variable is required"
     echo ""
-    echo "Please run from within 'nix develop' shell:"
-    echo "  cd /Users/comsom/Github/pollinations"
-    echo "  nix develop"
+    echo "Option 1: Run from enter.pollinations.ai directory (uses .env file)"
     echo "  cd enter.pollinations.ai"
     echo "  bash scripts/check-polar-tiers.sh"
+    echo ""
+    echo "Option 2: Run from nix develop shell:"
+    echo "  cd /Users/comsom/Github/pollinations"
+    echo "  nix develop"
+    echo "  bash enter.pollinations.ai/scripts/check-polar-tiers.sh"
     exit 1
 fi
-
-POLAR_TOKEN="$POLAR_ACCESS_TOKEN"
 
 echo "🔍 Checking Polar subscriptions for Enter users"
 echo "Server: $POLAR_SERVER"

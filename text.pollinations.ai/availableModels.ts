@@ -22,7 +22,7 @@ import { BASE_PROMPTS } from "./prompts/systemPrompts.js";
 import { portkeyConfig, type ValidModelId } from "./configs/modelConfigs.js";
 
 // Import registry for validation and aliases
-import type { TEXT_SERVICES } from "../shared/registry/text.js";
+import { TEXT_SERVICES } from "../shared/registry/text.js";
 import {
     resolveServiceId,
     getServiceAliases,
@@ -31,7 +31,31 @@ import {
 // Type constraint: model names must exist in registry
 type ValidServiceName = keyof typeof TEXT_SERVICES;
 
-interface ModelDefinition {
+// Helper to extract business logic properties from TEXT_SERVICES
+function getServiceProps(name: ValidServiceName) {
+    const service = TEXT_SERVICES[name] as any;
+    return {
+        tier: service.tier as "anonymous" | "seed" | "flower" | "nectar",
+        ...(service.persona && { community: true }),
+        ...(service.reasoning && { reasoning: true }),
+        ...(service.uncensored && { uncensored: true }),
+    };
+}
+
+// Helper to get display properties for /models endpoint
+export function getDisplayProps(name: ValidServiceName) {
+    const service = TEXT_SERVICES[name] as any;
+    return {
+        description: service.description!,
+        input_modalities: service.input_modalities!,
+        output_modalities: service.output_modalities!,
+        tools: true, // Default for all models
+        ...(service.voices && { voices: service.voices }),
+    };
+}
+
+interface ModelDefinition extends ReturnType<typeof getServiceProps> {
+    // Required properties
     name: ValidServiceName;
     description: string;
     config: (typeof portkeyConfig)[ValidModelId]; // ✅ Type-safe: must be a valid model ID from TEXT_COSTS
@@ -51,7 +75,7 @@ interface ModelDefinition {
 const models: ModelDefinition[] = [
     {
         name: "openai",
-        description: "OpenAI GPT-5 Nano",
+        ...getServiceProps("openai"),
         config: portkeyConfig["gpt-5-nano-2025-08-07"],
         transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
         community: false,
@@ -61,7 +85,7 @@ const models: ModelDefinition[] = [
     },
     {
         name: "openai-fast",
-        description: "OpenAI GPT-4.1 Nano",
+        ...getServiceProps("openai-fast"),
         config: portkeyConfig["gpt-4.1-nano-2025-04-14"],
         transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
         community: false,
@@ -71,7 +95,7 @@ const models: ModelDefinition[] = [
     },
     {
         name: "openai-large",
-        description: "OpenAI GPT-4.1",
+        ...getServiceProps("openai-large"),
         config: portkeyConfig["gpt-4.1-2025-04-14"],
         transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
         community: false,
@@ -81,7 +105,7 @@ const models: ModelDefinition[] = [
     },
     {
         name: "qwen-coder",
-        description: "Qwen 2.5 Coder 32B",
+        ...getServiceProps("qwen-coder"),
         config: portkeyConfig["qwen2.5-coder-32b-instruct"],
         transform: createSystemPromptTransform(BASE_PROMPTS.coding),
         community: false,
@@ -91,7 +115,7 @@ const models: ModelDefinition[] = [
     },
     {
         name: "mistral",
-        description: "Mistral Small 3.2 24B",
+        ...getServiceProps("mistral"),
         config: portkeyConfig["mistral-small-3.2-24b-instruct-2506"],
         transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
         community: false,
@@ -156,7 +180,7 @@ const models: ModelDefinition[] = [
     // },
     {
         name: "roblox-rp",
-        description: "Llama 3.1 8B Instruct",
+        ...getServiceProps("roblox-rp"),
         config: portkeyConfig["us.meta.llama3-1-8b-instruct-v1:0"],
         transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
         community: false,
@@ -166,7 +190,7 @@ const models: ModelDefinition[] = [
     },
     {
         name: "claudyclaude",
-        description: "Claude Haiku 4.5",
+        ...getServiceProps("claudyclaude"),
         config: portkeyConfig["us.anthropic.claude-haiku-4-5-20251001-v1:0"],
         transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
         input_modalities: ["text", "image"],
@@ -175,7 +199,7 @@ const models: ModelDefinition[] = [
     },
     {
         name: "openai-reasoning",
-        description: "OpenAI o4 Mini",
+        ...getServiceProps("openai-reasoning"),
         config: portkeyConfig["openai/o4-mini"],
         transform: pipe(
             createSystemPromptTransform(BASE_PROMPTS.conversational),
@@ -184,13 +208,16 @@ const models: ModelDefinition[] = [
         community: false,
         reasoning: true,
         supportsSystemMessages: false,
-        input_modalities: ["text", "image"],
-        output_modalities: ["text"],
-        tools: true,
+    },
+    {
+        name: "o4-mini",
+        ...getServiceProps("o4-mini"),
+        config: portkeyConfig["o4-mini"],
+        supportsSystemMessages: false,
     },
     {
         name: "gemini",
-        description: "Gemini 2.5 Flash Lite",
+        ...getServiceProps("gemini"),
         config: portkeyConfig["gemini-2.5-flash-lite"],
         transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
         community: false,
@@ -200,7 +227,7 @@ const models: ModelDefinition[] = [
     },
     {
         name: "gemini-search",
-        description: "Gemini 2.5 Flash Lite with Google Search",
+        ...getServiceProps("gemini-search"),
         config: portkeyConfig["gemini-2.5-flash-lite"],
         transform: pipe(createGoogleSearchTransform()),
         community: false,
@@ -215,7 +242,7 @@ const models: ModelDefinition[] = [
 
     {
         name: "unity",
-        description: "Unity Unrestricted Agent",
+        ...getServiceProps("unity"),
         config: portkeyConfig["mistral-small-3.1-24b-instruct-2503"],
         transform: createMessageTransform(unityPrompt),
         uncensored: true,
@@ -226,8 +253,8 @@ const models: ModelDefinition[] = [
     },
     {
         name: "midijourney",
-        description: "MIDIjourney",
-        config: portkeyConfig["gpt-4.1-2025-04-14"],
+        ...getServiceProps("midijourney"),
+        config: portkeyConfig["gpt-4.1-nano-2025-04-14"],
         transform: createMessageTransform(midijourneyPrompt),
         community: true,
         input_modalities: ["text"],
@@ -236,8 +263,8 @@ const models: ModelDefinition[] = [
     },
     {
         name: "rtist",
-        description: "Rtist",
-        config: portkeyConfig["gpt-4.1-2025-04-14"],
+        ...getServiceProps("rtist"),
+        config: portkeyConfig["gpt-4.1-nano-2025-04-14"],
         transform: createMessageTransform(rtistPrompt),
         community: true,
         input_modalities: ["text"],
@@ -246,7 +273,7 @@ const models: ModelDefinition[] = [
     },
     {
         name: "evil",
-        description: "Evil",
+        ...getServiceProps("evil"),
         config: portkeyConfig["mistral-small-3.1-24b-instruct-2503"],
         transform: createMessageTransform(evilPrompt),
         uncensored: true,
@@ -257,8 +284,7 @@ const models: ModelDefinition[] = [
     },
     {
         name: "bidara",
-        description:
-            "BIDARA (Biomimetic Designer and Research Assistant by NASA)",
+        ...getServiceProps("bidara"),
         config: portkeyConfig["gpt-4.1-nano-2025-04-14"],
         transform: createMessageTransform(bidaraSystemPrompt),
         community: true,
@@ -268,8 +294,8 @@ const models: ModelDefinition[] = [
     },
     {
         name: "chickytutor",
-        description: "ChickyTutor AI Language Tutor - (chickytutor.com)",
-        config: portkeyConfig["us.anthropic.claude-3-5-haiku-20241022-v1:0"],
+        ...getServiceProps("chickytutor"),
+        config: portkeyConfig["gpt-4.1-nano-2025-04-14"],
         transform: createMessageTransform(chickyTutorPrompt),
         community: true,
         input_modalities: ["text"],
@@ -278,16 +304,19 @@ const models: ModelDefinition[] = [
     },
 ];
 
-// Export models with aliases from registry and computed properties
+// Export models with display properties, aliases, and computed properties
 export const availableModels = models.map((model) => {
-    const inputs = model.input_modalities || [];
-    const outputs = model.output_modalities || [];
+    // Get display properties from registry
+    const displayProps = getDisplayProps(model.name);
+    const inputs = displayProps.input_modalities || [];
+    const outputs = displayProps.output_modalities || [];
 
     // Get aliases from registry (single source of truth)
     const aliases = getServiceAliases(model.name);
 
     return {
         ...model,
+        ...displayProps, // Add description, input/output modalities, tools, voices
         aliases, // ✅ Sourced from registry
         vision: inputs.includes("image"),
         audio: inputs.includes("audio") || outputs.includes("audio"),

@@ -48,6 +48,13 @@ export type ServiceDefinition<T extends ModelRegistry> = {
     free?: boolean; // Optional flag for free models (defaults to false)
     provider?: string; // Optional provider identifier (e.g., "azure-openai", "aws-bedrock")
     tier?: UserTier; // Optional tier level (defaults to "anonymous")
+    description?: string; // Human-readable description of the model
+    input_modalities?: string[]; // Supported input modalities (e.g., ["text", "image", "audio"])
+    output_modalities?: string[]; // Supported output modalities (e.g., ["text", "audio"])
+    voices?: string[]; // Available voices for audio models (e.g., ["alloy", "echo", "fable"])
+    persona?: boolean; // Whether this is a persona/character model (maps to "community" in availableModels)
+    reasoning?: boolean; // Whether the model has reasoning capabilities (e.g., o4-mini, deepseek-r1)
+    uncensored?: boolean; // Whether the model has uncensored content policy (for specific models like unity, evil)
 };
 
 export type ServiceRegistry<T extends ModelRegistry> = Record<

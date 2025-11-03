@@ -15,6 +15,7 @@ import { PollenBalance } from "../components/pollen-balance.tsx";
 import { TierPanel } from "../components/tier-panel.tsx";
 import { FAQ } from "../components/faq.tsx";
 import { Header } from "../components/header.tsx";
+import { Pricing } from "../components/pricing/index.ts";
 
 export const Route = createFileRoute("/")({
     component: RouteComponent,
@@ -191,6 +192,7 @@ function RouteComponent() {
                 onCreate={handleCreateApiKey}
                 onDelete={handleDeleteApiKey}
             />
+            <Pricing />
             <FAQ />
             <div className="text-center py-8">
                 <Link 

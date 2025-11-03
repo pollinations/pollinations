@@ -12,10 +12,6 @@ on:
         required: false
         type: boolean
         default: false
-      issue_number:
-        description: 'Issue number to test with (optional, for manual testing)'
-        required: false
-        type: string
 
 jobs:
   deploy:
@@ -25,7 +21,6 @@ jobs:
         run: |
           echo "🔧 Workflow triggered with:"
           echo "  Test Mode: ${{ github.event.inputs.test_mode || 'false' }}"
-          echo "  Issue Number: ${{ github.event.inputs.issue_number || 'none' }}"
           echo "  Branch: ${{ github.ref_name }}"
           
       - name: Checkout code
@@ -171,6 +166,3 @@ jobs:
         run: |
           echo "🧪 Test mode enabled - deployment steps were skipped"
           echo "✅ Workflow validation successful!"
-          if [ -n "${{ github.event.inputs.issue_number }}" ]; then
-            echo "📋 Testing with issue #${{ github.event.inputs.issue_number }}"
-          fi

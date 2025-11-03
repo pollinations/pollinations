@@ -129,6 +129,15 @@ export const proxyRoutes = new Hono<Env>()
                 allowAnonymous:
                     c.var.track.isFreeUsage && c.env.ALLOW_ANONYMOUS_USAGE,
             });
+            
+            // Check balance for paid models
+            if (!c.var.track.isFreeUsage && c.var.auth.user?.id) {
+                await c.var.polar.requirePositiveBalance(
+                    c.var.auth.user.id,
+                    "Insufficient pollen balance to use this model"
+                );
+            }
+            
             const textServiceUrl =
                 c.env.TEXT_SERVICE_URL || "https://text.pollinations.ai";
             const targetUrl = proxyUrl(c, `${textServiceUrl}/openai`);
@@ -262,6 +271,15 @@ export const proxyRoutes = new Hono<Env>()
                 allowAnonymous:
                     c.var.track.isFreeUsage && c.env.ALLOW_ANONYMOUS_USAGE,
             });
+            
+            // Check balance for paid models
+            if (!c.var.track.isFreeUsage && c.var.auth.user?.id) {
+                await c.var.polar.requirePositiveBalance(
+                    c.var.auth.user.id,
+                    "Insufficient pollen balance to use this model"
+                );
+            }
+            
             const targetUrl = proxyUrl(c, `${c.env.IMAGE_SERVICE_URL}/prompt`);
             targetUrl.pathname = joinPaths(
                 targetUrl.pathname,

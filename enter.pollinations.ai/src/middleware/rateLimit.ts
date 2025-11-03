@@ -8,7 +8,7 @@ import { TokenBucketKVStore } from "./rateLimit.store.ts";
  * 
  * Uses token bucket algorithm for smooth, continuous rate limiting:
  * - Secret API keys (sk_): Skip rate limiting entirely
- * - Publishable keys (pk_) / anonymous: 3 token capacity, 1 token per 30 seconds
+ * - Publishable keys (pk_) / anonymous: 3 token capacity, 1 token per 15 seconds
  * 
  * Token bucket benefits:
  * - Allows bursts up to 3 requests
@@ -33,7 +33,7 @@ export const frontendKeyRateLimit = createMiddleware<AuthEnv>(async (c, next) =>
             prefix: "ratelimit:"
         }),
         message: () => {
-            return "Rate limit exceeded for publishable key. Client-side keys (pk_*) are limited to 3 requests with 1 token refilling every 30 seconds. Use a secret key (sk_*) for server-side applications to bypass rate limits.";
+            return "Rate limit exceeded for publishable key. Client-side keys (pk_*) are limited to 3 requests with 1 token refilling every 15 seconds. Use a secret key (sk_*) for server-side applications to bypass rate limits.";
         },
     });
     

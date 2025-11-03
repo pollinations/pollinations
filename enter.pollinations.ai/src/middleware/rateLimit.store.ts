@@ -4,15 +4,15 @@ import type { Store } from "hono-rate-limiter";
  * Token Bucket rate limiter store for Cloudflare Workers KV
  * 
  * Implements a token bucket algorithm that provides smooth, continuous rate limiting:
- * - Tokens refill continuously at a fixed rate (1 token every 30 seconds)
+ * - Tokens refill continuously at a fixed rate (1 token every 15 seconds)
  * - Max capacity prevents abuse (3 tokens max)
  * - No hard resets - users get tokens back gradually
  * - Much better UX than fixed window approach
  * 
  * Configuration:
  * - Capacity: 3 tokens (max burst)
- * - Refill rate: 1 token per 30 seconds
- * - Average rate: 2 requests per minute
+ * - Refill rate: 1 token per 15 seconds
+ * - Average rate: 4 requests per minute
  */
 export class TokenBucketKVStore implements Store {
     namespace: KVNamespace;
@@ -21,7 +21,7 @@ export class TokenBucketKVStore implements Store {
     
     // Token bucket configuration
     private readonly CAPACITY = 3;            // Max tokens in bucket
-    private readonly REFILL_RATE_MS = 30000;  // 30 seconds per token
+    private readonly REFILL_RATE_MS = 15000;  // 15 seconds per token
 
     constructor(options: { namespace: KVNamespace; prefix?: string }) {
         this.namespace = options.namespace;

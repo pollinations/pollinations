@@ -89,8 +89,6 @@
             age
             uv
             nodejs_24
-            go-task
-            process-compose
 
             # Image processing dependencies for image.pollinations.ai
             vips
@@ -117,9 +115,6 @@
           shellHook = ''
             # runs each time the shell is entered
 
-            # disable deterministic time
-            unset SOURCE_DATE_EPOCH
-
             # enable recursive globbing
             shopt -s globstar
 
@@ -132,7 +127,7 @@
             fi
 
             # decrypt and load environment variables
-            for file in $FLAKE_PATH/**/.encrypted.env; do
+            for file in **/.encrypted.env; do
               echo "Decrypting: $file"
               eval "$(sops decrypt $file \
                 | grep -v '^#' \

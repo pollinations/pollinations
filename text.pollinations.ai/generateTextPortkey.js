@@ -4,7 +4,6 @@ import debug from "debug";
 import { resolveModelConfig } from "./utils/modelResolver.js";
 import { generateHeaders } from "./transforms/headerGenerator.js";
 import { sanitizeMessages } from "./transforms/messageSanitizer.js";
-import { checkLimits } from "./transforms/limitChecker.js";
 import { processParameters } from "./transforms/parameterProcessor.js";
 import { findModelByName } from "./availableModels.js";
 
@@ -122,12 +121,7 @@ export async function generateTextPortkey(messages, options = {}) {
                 !!processedOptions.modelConfig,
             );
 
-            // 4. Check limits
-            result = checkLimits(processedMessages, processedOptions);
-            processedMessages = result.messages;
-            processedOptions = result.options;
-
-            // 5. Process parameters
+            // 4. Process parameters (limit checking removed - handled by enter.pollinations.ai)
             result = processParameters(processedMessages, processedOptions);
             processedMessages = result.messages;
             processedOptions = result.options;

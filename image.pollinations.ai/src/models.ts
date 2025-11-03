@@ -7,18 +7,13 @@ type ImageServiceName = keyof typeof IMAGE_SERVICES;
 /**
  * Image-specific configuration for each model
  * Model names are enforced to match IMAGE_SERVICES from the registry
- * Tier information comes from the registry - this only contains implementation details
+ * Tier gating is handled by enter.pollinations.ai - this only contains implementation details
  */
 interface ImageModelConfig {
     type: string;
     enhance: boolean;
     maxSideLength: number;
     defaultSideLength?: number; // Optional - defaults to maxSideLength if not specified
-    tierCaps?: {
-        seed?: number;
-        flower?: number;
-        nectar?: number;
-    };
 }
 
 type ImageModelsConfig = {
@@ -37,11 +32,6 @@ export const IMAGE_CONFIG: ImageModelsConfig = {
         type: "kontext",
         enhance: true,
         maxSideLength: 1024, // Azure Flux Kontext standard resolution
-        tierCaps: {
-            seed: 1,      // Base limit (minimum tier required)
-            flower: 2,    // Double the seed tier
-            nectar: 2,    // Same as flower tier
-        },
     },
 
     // Assuming 'turbo' is of type 'sd'
@@ -76,16 +66,15 @@ export const IMAGE_CONFIG: ImageModelsConfig = {
 };
 
 /**
- * Legacy export for backward compatibility
- * Combines registry data (tier, pricing) with local config (enhance, maxSideLength)
- * @deprecated Use IMAGE_SERVICES from registry for tier info, IMAGE_CONFIG for implementation details
+ * Legacy MODELS export for backward compatibility
+ * Combines registry data with local config (enhance, maxSideLength)
+ * @deprecated Use IMAGE_SERVICES from registry, IMAGE_CONFIG for implementation details
  */
 export const MODELS = Object.fromEntries(
     Object.entries(IMAGE_CONFIG).map(([name, config]) => [
         name,
         {
             ...config,
-            tier: IMAGE_SERVICES[name as ImageServiceName].tier,
         },
     ])
-) as Record<ImageServiceName, ImageModelConfig & { tier: typeof IMAGE_SERVICES[ImageServiceName]["tier"] }>;
+) as Record<ImageServiceName, ImageModelConfig>;

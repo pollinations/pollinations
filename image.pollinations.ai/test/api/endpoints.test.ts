@@ -239,27 +239,7 @@ describe("Tracking headers (PR #4183)", () => {
         expect(tokenCount).toBe(1);
     }, 30000);
 
-    it("should include x-user-tier header when authenticated", async () => {
-        const testReferrer = process.env.VITE_TEST_REFERRER;
-        expect(testReferrer).toBeDefined();
-        
-        const response = await fetch(
-            `${BASE_URL}/prompt/test?model=flux`,
-            {
-                headers: {
-                    Referer: testReferrer || "",
-                },
-            },
-        );
-
-        expect(response.status).toBe(200);
-        
-        const userTier = response.headers.get("x-user-tier");
-        // May be present or not depending on auth
-        if (userTier) {
-            expect(["seed", "flower", "nectar"]).toContain(userTier);
-        }
-    }, 30000);
+    // x-user-tier header test removed - tier handling moved to enter.pollinations.ai
 });
 
 describe("Error handling", () => {

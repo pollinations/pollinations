@@ -8,7 +8,7 @@ import { TokenBucketKVStore } from "./rateLimit.store.ts";
  * 
  * Uses token bucket algorithm for smooth, continuous rate limiting:
  * - Secret API keys (sk_): Skip rate limiting entirely
- * - Publishable keys (pk_) / anonymous: 3 token capacity, 1 token per 15 seconds
+ * - Publishable keys (pk_): 3 token capacity, 1 token per 15 seconds
  * 
  * Token bucket benefits:
  * - Allows bursts up to 3 requests
@@ -24,7 +24,7 @@ export const frontendKeyRateLimit = createMiddleware<AuthEnv>(async (c, next) =>
         keyGenerator: (c) => c.req.header("cf-connecting-ip") || "unknown",
         skip: (c) => {
             // Skip rate limiting for secret API keys only (keyType: "secret")
-            // Publishable keys (keyType: "publishable") and anonymous users are rate limited
+            // Publishable keys (keyType: "publishable") are rate limited
             const apiKey = c.var?.auth?.apiKey;
             return apiKey?.metadata?.keyType === "secret";
         },

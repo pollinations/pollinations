@@ -197,7 +197,6 @@ export async function generateImageWithVertexAI(
 
         if (data.candidates && data.candidates.length > 0) {
             const candidate = data.candidates[0];
-            log("First candidate:", JSON.stringify(candidate, null, 2));
             
             // Extract finish reason and safety ratings for error reporting
             finishReason = candidate.finishReason;
@@ -206,9 +205,9 @@ export async function generateImageWithVertexAI(
             log("- candidate.content exists:", !!candidate.content);
             log("- candidate.content.parts exists:", !!candidate.content?.parts);
             log("- parts length:", candidate.content?.parts?.length || 0);
+            log("- finishReason:", finishReason);
             
             for (const part of candidate.content.parts) {
-                log("Processing part:", JSON.stringify(part, null, 2));
                 if (part.inlineData) {
                     imageData = part.inlineData.data;
                     mimeType = part.inlineData.mimeType;

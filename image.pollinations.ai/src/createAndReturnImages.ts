@@ -554,7 +554,7 @@ const callAzureGPTImageWithEndpoint = async (
     // Build request body
     const requestBody = {
         prompt: sanitizeString(prompt),
-        size: "auto",
+        size: size, // Use calculated size from width x height
         quality,
         output_format: outputFormat,
         // output_compression: outputCompression,

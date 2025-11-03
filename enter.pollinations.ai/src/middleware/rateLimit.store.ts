@@ -83,7 +83,7 @@ export class TokenBucketKVStore implements Store {
         
         // Check if we have tokens available BEFORE consuming
         // hono-rate-limiter will reject if totalHits >= limit
-        const totalHits = this.CAPACITY - tokens + 1; // +1 because this request will consume a token
+        const totalHits = this.capacity - tokens + 1; // +1 because this request will consume a token
         
         // Only consume token if we have one
         if (tokens > 0) {

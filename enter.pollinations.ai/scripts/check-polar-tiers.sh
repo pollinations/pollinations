@@ -14,6 +14,7 @@ POLAR_API="https://sandbox-api.polar.sh"  # sandbox API
 PRODUCT_ID_SEED="82ee54e1-5b69-447b-82aa-3c76bccae193"
 PRODUCT_ID_FLOWER="2bfbe9e0-8395-489f-a7a1-6821d835cc08"
 PRODUCT_ID_NECTAR="d67b2a25-c4d7-47fa-9d64-4b2a27f0908f"
+PRODUCT_ID_FLOWER_v2="a408139b-c62d-41ec-b7aa-226b91639ac9"
 
 # Check if POLAR_ACCESS_TOKEN is available (from nix develop)
 if [ -z "$POLAR_ACCESS_TOKEN" ]; then
@@ -40,6 +41,7 @@ get_tier_name() {
     case "$product_id" in
         "$PRODUCT_ID_SEED") echo "seed" ;;
         "$PRODUCT_ID_FLOWER") echo "flower" ;;
+        "$PRODUCT_ID_FLOWER_v2") echo "flower" ;;
         "$PRODUCT_ID_NECTAR") echo "nectar" ;;
         *) echo "unknown" ;;
     esac

@@ -272,12 +272,27 @@ export const proxyRoutes = new Hono<Env>()
                     c.var.track.isFreeUsage && c.env.ALLOW_ANONYMOUS_USAGE,
             });
             
+            // Debug logging
+            c.get("log")?.debug("[BALANCE CHECK] isFreeUsage={isFree} hasUser={hasUser} model={model}", {
+                isFree: c.var.track.isFreeUsage,
+                hasUser: !!c.var.auth.user?.id,
+                model: c.var.track.modelRequested,
+            });
+            
             // Check balance for paid models
             if (!c.var.track.isFreeUsage && c.var.auth.user?.id) {
+                c.get("log")?.debug("[BALANCE CHECK] Calling requirePositiveBalance for user={userId}", {
+                    userId: c.var.auth.user.id,
+                });
                 await c.var.polar.requirePositiveBalance(
                     c.var.auth.user.id,
                     "Insufficient pollen balance to use this model"
                 );
+            } else {
+                c.get("log")?.warn("[BALANCE CHECK] SKIPPED - isFree={isFree} hasUser={hasUser}", {
+                    isFree: c.var.track.isFreeUsage,
+                    hasUser: !!c.var.auth.user?.id,
+                });
             }
             
             const targetUrl = proxyUrl(c, `${c.env.IMAGE_SERVICE_URL}/prompt`);

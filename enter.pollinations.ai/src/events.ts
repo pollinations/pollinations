@@ -10,6 +10,7 @@ import {
 import { omit } from "./util.ts";
 import { z } from "zod";
 import { Logger } from "@logtape/logtape";
+import { TIER_POLLEN_METER_ID } from "./client/config.ts";
 
 const BUFFER_BATCH_SIZE = 1;
 const INGEST_BATCH_SIZE = 1000;
@@ -175,26 +176,49 @@ async function sendPolarEvents(
         let packBalance = 0;
         
         try {
-            const customerState = await polar.customers.getExternal({
+            const customerState = await polar.customers.getStateExternal({
                 externalId: event.userId,
             });
             
-            // Find TierPollen and PackPollen meters
-            // Type assertion for activeMeters which may not be in SDK types
+            // Log FULL RAW customer state for debugging
+            log.debug("RAW Polar API response: {raw}", {
+                raw: JSON.stringify(customerState, null, 2)
+            });
+            
+            // Log full customer state for debugging with meter details
             const meters = (customerState as any).activeMeters || [];
-            for (const meter of meters) {
-                // Identify meters by checking if they match our meter patterns
-                // TierPollen has daily grants, PackPollen doesn't
-                if (meter.balance > 0) {
-                    // Simple heuristic: assume first meter is tier, second is pack
-                    // Or we could check meter names if accessible
-                    if (tierBalance === 0) {
-                        tierBalance = meter.balance;
-                    } else {
-                        packBalance = meter.balance;
-                    }
-                }
-            }
+            log.debug("All meters: {meters}", {
+                meters: meters.map((m: any) => ({
+                    meterId: m.meterId,
+                    balance: m.balance,
+                    credited: m.creditedUnits,
+                    consumed: m.consumedUnits
+                }))
+            });
+            
+            // Find TierPollen and PackPollen meters by ID
+            // TierPollen is the subscription meter, PackPollen is from pack purchases
+            const tierMeter = meters.find((m: any) => 
+                m.meterId === TIER_POLLEN_METER_ID
+            );
+            const packMeters = meters.filter((m: any) => 
+                m.meterId !== TIER_POLLEN_METER_ID && m.balance > 0
+            );
+            
+            tierBalance = tierMeter?.balance || 0;
+            packBalance = packMeters.reduce((sum: number, m: any) => sum + (m.balance || 0), 0);
+            
+            log.debug("Meter identification: tierMeter={tierId} packMeters={packIds}", {
+                tierId: TIER_POLLEN_METER_ID,
+                packIds: packMeters.map((m: any) => m.meterId)
+            });
+            
+            log.info("Spending router balances fetched: userId={userId} cost={cost} tier={tier} pack={pack}", {
+                userId: event.userId,
+                cost,
+                tier: tierBalance,
+                pack: packBalance,
+            });
         } catch (error) {
             log.warn("Failed to get customer state for spending router: {error}, defaulting to tier", {
                 error,
@@ -223,6 +247,15 @@ async function sendPolarEvents(
             tokenPriceCompletionImage: event.tokenPriceCompletionImage,
         });
         
+        // CRITICAL: Guard against zero balance - don't send events if both meters are empty
+        if (tierBalance <= 0 && packBalance <= 0) {
+            log.warn("Skipping Polar event - zero balance: userId={userId} cost={cost}", {
+                userId: event.userId,
+                cost,
+            });
+            continue; // Skip this event
+        }
+        
         // Spending Router Logic
         if (cost <= tierBalance) {
             // Spend from tier only
@@ -235,7 +268,7 @@ async function sendPolarEvents(
                     totalPrice: cost,
                 },
             });
-            log.debug("Routing to tier: {cost} (tier: {tier}, pack: {pack})", {
+            log.info("Router decision: TIER ONLY - cost={cost} tier={tier} pack={pack}", {
                 cost,
                 tier: tierBalance,
                 pack: packBalance,
@@ -263,25 +296,29 @@ async function sendPolarEvents(
                     totalPrice: fromPack,
                 },
             });
-            log.debug("Splitting cost: {fromTier} tier + {fromPack} pack", {
+            log.info("Router decision: SPLIT - fromTier={fromTier} fromPack={fromPack} total={cost}", {
                 fromTier,
                 fromPack,
+                cost,
             });
         } else {
-            // Use pack only (or default to tier if no meters found)
+            // Use pack only (or default to tier if no pack meters found)
+            const pollenType = packBalance > 0 ? "pack" : "tier";
+            
             polarEvents.push({
                 name: event.eventType,
                 externalCustomerId: event.userId,
                 metadata: {
                     ...baseMetadata,
-                    pollenType: packBalance > 0 ? "pack" : "tier",
+                    pollenType,
                     totalPrice: cost,
                 },
             });
-            log.debug("Routing to pack: {cost} (tier: {tier}, pack: {pack})", {
+            log.info("Router decision: PACK ONLY - cost={cost} tier={tier} pack={pack} pollenType={pollenType}", {
                 cost,
                 tier: tierBalance,
                 pack: packBalance,
+                pollenType,
             });
         }
     }

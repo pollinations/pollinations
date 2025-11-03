@@ -37,7 +37,12 @@ export const Route = createFileRoute("/")({
 function RouteComponent() {
     const router = useRouter();
     const { auth, user, customer, apiKeys, tierData } = Route.useLoaderData();
-    const balance = customer?.activeMeters.find(m => m.meterId === config.pollenMeterId)?.balance || 0;
+    
+    // Extract both tier and pack balances by meter ID
+    const meters = customer?.activeMeters || [];
+    const tierBalance = meters.find(m => m.meterId === config.pollenMeterId)?.balance || 0;
+    const packBalance = meters.filter(m => m.meterId !== config.pollenMeterId)
+        .reduce((sum, m) => sum + (m.balance || 0), 0); // Sum all pack meters
 
     const [isSigningOut, setIsSigningOut] = useState(false);
     const [isActivating, setIsActivating] = useState(false);
@@ -150,7 +155,7 @@ function RouteComponent() {
                         </a>
                     </div>
                 </div>
-                <PollenBalance balance={balance} />
+                <PollenBalance tierBalance={tierBalance} packBalance={packBalance} />
             </div>
             {tierData && (
                 <div className="flex flex-col gap-2">

@@ -50,7 +50,19 @@ export const polar = createMiddleware<PolarEnv>(async (c, next) => {
     );
 
     const requirePositiveBalance = async (userId: string, message?: string) => {
-        const customerState = await getCustomerState(userId);
+        // CRITICAL: Bypass cache for authorization - always fetch fresh balance
+        // to prevent overdrafts from stale cached data
+        let customerState;
+        try {
+            customerState = await client.customers.getStateExternal({
+                externalId: userId,
+            });
+        } catch (error) {
+            log.error("Failed to get fresh customer state for auth: {error}", { error });
+            throw new HTTPException(403, {
+                message: message || "Your pollen balance is too low.",
+            });
+        }
         
         // Sum all active meters (supports dual-meter system: TierPollen + PackPollen)
         const totalBalance = customerState?.activeMeters.reduce(

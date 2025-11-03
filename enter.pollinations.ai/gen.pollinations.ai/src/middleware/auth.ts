@@ -18,21 +18,22 @@ export const genAuth = createMiddleware<Env>(async (c, next) => {
         });
     }
 
-    // Helper function for routes that need to check authorization
+    // Helper function for routes that need to check if anonymous usage is allowed
+    // User is always present at this point since we already validated above
     const requireAuthorization = async (options?: {
         allowAnonymous?: boolean;
         message?: string;
     }): Promise<void> => {
-        if (!result.user && !options?.allowAnonymous) {
-            c.get("log")?.warn("[GEN_AUTH] Authorization failed: No user and anonymous not allowed");
-            throw new HTTPException(401, {
-                message: options?.message || "Authentication required",
-            });
+        // User exists, so authorization succeeds unless specific check needed
+        // This is mainly for future extensibility
+        if (!options?.allowAnonymous) {
+            // Already authenticated, nothing more to check
+            return;
         }
     };
 
-    // Set auth context (cast needed since Env doesn't define auth in Variables)
-    (c as any).set("auth", {
+    // Set auth context with proper typing
+    c.set("auth", {
         user: result.user,
         apiKey: result.apiKey,
         requireAuthorization,

@@ -2,12 +2,11 @@ import { Context, Hono } from "hono";
 import { proxy } from "hono/proxy";
 import { cors } from "hono/cors";
 import { genAuth } from "../middleware/auth.ts";
-import type { User } from "../../../src/auth.ts";
 import { polar } from "../../../src/middleware/polar.ts";
 import type { Env } from "../../../src/env.ts";
 import { track } from "../middleware/track.ts";
-import { removeUnset } from "../../../src/util.ts";
 import { frontendKeyRateLimit } from "../middleware/frontendRateLimit.ts";
+import { generationHeaders } from "../utils/headers.ts";
 import { describeRoute, resolver } from "hono-openapi";
 import { validator } from "../../../src/middleware/validator.ts";
 import {
@@ -79,11 +78,9 @@ export const proxyRoutes = new Hono<Env>()
             },
         }),
         async (c) => {
-            const textServiceUrl =
-                c.env.TEXT_SERVICE_URL || "https://text.pollinations.ai";
-            return await proxy(`${textServiceUrl}/openai/models`, {
+            return await proxy(`${c.env.TEXT_SERVICE_URL}/openai/models`, {
                 ...c.req,
-                headers: proxyHeaders(c),
+                headers: buildProxyHeaders(c),
             });
         },
     )
@@ -127,15 +124,13 @@ export const proxyRoutes = new Hono<Env>()
                 allowAnonymous:
                     c.var.track.isFreeUsage && c.env.ALLOW_ANONYMOUS_USAGE,
             });
-            const textServiceUrl =
-                c.env.TEXT_SERVICE_URL || "https://text.pollinations.ai";
-            const targetUrl = proxyUrl(c, `${textServiceUrl}/openai`);
+            const targetUrl = proxyUrl(c, `${c.env.TEXT_SERVICE_URL}/openai`);
             const requestBody = await c.req.json();
             const response = await proxy(targetUrl, {
                 method: c.req.method,
                 headers: {
-                    ...proxyHeaders(c),
-                    ...generationHeaders(c.env.ENTER_TOKEN, c.var.auth.user),
+                    ...buildProxyHeaders(c),
+                    ...generationHeaders(c.var.auth.user, c.env.ENTER_TOKEN),
                 },
                 body: JSON.stringify(requestBody),
             });
@@ -177,9 +172,7 @@ export const proxyRoutes = new Hono<Env>()
             await c.var.auth.requireAuthorization({
                 allowAnonymous: true,
             });
-            const textServiceUrl =
-                c.env.TEXT_SERVICE_URL || "https://text.pollinations.ai";
-            const targetUrl = proxyUrl(c, `${textServiceUrl}/openai`);
+            const targetUrl = proxyUrl(c, `${c.env.TEXT_SERVICE_URL}/openai`);
             const requestBody = {
                 model: c.req.query("model") || "openai",
                 messages: [{ role: "user", content: c.req.param("prompt") }],
@@ -188,8 +181,8 @@ export const proxyRoutes = new Hono<Env>()
                 method: "POST",
                 headers: {
                     "content-type": "application/json",
-                    ...proxyHeaders(c),
-                    ...generationHeaders(c.env.ENTER_TOKEN, c.var.auth.user),
+                    ...buildProxyHeaders(c),
+                    ...generationHeaders(c.var.auth.user, c.env.ENTER_TOKEN),
                 },
                 body: JSON.stringify(requestBody),
             });
@@ -266,15 +259,11 @@ export const proxyRoutes = new Hono<Env>()
                 c.req.param("prompt"),
             );
             
-            const genHeaders = generationHeaders(c.env.ENTER_TOKEN, c.var.auth.user);
             const proxyRequestHeaders = {
-                ...proxyHeaders(c),
-                ...genHeaders,
+                ...buildProxyHeaders(c),
+                ...generationHeaders(c.var.auth.user, c.env.ENTER_TOKEN),
             };
             
-            c.get("log")?.debug("[PROXY] Image generation headers: {headers}", {
-                headers: genHeaders,
-            });
             c.get("log")?.debug("[PROXY] Proxying to: {url}", {
                 url: targetUrl.toString(),
             });
@@ -303,41 +292,23 @@ export const proxyRoutes = new Hono<Env>()
         },
     );
 
-function generationHeaders(
-    enterToken: string,
-    user?: User,
-): Record<string, string> {
-    return removeUnset({
-        "x-enter-token": enterToken,
-        "x-github-id": `${user?.githubId}`,
-        "x-user-tier": user?.tier,
-    });
-}
-
-function proxyHeaders(c: Context): Record<string, string> {
-    const clientIP = c.req.header("cf-connecting-ip") || "";
-    const clientHost = c.req.header("host") || "";
+function buildProxyHeaders(c: Context): Record<string, string> {
     return {
         ...c.req.header(),
         "x-request-id": c.get("requestId"),
-        "x-forwarded-host": clientHost,
-        "x-forwarded-for": clientIP,
-        "x-real-ip": clientIP,
+        "x-forwarded-host": c.req.header("host") || "",
+        "x-forwarded-for": c.req.header("cf-connecting-ip") || "",
+        "x-real-ip": c.req.header("cf-connecting-ip") || "",
     };
 }
 
 function proxyUrl(
     c: Context,
     targetBaseUrl: string,
-    targetPort: string = "",
 ): URL {
     const incomingUrl = new URL(c.req.url);
     const targetUrl = new URL(targetBaseUrl);
-    // Only override port if explicitly provided
-    if (targetPort) {
-        targetUrl.port = targetPort;
-    }
-    // Copy query parameters but exclude the 'key' parameter (used for enter.pollinations.ai auth only)
+    // Copy query parameters but exclude the 'key' parameter (auth only)
     const searchParams = new URLSearchParams(incomingUrl.search);
     searchParams.delete("key");
     targetUrl.search = searchParams.toString();
@@ -356,39 +327,23 @@ export function contentFilterResultsToHeaders(
     const completionFilterResults =
         response.choices?.[0]?.content_filter_results;
     const mapToString = (value: unknown) => (value ? String(value) : undefined);
-    return removeUnset({
-        "x-moderation-prompt-hate-severity": mapToString(
-            promptFilterResults?.hate?.severity,
-        ),
-        "x-moderation-prompt-self-harm-severity": mapToString(
-            promptFilterResults?.self_harm?.severity,
-        ),
-        "x-moderation-prompt-sexual-severity": mapToString(
-            promptFilterResults?.sexual?.severity,
-        ),
-        "x-moderation-prompt-violence-severity": mapToString(
-            promptFilterResults?.violence?.severity,
-        ),
-        "x-moderation-prompt-jailbreak-detected": mapToString(
-            promptFilterResults?.jailbreak?.detected,
-        ),
-        "x-moderation-completion-hate-severity": mapToString(
-            completionFilterResults?.hate?.severity,
-        ),
-        "x-moderation-completion-self-harm-severity": mapToString(
-            completionFilterResults?.self_harm?.severity,
-        ),
-        "x-moderation-completion-sexual-severity": mapToString(
-            completionFilterResults?.sexual?.severity,
-        ),
-        "x-moderation-completion-violence-severity": mapToString(
-            completionFilterResults?.violence?.severity,
-        ),
-        "x-moderation-completion-protected-material-text-detected": mapToString(
-            completionFilterResults?.protected_material_text?.detected,
-        ),
-        "x-moderation-completion-protected-material-code-detected": mapToString(
-            completionFilterResults?.protected_material_code?.detected,
-        ),
-    });
+    
+    const headers: Record<string, string> = {};
+    const addIfDefined = (key: string, value: string | undefined) => {
+        if (value !== undefined) headers[key] = value;
+    };
+    
+    addIfDefined("x-moderation-prompt-hate-severity", mapToString(promptFilterResults?.hate?.severity));
+    addIfDefined("x-moderation-prompt-self-harm-severity", mapToString(promptFilterResults?.self_harm?.severity));
+    addIfDefined("x-moderation-prompt-sexual-severity", mapToString(promptFilterResults?.sexual?.severity));
+    addIfDefined("x-moderation-prompt-violence-severity", mapToString(promptFilterResults?.violence?.severity));
+    addIfDefined("x-moderation-prompt-jailbreak-detected", mapToString(promptFilterResults?.jailbreak?.detected));
+    addIfDefined("x-moderation-completion-hate-severity", mapToString(completionFilterResults?.hate?.severity));
+    addIfDefined("x-moderation-completion-self-harm-severity", mapToString(completionFilterResults?.self_harm?.severity));
+    addIfDefined("x-moderation-completion-sexual-severity", mapToString(completionFilterResults?.sexual?.severity));
+    addIfDefined("x-moderation-completion-violence-severity", mapToString(completionFilterResults?.violence?.severity));
+    addIfDefined("x-moderation-completion-protected-material-text-detected", mapToString(completionFilterResults?.protected_material_text?.detected));
+    addIfDefined("x-moderation-completion-protected-material-code-detected", mapToString(completionFilterResults?.protected_material_code?.detected));
+    
+    return headers;
 }

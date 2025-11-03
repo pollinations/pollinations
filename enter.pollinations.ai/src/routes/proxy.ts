@@ -129,6 +129,8 @@ export const proxyRoutes = new Hono<Env>()
                 allowAnonymous:
                     c.var.track.isFreeUsage && c.env.ALLOW_ANONYMOUS_USAGE,
             });
+            await checkBalanceForPaidModel(c);
+            
             const textServiceUrl =
                 c.env.TEXT_SERVICE_URL || "https://text.pollinations.ai";
             const targetUrl = proxyUrl(c, `${textServiceUrl}/openai`);
@@ -257,104 +259,39 @@ export const proxyRoutes = new Hono<Env>()
             ].join("\n"),
         }),
         validator("query", GenerateImageRequestQueryParamsSchema),
-                ...proxyHeaders(c),
-                ...generationHeaders(c.env.ENTER_TOKEN, c.var.auth.user),
-            },
-            body: JSON.stringify(requestBody),
-        });
-        if (!response.ok || !response.body) {
-            throw new HTTPException(
-                response.status as ContentfulStatusCode,
-            );
-        }
-        const responseJson = await response.clone().json();
-        const parsedResponse =
-            CreateChatCompletionResponseSchema.parse(responseJson);
-        const contentFilterHeaders =
-            contentFilterResultsToHeaders(parsedResponse);
-        return new Response(response.body, {
-            headers: {
-                ...Object.fromEntries(response.headers),
-                ...contentFilterHeaders,
-            },
-        });
-    },
-)
-.get(
-    "/text/:prompt",
-    describeRoute({
-        description: [
-            "Generates text from text prompts.",
-            "",
-            "**Authentication:**",
-            "",
-            "Include your API key either:",
-            "- In the `Authorization` header as a Bearer token: `Authorization: Bearer YOUR_API_KEY`",
-            "- As a query parameter: `?key=YOUR_API_KEY`",
-            "",
-            "API keys can be created from your dashboard at enter.pollinations.ai.",
-        ].join("\n"),
-    }),
-    track("generate.text"),
-    async (c) => {
-        await c.var.auth.requireAuthorization({
-            allowAnonymous: true,
-        });
-        const textServiceUrl =
-            c.env.TEXT_SERVICE_URL || "https://text.pollinations.ai";
-        const targetUrl = proxyUrl(c, `${textServiceUrl}/openai`);
-        const requestBody = {
-            model: c.req.query("model") || "openai",
-            messages: [{ role: "user", content: c.req.param("prompt") }],
-        };
-        const response = await fetch(targetUrl, {
-            method: "POST",
-            headers: {
-                "content-type": "application/json",
-                ...proxyHeaders(c),
-                ...generationHeaders(c.env.ENTER_TOKEN, c.var.auth.user),
-            },
-            body: JSON.stringify(requestBody),
-        });
-        const responseJson = await response.json();
-        const parsedResponse =
-            CreateChatCompletionResponseSchema.parse(responseJson);
-        const contentFilterHeaders =
-            contentFilterResultsToHeaders(parsedResponse);
-        const message = parsedResponse.choices[0].message.content;
-        if (!message) {
-            throw new HTTPException(500, {
-                message: "Provider didn't return any messages",
+        async (c) => {
+            await c.var.auth.requireAuthorization({
+                allowAnonymous:
+                    c.var.track.isFreeUsage && c.env.ALLOW_ANONYMOUS_USAGE,
             });
-        }
-        return c.text(
-            parsedResponse.choices[0].message?.content || "",
-            200,
-            {
-                ...Object.fromEntries(response.headers),
-                ...contentFilterHeaders,
-            },
-        );
-    },
-)
-.get(
-    "/image/models",
-    describeRoute({
-        description: "Get available image models.",
-        responses: {
-            200: {
-                description: "Success",
-                content: {
-                    "application/json": {
-                        schema: resolver(
-                            z.array(z.string()).meta({
-                                description: "List of available models",
-                            }),
-                        ),
-                    },
-                },
-            },
-            ...errorResponses(400, 401, 500),
+            await checkBalanceForPaidModel(c);
+            
+            const targetUrl = proxyUrl(c, `${c.env.IMAGE_SERVICE_URL}/prompt`);
+            targetUrl.pathname = joinPaths(
+                targetUrl.pathname,
+                c.req.param("prompt"),
+            );
+            
+            const genHeaders = generationHeaders(c.env.ENTER_TOKEN, c.var.auth.user);
+            const proxyRequestHeaders = {
+                ...proxyHeaders(c),
+                ...genHeaders,
+            };
+            
+            c.get("log")?.debug("[PROXY] Image generation headers: {headers}", {
+                headers: genHeaders,
+            });
+            c.get("log")?.debug("[PROXY] Proxying to: {url}", {
+                url: targetUrl.toString(),
+            });
+            
+            const response = await proxy(targetUrl.toString(), {
+                method: c.req.method,
+                headers: proxyRequestHeaders,
+                body: c.req.raw.body,
+            });
+            
+            if (!response.ok) {
                 const responseText = await response.text();
                 c.get("log")?.warn("[PROXY] Error {status}: {body}", {
                     status: response.status,

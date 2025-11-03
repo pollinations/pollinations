@@ -65,46 +65,32 @@ type ErrorResponse = z.infer<typeof ErrorResponseSchema>;
 export const handleError: ErrorHandler<Env> = (err, c) => {
     const log = c.get("log");
     const timestamp = new Date().toISOString();
-    const isDevelopment = c.env.ENVIRONMENT === "development";
 
     if (err instanceof HTTPException) {
         const status = err.status;
-        const response = createBaseErrorResponse(
-            err,
-            status,
-            timestamp,
-            isDevelopment,
-        );
+        const response = createBaseErrorResponse(err, status, timestamp);
         log.trace("HttpException: {error}", { error: err });
         return c.json(response, status);
     }
 
     if (err instanceof APIError) {
         const status = err.statusCode as ContentfulStatusCode;
-        const response = createBaseErrorResponse(
-            err,
-            status,
-            timestamp,
-            isDevelopment,
-        );
+        const response = createBaseErrorResponse(err, status, timestamp);
         log.trace("APIError: {error}", { error: err });
         return c.json(response, status);
     }
 
     if (err instanceof ValidationError) {
         const status = 400;
-        const response = createValidationErrorResponse(
-            err,
-            status,
-            timestamp,
-            isDevelopment,
-        );
+        const response = createValidationErrorResponse(err, status, timestamp);
         log.trace("ValidationError: {error}", { error: err });
         return c.json(response, status);
     }
 
     const status = 500;
+    const user = (c.var as any).auth?.user;
     c.var.log.error({
+        ...(user && { userId: user.id, username: user.username }),
         error: {
             message: err.message || getDefaultErrorMessage(status),
             code: getErrorCode(status),
@@ -115,12 +101,7 @@ export const handleError: ErrorHandler<Env> = (err, c) => {
             cause: err.cause,
         },
     });
-    const response = createInternalErrorResponse(
-        err,
-        status,
-        timestamp,
-        isDevelopment,
-    );
+    const response = createInternalErrorResponse(err, status, timestamp);
     log.trace("InternalError: {error}", { error: err });
     return c.json(response, status);
 };
@@ -129,7 +110,6 @@ function createBaseErrorResponse(
     error: Error,
     status: ContentfulStatusCode,
     timestamp: string,
-    includeDebugInfo: boolean,
 ): ErrorResponse {
     return {
         success: false,
@@ -137,7 +117,7 @@ function createBaseErrorResponse(
             message: error.message || getDefaultErrorMessage(status),
             code: getErrorCode(status),
             timestamp,
-            ...(includeDebugInfo && !!error.cause && { cause: error.cause }),
+            ...(!!error.cause && { cause: error.cause }),
         },
         status,
     };
@@ -147,7 +127,6 @@ function createValidationErrorResponse(
     error: ValidationError,
     status: ContentfulStatusCode,
     timestamp: string,
-    includeDebugInfo: boolean,
 ): ErrorResponse {
     const flatErrors = z.flattenError(error.zodError);
     return {
@@ -160,7 +139,7 @@ function createValidationErrorResponse(
                 ...flatErrors,
             },
             timestamp,
-            ...(includeDebugInfo && !!error.cause && { cause: error.cause }),
+            ...(!!error.cause && { cause: error.cause }),
         },
         status,
     };
@@ -170,23 +149,18 @@ function createInternalErrorResponse(
     error: Error,
     status: ContentfulStatusCode,
     timestamp: string,
-    includeDebugInfo: boolean,
 ): ErrorResponse {
     return {
         success: false,
         error: {
-            message: includeDebugInfo
-                ? error.message || getDefaultErrorMessage(status)
-                : getDefaultErrorMessage(status),
+            message: error.message || getDefaultErrorMessage(status),
             code: getErrorCode(status),
-            ...(includeDebugInfo && {
-                details: {
-                    name: error.name,
-                    stack: error.stack,
-                },
-            }),
+            details: {
+                name: error.name,
+                stack: error.stack,
+            },
             timestamp,
-            ...(includeDebugInfo && !!error.cause && { cause: error.cause }),
+            ...(!!error.cause && { cause: error.cause }),
         },
         status,
     };

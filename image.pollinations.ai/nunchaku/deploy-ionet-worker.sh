@@ -165,6 +165,8 @@ EnvironmentFile=-/home/ionet/.env
 ExecStart=/home/ionet/pollinations/image.pollinations.ai/nunchaku/venv/bin/python server.py
 Restart=always
 RestartSec=10
+StandardOutput=journal
+StandardError=journal
 
 [Install]
 WantedBy=multi-user.target
@@ -189,6 +191,8 @@ EnvironmentFile=-/home/ionet/.env
 ExecStart=/home/ionet/pollinations/image.pollinations.ai/nunchaku/venv/bin/python server.py
 Restart=always
 RestartSec=10
+StandardOutput=journal
+StandardError=journal
 
 [Install]
 WantedBy=multi-user.target

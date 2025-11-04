@@ -2,16 +2,26 @@
   <img src="assets/logo-text.svg" alt="pollinations.ai" width="100%"/>
 </div>
 
-## 📢 Hacktoberfest News
+## 📢 Hacktoberfest 2025 — Recap
 
-- **Hacktoberfest 2025 is here!**  
-  If you're participating, please check out our [Code of Conduct](./CODE_OF_CONDUCT.md) and [Contributing Guidelines](./CONTRIBUTING.md) before submitting your PRs.
-- **Build Apps with Pollinations!** 🔥  
-  Create frontend apps using our APIs and get them featured. [Propose your app idea](https://github.com/pollinations/pollinations/issues/new) with `[Hacktoberfest App]` in the title, then build it! See the [hacktoberfest-2025 folder](./hacktoberfest-2025/README.md) for templates and guidelines.
-- For event PRs, look for issues tagged with `hacktoberfest` in our [issue tracker](https://github.com/pollinations/pollinations/issues) and join the community effort!
+![Hacktoberfest 2025 Banner](https://media.discordapp.net/attachments/1364293694030614640/1433905240586850364/hacktoberfest_x_pollinations.jpg?ex=690b0112&is=6909af92&hm=ba954c4d0f705b6ef3a3b1c4da0baeefd544d952e269a4dcbf16185c6ee4eb2b&=&format=webp&width=1209&height=653)
+ Hacktoberfest 2025 has concluded. Thanks to everyone who contributed — please continue following our [Code of Conduct](./CODE_OF_CONDUCT.md) and [Contributing Guidelines](./CONTRIBUTING.md).
+ 
+### Event highlights
 
-- **Pollinations Hive**  
-  We're excited to announce our integration with [Pollinations Hive](https://github.com/pollinations/hive), a curated collection of the top community-created projects within the Pollinations ecosystem. This project is also a part of Hacktoberfest 2025 and is accepting collaborative PRs, make sure to check it out too!
+| Metric | Result |
+|---|---:|
+| PRs made | 25 |
+| PRs merged | 22 |
+| Issues raised | 67 |
+| Issues closed | 38 |
+| Total contributions gained (PRs & merges) | 30 |
+| Stars gained (Oct 10–31) | 131 |
+| New projects added | 8 |
+| Community partner | GDG JIS University, Kolkata, India |
+| Attendance | Hacktoberfest Meetup (Virtual) |
+
+> ### Thank you to contributors and project maintainers.
 
 
 ## 🆕 Latest News

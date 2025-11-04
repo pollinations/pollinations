@@ -165,14 +165,12 @@ export const TEXT_SERVICES = {
     "openai-fast": {
         aliases: ["gpt-5-nano"],
         modelId: "gpt-5-nano-2025-08-07",
-        free: true,
         provider: "azure-openai",
     },
     "openai-large": {
         aliases: ["gpt-5-chat"],
         modelId: "gpt-5-chat-latest",
         provider: "azure-openai",
-        tier: "seed",
     },
     "qwen-coder": {
         aliases: ["qwen2.5-coder-32b-instruct"],
@@ -194,67 +192,56 @@ export const TEXT_SERVICES = {
         aliases: ["gpt-4o-mini-audio-preview"],
         modelId: "gpt-4o-mini-audio-preview-2024-12-17",
         provider: "azure-openai",
-        tier: "seed",
     },
     "roblox-rp": {
         aliases: ["llama-roblox", "llama-fast-roblox"],
         modelId: "us.meta.llama3-1-8b-instruct-v1:0",
         provider: "aws-bedrock",
-        tier: "seed",
     },
     "openai-reasoning": {
         aliases: ["o4-mini"],
         modelId: "openai/o4-mini",
         provider: "api-navy",
-        tier: "seed",
     },
     "gemini": {
         aliases: ["gemini-2.5-flash-lite"],
         modelId: "gemini-2.5-flash-lite",
         provider: "vertex-ai",
-        tier: "seed",
     },
     "deepseek": {
         aliases: ["deepseek-v3", "deepseek-v3.1", "deepseek-reasoning", "deepseek-r1-0528"],
         modelId: "myceli-deepseek-v3.1",
         provider: "azure",
-        tier: "seed",
     },
     "gemini-search": {
         aliases: ["searchgpt", "geminisearch"],
         modelId: "gemini-2.5-flash-lite",
         provider: "vertex-ai",
-        tier: "seed",
     },
     "chickytutor": {
         aliases: [],
         modelId: "us.anthropic.claude-3-5-haiku-20241022-v1:0",
-        free: true, // Free model - educational tool
         provider: "aws-bedrock",
     },
     "unity": {
         aliases: [],
         modelId: "mistral-small-3.1-24b-instruct-2503",
         provider: "scaleway",
-        tier: "seed",
     },
     "midijourney": {
         aliases: [],
         modelId: "gpt-4.1-2025-04-14",
-        free: true, // Free model - community creative tool
         provider: "azure-openai",
     },
     "rtist": {
         aliases: [],
         modelId: "gpt-4.1-2025-04-14",
         provider: "azure-openai",
-        tier: "seed",
     },
     "evil": {
         aliases: [],
         modelId: "mistral-small-3.1-24b-instruct-2503",
         provider: "scaleway",
-        tier: "seed",
     },
     "bidara": {
         aliases: [],
@@ -265,7 +252,6 @@ export const TEXT_SERVICES = {
         aliases: [],
         modelId: "us.anthropic.claude-haiku-4-5-20251001-v1:0",
         provider: "aws-bedrock",
-        tier: "flower",
     },
     "perplexity-fast": {
         aliases: ["sonar"],

@@ -128,14 +128,62 @@ export function useImageEditor({ stop, image }) {
 }
 
 const loadImage = async (newImage) => {
-    return new Promise((resolve, reject) => {
-        const img = new Image();
-        img.src = newImage.imageURL;
-        img.onload = () =>
-            resolve({
-                ...newImage,
-                loaded: true,
-            });
-        img.onerror = (error) => reject(error);
-    });
+    try {
+        const response = await fetch(newImage.imageURL);
+        
+        // Check if response is an error
+        if (!response.ok) {
+            // Try to parse error as JSON
+            const contentType = response.headers.get("content-type");
+            if (contentType && contentType.includes("application/json")) {
+                const errorData = await response.json();
+                const error = new Error(errorData.error || `HTTP ${response.status}`);
+                error.apiMessage = errorData.message;
+                throw error;
+            } else {
+                const errorText = await response.text();
+                throw new Error(errorText || `HTTP ${response.status}`);
+            }
+        }
+
+        // Check if response is JSON (error) or image
+        const contentType = response.headers.get("content-type");
+        if (contentType && contentType.includes("application/json")) {
+            const data = await response.json();
+            if (data.error) {
+                const error = new Error(data.error);
+                error.apiMessage = data.message;
+                throw error;
+            }
+        }
+
+        // If we got here, it's a valid image
+        // Still preload it to ensure it's ready
+        const blob = await response.blob();
+        const objectUrl = URL.createObjectURL(blob);
+        
+        return new Promise((resolve, reject) => {
+            const img = new Image();
+            img.src = objectUrl;
+            img.onload = () => {
+                URL.revokeObjectURL(objectUrl);
+                resolve({
+                    ...newImage,
+                    loaded: true,
+                });
+            };
+            img.onerror = (error) => {
+                URL.revokeObjectURL(objectUrl);
+                reject(error);
+            };
+        });
+    } catch (error) {
+        // Return the image with error info so it can be displayed
+        return {
+            ...newImage,
+            loaded: true,
+            error: error.message,
+            message: error.apiMessage,
+        };
+    }
 };

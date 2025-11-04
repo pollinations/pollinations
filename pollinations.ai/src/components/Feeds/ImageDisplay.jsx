@@ -1,9 +1,9 @@
 import React, { memo } from "react";
-import { Typography, Link, useMediaQuery, useTheme } from "@mui/material";
+import { Typography, Link, useMediaQuery, useTheme, Box } from "@mui/material";
 import PromptTooltip from "../PromptTooltip";
 import styled from "@emotion/styled";
 import { trackEvent } from "../../config/analytics.js";
-import { ErrorHandlingImage } from "../ErrorHandlingImage";
+import { Colors, Fonts } from "../../config/global";
 
 /**
  * ImageDisplay
@@ -22,19 +22,65 @@ export const ImageDisplay = memo(function ImageDisplay({ image }) {
         window.open(image["imageURL"], "_blank");
     };
 
+    // Show error if image has error property
+    if (image?.error) {
+        return (
+            <ImageContainer
+                sx={{
+                    display: "flex",
+                    flexDirection: "column",
+                    position: "relative",
+                    boxShadow: "none",
+                    backgroundColor: "transparent",
+                    width: "100%",
+                }}
+            >
+                <Box
+                    sx={{
+                        display: "flex",
+                        flexDirection: "column",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        backgroundColor: Colors.offblack2,
+                        padding: "40px 20px",
+                        minHeight: isDesktop ? "600px" : "400px",
+                        borderRadius: "8px",
+                    }}
+                >
+                    <Typography
+                        sx={{
+                            color: "#ff4444",
+                            fontFamily: Fonts.parameter,
+                            fontSize: "1.2em",
+                            fontWeight: "bold",
+                            marginBottom: "12px",
+                        }}
+                    >
+                        Error
+                    </Typography>
+                    <Typography
+                        sx={{
+                            color: Colors.offwhite,
+                            fontFamily: Fonts.parameter,
+                            fontSize: "1em",
+                            textAlign: "center",
+                            wordBreak: "break-word",
+                            maxWidth: "500px",
+                        }}
+                    >
+                        {image.error}
+                    </Typography>
+                </Box>
+            </ImageContainer>
+        );
+    }
+
     const ImageContent = (
         <PromptTooltip title={image["prompt"]} seed={image["seed"]}>
-            <ErrorHandlingImage
+            <ImageStyle
                 src={image["imageURL"]}
                 alt="generative_image"
                 onClick={handleImageClick}
-                error={image["error"]}
-                style={{
-                    height: isDesktop ? "600px" : "400px",
-                    width: "100%",
-                    maxWidth: "100%",
-                    objectFit: "contain",
-                }}
             />
         </PromptTooltip>
     );

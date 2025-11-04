@@ -58,6 +58,9 @@ app.onError(handleError);
 
 export type AppRoutes = typeof app;
 
+// Export Durable Object for rate limiting
+export { RateLimiter } from "./durable-objects/RateLimiter.ts";
+
 export default {
     fetch: app.fetch,
     scheduled: async (_controller, env, _ctx) => {

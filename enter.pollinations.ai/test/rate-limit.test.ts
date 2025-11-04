@@ -1,8 +1,10 @@
 import { SELF } from "cloudflare:test";
 import { test } from "./fixtures.ts";
 import { expect } from "vitest";
+import { getLogger } from "@logtape/logtape";
 
 const endpoint = "http://localhost:3000/api/generate/openai";
+const log = getLogger(["test", "rate-limit"]);
 
 test("publishable key rate limited (10 parallel requests)", { timeout: 60000 }, async ({ auth, sessionToken }) => {
     // Create a publishable key for testing
@@ -54,8 +56,8 @@ test("publishable key rate limited (10 parallel requests)", { timeout: 60000 }, 
         await response.text(); // Consume body
     }
     
-    console.log(`[TEST] 10 parallel requests: ${successCount} success, ${rateLimitedCount} rate limited`);
-    console.log(`[TEST] Note: KV eventual consistency may allow all to succeed`);
+    log.info(`10 parallel requests: ${successCount} success, ${rateLimitedCount} rate limited`);
+    log.info(`Note: KV eventual consistency may allow all to succeed`);
     
     // Verify rate limit headers exist
     expect(responses[0].headers.get("RateLimit-Limit")).toBe("3");
@@ -111,7 +113,7 @@ test("publishable key rate limited (5 sequential requests)", { timeout: 60000 },
         await response.text(); // Consume body
     }
     
-    console.log(`[TEST] 5 sequential requests: ${successCount} success, ${rateLimitedCount} rate limited (expected: 3 success, 2 blocked)`);
+    log.info(`5 sequential requests: ${successCount} success, ${rateLimitedCount} rate limited (expected: 3 success, 2 blocked)`);
     
     // Verify rate limit headers exist
     expect(responses[0].headers.get("RateLimit-Limit")).toBe("3");
@@ -176,13 +178,92 @@ test("publishable key - 30 parallel requests with network delays (KV limitation)
         await response.text(); // Consume body
     }
     
-    console.log(`[TEST] 30 parallel requests (${totalTime}ms): ${successCount} success, ${rateLimitedCount} rate limited`);
-    console.log(`[TEST] Expected: 3 success, 27 blocked | Actual: ${successCount} success (KV limitation allows bypass)`);
+    log.info(`30 parallel requests (${totalTime}ms): ${successCount} success, ${rateLimitedCount} rate limited`);
+    log.info(`Expected: 3 success, 27 blocked | Actual: ${successCount} success (KV limitation allows bypass)`);
     
     if (successCount > 3) {
-        console.log(`[TEST] ⚠️  KV eventual consistency confirmed - parallel requests bypass rate limiting`);
+        log.warn(`⚠️  KV eventual consistency confirmed - parallel requests bypass rate limiting`);
     }
     
     // Verify rate limit headers exist
     expect(responses[0].headers.get("RateLimit-Limit")).toBe("3");
+});
+
+test("publishable key - token refills after 15 seconds", { timeout: 30000 }, async ({ auth, sessionToken }) => {
+    // Create a publishable key for testing
+    const createApiKeyResponse = await auth.apiKey.create({
+        name: "test-publishable-key-refill",
+        prefix: "pk",
+        metadata: { keyType: "publishable" },
+        fetchOptions: {
+            headers: { "Cookie": `better-auth.session_token=${sessionToken}` },
+        },
+    });
+    
+    if (!createApiKeyResponse.data) throw new Error("Failed to create publishable API key");
+    const publishableKey = createApiKeyResponse.data.key;
+    
+    const testIp = `192.0.7.${Date.now() % 254}`;
+    
+    // Use all 3 tokens
+    log.info("Using all 3 tokens...");
+    for (let i = 1; i <= 3; i++) {
+        const response = await SELF.fetch(endpoint, {
+            method: "POST",
+            headers: {
+                "content-type": "application/json",
+                "authorization": `Bearer ${publishableKey}`,
+                "cf-connecting-ip": testIp,
+            },
+            body: JSON.stringify({
+                model: "openai",
+                messages: [{ role: "user", content: `${i}+${i}=` }],
+                seed: Math.floor(Math.random() * 1000000),
+            }),
+        });
+        expect(response.status).toBe(200);
+        await response.text();
+    }
+    
+    // 4th request should be rate limited
+    log.info("4th request should be rate limited...");
+    const blockedResponse = await SELF.fetch(endpoint, {
+        method: "POST",
+        headers: {
+            "content-type": "application/json",
+            "authorization": `Bearer ${publishableKey}`,
+            "cf-connecting-ip": testIp,
+        },
+        body: JSON.stringify({
+            model: "openai",
+            messages: [{ role: "user", content: "test" }],
+            seed: Math.floor(Math.random() * 1000000),
+        }),
+    });
+    expect(blockedResponse.status).toBe(429);
+    await blockedResponse.text();
+    
+    // Wait 15 seconds for token refill
+    log.info("Waiting 15 seconds for token refill...");
+    await new Promise(resolve => setTimeout(resolve, 15000));
+    
+    // 5th request should succeed after refill
+    log.info("5th request should succeed after refill...");
+    const refilledResponse = await SELF.fetch(endpoint, {
+        method: "POST",
+        headers: {
+            "content-type": "application/json",
+            "authorization": `Bearer ${publishableKey}`,
+            "cf-connecting-ip": testIp,
+        },
+        body: JSON.stringify({
+            model: "openai",
+            messages: [{ role: "user", content: "test after refill" }],
+            seed: Math.floor(Math.random() * 1000000),
+        }),
+    });
+    expect(refilledResponse.status).toBe(200);
+    await refilledResponse.text();
+    
+    log.info("✓ Token refilled successfully after 15 seconds");
 });

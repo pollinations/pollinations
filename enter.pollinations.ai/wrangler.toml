@@ -25,6 +25,15 @@ migrations_dir = "drizzle"
 binding = "KV"
 id = "aa0d0aceb6bd45de93032270c7adf4ab"
 
+[[durable_objects.bindings]]
+name = "RATE_LIMITER"
+class_name = "RateLimiter"
+script_name = "pollinations-enter"
+
+[[migrations]]
+tag = "v1"
+new_classes = ["RateLimiter"]
+
 [vars]
 ENVIRONMENT = "development"
 LOG_LEVEL = "trace"
@@ -83,6 +92,10 @@ migrations_dir = "drizzle"
 # development-pollinations-enter-kv
 binding = "KV"
 id = "aa0d0aceb6bd45de93032270c7adf4ab"
+
+[[env.test.durable_objects.bindings]]
+name = "RATE_LIMITER"
+class_name = "RateLimiter"
 
 [env.test.vars]
 ENVIRONMENT = "test"

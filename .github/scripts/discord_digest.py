@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-Daily Digest Generator
-Collects all PR summaries and creates a combined daily update for Discord
+Weekly Digest Generator
+Collects all PR summaries and creates a combined weekly update for Discord
 Handles large volumes with chunking and summarization strategies
 """
 
@@ -15,13 +15,13 @@ from typing import Dict, List, Tuple
 from datetime import datetime, timedelta
 
 # Configuration
-POLLINATIONS_API_BASE = "https://text.pollinations.ai/openai"
+POLLINATIONS_API_BASE = "https://enter.pollinations.ai/api/generate/openai"
 MODEL = "gemini"
 DISCORD_CHAR_LIMIT = 2000
 CHUNK_SIZE = 1900
 
-# Token limits (conservative estimates)
-MAX_INPUT_TOKENS = 25000  # Leave room for system prompt and response
+# Token limits (updated for 128k token window)
+MAX_INPUT_TOKENS = 120000  # Leave room for system prompt and response
 CHARS_PER_TOKEN = 4  # Average characters per token
 MAX_INPUT_CHARS = MAX_INPUT_TOKENS * CHARS_PER_TOKEN
 
@@ -140,14 +140,16 @@ def batch_summaries(summaries: List[Dict], max_chars: int) -> List[List[Dict]]:
     return batches
 
 def get_digest_system_prompt(is_condensed: bool = False) -> str:
-    """Return the daily digest generation prompt"""
+    """Return the weekly digest generation prompt"""
     if is_condensed:
-        return """You are creating a CONDENSED daily digest for Pollinations AI Discord.
+        return """You are creating a CONDENSED weekly digest for Pollinations AI Discord.
 You're receiving a LARGE number of PRs, so keep descriptions VERY brief.
 
 OUTPUT FORMAT:
 ```
-## 🌸 Bi-Daily Update - [Date]
+[Natural greeting mentioning <@&1424461167883194418>]
+
+## 🌸 Weekly Update - [Date]
 
 ### 🚀 Highlights
 - Brief description of most important change
@@ -162,36 +164,41 @@ OUTPUT FORMAT:
 Thanks to our amazing contributors! 🎉
 
 ---
+**Total PRs merged:** {N}
 **PRs merged:** [#123](<url>), [#456](<url>), [#789](<url>) (+{N} more)
 **Contributors:** [@user1](<github-url>), [@user2](<github-url>), [@user3](<github-url>)
 ```
 
 CRITICAL RULES:
+- Start with a natural, varied greeting that mentions <@&1424461167883194418>
 - Focus on WHAT changed, not WHO changed it in main content
 - Max 3-5 highlights (highest impact only)
 - Group similar changes naturally
 - All PR numbers and contributors go in footer
 - TOTAL LENGTH: 400-800 characters
 - Use angle brackets <> around all URLs
+- Each contributor should appear ONLY ONCE in the contributors list
 """
     
-    return """You are creating a daily digest for the Pollinations AI Discord community.
+    return """You are creating a weekly digest for the Pollinations AI Discord community.
 You'll receive summaries of multiple merged PRs and need to create ONE cohesive update message.
 
 CONTEXT: Pollinations is an open-source AI platform serving a community of users and contributors.
 
-YOUR TASK: Create a clean, engaging daily update that focuses on WHAT changed, not cluttered with WHO/WHERE details.
+YOUR TASK: Create a clean, engaging weekly update that focuses on WHAT changed, not cluttered with WHO/WHERE details.
 
 NEW CLEAN FORMAT:
 ```
-## 🌸 Bi-Daily Update - [Date]
+[Natural greeting mentioning <@&1424461167883194418>]
+
+## 🌸 Weekly Update - [Date]
 
 ### 🚀 New Features
 - Brief description of new capability or feature
 - Another feature or enhancement added
 - Major improvement users will notice
 
-### 🐛 Fixes & Improvements  
+### 🐛 Fixes & Improvements
 - Bug that was resolved (user impact)
 - Performance improvement or optimization
 - Better error handling or reliability fix
@@ -204,17 +211,20 @@ NEW CLEAN FORMAT:
 Thanks to our amazing contributors! 🎉
 
 ---
+**Total PRs merged:** {N}
 **PRs merged:** [#123](<url>), [#456](<url>), [#789](<url>), [#101](<url>)
 **Contributors:** [@alice](<github-url>), [@bob](<github-url>), [@charlie](<github-url>)
 ```
 
 CRITICAL FORMATTING RULES:
+- Start with a natural, varied greeting that mentions <@&1424461167883194418>
 - Main content focuses on WHAT changed (user impact)
 - NO inline PR numbers or author mentions in bullet points
 - Group related changes naturally under logical sections
 - All metadata (PR numbers, contributors) goes in footer
 - Use angle brackets <> around ALL URLs to prevent embeds
 - Keep bullet points concise and user-focused
+- Each contributor should appear ONLY ONCE in the contributors list
 
 GROUPING STRATEGY:
 - **🚀 New Features** - New capabilities, major additions
@@ -230,8 +240,7 @@ TONE & LENGTH:
 - If single PR has multiple changes, combine them naturally
 - If 8+ PRs, group minor ones as "Additional improvements"
 
-If NO user-facing changes, output:
-"No user-facing updates today! 🌸"
+If NO user-facing changes, DO NOT send any message at all.
 """
 
 def get_digest_user_prompt(summaries: List[Dict], date_str: str, is_condensed: bool = False) -> str:
@@ -251,7 +260,7 @@ def get_digest_user_prompt(summaries: List[Dict], date_str: str, is_condensed: b
         category = summary.get('category', 'core')
         grouped[impact][category].append(summary)
     
-    prompt = f"Create a daily digest for {date_str}.\n\n"
+    prompt = f"Create a weekly digest for {date_str}.\n\n"
     prompt += f"Total PRs merged: {len(summaries)}\n"
     
     if is_condensed:
@@ -278,7 +287,7 @@ def get_digest_user_prompt(summaries: List[Dict], date_str: str, is_condensed: b
                 prompt += f"Author: {item['pr_author']}\n"
                 prompt += f"PR URL: {item['pr_url']}\n"
     
-    prompt += f"\n\nCreate a clean daily digest focusing on WHAT changed (user impact)."
+    prompt += f"\n\nCreate a clean weekly digest focusing on WHAT changed (user impact)."
     prompt += f"\nCombine related changes naturally. Put all PR numbers and contributors in the footer."
     prompt += f"\nGenerate PR links as [#123](<{summaries[0]['pr_url'].split('/pull/')[0]}/pull/123>) format."
     prompt += f"\nGenerate contributor links as [@username](<https://github.com/username>) format."
@@ -307,7 +316,7 @@ def call_pollinations_api(system_prompt: str, user_prompt: str, token: str) -> s
         "seed": seed
     }
     
-    print(f"🤖 Generating daily digest with {MODEL}")
+    print(f"🤖 Generating weekly digest with {MODEL}")
     
     response = requests.post(
         f"{POLLINATIONS_API_BASE}/chat/completions",
@@ -419,7 +428,7 @@ def generate_multi_batch_digest(batches: List[List[Dict]], date_str: str, token:
     print("🔗 Combining batch summaries into final digest...")
     
     combine_prompt = f"""You have {len(batches)} sub-summaries of PRs merged on {date_str}.
-Combine them into ONE cohesive daily digest.
+Combine them into ONE cohesive weekly digest.
 
 Sub-summaries:
 """
@@ -429,7 +438,7 @@ Sub-summaries:
     
     combine_prompt += """
 
-Create a single unified daily digest that:
+Create a single unified weekly digest that:
 - Starts with "Hey <@&1424461167883194418>!"
 - Groups similar changes together
 - Highlights the most important updates
@@ -437,32 +446,32 @@ Create a single unified daily digest that:
 - Maintains friendly tone
 """
     
-    system_prompt = "You are combining multiple batch summaries into one cohesive daily digest for Discord."
+    system_prompt = "You are combining multiple batch summaries into one cohesive weekly digest for Discord."
     
     final_response = call_pollinations_api(system_prompt, combine_prompt, token)
     return parse_discord_message(final_response)
 
 def main():
-    print("🚀 Generating Daily Digest...")
+    print("🚀 Generating Weekly Digest...")
     
     # Get environment variables
-    pollinations_token = os.getenv('POLLINATIONS_TOKEN_DCPRS') or get_env('POLLINATIONS_TOKEN')
-    discord_webhook = os.getenv('DISCORD_WEBHOOK_DAILY') or get_env('DISCORD_WEBHOOK_URL')
+    pollinations_token = get_env('POLLINATIONS_TOKEN')
+    discord_webhook = os.getenv('DISCORD_WEBHOOK_DIGEST') or get_env('DISCORD_WEBHOOK_URL')
     repo_name = get_env('REPO_FULL_NAME')
     
     # Load all PR summaries
     summaries = load_pr_summaries()
     
     if not summaries:
-        print("📭 No PRs merged today, skipping digest")
+        print("📭 No PRs merged this week, skipping digest")
         return
     
     print(f"📊 Processing {len(summaries)} PRs...")
     
-    # Get date string (covering last 2 days)
+    # Get date string (covering last week)
     today = datetime.utcnow()
-    two_days_ago = today - timedelta(days=2)
-    date_str = f"{two_days_ago.strftime('%B %d')} - {today.strftime('%B %d, %Y')}"
+    week_ago = today - timedelta(days=7)
+    date_str = f"{week_ago.strftime('%B %d')} - {today.strftime('%B %d, %Y')}"
     
     # Strategy 1: Try with all summaries if reasonable size
     estimated_size = estimate_prompt_size(summaries)
@@ -472,8 +481,8 @@ def main():
         print("✅ Summaries fit in single batch")
         
         # Generate normal digest
-        system_prompt = get_digest_system_prompt(is_condensed=len(summaries) > 10)
-        user_prompt = get_digest_user_prompt(summaries, date_str, is_condensed=len(summaries) > 10)
+        system_prompt = get_digest_system_prompt(is_condensed=len(summaries) > 15)
+        user_prompt = get_digest_user_prompt(summaries, date_str, is_condensed=len(summaries) > 15)
         
         ai_response = call_pollinations_api(system_prompt, user_prompt, pollinations_token)
         message = parse_discord_message(ai_response)
@@ -527,7 +536,7 @@ def main():
     
     # Check if it's a skip message
     if "no user-facing updates" in message.lower() and len(summaries) == 0:
-        print("📭 Only internal changes today, skipping post")
+        print("📭 Only internal changes this week, skipping post")
         return
     
     # The footer is now handled by the AI prompt, but add fallback link
@@ -539,7 +548,7 @@ def main():
     print("📤 Posting to Discord...")
     post_to_discord(discord_webhook, message)
     
-    print(f"✨ Daily digest posted! ({pr_count} PRs processed)")
+    print(f"✨ Weekly digest posted! ({pr_count} PRs processed)")
 
 if __name__ == "__main__":
     main()

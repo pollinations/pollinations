@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 Generate Individual PR Summary
-Creates a JSON summary of a merged PR for later aggregation into daily digest
+Creates a JSON summary of a merged PR for later aggregation into weekly digest
 """
 
 import os
@@ -15,7 +15,7 @@ from datetime import datetime
 
 # Configuration
 GITHUB_API_BASE = "https://api.github.com"
-POLLINATIONS_API_BASE = "https://text.pollinations.ai/openai"
+POLLINATIONS_API_BASE = "https://enter.pollinations.ai/api/generate/openai"
 MODEL = "gemini"
 
 def get_env(key: str, required: bool = True) -> Optional[str]:
@@ -154,49 +154,44 @@ def format_diff_for_review(diff_text: str) -> str:
 
 def get_system_prompt() -> str:
     """Return the PR summary generation prompt"""
-    return """You are analyzing a merged PR for Pollinations AI to create a concise summary.
-This summary will be combined with other PR summaries into a daily digest.
+    return """You are creating a concise technical summary of a merged PR for Pollinations AI.
 
-Your task: Create a SHORT, bullet-point summary of what changed from a USER perspective.
+Your task: Create a direct, factual summary without formatting or emojis.
 
-CONTEXT: Pollinations is an open-source AI platform where:
-- **Core Platform**: API, models, infrastructure
-- **Community Projects**: Apps, tools, examples built with Pollinations
-- **Documentation**: Guides, tutorials, API docs
-- **Infrastructure**: Deployment, monitoring, performance
+CONTEXT: Pollinations is an open-source AI platform with these categories:
+- core: API, models, infrastructure changes
+- community: Apps, tools, examples built with Pollinations
+- docs: Guides, tutorials, API documentation
+- infrastructure: Deployment, monitoring, performance
 
-WHAT TO FOCUS ON (USER IMPACT):
-- Bug fixes users noticed
-- New features users can use
+WHAT TO FOCUS ON:
+- User-facing changes and bug fixes
+- New features or capabilities added
 - Performance improvements
-- UI/UX changes
-- Rate limit/quota changes
-- Community project submissions
+- API or interface changes
 
 WHAT TO SKIP:
-- Backend refactoring (unless it fixes user bugs)
-- Code cleanup/organization
-- Test updates (unless revealing new features)
-- Developer tooling
+- Internal refactoring without user impact
+- Code cleanup or organization
+- Test-only changes
+- Developer tooling updates
 
 OUTPUT FORMAT:
 Return ONLY a JSON object with this structure:
 {
   "category": "core|community|docs|infrastructure",
-  "summary": "One-line description of the change",
+  "summary": "Brief description of the main change",
   "impact": "high|medium|low",
-  "details": ["Bullet point 1", "Bullet point 2"]
+  "details": ["Detail 1", "Detail 2"]
 }
 
-- **category**: Type of change (core/community/docs/infrastructure)
-- **summary**: One sentence describing the main change
-- **impact**: 
-  - high: New features, bug fixes, quota changes, major improvements
-  - medium: Minor features, small improvements, documentation
-  - low: Typo fixes, internal changes with minimal user impact
-- **details**: 2-4 bullet points max, each under 100 chars
+Guidelines:
+- category: Choose the most relevant category
+- summary: One concise sentence describing the change
+- impact: high (new features/major fixes), medium (minor features/docs), low (internal changes)
+- details: 2-3 key points max, direct and factual
 
-Keep it CONCISE. This will be combined with other PRs into one daily message.
+Keep summaries clean and technical for later compilation into final digest.
 """
 
 def get_user_prompt(title: str, branch: str, description: str, diff: str) -> str:
@@ -214,7 +209,7 @@ Description:
 Code Changes:
 {{ diff }}
 
-Create a concise JSON summary for the daily digest."""
+Create a concise JSON summary for the weekly digest."""
     
     env = Environment()
     tmpl = env.from_string(template)
@@ -286,7 +281,7 @@ def main():
     
     # Get environment variables
     github_token = get_env('GITHUB_TOKEN')
-    pollinations_token = os.getenv('POLLINATIONS_TOKEN_DCPRS') or get_env('POLLINATIONS_TOKEN')
+    pollinations_token = get_env('POLLINATIONS_TOKEN')
     pr_number = get_env('PR_NUMBER')
     repo_full_name = get_env('REPO_FULL_NAME')
     pr_title = get_env('PR_TITLE')

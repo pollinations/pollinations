@@ -15,12 +15,17 @@ export const useModels = (modelType = "text") => {
         const fetchModels = async () => {
             try {
                 setLoading(true);
+                const API_KEY = "plln_pk_RRHEqHFAF7utI50fgWc418G7vLXybWg7wkkGQtBgNnZPGs3y4JKpqgEneL0YwQP2";
                 const endpoint =
                     modelType === "text"
-                        ? "https://text.pollinations.ai/models"
-                        : "https://image.pollinations.ai/models";
+                        ? "https://enter.pollinations.ai/api/generate/openai/models"
+                        : "https://enter.pollinations.ai/api/generate/image/models";
 
-                const response = await fetch(endpoint);
+                const response = await fetch(endpoint, {
+                    headers: {
+                        "Authorization": `Bearer ${API_KEY}`
+                    }
+                });
 
                 if (!response.ok) {
                     throw new Error(`HTTP error! status: ${response.status}`);

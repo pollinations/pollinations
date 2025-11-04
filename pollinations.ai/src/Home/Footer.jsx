@@ -1,6 +1,6 @@
 import styled from "@emotion/styled";
 import { SocialLinks } from "../components/SocialLinks";
-import logo from "/logo.webp";
+import logo from "/logo.svg";
 
 const FooterContainer = styled.footer`
   background-color: black;

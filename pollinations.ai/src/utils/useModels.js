@@ -15,17 +15,13 @@ export const useModels = (modelType = "text") => {
         const fetchModels = async () => {
             try {
                 setLoading(true);
-                const API_KEY = "plln_pk_RRHEqHFAF7utI50fgWc418G7vLXybWg7wkkGQtBgNnZPGs3y4JKpqgEneL0YwQP2";
                 const endpoint =
                     modelType === "text"
                         ? "https://enter.pollinations.ai/api/generate/openai/models"
                         : "https://enter.pollinations.ai/api/generate/image/models";
 
-                const response = await fetch(endpoint, {
-                    headers: {
-                        "Authorization": `Bearer ${API_KEY}`
-                    }
-                });
+                // Models endpoints are public - no auth required
+                const response = await fetch(endpoint);
 
                 if (!response.ok) {
                     throw new Error(`HTTP error! status: ${response.status}`);

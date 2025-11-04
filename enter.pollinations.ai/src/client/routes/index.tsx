@@ -1,4 +1,4 @@
-import { createFileRoute, redirect, useRouter, Link } from "@tanstack/react-router";
+import { createFileRoute, useRouter, redirect, Link } from "@tanstack/react-router";
 import { hc } from "hono/client";
 import { useState } from "react";
 import type { PolarRoutes } from "../../routes/polar.ts";
@@ -9,7 +9,7 @@ import {
     type CreateApiKeyResponse,
 } from "../components/api-key.tsx";
 import { Button } from "../components/button.tsx";
-import { config } from "../config.ts";
+import { config, TIER_POLLEN_METER_ID, PACK_POLLEN_METER_ID } from "../config.ts";
 import { User } from "../components/user.tsx";
 import { PollenBalance } from "../components/pollen-balance.tsx";
 import { TierPanel } from "../components/tier-panel.tsx";
@@ -41,28 +41,26 @@ function RouteComponent() {
     // Extract both tier and pack balances by meter ID
     const meters = customer?.activeMeters || [];
     
-    // IMPORTANT: config.pollenMeterId is the TIER meter (d78e4114...)
-    // The PACK meter is e5c7be95... (or any other meter that's not the tier meter)
-    const TIER_METER_ID = "d78e4114-8423-4006-9dda-a4f86d70c663"; // Subscription meter (daily refills)
-    
     // Log RAW data from Polar for debugging
     console.log("🔍 [FRONTEND] Raw meters from Polar:", meters.map(m => ({
         meterId: m.meterId,
         balance: m.balance,
         credited: m.creditedUnits,
         consumed: m.consumedUnits,
-        isTier: m.meterId === TIER_METER_ID
+        isTier: m.meterId === TIER_POLLEN_METER_ID,
+        isPack: m.meterId === PACK_POLLEN_METER_ID
     })));
     
-    const tierBalance = meters.find(m => m.meterId === TIER_METER_ID)?.balance || 0;
-    const packBalance = meters.filter(m => m.meterId !== TIER_METER_ID)
-        .reduce((sum, m) => sum + (m.balance || 0), 0); // Sum all pack meters
+    // Extract balances using explicit meter IDs
+    const tierBalance = meters.find(m => m.meterId === TIER_POLLEN_METER_ID)?.balance || 0;
+    const packBalance = meters.find(m => m.meterId === PACK_POLLEN_METER_ID)?.balance || 0;
     
     console.log("💰 [FRONTEND] Calculated balances:", {
         tierBalance,
         packBalance,
         total: tierBalance + packBalance,
-        tierMeterId: TIER_METER_ID
+        tierMeterId: TIER_POLLEN_METER_ID,
+        packMeterId: PACK_POLLEN_METER_ID
     });
 
     const [isSigningOut, setIsSigningOut] = useState(false);

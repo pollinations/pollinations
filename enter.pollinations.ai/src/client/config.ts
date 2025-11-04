@@ -19,7 +19,11 @@ const environmentConfig = {
 export const config =
     environmentConfig[import.meta.env.MODE as keyof typeof environmentConfig];
 
-// TierPollen meter ID - shared constant for server-side code
-// Using the original "Pollen" meter that receives generate.image/text events (no prefix)
-// This preserves all existing balance and history
+// Meter IDs for dual-meter pollen system
+// Shared constants used across frontend and backend
+
+// TierPollen: Subscription meter (daily refills, original "Pollen" meter)
 export const TIER_POLLEN_METER_ID = "d78e4114-8423-4006-9dda-a4f86d70c663";
+
+// PackPollen: Purchased pollen meter (one-time purchases, never expires)
+export const PACK_POLLEN_METER_ID = "e5c7be95-f991-4f7e-8752-d19a5e47faf0";

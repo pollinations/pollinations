@@ -68,6 +68,7 @@ export function useImageSlideshow() {
 export function useImageEditor({ stop, image }) {
     const [isLoading, setIsLoading] = useState(false);
     const [editedImage, setEditedImage] = useState(null);
+    const [error, setError] = useState(null);
     const abortControllerRef = useRef(null);
 
     // Effect to reset editedImage when the source image from the slideshow changes
@@ -75,12 +76,14 @@ export function useImageEditor({ stop, image }) {
         // When the parent 'image' (from slideshow) changes, reset the internal edited state.
         // This ensures that when the feed advances, the editor doesn't hold onto old edits.
         setEditedImage(null);
+        setError(null);
     }, [image]); // Depend on the image prop from the parent (slideshow)
 
     const updateImage = useCallback(
         async (newImage) => {
             stop(true);
             setIsLoading(true);
+            setError(null);
 
             // Create new AbortController for this request
             abortControllerRef.current = new AbortController();
@@ -93,11 +96,13 @@ export function useImageEditor({ stop, image }) {
                 );
                 const loadedImage = await loadImage(newImage);
                 setEditedImage(loadedImage);
+                setError(null);
             } catch (error) {
                 if (error.name === "AbortError") {
                     console.log("Image loading cancelled");
                 } else {
                     console.error("Error loading image:", error);
+                    setError(error.message);
                 }
             } finally {
                 setIsLoading(false);
@@ -124,18 +129,58 @@ export function useImageEditor({ stop, image }) {
         image: returnedImage,
         isLoading,
         setIsLoading,
+        error,
     };
 }
 
 const loadImage = async (newImage) => {
-    return new Promise((resolve, reject) => {
-        const img = new Image();
-        img.src = newImage.imageURL;
-        img.onload = () =>
-            resolve({
-                ...newImage,
-                loaded: true,
-            });
-        img.onerror = (error) => reject(error);
-    });
+    // Fetch first to check for errors
+    try {
+        const response = await fetch(newImage.imageURL);
+        
+        if (!response.ok) {
+            const errorText = await response.text();
+            try {
+                const errorJson = JSON.parse(errorText);
+                const errorMessage = errorJson.error || errorJson.message || errorText;
+                throw new Error(errorMessage);
+            } catch (e) {
+                if (e.message && !e.message.includes("JSON")) {
+                    throw e; // Re-throw if it's our error message
+                }
+                throw new Error(errorText || `Failed to load image (${response.status})`);
+            }
+        }
+        
+        const contentType = response.headers.get('content-type');
+        if (!contentType || !contentType.startsWith('image/')) {
+            // Not an image, might be JSON error
+            const text = await response.text();
+            try {
+                const json = JSON.parse(text);
+                if (json.error) {
+                    throw new Error(json.error);
+                }
+            } catch (e) {
+                if (e.message && !e.message.includes("JSON")) {
+                    throw e;
+                }
+            }
+            throw new Error("Response is not an image");
+        }
+        
+        // Now load the image
+        return new Promise((resolve, reject) => {
+            const img = new Image();
+            img.src = newImage.imageURL;
+            img.onload = () =>
+                resolve({
+                    ...newImage,
+                    loaded: true,
+                });
+            img.onerror = () => reject(new Error("Failed to render image"));
+        });
+    } catch (error) {
+        throw error;
+    }
 };

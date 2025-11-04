@@ -9,7 +9,7 @@ import { trackEvent } from "../../config/analytics.js";
  * Displays an image with a tooltip and tracks click events.
  * Tracks user interactions when the image is clicked.
  */
-export const ImageDisplay = memo(function ImageDisplay({ image }) {
+export const ImageDisplay = memo(function ImageDisplay({ image, error }) {
     const theme = useTheme();
     const isDesktop = useMediaQuery(theme.breakpoints.up("md"));
     const handleImageClick = (e) => {
@@ -42,24 +42,38 @@ export const ImageDisplay = memo(function ImageDisplay({ image }) {
                 width: "100%",
             }}
         >
-            {image
-                ? isDesktop
-                    ? <Link
-                          href={image["imageURL"]}
-                          target="_blank"
-                          rel="noopener"
-                          onClick={handleImageClick}
-                      >
-                          {ImageContent}
-                      </Link>
-                    : ImageContent
-                : <Typography
+            {error
+                ? <Typography
                       component="div"
-                      variant="h6"
-                      color="textSecondary"
+                      variant="body1"
+                      sx={{
+                          color: "#ff6b6b",
+                          padding: "20px",
+                          backgroundColor: "rgba(255, 107, 107, 0.1)",
+                          borderRadius: "8px",
+                          border: "1px solid rgba(255, 107, 107, 0.3)",
+                      }}
                   >
-                      Loading image...
-                  </Typography>}
+                      Error: {error}
+                  </Typography>
+                : image
+                  ? isDesktop
+                      ? <Link
+                            href={image["imageURL"]}
+                            target="_blank"
+                            rel="noopener"
+                            onClick={handleImageClick}
+                        >
+                            {ImageContent}
+                        </Link>
+                      : ImageContent
+                  : <Typography
+                        component="div"
+                        variant="h6"
+                        color="textSecondary"
+                    >
+                        Loading image...
+                    </Typography>}
         </ImageContainer>
     );
 });

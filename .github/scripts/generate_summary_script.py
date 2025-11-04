@@ -154,62 +154,155 @@ def format_diff_for_review(diff_text: str) -> str:
 
 def get_system_prompt() -> str:
     """Return the PR summary generation prompt"""
-    return """You are creating a concise technical summary of a merged PR for Pollinations AI.
+    return """You are creating a structured summary of a merged PR for Pollinations AI weekly digest compilation.
+Your task is to analyze merged pull requests and create user-facing summaries about what changed.
 
-Your task: Create a direct, factual summary without formatting or emojis.
+CRITICAL RULE: IGNORE PR titles and descriptions! They are often misleading or generic. 
+ONLY analyze the actual code changes in the diff to determine what really changed.
 
-CONTEXT: Pollinations is an open-source AI platform with these categories:
-- core: API, models, infrastructure changes
-- community: Apps, tools, examples built with Pollinations
-- docs: Guides, tutorials, API documentation
-- infrastructure: Deployment, monitoring, performance
+CRITICAL: You are talking to USERS of the Pollinations AI service, NOT developers!
+Users care about: bug fixes, new features, performance improvements, UI changes.
+Users DON'T care about: backend refactors, code architecture, database migrations, internal APIs.
 
-WHAT TO FOCUS ON:
-- User-facing changes and bug fixes
-- New features or capabilities added
-- Performance improvements
-- API or interface changes
+IMPORTANT: Pollinations is an open-source AI platform where the community contributes in multiple ways:
+1. **Core Platform Changes** - API improvements, new models, infrastructure updates
+2. **Community Project Submissions** - Apps, tools, examples, and projects built using Pollinations AI
+3. **Documentation & Guides** - Tutorials, examples, API documentation
+4. **Infrastructure & DevOps** - Deployment, monitoring, performance improvements
 
-WHAT TO SKIP:
-- Internal refactoring without user impact
-- Code cleanup or organization
-- Test-only changes
+CONTEXTUAL ANALYSIS - Determine the PR type based on file paths and changes:
+
+**CORE PLATFORM CHANGES** (affects all users):
+- Files in: `/api/`, `/models/`, `/backend/`, `/frontend/`, `/docker/`, `/kubernetes/`, `/src/`
+- Changes to: Rate limits, authentication, model endpoints, API responses, UI
+- Focus: What changed for users, bug fixes they'll notice, new features they can use
+
+**COMMUNITY PROJECT SUBMISSIONS** (showcases community creativity):
+- Files in: `/projects/`, `/examples/`, `/apps/`, `/tools/`, `/community/`, `/notebooks/`
+- New directories with complete applications/tools
+- Focus: Celebrate contributor, describe the project, encourage exploration
+
+**DOCUMENTATION UPDATES** (helps users learn):
+- Files: `README.md`, `/docs/`, `/guides/`, `/tutorials/`, `.md` files
+- Focus: What's easier to understand now, new learning resources
+
+**INFRASTRUCTURE CHANGES** (behind-the-scenes improvements):
+- Files: `/deploy/`, `/monitoring/`, `/scripts/`, `docker-compose.yml`, CI/CD files, `.github/`
+- Focus: Performance improvements users will notice, reliability improvements
+
+The format we will use to present the PR code diff:
+======
+## File: 'src/file1.py' 📝
+**Status:** MODIFIED
+
+@@ ... @@ def func1():
+__new hunk__
+11  unchanged code line0
+12  unchanged code line1
+13 +new code line2 added
+14  unchanged code line3
+__old hunk__
+ unchanged code line0
+ unchanged code line1
+-old code line2 removed
+ unchanged code line3
+======
+
+ANALYSIS REQUIREMENTS:
+
+**What to Focus On:**
+- Bug fixes users noticed - "Daily pollen refills work now", "Login issues fixed"
+- New features users can use - "New model available", "New API endpoint for X"
+- Performance improvements users feel - "Faster image generation", "Reduced wait times"
+- UI/UX changes - "Better tier display", "Cleaner dashboard"
+- Rate limit/quota changes - Very important! Users need to know about these
+- Community projects - Celebrate what the community built
+
+**What to Skip:**
+- Backend refactoring that doesn't affect users
+- Database schema changes (unless they fix a user-facing bug)
+- Internal API changes (unless they break existing user integrations)
+- Code organization/cleanup
+- Test updates (unless they reveal a new feature)
+- Environment variable changes (unless users need to update something)
 - Developer tooling updates
 
 OUTPUT FORMAT:
 Return ONLY a JSON object with this structure:
 {
   "category": "core|community|docs|infrastructure",
-  "summary": "Brief description of the main change",
+  "summary": "Brief description of the main change (no emojis or formatting)",
   "impact": "high|medium|low",
-  "details": ["Detail 1", "Detail 2"]
+  "details": ["Detail 1 (no emojis)", "Detail 2 (no emojis)", "Detail 3 (no emojis)"]
 }
 
-Guidelines:
-- category: Choose the most relevant category
-- summary: One concise sentence describing the change
+GUIDELINES:
+- category: Choose based on file paths and change type above
+- summary: One concise sentence describing what changed for users (no emojis, no markdown)
 - impact: high (new features/major fixes), medium (minor features/docs), low (internal changes)
-- details: 2-3 key points max, direct and factual
+- details: 2-4 key points, direct and factual (no emojis, no markdown formatting)
+- Keep summaries clean and technical for later compilation into final digest
+- Focus on WHAT changed for users, not HOW it was implemented
+- Use present tense: "Adds X", "Fixes Y", "Improves Z"
+- Prioritize completeness over brevity for significant changes, but stay concise for routine updates
 
-Keep summaries clean and technical for later compilation into final digest.
-"""
+The output should be clean JSON without any Discord formatting, emojis, or markdown."""
 
 def get_user_prompt(title: str, branch: str, description: str, diff: str) -> str:
     """Return the PR analysis prompt"""
-    template = """Analyze this merged PR:
+    template = """--Merged PR Information--
 
 Title: '{{ title }}'
 Branch: '{{ branch }}'
 {% if description and description != "No description provided" %}
 
-Description:
+PR Description:
+======
 {{ description }}
+======
 {% endif %}
 
-Code Changes:
+The PR code changes:
+======
 {{ diff }}
+======
 
-Create a concise JSON summary for the weekly digest."""
+ANALYSIS TASK:
+Analyze these code changes and create a structured summary for the Pollinations AI weekly digest.
+
+CRITICAL: IGNORE the PR title and description - ONLY analyze the actual code changes shown in the diff!
+The PR title/description may be misleading or generic. Focus ONLY on what the code actually does.
+
+REMEMBER: You're talking to USERS of the service, NOT developers!
+
+FIRST: Determine the PR type based on file paths in the diff:
+- **Core Platform** (API/backend/models): Focus on user-visible changes, bug fixes, new features
+- **Community Project** (projects/examples/apps): Celebrate contributor, describe the project
+- **Documentation** (README/docs/guides): Highlight what's easier to understand now
+- **Infrastructure** (deploy/monitoring/CI): Only mention if users will notice performance/reliability improvements
+
+THEN: Focus on USER IMPACT by analyzing the actual code changes:
+1. **What changed for users** - based on the code diff, not the PR title
+2. **Bug fixes they noticed** - look for actual fixes in the code
+3. **New features they can use** - analyze new functions/endpoints/UI elements in the code
+4. **Performance improvements they'll feel** - look for optimization changes
+5. **Rate limit/quota changes** - check for actual rate limit modifications
+6. **UI/UX improvements** - analyze frontend/UI code changes
+
+SKIP:
+- Backend refactoring (unless it fixes a user-facing bug)
+- Database migrations (unless they improve user experience)
+- Internal API changes (unless they break existing integrations)
+- Code cleanup/organization
+- Developer tooling
+
+IMPORTANT: Base your analysis ENTIRELY on the code diff. If the code changes don't match the PR title, trust the code!
+
+Create a structured JSON summary (no emojis, no markdown formatting) with:
+- Appropriate category based on actual file paths in the diff
+- Concise summary of what actually changed for users based on code analysis
+- Impact level based on actual code significance
+- Key details based on actual code changes, not PR description"""
     
     env = Environment()
     tmpl = env.from_string(template)
@@ -242,7 +335,7 @@ def call_pollinations_api(system_prompt: str, user_prompt: str, token: str) -> s
     print(f"🤖 Generating PR summary with {MODEL}")
     
     response = requests.post(
-        f"{POLLINATIONS_API_BASE}/chat/completions",
+        POLLINATIONS_API_BASE,
         headers=headers,
         json=payload,
         timeout=120

@@ -13,11 +13,12 @@ from typing import Dict, List, Optional
 from jinja2 import Environment, Template
 from datetime import datetime
 
+# Configuration
 GITHUB_API_BASE = "https://api.github.com"
 POLLINATIONS_API_BASE = "https://enter.pollinations.ai/api/generate/openai"
 MODEL = "gemini"
 DISCORD_CHAR_LIMIT = 2000
-CHUNK_SIZE = 1900  
+CHUNK_SIZE = 1900  # Leave room for safety
 
 def get_env(key: str, required: bool = True) -> Optional[str]:
     """Get environment variable with optional requirement check"""
@@ -46,6 +47,7 @@ def github_api_request(endpoint: str, token: str) -> Dict:
     return response.json()
 
 def get_pr_diff(repo: str, pr_number: str, token: str) -> str:
+    """Get PR diff in unified format"""
     headers = {
         "Authorization": f"Bearer {token}",
         "Accept": "application/vnd.github.v3.diff"
@@ -61,10 +63,14 @@ def get_pr_diff(repo: str, pr_number: str, token: str) -> str:
     return response.text
 
 def get_pr_files(repo: str, pr_number: str, token: str) -> List[Dict]:
+    """Get list of files changed in PR"""
     endpoint = f"repos/{repo}/pulls/{pr_number}/files"
     return github_api_request(endpoint, token)
 
 def format_diff_for_review(diff_text: str) -> str:
+    """
+    Format the diff text to match PR-Agent's format with line numbers
+    """
     lines = diff_text.split('\n')
     formatted_output = []
     current_file = None
@@ -547,7 +553,11 @@ def post_to_discord(webhook_url: str, payloads: List[Dict]):
 
 def main():
     print("🚀 Starting Update Announcement Generator...")
+    
+    # Get environment variables
     github_token = get_env('GITHUB_TOKEN')
+    
+    # Get Pollinations token from environment
     pollinations_token = get_env('POLLINATIONS_TOKEN')
     print("🔑 Using POLLINATIONS_TOKEN")
     

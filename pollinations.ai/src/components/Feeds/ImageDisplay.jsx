@@ -28,6 +28,7 @@ export const ImageDisplay = memo(function ImageDisplay({ image }) {
                 src={image["imageURL"]}
                 alt="generative_image"
                 onClick={handleImageClick}
+                error={image["error"]}
                 style={{
                     height: isDesktop ? "600px" : "400px",
                     width: "100%",

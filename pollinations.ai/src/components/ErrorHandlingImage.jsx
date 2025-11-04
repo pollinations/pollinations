@@ -6,12 +6,19 @@ import { Colors, Fonts } from "../config/global";
  * Custom image component that fetches images and displays API errors
  * Works like a regular <img> tag but can show error messages from the API
  */
-export function ErrorHandlingImage({ src, alt, style, ...props }) {
+export function ErrorHandlingImage({ src, alt, style, error: errorProp, ...props }) {
     const [imageData, setImageData] = useState(null);
-    const [error, setError] = useState(null);
+    const [error, setError] = useState(errorProp || null);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
+        // If error is passed as prop, show it immediately
+        if (errorProp) {
+            setError(errorProp);
+            setLoading(false);
+            return;
+        }
+
         if (!src) {
             setLoading(false);
             return;

@@ -4,7 +4,6 @@ on:
   push:
     branches:
       - main
-      - master
     paths:
       - 'image.pollinations.ai/cloudflare-cache/**'
   workflow_dispatch: # Allow manual triggering

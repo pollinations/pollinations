@@ -24,6 +24,7 @@ export const getModelPrices = (): ModelPrice[] => {
         prices.push({
             name: serviceName,
             type: "text",
+            perToken: true,
             promptTextPrice: formatPrice(latestCostAny.promptTextTokens, false, formatPricePer1M),
             promptCachedPrice: formatPrice(latestCostAny.promptCachedTokens, false, formatPricePer1M),
             promptAudioPrice: formatPrice(latestCostAny.promptAudioTokens, false, formatPricePer1M),

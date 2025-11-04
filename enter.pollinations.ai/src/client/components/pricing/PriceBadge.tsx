@@ -4,8 +4,8 @@ export const PriceBadge: FC<{ prices: (string | undefined)[], emoji: string, sub
     const validPrices = prices.filter(p => p && p !== "—");
     if (validPrices.length === 0) return null;
 
-    // Only show suffix for per-image pricing (special case)
-    const suffix = perImage ? ' / image' : '';
+    // Show suffix for per-image pricing (special case) or per-token pricing
+    const suffix = perImage ? ' / image' : (perToken ? ' /M token' : '');
 
     return (
         <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-xs whitespace-nowrap bg-gray-100 text-gray-700">

@@ -13,7 +13,7 @@ export const Pricing: FC = () => {
             <div className="flex flex-col sm:flex-row justify-between gap-3">
                 <h2 className="font-bold flex-1">Pricing</h2>
             </div>
-            <div className="bg-emerald-100 rounded-2xl p-8 border border-pink-300 space-y-8">
+            <div className="bg-emerald-100 rounded-2xl p-8 border border-pink-300 space-y-8 overflow-x-auto md:overflow-x-visible">
                 <ModelTable models={imageModels} type="image" />
                 <ModelTable models={textModels} type="text" />
                 <div className="text-xs text-gray-500 italic mt-4 pt-4 border-t border-gray-300">

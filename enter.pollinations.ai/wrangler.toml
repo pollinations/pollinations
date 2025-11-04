@@ -49,6 +49,36 @@ IMAGE_SERVICE_URL = "http://ec2-3-80-56-235.compute-1.amazonaws.com:16384"
 TEXT_SERVICE_URL = "http://ec2-3-80-56-235.compute-1.amazonaws.com:16385"
 
 
+[env.local]
+
+[[env.local.d1_databases]]
+binding = "DB"
+database_name = "development-pollinations-enter-db"
+database_id = "6345cb3c-e57a-4aab-bdd4-bca0de7bd930"
+migrations_dir = "drizzle"
+
+[[env.local.kv_namespaces]]
+# development-pollinations-enter-kv
+binding = "KV"
+id = "aa0d0aceb6bd45de93032270c7adf4ab"
+
+[env.local.vars]
+ENVIRONMENT = "local"
+LOG_LEVEL = "trace"
+ALLOW_ANONYMOUS_USAGE = false
+POLAR_SUCCESS_URL = "http://localhost:3000"
+POLAR_SERVER = "sandbox"
+TINYBIRD_INGEST_URL = "http://localhost:7181/v0/events?name=generation_event"
+# Polar product IDs for tier subscriptions
+POLAR_PRODUCT_ID_SEED = "19c3291a-e1fa-4a03-a08a-3de9ab84af5d"
+POLAR_PRODUCT_ID_FLOWER = "c675a78a-d954-4739-bfad-c0c8aa3e5576"
+POLAR_PRODUCT_ID_NECTAR = "dfe978ca-8e07-41fa-992a-ae19ab96e66c"
+IMAGE_SERVICE_URL = "http://localhost:16384"
+TEXT_SERVICE_URL = "http://localhost:16385"
+
+
+[env.staging]
+
 [[env.staging.routes]]
 pattern = "enter.pollinations.ai"
 zone_name = "pollinations.ai"
@@ -110,5 +140,5 @@ TINYBIRD_INGEST_URL = "http://localhost:7181/v0/events?name=generation_event"
 POLAR_PRODUCT_ID_SEED = "polar_product_id_seed"
 POLAR_PRODUCT_ID_FLOWER = "polar_product_id_flower"
 POLAR_PRODUCT_ID_NECTAR = "polar_product_id_nectar"
-IMAGE_SERVICE_URL = "http://ec2-3-80-56-235.compute-1.amazonaws.com:16384"
-TEXT_SERVICE_URL = "http://ec2-3-80-56-235.compute-1.amazonaws.com:16385"
+IMAGE_SERVICE_URL = "http://localhost:16384"
+TEXT_SERVICE_URL = "http://localhost:16385"

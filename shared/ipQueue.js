@@ -43,8 +43,8 @@ const createError = (message, status, context = {}) => {
 	return error;
 };
 
-// Helper: Get priority or tier-based cap
-const getCapForTier = (authResult) => {
+// Helper: Get cap for user (priority users or default)
+const getCapForUser = (authResult) => {
 	const userId = authResult.userId;
 	if (userId && specialModelPriorityUsers.has(userId)) {
 		const cap = specialModelPriorityUsers.get(userId);
@@ -52,20 +52,14 @@ const getCapForTier = (authResult) => {
 		return cap;
 	}
 	
-	const cap = tierCaps[authResult.tier] || 1;
-	log('Using tier-based cap: %d for tier: %s', cap, authResult.tier);
-	return cap;
+	// Default cap for all users (authenticated or not)
+	const defaultCap = 3;
+	log('Using default cap: %d', defaultCap);
+	return defaultCap;
 };
 
 // In-memory queue storage
 const queues = new Map();
-
-const tierCaps = {
-    anonymous: 1,
-    seed: 3,
-    flower: 6,
-    nectar: 20,
-};
 
 // Parse priority users from environment variable
 const parsePriorityUsers = () => {
@@ -96,7 +90,7 @@ if (specialModelPriorityUsers.size > 0) {
  * @param {Object} options - Queue options
  * @param {number} [options.interval=6000] - Time between requests in ms
  * @param {number} [options.cap=1] - Number of requests allowed per interval
- * @param {boolean} [options.forceCap=false] - If true, use provided cap instead of tier-based cap
+ * @param {boolean} [options.forceCap=false] - If true, use provided cap instead of user-based cap
  * @returns {Promise<any>} Result of the function execution
  */
 export async function enqueue(req, fn, { interval = 6000, cap = 1, forceCap = false } = {}) {
@@ -121,7 +115,7 @@ export async function enqueue(req, fn, { interval = 6000, cap = 1, forceCap = fa
 
     // Get authentication status
     const authResult = await shouldBypassQueue(req);
-    authLog("Auth: %s, tier=%s, userId=%s", authResult.reason, authResult.tier || "none", authResult.userId || "none");
+    authLog("Auth: %s, userId=%s", authResult.reason, authResult.userId || "none");
 
     // Check if there's an error in the auth result (invalid token)
     if (authResult.error) {
@@ -138,9 +132,9 @@ export async function enqueue(req, fn, { interval = 6000, cap = 1, forceCap = fa
     // For all other users, always use the queue but adjust the interval and cap based on authentication type
     // This ensures all requests are subject to rate limiting and queue size constraints
 
-    // Only apply tier-based cap if forceCap is not set
+    // Only apply user-based cap if forceCap is not set
 	if (!forceCap) {
-		cap = getCapForTier(authResult);
+		cap = getCapForUser(authResult);
 	} else {
 		log('Using forced cap: %d (override)', cap);
 	}
@@ -160,7 +154,6 @@ export async function enqueue(req, fn, { interval = 6000, cap = 1, forceCap = fa
 		total: totalInQueue,
 		position: totalInQueue + 1, // This request's position in queue
 		enqueuedAt: new Date().toISOString(),
-		tier: authResult.tier || "anonymous",
 		authenticated: authResult.authenticated || false,
 	};
 
@@ -176,7 +169,7 @@ export async function enqueue(req, fn, { interval = 6000, cap = 1, forceCap = fa
 		const userContext = authResult.username ? `user: ${authResult.username} (${authResult.userId})` : `IP: ${ip}`;
 		const message = `Queue full for ${userContext}: ${totalInQueue} requests already queued (max: ${maxQueueSize})`;
 		
-		errorLog("🚫 RATE LIMIT: %s - tier: %s", message, authResult.tier);
+		errorLog("🚫 RATE LIMIT: %s", message);
 		
 		const error = createError(message, 429, {
 			queueInfo: {
@@ -184,7 +177,6 @@ export async function enqueue(req, fn, { interval = 6000, cap = 1, forceCap = fa
 				total: totalInQueue, maxAllowed: maxQueueSize,
 				username: authResult.username || null,
 				userId: authResult.userId || null,
-				tier: authResult.tier || "anonymous"
 			}
 		});
 		

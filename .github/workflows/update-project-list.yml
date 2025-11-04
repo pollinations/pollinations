@@ -6,7 +6,7 @@ on:
       - 'pollinations.ai/src/config/projectList.js'
   push:
     branches:
-      - master
+      - main
     paths:
       - 'pollinations.ai/src/config/projectList.js'
 

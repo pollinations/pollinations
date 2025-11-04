@@ -1,6 +1,6 @@
 import styled from "@emotion/styled";
 import { SocialLinks } from "../components/SocialLinks";
-import logo from "/logo.webp";
+import logo from "/logo.svg";
 
 const FooterContainer = styled.footer`
   background-color: black;
@@ -120,7 +120,7 @@ const BerlinText = styled.p`
 const Footer = () => {
   const exploreLinks = [
     { text: "Gallery", href: "#feeds" },
-    { text: "API Docs", href: "https://github.com/pollinations/pollinations/blob/master/APIDOCS.md" },
+    { text: "API Docs", href: "https://github.com/pollinations/pollinations/blob/main/APIDOCS.md" },
     { text: "Our Models", href: "#feeds" },
   ];
 

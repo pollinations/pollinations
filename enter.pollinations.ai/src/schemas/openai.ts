@@ -318,7 +318,9 @@ export const ContentFilterSeveritySchema = z.enum([
     "high",
 ]);
 
-const ContentFilterResultSchema = z
+export type ContentFilterSeverity = z.infer<typeof ContentFilterSeveritySchema>;
+
+export const ContentFilterResultSchema = z
     .object({
         hate: z.object({
             filtered: z.boolean(),
@@ -353,7 +355,7 @@ const ContentFilterResultSchema = z
 
 export type ContentFilterResult = z.infer<typeof ContentFilterResultSchema>;
 
-const PromptFilterResultSchema = z.array(
+export const PromptFilterResultSchema = z.array(
     z.object({
         prompt_index: z.number().int().nonnegative(),
         content_filter_results: ContentFilterResultSchema,
@@ -370,7 +372,8 @@ const CompletionChoiceSchema = z.object({
         "tool_calls",
         "content_filter",
         "function_call",
-    ]),
+        "",  // Perplexity returns empty string
+    ]).nullable().optional(),
     index: z.number().int().nonnegative(),
     message: ChatCompletionResponseMessageSchema,
     logprobs: ChatCompletionChoiceLogprobsSchema.nullish(),
@@ -430,6 +433,7 @@ export const CreateChatCompletionStreamResponseSchema = z.object({
                     "tool_calls",
                     "content_filter",
                     "function_call",
+                    "",  // Perplexity returns empty string
                 ])
                 .nullable()
                 .optional(),

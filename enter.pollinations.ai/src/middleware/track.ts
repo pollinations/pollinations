@@ -7,9 +7,19 @@ import {
     calculatePrice,
     ServiceId,
     ModelId,
+    UsageCost,
+    UsagePrice,
+    PriceDefinition,
 } from "@shared/registry/registry.ts";
-import { parseUsageHeaders } from "@shared/registry/usage-headers.ts";
 import {
+    openaiUsageToTokenUsage,
+    parseUsageHeaders,
+} from "@shared/registry/usage-headers.ts";
+import {
+    CompletionUsage,
+    CompletionUsageSchema,
+    ContentFilterResult,
+    ContentFilterResultSchema,
     ContentFilterSeveritySchema,
     CreateChatCompletionResponseSchema,
     type CreateChatCompletionResponse,
@@ -23,26 +33,53 @@ import {
     usageToEventParams,
 } from "@/db/schema/event.ts";
 import { drizzle } from "drizzle-orm/d1";
-import { Context } from "hono";
+import { HonoRequest } from "hono";
 import type {
     EventType,
     GenerationEventContentFilterParams,
+    InsertGenerationEvent,
 } from "@/db/schema/event.ts";
 import type { AuthVariables } from "@/middleware/auth.ts";
 import { PolarVariables } from "./polar.ts";
 import { z } from "zod";
 import { TokenUsage } from "../../../shared/registry/registry.js";
 import { removeUnset } from "@/util.ts";
+import { EventSourceParserStream } from "eventsource-parser/stream";
+import { mergeContentFilterResults } from "@/content-filter.ts";
 
 export type ModelUsage = {
     model: ModelId;
     usage: TokenUsage;
 };
 
+type RequestTrackingData = {
+    modelRequested: string | null;
+    resolvedModelRequested: string;
+    freeModelRequested: boolean;
+    modelPriceDefinition: PriceDefinition;
+    streamRequested: boolean;
+    referrerData: ReferrerData;
+};
+
+type ResponseTrackingData = {
+    responseStatus: number;
+    responseOk: boolean;
+    cacheData: CacheData;
+    isBilledUsage: boolean;
+    modelUsed?: string;
+    usage?: TokenUsage;
+    cost?: UsageCost;
+    price?: UsagePrice;
+    contentFilterResults?: GenerationEventContentFilterParams;
+};
+
 export type TrackVariables = {
     track: {
-        isFreeUsage: boolean;
         modelRequested: string | null;
+        resolvedModelRequested: string;
+        freeModelRequested: boolean;
+        streamRequested: boolean;
+        overrideResponseTracking: (response: Response) => void;
     };
 };
 
@@ -58,104 +95,47 @@ export const track = (eventType: EventType) =>
     createMiddleware<TrackEnv>(async (c, next) => {
         const log = c.get("log");
         const startTime = new Date();
-
-        const modelRequested = await extractModelRequested(c);
-        const resolvedModelRequested = resolveServiceId(
-            modelRequested,
-            eventType,
-        );
-        const isFreeUsage = isFreeService(resolvedModelRequested);
+        const requestTracking = await trackRequest(eventType, c.req);
+        let responseOverride = null;
 
         c.set("track", {
-            modelRequested,
-            isFreeUsage,
+            modelRequested: requestTracking.modelRequested,
+            resolvedModelRequested: requestTracking.resolvedModelRequested,
+            freeModelRequested: requestTracking.freeModelRequested,
+            streamRequested: requestTracking.streamRequested,
+            overrideResponseTracking: (response: Response) => {
+                responseOverride = response;
+            },
         });
 
         await next();
 
-        const referrerInfo = extractReferrerInfo(c);
-        const cacheInfo = extractCacheHeaders(c);
-        const tokenPrice = getActivePriceDefinition(resolvedModelRequested);
-        if (!tokenPrice) {
-            throw new Error(
-                `Failed to get price definition for model: ${resolvedModelRequested}`,
-            );
-        }
-        let modelUsage, cost, price;
-        if (c.res.ok) {
-            if (!cacheInfo.cacheHit) {
-                modelUsage = extractUsage(c);
-                validateUsage(modelUsage, isFreeUsage);
-
-                log.debug("[COST] Model usage extracted: {modelUsage}", {
-                    modelUsage,
-                });
-
-                cost = calculateCost(
-                    modelUsage.model as ModelId,
-                    modelUsage.usage,
-                );
-
-                price = calculatePrice(
-                    resolvedModelRequested as ServiceId,
-                    modelUsage.usage,
-                );
-
-                log.debug("[COST] Calculated cost: {cost}, price: {price}", {
-                    cost,
-                    price,
-                });
-            } else {
-                log.info(
-                    "Response was served from {cacheType} cache, skipping cost/price calculation",
-                    { ...cacheInfo, cacheType: cacheInfo.cacheType || "exact" },
-                );
-            }
-        } else {
-            // TODO: track error events
-            log.info("Response was not ok ({status}), skipping tracking", {
-                status: c.res.status,
-            });
-            return;
-        }
         const endTime = new Date();
-
-        const event = {
-            id: generateRandomId(),
-            requestId: c.get("requestId"),
-            startTime,
-            endTime,
-            responseTime: endTime.getTime() - startTime.getTime(),
-            responseStatus: c.res.status,
-            environment: c.env.ENVIRONMENT,
-            eventType,
-
-            userId: c.var.auth.user?.id,
-            userTier: extractUserTier(c),
-            ...referrerInfo,
-
-            modelRequested,
-            modelUsed: modelUsage?.model,
-            isBilledUsage: !isFreeUsage && !cacheInfo.cacheHit,
-
-            ...priceToEventParams(tokenPrice),
-            ...usageToEventParams(modelUsage?.usage),
-            ...extractContentFilterResults(c.res.headers),
-
-            totalCost: cost?.totalCost || 0,
-            totalPrice: price?.totalPrice || 0,
-
-            ...cacheInfo,
-        };
-
-        log.trace("Event: {event}", { event });
 
         c.executionCtx.waitUntil(
             (async () => {
+                const responseTracking = await trackResponse(
+                    eventType,
+                    requestTracking,
+                    responseOverride || c.res,
+                );
+                const user = c.var.auth.user;
+                const event = createTrackingEvent({
+                    requestId: c.get("requestId"),
+                    startTime,
+                    endTime,
+                    environment: c.env.ENVIRONMENT,
+                    eventType,
+                    userId: user?.id,
+                    userTier: user?.tier,
+                    requestTracking,
+                    responseTracking,
+                });
+                log.trace("Event: {event}", { event });
                 const db = drizzle(c.env.DB);
                 await storeEvents(db, c.var.log, [event]);
-                // process events immediately in development
-                if (c.env.ENVIRONMENT === "development")
+                // process events immediately in development/testing
+                if (["test", "development"].includes(c.env.ENVIRONMENT))
                     await processEvents(db, c.var.log, {
                         polarAccessToken: c.env.POLAR_ACCESS_TOKEN,
                         polarServer: c.env.POLAR_SERVER,
@@ -166,65 +146,332 @@ export const track = (eventType: EventType) =>
         );
     });
 
-async function extractModelRequested(
-    c: Context<TrackEnv>,
-): Promise<string | null> {
-    if (c.req.method === "GET") {
-        return c.req.query("model") || null;
+async function trackRequest(
+    eventType: EventType,
+    request: HonoRequest,
+): Promise<RequestTrackingData> {
+    const modelRequested = await extractModelRequested(request);
+    const resolvedModelRequested = resolveServiceId(modelRequested, eventType);
+    const freeModelRequested = isFreeService(resolvedModelRequested);
+    const modelPriceDefinition = getActivePriceDefinition(
+        resolvedModelRequested,
+    );
+    if (!modelPriceDefinition) {
+        throw new Error(
+            `Failed to get price definition for model: ${resolvedModelRequested}`,
+        );
     }
-    if (c.req.method === "POST") {
-        const body = await c.req.json();
+    const streamRequested = await extractStreamRequested(request);
+    const referrerData = extractReferrerHeader(request);
+
+    return {
+        modelRequested,
+        resolvedModelRequested,
+        modelPriceDefinition,
+        freeModelRequested,
+        streamRequested,
+        referrerData,
+    };
+}
+
+async function trackResponse(
+    eventType: EventType,
+    requestTracking: RequestTrackingData,
+    response: Response,
+): Promise<ResponseTrackingData> {
+    const { resolvedModelRequested } = requestTracking;
+    const cacheInfo = extractCacheHeaders(response);
+    if (!response.ok || cacheInfo.cacheHit) {
+        return {
+            responseOk: response.ok,
+            responseStatus: response.status,
+            cacheData: cacheInfo,
+            isBilledUsage: false,
+        };
+    }
+    const { modelUsage, contentFilterResults } =
+        await extractUsageAndContentFilterResults(
+            eventType,
+            requestTracking,
+            response,
+        );
+    const cost = calculateCost(modelUsage.model as ModelId, modelUsage.usage);
+    const price = calculatePrice(
+        resolvedModelRequested as ServiceId,
+        modelUsage.usage,
+    );
+    return {
+        responseOk: response.ok,
+        responseStatus: response.status,
+        cacheData: cacheInfo,
+        isBilledUsage: !requestTracking.freeModelRequested,
+        cost,
+        price,
+        modelUsed: modelUsage.model,
+        usage: modelUsage.usage,
+        contentFilterResults,
+    };
+}
+
+async function* extractResponseStream(
+    response: Response,
+): AsyncGenerator<unknown> {
+    if (!response.body) return;
+
+    const textDecoder = new TextDecoderStream();
+    const parser = new EventSourceParserStream();
+    const eventStream = response.body
+        .pipeThrough(textDecoder)
+        .pipeThrough(parser);
+
+    for await (const event of asyncIteratorStream(eventStream)) {
+        if (event.data === "[DONE]") return;
+        yield JSON.parse(event.data);
+    }
+}
+
+async function* asyncIteratorStream<T>(
+    stream: ReadableStream<T>,
+): AsyncGenerator<T> {
+    const reader = stream.getReader();
+    try {
+        while (true) {
+            const { done, value } = await reader.read();
+            if (done) return;
+            yield value;
+        }
+    } finally {
+        reader.releaseLock();
+    }
+}
+
+type TrackingEventInput = {
+    requestId: string;
+    startTime: Date;
+    endTime: Date;
+    environment: string;
+    eventType: EventType;
+    userId?: string;
+    userTier?: string;
+    requestTracking: RequestTrackingData;
+    responseTracking: ResponseTrackingData;
+};
+
+function createTrackingEvent({
+    requestId,
+    startTime,
+    endTime,
+    environment,
+    eventType,
+    userId,
+    userTier,
+    requestTracking,
+    responseTracking,
+}: TrackingEventInput): InsertGenerationEvent {
+    return {
+        id: generateRandomId(),
+        requestId,
+        startTime,
+        endTime,
+        responseTime: endTime.getTime() - startTime.getTime(),
+        responseStatus: responseTracking.responseStatus,
+        environment,
+        eventType,
+
+        userId,
+        userTier: userTier || "anonymous",
+
+        ...requestTracking.referrerData,
+        ...responseTracking.cacheData,
+
+        modelRequested: requestTracking.modelRequested,
+        modelUsed: responseTracking.modelUsed,
+        isBilledUsage:
+            responseTracking.responseOk &&
+            !requestTracking.freeModelRequested &&
+            !responseTracking.cacheData.cacheHit,
+
+        ...priceToEventParams(requestTracking.modelPriceDefinition),
+        ...usageToEventParams(responseTracking.usage),
+
+        totalCost: responseTracking.cost?.totalCost || 0,
+        totalPrice: responseTracking.price?.totalPrice || 0,
+
+        ...responseTracking.contentFilterResults,
+    };
+}
+
+// // TODO: track error events
+// log.info("Skipping response tracking for status: {status}", {
+//     status: response.status,
+// });
+// log.info(
+//     "Response was served from {cacheType} cache, skipping cost/price calculation",
+//     {
+//         ...cacheInfo,
+//         cacheType: cacheInfo.cacheType || "exact",
+//     },
+// );
+
+async function extractModelRequested(
+    request: HonoRequest,
+): Promise<string | null> {
+    if (request.method === "GET") {
+        return request.query("model") || null;
+    }
+    if (request.method === "POST") {
+        const body = await request.json();
         return body.model || null;
     }
     return null;
 }
 
-function extractUsage(c: Context<TrackEnv>): ModelUsage {
-    const log = c.get("log");
-    const usage = parseUsageHeaders(c.res.headers);
-    const modelUsed = c.res.headers.get("x-model-used");
+async function extractStreamRequested(request: HonoRequest): Promise<boolean> {
+    if (request.method === "GET") {
+        const stream = request.param("stream");
+        return z.safeParse(z.coerce.boolean(), stream).data || false;
+    }
+    if (request.method === "POST") {
+        const stream = (await request.json()).stream;
+        return z.safeParse(z.coerce.boolean(), stream).data || false;
+    }
+    return false;
+}
+
+function extractUsageHeaders(response: Response): ModelUsage {
+    const modelUsed = response.headers.get("x-model-used");
     if (!modelUsed) {
         throw new Error(
             "Failed to determine model: x-model-used header was missing",
         );
     }
-    log.debug("[COST] Extracted headers: model: {model}, usage: {usage}", {
-        model: modelUsed,
-        usage,
-    });
+    const usage = parseUsageHeaders(response.headers);
     return {
         model: modelUsed as ModelId,
         usage,
     };
 }
 
-function validateUsage(usage: ModelUsage, isFreeUsage: boolean) {
-    const includedUsageTypes = Object.keys(usage.usage);
-    if (!isFreeUsage && includedUsageTypes.length === 0) {
-        throw new Error("No usage headers where present for a non-free model");
-    }
-}
-
-function extractUserTier(c: Context<TrackEnv>): string | undefined {
-    return c.var.auth.user?.tier;
-}
-
-function extractContentFilterResults(
-    headers: Headers | Record<string, string>,
+function extractContentFilterHeaders(
+    response: Response,
 ): GenerationEventContentFilterParams {
-    const plainHeaders =
-        headers instanceof Headers
-            ? Object.fromEntries(headers.entries())
-            : headers;
-    const parseResult =
-        ContentFilterResultHeadersSchema.safeParse(plainHeaders);
-    if (parseResult.success) {
-        return parseResult.data;
-    }
-    return {};
+    const parseResult = ContentFilterResultHeadersSchema.safeParse(
+        Object.fromEntries(response.headers.entries()),
+    );
+    return parseResult.data || {};
 }
 
-type CacheInfo = {
+function extractUsageAndContentFilterResultsHeaders(response: Response): {
+    modelUsage: ModelUsage;
+    contentFilterResults: GenerationEventContentFilterParams;
+} {
+    return {
+        modelUsage: extractUsageHeaders(response),
+        contentFilterResults: extractContentFilterHeaders(response),
+    };
+}
+
+async function extractUsageAndContentFilterResultsStream(
+    events: AsyncIterable<unknown>,
+): Promise<{
+    modelUsage: ModelUsage;
+    contentFilterResults: GenerationEventContentFilterParams;
+}> {
+    const EventSchema = z.object({
+        model: z.string(),
+        usage: CompletionUsageSchema.nullish(),
+        choices: z.array(
+            z.object({
+                content_filter_results: ContentFilterResultSchema.nullish(),
+            }),
+        ),
+        prompt_filter_results: z
+            .array(
+                z.object({
+                    content_filter_results: ContentFilterResultSchema,
+                }),
+            )
+            .nullish(),
+    });
+
+    let model = undefined;
+    let usage: CompletionUsage | undefined = undefined;
+    let promptFilterResults: ContentFilterResult = {};
+    let completionFilterResults: ContentFilterResult = {};
+
+    for await (const event of events) {
+        const parseResult = EventSchema.safeParse(event);
+
+        const incomingPromptFilterResults =
+            parseResult.data?.prompt_filter_results?.map(
+                (entry) => entry.content_filter_results,
+            ) || [];
+
+        promptFilterResults = mergeContentFilterResults([
+            ...incomingPromptFilterResults,
+            promptFilterResults,
+        ]);
+
+        const incomingCompletionFilterResults =
+            parseResult.data?.choices[0]?.content_filter_results;
+
+        completionFilterResults = mergeContentFilterResults([
+            incomingCompletionFilterResults || {},
+            completionFilterResults,
+        ]);
+
+        if (parseResult.data?.usage) {
+            if (usage) {
+                throw new Error("Multiple usage objects found in event stream");
+            }
+            usage = parseResult.data?.usage;
+            model = parseResult.data?.model;
+        }
+    }
+
+    if (!usage) {
+        throw new Error("No usage object found in event stream");
+    }
+
+    return {
+        modelUsage: {
+            model: model as ModelId,
+            usage: openaiUsageToTokenUsage(usage),
+        },
+        contentFilterResults: contentFilterResultsToEventParams({
+            promptFilterResults,
+            completionFilterResults,
+        }),
+    };
+}
+
+async function extractUsageAndContentFilterResults(
+    eventType: EventType,
+    requestTracking: RequestTrackingData,
+    response: Response,
+): Promise<{
+    modelUsage: ModelUsage;
+    contentFilterResults: GenerationEventContentFilterParams;
+}> {
+    if (
+        eventType === "generate.text" &&
+        requestTracking.streamRequested &&
+        response.body instanceof ReadableStream
+    ) {
+        const eventStream = extractResponseStream(response.clone());
+        return await extractUsageAndContentFilterResultsStream(eventStream);
+    }
+    return extractUsageAndContentFilterResultsHeaders(response);
+}
+
+function validateUsage(usage: ModelUsage, freeModelRequested: boolean) {
+    const includedUsageTypes = Object.keys(usage.usage);
+    if (!freeModelRequested && includedUsageTypes.length === 0) {
+        throw new Error("No usage information found for a non-free model");
+    }
+}
+
+type CacheData = {
     cacheHit: boolean;
     cacheKey?: string;
     cacheType?: "exact" | "semantic";
@@ -232,29 +479,30 @@ type CacheInfo = {
     cacheSemanticThreshold?: number;
 };
 
-function extractCacheHeaders(c: Context<TrackEnv>): CacheInfo {
+function extractCacheHeaders(response: Response): CacheData {
     return {
-        cacheHit: c.res.headers.get("x-cache") === "HIT",
-        cacheKey: c.res.headers.get("x-cache-key") || undefined,
+        cacheHit: response.headers.get("x-cache") === "HIT",
+        cacheKey: response.headers.get("x-cache-key") || undefined,
         cacheType: z
             .enum(["exact", "semantic"])
-            .safeParse(c.res.headers.get("x-cache-type")).data,
+            .safeParse(response.headers.get("x-cache-type")).data,
         cacheSemanticSimilarity: z
             .number()
-            .safeParse(c.res.headers.get("x-cache-semantic-similarity")).data,
+            .safeParse(response.headers.get("x-cache-semantic-similarity"))
+            .data,
         cacheSemanticThreshold: z
             .number()
-            .safeParse(c.res.headers.get("x-cache-semantic-threshold")).data,
+            .safeParse(response.headers.get("x-cache-semantic-threshold")).data,
     };
 }
 
-type ReferrerInfo = {
+type ReferrerData = {
     referrerUrl?: string;
     referrerDomain?: string;
 };
 
-function extractReferrerInfo(c: Context<TrackEnv>): ReferrerInfo {
-    const referrerUrl = c.req.header("referer");
+function extractReferrerHeader(request: HonoRequest): ReferrerData {
+    const referrerUrl = request.header("referer") || undefined;
     const referrerDomain = referrerUrl && safeUrl(referrerUrl)?.hostname;
     return { referrerUrl, referrerDomain };
 }

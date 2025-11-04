@@ -61,7 +61,7 @@ fi
 echo "☁️  Deploying to Cloudflare Pages..."
 wrangler pages deploy "hacktoberfest-2025/$APP_NAME/$OUTPUT_DIR" \
   --project-name="hacktoberfest-$APP_NAME" \
-  --branch=master \
+  --branch=main \
   --commit-dirty=true
 
 echo "✅ Deployment complete for $APP_NAME"

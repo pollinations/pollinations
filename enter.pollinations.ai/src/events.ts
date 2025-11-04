@@ -349,24 +349,25 @@ async function sendPolarEvents(
         }
     }
     
-    // CRITICAL FIX #2: Mark zero-balance events as delivered with error status
+    // CRITICAL FIX #2: Mark zero-balance events as successfully processed (not an error!)
+    // These events were correctly handled by business logic - just not billable
     if (skippedEventIds.length > 0) {
         try {
             await db
                 .update(event)
                 .set({
-                    polarDeliveredAt: new Date(),
-                    eventStatus: "error",
+                    eventStatus: "sent",  // Successfully processed (zero balance is not an error)
+                    // polarDeliveredAt stays NULL - nothing was sent to Polar (skipped)
                     updatedAt: new Date(),
                 })
                 .where(sql`${event.id} IN (${sql.join(skippedEventIds.map(id => sql`${id}`), sql`, `)})`);  
             
-            log.info("✅ Marked {count} zero-balance events as delivered with error status", {
+            log.info("✅ Marked {count} zero-balance events as processed (skipped billing)", {
                 count: skippedEventIds.length,
                 eventIds: skippedEventIds,
             });
         } catch (error) {
-            log.error("❌ Failed to mark zero-balance events as delivered: {error}", { error });
+            log.error("❌ Failed to mark zero-balance events as processed: {error}", { error });
         }
     }
     

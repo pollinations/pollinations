@@ -29,8 +29,13 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-          ref: ${{ github.event.pull_request.head.sha || github.sha }}
-          repository: ${{ github.event.pull_request.head.repo.full_name || github.repository }}
+          # For fork PRs: use PR refs (refs/pull/{number}/head) instead of branch names
+          # - pull_request events: use head.sha
+          # - issue_comment on PRs: use refs/pull/{issue.number}/head
+          # - other events: use default sha
+          ref: ${{ github.event.pull_request.head.sha || (github.event.issue.pull_request && format('refs/pull/{0}/head', github.event.issue.number)) || github.sha }}
+          # Always use base repository to avoid fork checkout failures
+          repository: ${{ github.repository }}
 
       - name: Run Claude Code
         id: claude

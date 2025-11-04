@@ -31,7 +31,7 @@ export const Integration = () => {
             category: "integrate",
         });
         window.open(
-            "https://github.com/pollinations/pollinations/blob/master/APIDOCS.md",
+            "https://github.com/pollinations/pollinations/blob/main/APIDOCS.md",
             "_blank",
         );
     };

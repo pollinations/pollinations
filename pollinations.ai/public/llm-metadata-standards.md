@@ -279,7 +279,7 @@ The MCP server provides the following functions to AI assistants:
 - `sayText`: Convert specific text to speech
 - `listModels`: List available models for image and text generation
 
-For more details, see the [MCP Server documentation](https://github.com/pollinations/pollinations/tree/master/model-context-protocol).
+For more details, see the [MCP Server documentation](https://github.com/pollinations/pollinations/tree/main/model-context-protocol).
 
 ## Testing the Standards
 

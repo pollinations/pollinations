@@ -2,7 +2,7 @@ name: Deploy Hacktoberfest Apps
 
 on:
   push:
-    branches: [master]
+    branches: [main]
     paths:
       - 'hacktoberfest-2025/*/**'
       - '!hacktoberfest-2025/scripts/**'
@@ -111,7 +111,7 @@ jobs:
             fi
             
             echo "Deploying from $SOURCE_DIR to $PROJECT_NAME"
-            wrangler pages deploy "$SOURCE_DIR" --project-name="$PROJECT_NAME" --branch=master
+            wrangler pages deploy "$SOURCE_DIR" --project-name="$PROJECT_NAME" --branch=main
           done
 
       - name: Comment on commit

@@ -109,7 +109,7 @@ app.use(cors());
 app.get("/", (req, res) => {
     res.redirect(
         301,
-        "https://github.com/pollinations/pollinations/blob/master/APIDOCS.md",
+        "https://github.com/pollinations/pollinations/blob/main/APIDOCS.md",
     );
 });
 

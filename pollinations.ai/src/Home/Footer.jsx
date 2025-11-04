@@ -120,7 +120,7 @@ const BerlinText = styled.p`
 const Footer = () => {
   const exploreLinks = [
     { text: "Gallery", href: "#feeds" },
-    { text: "API Docs", href: "https://github.com/pollinations/pollinations/blob/master/APIDOCS.md" },
+    { text: "API Docs", href: "https://github.com/pollinations/pollinations/blob/main/APIDOCS.md" },
     { text: "Our Models", href: "#feeds" },
   ];
 

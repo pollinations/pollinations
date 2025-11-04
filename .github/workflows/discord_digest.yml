@@ -6,12 +6,10 @@ on:
       - main
       - master
   schedule:
-    # Run at 12:00 UTC every Monday and Friday
     - cron: '0 12 * * 1,5'
-  workflow_dispatch: # Allow manual trigger
+  workflow_dispatch: 
 
 jobs:
-  # Job 1: Generate individual PR summary when merged
   generate-pr-summary:
     if: github.event_name == 'pull_request_target' && github.event.pull_request.merged == true
     runs-on: ubuntu-latest
@@ -64,7 +62,6 @@ jobs:
           git commit -m "Add PR #${{ github.event.pull_request.number }} summary for discord digest" || echo "No changes to commit"
           git push || echo "No changes to push"
 
-  # Job 2: Collect all summaries and post discord digest
   post-discord-digest:
     if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
@@ -115,7 +112,7 @@ jobs:
             git commit -m "Clean up processed PR summaries from ${ARCHIVE_DATE}" || echo "No changes to commit"
             git push || echo "No changes to push"
             
-            echo "✅ Cleaned up processed summaries"
+            echo "Cleaned up processed summaries"
           else
-            echo "📭 No summaries to clean up"
+            echo "No summaries to clean up"
           fi

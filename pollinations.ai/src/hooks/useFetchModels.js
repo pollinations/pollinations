@@ -14,7 +14,12 @@ const useFetchModels = () => {
 
     useEffect(() => {
         setLoading(true);
-        fetch("https://image.pollinations.ai/models")
+        const API_KEY = "plln_pk_RRHEqHFAF7utI50fgWc418G7vLXybWg7wkkGQtBgNnZPGs3y4JKpqgEneL0YwQP2";
+        fetch("https://enter.pollinations.ai/api/generate/image/models", {
+            headers: {
+                "Authorization": `Bearer ${API_KEY}`
+            }
+        })
             .then((res) => {
                 if (!res.ok) {
                     throw new Error(`Failed to fetch models: ${res.status}`);

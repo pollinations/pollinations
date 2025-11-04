@@ -174,7 +174,11 @@ function RouteComponent() {
                         </a>
                     </div>
                 </div>
-                <PollenBalance tierBalance={tierBalance} packBalance={packBalance} />
+                <PollenBalance 
+                    tierBalance={tierBalance} 
+                    packBalance={packBalance}
+                    dailyPollen={tierData?.daily_pollen || 0}
+                />
             </div>
             {tierData && (
                 <div className="flex flex-col gap-2">

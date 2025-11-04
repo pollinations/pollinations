@@ -8,6 +8,13 @@ import type { Store } from "hono-rate-limiter";
  * - Max capacity prevents abuse
  * - No hard resets - users get tokens back gradually
  * - Much better UX than fixed window approach
+ * 
+ * KNOWN LIMITATION: Due to KV's eventually consistent nature, concurrent requests
+ * from the same IP may not be perfectly rate limited. This is acceptable for most
+ * real-world use cases where clients don't send many parallel requests.
+ * 
+ * For strict rate limiting, consider using Durable Objects instead:
+ * https://developers.cloudflare.com/durable-objects/examples/build-a-rate-limiter/
  */
 export class TokenBucketKVStore implements Store {
     namespace: KVNamespace;
@@ -54,7 +61,14 @@ export class TokenBucketKVStore implements Store {
 
     async increment(key: string): Promise<{ totalHits: number; resetTime: Date | undefined }> {
         const now = Date.now();
-        const stored = await this.namespace.get(this.prefixKey(key), "json");
+        const prefixedKey = this.prefixKey(key);
+        
+        console.log(`[RATE_LIMIT] increment() called for key=${key}`);
+        console.log(`[RATE_LIMIT]   prefixedKey=${prefixedKey}`);
+        console.log(`[RATE_LIMIT]   now=${now}`);
+        
+        const stored = await this.namespace.get(prefixedKey, "json");
+        console.log(`[RATE_LIMIT]   stored from KV:`, JSON.stringify(stored));
         
         let tokens: number;
         let lastRefill: number;
@@ -66,43 +80,69 @@ export class TokenBucketKVStore implements Store {
             const elapsedMs = now - storedLastRefill;
             const tokensToAdd = Math.floor(elapsedMs / this.refillRateMs);
             
+            console.log(`[RATE_LIMIT]   existing bucket: storedTokens=${storedTokens}, elapsedMs=${elapsedMs}, tokensToAdd=${tokensToAdd}`);
+            
             if (tokensToAdd > 0) {
                 // Refill tokens (up to capacity) and update lastRefill
                 tokens = Math.min(this.capacity, storedTokens + tokensToAdd);
                 lastRefill = storedLastRefill + (tokensToAdd * this.refillRateMs);
+                console.log(`[RATE_LIMIT]   refilled: tokens=${tokens}, lastRefill=${lastRefill}`);
             } else {
                 // No refill yet
                 tokens = storedTokens;
                 lastRefill = storedLastRefill;
+                console.log(`[RATE_LIMIT]   no refill: tokens=${tokens}`);
             }
         } else {
             // New bucket - start with full capacity
             tokens = this.capacity;
             lastRefill = now;
+            console.log(`[RATE_LIMIT]   new bucket: tokens=${tokens}, lastRefill=${lastRefill}`);
         }
         
-        // Check if we have tokens available BEFORE consuming
-        // hono-rate-limiter will reject if totalHits >= limit
-        const totalHits = this.capacity - tokens + 1; // +1 because this request will consume a token
+        // Calculate totalHits for hono-rate-limiter
+        // hono-rate-limiter checks: if (totalHits > limit) return 429
+        // When tokens=0, we need totalHits > capacity to trigger 429
+        let totalHits: number;
+        if (tokens > 0) {
+            // We have tokens - calculate hits after consuming
+            const tokensAfterConsume = tokens - 1;
+            totalHits = this.capacity - tokensAfterConsume;
+        } else {
+            // No tokens available - return totalHits > capacity to trigger 429
+            totalHits = this.capacity + 1;
+        }
+        
+        console.log(`[RATE_LIMIT]   before consume: tokens=${tokens}, totalHits=${totalHits}, capacity=${this.capacity}`);
+        console.log(`[RATE_LIMIT]   will be rate limited? ${totalHits > this.capacity ? 'YES (429)' : 'NO (200)'}`);
         
         // Only consume token if we have one
         if (tokens > 0) {
             tokens -= 1;
+            console.log(`[RATE_LIMIT]   consumed token: tokens now=${tokens}`);
             
             // Store updated bucket state
             const ttlSeconds = Math.max(Math.ceil((this.capacity * this.refillRateMs) / 1000) + 10, 60);
+            const newState = {
+                tokens,
+                lastRefill,
+            };
+            console.log(`[RATE_LIMIT]   writing to KV:`, JSON.stringify(newState));
+            
             await this.namespace.put(
-                this.prefixKey(key),
-                JSON.stringify({
-                    tokens,
-                    lastRefill,
-                }),
+                prefixedKey,
+                JSON.stringify(newState),
                 { expirationTtl: ttlSeconds }
             );
+            console.log(`[RATE_LIMIT]   KV write complete`);
+        } else {
+            console.log(`[RATE_LIMIT]   NO TOKENS AVAILABLE - should be rate limited!`);
         }
         
         const resetTime = new Date(lastRefill + this.refillRateMs);
-        return { totalHits: this.capacity - tokens, resetTime };
+        console.log(`[RATE_LIMIT]   returning: totalHits=${totalHits}, resetTime=${resetTime.toISOString()}`);
+        
+        return { totalHits, resetTime };
     }
 
     async decrement(key: string): Promise<void> {

@@ -12,11 +12,10 @@ import type { TokenUsage } from "../registry/registry.ts";
 
 // Test with real services from the registry
 test("isFreeService should return the correct values", async () => {
-    // Test with actual free services
-    expect(isFreeService("openai-fast")).toBe(true);
-    expect(isFreeService("chickytutor")).toBe(true);
-    expect(isFreeService("midijourney")).toBe(true);
-    // openai and openai-large are NOT free - they have pricing
+    // All services now have pricing - no free services
+    expect(isFreeService("openai-fast")).toBe(false);
+    expect(isFreeService("chickytutor")).toBe(false);
+    expect(isFreeService("midijourney")).toBe(false);
     expect(isFreeService("openai")).toBe(false);
     expect(isFreeService("openai-large")).toBe(false);
 });
@@ -46,12 +45,13 @@ test("calculatePrice should return the correct price", async () => {
         completionTextTokens: 1_000_000,
     } satisfies TokenUsage;
     
-    // Test with real free service (openai-fast is marked as free)
-    const freePrice = calculatePrice("openai-fast", usage);
-    expect(freePrice.promptTextTokens).toBe(0.0);
-    expect(freePrice.promptCachedTokens).toBe(0.0);
-    expect(freePrice.completionTextTokens).toBe(0.0);
-    expect(freePrice.totalPrice).toBe(0.0);
+    // Test with openai-fast which has pricing (gpt-5-nano-2025-08-07)
+    // gpt-5-nano pricing: $0.06 per 1M prompt tokens, $0.01 per 1M cached, $0.44 per 1M completion
+    const price = calculatePrice("openai-fast", usage);
+    expect(price.promptTextTokens).toBe(0.06);
+    expect(price.promptCachedTokens).toBe(0.010);
+    expect(price.completionTextTokens).toBe(0.44);
+    expect(price.totalPrice).toBe(0.51); // 0.06 + 0.01 + 0.44
 });
 
 test("Usage types with undefined cost or price should throw an error", async () => {

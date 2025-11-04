@@ -15,7 +15,7 @@ from datetime import datetime
 
 # Configuration
 GITHUB_API_BASE = "https://api.github.com"
-POLLINATIONS_API_BASE = "https://text.pollinations.ai/openai"
+POLLINATIONS_API_BASE = "https://enter.pollinations.ai/api/generate/openai"
 MODEL = "gemini"
 DISCORD_CHAR_LIMIT = 2000
 CHUNK_SIZE = 1900  # Leave room for safety
@@ -557,13 +557,9 @@ def main():
     # Get environment variables
     github_token = get_env('GITHUB_TOKEN')
     
-    # Check for POLLINATIONS_TOKEN_DCPRS first, fallback to POLLINATIONS_TOKEN
-    pollinations_token = os.getenv('POLLINATIONS_TOKEN_DCPRS')
-    if pollinations_token:
-        print("🔑 Using POLLINATIONS_TOKEN_DCPRS")
-    else:
-        pollinations_token = get_env('POLLINATIONS_TOKEN')
-        print("🔑 Using POLLINATIONS_TOKEN")
+    # Get Pollinations token from environment
+    pollinations_token = get_env('POLLINATIONS_TOKEN')
+    print("🔑 Using POLLINATIONS_TOKEN")
     
     discord_webhook = get_env('DISCORD_WEBHOOK_URL')
     pr_number = get_env('PR_NUMBER')

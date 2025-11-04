@@ -190,40 +190,20 @@ async function sendPolarEvents(
                     externalId: event.userId,
                 });
             
-            // Log FULL RAW customer state for debugging
-            log.debug("RAW Polar API response: {raw}", {
-                raw: JSON.stringify(customerState, null, 2)
-            });
-            
-            // Log full customer state for debugging with meter details
-            const meters = (customerState as any).activeMeters || [];
-            log.debug("All meters: {meters}", {
-                meters: meters.map((m: any) => ({
-                    meterId: m.meterId,
-                    balance: m.balance,
-                    credited: m.creditedUnits,
-                    consumed: m.consumedUnits
-                }))
-            });
-            
-            // Find TierPollen and PackPollen meters by ID
-            // TierPollen is the subscription meter, PackPollen is from pack purchases
-            const tierMeter = meters.find((m: any) => 
-                m.meterId === TIER_POLLEN_METER_ID
-            );
-            const packMeters = meters.filter((m: any) => 
-                m.meterId !== TIER_POLLEN_METER_ID && m.balance > 0
-            );
-            
+                // Extract meters with proper type safety
+                const meters = customerState?.activeMeters || [];
+                
+                // Find TierPollen and PackPollen meters by ID
+                const tierMeter = meters.find(m => m.meterId === TIER_POLLEN_METER_ID);
+                const packMeters = meters.filter(m => 
+                    m.meterId !== TIER_POLLEN_METER_ID && (m.balance || 0) > 0
+                );
+                
                 tierBalance = tierMeter?.balance || 0;
-                packBalance = packMeters.reduce((sum: number, m: any) => sum + (m.balance || 0), 0);
+                packBalance = packMeters.reduce((sum, m) => sum + (m.balance || 0), 0);
                 
-                log.debug("Meter identification: tierMeter={tierId} packMeters={packIds}", {
-                    tierId: TIER_POLLEN_METER_ID,
-                    packIds: packMeters.map((m: any) => m.meterId)
-                });
-                
-                log.info("Spending router balances fetched: userId={userId} cost={cost} tier={tier} pack={pack}", {
+                // Single concise log for balance fetching
+                log.info("Balance fetched: userId={userId} cost={cost} tier={tier} pack={pack}", {
                     userId: event.userId,
                     cost,
                     tier: tierBalance,
@@ -299,12 +279,7 @@ async function sendPolarEvents(
             // Update running balance
             runningBalance.tier -= cost;
             
-            log.info("Router decision: TIER ONLY - cost={cost} tier={tierBefore}->{tierAfter} pack={pack}", {
-                cost,
-                tierBefore: tierBalance,
-                tierAfter: runningBalance.tier,
-                pack: packBalance,
-            });
+            // Tier-only route (most common case)
         } else if (tierBalance > 0 && cost <= tierBalance + packBalance) {
             // Split between tier and pack
             const fromTier = tierBalance;
@@ -343,13 +318,7 @@ async function sendPolarEvents(
             runningBalance.tier = 0;
             runningBalance.pack -= fromPack;
             
-            log.info("Router decision: SPLIT - fromTier={fromTier} fromPack={fromPack} total={cost} tier={tierAfter} pack={packAfter}", {
-                fromTier,
-                fromPack,
-                cost,
-                tierAfter: runningBalance.tier,
-                packAfter: runningBalance.pack,
-            });
+            log.info("Split charge: tier={fromTier} pack={fromPack}", { fromTier, fromPack });
         } else {
             // Use pack only (or default to tier if no pack meters found)
             const pollenType = packBalance > 0 ? "pack" : "tier";
@@ -376,14 +345,7 @@ async function sendPolarEvents(
                 runningBalance.tier -= cost; // Might go negative (overdraft)
             }
             
-            log.info("Router decision: PACK ONLY - cost={cost} tier={tierBefore}->{tierAfter} pack={packBefore}->{packAfter} pollenType={pollenType}", {
-                cost,
-                tierBefore: tierBalance,
-                tierAfter: runningBalance.tier,
-                packBefore: packBalance,
-                packAfter: runningBalance.pack,
-                pollenType,
-            });
+            // Pack-only route or overdraft to tier
         }
     }
     

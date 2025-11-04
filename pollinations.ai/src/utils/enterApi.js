@@ -1,11 +1,12 @@
 /**
  * Enter.pollinations.ai API Service
+ * Centralized configuration and utilities for enter.pollinations.ai API
  */
 
-const ENTER_BASE_URL = "https://enter.pollinations.ai/api";
-const API_KEY = "plln_pk_yKJQ53tshIxIWUtUXFB3tljE3WObCXHN776D11Pyy81ZPCp7rKgCkYQGM4HDpoXz";
+export const ENTER_BASE_URL = "https://enter.pollinations.ai/api";
+export const API_KEY = "plln_pk_yKJQ53tshIxIWUtUXFB3tljE3WObCXHN776D11Pyy81ZPCp7rKgCkYQGM4HDpoXz";
 
-function getAuthHeader() {
+export function getAuthHeader() {
   return {
     "Authorization": `Bearer ${API_KEY}`,
   };

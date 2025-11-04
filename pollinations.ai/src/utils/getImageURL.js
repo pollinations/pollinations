@@ -4,6 +4,7 @@
  * @returns {string} - The constructed image URL.
  */
 import { modelSupportsImageInput } from "../config/imageModels";
+import { ENTER_BASE_URL, API_KEY } from "./enterApi";
 
 const ENTER_BASE_URL = "https://enter.pollinations.ai/api";
 const API_KEY = "plln_pk_RRHEqHFAF7utI50fgWc418G7vLXybWg7wkkGQtBgNnZPGs3y4JKpqgEneL0YwQP2";

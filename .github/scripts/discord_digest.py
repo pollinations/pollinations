@@ -35,13 +35,13 @@ def get_env(key: str, required: bool = True) -> str:
 
 def load_pr_summaries() -> List[Dict]:
     """Load all PR summaries from the summaries directory"""
-    summaries_dir = ".pr-summaries"
+    summaries_dir = os.getenv('SUMMARIES_PATH', './pr-summaries/')
     
     if not os.path.exists(summaries_dir):
-        print(f"📭 No summaries directory found")
+        print(f"📭 No summaries directory found at {summaries_dir}")
         return []
     
-    summary_files = glob.glob(f"{summaries_dir}/pr_*.json")
+    summary_files = glob.glob(f"{summaries_dir}/*.json")
     
     if not summary_files:
         print(f"📭 No PR summaries found")
@@ -102,12 +102,12 @@ def create_condensed_summary(summaries: List[Dict]) -> List[Dict]:
     condensed = []
     for s in summaries:
         condensed.append({
-            'pr_number': s['pr_number'],
-            'pr_title': s['pr_title'][:80],  # Truncate title
+            'pr_number': s.get('pr_number', 0),
+            'pr_title': s.get('pr_title', 'Unknown PR')[:80],  # Truncate title
             'category': s.get('category', 'core'),
             'impact': s.get('impact', 'medium'),
             'summary': s.get('summary', '')[:150],  # Truncate summary
-            'pr_author': s['pr_author']
+            'pr_author': s.get('pr_author', 'Unknown')
         })
     return condensed
 
@@ -170,7 +170,8 @@ Thanks to our amazing contributors! 🎉
 ```
 
 CRITICAL RULES:
-- Start with a natural, varied greeting that mentions <@&1424461167883194418>
+- Start with a natural, VARIED greeting that mentions <@&1424461167883194418>
+- Use different greetings each time: "Hey <@&1424461167883194418>!", "Hello <@&1424461167883194418>!", "What's up <@&1424461167883194418>?", "Good news <@&1424461167883194418>!", "Time for updates <@&1424461167883194418>!", etc.
 - Focus on WHAT changed, not WHO changed it in main content
 - Max 3-5 highlights (highest impact only)
 - Group similar changes naturally
@@ -189,7 +190,7 @@ YOUR TASK: Create a clean, engaging weekly update that focuses on WHAT changed, 
 
 NEW CLEAN FORMAT:
 ```
-[Natural greeting mentioning <@&1424461167883194418>]
+[Natural greeting with <@&1424461167883194418>]
 
 ## 🌸 Weekly Update - [Date]
 
@@ -217,7 +218,8 @@ Thanks to our amazing contributors! 🎉
 ```
 
 CRITICAL FORMATTING RULES:
-- Start with a natural, varied greeting that mentions <@&1424461167883194418>
+- Start with a natural, VARIED greeting with <@&1424461167883194418> (the role ping represents everyone)
+- Use different styles: "Hey <@&1424461167883194418>!", "Hello <@&1424461167883194418>!", "What's up <@&1424461167883194418>?", "Good news <@&1424461167883194418>!", "Time for updates <@&1424461167883194418>!", etc.
 - Main content focuses on WHAT changed (user impact)
 - NO inline PR numbers or author mentions in bullet points
 - Group related changes naturally under logical sections
@@ -277,19 +279,33 @@ def get_digest_user_prompt(summaries: List[Dict], date_str: str, is_condensed: b
         if items:
             prompt += f"\n=== {impact.upper()} IMPACT ({len(items)} PRs) ===\n"
             for item in items:
-                prompt += f"\n**PR #{item['pr_number']}** - {item['pr_title']}\n"
-                prompt += f"Category: {item['category']}\n"
-                prompt += f"Summary: {item['summary']}\n"
+                pr_num = item.get('pr_number', 0)
+                pr_title = item.get('pr_title', 'Unknown PR')
+                category = item.get('category', 'core')
+                summary = item.get('summary', 'No summary available')
+                author = item.get('pr_author', 'Unknown')
+                pr_url = item.get('pr_url', '#')
+                
+                prompt += f"\n**PR #{pr_num}** - {pr_title}\n"
+                prompt += f"Category: {category}\n"
+                prompt += f"Summary: {summary}\n"
                 if not is_condensed and item.get('details'):
                     prompt += "Details:\n"
                     for detail in item['details']:
                         prompt += f"  - {detail}\n"
-                prompt += f"Author: {item['pr_author']}\n"
-                prompt += f"PR URL: {item['pr_url']}\n"
+                prompt += f"Author: {author}\n"
+                prompt += f"PR URL: {pr_url}\n"
     
     prompt += f"\n\nCreate a clean weekly digest focusing on WHAT changed (user impact)."
     prompt += f"\nCombine related changes naturally. Put all PR numbers and contributors in the footer."
-    prompt += f"\nGenerate PR links as [#123](<{summaries[0]['pr_url'].split('/pull/')[0]}/pull/123>) format."
+    
+    # Generate example URLs safely
+    if summaries:
+        base_url = summaries[0]['pr_url'].split('/pull/')[0]
+        prompt += f"\nGenerate PR links as [#123](<{base_url}/pull/123>) format."
+    else:
+        prompt += f"\nGenerate PR links as [#123](<https://github.com/repo/pull/123>) format."
+    
     prompt += f"\nGenerate contributor links as [@username](<https://github.com/username>) format."
     
     if is_condensed:
@@ -319,7 +335,7 @@ def call_pollinations_api(system_prompt: str, user_prompt: str, token: str) -> s
     print(f"🤖 Generating weekly digest with {MODEL}")
     
     response = requests.post(
-        f"{POLLINATIONS_API_BASE}/chat/completions",
+        POLLINATIONS_API_BASE,
         headers=headers,
         json=payload,
         timeout=120
@@ -330,8 +346,13 @@ def call_pollinations_api(system_prompt: str, user_prompt: str, token: str) -> s
         print(response.text)
         sys.exit(1)
     
-    result = response.json()
-    return result['choices'][0]['message']['content']
+    try:
+        result = response.json()
+        return result['choices'][0]['message']['content']
+    except (KeyError, IndexError, json.JSONDecodeError) as e:
+        print(f"❌ Error parsing API response: {e}")
+        print(f"Response: {response.text}")
+        sys.exit(1)
 
 def parse_discord_message(response: str) -> str:
     """Parse Discord message from AI response"""
@@ -471,7 +492,14 @@ def main():
     # Get date string (covering last week)
     today = datetime.utcnow()
     week_ago = today - timedelta(days=7)
-    date_str = f"{week_ago.strftime('%B %d')} - {today.strftime('%B %d, %Y')}"
+    
+    # Create a concise date range format
+    if week_ago.month == today.month:
+        # Same month: "Nov 4-11, 2025"
+        date_str = f"{week_ago.strftime('%b %d')}-{today.strftime('%d, %Y')}"
+    else:
+        # Different months: "Oct 28 - Nov 4, 2025"
+        date_str = f"{week_ago.strftime('%b %d')} - {today.strftime('%b %d, %Y')}"
     
     # Strategy 1: Try with all summaries if reasonable size
     estimated_size = estimate_prompt_size(summaries)

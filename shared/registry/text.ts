@@ -3,7 +3,6 @@ import type {
     ServiceRegistry,
     UsageConversionDefinition,
 } from "./registry";
-import type { UserTier } from "./types";
 import { ZERO_PRICE, PRICING_START_DATE, perMillion } from "./price-helpers";
 export const TEXT_COSTS = {
     "gpt-5-mini-2025-08-07": [

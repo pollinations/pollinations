@@ -146,7 +146,7 @@ jobs:
             # Delete each gist
             for gist_id in $GIST_IDS; do
               echo "Deleting gist: $gist_id"
-              gh gist delete $gist_id --confirm || echo "Failed to delete gist $gist_id"
+              gh gist delete $gist_id --yes || echo "Failed to delete gist $gist_id"
             done
             
             echo "✅ Cleaned up all processed PR summary gists"
@@ -154,4 +154,5 @@ jobs:
             echo "📭 No gists found to clean up"
           fi
         env:
+
           GITHUB_TOKEN: ${{ secrets.GIST_TOKEN }}

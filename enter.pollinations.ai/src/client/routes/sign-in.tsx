@@ -36,8 +36,8 @@ function RouteComponent() {
                     {loading ? "Signing in..." : "Sign in with Github"}
                 </Button>
             </Header>
-            <Pricing />
             <FAQ />
+            <Pricing />
         </div>
     );
 }

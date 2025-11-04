@@ -192,8 +192,8 @@ function RouteComponent() {
                 onCreate={handleCreateApiKey}
                 onDelete={handleDeleteApiKey}
             />
-            <Pricing />
             <FAQ />
+            <Pricing />
             <div className="text-center py-8">
                 <Link 
                     to="/terms" 

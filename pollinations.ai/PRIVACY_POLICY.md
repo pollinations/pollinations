@@ -1,68 +1,44 @@
-# Privacy Policy
+# Privacy & Data
 
-*Your privacy is paramount to us. This policy outlines our practices regarding the collection, use, protection, and sharing of your information.*
-
----
-
-## 1. Information We Collect
-
-We collect **minimal details** to provide our services:
-
-
-### Data Types
-
-- **Discord IDs** — For user identification when using Discord integration
-- **Usage Information** — We anonymously track how our services are used to improve your experience, without collecting personal data
-- **Cookies and Tracking Technologies** — We may collect information to deliver, maintain, and refine our services
-
-### How We Use Your Information
-
-- Service delivery and communication
-- Sending notices and updates
-- Safeguarding security and integrity
-- Meeting legal requirements
+*We're privacy-focused. Here's what you need to know.*
 
 ---
 
-## 2. Sharing of Information
+## 🔒 What We Collect (Spoiler: Very Little)
 
-> **Your data is NOT for sale.**
+**We keep it minimal:**
 
-We do **not** share your data with third parties except:
+- **Discord IDs** (if you use Discord integration)
+- **Anonymous usage stats** to improve the platform
+- **No personal data** — we don't store your creations or track who you are
 
-- With service providers who assist us
-- When required to defend our rights and safety
-- As required by law
-
----
-
-## 3. Security Safeguards
-
-We implement robust measures to protect your information against:
-
-- Unauthorized access
-- Unauthorized changes
-- Unauthorized destruction
+**Why we collect anything:**
+- To keep the service running
+- To make it better
+- To prevent abuse
 
 ---
 
-## 4. Changes to Privacy Policy
+## 🚫 We Don't Sell Your Data
 
-We may update this policy occasionally. 
+**Never. Period.**
 
-**Continued use of our services after changes indicates acceptance.**
+We only share data when legally required or with service providers who help run the platform.
 
 ---
 
-## 5. GDPR and Data Processing Terms
+## 🛡️ Security
 
-**Pollinations.AI is fully compliant with the General Data Protection Regulation (GDPR).**
+We protect your information from unauthorized access and keep everything encrypted in transit.
 
+---
 
-### Our GDPR Commitments:
+## 🇪🇺 GDPR Compliance
 
-- Our API processes data **transiently** without storing personal data
-- Analytics data (such as referrer URLs collected via GA4) is **anonymized and aggregated** solely for service improvement
-- Data is **encrypted in transit**, and no personal data is retained
-- A **Data Processing Agreement (DPA)** outlining our GDPR compliance is available upon request
-- Data subject requests are managed in accordance with GDPR standards
+For our EU friends:
+
+- We're GDPR compliant
+- Data is processed transiently (not stored)
+- Everything is anonymized and aggregated
+- You can request your data anytime
+- Contact us: hello@pollinations.ai

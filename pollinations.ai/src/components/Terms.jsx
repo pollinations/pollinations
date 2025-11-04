@@ -1,5 +1,6 @@
 import styled from "@emotion/styled";
 import Markdown from "markdown-to-jsx";
+import { useState } from "react";
 import termsMarkdown from "../../TERMS_OF_SERVICE.md?raw";
 import privacyMarkdown from "../../PRIVACY_POLICY.md?raw";
 import { Colors } from "../config/global";
@@ -172,6 +173,15 @@ const ContactSection = styled.div`
 `;
 
 const Terms = () => {
+  const [copied, setCopied] = useState(false);
+
+  const copyEmail = (e) => {
+    e.preventDefault();
+    navigator.clipboard.writeText('hello@pollinations.ai');
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
   return (
     <PageContainer>
       <LogoContainer>
@@ -193,8 +203,25 @@ const Terms = () => {
       </ContentWrapper>
 
       <ContactSection>
+        <p style={{ marginBottom: '1rem' }}>
+          🌸 <strong>Join the Community</strong>
+        </p>
         <p>
-          For any inquiries, please contact: <a href="mailto:hello@pollinations.ai">hello@pollinations.ai</a>
+          <a href="https://github.com/pollinations" target="_blank" rel="noopener noreferrer">GitHub</a>
+          {' • '}
+          <a 
+            href="mailto:hello@pollinations.ai" 
+            onClick={copyEmail}
+            style={{ cursor: 'pointer', position: 'relative' }}
+            title="Click to copy email"
+          >
+            {copied ? '✓ Copied!' : 'Email'}
+          </a>
+          {' • '}
+          <a href="https://discord.gg/k9F7SyTgqn" target="_blank" rel="noopener noreferrer">Discord</a>
+        </p>
+        <p style={{ marginTop: '1rem', opacity: 0.7, fontSize: '0.95rem' }}>
+          Open source • Free forever • Built by the community
         </p>
       </ContactSection>
     </PageContainer>

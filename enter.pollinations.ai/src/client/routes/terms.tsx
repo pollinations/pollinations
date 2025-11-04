@@ -16,9 +16,9 @@ function TermsComponent() {
             {/* Centered Logo */}
             <div className="flex justify-center mb-12">
                 <img
-                    src="/logo_text_black.svg"
-                    alt="pollinations.ai"
-                    className="h-16 sm:h-20 max-w-[90%] invert"
+                    src="/myceli-ai-logo.svg"
+                    alt="Myceli.AI"
+                    className="h-16 sm:h-20 max-w-[90%]"
                 />
             </div>
 
@@ -45,7 +45,7 @@ function TermsComponent() {
             {/* Contact Us - Outside cards, centered */}
             <div className="text-center mt-12 mb-8">
                 <p className="text-gray-700 text-lg">
-                    For any inquiries, please contact: <a href="mailto:hello@pollinations.ai" className="text-blue-600 font-semibold hover:underline">hello@pollinations.ai</a>
+                    For any inquiries, please contact: <a href="mailto:hi@myceli.ai" className="text-blue-600 font-semibold hover:underline">hi@myceli.ai</a>
                 </p>
             </div>
         </div>

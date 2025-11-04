@@ -56,7 +56,7 @@ We may update this policy occasionally.
 
 ## 5. GDPR and Data Processing Terms
 
-**Pollinations.AI is fully compliant with the General Data Protection Regulation (GDPR).**
+**Myceli.AI OÜ is fully compliant with the General Data Protection Regulation (GDPR).**
 
 
 ### Our GDPR Commitments:
@@ -66,3 +66,11 @@ We may update this policy occasionally.
 - Data is **encrypted in transit**, and no personal data is retained
 - A **Data Processing Agreement (DPA)** outlining our GDPR compliance is available upon request
 - Data subject requests are managed in accordance with GDPR standards
+
+---
+
+## Company Information
+
+**Myceli.AI OÜ**  
+Registry Code: 17186693 | VAT: EE102877908  
+Tornimäe tn 5, 10145 Tallinn, Estonia

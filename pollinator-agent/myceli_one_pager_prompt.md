@@ -378,7 +378,7 @@ We're raising a $3M Seed Round to grow the open AI ecosystem
 Join us in building sustainable AI infrastructure
 
 **Contact:**
-Connect: hello@myceli.ai
+Connect: hi@myceli.ai
 
 **Optional Social/Link Elements:**
 If including social proof, show icons or links for:

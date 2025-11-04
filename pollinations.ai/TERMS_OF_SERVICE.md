@@ -1,80 +1,72 @@
-# Terms of Service
+# Community Guidelines & Terms
 
-*Our services empower you to harness AI technology for the creation and interaction with digital media. By using our services, you consent to these terms. Please review them attentively.*
-
----
-
-## 1. Acceptance of Terms
-
-By accessing **Pollinations.AI**, you confirm your understanding and agreement with these Terms and our Privacy Policy. 
-
-If you disagree, we advise you not to use our services.
-
-**What We Offer:**
-
-- AI-powered tools for digital media creation
-- You retain full ownership and responsibility for your content
-- Content can be utilized for commercial purposes, subject to legality and ethical standards
-
-**Our Commitment:**
-
-- We do **not** store user-generated content
-- No personal data is stored
-- We prioritize user privacy and anonymity in all our services
-
-> **Important:** We encourage you to review the licenses of the open-source models we use before commercial use.
+*Welcome to Pollinations! We're an open source project making AI accessible to everyone. By using this platform, you're joining our community.*
 
 ---
 
-## 2. User Conduct
+## 🌸 About This Project
 
-Use Pollinations.AI ethically and legally. 
+Pollinations is a **free, open source** AI platform. We believe in:
 
-**You agree not to:**
+- **Open Access** — Free AI tools for everyone
+- **Your Ownership** — You own everything you create here
+- **Privacy First** — We don't store your creations or personal data
+- **Community Driven** — Built by contributors, for creators
 
-- Engage in illegal activities or violate local laws
-- Infringe on third-party rights or intellectual property
-- Disseminate malicious software or attempt unauthorized data access
-- Probe or test the security of our services
+**Open Source:**
+- Our code is on [GitHub](https://github.com/pollinations)
+- Licensed under permissive open source licenses
+- Contributions welcome!
 
----
-
-## 3. Prohibition of Unauthorized Materials
-
-**Our services must not be used to generate:**
-
-
-### Celebrity Deepfakes
-
-- Creating deepfake materials of celebrities, politicians, or public figures is **strictly prohibited**
-
-### Child Sexual Abuse Material (CSAM)
-
-- It is **strictly forbidden** to produce CSAM or any content depicting individuals under 18 years of age
-- This applies to both fictional and real-life subjects
+> **Note:** The AI models we use have their own licenses. Check model licenses before commercial use.
 
 ---
 
-## 4. Intellectual Property
+## 🤝 Community Conduct
 
-When creating content using Pollinations.AI:
+Help us keep this a welcoming space for everyone:
 
-- Respect the licenses of the open-source models we employ
-- Check specific licenses for restrictions if using content commercially
-- You retain all rights to your created content
-
-**Pollinations.AI GmbH** claims **no intellectual property rights** over the content you create.
-
----
-
-## 5. Modification of Terms
-
-We may amend these terms or our services at any time. 
-
-After changes are posted, your continued use indicates acceptance of the revised terms.
+**Be Respectful:**
+- Use the platform ethically and legally
+- Respect others' rights and intellectual property
+- Don't abuse the service or try to break things
+- Follow local laws and regulations
 
 ---
 
-## 6. Governing Law
+## 🚫 What's Not Allowed
 
-These terms are subject to the **laws of Germany**, without regard to conflict of laws principles.
+To protect our community and comply with laws:
+
+**Prohibited Content:**
+- **No deepfakes** of real people without consent
+- **Absolutely no CSAM** (child sexual abuse material) of any kind, fictional or real
+- No illegal content or content that violates others' rights
+
+We take these seriously to keep the platform safe and legal for everyone.
+
+---
+
+## 📜 Your Rights & Licensing
+
+**Your Creations:**
+- You own what you make
+- We claim zero rights to your content
+- Use your creations however you want
+
+**AI Model Licenses:**
+- Each AI model has its own license
+- Some allow commercial use, some don't
+- Always check the specific model's license
+
+**Our Code:**
+- Open source and free to use
+- Check our [GitHub](https://github.com/pollinations) for details
+
+---
+
+## 📝 Updates & Legal
+
+We may update these guidelines as the project evolves. We'll keep you posted on major changes.
+
+For legal stuff: This is a community project based in Berlin, Germany. 🇩🇪

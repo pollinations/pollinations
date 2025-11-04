@@ -36,6 +36,12 @@ export function processParameters(messages, options) {
         }
     });
 
+    // Add stream_options for Azure OpenAI models
+    if (updatedOptions.stream && config.provider === "azure-openai") {
+        log("Adding stream_options for Azure OpenAI model");
+        updatedOptions.stream_options = { include_usage: true };
+    }
+
     // Apply parameter filtering if defined
     if (modelConfig.allowedParameters) {
         const allowedParams = modelConfig.allowedParameters;

@@ -24,13 +24,13 @@ export function openaiUsageToTokenUsage(openaiUsage: {
     prompt_tokens_details?: {
         cached_tokens?: number;
         audio_tokens?: number;
-    };
+    } | null;
     completion_tokens_details?: {
         reasoning_tokens?: number;
         audio_tokens?: number;
         accepted_prediction_tokens?: number;
         rejected_prediction_tokens?: number;
-    };
+    } | null;
 }): TokenUsage {
     const promptDetailTokens =
         (openaiUsage.prompt_tokens_details?.cached_tokens || 0) +

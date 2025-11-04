@@ -1,16 +1,33 @@
 import { isFreeService, getTextServices } from "@shared/registry/registry.ts";
 import { SELF } from "cloudflare:test";
-import { test } from "./fixtures.ts";
+import { test } from "../fixtures.ts";
 import { describe, beforeEach, expect } from "vitest";
 import { env } from "cloudflare:workers";
+import { ServiceId } from "@shared/registry/registry.ts";
 
-const DISABLE_CACHE = false;
+const TEST_DISABLE_CACHE = true;
+const TEST_ALL_SERVICES = false;
+
+const REQUIRED_SERVICES = [
+    "openai",
+    "openai-fast",
+    "openai-large",
+    // "chickytutor",
+];
+
+const servicesToTest = getTextServices().filter(
+    (serviceId) => TEST_ALL_SERVICES || REQUIRED_SERVICES.includes(serviceId),
+);
 
 const anonymousTestCases = (allowAnoymous: boolean) => {
-    return getTextServices().map((serviceId) => [
+    return servicesToTest.map((serviceId) => [
         serviceId,
         isFreeService(serviceId) && allowAnoymous ? 200 : 401,
     ]);
+};
+
+const authenticatedTestCases = (): [ServiceId, number][] => {
+    return servicesToTest.map((serviceId) => [serviceId, 200]);
 };
 
 const randomString = (length: number) => {
@@ -18,8 +35,8 @@ const randomString = (length: number) => {
 };
 
 function testMessageContent() {
-    return DISABLE_CACHE
-        ? `Do you like this random string: ${randomString(10)}? Only answer yes or no.`
+    return TEST_DISABLE_CACHE
+        ? `Do you like this string: ${randomString(10)}? Only answer yes or no.`
         : "Do you prefer 0, or 1? Just answer with 0 or 1.";
 }
 
@@ -60,11 +77,11 @@ describe.for([true, false])(
     },
 );
 
-// Send a request to each text model, using the Authorization Bearer header
-test.for(getTextServices())(
-    "%s should respond with 200 when using API key via Bearer token",
+// Sends a request to each text model, using bearer auth
+test.for(authenticatedTestCases())(
+    "%s should respond with 200 when using authorization header",
     { timeout: 30000 },
-    async (serviceId, { apiKey }) => {
+    async ([serviceId, expectedStatus], { apiKey }) => {
         const response = await SELF.fetch(
             `http://localhost:3000/api/generate/openai`,
             {
@@ -85,15 +102,14 @@ test.for(getTextServices())(
                 }),
             },
         );
-        expect(response.status).toBe(200);
+        expect(response.status).toBe(expectedStatus);
     },
 );
 
-// Sends a request to each text model, using bearer auth
-test.for(getTextServices())(
-    "%s should respond with 200 when using authorization header",
+test.for(authenticatedTestCases())(
+    "%s should respond with 200 when streaming",
     { timeout: 30000 },
-    async (serviceId, { apiKey }) => {
+    async ([serviceId, expectedStatus], { apiKey, mocks }) => {
         const response = await SELF.fetch(
             `http://localhost:3000/api/generate/openai`,
             {
@@ -108,12 +124,29 @@ test.for(getTextServices())(
                     messages: [
                         {
                             role: "user",
-                            content: "Hello, whats going on today?",
+                            content: testMessageContent(),
                         },
                     ],
+                    stream: true,
                 }),
             },
         );
-        expect(response.status).toBe(200);
+        expect(response.status).toBe(expectedStatus);
+
+        // consume the stream
+        await response.text();
+
+        // wait for event to be processed
+        await new Promise((resolve) => setTimeout(resolve, 50));
+
+        // make sure the recorded events contain usage
+        const events = mocks.tinybird.state.events;
+        expect(events).toHaveLength(1);
+        events.forEach((event) => {
+            expect(event.modelUsed).toBeDefined();
+            expect(event.tokenCountPromptText).toBeGreaterThan(0);
+            expect(event.tokenCountCompletionText).toBeGreaterThan(0);
+            expect(event.totalCost).toBeGreaterThan(0);
+        });
     },
 );

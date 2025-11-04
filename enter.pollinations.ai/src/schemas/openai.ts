@@ -318,7 +318,9 @@ export const ContentFilterSeveritySchema = z.enum([
     "high",
 ]);
 
-const ContentFilterResultSchema = z
+export type ContentFilterSeverity = z.infer<typeof ContentFilterSeveritySchema>;
+
+export const ContentFilterResultSchema = z
     .object({
         hate: z.object({
             filtered: z.boolean(),
@@ -353,7 +355,7 @@ const ContentFilterResultSchema = z
 
 export type ContentFilterResult = z.infer<typeof ContentFilterResultSchema>;
 
-const PromptFilterResultSchema = z.array(
+export const PromptFilterResultSchema = z.array(
     z.object({
         prompt_index: z.number().int().nonnegative(),
         content_filter_results: ContentFilterResultSchema,

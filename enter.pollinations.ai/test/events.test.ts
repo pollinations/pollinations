@@ -55,11 +55,8 @@ function createTextGenerationEvent(
         "generate.text",
     );
 
-    const modelUsed = getServiceDefinition(resolvedModelRequested)
-        .modelId;
-    const priceDefinition = getActivePriceDefinition(
-        resolvedModelRequested,
-    );
+    const modelUsed = getServiceDefinition(resolvedModelRequested).modelId;
+    const priceDefinition = getActivePriceDefinition(resolvedModelRequested);
     if (!priceDefinition) {
         throw new Error(
             `Failed to get price definition for model: ${modelRequested}`,

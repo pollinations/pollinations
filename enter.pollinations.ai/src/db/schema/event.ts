@@ -1,6 +1,9 @@
 import { PriceDefinition, TokenUsage } from "@shared/registry/registry.ts";
 import { integer, real, sqliteTable, text } from "drizzle-orm/sqlite-core";
-import type { CreateChatCompletionResponse } from "@/schemas/openai";
+import type {
+    ContentFilterResult,
+    CreateChatCompletionResponse,
+} from "@/schemas/openai";
 import { removeUnset } from "@/util.ts";
 
 const eventTypeValues = ["generate.text", "generate.image"] as const;
@@ -216,14 +219,14 @@ export type GenerationEventContentFilterParams = {
     moderationCompletionProtectedMaterialCodeDetected?: boolean;
 };
 
-// biome-ignore format: custom formatting
-export function contentFilterResultsToEventParams(
-    response: CreateChatCompletionResponse,
-): GenerationEventContentFilterParams {
-    const promptFilterResults =
-        response.prompt_filter_results?.[0]?.content_filter_results;
-    const completionFilterResults = 
-        response.choices[0]?.content_filter_results;
+export function contentFilterResultsToEventParams({
+    promptFilterResults,
+    completionFilterResults,
+}: {
+    promptFilterResults: ContentFilterResult;
+    completionFilterResults: ContentFilterResult;
+}): GenerationEventContentFilterParams {
+    // biome-ignore format: custom formatting
     return {
         // prompt filter results
         moderationPromptHateSeverity: 

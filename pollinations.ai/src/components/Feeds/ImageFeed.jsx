@@ -50,7 +50,7 @@ export const ImageFeed = memo(({ mode }) => {
         stop,
         isStopped,
     } = useImageSlideshow();
-    const { updateImage, cancelLoading, image, isLoading, error } = useImageEditor({
+    const { updateImage, cancelLoading, image, isLoading } = useImageEditor({
         stop,
         image: slideshowImage,
     });
@@ -250,7 +250,6 @@ export const ImageFeed = memo(({ mode }) => {
                             <ImageDisplay
                                 image={currentImage}
                                 isLoading={isLoading}
-                                error={error}
                             />
                         </Box>
                     </Box>

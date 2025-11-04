@@ -68,7 +68,6 @@ export function useImageSlideshow() {
 export function useImageEditor({ stop, image }) {
     const [isLoading, setIsLoading] = useState(false);
     const [editedImage, setEditedImage] = useState(null);
-    const [error, setError] = useState(null);
     const abortControllerRef = useRef(null);
 
     // Effect to reset editedImage when the source image from the slideshow changes
@@ -76,14 +75,12 @@ export function useImageEditor({ stop, image }) {
         // When the parent 'image' (from slideshow) changes, reset the internal edited state.
         // This ensures that when the feed advances, the editor doesn't hold onto old edits.
         setEditedImage(null);
-        setError(null);
     }, [image]); // Depend on the image prop from the parent (slideshow)
 
     const updateImage = useCallback(
         async (newImage) => {
             stop(true);
             setIsLoading(true);
-            setError(null);
 
             // Create new AbortController for this request
             abortControllerRef.current = new AbortController();
@@ -96,13 +93,11 @@ export function useImageEditor({ stop, image }) {
                 );
                 const loadedImage = await loadImage(newImage);
                 setEditedImage(loadedImage);
-                setError(null);
             } catch (error) {
                 if (error.name === "AbortError") {
                     console.log("Image loading cancelled");
                 } else {
                     console.error("Error loading image:", error);
-                    setError(error.message);
                 }
             } finally {
                 setIsLoading(false);
@@ -129,7 +124,6 @@ export function useImageEditor({ stop, image }) {
         image: returnedImage,
         isLoading,
         setIsLoading,
-        error,
     };
 }
 
@@ -137,30 +131,11 @@ const loadImage = async (newImage) => {
     return new Promise((resolve, reject) => {
         const img = new Image();
         img.src = newImage.imageURL;
-        
-        img.onload = () => {
+        img.onload = () =>
             resolve({
                 ...newImage,
                 loaded: true,
             });
-        };
-        
-        img.onerror = async () => {
-            // Image failed to load, fetch to get error details
-            try {
-                const response = await fetch(newImage.imageURL);
-                const text = await response.text();
-                
-                // Try to parse as JSON for error message
-                try {
-                    const json = JSON.parse(text);
-                    reject(new Error(json.error || json.message || "Failed to load image"));
-                } catch {
-                    reject(new Error(text || "Failed to load image"));
-                }
-            } catch {
-                reject(new Error("Failed to load image"));
-            }
-        };
+        img.onerror = (error) => reject(error);
     });
 };

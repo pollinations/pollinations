@@ -65,19 +65,9 @@ export const useTextEditor = ({ stop, entry }) => {
 
                 if (!response.ok) {
                     const errorText = await response.text();
-                    let errorMessage = errorText;
-                    
-                    // Try to parse JSON error response
-                    try {
-                        const errorJson = JSON.parse(errorText);
-                        if (errorJson.error) {
-                            errorMessage = errorJson.error;
-                        }
-                    } catch (e) {
-                        // Not JSON, use raw text
-                    }
-                    
-                    throw new Error(errorMessage || `HTTP error! status: ${response.status}`);
+                    throw new Error(
+                        `HTTP error! status: ${response.status}, message: ${errorText || "No error details"}`,
+                    );
                 }
 
                 const data = await response.json();

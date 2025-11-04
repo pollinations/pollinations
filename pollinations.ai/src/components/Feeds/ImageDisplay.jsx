@@ -69,6 +69,13 @@ export const ImageDisplay = memo(function ImageDisplay({ image }) {
                         }}
                     >
                         {image.error}
+                        {image.message && image.message !== image.error && (
+                            <>
+                                <br />
+                                <br />
+                                {image.message}
+                            </>
+                        )}
                     </Typography>
                 </Box>
             </ImageContainer>

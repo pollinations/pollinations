@@ -137,7 +137,9 @@ const loadImage = async (newImage) => {
             const contentType = response.headers.get("content-type");
             if (contentType && contentType.includes("application/json")) {
                 const errorData = await response.json();
-                throw new Error(errorData.error || `HTTP ${response.status}`);
+                const error = new Error(errorData.error || `HTTP ${response.status}`);
+                error.apiMessage = errorData.message;
+                throw error;
             } else {
                 const errorText = await response.text();
                 throw new Error(errorText || `HTTP ${response.status}`);
@@ -149,7 +151,9 @@ const loadImage = async (newImage) => {
         if (contentType && contentType.includes("application/json")) {
             const data = await response.json();
             if (data.error) {
-                throw new Error(data.error);
+                const error = new Error(data.error);
+                error.apiMessage = data.message;
+                throw error;
             }
         }
 
@@ -179,6 +183,7 @@ const loadImage = async (newImage) => {
             ...newImage,
             loaded: true,
             error: error.message,
+            message: error.apiMessage,
         };
     }
 };

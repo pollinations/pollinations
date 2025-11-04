@@ -1,25 +1,33 @@
 import { DurableObject } from "cloudflare:workers";
 
 /**
- * Rate Limiter Durable Object
+ * RateLimiter Durable Object (Ephemeral)
  * 
- * Provides strongly consistent, per-user rate limiting using the token bucket algorithm.
- * Each user gets their own Durable Object instance, ensuring:
- * - No race conditions (strongly consistent)
- * - Fast in-memory state
- * - Automatic token refill via alarms
- * - Per-user isolation for better performance
+ * Implements a token bucket rate limiter with the following characteristics:
+ * - Capacity: 3 tokens (allows bursts of up to 3 requests)
+ * - Refill rate: 1 token per 15 seconds
+ * - Strong consistency: All operations are atomic within the Durable Object
+ * - Per-user isolation: Each user (identified by IP) gets their own Durable Object
+ * - Ephemeral: Uses in-memory state only, no persistent storage
  * 
- * Token Bucket Configuration:
- * - Capacity: 3 tokens
- * - Refill rate: 1 token every 15 seconds
- * - Allows bursts up to 3 requests
- * - Smooth, continuous rate limiting
+ * The token bucket algorithm works as follows:
+ * 1. Start with a full bucket (3 tokens)
+ * 2. Each request consumes 1 token
+ * 3. Tokens refill at a rate of 1 per 15 seconds
+ * 4. If no tokens available, request is rate limited
+ * 
+ * Benefits over KV-based approach:
+ * - Strong consistency (no race conditions with parallel requests)
+ * - Automatic token refilling via setTimeout
+ * - Per-user state isolation
+ * - No storage costs (ephemeral, in-memory only)
+ * - Automatic cleanup (state resets when DO is evicted after inactivity)
  */
 export class RateLimiter extends DurableObject {
     private tokens: number;
     private capacity: number = 3;
     private refillIntervalMs: number = 15000; // 15 seconds per token
+    private refillTimer: ReturnType<typeof setTimeout> | null = null;
     
     constructor(ctx: DurableObjectState, env: unknown) {
         super(ctx, env);
@@ -28,18 +36,15 @@ export class RateLimiter extends DurableObject {
     }
     
     /**
-     * Check if a request is allowed and consume a token if available
-     * Returns: { allowed: boolean, remaining: number, resetTime: number }
+     * Check if a request should be allowed based on available tokens
+     * @returns Object with allowed status, remaining tokens, and reset time
      */
     async checkRateLimit(): Promise<{ allowed: boolean; remaining: number; resetTime: number }> {
         const now = Date.now();
         
         if (this.tokens > 0) {
-            // Consume a token
             this.tokens--;
-            
-            // Schedule token refill if not already scheduled
-            await this.scheduleRefill();
+            this.scheduleRefill();
             
             return {
                 allowed: true,
@@ -48,7 +53,6 @@ export class RateLimiter extends DurableObject {
             };
         }
         
-        // No tokens available
         return {
             allowed: false,
             remaining: 0,
@@ -57,34 +61,34 @@ export class RateLimiter extends DurableObject {
     }
     
     /**
-     * Schedule an alarm to refill tokens
+     * Schedule a token refill using setTimeout
+     * Only schedules if no timer is currently active
      */
-    private async scheduleRefill(): Promise<void> {
-        const currentAlarm = await this.ctx.storage.getAlarm();
-        
-        // Only schedule if no alarm is set
-        if (currentAlarm === null) {
-            await this.ctx.storage.setAlarm(Date.now() + this.refillIntervalMs);
+    private scheduleRefill(): void {
+        if (this.refillTimer === null) {
+            this.refillTimer = setTimeout(() => {
+                this.refillToken();
+            }, this.refillIntervalMs);
         }
     }
     
     /**
-     * Alarm handler - called when it's time to refill a token
+     * Refill one token and schedule the next refill if needed
      */
-    async alarm(): Promise<void> {
+    private refillToken(): void {
+        this.refillTimer = null;
+        
         if (this.tokens < this.capacity) {
-            // Add one token
             this.tokens++;
-            
-            // Schedule next refill if still below capacity
+            // Schedule next refill if we're still below capacity
             if (this.tokens < this.capacity) {
-                await this.scheduleRefill();
+                this.scheduleRefill();
             }
         }
     }
     
     /**
-     * Get current state (for debugging)
+     * Get current state (for debugging/testing)
      */
     async getState(): Promise<{ tokens: number; capacity: number }> {
         return {
@@ -94,10 +98,13 @@ export class RateLimiter extends DurableObject {
     }
     
     /**
-     * Reset rate limit (for testing)
+     * Reset rate limiter to full capacity (for testing)
      */
     async reset(): Promise<void> {
         this.tokens = this.capacity;
-        await this.ctx.storage.deleteAlarm();
+        if (this.refillTimer !== null) {
+            clearTimeout(this.refillTimer);
+            this.refillTimer = null;
+        }
     }
 }

@@ -4,8 +4,6 @@ import {
     calculateCost,
     calculatePrice,
     isFreeService,
-    getRequiredTier,
-    canAccessService,
     SERVICE_REGISTRY
 } from "../registry/registry.ts";
 import { perMillion, ZERO_PRICE, ZERO_PRICE_START_DATE, PRICING_START_DATE } from "../registry/price-helpers.ts";
@@ -134,73 +132,4 @@ test("getModelDefinition returns undefined for invalid model", async () => {
     expect(getModelDefinition("invalid-model" as any)).toBeUndefined();
 });
 
-// Tier System Tests
-test("getRequiredTier should return correct tier for services", async () => {
-    // Test anonymous tier (free services)
-    expect(getRequiredTier("openai")).toBe("anonymous");
-    expect(getRequiredTier("openai-fast")).toBe("anonymous");
-    expect(getRequiredTier("qwen-coder")).toBe("anonymous");
-    
-    // Test seed tier (authenticated free)
-    expect(getRequiredTier("deepseek")).toBe("seed");
-    expect(getRequiredTier("gemini")).toBe("seed");
-    expect(getRequiredTier("flux")).toBe("seed");
-    
-    // Test flower tier
-    expect(getRequiredTier("claudyclaude")).toBe("flower");
-});
-
-test("getRequiredTier should throw for invalid service", async () => {
-    expect(() => getRequiredTier("invalid-service" as any))
-        .toThrow("Service not found");
-});
-
-test("canAccessService should enforce tier hierarchy", async () => {
-    // Anonymous tier can only access anonymous services
-    expect(canAccessService("openai", "anonymous")).toBe(true);
-    expect(canAccessService("flux", "anonymous")).toBe(false);
-    expect(canAccessService("claudyclaude", "anonymous")).toBe(false);
-    
-    // Seed tier can access anonymous and seed
-    expect(canAccessService("openai", "seed")).toBe(true);
-    expect(canAccessService("flux", "seed")).toBe(true);
-    expect(canAccessService("claudyclaude", "seed")).toBe(false);
-    
-    // Flower tier can access anonymous, seed, and flower
-    expect(canAccessService("openai", "flower")).toBe(true);
-    expect(canAccessService("flux", "flower")).toBe(true);
-    expect(canAccessService("claudyclaude", "flower")).toBe(true);
-    
-    // Nectar tier can access all services
-    expect(canAccessService("openai", "nectar")).toBe(true);
-    expect(canAccessService("flux", "nectar")).toBe(true);
-    expect(canAccessService("claudyclaude", "nectar")).toBe(true);
-});
-
-test("canAccessService should return false for invalid tiers", async () => {
-    // Invalid user tier
-    expect(canAccessService("openai", "invalid" as any)).toBe(false);
-});
-
-test("all services should have valid tier information", async () => {
-    // Verify every service has a valid tier and check distribution
-    const services = Object.entries(SERVICE_REGISTRY);
-    expect(services.length).toBeGreaterThan(0);
-    
-    const servicesByTier = {
-        anonymous: [] as string[],
-        seed: [] as string[],
-        flower: [] as string[],
-        nectar: [] as string[],
-    };
-    
-    for (const [serviceId, service] of services) {
-        const tier = service.tier ?? "anonymous";
-        expect(["anonymous", "seed", "flower", "nectar"]).toContain(tier);
-        servicesByTier[tier].push(serviceId);
-    }
-    
-    // Verify we have services at key tier levels
-    expect(servicesByTier.anonymous.length).toBeGreaterThan(0);
-    expect(servicesByTier.seed.length).toBeGreaterThan(0);
-});
+// Tier system tests removed - tier gating now handled by enter.pollinations.ai

@@ -141,6 +141,20 @@ export const TEXT_COSTS = {
             completionTextTokens: perMillion(15.0),
         },
     ],
+    "sonar": [
+        {
+            date: PRICING_START_DATE,
+            promptTextTokens: perMillion(1.0),
+            completionTextTokens: perMillion(1.0),
+        },
+    ],
+    "sonar-reasoning": [
+        {
+            date: PRICING_START_DATE,
+            promptTextTokens: perMillion(1.0),
+            completionTextTokens: perMillion(5.0),
+        },
+    ],
 } as const satisfies ModelRegistry;
 export const TEXT_SERVICES = {
     "openai": {
@@ -252,5 +266,15 @@ export const TEXT_SERVICES = {
         modelId: "us.anthropic.claude-haiku-4-5-20251001-v1:0",
         provider: "aws-bedrock",
         tier: "flower",
+    },
+    "perplexity-fast": {
+        aliases: ["sonar"],
+        modelId: "sonar",
+        provider: "perplexity",
+    },
+    "perplexity-reasoning": {
+        aliases: ["sonar-reasoning"],
+        modelId: "sonar-reasoning",
+        provider: "perplexity",
     },
 } as const satisfies ServiceRegistry<typeof TEXT_COSTS>;

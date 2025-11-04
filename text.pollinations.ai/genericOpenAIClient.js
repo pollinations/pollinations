@@ -292,7 +292,6 @@ export async function genericOpenAIClient(messages, options = {}, config) {
             organization: normalizedOptions.userInfo?.userId
                 ? "pollinations"
                 : undefined,
-            tier: normalizedOptions.userInfo?.tier || "seed",
         }).catch((err) => {
             errorLog(
                 `[${requestId}] Failed to send telemetry to Tinybird`,
@@ -361,7 +360,6 @@ export async function genericOpenAIClient(messages, options = {}, config) {
             organization: normalizedOptions.userInfo?.userId
                 ? "pollinations"
                 : undefined,
-            tier: normalizedOptions.userInfo?.tier || "seed",
         }).catch((err) => {
             errorLog(
                 `[${requestId}] Failed to send error telemetry to Tinybird`,

@@ -92,7 +92,6 @@ export async function logNanoBananaResponse(
                 userInfo: {
                     username: userInfo?.username || 'anonymous',
                     userId: userInfo?.userId || null,
-                    tier: userInfo?.tier || 'anonymous',
                     authenticated: userInfo?.authenticated || false,
                     authReason: userInfo?.reason || 'none',
                     // Include IP or other identifying info if available
@@ -218,7 +217,6 @@ export async function logNanoBananaErrorsOnly(
                 userInfo: {
                     username: userInfo?.username || 'anonymous',
                     userId: userInfo?.userId || null,
-                    tier: userInfo?.tier || 'anonymous',
                     authenticated: userInfo?.authenticated || false,
                     authReason: userInfo?.reason || 'none',
                     // Include IP or other identifying info if available

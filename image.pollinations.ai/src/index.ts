@@ -7,7 +7,6 @@ import {
     addAuthDebugHeaders,
     createAuthDebugResponse,
     handleAuthentication,
-    isEnterRequest,
 } from "../../shared/auth-utils.js";
 import { extractToken, getIp } from "../../shared/extractFromRequest.js";
 import { sendImageTelemetry } from "./utils/telemetry.js";
@@ -15,7 +14,6 @@ import { buildTrackingHeaders } from "./utils/trackingHeaders.js";
 
 // Import shared utilities
 import { enqueue } from "../../shared/ipQueue.js";
-import { canAccessService } from "../../shared/registry/registry.ts";
 import { countFluxJobs, handleRegisterEndpoint } from "./availableServers.js";
 import { cacheImagePromise } from "./cacheGeneratedImages.js";
 import { IMAGE_CONFIG } from "./models.js";
@@ -229,8 +227,7 @@ const imageGen = async ({
         // Create user info object for passing to generation functions
         const userInfo = authResult;
 
-        // Check if request is from enter.pollinations.ai
-        const fromEnter = isEnterRequest(req);
+        // All requests assumed to come from enter.pollinations.ai
 
         // Pass the complete user info object instead of individual properties
         const { buffer, ...maturity } = await createAndReturnImageCached(
@@ -242,7 +239,6 @@ const imageGen = async ({
             requestId,
             wasTransformedForBadDomain,
             userInfo,
-            fromEnter,
         );
 
         progress.updateBar(requestId, 50, "Generation", "Starting generation");
@@ -442,60 +438,24 @@ const checkCacheAndGenerate = async (
                 // Determine queue configuration based on model first, then authentication
                 let queueConfig = null;
                 
-                // Model-specific queue configs with hourly limits
-                // NOTE: ipQueue.js handles enter.pollinations.ai bypass automatically
+                // Model-specific queue configs - all requests assumed from enter.pollinations.ai
                 const modelName = safeParams.model as string;
                 if (modelName === "nanobanana") {
-                    // Check hourly limit for nanobanana (skip for enter.pollinations.ai requests)
-                    const fromEnter = isEnterRequest(req);
-                    let remaining = HOURLY_LIMIT;
-                    
-                    if (!fromEnter) {
-                        const ip = getIp(req);
-                        const { allowed, remaining: rem, resetIn } = checkHourlyLimit(ip);
-                        remaining = rem;
-                        
-                        if (!allowed) {
-                            const minutesLeft = Math.ceil(resetIn / 60000);
-                            throw new Error(
-                                `Hourly limit reached for ${modelName}. You can generate ${remaining} more images. Limit resets in ${minutesLeft} minutes.`
-                            );
-                        }
-                    }
-                    
-                    // 90 second interval, 10 images per hour max
+                    // 90 second interval - no hourly limit for enter requests
                     queueConfig = { interval: 90000 }; // 90 second interval
-                    logAuth(`${modelName} model - 90 second interval, ${remaining}/${HOURLY_LIMIT} images remaining this hour${fromEnter ? ' (enter request - no hourly limit)' : ''}`);
+                    logAuth(`${modelName} model - 90 second interval (enter request - no hourly limit)`);
                 } else if (modelName === "kontext") {
-                    // Kontext model requires seed tier or higher (checked via registry)
-                    // NOTE: Skip tier check for enter.pollinations.ai requests
-                    // (rate limiting is handled separately by ipQueue)
-                    const fromEnter = isEnterRequest(req);
-                    if (!fromEnter && !canAccessService("kontext", authResult.tier)) {
-                        throw new Error("Kontext model requires authentication (seed tier or higher). Visit https://auth.pollinations.ai");
-                    }
-                    // 30 second interval with tier-based cap from model config
-                    const cap = IMAGE_CONFIG.kontext.tierCaps?.[authResult.tier] || 1;
-                    queueConfig = { 
-                        interval: 30000,
-                        cap,
-                        forceCap: true
-                    };
-                    logAuth(`${modelName} model - 30 second interval, cap=${cap} for tier ${authResult.tier}`);
+                    // 30 second interval
+                    queueConfig = { interval: 30000 };
+                    logAuth(`${modelName} model - 30 second interval`);
                 } else if (modelName === "gptimage") {
-                    // GPTImage model - tier-based limits
-                    // Nectar tier: 60s interval, cap=3 | Other tiers: 150s interval, cap=1
-                    if (authResult.tier === "nectar") {
-                        queueConfig = { interval: 60000, cap: 3, forceCap: true };
-                        logAuth("GPTImage model (nectar tier) - 60 second interval, cap=3 (forced)");
-                    } else {
-                        queueConfig = { interval: 150000, cap: 1, forceCap: true };
-                        logAuth("GPTImage model - 150 second interval, cap=1 (forced)");
-                    }
+                    // 60 second interval
+                    queueConfig = { interval: 60000 };
+                    logAuth("GPTImage model - 60 second interval");
                 } else if (hasValidToken) {
-                    // Token authentication for other models - 7s minimum interval with tier-based caps
-                    queueConfig = { interval: 7000 }; // cap will be set by ipQueue based on tier
-                    logAuth("Token authenticated - using 7s minimum interval with tier-based concurrency");
+                    // Token authentication for other models - 7s minimum interval
+                    queueConfig = { interval: 7000 };
+                    logAuth("Token authenticated - using 7s minimum interval");
                 } else {
                     // Use default queue config for other models with no token
                     queueConfig = QUEUE_CONFIG;
@@ -677,11 +637,8 @@ const server = http.createServer((req, res) => {
             Expires: "0",
         });
         
-        // Filter out nectar-tier models from public /models list
-        // Users don't need to authenticate to see the list, so we only show accessible models
-        const publicModels = Object.entries(MODELS)
-            .filter(([_, config]) => config.tier !== "nectar")
-            .map(([name, _]) => name);
+        // Return all available models - enter.pollinations.ai handles access control
+        const publicModels = Object.keys(MODELS);
         
         res.end(JSON.stringify(publicModels));
         return;
@@ -697,7 +654,6 @@ const server = http.createServer((req, res) => {
         });
         const modelDetails = Object.entries(MODELS).map(([name, config]) => ({
             name,
-            tier: (config as any).tier || "seed", 
             enhance : config.enhance || false,
             maxSideLength: config.maxSideLength,
         }));
@@ -739,11 +695,7 @@ const port = process.env.PORT || 16384;
 server.listen(port, () => {
     console.log(`🌸 Image server listening on port ${port}`);
     console.log(`🔗 Test URL: http://localhost:${port}/prompt/pollinations`);
-    
-    // Validate ENTER_TOKEN configuration
-    if (!process.env.ENTER_TOKEN) {
-        logAuth('⚠️  ENTER_TOKEN not set - enter.pollinations.ai bypass disabled');
-    }
+    console.log(`✨ All requests assumed to come from enter.pollinations.ai`);
     
     // Debug environment info
     const debugEnv = process.env.DEBUG;

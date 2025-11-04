@@ -170,7 +170,7 @@ const Footer = () => {
       </MainContent>
 
       <BottomSection>
-        <TermsLink href="https://enter.pollinations.ai/terms" target="_blank" rel="noopener noreferrer">
+        <TermsLink href="/terms">
           Terms & Conditions
         </TermsLink>
         <BerlinText>Open source AI innovation from Berlin</BerlinText>

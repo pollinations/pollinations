@@ -6,7 +6,7 @@
 
 ## 1. Acceptance of Terms
 
-By accessing **Pollinations.AI**, you confirm your understanding and agreement with these Terms and our Privacy Policy. 
+By accessing our services, you confirm your understanding and agreement with these Terms and our Privacy Policy. 
 
 If you disagree, we advise you not to use our services.
 
@@ -28,7 +28,7 @@ If you disagree, we advise you not to use our services.
 
 ## 2. User Conduct
 
-Use Pollinations.AI ethically and legally. 
+Use our services ethically and legally. 
 
 **You agree not to:**
 
@@ -57,13 +57,13 @@ Use Pollinations.AI ethically and legally.
 
 ## 4. Intellectual Property
 
-When creating content using Pollinations.AI:
+When creating content using our services:
 
 - Respect the licenses of the open-source models we employ
 - Check specific licenses for restrictions if using content commercially
 - You retain all rights to your created content
 
-**Pollinations.AI GmbH** claims **no intellectual property rights** over the content you create.
+**Myceli.AI OÜ** claims **no intellectual property rights** over the content you create.
 
 ---
 
@@ -77,4 +77,12 @@ After changes are posted, your continued use indicates acceptance of the revised
 
 ## 6. Governing Law
 
-These terms are subject to the **laws of Germany**, without regard to conflict of laws principles.
+These terms are subject to the **laws of Estonia**, without regard to conflict of laws principles.
+
+---
+
+## Company Information
+
+**Myceli.AI OÜ**  
+Registry Code: 17186693 | VAT: EE102877908  
+Tornimäe tn 5, 10145 Tallinn, Estonia

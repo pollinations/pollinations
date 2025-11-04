@@ -43,6 +43,8 @@ export const createDocsRoutes = (apiRouter: Hono<Env>) => {
                         description: [
                             "Documentation for `enter.pollinations.ai`.",
                             "",
+                            "[📝 Edit this page on GitHub](https://github.com/pollinations/pollinations/edit/master/enter.pollinations.ai/src/routes/docs.ts)",
+                            "",
                             "## Quick Start",
                             "",
                             "**Generate an image:**",

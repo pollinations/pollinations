@@ -1,4 +1,4 @@
-import { cached } from "@/cache";
+// Caching removed - see requirePositiveBalance for explanation
 import { Polar } from "@polar-sh/sdk";
 import { createMiddleware } from "hono/factory";
 import { LoggerVariables } from "@/middleware/logger.ts";
@@ -30,35 +30,35 @@ export const polar = createMiddleware<PolarEnv>(async (c, next) => {
         server: c.env.POLAR_SERVER,
     });
 
-    const getCustomerState = cached(
-        async (userId: string): Promise<CustomerState | null> => {
-            try {
-                log.info("🔍 [POLAR] Fetching customer state from Polar API: userId={userId}", { userId });
-                const state = await client.customers.getStateExternal({
-                    externalId: userId,
-                });
-                log.info("✅ [POLAR] Received customer state: userId={userId} meters={meterCount}", { 
-                    userId, 
-                    meterCount: state?.activeMeters?.length || 0 
-                });
-                return state;
-            } catch (error) {
-                log.error("❌ [POLAR] Failed to get customer state: {error}", { error });
-                return null;
-            }
-        },
-        {
-            log,
-            ttl: 60, // 60 seconds - minimum allowed by Cloudflare KV
-            kv: c.env.KV,
-            keyGenerator: (userId) => `polar:customer:state:${userId}`,
-        },
-    );
+    // CRITICAL: No caching for balance checks (FIX for Issue #1)
+    // Previously cached for 60s which created overdraft window:
+    //   - Request at T+0: sees cached balance=100, approved
+    //   - Request at T+30: sees cached balance=100, approved  
+    //   - Request at T+59: sees cached balance=100, approved
+    //   - All 3 requests charge 50 pollen each = 150 total spent from 100 balance
+    // Trade-off: More Polar API calls (up to 300/min = 5/sec, well within limits)
+    const getCustomerState = async (userId: string): Promise<CustomerState | null> => {
+        try {
+            log.info("🔍 [POLAR] Fetching customer state from Polar API: userId={userId}", { userId });
+            const state = await client.customers.getStateExternal({
+                externalId: userId,
+            });
+            log.info("✅ [POLAR] Received customer state: userId={userId} meters={meterCount}", { 
+                userId, 
+                meterCount: state?.activeMeters?.length || 0 
+            });
+            return state;
+        } catch (error) {
+            log.error("❌ [POLAR] Failed to get customer state: {error}", { error });
+            return null;
+        }
+    };
 
     const requirePositiveBalance = async (userId: string, message?: string) => {
-        // Use cached balance check to avoid Polar API rate limits (300 req/min = 5 req/sec)
-        // Cache TTL: 60 seconds (Cloudflare KV minimum) - allows burst traffic while keeping balance reasonably fresh
-        // Trade-off: User can overdraft by ~60 seconds of usage (acceptable given low per-request costs)
+        // CRITICAL FIX #1: Direct API call (no cache) prevents overdraft race condition
+        // Each request gets fresh balance = financial accuracy guaranteed
+        // Polar API rate limit: 300 req/min (5 req/sec) - well within typical usage
+        // Our internal rate limit: ~5 req/sec per API key - stays under Polar's limit
         
         log.info("🔐 [BALANCE CHECK] Starting for userId={userId}", { userId });
         

@@ -54,7 +54,7 @@ export function isValidToken(token, validTokens) {
 /**
  * Check if a referrer domain is registered by any user in the auth.pollinations.ai database
  * @param {string} referrer - The referrer URL to check
- * @returns {Promise<{userId: string, username: string, tier: string}|null>} User info if domain is registered, null otherwise
+ * @returns {Promise<{userId: string, username: string}|null>} User info if domain is registered, null otherwise
  */
 async function _checkReferrerInDb(referrer) {
 	if (!referrer) return null;
@@ -91,12 +91,11 @@ async function _checkReferrerInDb(referrer) {
 
 		if (data && data.valid && data.user_id) {
 			referrerLog(
-				`✅ Domain ${domain} is registered by user ${data.user_id} (${data.username}) with tier ${data.tier}`,
+				`✅ Domain ${domain} is registered by user ${data.user_id} (${data.username})`,
 			);
 			return {
 				userId: data.user_id,
 				username: data.username,
-				tier: data.tier,
 			};
 		} else {
 			referrerLog(`❌ Domain ${domain} is not registered in the database`);
@@ -117,7 +116,7 @@ export const checkReferrerInDb = memoizee(_checkReferrerInDb, {
 /**
  * Validate token against the auth.pollinations.ai API.
  * @param {string} token - The token to validate.
- * @returns {Promise<{userId: string, username: string, tier: string}|null>} User info if valid, null otherwise.
+ * @returns {Promise<{userId: string, username: string}|null>} User info if valid, null otherwise.
  */
 async function _validateApiTokenDb(token) {
 	const maskedToken =
@@ -161,14 +160,12 @@ async function _validateApiTokenDb(token) {
 
 		if (data && data.valid && data.userId) {
 			tokenLog(
-				"validateApiTokenDb: Valid token for user: %s, tier: %s",
+				"validateApiTokenDb: Valid token for user: %s",
 				data.userId,
-				data.tier || "seed",
 			);
 			return {
 				userId: data.userId,
 				username: data.username || data.userId, // Use userId as fallback if username not provided
-				tier: data.tier || "seed",
 			};
 		} else {
 			tokenLog(
@@ -246,7 +243,7 @@ export async function isUserDomainAllowedFromDb(
  * Determine if request is authenticated
  * @param {Request|Object} req - The request object
  * @param {Object} ctx - Context object (currently unused but kept for future extensibility)
- * @returns {{authenticated: boolean, tokenAuth: boolean, referrerAuth: boolean, bypass: boolean, reason: string, userId: string|null, username: string|null, tier: string, debugInfo: Object}} Authentication status, auth type, reason, userId, username if authenticated, and debug info
+ * @returns {{authenticated: boolean, tokenAuth: boolean, referrerAuth: boolean, bypass: boolean, reason: string, userId: string|null, username: string|null, debugInfo: Object}} Authentication status, auth type, reason, userId, username if authenticated, and debug info
  * @throws {Error} If an invalid token is provided
  */
 export async function shouldBypassQueue(req) {
@@ -291,18 +288,15 @@ export async function shouldBypassQueue(req) {
 		const tokenResult = await validateApiTokenDb(token);
 		if (tokenResult && tokenResult.userId) {
 			tokenLog(
-				"✅ Valid DB token found for user: %s (tier: %s)",
+				"✅ Valid DB token found for user: %s",
 				tokenResult.userId,
-				tokenResult.tier,
 			);
 			debugInfo.authResult = "DB_TOKEN";
 			debugInfo.userId = tokenResult.userId;
 			debugInfo.username = tokenResult.username;
-			debugInfo.tier = tokenResult.tier;
 			log(
-				"Authentication succeeded: DB_TOKEN for user %s (tier: %s)",
+				"Authentication succeeded: DB_TOKEN for user %s",
 				tokenResult.userId,
-				tokenResult.tier,
 			);
 			return {
 				authenticated: true,
@@ -330,20 +324,17 @@ export async function shouldBypassQueue(req) {
 		const dbReferrerResult = await checkReferrerInDb(refStr);
 		if (dbReferrerResult && dbReferrerResult.userId) {
 			referrerLog(
-				"✅ Registered domain: %s for user %s (tier: %s)",
+				"✅ Registered domain: %s for user %s",
 				refStr,
 				dbReferrerResult.userId,
-				dbReferrerResult.tier,
 			);
 			debugInfo.authResult = "DB_REFERRER";
 			debugInfo.dbReferrerMatch = true; // Ensuring this is included
 			debugInfo.userId = dbReferrerResult.userId;
 			debugInfo.username = dbReferrerResult.username; // Ensuring this is included
-			debugInfo.tier = dbReferrerResult.tier;
 			log(
-				"Authentication succeeded: DB_REFERRER for user %s (tier: %s)",
+				"Authentication succeeded: DB_REFERRER for user %s",
 				dbReferrerResult.userId,
-				dbReferrerResult.tier,
 			);
 			return {
 				authenticated: true,
@@ -373,7 +364,6 @@ export async function shouldBypassQueue(req) {
 		reason: "NO_AUTH_METHOD_SUCCESS",
 		userId: null,
 		username: null,
-		tier: "anonymous",
 		debugInfo,
 	};
 }
@@ -437,7 +427,6 @@ export async function handleAuthentication(
 
 		return {
 			...authResult,
-			tier: debugInfo.tier || "anonymous",
 			debugInfo,
 		};
 	} catch (authError) {

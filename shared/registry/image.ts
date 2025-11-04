@@ -56,39 +56,32 @@ export const IMAGE_SERVICES = {
     "flux": {
         aliases: [],
         modelId: "flux",
-        free: true,
         provider: "io.net",
-        tier: "seed",
     },
     "kontext": {
         aliases: [],
         modelId: "kontext",
         provider: "azure",
-        tier: "seed",
     },
     "turbo": {
         aliases: [],
         modelId: "turbo",
         provider: "scaleway",
-        tier: "seed",
     },
     nanobanana: {
         aliases: [],
         modelId: "nanobanana",
         provider: "vertex-ai",
-        tier: "nectar",
     },
     seedream: {
         aliases: [],
         modelId: "seedream",
         provider: "bytedance-ark",
-        tier: "nectar",
     },
     "gptimage": {
         aliases: ["gpt-image", "gpt-image-1-mini"],
         modelId: "gptimage",
         provider: "azure-openai",
-        tier: "seed",
     },
 } as const satisfies ServiceRegistry<typeof IMAGE_COSTS>;
 

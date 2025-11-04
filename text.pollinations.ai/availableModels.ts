@@ -276,6 +276,27 @@ const models: ModelDefinition[] = [
         output_modalities: ["text"],
         tools: true,
     },
+    {
+        name: "perplexity-fast",
+        description: "Perplexity Sonar - Fast & Affordable",
+        config: portkeyConfig["sonar"],
+        transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
+        community: false,
+        input_modalities: ["text"],
+        output_modalities: ["text"],
+        tools: true,
+    },
+    {
+        name: "perplexity-reasoning",
+        description: "Perplexity Sonar Reasoning - Advanced Reasoning",
+        config: portkeyConfig["sonar-reasoning"],
+        transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
+        community: false,
+        input_modalities: ["text"],
+        output_modalities: ["text"],
+        tools: true,
+        reasoning: true,
+    },
 ];
 
 // Export models with aliases from registry and computed properties

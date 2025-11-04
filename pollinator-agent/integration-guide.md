@@ -35,7 +35,7 @@ Before proceeding with any integration work, it's critical to thoroughly review 
 
 ### 1. README.md
 
-First, review the [main README.md](https://github.com/pollinations/pollinations/blob/master/README.md) to understand:
+First, review the [main README.md](https://github.com/pollinations/pollinations/blob/main/README.md) to understand:
 - Core features and value proposition of Pollinations.AI
 - Project architecture and components
 - Available services (text, image, audio generation)
@@ -46,7 +46,7 @@ First, review the [main README.md](https://github.com/pollinations/pollinations/
 
 ### 2. APIDOCS.md
 
-Next, review the [API documentation](https://github.com/pollinations/pollinations/blob/master/APIDOCS.md) to understand:
+Next, review the [API documentation](https://github.com/pollinations/pollinations/blob/main/APIDOCS.md) to understand:
 - Detailed API endpoints for image, text, and audio generation
 - Parameter options and default values
 - Code examples in multiple languages
@@ -251,7 +251,7 @@ By following these guidelines, we ensure our contributions are valuable, easy to
 
 **Format used**:
 ```markdown
-| [Pollinations.AI](https://pollinations.ai/) | [Link](https://github.com/pollinations/pollinations/blob/master/APIDOCS.md) | N | Pollinations.AI provides free, no-signup APIs for text, image, and audio generation with no API keys required. It offers simple URL-based endpoints, OpenAI-compatible interfaces, and React hooks for easy integration. |
+| [Pollinations.AI](https://pollinations.ai/) | [Link](https://github.com/pollinations/pollinations/blob/main/APIDOCS.md) | N | Pollinations.AI provides free, no-signup APIs for text, image, and audio generation with no API keys required. It offers simple URL-based endpoints, OpenAI-compatible interfaces, and React hooks for easy integration. |
 ```
 
 ### Example 2: awesome-generative-ai

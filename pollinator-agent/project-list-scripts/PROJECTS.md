@@ -2,17 +2,18 @@
 
 Pollinations.AI is used in various projects, including:
 
-### Vibe Coding ✨
+### Vibe Coding 
 
 | Project | Description | Creator |
 |---------|-------------|--------|
-| [Berrry Computer](https://berrry.app) ([⭐ 0](https://github.com/Strawberry-Computer)) | Make tiny self-contained web apps with AI. Find a tweet with an interesting app... | @vgrichina |
-| [websim-pollinations-ai](https://websim.pollinations.ai) ([⭐ 0](https://github.com/pollinations/pollinations/tree/master/websim.pollinations.ai)) | A lightweight websim for creating web simulations with AI. Usage:... | @thomash |
-| Qwen-Agent ([⭐ 11.5k](https://github.com/QwenLM/Qwen-Agent)) | A framework for developing agentic LLM applications. | - |
-| Pollinations Task Master ([⭐ 20](https://github.com/LousyBook94/pollinations-task-master)) | A task management system that uses AI to help break down and organize... | @LousyBook94 |
-| [SocialScribe](https://socialscribe.pages.dev/) ([⭐ 1](https://github.com/sh20raj/socialscribe)) | An AI-powered Chrome extension that fixes grammar, rewrites text, and enhances... | @sh20raj |
-| [EasyGen - AI Diagram Generator ✨](https://easygenme.netlify.app/) | Modern open-source web application that transforms text descriptions into... | @ellweb3 |
-| [Visiora - Image Generation using AI 🎨](https://visiora-img.netlify.app/) ([⭐ 0](https://github.com/Kandariarjun07/Visiora)) | A modern web application that transforms text prompts into stunning... | @Kandariarjun07 |
+| [Berrry Computer](https://berrry.app) ([ 0](https://github.com/Strawberry-Computer)) | Make tiny self-contained web apps with AI. Find a tweet with an interesting app... | @vgrichina |
+| [websim-pollinations-ai](https://websim.pollinations.ai) ([ 0](https://github.com/pollinations/pollinations/tree/main/websim.pollinations.ai)) | A lightweight websim for creating web simulations with AI. Usage:... | @thomash |
+| Qwen-Agent ([ 11.5k](https://github.com/QwenLM/Qwen-Agent)) | A framework for developing agentic LLM applications. | - |
+| Pollinations Task Master ([ 20](https://github.com/LousyBook94/pollinations-task-master)) | A task management system that uses AI to help break down and organize... | @LousyBook94 |
+| [SocialScribe](https://socialscribe.pages.dev/) ([ 1](https://github.com/sh20raj/socialscribe)) | An AI-powered Chrome extension that fixes grammar, rewrites text, and enhances... | @sh20raj |
+| [EasyGen - AI Diagram Generator ](https://easygenme.netlify.app/) | Modern open-source web application that transforms text descriptions into... | @ellweb3 |
+| [Visiora - Image Generation using AI ](https://visiora-img.netlify.app/) ([ 0](https://github.com/Kandariarjun07/Visiora)) | A modern web application that transforms text prompts into stunning... | @Kandariarjun07 |
+| [PairFusion](https://pair-fusion.vercel.app/) ([ 0](https://github.com/auraticabhi/PairFusion)) | A real-time AI powered, scalable and feature-rich collaborative IDE built for... | @auraticabhi |
 | [PairFusion](https://pair-fusion.vercel.app/) ([⭐ 0](https://github.com/auraticabhi/PairFusion)) | A real-time AI powered, scalable and feature-rich collaborative IDE built for... | @auraticabhi |
 | [CraftUI](https://craftui.studio/) | An AI-powered tool that simplifies UI design by turning text prompts or images... | @imhardikdesai |
 | [AI Code Generator](https://codegen.on.websim.com/) | A websim project that generates code from description, selected programming... | @Miencraft2 |

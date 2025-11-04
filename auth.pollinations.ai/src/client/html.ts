@@ -223,7 +223,7 @@ export const generateHTML = () => `<!DOCTYPE html>
     </div>
 
     <footer style="text-align: center; padding: 20px; margin-top: 40px; font-size: 14px; opacity: 0.8;">
-        <p>Need help? Check out our <a href="https://github.com/pollinations/pollinations/blob/master/APIDOCS.md" target="_blank" style="color: var(--color-primary);">API Documentation</a> 📚</p>
+        <p>Need help? Check out our <a href="https://github.com/pollinations/pollinations/blob/main/APIDOCS.md" target="_blank" style="color: var(--color-primary);">API Documentation</a> 📚</p>
     </footer>
 
     ${JS}

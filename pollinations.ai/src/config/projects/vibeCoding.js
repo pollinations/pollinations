@@ -152,7 +152,7 @@ export const vibeCodingProjects = [
     url: "https://websim.pollinations.ai",
     description: "A lightweight websim for creating web simulations with AI. Usage: https://websim.pollinations.ai/[prompt] - Simply append your prompt to the URL to generate interactive web experiences.",
     author: "@thomash",
-    repo: "https://github.com/pollinations/pollinations/tree/master/websim.pollinations.ai",
+    repo: "https://github.com/pollinations/pollinations/tree/main/websim.pollinations.ai",
     submissionDate: "2025-08-03",
     order: 0.5
   }

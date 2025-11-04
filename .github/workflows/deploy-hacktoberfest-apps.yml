@@ -4,7 +4,7 @@ on:
   push:
     paths:
       - 'hacktoberfest-2025/**'
-    branches: [master, main]
+    branches: [main]
 
 jobs:
   deploy:
@@ -105,7 +105,7 @@ jobs:
             # Step 3: Deploy to production
             wrangler pages deploy "hacktoberfest-2025/$app/$DIR" \
               --project-name="hacktoberfest-$app" \
-              --branch=master \
+              --branch=main \
               --commit-dirty=true
             
             echo "✅ Deployment complete for $app"

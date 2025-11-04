@@ -95,6 +95,11 @@ migrations_dir = "drizzle"
 binding = "KV"
 id = "eb4ea5149a5a413db53902bf2b8c1d95"
 
+[[env.staging.durable_objects.bindings]]
+name = "RATE_LIMITER"
+class_name = "RateLimiter"
+script_name = "pollinations-enter-staging"
+
 [env.staging.vars]
 ENVIRONMENT = "staging"
 LOG_LEVEL = "debug"

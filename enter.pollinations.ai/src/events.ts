@@ -49,6 +49,7 @@ export async function processEvents(
     const [processingId, events] = await preparePendingEvents(db);
     if (events.length === 0) return;
     const polarDelivery = await sendPolarEvents(
+        db,
         events,
         config.polarAccessToken,
         config.polarServer,
@@ -139,6 +140,7 @@ async function confirmProcessingEvents(
 type DeliveryStatus = "skipped" | "failed" | "succeeded";
 
 async function sendPolarEvents(
+    db: DrizzleD1Database,
     events: SelectGenerationEvent[],
     polarAccessToken: string,
     polarServer: "sandbox" | "production",
@@ -158,6 +160,11 @@ async function sendPolarEvents(
     
     // Process events with spending router
     const polarEvents = [];
+    const skippedEventIds: string[] = []; // Track events skipped due to zero balance
+    
+    // CRITICAL FIX #3: Fetch balance ONCE and track running totals
+    // This prevents race condition where each event sees the same starting balance
+    const userBalances = new Map<string, { tier: number; pack: number }>();
     
     for (const event of billedEvents) {
         if (!event.userId) {
@@ -172,14 +179,16 @@ async function sendPolarEvents(
         
         const cost = event.totalPrice;
         
-        // Get customer state to determine meter balances
-        let tierBalance = 0;
-        let packBalance = 0;
-        
-        try {
-            const customerState = await polar.customers.getStateExternal({
-                externalId: event.userId,
-            });
+        // Get or initialize running balance for this user
+        if (!userBalances.has(event.userId)) {
+            // Fetch balance ONCE per user in this batch
+            let tierBalance = 0;
+            let packBalance = 0;
+            
+            try {
+                const customerState = await polar.customers.getStateExternal({
+                    externalId: event.userId,
+                });
             
             // Log FULL RAW customer state for debugging
             log.debug("RAW Polar API response: {raw}", {
@@ -206,26 +215,35 @@ async function sendPolarEvents(
                 m.meterId !== TIER_POLLEN_METER_ID && m.balance > 0
             );
             
-            tierBalance = tierMeter?.balance || 0;
-            packBalance = packMeters.reduce((sum: number, m: any) => sum + (m.balance || 0), 0);
+                tierBalance = tierMeter?.balance || 0;
+                packBalance = packMeters.reduce((sum: number, m: any) => sum + (m.balance || 0), 0);
+                
+                log.debug("Meter identification: tierMeter={tierId} packMeters={packIds}", {
+                    tierId: TIER_POLLEN_METER_ID,
+                    packIds: packMeters.map((m: any) => m.meterId)
+                });
+                
+                log.info("Spending router balances fetched: userId={userId} cost={cost} tier={tier} pack={pack}", {
+                    userId: event.userId,
+                    cost,
+                    tier: tierBalance,
+                    pack: packBalance,
+                });
+            } catch (error) {
+                log.warn("Failed to get customer state for spending router: {error}, defaulting to tier", {
+                    error,
+                    userId: event.userId,
+                });
+            }
             
-            log.debug("Meter identification: tierMeter={tierId} packMeters={packIds}", {
-                tierId: TIER_POLLEN_METER_ID,
-                packIds: packMeters.map((m: any) => m.meterId)
-            });
-            
-            log.info("Spending router balances fetched: userId={userId} cost={cost} tier={tier} pack={pack}", {
-                userId: event.userId,
-                cost,
-                tier: tierBalance,
-                pack: packBalance,
-            });
-        } catch (error) {
-            log.warn("Failed to get customer state for spending router: {error}, defaulting to tier", {
-                error,
-                userId: event.userId,
-            });
+            // Store initial balance for this user
+            userBalances.set(event.userId, { tier: tierBalance, pack: packBalance });
         }
+        
+        // Get current running balance for this user
+        const runningBalance = userBalances.get(event.userId)!;
+        const tierBalance = runningBalance.tier;
+        const packBalance = runningBalance.pack;
         
         // Create base metadata (without pollenType)
         const baseMetadata = removeUnset({
@@ -248,16 +266,18 @@ async function sendPolarEvents(
             tokenPriceCompletionImage: event.tokenPriceCompletionImage,
         });
         
-        // CRITICAL: Guard against zero balance - don't send events if both meters are empty
+        // CRITICAL FIX #2: Guard against zero balance AND mark event as delivered
         if (tierBalance <= 0 && packBalance <= 0) {
-            log.warn("Skipping Polar event - zero balance: userId={userId} cost={cost}", {
+            log.warn("Skipping Polar event - zero balance: userId={userId} cost={cost} eventId={eventId}", {
                 userId: event.userId,
                 cost,
+                eventId: event.id,
             });
-            continue; // Skip this event
+            skippedEventIds.push(event.id);
+            continue; // Skip this event - will be marked as delivered with error below
         }
         
-        // Spending Router Logic
+        // Spending Router Logic - now updates running balance after each event
         if (cost <= tierBalance) {
             // Spend from tier only - use original event name (no prefix) for backward compatibility
             polarEvents.push({
@@ -269,9 +289,14 @@ async function sendPolarEvents(
                     totalPrice: cost,
                 },
             });
-            log.info("Router decision: TIER ONLY - cost={cost} tier={tier} pack={pack}", {
+            
+            // Update running balance
+            runningBalance.tier -= cost;
+            
+            log.info("Router decision: TIER ONLY - cost={cost} tier={tierBefore}->{tierAfter} pack={pack}", {
                 cost,
-                tier: tierBalance,
+                tierBefore: tierBalance,
+                tierAfter: runningBalance.tier,
                 pack: packBalance,
             });
         } else if (tierBalance > 0 && cost <= tierBalance + packBalance) {
@@ -299,10 +324,17 @@ async function sendPolarEvents(
                     totalPrice: fromPack,
                 },
             });
-            log.info("Router decision: SPLIT - fromTier={fromTier} fromPack={fromPack} total={cost}", {
+            
+            // Update running balance
+            runningBalance.tier = 0;
+            runningBalance.pack -= fromPack;
+            
+            log.info("Router decision: SPLIT - fromTier={fromTier} fromPack={fromPack} total={cost} tier={tierAfter} pack={packAfter}", {
                 fromTier,
                 fromPack,
                 cost,
+                tierAfter: runningBalance.tier,
+                packAfter: runningBalance.pack,
             });
         } else {
             // Use pack only (or default to tier if no pack meters found)
@@ -322,12 +354,43 @@ async function sendPolarEvents(
                     totalPrice: cost,
                 },
             });
-            log.info("Router decision: PACK ONLY - cost={cost} tier={tier} pack={pack} pollenType={pollenType}", {
+            
+            // Update running balance
+            if (pollenType === "pack") {
+                runningBalance.pack -= cost;
+            } else {
+                runningBalance.tier -= cost; // Might go negative (overdraft)
+            }
+            
+            log.info("Router decision: PACK ONLY - cost={cost} tier={tierBefore}->{tierAfter} pack={packBefore}->{packAfter} pollenType={pollenType}", {
                 cost,
-                tier: tierBalance,
-                pack: packBalance,
+                tierBefore: tierBalance,
+                tierAfter: runningBalance.tier,
+                packBefore: packBalance,
+                packAfter: runningBalance.pack,
                 pollenType,
             });
+        }
+    }
+    
+    // CRITICAL FIX #2: Mark zero-balance events as delivered with error status
+    if (skippedEventIds.length > 0) {
+        try {
+            await db
+                .update(event)
+                .set({
+                    polarDeliveredAt: new Date(),
+                    eventStatus: "error",
+                    updatedAt: new Date(),
+                })
+                .where(sql`${event.id} IN (${sql.join(skippedEventIds.map(id => sql`${id}`), sql`, `)})`);  
+            
+            log.info("✅ Marked {count} zero-balance events as delivered with error status", {
+                count: skippedEventIds.length,
+                eventIds: skippedEventIds,
+            });
+        } catch (error) {
+            log.error("❌ Failed to mark zero-balance events as delivered: {error}", { error });
         }
     }
     

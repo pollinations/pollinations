@@ -41,29 +41,41 @@ Pollen grants are always spent before your purchased Pollen balance, and it expi
 
 ## How much Pollen do models use?
 
-Each model uses different amounts of Pollen based on what it costs us to run. Here's what you can generate per Pollen (remember: **1 Pollen = $1**):
+Each model costs different amounts of Pollen based on what it costs us to run (**$1 ≈ 1 Pollen**). Here are some real examples:
 
-**Image Models:**
-- **flux**: ∞ images per Pollen (always free!)
-- **turbo**: ~333 images per Pollen
-- **kontext**: ~200 images per Pollen
-- **gptimage**: ~77 images per Pollen
-- **nanobanana**: ~50 images per Pollen
+**Image Generation:**
+- **Flux** — ~8,300 images per Pollen (ultra-efficient!)
+- **Turbo** — ~3,300 images per Pollen
+- **GPTImage** — ~125 images per Pollen (vision-capable, higher quality)
+- **Seedream** — ~33 images per Pollen (premium quality)
+- **Kontext** — 25 images per Pollen (advanced editing)
 
-**Text Models:**
-- **Fast models**: 100,000+ responses per Pollen
-- **Advanced models**: ~1,000 responses per Pollen
+**Text Generation** *(typical conversation ~600 tokens)*:
+- **Gemini 2.5 Flash** — ~3,800 conversations per Pollen
+- **Mistral Small** — ~5,900 conversations per Pollen
+- **GPT-5 Nano** — ~5,300 conversations per Pollen (vision-capable!)
+- **DeepSeek V3.1** — ~445 conversations per Pollen (advanced reasoning)
+- **Claude Sonnet 4.5** — ~150 conversations per Pollen (top-tier quality)
 
-## What can I create with 10 Pollen?
+*Prices are approximate and based on typical usage. For exact token-based pricing, check the pricing table on your dashboard.*
 
-With just 10 Pollen (≈$10), you can generate:
-- **500 nanobanana images** — high-quality AI art perfect for professional projects
-- **3,300 turbo images** — rapid prototyping and quick iterations
-- **2,000 kontext images** — balanced quality for most use cases
-- **770 gptimage images** — GPT-powered visual generation
-- **100,000+ fast text responses** — chatbot conversations, content generation
-- **10,000 advanced text responses** — complex reasoning and analysis
-- **Unlimited flux images** — completely free, always!
+## What can I create with 1 Pollen?
+
+**With just 1 Pollen, you could:**
+- Generate **8,000+ images** with Flux (perfect for bulk generation)
+- Have **5,000+ conversations** with efficient text models like Mistral or Gemini
+- Create **125 high-quality images** with GPTImage (vision + editing capabilities)
+- Process **445 advanced reasoning tasks** with DeepSeek
+- Run **150 conversations** with Claude Sonnet (premium quality responses)
+
+**With 10 Pollen ($10):**
+- **83,000 Flux images** — enough for a large-scale app or service
+- **59,000 Mistral conversations** — power a chatbot for months
+- **1,250 GPTImage creations** — professional image generation with editing
+- **4,450 DeepSeek reasoning sessions** — complex problem solving
+- **1,500 Claude Sonnet chats** — top-tier AI conversations
+
+Mix and match models based on your needs. Use efficient models for high-volume tasks and premium models when quality matters most!
 
 ## How does my Pollen wallet work?
 

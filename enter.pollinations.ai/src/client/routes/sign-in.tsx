@@ -3,6 +3,7 @@ import { useState } from "react";
 import { FAQ } from "../components/faq.tsx";
 import { Button } from "../components/button.tsx";
 import { Header } from "../components/header.tsx";
+import { Pricing } from "../components/pricing/index.ts";
 
 export const Route = createFileRoute("/sign-in")({
     component: RouteComponent,
@@ -36,6 +37,7 @@ function RouteComponent() {
                 </Button>
             </Header>
             <FAQ />
+            <Pricing />
         </div>
     );
 }

@@ -249,3 +249,17 @@ export function createBedrockFargateModelConfig(additionalConfig = {}) {
         ...additionalConfig,
     };
 }
+
+/**
+ * Creates a Perplexity model configuration
+ * @param {Object} additionalConfig - Additional configuration to merge with base config
+ * @returns {Object} - Perplexity model configuration
+ */
+export function createPerplexityModelConfig(additionalConfig = {}) {
+    return {
+        provider: "perplexity-ai",
+        authKey: process.env.PERPLEXITY_API_KEY,
+        "max-tokens": 8192,
+        ...additionalConfig,
+    };
+}

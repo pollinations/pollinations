@@ -17,6 +17,7 @@ import {
     createDeepSeekReasoningConfig,
     createMyceliDeepSeekV31Config,
     createApiNavyModelConfig,
+    createPerplexityModelConfig,
 } from "./providerConfigs.js";
 import type { TEXT_COSTS } from "../../shared/registry/text.js";
 
@@ -431,5 +432,13 @@ export const portkeyConfig: PortkeyConfigMap = {
     "us.meta.llama3-2-3b-instruct-v1:0": () =>
         createBedrockLambdaModelConfig({
             model: "us.meta.llama3-2-3b-instruct-v1:0",
+        }),
+    "sonar": () =>
+        createPerplexityModelConfig({
+            model: "sonar",
+        }),
+    "sonar-reasoning": () =>
+        createPerplexityModelConfig({
+            model: "sonar-reasoning",
         }),
 };

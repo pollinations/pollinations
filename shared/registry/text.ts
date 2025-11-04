@@ -158,7 +158,7 @@ export const TEXT_COSTS = {
 export const TEXT_SERVICES = {
     "openai": {
         aliases: ["gpt-5-mini"],
-        modelId: "gpt-5-mini-2025-08-07",
+        modelId: "gpt-5-nano-2025-08-07",
         provider: "azure-openai",
         description: "OpenAI GPT-5 Nano",
         input_modalities: ["text", "image"],
@@ -167,7 +167,7 @@ export const TEXT_SERVICES = {
     },
     "openai-fast": {
         aliases: ["gpt-5-nano"],
-        modelId: "gpt-5-nano-2025-08-07",
+        modelId: "gpt-4.1-nano-2025-04-14",
         provider: "azure-openai",
         description: "OpenAI GPT-4.1 Nano",
         input_modalities: ["text", "image"],

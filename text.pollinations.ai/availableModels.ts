@@ -95,6 +95,15 @@ const models: ModelDefinition[] = [
         supportsSystemMessages: false,
     },
     {
+        name: "o4-mini",
+        config: portkeyConfig["openai/o4-mini"],
+        transform: pipe(
+            createSystemPromptTransform(BASE_PROMPTS.conversational),
+            removeSystemMessages,
+        ),
+        supportsSystemMessages: false,
+    },
+    {
         name: "gemini",
         config: portkeyConfig["gemini-2.5-flash-lite"],
         transform: createSystemPromptTransform(BASE_PROMPTS.conversational),

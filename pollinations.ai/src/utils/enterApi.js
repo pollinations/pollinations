@@ -3,7 +3,7 @@
  */
 
 const ENTER_BASE_URL = "https://enter.pollinations.ai/api";
-const API_KEY = "plln_pk_RRHEqHFAF7utI50fgWc418G7vLXybWg7wkkGQtBgNnZPGs3y4JKpqgEneL0YwQP2";
+const API_KEY = "plln_pk_yKJQ53tshIxIWUtUXFB3tljE3WObCXHN776D11Pyy81ZPCp7rKgCkYQGM4HDpoXz";
 
 function getAuthHeader() {
   return {

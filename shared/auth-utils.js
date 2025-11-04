@@ -246,7 +246,7 @@ export async function isUserDomainAllowedFromDb(
  * Determine if request is authenticated
  * @param {Request|Object} req - The request object
  * @param {Object} ctx - Context object (currently unused but kept for future extensibility)
- * @returns {{authenticated: boolean, tokenAuth: boolean, referrerAuth: boolean, bypass: boolean, reason: string, userId: string|null, username: string|null, tier: string, debugInfo: Object}} Authentication status, auth type, reason, userId, username if authenticated, and debug info
+ * @returns {{authenticated: boolean, tokenAuth: boolean, referrerAuth: boolean, bypass: boolean, reason: string, userId: string|null, username: string|null, debugInfo: Object}} Authentication status, auth type, reason, userId, username if authenticated, and debug info
  * @throws {Error} If an invalid token is provided
  */
 export async function shouldBypassQueue(req) {
@@ -373,7 +373,6 @@ export async function shouldBypassQueue(req) {
 		reason: "NO_AUTH_METHOD_SUCCESS",
 		userId: null,
 		username: null,
-		tier: "anonymous",
 		debugInfo,
 	};
 }
@@ -437,7 +436,6 @@ export async function handleAuthentication(
 
 		return {
 			...authResult,
-			tier: debugInfo.tier || "anonymous",
 			debugInfo,
 		};
 	} catch (authError) {

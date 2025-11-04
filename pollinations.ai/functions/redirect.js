@@ -1,6 +1,4 @@
 // Netlify function to handle redirects with analytics
-import { incrementUserMetric } from "../../shared/userMetrics.js";
-
 // Import redirect mapping and affiliate data from the consolidated affiliates.js file
 import { redirectMapping, affiliatesData } from "../../shared/affiliates.js";
 

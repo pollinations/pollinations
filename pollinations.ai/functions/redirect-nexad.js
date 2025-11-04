@@ -1,5 +1,4 @@
 // Netlify function to handle nex.ad redirects with analytics
-import { incrementUserMetric } from "../../shared/userMetrics.js";
 
 /**
  * Extract event ID from the path

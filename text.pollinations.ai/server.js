@@ -488,11 +488,10 @@ export async function sendErrorResponse(
     if (responseStatus === 429) {
         if (authResult.username) {
             errorLog(
-                "🚫 RATE LIMIT ERROR: User %s (%s) exceeded limits - IP: %s, tier: %s, model: %s",
+                "🚫 RATE LIMIT ERROR: User %s (%s) exceeded limits - IP: %s, model: %s",
                 authResult.username,
                 authResult.userId,
                 clientInfo.ip,
-                authResult.tier,
                 requestData?.model || "unknown",
             );
         } else {

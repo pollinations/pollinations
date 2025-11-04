@@ -13,7 +13,6 @@ import { shouldProceedWithAd, sendAdSkippedAnalytics } from "./adUtils.js";
 //     trackImpression,
 // } from "./nexAdFormatter.js";
 import { handleAuthentication } from "../../shared/auth-utils.js";
-import { incrementUserMetric } from "../../shared/userMetrics.js";
 
 const log = debug("pollinations:adfilter");
 const errorLog = debug("pollinations:adfilter:error");

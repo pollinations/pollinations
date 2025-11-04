@@ -230,10 +230,16 @@ async function sendPolarEvents(
                     pack: packBalance,
                 });
             } catch (error) {
-                log.warn("Failed to get customer state for spending router: {error}, defaulting to tier", {
+                log.error("❌ CRITICAL: Failed to get customer state for spending router: {error} userId={userId}", {
                     error,
                     userId: event.userId,
+                    eventId: event.id,
                 });
+                // CRITICAL FIX: Don't bill non-existent/errored customers
+                // Mark event as error immediately instead of trying to bill with zero balance
+                skippedEventIds.push(event.id);
+                userBalances.set(event.userId, { tier: 0, pack: 0 }); // Set to zero to trigger skip
+                continue; // Skip to next event
             }
             
             // Store initial balance for this user
@@ -304,6 +310,10 @@ async function sendPolarEvents(
             const fromTier = tierBalance;
             const fromPack = cost - tierBalance;
             
+            // CRITICAL FIX: Add splitGroupId to link the two events
+            // This helps analytics and UX understand these are parts of one generation
+            const splitGroupId = `${event.id}-split`;
+            
             // Tier portion - use original event name (no prefix)
             polarEvents.push({
                 name: event.eventType, // No prefix for tier events
@@ -312,6 +322,8 @@ async function sendPolarEvents(
                     ...baseMetadata,
                     pollenType: "tier",
                     totalPrice: fromTier,
+                    splitGroupId, // Link to other part
+                    splitPart: "tier", // Identify this portion
                 },
             });
             // Pack portion - add pack. prefix
@@ -322,6 +334,8 @@ async function sendPolarEvents(
                     ...baseMetadata,
                     pollenType: "pack",
                     totalPrice: fromPack,
+                    splitGroupId, // Link to other part
+                    splitPart: "pack", // Identify this portion
                 },
             });
             

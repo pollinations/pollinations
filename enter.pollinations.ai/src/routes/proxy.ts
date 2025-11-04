@@ -162,6 +162,32 @@ export const proxyRoutes = new Hono<Env>()
         },
     )
     .get(
+        "/text/models",
+        describeRoute({
+            description: "Get available text models.",
+            responses: {
+                200: {
+                    description: "Success",
+                    content: {
+                        "application/json": {
+                            schema: resolver(
+                                z.array(z.string()).meta({
+                                    description: "List of available models",
+                                }),
+                            ),
+                        },
+                    },
+                },
+                ...errorResponses(500),
+            },
+        }),
+        async (c) => {
+            const textServiceUrl =
+                c.env.TEXT_SERVICE_URL || "https://text.pollinations.ai";
+            return await proxy(`${textServiceUrl}/models`);
+        },
+    )
+    .get(
         "/text/:prompt",
         describeRoute({
             description: [
@@ -216,32 +242,6 @@ export const proxyRoutes = new Hono<Env>()
                     ...contentFilterHeaders,
                 },
             );
-        },
-    )
-    .get(
-        "/text/models",
-        describeRoute({
-            description: "Get available text models.",
-            responses: {
-                200: {
-                    description: "Success",
-                    content: {
-                        "application/json": {
-                            schema: resolver(
-                                z.array(z.string()).meta({
-                                    description: "List of available models",
-                                }),
-                            ),
-                        },
-                    },
-                },
-                ...errorResponses(500),
-            },
-        }),
-        async (c) => {
-            const textServiceUrl =
-                c.env.TEXT_SERVICE_URL || "https://text.pollinations.ai";
-            return await proxy(`${textServiceUrl}/models`);
         },
     )
     .get(

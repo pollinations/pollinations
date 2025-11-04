@@ -35,13 +35,29 @@ def get_env(key: str, required: bool = True) -> str:
 
 def load_pr_summaries() -> List[Dict]:
     """Load all PR summaries from the summaries directory"""
-    summaries_dir = ".pr-summaries"
+    summaries_dir = ".github/pr-summaries"
+    # fallbacks = [
+    #     summaries_dir,
+    #     "./pr-summaries",
+    #     ".github/pr-summaries",
+    #     os.path.join(os.path.dirname(__file__), "..", "pr-summaries")
+    # ]
+
+    # found_dir = None
+    # for p in fallbacks:
+    #     p_norm = os.path.normpath(p)
+    #     if os.path.exists(p_norm) and os.path.isdir(p_norm):
+    #         found_dir = p_norm
+    #         break
+
+    # if not found_dir:
+    #     print(f"📭 No summaries directory found (tried: {', '.join(fallbacks)})")
+    #     return []
+
+    # summaries_dir = found_dir
+    # print(f"🔎 Using summaries directory: {summaries_dir}")
     
-    if not os.path.exists(summaries_dir):
-        print(f"📭 No summaries directory found")
-        return []
-    
-    summary_files = glob.glob(f"{summaries_dir}/pr_*.json")
+    summary_files = glob.glob(os.path.join(summaries_dir, "pr_*.json"))
     
     if not summary_files:
         print(f"📭 No PR summaries found")
@@ -248,17 +264,41 @@ def get_digest_user_prompt(summaries: List[Dict], date_str: str, is_condensed: b
     if not summaries:
         return "No PR summaries to process."
     
-    # Group by category and impact
-    grouped = {
-        'high': {'core': [], 'community': [], 'docs': [], 'infrastructure': []},
-        'medium': {'core': [], 'community': [], 'docs': [], 'infrastructure': []},
-        'low': {'core': [], 'community': [], 'docs': [], 'infrastructure': []}
-    }
+    # Known categories and impacts we expect; unknown values are normalized/fallbacked
+    allowed_categories = ['core', 'community', 'docs', 'infrastructure']
+    allowed_impacts = ['high', 'medium', 'low']
+    
+    # Make grouped flexible so unknown normalized categories won't raise KeyError
+    grouped = {impact: {} for impact in allowed_impacts}
+    
+    # helper to normalize category names
+    def normalize_category(cat: str) -> str:
+        if not cat:
+            return 'core'
+        c = str(cat).strip().lower()
+        if c in allowed_categories:
+            return c
+        # common mappings
+        if c in ('ci', 'build', 'builds', 'automation', 'pipeline'):
+            return 'infrastructure'
+        if c in ('test', 'tests', 'testing'):
+            return 'core'
+        if 'doc' in c:
+            return 'docs'
+        if 'community' in c or 'social' in c:
+            return 'community'
+        # fallback to infrastructure for infra-like names, otherwise core
+        if any(x in c for x in ('infra', 'ci', 'build', 'deploy', 'ops')):
+            return 'infrastructure'
+        return 'core'
     
     for summary in summaries:
-        impact = summary.get('impact', 'medium')
-        category = summary.get('category', 'core')
-        grouped[impact][category].append(summary)
+        impact = str(summary.get('impact', 'medium')).lower()
+        if impact not in allowed_impacts:
+            impact = 'medium'
+        category_key = normalize_category(summary.get('category', 'core'))
+        # use setdefault to avoid KeyError for unexpected categories
+        grouped[impact].setdefault(category_key, []).append(summary)
     
     prompt = f"Create a weekly digest for {date_str}.\n\n"
     prompt += f"Total PRs merged: {len(summaries)}\n"
@@ -271,25 +311,37 @@ def get_digest_user_prompt(summaries: List[Dict], date_str: str, is_condensed: b
     # Add summaries by priority (high first)
     for impact in ['high', 'medium', 'low']:
         items = []
-        for category in ['core', 'community', 'docs', 'infrastructure']:
-            items.extend(grouped[impact][category])
+        for cat in ['core', 'community', 'docs', 'infrastructure']:
+            items.extend(grouped[impact].get(cat, []))
         
         if items:
             prompt += f"\n=== {impact.upper()} IMPACT ({len(items)} PRs) ===\n"
             for item in items:
-                prompt += f"\n**PR #{item['pr_number']}** - {item['pr_title']}\n"
-                prompt += f"Category: {item['category']}\n"
-                prompt += f"Summary: {item['summary']}\n"
+                prompt += f"\n**PR #{item.get('pr_number','?')}** - {item.get('pr_title','(no title)')}\n"
+                # don't reuse the loop variable name; fallback to the item's category if missing
+                prompt += f"Category: {item.get('category', 'core')}\n"
+                prompt += f"Summary: {item.get('summary','')}\n"
                 if not is_condensed and item.get('details'):
                     prompt += "Details:\n"
                     for detail in item['details']:
                         prompt += f"  - {detail}\n"
-                prompt += f"Author: {item['pr_author']}\n"
-                prompt += f"PR URL: {item['pr_url']}\n"
+                prompt += f"Author: {item.get('pr_author','')}\n"
+                prompt += f"PR URL: {item.get('pr_url','')}\n"
+    
+    # Safe PR URL/footer generation (use repo base from first summary if available)
+    repo_base = ''
+    first_url = summaries[0].get('pr_url') if summaries else None
+    if first_url and '/pull/' in first_url:
+        repo_base = first_url.split('/pull/')[0]
+    else:
+        repo_base = ''
     
     prompt += f"\n\nCreate a clean weekly digest focusing on WHAT changed (user impact)."
     prompt += f"\nCombine related changes naturally. Put all PR numbers and contributors in the footer."
-    prompt += f"\nGenerate PR links as [#123](<{summaries[0]['pr_url'].split('/pull/')[0]}/pull/123>) format."
+    if repo_base:
+        prompt += f"\nGenerate PR links as [#123](<{repo_base}/pull/123>) format."
+    else:
+        prompt += f"\nGenerate PR links as [#123](<https://github.com/OWNER/REPO/pull/123>) format."
     prompt += f"\nGenerate contributor links as [@username](<https://github.com/username>) format."
     
     if is_condensed:
@@ -319,7 +371,7 @@ def call_pollinations_api(system_prompt: str, user_prompt: str, token: str) -> s
     print(f"🤖 Generating weekly digest with {MODEL}")
     
     response = requests.post(
-        f"{POLLINATIONS_API_BASE}/chat/completions",
+        POLLINATIONS_API_BASE,
         headers=headers,
         json=payload,
         timeout=120

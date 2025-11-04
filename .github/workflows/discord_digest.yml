@@ -46,12 +46,18 @@ jobs:
           PR_BRANCH: ${{ github.event.pull_request.head.ref }}
         run: python .github/scripts/generate_summary_script.py
       
-      - name: Upload PR Summary as Artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: pr-summary-${{ github.event.pull_request.number }}-${{ github.run_id }}
-          path: pr_summary.json
-          retention-days: 7  # Keep for 7 days, enough for weekly digest
+      - name: Store PR Summary as Gist
+        run: |
+          echo "📝 Creating gist for PR #${{ github.event.pull_request.number }} summary..."
+          
+          # Create a private gist with the summary
+          gh gist create pr_summary.json \
+            --desc "PR #${{ github.event.pull_request.number }} summary for weekly digest - ${{ github.event.pull_request.title }}" \
+            --filename "pr-${{ github.event.pull_request.number }}-summary.json"
+          
+          echo "✅ Summary stored as private gist"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   # Job 2: Collect all summaries and post discord digest
   post-discord-digest:
@@ -59,7 +65,6 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
-      actions: read  # Need this to download artifacts
     
     steps:
       - name: Checkout code
@@ -74,20 +79,39 @@ jobs:
         run: |
           pip install requests PyYAML Jinja2
       
-      - name: Download All PR Summary Artifacts
-        uses: actions/download-artifact@v4
-        with:
-          pattern: pr-summary-*
-          path: ./pr-summaries/
-          merge-multiple: true
-      
-      - name: List Downloaded Summaries
+      - name: Download PR Summaries from Gists
         run: |
-          echo "📋 Downloaded PR summaries:"
-          find ./pr-summaries/ -name "*.json" -type f | sort
-          echo "Total summaries: $(find ./pr-summaries/ -name "*.json" -type f | wc -l)"
+          echo "📥 Downloading PR summaries from gists..."
+          mkdir -p ./pr-summaries/
+          
+          # Get all gists and filter for PR summaries
+          GIST_IDS=$(gh gist list --limit 100 | grep "PR #.*summary for weekly digest" | awk '{print $1}')
+          
+          if [ -z "$GIST_IDS" ]; then
+            echo "📭 No PR summary gists found"
+            exit 0
+          fi
+          
+          echo "Found gists: $GIST_IDS"
+          
+          # Download each gist
+          for gist_id in $GIST_IDS; do
+            echo "Downloading gist: $gist_id"
+            gh gist view $gist_id --files | while read filename; do
+              if [[ $filename == *"summary.json" ]]; then
+                gh gist view $gist_id --filename "$filename" > "./pr-summaries/$filename"
+                echo "✅ Downloaded: $filename"
+              fi
+            done
+          done
+          
+          echo "📋 Downloaded summaries:"
+          ls -la ./pr-summaries/
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       
       - name: Generate and Post Discord Digest
+        id: post-digest
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           POLLINATIONS_TOKEN: ${{ secrets.POLLINATIONS_TOKEN }}
@@ -96,3 +120,27 @@ jobs:
           REPO_FULL_NAME: ${{ github.repository }}
           SUMMARIES_PATH: ./pr-summaries/
         run: python .github/scripts/discord_digest.py
+      
+      - name: Clean up processed gists
+        if: steps.post-digest.outcome == 'success'  # Only run if Discord posting succeeded
+        run: |
+          echo "🧹 Cleaning up processed PR summary gists..."
+          
+          # Get all gists that are PR summaries
+          GIST_IDS=$(gh gist list --limit 100 | grep "PR #.*summary for weekly digest" | awk '{print $1}')
+          
+          if [ -n "$GIST_IDS" ]; then
+            echo "Found gists to delete: $GIST_IDS"
+            
+            # Delete each gist
+            for gist_id in $GIST_IDS; do
+              echo "Deleting gist: $gist_id"
+              gh gist delete $gist_id --confirm || echo "Failed to delete gist $gist_id"
+            done
+            
+            echo "✅ Cleaned up all processed PR summary gists"
+          else
+            echo "📭 No gists found to clean up"
+          fi
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

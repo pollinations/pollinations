@@ -134,53 +134,33 @@ export function useImageEditor({ stop, image }) {
 }
 
 const loadImage = async (newImage) => {
-    // Fetch first to check for errors
-    try {
-        const response = await fetch(newImage.imageURL);
+    return new Promise((resolve, reject) => {
+        const img = new Image();
+        img.src = newImage.imageURL;
         
-        if (!response.ok) {
-            const errorText = await response.text();
+        img.onload = () => {
+            resolve({
+                ...newImage,
+                loaded: true,
+            });
+        };
+        
+        img.onerror = async () => {
+            // Image failed to load, fetch to get error details
             try {
-                const errorJson = JSON.parse(errorText);
-                const errorMessage = errorJson.error || errorJson.message || errorText;
-                throw new Error(errorMessage);
-            } catch (e) {
-                if (e.message && !e.message.includes("JSON")) {
-                    throw e; // Re-throw if it's our error message
+                const response = await fetch(newImage.imageURL);
+                const text = await response.text();
+                
+                // Try to parse as JSON for error message
+                try {
+                    const json = JSON.parse(text);
+                    reject(new Error(json.error || json.message || "Failed to load image"));
+                } catch {
+                    reject(new Error(text || "Failed to load image"));
                 }
-                throw new Error(errorText || `Failed to load image (${response.status})`);
+            } catch {
+                reject(new Error("Failed to load image"));
             }
-        }
-        
-        const contentType = response.headers.get('content-type');
-        if (!contentType || !contentType.startsWith('image/')) {
-            // Not an image, might be JSON error
-            const text = await response.text();
-            try {
-                const json = JSON.parse(text);
-                if (json.error) {
-                    throw new Error(json.error);
-                }
-            } catch (e) {
-                if (e.message && !e.message.includes("JSON")) {
-                    throw e;
-                }
-            }
-            throw new Error("Response is not an image");
-        }
-        
-        // Now load the image
-        return new Promise((resolve, reject) => {
-            const img = new Image();
-            img.src = newImage.imageURL;
-            img.onload = () =>
-                resolve({
-                    ...newImage,
-                    loaded: true,
-                });
-            img.onerror = () => reject(new Error("Failed to render image"));
-        });
-    } catch (error) {
-        throw error;
-    }
+        };
+    });
 };

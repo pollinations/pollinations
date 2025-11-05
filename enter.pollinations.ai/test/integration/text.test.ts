@@ -54,7 +54,7 @@ describe.for([true, false])(
             { timeout: 30000 },
             async ([serviceId, expectedStatus]) => {
                 const response = await SELF.fetch(
-                    `http://localhost:3000/api/generate/openai`,
+                    `http://localhost:3000/api/generate/v1/chat/completions`,
                     {
                         method: "POST",
                         headers: {
@@ -83,7 +83,7 @@ test.for(authenticatedTestCases())(
     { timeout: 30000 },
     async ([serviceId, expectedStatus], { apiKey }) => {
         const response = await SELF.fetch(
-            `http://localhost:3000/api/generate/openai`,
+            `http://localhost:3000/api/generate/v1/chat/completions`,
             {
                 method: "POST",
                 headers: {
@@ -111,7 +111,7 @@ test.for(authenticatedTestCases())(
     { timeout: 30000 },
     async ([serviceId, expectedStatus], { apiKey, mocks }) => {
         const response = await SELF.fetch(
-            `http://localhost:3000/api/generate/openai`,
+            `http://localhost:3000/api/generate/v1/chat/completions`,
             {
                 method: "POST",
                 headers: {

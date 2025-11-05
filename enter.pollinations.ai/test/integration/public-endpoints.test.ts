@@ -6,9 +6,9 @@ import { describe, expect } from "vitest";
 // These endpoints should work with CORS from any origin (e.g., pollinations.ai frontend)
 
 describe("Public model endpoints", () => {
-    test("GET /openai/models returns 200 without auth", async () => {
+    test("GET /v1/models returns 200 without auth", async () => {
         const response = await SELF.fetch(
-            `http://localhost:3000/api/generate/openai/models`,
+            `http://localhost:3000/api/generate/v1/models`,
             {
                 method: "GET",
             },
@@ -36,9 +36,9 @@ describe("Public model endpoints", () => {
         expect(Array.isArray(data)).toBe(true);
     });
 
-    test("GET /openai/models has CORS headers for cross-origin requests", async () => {
+    test("GET /v1/models has CORS headers for cross-origin requests", async () => {
         const response = await SELF.fetch(
-            `http://localhost:3000/api/generate/openai/models`,
+            `http://localhost:3000/api/generate/v1/models`,
             {
                 method: "GET",
                 headers: {

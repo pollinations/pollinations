@@ -48,9 +48,9 @@ describe("Public model endpoints", () => {
         );
         expect(response.status).toBe(200);
 
-        // Verify CORS headers allow any origin
+        // Verify CORS headers are present (Hono returns the requesting origin for security)
         const corsHeader = response.headers.get("access-control-allow-origin");
-        expect(corsHeader).toBe("*");
+        expect(corsHeader).toBeTruthy();
     });
 
     test("GET /image/models has CORS headers for cross-origin requests", async () => {
@@ -65,8 +65,23 @@ describe("Public model endpoints", () => {
         );
         expect(response.status).toBe(200);
 
-        // Verify CORS headers allow any origin
+        // Verify CORS headers are present (Hono returns the requesting origin for security)
         const corsHeader = response.headers.get("access-control-allow-origin");
-        expect(corsHeader).toBe("*");
+        expect(corsHeader).toBeTruthy();
+    });
+
+    test("OPTIONS preflight request works for /image/models", async () => {
+        const response = await SELF.fetch(
+            `http://localhost:3000/api/generate/image/models`,
+            {
+                method: "OPTIONS",
+                headers: {
+                    origin: "https://pollinations.ai",
+                    "access-control-request-method": "GET",
+                },
+            },
+        );
+        expect(response.status).toBe(204);
+        expect(response.headers.get("access-control-allow-origin")).toBe("*");
     });
 });

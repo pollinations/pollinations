@@ -32,8 +32,6 @@ Registering itself gives you an account. The real power is unlocked when you **c
 - **Using a Front-End Key:** Designed for client-side apps (bound to your domain). Medium rate limits. Access to all models, which consume Pollen based on usage.
 - **Using a Server-to-Server Key:** For backend apps. No platform rate limits. Access to all models, which consume Pollen based on usage.
 
-If you register but do not use a key, your rate limits will be the same as an anonymous user.
-
 ## How do daily Pollen grants work?
 
 Registered developers receive daily Pollen grants to support experimentation based on their tier. 

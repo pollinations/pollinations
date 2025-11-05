@@ -15,14 +15,14 @@
 1. **🌐 Publishable Key** (starts with `pk_`)
    - Always visible in dashboard
    - Safe for client-side code (React, Vue, etc.)
-   - IP-based rate limiting (100 req/min)
+   - IP-based rate limiting: 3 req/burst, 1 refill per 15 sec (~4 req/min)
    - Access to all models
    
 2. **🔒 Secret Key** (starts with `sk_`)
    - Only shown once - copy immediately!
    - For server-side apps only
    - Never expose publicly
-   - Best rate limits
+   - No rate limits
    - Can spend Pollen for paid models
 
 **For testing, use Secret Keys** for better rate limits and pollen spending.

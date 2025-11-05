@@ -42,11 +42,9 @@ export const makeParamsSafe = ({
         model = "flux";
     }
 
-    const maxSideLength = MODELS[model].maxSideLength;
-    const defaultSideLength = MODELS[model].defaultSideLength ?? maxSideLength;
-    const maxPixels = maxSideLength * maxSideLength;
+    const defaultSideLength = MODELS[model].defaultSideLength ?? 1024;
 
-    // Ensure width and height are integers or default to defaultSideLength
+    // Use provided dimensions or default - no scaling/limiting
     width = Number.isInteger(parseInt(width))
         ? parseInt(width)
         : defaultSideLength;
@@ -60,13 +58,6 @@ export const makeParamsSafe = ({
 
     if (seed < 0 || seed > maxSeedValue) {
         seed = 42;
-    }
-
-    // // Adjust dimensions to maintain aspect ratio if exceeding maxPixels
-    if (width * height > maxPixels) {
-        const ratio = Math.sqrt(maxPixels / (width * height));
-        width = Math.floor(width * ratio);
-        height = Math.floor(height * ratio);
     }
 
     // Validate quality parameter - only allow specific values

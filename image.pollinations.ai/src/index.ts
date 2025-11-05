@@ -655,7 +655,7 @@ const server = http.createServer((req, res) => {
         const modelDetails = Object.entries(MODELS).map(([name, config]) => ({
             name,
             enhance : config.enhance || false,
-            maxSideLength: config.maxSideLength,
+            defaultSideLength: config.defaultSideLength ?? 1024,
         }));
         res.end(JSON.stringify(modelDetails));
         return;

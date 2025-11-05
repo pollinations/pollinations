@@ -19,6 +19,7 @@ import StyledLink from "../components/StyledLink";
 import { useTheme, useMediaQuery, Link } from "@mui/material";
 import Grid from "@mui/material/Grid2";
 import { trackEvent } from "../config/analytics.js";
+import { getEnterImageURL } from "../utils/enterApi";
 
 const Supporter = () => {
     const theme = useTheme();
@@ -27,10 +28,15 @@ const Supporter = () => {
     const imageDimension = 96;
     const seedValue = 41 + Math.floor(Math.random() * 3);
 
-    const generateImageUrl = (name, description) =>
-        `https://pollinations.ai/p/${encodeURIComponent(
-            `${SUPPORTER_LOGO_STYLE} ${name} ${description}`,
-        )}?width=${imageDimension * 3}&height=${imageDimension * 3}&nologo=true&seed=${seedValue}`;
+    const generateImageUrl = (name, description) => 
+        getEnterImageURL({
+            prompt: `${SUPPORTER_LOGO_STYLE} ${name} ${description}`,
+            width: imageDimension * 3,
+            height: imageDimension * 3,
+            nologo: true,
+            seed: seedValue,
+            model: 'nanobanana'
+        });
 
     // Helper to ensure proper protocol for external links
     const getCompanyLink = (url) => {

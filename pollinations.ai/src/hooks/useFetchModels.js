@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import Debug from "debug";
+import { PLAYGROUND_API_KEY, ENTER_BASE_URL } from "../utils/enterApi";
 
 const debug = Debug("useFetchModels");
 
@@ -14,10 +15,9 @@ const useFetchModels = () => {
 
     useEffect(() => {
         setLoading(true);
-        const API_KEY = "plln_pk_RRHEqHFAF7utI50fgWc418G7vLXybWg7wkkGQtBgNnZPGs3y4JKpqgEneL0YwQP2";
-        fetch("https://enter.pollinations.ai/api/generate/image/models", {
+        fetch(`${ENTER_BASE_URL}/generate/image/models`, {
             headers: {
-                "Authorization": `Bearer ${API_KEY}`
+                "Authorization": `Bearer ${PLAYGROUND_API_KEY}`
             }
         })
             .then((res) => {

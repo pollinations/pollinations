@@ -10,9 +10,7 @@ import { createGoogleSearchTransform } from "./transforms/createGoogleSearchTran
 // Import persona prompts
 import unityPrompt from "./personas/unity.js";
 import midijourneyPrompt from "./personas/midijourney.js";
-import rtistPrompt from "./personas/rtist.js";
 import evilPrompt from "./personas/evil.js";
-import { bidaraSystemPrompt } from "./personas/bidara.js";
 import chickyTutorPrompt from "./personas/chickytutor.js";
 
 // Import system prompts
@@ -99,16 +97,17 @@ const models: ModelDefinition[] = [
         output_modalities: ["text"],
         tools: true,
     },
-    // {
-    // 	name: "mistral-naughty",
-    // 	description: "Mistral Nemo Instruct 2407",
-    // 	config: portkeyConfig["mistral-nemo-instruct-2407"],
-    // 	transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
-    // 	community: false,
-    // 	input_modalities: ["text"],
-    // 	output_modalities: ["text"],
-    // 	tools: true
-    // },
+    {
+        name: "naughty",
+        description: "Mistral Nemo Instruct 2407",
+        config: portkeyConfig["mistral-nemo-instruct-2407"],
+        transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
+        uncensored: true,
+        community: false,
+        input_modalities: ["text"],
+        output_modalities: ["text"],
+        tools: true,
+    },
     {
         name: "deepseek",
         description: "DeepSeek V3.1",
@@ -155,17 +154,7 @@ const models: ModelDefinition[] = [
     // 	tools: true
     // },
     {
-        name: "roblox-rp",
-        description: "Llama 3.1 8B Instruct",
-        config: portkeyConfig["us.meta.llama3-1-8b-instruct-v1:0"],
-        transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
-        community: false,
-        input_modalities: ["text"],
-        output_modalities: ["text"],
-        tools: true,
-    },
-    {
-        name: "claudyclaude",
+        name: "claude",
         description: "Claude Haiku 4.5",
         config: portkeyConfig["us.anthropic.claude-haiku-4-5-20251001-v1:0"],
         transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
@@ -235,32 +224,11 @@ const models: ModelDefinition[] = [
         tools: true,
     },
     {
-        name: "rtist",
-        description: "Rtist",
-        config: portkeyConfig["gpt-4.1-2025-04-14"],
-        transform: createMessageTransform(rtistPrompt),
-        community: true,
-        input_modalities: ["text"],
-        output_modalities: ["text"],
-        tools: true,
-    },
-    {
         name: "evil",
         description: "Evil",
         config: portkeyConfig["mistral-small-3.1-24b-instruct-2503"],
         transform: createMessageTransform(evilPrompt),
         uncensored: true,
-        community: true,
-        input_modalities: ["text", "image"],
-        output_modalities: ["text"],
-        tools: true,
-    },
-    {
-        name: "bidara",
-        description:
-            "BIDARA (Biomimetic Designer and Research Assistant by NASA)",
-        config: portkeyConfig["gpt-4.1-nano-2025-04-14"],
-        transform: createMessageTransform(bidaraSystemPrompt),
         community: true,
         input_modalities: ["text", "image"],
         output_modalities: ["text"],

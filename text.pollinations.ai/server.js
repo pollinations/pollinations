@@ -975,22 +975,6 @@ async function sendAsOpenAIStream(res, completion, req = null) {
     res.end();
 }
 
-// Helper function for Roblox-specific message handling
-function handleRobloxSpecificFix(messages, model) {
-    // Check if model is roblox-rp and the last message has role:system
-    if (
-        model === "roblox-rp" &&
-        messages.length > 0 &&
-        messages[messages.length - 1].role === "system"
-    ) {
-        log("Applying Roblox-specific fix: reversing message order");
-        // Create a copy of the messages array and reverse it
-        return [...messages].reverse();
-    }
-
-    // Return original messages if conditions aren't met
-    return messages;
-}
 
 async function generateTextBasedOnModel(messages, options) {
     const model = options.model || "openai-fast";

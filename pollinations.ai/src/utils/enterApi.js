@@ -116,7 +116,7 @@ export async function generateText(prompt, params = {}) {
 export async function getModels(type = "image") {
   const endpoint = type === "image" 
     ? `${ENTER_BASE_URL}/generate/image/models`
-    : `${ENTER_BASE_URL}/v1/models`;
+    : `${ENTER_BASE_URL}/generate/text/models`;
 
   const response = await fetch(endpoint, {
     headers: getAuthHeader(),

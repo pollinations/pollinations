@@ -18,7 +18,7 @@ export const useModels = (modelType = "text") => {
                 setLoading(true);
                 const endpoint =
                     modelType === "text"
-                        ? `${ENTER_BASE_URL}/v1/models`
+                        ? `${ENTER_BASE_URL}/generate/text/models`
                         : `${ENTER_BASE_URL}/generate/image/models`;
 
                 const response = await fetch(endpoint, {
@@ -34,10 +34,11 @@ export const useModels = (modelType = "text") => {
                 const data = await response.json();
 
                 if (modelType === "text") {
-                    // Process text models - API returns {data: [{id, object}]}
-                    const processedModels = (data.data || []).map((model) => ({
-                        id: model.id,
-                        name: model.id,
+                    // Process text models - API returns array of model objects
+                    const processedModels = (Array.isArray(data) ? data : []).map((model) => ({
+                        id: model.name,
+                        name: model.description ? `${model.name} - ${model.description}` : model.name,
+                        details: model,
                     })).sort((a, b) => a.name.localeCompare(b.name));
 
                     setModels(processedModels);

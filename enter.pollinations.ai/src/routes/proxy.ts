@@ -49,6 +49,32 @@ function errorResponses(...codes: ErrorStatusCode[]) {
 }
 
 export const proxyRoutes = new Hono<Env>()
+    // OpenAI v1 compatible routes
+    .get(
+        "/models",
+        describeRoute({
+            description: "Get available text models (OpenAI-compatible).",
+            responses: {
+                200: {
+                    description: "Success",
+                    content: {
+                        "application/json": {
+                            schema: resolver(GetModelsResponseSchema),
+                        },
+                    },
+                },
+                ...errorResponses(500),
+            },
+        }),
+        async (c) => {
+            const textServiceUrl =
+                c.env.TEXT_SERVICE_URL || "https://text.pollinations.ai";
+            return await proxy(`${textServiceUrl}/openai/models`, {
+                ...c.req,
+                headers: proxyHeaders(c),
+            });
+        },
+    )
     .get(
         "/openai/models",
         describeRoute({
@@ -102,7 +128,85 @@ export const proxyRoutes = new Hono<Env>()
     .use(auth({ allowApiKey: true, allowSessionCookie: true }))
     .use(frontendKeyRateLimit)
     .use(polar)
-    // .use(alias({ "/openai/chat/completions": "/openai" }))
+    // OpenAI v1 compatible chat completions endpoint
+    .post(
+        "/chat/completions",
+        track("generate.text"),
+        describeRoute({
+            description: [
+                "OpenAI compatible endpoint for text generation.",
+                "Standard OpenAI v1 API endpoint.",
+                "",
+                "**Authentication (Secret Keys Only):**",
+                "",
+                "Include your API key in the `Authorization` header as a Bearer token:",
+                "",
+                "`Authorization: Bearer YOUR_API_KEY`",
+                "",
+                "API keys can be created from your dashboard at enter.pollinations.ai.",
+                "Secret keys provide the best rate limits and can spend Pollen.",
+            ].join("\n"),
+            responses: {
+                200: {
+                    description: "Success",
+                    content: {
+                        "application/json": {
+                            schema: resolver(
+                                CreateChatCompletionResponseSchema,
+                            ),
+                        },
+                    },
+                },
+                ...errorResponses(400, 401, 500),
+            },
+        }),
+        validator("json", CreateChatCompletionRequestSchema),
+        async (c) => {
+            await c.var.auth.requireAuthorization({
+                allowAnonymous:
+                    c.var.track.freeModelRequested &&
+                    c.env.ALLOW_ANONYMOUS_USAGE,
+            });
+
+            await checkBalanceForPaidModel(c);
+
+            const textServiceUrl =
+                c.env.TEXT_SERVICE_URL || "https://text.pollinations.ai";
+            const targetUrl = proxyUrl(c, `${textServiceUrl}/openai`);
+            const requestBody = await c.req.json();
+            const response = await proxy(targetUrl, {
+                method: c.req.method,
+                headers: {
+                    ...proxyHeaders(c),
+                    ...generationHeaders(c.env.ENTER_TOKEN, c.var.auth.user),
+                },
+                body: JSON.stringify(requestBody),
+            });
+
+            if (!response.ok || !response.body) {
+                throw new HTTPException(
+                    response.status as ContentfulStatusCode,
+                );
+            }
+
+            // add content filter headers if not streaming
+            let contentFilterHeaders = {};
+            if (!c.var.track.streamRequested) {
+                const responseJson = await response.clone().json();
+                const parsedResponse =
+                    CreateChatCompletionResponseSchema.parse(responseJson);
+                contentFilterHeaders =
+                    contentFilterResultsToHeaders(parsedResponse);
+            }
+
+            return new Response(response.body, {
+                headers: {
+                    ...Object.fromEntries(response.headers),
+                    ...contentFilterHeaders,
+                },
+            });
+        },
+    )
     .post(
         "/openai",
         track("generate.text"),

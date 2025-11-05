@@ -24,12 +24,27 @@ export const api = new Hono<Env>()
     .route("/tiers", tiersRoutes)
     .route("/generate", proxyRoutes);
 
+// OpenAI-compatible v1 API
+export const v1Api = new Hono<Env>()
+    .route("/", proxyRoutes);
+
 const docsRoutes = createDocsRoutes(api);
 
 const app = new Hono<Env>()
     // Permissive CORS for public API endpoints (require API keys)
     .use(
         "/api/generate/*",
+        cors({
+            origin: "*",
+            allowMethods: ["GET", "POST", "OPTIONS"],
+            allowHeaders: ["Content-Type", "Authorization"],
+            exposeHeaders: ["Content-Length"],
+            maxAge: 600,
+        }),
+    )
+    // Permissive CORS for v1 API (OpenAI-compatible)
+    .use(
+        "/v1/*",
         cors({
             origin: "*",
             allowMethods: ["GET", "POST", "OPTIONS"],
@@ -61,7 +76,8 @@ const app = new Hono<Env>()
     .use("*", requestId())
     .use("*", logger)
     .route("/api", api)
-    .route("/api/docs", docsRoutes);
+    .route("/api/docs", docsRoutes)
+    .route("/v1", v1Api);
 
 app.notFound((c) => {
     return handleError(new HTTPException(404), c);

@@ -79,6 +79,7 @@ export const tiersRoutes = new Hono<Env>()
     .get(
         "/view",
         describeRoute({
+            tags: ["Auth"],
             description: "Get the current user's tier status and daily pollen information.",
             hide: ({ c }) => c?.env.ENVIRONMENT !== "development",
         }),
@@ -161,6 +162,7 @@ export const tiersRoutes = new Hono<Env>()
     .post(
         "/activate",
         describeRoute({
+            tags: ["Auth"],
             description: "Create a Polar checkout session to activate a tier subscription.",
             hide: ({ c }) => c?.env.ENVIRONMENT !== "development",
         }),

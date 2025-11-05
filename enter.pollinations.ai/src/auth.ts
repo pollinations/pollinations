@@ -58,6 +58,11 @@ export function createAuth(env: Cloudflare.Env) {
             schema: betterAuthSchema,
             provider: "sqlite",
         }),
+        session: {
+            metadata: {
+                authMigrationV2: true, // Mark new sessions for API auth migration
+            },
+        },
         user: {
             additionalFields: {
                 githubId: {

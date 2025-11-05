@@ -112,6 +112,15 @@ export const auth = (options: AuthOptions) =>
         const { user, session, apiKey } =
             (await authenticateSession()) || (await authenticateApiKey()) || {};
 
+        // Force logout old sessions (pre-API auth change) - one-time migration
+        if (session && !session.metadata?.authMigrationV2) {
+            log.debug("[AUTH] Old session detected, forcing logout for migration");
+            await client.api.signOut({ headers: c.req.raw.headers });
+            throw new HTTPException(401, {
+                message: "Session expired. Please log in again.",
+            });
+        }
+
         log.debug("[AUTH] Authentication result: {authenticated}", {
             authenticated: !!user,
             hasSession: !!session,

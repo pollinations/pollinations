@@ -37,6 +37,15 @@ const WORKLOAD_REASONING = {
  */
 const IMAGE_TOKENS_1024 = 85 + (170 * Math.ceil(1024/512) * Math.ceil(1024/512));
 
+/**
+ * Model-specific image token counts for 1024×1024 images
+ * Different providers use different token counting methods
+ */
+const MODEL_IMAGE_TOKENS: Record<string, number> = {
+    'gptimage': IMAGE_TOKENS_1024,     // 765 tokens (OpenAI tile calculation)
+    'nanobanana': 1290,                // 1290 tokens (Vertex AI Gemini actual usage)
+};
+
 /** 
  * Audio pricing per minute (OpenAI realtime API rates)
  * Fixed per-minute costs, not token-based
@@ -49,7 +58,15 @@ const AUDIO_COST_PER_MIN = {
 
 /** Format large numbers with K/M abbreviations */
 function formatLargeNumber(num: number): string {
-    const rounded = Math.round(num / 10) * 10;
+    // Less aggressive rounding for smaller numbers
+    let rounded: number;
+    if (num < 50) {
+        // Round to nearest 5 for numbers under 50
+        rounded = Math.round(num / 5) * 5;
+    } else {
+        // Round to nearest 10 for larger numbers
+        rounded = Math.round(num / 10) * 10;
+    }
     
     if (rounded >= 1_000_000) {
         const millions = rounded / 1_000_000;
@@ -136,12 +153,13 @@ export const calculatePerPollen = (model: ModelPrice): string => {
             return formatLargeNumber(imagesPerPollen);
         }
         
-        // Case 2: Per-token pricing (e.g., gptimage with OpenAI tile calculation)
+        // Case 2: Per-token pricing (e.g., gptimage, nanobanana)
         if (model.perToken && model.completionImagePrice) {
             const tokenPrice = parseFloat(model.completionImagePrice);
             
-            // OpenAI tile calculation for 1024×1024: 85 + 170×4 tiles = 765 tokens
-            const costPerImage = (tokenPrice * IMAGE_TOKENS_1024) / 1_000_000;
+            // Use model-specific token count, fallback to OpenAI calculation
+            const tokenCount = MODEL_IMAGE_TOKENS[model.name] || IMAGE_TOKENS_1024;
+            const costPerImage = (tokenPrice * tokenCount) / 1_000_000;
             
             if (costPerImage === 0) return "—";
             

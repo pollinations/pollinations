@@ -2,7 +2,6 @@
 /c/* / 200
 /prompt/* https://image.pollinations.ai/prompt/:splat 301
 /p/* https://image.pollinations.ai/prompt/:splat 301
-/terms / 200
 /readme / 200
 /referral / 200
 /sirius-cybernetics-elevator-challenge https://b_jhzjeywxldc.v0.build/ 301

@@ -1,6 +1,7 @@
 import styled from "@emotion/styled";
 import Markdown from "markdown-to-jsx";
 import { useState } from "react";
+import { Link } from "react-router-dom";
 import termsMarkdown from "../../TERMS_OF_SERVICE.md?raw";
 import privacyMarkdown from "../../PRIVACY_POLICY.md?raw";
 import { Colors } from "../config/global";
@@ -20,6 +21,16 @@ const LogoContainer = styled.div`
   display: flex;
   justify-content: center;
   margin-bottom: 60px;
+  
+  a {
+    display: inline-block;
+    cursor: pointer;
+    transition: opacity 0.3s ease;
+    
+    &:hover {
+      opacity: 0.8;
+    }
+  }
   
   img {
     height: 60px;
@@ -185,7 +196,9 @@ const Terms = () => {
   return (
     <PageContainer>
       <LogoContainer>
-        <img src="/logo.svg" alt="Pollinations.ai" />
+        <Link to="/">
+          <img src="/logo-text.svg" alt="Pollinations.ai" />
+        </Link>
       </LogoContainer>
 
       <ContentWrapper>

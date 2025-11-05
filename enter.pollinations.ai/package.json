@@ -10,7 +10,9 @@
         "test": "npx vitest run",
         "gen:migrations": "npx drizzle-kit generate",
         "gen:auth-schema": "npx @better-auth/cli@latest generate --config betterAuth.config.ts --output src/db/schema/better-auth.ts",
-        "gen:cf-types": "sops -d .encrypted.dev.env > .dev.vars && wrangler types --env-interface CloudflareBindings",
+        "gen:types:runtime": "sops -d .encrypted.dev.env > .dev.vars && wrangler types --include-env=false worker-runtime.d.ts",
+        "gen:types:bindings": "sops -d .encrypted.dev.env > .dev.vars && wrangler types --include-runtime=false --env-interface CloudflareBindings worker-bindings.d.ts",
+        "gen:types": "npm run gen:types:runtime && npm run gen:types:bindings",
         "migrate:staging": "wrangler d1 migrations apply DB --remote --env staging",
         "migrate:development": "wrangler d1 migrations apply DB --local",
         "build:staging": "CLOUDFLARE_ENV=staging vite build --mode=staging",
@@ -70,6 +72,6 @@
         "vite": "^7.1.12",
         "vite-tsconfig-paths": "^5.1.4",
         "vitest": "^3.2.4",
-        "wrangler": "^4.45.0"
+        "wrangler": "^4.45.4"
     }
 }

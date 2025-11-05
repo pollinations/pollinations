@@ -57,6 +57,13 @@ export const event = sqliteTable("event", {
         enum: apiKeyTypeValues,
     }).$type<ApiKeyType>(),
 
+    // Meter selection and balance
+    selectedMeterId: text("selected_meter_id"),
+    selectedMeterSlug: text("selected_meter_slug"),
+    balances: text("balances", { mode: "json" }).$type<
+        Record<string, number>
+    >(),
+
     // Referrer
     referrerDomain: text("referrer_domain"),
     referrerUrl: text("referrer_url"),

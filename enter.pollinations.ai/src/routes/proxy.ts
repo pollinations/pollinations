@@ -267,30 +267,6 @@ export const proxyRoutes = new Hono<Env>()
         },
     )
     .get(
-        "/image/models",
-        describeRoute({
-            description: "Get available image models.",
-            responses: {
-                200: {
-                    description: "Success",
-                    content: {
-                        "application/json": {
-                            schema: resolver(
-                                z.array(z.string()).meta({
-                                    description: "List of available models",
-                                }),
-                            ),
-                        },
-                    },
-                },
-                ...errorResponses(400, 401, 500),
-            },
-        }),
-        async (c) => {
-            return await proxy(`${c.env.IMAGE_SERVICE_URL}/models`);
-        },
-    )
-    .get(
         "/image/:prompt",
         track("generate.image"),
         describeRoute({

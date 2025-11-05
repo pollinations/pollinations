@@ -35,6 +35,18 @@ export const APP_CONFIGS = {
     outputDir: 'auth.pollinations.ai/media',
     sourceSvg: '../../assets/logo.svg',
     themeColor: '#e67e00'
+  },
+  
+  image: {
+    name: 'image.pollinations.ai',
+    outputDir: 'image.pollinations.ai',
+    sourceSvg: '../../assets/logo-text.svg',
+    watermark: {
+      enabled: true,
+      width: 200,
+      height: 31,
+      preserveTransparency: true
+    }
   }
 };
 

@@ -19,7 +19,6 @@ import { useState } from "react";
 
 const Footer = () => {
     const theme = useTheme();
-    const isXs = useMediaQuery(theme.breakpoints.only("xs"));
     const isMdDown = useMediaQuery(theme.breakpoints.down("md"));
     const [copied, setCopied] = useState(false);
 
@@ -111,7 +110,7 @@ const Footer = () => {
                             fontSize: "1.2em",
                             fontFamily: Fonts.title,
                             width: "100%",
-                            textAlign: isXs ? "center" : "right",
+                            textAlign: isMdDown ? "center" : "right",
                             marginTop: "0.5em",
                         }}
                     >

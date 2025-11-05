@@ -1,5 +1,10 @@
 export const SUPPORTER_LIST = [
     {
+        name: "Perplexity AI",
+        url: "https://www.perplexity.ai/",
+        description: "AI-powered search and conversational answer engine",
+    },
+    {
         name: "AWS Activate",
         url: "https://aws.amazon.com/",
         description: "GPU Cloud Credits",

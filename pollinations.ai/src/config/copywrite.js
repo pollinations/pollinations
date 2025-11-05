@@ -88,7 +88,7 @@ export const SUPPORTER_LOGO_STYLE =
 export const FOOTER_TERMS_CONDITIONS_LINK = "Terms & Conditions";
 
 export const FOOTER_CLOSE = "Close";
-export const FOOTER_INFO_1 = " 2025 pollinations.ai";
+export const FOOTER_INFO_1 = "- pollinations.ai - 2025";
 export const FOOTER_INFO_2 = "Open source AI innovation from Berlin";
 
 export const ASCII_ART_PROMPT = (width, height) =>

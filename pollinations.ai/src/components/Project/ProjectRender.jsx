@@ -39,7 +39,7 @@ const ProjectsRender = ({ projectList, classes }) => {
                                     flexWrap: "nowrap",
                                     alignContent: "center",
                                     justifyContent: "space-between",
-                                    alignItems: "center",
+                                    alignItems: isMobile ? "center" : "flex-start",
                                     width: "100%",
                                 }}
                                 className={classes.gridItem}

@@ -27,7 +27,9 @@ Not currently. You need to register and use an API key to access our models. All
 
 ## What do I get when I register?
 
-Registration gives you access to the Pollinations API and the **Seed tier**, which includes 5 Pollen per day to get you started. Once registered, you can **create API keys** to start making requests.
+Registration gives you access to the Pollinations API and the **Seed tier**, which includes 5 Pollen per day* to get you started. Once registered, you can **create API keys** to start making requests.
+
+*During beta only - subject to change
 
 - **Publishable Key (pk_):** Designed for client-side apps (bound to your domain). Rate limits: 3 requests/burst, 1 refill per 15 sec (~4 req/min). Access to all models, which consume Pollen based on usage.
 - **Secret Key (sk_):** For server-side apps only. No rate limits. Access to all models, which consume Pollen based on usage.

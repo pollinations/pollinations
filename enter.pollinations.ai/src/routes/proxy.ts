@@ -50,9 +50,9 @@ function errorResponses(...codes: ErrorStatusCode[]) {
 
 export const proxyRoutes = new Hono<Env>()
     .get(
-        "/openai/models",
+        "/v1/models",
         describeRoute({
-            description: "Get available text models.",
+            description: "Get available text models (OpenAI-compatible).",
             responses: {
                 200: {
                     description: "Success",
@@ -102,14 +102,12 @@ export const proxyRoutes = new Hono<Env>()
     .use(auth({ allowApiKey: true, allowSessionCookie: true }))
     .use(frontendKeyRateLimit)
     .use(polar)
-    // .use(alias({ "/openai/chat/completions": "/openai" }))
     .post(
-        "/openai",
+        "/v1/chat/completions",
         track("generate.text"),
         describeRoute({
             description: [
-                "OpenAI compatible endpoint for text generation.",
-                "Also available under `/openai/chat/completions`.",
+                "OpenAI-compatible chat completions endpoint.",
                 "",
                 "**Authentication (Secret Keys Only):**",
                 "",

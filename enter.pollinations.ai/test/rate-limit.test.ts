@@ -3,7 +3,7 @@ import { test } from "./fixtures.ts";
 import { expect } from "vitest";
 import { getLogger } from "@logtape/logtape";
 
-const endpoint = "http://localhost:3000/api/generate/openai";
+const endpoint = "http://localhost:3000/api/generate/v1/chat/completions";
 const log = getLogger(["test", "rate-limit"]);
 
 test("publishable key rate limited (10 parallel requests)", { timeout: 60000 }, async ({ auth, sessionToken }) => {

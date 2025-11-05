@@ -18,7 +18,7 @@ export const useModels = (modelType = "text") => {
                 setLoading(true);
                 const endpoint =
                     modelType === "text"
-                        ? `${ENTER_BASE_URL}/generate/text/models`
+                        ? `${ENTER_BASE_URL}/v1/models`
                         : `${ENTER_BASE_URL}/generate/image/models`;
 
                 const response = await fetch(endpoint, {
@@ -34,34 +34,11 @@ export const useModels = (modelType = "text") => {
                 const data = await response.json();
 
                 if (modelType === "text") {
-                    // Process text models
-                    let processedModels = [];
-
-                    if (Array.isArray(data)) {
-                        // API returns array of strings (model IDs)
-                        processedModels = data.map((modelId) => {
-                            // Handle both string format and object format for backward compatibility
-                            if (typeof modelId === 'string') {
-                                return {
-                                    id: modelId,
-                                    name: modelId,
-                                };
-                            } else {
-                                return {
-                                    id: modelId.name,
-                                    name: modelId.description
-                                        ? `${modelId.name} - ${modelId.description}`
-                                        : modelId.name,
-                                    details: modelId,
-                                };
-                            }
-                        });
-                    }
-
-                    // Sort models alphabetically
-                    processedModels.sort((a, b) =>
-                        a.name.localeCompare(b.name),
-                    );
+                    // Process text models - API returns {data: [{id, object}]}
+                    const processedModels = (data.data || []).map((model) => ({
+                        id: model.id,
+                        name: model.id,
+                    })).sort((a, b) => a.name.localeCompare(b.name));
 
                     setModels(processedModels);
                 } else {

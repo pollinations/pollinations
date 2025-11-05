@@ -8,12 +8,9 @@ export const ENTER_BASE_URL = "https://enter.pollinations.ai/api";
 export const PLAYGROUND_API_KEY = "plln_pk_RRHEqHFAF7utI50fgWc418G7vLXybWg7wkkGQtBgNnZPGs3y4JKpqgEneL0YwQP2"; // For interactive playground features
 export const UI_ASSETS_API_KEY = "plln_pk_DSf8DvxaLKn2LbP9QQAlA5hFpQGXePYiSY1AHZQn2CiKgtO7VBKQ1FNw1xCEpRYK"; // For website UI assets (logos, etc.)
 
-// Legacy export - uses UI assets key
-export const API_KEY = UI_ASSETS_API_KEY;
-
 function getAuthHeader() {
   return {
-    "Authorization": `Bearer ${API_KEY}`,
+    "Authorization": `Bearer ${UI_ASSETS_API_KEY}`,
   };
 }
 
@@ -62,7 +59,7 @@ export function getEnterImageURL(params) {
   });
   
   // Add API key to query params
-  queryParams.set("key", API_KEY);
+  queryParams.set("key", UI_ASSETS_API_KEY);
 
   const url = `${ENTER_BASE_URL}/generate/image/${encodeURIComponent(prompt)}?${queryParams.toString()}`;
   return url;
@@ -119,7 +116,7 @@ export async function generateText(prompt, params = {}) {
 export async function getModels(type = "image") {
   const endpoint = type === "image" 
     ? `${ENTER_BASE_URL}/generate/image/models`
-    : `${ENTER_BASE_URL}/generate/openai/models`;
+    : `${ENTER_BASE_URL}/v1/models`;
 
   const response = await fetch(endpoint, {
     headers: getAuthHeader(),

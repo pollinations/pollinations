@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { PLAYGROUND_API_KEY, ENTER_BASE_URL } from "./enterApi";
 
 /**
  * Hook to fetch available models from the Pollinations API
@@ -15,15 +16,14 @@ export const useModels = (modelType = "text") => {
         const fetchModels = async () => {
             try {
                 setLoading(true);
-                const API_KEY = "plln_pk_RRHEqHFAF7utI50fgWc418G7vLXybWg7wkkGQtBgNnZPGs3y4JKpqgEneL0YwQP2";
                 const endpoint =
                     modelType === "text"
-                        ? "https://enter.pollinations.ai/api/generate/openai/models"
-                        : "https://enter.pollinations.ai/api/generate/image/models";
+                        ? `${ENTER_BASE_URL}/generate/text/models`
+                        : `${ENTER_BASE_URL}/generate/image/models`;
 
                 const response = await fetch(endpoint, {
                     headers: {
-                        "Authorization": `Bearer ${API_KEY}`
+                        "Authorization": `Bearer ${PLAYGROUND_API_KEY}`
                     }
                 });
 
@@ -34,24 +34,12 @@ export const useModels = (modelType = "text") => {
                 const data = await response.json();
 
                 if (modelType === "text") {
-                    // Process text models
-                    let processedModels = [];
-
-                    if (Array.isArray(data)) {
-                        // Process all models
-                        processedModels = data.map((model) => ({
-                            id: model.name,
-                            name: model.description
-                                ? `${model.name} - ${model.description}`
-                                : model.name,
-                            details: model,
-                        }));
-                    }
-
-                    // Sort models alphabetically
-                    processedModels.sort((a, b) =>
-                        a.name.localeCompare(b.name),
-                    );
+                    // Process text models - API returns array of model objects
+                    const processedModels = (Array.isArray(data) ? data : []).map((model) => ({
+                        id: model.name,
+                        name: model.description ? `${model.name} - ${model.description}` : model.name,
+                        details: model,
+                    })).sort((a, b) => a.name.localeCompare(b.name));
 
                     setModels(processedModels);
                 } else {

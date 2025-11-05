@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react";
+import { PLAYGROUND_API_KEY, ENTER_BASE_URL } from "./enterApi";
 
 /**
  * Hook for text editor functionality
@@ -15,9 +16,6 @@ export const useTextEditor = ({ stop, entry }) => {
         // Always update currentEntry when the parent entry changes
         setCurrentEntry(entry);
     }, [entry]);
-
-    const API_KEY = "plln_pk_RRHEqHFAF7utI50fgWc418G7vLXybWg7wkkGQtBgNnZPGs3y4JKpqgEneL0YwQP2";
-    const ENTER_BASE_URL = "https://enter.pollinations.ai/api";
 
     // Generate text via API (using POST with OpenAI format)
     const updateText = useCallback(
@@ -55,7 +53,7 @@ export const useTextEditor = ({ stop, entry }) => {
                     method: "POST",
                     headers: {
                         "Content-Type": "application/json",
-                        "Authorization": `Bearer ${API_KEY}`,
+                        "Authorization": `Bearer ${PLAYGROUND_API_KEY}`,
                     },
                     body: JSON.stringify(body),
                     signal: controller.signal,

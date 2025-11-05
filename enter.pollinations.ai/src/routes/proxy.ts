@@ -100,8 +100,8 @@ export const proxyRoutes = new Hono<Env>()
             return await proxy(`${c.env.IMAGE_SERVICE_URL}/models`);
         },
     )
-    // Auth required for all endpoints below
-    .use(auth({ allowApiKey: true, allowSessionCookie: true }))
+    // Auth required for all endpoints below (API key only - no session cookies)
+    .use(auth({ allowApiKey: true, allowSessionCookie: false }))
     .use(frontendKeyRateLimit)
     .use(polar)
     .post(

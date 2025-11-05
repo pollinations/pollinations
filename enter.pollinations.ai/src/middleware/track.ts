@@ -309,7 +309,10 @@ function createTrackingEvent({
         ...responseTracking.cacheData,
 
         modelRequested: requestTracking.modelRequested,
+        resolvedModelRequested: requestTracking.resolvedModelRequested,
+        freeModelRequested: requestTracking.freeModelRequested,
         modelUsed: responseTracking.modelUsed,
+
         isBilledUsage:
             responseTracking.responseOk &&
             !requestTracking.freeModelRequested &&

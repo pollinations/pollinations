@@ -440,8 +440,11 @@ async function handleChatCompletions(c: Context<Env & TrackEnv>) {
         body: JSON.stringify(requestBody),
     });
 
-    if (!response.ok || !response.body) {
-        throw new HTTPException(response.status as ContentfulStatusCode);
+    if (!response.ok) {
+        throw new UpstreamError(response.status as ContentfulStatusCode, {
+            message: "The text service returned an error response",
+            requestUrl: targetUrl,
+        });
     }
 
     // add content filter headers if not streaming

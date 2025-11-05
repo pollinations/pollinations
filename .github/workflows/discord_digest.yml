@@ -1,29 +1,21 @@
-name: Weekly Discord Digest (Monday & Friday)
+name: Simple Weekly Discord Digest (Monday & Friday)
 on:
-  pull_request_target:
-    types: [closed]
-    branches:
-      - main
-      - master
   schedule:
     # Run at 12:00 UTC every Monday and Friday
     - cron: '0 12 * * 1,5'
   workflow_dispatch: # Allow manual trigger
 
 jobs:
-  # Job 1: Generate individual PR summary when merged
-  generate-pr-summary:
-    if: github.event_name == 'pull_request_target' && github.event.pull_request.merged == true
+  # Simple digest - just get recent PRs and send to AI
+  post-simple-digest:
     runs-on: ubuntu-latest
     permissions:
-      contents: write
+      contents: read
       pull-requests: read
     
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
       
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -32,115 +24,13 @@ jobs:
       
       - name: Install dependencies
         run: |
-          pip install requests PyYAML Jinja2
+          pip install requests
       
-      - name: Generate PR Summary
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          POLLINATIONS_TOKEN: ${{ secrets.POLLINATIONS_TOKEN }}
-          PR_NUMBER: ${{ github.event.pull_request.number }}
-          REPO_FULL_NAME: ${{ github.repository }}
-          PR_TITLE: ${{ github.event.pull_request.title }}
-          PR_URL: ${{ github.event.pull_request.html_url }}
-          PR_AUTHOR: ${{ github.event.pull_request.user.login }}
-          PR_BRANCH: ${{ github.event.pull_request.head.ref }}
-        run: python .github/scripts/generate_summary_script.py
-      
-      - name: Store PR Summary as Gist
-        run: |
-          echo "📝 Creating gist for PR #${{ github.event.pull_request.number }} summary..."
-          
-          # Create a private gist with the summary
-          gh gist create pr_summary.json \
-            --desc "PR #${{ github.event.pull_request.number }} summary for weekly digest - ${{ github.event.pull_request.title }}" \
-            --filename "pr-${{ github.event.pull_request.number }}-summary.json"
-          
-          echo "✅ Summary stored as private gist"
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-  # Job 2: Collect all summaries and post discord digest
-  post-discord-digest:
-    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-    
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-      
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.11'
-      
-      - name: Install dependencies
-        run: |
-          pip install requests PyYAML Jinja2
-      
-      - name: Download PR Summaries from Gists
-        run: |
-          echo "📥 Downloading PR summaries from gists..."
-          mkdir -p ./pr-summaries/
-          
-          # Get all gists and filter for PR summaries
-          GIST_IDS=$(gh gist list --limit 100 | grep "PR #.*summary for weekly digest" | awk '{print $1}')
-          
-          if [ -z "$GIST_IDS" ]; then
-            echo "📭 No PR summary gists found"
-            exit 0
-          fi
-          
-          echo "Found gists: $GIST_IDS"
-          
-          # Download each gist
-          for gist_id in $GIST_IDS; do
-            echo "Downloading gist: $gist_id"
-            gh gist view $gist_id --files | while read filename; do
-              if [[ $filename == *"summary.json" ]]; then
-                gh gist view $gist_id --filename "$filename" > "./pr-summaries/$filename"
-                echo "✅ Downloaded: $filename"
-              fi
-            done
-          done
-          
-          echo "📋 Downloaded summaries:"
-          ls -la ./pr-summaries/
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      
-      - name: Generate and Post Discord Digest
-        id: post-digest
+      - name: Generate and Post Simple Digest
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           POLLINATIONS_TOKEN: ${{ secrets.POLLINATIONS_TOKEN }}
           DISCORD_WEBHOOK_DIGEST: ${{ secrets.DISCORD_WEBHOOK_DIGEST }}
           DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
           REPO_FULL_NAME: ${{ github.repository }}
-          SUMMARIES_PATH: ./pr-summaries/
         run: python .github/scripts/discord_digest.py
-      
-      - name: Clean up processed gists
-        if: steps.post-digest.outcome == 'success'  # Only run if Discord posting succeeded
-        run: |
-          echo "🧹 Cleaning up processed PR summary gists..."
-          
-          # Get all gists that are PR summaries
-          GIST_IDS=$(gh gist list --limit 100 | grep "PR #.*summary for weekly digest" | awk '{print $1}')
-          
-          if [ -n "$GIST_IDS" ]; then
-            echo "Found gists to delete: $GIST_IDS"
-            
-            # Delete each gist
-            for gist_id in $GIST_IDS; do
-              echo "Deleting gist: $gist_id"
-              gh gist delete $gist_id --confirm || echo "Failed to delete gist $gist_id"
-            done
-            
-            echo "✅ Cleaned up all processed PR summary gists"
-          else
-            echo "📭 No gists found to clean up"
-          fi
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -400,8 +400,13 @@ def call_pollinations_api(system_prompt: str, user_prompt: str, token: str) -> s
         print(response.text)
         sys.exit(1)
     
-    result = response.json()
-    return result['choices'][0]['message']['content']
+    try:
+        result = response.json()
+        return result['choices'][0]['message']['content']
+    except (KeyError, IndexError, json.JSONDecodeError) as e:
+        print(f"❌ Error parsing API response: {e}")
+        print(f"Response: {response.text}")
+        sys.exit(1)
 
 def parse_discord_message(response: str) -> str:
     """Parse Discord message from AI response"""
@@ -496,8 +501,12 @@ def format_review_for_discord(message_content: str, pr_info: Dict) -> List[Dict]
     time_str = format_timestamp(pr_info.get('merged_at'))
     
     # Create Discord markdown links with angle brackets to suppress embeds
-    pr_link = f"[PR #{pr_info['number']}](<{pr_info['url']}>)"
-    author_link = f"[{pr_info['author']}](<https://github.com/{pr_info['author']}>)"
+    pr_number = pr_info.get('number', 'Unknown')
+    pr_url = pr_info.get('url', '#')
+    pr_author = pr_info.get('author', 'Unknown')
+    
+    pr_link = f"[PR #{pr_number}](<{pr_url}>)"
+    author_link = f"[{pr_author}](<https://github.com/{pr_author}>)"
     
     footer = f"\n\n{pr_link} • Merged by {author_link} • {time_str}"
     

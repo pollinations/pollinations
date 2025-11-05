@@ -346,8 +346,13 @@ def call_pollinations_api(system_prompt: str, user_prompt: str, token: str) -> s
         print(response.text)
         sys.exit(1)
     
-    result = response.json()
-    return result['choices'][0]['message']['content']
+    try:
+        result = response.json()
+        return result['choices'][0]['message']['content']
+    except (KeyError, IndexError, json.JSONDecodeError) as e:
+        print(f"❌ Error parsing API response: {e}")
+        print(f"Response: {response.text}")
+        sys.exit(1)
 
 def parse_ai_response(response: str) -> Dict:
     """Parse AI response and extract JSON"""
@@ -419,8 +424,12 @@ def main():
     with open('pr_summary.json', 'w') as f:
         json.dump(output, f, indent=2)
     
-    print(f"✅ Summary saved: {summary['category']} ({summary['impact']} impact)")
-    print(f"   {summary['summary']}")
+    category = summary.get('category', 'unknown')
+    impact = summary.get('impact', 'unknown')
+    summary_text = summary.get('summary', 'No summary')
+    
+    print(f"✅ Summary saved: {category} ({impact} impact)")
+    print(f"   {summary_text}")
     print(f"   PR URL: {pr_url}")
     print(f"   Author: {pr_author}")
 

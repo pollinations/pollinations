@@ -6,6 +6,23 @@
 
 ---
 
+## 📍 Quick Reference
+
+### Endpoints
+- **Image:** `GET /api/generate/image/{prompt}?model=flux`
+- **Text (OpenAI):** `POST /api/generate/openai` with JSON body
+- **Text (Simple):** `GET /api/generate/text/{prompt}?model=openai`
+
+### Authentication
+- Header: `Authorization: Bearer YOUR_API_KEY`
+- Query: `?key=YOUR_API_KEY`
+
+### Model Discovery
+- **Image models:** `/api/generate/image/models`
+- **Text models:** `/api/generate/openai/models`
+
+---
+
 ## 🔑 Setup
 
 ### API Key Types

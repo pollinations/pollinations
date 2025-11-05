@@ -25,9 +25,9 @@ Not yet, but we're considering it based on community feedback. Check out the [vo
 
 Not currently. You need to register and use an API key to access our models. All API calls require authentication and consume Pollen based on the model you use.
 
-## What changes when I register?
+## What do I get when I register?
 
-Registering itself gives you an account. The real power is unlocked when you **create and use an API key**. Registering is the necessary first step to do that.
+Registration gives you access to the Pollinations API. Once registered, you can **create API keys** to start making requests.
 
 - **Using a Front-End Key:** Designed for client-side apps (bound to your domain). Medium rate limits. Access to all models, which consume Pollen based on usage.
 - **Using a Server-to-Server Key:** For backend apps. No platform rate limits. Access to all models, which consume Pollen based on usage.

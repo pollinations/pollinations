@@ -29,8 +29,8 @@ Not currently. You need to register and use an API key to access our models. All
 
 Registration gives you access to the Pollinations API. Once registered, you can **create API keys** to start making requests.
 
-- **Using a Front-End Key:** Designed for client-side apps (bound to your domain). Medium rate limits. Access to all models, which consume Pollen based on usage.
-- **Using a Server-to-Server Key:** For backend apps. No platform rate limits. Access to all models, which consume Pollen based on usage.
+- **Publishable Key (pk_):** Designed for client-side apps (bound to your domain). Rate limits: 3 requests/burst, 1 refill per 15 sec (~4 req/min). Access to all models, which consume Pollen based on usage.
+- **Secret Key (sk_):** For server-side apps only. No rate limits. Access to all models, which consume Pollen based on usage.
 
 ## How do daily Pollen grants work?
 

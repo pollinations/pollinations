@@ -24,11 +24,12 @@ export const Route = createFileRoute("/")({
         const honoPolar = hc<PolarRoutes>("/api/polar");
         const honoTiers = hc<TiersRoutes>("/api/tiers");
         
-        const customer = await honoPolar.customer.state.$get().then(r => r.ok ? r.json() : null);
-        const tierData = await honoTiers.view.$get().then(r => r.ok ? r.json() : null);
-        
-        // Use better-auth's built-in list() method which returns metadata
-        const apiKeysResult = await context.auth.apiKey.list();
+        // Parallelize independent API calls for faster loading
+        const [customer, tierData, apiKeysResult] = await Promise.all([
+            honoPolar.customer.state.$get().then(r => r.ok ? r.json() : null),
+            honoTiers.view.$get().then(r => r.ok ? r.json() : null),
+            context.auth.apiKey.list(),
+        ]);
         const apiKeys = apiKeysResult.data || [];
 
         return { auth: context.auth, user: context.user, customer, apiKeys, tierData };

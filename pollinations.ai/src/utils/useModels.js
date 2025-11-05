@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { PLAYGROUND_API_KEY, ENTER_BASE_URL } from "./enterApi";
 
 /**
  * Hook to fetch available models from the Pollinations API
@@ -15,15 +16,14 @@ export const useModels = (modelType = "text") => {
         const fetchModels = async () => {
             try {
                 setLoading(true);
-                const API_KEY = "plln_pk_RRHEqHFAF7utI50fgWc418G7vLXybWg7wkkGQtBgNnZPGs3y4JKpqgEneL0YwQP2";
                 const endpoint =
                     modelType === "text"
-                        ? "https://enter.pollinations.ai/api/generate/openai/models"
-                        : "https://enter.pollinations.ai/api/generate/image/models";
+                        ? `${ENTER_BASE_URL}/generate/text/models`
+                        : `${ENTER_BASE_URL}/generate/image/models`;
 
                 const response = await fetch(endpoint, {
                     headers: {
-                        "Authorization": `Bearer ${API_KEY}`
+                        "Authorization": `Bearer ${PLAYGROUND_API_KEY}`
                     }
                 });
 
@@ -38,14 +38,24 @@ export const useModels = (modelType = "text") => {
                     let processedModels = [];
 
                     if (Array.isArray(data)) {
-                        // Process all models
-                        processedModels = data.map((model) => ({
-                            id: model.name,
-                            name: model.description
-                                ? `${model.name} - ${model.description}`
-                                : model.name,
-                            details: model,
-                        }));
+                        // API returns array of strings (model IDs)
+                        processedModels = data.map((modelId) => {
+                            // Handle both string format and object format for backward compatibility
+                            if (typeof modelId === 'string') {
+                                return {
+                                    id: modelId,
+                                    name: modelId,
+                                };
+                            } else {
+                                return {
+                                    id: modelId.name,
+                                    name: modelId.description
+                                        ? `${modelId.name} - ${modelId.description}`
+                                        : modelId.name,
+                                    details: modelId,
+                                };
+                            }
+                        });
                     }
 
                     // Sort models alphabetically

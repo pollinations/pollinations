@@ -3,7 +3,13 @@
  */
 
 export const ENTER_BASE_URL = "https://enter.pollinations.ai/api";
-export const API_KEY = "plln_pk_yKJQ53tshIxIWUtUXFB3tljE3WObCXHN776D11Pyy81ZPCp7rKgCkYQGM4HDpoXz";
+
+// API Keys
+export const PLAYGROUND_API_KEY = "plln_pk_RRHEqHFAF7utI50fgWc418G7vLXybWg7wkkGQtBgNnZPGs3y4JKpqgEneL0YwQP2"; // For interactive playground features
+export const UI_ASSETS_API_KEY = "plln_pk_DSf8DvxaLKn2LbP9QQAlA5hFpQGXePYiSY1AHZQn2CiKgtO7VBKQ1FNw1xCEpRYK"; // For website UI assets (logos, etc.)
+
+// Legacy export - uses UI assets key
+export const API_KEY = UI_ASSETS_API_KEY;
 
 function getAuthHeader() {
   return {

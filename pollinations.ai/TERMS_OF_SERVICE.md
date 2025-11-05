@@ -1,24 +1,55 @@
-# Community Guidelines & Terms
+# Guidelines & Terms
 
-*Welcome to Pollinations! We're an open source project making AI accessible to everyone. By using this platform, you're joining our community.*
+*Welcome! We're an open source project making AI accessible to everyone. By using this platform, you're joining our community.*
 
 ---
 
 ## 🌸 About This Project
 
-Pollinations is a **free, open source** AI platform. We believe in:
+pollinations.ai is an **open source**, **community-driven** production-ready infrastructure for running, routing, and scaling AI models. The codebase handles orchestration, load-balancing, and API-key storage.
 
-- **Open Access** — Free AI tools for everyone
+We believe in:
+
+- **Open Access** — AI tools for everyone
 - **Your Ownership** — You own everything you create here
 - **Privacy First** — We don't store your creations or personal data
 - **Community Driven** — Built by contributors, for creators
 
 **Open Source:**
 - Our code is on [GitHub](https://github.com/pollinations)
-- Licensed under permissive open source licenses
+- Licensed under permissive open source licenses (MIT/Apache-2.0)
 - Contributions welcome!
 
 > **Note:** The AI models we use have their own licenses. Check model licenses before commercial use.
+
+---
+
+## 🚀 Using the Platform
+
+- Explore, learn, and contribute
+- Community tools/demos are **non-commercial** and offered without uptime commitments
+- Age requirement: community features are intended for users **16+** (or local equivalent)
+
+---
+
+## 📜 Your Rights & Licensing
+
+**Your Creations:**
+- **You own what you make**
+- You're responsible for rights in your inputs/outputs
+- **Minimal license to us** to operate/protect the site (e.g., caching, moderation)
+- Content is processed **transiently**; aside from necessary logs, we discard it
+- **No training without opt-in:** we don't use your prompts/outputs to train models unless you choose to share
+
+**Our Code:**
+- **Open-source code:** use and contributions follow each repository's license (e.g., MIT/Apache-2.0)
+- **Contributions:** by contributing you comply with **DCO 1.1** and license contributions under the repo's primary OSS license unless stated otherwise
+- **No trademark license:** names/logos/brands require permission
+
+**AI Model Licenses:**
+- Each model has its own license
+- Some allow commercial use, some don't
+- **Always check the specific model's license before use**
 
 ---
 
@@ -28,45 +59,50 @@ Help us keep this a welcoming space for everyone:
 
 **Be Respectful:**
 - Use the platform ethically and legally
-- Respect others' rights and intellectual property
-- Don't abuse the service or try to break things
-- Follow local laws and regulations
+- Don't infringe rights, break laws, or harass others
+- Don't abuse services or try to bypass security/rate limits
+- No scraping personal data at scale or doxxing
 
 ---
 
-## 🚫 What's Not Allowed
+## 🚫 Safety Rules
 
 To protect our community and comply with laws:
 
 **Prohibited Content:**
 - **No deepfakes** of real people without consent
-- **Absolutely no CSAM** (child sexual abuse material) of any kind, fictional or real
-- No illegal content or content that violates others' rights
+- **Absolutely no CSAM** (child sexual abuse material) of any kind, real or fictional
+- No sexual content involving minors
+- No illegal content or content that violates privacy/publicity rights
 
 We take these seriously to keep the platform safe and legal for everyone.
 
 ---
 
-## 📜 Your Rights & Licensing
+## ⚖️ Legal
 
-**Your Creations:**
-- You own what you make
-- We claim zero rights to your content
-- Use your creations however you want
+The platform, code, and models are provided **"as is"** without warranties. 
 
-**AI Model Licenses:**
-- Each AI model has its own license
-- Some allow commercial use, some don't
-- Always check the specific model's license
+To the extent permitted by law:
+- Our liability is capped at **€100**
+- We're not liable for indirect damages, lost profits, or lost data
 
-**Our Code:**
-- Open source and free to use
-- Check our [GitHub](https://github.com/pollinations) for details
+This protects our open source community and contributors.
 
 ---
 
-## 📝 Updates & Legal
+## 📝 Updates & Changes
 
-We may update these guidelines as the project evolves. We'll keep you posted on major changes.
+We may update these terms as the project evolves. Changes are effective when we post a new date. We'll keep you posted on major changes.
 
-For legal stuff: This is a community project based in Berlin, Germany. 🇩🇪
+---
+
+## 🌍 Law & Venue
+
+This is a community project based in **Estonia**. Disputes are subject to **Estonian law** and the jurisdiction of **Harju County Court (Tallinn)**.
+
+---
+
+## 📧 Contact
+
+Questions? Reach out at **[legal@myceli.ai](mailto:legal@myceli.ai)**

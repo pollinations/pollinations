@@ -1,44 +1,13 @@
-# Privacy & Data
+# Privacy Notice
 
-*We're privacy-focused. Here's what you need to know.*
+**Scope.** This site presents the **pollinations.ai** open-source project and community. It does not offer commercial accounts or paid services.
 
----
+**What we process (minimal):** standard service logs (IP, timestamps, user-agent), optional community identifiers (e.g., Discord username if you link a bot, GitHub handle if you contribute), and aggregated telemetry. Prompts/outputs in demo pages are processed **transiently** to render results and not retained beyond short-lived caches unless you choose to publish them.
 
-## 🔒 What We Collect (Spoiler: Very Little)
+**Why:** run the site, prevent abuse, improve reliability, and comply with the law (legitimate interests; contract where an account exists).
 
-**We keep it minimal:**
+**Cookies:** only essential cookies. No non-essential analytics unless explicitly introduced (and then opt-in).
 
-- **Discord IDs** (if you use Discord integration)
-- **Anonymous usage stats** to improve the platform
-- **No personal data** — we don't store your creations or track who you are
+**Sharing:** service providers under confidentiality; authorities when required by law. We **do not sell** personal data.
 
-**Why we collect anything:**
-- To keep the service running
-- To make it better
-- To prevent abuse
-
----
-
-## 🚫 We Don't Sell Your Data
-
-**Never. Period.**
-
-We only share data when legally required or with service providers who help run the platform.
-
----
-
-## 🛡️ Security
-
-We protect your information from unauthorized access and keep everything encrypted in transit.
-
----
-
-## 🇪🇺 GDPR Compliance
-
-For our EU friends:
-
-- We're GDPR compliant
-- Data is processed transiently (not stored)
-- Everything is anonymized and aggregated
-- You can request your data anytime
-- Contact us: hello@pollinations.ai
+**Rights & contact:** access, rectification, deletion, objection, portability, and withdrawal of consent (where used). Contact **[legal@myceli.ai](mailto:legal@myceli.ai)**. For full details, see the **[Myceli.AI Privacy Policy](https://enter.pollinations.ai/terms)**.

@@ -216,20 +216,18 @@ export const proxyRoutes = new Hono<Env>()
 
             const textServiceUrl =
                 c.env.TEXT_SERVICE_URL || "https://text.pollinations.ai";
-            const targetUrl = proxyUrl(c, `${textServiceUrl}/openai`);
-            const requestBody = {
-                model: c.req.query("model") || "openai",
-                messages: [{ role: "user", content: c.req.param("prompt") }],
-            };
+            
+            // Build URL with prompt in path and model as query param
+            const model = c.req.query("model") || "openai";
+            const prompt = c.req.param("prompt");
+            const targetUrl = proxyUrl(c, `${textServiceUrl}/${encodeURIComponent(prompt)}?model=${model}`);
 
             const response = await fetch(targetUrl, {
-                method: "POST",
+                method: "GET",
                 headers: {
-                    "content-type": "application/json",
                     ...proxyHeaders(c),
                     ...generationHeaders(c.env.ENTER_TOKEN, c.var.auth.user),
                 },
-                body: JSON.stringify(requestBody),
             });
 
             // return response as is if streaming
@@ -237,29 +235,9 @@ export const proxyRoutes = new Hono<Env>()
                 return response;
             }
 
-            // extract content filter results
-            const responseJson = await response.clone().json();
-            const parsedResponse =
-                CreateChatCompletionResponseSchema.parse(responseJson);
-            const contentFilterHeaders =
-                contentFilterResultsToHeaders(parsedResponse);
-
-            // extract message
-            const message = parsedResponse.choices[0].message.content;
-            if (!message) {
-                throw new HTTPException(500, {
-                    message: "Provider didn't return any messages",
-                });
-            }
-
-            return c.text(
-                parsedResponse.choices[0].message?.content || "",
-                200,
-                {
-                    ...Object.fromEntries(response.headers),
-                    ...contentFilterHeaders,
-                },
-            );
+            // Backend returns plain text for text models and raw audio for audio models
+            // No JSON parsing needed for GET endpoint - just pass through the response
+            return response;
         },
     )
     .get(

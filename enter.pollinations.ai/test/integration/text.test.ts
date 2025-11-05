@@ -150,3 +150,58 @@ test.for(authenticatedTestCases())(
         });
     },
 );
+
+// Test GET /text/:prompt endpoint returns plain text for text models
+test.for(authenticatedTestCases())(
+    "GET /text/:prompt with %s should return plain text",
+    { timeout: 30000 },
+    async ([serviceId, expectedStatus], { apiKey }) => {
+        const response = await SELF.fetch(
+            `http://localhost:3000/api/generate/text/${encodeURIComponent(testMessageContent())}?model=${serviceId}`,
+            {
+                method: "GET",
+                headers: {
+                    "authorization": `Bearer ${apiKey}`,
+                    "referer": env.TESTING_REFERRER,
+                },
+            },
+        );
+        expect(response.status).toBe(expectedStatus);
+
+        // Verify content-type is text/plain for text models
+        const contentType = response.headers.get("content-type");
+        expect(contentType).toContain("text/plain");
+
+        // Verify response is plain text (not JSON)
+        const text = await response.text();
+        expect(text.length).toBeGreaterThan(0);
+        expect(() => JSON.parse(text)).toThrow(); // Should not be valid JSON
+    },
+);
+
+// Test GET /text/:prompt endpoint returns raw audio for audio models
+test(
+    "GET /text/:prompt with openai-audio should return raw audio",
+    { timeout: 30000 },
+    async ({ apiKey }) => {
+        const response = await SELF.fetch(
+            `http://localhost:3000/api/generate/text/hello?model=openai-audio`,
+            {
+                method: "GET",
+                headers: {
+                    "authorization": `Bearer ${apiKey}`,
+                    "referer": env.TESTING_REFERRER,
+                },
+            },
+        );
+        expect(response.status).toBe(200);
+
+        // Verify content-type is audio
+        const contentType = response.headers.get("content-type");
+        expect(contentType).toContain("audio/");
+
+        // Verify response is binary audio data
+        const arrayBuffer = await response.arrayBuffer();
+        expect(arrayBuffer.byteLength).toBeGreaterThan(0);
+    },
+);

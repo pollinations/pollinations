@@ -1,7 +1,7 @@
 name = "pollinations-enter"
 main = "src/index.ts"
-compatibility_date = "2025-09-01"
-compatibility_flags = [ "nodejs_compat", "nodejs_als" ]
+compatibility_date = "2025-11-01"
+# compatibility_flags = [ "nodejs_compat", "nodejs_als" ]
 
 [dev]
 port = 3000

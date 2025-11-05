@@ -22,10 +22,6 @@ import type { TrackingData } from "./utils/trackingHeaders.ts";
 
 // Import GPT Image logging utilities
 import { logGptImageError, logGptImagePrompt } from "./utils/gptImageLogger.ts";
-// Import user stats tracker for violation logging
-import { userStatsTracker } from "./utils/userStatsTracker.ts";
-// Import violation ratio checker
-import { checkViolationRatio, recordGptImageRequest } from "./utils/violationRatioChecker.ts";
 // Import Vertex AI Gemini image generator
 import { callVertexAIGemini } from "./vertexAIImageGenerator.js";
 import { writeExifMetadata } from "./writeExifMetadata.ts";
@@ -820,17 +816,7 @@ const generateImage = async (
                 : "No userInfo provided",
         );
 
-        // Record request and check violation ratio
-        const username = userInfo?.username;
-        recordGptImageRequest(username);
-        
-        const violationCheck = checkViolationRatio(username);
-        if (violationCheck.blocked) {
-            progress.updateBar(requestId, 35, "Auth", "User blocked");
-            const error: any = new Error(violationCheck.reason);
-            error.status = 403;
-            throw error;
-        }
+        // User blocking has been deprecated - no longer checking violation ratios
 
         // All requests assumed to come from enter.pollinations.ai - tier checks bypassed
         {
@@ -866,20 +852,9 @@ const generateImage = async (
                         "Error",
                         "Prompt contains unsafe content",
                     );
-
-                    // Log the error with safety analysis results
-                    const error = new Error(errorMessage);
-                    await logGptImageError(
-                        prompt,
-                        safeParams,
-                        userInfo,
-                        error,
-                        promptSafetyResult,
-                    );
                     
-                    // Track violation in user stats
-                    userStatsTracker.recordViolation(userInfo?.username);
-                    
+                    const error: any = new Error(errorMessage);
+                    error.status = 403;
                     throw error;
                 }
 
@@ -898,9 +873,6 @@ const generateImage = async (
                 );
 
                 await logGptImageError(prompt, safeParams, userInfo, error);
-                
-                // Track violation in user stats for generation failures
-                userStatsTracker.recordViolation(userInfo?.username);
 
                 progress.updateBar(requestId, 100, "Error", error.message);
                 throw error;

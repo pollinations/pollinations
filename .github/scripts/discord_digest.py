@@ -1,29 +1,22 @@
 #!/usr/bin/env python3
 """
-Weekly Digest Generator
-Collects all PR summaries and creates a combined weekly update for Discord
-Handles large volumes with chunking and summarization strategies
+Simple Weekly Digest Generator
+Gets recent merged PRs and creates a weekly digest in one AI call
+No temp storage, no complexity - just simple and direct
 """
 
 import os
 import sys
 import json
-import glob
 import random
 import requests
-from typing import Dict, List, Tuple
-from datetime import datetime, timedelta
+from typing import Dict, List
+from datetime import datetime, timedelta, timezone
 
 # Configuration
+GITHUB_API_BASE = "https://api.github.com"
 POLLINATIONS_API_BASE = "https://enter.pollinations.ai/api/generate/openai"
-MODEL = "gemini"
-DISCORD_CHAR_LIMIT = 2000
-CHUNK_SIZE = 1900
-
-# Token limits (updated for 128k token window)
-MAX_INPUT_TOKENS = 120000  # Leave room for system prompt and response
-CHARS_PER_TOKEN = 4  # Average characters per token
-MAX_INPUT_CHARS = MAX_INPUT_TOKENS * CHARS_PER_TOKEN
+MODEL = "openai-large"
 
 def get_env(key: str, required: bool = True) -> str:
     """Get environment variable"""
@@ -33,269 +26,144 @@ def get_env(key: str, required: bool = True) -> str:
         sys.exit(1)
     return value
 
-def load_pr_summaries() -> List[Dict]:
-    """Load all PR summaries from the summaries directory"""
-    summaries_dir = ".pr-summaries"
+def get_recent_merged_prs(repo: str, token: str, since_time: datetime) -> List[Dict]:
+    """Get recently merged PRs since last digest"""
+    headers = {
+        "Authorization": f"Bearer {token}",
+        "Accept": "application/vnd.github+json",
+        "X-GitHub-Api-Version": "2022-11-28"
+    }
     
-    if not os.path.exists(summaries_dir):
-        print(f"📭 No summaries directory found")
-        return []
+    url = f"{GITHUB_API_BASE}/repos/{repo}/pulls"
+    params = {
+        "state": "closed",
+        "sort": "updated",
+        "direction": "desc",
+        "per_page": 50
+    }
     
-    summary_files = glob.glob(f"{summaries_dir}/pr_*.json")
+    response = requests.get(url, headers=headers, params=params)
     
-    if not summary_files:
-        print(f"📭 No PR summaries found")
-        return []
+    if response.status_code != 200:
+        print(f"❌ GitHub API error: {response.status_code}")
+        sys.exit(1)
     
-    summaries = []
-    for file_path in summary_files:
-        try:
-            with open(file_path, 'r') as f:
-                summary = json.load(f)
-                summaries.append(summary)
-        except Exception as e:
-            print(f"⚠️ Warning: Could not load {file_path}: {e}")
+    all_prs = response.json()
     
-    # Sort by impact (high first) and then by PR number
-    impact_order = {'high': 0, 'medium': 1, 'low': 2}
-    summaries.sort(key=lambda x: (
-        impact_order.get(x.get('impact', 'medium'), 1),
-        -x.get('pr_number', 0)
-    ))
+    # Filter for merged PRs after the cutoff time
+    merged_prs = []
+    for pr in all_prs:
+        merged_at = pr.get('merged_at')
+        if merged_at:
+            merged_time = datetime.fromisoformat(merged_at.replace('Z', '+00:00'))
+            if merged_time > since_time:
+                merged_prs.append({
+                    'number': pr.get('number', 0),
+                    'title': pr.get('title', 'No title'),
+                    'body': pr.get('body', 'No description'),
+                    'author': pr.get('user', {}).get('login', 'Unknown'),
+                    'merged_at': merged_at,
+                    'url': pr.get('html_url', '#')
+                })
     
-    print(f"📊 Loaded {len(summaries)} PR summaries")
-    return summaries
+    # Sort by PR number (ascending)
+    merged_prs.sort(key=lambda x: x['number'])
+    return merged_prs
 
-def estimate_prompt_size(summaries: List[Dict]) -> int:
-    """Estimate the size of the prompt in characters"""
-    total = 0
-    for summary in summaries:
-        # Estimate based on JSON size
-        total += len(json.dumps(summary))
-        total += 100  # Add overhead for formatting
-    return total
+def get_last_digest_time() -> datetime:
+    """Get the time of the last digest based on the fixed Monday/Friday schedule"""
+    now = datetime.now(timezone.utc)
+    current_weekday = now.weekday()  # 0=Monday, 4=Friday
+    
+    if current_weekday == 0:  # Monday
+        # Last digest was Friday at 12:00 UTC
+        days_back = 3
+        last_digest = now.replace(hour=12, minute=0, second=0, microsecond=0) - timedelta(days=days_back)
+    elif current_weekday == 4:  # Friday  
+        # Last digest was Monday at 12:00 UTC
+        days_back = 4
+        last_digest = now.replace(hour=12, minute=0, second=0, microsecond=0) - timedelta(days=days_back)
+    else:
+        # Other days - cover last 3 days
+        last_digest = now - timedelta(days=3)
+    
+    return last_digest
 
-def filter_summaries_by_impact(summaries: List[Dict]) -> Tuple[List[Dict], List[Dict]]:
-    """
-    Filter summaries by impact level.
-    Returns (high_priority, low_priority) tuple.
-    """
-    high_priority = []
-    low_priority = []
+def create_digest_prompt(prs: List[Dict]) -> str:
+    """Create the AI prompt with all PR data"""
+    if not prs:
+        return ""
     
-    for summary in summaries:
-        impact = summary.get('impact', 'medium')
-        if impact == 'high':
-            high_priority.append(summary)
-        elif impact == 'medium':
-            high_priority.append(summary)
-        else:  # low impact
-            low_priority.append(summary)
+    # Calculate date range
+    today = datetime.now(timezone.utc)
+    week_ago = today - timedelta(days=4)  # Cover last few days
     
-    return high_priority, low_priority
+    if week_ago.month == today.month:
+        date_str = f"{week_ago.strftime('%b %d')}-{today.strftime('%d, %Y')}"
+    else:
+        date_str = f"{week_ago.strftime('%b %d')} - {today.strftime('%b %d, %Y')}"
+    
+    system_prompt = f"""You are creating a weekly digest for the Pollinations AI Discord community.
+Analyze the merged PRs and create ONE clean, engaging update message for USERS of the platform.
 
-def create_condensed_summary(summaries: List[Dict]) -> List[Dict]:
-    """
-    Create ultra-condensed versions of summaries for very large batches.
-    Keeps only essential info.
-    """
-    condensed = []
-    for s in summaries:
-        condensed.append({
-            'pr_number': s['pr_number'],
-            'pr_title': s['pr_title'][:80],  # Truncate title
-            'category': s.get('category', 'core'),
-            'impact': s.get('impact', 'medium'),
-            'summary': s.get('summary', '')[:150],  # Truncate summary
-            'pr_author': s['pr_author']
-        })
-    return condensed
-
-def batch_summaries(summaries: List[Dict], max_chars: int) -> List[List[Dict]]:
-    """
-    Split summaries into batches that fit within token limits.
-    Returns list of batches.
-    """
-    batches = []
-    current_batch = []
-    current_size = 0
-    
-    for summary in summaries:
-        # Estimate size of this summary
-        summary_size = len(json.dumps(summary)) + 100
-        
-        # If adding this would exceed limit, start new batch
-        if current_size + summary_size > max_chars and current_batch:
-            batches.append(current_batch)
-            current_batch = []
-            current_size = 0
-        
-        current_batch.append(summary)
-        current_size += summary_size
-    
-    # Add last batch
-    if current_batch:
-        batches.append(current_batch)
-    
-    return batches
-
-def get_digest_system_prompt(is_condensed: bool = False) -> str:
-    """Return the weekly digest generation prompt"""
-    if is_condensed:
-        return """You are creating a CONDENSED weekly digest for Pollinations AI Discord.
-You're receiving a LARGE number of PRs, so keep descriptions VERY brief.
+CONTEXT: Pollinations is an open-source AI platform. You're talking to USERS who use the service, NOT developers.
 
 OUTPUT FORMAT:
 ```
-[Natural greeting mentioning <@&1424461167883194418>]
+[Greet <@&1424461167883194418> naturally and casually in a playful way]
 
-## 🌸 Weekly Update - [Date]
+## 🌸 Weekly Update - {date_str}
 
-### 🚀 Highlights
-- Brief description of most important change
-- Another key improvement or feature
-- Critical bug fix or enhancement
+[Create sections that make sense for what actually changed - you have COMPLETE FREEDOM]
+[Examples: "🎮 Discord Bot", "🚀 New Models", "⚡ Speed Improvements", "🎨 UI Updates", "🔧 Bug Fixes", etc.]
 
-### 📦 Other Updates
-- {N} additional improvements across core platform
-- Bug fixes and performance optimizations
-- Documentation and community contributions
+### [Your chosen section name with emoji]
+- What changed for users (brief, clear)
+- Another user-facing change
+- Focus on benefits users will notice
 
-Thanks to our amazing contributors! 🎉
+### [Another section if needed]
+- More changes that affect users
+- Keep it user-focused
 
----
-**Total PRs merged:** {N}
-**PRs merged:** [#123](<url>), [#456](<url>), [#789](<url>) (+{N} more)
-**Contributors:** [@user1](<github-url>), [@user2](<github-url>), [@user3](<github-url>)
+[Add as many sections as needed - organize however makes most sense!]
 ```
+
+YOUR COMPLETE FREEDOM:
+- Choose ANY section names that fit the changes
+- Create ANY number of sections (1-5 typically)
+- Use ANY emojis that make sense
+- Group changes however is most logical for users
+- Focus on what USERS will experience, not technical details
 
 CRITICAL RULES:
-- Start with a natural, varied greeting that mentions <@&1424461167883194418>
-- Focus on WHAT changed, not WHO changed it in main content
-- Max 3-5 highlights (highest impact only)
-- Group similar changes naturally
-- All PR numbers and contributors go in footer
-- TOTAL LENGTH: 400-800 characters
-- Use angle brackets <> around all URLs
-- Each contributor should appear ONLY ONCE in the contributors list
+- Greet <@&1424461167883194418> naturally and casually - be creative with your greeting!
+- Write for USERS, not developers - focus on benefits they'll see
+- Keep bullet points concise and clear
+- NO PR numbers, NO author names, NO technical jargon
+- Skip internal/developer changes that don't affect users
+- If no user-facing changes, return only one word "SKIP"
+- A bit of fun and sarcasm is ok! 
+
+TONE: Conversational, friendly, focus on user benefits and playful
+LENGTH: Keep it concise but complete"""
+
+    user_prompt = f"""Analyze these {len(prs)} merged PRs and create a weekly digest:
+
 """
     
-    return """You are creating a weekly digest for the Pollinations AI Discord community.
-You'll receive summaries of multiple merged PRs and need to create ONE cohesive update message.
+    for i, pr in enumerate(prs, 1):
+        user_prompt += f"""PR #{pr['number']}: {pr['title']}
+Author: {pr['author']}
+Description: {pr['body'][:500] if pr['body'] else 'No description'}
 
-CONTEXT: Pollinations is an open-source AI platform serving a community of users and contributors.
-
-YOUR TASK: Create a clean, engaging weekly update that focuses on WHAT changed, not cluttered with WHO/WHERE details.
-
-NEW CLEAN FORMAT:
-```
-[Natural greeting mentioning <@&1424461167883194418>]
-
-## 🌸 Weekly Update - [Date]
-
-### 🚀 New Features
-- Brief description of new capability or feature
-- Another feature or enhancement added
-- Major improvement users will notice
-
-### 🐛 Fixes & Improvements
-- Bug that was resolved (user impact)
-- Performance improvement or optimization
-- Better error handling or reliability fix
-
-### 🌐 Community Contributions
-- New tool, example, or integration added
-- Documentation or tutorial improvements
-- SDK or library enhancements
-
-Thanks to our amazing contributors! 🎉
-
----
-**Total PRs merged:** {N}
-**PRs merged:** [#123](<url>), [#456](<url>), [#789](<url>), [#101](<url>)
-**Contributors:** [@alice](<github-url>), [@bob](<github-url>), [@charlie](<github-url>)
-```
-
-CRITICAL FORMATTING RULES:
-- Start with a natural, varied greeting that mentions <@&1424461167883194418>
-- Main content focuses on WHAT changed (user impact)
-- NO inline PR numbers or author mentions in bullet points
-- Group related changes naturally under logical sections
-- All metadata (PR numbers, contributors) goes in footer
-- Use angle brackets <> around ALL URLs to prevent embeds
-- Keep bullet points concise and user-focused
-- Each contributor should appear ONLY ONCE in the contributors list
-
-GROUPING STRATEGY:
-- **🚀 New Features** - New capabilities, major additions
-- **🐛 Fixes & Improvements** - Bug fixes, performance, reliability
-- **🌐 Community Contributions** - Tools, examples, docs, SDKs
-- **📚 Documentation** - Guides, tutorials (if significant)
-- **🔧 Infrastructure** - Only if user-visible impact
-
-TONE & LENGTH:
-- Conversational and appreciative
-- Focus on user benefits
-- 600-1200 characters total
-- If single PR has multiple changes, combine them naturally
-- If 8+ PRs, group minor ones as "Additional improvements"
-
-If NO user-facing changes, DO NOT send any message at all.
 """
-
-def get_digest_user_prompt(summaries: List[Dict], date_str: str, is_condensed: bool = False) -> str:
-    """Create user prompt with all PR summaries"""
-    if not summaries:
-        return "No PR summaries to process."
     
-    # Group by category and impact
-    grouped = {
-        'high': {'core': [], 'community': [], 'docs': [], 'infrastructure': []},
-        'medium': {'core': [], 'community': [], 'docs': [], 'infrastructure': []},
-        'low': {'core': [], 'community': [], 'docs': [], 'infrastructure': []}
-    }
+    user_prompt += """
+Create a clean weekly digest focusing on user impact. Group related changes naturally.
+Remember: Focus on WHAT changed for users, not WHO changed it or technical details."""
     
-    for summary in summaries:
-        impact = summary.get('impact', 'medium')
-        category = summary.get('category', 'core')
-        grouped[impact][category].append(summary)
-    
-    prompt = f"Create a weekly digest for {date_str}.\n\n"
-    prompt += f"Total PRs merged: {len(summaries)}\n"
-    
-    if is_condensed:
-        prompt += "\n⚠️ LARGE BATCH: Keep it VERY concise!\n"
-    
-    prompt += "\n"
-    
-    # Add summaries by priority (high first)
-    for impact in ['high', 'medium', 'low']:
-        items = []
-        for category in ['core', 'community', 'docs', 'infrastructure']:
-            items.extend(grouped[impact][category])
-        
-        if items:
-            prompt += f"\n=== {impact.upper()} IMPACT ({len(items)} PRs) ===\n"
-            for item in items:
-                prompt += f"\n**PR #{item['pr_number']}** - {item['pr_title']}\n"
-                prompt += f"Category: {item['category']}\n"
-                prompt += f"Summary: {item['summary']}\n"
-                if not is_condensed and item.get('details'):
-                    prompt += "Details:\n"
-                    for detail in item['details']:
-                        prompt += f"  - {detail}\n"
-                prompt += f"Author: {item['pr_author']}\n"
-                prompt += f"PR URL: {item['pr_url']}\n"
-    
-    prompt += f"\n\nCreate a clean weekly digest focusing on WHAT changed (user impact)."
-    prompt += f"\nCombine related changes naturally. Put all PR numbers and contributors in the footer."
-    prompt += f"\nGenerate PR links as [#123](<{summaries[0]['pr_url'].split('/pull/')[0]}/pull/123>) format."
-    prompt += f"\nGenerate contributor links as [@username](<https://github.com/username>) format."
-    
-    if is_condensed:
-        prompt += "\nRemember: VERY brief, prioritize highest impact items only."
-    
-    return prompt
+    return system_prompt, user_prompt
 
 def call_pollinations_api(system_prompt: str, user_prompt: str, token: str) -> str:
     """Call Pollinations AI API"""
@@ -316,10 +184,10 @@ def call_pollinations_api(system_prompt: str, user_prompt: str, token: str) -> s
         "seed": seed
     }
     
-    print(f"🤖 Generating weekly digest with {MODEL}")
+
     
     response = requests.post(
-        f"{POLLINATIONS_API_BASE}/chat/completions",
+        POLLINATIONS_API_BASE,
         headers=headers,
         json=payload,
         timeout=120
@@ -330,11 +198,16 @@ def call_pollinations_api(system_prompt: str, user_prompt: str, token: str) -> s
         print(response.text)
         sys.exit(1)
     
-    result = response.json()
-    return result['choices'][0]['message']['content']
+    try:
+        result = response.json()
+        return result['choices'][0]['message']['content']
+    except (KeyError, IndexError, json.JSONDecodeError) as e:
+        print(f"❌ Error parsing API response: {e}")
+        print(f"Response: {response.text}")
+        sys.exit(1)
 
-def parse_discord_message(response: str) -> str:
-    """Parse Discord message from AI response"""
+def parse_message(response: str) -> str:
+    """Clean up AI response"""
     message = response.strip()
     
     # Remove markdown code blocks if present
@@ -348,8 +221,8 @@ def parse_discord_message(response: str) -> str:
     
     return message.strip()
 
-def chunk_message(message: str, max_length: int = CHUNK_SIZE) -> List[str]:
-    """Split message into chunks at appropriate breakpoints"""
+def chunk_message(message: str, max_length: int = 1900) -> List[str]:
+    """Split message into chunks at natural breakpoints"""
     if len(message) <= max_length:
         return [message]
     
@@ -364,17 +237,17 @@ def chunk_message(message: str, max_length: int = CHUNK_SIZE) -> List[str]:
         chunk = remaining[:max_length]
         split_point = max_length
         
-        # Try paragraph break
+        # Try to split at paragraph break (double newline)
         last_para = chunk.rfind('\n\n')
         if last_para > max_length * 0.5:
             split_point = last_para + 2
         else:
-            # Try line break
+            # Try to split at line break
             last_line = chunk.rfind('\n')
             if last_line > max_length * 0.5:
                 split_point = last_line + 1
             else:
-                # Try space
+                # Try to split at space
                 last_space = chunk.rfind(' ')
                 if last_space > max_length * 0.5:
                     split_point = last_space + 1
@@ -385,170 +258,54 @@ def chunk_message(message: str, max_length: int = CHUNK_SIZE) -> List[str]:
     return chunks
 
 def post_to_discord(webhook_url: str, message: str):
-    """Post message to Discord webhook"""
-    import time
-    
+    """Post message to Discord with automatic chunking if needed"""
     chunks = chunk_message(message)
     
     for i, chunk in enumerate(chunks):
         if i > 0:
+            # Small delay between chunks to ensure proper ordering
+            import time
             time.sleep(0.5)
         
         payload = {"content": chunk}
         response = requests.post(webhook_url, json=payload)
         
         if response.status_code not in [200, 204]:
-            print(f"❌ Discord error on chunk {i+1}: {response.status_code}")
+            print(f"❌ Discord error: {response.status_code}")
             print(response.text)
             sys.exit(1)
-        
-        print(f"✅ Posted chunk {i+1}/{len(chunks)} to Discord")
+    
 
-def generate_multi_batch_digest(batches: List[List[Dict]], date_str: str, token: str) -> str:
-    """
-    Generate digest from multiple batches by creating sub-summaries first,
-    then combining them into final digest.
-    """
-    print(f"📦 Processing {len(batches)} batches separately...")
-    
-    batch_summaries = []
-    
-    for i, batch in enumerate(batches):
-        print(f"   Processing batch {i+1}/{len(batches)} ({len(batch)} PRs)...")
-        
-        # Create condensed version for this batch
-        system_prompt = get_digest_system_prompt(is_condensed=True)
-        user_prompt = get_digest_user_prompt(batch, date_str, is_condensed=True)
-        
-        response = call_pollinations_api(system_prompt, user_prompt, token)
-        batch_summary = parse_discord_message(response)
-        batch_summaries.append(batch_summary)
-    
-    # Now combine all batch summaries into final digest
-    print("🔗 Combining batch summaries into final digest...")
-    
-    combine_prompt = f"""You have {len(batches)} sub-summaries of PRs merged on {date_str}.
-Combine them into ONE cohesive weekly digest.
-
-Sub-summaries:
-"""
-    
-    for i, summary in enumerate(batch_summaries):
-        combine_prompt += f"\n--- Batch {i+1} ---\n{summary}\n"
-    
-    combine_prompt += """
-
-Create a single unified weekly digest that:
-- Starts with "Hey <@&1424461167883194418>!"
-- Groups similar changes together
-- Highlights the most important updates
-- Keeps it concise (800-1200 chars)
-- Maintains friendly tone
-"""
-    
-    system_prompt = "You are combining multiple batch summaries into one cohesive weekly digest for Discord."
-    
-    final_response = call_pollinations_api(system_prompt, combine_prompt, token)
-    return parse_discord_message(final_response)
 
 def main():
-    print("🚀 Generating Weekly Digest...")
-    
     # Get environment variables
+    github_token = get_env('GITHUB_TOKEN')
     pollinations_token = get_env('POLLINATIONS_TOKEN')
     discord_webhook = os.getenv('DISCORD_WEBHOOK_DIGEST') or get_env('DISCORD_WEBHOOK_URL')
     repo_name = get_env('REPO_FULL_NAME')
     
-    # Load all PR summaries
-    summaries = load_pr_summaries()
+    # Get last digest time based on schedule
+    last_digest_time = get_last_digest_time()
     
-    if not summaries:
-        print("📭 No PRs merged this week, skipping digest")
+    # Get recent merged PRs
+    merged_prs = get_recent_merged_prs(repo_name, github_token, last_digest_time)
+    
+    if not merged_prs:
         return
     
-    print(f"📊 Processing {len(summaries)} PRs...")
+    # Create AI prompt
+    system_prompt, user_prompt = create_digest_prompt(merged_prs)
     
-    # Get date string (covering last week)
-    today = datetime.utcnow()
-    week_ago = today - timedelta(days=7)
-    date_str = f"{week_ago.strftime('%B %d')} - {today.strftime('%B %d, %Y')}"
+    # Generate digest
+    ai_response = call_pollinations_api(system_prompt, user_prompt, pollinations_token)
+    message = parse_message(ai_response)
     
-    # Strategy 1: Try with all summaries if reasonable size
-    estimated_size = estimate_prompt_size(summaries)
-    print(f"📏 Estimated prompt size: {estimated_size:,} chars")
-    
-    if estimated_size < MAX_INPUT_CHARS:
-        print("✅ Summaries fit in single batch")
-        
-        # Generate normal digest
-        system_prompt = get_digest_system_prompt(is_condensed=len(summaries) > 15)
-        user_prompt = get_digest_user_prompt(summaries, date_str, is_condensed=len(summaries) > 15)
-        
-        ai_response = call_pollinations_api(system_prompt, user_prompt, pollinations_token)
-        message = parse_discord_message(ai_response)
-    
-    else:
-        print(f"⚠️ Prompt too large! Applying reduction strategies...")
-        
-        # Strategy 2: Filter by impact (drop low-impact items)
-        high_priority, low_priority = filter_summaries_by_impact(summaries)
-        
-        print(f"   High/Medium priority: {len(high_priority)} PRs")
-        print(f"   Low priority: {len(low_priority)} PRs")
-        
-        # Try with just high priority
-        high_priority_size = estimate_prompt_size(high_priority)
-        
-        if high_priority_size < MAX_INPUT_CHARS:
-            print("✅ Using high/medium priority PRs only")
-            
-            system_prompt = get_digest_system_prompt(is_condensed=True)
-            user_prompt = get_digest_user_prompt(high_priority, date_str, is_condensed=True)
-            user_prompt += f"\n\nNote: {len(low_priority)} additional low-impact PRs were merged (internal changes, minor fixes)."
-            
-            ai_response = call_pollinations_api(system_prompt, user_prompt, pollinations_token)
-            message = parse_discord_message(ai_response)
-        
-        else:
-            print("⚠️ Still too large! Using batch processing...")
-            
-            # Strategy 3: Batch processing with condensed summaries
-            condensed = create_condensed_summary(high_priority)
-            batches = batch_summaries(condensed, MAX_INPUT_CHARS // 2)
-            
-            print(f"   Split into {len(batches)} batches")
-            
-            if len(batches) == 1:
-                # Single batch with condensed data
-                system_prompt = get_digest_system_prompt(is_condensed=True)
-                user_prompt = get_digest_user_prompt(batches[0], date_str, is_condensed=True)
-                
-                ai_response = call_pollinations_api(system_prompt, user_prompt, pollinations_token)
-                message = parse_discord_message(ai_response)
-            else:
-                # Multiple batches - need hierarchical summarization
-                message = generate_multi_batch_digest(batches, date_str, pollinations_token)
-            
-            # Add note about volume
-            total_skipped = len(low_priority)
-            if total_skipped > 0:
-                message += f"\n\n_Plus {total_skipped} additional minor updates and internal improvements._"
-    
-    # Check if it's a skip message
-    if "no user-facing updates" in message.lower() and len(summaries) == 0:
-        print("📭 Only internal changes this week, skipping post")
+    # Check if AI said to skip
+    if message.upper().startswith('SKIP'):
         return
-    
-    # The footer is now handled by the AI prompt, but add fallback link
-    pr_count = len(summaries)
-    if "_View all changes:" not in message and "**PRs merged:**" not in message:
-        message += f"\n\n_View all changes: <https://github.com/{repo_name}/pulls?q=is:pr+is:merged>_"
     
     # Post to Discord
-    print("📤 Posting to Discord...")
     post_to_discord(discord_webhook, message)
-    
-    print(f"✨ Weekly digest posted! ({pr_count} PRs processed)")
 
 if __name__ == "__main__":
     main()

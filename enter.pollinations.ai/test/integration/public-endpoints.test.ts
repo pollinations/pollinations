@@ -85,3 +85,20 @@ describe("Public model endpoints", () => {
         expect(response.headers.get("access-control-allow-origin")).toBe("*");
     });
 });
+
+describe("API auth endpoints", () => {
+    test("Session cookies should not work for API proxy routes", async ({ sessionToken }) => {
+        // Try to use session cookie for API generation endpoint (should fail)
+        const response = await SELF.fetch(
+            `http://localhost:3000/api/generate/text/test`,
+            {
+                method: "GET",
+                headers: {
+                    "Cookie": `better-auth.session_token=${sessionToken}`,
+                },
+            },
+        );
+        // Should return 401 because session auth is disabled for API routes
+        expect(response.status).toBe(401);
+    });
+});

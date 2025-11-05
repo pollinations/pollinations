@@ -6,6 +6,14 @@ import App from "./App";
 import { BrowserRouter } from "react-router-dom";
 import ScrollToTop from "./utils/ScrollToTop";
 
+// Disable verbose micromark debug logs
+if (typeof localStorage !== 'undefined') {
+    const currentDebug = localStorage.getItem('debug');
+    if (!currentDebug || currentDebug === '*') {
+        localStorage.setItem('debug', '*,-micromark*');
+    }
+}
+
 const theme = createTheme();
 const container = document.getElementById("root");
 const root = createRoot(container); // Create a root

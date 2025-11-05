@@ -1,10 +1,6 @@
 import { PriceDefinition, TokenUsage } from "@shared/registry/registry.ts";
 import { integer, real, sqliteTable, text } from "drizzle-orm/sqlite-core";
-import type {
-    ContentFilterResult,
-    CreateChatCompletionResponse,
-} from "@/schemas/openai";
-import { removeUnset } from "@/util.ts";
+import type { ContentFilterResult } from "@/schemas/openai";
 
 const eventTypeValues = ["generate.text", "generate.image"] as const;
 export type EventType = (typeof eventTypeValues)[number];
@@ -12,19 +8,13 @@ export type EventType = (typeof eventTypeValues)[number];
 const eventStatusValues = ["pending", "processing", "sent", "error"] as const;
 export type EventStatus = (typeof eventStatusValues)[number];
 
+const apiKeyTypeValues = ["secret", "publishable"] as const;
+export type ApiKeyType = (typeof apiKeyTypeValues)[number];
+
 export const event = sqliteTable("event", {
     id: text("id").primaryKey(),
 
-    // Request identification and timing
-    requestId: text("request_id").notNull(),
-    startTime: integer("start_time", { mode: "timestamp_ms" }).notNull(),
-    endTime: integer("end_time", { mode: "timestamp_ms" }).notNull(),
-    responseTime: real("response_time"),
-    responseStatus: integer("response_status"),
-    environment: text("environment"),
-
     // Event processing
-    eventType: text("event_type").$type<EventType>().notNull(),
     eventProcessingId: text("event_processing_id"),
     eventStatus: text("event_status", { enum: eventStatusValues })
         .$type<EventStatus>()
@@ -49,14 +39,32 @@ export const event = sqliteTable("event", {
         .$onUpdateFn(() => new Date())
         .notNull(),
 
+    // Request identification and timing
+    requestId: text("request_id").notNull(),
+    requestPath: text("request_path").notNull(),
+    startTime: integer("start_time", { mode: "timestamp_ms" }).notNull(),
+    endTime: integer("end_time", { mode: "timestamp_ms" }).notNull(),
+    responseTime: real("response_time"),
+    responseStatus: integer("response_status"),
+    environment: text("environment"),
+    eventType: text("event_type").$type<EventType>().notNull(),
+
     // User information
     userId: text("user_id"),
     userTier: text("user_tier"),
+    apiKeyId: text("api_key_id"),
+    apiKeyType: text("api_key_type", {
+        enum: apiKeyTypeValues,
+    }).$type<ApiKeyType>(),
+
+    // Referrer
     referrerDomain: text("referrer_domain"),
     referrerUrl: text("referrer_url"),
 
     // Model information
     modelRequested: text("model_requested"),
+    resolvedModelRequested: text("resolved_model_requested"),
+    freeModelRequested: integer("free_model_requested", { mode: "boolean" }),
     modelUsed: text("model_used"),
     isBilledUsage: integer("is_billed_usage", { mode: "boolean" }).notNull(),
 
@@ -88,10 +96,8 @@ export const event = sqliteTable("event", {
         "token_count_completion_image",
     ).notNull(),
 
-    // Cost
+    // Totals
     totalCost: real("total_cost").notNull(),
-
-    // Price
     totalPrice: real("total_price").notNull(),
 
     // Prompt moderation results
@@ -136,6 +142,13 @@ export const event = sqliteTable("event", {
     cacheSemanticSimilarity: real("cache_semantic_similarity"),
     cacheSemanticThreshold: real("cache_semantic_threshold"),
     cacheKey: text("cache_key"),
+
+    // Error
+    errorResponseCode: text("error_response_code"),
+    errorSource: text("error_source"),
+    errorMessage: text("error_message"),
+    errorStack: text("error_stack"),
+    errorDetails: text("error_details"),
 });
 
 export type InsertGenerationEvent = typeof event.$inferInsert;

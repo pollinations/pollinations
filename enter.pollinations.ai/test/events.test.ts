@@ -73,6 +73,7 @@ function createTextGenerationEvent(
     return {
         id: generateRandomId(),
         requestId: generateRandomId(),
+        requestPath: "/api/generate/openai",
         startTime: new Date(),
         endTime: new Date(),
         responseTime: 0,

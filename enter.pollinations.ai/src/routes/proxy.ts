@@ -20,6 +20,7 @@ import {
     ErrorStatusCode,
     getDefaultErrorMessage,
     KNOWN_ERROR_STATUS_CODES,
+    UpstreamError,
 } from "@/error.ts";
 import { GenerateImageRequestQueryParamsSchema } from "@/schemas/image.ts";
 import { z } from "zod";
@@ -200,14 +201,18 @@ export const proxyRoutes = new Hono<Env>()
                     c.var.track.freeModelRequested &&
                     c.env.ALLOW_ANONYMOUS_USAGE,
             });
+            await checkBalanceForPaidModel(c);
 
             const textServiceUrl =
                 c.env.TEXT_SERVICE_URL || "https://text.pollinations.ai";
-            
+
             // Build URL with prompt in path and model as query param
             const model = c.req.query("model") || "openai";
             const prompt = c.req.param("prompt");
-            const targetUrl = proxyUrl(c, `${textServiceUrl}/${encodeURIComponent(prompt)}?model=${model}`);
+            const targetUrl = proxyUrl(
+                c,
+                `${textServiceUrl}/${encodeURIComponent(prompt)}?model=${model}`,
+            );
 
             const response = await fetch(targetUrl, {
                 method: "GET",
@@ -217,9 +222,14 @@ export const proxyRoutes = new Hono<Env>()
                 },
             });
 
-            // return response as is if streaming
-            if (c.var.track.streamRequested) {
-                return response;
+            if (!response.ok) {
+                throw new UpstreamError(
+                    response.status as ContentfulStatusCode,
+                    {
+                        message: "The text service returned an error response",
+                        requestUrl: targetUrl,
+                    },
+                );
             }
 
             // Backend returns plain text for text models and raw audio for audio models
@@ -259,6 +269,7 @@ export const proxyRoutes = new Hono<Env>()
                 targetUrl.pathname,
                 c.req.param("prompt"),
             );
+
             log.debug("[PROXY] Proxying to: {url}", {
                 url: targetUrl.toString(),
             });
@@ -267,6 +278,7 @@ export const proxyRoutes = new Hono<Env>()
                 c.env.ENTER_TOKEN,
                 c.var.auth.user,
             );
+
             log.debug("[PROXY] Image generation headers: {headers}", {
                 headers: genHeaders,
             });
@@ -275,6 +287,13 @@ export const proxyRoutes = new Hono<Env>()
                 ...proxyHeaders(c),
                 ...genHeaders,
             };
+
+            c.get("log")?.debug("[PROXY] Image generation headers: {headers}", {
+                headers: genHeaders,
+            });
+            c.get("log")?.debug("[PROXY] Proxying to: {url}", {
+                url: targetUrl.toString(),
+            });
 
             const response = await proxy(targetUrl.toString(), {
                 method: c.req.method,
@@ -403,8 +422,7 @@ async function checkBalanceForPaidModel(c: Context<Env & TrackEnv>) {
 async function handleChatCompletions(c: Context<Env & TrackEnv>) {
     await c.var.auth.requireAuthorization({
         allowAnonymous:
-            c.var.track.freeModelRequested &&
-            c.env.ALLOW_ANONYMOUS_USAGE,
+            c.var.track.freeModelRequested && c.env.ALLOW_ANONYMOUS_USAGE,
     });
 
     await checkBalanceForPaidModel(c);
@@ -422,10 +440,11 @@ async function handleChatCompletions(c: Context<Env & TrackEnv>) {
         body: JSON.stringify(requestBody),
     });
 
-    if (!response.ok || !response.body) {
-        throw new HTTPException(
-            response.status as ContentfulStatusCode,
-        );
+    if (!response.ok) {
+        throw new UpstreamError(response.status as ContentfulStatusCode, {
+            message: "The text service returned an error response",
+            requestUrl: targetUrl,
+        });
     }
 
     // add content filter headers if not streaming
@@ -434,8 +453,7 @@ async function handleChatCompletions(c: Context<Env & TrackEnv>) {
         const responseJson = await response.clone().json();
         const parsedResponse =
             CreateChatCompletionResponseSchema.parse(responseJson);
-        contentFilterHeaders =
-            contentFilterResultsToHeaders(parsedResponse);
+        contentFilterHeaders = contentFilterResultsToHeaders(parsedResponse);
     }
 
     return new Response(response.body, {

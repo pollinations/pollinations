@@ -5,21 +5,30 @@ Generative AI events with usage, pricing, metadata, moderation, and cache info
 
 SCHEMA >
 `request_id`      String                 `json:$.requestId`,
+`request_path`    String                 `json:$.requestPath`,
 `start_time`      DateTime               `json:$.startTime`,
 `end_time`        DateTime               `json:$.endTime`,
 `response_time`   Float32                `json:$.responseTime` DEFAULT 0,
 `response_status` UInt32                 `json:$.responseStatus` DEFAULT 0,
 `environment`     LowCardinality(String) `json:$.environment` DEFAULT 'undefined',
-
 `event_type`      LowCardinality(String) `json:$.eventType`,
+
+-- User
 `user_id`         LowCardinality(String) `json:$.userId` DEFAULT 'undefined',
 `user_tier`       LowCardinality(String) `json:$.userTier` DEFAULT 'undefined',
+`api_key_id`      String                 `json:$.apiKeyId` DEFAULT 'undefined',
+`api_key_type`    LowCardinality(String) `json:$.apiKeyType` DEFAULT 'undefined',
+
+-- Referrer
 `referrer_url`    String                 `json:$.referrerUrl` DEFAULT 'undefined',
 `referrer_domain` LowCardinality(String) `json:$.referrerDomain` DEFAULT 'undefined',
 
-`model_requested`      LowCardinality(String) `json:$.modelRequested` DEFAULT 'undefined',
-`model_used`           LowCardinality(String) `json:$.modelUsed` DEFAULT 'undefined',
-`is_billed_usage`      Bool                   `json:$.isBilledUsage`,
+-- Model
+`model_requested`           LowCardinality(String) `json:$.modelRequested` DEFAULT 'undefined',
+`resolved_model_requested`  LowCardinality(String) `json:$.resolvedModelRequested` DEFAULT 'undefined',
+`free_model_requested`      Nullable(Bool)         `json:$.freeModelRequested`,
+`model_used`                LowCardinality(String) `json:$.modelUsed` DEFAULT 'undefined',
+`is_billed_usage`           Bool                   `json:$.isBilledUsage`,
 
 -- Pricing
 `token_price_prompt_text`          Float64  `json:$.tokenPricePromptText` DEFAULT 0,
@@ -41,7 +50,7 @@ SCHEMA >
 `token_count_completion_audio`     UInt32   `json:$.tokenCountCompletionAudio` DEFAULT 0,
 `token_count_completion_image`     UInt32   `json:$.tokenCountCompletionImage` DEFAULT 0,
 
-`cost_type`     LowCardinality(String) `json:$.costType` DEFAULT 'undefined',
+-- Totals
 `total_cost`    Float64 `json:$.totalCost` DEFAULT 0,
 `total_price`   Float64 `json:$.totalPrice` DEFAULT 0,
 
@@ -67,7 +76,76 @@ SCHEMA >
 `cache_semantic_threshold`   Nullable(Float32)       `json:$.cacheSemanticThreshold`,
 `cache_key`                  String                  `json:$.cacheKey` DEFAULT '',
 
+-- Error
+`error_response_code`        LowCardinality(String)  `json:$.errorResponseCode` DEFAULT 'undefined',
+`error_source`               LowCardinality(String)  `json:$.errorSource` DEFAULT 'undefined',
+`error_message`              String                  `json:$.errorMessage` DEFAULT 'undefined',
+`error_stack`                String                  `json:$.errorStack` DEFAULT 'undefined',
+`error_details`              String                  `json:$.errorDetails` DEFAULT 'undefined',
+
 ENGINE "MergeTree" 
 ENGINE_PARTITION_KEY "toYYYYMM(start_time)"
 ENGINE_SORTING_KEY "start_time, environment, user_id, user_tier"
 ENGINE_PRIMARY_KEY "start_time, environment, user_id"
+
+FORWARD_QUERY >
+  SELECT 
+    request_id,
+    defaultValueOfTypeName('String') AS request_path,
+    start_time,
+    end_time,
+    response_time,
+    response_status,
+    environment,
+    event_type,
+    user_id,
+    user_tier,
+    defaultValueOfTypeName('String') AS api_key_id,
+    defaultValueOfTypeName('LowCardinality(String)') AS api_key_type,
+    referrer_url,
+    referrer_domain,
+    model_requested,
+    defaultValueOfTypeName('LowCardinality(String)') AS resolved_model_requested,
+    defaultValueOfTypeName('Nullable(Bool)') AS free_model_requested,
+    model_used,
+    is_billed_usage,
+    token_price_prompt_text,
+    token_price_prompt_cached,
+    token_price_prompt_audio,
+    token_price_prompt_image,
+    token_price_completion_text,
+    token_price_completion_reasoning,
+    token_price_completion_audio,
+    token_price_completion_image,
+    token_count_prompt_text,
+    token_count_prompt_audio,
+    token_count_prompt_cached,
+    token_count_prompt_image,
+    token_count_completion_text,
+    token_count_completion_reasoning,
+    token_count_completion_audio,
+    token_count_completion_image,
+    total_cost,
+    total_price,
+    moderation_prompt_hate_severity,
+    moderation_prompt_self_harm_severity,
+    moderation_prompt_sexual_severity,
+    moderation_prompt_violence_severity,
+    moderation_prompt_jailbreak_detected,
+    moderation_completion_hate_severity,
+    moderation_completion_self_harm_severity,
+    moderation_completion_sexual_severity,
+    moderation_completion_violence_severity,
+    moderation_completion_protected_material_code_detected,
+    moderation_completion_protected_material_text_detected,
+    cache_hit,
+    cache_type,
+    cache_semantic_similarity,
+    cache_semantic_threshold,
+    cache_key,
+    defaultValueOfTypeName('LowCardinality(String)') AS error_name,
+    defaultValueOfTypeName('LowCardinality(String)') AS error_response_code,
+    defaultValueOfTypeName('LowCardinality(String)') AS error_source,
+    defaultValueOfTypeName('String') AS error_message,
+    defaultValueOfTypeName('String') AS error_stack,
+    defaultValueOfTypeName('String') AS error_details

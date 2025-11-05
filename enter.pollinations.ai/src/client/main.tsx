@@ -6,7 +6,6 @@ import {
     type FC,
     type PropsWithChildren,
     StrictMode,
-    useEffect,
     useMemo,
 } from "react";
 import ReactDOM from "react-dom/client";
@@ -60,11 +59,6 @@ const router = createRouter({
 
 const App: FC<PropsWithChildren> = () => {
     const session = authClient.useSession();
-
-    useEffect(() => {
-        if (session.isPending) return;
-        router.invalidate();
-    }, [session]);
 
     const context = useMemo(() => {
         return {

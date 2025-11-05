@@ -205,3 +205,20 @@ test(
         expect(arrayBuffer.byteLength).toBeGreaterThan(0);
     },
 );
+
+// Test that session cookies don't work for API routes (only API keys)
+test(
+    "Session cookies should not authenticate API proxy routes",
+    async ({ sessionToken }) => {
+        const response = await SELF.fetch(
+            `http://localhost:3000/api/generate/text/test`,
+            {
+                method: "GET",
+                headers: {
+                    "Cookie": `better-auth.session_token=${sessionToken}`,
+                },
+            },
+        );
+        expect(response.status).toBe(401);
+    },
+);

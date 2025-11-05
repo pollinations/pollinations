@@ -78,8 +78,8 @@ export const TEXT_COSTS = {
     "mistral-nemo-instruct-2407": [
         {
             date: PRICING_START_DATE,
-            promptTextTokens: perMillion(0.2),
-            completionTextTokens: perMillion(0.2),
+            promptTextTokens: perMillion(0.14),
+            completionTextTokens: perMillion(0.42),
         },
     ],
     "us.meta.llama3-1-8b-instruct-v1:0": [
@@ -181,20 +181,15 @@ export const TEXT_SERVICES = {
         modelId: "mistral-small-3.2-24b-instruct-2506",
         provider: "scaleway",
     },
-    // "mistral-naughty": {
-    //     aliases: ["mistral-romance", "mistral-nemo-instruct-2407-romance", "mistral-roblox"],
-    //     modelId: "mistral-nemo-instruct-2407",
-    //     provider: "scaleway",
-    // },
+    "naughty": {
+        aliases: ["mistral-naughty", "mistral-romance", "mistral-nemo-instruct-2407-romance", "mistral-roblox"],
+        modelId: "mistral-nemo-instruct-2407",
+        provider: "scaleway",
+    },
     "openai-audio": {
         aliases: ["gpt-4o-mini-audio-preview"],
         modelId: "gpt-4o-mini-audio-preview-2024-12-17",
         provider: "azure-openai",
-    },
-    "roblox-rp": {
-        aliases: ["llama-roblox", "llama-fast-roblox"],
-        modelId: "us.meta.llama3-1-8b-instruct-v1:0",
-        provider: "aws-bedrock",
     },
     "openai-reasoning": {
         aliases: ["o4-mini"],
@@ -231,23 +226,13 @@ export const TEXT_SERVICES = {
         modelId: "gpt-4.1-2025-04-14",
         provider: "azure-openai",
     },
-    "rtist": {
-        aliases: [],
-        modelId: "gpt-4.1-2025-04-14",
-        provider: "azure-openai",
-    },
     "evil": {
         aliases: [],
         modelId: "mistral-small-3.1-24b-instruct-2503",
         provider: "scaleway",
     },
-    "bidara": {
-        aliases: [],
-        modelId: "gpt-4.1-nano-2025-04-14",
-        provider: "azure-openai",
-    },
-    "claudyclaude": {
-        aliases: [],
+    "claude": {
+        aliases: ["claudyclaude"],
         modelId: "us.anthropic.claude-haiku-4-5-20251001-v1:0",
         provider: "aws-bedrock",
     },

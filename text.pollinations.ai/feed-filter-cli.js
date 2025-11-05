@@ -189,8 +189,7 @@ const matchesFilters = (data, options = {}) => {
         // Check referrer, model name, and system prompt for Roblox
         const isRobloxModel =
             parameters?.model &&
-            (parameters.model.toLowerCase().includes("roblox") ||
-                parameters.model === "roblox-rp");
+            parameters.model.toLowerCase().includes("roblox");
 
         if (isRobloxModel) {
             return false;

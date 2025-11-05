@@ -6,6 +6,26 @@ import { APIError } from "better-auth";
 import { ContentfulStatusCode } from "hono/utils/http-status";
 import { ValidationError } from "@/middleware/validator";
 
+type UpstreamErrorOptions = {
+    res?: Response;
+    message?: string;
+    cause?: unknown;
+    requestUrl?: URL;
+    requestBody?: unknown;
+};
+
+export class UpstreamError extends HTTPException {
+    public readonly name = "UpstreamError" as const;
+    public readonly requestUrl?: URL;
+    public readonly requestBody?: unknown;
+
+    constructor(status: ContentfulStatusCode, options?: UpstreamErrorOptions) {
+        super(status, options);
+        this.requestUrl = options?.requestUrl;
+        this.requestBody = options?.requestBody;
+    }
+}
+
 const GenericErrorDetailsSchema = z.object({
     name: z.string(),
     stack: z.string().optional(),
@@ -66,6 +86,9 @@ export const handleError: ErrorHandler<Env> = (err, c) => {
     const log = c.get("log");
     const timestamp = new Date().toISOString();
 
+    // Set the error on the context for it to be tracked
+    c.set("error", err);
+
     if (err instanceof HTTPException) {
         const status = err.status;
         const response = createBaseErrorResponse(err, status, timestamp);
@@ -89,7 +112,7 @@ export const handleError: ErrorHandler<Env> = (err, c) => {
 
     const status = 500;
     const user = (c.var as any).auth?.user;
-    c.var.log.error({
+    log.error("InternalError: {*}", {
         ...(user && { userId: user.id, username: user.username }),
         error: {
             message: err.message || getDefaultErrorMessage(status),
@@ -102,7 +125,6 @@ export const handleError: ErrorHandler<Env> = (err, c) => {
         },
     });
     const response = createInternalErrorResponse(err, status, timestamp);
-    log.trace("InternalError: {error}", { error: err });
     return c.json(response, status);
 };
 
@@ -166,10 +188,11 @@ function createInternalErrorResponse(
     };
 }
 
-function getErrorCode(status: number): string {
+export function getErrorCode(status: number): string {
     const codes: Record<number, string> = {
         400: "BAD_REQUEST",
         401: "UNAUTHORIZED",
+        402: "PAYMENT_REQUIRED",
         403: "FORBIDDEN",
         404: "NOT_FOUND",
         405: "METHOD_NOT_ALLOWED",
@@ -191,8 +214,9 @@ export type ErrorStatusCode = (typeof KNOWN_ERROR_STATUS_CODES)[number];
 
 export function getDefaultErrorMessage(status: number): string {
     const messages: Record<number, string> = {
-        400: "Something was wrong with the input data.",
+        400: "Something was wrong with the input data, check the details for more info.",
         401: "You need to authenticate by providing a session cookie or Authorization header (Bearer token).",
+        402: "Your pollen balance is too low.",
         403: "Access denied! You don't have the required permissions.",
         404: "Oh no, there's nothing here.",
         405: "That HTTP method isn't supported here. Please check the API docs.",

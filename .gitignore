@@ -294,13 +294,16 @@ cursor-party/
 .aider*
 data/
 text.pollinations.ai/v2/
+
 # Local Netlify folder
 .netlify
 .dev.vars
 image.pollinations.ai/temp_logs/
 .wrangler/
+
 # Crush Dev Agent
 .crush/
+.crush.json
 
 # Tinybird CLI configuration (contains sensitive tokens)
 .tinyb
@@ -308,11 +311,6 @@ image.pollinations.ai/temp_logs/
 # Google Cloud credentials and service account keys
 **/credentials/
 credentials/
-*.json
-!package*.json
-!tsconfig*.json
-!**/package*.json
-!**/tsconfig*.json
 google_*.json
 service-account-*.json
 *-key.json

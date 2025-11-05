@@ -65,9 +65,7 @@ CREATE TABLE `user` (
 	`role` text,
 	`banned` integer DEFAULT false,
 	`ban_reason` text,
-	`ban_expires` integer,
-	`github_id` integer,
-	`github_username` text
+	`ban_expires` integer
 );
 --> statement-breakpoint
 CREATE UNIQUE INDEX `user_email_unique` ON `user` (`email`);--> statement-breakpoint

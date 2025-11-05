@@ -221,15 +221,59 @@ def parse_message(response: str) -> str:
     
     return message.strip()
 
-def post_to_discord(webhook_url: str, message: str):
-    """Post message to Discord"""
-    payload = {"content": message}
-    response = requests.post(webhook_url, json=payload)
+def chunk_message(message: str, max_length: int = 1900) -> List[str]:
+    """Split message into chunks at natural breakpoints"""
+    if len(message) <= max_length:
+        return [message]
     
-    if response.status_code not in [200, 204]:
-        print(f"❌ Discord error: {response.status_code}")
-        print(response.text)
-        sys.exit(1)
+    chunks = []
+    remaining = message
+    
+    while remaining:
+        if len(remaining) <= max_length:
+            chunks.append(remaining)
+            break
+        
+        chunk = remaining[:max_length]
+        split_point = max_length
+        
+        # Try to split at paragraph break (double newline)
+        last_para = chunk.rfind('\n\n')
+        if last_para > max_length * 0.5:
+            split_point = last_para + 2
+        else:
+            # Try to split at line break
+            last_line = chunk.rfind('\n')
+            if last_line > max_length * 0.5:
+                split_point = last_line + 1
+            else:
+                # Try to split at space
+                last_space = chunk.rfind(' ')
+                if last_space > max_length * 0.5:
+                    split_point = last_space + 1
+        
+        chunks.append(remaining[:split_point].rstrip())
+        remaining = remaining[split_point:].lstrip()
+    
+    return chunks
+
+def post_to_discord(webhook_url: str, message: str):
+    """Post message to Discord with automatic chunking if needed"""
+    chunks = chunk_message(message)
+    
+    for i, chunk in enumerate(chunks):
+        if i > 0:
+            # Small delay between chunks to ensure proper ordering
+            import time
+            time.sleep(0.5)
+        
+        payload = {"content": chunk}
+        response = requests.post(webhook_url, json=payload)
+        
+        if response.status_code not in [200, 204]:
+            print(f"❌ Discord error: {response.status_code}")
+            print(response.text)
+            sys.exit(1)
     
 
 

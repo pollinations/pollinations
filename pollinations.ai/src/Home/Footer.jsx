@@ -97,8 +97,7 @@ const Footer = () => {
                         sx={{ fontSize: "1.5em", fontFamily: Fonts.title }}
                     >
                         <StyledLink 
-                            href="https://enter.pollinations.ai/terms" 
-                            isExternal
+                            to="/terms" 
                             onClick={handleTermsLinkClick}
                         >
                             <LLMTextManipulator

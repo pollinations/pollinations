@@ -9,19 +9,9 @@
  
 ### Event highlights
 
-| Metric | Result |
-|---|---:|
-| PRs made | 25 |
-| PRs merged | 22 |
-| Issues raised | 67 |
-| Issues closed | 38 |
-| Total contributions gained (PRs & merges) | 30 |
-| Stars gained (Oct 10–31) | 131 |
-| New projects added | 8 |
-| Community partner | GDG JIS University, Kolkata, India |
-| Attendance | Hacktoberfest Meetup (Virtual) |
+We opened 67 issues and closed 38, created 25 PRs with 22 merged (30 total contributions), added 8 new projects, gained 131 stars (Oct 10–31), partnered with GDG JIS University (Kolkata, India), and hosted a virtual Hacktoberfest meetup.
 
-> ### Thank you to contributors and project maintainers.
+> Thank you to contributors and project maintainers.
 
 
 ## 🆕 Latest News

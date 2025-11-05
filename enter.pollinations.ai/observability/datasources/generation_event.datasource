@@ -77,7 +77,6 @@ SCHEMA >
 `cache_key`                  String                  `json:$.cacheKey` DEFAULT '',
 
 -- Error
-`error_name`                 LowCardinality(String)  `json:$.errorName` DEFAULT 'undefined',
 `error_response_code`        LowCardinality(String)  `json:$.errorResponseCode` DEFAULT 'undefined',
 `error_source`               LowCardinality(String)  `json:$.errorSource` DEFAULT 'undefined',
 `error_message`              String                  `json:$.errorMessage` DEFAULT 'undefined',

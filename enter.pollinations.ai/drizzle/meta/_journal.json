@@ -1,0 +1,20 @@
+{
+  "version": "7",
+  "dialect": "sqlite",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "6",
+      "when": 1758838821183,
+      "tag": "0000_amused_living_tribunal",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "6",
+      "when": 1762354921081,
+      "tag": "0001_damp_dakota_north",
+      "breakpoints": true
+    }
+  ]
+}

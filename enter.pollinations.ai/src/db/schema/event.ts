@@ -144,7 +144,6 @@ export const event = sqliteTable("event", {
     cacheKey: text("cache_key"),
 
     // Error
-    errorName: text("error_name"),
     errorResponseCode: text("error_response_code"),
     errorSource: text("error_source"),
     errorMessage: text("error_message"),

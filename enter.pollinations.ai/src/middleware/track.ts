@@ -21,8 +21,6 @@ import {
     ContentFilterResult,
     ContentFilterResultSchema,
     ContentFilterSeveritySchema,
-    CreateChatCompletionResponseSchema,
-    type CreateChatCompletionResponse,
 } from "@/schemas/openai.ts";
 import { generateRandomId } from "@/util.ts";
 import { createMiddleware } from "hono/factory";
@@ -584,7 +582,6 @@ const ContentFilterResultHeadersSchema = z
 type ErrorData = {
     errorCode?: string;
     errorSource?: string;
-    errorName?: string;
     errorMessage?: string;
     errorStack?: string;
     errorDetails?: string;
@@ -605,7 +602,6 @@ function collectErrorData(response: Response, error?: Error): ErrorData {
     return {
         errorCode: getErrorCode(status || response.status),
         errorSource: source,
-        errorName: error?.name,
         errorMessage: error?.message,
         errorStack: error?.stack,
         errorDetails: details,

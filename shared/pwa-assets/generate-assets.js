@@ -65,6 +65,21 @@ async function generateFavicon(svgBuffer, outputPath, backgroundColor) {
 }
 
 /**
+ * Generate watermark logo with transparency preserved (for image.pollinations.ai)
+ */
+async function generateWatermarkLogo(svgBuffer, outputPath, width, height) {
+  console.log(`  Generating watermark ${width}x${height} with transparency → ${outputPath}`);
+  
+  await sharp(svgBuffer)
+    .resize(width, height, { 
+      fit: 'contain', 
+      background: { r: 0, g: 0, b: 0, alpha: 0 } 
+    })
+    .png({ compressionLevel: 9 })
+    .toFile(outputPath);
+}
+
+/**
  * Generate OG image (social media preview)
  */
 async function generateOGImage(svgBuffer, outputPath, backgroundColor, textLogoBuffer = null) {
@@ -113,6 +128,19 @@ async function generateAssetsForApp(appKey, appConfig) {
     
     // Ensure output directory exists
     mkdirSync(outputDir, { recursive: true });
+  
+  // Handle image service watermark generation (special case)
+  if (appKey === 'image' && appConfig.watermark?.enabled) {
+    console.log('\n🏷️  Watermark Logo:');
+    await generateWatermarkLogo(
+      svgBuffer,
+      join(outputDir, 'logo.png'),
+      appConfig.watermark.width,
+      appConfig.watermark.height
+    );
+    console.log(`\n✅ Done generating watermark for ${appConfig.name}`);
+    return;
+  }
   
   // Generate favicons
   console.log('\n🎨 Favicons:');

@@ -1,6 +1,5 @@
 import { Context, Hono } from "hono";
 import { proxy } from "hono/proxy";
-import { cors } from "hono/cors";
 import { auth } from "@/middleware/auth.ts";
 import type { User } from "@/auth.ts";
 import { polar } from "@/middleware/polar.ts";
@@ -50,14 +49,6 @@ function errorResponses(...codes: ErrorStatusCode[]) {
 }
 
 export const proxyRoutes = new Hono<Env>()
-    .use(
-        "*",
-        cors({
-            origin: "*",
-            allowHeaders: ["authorization", "content-type"],
-            allowMethods: ["GET", "POST", "OPTIONS"],
-        }),
-    )
     .get(
         "/openai/models",
         describeRoute({

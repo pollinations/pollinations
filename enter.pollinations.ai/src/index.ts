@@ -27,6 +27,18 @@ export const api = new Hono<Env>()
 const docsRoutes = createDocsRoutes(api);
 
 const app = new Hono<Env>()
+    // Permissive CORS for public API endpoints (require API keys)
+    .use(
+        "/api/generate/*",
+        cors({
+            origin: "*",
+            allowMethods: ["GET", "POST", "OPTIONS"],
+            allowHeaders: ["Content-Type", "Authorization"],
+            exposeHeaders: ["Content-Length"],
+            maxAge: 600,
+        }),
+    )
+    // Restrictive CORS for auth/dashboard endpoints (use credentials)
     .use(
         "*",
         cors({
@@ -36,6 +48,7 @@ const app = new Hono<Env>()
                 // Production origins
                 if (origin === "https://enter.pollinations.ai") return origin;
                 if (origin === "https://beta.pollinations.ai") return origin;
+                if (origin === "https://pollinations.ai") return origin;
                 return null;
             },
             credentials: true,

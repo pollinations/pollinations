@@ -284,7 +284,7 @@ const CreateKeyForm: FC<{
                             <ul className="text-xs text-gray-700 mt-1 space-y-0.5 list-disc pl-4">
                                 <li className="font-semibold text-amber-900">Only shown once - copy it now!</li>
                                 <li>For server-side apps - never expose publicly</li>
-                                <li>No rate limits and can spend Pollen for paid models</li>
+                                <li>No rate limits</li>
                             </ul>
                         </div>
                     </label>

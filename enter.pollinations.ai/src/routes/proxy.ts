@@ -83,6 +83,31 @@ export const proxyRoutes = new Hono<Env>()
             });
         },
     )
+    .get(
+        "/image/models",
+        describeRoute({
+            description: "Get available image models.",
+            responses: {
+                200: {
+                    description: "Success",
+                    content: {
+                        "application/json": {
+                            schema: resolver(
+                                z.array(z.string()).meta({
+                                    description: "List of available models",
+                                }),
+                            ),
+                        },
+                    },
+                },
+                ...errorResponses(500),
+            },
+        }),
+        async (c) => {
+            return await proxy(`${c.env.IMAGE_SERVICE_URL}/models`);
+        },
+    )
+    // Auth required for all endpoints below
     .use(auth({ allowApiKey: true, allowSessionCookie: true }))
     .use(frontendKeyRateLimit)
     .use(polar)
@@ -238,30 +263,6 @@ export const proxyRoutes = new Hono<Env>()
             // Backend returns plain text for text models and raw audio for audio models
             // No JSON parsing needed for GET endpoint - just pass through the response
             return response;
-        },
-    )
-    .get(
-        "/image/models",
-        describeRoute({
-            description: "Get available image models.",
-            responses: {
-                200: {
-                    description: "Success",
-                    content: {
-                        "application/json": {
-                            schema: resolver(
-                                z.array(z.string()).meta({
-                                    description: "List of available models",
-                                }),
-                            ),
-                        },
-                    },
-                },
-                ...errorResponses(400, 401, 500),
-            },
-        }),
-        async (c) => {
-            return await proxy(`${c.env.IMAGE_SERVICE_URL}/models`);
         },
     )
     .get(

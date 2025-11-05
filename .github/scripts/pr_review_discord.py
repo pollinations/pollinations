@@ -494,22 +494,18 @@ def chunk_message(message: str, max_length: int = CHUNK_SIZE) -> List[str]:
     return chunks
 
 def format_review_for_discord(message_content: str, pr_info: Dict) -> List[Dict]:
-    """
-    Format announcement message for Discord webhook.
-    Returns a list of payloads if message needs to be chunked.
-    """
     time_str = format_timestamp(pr_info.get('merged_at'))
-    
-    # Create Discord markdown links with angle brackets to suppress embeds
     pr_number = pr_info.get('number', 'Unknown')
     pr_url = pr_info.get('url', '#')
     pr_author = pr_info.get('author', 'Unknown')
-    
+    pr_creator = pr_info.get('created_by', pr_author)
+    pr_merger = pr_info.get('merged_by', pr_author)
     pr_link = f"[PR #{pr_number}](<{pr_url}>)"
-    author_link = f"[{pr_author}](<https://github.com/{pr_author}>)"
-    
-    footer = f"\n\n{pr_link} • Merged by {author_link} • {time_str}"
-    
+    creator_link = f"[{pr_creator if pr_creator != 'Unknown' else 'Some Pollinations Contributor'}](<https://github.com/{pr_creator}>)"
+    merger_link = f"[{pr_merger if pr_merger != 'Unknown' else 'Some Pollinations Contributor'}](<https://github.com/{pr_merger}>)"
+
+    footer = f"\n\n{pr_link} • Created by {creator_link} • Merged by {merger_link} • {time_str}"
+
     # Calculate available space for content
     footer_length = len(footer)
     available_space = CHUNK_SIZE - footer_length
@@ -585,6 +581,11 @@ def main():
     pr_data = github_api_request(f"repos/{repo_full_name}/pulls/{pr_number}", github_token)
     pr_description = pr_data.get('body', '')
     merged_at = pr_data.get('merged_at', '')
+    # Prefer GitHub PR metadata for creator/merger, fallback to env var
+    created_by_user = pr_data.get('user', {}).get('login')
+    merged_by_user = None
+    if pr_data.get('merged_by'):
+        merged_by_user = pr_data.get('merged_by', {}).get('login')
     
     # Get PR diff
     print("📥 Fetching PR diff...")
@@ -619,6 +620,8 @@ def main():
         'number': pr_number,
         'url': pr_url,
         'author': pr_author,
+        'created_by': created_by_user or pr_author,
+        'merged_by': merged_by_user or pr_author,
         'merged_at': merged_at
     }
     

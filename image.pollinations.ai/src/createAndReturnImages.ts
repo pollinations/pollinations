@@ -125,10 +125,11 @@ export const callComfyUI = async (
             safeParams,
         );
 
-        // Linear scaling of steps between 6 (at concurrentRequests=2) and 1 (at concurrentRequests=36)
+        // Scale steps from 4 down to 1, dropping more gradually
+        // 4 steps up to 20 concurrent, then gradually down to 1 at 50+ concurrent
         const steps = Math.max(
             1,
-            Math.round(4 - ((concurrentRequests - 2) * (3 - 1)) / (10 - 2)),
+            Math.round(4 - Math.max(0, concurrentRequests - 20) / 10)
         );
         logOps("calculated_steps", steps);
 

@@ -259,7 +259,7 @@ const CreateKeyForm: FC<{
                             <ul className="text-xs text-gray-700 mt-1 space-y-0.5 list-disc pl-4">
                                 <li className="font-semibold">Always visible in your dashboard</li>
                                 <li>Safe to use in client-side code (React, Vue, etc.)</li>
-                                <li>Access to all models with IP-based rate limiting (100 req/min)</li>
+                                <li>IP-based rate limiting: 3 req/burst, 1 refill per 15 sec (~4 req/min)</li>
                             </ul>
                         </div>
                     </label>
@@ -284,7 +284,7 @@ const CreateKeyForm: FC<{
                             <ul className="text-xs text-gray-700 mt-1 space-y-0.5 list-disc pl-4">
                                 <li className="font-semibold text-amber-900">Only shown once - copy it now!</li>
                                 <li>For server-side apps - never expose publicly</li>
-                                <li>Best rate limits and can spend Pollen for paid models</li>
+                                <li>No rate limits</li>
                             </ul>
                         </div>
                     </label>

@@ -58,6 +58,7 @@ export const proxyRoutes = new Hono<Env>()
             allowMethods: ["GET", "POST", "OPTIONS"],
         }),
     )
+    // Public endpoints (no auth required) - must come before auth middleware below
     .get(
         "/openai/models",
         describeRoute({
@@ -107,6 +108,7 @@ export const proxyRoutes = new Hono<Env>()
             return await proxy(`${c.env.IMAGE_SERVICE_URL}/models`);
         },
     )
+    // Auth required for all endpoints below
     .use(auth({ allowApiKey: true, allowSessionCookie: true }))
     .use(frontendKeyRateLimit)
     .use(polar)

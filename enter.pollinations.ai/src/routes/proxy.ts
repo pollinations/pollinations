@@ -52,6 +52,7 @@ export const proxyRoutes = new Hono<Env>()
     .get(
         "/v1/models",
         describeRoute({
+            tags: ["Text Generation"],
             description: "Get available text models (OpenAI-compatible).",
             responses: {
                 200: {
@@ -77,6 +78,7 @@ export const proxyRoutes = new Hono<Env>()
     .get(
         "/image/models",
         describeRoute({
+            tags: ["Image Generation"],
             description: "Get available image models.",
             responses: {
                 200: {
@@ -106,8 +108,11 @@ export const proxyRoutes = new Hono<Env>()
         "/v1/chat/completions",
         track("generate.text"),
         describeRoute({
+            tags: ["Text Generation"],
             description: [
                 "OpenAI-compatible chat completions endpoint.",
+                "",
+                "**Legacy endpoint:** `/openai` (deprecated, use `/v1/chat/completions` instead)",
                 "",
                 "**Authentication (Secret Keys Only):**",
                 "",
@@ -133,55 +138,22 @@ export const proxyRoutes = new Hono<Env>()
             },
         }),
         validator("json", CreateChatCompletionRequestSchema),
-        async (c) => {
-            await c.var.auth.requireAuthorization({
-                allowAnonymous:
-                    c.var.track.freeModelRequested &&
-                    c.env.ALLOW_ANONYMOUS_USAGE,
-            });
-
-            await checkBalanceForPaidModel(c);
-
-            const textServiceUrl =
-                c.env.TEXT_SERVICE_URL || "https://text.pollinations.ai";
-            const targetUrl = proxyUrl(c, `${textServiceUrl}/openai`);
-            const requestBody = await c.req.json();
-            const response = await proxy(targetUrl, {
-                method: c.req.method,
-                headers: {
-                    ...proxyHeaders(c),
-                    ...generationHeaders(c.env.ENTER_TOKEN, c.var.auth.user),
-                },
-                body: JSON.stringify(requestBody),
-            });
-
-            if (!response.ok || !response.body) {
-                throw new HTTPException(
-                    response.status as ContentfulStatusCode,
-                );
-            }
-
-            // add content filter headers if not streaming
-            let contentFilterHeaders = {};
-            if (!c.var.track.streamRequested) {
-                const responseJson = await response.clone().json();
-                const parsedResponse =
-                    CreateChatCompletionResponseSchema.parse(responseJson);
-                contentFilterHeaders =
-                    contentFilterResultsToHeaders(parsedResponse);
-            }
-
-            return new Response(response.body, {
-                headers: {
-                    ...Object.fromEntries(response.headers),
-                    ...contentFilterHeaders,
-                },
-            });
-        },
+        async (c) => handleChatCompletions(c),
+    )
+    // Undocumented /openai alias for backward compatibility (deprecated)
+    .post(
+        "/openai",
+        track("generate.text"),
+        describeRoute({
+            hide: true, // Hide from OpenAPI docs completely
+        }),
+        validator("json", CreateChatCompletionRequestSchema),
+        async (c) => handleChatCompletions(c),
     )
     .get(
         "/text/models",
         describeRoute({
+            tags: ["Text Generation"],
             description: "Get available text models.",
             responses: {
                 200: {
@@ -208,6 +180,7 @@ export const proxyRoutes = new Hono<Env>()
     .get(
         "/text/:prompt",
         describeRoute({
+            tags: ["Text Generation"],
             description: [
                 "Generates text from text prompts.",
                 "",
@@ -258,6 +231,7 @@ export const proxyRoutes = new Hono<Env>()
         "/image/:prompt",
         track("generate.image"),
         describeRoute({
+            tags: ["Image Generation"],
             description: [
                 "Generate an image from a text prompt.",
                 "",
@@ -423,4 +397,51 @@ async function checkBalanceForPaidModel(c: Context<Env & TrackEnv>) {
             "Insufficient pollen balance to use this model",
         );
     }
+}
+
+// Shared handler for OpenAI-compatible chat completions
+async function handleChatCompletions(c: Context<Env & TrackEnv>) {
+    await c.var.auth.requireAuthorization({
+        allowAnonymous:
+            c.var.track.freeModelRequested &&
+            c.env.ALLOW_ANONYMOUS_USAGE,
+    });
+
+    await checkBalanceForPaidModel(c);
+
+    const textServiceUrl =
+        c.env.TEXT_SERVICE_URL || "https://text.pollinations.ai";
+    const targetUrl = proxyUrl(c, `${textServiceUrl}/openai`);
+    const requestBody = await c.req.json();
+    const response = await proxy(targetUrl, {
+        method: c.req.method,
+        headers: {
+            ...proxyHeaders(c),
+            ...generationHeaders(c.env.ENTER_TOKEN, c.var.auth.user),
+        },
+        body: JSON.stringify(requestBody),
+    });
+
+    if (!response.ok || !response.body) {
+        throw new HTTPException(
+            response.status as ContentfulStatusCode,
+        );
+    }
+
+    // add content filter headers if not streaming
+    let contentFilterHeaders = {};
+    if (!c.var.track.streamRequested) {
+        const responseJson = await response.clone().json();
+        const parsedResponse =
+            CreateChatCompletionResponseSchema.parse(responseJson);
+        contentFilterHeaders =
+            contentFilterResultsToHeaders(parsedResponse);
+    }
+
+    return new Response(response.body, {
+        headers: {
+            ...Object.fromEntries(response.headers),
+            ...contentFilterHeaders,
+        },
+    });
 }

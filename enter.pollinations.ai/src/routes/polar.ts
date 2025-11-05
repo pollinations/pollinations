@@ -38,6 +38,7 @@ export const polarRoutes = new Hono<Env>()
     .get(
         "/customer/state",
         describeRoute({
+            tags: ["Auth"],
             description: "Get the polar customer state for the current user.",
             hide: ({ c }) => c?.env.ENVIRONMENT !== "development",
         }),
@@ -53,6 +54,7 @@ export const polarRoutes = new Hono<Env>()
     .get(
         "/customer/events",
         describeRoute({
+            tags: ["Auth"],
             description: "Get usage events associated with the current user.",
             hide: ({ c }) => c?.env.ENVIRONMENT !== "development",
         }),
@@ -68,6 +70,7 @@ export const polarRoutes = new Hono<Env>()
     .get(
         "/customer/portal",
         describeRoute({
+            tags: ["Auth"],
             description: [
                 "Redirects to the current users customer portal by default.",
                 "If `redirect` is set to `false`, returns JSON with the redirect url.",
@@ -96,6 +99,7 @@ export const polarRoutes = new Hono<Env>()
     .get(
         "/checkout/:slug",
         describeRoute({
+            tags: ["Auth"],
             description:
                 "Opens the polar checkout matching the product `slug`.",
             hide: ({ c }) => c?.env.ENVIRONMENT !== "development",

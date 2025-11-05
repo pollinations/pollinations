@@ -58,7 +58,6 @@ export const proxyRoutes = new Hono<Env>()
             allowMethods: ["GET", "POST", "OPTIONS"],
         }),
     )
-    // Public endpoints (no auth required) - must come before auth middleware below
     .get(
         "/openai/models",
         describeRoute({

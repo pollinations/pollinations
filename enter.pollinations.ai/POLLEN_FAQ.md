@@ -2,7 +2,7 @@
 
 ## What is Pollen?
 
-Pollen is our prepaid credit system. **$1 ≈ 1 Pollen** (pricing may evolve). You spend it to make API calls to paid models. Free models always cost 0 Pollen.
+Pollen is our prepaid credit system. **$1 ≈ 1 Pollen** (pricing may evolve). You spend it to make API calls.
 
 ## How do I get Pollen?
 
@@ -23,14 +23,14 @@ Not yet, but we're considering it based on community feedback. Check out the [vo
 
 ## Can I try it without signing up?
 
-Yep! You can use our API with **Anonymous access** — no signup, account, or payment needed. You can call all free models, subject to standard rate limits.
+Not currently. You need to register and use an API key to access our models. All API calls require authentication and consume Pollen based on the model you use.
 
 ## What changes when I register?
 
 Registering itself gives you an account. The real power is unlocked when you **create and use an API key**. Registering is the necessary first step to do that.
 
-- **Using a Front-End Key:** Designed for client-side apps (bound to your domain). Medium rate limits. Access to all models — free models cost 0 Pollen, paid models spend Pollen.
-- **Using a Server-to-Server Key:** For backend apps. No platform rate limits. Access to all models — free models cost 0 Pollen, paid models spend Pollen.
+- **Using a Front-End Key:** Designed for client-side apps (bound to your domain). Medium rate limits. Access to all models, which consume Pollen based on usage.
+- **Using a Server-to-Server Key:** For backend apps. No platform rate limits. Access to all models, which consume Pollen based on usage.
 
 If you register but do not use a key, your rate limits will be the same as an anonymous user.
 
@@ -39,43 +39,31 @@ If you register but do not use a key, your rate limits will be the same as an an
 Registered developers receive daily Pollen grants to support experimentation based on their tier. 
 Pollen grants are always spent before your purchased Pollen balance, and it expires each day.
 
-## How much Pollen do models use?
+## What can I create with Pollen?
 
-Each model costs different amounts of Pollen based on what it costs us to run (**$1 ≈ 1 Pollen**). Here are some real examples:
+Think of Pollen like buying in bulk — the more efficient the model, the more you get! (**$1 ≈ 1 Pollen**)
 
-**Image Generation:**
-- **Flux** — ~8,300 images per Pollen (ultra-efficient!)
-- **Turbo** — ~3,300 images per Pollen
-- **GPTImage** — ~125 images per Pollen (vision-capable, higher quality)
-- **Seedream** — ~33 images per Pollen (premium quality)
+**🎨 Image Generation:**
+- **Flux** — 8,300 images per Pollen (ultra-efficient for bulk!)
+- **Turbo** — 3,300 images per Pollen (fast generation)
+- **GPTImage** — 125 images per Pollen (vision-capable, higher quality)
+- **Seedream** — 33 images per Pollen (premium quality)
 - **Kontext** — 25 images per Pollen (advanced editing)
 
-**Text Generation** *(typical conversation ~600 tokens)*:
-- **Gemini 2.5 Flash** — ~3,800 conversations per Pollen
-- **Mistral Small** — ~5,900 conversations per Pollen
-- **GPT-5 Nano** — ~5,300 conversations per Pollen (vision-capable!)
-- **DeepSeek V3.1** — ~445 conversations per Pollen (advanced reasoning)
-- **Claude Sonnet 4.5** — ~150 conversations per Pollen (top-tier quality)
+**💬 Text Generation** *(~600 token conversations)*:
+- **Mistral Small** — 5,900 conversations per Pollen (super efficient)
+- **GPT-5 Nano** — 5,300 conversations per Pollen (vision-capable!)
+- **Gemini 2.5 Flash** — 3,800 conversations per Pollen (fast & smart)
+- **DeepSeek V3.1** — 445 conversations per Pollen (advanced reasoning)
+- **Claude Sonnet 4.5** — 150 conversations per Pollen (top-tier quality)
 
-*Prices are approximate and based on typical usage. For exact token-based pricing, check the pricing table on your dashboard.*
+**💡 Real-World Examples:**
+- **1 Pollen** = 8,000+ Flux images OR 5,900 Mistral chats
+- **10 Pollen ($10)** = 83,000 Flux images OR 59,000 Mistral chats — enough to power an app for months!
 
-## What can I create with 1 Pollen?
+**Pro tip:** Mix efficient models for high-volume tasks with premium models when quality matters most.
 
-**With just 1 Pollen, you could:**
-- Generate **8,000+ images** with Flux (perfect for bulk generation)
-- Have **5,000+ conversations** with efficient text models like Mistral or Gemini
-- Create **125 high-quality images** with GPTImage (vision + editing capabilities)
-- Process **445 advanced reasoning tasks** with DeepSeek
-- Run **150 conversations** with Claude Sonnet (premium quality responses)
-
-**With 10 Pollen ($10):**
-- **83,000 Flux images** — enough for a large-scale app or service
-- **59,000 Mistral conversations** — power a chatbot for months
-- **1,250 GPTImage creations** — professional image generation with editing
-- **4,450 DeepSeek reasoning sessions** — complex problem solving
-- **1,500 Claude Sonnet chats** — top-tier AI conversations
-
-Mix and match models based on your needs. Use efficient models for high-volume tasks and premium models when quality matters most!
+*For exact token-based pricing, check your [dashboard](https://enter.pollinations.ai).*
 
 ## How does my Pollen wallet work?
 

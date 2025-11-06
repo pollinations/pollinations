@@ -69,13 +69,7 @@ export const frontendKeyRateLimit = createMiddleware<AuthEnv>(async (c, next) =>
     if (pollenPrice) {
         const cost = parseFloat(pollenPrice);
         if (!isNaN(cost) && cost > 0) {
-            c.executionCtx.waitUntil(
-                stub.consumePollen(cost).catch((error) => {
-                    c.var.log.error("Failed to consume pollen: {error}", { error, identifier, cost });
-                    // Note: Failed consumption means bucket won't be updated
-                    // This is acceptable as it errs on the side of allowing requests
-                })
-            );
+            c.executionCtx.waitUntil(stub.consumePollen(cost));
         }
     }
 });

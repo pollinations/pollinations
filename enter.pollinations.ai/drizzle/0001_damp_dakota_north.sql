@@ -1,4 +1,4 @@
-ALTER TABLE `event` ADD `request_path`;--> statement-breakpoint
+ALTER TABLE `event` ADD `request_path` text;--> statement-breakpoint
 ALTER TABLE `event` ADD `api_key_id` text;--> statement-breakpoint
 ALTER TABLE `event` ADD `api_key_type` text;--> statement-breakpoint
 ALTER TABLE `event` ADD `resolved_model_requested` text;--> statement-breakpoint

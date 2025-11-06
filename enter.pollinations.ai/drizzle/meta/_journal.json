@@ -15,6 +15,13 @@
       "when": 1762354921081,
       "tag": "0001_damp_dakota_north",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1762379554907,
+      "tag": "0002_lucky_wendell_rand",
+      "breakpoints": true
     }
   ]
 }

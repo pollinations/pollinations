@@ -57,9 +57,17 @@ export const Route = createFileRoute("/")({
 function RouteComponent() {
     const router = useRouter();
     const { auth, user, customer, apiKeys, tierData } = Route.useLoaderData();
-    const balance =
-        customer?.activeMeters.find((m) => m.meterId === config.pollenMeterId)
-            ?.balance || 0;
+
+    const balances = {
+        pack:
+            customer?.activeMeters.find(
+                (m) => m.meterId === config.pollenPackMeterId,
+            )?.balance || 0,
+        tier:
+            customer?.activeMeters.find(
+                (m) => m.meterId === config.pollenTierMeterId,
+            )?.balance || 0,
+    };
 
     const [isSigningOut, setIsSigningOut] = useState(false);
     const [isActivating, setIsActivating] = useState(false);
@@ -161,7 +169,7 @@ function RouteComponent() {
                     <div className="flex flex-wrap gap-3 items-center">
                         <Button
                             as="button"
-                            color="pink"
+                            color="purple"
                             weight="light"
                             disabled
                         >
@@ -169,13 +177,13 @@ function RouteComponent() {
                         </Button>
                         <Button
                             as="button"
-                            color="blue"
+                            color="purple"
                             weight="light"
                             disabled
                         >
                             + $25
                         </Button>
-                        <Button as="button" color="red" weight="light" disabled>
+                        <Button as="button" color="purple" weight="light" disabled>
                             + $50
                         </Button>
                         <a
@@ -188,7 +196,7 @@ function RouteComponent() {
                         </a>
                     </div>
                 </div>
-                <PollenBalance balance={balance} />
+                <PollenBalance balances={balances} dailyPollen={tierData?.daily_pollen} />
             </div>
             {tierData && (
                 <div className="flex flex-col gap-2">

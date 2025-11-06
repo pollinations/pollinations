@@ -12,7 +12,7 @@ import type { Env } from "../env.ts";
  * - Identifier: pk_{apiKeyId}:ip:{ip} (prevents abuse via key+IP combination)
  * 
  * Design principles:
- * - No negative balance: Hard floor at zero
+ * - Allows negative balance: Creates debt when costs exceed available pollen
  * - Continuous refill: Time-based, not fixed windows
  * - Uses actual pollen costs from completed requests
  * - Separate from user balance checks (polar middleware)
@@ -23,6 +23,7 @@ export class PollenRateLimiter extends DurableObject {
     private lastUpdateTime: number;
     private readonly capacity: number;
     private readonly refillRate: number;
+    private requestInProgress: boolean = false;
     
     constructor(ctx: DurableObjectState, env: CloudflareBindings) {
         super(ctx, env);
@@ -53,8 +54,20 @@ export class PollenRateLimiter extends DurableObject {
         // Refill bucket based on time elapsed
         this.refillBucket(now);
         
+        // Block if another request is in progress (prevents parallel requests)
+        if (this.requestInProgress) {
+            return {
+                allowed: false,
+                remaining: this.currentFill,
+                waitMs: 1000, // Wait 1 second and retry
+            };
+        }
+        
+        // Allow request if bucket has positive pollen
+        // Bucket can go negative after consumption, naturally blocking future requests
         if (this.currentFill > 0) {
-            // Allow request, remaining pollen stays for now (deducted post-request)
+            // Allow request and mark as in progress
+            this.requestInProgress = true;
             return {
                 allowed: true,
                 remaining: this.currentFill,
@@ -62,8 +75,8 @@ export class PollenRateLimiter extends DurableObject {
             };
         }
         
-        // Calculate wait time until bucket has at least 0.001 pollen
-        const pollenNeeded = 0.001; // Minimum pollen to allow request
+        // Calculate wait time until bucket refills to positive
+        const pollenNeeded = 0.001 - this.currentFill; // Need to get above zero
         const msNeeded = Math.ceil(pollenNeeded / this.refillRate);
         
         return {
@@ -85,8 +98,11 @@ export class PollenRateLimiter extends DurableObject {
         // Refill bucket based on time elapsed
         this.refillBucket(now);
         
-        // Deduct cost with hard floor at zero
-        this.currentFill = Math.max(0, this.currentFill - cost);
+        // Deduct cost (can go negative, creating debt that must be repaid by refill)
+        this.currentFill = this.currentFill - cost;
+        
+        // Mark request as complete
+        this.requestInProgress = false;
     }
     
     /**

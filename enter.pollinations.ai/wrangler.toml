@@ -150,3 +150,5 @@ POLAR_PRODUCT_ID_FLOWER = "polar_product_id_flower"
 POLAR_PRODUCT_ID_NECTAR = "polar_product_id_nectar"
 IMAGE_SERVICE_URL = "http://ec2-3-80-56-235.compute-1.amazonaws.com:16384"
 TEXT_SERVICE_URL = "http://ec2-3-80-56-235.compute-1.amazonaws.com:16385"
+POLLEN_BUCKET_CAPACITY = 0.002  # Small capacity allowing ~1-2 mock requests before exhaustion
+POLLEN_REFILL_PER_HOUR = 0.0036  # 0.000001 pollen per second (slow refill for testing)

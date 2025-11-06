@@ -2,22 +2,25 @@ import { createMiddleware } from "hono/factory";
 import type { AuthEnv } from "./auth.ts";
 
 /**
- * Rate limiting middleware using Durable Objects for publishable key requests.
+ * Pollen-based rate limiting middleware using Durable Objects for publishable key requests.
  * 
- * Provides strongly consistent, per-user rate limiting with:
+ * Provides strongly consistent, pollen-based rate limiting with:
  * - Secret API keys (sk_): Skip rate limiting entirely
- * - Publishable keys (pk_): Per-IP rate limiting with Durable Objects
+ * - Publishable keys (pk_): Pollen-based rate limiting with Durable Objects
  * 
- * Benefits over KV approach:
+ * Rate limiting strategy:
+ * - Token bucket with pollen units (not request counts)
+ * - Capacity: 0.15 pollen (allows ~3 average requests burst)
+ * - Refill rate: 0.05 pollen per minute (steady-state throughput)
+ * - Identifier: pk_{apiKeyId}:ip:{ip} (prevents abuse via key + IP)
+ * - Pre-request check (allow if bucket > 0)
+ * - Post-request deduction (actual pollen cost)
+ * 
+ * Benefits over request-count approach:
+ * - Expensive requests consume more pollen
+ * - No cost estimation needed
  * - Strongly consistent (no race conditions)
- * - Handles parallel requests correctly
- * - Faster (in-memory state)
- * - Per-user isolation
- * 
- * Token bucket configuration:
- * - Capacity: 3 tokens
- * - Refill rate: 1 token per 15 seconds
- * - Allows bursts up to 3 requests
+ * - Per (key + IP) isolation
  */
 export const frontendKeyRateLimit = createMiddleware<AuthEnv>(async (c, next) => {
     // Skip rate limiting for secret API keys
@@ -26,25 +29,39 @@ export const frontendKeyRateLimit = createMiddleware<AuthEnv>(async (c, next) =>
         return next();
     }
     
-    // Get user identifier (IP address for publishable keys)
+    // Only apply to publishable keys
+    if (apiKey?.metadata?.keyType !== "publishable") {
+        return next();
+    }
+    
+    // Get composite identifier: pk_{apiKeyId}:ip:{ip}
     const ip = c.req.header("cf-connecting-ip") || "unknown";
-    const userId = `ip:${ip}`;
+    const identifier = `pk_${apiKey.id}:ip:${ip}`;
     
-    // Get Durable Object for this user
-    const id = c.env.RATE_LIMITER.idFromName(userId);
-    const stub = c.env.RATE_LIMITER.get(id);
+    // Get Durable Object for this (key + IP) combination
+    const id = c.env.POLLEN_RATE_LIMITER.idFromName(identifier);
+    const stub = c.env.POLLEN_RATE_LIMITER.get(id) as DurableObjectStub & {
+        checkRateLimit(): Promise<{ allowed: boolean; remaining: number; waitMs: number }>;
+    };
     
-    // Check rate limit
+    // Check pollen rate limit
     const result = await stub.checkRateLimit();
     
-    // Set rate limit headers
-    c.header("RateLimit-Limit", "3");
-    c.header("RateLimit-Remaining", result.remaining.toString());
-    c.header("RateLimit-Reset", new Date(result.resetTime).toISOString());
+    // Set rate limit headers (pollen units) - read capacity from env
+    const capacity = c.env.POLLEN_BUCKET_CAPACITY ?? 0.15;
+    c.header("RateLimit-Limit", capacity.toString());
+    c.header("RateLimit-Remaining", result.remaining.toFixed(4)); // Current pollen
     
     if (!result.allowed) {
+        const retryAfterSeconds = Math.ceil(result.waitMs / 1000);
+        c.header("Retry-After", retryAfterSeconds.toString());
+        
+        const refillRate = c.env.POLLEN_REFILL_PER_MINUTE ?? 0.05;
         return c.json({
-            error: "Rate limit exceeded for publishable key. Client-side keys (pk_*) are limited to 3 requests with 1 token refilling every 15 seconds. Use a secret key (sk_*) for server-side applications to bypass rate limits."
+            error: `Pollen rate limit exceeded for publishable key. Your pollen bucket (${capacity} capacity) is empty. Refill rate: ${refillRate} pollen per minute. Use a secret key (sk_*) for server-side applications to bypass rate limits.`,
+            retryAfterSeconds,
+            pollenCapacity: capacity,
+            pollenRefillRate: `${refillRate} per minute`
         }, 429);
     }
     

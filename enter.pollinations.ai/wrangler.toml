@@ -26,13 +26,13 @@ binding = "KV"
 id = "aa0d0aceb6bd45de93032270c7adf4ab"
 
 [[durable_objects.bindings]]
-name = "RATE_LIMITER"
-class_name = "RateLimiter"
+name = "POLLEN_RATE_LIMITER"
+class_name = "PollenRateLimiter"
 script_name = "pollinations-enter"
 
 [[migrations]]
-tag = "v1"
-new_classes = ["RateLimiter"]
+tag = "v2"
+new_classes = ["PollenRateLimiter"]
 
 [vars]
 ENVIRONMENT = "development"
@@ -47,6 +47,9 @@ POLAR_PRODUCT_ID_FLOWER = "2bfbe9e0-8395-489f-a7a1-6821d835cc08"
 POLAR_PRODUCT_ID_NECTAR = "d67b2a25-c4d7-47fa-9d64-4b2a27f0908f"
 IMAGE_SERVICE_URL = "http://ec2-3-80-56-235.compute-1.amazonaws.com:16384"
 TEXT_SERVICE_URL = "http://ec2-3-80-56-235.compute-1.amazonaws.com:16385"
+# Pollen rate limiter configuration
+POLLEN_BUCKET_CAPACITY = 0.15      # Max pollen in bucket (allows ~3 cheap requests burst)
+POLLEN_REFILL_PER_MINUTE = 0.05    # Pollen refilled per minute (steady-state throughput)
 
 
 [env.local]
@@ -96,8 +99,8 @@ binding = "KV"
 id = "eb4ea5149a5a413db53902bf2b8c1d95"
 
 [[env.staging.durable_objects.bindings]]
-name = "RATE_LIMITER"
-class_name = "RateLimiter"
+name = "POLLEN_RATE_LIMITER"
+class_name = "PollenRateLimiter"
 script_name = "pollinations-enter-staging"
 
 [env.staging.vars]
@@ -129,8 +132,8 @@ binding = "KV"
 id = "aa0d0aceb6bd45de93032270c7adf4ab"
 
 [[env.test.durable_objects.bindings]]
-name = "RATE_LIMITER"
-class_name = "RateLimiter"
+name = "POLLEN_RATE_LIMITER"
+class_name = "PollenRateLimiter"
 
 [env.test.vars]
 ENVIRONMENT = "test"

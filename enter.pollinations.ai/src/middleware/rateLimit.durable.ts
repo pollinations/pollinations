@@ -64,20 +64,18 @@ export const frontendKeyRateLimit = createMiddleware<AuthEnv>(async (c, next) =>
     await next();
     
     // Deduct actual pollen cost after request completes (post-request)
-    // CRITICAL: We AWAIT this instead of waitUntil() to ensure sequential processing
-    // The Durable Object's single-threaded nature ensures the next request's 
-    // checkRateLimit() can only run AFTER this consumePollen() completes
+    // Use waitUntil() - Durable Object's single-threaded nature ensures sequential processing
     const pollenPrice = c.res.headers.get("X-Pollen-Price");
     if (pollenPrice) {
         const cost = parseFloat(pollenPrice);
         if (!isNaN(cost) && cost > 0) {
-            try {
-                await stub.consumePollen(cost);
-            } catch (error) {
-                c.var.log.error("Failed to consume pollen: {error}", { error, identifier, cost });
-            }
+            c.executionCtx.waitUntil(
+                stub.consumePollen(cost).catch((error) => {
+                    c.var.log.error("Failed to consume pollen: {error}", { error, identifier, cost });
+                    // Note: Failed consumption means bucket won't be updated
+                    // This is acceptable as it errs on the side of allowing requests
+                })
+            );
         }
-        // Remove internal header from response
-        c.res.headers.delete("X-Pollen-Price");
     }
 });

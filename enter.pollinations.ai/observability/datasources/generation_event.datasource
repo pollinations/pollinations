@@ -143,7 +143,6 @@ FORWARD_QUERY >
     cache_semantic_similarity,
     cache_semantic_threshold,
     cache_key,
-    defaultValueOfTypeName('LowCardinality(String)') AS error_name,
     defaultValueOfTypeName('LowCardinality(String)') AS error_response_code,
     defaultValueOfTypeName('LowCardinality(String)') AS error_source,
     defaultValueOfTypeName('String') AS error_message,

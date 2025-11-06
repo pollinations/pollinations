@@ -20,7 +20,8 @@ We believe in:
 - Licensed under permissive open source licenses (MIT/Apache-2.0)
 - Contributions welcome!
 
-> **Note:** The AI models we use have their own licenses. Check model licenses before commercial use.
+> - The AI models we use have their own licenses. Check model licenses before commercial use.
+> - This covers the non-commercial site and open-source code. Paid services are governed by the [Myceli.AI Terms](https://enter.pollinations.ai/terms).
 
 ---
 
@@ -105,4 +106,6 @@ This is a community project based in **Estonia**. Disputes are subject to **Esto
 
 ## 📧 Contact
 
-Questions? Reach out at **[legal@myceli.ai](mailto:legal@myceli.ai)**
+Questions? Reach out at **[hi@myceli.ai](mailto:hi@myceli.ai)**
+
+**Operated by:** Myceli.AI OÜ, Estonia

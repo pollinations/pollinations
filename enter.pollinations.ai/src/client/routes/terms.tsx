@@ -48,7 +48,7 @@ function TermsComponent() {
                     <br />
                     Registered address: Tornimäe tn 5, 10145 Tallinn, Estonia
                     <br />
-                    Contact: <a href="mailto:legal@myceli.ai" className="text-blue-600 hover:underline">legal@myceli.ai</a>
+                    Contact: <a href="mailto:hi@myceli.ai" className="text-blue-600 hover:underline">hi@myceli.ai</a>
                     <br />
                     Supervisory authority: Estonian Data Protection Inspectorate
                 </p>

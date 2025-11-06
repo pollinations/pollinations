@@ -52,7 +52,7 @@ Where data leaves the EEA, we use approved safeguards (e.g., **EU Standard Contr
 
 ### 9) Your rights (GDPR)
 
-Access, correction, deletion, restriction, portability, **objection** to legitimate-interest processing, and **withdrawal of consent** (cookies/marketing). You can complain to your local authority or the Estonian Data Protection Inspectorate. **Contact:** [legal@myceli.ai](mailto:legal@myceli.ai).
+Access, correction, deletion, restriction, portability, **objection** to legitimate-interest processing, and **withdrawal of consent** (cookies/marketing). You can complain to your local authority or the Estonian Data Protection Inspectorate. **Contact:** [hi@myceli.ai](mailto:hi@myceli.ai).
 
 ### 10) Security
 

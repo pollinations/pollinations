@@ -10,4 +10,4 @@
 
 **Sharing:** service providers under confidentiality; authorities when required by law. We **do not sell** personal data.
 
-**Rights & contact:** access, rectification, deletion, objection, portability, and withdrawal of consent (where used). Contact **[legal@myceli.ai](mailto:legal@myceli.ai)**. For full details, see the **[Myceli.AI Privacy Policy](https://enter.pollinations.ai/terms)**.
+**Rights & contact:** access, rectification, deletion, objection, portability, and withdrawal of consent (where used). Contact **[hi@myceli.ai](mailto:hi@myceli.ai)**. For full details, see the **[Myceli.AI Terms & Privacy](https://enter.pollinations.ai/terms)**.

@@ -13,7 +13,7 @@ export const Pricing: FC = () => {
             <div className="flex flex-col sm:flex-row justify-between gap-3">
                 <h2 className="font-bold flex-1">Pricing</h2>
             </div>
-            <div className="bg-emerald-100 rounded-2xl p-8 border border-pink-300 space-y-8 overflow-x-auto md:overflow-x-visible">
+            <div className="bg-amber-50/30 rounded-2xl p-8 border border-amber-300 space-y-8 overflow-x-auto md:overflow-x-visible">
                 <div className="bg-gradient-to-r from-purple-100 to-pink-100 rounded-xl p-4 border-2 border-purple-300">
                     <p className="text-sm font-medium text-purple-900">
                         ✨ <span className="font-bold">Beta vibes!</span> Our pricing is still cooking and might change as we make things even better for you 💜 

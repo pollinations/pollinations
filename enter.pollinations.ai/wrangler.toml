@@ -103,6 +103,11 @@ name = "POLLEN_RATE_LIMITER"
 class_name = "PollenRateLimiter"
 script_name = "pollinations-enter-staging"
 
+[[env.staging.migrations]]
+tag = "v2"
+deleted_classes = ["RateLimiter"]
+new_classes = ["PollenRateLimiter"]
+
 [env.staging.vars]
 ENVIRONMENT = "staging"
 LOG_LEVEL = "debug"

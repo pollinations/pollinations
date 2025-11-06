@@ -291,9 +291,13 @@ async function sendTinybirdEvents(
 function flattenBalances(balances: Record<string, number> | null) {
     if (!balances) return {};
     return Object.fromEntries(
-        Object.entries(balances).map(([slug, balance]) => [
-            `${slug}Balance`,
-            balance,
-        ]),
+        Object.entries(balances).map(([slug, balance]) => {
+            const meterType = slug.split(":").at(-1) || "unknown";
+            return [`pollen${capitalize(meterType)}Balance`, balance];
+        }),
     );
+}
+
+function capitalize(str: string) {
+    return `${str.charAt(0).toUpperCase()}${str.slice(1)}`;
 }

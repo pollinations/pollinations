@@ -1,15 +1,8 @@
-import { execSync } from "node:child_process";
-import { dirname, join } from "node:path";
-import { fileURLToPath } from "node:url";
 import { Polar } from "@polar-sh/sdk";
 import { command, number, run, string, boolean } from "@drizzle-team/brocli";
 import { inspect } from "node:util";
 
-const __dirname = dirname(fileURLToPath(import.meta.url));
-
-function secretsFile(environment: string) {
-    return join(__dirname, "..", `.encrypted.${environment}.env`);
-}
+const VERSION = "v1";
 
 const polarAccessToken = process.env["POLAR_ACCESS_TOKEN"];
 if (!polarAccessToken) {
@@ -25,14 +18,15 @@ function createPolarClient(server: "sandbox" | "production") {
 
 type CreateMeterOptions = {
     name: string;
-    slug: string;
+    type: "tier" | "pack";
     priority: number;
 };
 
 async function createPollenMeter(
     polar: Polar,
-    { name, slug, priority }: CreateMeterOptions,
+    { name, type, priority }: CreateMeterOptions,
 ) {
+    const slug = `${VERSION}:meter:${type}`;
     return await polar.meters.create({
         name,
         filter: {
@@ -73,14 +67,15 @@ async function createPollenMeter(
 
 type UpdateMeterOptions = {
     id: string;
-    slug: string;
+    type: "tier" | "pack";
     priority: number;
 };
 
 async function updatePollenMeter(
     polar: Polar,
-    { id, slug, priority }: UpdateMeterOptions,
+    { id, type, priority }: UpdateMeterOptions,
 ) {
+    const slug = `${VERSION}:meter:${type}`;
     return await polar.meters.update({
         id,
         meterUpdate: {
@@ -121,7 +116,70 @@ async function updatePollenMeter(
     });
 }
 
-const list = command({
+type CreatePollenTierBenefitOptions = {
+    amount: number;
+    meterId: string;
+};
+
+async function createPollenTierBenefit(
+    polar: Polar,
+    { amount, meterId }: CreatePollenTierBenefitOptions,
+) {
+    if (amount % 1 !== 0) {
+        throw new Error("Amount must be an integer");
+    }
+    const formattedAmount = amount.toLocaleString("en-US", {
+        maximumFractionDigits: 0,
+    });
+    return await polar.benefits.create({
+        type: "meter_credit",
+        description: `Grant ${formattedAmount} pollen without rollover.`,
+        properties: {
+            meterId,
+            units: amount,
+            rollover: false,
+        },
+        metadata: {
+            slug: `${VERSION}:benefit:tier:${formattedAmount}`,
+        },
+    });
+}
+
+type CreatePollenPackProductOptions = {
+    name: string;
+    amount: number;
+    benefits: string[];
+};
+
+async function createPollenTierProductAndBenefit(
+    polar: Polar,
+    { name, amount, benefits }: CreatePollenPackProductOptions,
+) {
+    if (amount % 1 !== 0) {
+        throw new Error("Amount must be an integer");
+    }
+    const formattedAmount = amount.toLocaleString("en-US", {
+        maximumFractionDigits: 0,
+    });
+    const product = await polar.products.create({
+        name,
+        description: `Grant ${formattedAmount} pollen per day, without rollover.`,
+        prices: [{ amountType: "free" }],
+        recurringInterval: "day",
+        metadata: {
+            slug: `${VERSION}:product:tier:${formattedAmount}`,
+        },
+    });
+    const updatedProduct = await polar.products.updateBenefits({
+        id: product.id,
+        productBenefitsUpdate: {
+            benefits,
+        },
+    });
+    return updatedProduct;
+}
+
+const meterList = command({
     name: "list",
     options: {
         env: string().enum("staging", "production").default("staging"),
@@ -138,11 +196,11 @@ const list = command({
     },
 });
 
-const update = command({
+const meterUpdate = command({
     name: "update",
     options: {
         id: string().required(),
-        slug: string().required(),
+        type: string().enum("tier", "pack").required(),
         priority: number().required(),
         env: string().enum("staging", "production").default("staging"),
     },
@@ -151,18 +209,18 @@ const update = command({
         const polar = createPolarClient(server);
         const response = await updatePollenMeter(polar, {
             id: opts.id,
-            slug: opts.slug,
+            type: opts.type,
             priority: opts.priority,
         });
         console.log(inspect(response, false, 1000));
     },
 });
 
-const create = command({
+const meterCreate = command({
     name: "create",
     options: {
         name: string().required(),
-        slug: string().required(),
+        type: string().enum("tier", "pack").required(),
         priority: number().required(),
         env: string().enum("staging", "production").default("staging"),
     },
@@ -171,11 +229,45 @@ const create = command({
         const polar = createPolarClient(server);
         const response = await createPollenMeter(polar, {
             name: opts.name,
-            slug: opts.slug,
+            type: opts.type,
             priority: opts.priority,
         });
         console.log(inspect(response, false, 1000));
     },
 });
 
-run([update, list, create]);
+const productCreate = command({
+    name: "create",
+    options: {
+        name: string().required(),
+        amount: number().required(),
+        benefits: string().required(),
+        env: string().enum("staging", "production").default("staging"),
+    },
+    handler: async (opts) => {
+        const server = opts.env === "production" ? "production" : "sandbox";
+        const polar = createPolarClient(server);
+        const benefits = opts.benefits
+            .split(",")
+            .map((benefit) => benefit.trim());
+        const response = await createPollenTierProductAndBenefit(polar, {
+            name: opts.name,
+            amount: opts.amount,
+            benefits,
+        });
+        console.log(inspect(response, false, 1000));
+    },
+});
+
+const commands = [
+    command({
+        name: "meter",
+        subcommands: [meterUpdate, meterList, meterCreate],
+    }),
+    command({
+        name: "product",
+        subcommands: [productCreate],
+    }),
+];
+
+run(commands);

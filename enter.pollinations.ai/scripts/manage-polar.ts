@@ -188,7 +188,7 @@ const meterList = command({
     handler: async (opts) => {
         const server = opts.env === "production" ? "production" : "sandbox";
         const polar = createPolarClient(server);
-        const response = await polar.meters.list({});
+        const response = await polar.meters.list({ limit: 1000 });
         const meters = response.result.items.filter(
             (meter) => meter.archivedAt === null || opts.showArchived,
         );

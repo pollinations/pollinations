@@ -19,16 +19,16 @@ export const PollenBalance: FC<PollenBalanceProps> = ({ balances, dailyPollen = 
     const packPercentage = totalPollen > 0 ? (packPollen / totalPollen) * 100 : 0;
     
     return (
-        <div className="bg-emerald-100 rounded-2xl p-8 border border-purple-300">
+        <div className="bg-emerald-100 rounded-2xl p-4 sm:p-8 border border-purple-300">
             <div className="flex flex-row justify-center text-center pb-1">
                 {/* Combined Pollen Gauge */}
-                <div className="flex flex-col items-center gap-4">
+                <div className="flex flex-col items-center gap-4 w-full">
                     {/* Pollen amount above gauge */}
-                    <span className="text-6xl font-bold text-green-950 tabular-nums">
+                    <span className="text-4xl sm:text-5xl md:text-6xl font-bold text-green-950 tabular-nums">
                         {totalPollen.toFixed(2)} pollen
                     </span>
                     {/* Gauge */}
-                    <div className="relative w-[500px] h-8 bg-gray-200 rounded-full overflow-hidden border border-purple-400">
+                    <div className="relative w-full max-w-[500px] h-8 bg-gray-200 rounded-full overflow-hidden border border-purple-400">
                         {/* Pack Pollen - Soft purple for paid */}
                         <div 
                             className="absolute inset-y-0 left-0 bg-purple-200 transition-all duration-500 ease-out"

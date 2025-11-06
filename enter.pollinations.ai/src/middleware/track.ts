@@ -606,7 +606,7 @@ const ContentFilterResultHeadersSchema = z
     }));
 
 type ErrorData = {
-    errorCode?: string;
+    errorResponseCode?: string;
     errorSource?: string;
     errorMessage?: string;
     errorStack?: string;
@@ -626,7 +626,7 @@ function collectErrorData(response: Response, error?: Error): ErrorData {
         });
     }
     return {
-        errorCode: getErrorCode(status || response.status),
+        errorResponseCode: getErrorCode(status || response.status),
         errorSource: source,
         errorMessage: error?.message,
         errorStack: error?.stack,

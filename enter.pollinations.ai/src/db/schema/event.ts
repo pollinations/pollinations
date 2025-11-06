@@ -41,7 +41,7 @@ export const event = sqliteTable("event", {
 
     // Request identification and timing
     requestId: text("request_id").notNull(),
-    requestPath: text("request_path").notNull(),
+    requestPath: text("request_path"),
     startTime: integer("start_time", { mode: "timestamp_ms" }).notNull(),
     endTime: integer("end_time", { mode: "timestamp_ms" }).notNull(),
     responseTime: real("response_time"),

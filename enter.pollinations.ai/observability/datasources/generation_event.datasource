@@ -22,7 +22,7 @@ SCHEMA >
 -- Meter
 `selected_meter_id`     String                  `json:$.selectedMeterId` DEFAULT 'undefined',
 `selected_meter_slug`   LowCardinality(String)  `json:$.selectedMeterSlug` DEFAULT 'undefined',
-`balances`              Map(String, Float64)    `json:$.balances` DEFAULT '{}',
+`balances`              Map(String, Float64)    `json:$.balances` DEFAULT map(),
 
 -- Referrer
 `referrer_url`    String                 `json:$.referrerUrl` DEFAULT 'undefined',

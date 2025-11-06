@@ -11,7 +11,7 @@ import type { AuthEnv } from "./auth.ts";
  * Rate limiting strategy:
  * - Token bucket with pollen units (not request counts)
  * - Capacity: 0.15 pollen (allows ~3 average requests burst)
- * - Refill rate: 0.05 pollen per minute (steady-state throughput)
+ * - Refill rate: 1/60 pollen per minute = 1 pollen per hour (steady-state throughput)
  * - Identifier: pk_{apiKeyId}:ip:{ip} (prevents abuse via key + IP)
  * - Pre-request check (allow if bucket > 0)
  * - Post-request deduction (actual pollen cost)
@@ -56,12 +56,12 @@ export const frontendKeyRateLimit = createMiddleware<AuthEnv>(async (c, next) =>
         const retryAfterSeconds = Math.ceil(result.waitMs / 1000);
         c.header("Retry-After", retryAfterSeconds.toString());
         
-        const refillRate = c.env.POLLEN_REFILL_PER_MINUTE ?? 0.05;
+        const refillRate = c.env.POLLEN_REFILL_PER_MINUTE ?? (1/60);
         return c.json({
-            error: `Pollen rate limit exceeded for publishable key. Your pollen bucket (${capacity} capacity) is empty. Refill rate: ${refillRate} pollen per minute. Use a secret key (sk_*) for server-side applications to bypass rate limits.`,
+            error: `Pollen rate limit exceeded for publishable key. Your pollen bucket (${capacity} capacity) is empty. Refill rate: ${refillRate.toFixed(6)} pollen per minute (1 pollen per hour). Use a secret key (sk_*) for server-side applications to bypass rate limits.`,
             retryAfterSeconds,
             pollenCapacity: capacity,
-            pollenRefillRate: `${refillRate} per minute`
+            pollenRefillRate: `${refillRate.toFixed(6)} per minute (1 per hour)`
         }, 429);
     }
     

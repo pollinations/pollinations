@@ -7,7 +7,7 @@ import type { Env } from "../env.ts";
  * Implements a pollen-based token bucket rate limiter:
  * - Bucket holds pollen units (not request counts)
  * - Capacity: 0.15 pollen (allows ~3 average requests burst)
- * - Refill rate: 0.05 pollen per minute (steady-state throughput)
+ * - Refill rate: 1/60 pollen per minute = 1 pollen per hour (steady-state throughput)
  * - Actual cost deducted post-request (no estimation needed)
  * - Identifier: pk_{apiKeyId}:ip:{ip} (prevents abuse via key+IP combination)
  * 

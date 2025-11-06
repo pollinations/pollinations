@@ -18,7 +18,7 @@ declare namespace Cloudflare {
 		POLAR_PRODUCT_ID_NECTAR: "d67b2a25-c4d7-47fa-9d64-4b2a27f0908f" | "dfe978ca-8e07-41fa-992a-ae19ab96e66c" | "polar_product_id_nectar";
 		IMAGE_SERVICE_URL: "http://ec2-3-80-56-235.compute-1.amazonaws.com:16384" | "http://localhost:16384";
 		TEXT_SERVICE_URL: "http://ec2-3-80-56-235.compute-1.amazonaws.com:16385" | "http://localhost:16385";
-		POLLEN_BUCKET_CAPACITY: 0.15;
+		POLLEN_BUCKET_CAPACITY: 0.1;
 		POLLEN_REFILL_PER_HOUR: 1.0;
 		BETTER_AUTH_SECRET: string;
 		POLAR_ACCESS_TOKEN: string;

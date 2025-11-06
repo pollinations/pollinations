@@ -6,7 +6,7 @@ import type { Env } from "../env.ts";
  * 
  * Implements a pollen-based token bucket rate limiter:
  * - Bucket holds pollen units (not request counts)
- * - Capacity: 0.15 pollen (allows ~3 average requests burst)
+ * - Capacity: 0.1 pollen (allows ~2 average requests burst)
  * - Refill rate: 1/60 pollen per minute = 1 pollen per hour (steady-state throughput)
  * - Actual cost deducted post-request (no estimation needed)
  * - Identifier: pk_{apiKeyId}:ip:{ip} (prevents abuse via key+IP combination)
@@ -28,7 +28,7 @@ export class PollenRateLimiter extends DurableObject {
         super(ctx, env);
         
         // Read configuration from environment variables with fallbacks
-        this.capacity = env.POLLEN_BUCKET_CAPACITY ?? 0.15;
+        this.capacity = env.POLLEN_BUCKET_CAPACITY ?? 0.1;
         const refillPerHour = env.POLLEN_REFILL_PER_HOUR ?? 1.0;
         this.refillRate = refillPerHour / 3600000; // Convert per-hour to per-millisecond
         

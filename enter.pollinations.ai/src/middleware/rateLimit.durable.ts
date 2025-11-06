@@ -10,7 +10,7 @@ import type { AuthEnv } from "./auth.ts";
  * 
  * Rate limiting strategy:
  * - Token bucket with pollen units (not request counts)
- * - Capacity: 0.15 pollen (allows ~3 average requests burst)
+ * - Capacity: 0.1 pollen (allows ~2 average requests burst)
  * - Refill rate: 1/60 pollen per minute = 1 pollen per hour (steady-state throughput)
  * - Identifier: pk_{apiKeyId}:ip:{ip} (prevents abuse via key + IP)
  * - Pre-request check (allow if bucket > 0)
@@ -48,7 +48,7 @@ export const frontendKeyRateLimit = createMiddleware<AuthEnv>(async (c, next) =>
     const result = await stub.checkRateLimit();
     
     // Set rate limit headers (pollen units) - read capacity from env
-    const capacity = c.env.POLLEN_BUCKET_CAPACITY ?? 0.15;
+    const capacity = c.env.POLLEN_BUCKET_CAPACITY ?? 0.1;
     c.header("RateLimit-Limit", capacity.toString());
     c.header("RateLimit-Remaining", result.remaining.toFixed(4)); // Current pollen
     

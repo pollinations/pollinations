@@ -7,7 +7,7 @@ const endpoint = "http://localhost:3000/api/generate/v1/chat/completions";
 const log = getLogger(["test", "rate-limit"]);
 
 // Get capacity from environment (same as production code)
-const EXPECTED_CAPACITY = parseFloat(process.env.POLLEN_BUCKET_CAPACITY || "0.15");
+const EXPECTED_CAPACITY = parseFloat(process.env.POLLEN_BUCKET_CAPACITY || "0.1");
 
 test("pollen limiter - verifies pollen-based headers", { timeout: 30000 }, async ({ auth, sessionToken }) => {
     // Create a publishable key for testing

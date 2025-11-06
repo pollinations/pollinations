@@ -501,7 +501,11 @@ def format_review_for_discord(message_content: str, pr_info: Dict) -> List[Dict]
     pr_url = pr_info.get('url', '#')
     pr_author = pr_info.get('author', 'Unknown')
     pr_creator = pr_info.get('created_by', pr_author)
-    pr_merger = pr_info.get('merged_by', pr_author)
+    pr_merger = pr_info.get('merged_by', None)
+    if isinstance(pr_merger, dict):
+        pr_merger = pr_merger.get('login', 'Unknown')
+    elif not pr_merger:
+        pr_merger = 'Unknown'
     pr_link = f"[PR #{pr_number}](<{pr_url}>)"
     creator_link = f"[{pr_creator if pr_creator != 'Unknown' else 'Some Pollinations Contributor'}](<https://github.com/{pr_creator}>)"
     merger_link = f"[{pr_merger if pr_merger != 'Unknown' else 'Some Pollinations Contributor'}](<https://github.com/{pr_merger}>)"

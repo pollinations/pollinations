@@ -29,8 +29,8 @@ export class PollenRateLimiter extends DurableObject {
         
         // Read configuration from environment variables with fallbacks
         this.capacity = env.POLLEN_BUCKET_CAPACITY ?? 0.15;
-        const refillPerMinute = env.POLLEN_REFILL_PER_MINUTE ?? 0.05;
-        this.refillRate = refillPerMinute / 60000; // Convert per-minute to per-millisecond
+        const refillPerHour = env.POLLEN_REFILL_PER_HOUR ?? 1.0;
+        this.refillRate = refillPerHour / 3600000; // Convert per-hour to per-millisecond
         
         // Start with full capacity
         this.currentFill = this.capacity;
@@ -116,7 +116,7 @@ export class PollenRateLimiter extends DurableObject {
         return {
             currentFill: this.currentFill,
             capacity: this.capacity,
-            refillRate: this.refillRate * 60000, // Convert to per-minute for readability
+            refillRate: this.refillRate * 3600000, // Convert to per-hour for readability
         };
     }
     

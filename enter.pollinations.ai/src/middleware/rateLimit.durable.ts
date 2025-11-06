@@ -56,12 +56,12 @@ export const frontendKeyRateLimit = createMiddleware<AuthEnv>(async (c, next) =>
         const retryAfterSeconds = Math.ceil(result.waitMs / 1000);
         c.header("Retry-After", retryAfterSeconds.toString());
         
-        const refillRate = c.env.POLLEN_REFILL_PER_MINUTE ?? (1/60);
+        const refillRate = c.env.POLLEN_REFILL_PER_HOUR ?? 1.0;
         return c.json({
-            error: `Pollen rate limit exceeded for publishable key. Your pollen bucket (${capacity} capacity) is empty. Refill rate: ${refillRate.toFixed(6)} pollen per minute (1 pollen per hour). Use a secret key (sk_*) for server-side applications to bypass rate limits.`,
+            error: `Pollen rate limit exceeded for publishable key. Your pollen bucket (${capacity} capacity) is empty. Refill rate: ${refillRate} pollen per hour. Use a secret key (sk_*) for server-side applications to bypass rate limits.`,
             retryAfterSeconds,
             pollenCapacity: capacity,
-            pollenRefillRate: `${refillRate.toFixed(6)} per minute (1 per hour)`
+            pollenRefillRate: `${refillRate} per hour`
         }, 429);
     }
     

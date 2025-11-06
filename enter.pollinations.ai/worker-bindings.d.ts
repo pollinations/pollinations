@@ -19,7 +19,7 @@ declare namespace Cloudflare {
 		IMAGE_SERVICE_URL: "http://ec2-3-80-56-235.compute-1.amazonaws.com:16384" | "http://localhost:16384";
 		TEXT_SERVICE_URL: "http://ec2-3-80-56-235.compute-1.amazonaws.com:16385" | "http://localhost:16385";
 		POLLEN_BUCKET_CAPACITY: 0.15;
-		POLLEN_REFILL_PER_MINUTE: 0.05;
+		POLLEN_REFILL_PER_HOUR: 1.0;
 		BETTER_AUTH_SECRET: string;
 		POLAR_ACCESS_TOKEN: string;
 		GITHUB_CLIENT_ID: string;

@@ -7,8 +7,8 @@ export const APP_CONFIGS = {
   enter: {
     name: 'enter.pollinations.ai',
     outputDir: 'enter.pollinations.ai/public',
-    sourceSvg: '../../assets/logo.svg',
-    ogSourceSvg: '../../assets/logo-text.svg',
+    sourceSvg: '../assets/logo.svg',
+    ogSourceSvg: '../assets/logo-text.svg',
     themeColor: '#5b2dd8',
     seo: {
       title: 'pollinations.ai - beta',
@@ -20,8 +20,8 @@ export const APP_CONFIGS = {
   pollinations: {
     name: 'pollinations.ai',
     outputDir: 'pollinations.ai/public',
-    sourceSvg: '../../assets/logo.svg',
-    ogSourceSvg: '../../assets/logo-text.svg',
+    sourceSvg: '../assets/logo.svg',
+    ogSourceSvg: '../assets/logo-text.svg',
     themeColor: '#d6379e',
     seo: {
       title: 'pollinations.ai',
@@ -33,14 +33,14 @@ export const APP_CONFIGS = {
   auth: {
     name: 'auth.pollinations.ai',
     outputDir: 'auth.pollinations.ai/media',
-    sourceSvg: '../../assets/logo.svg',
+    sourceSvg: '../assets/logo.svg',
     themeColor: '#e67e00'
   },
   
   image: {
     name: 'image.pollinations.ai',
     outputDir: 'image.pollinations.ai',
-    sourceSvg: '../../assets/logo-text.svg',
+    sourceSvg: '../assets/logo-text.svg',
     watermark: {
       enabled: true,
       width: 200,

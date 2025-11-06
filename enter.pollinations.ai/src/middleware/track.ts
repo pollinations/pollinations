@@ -145,9 +145,15 @@ export const track = (eventType: EventType) =>
                     responseTracking,
                     errorTracking: collectErrorData(response, c.get("error")),
                 });
+                
+                // Set internal header for rate limiter to read pollen price
+                if (responseTracking.price?.totalPrice) {
+                    c.header("X-Pollen-Price", responseTracking.price.totalPrice.toString());
+                }
                 log.trace("Event: {event}", { event });
                 const db = drizzle(c.env.DB);
                 await storeEvents(db, c.var.log, [event]);
+                
                 // process events immediately in development/testing
                 if (["test", "development"].includes(c.env.ENVIRONMENT))
                     await processEvents(db, c.var.log, {

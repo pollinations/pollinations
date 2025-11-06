@@ -71,8 +71,8 @@ app.onError(handleError);
 
 export type AppRoutes = typeof app;
 
-// Export Durable Object for rate limiting
-export { RateLimiter } from "./durable-objects/RateLimiter.ts";
+// Export Durable Object for pollen-based rate limiting
+export { PollenRateLimiter } from "./durable-objects/PollenRateLimiter.ts";
 
 export default {
     fetch: app.fetch,

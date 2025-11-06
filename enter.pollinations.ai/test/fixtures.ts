@@ -5,6 +5,7 @@ import { SELF } from "cloudflare:test";
 import { createMockPolar } from "./mocks/polar.ts";
 import { createMockGithub } from "./mocks/github.ts";
 import { createMockTinybird } from "./mocks/tinybird.ts";
+import { createMockTextService } from "./mocks/textService.ts";
 import { teardownFetchMock, setupFetchMock } from "./mocks/fetch.ts";
 
 const createAuth = () =>
@@ -22,6 +23,7 @@ type Fixtures = {
         github: ReturnType<typeof createMockGithub>;
         polar: ReturnType<typeof createMockPolar>;
         tinybird: ReturnType<typeof createMockTinybird>;
+        textService: ReturnType<typeof createMockTextService>;
     };
     auth: ReturnType<typeof createAuth>;
     sessionToken: string;
@@ -37,16 +39,19 @@ export const test = base.extend<Fixtures>({
         const mockPolar = createMockPolar();
         const mockTinybird = createMockTinybird();
         const mockGithub = createMockGithub();
+        const mockTextService = createMockTextService();
         const mockHandlers = {
             ...mockGithub.handlerMap,
             ...mockPolar.handlerMap,
             ...mockTinybird.handlerMap,
+            ...mockTextService.handlerMap,
         };
         setupFetchMock(mockHandlers, { logRequests: true });
         await use({
             github: mockGithub,
             polar: mockPolar,
             tinybird: mockTinybird,
+            textService: mockTextService,
         });
         await teardownFetchMock();
     },

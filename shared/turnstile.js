@@ -74,7 +74,7 @@ export function needsTurnstileVerification(origin, method) {
 		const mainDomains = [
 			"text.pollinations.ai",
 			"image.pollinations.ai",
-			"auth.pollinations.ai",
+			"enter.pollinations.ai",
 		];
 		const hostname = new URL(origin).hostname;
 		return !mainDomains.includes(hostname);

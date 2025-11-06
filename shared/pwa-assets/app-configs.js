@@ -30,13 +30,6 @@ export const APP_CONFIGS = {
     }
   },
   
-  auth: {
-    name: 'auth.pollinations.ai',
-    outputDir: 'auth.pollinations.ai/media',
-    sourceSvg: '../assets/logo.svg',
-    themeColor: '#e67e00'
-  },
-  
   image: {
     name: 'image.pollinations.ai',
     outputDir: 'image.pollinations.ai',

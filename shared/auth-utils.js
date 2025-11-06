@@ -52,59 +52,17 @@ export function isValidToken(token, validTokens) {
 }
 
 /**
- * Check if a referrer domain is registered by any user in the auth.pollinations.ai database
+ * Check if a referrer domain is registered by any user
+ * TODO: Migrate to enter.pollinations.ai referrer validation endpoint
  * @param {string} referrer - The referrer URL to check
  * @returns {Promise<{userId: string, username: string}|null>} User info if domain is registered, null otherwise
  */
 async function _checkReferrerInDb(referrer) {
 	if (!referrer) return null;
 
-	try {
-		// Extract domain from referrer URL if it's a full URL
-		let domain = referrer;
-		if (referrer.startsWith("http://") || referrer.startsWith("https://")) {
-			try {
-				const urlObj = new URL(referrer);
-				domain = urlObj.hostname;
-			} catch (error) {
-				// If parsing fails, use the raw referrer value
-				referrerLog("Failed to parse referrer as URL, using raw value:", error);
-			}
-		}
-
-		referrerLog(
-			`Checking if domain ${domain} is registered in auth.pollinations.ai database`,
-		);
-
-		// Query the auth.pollinations.ai API to check if the domain is registered by any user
-		const apiUrl = `https://auth.pollinations.ai/api/validate-referrer?referrer=${encodeURIComponent(domain)}`;
-		referrerLog(`Calling API: ${apiUrl}`);
-
-		const response = await fetch(apiUrl);
-		if (!response.ok) {
-			referrerLog(`API returned error status: ${response.status}`);
-			return null;
-		}
-
-		const data = await response.json();
-		referrerLog("API response:", data);
-
-		if (data && data.valid && data.user_id) {
-			referrerLog(
-				`✅ Domain ${domain} is registered by user ${data.user_id} (${data.username})`,
-			);
-			return {
-				userId: data.user_id,
-				username: data.username,
-			};
-		} else {
-			referrerLog(`❌ Domain ${domain} is not registered in the database`);
-			return null;
-		}
-	} catch (error) {
-		referrerLog("Error checking referrer in database:", error);
-		return null;
-	}
+	// TODO: Implement referrer validation via enter.pollinations.ai
+	referrerLog("Referrer validation disabled - auth.pollinations.ai removed, awaiting enter.pollinations.ai migration");
+	return null;
 }
 
 // Memoized version with 30 second TTL
@@ -114,7 +72,8 @@ export const checkReferrerInDb = memoizee(_checkReferrerInDb, {
 });
 
 /**
- * Validate token against the auth.pollinations.ai API.
+ * Validate token against the authentication API.
+ * TODO: Migrate to enter.pollinations.ai token validation endpoint
  * @param {string} token - The token to validate.
  * @returns {Promise<{userId: string, username: string}|null>} User info if valid, null otherwise.
  */
@@ -130,54 +89,11 @@ async function _validateApiTokenDb(token) {
 	}
 
 	tokenLog(
-		"validateApiTokenDb: Starting validation for token: %s",
-		maskedToken,
+		"validateApiTokenDb: Token validation disabled - auth.pollinations.ai removed",
 	);
 
-	try {
-		const apiUrl = `https://auth.pollinations.ai/api/validate-token/${encodeURIComponent(token)}`;
-		tokenLog("validateApiTokenDb: Making API call to auth.pollinations.ai");
-
-		// Call the auth.pollinations.ai API to validate the token using a simple GET request
-		const response = await fetch(apiUrl);
-
-		tokenLog(
-			"validateApiTokenDb: API response status: %d %s",
-			response.status,
-			response.statusText,
-		);
-
-		if (!response.ok) {
-			tokenLog(
-				"validateApiTokenDb: API returned non-OK status: %d",
-				response.status,
-			);
-			return null;
-		}
-
-		const data = await response.json();
-		tokenLog("validateApiTokenDb: API response data: %o", data);
-
-		if (data && data.valid && data.userId) {
-			tokenLog(
-				"validateApiTokenDb: Valid token for user: %s",
-				data.userId,
-			);
-			return {
-				userId: data.userId,
-				username: data.username || data.userId, // Use userId as fallback if username not provided
-			};
-		} else {
-			tokenLog(
-				"validateApiTokenDb: Token validation failed - invalid token or missing userId",
-			);
-			return null;
-		}
-	} catch (error) {
-		tokenLog("validateApiTokenDb: Error during API call: %s", error.message);
-		console.error("Error validating token with auth API:", error);
-		return null;
-	}
+	// TODO: Implement token validation via enter.pollinations.ai
+	return null;
 }
 
 // Memoized version with 30 second TTL
@@ -215,10 +131,11 @@ export function isDomainWhitelisted(referrer, whitelist) {
 
 /**
  * Check if a domain is allowed for a specific user in the auth database.
+ * TODO: Migrate to enter.pollinations.ai domain validation
  * @param {string} userId - The user ID.
  * @param {string} referrer - The referrer URL to check.
  * @param {D1Database} db - The D1 Database instance.
- * @param {function} isDomainAllowedDb - The function to check domain against DB (e.g., from auth.pollinations.ai/src/db.ts).
+ * @param {function} isDomainAllowedDb - The function to check domain against DB.
  * @returns {Promise<boolean>} Whether the domain is allowed for the user.
  */
 export async function isUserDomainAllowedFromDb(
@@ -284,7 +201,7 @@ export async function shouldBypassQueue(req) {
 	// 1️⃣ Token-based authentication
 	if (token) {
 		tokenLog("Validating token: %s", debugInfo.token);
-		tokenLog("Checking token against auth.pollinations.ai API");
+		tokenLog("Token validation via enter.pollinations.ai not yet implemented");
 		const tokenResult = await validateApiTokenDb(token);
 		if (tokenResult && tokenResult.userId) {
 			tokenLog(
@@ -318,7 +235,7 @@ export async function shouldBypassQueue(req) {
 		const refStr = String(ref);
 
 		referrerLog(
-			"Checking if referrer is registered in auth database: %s",
+			"Checking if referrer is registered (currently disabled): %s",
 			refStr,
 		);
 		const dbReferrerResult = await checkReferrerInDb(refStr);
@@ -346,7 +263,7 @@ export async function shouldBypassQueue(req) {
 			};
 		} else {
 			referrerLog(
-				"Referrer is not a registered domain in auth database: %s",
+				"Referrer validation disabled (awaiting enter.pollinations.ai migration): %s",
 				refStr,
 			);
 		}
@@ -516,7 +433,8 @@ export function createAuthDebugResponse(debugInfo) {
 }
 
 /**
- * Fetch user preferences from auth.pollinations.ai
+ * Fetch user preferences
+ * TODO: Migrate to enter.pollinations.ai preferences endpoint
  * @param {string} userId - The user ID to fetch preferences for
  * @returns {Promise<Object|null>} User preferences object or null if not found/error
  */
@@ -524,43 +442,8 @@ export async function getUserPreferences(userId) {
 	if (!userId) return null;
 
 	const preferenceLog = debug("pollinations:auth:preferences");
-
-	try {
-		preferenceLog(`Fetching preferences for user ${userId}`);
-
-		// Using admin endpoint to access preferences
-		const response = await fetch(
-			`https://auth.pollinations.ai/admin/preferences?user_id=${encodeURIComponent(userId)}`,
-			{
-				headers: {
-					Accept: "application/json",
-					Authorization: `Bearer ${process.env.ADMIN_API_KEY}`,
-				},
-			},
-		);
-
-		if (!response.ok) {
-			preferenceLog(
-				`Failed to fetch preferences: ${response.status} ${response.statusText}`,
-			);
-			// Log response body for debugging if status is not 404 (not found)
-			if (response.status !== 404) {
-				try {
-					const errorBody = await response.text();
-					preferenceLog("Error response body:", errorBody);
-				} catch (e) {
-					// Ignore error reading body
-				}
-			}
-			return null;
-		}
-
-		const data = await response.json();
-		preferenceLog("Preferences fetched successfully:", data.preferences);
-
-		return data.preferences || {};
-	} catch (error) {
-		preferenceLog("Error fetching preferences:", error);
-		return null;
-	}
+	preferenceLog(`User preferences disabled - auth.pollinations.ai removed, awaiting enter.pollinations.ai migration for user ${userId}`);
+	
+	// TODO: Implement preferences fetch via enter.pollinations.ai
+	return null;
 }

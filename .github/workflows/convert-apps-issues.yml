@@ -1,0 +1,105 @@
+name: Convert APPS Issues to PRs
+
+on:
+  issues:
+    types: [opened, labeled]
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+
+jobs:
+  convert:
+    if: contains(github.event.issue.labels.*.name, 'APPS')
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Extract issue data
+        id: parse
+        run: |
+          echo "ISSUE_TITLE=$(jq -r '.issue.title' < $GITHUB_EVENT_PATH)" >> $GITHUB_ENV
+          echo "ISSUE_BODY=$(jq -r '.issue.body' < $GITHUB_EVENT_PATH)" >> $GITHUB_ENV
+          echo "ISSUE_NUMBER=$(jq -r '.issue.number' < $GITHUB_EVENT_PATH)" >> $GITHUB_ENV
+          echo "ISSUE_AUTHOR=$(jq -r '.issue.user.login' < $GITHUB_EVENT_PATH)" >> $GITHUB_ENV
+
+      - name: Ask Pollinations Claude to create project entry
+        id: pollinate
+        env:
+          POLLINATIONS_API_KEY: ${{ secrets.POLLINATIONS_API_KEY }}
+        run: |
+          PAYLOAD=$(jq -n --arg body "$ISSUE_BODY" --arg title "$ISSUE_TITLE" '{
+            model: "claude",
+            prompt: ("You are a project parser. From the following GitHub issue form, extract and return a JSON object following this exact schema:\n\n" +
+                     "{ name, url, description, author, repo, submissionDate, order, category }\n\n" +
+                     "Category options: chat, creative, games, hackAndBuild, learn, socialBots, vibeCoding.\n" +
+                     "Return only valid JSON.\n\nIssue:\n" + $title + "\n" + $body)
+          }')
+
+          RESPONSE=$(curl -s -X POST "https://enter.pollinations.ai/api/generate/v1" \
+            -H "Content-Type: application/json" \
+            -H "Authorization: Bearer $POLLINATIONS_API_KEY" \
+            -d "$PAYLOAD")
+
+          echo "RESPONSE=$RESPONSE" >> $GITHUB_ENV
+
+          # Extract the JSON part of the model output safely
+          echo "$RESPONSE" | jq -r '.output' > project.json
+
+      - name: Determine category and filename
+        id: category
+        run: |
+          CATEGORY=$(jq -r '.category' project.json)
+          case "$CATEGORY" in
+            chat) FILE="pollinations.ai/src/config/projects/chat.js" ;;
+            creative) FILE="pollinations.ai/src/config/projects/creative.js" ;;
+            games) FILE="pollinations.ai/src/config/projects/games.js" ;;
+            hackAndBuild) FILE="pollinations.ai/src/config/projects/hackAndBuild.js" ;;
+            learn) FILE="pollinations.ai/src/config/projects/learn.js" ;;
+            socialBots) FILE="pollinations.ai/src/config/projects/socialBots.js" ;;
+            vibeCoding) FILE="pollinations.ai/src/config/projects/vibeCoding.js" ;;
+            *) echo "Unknown category: $CATEGORY" && exit 1 ;;
+          esac
+          echo "CATEGORY=$CATEGORY" >> $GITHUB_ENV
+          echo "FILE=$FILE" >> $GITHUB_ENV
+
+      - name: Append new project to category file
+        run: |
+          TEMP_FILE=$(mktemp)
+          jq -r '.' project.json > new_entry.json
+          PROJECT_JS=$(cat new_entry.json | jq -r '{
+            name, url, description, author, repo, submissionDate, order
+          } | "  " + tostring' | sed 's/^{/{\n/' | sed 's/}$/\n  },/')
+
+          # Insert before the final closing bracket
+          awk -v entry="$PROJECT_JS" '/];/ {print entry}1' "$FILE" > "$TEMP_FILE"
+          mv "$TEMP_FILE" "$FILE"
+
+      - name: Update README via generate script
+        run: |
+          node pollinator-agent/project-list-scripts/generate-project-table.js --update-readme
+
+      - name: Create Pull Request
+        uses: peter-evans/create-pull-request@v6
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          commit-message: "Add $(jq -r '.name' project.json) to $CATEGORY"
+          branch: "auto/project-${{ env.ISSUE_NUMBER }}"
+          title: "Add $(jq -r '.name' project.json) to $CATEGORY"
+          body: |
+            This PR adds **$(jq -r '.name' project.json)** to **$CATEGORY**.
+
+            Co-authored-by: ${{ env.ISSUE_AUTHOR }} <${{ env.ISSUE_AUTHOR }}@users.noreply.github.com>
+            Closes #${{ env.ISSUE_NUMBER }}
+          labels: enhancement
+          signoff: true

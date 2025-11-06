@@ -2,18 +2,21 @@ const environmentConfig = {
     development: {
         baseUrl: "http://localhost:3000",
         authPath: "/api/auth",
-        pollenMeterId: "d78e4114-8423-4006-9dda-a4f86d70c663",
+        pollenTierMeterId: "00a732fc-75c7-4ec8-975b-af0dfca7ab3c",
+        pollenPackMeterId: "ec075bd7-8073-4b30-bbc2-3a9afe6c9de7",
     },
     staging: {
         baseUrl: "https://enter.pollinations.ai",
         authPath: "/api/auth",
-        pollenMeterId: "d78e4114-8423-4006-9dda-a4f86d70c663",
+        pollenTierMeterId: "00a732fc-75c7-4ec8-975b-af0dfca7ab3c",
+        pollenPackMeterId: "ec075bd7-8073-4b30-bbc2-3a9afe6c9de7",
     },
     production: {
         baseUrl: "https://enter.pollinations.ai",
         authPath: "/api/auth",
         // TODO: Update this to real value once created
-        pollenMeterId: "d78e4114-8423-4006-9dda-a4f86d70c663",
+        pollenTierMeterId: "00a732fc-75c7-4ec8-975b-af0dfca7ab3c",
+        pollenPackMeterId: "ec075bd7-8073-4b30-bbc2-3a9afe6c9de7",
     },
 } as const;
 

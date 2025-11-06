@@ -79,7 +79,7 @@ export const FAQ: FC = () => {
                     </a>
                 </div>
             </div>
-            <div className="bg-emerald-100 rounded-2xl p-8 border border-pink-300">
+            <div className="bg-green-50/30 rounded-2xl p-8 border border-green-300">
                 <div className="flex flex-col gap-4">
                     {faqData.map((item, index) => (
                         <div key={index} className="pb-4 last:pb-0">

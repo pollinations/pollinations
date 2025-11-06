@@ -1,5 +1,5 @@
 import { Polar } from "@polar-sh/sdk";
-import { eq, sql, getTableColumns } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import type { DrizzleD1Database } from "drizzle-orm/d1";
 import { event } from "./db/schema/event.ts";
 import { batches, generateRandomId, removeUnset } from "./util.ts";
@@ -81,7 +81,11 @@ async function preparePendingEvents(
     // Update events to processing status
     await db
         .update(event)
-        .set({ eventStatus: "processing", eventProcessingId, updatedAt: new Date() })
+        .set({
+            eventStatus: "processing",
+            eventProcessingId,
+            updatedAt: new Date(),
+        })
         .where(eq(event.eventStatus, "pending"));
 
     // Fetch the updated events (D1 has column limits on .returning())
@@ -186,6 +190,10 @@ async function sendPolarEvents(
                 tokenPriceCompletionImage: event.tokenPriceCompletionImage,
                 // calculated price
                 totalPrice: event.totalPrice,
+                // meter selection
+                selectedMeterId: event.selectedMeterId,
+                selectedMeterSlug: event.selectedMeterSlug,
+                ...flattenBalances(event.balances),
             });
             return {
                 name: event.eventType,
@@ -278,4 +286,18 @@ async function sendTinybirdEvents(
         return "failed";
     }
     return "succeeded";
+}
+
+function flattenBalances(balances: Record<string, number> | null) {
+    if (!balances) return {};
+    return Object.fromEntries(
+        Object.entries(balances).map(([slug, balance]) => {
+            const meterType = slug.split(":").at(-1) || "unknown";
+            return [`pollen${capitalize(meterType)}Balance`, balance];
+        }),
+    );
+}
+
+function capitalize(str: string) {
+    return `${str.charAt(0).toUpperCase()}${str.slice(1)}`;
 }

@@ -93,16 +93,18 @@ export class PollenRateLimiter extends DurableObject {
      * @param cost - Actual pollen cost of the request
      */
     async consumePollen(cost: number): Promise<void> {
-        const now = Date.now();
-        
-        // Refill bucket based on time elapsed
-        this.refillBucket(now);
-        
-        // Deduct cost (can go negative, creating debt that must be repaid by refill)
-        this.currentFill = this.currentFill - cost;
-        
-        // Mark request as complete
-        this.requestInProgress = false;
+        try {
+            const now = Date.now();
+            
+            // Refill bucket based on time elapsed
+            this.refillBucket(now);
+            
+            // Deduct cost (can go negative, creating debt that must be repaid by refill)
+            this.currentFill = this.currentFill - cost;
+        } finally {
+            // Always clear flag, even if consumption fails
+            this.requestInProgress = false;
+        }
     }
     
     /**

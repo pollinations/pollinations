@@ -6,7 +6,7 @@ echo "=== IO.NET Flux Workers Health Check ==="
 echo "Time: $(date)"
 echo ""
 
-for host in io4090-6 io4090-7 io4090-8 io4090-9 io4090-10; do
+for host in io4090-6 io4090-7 io4090-8 io4090-9 io4090-10 io4090-11 io4090-12 io4090-13 io4090-14; do
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
     echo "📍 $host"
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"

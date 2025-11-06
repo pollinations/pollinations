@@ -16,11 +16,6 @@ import type { AuthEnv } from "./auth.ts";
  * - Pre-request check (allow if bucket > 0)
  * - Post-request deduction (actual pollen cost)
  * 
- * Benefits over request-count approach:
- * - Expensive requests consume more pollen
- * - No cost estimation needed
- * - Strongly consistent (no race conditions)
- * - Per (key + IP) isolation
  */
 export const frontendKeyRateLimit = createMiddleware<AuthEnv>(async (c, next) => {
     // Skip rate limiting for secret API keys

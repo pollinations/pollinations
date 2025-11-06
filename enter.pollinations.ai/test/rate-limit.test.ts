@@ -131,3 +131,50 @@ test("pollen rate limiter - verify headers and deduction mechanism", { timeout: 
     // For MVP, we've verified the mechanism exists and basic flow works
     log.info("✓ Pollen rate limiter MVP test passed - headers correct, async deduction configured");
 });
+
+test("pollen rate limiter - secret keys bypass rate limiting", { timeout: 30000 }, async ({ auth, sessionToken }) => {
+    // Create a secret key for testing
+    const createApiKeyResponse = await auth.apiKey.create({
+        name: "test-secret-bypass",
+        prefix: "sk",
+        metadata: { keyType: "secret" },
+        fetchOptions: {
+            headers: { "Cookie": `better-auth.session_token=${sessionToken}` },
+        },
+    });
+    
+    if (!createApiKeyResponse.data) throw new Error("Failed to create secret API key");
+    const secretKey = createApiKeyResponse.data.key;
+    
+    expect(secretKey.startsWith("sk_")).toBe(true);
+    
+    const testIp = `192.0.11.${Date.now() % 254}`;
+    
+    log.info("Testing secret key bypass - should have no rate limit headers");
+    
+    // Make request with secret key
+    const response = await SELF.fetch(endpoint, {
+        method: "POST",
+        headers: {
+            "content-type": "application/json",
+            "authorization": `Bearer ${secretKey}`,
+            "cf-connecting-ip": testIp,
+        },
+        body: JSON.stringify({
+            model: "openai",
+            messages: [{ role: "user", content: "test secret key" }],
+        }),
+    });
+    
+    await response.text(); // Consume body
+    
+    // Verify NO rate limit headers for secret keys
+    const rateLimitHeader = response.headers.get("RateLimit-Limit");
+    const remainingHeader = response.headers.get("RateLimit-Remaining");
+    
+    expect(response.status).toBe(200);
+    expect(rateLimitHeader).toBeNull(); // Secret keys should not have rate limit headers
+    expect(remainingHeader).toBeNull();
+    
+    log.info("✓ Secret key correctly bypasses rate limiting - no headers present");
+});

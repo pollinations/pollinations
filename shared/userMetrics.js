@@ -27,7 +27,8 @@ export async function incrementUserMetric(userId, metricKey, incrementBy = 1) {
         return;
     }
 
-    const metricsUrl = `https://auth.pollinations.ai/admin/metrics?user_id=${encodeURIComponent(userId)}`;
+    // TODO: Migrate to enter.pollinations.ai metrics endpoint when available
+    const metricsUrl = `https://METRICS_ENDPOINT_TBD/admin/metrics?user_id=${encodeURIComponent(userId)}`;
     const metricsPayload = {
         increment: {
             key: metricKey,

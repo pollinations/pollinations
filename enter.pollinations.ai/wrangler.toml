@@ -1,7 +1,7 @@
 name = "pollinations-enter"
 main = "src/index.ts"
 compatibility_date = "2025-11-01"
-# compatibility_flags = [ "nodejs_compat", "nodejs_als" ]
+compatibility_flags = [ "nodejs_compat", "nodejs_als" ]
 
 [dev]
 port = 3000
@@ -26,13 +26,13 @@ binding = "KV"
 id = "aa0d0aceb6bd45de93032270c7adf4ab"
 
 [[durable_objects.bindings]]
-name = "RATE_LIMITER"
-class_name = "RateLimiter"
+name = "POLLEN_RATE_LIMITER"
+class_name = "PollenRateLimiter"
 script_name = "pollinations-enter"
 
 [[migrations]]
-tag = "v1"
-new_classes = ["RateLimiter"]
+tag = "v2"
+new_classes = ["PollenRateLimiter"]
 
 [vars]
 ENVIRONMENT = "development"
@@ -47,6 +47,9 @@ POLAR_PRODUCT_ID_FLOWER = "2bfbe9e0-8395-489f-a7a1-6821d835cc08"
 POLAR_PRODUCT_ID_NECTAR = "d67b2a25-c4d7-47fa-9d64-4b2a27f0908f"
 IMAGE_SERVICE_URL = "http://ec2-3-80-56-235.compute-1.amazonaws.com:16384"
 TEXT_SERVICE_URL = "http://ec2-3-80-56-235.compute-1.amazonaws.com:16385"
+# Pollen rate limiter configuration
+POLLEN_BUCKET_CAPACITY = 0.1   # Max pollen in bucket (allows ~2 cheap requests burst)
+POLLEN_REFILL_PER_HOUR = 1.0   # Pollen refilled per hour
 
 
 [env.local]
@@ -75,6 +78,9 @@ POLAR_PRODUCT_ID_FLOWER = "c675a78a-d954-4739-bfad-c0c8aa3e5576"
 POLAR_PRODUCT_ID_NECTAR = "dfe978ca-8e07-41fa-992a-ae19ab96e66c"
 IMAGE_SERVICE_URL = "http://localhost:16384"
 TEXT_SERVICE_URL = "http://localhost:16385"
+# Pollen rate limiter configuration
+POLLEN_BUCKET_CAPACITY = 0.1   # Max pollen in bucket (allows ~2 cheap requests burst)
+POLLEN_REFILL_PER_HOUR = 1.0   # Pollen refilled per hour
 
 
 [env.staging]
@@ -96,9 +102,14 @@ binding = "KV"
 id = "eb4ea5149a5a413db53902bf2b8c1d95"
 
 [[env.staging.durable_objects.bindings]]
-name = "RATE_LIMITER"
-class_name = "RateLimiter"
+name = "POLLEN_RATE_LIMITER"
+class_name = "PollenRateLimiter"
 script_name = "pollinations-enter-staging"
+
+[[env.staging.migrations]]
+tag = "v2"
+deleted_classes = ["RateLimiter"]
+new_classes = ["PollenRateLimiter"]
 
 [env.staging.vars]
 ENVIRONMENT = "staging"
@@ -113,7 +124,9 @@ POLAR_PRODUCT_ID_FLOWER = "2bfbe9e0-8395-489f-a7a1-6821d835cc08"
 POLAR_PRODUCT_ID_NECTAR = "d67b2a25-c4d7-47fa-9d64-4b2a27f0908f"
 IMAGE_SERVICE_URL = "http://ec2-3-80-56-235.compute-1.amazonaws.com:16384"
 TEXT_SERVICE_URL = "http://ec2-3-80-56-235.compute-1.amazonaws.com:16385"
-
+# Pollen rate limiter configuration
+POLLEN_BUCKET_CAPACITY = 0.1   # Max pollen in bucket (allows ~2 cheap requests burst)
+POLLEN_REFILL_PER_HOUR = 1.0   # Pollen refilled per hour
 
 [env.test]
 
@@ -129,8 +142,8 @@ binding = "KV"
 id = "aa0d0aceb6bd45de93032270c7adf4ab"
 
 [[env.test.durable_objects.bindings]]
-name = "RATE_LIMITER"
-class_name = "RateLimiter"
+name = "POLLEN_RATE_LIMITER"
+class_name = "PollenRateLimiter"
 
 [env.test.vars]
 ENVIRONMENT = "test"
@@ -147,3 +160,5 @@ POLAR_PRODUCT_ID_FLOWER = "polar_product_id_flower"
 POLAR_PRODUCT_ID_NECTAR = "polar_product_id_nectar"
 IMAGE_SERVICE_URL = "http://ec2-3-80-56-235.compute-1.amazonaws.com:16384"
 TEXT_SERVICE_URL = "http://ec2-3-80-56-235.compute-1.amazonaws.com:16385"
+POLLEN_BUCKET_CAPACITY = 0.002  # Small capacity allowing ~1-2 mock requests before exhaustion
+POLLEN_REFILL_PER_HOUR = 0.0036  # 0.000001 pollen per second (slow refill for testing)

@@ -1,8 +1,4 @@
-ALTER TABLE `user` ADD `github_id` integer;--> statement-breakpoint
-ALTER TABLE `user` ADD `github_username` text;--> statement-breakpoint
-ALTER TABLE `user` ADD `tier` text DEFAULT 'seed' NOT NULL;--> statement-breakpoint
-CREATE INDEX `idx_user_tier` ON `user` (`tier`);--> statement-breakpoint
-ALTER TABLE `event` ADD `request_path` text NOT NULL;--> statement-breakpoint
+ALTER TABLE `event` ADD `request_path` text;--> statement-breakpoint
 ALTER TABLE `event` ADD `api_key_id` text;--> statement-breakpoint
 ALTER TABLE `event` ADD `api_key_type` text;--> statement-breakpoint
 ALTER TABLE `event` ADD `resolved_model_requested` text;--> statement-breakpoint

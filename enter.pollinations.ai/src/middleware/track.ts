@@ -133,6 +133,18 @@ export const track = (eventType: EventType) =>
                     apiKeyType: c.var.auth.apiKey?.metadata
                         ?.keyType as ApiKeyType,
                 };
+                const balanceTracking = {
+                    selectedMeterId:
+                        c.var.polar.balanceCheckResult?.selectedMeterId,
+                    selectedMeterSlug:
+                        c.var.polar.balanceCheckResult?.selectedMeterSlug,
+                    balances: Object.fromEntries(
+                        c.var.polar.balanceCheckResult?.meters.map((meter) => [
+                            meter.metadata.slug,
+                            meter.balance,
+                        ]) || [],
+                    ),
+                };
                 const event = createTrackingEvent({
                     requestId: c.get("requestId"),
                     requestPath: c.req.path,
@@ -141,13 +153,20 @@ export const track = (eventType: EventType) =>
                     environment: c.env.ENVIRONMENT,
                     eventType,
                     userTracking,
+                    balanceTracking,
                     requestTracking,
                     responseTracking,
                     errorTracking: collectErrorData(response, c.get("error")),
                 });
+                
+                // Set internal header for rate limiter to read pollen price
+                if (responseTracking.price?.totalPrice) {
+                    c.header("X-Pollen-Price", responseTracking.price.totalPrice.toString());
+                }
                 log.trace("Event: {event}", { event });
                 const db = drizzle(c.env.DB);
                 await storeEvents(db, c.var.log, [event]);
+                
                 // process events immediately in development/testing
                 if (["test", "development"].includes(c.env.ENVIRONMENT))
                     await processEvents(db, c.var.log, {
@@ -268,6 +287,12 @@ type UserData = {
     apiKeyType?: ApiKeyType;
 };
 
+type BalanceData = {
+    selectedMeterId?: string;
+    selectedMeterSlug?: string;
+    balances: Record<string, number>;
+};
+
 type TrackingEventInput = {
     requestId: string;
     requestPath: string;
@@ -276,6 +301,7 @@ type TrackingEventInput = {
     environment: string;
     eventType: EventType;
     userTracking: UserData;
+    balanceTracking: BalanceData;
     requestTracking: RequestTrackingData;
     responseTracking: ResponseTrackingData;
     errorTracking?: ErrorData;
@@ -289,6 +315,7 @@ function createTrackingEvent({
     environment,
     eventType,
     userTracking,
+    balanceTracking,
     requestTracking,
     responseTracking,
     errorTracking,
@@ -317,6 +344,8 @@ function createTrackingEvent({
             responseTracking.responseOk &&
             !requestTracking.freeModelRequested &&
             !responseTracking.cacheData.cacheHit,
+
+        ...balanceTracking,
 
         ...priceToEventParams(requestTracking.modelPriceDefinition),
         ...usageToEventParams(responseTracking.usage),
@@ -583,7 +612,7 @@ const ContentFilterResultHeadersSchema = z
     }));
 
 type ErrorData = {
-    errorCode?: string;
+    errorResponseCode?: string;
     errorSource?: string;
     errorMessage?: string;
     errorStack?: string;
@@ -603,7 +632,7 @@ function collectErrorData(response: Response, error?: Error): ErrorData {
         });
     }
     return {
-        errorCode: getErrorCode(status || response.status),
+        errorResponseCode: getErrorCode(status || response.status),
         errorSource: source,
         errorMessage: error?.message,
         errorStack: error?.stack,

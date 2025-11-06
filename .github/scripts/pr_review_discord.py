@@ -493,23 +493,18 @@ def chunk_message(message: str, max_length: int = CHUNK_SIZE) -> List[str]:
     
     return chunks
 
+
+
 def format_review_for_discord(message_content: str, pr_info: Dict) -> List[Dict]:
-    """
-    Format announcement message for Discord webhook.
-    Returns a list of payloads if message needs to be chunked.
-    """
     time_str = format_timestamp(pr_info.get('merged_at'))
-    
-    # Create Discord markdown links with angle brackets to suppress embeds
     pr_number = pr_info.get('number', 'Unknown')
     pr_url = pr_info.get('url', '#')
     pr_author = pr_info.get('author', 'Unknown')
-    
+    pr_creator = pr_info.get('created_by', pr_author)
     pr_link = f"[PR #{pr_number}](<{pr_url}>)"
-    author_link = f"[{pr_author}](<https://github.com/{pr_author}>)"
-    
-    footer = f"\n\n{pr_link} • Merged by {author_link} • {time_str}"
-    
+    creator_link = f"[{pr_creator if pr_creator != 'Unknown' else 'Some Pollinations Contributor'}](<https://github.com/{pr_creator}>)"
+    footer = f"\n\n{pr_link} • By {creator_link} • {time_str}"
+
     # Calculate available space for content
     footer_length = len(footer)
     available_space = CHUNK_SIZE - footer_length
@@ -541,6 +536,8 @@ def format_review_for_discord(message_content: str, pr_info: Dict) -> List[Dict]
         print(f"  📄 Chunk {i+1}/{total_chunks}: {len(full_message)} chars")
     
     return payloads
+
+
 
 def post_to_discord(webhook_url: str, payloads: List[Dict]):
     """Post message(s) to Discord webhook"""

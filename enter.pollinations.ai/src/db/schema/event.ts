@@ -41,7 +41,7 @@ export const event = sqliteTable("event", {
 
     // Request identification and timing
     requestId: text("request_id").notNull(),
-    requestPath: text("request_path").notNull(),
+    requestPath: text("request_path"),
     startTime: integer("start_time", { mode: "timestamp_ms" }).notNull(),
     endTime: integer("end_time", { mode: "timestamp_ms" }).notNull(),
     responseTime: real("response_time"),
@@ -56,6 +56,13 @@ export const event = sqliteTable("event", {
     apiKeyType: text("api_key_type", {
         enum: apiKeyTypeValues,
     }).$type<ApiKeyType>(),
+
+    // Meter selection and balance
+    selectedMeterId: text("selected_meter_id"),
+    selectedMeterSlug: text("selected_meter_slug"),
+    balances: text("balances", { mode: "json" }).$type<
+        Record<string, number>
+    >(),
 
     // Referrer
     referrerDomain: text("referrer_domain"),

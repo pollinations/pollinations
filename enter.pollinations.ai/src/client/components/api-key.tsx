@@ -89,7 +89,7 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                     </div>
                 </div>
                 {apiKeys.length ? (
-                    <div className="bg-emerald-100 rounded-2xl p-8 border border-pink-300 overflow-x-auto">
+                    <div className="bg-blue-50/30 rounded-2xl p-8 border border-blue-300 overflow-x-auto">
                         <div className="grid grid-cols-[100px_200px_1fr_70px_40px] gap-x-4 gap-y-4 min-w-[630px]">
                             <span className="font-bold text-pink-400 text-sm">Type</span>
                             <span className="font-bold text-pink-400 text-sm">Name</span>

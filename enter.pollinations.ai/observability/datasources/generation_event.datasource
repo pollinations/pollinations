@@ -19,6 +19,11 @@ SCHEMA >
 `api_key_id`      String                 `json:$.apiKeyId` DEFAULT 'undefined',
 `api_key_type`    LowCardinality(String) `json:$.apiKeyType` DEFAULT 'undefined',
 
+-- Meter
+`selected_meter_id`     String                  `json:$.selectedMeterId` DEFAULT 'undefined',
+`selected_meter_slug`   LowCardinality(String)  `json:$.selectedMeterSlug` DEFAULT 'undefined',
+`balances`              Map(String, Float64)    `json:$.balances` DEFAULT map(),
+
 -- Referrer
 `referrer_url`    String                 `json:$.referrerUrl` DEFAULT 'undefined',
 `referrer_domain` LowCardinality(String) `json:$.referrerDomain` DEFAULT 'undefined',
@@ -102,6 +107,9 @@ FORWARD_QUERY >
     user_tier,
     defaultValueOfTypeName('String') AS api_key_id,
     defaultValueOfTypeName('LowCardinality(String)') AS api_key_type,
+    defaultValueOfTypeName('String') AS selected_meter_id,
+    defaultValueOfTypeName('LowCardinality(String)') AS selected_meter_slug,
+    defaultValueOfTypeName('Map(String, Float64)') AS balances,
     referrer_url,
     referrer_domain,
     model_requested,
@@ -143,7 +151,6 @@ FORWARD_QUERY >
     cache_semantic_similarity,
     cache_semantic_threshold,
     cache_key,
-    defaultValueOfTypeName('LowCardinality(String)') AS error_name,
     defaultValueOfTypeName('LowCardinality(String)') AS error_response_code,
     defaultValueOfTypeName('LowCardinality(String)') AS error_source,
     defaultValueOfTypeName('String') AS error_message,

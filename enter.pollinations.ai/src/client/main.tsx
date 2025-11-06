@@ -2,12 +2,7 @@ import { createRouter, RouterProvider } from "@tanstack/react-router";
 import { apiKeyClient } from "better-auth/client/plugins";
 import { createAuthClient } from "better-auth/react";
 import { hc } from "hono/client";
-import {
-    type FC,
-    type PropsWithChildren,
-    StrictMode,
-    useMemo,
-} from "react";
+import { type FC, type PropsWithChildren, StrictMode } from "react";
 import ReactDOM from "react-dom/client";
 import type { AppRoutes } from "../index.ts";
 import { routeTree } from "./routeTree.gen";
@@ -41,9 +36,7 @@ export type ApiClient = (typeof apiClient)["api"];
 export type RouterContext = {
     auth: AuthClient;
     api: ApiClient;
-    user: User | null;
-    session: Session | null;
-    isLoading: boolean;
+    user?: User;
 };
 
 const router = createRouter({
@@ -51,25 +44,14 @@ const router = createRouter({
     context: {
         auth: authClient,
         api: apiClient.api,
-        user: null,
-        session: null,
-        isLoading: true,
     },
 });
 
 const App: FC<PropsWithChildren> = () => {
-    const session = authClient.useSession();
-
-    const context = useMemo(() => {
-        return {
-            auth: authClient,
-            api: apiClient.api,
-            user: session.data?.user || null,
-            session: session.data?.session || null,
-            isLoading: session.isPending,
-        };
-    }, [session]);
-
+    const context = {
+        auth: authClient,
+        api: apiClient.api,
+    };
     return <RouterProvider router={router} context={context} />;
 };
 

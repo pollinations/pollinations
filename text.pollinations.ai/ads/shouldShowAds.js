@@ -6,8 +6,8 @@ import {
     getUserPreferences,
 } from "../../shared/auth-utils.js";
 
-// Probability of adding referral links (5%)
-const REFERRAL_LINK_PROBABILITY = 0.05;
+// Ads disabled by default (legacy system being phased out)
+const REFERRAL_LINK_PROBABILITY = 0;
 
 const TEST_ADS_MARKER = "p-ads";
 
@@ -97,53 +97,7 @@ export async function shouldShowAds(
         }
     }
 
-    // Check user preferences if request is provided and auth result is available
-    if (authResult && authResult.authenticated && authResult.userId) {
-        try {
-            log(
-                "User authenticated, checking preferences for userId:",
-                authResult.userId,
-            );
-
-            const preferences = await getUserPreferences(authResult.userId);
-            if (preferences && preferences.show_ads === false) {
-                log("User has opted out of ads via preferences");
-                return {
-                    shouldShowAd: false,
-                    markerFound: false,
-                    userPreference: false,
-                };
-            }
-        } catch (error) {
-            log("Error checking user preferences:", error);
-            // Continue with normal flow if preference check fails
-        }
-    } else if (req && !authResult) {
-        try {
-            const authResultLocal = await handleAuthentication(req);
-            if (authResultLocal.authenticated && authResultLocal.userId) {
-                log(
-                    "User authenticated, checking preferences for userId:",
-                    authResultLocal.userId,
-                );
-
-                const preferences = await getUserPreferences(
-                    authResultLocal.userId,
-                );
-                if (preferences && preferences.show_ads === false) {
-                    log("User has opted out of ads via preferences");
-                    return {
-                        shouldShowAd: false,
-                        markerFound: false,
-                        userPreference: false,
-                    };
-                }
-            }
-        } catch (error) {
-            log("Error checking user preferences:", error);
-            // Continue with normal flow if preference check fails
-        }
-    }
+    // User preference checks removed - ads disabled by default
 
     // Get request data for referrer check
     const requestData = getRequestData(req);

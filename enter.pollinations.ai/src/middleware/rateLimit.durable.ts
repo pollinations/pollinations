@@ -14,8 +14,7 @@ import type { AuthEnv } from "./auth.ts";
  * - Refill rate: 1/60 pollen per minute = 1 pollen per hour (steady-state throughput)
  * - Identifier: pk_{apiKeyId}:ip:{ip} (prevents abuse via key + IP)
  * - Pre-request check (allow if bucket > 0)
- * - Post-request deduction (actual pollen cost)
- * 
+ * - Post-request deduction (actual pollen cost from response tracking)
  */
 export const frontendKeyRateLimit = createMiddleware<AuthEnv>(async (c, next) => {
     // Skip rate limiting for secret API keys
@@ -37,9 +36,10 @@ export const frontendKeyRateLimit = createMiddleware<AuthEnv>(async (c, next) =>
     const id = c.env.POLLEN_RATE_LIMITER.idFromName(identifier);
     const stub = c.env.POLLEN_RATE_LIMITER.get(id) as DurableObjectStub & {
         checkRateLimit(): Promise<{ allowed: boolean; remaining: number; waitMs: number }>;
+        consumePollen(cost: number): Promise<void>;
     };
     
-    // Check pollen rate limit
+    // Check pollen rate limit (pre-request)
     const result = await stub.checkRateLimit();
     
     // Set rate limit headers (pollen units) - read capacity from env
@@ -60,5 +60,22 @@ export const frontendKeyRateLimit = createMiddleware<AuthEnv>(async (c, next) =>
         }, 429);
     }
     
-    return next();
+    // Process request
+    await next();
+    
+    // Deduct actual pollen cost after request completes (post-request)
+    // Read price from internal header set by track middleware
+    const pollenPrice = c.res.headers.get("X-Pollen-Price");
+    if (pollenPrice) {
+        const cost = parseFloat(pollenPrice);
+        if (!isNaN(cost) && cost > 0) {
+            c.executionCtx.waitUntil(
+                stub.consumePollen(cost).catch((error) => {
+                    c.var.log.error("Failed to consume pollen: {error}", { error, identifier, cost });
+                })
+            );
+        }
+        // Remove internal header from response
+        c.res.headers.delete("X-Pollen-Price");
+    }
 });

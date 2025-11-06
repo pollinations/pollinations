@@ -145,34 +145,14 @@ export const track = (eventType: EventType) =>
                     responseTracking,
                     errorTracking: collectErrorData(response, c.get("error")),
                 });
+                
+                // Set internal header for rate limiter to read pollen price
+                if (responseTracking.price?.totalPrice) {
+                    c.header("X-Pollen-Price", responseTracking.price.totalPrice.toString());
+                }
                 log.trace("Event: {event}", { event });
                 const db = drizzle(c.env.DB);
                 await storeEvents(db, c.var.log, [event]);
-                
-                // Record pollen consumption for publishable keys (post-request deduction)
-                const apiKey = c.var.auth.apiKey;
-                if (
-                    apiKey?.metadata?.keyType === "publishable" &&
-                    response.ok &&
-                    responseTracking.price?.totalPrice
-                ) {
-                    try {
-                        const ip = c.req.header("cf-connecting-ip") || "unknown";
-                        const identifier = `pk_${apiKey.id}:ip:${ip}`;
-                        const id = c.env.POLLEN_RATE_LIMITER.idFromName(identifier);
-                        const stub = c.env.POLLEN_RATE_LIMITER.get(id) as DurableObjectStub & {
-                            consumePollen(cost: number): Promise<void>;
-                        };
-                        await stub.consumePollen(responseTracking.price.totalPrice);
-                        log.trace("Pollen consumed: {cost}", { 
-                            cost: responseTracking.price.totalPrice,
-                            identifier
-                        });
-                    } catch (error) {
-                        // Don't fail tracking if pollen deduction fails
-                        log.error("Failed to record pollen consumption: {error}", { error });
-                    }
-                }
                 
                 // process events immediately in development/testing
                 if (["test", "development"].includes(c.env.ENVIRONMENT))

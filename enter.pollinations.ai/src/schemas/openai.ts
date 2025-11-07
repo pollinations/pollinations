@@ -358,7 +358,7 @@ export type ContentFilterResult = z.infer<typeof ContentFilterResultSchema>;
 export const PromptFilterResultSchema = z.array(
     z.object({
         prompt_index: z.number().int().nonnegative(),
-        content_filter_results: ContentFilterResultSchema,
+        content_filter_results: ContentFilterResultSchema.optional(),
     }),
 );
 

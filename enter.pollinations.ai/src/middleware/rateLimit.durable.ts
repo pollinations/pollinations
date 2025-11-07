@@ -17,16 +17,31 @@ import type { AuthEnv } from "./auth.ts";
  * - Post-request deduction (actual pollen cost from response tracking)
  */
 export const frontendKeyRateLimit = createMiddleware<AuthEnv>(async (c, next) => {
+    const log = c.get("log");
+    
     // Skip rate limiting for secret API keys
     const apiKey = c.var?.auth?.apiKey;
+    
+    log.debug("[RATE_LIMIT] API Key check: {hasApiKey}, {keyType}, {metadata}", {
+        hasApiKey: !!apiKey,
+        keyType: apiKey?.metadata?.keyType,
+        metadata: apiKey?.metadata,
+    });
+    
     if (apiKey?.metadata?.keyType === "secret") {
+        log.debug("[RATE_LIMIT] Skipping rate limit for secret key");
         return next();
     }
     
     // Only apply to publishable keys
     if (apiKey?.metadata?.keyType !== "publishable") {
+        log.debug("[RATE_LIMIT] Skipping rate limit - not a publishable key");
         return next();
     }
+    
+    log.debug("[RATE_LIMIT] Applying rate limit for publishable key: {keyId}", {
+        keyId: apiKey.id,
+    });
     
     // Get composite identifier: pk_{apiKeyId}:ip:{ip}
     const ip = c.req.header("cf-connecting-ip") || "unknown";

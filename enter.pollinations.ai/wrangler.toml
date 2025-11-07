@@ -47,10 +47,6 @@ POLAR_PRODUCT_ID_FLOWER = "ea33ef88-67ff-45d8-906e-bb9357dd549a"
 POLAR_PRODUCT_ID_NECTAR = "10167875-38e1-459f-8241-106aafc3062c"
 IMAGE_SERVICE_URL = "http://ec2-3-80-56-235.compute-1.amazonaws.com:16384"
 TEXT_SERVICE_URL = "http://ec2-3-80-56-235.compute-1.amazonaws.com:16385"
-# Pollen rate limiter configuration
-POLLEN_BUCKET_CAPACITY = 0.1   # Max pollen in bucket (allows ~2 cheap requests burst)
-POLLEN_REFILL_PER_HOUR = 1.0   # Pollen refilled per hour
-
 
 [env.local]
 
@@ -78,10 +74,6 @@ POLAR_PRODUCT_ID_FLOWER = "ea33ef88-67ff-45d8-906e-bb9357dd549a"
 POLAR_PRODUCT_ID_NECTAR = "10167875-38e1-459f-8241-106aafc3062c"
 IMAGE_SERVICE_URL = "http://localhost:16384"
 TEXT_SERVICE_URL = "http://localhost:16385"
-# Pollen rate limiter configuration
-POLLEN_BUCKET_CAPACITY = 0.1   # Max pollen in bucket (allows ~2 cheap requests burst)
-POLLEN_REFILL_PER_HOUR = 1.0   # Pollen refilled per hour
-
 
 [env.staging]
 
@@ -124,9 +116,6 @@ POLAR_PRODUCT_ID_FLOWER = "ea33ef88-67ff-45d8-906e-bb9357dd549a"
 POLAR_PRODUCT_ID_NECTAR = "10167875-38e1-459f-8241-106aafc3062c"
 IMAGE_SERVICE_URL = "http://ec2-3-80-56-235.compute-1.amazonaws.com:16384"
 TEXT_SERVICE_URL = "http://ec2-3-80-56-235.compute-1.amazonaws.com:16385"
-# Pollen rate limiter configuration
-POLLEN_BUCKET_CAPACITY = 0.1   # Max pollen in bucket (allows ~2 cheap requests burst)
-POLLEN_REFILL_PER_HOUR = 1.0   # Pollen refilled per hour
 
 [env.test]
 

@@ -29,8 +29,8 @@ export class PollenRateLimiter extends DurableObject {
         super(ctx, env);
         
         // Read configuration from environment variables with fallbacks
-        this.capacity = env.POLLEN_BUCKET_CAPACITY ?? 0; // TESTING: 0 capacity = only refill allows requests
-        const refillPerHour = env.POLLEN_REFILL_PER_HOUR ?? 1.0;
+        this.capacity = env.POLLEN_BUCKET_CAPACITY ?? 0.1; // Default: 0.1 pollen (~2 cheap requests burst)
+        const refillPerHour = env.POLLEN_REFILL_PER_HOUR ?? 1.0; // Default: 1 pollen per hour
         this.refillRate = refillPerHour / 3600000; // Convert per-hour to per-millisecond
         
         // Load state from storage or initialize with defaults

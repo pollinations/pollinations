@@ -69,7 +69,7 @@ export class PollenRateLimiter extends DurableObject {
         });
         
         // Refill bucket based on time elapsed
-        this.refillBucket(now);
+        await this.refillBucket(now);
         
         console.log('[DURABLE] After refill', {
             currentFill: this.currentFill
@@ -132,7 +132,7 @@ export class PollenRateLimiter extends DurableObject {
             });
             
             // Refill bucket based on time elapsed
-            this.refillBucket(now);
+            await this.refillBucket(now);
             
             // Deduct cost (can go negative, creating debt that must be repaid by refill)
             this.currentFill = this.currentFill - cost;
@@ -154,7 +154,7 @@ export class PollenRateLimiter extends DurableObject {
      * Refill bucket based on time elapsed since last update
      * @param now - Current timestamp in milliseconds
      */
-    private refillBucket(now: number): void {
+    private async refillBucket(now: number): Promise<void> {
         const timePassed = now - this.lastUpdateTime;
         const pollenToAdd = timePassed * this.refillRate;
         
@@ -170,6 +170,9 @@ export class PollenRateLimiter extends DurableObject {
         // Add refilled pollen, cap at capacity
         this.currentFill = Math.min(this.capacity, this.currentFill + pollenToAdd);
         this.lastUpdateTime = now;
+        
+        // Persist updated lastUpdateTime to storage
+        await this.ctx.storage.put("lastUpdateTime", this.lastUpdateTime);
         
         console.log('[DURABLE] After refill cap', {
             currentFillAfter: this.currentFill

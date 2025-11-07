@@ -43,7 +43,7 @@ const ChatCompletionRequestMessageContentPartImageSchema = z.object({
     type: z.literal("image_url"),
     image_url: z.object({
         url: z.string(),
-        detail: z.enum(["auto", "low", "high"]).default("auto").optional(),
+        detail: z.enum(["auto", "low", "high"]).optional(),
     }),
 });
 

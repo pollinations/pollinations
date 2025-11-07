@@ -48,15 +48,24 @@ export const frontendKeyRateLimit = createMiddleware<AuthEnv>(async (c, next) =>
     c.header("RateLimit-Remaining", result.remaining.toFixed(4)); // Current pollen
     
     if (!result.allowed) {
-        const retryAfterSeconds = Math.ceil(result.waitMs / 1000);
-        c.header("Retry-After", retryAfterSeconds.toString());
+        // If waitMs is provided, it's a rate limit exhaustion (not concurrent request)
+        if (result.waitMs !== undefined) {
+            const retryAfterSeconds = parseFloat((result.waitMs / 1000).toFixed(2));
+            c.header("Retry-After", Math.ceil(retryAfterSeconds).toString());
+            
+            return c.json({
+                error: "Rate limit exceeded",
+                message: `Rate limit bucket exhausted (${result.remaining.toFixed(2)}/${capacity}). Retry after ${retryAfterSeconds}s. Use secret keys (sk_*) for unlimited requests.`,
+                retryAfterSeconds: retryAfterSeconds,
+                rateLimitRemaining: parseFloat(result.remaining.toFixed(2))
+            }, 429);
+        }
         
-        const refillRate = c.env.POLLEN_REFILL_PER_HOUR ?? 1.0;
+        // Concurrent request - no wait time, just retry
         return c.json({
-            error: `Pollen rate limit exceeded for publishable key. Your pollen bucket (${capacity} capacity) is empty. Refill rate: ${refillRate} pollen per hour. Use a secret key (sk_*) for server-side applications to bypass rate limits.`,
-            retryAfterSeconds,
-            pollenCapacity: capacity,
-            pollenRefillRate: `${refillRate} per hour`
+            error: "Concurrent request in progress",
+            message: "Another request is currently being processed. Please wait until it finishes.",
+            rateLimitRemaining: parseFloat(result.remaining.toFixed(2))
         }, 429);
     }
     

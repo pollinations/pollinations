@@ -171,9 +171,11 @@ function RouteComponent() {
                             as="button"
                             color="purple"
                             weight="light"
-                            disabled
+                            onClick={() => {
+                                window.location.href = "/api/polar/checkout/pollen-bundle-small";
+                            }}
                         >
-                            + $10
+                            + $5
                         </Button>
                         <Button
                             as="button"
@@ -181,10 +183,10 @@ function RouteComponent() {
                             weight="light"
                             disabled
                         >
-                            + $25
+                            + $10
                         </Button>
                         <Button as="button" color="purple" weight="light" disabled>
-                            + $50
+                            + $20
                         </Button>
                         <a
                             href="https://github.com/pollinations/pollinations/issues/4826"

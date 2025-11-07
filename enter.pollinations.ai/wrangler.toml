@@ -48,7 +48,7 @@ POLAR_PRODUCT_ID_NECTAR = "d67b2a25-c4d7-47fa-9d64-4b2a27f0908f"
 IMAGE_SERVICE_URL = "http://ec2-3-80-56-235.compute-1.amazonaws.com:16384"
 TEXT_SERVICE_URL = "http://ec2-3-80-56-235.compute-1.amazonaws.com:16385"
 # Pollen rate limiter configuration
-POLLEN_BUCKET_CAPACITY = 0.000000001   # Max pollen in bucket (allows ~2 cheap requests burst)
+POLLEN_BUCKET_CAPACITY = 0.1   # Max pollen in bucket (allows ~2 cheap requests burst)
 POLLEN_REFILL_PER_HOUR = 1.0   # Pollen refilled per hour
 
 

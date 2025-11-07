@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """
-Scalable Weekly Digest Generator
-Handles large PR volumes by chunking, then merging into one cohesive digest
+Simple Weekly Digest Generator
+Gets recent merged PRs and creates a weekly digest in one AI call
+No temp storage, no complexity - just simple and direct
 """
 
 import os
@@ -17,7 +18,7 @@ from datetime import datetime, timedelta, timezone
 GITHUB_API_BASE = "https://api.github.com"
 POLLINATIONS_API_BASE = "https://enter.pollinations.ai/api/generate/openai"
 MODEL = "openai-large"
-CHUNK_SIZE = 50  # PRs per chunk - adjust based on your needs
+CHUNK_SIZE = 50  # PRs per chunk for large batches
 
 def get_env(key: str, required: bool = True) -> str:
     """Get environment variable"""
@@ -28,25 +29,29 @@ def get_env(key: str, required: bool = True) -> str:
     return value
 
 def get_recent_merged_prs(repo: str, token: str, since_time: datetime) -> List[Dict]:
-    """Get recently merged PRs since last digest with pagination"""
+    """Get recently merged PRs using GitHub Search API - efficient and accurate"""
     headers = {
         "Authorization": f"Bearer {token}",
         "Accept": "application/vnd.github+json",
         "X-GitHub-Api-Version": "2022-11-28"
     }
     
+    # Format date for GitHub search (ISO 8601)
+    since_str = since_time.strftime('%Y-%m-%dT%H:%M:%S')
+    
     merged_prs = []
     page = 1
     per_page = 100
     
-    print(f"📦 Fetching merged PRs for {repo} since {since_time.isoformat()}...")
+    print(f"📦 Searching merged PRs for {repo} since {since_time.isoformat()}...")
     
     while True:
-        url = f"{GITHUB_API_BASE}/repos/{repo}/pulls"
+        # Use Search API with merged date filter
+        url = f"{GITHUB_API_BASE}/search/issues"
         params = {
-            "state": "closed",
-            "sort": "updated",
-            "direction": "desc",
+            "q": f"repo:{repo} is:pr is:merged merged:>={since_str}",
+            "sort": "created",
+            "order": "desc",
             "per_page": per_page,
             "page": page
         }
@@ -58,33 +63,45 @@ def get_recent_merged_prs(repo: str, token: str, since_time: datetime) -> List[D
             print(response.text)
             sys.exit(1)
         
-        prs = response.json()
-        if not prs:
+        data = response.json()
+        items = data.get('items', [])
+        
+        if not items:
             break
         
-        for pr in prs:
-            merged_at = pr.get('merged_at')
-            if not merged_at:
-                continue
-            
-            merged_time = datetime.fromisoformat(merged_at.replace('Z', '+00:00'))
-            if merged_time > since_time:
-                merged_prs.append({
-                    'number': pr.get('number', 0),
-                    'title': pr.get('title', 'No title'),
-                    'body': pr.get('body', 'No description'),
-                    'author': pr.get('user', {}).get('login', 'Unknown'),
-                    'merged_at': merged_at,
-                    'url': pr.get('html_url', '#')
-                })
+        for pr in items:
+            # Get PR body - Search API doesn't always include full body
+            pr_url = pr.get('pull_request', {}).get('url')
+            if pr_url:
+                pr_detail = requests.get(pr_url, headers=headers)
+                if pr_detail.status_code == 200:
+                    pr_data = pr_detail.json()
+                    body = pr_data.get('body', 'No description')
+                else:
+                    body = pr.get('body', 'No description')
             else:
-                print(f"✅ Stopped: reached PR older than cutoff (page {page}).")
-                merged_prs.sort(key=lambda x: x['number'])
-                return merged_prs
+                body = pr.get('body', 'No description')
+            
+            merged_prs.append({
+                'number': pr.get('number', 0),
+                'title': pr.get('title', 'No title'),
+                'body': body,
+                'author': pr.get('user', {}).get('login', 'Unknown'),
+                'merged_at': pr.get('closed_at'),  # closed_at is merge time for merged PRs
+                'url': pr.get('html_url', '#')
+            })
+            
+            time.sleep(0.1)  # Small delay for detail requests
         
-        print(f"📄 Page {page} fetched ({len(prs)} PRs).")
+        print(f"📄 Page {page} fetched ({len(items)} PRs).")
+        
+        # Check if there are more results
+        total_count = data.get('total_count', 0)
+        if len(merged_prs) >= total_count:
+            break
+        
         page += 1
-        time.sleep(0.3)
+        time.sleep(0.3)  # Rate limiting between pages
     
     merged_prs.sort(key=lambda x: x['number'])
     print(f"✅ Total merged PRs found: {len(merged_prs)}")
@@ -96,13 +113,16 @@ def get_last_digest_time() -> datetime:
     current_weekday = now.weekday()
     
     if current_weekday == 0:  # Monday
+        # Last digest was Friday at 00:00 UTC (start of day)
         days_back = 3
-        last_digest = now.replace(hour=12, minute=0, second=0, microsecond=0) - timedelta(days=days_back)
+        last_digest = (now - timedelta(days=days_back)).replace(hour=0, minute=0, second=0, microsecond=0)
     elif current_weekday == 4:  # Friday  
+        # Last digest was Monday at 00:00 UTC (start of day)
         days_back = 4
-        last_digest = now.replace(hour=12, minute=0, second=0, microsecond=0) - timedelta(days=days_back)
+        last_digest = (now - timedelta(days=days_back)).replace(hour=0, minute=0, second=0, microsecond=0)
     else:
-        last_digest = now - timedelta(days=3)
+        # Other days - cover last 5 days
+        last_digest = (now - timedelta(days=5)).replace(hour=0, minute=0, second=0, microsecond=0)
     
     return last_digest
 
@@ -154,16 +174,23 @@ You've been given pre-filtered user-facing changes. Now create ONE polished, eng
 CONTEXT: Pollinations is an open-source AI platform. Your audience is USERS, not developers.
 
 OUTPUT FORMAT:
+```
 [Greet <@&1424461167883194418> naturally and casually in a playful way]
-🌸 Weekly Update - {date_str}
-[Choose section name with emoji based on changes]
-Polished description of change (benefits-focused)
-Another change
-Keep concise and clear
-[Another section if it makes sense]
-More organized changes
-Group logically for users
+
+## 🌸 Weekly Update - {date_str}
+
+### [Choose section name with emoji based on changes]
+- Polished description of change (benefits-focused)
+- Another change
+- Keep concise and clear
+
+### [Another section if it makes sense]
+- More organized changes
+- Group logically for users
+
 [Add sections as needed - organize however makes most sense!]
+```
+
 RULES:
 - Greet <@&1424461167883194418> creatively and playfully
 - Group related changes into logical sections (Discord Bot, New Features, Bug Fixes, etc.)
@@ -183,6 +210,81 @@ TONE: Conversational, friendly, exciting about improvements"""
 {combined_changes}
 
 Create a polished weekly digest that groups these changes logically and presents them in an engaging way for users."""
+    
+    return system_prompt, user_prompt
+
+def create_single_digest_prompt(prs: List[Dict]) -> tuple:
+    """Create the AI prompt with all PR data for small batches"""
+    if not prs:
+        return "", ""
+    
+    today = datetime.now(timezone.utc)
+    week_ago = today - timedelta(days=4)
+    
+    if week_ago.month == today.month:
+        date_str = f"{week_ago.strftime('%b %d')}-{today.strftime('%d, %Y')}"
+    else:
+        date_str = f"{week_ago.strftime('%b %d')} - {today.strftime('%b %d, %Y')}"
+    
+    system_prompt = f"""You are creating a weekly digest for the Pollinations AI Discord community.
+Analyze the merged PRs and create ONE clean, engaging update message for USERS of the platform.
+
+CONTEXT: Pollinations is an open-source AI platform. You're talking to USERS who use the service, NOT developers.
+
+OUTPUT FORMAT:
+```
+[Greet <@&1424461167883194418> naturally and casually in a playful way]
+
+## 🌸 Weekly Update - {date_str}
+
+[Create sections that make sense for what actually changed - you have COMPLETE FREEDOM]
+[Examples: "🎮 Discord Bot", "🚀 New Models", "⚡ Speed Improvements", "🎨 UI Updates", "🔧 Bug Fixes", etc.]
+
+### [Your chosen section name with emoji]
+- What changed for users (brief, clear)
+- Another user-facing change
+- Focus on benefits users will notice
+
+### [Another section if needed]
+- More changes that affect users
+- Keep it user-focused
+
+[Add as many sections as needed - organize however makes most sense!]
+```
+
+YOUR COMPLETE FREEDOM:
+- Choose ANY section names that fit the changes
+- Create ANY number of sections (1-5 typically)
+- Use ANY emojis that make sense
+- Group changes however is most logical for users
+- Focus on what USERS will experience, not technical details
+
+CRITICAL RULES:
+- Greet <@&1424461167883194418> naturally and casually - be creative with your greeting!
+- Write for USERS, not developers - focus on benefits they'll see
+- Keep bullet points concise and clear
+- NO PR numbers, NO author names, NO technical jargon
+- Skip internal/developer changes that don't affect users
+- If no user-facing changes, return only one word "SKIP"
+- A bit of fun and sarcasm is ok! 
+
+TONE: Conversational, friendly, focus on user benefits and playful
+LENGTH: Keep it concise but complete"""
+
+    user_prompt = f"""Analyze these {len(prs)} merged PRs and create a weekly digest:
+
+"""
+    
+    for i, pr in enumerate(prs, 1):
+        user_prompt += f"""PR #{pr['number']}: {pr['title']}
+Author: {pr['author']}
+Description: {pr['body'][:500] if pr['body'] else 'No description'}
+
+"""
+    
+    user_prompt += """
+Create a clean weekly digest focusing on user impact. Group related changes naturally.
+Remember: Focus on WHAT changed for users, not WHO changed it or technical details."""
     
     return system_prompt, user_prompt
 
@@ -300,7 +402,7 @@ def main():
     # Get last digest time
     last_digest_time = get_last_digest_time()
     
-    # Get recent merged PRs
+    # Get recent merged PRs using Search API
     merged_prs = get_recent_merged_prs(repo_name, github_token, last_digest_time)
     
     if not merged_prs:
@@ -312,67 +414,7 @@ def main():
     # For small batches, use single call (your original approach)
     if len(merged_prs) <= CHUNK_SIZE:
         print("🧠 Small batch - using single AI call...")
-        
-        today = datetime.now(timezone.utc)
-        week_ago = today - timedelta(days=4)
-        
-        if week_ago.month == today.month:
-            date_str = f"{week_ago.strftime('%b %d')}-{today.strftime('%d, %Y')}"
-        else:
-            date_str = f"{week_ago.strftime('%b %d')} - {today.strftime('%b %d, %Y')}"
-        
-        system_prompt = f"""You are creating a weekly digest for the Pollinations AI Discord community.
-Analyze the merged PRs and create ONE clean, engaging update message for USERS of the platform.
-
-CONTEXT: Pollinations is an open-source AI platform. You're talking to USERS who use the service, NOT developers.
-
-OUTPUT FORMAT:
-[Greet <@&1424461167883194418> naturally and casually in a playful way]
-🌸 Weekly Update - {date_str}
-[Create sections that make sense for what actually changed - you have COMPLETE FREEDOM]
-[Examples: "🎮 Discord Bot", "🚀 New Models", "⚡ Speed Improvements", "🎨 UI Updates", "🔧 Bug Fixes", etc.]
-[Your chosen section name with emoji]
-What changed for users (brief, clear)
-Another user-facing change
-Focus on benefits users will notice
-[Another section if needed]
-More changes that affect users
-Keep it user-focused
-[Add as many sections as needed - organize however makes most sense!]
-YOUR COMPLETE FREEDOM:
-- Choose ANY section names that fit the changes
-- Create ANY number of sections (1-5 typically)
-- Use ANY emojis that make sense
-- Group changes however is most logical for users
-- Focus on what USERS will experience, not technical details
-
-CRITICAL RULES:
-- Greet <@&1424461167883194418> naturally and casually - be creative with your greeting!
-- Write for USERS, not developers - focus on benefits they'll see
-- Keep bullet points concise and clear
-- NO PR numbers, NO author names, NO technical jargon
-- Skip internal/developer changes that don't affect users
-- If no user-facing changes, return only one word "SKIP"
-- A bit of fun and sarcasm is ok! 
-
-TONE: Conversational, friendly, focus on user benefits and playful
-LENGTH: Keep it concise but complete"""
-
-        user_prompt = f"""Analyze these {len(merged_prs)} merged PRs and create a weekly digest:
-
-"""
-        
-        for pr in merged_prs:
-            user_prompt += f"""PR #{pr['number']}: {pr['title']}
-Author: {pr['author']}
-Description: {pr['body'][:500] if pr['body'] else 'No description'}
-
-"""
-        
-        user_prompt += """
-Create a clean weekly digest focusing on user impact. Group related changes naturally.
-Remember: Focus on WHAT changed for users, not WHO changed it or technical details."""
-        
+        system_prompt, user_prompt = create_single_digest_prompt(merged_prs)
         ai_response = call_pollinations_api(system_prompt, user_prompt, pollinations_token)
         message = parse_message(ai_response)
         

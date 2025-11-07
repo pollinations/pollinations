@@ -64,6 +64,11 @@ async function ensureConfigured(env: CloudflareBindings) {
                 lowestLevel: logLevel,
             },
             {
+                category: ["durable"],
+                sinks: ["console"],
+                lowestLevel: logLevel,
+            },
+            {
                 category: ["test", "mock"],
                 sinks: ["console"],
                 lowestLevel: logLevel,

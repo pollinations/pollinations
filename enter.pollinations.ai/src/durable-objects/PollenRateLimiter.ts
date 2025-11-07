@@ -47,7 +47,7 @@ export class PollenRateLimiter extends DurableObject {
     async checkRateLimit(): Promise<{ 
         allowed: boolean; 
         remaining: number; 
-        waitMs: number;
+        waitMs?: number;
     }> {
         const now = Date.now();
         
@@ -59,7 +59,7 @@ export class PollenRateLimiter extends DurableObject {
             return {
                 allowed: false,
                 remaining: this.currentFill,
-                waitMs: 1000, // Wait 1 second and retry
+                // No waitMs - concurrent request, retry immediately
             };
         }
         
@@ -71,17 +71,16 @@ export class PollenRateLimiter extends DurableObject {
             return {
                 allowed: true,
                 remaining: this.currentFill,
-                waitMs: 0,
             };
         }
         
-        // Calculate wait time until bucket refills to positive
-        const pollenNeeded = 0.001 - this.currentFill; // Need to get above zero
+        // Calculate wait time until bucket refills to positive (rate limit exhausted case)
+        const pollenNeeded = -this.currentFill; // Need to get back to zero (same threshold as check)
         const msNeeded = Math.ceil(pollenNeeded / this.refillRate);
         
         return {
             allowed: false,
-            remaining: 0,
+            remaining: this.currentFill,
             waitMs: msNeeded,
         };
     }

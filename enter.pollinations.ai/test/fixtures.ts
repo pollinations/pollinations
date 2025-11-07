@@ -1,12 +1,12 @@
 import { test as base, expect } from "vitest";
 import { createAuthClient } from "better-auth/client";
 import { apiKeyClient, adminClient } from "better-auth/client/plugins";
-import { SELF } from "cloudflare:test";
+import { fetchMock, SELF } from "cloudflare:test";
+import { setupFetchMock, teardownFetchMock } from "./mocks/fetch.ts";
 import { createMockPolar } from "./mocks/polar.ts";
-import { createMockGithub } from "./mocks/github.ts";
 import { createMockTinybird } from "./mocks/tinybird.ts";
-import { createMockTextService } from "./mocks/textService.ts";
-import { teardownFetchMock, setupFetchMock } from "./mocks/fetch.ts";
+import { createMockGithub } from "./mocks/github.ts";
+import { setupTextServiceMock } from "./mocks/textService.ts";
 
 const createAuth = () =>
     createAuthClient({
@@ -23,7 +23,6 @@ type Fixtures = {
         github: ReturnType<typeof createMockGithub>;
         polar: ReturnType<typeof createMockPolar>;
         tinybird: ReturnType<typeof createMockTinybird>;
-        textService: ReturnType<typeof createMockTextService>;
     };
     auth: ReturnType<typeof createAuth>;
     sessionToken: string;
@@ -36,24 +35,32 @@ type SignupData = {
 
 export const test = base.extend<Fixtures>({
     mocks: async ({}, use) => {
+        // Activate Cloudflare's fetchMock for outbound requests
+        fetchMock.activate();
+        fetchMock.disableNetConnect();
+        
+        // Setup text service mock using fetchMock
+        setupTextServiceMock();
+        
+        // Setup other mocks using the old system (for Polar, Tinybird, Github)
         const mockPolar = createMockPolar();
         const mockTinybird = createMockTinybird();
         const mockGithub = createMockGithub();
-        const mockTextService = createMockTextService();
         const mockHandlers = {
             ...mockGithub.handlerMap,
             ...mockPolar.handlerMap,
             ...mockTinybird.handlerMap,
-            ...mockTextService.handlerMap,
         };
         setupFetchMock(mockHandlers, { logRequests: true });
+        
         await use({
             github: mockGithub,
             polar: mockPolar,
             tinybird: mockTinybird,
-            textService: mockTextService,
         });
+        
         await teardownFetchMock();
+        fetchMock.deactivate();
     },
     auth: async ({}, use) => {
         const auth = createAuth();

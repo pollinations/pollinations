@@ -3,7 +3,6 @@ name: Deploy enter.pollinations.ai
 on:
   push:
     branches:
-      - main
       - staging
     paths:
       - 'enter.pollinations.ai/**'

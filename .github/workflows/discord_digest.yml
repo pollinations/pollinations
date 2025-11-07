@@ -1,7 +1,7 @@
 name: Simple Weekly Discord Digest (Monday & Friday)
 on:
   schedule:
-    - cron: '0 16 7 11 *'
+    - cron: '0 12 * * 1,5'
   workflow_dispatch: # Allow manual trigger
 
 jobs:

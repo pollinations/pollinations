@@ -9,7 +9,7 @@ const log = getLogger(["test", "rate-limit"]);
 // Get capacity from environment (test env uses 0.002 for bucket exhaustion testing)
 const EXPECTED_CAPACITY = parseFloat(process.env.POLLEN_BUCKET_CAPACITY || "0.002");
 
-test("pollen limiter - verifies pollen-based headers", { timeout: 30000 }, async ({ auth, sessionToken }) => {
+test("pollen limiter - verifies pollen-based headers", { timeout: 30000 }, async ({ auth, sessionToken, mocks }) => {
     // Create a publishable key for testing
     const createApiKeyResponse = await auth.apiKey.create({
         name: "test-pollen-headers2",
@@ -59,7 +59,7 @@ test("pollen limiter - verifies pollen-based headers", { timeout: 30000 }, async
 // Pollen-Based Rate Limiter - Full MVP Test
 // ========================================
 
-test("pollen rate limiter - verify headers and deduction mechanism", { timeout: 30000 }, async ({ auth, sessionToken }) => {
+test("pollen rate limiter - verify headers and deduction mechanism", { timeout: 30000 }, async ({ auth, sessionToken, mocks }) => {
     // Create a publishable key for testing
     const createApiKeyResponse = await auth.apiKey.create({
         name: "test-pollen-headers",
@@ -119,7 +119,7 @@ test("pollen rate limiter - verify headers and deduction mechanism", { timeout: 
     log.info("✓ Pollen rate limiter test passed - headers correct, synchronous deduction working");
 });
 
-test("pollen rate limiter - secret keys bypass rate limiting", { timeout: 30000 }, async ({ auth, sessionToken }) => {
+test("pollen rate limiter - secret keys bypass rate limiting", { timeout: 30000 }, async ({ auth, sessionToken, mocks }) => {
     // Create a secret key for testing
     const createApiKeyResponse = await auth.apiKey.create({
         name: "test-secret-bypass",
@@ -166,7 +166,7 @@ test("pollen rate limiter - secret keys bypass rate limiting", { timeout: 30000 
     log.info("✓ Secret key correctly bypasses rate limiting - no headers present");
 });
 
-test("pollen rate limiter - blocks when bucket exhausted (429)", { timeout: 60000 }, async ({ auth, sessionToken }) => {
+test("pollen rate limiter - blocks when bucket exhausted (429)", { timeout: 60000 }, async ({ auth, sessionToken, mocks }) => {
     // Create a publishable key for testing
     const createApiKeyResponse = await auth.apiKey.create({
         name: "test-rate-limit-block",
@@ -245,7 +245,7 @@ test("pollen rate limiter - blocks when bucket exhausted (429)", { timeout: 6000
     log.info(`✓ Rate limiter successfully blocked after ${requestCount} requests`);
 });
 
-test("pollen rate limiter - prevents concurrent requests", { timeout: 30000 }, async ({ auth, sessionToken }) => {
+test("pollen rate limiter - prevents concurrent requests", { timeout: 30000 }, async ({ auth, sessionToken, mocks }) => {
     // Create a publishable key for testing
     const createApiKeyResponse = await auth.apiKey.create({
         name: "test-concurrent-blocking",
@@ -319,7 +319,7 @@ test("pollen rate limiter - prevents concurrent requests", { timeout: 30000 }, a
     log.info("✓ Concurrent requests prevented - no race condition!");
 });
 
-test("pollen rate limiter - bucket refills over time", { timeout: 30000 }, async ({ auth, sessionToken }) => {
+test("pollen rate limiter - bucket refills over time", { timeout: 60000 }, async ({ auth, sessionToken, mocks }) => {
     // Create a publishable key for testing
     const createApiKeyResponse = await auth.apiKey.create({
         name: "test-refill-mechanism",

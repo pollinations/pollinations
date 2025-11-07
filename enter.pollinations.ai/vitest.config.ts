@@ -13,7 +13,7 @@ export default defineWorkersConfig(async () => {
         ...viteConfig,
         test: {
             setupFiles: ["./test/apply-migrations.ts"],
-            reporters: ['default'], // Use default reporter (less verbose than 'verbose')
+            reporters: ['verbose'], // Enable verbose logging to see full error details
             poolOptions: {
                 workers: {
                     singleWorker: true,

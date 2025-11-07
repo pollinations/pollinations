@@ -50,6 +50,16 @@ export function createMockPolar(): MockAPI<MockPolarState> {
         })
         .post("/v1/customer-sessions", async (c) => {
             return c.json(mockCustomerSession, 201);
+        })
+        .get("/v1/customer-meters", async (c) => {
+            // Return mock customer meters with balance
+            return c.json({
+                items: [createMockMeter(100, 100)],
+                pagination: {
+                    total_count: 1,
+                    max_page: 1,
+                },
+            });
         });
 
     const handlerMap = {
@@ -76,6 +86,43 @@ function createMockMeter(balance: number, creditedUnits: number = 10) {
         consumed_units: creditedUnits - balance,
         credited_units: creditedUnits,
         balance,
+        customer_id: "test-customer-id-1234",
+        organization_id: "test-org-id-1234",
+        customer: {
+            id: "test-customer-id-1234",
+            email: "test@example.com",
+            created_at: "2025-09-25T16:46:18.720Z",
+            modified_at: "2025-09-25T16:46:18.739Z",
+            metadata: {},
+            external_id: "test-external-id",
+            email_verified: true,
+            name: "Test User",
+            billing_address: null,
+            tax_id: [],
+            organization_id: "test-org-id-1234",
+            deleted_at: null,
+            avatar_url: "",
+        },
+        meter: {
+            id: "test-meter-id-5678",
+            slug: "pollen",
+            created_at: "2025-09-25T16:46:18.720Z",
+            modified_at: "2025-09-25T16:46:18.739Z",
+            metadata: {
+                slug: "pollen",
+                priority: 1,
+            },
+            name: "Pollen Meter",
+            filter: {
+                conjunction: "and",
+                clauses: [],
+            },
+            aggregation: {
+                func: "sum",
+                property: "amount",
+            },
+            organization_id: "test-org-id-1234",
+        },
     };
 }
 

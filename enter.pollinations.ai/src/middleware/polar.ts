@@ -68,6 +68,27 @@ export const polar = createMiddleware<PolarEnv>(async (c, next) => {
                 });
                 return response.result.items;
             } catch (error) {
+                // Log full error details for debugging - use multiple approaches
+                console.error("=== POLAR SDK ERROR DEBUG ===");
+                console.error("Error object:", error);
+                console.error("Error string:", String(error));
+                console.error("Error JSON (getOwnPropertyNames):", JSON.stringify(error, Object.getOwnPropertyNames(error), 2));
+                
+                // Try to access Zod error details if it exists
+                if (error && typeof error === 'object') {
+                    console.error("Error keys:", Object.keys(error));
+                    if ('issues' in error) {
+                        console.error("Zod issues:", JSON.stringify((error as any).issues, null, 2));
+                    }
+                    if ('cause' in error) {
+                        console.error("Error cause:", error.cause);
+                    }
+                }
+                
+                log.error("Failed to get customer meters", {
+                    errorType: error?.constructor?.name,
+                    errorMessage: error instanceof Error ? error.message : String(error),
+                });
                 throw new Error("Failed to get customer meters.", {
                     cause: error,
                 });

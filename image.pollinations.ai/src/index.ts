@@ -102,14 +102,7 @@ const setCORSHeaders = (res: ServerResponse) => {
     res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
     res.setHeader("Access-Control-Allow-Headers", "Content-Type");
     res.setHeader("Access-Control-Expose-Headers", [
-        "X-Auth-Status",
-        "X-Auth-Reason",
-        "X-Debug-Token",
-        "X-Debug-Token-Source",
-        "X-Debug-Referrer",
-        "X-Debug-Legacy-Token-Match",
-        "X-Debug-Allowlist-Match",
-        "X-Debug-User-Id",
+        "Content-Length",
     ]);
 };
 
@@ -492,9 +485,6 @@ const checkCacheAndGenerate = async (
         const headers = {
             "Content-Type": "image/jpeg",
             "Cache-Control": "public, max-age=31536000, immutable",
-            "X-Auth-Status": isAuthenticated
-                ? "authenticated"
-                : "unauthenticated",
         };
 
         // Add Content-Disposition header with sanitized filename

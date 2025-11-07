@@ -19,8 +19,8 @@ import type { Env } from "../env.ts";
  * - Only applies to frontend keys (pk_*)
  */
 export class PollenRateLimiter extends DurableObject {
-    private currentFill: number;
-    private lastUpdateTime: number;
+    private currentFill!: number; // Initialized in blockConcurrencyWhile
+    private lastUpdateTime!: number; // Initialized in blockConcurrencyWhile
     private readonly capacity: number;
     private readonly refillRate: number;
     private requestInProgress: boolean = false;
@@ -29,13 +29,23 @@ export class PollenRateLimiter extends DurableObject {
         super(ctx, env);
         
         // Read configuration from environment variables with fallbacks
-        this.capacity = env.POLLEN_BUCKET_CAPACITY ?? 0.1;
+        this.capacity = env.POLLEN_BUCKET_CAPACITY ?? 0; // TESTING: 0 capacity = only refill allows requests
         const refillPerHour = env.POLLEN_REFILL_PER_HOUR ?? 1.0;
         this.refillRate = refillPerHour / 3600000; // Convert per-hour to per-millisecond
         
-        // Start with full capacity
-        this.currentFill = this.capacity;
-        this.lastUpdateTime = Date.now();
+        // Load state from storage or initialize with defaults
+        // blockConcurrencyWhile ensures no requests are delivered until initialization completes
+        this.ctx.blockConcurrencyWhile(async () => {
+            this.currentFill = await ctx.storage.get("currentFill") ?? this.capacity;
+            this.lastUpdateTime = await ctx.storage.get("lastUpdateTime") ?? Date.now();
+            this.requestInProgress = false; // Always start with no request in progress
+            
+            console.log('[DURABLE] Loaded from storage', {
+                currentFill: this.currentFill,
+                lastUpdateTime: this.lastUpdateTime,
+                capacity: this.capacity
+            });
+        });
     }
     
     /**
@@ -51,11 +61,23 @@ export class PollenRateLimiter extends DurableObject {
     }> {
         const now = Date.now();
         
+        console.log('[DURABLE] checkRateLimit called', {
+            currentFill: this.currentFill,
+            capacity: this.capacity,
+            refillRate: this.refillRate * 3600000, // per hour
+            requestInProgress: this.requestInProgress
+        });
+        
         // Refill bucket based on time elapsed
         this.refillBucket(now);
         
+        console.log('[DURABLE] After refill', {
+            currentFill: this.currentFill
+        });
+        
         // Block if another request is in progress (prevents parallel requests)
         if (this.requestInProgress) {
+            console.log('[DURABLE] Blocking concurrent request');
             return {
                 allowed: false,
                 remaining: this.currentFill,
@@ -68,6 +90,9 @@ export class PollenRateLimiter extends DurableObject {
         if (this.currentFill > 0) {
             // Allow request and mark as in progress
             this.requestInProgress = true;
+            console.log('[DURABLE] Request ALLOWED', {
+                remaining: this.currentFill
+            });
             return {
                 allowed: true,
                 remaining: this.currentFill,
@@ -77,6 +102,12 @@ export class PollenRateLimiter extends DurableObject {
         // Calculate wait time until bucket refills to positive (rate limit exhausted case)
         const pollenNeeded = -this.currentFill; // Need to get back to zero (same threshold as check)
         const msNeeded = Math.ceil(pollenNeeded / this.refillRate);
+        
+        console.log('[DURABLE] Request BLOCKED - rate limit exhausted', {
+            currentFill: this.currentFill,
+            pollenNeeded,
+            waitMs: msNeeded
+        });
         
         return {
             allowed: false,
@@ -95,11 +126,24 @@ export class PollenRateLimiter extends DurableObject {
         try {
             const now = Date.now();
             
+            console.log('[DURABLE] consumePollen called', {
+                cost,
+                currentFillBefore: this.currentFill
+            });
+            
             // Refill bucket based on time elapsed
             this.refillBucket(now);
             
             // Deduct cost (can go negative, creating debt that must be repaid by refill)
             this.currentFill = this.currentFill - cost;
+            
+            console.log('[DURABLE] After consumption', {
+                currentFillAfter: this.currentFill
+            });
+            
+            // Persist state to storage
+            await this.ctx.storage.put("currentFill", this.currentFill);
+            await this.ctx.storage.put("lastUpdateTime", this.lastUpdateTime);
         } finally {
             // Always clear flag, even if consumption fails
             this.requestInProgress = false;
@@ -114,9 +158,22 @@ export class PollenRateLimiter extends DurableObject {
         const timePassed = now - this.lastUpdateTime;
         const pollenToAdd = timePassed * this.refillRate;
         
+        console.log('[DURABLE] refillBucket', {
+            timePassed,
+            pollenToAdd,
+            currentFillBefore: this.currentFill,
+            capacity: this.capacity,
+            lastUpdateTime: this.lastUpdateTime,
+            now: now
+        });
+        
         // Add refilled pollen, cap at capacity
         this.currentFill = Math.min(this.capacity, this.currentFill + pollenToAdd);
         this.lastUpdateTime = now;
+        
+        console.log('[DURABLE] After refill cap', {
+            currentFillAfter: this.currentFill
+        });
     }
     
     /**

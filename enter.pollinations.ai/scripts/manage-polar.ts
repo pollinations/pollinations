@@ -117,18 +117,18 @@ async function updatePollenMeter(
 }
 
 type CreatePollenTierBenefitOptions = {
-    amount: number;
+    pollenGrantAmount: number;
     meterId: string;
 };
 
 async function createPollenTierBenefit(
     polar: Polar,
-    { amount, meterId }: CreatePollenTierBenefitOptions,
+    { pollenGrantAmount, meterId }: CreatePollenTierBenefitOptions,
 ) {
-    if (amount % 1 !== 0) {
+    if (pollenGrantAmount % 1 !== 0) {
         throw new Error("Amount must be an integer");
     }
-    const formattedAmount = amount.toLocaleString("en-US", {
+    const formattedAmount = pollenGrantAmount.toLocaleString("en-US", {
         maximumFractionDigits: 0,
     });
     return await polar.benefits.create({
@@ -136,7 +136,7 @@ async function createPollenTierBenefit(
         description: `Grant ${formattedAmount} pollen without rollover.`,
         properties: {
             meterId,
-            units: amount,
+            units: pollenGrantAmount,
             rollover: false,
         },
         metadata: {
@@ -147,18 +147,18 @@ async function createPollenTierBenefit(
 
 type CreatePollenPackProductOptions = {
     name: string;
-    amount: number;
+    pollenGrantAmount: number;
     benefits: string[];
 };
 
-async function createPollenTierProductAndBenefit(
+async function createPollenTierProduct(
     polar: Polar,
-    { name, amount, benefits }: CreatePollenPackProductOptions,
+    { name, pollenGrantAmount, benefits }: CreatePollenPackProductOptions,
 ) {
-    if (amount % 1 !== 0) {
+    if (pollenGrantAmount % 1 !== 0) {
         throw new Error("Amount must be an integer");
     }
-    const formattedAmount = amount.toLocaleString("en-US", {
+    const formattedAmount = pollenGrantAmount.toLocaleString("en-US", {
         maximumFractionDigits: 0,
     });
     const product = await polar.products.create({
@@ -177,6 +177,125 @@ async function createPollenTierProductAndBenefit(
         },
     });
     return updatedProduct;
+}
+
+type CreateAllPollenBenefitsAndProductsOptions = {
+    tierMeterId: string;
+    tiers: {
+        name: string;
+        pollenGrantAmount: number;
+    }[];
+};
+
+async function createPollenTierBenefitsAndProducts(
+    polar: Polar,
+    { tierMeterId, tiers }: CreateAllPollenBenefitsAndProductsOptions,
+) {
+    const createdProducts: any[] = [];
+    for (const tier of tiers) {
+        const benefit = await createPollenTierBenefit(polar, {
+            pollenGrantAmount: tier.pollenGrantAmount,
+            meterId: tierMeterId,
+        });
+        const product = await createPollenTierProduct(polar, {
+            name: tier.name,
+            pollenGrantAmount: tier.pollenGrantAmount,
+            benefits: [benefit.id],
+        });
+        createdProducts.push(product);
+    }
+    console.log(inspect(createdProducts, false, 1000));
+}
+
+const TIERS = [
+    {
+        name: "Seed",
+        pollenGrantAmount: 10,
+    },
+    {
+        name: "Flower",
+        pollenGrantAmount: 15,
+    },
+    {
+        name: "Nectar",
+        pollenGrantAmount: 20,
+    },
+];
+
+type UpdateSubscriptionOptions = {
+    subscriptionId: string;
+    productId: string;
+};
+
+const UPDATE_PRODUCTS = [
+    // Seed
+    {
+        currentProductId: "82ee54e1-5b69-447b-82aa-3c76bccae193",
+        updatedProductId: "5cbd2495-dba1-4840-8465-46afd9b16679",
+    },
+    // Flower
+    {
+        currentProductId: "2bfbe9e0-8395-489f-a7a1-6821d835cc08",
+        updatedProductId: "ea33ef88-67ff-45d8-906e-bb9357dd549a",
+    },
+    // Nectar
+    {
+        currentProductId: "d67b2a25-c4d7-47fa-9d64-4b2a27f0908f",
+        updatedProductId: "10167875-38e1-459f-8241-106aafc3062c",
+    },
+] as const;
+
+async function updateSubscriptionProducts(
+    polar: Polar,
+    config: typeof UPDATE_PRODUCTS,
+    apply: boolean,
+) {
+    const tierMap = Object.fromEntries(
+        config.map((item) => [item.currentProductId, item.updatedProductId]),
+    );
+    const results: any[] = [];
+    const paginator = await polar.subscriptions.list({ limit: 100 });
+    for await (const page of paginator) {
+        for (const sub of page.result.items) {
+            if (tierMap[sub.productId]) {
+                console.log("Processing user:", sub.customer.email);
+                console.log(
+                    `Updating subscription ${sub.id} to ${tierMap[sub.productId]}`,
+                );
+                if (apply) {
+                    try {
+                        const result = await polar.subscriptions.update({
+                            id: sub.id,
+                            subscriptionUpdate: {
+                                productId: tierMap[sub.productId],
+                                prorationBehavior: "prorate",
+                            },
+                        });
+                        results.push(result);
+                    } catch (e) {
+                        console.log(e);
+                    }
+                    await new Promise((resolve) => setTimeout(resolve, 500));
+                }
+            } else {
+                console.log("Skipping user:", sub.customer.email);
+            }
+        }
+    }
+    console.log(inspect(results, false, 1000));
+}
+
+async function updateSubscription(
+    polar: Polar,
+    { subscriptionId, productId }: UpdateSubscriptionOptions,
+) {
+    const updatedSubscription = await polar.subscriptions.update({
+        id: subscriptionId,
+        subscriptionUpdate: {
+            productId,
+        },
+    });
+    return updatedSubscription;
 }
 
 const meterList = command({
@@ -250,12 +369,86 @@ const productCreate = command({
         const benefits = opts.benefits
             .split(",")
             .map((benefit) => benefit.trim());
-        const response = await createPollenTierProductAndBenefit(polar, {
+        const response = await createPollenTierProduct(polar, {
             name: opts.name,
-            amount: opts.amount,
+            pollenGrantAmount: opts.amount,
             benefits,
         });
         console.log(inspect(response, false, 1000));
+    },
+});
+
+const subscriptionList = command({
+    name: "list",
+    options: {
+        env: string().enum("staging", "production").default("staging"),
+    },
+    handler: async (opts) => {
+        const server = opts.env === "production" ? "production" : "sandbox";
+        const polar = createPolarClient(server);
+        const subscriptions = await polar.subscriptions.list({ limit: 100000 });
+        const activeSub = subscriptions.result.items.find((sub) =>
+            sub.customer.email.startsWith("pollen"),
+        );
+        if (!activeSub) throw new Error("No active subscription found.");
+        const result = await polar.subscriptions.update({
+            id: activeSub.id,
+            subscriptionUpdate: {
+                productId: activeSub.productId,
+                prorationBehavior: "prorate",
+            },
+        });
+        console.log(inspect(result, false, 1000));
+    },
+});
+
+const subscriptionUpdate = command({
+    name: "update",
+    options: {
+        subscriptionId: string().required(),
+        productId: string().required(),
+        env: string().enum("staging", "production").default("staging"),
+    },
+    handler: async (opts) => {
+        const server = opts.env === "production" ? "production" : "sandbox";
+        const polar = createPolarClient(server);
+        const subscription = await updateSubscription(polar, opts);
+        console.log(inspect(subscription, false, 1000));
+    },
+});
+
+const tierCreateProducts = command({
+    name: "create-products",
+    options: {
+        meterId: string().required(),
+        env: string().enum("staging", "production").default("staging"),
+    },
+    handler: async (opts) => {
+        const server = opts.env === "production" ? "production" : "sandbox";
+        const polar = createPolarClient(server);
+        const products = await createPollenTierBenefitsAndProducts(polar, {
+            tiers: TIERS,
+            tierMeterId: opts.meterId,
+        });
+        console.log(inspect(products, false, 1000));
+    },
+});
+
+const tierUpdateSubscriptions = command({
+    name: "update-subscriptions",
+    options: {
+        apply: boolean().default(false),
+        env: string().enum("staging", "production").default("staging"),
+    },
+    handler: async (opts) => {
+        const server = opts.env === "production" ? "production" : "sandbox";
+        const polar = createPolarClient(server);
+        const results = await updateSubscriptionProducts(
+            polar,
+            UPDATE_PRODUCTS,
+            opts.apply,
+        );
+        console.log(inspect(results, false, 1000));
     },
 });
 
@@ -267,6 +460,11 @@ const commands = [
     command({
         name: "product",
         subcommands: [productCreate],
+    }),
+    command({ name: "subscriptions", subcommands: [subscriptionList] }),
+    command({
+        name: "tier",
+        subcommands: [tierCreateProducts, tierUpdateSubscriptions],
     }),
 ];
 

@@ -1,88 +1,66 @@
 # Terms of Service
 
-*Our services empower you to harness AI technology for the creation and interaction with digital media. By using our services, you consent to these terms. Please review them attentively.*
+## what Myceli.AI is
+
+We develop and operate **commercial, hosted services** built on the open-source **pollinations.ai** codebase. We provide the dashboard/API, billing and support, and—where applicable—service commitments. The open-source code remains licensed under its respective repository licences.
 
 ---
 
-## 1. Acceptance of Terms
+## 1) accounts & access
 
-By accessing our services, you confirm your understanding and agreement with these Terms and our Privacy Policy. 
+Provide accurate registration/billing details and keep credentials secure. Betas/experiments are provided “as is”.
 
-If you disagree, we advise you not to use our services.
+## 2) the service
 
-**What We Offer:**
+Hosted access to model-powered tools, dashboards, and APIs per your plan’s usage limits. We may make non-breaking changes and will notify you of material reductions.
 
-- AI-powered tools for digital media creation
-- You retain full ownership and responsibility for your content
-- Content can be utilized for commercial purposes, subject to legality and ethical standards
+## 3) customer data & privacy
 
-**Our Commitment:**
+* **Ownership:** you retain all rights to data you submit (“Customer Data”).
+* **Processing:** we process Customer Data to provide/secure the Service, prevent abuse, and improve core functionality.
+* **Content storage:** prompts/outputs are processed **transiently** to deliver results. We don’t retain them beyond what’s necessary to run the Service, except configuration you choose to save and legally required logs/billing records.
+* **No training without opt-in:** we **do not** use your prompts/outputs to train models without your permission.
+* **GDPR/DPA:** when we process personal data on your behalf, you are controller and we are processor. Our **DPA** is incorporated by reference and **available on request**.
+* **Sub-processors:** **available on request**; we’ll give at least **14 days’** prior notice of material changes.
+* **Security:** a concise security overview is **available on request**.
 
-- We do **not** store user-generated content
-- No personal data is stored
-- We prioritize user privacy and anonymity in all our services
+## 4) acceptable use & safety
 
-> **Important:** We encourage you to review the licenses of the open-source models we use before commercial use.
+Don’t violate law; infringe IP/likeness/privacy; attack the Service; evade rate limits; or replicate non-public features to build a competing hosted service. **No deepfakes of real people without consent. No CSAM (real or fictional).**
 
----
+## 5) fees, taxes & billing
 
-## 2. User Conduct
+* **Fees** per plan/order/invoice.
+* **Currency:** unless stated otherwise, billing is in **EUR**.
+* **Taxes:** prices are **net of VAT**; we charge **Estonian VAT (22%)** where applicable. For eligible EU B2B customers, **reverse-charge** rules apply with a valid VAT ID.
+* **Check:** **gross = net × 1.22**.
+* **Payment:** via dashboard/invoice by due date; late amounts may accrue **1.5%/month** (or legal max). We may suspend for non-payment after notice.
+* **Price changes:** **outside beta**, we’ll provide at least **30 days’** notice of fee changes; you may cancel before the effective date. **During beta**, pricing may change; we’ll notify in-product when practicable.
+* **Refunds:** unless required by law, fees are **non-refundable**.
 
-Use our services ethically and legally. 
+## 6) IP & open-source
 
-**You agree not to:**
+We and our licensors own the Service, models, and documentation. The Service may include or run against OSS; those components are governed by their licences. **Model licences vary**; verify before commercial use. Feedback may be used to improve the Service.
 
-- Engage in illegal activities or violate local laws
-- Infringe on third-party rights or intellectual property
-- Disseminate malicious software or attempt unauthorized data access
-- Probe or test the security of our services
+## 7) warranties & liability
 
----
+We warrant reasonable skill and care. Otherwise the Service is **“as is”**.
+**Cap:** each party’s aggregate liability is limited to **12 months of fees paid** by you.
+**Exclusions:** no indirect/special/incidental/consequential damages or lost profits/data.
+**Exceptions:** caps/exclusions don’t apply to payment obligations, confidentiality breaches, IP indemnity, or wilful misconduct.
 
-## 3. Prohibition of Unauthorized Materials
+## 8) confidentiality
 
-**Our services must not be used to generate:**
+Each party protects the other’s confidential information and uses it only for this relationship.
 
+## 9) term; suspension; termination
 
-### Celebrity Deepfakes
+Term begins on first access and continues per plan (usually month-to-month). Either party may terminate for uncured material breach after 30 days’ notice. On termination we delete/return Customer Data per the DPA within 30 days unless legal retention applies.
 
-- Creating deepfake materials of celebrities, politicians, or public figures is **strictly prohibited**
+## 10) publicity; export; misc.
 
-### Child Sexual Abuse Material (CSAM)
+We may use your name/logo to identify you as a customer unless you opt out in writing. You will comply with export/sanctions controls. Assignment with consent (not unreasonably withheld); notices by email; severability; no waiver; force majeure. Order of precedence: Order Form → these Terms → DPA.
 
-- It is **strictly forbidden** to produce CSAM or any content depicting individuals under 18 years of age
-- This applies to both fictional and real-life subjects
+## 11) governing law & venue
 
----
-
-## 4. Intellectual Property
-
-When creating content using our services:
-
-- Respect the licenses of the open-source models we employ
-- Check specific licenses for restrictions if using content commercially
-- You retain all rights to your created content
-
-**Myceli.AI OÜ** claims **no intellectual property rights** over the content you create.
-
----
-
-## 5. Modification of Terms
-
-We may amend these terms or our services at any time. 
-
-After changes are posted, your continued use indicates acceptance of the revised terms.
-
----
-
-## 6. Governing Law
-
-These terms are subject to the **laws of Estonia**, without regard to conflict of laws principles.
-
----
-
-## Company Information
-
-**Myceli.AI OÜ**  
-Registry Code: 17186693 | VAT: EE102877908  
-Tornimäe tn 5, 10145 Tallinn, Estonia
+**Estonia** / **Harju County Court (Tallinn)**.

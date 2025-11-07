@@ -37,7 +37,7 @@ import type { ProgressManager } from "./progressBar.ts";
 // Import model handlers
 import { callBPAIGenWithKontextFallback } from "./models/bpaigenModel.ts";
 import { callSeedreamAPI } from "./models/seedreamModel.ts";
-import type { ImageGenerationResult as FluxImageGenerationResult } from "./models/azureFluxKontextModel.js";
+import { callAzureFluxKontext, type ImageGenerationResult as FluxImageGenerationResult } from "./models/azureFluxKontextModel.js";
 
 dotenv.config();
 

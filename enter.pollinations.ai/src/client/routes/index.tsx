@@ -159,7 +159,7 @@ function RouteComponent() {
                         window.location.href = "/api/polar/customer/portal";
                     }}
                 />
-                <Button as="a" href="/api/docs" color="purple" weight="light">
+                <Button as="a" href="/api/docs" className="bg-gray-900 text-white hover:!brightness-90">
                     API Reference
                 </Button>
             </Header>

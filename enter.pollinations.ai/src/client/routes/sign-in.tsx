@@ -34,12 +34,11 @@ function RouteComponent() {
                     as="button"
                     onClick={handleSignIn}
                     disabled={loading}
-                    color="pink"
-                    weight="light"
+                    className="bg-amber-200 text-amber-900 hover:brightness-105"
                 >
                     {loading ? "Signing in..." : "Sign in with Github"}
                 </Button>
-                <Button as="a" href="/api/docs">
+                <Button as="a" href="/api/docs" className="bg-gray-900 text-white hover:!brightness-90">
                     API Reference
                 </Button>
             </Header>

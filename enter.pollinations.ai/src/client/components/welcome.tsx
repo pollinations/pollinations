@@ -42,17 +42,17 @@ export function Welcome({ isAuthenticated }: WelcomeProps) {
     return (
         <div className="text-center space-y-8 max-w-4xl mx-auto">
             <p className="text-2xl font-bold text-gray-800">
-                Sign in with <span className="italic">GitHub</span>.
+                Sign in with <span className="italic">GitHub</span>
             </p>
             
             <div className="space-y-6">
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-6 max-w-3xl mx-auto">
                     <div className="flex flex-col items-center text-center p-4">
-                        <span className="text-4xl mb-2">✨</span>
+                        <span className="text-4xl mb-2">👾</span>
                         <div className="space-y-1">
                             <span className="text-lg font-bold text-purple-600 block">Create</span>
                             <p className="text-sm leading-relaxed">
-                                <span className="italic text-purple-500">images</span>, <span className="underline text-purple-500">words</span>,<br />
+                                <span className="italic text-purple-500">images</span>, <span className="font-bold text-purple-500">words</span>,<br />
                                 <span className="font-semibold text-purple-500">sounds</span> —<br />
                                 anything.
                             </p>
@@ -65,17 +65,17 @@ export function Welcome({ isAuthenticated }: WelcomeProps) {
                             <p className="text-sm leading-relaxed">
                                 <span className="italic text-pink-500">daily</span> <span className="font-bold text-pink-500">Pollen</span><br />
                                 and use it to<br />
-                                <span className="italic underline text-pink-500">generate</span>.
+                                <span className="italic font-bold text-pink-500">generate</span>.
                             </p>
                         </div>
                     </div>
                     <div className="flex flex-col items-center text-center p-4">
-                        <span className="text-4xl mb-2">🔑</span>
+                        <span className="text-4xl mb-2">💎</span>
                         <div className="space-y-1">
                             <span className="text-lg font-bold text-blue-600 block">Manage</span>
                             <p className="text-sm leading-relaxed">
                                 your <span className="italic text-blue-500">balance</span><br />
-                                and <span className="underline text-blue-500">API keys</span>.
+                                and <span className="font-bold text-blue-500">API keys</span>.
                             </p>
                         </div>
                     </div>
@@ -85,15 +85,12 @@ export function Welcome({ isAuthenticated }: WelcomeProps) {
                             <span className="text-lg font-bold text-green-600 block">Build</span>
                             <p className="text-sm leading-relaxed">
                                 <span className="italic text-green-500">your own</span><br />
-                                <span className="underline text-green-500">AI-powered</span><br />
+                                <span className="font-bold text-green-500">AI-powered</span><br />
                                 apps.
                             </p>
                         </div>
                     </div>
                 </div>
-                <p className="text-gray-600 mt-6 text-lg">
-                    It's all connected — simple, playful.
-                </p>
             </div>
         </div>
     );

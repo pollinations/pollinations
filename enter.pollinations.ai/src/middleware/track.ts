@@ -10,6 +10,8 @@ import {
     UsageCost,
     UsagePrice,
     PriceDefinition,
+    getModelDefinition,
+    getServiceDefinition,
 } from "@shared/registry/registry.ts";
 import {
     openaiUsageToTokenUsage,
@@ -24,7 +26,6 @@ import {
 } from "@/schemas/openai.ts";
 import { generateRandomId } from "@/util.ts";
 import { createMiddleware } from "hono/factory";
-import type { LoggerVariables } from "./logger.ts";
 import {
     contentFilterResultsToEventParams,
     priceToEventParams,
@@ -47,8 +48,14 @@ import { EventSourceParserStream } from "eventsource-parser/stream";
 import { mergeContentFilterResults } from "@/content-filter.ts";
 import { getErrorCode, UpstreamError } from "@/error.ts";
 import { ValidationError } from "@/middleware/validator.ts";
+<<<<<<< HEAD
 import { ErrorVariables } from "@/env.ts";
 import { FrontendKeyRateLimitVariables } from "./rateLimit.durable.ts";
+=======
+import type { LoggerVariables } from "./logger.ts";
+import type { ErrorVariables } from "@/env.ts";
+import type { FrontendKeyRateLimitVariables } from "./rateLimit.durable.ts";
+>>>>>>> b2a54b43a (Add additional fields to tracking events)
 
 export type ModelUsage = {
     model: ModelId;
@@ -58,6 +65,7 @@ export type ModelUsage = {
 type RequestTrackingData = {
     modelRequested: string | null;
     resolvedModelRequested: string;
+    modelProvider?: string;
     freeModelRequested: boolean;
     modelPriceDefinition: PriceDefinition;
     streamRequested: boolean;
@@ -136,11 +144,16 @@ export const track = (eventType: EventType) =>
                     userId: c.var.auth.user?.id,
                     userTier: c.var.auth.user?.tier,
                     userGithubId: `${c.var.auth.user?.githubId}`,
+<<<<<<< HEAD
                     userGithubName: c.var.auth.user?.githubUsername,
+=======
+                    userGithubUsername: c.var.auth.user?.githubUsername,
+>>>>>>> b2a54b43a (Add additional fields to tracking events)
                     apiKeyId: c.var.auth.apiKey?.id,
                     apiKeyType: c.var.auth.apiKey?.metadata
                         ?.keyType as ApiKeyType,
                 };
+
                 const balanceTracking = {
                     selectedMeterId:
                         c.var.polar.balanceCheckResult?.selectedMeterId,
@@ -153,6 +166,7 @@ export const track = (eventType: EventType) =>
                         ]) || [],
                     ),
                 };
+
                 const event = createTrackingEvent({
                     requestId: c.get("requestId"),
                     requestPath: c.req.path,
@@ -167,6 +181,13 @@ export const track = (eventType: EventType) =>
                     errorTracking: collectErrorData(response, c.get("error")),
                 });
 
+<<<<<<< HEAD
+=======
+                // // Set internal header for rate limiter to read pollen price
+                // if (responseTracking.price?.totalPrice) {
+                //     c.header("X-Pollen-Price", responseTracking.price.totalPrice.toString());
+                // }
+>>>>>>> b2a54b43a (Add additional fields to tracking events)
                 log.trace("Event: {event}", { event });
                 const db = drizzle(c.env.DB);
                 await storeEvents(db, c.var.log, [event]);
@@ -191,7 +212,11 @@ async function trackRequest(
     request: HonoRequest,
 ): Promise<RequestTrackingData> {
     const modelRequested = await extractModelRequested(request);
-    const resolvedModelRequested = resolveServiceId(modelRequested, eventType);
+    const resolvedModelRequested = resolveServiceId(
+        modelRequested,
+        eventType,
+    ) as ServiceId;
+    const modelProvider = getServiceDefinition(resolvedModelRequested).provider;
     const freeModelRequested = isFreeService(resolvedModelRequested);
     const modelPriceDefinition = getActivePriceDefinition(
         resolvedModelRequested,
@@ -207,6 +232,7 @@ async function trackRequest(
     return {
         modelRequested,
         resolvedModelRequested,
+        modelProvider,
         modelPriceDefinition,
         freeModelRequested,
         streamRequested,
@@ -289,7 +315,7 @@ type UserData = {
     userId?: string;
     userTier?: string;
     userGithubId?: string;
-    userGithubName?: string;
+    userGithubUsername?: string;
     apiKeyId?: string;
     apiKeyType?: ApiKeyType;
 };

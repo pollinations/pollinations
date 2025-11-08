@@ -152,7 +152,8 @@ export const track = (eventType: EventType) =>
                     apiKeyId: c.var.auth.apiKey?.id,
                     apiKeyType: c.var.auth.apiKey?.metadata
                         ?.keyType as ApiKeyType,
-                };
+                    apiKeyName: c.var.auth.apiKey?.name,
+                } satisfies UserData;
 
                 const balanceTracking = {
                     selectedMeterId:
@@ -165,7 +166,7 @@ export const track = (eventType: EventType) =>
                             meter.balance,
                         ]) || [],
                     ),
-                };
+                } satisfies BalanceData;
 
                 const event = createTrackingEvent({
                     requestId: c.get("requestId"),
@@ -318,6 +319,7 @@ type UserData = {
     userGithubUsername?: string;
     apiKeyId?: string;
     apiKeyType?: ApiKeyType;
+    apiKeyName?: string;
 };
 
 type BalanceData = {

@@ -41,10 +41,6 @@ export function Welcome({ isAuthenticated }: WelcomeProps) {
 
     return (
         <div className="text-center space-y-8 max-w-4xl mx-auto">
-            <p className="text-2xl font-bold text-gray-800">
-                Sign in with <span className="italic">GitHub</span>
-            </p>
-            
             <div className="space-y-6">
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-6 max-w-3xl mx-auto">
                     <div className="flex flex-col items-center text-center p-4">
@@ -90,6 +86,14 @@ export function Welcome({ isAuthenticated }: WelcomeProps) {
                             </p>
                         </div>
                     </div>
+                </div>
+                <div className="mt-8 space-y-1">
+                    <p className="text-2xl font-bold text-gray-800">
+                        Sign in with <span className="italic">GitHub</span>
+                    </p>
+                    <p className="text-base text-gray-600">
+                        No credit card required
+                    </p>
                 </div>
             </div>
         </div>

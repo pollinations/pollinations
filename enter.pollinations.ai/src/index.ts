@@ -27,7 +27,27 @@ export const api = new Hono<Env>()
 const docsRoutes = createDocsRoutes(api);
 
 const app = new Hono<Env>()
+    // Path rewriting middleware for gen.pollinations.ai
+    .use("*", async (c, next) => {
+        const hostname = new URL(c.req.url).hostname;
+        if (hostname === "gen.pollinations.ai") {
+            // Redirect root to /api/docs
+            if (c.req.path === "/") {
+                return c.redirect("/api/docs", 302);
+            }
+            // Don't rewrite /assets, /api, or static files - let them fall through to asset handler
+            else if (!c.req.path.startsWith("/api/") && !c.req.path.startsWith("/assets/") && !c.req.path.match(/\.(js|css|png|jpg|svg|ico|webmanifest)$/)) {
+                // Rewrite other paths: /image/models -> /api/generate/image/models
+                c.req.raw = new Request(
+                    c.req.url.replace(c.req.path, "/api/generate" + c.req.path),
+                    c.req.raw
+                );
+            }
+        }
+        await next();
+    })
     // Permissive CORS for public API endpoints (require API keys)
+    // Also applies to gen.pollinations.ai root paths (rewritten to /api/generate)
     .use(
         "/api/generate/*",
         cors({
@@ -63,7 +83,11 @@ const app = new Hono<Env>()
     .route("/api", api)
     .route("/api/docs", docsRoutes);
 
-app.notFound((c) => {
+app.notFound(async (c) => {
+    // Serve static assets for non-API routes
+    if (c.env.ASSETS) {
+        return c.env.ASSETS.fetch(c.req.raw);
+    }
     return handleError(new HTTPException(404), c);
 });
 

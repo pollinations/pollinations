@@ -6,7 +6,7 @@ import React, {
     useCallback,
     useMemo,
 } from "react";
-import { Box, Typography, TextField, Button, IconButton } from "@mui/material";
+import { Box, Typography, TextField, IconButton } from "@mui/material";
 import { Colors, Fonts } from "../../config/global";
 import { GeneralButton } from "../GeneralButton";
 import Grid from "@mui/material/Grid2";
@@ -17,17 +17,14 @@ import {
     IMAGE_FEED_ENANCER_TOOLTIP,
     IMAGE_FEED_LOGO_WATERMARK,
     IMAGE_EDIT_BUTTON_OFF,
-    IMAGE_FEED_TOOLTIP_MODEL,
-    IMAGE_FEED_TOOLTIP_WIDTH,
-    IMAGE_FEED_TOOLTIP_HEIGHT,
     IMAGE_FEED_TOOLTIP_SEED,
 } from "../../config/copywrite";
 import { noLink } from "../../config/llmTransforms";
-import { keyframes } from "@emotion/react";
 import { LLMTextManipulator } from "../LLMTextManipulator";
 import { getImageURL } from "../../utils/getImageURL";
 import { trackEvent } from "../../config/analytics";
 import CloseIcon from "@mui/icons-material/Close";
+import AddIcon from "@mui/icons-material/Add";
 import { modelSupportsImageInput, MAX_REFERENCE_IMAGES, } from "../../config/imageModels.js";
 
 // ─── PARAMETER STYLING CONSTANTS ────────────────────────────────────────────────
@@ -42,30 +39,6 @@ const PARAM_STYLES = {
     checkboxColorOff: Colors.offblack,
 };
 
-// TextField styling for reference image input
-const TEXT_FIELD_STYLES = {
-    flex: 1,
-    minWidth: "200px",
-    "& .MuiOutlinedInput-root": {
-        backgroundColor: Colors.offblack,
-        color: Colors.offwhite,
-        fontFamily: Fonts.parameter,
-        fontSize: "0.9em",
-        "& fieldset": {
-            borderColor: `${Colors.gray2}66`,
-        },
-        "&:hover fieldset": {
-            borderColor: Colors.lime,
-        },
-        "&.Mui-focused fieldset": {
-            borderColor: Colors.lime,
-        },
-    },
-    "& .MuiOutlinedInput-input::placeholder": {
-        color: `${Colors.offwhite}80`,
-        opacity: 1,
-    },
-};
 
 const normalizeImageList = (value) => {
     if (!value) return [];
@@ -103,7 +76,6 @@ export const ImageEditor = memo(function ImageEditor({
     stop,
     cancelLoading,
     updateImage,
-    handleToggleChange,
 }) {
     // ─── LOCAL STATE ─────────────────────────────────────────────────────────────
     // Initialize with default values for numeric inputs
@@ -351,23 +323,6 @@ export const ImageEditor = memo(function ImageEditor({
         });
     }, [updateImage, image?.prompt]);
 
-    // ─── STYLES: BUTTONS, MENU, ANIMATIONS ─────────────────────────────────────
-
-    const blinkAnimation = keyframes`
-    0% {
-      background-color: ${Colors.offblack};
-      color: ${Colors.lime};
-    }
-    50% {
-      background-color: ${Colors.lime}B3;
-      color: ${Colors.offblack}B3;
-    }
-    100% {
-      background-color: ${Colors.offblack}B3;
-      color: ${Colors.lime}B3;
-    }
-  `;
-
     return (
         <Box
             sx={{
@@ -380,6 +335,145 @@ export const ImageEditor = memo(function ImageEditor({
                 {/* Conditional Rendering of Controls in Edit Mode */}
                 {toggleValue === "edit" && (
                     <>
+                        {/* Reference Images - appears between prompt and model */}
+                        {supportsImageInput && (
+                            <Grid size={{ xs: 12 }}>
+                                <Typography
+                                    sx={{
+                                        color: Colors.gray2,
+                                        fontSize: "0.9em",
+                                        fontFamily: Fonts.parameter,
+                                        marginBottom: "4px",
+                                    }}
+                                >
+                                    Reference images <span style={{ opacity: 0.5 }}>•</span>{" "}
+                                    <span style={{ fontSize: "0.85em", opacity: 0.7 }}>
+                                        {`${referenceImages.length}/${MAX_REFERENCE_IMAGES} images`}
+                                    </span>
+                                </Typography>
+                                {referenceImages.length > 0 && (
+                                    <Box
+                                        sx={{
+                                            display: "flex",
+                                            flexWrap: "wrap",
+                                            gap: "12px",
+                                            marginBottom: "12px",
+                                        }}
+                                    >
+                                        {referenceImages.map((img, index) => (
+                                            <Box
+                                                key={`${img}-${index}`}
+                                                sx={{
+                                                    position: "relative",
+                                                    width: "120px",
+                                                    height: "120px",
+                                                    overflow: "hidden",
+                                                    backgroundColor: Colors.offblack,
+                                                }}
+                                            >
+                                                <Box
+                                                    component="img"
+                                                    src={img}
+                                                    alt={`reference-${index + 1}`}
+                                                    sx={{
+                                                        width: "100%",
+                                                        height: "100%",
+                                                        objectFit: "cover",
+                                                    }}
+                                                />
+                                                <IconButton
+                                                    size="small"
+                                                    onClick={() =>
+                                                        handleReferenceImageRemove(index)
+                                                    }
+                                                    sx={{
+                                                        position: "absolute",
+                                                        top: 4,
+                                                        right: 4,
+                                                        backgroundColor: Colors.offblack2,
+                                                        color: Colors.lime,
+                                                        width: "24px",
+                                                        height: "24px",
+                                                        "&:hover": {
+                                                            backgroundColor: Colors.offblack2,
+                                                            opacity: 0.9,
+                                                        },
+                                                    }}
+                                                >
+                                                    <CloseIcon sx={{ fontSize: "16px" }} />
+                                                </IconButton>
+                                            </Box>
+                                        ))}
+                                    </Box>
+                                )}
+                                <Box
+                                    sx={{
+                                        height: "60px",
+                                        backgroundColor: Colors.offblack2,
+                                        display: "flex",
+                                        alignItems: "center",
+                                        position: "relative",
+                                    }}
+                                >
+                                    <TextField
+                                        value={imageUrlInput}
+                                        onChange={(event) =>
+                                            setImageUrlInput(event.target.value)
+                                        }
+                                        onKeyDown={(event) => {
+                                            if (event.key === "Enter") {
+                                                event.preventDefault();
+                                                handleImageUrlAdd();
+                                            }
+                                        }}
+                                        placeholder="Paste image URL"
+                                        disabled={remainingImageSlots <= 0}
+                                        variant="outlined"
+                                        InputProps={{
+                                            sx: {
+                                                fontSize: { xs: "1.5em", md: "1.1em" },
+                                                fontFamily: Fonts.parameter,
+                                                height: "60px",
+                                                paddingRight: "60px",
+                                                "& .MuiOutlinedInput-notchedOutline": {
+                                                    border: "none",
+                                                },
+                                            },
+                                        }}
+                                        sx={{
+                                            width: "100%",
+                                            "& .MuiOutlinedInput-input::placeholder": {
+                                                color: `${Colors.offwhite}60`,
+                                                opacity: 1,
+                                            },
+                                        }}
+                                    />
+                                    <IconButton
+                                        onClick={handleImageUrlAdd}
+                                        disabled={
+                                            remainingImageSlots <= 0 ||
+                                            imageUrlInput.trim() === ""
+                                        }
+                                        sx={{
+                                            position: "absolute",
+                                            right: "8px",
+                                            width: "44px",
+                                            height: "44px",
+                                            color: Colors.lime,
+                                            "&:hover": {
+                                                backgroundColor: `${Colors.lime}26`,
+                                            },
+                                            "&.Mui-disabled": {
+                                                color: `${Colors.lime}40`,
+                                            },
+                                        }}
+                                    >
+                                        <AddIcon sx={{ fontSize: "2em", fontWeight: "bold" }} />
+                                    </IconButton>
+                                </Box>
+                            </Grid>
+                        )}
+
                         {/* Model Selector */}
                         <Grid size={{ xs: 12, sm: 4, md: 2 }}>
                             <ModelSelector
@@ -474,165 +568,6 @@ export const ImageEditor = memo(function ImageEditor({
                                 styles={PARAM_STYLES}
                             />
                         </Grid>
-
-                        {supportsImageInput && (
-                            <Grid size={{ xs: 12 }}>
-                                <Box
-                                    sx={{
-                                        backgroundColor: Colors.offblack2,
-                                        border: `1px solid ${Colors.gray2}33`,
-                                        borderRadius: "10px",
-                                        padding: "16px",
-                                        display: "flex",
-                                        flexDirection: "column",
-                                        gap: "12px",
-                                    }}
-                                >
-                                    <Box
-                                        sx={{
-                                            display: "flex",
-                                            justifyContent: "space-between",
-                                            alignItems: "center",
-                                            flexWrap: "wrap",
-                                            gap: "8px",
-                                        }}
-                                    >
-                                        <Typography
-                                            sx={{
-                                                color: Colors.offwhite,
-                                                fontFamily: Fonts.parameter,
-                                                fontSize: "0.95em",
-                                                letterSpacing: "0.02em",
-                                            }}
-                                        >
-                                            Reference images
-                                        </Typography>
-                                        <Typography
-                                            sx={{
-                                                color: `${Colors.offwhite}80`,
-                                                fontFamily: Fonts.parameter,
-                                                fontSize: "0.8em",
-                                            }}
-                                        >
-                                            {`${referenceImages.length}/${MAX_REFERENCE_IMAGES} images`}
-                                        </Typography>
-                                    </Box>
-
-                                    {referenceImages.length > 0 && (
-                                        <Box
-                                            sx={{
-                                                display: "flex",
-                                                flexWrap: "wrap",
-                                                gap: "12px",
-                                            }}
-                                        >
-                                            {referenceImages.map((img, index) => (
-                                                <Box
-                                                    key={`${img}-${index}`}
-                                                    sx={{
-                                                        position: "relative",
-                                                        width: "72px",
-                                                        height: "72px",
-                                                        borderRadius: "8px",
-                                                        overflow: "hidden",
-                                                        border: `1px solid ${Colors.gray2}66`,
-                                                        backgroundColor: Colors.offblack,
-                                                    }}
-                                                >
-                                                    <Box
-                                                        component="img"
-                                                        src={img}
-                                                        alt={`reference-${index + 1}`}
-                                                        sx={{
-                                                            width: "100%",
-                                                            height: "100%",
-                                                            objectFit: "cover",
-                                                        }}
-                                                    />
-                                                    <IconButton
-                                                        size="small"
-                                                        onClick={() =>
-                                                            handleReferenceImageRemove(index)
-                                                        }
-                                                        sx={{
-                                                            position: "absolute",
-                                                            top: 4,
-                                                            right: 4,
-                                                            backgroundColor: `${Colors.offblack}CC`,
-                                                            color: Colors.offwhite,
-                                                            "&:hover": {
-                                                                backgroundColor: `${Colors.offblack}F2`,
-                                                            },
-                                                        }}
-                                                    >
-                                                        <CloseIcon sx={{ fontSize: "16px" }} />
-                                                    </IconButton>
-                                                </Box>
-                                            ))}
-                                        </Box>
-                                    )}
-
-                                    <Box
-                                        sx={{
-                                            display: "flex",
-                                            gap: "12px",
-                                            flexWrap: "wrap",
-                                            alignItems: "center",
-                                        }}
-                                    >
-                                        <TextField
-                                            value={imageUrlInput}
-                                            onChange={(event) =>
-                                                setImageUrlInput(event.target.value)
-                                            }
-                                            onKeyDown={(event) => {
-                                                if (event.key === "Enter") {
-                                                    event.preventDefault();
-                                                    handleImageUrlAdd();
-                                                }
-                                            }}
-                                            placeholder="Paste image URL"
-                                            size="small"
-                                            disabled={remainingImageSlots <= 0}
-                                            sx={TEXT_FIELD_STYLES}
-                                        />
-                                        <Button
-                                            variant="outlined"
-                                            onClick={handleImageUrlAdd}
-                                            disabled={
-                                                remainingImageSlots <= 0 ||
-                                                imageUrlInput.trim() === ""
-                                            }
-                                            sx={{
-                                                borderColor: Colors.lime,
-                                                color: Colors.lime,
-                                                fontFamily: Fonts.parameter,
-                                                textTransform: "none",
-                                                "&:hover": {
-                                                    borderColor: Colors.lime,
-                                                    backgroundColor: `${Colors.lime}26`,
-                                                },
-                                            }}
-                                        >
-                                            Add image
-                                        </Button>
-                                    </Box>
-
-                                    <Typography
-                                        sx={{
-                                            color: `${Colors.offwhite}66`,
-                                            fontFamily: Fonts.parameter,
-                                            fontSize: "0.75em",
-                                            lineHeight: 1.6,
-                                        }}
-                                    >
-                                        Works best with models like nanobanana, seedream,
-                                        or kontext. Paste direct image links to guide the
-                                        generation.
-                                    </Typography>
-                                </Box>
-                            </Grid>
-                        )}
 
                         {/* Submit Button */}
                         <Grid

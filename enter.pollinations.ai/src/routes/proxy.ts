@@ -1,6 +1,7 @@
 import { Context, Hono } from "hono";
 import { proxy } from "hono/proxy";
 import { auth } from "@/middleware/auth.ts";
+import { apiKeyAuth } from "@/middleware/api-key-auth.ts";
 import type { User } from "@/auth.ts";
 import { polar } from "@/middleware/polar.ts";
 import type { Env } from "../env.ts";
@@ -26,6 +27,14 @@ import { GenerateImageRequestQueryParamsSchema } from "@/schemas/image.ts";
 import { z } from "zod";
 import { HTTPException } from "hono/http-exception";
 import { ContentfulStatusCode } from "hono/utils/http-status";
+
+/**
+ * Helper to safely access auth context from either auth or apiKeyAuth middleware.
+ * Follows Hono best practice for optional middleware variables (see honojs/discussions#4274).
+ */
+function getAuthContext(c: Context) {
+    return (c.var as any).auth || (c.var as any).apiKeyAuth;
+}
 
 const errorResponseDescriptions = Object.fromEntries(
     KNOWN_ERROR_STATUS_CODES.map((status) => [
@@ -102,7 +111,7 @@ export const proxyRoutes = new Hono<Env>()
         },
     )
     // Auth required for all endpoints below (API key only - no session cookies)
-    .use(auth({ allowApiKey: true, allowSessionCookie: false }))
+    .use(apiKeyAuth)
     .use(frontendKeyRateLimit)
     .use(polar)
     .post(
@@ -410,9 +419,10 @@ export function contentFilterResultsToHeaders(
 }
 
 async function checkBalanceForPaidModel(c: Context<Env & TrackEnv>) {
-    if (!c.var.track.freeModelRequested && c.var.auth.user?.id) {
+    const authContext = getAuthContext(c);
+    if (!c.var.track.freeModelRequested && authContext?.user?.id) {
         await c.var.polar.requirePositiveBalance(
-            c.var.auth.user.id,
+            authContext.user.id,
             "Insufficient pollen balance to use this model",
         );
     }
@@ -420,7 +430,8 @@ async function checkBalanceForPaidModel(c: Context<Env & TrackEnv>) {
 
 // Shared handler for OpenAI-compatible chat completions
 async function handleChatCompletions(c: Context<Env & TrackEnv>) {
-    await c.var.auth.requireAuthorization({
+    const authContext = getAuthContext(c);
+    await authContext.requireAuthorization({
         allowAnonymous:
             c.var.track.freeModelRequested && c.env.ALLOW_ANONYMOUS_USAGE,
     });
@@ -435,7 +446,7 @@ async function handleChatCompletions(c: Context<Env & TrackEnv>) {
         method: c.req.method,
         headers: {
             ...proxyHeaders(c),
-            ...generationHeaders(c.env.ENTER_TOKEN, c.var.auth.user),
+            ...generationHeaders(c.env.ENTER_TOKEN, authContext.user),
         },
         body: JSON.stringify(requestBody),
     });

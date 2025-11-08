@@ -39,6 +39,7 @@ import type {
     InsertGenerationEvent,
 } from "@/db/schema/event.ts";
 import type { AuthVariables } from "@/middleware/auth.ts";
+import type { ApiKeyAuthVariables } from "@/middleware/api-key-auth.ts";
 import { PolarVariables } from "./polar.ts";
 import { z } from "zod";
 import { TokenUsage } from "../../../shared/registry/registry.js";
@@ -89,7 +90,7 @@ export type TrackEnv = {
     Bindings: CloudflareBindings;
     Variables: ErrorVariables &
         LoggerVariables &
-        AuthVariables &
+        (AuthVariables | ApiKeyAuthVariables) &
         PolarVariables &
         TrackVariables;
 };
@@ -124,13 +125,15 @@ export const track = (eventType: EventType) =>
                     requestTracking,
                     response,
                 );
+                // Support both auth and apiKeyAuth context structures
+                const authContext = (c.var as any).auth || (c.var as any).apiKeyAuth;
                 const userTracking = {
-                    userId: c.var.auth.user?.id,
-                    userTier: c.var.auth.user?.tier,
-                    userGithubId: c.var.auth.user?.githubId,
-                    userGithubName: c.var.auth.user?.githubUsername,
-                    apiKeyId: c.var.auth.apiKey?.id,
-                    apiKeyType: c.var.auth.apiKey?.metadata
+                    userId: authContext?.user?.id,
+                    userTier: authContext?.user?.tier,
+                    userGithubId: authContext?.user?.githubId,
+                    userGithubName: authContext?.user?.githubUsername,
+                    apiKeyId: authContext?.apiKey?.id,
+                    apiKeyType: authContext?.apiKey?.metadata
                         ?.keyType as ApiKeyType,
                 };
                 const balanceTracking = {

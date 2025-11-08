@@ -33,7 +33,7 @@ export const products: ProductMap = {
 };
 
 export const polarRoutes = new Hono<Env>()
-    .use("*", auth({ allowApiKey: false, allowSessionCookie: true }))
+    .use("*", auth)
     .use("*", polar)
     .get(
         "/customer/state",

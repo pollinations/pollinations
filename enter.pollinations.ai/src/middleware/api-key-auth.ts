@@ -15,7 +15,6 @@ import {
     extractApiKey,
     authenticateApiKey,
     createRequireAuthorization,
-    createRequireUser,
     type ApiKey,
 } from "./auth-utils.ts";
 
@@ -27,7 +26,6 @@ export type ApiKeyAuthVariables = {
             allowAnonymous?: boolean;
             message?: string;
         }) => Promise<void>;
-        requireUser: () => User;
     };
 };
 
@@ -73,7 +71,6 @@ export const apiKeyAuth = createMiddleware<ApiKeyAuthEnv>(async (c, next) => {
         user: result.user,
         apiKey: result.apiKey,
         requireAuthorization: createRequireAuthorization(result.user, log),
-        requireUser: createRequireUser(result.user),
     });
     
     await next();

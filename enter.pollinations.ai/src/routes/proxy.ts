@@ -205,7 +205,8 @@ export const proxyRoutes = new Hono<Env>()
         }),
         track("generate.text"),
         async (c) => {
-            await c.var.auth.requireAuthorization({
+            const authContext = getAuthContext(c);
+            await authContext.requireAuthorization({
                 allowAnonymous:
                     c.var.track.freeModelRequested &&
                     c.env.ALLOW_ANONYMOUS_USAGE,
@@ -227,7 +228,7 @@ export const proxyRoutes = new Hono<Env>()
                 method: "GET",
                 headers: {
                     ...proxyHeaders(c),
-                    ...generationHeaders(c.env.ENTER_TOKEN, c.var.auth.user),
+                    ...generationHeaders(c.env.ENTER_TOKEN, authContext.user),
                 },
             });
 
@@ -266,7 +267,8 @@ export const proxyRoutes = new Hono<Env>()
         validator("query", GenerateImageRequestQueryParamsSchema),
         async (c) => {
             const log = c.get("log");
-            await c.var.auth.requireAuthorization({
+            const authContext = getAuthContext(c);
+            await authContext.requireAuthorization({
                 allowAnonymous:
                     c.var.track.freeModelRequested &&
                     c.env.ALLOW_ANONYMOUS_USAGE,
@@ -285,7 +287,7 @@ export const proxyRoutes = new Hono<Env>()
 
             const genHeaders = generationHeaders(
                 c.env.ENTER_TOKEN,
-                c.var.auth.user,
+                authContext.user,
             );
 
             log.debug("[PROXY] Image generation headers: {headers}", {

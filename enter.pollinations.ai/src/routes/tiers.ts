@@ -74,7 +74,7 @@ const activateRequestSchema = z.object({
 });
 
 export const tiersRoutes = new Hono<Env>()
-    .use(auth({ allowSessionCookie: true, allowApiKey: false }))
+    .use(auth)
     .use(polar)
     .get(
         "/view",

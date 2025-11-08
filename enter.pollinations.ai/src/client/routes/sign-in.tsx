@@ -3,6 +3,7 @@ import { useState } from "react";
 import { FAQ } from "../components/faq.tsx";
 import { Button } from "../components/button.tsx";
 import { Header } from "../components/header.tsx";
+import { Welcome } from "../components/welcome.tsx";
 
 export const Route = createFileRoute("/sign-in")({
     component: RouteComponent,
@@ -42,6 +43,7 @@ function RouteComponent() {
                     {loading ? "Signing in..." : "Sign in with Github"}
                 </Button>
             </Header>
+            <Welcome isAuthenticated={false} />
             <FAQ />
         </div>
     );

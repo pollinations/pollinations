@@ -21,6 +21,7 @@ import { TierPanel } from "../components/tier-panel.tsx";
 import { FAQ } from "../components/faq.tsx";
 import { Header } from "../components/header.tsx";
 import { Pricing } from "../components/pricing/index.ts";
+import { Welcome } from "../components/welcome.tsx";
 
 export const Route = createFileRoute("/")({
     component: RouteComponent,
@@ -163,6 +164,7 @@ function RouteComponent() {
                     API Docs
                 </Button>
             </Header>
+            <Welcome isAuthenticated={true} />
             <div className="flex flex-col gap-2">
                 <div className="flex flex-col sm:flex-row justify-between gap-3">
                     <h2 className="font-bold flex-1">Balance</h2>

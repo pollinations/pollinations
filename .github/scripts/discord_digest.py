@@ -327,7 +327,7 @@ def post_to_discord(webhook_url: str, message: str):
     print("Digest posted to Discord.")
 
 def main():
-    github_token = get_env('GITHUB_TOKEN')
+    github_token = get_env('POLLI_PAT')
     pollinations_token = get_env('POLLINATIONS_TOKEN')
     discord_webhook = os.getenv('DISCORD_WEBHOOK_DIGEST') or get_env('DISCORD_WEBHOOK_URL')
     owner_name = "pollinations"  

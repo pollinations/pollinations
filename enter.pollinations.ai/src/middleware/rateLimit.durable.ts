@@ -6,8 +6,9 @@ import { safeRound } from "@/util.ts";
 import { Env } from "@/env.ts";
 
 export type FrontendKeyRateLimitVariables = {
-    frontendKeyRateLimit: {
-        consumePollen: (totalPrice: number) => void;
+    // will be undefined when using a secret api key
+    frontendKeyRateLimit?: {
+        consumePollen: (totalPrice: number) => Promise<void>;
     };
 };
 
@@ -85,6 +86,7 @@ export const frontendKeyRateLimit = createMiddleware<
             );
         }
         // concurrent request: no wait time
+        c.header("Retry-After", "0");
         // TODO: Change this to throw an error to get consistent error responses
         return c.json(
             {

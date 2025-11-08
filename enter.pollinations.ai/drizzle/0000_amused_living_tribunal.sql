@@ -65,7 +65,7 @@ CREATE TABLE `user` (
 	`role` text,
 	`banned` integer DEFAULT false,
 	`ban_reason` text,
-	`ban_expires` integer
+	`ban_expires` integer,
     `github_id` integer,
     `github_username` text,
     `tier` text DEFAULT 'seed' NOT NULL

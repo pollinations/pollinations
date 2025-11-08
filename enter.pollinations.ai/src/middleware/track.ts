@@ -128,14 +128,14 @@ export const track = (eventType: EventType) =>
                 );
 
                 // register pollen consumption with rate limiter
-                c.var.frontendKeyRateLimit?.consumePollen(
+                await c.var.frontendKeyRateLimit?.consumePollen(
                     responseTracking.price?.totalPrice || 0,
                 );
 
                 const userTracking: UserData = {
                     userId: c.var.auth.user?.id,
                     userTier: c.var.auth.user?.tier,
-                    userGithubId: c.var.auth.user?.githubId,
+                    userGithubId: `${c.var.auth.user?.githubId}`,
                     userGithubName: c.var.auth.user?.githubUsername,
                     apiKeyId: c.var.auth.apiKey?.id,
                     apiKeyType: c.var.auth.apiKey?.metadata
@@ -285,7 +285,7 @@ async function* asyncIteratorStream<T>(
 type UserData = {
     userId?: string;
     userTier?: string;
-    userGithubId?: number;
+    userGithubId?: string;
     userGithubName?: string;
     apiKeyId?: string;
     apiKeyType?: ApiKeyType;

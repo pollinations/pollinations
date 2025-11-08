@@ -10,7 +10,6 @@ import {
     UsageCost,
     UsagePrice,
     PriceDefinition,
-    getModelDefinition,
     getServiceDefinition,
 } from "@shared/registry/registry.ts";
 import {
@@ -48,14 +47,9 @@ import { EventSourceParserStream } from "eventsource-parser/stream";
 import { mergeContentFilterResults } from "@/content-filter.ts";
 import { getErrorCode, UpstreamError } from "@/error.ts";
 import { ValidationError } from "@/middleware/validator.ts";
-<<<<<<< HEAD
-import { ErrorVariables } from "@/env.ts";
-import { FrontendKeyRateLimitVariables } from "./rateLimit.durable.ts";
-=======
 import type { LoggerVariables } from "./logger.ts";
 import type { ErrorVariables } from "@/env.ts";
 import type { FrontendKeyRateLimitVariables } from "./rateLimit.durable.ts";
->>>>>>> b2a54b43a (Add additional fields to tracking events)
 
 export type ModelUsage = {
     model: ModelId;
@@ -144,11 +138,7 @@ export const track = (eventType: EventType) =>
                     userId: c.var.auth.user?.id,
                     userTier: c.var.auth.user?.tier,
                     userGithubId: `${c.var.auth.user?.githubId}`,
-<<<<<<< HEAD
-                    userGithubName: c.var.auth.user?.githubUsername,
-=======
                     userGithubUsername: c.var.auth.user?.githubUsername,
->>>>>>> b2a54b43a (Add additional fields to tracking events)
                     apiKeyId: c.var.auth.apiKey?.id,
                     apiKeyType: c.var.auth.apiKey?.metadata
                         ?.keyType as ApiKeyType,
@@ -182,19 +172,13 @@ export const track = (eventType: EventType) =>
                     errorTracking: collectErrorData(response, c.get("error")),
                 });
 
-<<<<<<< HEAD
-=======
-                // // Set internal header for rate limiter to read pollen price
-                // if (responseTracking.price?.totalPrice) {
-                //     c.header("X-Pollen-Price", responseTracking.price.totalPrice.toString());
-                // }
->>>>>>> b2a54b43a (Add additional fields to tracking events)
                 log.trace("Event: {event}", { event });
                 const db = drizzle(c.env.DB);
                 await storeEvents(db, c.var.log, [event]);
 
                 // process events immediately in development/testing
                 // Don't await to prevent test hangs on external API failures
+                // TODO: Check why this is necessary
                 if (["test", "development"].includes(c.env.ENVIRONMENT))
                     processEvents(db, c.var.log, {
                         polarAccessToken: c.env.POLAR_ACCESS_TOKEN,

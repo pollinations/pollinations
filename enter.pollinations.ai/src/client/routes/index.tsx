@@ -160,7 +160,7 @@ function RouteComponent() {
                     }}
                 />
                 <Button as="a" href="/api/docs" color="purple" weight="light">
-                    API Docs
+                    API Reference
                 </Button>
             </Header>
             <div className="flex flex-col gap-2">

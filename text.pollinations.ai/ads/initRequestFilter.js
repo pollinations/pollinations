@@ -18,6 +18,9 @@ import { incrementUserMetric } from "../../shared/userMetrics.js";
 const log = debug("pollinations:adfilter");
 const errorLog = debug("pollinations:adfilter:error");
 
+// Global flag to disable ad system
+const ADS_GLOBALLY_DISABLED = true;
+
 /**
  * Main function to generate ads for content
  * @param {Object} req - Express request object
@@ -32,6 +35,11 @@ export async function generateAdForContent(
     messages = [],
     isStreaming = false,
 ) {
+    // Early return if ads are globally disabled
+    if (ADS_GLOBALLY_DISABLED) {
+        return null;
+    }
+
     try {
         // Get authenticated user ID if available - do this once at the top
         let authResult = null;

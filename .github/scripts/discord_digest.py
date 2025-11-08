@@ -1,10 +1,3 @@
-#!/usr/bin/env python3
-"""
-Simple Weekly Digest Generator
-Gets recent merged PRs and creates a weekly digest in one AI call
-No temp storage, no complexity - just simple and direct
-"""
-
 import os
 import sys
 import json
@@ -28,101 +21,66 @@ def get_env(key: str, required: bool = True) -> str:
         sys.exit(1)
     return value
 
-def get_recent_merged_prs(repo: str, token: str, since_time: datetime) -> List[Dict]:
-    """Get recently merged PRs using GitHub Search API - efficient and accurate"""
+
+def get_merged_prs(owner: str, repo: str, start_date: datetime, token: str):
+    END_DATE = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")  
+    START_DATE = "2025-10-28T00:00:00Z"
+    base_url = "https://api.github.com/search/issues"
     headers = {
-        "Authorization": f"Bearer {token}",
         "Accept": "application/vnd.github+json",
-        "X-GitHub-Api-Version": "2022-11-28"
+        "Authorization": f"Bearer {token}"
     }
-    
-    # Format date for GitHub search (ISO 8601)
-    since_str = since_time.strftime('%Y-%m-%dT%H:%M:%S')
-    
-    merged_prs = []
-    page = 1
-    per_page = 100
-    
-    print(f"📦 Searching merged PRs for {repo} since {since_time.isoformat()}...")
-    
+
+    query = f"repo:{owner}/{repo} is:pull-request is:merged merged:{START_DATE}..{END_DATE}"
+    params = {"q": query, "per_page": 100, "page": 1}
+
+    all_prs = []
+    print(f"Fetching merged PRs from {START_DATE} to {END_DATE}...\n")
+
     while True:
-        # Use Search API with merged date filter
-        url = f"{GITHUB_API_BASE}/search/issues"
-        params = {
-            "q": f"repo:{repo} is:pr is:merged merged:>={since_str}",
-            "sort": "created",
-            "order": "desc",
-            "per_page": per_page,
-            "page": page
-        }
-        
-        response = requests.get(url, headers=headers, params=params)
-        
+        response = requests.get(base_url, headers=headers, params=params)
         if response.status_code != 200:
-            print(f"❌ GitHub API error: {response.status_code}")
-            print(response.text)
-            sys.exit(1)
-        
+            print(f"Error: {response.status_code} -> {response.text}")
+            break
+
         data = response.json()
-        items = data.get('items', [])
+        items = data.get("items", [])
         
-        if not items:
+        # Fetch full PR details for each search result
+        for item in items:
+            pr_url = item['pull_request']['url']
+            pr_response = requests.get(pr_url, headers=headers)
+            if pr_response.status_code == 200:
+                pr_data = pr_response.json()
+                all_prs.append({
+                    'number': pr_data['number'],
+                    'title': pr_data['title'],
+                    'body': pr_data['body'],
+                    'author': pr_data['user']['login']
+                })
+            time.sleep(0.1)  # Rate limiting
+        
+        if "next" not in response.links:
             break
-        
-        for pr in items:
-            # Get PR body - Search API doesn't always include full body
-            pr_url = pr.get('pull_request', {}).get('url')
-            if pr_url:
-                pr_detail = requests.get(pr_url, headers=headers)
-                if pr_detail.status_code == 200:
-                    pr_data = pr_detail.json()
-                    body = pr_data.get('body', 'No description')
-                else:
-                    body = pr.get('body', 'No description')
-            else:
-                body = pr.get('body', 'No description')
-            
-            merged_prs.append({
-                'number': pr.get('number', 0),
-                'title': pr.get('title', 'No title'),
-                'body': body,
-                'author': pr.get('user', {}).get('login', 'Unknown'),
-                'merged_at': pr.get('closed_at'),  # closed_at is merge time for merged PRs
-                'url': pr.get('html_url', '#')
-            })
-            
-            time.sleep(0.1)  # Small delay for detail requests
-        
-        print(f"📄 Page {page} fetched ({len(items)} PRs).")
-        
-        # Check if there are more results
-        total_count = data.get('total_count', 0)
-        if len(merged_prs) >= total_count:
-            break
-        
-        page += 1
-        time.sleep(0.3)  # Rate limiting between pages
-    
-    merged_prs.sort(key=lambda x: x['number'])
-    print(f"✅ Total merged PRs found: {len(merged_prs)}")
-    return merged_prs
+
+        params["page"] += 1
+
+    return all_prs
+
 
 def get_last_digest_time() -> datetime:
-    """Get the time of the last digest based on the fixed Monday/Friday schedule"""
+    """Get the time of the last digest based on the fixed Monday/Friday schedule (12:00 UTC)"""
     now = datetime.now(timezone.utc)
     current_weekday = now.weekday()
     
     if current_weekday == 0:  # Monday
-        # Last digest was Friday at 00:00 UTC (start of day)
         days_back = 3
-        last_digest = (now - timedelta(days=days_back)).replace(hour=0, minute=0, second=0, microsecond=0)
+        last_digest = (now - timedelta(days=days_back)).replace(hour=12, minute=0, second=0, microsecond=0)
     elif current_weekday == 4:  # Friday  
-        # Last digest was Monday at 00:00 UTC (start of day)
         days_back = 4
-        last_digest = (now - timedelta(days=days_back)).replace(hour=0, minute=0, second=0, microsecond=0)
+        last_digest = (now - timedelta(days=days_back)).replace(hour=12, minute=0, second=0, microsecond=0)
     else:
-        # Other days - cover last 5 days
-        last_digest = (now - timedelta(days=5)).replace(hour=0, minute=0, second=0, microsecond=0)
+        last_digest = (now - timedelta(days=5)).replace(hour=12, minute=0, second=0, microsecond=0)
     
     return last_digest
 
@@ -196,12 +154,16 @@ RULES:
 - Group related changes into logical sections (Discord Bot, New Features, Bug Fixes, etc.)
 - Use emojis that fit each section
 - Remove duplicate or very similar items
+- Try to keep it short simple and on-point without too much clutter
 - Polish the language to be engaging and user-focused
 - NO PR numbers, NO author names, NO technical jargon
+- Only user facing changes or things that actually impact users like limits and such
+- Avoid focusing on developer releated insights like backend changes or anything that doesn't direct affect the users 
+- Make the final response such that it will be seen from the user's prespective
 - Keep it concise but complete
 - A bit of fun and playfulness is encouraged!
 
-TONE: Conversational, friendly, exciting about improvements"""
+TONE: Conversational, friendly, exciting about improvements. Be concise, on-point and professional while being a bit witty!"""
 
     combined_changes = "\n\n---\n\n".join(all_changes)
     
@@ -277,7 +239,7 @@ LENGTH: Keep it concise but complete"""
     
     for i, pr in enumerate(prs, 1):
         user_prompt += f"""PR #{pr['number']}: {pr['title']}
-Author: {pr['author']}
+Author: {pr['author'] if 'author' in pr else 'Some Contributor'}
 Description: {pr['body'][:500] if pr['body'] else 'No description'}
 
 """
@@ -303,7 +265,7 @@ def call_pollinations_api(system_prompt: str, user_prompt: str, token: str) -> s
             {"role": "system", "content": system_prompt},
             {"role": "user", "content": user_prompt}
         ],
-        "temperature": 0.3,
+        "temperature": 0.7,
         "seed": seed
     }
     
@@ -397,13 +359,14 @@ def main():
     github_token = get_env('GITHUB_TOKEN')
     pollinations_token = get_env('POLLINATIONS_TOKEN')
     discord_webhook = os.getenv('DISCORD_WEBHOOK_DIGEST') or get_env('DISCORD_WEBHOOK_URL')
-    repo_name = get_env('REPO_FULL_NAME')
-    
+    owner_name = "Itachi-1824"  
+    repo_name = "Temp-Will-be-deleted-"
     # Get last digest time
     last_digest_time = get_last_digest_time()
     
     # Get recent merged PRs using Search API
-    merged_prs = get_recent_merged_prs(repo_name, github_token, last_digest_time)
+    merged_prs = get_merged_prs(owner_name, repo_name, last_digest_time, github_token)
+    print(f"Total merged PRs found: {len(merged_prs)}")
     
     if not merged_prs:
         print("ℹ️ No merged PRs found for this period. Skipping.")
@@ -458,3 +421,5 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+

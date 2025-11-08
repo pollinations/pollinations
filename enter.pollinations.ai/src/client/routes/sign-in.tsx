@@ -34,6 +34,7 @@ function RouteComponent() {
                     as="button"
                     onClick={handleSignIn}
                     disabled={loading}
+                    color="pink"
                     weight="light"
                 >
                     {loading ? "Signing in..." : "Sign in with Github"}

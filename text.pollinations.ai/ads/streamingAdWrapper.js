@@ -7,6 +7,10 @@ const log = debug("pollinations:adfilter");
 const errorLog = debug("pollinations:adfilter:error");
 import { generateAdForContent } from "./initRequestFilter.js";
 import { sendAdSkippedAnalytics } from "./adUtils.js";
+
+// Global flag to disable ad system
+const ADS_GLOBALLY_DISABLED = true;
+
 /**
  * Creates a streaming wrapper that adds an ad at the end of the stream
  * This maintains the thin proxy approach for most of the stream
@@ -20,6 +24,11 @@ export async function createStreamingAdWrapper(
     req,
     messages = [],
 ) {
+    // Early return if ads are globally disabled - just pass through the stream
+    if (ADS_GLOBALLY_DISABLED) {
+        return responseStream;
+    }
+
     if (!responseStream || !responseStream.pipe) {
         log("Invalid stream provided to createStreamingAdWrapper");
         if (req) {

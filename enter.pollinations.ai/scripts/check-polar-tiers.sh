@@ -112,17 +112,20 @@ grep -A 999999 '^\[' "$temp_json" | jq -r '.[0].results[]? | "\(.id)|\(.github_u
 
 rm -f "$temp_json"
 
-# Fetch Auth DB tiers (production pollinations.ai)
-echo "📊 Fetching tiers from Auth DB (pollinations.ai)..." >&2
-cd /Users/comsom/Github/pollinations/auth.pollinations.ai
-npx wrangler d1 execute DB --remote --json \
-    --command "SELECT user_id, tier FROM user_tiers;" \
-    2>&1 > "$temp_auth"
-cd - > /dev/null
+# DEPRECATED: auth.pollinations.ai has been removed
+# All authentication is now handled by enter.pollinations.ai
+# Keeping this section commented for historical reference
+# echo "📊 Fetching tiers from Auth DB (pollinations.ai)..." >&2
+# cd /Users/comsom/Github/pollinations/auth.pollinations.ai
+# npx wrangler d1 execute DB --remote --json \
+#     --command "SELECT user_id, tier FROM user_tiers;" \
+#     2>&1 > "$temp_auth"
+# cd - > /dev/null
+# grep -A 999999 '^\[' "$temp_auth" | jq -r '.[0].results[]? | "\(.user_id)|\(.tier // "NULL")"' > "${temp_auth}.parsed"
+# rm -f "$temp_auth"
 
-# Parse Auth DB tiers
-grep -A 999999 '^\[' "$temp_auth" | jq -r '.[0].results[]? | "\(.user_id)|\(.tier // "NULL")"' > "${temp_auth}.parsed"
-rm -f "$temp_auth"
+# Create empty file for compatibility
+touch "${temp_auth}.parsed"
 
 # Count users
 user_count=$(wc -l < "$temp_file" | tr -d ' ')

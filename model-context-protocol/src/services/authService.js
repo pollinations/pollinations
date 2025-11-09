@@ -1,7 +1,7 @@
 /**
  * Pollinations Authentication Service
  *
- * Functions and schemas for authenticating with auth.pollinations.ai
+ * Functions and schemas for authenticating with enter.pollinations.ai
  * and managing domain allowlists using JWT-based authentication
  */
 
@@ -10,7 +10,7 @@ import { z } from "zod";
 import crypto from "crypto";
 
 // Constants
-const AUTH_API_BASE_URL = "https://auth.pollinations.ai";
+const AUTH_API_BASE_URL = "https://enter.pollinations.ai";
 
 /**
  * Initiates the GitHub OAuth authentication flow with PKCE
@@ -144,7 +144,7 @@ async function getDomains(params) {
     }
 
     try {
-        // Call the auth.pollinations.ai domains endpoint with JWT
+        // Call the enter.pollinations.ai domains endpoint with JWT
         const response = await fetch(
             `${AUTH_API_BASE_URL}/api/user/${userId}/domains`,
             {
@@ -194,7 +194,7 @@ async function updateDomains(params) {
     }
 
     try {
-        // Call the auth.pollinations.ai domains endpoint with JWT
+        // Call the enter.pollinations.ai domains endpoint with JWT
         const response = await fetch(
             `${AUTH_API_BASE_URL}/api/user/${userId}/domains`,
             {

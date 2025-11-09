@@ -90,62 +90,64 @@ def create_digest_prompt(prs: List[Dict], is_final: bool = False, all_changes: L
     date_str = f"From {start_date.split('T')[0].split('-')[2]} {MONTH[int(start_date.split('T')[0].split('-')[1]) - 1]} {start_date.split('T')[0].split('-')[0]} to {end_date.split('T')[0].split('-')[2]} {MONTH[int(end_date.split('T')[0].split('-')[1]) - 1]} {end_date.split('T')[0].split('-')[0]}"
     
     system_prompt = f"""You are creating a weekly digest for the Pollinations AI Discord community.
-    Focus on FUNCTIONAL changes only - features, improvements, bug fixes that affect how users interact with the platform.
-    Ignore: styling updates, minor UI tweaks, internal refactors, dependency updates, code cleanup.
-    Include: new features, model additions, performance improvements, API changes, workflow improvements.
+    Extract ONLY major, user-impacting changes - the real wins, not the fixes or maintenance.
+    Ignore: bug fixes, styling updates, UI tweaks, refactors, dependency updates, code cleanup, error handling.
+    Include: new features, model additions, performance gains, API improvements, significant workflow enhancements, user experience upgrades.
 
-    CONTEXT: Pollinations is an open-source AI platform. Your audience is USERS, not developers.
+    CONTEXT: Pollinations is an open-source AI platform. Your audience is USERS who care about what they can DO now.
 
     OUTPUT FORMAT:
     ```
-    [Greet <@&1424461167883194418> naturally and casually in a playful way]
+    [Greet <@&1424461167883194418> naturally and casually in a playful, witty way]
 
     ## 🌸 Weekly Update - {date_str}
     (do not change anything from the mentioned date_str, strictly use it as is)
-    [Create sections that make sense for functional changes - you have COMPLETE FREEDOM]
-    [MAKE SURE THAT WE PUT ALL THE INFO IN SOMEWHERE AROUND 200-400 WORDS TOTAL]
-    [Examples: "🎮 Discord Bot", "🚀 New Models", "⚡ Performance", "🔄 API Changes", "🔧 Bug Fixes", etc.]
 
-    ### [Your chosen section name with emoji]
-    - What changed for users (brief, clear, functional impact)
-    - Another functional change
-    - Focus on benefits users will notice
+    [Create sections that make sense - you have COMPLETE FREEDOM]
+    [MAKE SURE THAT WE PUT ALL THE INFO IN SOMEWHERE AROUND 200-400 WORDS TOTAL]
+    [Examples: "🎮 Discord Bot", "🚀 New Models", "⚡ Performance", "🔄 API Changes", "✨ Feature Drops", etc.]
+
+    ### [Section with emoji]
+    - Major change with clear user benefit
+    - Another significant addition
+    - Focus on what users can now do
 
     ### [Another section if needed]
-    - More functional changes
-    - Keep it user-focused
+    - More impactful changes
+    - Keep it user-focused and exciting
 
     [Add as many sections as needed - organize however makes most sense!]
     ```
 
     CRITICAL RULES:
-    - Greet <@&1424461167883194418> naturally and casually - be creative!
-    - Write for USERS, not developers - focus on functional benefits
-    - Keep bullet points concise and clear
+    - Greet <@&1424461167883194418> naturally - be witty and creative!
+    - Write for USERS - focus on impact and excitement, not technical details
+    - Only include MAJOR changes that matter to users
     - NO PR numbers, NO author names, NO technical jargon
-    - Skip styling, UI cosmetics, code cleanup, dependency updates
-    - Focus on functional impact only
-    - If no functional changes, return only: SKIP
-    - A bit of fun and sarcasm is ok!
+    - Skip all bug fixes, error handling, and maintenance work
+    - Skip styling and UI cosmetics completely
+    - If no major impactful changes found, return only: SKIP
+    - Be witty, fun, and celebratory about real wins
 
-    TONE: Conversational, friendly, focus on functional user benefits and playful
-    LENGTH: Keep it concise but complete"""
+    TONE: Conversational, witty, celebratory. Highlight the cool stuff.
+    LENGTH: Keep it punchy but complete"""
 
     if is_final:
         combined_changes = "\n\n---\n\n".join(all_changes)
-        user_prompt = f"""Here are the functional changes from this week:
+        user_prompt = f"""Here are the major changes from this week:
         {combined_changes}
-        Create a polished weekly digest that groups these functional changes logically and presents them in an engaging way for users."""
+
+        Create a polished, witty weekly digest that celebrates these wins and makes them exciting for users. Group logically and present the real impact."""
     else:
-        user_prompt = f"""Analyze these {len(prs)} merged PRs and extract FUNCTIONAL changes only:"""
+        user_prompt = f"""Analyze these {len(prs)} merged PRs and extract only MAJOR, user-impacting changes:"""
         for i, pr in enumerate(prs, 1):
             user_prompt += f"""PR #{pr['number']}: {pr['title']}
-        Author: {pr['author'] if 'author' in pr else 'Some Contributor'}
-        Description: {pr['body'][:500] if pr['body'] else 'No description'}"""
-            
-        user_prompt += """Extract only functional changes (features, improvements, bug fixes, API changes, performance gains).
-        Ignore styling, UI cosmetics, code cleanup, dependencies.
-        If no functional changes, return only: SKIP"""
+            Author: {pr['author'] if 'author' in pr else 'Some Contributor'}
+            Description: {pr['body'][:500] if pr['body'] else 'No description'}"""
+
+        user_prompt += """Extract only major changes that impact users (new features, significant improvements, API enhancements, performance wins).
+        Ignore bug fixes, styling, code cleanup, dependency updates, error handling.
+        If no major impactful changes found, return only: SKIP"""
 
     return system_prompt, user_prompt
 

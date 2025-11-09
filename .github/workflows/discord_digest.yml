@@ -2,10 +2,9 @@ name: Simple Weekly Discord Digest (Monday & Friday)
 on:
   schedule:
     - cron: '0 12 * * 1,5' 
-  workflow_dispatch: # Allow manual trigger
+  workflow_dispatch:
 
 jobs:
-  # Simple digest - just get recent PRs and send to AI
   post-simple-digest:
     runs-on: ubuntu-latest
     permissions:

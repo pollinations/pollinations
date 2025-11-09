@@ -1,101 +1,24 @@
 #!/bin/bash
-# Check Polar subscriptions for all Enter users and compare with DB tiers
+# Compare tiers between Enter (staging) and Auth (production) databases
 #
-# Usage: 
-# 1. Enter the nix develop shell (from pollinations root): nix develop
-# 2. Then run: bash enter.pollinations.ai/scripts/check-polar-tiers.sh
+# Usage: bash enter.pollinations.ai/scripts/check-polar-tiers.sh
 
 set -e
 
-POLAR_SERVER="sandbox"  # or "production"
-POLAR_API="https://sandbox-api.polar.sh"  # sandbox API
-
-# Product ID mappings (from wrangler.toml staging - V2 NEW)
-PRODUCT_ID_SEED="82ee54e1-5b69-447b-82aa-3c76bccae193"
-PRODUCT_ID_FLOWER="2bfbe9e0-8395-489f-a7a1-6821d835cc08"
-PRODUCT_ID_NECTAR="d67b2a25-c4d7-47fa-9d64-4b2a27f0908f"
-
-# Check if POLAR_ACCESS_TOKEN is available (from nix develop)
-if [ -z "$POLAR_ACCESS_TOKEN" ]; then
-    echo "❌ POLAR_ACCESS_TOKEN environment variable is required"
-    echo ""
-    echo "Please run from within 'nix develop' shell:"
-    echo "  cd /Users/comsom/Github/pollinations"
-    echo "  nix develop"
-    echo "  cd enter.pollinations.ai"
-    echo "  bash scripts/check-polar-tiers.sh"
+# Cloudflare account ID must be loaded from .encrypted.env (via nix develop)
+if [ -z "$CLOUDFLARE_ACCOUNT_ID" ]; then
+    echo "❌ Error: CLOUDFLARE_ACCOUNT_ID environment variable is not set" >&2
+    echo "   Run this script inside 'nix develop' to load encrypted environment variables" >&2
     exit 1
 fi
 
-POLAR_TOKEN="$POLAR_ACCESS_TOKEN"
-
-echo "🔍 Checking Polar subscriptions for Enter users"
-echo "Server: $POLAR_SERVER"
+echo "🔍 Comparing tiers: Enter (staging) vs Auth (production)"
 echo "=" | tr '=' '=' | head -c 80 && echo
 echo
 
-# Function to get tier name from product ID
-get_tier_name() {
-    local product_id="$1"
-    case "$product_id" in
-        "$PRODUCT_ID_SEED") echo "seed" ;;
-        "$PRODUCT_ID_FLOWER") echo "flower" ;;
-        "$PRODUCT_ID_NECTAR") echo "nectar" ;;
-        *) echo "unknown" ;;
-    esac
-}
-
-# Function to check Polar subscription for a user
-check_polar_sub() {
-    local user_id="$1"
-    local username="$2"
-    local db_tier="$3"
-    
-    # Query Polar API for customer state
-    local response=$(curl -s -w "\n%{http_code}" \
-        -H "Authorization: Bearer $POLAR_TOKEN" \
-        "$POLAR_API/v1/customers/external/$user_id/state" \
-        2>/dev/null)
-    
-    local http_code=$(echo "$response" | tail -n 1)
-    local body=$(echo "$response" | sed '$d')
-    
-    if [ "$http_code" = "200" ]; then
-        # Parse JSON to get active subscriptions (using jq if available, otherwise grep)
-        if command -v jq &> /dev/null; then
-            local product_ids=$(echo "$body" | jq -r '.active_subscriptions[]?.product_id // empty' 2>/dev/null)
-            local pollen_balance=$(echo "$body" | jq -r '.active_meters[0]?.balance // 0' 2>/dev/null)
-            
-            if [ -n "$product_ids" ]; then
-                local first_product_id=$(echo "$product_ids" | head -n1)
-                local polar_tier=$(get_tier_name "$first_product_id")
-                
-                if [ "$db_tier" = "$polar_tier" ]; then
-                    echo "✅ $username: DB=$db_tier, Polar=$polar_tier, Balance=$pollen_balance"
-                else
-                    echo "⚠️  $username: DB=$db_tier, Polar=$polar_tier (MISMATCH!), Balance=$pollen_balance"
-                fi
-            else
-                echo "⚠️  $username: DB=$db_tier, Polar=none (no active subscription)"
-            fi
-        else
-            # Fallback without jq
-            if echo "$body" | grep -q "active_subscriptions"; then
-                echo "📊 $username: DB=$db_tier, Polar=<needs jq to parse>"
-            else
-                echo "⚠️  $username: DB=$db_tier, Polar=none (no active subscription)"
-            fi
-        fi
-    elif [ "$http_code" = "404" ]; then
-        echo "⚠️  $username: DB=$db_tier, Polar=not found (user not in Polar)"
-    else
-        echo "❌ $username: DB=$db_tier, Polar API error (HTTP $http_code)"
-    fi
-}
 
 # Get ALL users from Enter staging
 echo "📊 Fetching all users from Enter staging..." >&2
-echo >&2
 
 # Save to temp files for processing
 temp_file=$(mktemp)
@@ -103,22 +26,46 @@ temp_json=$(mktemp)
 temp_auth=$(mktemp)
 
 # Capture output from Enter DB (include github_id for Auth lookup)
-npx wrangler d1 execute DB --remote --env staging --json \
+echo "   Running wrangler query..." >&2
+
+if ! npx wrangler d1 execute DB --remote --env staging --json \
     --command "SELECT id, github_username, email, tier, github_id FROM user ORDER BY github_username;" \
-    2>&1 > "$temp_json"
+    > "$temp_json" 2>&1; then
+    echo "❌ Failed to query Enter database" >&2
+    cat "$temp_json" >&2
+    rm -f "$temp_json"
+    exit 1
+fi
+
+echo "   Parsing results..." >&2
 
 # Extract Enter DB data
-grep -A 999999 '^\[' "$temp_json" | jq -r '.[0].results[]? | "\(.id)|\(.github_username)|\(.email)|\(.tier // "seed")|\(.github_id // "NULL")"' > "$temp_file"
+if ! grep -A 999999 '^\[' "$temp_json" | jq -r '.[0].results[]? | "\(.id)|\(.github_username)|\(.email)|\(.tier // "seed")|\(.github_id // "NULL")"' > "$temp_file"; then
+    echo "❌ Failed to parse Enter DB results" >&2
+    cat "$temp_json" >&2
+    rm -f "$temp_json" "$temp_file"
+    exit 1
+fi
 
 rm -f "$temp_json"
 
 # Fetch Auth DB tiers (production pollinations.ai)
 echo "📊 Fetching tiers from Auth DB (pollinations.ai)..." >&2
-cd /Users/comsom/Github/pollinations/auth.pollinations.ai
-npx wrangler d1 execute DB --remote --json \
+
+# Get the script directory to find auth.pollinations.ai
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+AUTH_DIR="$(cd "$SCRIPT_DIR/../../auth.pollinations.ai" && pwd)"
+
+if [ ! -d "$AUTH_DIR" ]; then
+    echo "❌ Could not find auth.pollinations.ai directory at: $AUTH_DIR" >&2
+    echo "   Expected structure: pollinations/auth.pollinations.ai/" >&2
+    rm -f "$temp_file"
+    exit 1
+fi
+
+(cd "$AUTH_DIR" && npx wrangler d1 execute DB --remote --json \
     --command "SELECT user_id, tier FROM user_tiers;" \
-    2>&1 > "$temp_auth"
-cd - > /dev/null
+    > "$temp_auth" 2>&1)
 
 # Parse Auth DB tiers
 grep -A 999999 '^\[' "$temp_auth" | jq -r '.[0].results[]? | "\(.user_id)|\(.tier // "NULL")"' > "${temp_auth}.parsed"
@@ -130,16 +77,18 @@ echo "Found $user_count total users" >&2
 echo >&2
 
 # Print markdown table header  
-echo "| GitHub Username | Email | Enter Tier | Auth Tier | Polar Sub |"
-echo "|-----------------|-------|------------|-----------|-----------|"
+echo "| Email | Auth Tier | Enter Tier |"
+echo "|-------|-----------|------------|"
 
 # Temp files for summary
-temp_no_polar=$(mktemp)
-temp_auth_mismatch=$(mktemp)
-temp_polar_mismatch=$(mktemp)
+temp_mismatches=$(mktemp)
+temp_updates=$(mktemp)
 
 # Process each user
 count=0
+echo "🔄 Processing users..." >&2
+echo >&2
+
 while IFS='|' read -r id username email enter_tier github_id; do
     if [ -z "$id" ]; then
         continue
@@ -158,47 +107,24 @@ while IFS='|' read -r id username email enter_tier github_id; do
     auth_tier_compare="$auth_tier"
     [ "$auth_tier_compare" = "NULL" ] && auth_tier_compare="seed"
     
-    # Query Polar API for customer state
-    response=$(curl -s -w "\n%{http_code}" \
-        -H "Authorization: Bearer $POLAR_TOKEN" \
-        "$POLAR_API/v1/customers/external/$id/state" \
-        2>/dev/null)
-    
-    http_code=$(echo "$response" | tail -n 1)
-    body=$(echo "$response" | sed '$d')
-    
-    polar_tier="none"
-    
-    if [ "$http_code" = "200" ]; then
-        if command -v jq &> /dev/null; then
-            product_ids=$(echo "$body" | jq -r '.active_subscriptions[]?.product_id // empty' 2>/dev/null)
-            
-            if [ -n "$product_ids" ]; then
-                first_product_id=$(echo "$product_ids" | head -n1)
-                polar_tier=$(get_tier_name "$first_product_id")
-            fi
+    # Check if tiers match
+    if [ "$enter_tier" = "$auth_tier_compare" ]; then
+        match="✅"
+        echo "   [$count/$user_count] ✅ $username: Enter=$enter_tier, Auth=$auth_tier (match)" >&2
+    else
+        # Skip if Auth tier is NULL (no tier in old system)
+        if [ "$auth_tier" = "NULL" ]; then
+            echo "   [$count/$user_count] ⏭️  $username: Enter=$enter_tier, Auth=$auth_tier (skipped - no auth tier)" >&2
+        else
+            match="❌"
+            echo "   [$count/$user_count] ❌ $username: Enter=$enter_tier, Auth=$auth_tier (MISMATCH)" >&2
+            echo "- **$username**: Enter=\`$enter_tier\`, Auth=\`$auth_tier\`" >> "$temp_mismatches"
+            # Store update info: email|auth_tier|username
+            echo "$email|$auth_tier|$username" >> "$temp_updates"
+            # Only output table row for mismatches where auth has a tier
+            printf "| %-40s | %-9s | %-10s |\n" "${email:0:40}" "$auth_tier" "$enter_tier"
         fi
-    elif [ "$http_code" = "404" ]; then
-        polar_tier="not_found"
     fi
-    
-    # Output markdown table row
-    printf "| %-20s | %-30s | %-10s | %-9s | %-9s |\n" "$username" "${email:0:30}" "$enter_tier" "$auth_tier" "$polar_tier"
-    
-    # Track issues for summary
-    if [ "$polar_tier" = "none" ] || [ "$polar_tier" = "not_found" ]; then
-        echo "- **$username** (Enter: $enter_tier)" >> "$temp_no_polar"
-    fi
-    
-    if [ "$enter_tier" != "$auth_tier_compare" ]; then
-        echo "- **$username** (Enter: $enter_tier, Auth: $auth_tier)" >> "$temp_auth_mismatch"
-    fi
-    
-    if [ "$polar_tier" != "none" ] && [ "$polar_tier" != "not_found" ] && [ "$enter_tier" != "$polar_tier" ]; then
-        echo "- **$username** (Enter: $enter_tier, Auth: $auth_tier, Polar: $polar_tier)" >> "$temp_polar_mismatch"
-    fi
-    
-    sleep 0.3  # Small delay to avoid rate limiting
 done < "$temp_file"
 
 # Print summary
@@ -206,34 +132,47 @@ echo ""
 echo "## Summary"
 echo ""
 
-# No Polar subscription
-echo "### Users Without Polar Subscriptions"
-if [ -s "$temp_no_polar" ]; then
-    cat "$temp_no_polar"
+# Tier mismatches
+echo "### Tier Mismatches Between Enter and Auth"
+if [ -s "$temp_mismatches" ]; then
+    cat "$temp_mismatches"
+    mismatch_count=$(wc -l < "$temp_mismatches" | tr -d ' ')
+    echo ""
+    echo "**Total mismatches:** $mismatch_count out of $count users"
 else
-    echo "✅ All users have Polar subscriptions"
+    echo "✅ All tiers match between Enter and Auth"
 fi
-echo ""
 
-# Auth/Enter mismatch
-echo "### Users with Auth/Enter Tier Mismatch"
-if [ -s "$temp_auth_mismatch" ]; then
-    cat "$temp_auth_mismatch"
+# Update mismatched tiers
+if [ -s "$temp_updates" ]; then
+    echo ""
+    echo "## Updating Enter Tiers to Match Auth"
+    echo ""
+    
+    update_count=0
+    while IFS='|' read -r email auth_tier username; do
+        update_count=$((update_count + 1))
+        echo "🔄 [$update_count] Updating $username: $email -> tier=$auth_tier" >&2
+        
+        # Update the Enter database
+        if npx wrangler d1 execute DB --remote --env staging \
+            --command "UPDATE user SET tier='$auth_tier' WHERE email='$email';" \
+            > /dev/null 2>&1; then
+            echo "   ✅ Successfully updated $username to tier=$auth_tier" >&2
+        else
+            echo "   ❌ Failed to update $username" >&2
+        fi
+    done < "$temp_updates"
+    
+    echo ""
+    echo "✅ Updated $update_count users" >&2
 else
-    echo "✅ All Auth and Enter tiers match"
-fi
-echo ""
-
-# Polar mismatch
-echo "### Users with Polar Subscription Mismatch"
-if [ -s "$temp_polar_mismatch" ]; then
-    cat "$temp_polar_mismatch"
-else
-    echo "✅ All Polar subscriptions match Enter tiers"
+    echo ""
+    echo "✅ No updates needed - all tiers are aligned" >&2
 fi
 
 # Cleanup
-rm -f "$temp_file" "${temp_auth}.parsed" "$temp_no_polar" "$temp_auth_mismatch" "$temp_polar_mismatch"
+rm -f "$temp_file" "${temp_auth}.parsed" "$temp_mismatches" "$temp_updates"
 
 echo >&2
 echo "✅ Checked $count users" >&2

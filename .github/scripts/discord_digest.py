@@ -98,7 +98,7 @@ def create_digest_prompt(prs: List[Dict], is_final: bool = False, all_changes: L
 
     OUTPUT FORMAT:
     ```
-    [Greet Community Members naturally and casually in a playful way]
+    [Greet <@&1424461167883194418> naturally and casually in a playful way]
 
     ## 🌸 Weekly Update - {date_str}
     (do not change anything from the mentioned date_str, strictly use it as is)
@@ -119,7 +119,7 @@ def create_digest_prompt(prs: List[Dict], is_final: bool = False, all_changes: L
     ```
 
     CRITICAL RULES:
-    - Greet Community Members naturally and casually - be creative!
+    - Greet <@&1424461167883194418> naturally and casually - be creative!
     - Write for USERS, not developers - focus on functional benefits
     - Keep bullet points concise and clear
     - NO PR numbers, NO author names, NO technical jargon

@@ -83,43 +83,16 @@ def get_last_digest_time() -> datetime:
 def chunk_prs(prs: List[Dict], chunk_size: int) -> List[List[Dict]]:
     return [prs[i:i + chunk_size] for i in range(0, len(prs), chunk_size)]
 
-def create_chunk_prompt(prs: List[Dict], chunk_num: int, total_chunks: int) -> tuple:
-    system_prompt = """You are analyzing a subset of merged PRs for a weekly digest.
-Extract ONLY user-facing changes - features, improvements, bug fixes that users will notice.
-Focus on WHAT changed for users, not technical implementation details.
-
-FORMAT your response as a simple bullet list:
-- Feature/improvement/fix description (brief, user-focused)
-- Another change
-- Include the date of the change range
-- etc.
-
-If a PR has no user-facing impact, skip it entirely.
-If NO PRs in this batch have user impact, return only: SKIP"""
-
-    user_prompt = f"""Analyze batch {chunk_num}/{total_chunks} ({len(prs)} PRs):
-
-"""
-
-    for pr in prs:
-        user_prompt += f"""PR #{pr['number']}: {pr['title']}
-Description: {pr['body'][:300] if pr['body'] else 'No description'}
-
-"""
-
-    user_prompt += "\nList only user-facing changes as bullet points."
-
-    return system_prompt, user_prompt
-
-def create_final_digest_prompt(all_changes: List[str]) -> tuple:
-    MONTH = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+def create_digest_prompt(prs: List[Dict], is_final: bool = False, all_changes: List[str] = None) -> tuple:
+    MONTH = ["Jan", "Feb", "Mar", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
     end_date = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
     start_date = get_last_digest_time().strftime("%Y-%m-%dT%H:%M:%SZ")
     date_str = f"From {start_date.split('T')[0].split('-')[2]} {MONTH[int(start_date.split('T')[0].split('-')[1]) - 1]} {start_date.split('T')[0].split('-')[0]} to {end_date.split('T')[0].split('-')[2]} {MONTH[int(end_date.split('T')[0].split('-')[1]) - 1]} {end_date.split('T')[0].split('-')[0]}"
-    print(f"Creating final digest for period: {date_str}")
-    system_prompt = f"""
-    You are creating the FINAL weekly digest for Pollinations AI Discord community.
-    You've been given pre-filtered user-facing changes. Now create ONE polished, engaging message.
+    
+    system_prompt = f"""You are creating a weekly digest for the Pollinations AI Discord community.
+    Focus on FUNCTIONAL changes only - features, improvements, bug fixes that affect how users interact with the platform.
+    Ignore: styling updates, minor UI tweaks, internal refactors, dependency updates, code cleanup.
+    Include: new features, model additions, performance improvements, API changes, workflow improvements.
 
     CONTEXT: Pollinations is an open-source AI platform. Your audience is USERS, not developers.
 
@@ -129,107 +102,51 @@ def create_final_digest_prompt(all_changes: List[str]) -> tuple:
 
     ## 🌸 Weekly Update - {date_str}
     (do not change anything from the mentioned date_str, strictly use it as is)
-    ### [Choose section name with emoji based on changes]
-    - Polished description of change (benefits-focused)
-    - Another change
-    - Keep concise and clear
-
-    ### [Another section if it makes sense]
-    - More organized changes
-    - Group logically for users
-
-    [Add sections as needed - organize however makes most sense!]
-    ```
-
-    RULES:
-    - Greet <@&1424461167883194418> creatively and playfully
-    - Group related changes into logical sections (Discord Bot, New Features, Bug Fixes, etc.)
-    - Use emojis that fit each section
-    - Remove duplicate or very similar items
-    - Try to keep it short simple and on-point without too much clutter
-    - Polish the language to be engaging and user-focused
-    - NO PR numbers, NO author names, NO technical jargon
-    - Only user facing changes or things that actually impact users like limits and such
-    - Avoid focusing on developer releated insights like backend changes or anything that doesn't direct affect the users 
-    - Make the final response such that it will be seen from the user's prespective
-    - Keep it concise but complete
-    - A bit of fun and playfulness is encouraged!
-    TONE: Conversational, friendly, exciting about improvements. Be concise, on-point and professional while being a bit witty!"""
-    combined_changes = "\n\n---\n\n".join(all_changes)
-    
-    user_prompt = f"""Here are the user-facing changes from this week:
-    {combined_changes}
-    Create a polished weekly digest that groups these changes logically and presents them in an engaging way for users."""
-    
-    return system_prompt, user_prompt
-
-def create_single_digest_prompt(prs: List[Dict]) -> tuple:
-    if not prs:
-        return "", ""
-    MONTH = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
-    end_date = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
-    start_date = get_last_digest_time().strftime("%Y-%m-%dT%H:%M:%SZ")
-    date_str = f"From {start_date.split('T')[0].split('-')[2]} {MONTH[int(start_date.split('T')[0].split('-')[1]) - 1]} {start_date.split('T')[0].split('-')[0]} to {end_date.split('T')[0].split('-')[2]} {MONTH[int(end_date.split('T')[0].split('-')[1]) - 1]} {end_date.split('T')[0].split('-')[0]}"
-    print(f"Creating final digest for period: {date_str}")
-    system_prompt = f"""
-    You are creating a weekly digest for the Pollinations AI Discord community.
-    Analyze the merged PRs and create ONE clean, engaging update message for USERS of the platform.
-
-    CONTEXT: Pollinations is an open-source AI platform. You're talking to USERS who use the service, NOT developers.
-
-    OUTPUT FORMAT:
-    ```
-    [Greet <@&1424461167883194418> naturally and casually in a playful way]
-
-    ## 🌸 Weekly Update - {date_str}
-    (do not change anything from the mentioned date_str, strictly use it as is)
-    [Create sections that make sense for what actually changed - you have COMPLETE FREEDOM]
-    [Examples: "🎮 Discord Bot", "🚀 New Models", "⚡ Speed Improvements", "🎨 UI Updates", "🔧 Bug Fixes", etc.]
+    [Create sections that make sense for functional changes - you have COMPLETE FREEDOM]
+    [Examples: "🎮 Discord Bot", "🚀 New Models", "⚡ Performance", "🔄 API Changes", "🔧 Bug Fixes", etc.]
 
     ### [Your chosen section name with emoji]
-    - What changed for users (brief, clear)
-    - Another user-facing change
+    - What changed for users (brief, clear, functional impact)
+    - Another functional change
     - Focus on benefits users will notice
 
     ### [Another section if needed]
-    - More changes that affect users
+    - More functional changes
     - Keep it user-focused
 
     [Add as many sections as needed - organize however makes most sense!]
     ```
 
-    YOUR COMPLETE FREEDOM:
-    - Choose ANY section names that fit the changes
-    - Create ANY number of sections (1-5 typically)
-    - Use ANY emojis that make sense
-    - Group changes however is most logical for users
-    - Focus on what USERS will experience, not technical details
-
     CRITICAL RULES:
-    - Greet <@&1424461167883194418> naturally and casually - be creative with your greeting!
-    - Write for USERS, not developers - focus on benefits they'll see
+    - Greet <@&1424461167883194418> naturally and casually - be creative!
+    - Write for USERS, not developers - focus on functional benefits
     - Keep bullet points concise and clear
     - NO PR numbers, NO author names, NO technical jargon
-    - Skip internal/developer changes that don't affect users
-    - If no user-facing changes, return only one word "SKIP"
-    - A bit of fun and sarcasm is ok! 
+    - Skip styling, UI cosmetics, code cleanup, dependency updates
+    - Focus on functional impact only
+    - If no functional changes, return only: SKIP
+    - A bit of fun and sarcasm is ok!
 
-    TONE: Conversational, friendly, focus on user benefits and playful
+    TONE: Conversational, friendly, focus on functional user benefits and playful
     LENGTH: Keep it concise but complete"""
-    user_prompt = f"""Analyze these {len(prs)} merged PRs and create a weekly digest:
-    """
-    
-    for i, pr in enumerate(prs, 1):
-        user_prompt += f"""PR #{pr['number']}: {pr['title']}
-        Author: {pr['author'] if 'author' in pr else 'Some Contributor'}
-        Description: {pr['body'][:500] if pr['body'] else 'No description'}
-        """
-    
-    user_prompt += """
-    Create a clean weekly digest focusing on user impact. Group related changes naturally.
-    Remember: Focus on WHAT changed for users, not WHO changed it or technical details."""
-    return system_prompt, user_prompt
 
+    if is_final:
+        combined_changes = "\n\n---\n\n".join(all_changes)
+        user_prompt = f"""Here are the functional changes from this week:
+        {combined_changes}
+        Create a polished weekly digest that groups these functional changes logically and presents them in an engaging way for users."""
+    else:
+        user_prompt = f"""Analyze these {len(prs)} merged PRs and extract FUNCTIONAL changes only:"""
+        for i, pr in enumerate(prs, 1):
+            user_prompt += f"""PR #{pr['number']}: {pr['title']}
+        Author: {pr['author'] if 'author' in pr else 'Some Contributor'}
+        Description: {pr['body'][:500] if pr['body'] else 'No description'}"""
+            
+        user_prompt += """Extract only functional changes (features, improvements, bug fixes, API changes, performance gains).
+        Ignore styling, UI cosmetics, code cleanup, dependencies.
+        If no functional changes, return only: SKIP"""
+
+    return system_prompt, user_prompt
 
 
 def call_pollinations_api(system_prompt: str, user_prompt: str, token: str) -> str:
@@ -343,7 +260,7 @@ def main():
     print(f"Processing {len(merged_prs)} PRs...")
     if len(merged_prs) <= CHUNK_SIZE:
         print("Small batch - using single AI call...")
-        system_prompt, user_prompt = create_single_digest_prompt(merged_prs)
+        system_prompt, user_prompt = create_digest_prompt(merged_prs)
         ai_response = call_pollinations_api(system_prompt, user_prompt, pollinations_token)
         message = parse_message(ai_response)
         
@@ -354,7 +271,7 @@ def main():
         all_changes = []
         for i, chunk in enumerate(pr_chunks, 1):
             print(f"Processing chunk {i}/{len(pr_chunks)} ({len(chunk)} PRs)...")
-            sys_prompt, usr_prompt = create_chunk_prompt(chunk, i, len(pr_chunks))
+            sys_prompt, usr_prompt = create_digest_prompt(chunk)
             response = call_pollinations_api(sys_prompt, usr_prompt, pollinations_token)
             changes = parse_message(response)
             
@@ -363,16 +280,16 @@ def main():
             time.sleep(0.5)  
         
         if not all_changes:
-            print("No user-facing changes found across all chunks.")
+            print("No functional changes found across all chunks.")
             return
         
         print("Creating final polished digest...")
-        sys_prompt, usr_prompt = create_final_digest_prompt(all_changes)
+        sys_prompt, usr_prompt = create_digest_prompt([], is_final=True, all_changes=all_changes)
         ai_response = call_pollinations_api(sys_prompt, usr_prompt, pollinations_token)
         message = parse_message(ai_response)
 
     if message.upper().startswith('SKIP'):
-        print("AI returned SKIP — no user-facing updates.")
+        print("AI returned SKIP — no functional updates.")
         return
     post_to_discord(discord_webhook, message)
 

@@ -1,7 +1,8 @@
 #!/bin/bash
 # Compare tiers between Enter (staging) and Auth (production) databases
+# and sync Enter to match Auth for any mismatches
 #
-# Usage: bash enter.pollinations.ai/scripts/check-polar-tiers.sh
+# Usage: bash enter.pollinations.ai/scripts/sync-enter-auth-tiers.sh
 
 set -e
 

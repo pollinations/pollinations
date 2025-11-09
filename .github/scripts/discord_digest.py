@@ -103,6 +103,7 @@ def create_digest_prompt(prs: List[Dict], is_final: bool = False, all_changes: L
     ## 🌸 Weekly Update - {date_str}
     (do not change anything from the mentioned date_str, strictly use it as is)
     [Create sections that make sense for functional changes - you have COMPLETE FREEDOM]
+    [MAKE SURE THAT WE PUT ALL THE INFO IN SOMEWHERE AROUND 200-400 WORDS TOTAL]
     [Examples: "🎮 Discord Bot", "🚀 New Models", "⚡ Performance", "🔄 API Changes", "🔧 Bug Fixes", etc.]
 
     ### [Your chosen section name with emoji]

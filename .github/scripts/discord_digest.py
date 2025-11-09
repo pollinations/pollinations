@@ -9,7 +9,7 @@ from datetime import datetime, timedelta, timezone
 
 GITHUB_API_BASE = "https://api.github.com"
 POLLINATIONS_API_BASE = "https://enter.pollinations.ai/api/generate/openai"
-MODEL = "openai-large"
+MODEL = "gemini"
 CHUNK_SIZE = 50
 
 def get_env(key: str, required: bool = True) -> str:

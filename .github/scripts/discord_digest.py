@@ -116,7 +116,7 @@ def create_final_digest_prompt(all_changes: List[str]) -> tuple:
     end_date = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
     start_date = get_last_digest_time().strftime("%Y-%m-%dT%H:%M:%SZ")
     date_str = f"From {start_date.split('T')[0].split('-')[2]} {MONTH[int(start_date.split('T')[0].split('-')[1]) - 1]} {start_date.split('T')[0].split('-')[0]} to {end_date.split('T')[0].split('-')[2]} {MONTH[int(end_date.split('T')[0].split('-')[1]) - 1]} {end_date.split('T')[0].split('-')[0]}"
-
+    print(f"Creating final digest for period: {date_str}")
     system_prompt = f"""
     You are creating the FINAL weekly digest for Pollinations AI Discord community.
     You've been given pre-filtered user-facing changes. Now create ONE polished, engaging message.
@@ -125,10 +125,10 @@ def create_final_digest_prompt(all_changes: List[str]) -> tuple:
 
     OUTPUT FORMAT:
     ```
-    [Greet the community naturally and casually in a playful way]
+    [Greet <@&1424461167883194418> naturally and casually in a playful way]
 
     ## 🌸 Weekly Update - {date_str}
-
+    (do not change anything from the mentioned date_str, strictly use it as is)
     ### [Choose section name with emoji based on changes]
     - Polished description of change (benefits-focused)
     - Another change
@@ -142,7 +142,7 @@ def create_final_digest_prompt(all_changes: List[str]) -> tuple:
     ```
 
     RULES:
-    - Greet the community creatively and playfully
+    - Greet <@&1424461167883194418> creatively and playfully
     - Group related changes into logical sections (Discord Bot, New Features, Bug Fixes, etc.)
     - Use emojis that fit each section
     - Remove duplicate or very similar items
@@ -170,7 +170,7 @@ def create_single_digest_prompt(prs: List[Dict]) -> tuple:
     end_date = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
     start_date = get_last_digest_time().strftime("%Y-%m-%dT%H:%M:%SZ")
     date_str = f"From {start_date.split('T')[0].split('-')[2]} {MONTH[int(start_date.split('T')[0].split('-')[1]) - 1]} {start_date.split('T')[0].split('-')[0]} to {end_date.split('T')[0].split('-')[2]} {MONTH[int(end_date.split('T')[0].split('-')[1]) - 1]} {end_date.split('T')[0].split('-')[0]}"
-
+    print(f"Creating final digest for period: {date_str}")
     system_prompt = f"""
     You are creating a weekly digest for the Pollinations AI Discord community.
     Analyze the merged PRs and create ONE clean, engaging update message for USERS of the platform.
@@ -179,10 +179,10 @@ def create_single_digest_prompt(prs: List[Dict]) -> tuple:
 
     OUTPUT FORMAT:
     ```
-    [Greet the community naturally and casually in a playful way]
+    [Greet <@&1424461167883194418> naturally and casually in a playful way]
 
     ## 🌸 Weekly Update - {date_str}
-
+    (do not change anything from the mentioned date_str, strictly use it as is)
     [Create sections that make sense for what actually changed - you have COMPLETE FREEDOM]
     [Examples: "🎮 Discord Bot", "🚀 New Models", "⚡ Speed Improvements", "🎨 UI Updates", "🔧 Bug Fixes", etc.]
 
@@ -206,7 +206,7 @@ def create_single_digest_prompt(prs: List[Dict]) -> tuple:
     - Focus on what USERS will experience, not technical details
 
     CRITICAL RULES:
-    - Greet the community naturally and casually - be creative with your greeting!
+    - Greet <@&1424461167883194418> naturally and casually - be creative with your greeting!
     - Write for USERS, not developers - focus on benefits they'll see
     - Keep bullet points concise and clear
     - NO PR numbers, NO author names, NO technical jargon

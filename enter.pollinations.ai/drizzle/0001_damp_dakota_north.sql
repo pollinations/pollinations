@@ -8,4 +8,4 @@ ALTER TABLE `event` ADD `error_source` text;--> statement-breakpoint
 ALTER TABLE `event` ADD `error_message` text;--> statement-breakpoint
 ALTER TABLE `event` ADD `error_stack` text;--> statement-breakpoint
 ALTER TABLE `event` ADD `error_details` text;--> statement-breakpoint
-ALTER TABLE `event` DROP COLUMN `cost_type`;
+ALTER TABLE `event` DROP COLUMN `cost_type`;--> statement-breakpoint

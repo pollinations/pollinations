@@ -125,7 +125,7 @@ def create_final_digest_prompt(all_changes: List[str]) -> tuple:
 
     OUTPUT FORMAT:
     ```
-    [Greet <@&1424461167883194418> naturally and casually in a playful way]
+    [Greet the community naturally and casually in a playful way]
 
     ## 🌸 Weekly Update - {date_str}
 
@@ -142,7 +142,7 @@ def create_final_digest_prompt(all_changes: List[str]) -> tuple:
     ```
 
     RULES:
-    - Greet <@&1424461167883194418> creatively and playfully
+    - Greet the community creatively and playfully
     - Group related changes into logical sections (Discord Bot, New Features, Bug Fixes, etc.)
     - Use emojis that fit each section
     - Remove duplicate or very similar items
@@ -179,7 +179,7 @@ def create_single_digest_prompt(prs: List[Dict]) -> tuple:
 
     OUTPUT FORMAT:
     ```
-    [Greet <@&1424461167883194418> naturally and casually in a playful way]
+    [Greet the community naturally and casually in a playful way]
 
     ## 🌸 Weekly Update - {date_str}
 
@@ -206,7 +206,7 @@ def create_single_digest_prompt(prs: List[Dict]) -> tuple:
     - Focus on what USERS will experience, not technical details
 
     CRITICAL RULES:
-    - Greet <@&1424461167883194418> naturally and casually - be creative with your greeting!
+    - Greet the community naturally and casually - be creative with your greeting!
     - Write for USERS, not developers - focus on benefits they'll see
     - Keep bullet points concise and clear
     - NO PR numbers, NO author names, NO technical jargon

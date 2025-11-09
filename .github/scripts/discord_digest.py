@@ -9,7 +9,7 @@ from datetime import datetime, timedelta, timezone
 
 GITHUB_API_BASE = "https://api.github.com"
 POLLINATIONS_API_BASE = "https://enter.pollinations.ai/api/generate/openai"
-MODEL = "gemini"
+MODEL = "openai-large"
 CHUNK_SIZE = 50
 
 def get_env(key: str, required: bool = True) -> str:
@@ -245,7 +245,8 @@ def call_pollinations_api(system_prompt: str, user_prompt: str, token: str) -> s
             {"role": "user", "content": user_prompt}
         ],
         "temperature": 0.7,
-        "seed": seed
+        "seed": seed,
+        "max_tokens": 250
     }
     response = requests.post(
         POLLINATIONS_API_BASE,

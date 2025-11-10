@@ -31,8 +31,13 @@ app.all(
     async (c) => {
         const clientIP = c.get("connectingIp");
         const targetUrl = new URL(c.req.url);
-        targetUrl.hostname = c.env.ORIGIN_HOST;
-        targetUrl.port = "";
+        
+        // Handle ORIGIN_HOST with optional port (e.g., "host:port" or just "host")
+        const originParts = c.env.ORIGIN_HOST.split(":");
+        targetUrl.hostname = originParts[0];
+        targetUrl.port = originParts[1] || "";
+        targetUrl.protocol = "http:"; // AWS EC2 uses HTTP
+        
         console.debug("[PROXY] Forwarding to origin:", targetUrl.toString());
         const response = await proxy(targetUrl, {
             ...c.req,
@@ -53,8 +58,13 @@ app.all(
 app.all("*", setConnectingIp, async (c) => {
     const clientIP = c.get("connectingIp");
     const targetUrl = new URL(c.req.url);
-    targetUrl.hostname = c.env.ORIGIN_HOST;
-    targetUrl.port = "";
+    
+    // Handle ORIGIN_HOST with optional port (e.g., "host:port" or just "host")
+    const originParts = c.env.ORIGIN_HOST.split(":");
+    targetUrl.hostname = originParts[0];
+    targetUrl.port = originParts[1] || "";
+    targetUrl.protocol = "http:"; // AWS EC2 uses HTTP
+    
     console.debug("[PROXY] Forwarding to origin:", targetUrl.toString());
     return proxy(targetUrl, {
         ...c.req,

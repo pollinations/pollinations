@@ -62,12 +62,7 @@ export function generateCacheKey(url: URL): string {
     normalizedUrl.search = "";
     params.forEach(([key, value]) => {
         // Skip certain parameters that shouldn't affect caching
-        // Authentication and referrer parameters should not be part of cache key
-        if (
-            !["nofeed", "no-cache", "token", "referrer", "referer"].includes(
-                key,
-            )
-        ) {
+        if (!["nofeed", "no-cache"].includes(key)) {
             normalizedUrl.searchParams.append(key, value);
         }
     });

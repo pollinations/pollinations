@@ -752,20 +752,20 @@ curl https://text.pollinations.ai/openai \
 ```
 
 **What’s Happening?**
-- Replace `YOUR_TOKEN` with a token from [auth.pollinations.ai](https://auth.pollinations.ai).
+- Replace `YOUR_TOKEN` with a token from [enter.pollinations.ai](https://enter.pollinations.ai).
 - This is safer for backend apps.
 
 ### Access Tiers
 | Tier     | Rate Limit             | Models Available | Access             | Notes                     |
 |----------|------------------------|------------------|--------------------|---------------------------|
 | Anonymous| One request every 15s | Basic models     | No signup          | Good for testing          |
-| Seed     | One request every 5s  | Standard models  | Free registration  | Sign up at auth.pollinations.ai |
+| Seed     | One request every 5s  | Standard models  | Free registration  | Sign up at enter.pollinations.ai |
 | Flower   | One request every 3s  | Advanced models  | Paid tier          | Higher limits             |
 | Nectar   | No limits             | All models       | Enterprise         | Contact Pollinations.AI   |
 
 **Starting March 31, 2025**:
 - Free tier images may include watermarks.
-- Register at [auth.pollinations.ai](https://auth.pollinations.ai) to remove watermarks and get higher limits.
+- Register at [enter.pollinations.ai](https://enter.pollinations.ai) to remove watermarks and get higher limits.
 
 ## Advanced Features
 ### Image-to-Image Generation
@@ -931,11 +931,11 @@ Here are tips to make the most of the API:
 ### Rate Limits
 - **Stay Within Limits**: Anonymous users get one request every 15 seconds. Register for higher limits.
 - **Retry Smartly**: If you hit a limit, wait and try again (exponential backoff). For example, wait 1 second, then 2, then 4, etc.
-- **Register Your App**: Sign up at [auth.pollinations.ai](https://auth.pollinations.ai) for better performance.
+- **Register Your App**: Sign up at [enter.pollinations.ai](https://enter.pollinations.ai) for better performance.
 
 ## Support & Resources
 - **Documentation**: [github.com/pollinations/pollinations](https://github.com/pollinations/pollinations)
-- **Authentication**: [auth.pollinations.ai](https://auth.pollinations.ai)
+- **Authentication**: [enter.pollinations.ai](https://enter.pollinations.ai)
 - **React Playground**: [react-hooks.pollinations.ai](https://react-hooks.pollinations.ai)
 - **Community**: Join our community on X for updates and tips.
 

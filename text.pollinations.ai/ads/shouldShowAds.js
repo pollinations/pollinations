@@ -1,10 +1,6 @@
 import { getRequestData } from "../requestUtils.js";
 import { REDIRECT_BASE_URL } from "./adLlmMapper.js";
 import { REQUIRE_MARKDOWN, markdownRegex } from "./adUtils.js";
-import {
-    handleAuthentication,
-    getUserPreferences,
-} from "../../shared/auth-utils.js";
 
 // Global flag to completely disable ad system
 const ADS_GLOBALLY_DISABLED = true;

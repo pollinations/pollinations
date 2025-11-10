@@ -93,8 +93,7 @@ pollinations/
 ├── pollinations.ai/           # Main React frontend application
 ├── pollinations-react/        # React component library
 ├── model-context-protocol/    # MCP server for AI assistant integration
-├── enter.pollinations.ai/     # New centralized auth gateway (BETA)
-├── auth.pollinations.ai/      # Legacy auth service (being phased out)
+├── enter.pollinations.ai/     # Centralized auth gateway (ACTIVE)
 └── operations/                # Documentation and operations
 ```
 
@@ -116,10 +115,9 @@ Our new centralized authentication and model gateway:
 - **Note**: Current endpoint structure is transitional and will be simplified in future releases
 
 ### 🔄 **Legacy APIs** (OLD - Being Phased Out)
-- **image.pollinations.ai** - Direct image generation (no auth)
-- **text.pollinations.ai** - Direct text generation (no auth)
-- **auth.pollinations.ai** - Original authentication service
-- **Status**: Still operational but will be deprecated in favor of enter.pollinations.ai
+- **image.pollinations.ai** - Direct image generation (no auth validation)
+- **text.pollinations.ai** - Direct text generation (no auth validation)
+- **Status**: Image/text services operational but authentication removed; all auth now via enter.pollinations.ai
 - **Migration**: All new features are being built on enter.pollinations.ai
 
 **For Agents**: When working on API-related tasks, clarify whether you're working with:

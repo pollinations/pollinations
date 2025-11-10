@@ -26,8 +26,6 @@ import {
 } from "./utils/stringMonitor.js";
 
 // Import shared utilities
-import { enqueue } from "../shared/ipQueue.js";
-import { handleAuthentication } from "../shared/auth-utils.js";
 import { getIp } from "../shared/extractFromRequest.js";
 import {
     buildUsageHeaders,
@@ -655,41 +653,9 @@ async function processRequest(req, res, requestData) {
         return res.status(403).json(errorResponse);
     }
 
-    // Check authentication status
-    const authResult = await handleAuthentication(req, null, authLog);
-    // Store authentication result in request for later use
-    req.authResult = authResult;
-    // Use the new explicit authentication fields
-    const isTokenAuthenticated = authResult.tokenAuth;
-    const hasReferrer = authResult.referrerAuth;
-
-    // Determine queue configuration based on authentication
-    // Note: ipQueue.js handles tier-based caps and enter.pollinations.ai bypass automatically
-    let queueConfig;
-
-    if (isTokenAuthenticated) {
-        // Token authentication - ipQueue will automatically apply tier-based caps
-        queueConfig = { interval: 3000 }; // cap will be set by ipQueue based on tier
-        authLog(
-            "Token authenticated - ipQueue will apply tier-based concurrency",
-        );
-    } else if (hasReferrer) {
-        // Referrer authentication uses base configuration
-        queueConfig = { interval: 9000 };
-        authLog("Referrer authenticated - using base configuration");
-    } else {
-        // Use default queue config with interval
-        queueConfig = QUEUE_CONFIG;
-        authLog("No authentication - standard queue with delay");
-    }
-
-    // Use shared queue for rate limiting with max queue size
-    await enqueue(req, () => handleRequest(req, res, requestData), {
-        ...queueConfig,
-    });
-
-    // Note: We've removed the duplicate handleRequest calls that were causing the headers error
-    // The shared enqueue function above now handles all queue logic, including authentication status
+    // Authentication and rate limiting is now handled by enter.pollinations.ai
+    // Just call handleRequest directly
+    await handleRequest(req, res, requestData);
 }
 
 // Helper function to check if a model is an audio model and add necessary parameters

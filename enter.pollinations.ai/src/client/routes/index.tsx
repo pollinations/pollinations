@@ -59,7 +59,7 @@ function RouteComponent() {
         const keyType = formState.keyType || "secret";
         const result = await auth.apiKey.create({
             name: formState.name,
-            prefix: keyType === "publishable" ? "pk" : "sk",
+            prefix: keyType === "publishable" ? "plln_pk" : "plln_sk",
             metadata: { description: formState.description, keyType },
         });
         if (result.error) {

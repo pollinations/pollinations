@@ -16,14 +16,14 @@ const SocialLinksContainer = styled("div")(({ gap }) => ({
 
 const LinkItem = styled(Link, {
     // Prevent forwarding isHovered to the DOM
-    shouldForwardProp: (prop) => prop !== "isHovered",
-})(({ isHovered }) => ({
+    shouldForwardProp: (prop) => !["isHovered", "invert"].includes(prop),
+})(({ isHovered, invert }) => ({
     display: "flex",
     justifyContent: "center",
     alignItems: "center",
     borderRadius: "50%",
-    border: `3px solid ${isHovered ? "#05ffa1" : "#ff61d8"}`,
-    backgroundColor: isHovered ? "linear-gradient(135deg, #ff61d8, #05ffa1)" : "white",
+    border: invert ? `1px solid ${isHovered ? Colors.offwhite : 'transparent'}` : `2px solid ${Colors.offblack}`,
+    backgroundColor: isHovered ? (invert ? Colors.offblack : Colors.offblack) : "transparent",
     width: "40px",
     height: "40px",
     transition: "all 0.3s ease",
@@ -44,8 +44,8 @@ const StyledReactSVG = styled(ReactSVG, {
     shouldForwardProp: (prop) => !["isHovered", "invert"].includes(prop),
 })(({ isHovered, invert }) => ({
     "& svg": {
-        fill: isHovered ? "#000000" : "#ff61d8",
-        transition: "fill 0.3s ease",
+        fill: invert ? Colors.offwhite : (isHovered ? Colors.offwhite : Colors.offblack),
+        transition: "fill 0.6s ease",
         width: "100%",
         height: "100%",
     },
@@ -74,19 +74,10 @@ export const SocialLinks = ({ gap, location, invert }) => {
                         target="_blank"
                         title={platform}
                         isHovered={isHovered}
+                        invert={invert}
                         onMouseEnter={() => setHoveredIndex(index)}
                         onMouseLeave={() => setHoveredIndex(null)}
                         onClick={() => handleLinkClick(platform)}
-                        sx={
-                            invert
-                                ? {
-                                      border: `1px solid ${Colors.offwhite}`,
-                                      backgroundColor: isHovered
-                                          ? Colors.offblack
-                                          : "transparent",
-                                  }
-                                : {}
-                        }
                     >
                         <StyledReactSVG
                             src={icon}

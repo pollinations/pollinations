@@ -129,6 +129,8 @@ export const proxyRoutes = new Hono<Env>()
                 allowAnonymous:
                     c.var.track.isFreeUsage && c.env.ALLOW_ANONYMOUS_USAGE,
             });
+            await checkBalanceForPaidModel(c);
+            
             const textServiceUrl =
                 c.env.TEXT_SERVICE_URL || "https://text.pollinations.ai";
             const targetUrl = proxyUrl(c, `${textServiceUrl}/openai`);
@@ -157,6 +159,32 @@ export const proxyRoutes = new Hono<Env>()
                     ...contentFilterHeaders,
                 },
             });
+        },
+    )
+    .get(
+        "/text/models",
+        describeRoute({
+            description: "Get available text models.",
+            responses: {
+                200: {
+                    description: "Success",
+                    content: {
+                        "application/json": {
+                            schema: resolver(
+                                z.array(z.string()).meta({
+                                    description: "List of available models",
+                                }),
+                            ),
+                        },
+                    },
+                },
+                ...errorResponses(500),
+            },
+        }),
+        async (c) => {
+            const textServiceUrl =
+                c.env.TEXT_SERVICE_URL || "https://text.pollinations.ai";
+            return await proxy(`${textServiceUrl}/models`);
         },
     )
     .get(
@@ -262,6 +290,8 @@ export const proxyRoutes = new Hono<Env>()
                 allowAnonymous:
                     c.var.track.isFreeUsage && c.env.ALLOW_ANONYMOUS_USAGE,
             });
+            await checkBalanceForPaidModel(c);
+            
             const targetUrl = proxyUrl(c, `${c.env.IMAGE_SERVICE_URL}/prompt`);
             targetUrl.pathname = joinPaths(
                 targetUrl.pathname,
@@ -393,4 +423,13 @@ export function contentFilterResultsToHeaders(
             completionFilterResults?.protected_material_code?.detected,
         ),
     });
+}
+
+async function checkBalanceForPaidModel(c: Context<Env & import("@/middleware/auth.ts").AuthEnv & import("@/middleware/polar.ts").PolarEnv & import("@/middleware/track.ts").TrackEnv>) {
+    if (!c.var.track.isFreeUsage && c.var.auth.user?.id) {
+        await c.var.polar.requirePositiveBalance(
+            c.var.auth.user.id,
+            "Insufficient pollen balance to use this model"
+        );
+    }
 }

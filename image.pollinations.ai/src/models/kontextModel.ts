@@ -88,7 +88,7 @@ export const callKontextAPI = async (
             trackingData: {
                 actualModel: 'kontext',
                 usage: {
-                    candidatesTokenCount: 1,
+                    completionImageTokens: 1,
                     totalTokenCount: 1
                 }
             }

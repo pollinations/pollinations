@@ -1,4 +1,5 @@
 import os
+import sys
 import time
 import uuid
 from typing import List, Dict, Any
@@ -7,7 +8,7 @@ from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 import torch
 from diffusers import FluxPipeline
-from nunchaku.models.transformer_flux import NunchakuFluxTransformer2dModel
+from nunchaku.models import NunchakuFluxTransformer2dModel
 from safety_checker.censor import check_safety
 import requests
 import logging
@@ -45,10 +46,18 @@ def get_public_ip():
 
 # Heartbeat function
 async def send_heartbeat():
-    public_ip = await asyncio.get_event_loop().run_in_executor(None, get_public_ip)
+    # Check for PUBLIC_IP environment variable first, otherwise auto-detect
+    public_ip = os.getenv("PUBLIC_IP")
+    if not public_ip:
+        public_ip = await asyncio.get_event_loop().run_in_executor(None, get_public_ip)
     if public_ip:
         try:
-            port = int(os.getenv("PORT", "8765"))
+            # Use PUBLIC_PORT if set, otherwise use PORT
+            public_port = os.getenv("PUBLIC_PORT")
+            if public_port:
+                port = int(public_port)
+            else:
+                port = int(os.getenv("PORT", "10001"))
             url = f"http://{public_ip}:{port}"
             service_type = os.getenv("SERVICE_TYPE", "flux")  # Get service type from environment variable
             async with aiohttp.ClientSession() as session:
@@ -127,9 +136,19 @@ async def lifespan(app: FastAPI):
                 pass
 
 def find_nearest_valid_dimensions(width: float, height: float) -> tuple[int, int]:
-    """Find the nearest dimensions that are multiples of 8 and their product is divisible by 65536."""
+    """Find the nearest dimensions that are multiples of 8 and their product is divisible by 65536.
+    Also enforces a maximum total pixel count to prevent CUDA OOM errors."""
+    # Cap total pixels to prevent CUDA OOM with quantized models (1024x1024 = 1,048,576)
+    MAX_PIXELS = 768 * 768
     start_w = round(width)
     start_h = round(height)
+    
+    # Scale down proportionally if total pixels exceed limit
+    current_pixels = start_w * start_h
+    if current_pixels > MAX_PIXELS:
+        scale = (MAX_PIXELS / current_pixels) ** 0.5
+        start_w = round(start_w * scale)
+        start_h = round(start_h * scale)
     
     def is_valid(w: int, h: int) -> bool:
         return w % 8 == 0 and h % 8 == 0 and (w * h) % 65536 == 0
@@ -172,39 +191,45 @@ async def generate(request: ImageRequest):
     print(f"Original dimensions: {request.width}x{request.height}")
     print(f"Adjusted dimensions: {width}x{height}")
 
-    with torch.inference_mode():
-        output = pipe(
-            prompt=request.prompts[0],
-            generator=generator,
-            width=width,
-            height=height,
-            num_inference_steps=request.steps,
-        )
+    try:
+        with torch.inference_mode():
+            output = pipe(
+                prompt=request.prompts[0],
+                generator=generator,
+                width=width,
+                height=height,
+                num_inference_steps=request.steps,
+            )
 
-    # Check for NSFW content
-    image = output.images[0]
-    concepts, has_nsfw = check_safety([image], request.safety_checker_adj)
+        # Check for NSFW content
+        image = output.images[0]
+        concepts, has_nsfw = check_safety([image], request.safety_checker_adj)
+        
+        # Convert image to base64
+        img_byte_arr = io.BytesIO()
+        image.save(img_byte_arr, format='JPEG', quality=95)
+        img_base64 = base64.b64encode(img_byte_arr.getvalue()).decode('utf-8')
+        
+        response_content = [{
+            "image": img_base64,
+            "has_nsfw_concept": has_nsfw[0],
+            "concept": concepts[0],
+            "width": width,
+            "height": height,
+            "seed": seed,
+            "prompt": request.prompts[0]
+        }]
+        
+        # Send heartbeat after successful generation
+        await send_heartbeat()
+        return JSONResponse(content=response_content)
     
-    # Convert image to base64
-    img_byte_arr = io.BytesIO()
-    image.save(img_byte_arr, format='JPEG', quality=95)
-    img_base64 = base64.b64encode(img_byte_arr.getvalue()).decode('utf-8')
-    
-    response_content = [{
-        "image": img_base64,
-        "has_nsfw_concept": has_nsfw[0],
-        "concept": concepts[0],
-        "width": width,
-        "height": height,
-        "seed": seed,
-        "prompt": request.prompts[0]
-    }]
-    
-    # Send heartbeat after successful generation
-    await send_heartbeat()
-    return JSONResponse(content=response_content)
+    except torch.cuda.OutOfMemoryError as e:
+        logger.error(f"CUDA OOM Error: {str(e)} - Exiting to trigger systemd restart")
+        # Exit with non-zero status to trigger systemd restart
+        sys.exit(1)
 
 if __name__ == "__main__":
     import uvicorn
-    port = int(os.getenv("PORT", "8765"))
+    port = int(os.getenv("PORT", "10001"))
     uvicorn.run(app, host="0.0.0.0", port=port)

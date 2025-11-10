@@ -1,17 +1,15 @@
-import React, { useState } from "react";
+import React from "react";
 import styled from "@emotion/styled"; // Added to style our ReactSVG icon
-import { Box, useTheme, Popover, IconButton } from "@mui/material";
+import { Box, useTheme } from "@mui/material";
 import { SectionBG, Colors, Fonts } from "../config/global";
 import { SectionContainer } from "../components/SectionContainer";
 import { NavLink } from "react-router-dom";
 import { SocialLinks } from "../components/SocialLinks";
-import PollinationsLogo from "../assets/logo/logo-text.svg?react";
-import LogoIconBlack from "../assets/logo/logo-icon-black.svg?react";
+import PollinationsLogo from "../logo/logo-text.svg?react";
 import { useMediaQuery } from "@mui/material";
 import { trackEvent } from "../config/analytics";
 import { GeneralButton } from "../components/GeneralButton";
-import { ICONS } from "../assets/icons/icons.js"; // Import the ICONS map
-import InfoIcon from "@mui/icons-material/Info";
+import { ICONS } from "../icons/icons.js"; // Import the ICONS map
 import { ReactSVG } from "react-svg";
 
 // Styled icon component to control fill color
@@ -74,7 +72,6 @@ const AboutUsButton = styled(GeneralButton)(() => ({
 const Header = () => {
     const theme = useTheme(); // Use the useTheme hook to access the theme
     const isMobile = useMediaQuery(theme.breakpoints.down("md"));
-    const [anchorEl, setAnchorEl] = useState(null);
 
     const handleNavLinkClick = () => {
         trackEvent({
@@ -94,8 +91,6 @@ const Header = () => {
             "_blank",
         );
     };
-
-    const open = Boolean(anchorEl);
 
     return (
         <SectionContainer backgroundConfig={SectionBG.header}>
@@ -127,28 +122,13 @@ const Header = () => {
                         textDecoration: "none",
                     }}
                 >
-                    <Box
-                        sx={{
-                            display: "flex",
-                            flexDirection: { xs: "column-reverse", md: "row" },
-                            alignItems: "center",
+                    <PollinationsLogo
+                        style={{
+                            width: isMobile ? "300px" : "350px",
+                            height: isMobile ? "auto" : "auto",
+                            filter: "invert(1)",
                         }}
-                    >
-                        <LogoIconBlack
-                            style={{
-                                width: isMobile ? "50px" : "60px",
-                                height: isMobile ? "50px" : "60px",
-                                marginRight: isMobile ? "0em" : "1em",
-                            }}
-                        />
-                        <PollinationsLogo
-                            style={{
-                                width: isMobile ? "300px" : "350px",
-                                height: isMobile ? "auto" : "auto",
-                                marginBottom: isMobile ? "1em" : "0em",
-                            }}
-                        />
-                    </Box>
+                    />
                 </NavLink>
                 <Box
                     sx={{

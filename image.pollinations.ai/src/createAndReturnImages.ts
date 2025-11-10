@@ -37,7 +37,7 @@ import type { ProgressManager } from "./progressBar.ts";
 // Import model handlers
 import { callBPAIGenWithKontextFallback } from "./models/bpaigenModel.ts";
 import { callSeedreamAPI } from "./models/seedreamModel.ts";
-import { callAzureFluxKontext } from "./models/azureFluxKontextModel.ts";
+import { callAzureFluxKontext, type ImageGenerationResult as FluxImageGenerationResult } from "./models/azureFluxKontextModel.js";
 
 dotenv.config();
 
@@ -127,10 +127,11 @@ export const callComfyUI = async (
             safeParams,
         );
 
-        // Linear scaling of steps between 6 (at concurrentRequests=2) and 1 (at concurrentRequests=36)
+        // Scale steps from 4 down to 1, dropping more gradually
+        // 4 steps up to 20 concurrent, then gradually down to 1 at 50+ concurrent
         const steps = Math.max(
             1,
-            Math.round(4 - ((concurrentRequests - 2) * (3 - 1)) / (10 - 2)),
+            Math.round(4 - Math.max(0, concurrentRequests - 20) / 10)
         );
         logOps("calculated_steps", steps);
 
@@ -228,9 +229,9 @@ export const callComfyUI = async (
                 buffer: resizedBuffer, 
                 ...rest,
                 trackingData: {
-                    actualModel: 'comfyui',
+                    actualModel: 'flux',
                     usage: {
-                        candidatesTokenCount: 1,
+                        completionImageTokens: 1,
                         totalTokenCount: 1
                     }
                 }
@@ -249,9 +250,9 @@ export const callComfyUI = async (
             buffer: jpegBuffer, 
             ...rest,
             trackingData: {
-                actualModel: safeParams.model,
+                actualModel: 'flux',
                 usage: {
-                    candidatesTokenCount: 1,
+                    completionImageTokens: 1,
                     totalTokenCount: 1
                 }
             }
@@ -375,7 +376,7 @@ async function callCloudflareModel(
         trackingData: {
             actualModel: registryModelName,
             usage: {
-                candidatesTokenCount: 1,
+                completionImageTokens: 1,
                 totalTokenCount: 1
             }
         }
@@ -752,7 +753,7 @@ const callAzureGPTImageWithEndpoint = async (
     // Azure returns usage in format: { prompt_tokens, completion_tokens, total_tokens }
     const outputTokens = data.usage?.completion_tokens || data.usage?.total_tokens || 1;
     
-    logCloudflare(`GPT Image token usage: ${outputTokens} output tokens`);
+    logCloudflare(`GPT Image token usage: ${outputTokens} completion tokens`);
 
     // Azure doesn't provide content safety information directly, so we'll set defaults
     // In a production environment, you might want to use a separate content moderation service
@@ -763,7 +764,7 @@ const callAzureGPTImageWithEndpoint = async (
         trackingData: {
             actualModel: safeParams.model,
             usage: {
-                candidatesTokenCount: outputTokens, // Use actual token count from API
+                completionImageTokens: outputTokens,
                 totalTokenCount: outputTokens
             }
         }
@@ -939,85 +940,85 @@ const generateImage = async (
                 : "No userInfo provided",
         );
 
-        // Restrict Nano Banana model to users with valid authentication (nectar tier)
-        if (!hasSufficientTier(userInfo.tier, "nectar")) {
+        // Restrict Nano Banana model to enter.pollinations.ai requests ONLY
+        if (!fromEnter) {
             const errorText =
-                "Access to nanobanana is currently limited to users in the nectar tier or higher. Please authenticate at https://auth.pollinations.ai for tier upgrade information.";
+                "Access to nanobanana is currently limited to enter.pollinations.ai. Direct access is not available.";
             logError(errorText);
             progress.updateBar(
                 requestId,
                 35,
                 "Auth",
-                "Nano Banana requires authorization",
+                "Nano Banana requires enter.pollinations.ai access",
             );
             const error: any = new Error(errorText);
             error.status = 403;
             throw error;
-        } else {
-            // For nanobanana model, always throw errors instead of falling back
-            progress.updateBar(
-                requestId,
-                30,
-                "Processing",
-                "Checking prompt safety...",
+        }
+
+        // For nanobanana model, always throw errors instead of falling back
+        progress.updateBar(
+            requestId,
+            30,
+            "Processing",
+            "Checking prompt safety...",
+        );
+
+        try {
+            // Check prompt safety with Azure Content Safety
+            const promptSafetyResult = await analyzeTextSafety(prompt);
+
+            // Log the prompt with safety analysis results
+            await logGptImagePrompt(
+                prompt,
+                safeParams,
+                userInfo,
+                promptSafetyResult,
             );
 
-            try {
-                // Check prompt safety with Azure Content Safety
-                const promptSafetyResult = await analyzeTextSafety(prompt);
+            if (!promptSafetyResult.safe) {
+                const errorMessage = `Prompt contains unsafe content: ${promptSafetyResult.formattedViolations}`;
+                logError(
+                    "Azure Content Safety rejected prompt:",
+                    errorMessage,
+                );
+                progress.updateBar(
+                    requestId,
+                    100,
+                    "Error",
+                    "Prompt contains unsafe content",
+                );
 
-                // Log the prompt with safety analysis results
-                await logGptImagePrompt(
+                // Log the error with safety analysis results
+                const error = new Error(errorMessage);
+                await logGptImageError(
                     prompt,
                     safeParams,
                     userInfo,
+                    error,
                     promptSafetyResult,
                 );
-
-                if (!promptSafetyResult.safe) {
-                    const errorMessage = `Prompt contains unsafe content: ${promptSafetyResult.formattedViolations}`;
-                    logError(
-                        "Azure Content Safety rejected prompt:",
-                        errorMessage,
-                    );
-                    progress.updateBar(
-                        requestId,
-                        100,
-                        "Error",
-                        "Prompt contains unsafe content",
-                    );
-
-                    // Log the error with safety analysis results
-                    const error = new Error(errorMessage);
-                    await logGptImageError(
-                        prompt,
-                        safeParams,
-                        userInfo,
-                        error,
-                        promptSafetyResult,
-                    );
-                    throw error;
-                }
-
-                progress.updateBar(
-                    requestId,
-                    35,
-                    "Processing",
-                    "Generating with Nano Banana...",
-                );
-                return await callVertexAIGemini(prompt, safeParams, userInfo);
-            } catch (error) {
-                // Log the error but don't fall back - propagate it to the caller
-                logError(
-                    "Vertex AI Gemini image generation or safety check failed:",
-                    error.message,
-                );
-
-                await logGptImageError(prompt, safeParams, userInfo, error);
-
-                progress.updateBar(requestId, 100, "Error", error.message);
                 throw error;
             }
+
+            progress.updateBar(
+                requestId,
+                35,
+                "Processing",
+                "Generating with Nano Banana...",
+            );
+            return await callVertexAIGemini(prompt, safeParams, userInfo);
+        } catch (error) {
+            // Log the error but don't fall back - propagate it to the caller
+            logError(
+                "Vertex AI Gemini image generation or safety check failed:",
+                error.message,
+            );
+
+            await logGptImageError(prompt, safeParams, userInfo, error);
+
+            progress.updateBar(requestId, 100, "Error", error.message);
+            throw error;
         }
     }
 
@@ -1093,42 +1094,14 @@ const generateImage = async (
 
     if (safeParams.model === "flux") {
         progress.updateBar(requestId, 25, "Processing", "Using registered servers");
-        try {
-            return await callComfyUI(prompt, safeParams, concurrentRequests);
-        } catch (error) {
-            progress.updateBar(
-                requestId,
-                30,
-                "Processing",
-                `Registered servers failed: ${error}. Falling back to Cloudflare Flux...`,
-            );
-            // Fallback to Cloudflare Flux
-            progress.updateBar(requestId, 35, "Processing", "Generating image with Cloudflare Flux...");
-            try {
-                return await callCloudflareFlux(prompt, safeParams);
-            } catch (error) {
-                progress.updateBar(
-                    requestId,
-                    40,
-                    "Processing",
-                    `Cloudflare Flux failed: ${error}. Falling back to Dreamshaper...`,
-                );
-                // Final fallback to Dreamshaper
-                return await callCloudflareDreamshaper(prompt, safeParams);
-            }
-        }
+        return await callComfyUI(prompt, safeParams, concurrentRequests);
     }
 
     try {
         return await callComfyUI(prompt, safeParams, concurrentRequests);
     } catch (_error) {
-        progress.updateBar(
-            requestId,
-            35,
-            "Processing",
-            "Trying Cloudflare Dreamshaper...",
-        );
-        return await callCloudflareDreamshaper(prompt, safeParams);
+        // Cloudflare Flux fallback disabled
+        throw _error;
     }
 };
 

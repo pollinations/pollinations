@@ -1,4 +1,4 @@
-import { ICONS } from "../assets/icons/icons.js";
+import { ICONS } from "../icons/icons.js";
 
 export const SOCIAL_LINKS = {
     discord: {
@@ -23,18 +23,25 @@ export const SOCIAL_LINKS = {
         width: "22px",
         height: "22px",
     },
-    // x: {
-    //   label: 'X',
-    //   icon: ICONS.x,
-    //   url: 'https://twitter.com/pollinations_ai',
-    //   width: "20px",
-    //   height: "20px",
-    // },
+    x: {
+      label: 'X',
+      icon: ICONS.x,
+      url: 'https://twitter.com/pollinations_ai',
+      width: "20px",
+      height: "20px",
+    },
     tiktok: {
         label: "Tiktok",
         icon: ICONS.tiktok,
         url: "https://tiktok.com/@pollinations.ai",
         width: "27px",
         height: "27px",
+    },
+    linkedin: {
+        label: "LinkedIn",
+        icon: ICONS.linkedin,
+        url: "#",
+        width: "22px",
+        height: "22px",
     },
 };

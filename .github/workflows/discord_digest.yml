@@ -1,0 +1,121 @@
+name: Weekly Discord Digest (Monday & Friday)
+on:
+  pull_request:
+    types: [closed]
+    branches:
+      - main
+      - master
+  schedule:
+    # Run at 12:00 UTC every Monday and Friday
+    - cron: '0 12 * * 1,5'
+  workflow_dispatch: # Allow manual trigger
+
+jobs:
+  # Job 1: Generate individual PR summary when merged
+  generate-pr-summary:
+    if: github.event_name == 'pull_request' && github.event.pull_request.merged == true
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: read
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      
+      - name: Install dependencies
+        run: |
+          pip install requests PyYAML Jinja2
+      
+      - name: Generate PR Summary
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          POLLINATIONS_TOKEN: ${{ secrets.POLLINATIONS_TOKEN_DCPRS }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          REPO_FULL_NAME: ${{ github.repository }}
+          PR_TITLE: ${{ github.event.pull_request.title }}
+          PR_URL: ${{ github.event.pull_request.html_url }}
+          PR_AUTHOR: ${{ github.event.pull_request.user.login }}
+          PR_BRANCH: ${{ github.event.pull_request.head.ref }}
+        run: python .github/scripts/generate_summary_script.py
+      
+      - name: Store PR Summary
+        run: |
+          # Create summaries directory if it doesn't exist
+          mkdir -p .pr-summaries
+          
+          # Move the generated summary to the summaries directory
+          # with timestamp in filename
+          TIMESTAMP=$(date +%Y%m%d_%H%M%S)
+          mv pr_summary.json .pr-summaries/pr_${{ github.event.pull_request.number }}_${TIMESTAMP}.json
+      
+      - name: Commit PR Summary
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          git add .pr-summaries/
+          git commit -m "Add PR #${{ github.event.pull_request.number }} summary for discord digest" || echo "No changes to commit"
+          git push || echo "No changes to push"
+
+  # Job 2: Collect all summaries and post discord digest
+  post-discord-digest:
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: read
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      
+      - name: Install dependencies
+        run: |
+          pip install requests PyYAML Jinja2
+      
+      - name: Generate and Post Discord Digest
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          POLLINATIONS_TOKEN: ${{ secrets.POLLINATIONS_TOKEN_DCPRS }}
+          DISCORD_WEBHOOK_DIGEST: ${{ secrets.DISCORD_WEBHOOK_DIGEST }}
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+          REPO_FULL_NAME: ${{ github.repository }}
+        run: python .github/scripts/discord_digest.py
+      
+      - name: Clean up processed summaries
+        run: |
+          # Delete processed summaries (keep repo clean)
+          if [ -d .pr-summaries ] && [ "$(ls -A .pr-summaries/*.json 2>/dev/null)" ]; then
+            ARCHIVE_DATE=$(date +%Y-%m-%d)
+            
+            # Option 1: Delete summaries (recommended - keeps repo clean)
+            rm -f .pr-summaries/pr_*.json
+            
+            # Option 2: Archive summaries (uncomment if you want to keep history)
+            # mkdir -p .pr-summaries/archive/${ARCHIVE_DATE}
+            # mv .pr-summaries/pr_*.json .pr-summaries/archive/${ARCHIVE_DATE}/ 2>/dev/null || true
+            
+            git config --local user.email "github-actions[bot]@users.noreply.github.com"
+            git config --local user.name "github-actions[bot]"
+            git add .pr-summaries/
+            git commit -m "Clean up processed PR summaries from ${ARCHIVE_DATE}" || echo "No changes to commit"
+            git push || echo "No changes to push"
+            
+            echo "✅ Cleaned up processed summaries"
+          else
+            echo "📭 No summaries to clean up"
+          fi

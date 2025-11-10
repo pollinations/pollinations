@@ -15,10 +15,10 @@ export function extractResourceName(endpoint) {
     // Extract resource name from both Azure OpenAI patterns:
     // 1. https://pollinations4490940554.openai.azure.com
     // 2. https://gpt-image-jp.cognitiveservices.azure.com
-    let match = endpoint.match(/https:\/\/([^\.]+)\.openai\.azure\.com/);
+    let match = endpoint.match(/https:\/\/([^.]+)\.openai\.azure\.com/);
     if (!match) {
         match = endpoint.match(
-            /https:\/\/([^\.]+)\.cognitiveservices\.azure\.com/,
+            /https:\/\/([^.]+)\.cognitiveservices\.azure\.com/,
         );
     }
 
@@ -39,7 +39,7 @@ export function extractDeploymentName(endpoint) {
     log("Extracting deployment name from endpoint:", endpoint);
 
     // Extract deployment name (e.g., gpt-4o-mini from .../deployments/gpt-4o-mini/...)
-    const match = endpoint.match(/\/deployments\/([^\/]+)/);
+    const match = endpoint.match(/\/deployments\/([^/]+)/);
     log("Extracted deployment name:", match ? match[1] : null);
     return match ? match[1] : null;
 }

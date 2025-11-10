@@ -236,6 +236,11 @@ export const TEXT_SERVICES = {
         modelId: "us.anthropic.claude-haiku-4-5-20251001-v1:0",
         provider: "aws-bedrock",
     },
+    "claude-large": {
+        aliases: ["sonnet", "claude-4.5", "claude-sonnet-4.5", "claude-sonnet"],
+        modelId: "us.anthropic.claude-sonnet-4-5-20250929-v1:0",
+        provider: "aws-bedrock",
+    },
     "perplexity-fast": {
         aliases: ["sonar"],
         modelId: "sonar",

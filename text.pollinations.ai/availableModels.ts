@@ -163,6 +163,16 @@ const models: ModelDefinition[] = [
         tools: true,
     },
     {
+        name: "claude-large",
+        description: "Claude Sonnet 4.5",
+        config: portkeyConfig["us.anthropic.claude-sonnet-4-5-20250929-v1:0"],
+        transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
+        community: false,
+        input_modalities: ["text", "image"],
+        output_modalities: ["text"],
+        tools: true,
+    },
+    {
         name: "openai-reasoning",
         description: "OpenAI o4 Mini",
         config: portkeyConfig["openai/o4-mini"],

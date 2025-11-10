@@ -6,6 +6,7 @@ on:
       - staging
     paths:
       - 'enter.pollinations.ai/**'
+      - 'shared/registry/**'
       - '.github/workflows/deploy-enter-cloudflare.yml'
   workflow_dispatch:
 

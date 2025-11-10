@@ -18,14 +18,14 @@ compatibility_date = "2025-08-01"
 binding = "IMAGE_BUCKET"
 bucket_name = "pollinations-images"
 
-# Vectorize index for semantic caching (disabled but binding required)
-[[vectorize]]
-binding = "VECTORIZE_INDEX"
-index_name = "pollinations-image-cache-v3"
+# Vectorize index for semantic caching - COMMENTED OUT (semantic cache disabled)
+# [[vectorize]]
+# binding = "VECTORIZE_INDEX"
+# index_name = "pollinations-image-cache-v3"
 
-# Workers AI for embeddings (disabled but binding required)
-[ai]
-binding = "AI"
+# Workers AI for embeddings - COMMENTED OUT (semantic cache disabled)
+# [ai]
+# binding = "AI"
 
 # Environment variables
 [vars]
@@ -60,12 +60,12 @@ SEMANTIC_THRESHOLD_LONG = 0.995
 binding = "IMAGE_BUCKET"
 bucket_name = "pollinations-images"
 
-[[env.test.vectorize]]
-binding = "VECTORIZE_INDEX"
-index_name = "pollinations-image-cache-v3-test"
+# [[env.test.vectorize]]
+# binding = "VECTORIZE_INDEX"
+# index_name = "pollinations-image-cache-v3-test"
 
-[env.test.ai]
-binding = "AI"
+# [env.test.ai]
+# binding = "AI"
 
 # Note: The usage_model setting is deprecated and has been removed
 # Workers Unbound is now configured via account settings in the Cloudflare dashboard

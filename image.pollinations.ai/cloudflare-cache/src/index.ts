@@ -19,6 +19,19 @@ app.use(
     }),
 );
 
+/**
+ * Build target URL from origin host and current request URL
+ * Handles hostname:port format and sets HTTP protocol for AWS EC2
+ */
+function buildTargetUrl(originHost: string, requestUrl: string): URL {
+    const targetUrl = new URL(requestUrl);
+    const originParts = originHost.split(":");
+    targetUrl.hostname = originParts[0];
+    targetUrl.port = originParts[1] ?? ""; // Empty string for default port
+    targetUrl.protocol = "http:"; // AWS EC2 uses HTTP
+    return targetUrl;
+}
+
 // cache and proxy image requests
 app.all(
     "/prompt/:prompt",
@@ -30,13 +43,7 @@ app.all(
     semanticCache,
     async (c) => {
         const clientIP = c.get("connectingIp");
-        const targetUrl = new URL(c.req.url);
-        
-        // Handle ORIGIN_HOST with optional port (e.g., "host:port" or just "host")
-        const originParts = c.env.ORIGIN_HOST.split(":");
-        targetUrl.hostname = originParts[0];
-        targetUrl.port = originParts[1] || "";
-        targetUrl.protocol = "http:"; // AWS EC2 uses HTTP
+        const targetUrl = buildTargetUrl(c.env.ORIGIN_HOST, c.req.url);
         
         console.debug("[PROXY] Forwarding to origin:", targetUrl.toString());
         const response = await proxy(targetUrl, {
@@ -57,13 +64,7 @@ app.all(
 // proxy other requests as is
 app.all("*", setConnectingIp, async (c) => {
     const clientIP = c.get("connectingIp");
-    const targetUrl = new URL(c.req.url);
-    
-    // Handle ORIGIN_HOST with optional port (e.g., "host:port" or just "host")
-    const originParts = c.env.ORIGIN_HOST.split(":");
-    targetUrl.hostname = originParts[0];
-    targetUrl.port = originParts[1] || "";
-    targetUrl.protocol = "http:"; // AWS EC2 uses HTTP
+    const targetUrl = buildTargetUrl(c.env.ORIGIN_HOST, c.req.url);
     
     console.debug("[PROXY] Forwarding to origin:", targetUrl.toString());
     return proxy(targetUrl, {

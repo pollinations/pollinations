@@ -64,7 +64,7 @@ export const IMAGE_SERVICES = {
         aliases: [],
         modelId: "kontext",
         provider: "azure",
-        tier: "seed",
+        tier: "nectar",
     },
     "turbo": {
         aliases: [],

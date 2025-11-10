@@ -472,7 +472,7 @@ const checkCacheAndGenerate = async (
                     // (rate limiting is handled separately by ipQueue)
                     const fromEnter = isEnterRequest(req);
                     if (!fromEnter && !canAccessService("kontext", authResult.tier)) {
-                        throw new Error("Kontext model requires authentication (seed tier or higher). Visit https://auth.pollinations.ai");
+                        throw new Error("Kontext model requires nectar tier or higher. Visit https://enter.pollinations.ai to get started.");
                     }
                     // 30 second interval with tier-based cap from model config
                     const cap = IMAGE_CONFIG.kontext.tierCaps?.[authResult.tier] || 1;

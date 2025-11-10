@@ -99,6 +99,21 @@ export function createMyceliDeepSeekV31Config(additionalConfig = {}) {
 }
 
 /**
+ * Creates a Myceli Grok 4 Fast model configuration
+ * @param {Object} additionalConfig - Additional configuration to merge with base config
+ * @returns {Object} - Myceli Grok 4 Fast model configuration
+ */
+export function createMyceliGrok4FastConfig(additionalConfig = {}) {
+    return {
+        provider: "openai",
+        "custom-host": "https://myceli.services.ai.azure.com/openai/v1",
+        authKey: process.env.AZURE_MYCELI_DEEPSEEK_R1_API_KEY,
+        model: "grok-4-fast-non-reasoning",
+        ...additionalConfig,
+    };
+}
+
+/**
  * Creates a Cloudflare model configuration
  * @param {Object} additionalConfig - Additional configuration to merge with base config
  * @returns {Object} - Cloudflare model configuration

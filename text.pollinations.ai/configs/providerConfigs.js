@@ -90,11 +90,9 @@ export function createDeepSeekReasoningConfig(additionalConfig = {}) {
 export function createMyceliDeepSeekV31Config(additionalConfig = {}) {
     return {
         provider: "openai",
-        "custom-host": process.env.AZURE_MYCELI_DEEPSEEK_R1_ENDPOINT,
+        "custom-host": "https://myceli.services.ai.azure.com/openai/v1",
         authKey: process.env.AZURE_MYCELI_DEEPSEEK_R1_API_KEY,
-        "auth-header-name": "Authorization",
-        "auth-header-value-prefix": "",
-        model: "myceli-deepseek-v3.1",
+        model: "DeepSeek-V3.1-2",
         "max-tokens": 8192,
         ...additionalConfig,
     };

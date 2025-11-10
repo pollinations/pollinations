@@ -171,9 +171,7 @@ function RouteComponent() {
                             as="button"
                             color="purple"
                             weight="light"
-                            onClick={() => {
-                                window.location.href = "/api/polar/checkout/pollen-bundle-small";
-                            }}
+                            disabled
                         >
                             + $5
                         </Button>

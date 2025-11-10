@@ -140,6 +140,13 @@ export const TEXT_COSTS = {
             completionTextTokens: perMillion(15.0),
         },
     ],
+    "myceli-grok-4-fast": [
+        {
+            date: PRICING_START_DATE,
+            promptTextTokens: perMillion(0.2),
+            completionTextTokens: perMillion(0.5),
+        },
+    ],
     "sonar": [
         {
             date: PRICING_START_DATE,
@@ -204,6 +211,11 @@ export const TEXT_SERVICES = {
     "deepseek": {
         aliases: ["deepseek-v3", "deepseek-v3.1", "deepseek-reasoning", "deepseek-r1-0528"],
         modelId: "myceli-deepseek-v3.1",
+        provider: "azure",
+    },
+    "grok": {
+        aliases: ["grok-fast", "grok-4", "grok-4-fast"],
+        modelId: "myceli-grok-4-fast",
         provider: "azure",
     },
     "gemini-search": {

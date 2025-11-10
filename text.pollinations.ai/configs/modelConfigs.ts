@@ -16,6 +16,7 @@ import {
     createDeepSeekModelConfig,
     createDeepSeekReasoningConfig,
     createMyceliDeepSeekV31Config,
+    createMyceliGrok4FastConfig,
     createApiNavyModelConfig,
     createPerplexityModelConfig,
 } from "./providerConfigs.js";
@@ -414,6 +415,7 @@ export const portkeyConfig: PortkeyConfigMap = {
     "DeepSeek-V3-0324": () => createDeepSeekModelConfig(),
     "MAI-DS-R1": () => createDeepSeekReasoningConfig(),
     "myceli-deepseek-v3.1": () => createMyceliDeepSeekV31Config(),
+    "myceli-grok-4-fast": () => createMyceliGrok4FastConfig(),
     // Custom endpoints
     "elixposearch-endpoint": () => createElixpoSearchModelConfig(),
     // AWS Bedrock Lambda endpoint

@@ -93,12 +93,13 @@ def create_digest_prompt(prs: List[Dict], is_final: bool = False, all_changes: L
     Extract ONLY major, user-impacting changes - the real wins, not the fixes or maintenance.
     Ignore: bug fixes, styling updates, UI tweaks, refactors, dependency updates, code cleanup, error handling.
     Include: new features, model additions, performance gains, API improvements, significant workflow enhancements, user experience upgrades.
+    In general ignore the updates or modifications that does not impact the users directly, its a user-facing message rather then developer/internal focused.
 
     CONTEXT: Pollinations is an open-source AI platform. Your audience is USERS who care about what they can DO now.
 
     OUTPUT FORMAT:
     ```
-    [Greet <@&1424461167883194418> naturally and casually in a playful, witty way]
+    [Greet <@&1424461167883194418> naturally and casually in a playful, witty way. short]
 
     ## 🌸 Weekly Update - {date_str}
     (do not change anything from the mentioned date_str, strictly use it as is)
@@ -128,6 +129,10 @@ def create_digest_prompt(prs: List[Dict], is_final: bool = False, all_changes: L
     - Skip styling and UI cosmetics completely
     - If no major impactful changes found, return only: SKIP
     - Be witty, fun, and celebratory about real wins
+    - Do not add unnecessary length to the output
+    - Keep it as concise and brief as possible while still covering whats needed
+    - Focus mainly on changes that impact the user's who use services powered by pollinations rather than developers who use pollinations.
+    - Give the final output as whole that isn't overloaded with technical info nor full of clutter but appealing to users while being fairly simple! 
 
     TONE: Conversational, witty, celebratory. Highlight the cool stuff.
     LENGTH: Keep it punchy but complete"""

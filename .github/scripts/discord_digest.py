@@ -69,14 +69,11 @@ def get_merged_prs(owner: str, repo: str, START_DATE: datetime, token: str):
 def get_last_digest_time() -> datetime:
     now = datetime.now(timezone.utc)
     current_weekday = now.weekday()
-
     if current_weekday == 0:
-        days_back = 3
-    elif current_weekday == 4:
-        days_back = 4
-    else:
         days_back = 7
-
+    else: 
+        days_back = 1 
+        #dummy testing with just 1 day back
     last_digest = (now - timedelta(days=days_back)).replace(hour=12, minute=0, second=0, microsecond=0)
     return last_digest
 
@@ -84,11 +81,11 @@ def chunk_prs(prs: List[Dict], chunk_size: int) -> List[List[Dict]]:
     return [prs[i:i + chunk_size] for i in range(0, len(prs), chunk_size)]
 
 def create_digest_prompt(prs: List[Dict], is_final: bool = False, all_changes: List[str] = None) -> tuple:
-    MONTH = ["Jan", "Feb", "Mar", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+    MONTH = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
     end_date = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
     start_date = get_last_digest_time().strftime("%Y-%m-%dT%H:%M:%SZ")
     date_str = f"From {start_date.split('T')[0].split('-')[2]} {MONTH[int(start_date.split('T')[0].split('-')[1]) - 1]} {start_date.split('T')[0].split('-')[0]} to {end_date.split('T')[0].split('-')[2]} {MONTH[int(end_date.split('T')[0].split('-')[1]) - 1]} {end_date.split('T')[0].split('-')[0]}"
-    
+    print(f"Creating digest prompt for period: {date_str}")
     system_prompt = f"""You are creating a weekly digest for the Pollinations AI Discord community.
     Extract ONLY major, user-impacting changes - the real wins, not the fixes or maintenance.
     Ignore: bug fixes, styling updates, UI tweaks, refactors, dependency updates, code cleanup, error handling.

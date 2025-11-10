@@ -12,7 +12,8 @@ crons = [ "* * * * *" ] # every minute
 [assets]
 directory = "dist/client"
 not_found_handling = "single-page-application"
-run_worker_first = [ "/api/*" ]
+binding = "ASSETS"
+run_worker_first = true
 
 [[d1_databases]]
 binding = "DB"
@@ -79,6 +80,11 @@ TEXT_SERVICE_URL = "http://localhost:16385"
 
 [[env.staging.routes]]
 pattern = "enter.pollinations.ai"
+zone_name = "pollinations.ai"
+custom_domain = true
+
+[[env.staging.routes]]
+pattern = "gen.pollinations.ai"
 zone_name = "pollinations.ai"
 custom_domain = true
 

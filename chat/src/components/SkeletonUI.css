@@ -1,0 +1,114 @@
+.skeleton-chat {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+}
+
+.skeleton-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem;
+  border-bottom: 1px solid var(--border-color);
+  background-color: var(--bg-secondary);
+}
+
+.skeleton-header-left,
+.skeleton-header-right {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.skeleton-button {
+  width: 36px;
+  height: 36px;
+  background: linear-gradient(90deg, var(--bg-tertiary), var(--bg-secondary));
+  border-radius: 4px;
+  animation: skeleton-loading 1.5s infinite;
+}
+
+.skeleton-model-selector {
+  width: 120px;
+  height: 36px;
+  background: linear-gradient(90deg, var(--bg-tertiary), var(--bg-secondary));
+  border-radius: 4px;
+  animation: skeleton-loading 1.5s infinite;
+}
+
+.skeleton-messages {
+  flex: 1;
+  padding: 1rem;
+  overflow-y: auto;
+}
+
+.skeleton-message {
+  display: flex;
+  margin-bottom: 1rem;
+  animation: skeleton-loading 1.5s infinite;
+}
+
+.skeleton-message.user {
+  flex-direction: row-reverse;
+}
+
+.skeleton-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 4px;
+  background: linear-gradient(90deg, var(--bg-tertiary), var(--bg-secondary));
+}
+
+.skeleton-content {
+  flex: 1;
+  margin: 0 12px;
+  max-width: 80%;
+}
+
+.skeleton-line {
+  height: 16px;
+  background: linear-gradient(90deg, var(--bg-tertiary), var(--bg-secondary));
+  border-radius: 4px;
+  margin-bottom: 8px;
+  animation: skeleton-loading 1.5s infinite;
+}
+
+.skeleton-line.short {
+  width: 60%;
+}
+
+.skeleton-input {
+  display: flex;
+  padding: 1rem;
+  gap: 0.5rem;
+  border-top: 1px solid var(--border-color);
+  background-color: var(--bg-secondary);
+}
+
+.skeleton-textarea {
+  flex: 1;
+  height: 40px;
+  background: linear-gradient(90deg, var(--bg-tertiary), var(--bg-secondary));
+  border-radius: 4px;
+  animation: skeleton-loading 1.5s infinite;
+}
+
+.skeleton-send-button {
+  width: 40px;
+  height: 40px;
+  background: linear-gradient(90deg, var(--bg-tertiary), var(--bg-secondary));
+  border-radius: 4px;
+  animation: skeleton-loading 1.5s infinite;
+}
+
+@keyframes skeleton-loading {
+  0% {
+    background: linear-gradient(90deg, var(--bg-tertiary), var(--bg-secondary));
+  }
+  50% {
+    background: linear-gradient(90deg, var(--bg-secondary), var(--bg-tertiary));
+  }
+  100% {
+    background: linear-gradient(90deg, var(--bg-tertiary), var(--bg-secondary));
+  }
+}

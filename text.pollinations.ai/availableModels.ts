@@ -120,6 +120,16 @@ const models: ModelDefinition[] = [
         tools: true,
     },
     {
+        name: "grok",
+        description: "Grok 4 Fast",
+        config: portkeyConfig["myceli-grok-4-fast"],
+        transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
+        community: false,
+        input_modalities: ["text"],
+        output_modalities: ["text"],
+        tools: true,
+    },
+    {
         name: "openai-audio",
         description: "OpenAI GPT-4o Mini Audio Preview",
         voices: [

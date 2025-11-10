@@ -129,7 +129,9 @@ export const track = (eventType: EventType) =>
                     userTier: c.var.auth.user?.tier,
                     userGithubId: c.var.auth.user?.githubId,
                     userGithubName: c.var.auth.user?.githubUsername,
+                    userGithubEmail: c.var.auth.user?.email,
                     apiKeyId: c.var.auth.apiKey?.id,
+                    apiKeyName: c.var.auth.apiKey?.name,
                     apiKeyType: c.var.auth.apiKey?.metadata
                         ?.keyType as ApiKeyType,
                 };

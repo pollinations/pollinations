@@ -94,6 +94,12 @@ export const frontendKeyRateLimit = createMiddleware<AuthEnv>(async (c, next) =>
         const cost = parseFloat(pollenPrice);
         if (!isNaN(cost) && cost > 0) {
             c.executionCtx.waitUntil(stub.consumePollen(cost));
+        } else {
+            // No cost but need to clear the in-progress flag
+            c.executionCtx.waitUntil(stub.consumePollen(0));
         }
+    } else {
+        // No pollen price (cache hit or free model) - still need to clear flag
+        c.executionCtx.waitUntil(stub.consumePollen(0));
     }
 });

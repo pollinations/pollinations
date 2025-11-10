@@ -114,7 +114,7 @@ TINYBIRD_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=g
 POLAR_PRODUCT_ID_SEED = "5cbd2495-dba1-4840-8465-46afd9b16679"
 POLAR_PRODUCT_ID_FLOWER = "ea33ef88-67ff-45d8-906e-bb9357dd549a"
 POLAR_PRODUCT_ID_NECTAR = "10167875-38e1-459f-8241-106aafc3062c"
-IMAGE_SERVICE_URL = "http://ec2-3-80-56-235.compute-1.amazonaws.com:16384"
+IMAGE_SERVICE_URL = "https://pollinations-enter-image-cache.thomash-efd.workers.dev"
 TEXT_SERVICE_URL = "http://ec2-3-80-56-235.compute-1.amazonaws.com:16385"
 
 [env.test]

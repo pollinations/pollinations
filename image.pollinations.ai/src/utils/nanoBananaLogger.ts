@@ -8,7 +8,6 @@ import path from "node:path";
 import debug from "debug";
 import type { ImageParams } from "../params.ts";
 import type { AuthResult } from "../createAndReturnImages.ts";
-import { userStatsTracker } from "./userStatsTracker.ts";
 
 // Debug loggers
 const logOps = debug("pollinations:ops");
@@ -139,9 +138,6 @@ export async function logNanoBananaResponse(
                 await fsPromises.appendFile(refusalLogFile, refusalLine);
             }
             
-            // Track violation in user stats (only for actual violations, not admin blocks)
-            userStatsTracker.recordViolation(userInfo?.username);
-            
             logOps(`🚨 Content policy violation logged for user: ${userInfo?.username || 'anonymous'}`);
         } else if (isAdministrativeBlock) {
             logOps(`🚫 Administrative block for user: ${userInfo?.username || 'anonymous'} - not logged to violations`);
@@ -254,9 +250,6 @@ export async function logNanoBananaErrorsOnly(
             const refusalLine = `${timestamp} | ${username} | ${refusalDetails.refusalReason}\n`;
             await fsPromises.appendFile(refusalLogFile, refusalLine);
         }
-        
-        // Track violation in user stats for "No image data" cases
-        userStatsTracker.recordViolation(userInfo?.username);
         
         logOps(`🚨 "No image data" error logged for user: ${userInfo?.username || 'anonymous'} - likely content policy violation`);
 

@@ -1,4 +1,7 @@
-# Optimize auth.pollinations.ai Database Performance for Token Lookups
+# DEPRECATED: Optimize auth.pollinations.ai Database Performance for Token Lookups
+
+**Note**: auth.pollinations.ai has been removed. All authentication is now handled by enter.pollinations.ai.
+This document is kept for historical reference only.
 
 ## Problem Statement
 
@@ -166,7 +169,7 @@ After implementation, monitor:
 
 1. **Benchmark current performance**:
    ```bash
-   time curl -H "Authorization: Bearer YOUR_TOKEN" https://auth.pollinations.ai/api/validate-token/YOUR_TOKEN
+   time curl -H "Authorization: Bearer YOUR_TOKEN" https://enter.pollinations.ai/api/validate-token/YOUR_TOKEN
    ```
 
 2. **Apply indexes and re-test**

@@ -199,7 +199,7 @@ Install: `npm install @pollinations/react`
 ### 11. Resources
 
 - Docs: [github.com/pollinations/pollinations](https://github.com/pollinations/pollinations)
-- Auth: [auth.pollinations.ai](https://auth.pollinations.ai)
+- Auth: [enter.pollinations.ai](https://enter.pollinations.ai)
 - React Playground: [react-hooks.pollinations.ai](https://react-hooks.pollinations.ai)
 
 **License:** MIT

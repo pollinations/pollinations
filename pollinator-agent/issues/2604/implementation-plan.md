@@ -118,7 +118,8 @@ async function getCachedTokenValidation(token: string) {
 
 ### Step 1: Add new function to db.ts (10 minutes)
 ```typescript
-// Add to /auth.pollinations.ai/src/db.ts
+// DEPRECATED: auth.pollinations.ai has been removed
+// This was originally in /auth.pollinations.ai/src/db.ts
 export async function validateApiTokenComplete(db: D1Database, token: string): Promise<{
   userId: string | null;
   username: string | null;  
@@ -177,14 +178,14 @@ async function handleValidateToken(token: string, env: Env, corsHeaders: Record<
 ### Step 3: Test performance improvement (5 minutes)
 ```bash
 # Test with same token
-time curl -s -H "Authorization: Bearer BpigHXfbVA0xQFQ1" https://auth.pollinations.ai/api/validate-token/BpigHXfbVA0xQFQ1
+time curl -s -H "Authorization: Bearer BpigHXfbVA0xQFQ1" https://enter.pollinations.ai/api/validate-token/BpigHXfbVA0xQFQ1
 
 # Expected: ~3-4 seconds instead of 12+ seconds
 ```
 
 ### Step 4: Deploy (5 minutes)
 ```bash
-cd /Users/thomash/Documents/GitHub/pollinations/auth.pollinations.ai
+cd /Users/thomash/Documents/GitHub/pollinations/enter.pollinations.ai
 wrangler deploy
 ```
 

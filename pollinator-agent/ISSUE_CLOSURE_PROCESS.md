@@ -75,7 +75,7 @@ GITHUB_TOKEN=your_token node restore-issue-bodies.js <issue-number> --apply
 ### Step 4: Grant Tier (if approved)
 
 ```bash
-cd /path/to/auth.pollinations.ai
+cd /path/to/enter.pollinations.ai
 node scripts/set-tier.js <github-user-id> flower
 ```
 
@@ -97,7 +97,7 @@ We've upgraded your account to **flower tier** to help you [benefit].
 - Priority queue access
 - [Other specific benefits]
 
-Get your API token at https://auth.pollinations.ai and keep building! 🚀
+Get your API token at https://enter.pollinations.ai and keep building! 🚀
 
 Your app is live at: [project URL]
 ```
@@ -176,13 +176,13 @@ GITHUB_TOKEN=your_token node restore-issue-bodies.js 3310 3315 3084 --apply
 
 ### 2. set-tier.js
 
-**Purpose:** Set user tier in auth.pollinations.ai database
+**Purpose:** Set user tier in enter.pollinations.ai database
 
-**Location:** `/auth.pollinations.ai/scripts/set-tier.js`
+**Location:** `/enter.pollinations.ai/scripts/set-tier.js`
 
 **Usage:**
 ```bash
-cd /path/to/auth.pollinations.ai
+cd /path/to/enter.pollinations.ai
 node scripts/set-tier.js <github-user-id> <tier>
 ```
 
@@ -285,7 +285,7 @@ if (currentBody !== closureMessage) {
 - ✅ Be enthusiastic and supportive
 - ✅ Explain what they get with the tier
 - ✅ Link to their project to show you reviewed it
-- ✅ Include auth.pollinations.ai link for token
+- ✅ Include enter.pollinations.ai link for token
 
 **When Closing Without Grant:**
 - ✅ Be brief and factual
@@ -353,7 +353,7 @@ GITHUB_TOKEN=token node restore-issue-bodies.js <issue> --apply
 
 ### Grant Flower Tier
 ```bash
-cd auth.pollinations.ai
+cd enter.pollinations.ai
 node scripts/set-tier.js <user-id> flower
 ```
 
@@ -368,7 +368,7 @@ gh issue comment <issue-number> --body "🌸 **Flower Tier Granted!** ..."
 
 ### Before Starting
 1. Set GITHUB_TOKEN environment variable
-2. Have auth.pollinations.ai scripts ready
+2. Have enter.pollinations.ai scripts ready
 3. Review previous session summary
 
 ### During Session

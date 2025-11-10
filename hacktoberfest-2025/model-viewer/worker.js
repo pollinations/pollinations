@@ -46,47 +46,66 @@ async function fetchModels() {
 // Check model uptime and record result
 async function checkAndRecordModel(env, modelName, type) {
     let isUp = false;
+    const timestamp = Date.now();
+    const seed = Math.floor(timestamp / 1000); // Use timestamp-based seed to avoid caching
     
     try {
         if (type === 'text') {
-            const response = await fetch('https://text.pollinations.ai/models', {
-                signal: AbortSignal.timeout(5000)
+            const response = await fetch('https://text.pollinations.ai/', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    messages: [{ role: 'user', content: 'test' }],
+                    model: modelName,
+                    seed
+                }),
+                signal: AbortSignal.timeout(10000)
             });
             if (response.ok) {
-                const models = await response.json();
-                isUp = models.some(m => m.name === modelName);
+                const text = await response.text();
+                isUp = text && text.length > 0;
             }
         } else if (type === 'image') {
             const response = await fetch(
-                `https://image.pollinations.ai/prompt/test?model=${modelName}&width=64&height=64&nologo=true`,
+                `https://image.pollinations.ai/prompt/test?model=${modelName}&width=64&height=64&nologo=true&seed=${seed}`,
                 { 
-                    method: 'HEAD',
-                    signal: AbortSignal.timeout(5000)
+                    method: 'GET',
+                    signal: AbortSignal.timeout(15000)
                 }
             );
-            isUp = response.ok;
+            if (response.ok) {
+                const contentType = response.headers.get('content-type');
+                isUp = contentType && contentType.startsWith('image/');
+            }
         }
     } catch (error) {
         console.error(`Check failed for ${modelName}:`, error.message);
         isUp = false;
     }
     
-    // Get existing data
-    const existingData = await env.UPTIME_DATA.get(modelName, { type: 'json' }) || {
-        history: [],
-        lastCheck: null,
-        currentStatus: 'unknown',
-        type
-    };
+    let existingData;
+    try {
+        existingData = await env.UPTIME_DATA.get(modelName, { type: 'json' }) || {
+            history: [],
+            lastCheck: null,
+            currentStatus: 'unknown',
+            type
+        };
+    } catch (error) {
+        console.error(`KV read failed for ${modelName}:`, error.message);
+        existingData = {
+            history: [],
+            lastCheck: null,
+            currentStatus: 'unknown',
+            type
+        };
+    }
     
-    // Add new entry
-    const timestamp = Date.now();
     existingData.history.push({
         timestamp,
         status: isUp ? 'up' : 'down'
     });
     
-    // Keep only last 288 entries (24 hours at 5-min intervals)
     if (existingData.history.length > 288) {
         existingData.history = existingData.history.slice(-288);
     }
@@ -95,8 +114,11 @@ async function checkAndRecordModel(env, modelName, type) {
     existingData.currentStatus = isUp ? 'online' : 'offline';
     existingData.type = type;
     
-    // Store updated data
-    await env.UPTIME_DATA.put(modelName, JSON.stringify(existingData));
+    try {
+        await env.UPTIME_DATA.put(modelName, JSON.stringify(existingData));
+    } catch (error) {
+        console.error(`KV write failed for ${modelName}:`, error.message);
+    }
     
     return isUp;
 }
@@ -108,15 +130,10 @@ export default {
         
         const { textModels, imageModels } = await fetchModels();
         
-        // Check all text models
-        for (const model of textModels) {
-            await checkAndRecordModel(env, model.name, 'text');
-        }
-        
-        // Check all image models
-        for (const model of imageModels) {
-            await checkAndRecordModel(env, model.name, 'image');
-        }
+        await Promise.all([
+            ...textModels.map(model => checkAndRecordModel(env, model.name, 'text')),
+            ...imageModels.map(model => checkAndRecordModel(env, model.name, 'image'))
+        ]);
         
         console.log(`Checked ${textModels.length} text models and ${imageModels.length} image models`);
     },
@@ -138,22 +155,37 @@ export default {
         
         // GET /api/uptime - Get all uptime data
         if (url.pathname === '/api/uptime' && request.method === 'GET') {
-            const list = await env.UPTIME_DATA.list();
-            const allData = {};
-            
-            for (const key of list.keys) {
-                const data = await env.UPTIME_DATA.get(key.name, { type: 'json' });
-                if (data) {
-                    allData[key.name] = data;
+            try {
+                const list = await env.UPTIME_DATA.list();
+                const allData = {};
+                
+                for (const key of list.keys) {
+                    try {
+                        const data = await env.UPTIME_DATA.get(key.name, { type: 'json' });
+                        if (data) {
+                            allData[key.name] = data;
+                        }
+                    } catch (error) {
+                        console.error(`Failed to get data for ${key.name}:`, error.message);
+                    }
                 }
+                
+                return new Response(JSON.stringify(allData), {
+                    headers: {
+                        ...corsHeaders,
+                        'Content-Type': 'application/json',
+                    }
+                });
+            } catch (error) {
+                console.error('Failed to list KV keys:', error.message);
+                return new Response(JSON.stringify({ error: 'Failed to retrieve uptime data' }), {
+                    status: 500,
+                    headers: {
+                        ...corsHeaders,
+                        'Content-Type': 'application/json',
+                    }
+                });
             }
-            
-            return new Response(JSON.stringify(allData), {
-                headers: {
-                    ...corsHeaders,
-                    'Content-Type': 'application/json',
-                }
-            });
         }
         
         // GET /api/uptime/:modelName - Get specific model uptime
@@ -170,30 +202,41 @@ export default {
                 });
             }
             
-            const data = await env.UPTIME_DATA.get(modelName, { type: 'json' });
-            
-            if (!data) {
-                return new Response(JSON.stringify({ error: 'Model not found' }), {
-                    status: 404,
+            try {
+                const data = await env.UPTIME_DATA.get(modelName, { type: 'json' });
+                
+                if (!data) {
+                    return new Response(JSON.stringify({ error: 'Model not found' }), {
+                        status: 404,
+                        headers: {
+                            ...corsHeaders,
+                            'Content-Type': 'application/json',
+                        }
+                    });
+                }
+                
+                const result = {
+                    model: modelName,
+                    ...data,
+                    uptimePercentage: calculateUptimePercentage(data.history)
+                };
+                
+                return new Response(JSON.stringify(result), {
+                    headers: {
+                        ...corsHeaders,
+                        'Content-Type': 'application/json',
+                    }
+                });
+            } catch (error) {
+                console.error(`Failed to get data for ${modelName}:`, error.message);
+                return new Response(JSON.stringify({ error: 'Failed to retrieve model data' }), {
+                    status: 500,
                     headers: {
                         ...corsHeaders,
                         'Content-Type': 'application/json',
                     }
                 });
             }
-            
-            const result = {
-                model: modelName,
-                ...data,
-                uptimePercentage: calculateUptimePercentage(data.history)
-            };
-            
-            return new Response(JSON.stringify(result), {
-                headers: {
-                    ...corsHeaders,
-                    'Content-Type': 'application/json',
-                }
-            });
         }
         
         // POST /api/uptime/:modelName - Record uptime check (for manual checks)

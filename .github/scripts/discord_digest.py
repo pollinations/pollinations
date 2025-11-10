@@ -69,14 +69,11 @@ def get_merged_prs(owner: str, repo: str, START_DATE: datetime, token: str):
 def get_last_digest_time() -> datetime:
     now = datetime.now(timezone.utc)
     current_weekday = now.weekday()
-
     if current_weekday == 0:
-        days_back = 3
-    elif current_weekday == 4:
-        days_back = 4
-    else:
         days_back = 7
-
+    else: 
+        days_back = 1 
+        #dummy testing with just 1 day back
     last_digest = (now - timedelta(days=days_back)).replace(hour=12, minute=0, second=0, microsecond=0)
     return last_digest
 

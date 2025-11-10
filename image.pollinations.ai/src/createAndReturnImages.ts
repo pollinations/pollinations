@@ -176,7 +176,8 @@ export const callComfyUI = async (
                 body: JSON.stringify(body),
             });
         } catch (error) {
-            logError(`Fetch failed: ${error.message}`);
+            logError(`Fetch failed for ${safeParams.model}:`, error.message);
+            logError('Request body:', JSON.stringify(body, null, 2));
             throw error;
         }
 

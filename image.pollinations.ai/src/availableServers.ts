@@ -295,34 +295,71 @@ export const fetchFromLeastBusyServer = async (
     type: ServerType = "flux",
     options: RequestInit,
 ): Promise<Response> => {
-    const serverUrl = await getNextServerUrl(type);
-    const server = SERVERS[type].find((s) => s.url === serverUrl);
+    const maxRetries = 3; // Try up to 3 different servers
+    let lastError: Error | null = null;
+    
+    for (let attempt = 0; attempt < maxRetries; attempt++) {
+        const serverUrl = await getNextServerUrl(type);
+        const server = SERVERS[type].find((s) => s.url === serverUrl);
 
-    if (!server) {
-        throw new Error(`Server ${serverUrl} not found for type ${type}`);
-    }
+        if (!server) {
+            throw new Error(`Server ${serverUrl} not found for type ${type}`);
+        }
 
-    return server.queue.add(
-        async () => {
-            server.totalRequests++;
-            try {
-                const response = await fetch(`${serverUrl}/generate`, options);
-                if (!response.ok) {
-                    server.errors++;
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-                return response;
-            } catch (error) {
-                server.errors++;
-                throw error;
+        try {
+            return await server.queue.add(
+                async () => {
+                    server.totalRequests++;
+                    try {
+                        const response = await fetch(`${serverUrl}/generate`, options);
+                        if (!response.ok) {
+                            server.errors++;
+                            
+                            // Capture detailed error information
+                            let errorBody = '';
+                            try {
+                                errorBody = await response.text();
+                            } catch (e) {
+                                errorBody = 'Could not read error response body';
+                            }
+                            
+                            console.error(`[${type}] Server ${serverUrl} returned ${response.status}:`, {
+                                status: response.status,
+                                statusText: response.statusText,
+                                headers: Object.fromEntries(response.headers.entries()),
+                                body: errorBody.substring(0, 500) // Limit to first 500 chars
+                            });
+                            
+                            throw new Error(`HTTP error! status: ${response.status}, body: ${errorBody.substring(0, 200)}`);
+                        }
+                        return response;
+                    } catch (error) {
+                        server.errors++;
+                        throw error;
+                    }
+                },
+                {
+                    // throw on timeout instead of quitely resolving to void
+                    // please check if this causes any issues @voodoohop
+                    throwOnTimeout: true,
+                },
+            );
+        } catch (error) {
+            lastError = error as Error;
+            
+            // Only retry on 500 errors
+            if (error.message && error.message.includes('status: 500')) {
+                console.error(`[${type}] Attempt ${attempt + 1}/${maxRetries} failed with 500 error, trying different server...`);
+                continue;
             }
-        },
-        {
-            // throw on timeout instead of quitely resolving to void
-            // please check if this causes any issues @voodoohop
-            throwOnTimeout: true,
-        },
-    );
+            
+            // For non-500 errors, throw immediately
+            throw error;
+        }
+    }
+    
+    // If we exhausted all retries, throw the last error
+    throw lastError || new Error('All server attempts failed');
 };
 
 // Wrapper for backward compatibility

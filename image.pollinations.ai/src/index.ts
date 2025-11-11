@@ -488,17 +488,6 @@ const checkCacheAndGenerate = async (
                     ? "Too Many Requests"
                     : "Internal Server Error";
 
-        // Extract debug info from error if available
-        const errorDebugInfo = error.details?.debugInfo;
-
-        // Add debug headers for authentication information even in error responses
-        const errorHeaders = {
-            "Content-Type": "application/json",
-            "X-Error-Type": errorType,
-        };
-
-        addAuthDebugHeaders(errorHeaders, errorDebugInfo);
-
         // Log the error response using debug
         logError("Error response:", {
             requestId,
@@ -507,13 +496,16 @@ const checkCacheAndGenerate = async (
             message: error.message,
         });
 
-        res.writeHead(statusCode, errorHeaders);
+        res.writeHead(statusCode, {
+            "Content-Type": "application/json",
+            "X-Error-Type": errorType,
+        });
+        
         // Create a response object with error information
         const responseObj = {
             error: errorType,
             message: error.message,
             details: error.details,
-            debug: createAuthDebugResponse(errorDebugInfo),
             timingInfo: relativeTiming(timingInfo),
             requestId,
             requestParameters: {

@@ -1,8 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import termsMarkdown from "../../../TERMS_OF_SERVICE.md?raw";
-import privacyMarkdown from "../../../PRIVACY_POLICY.md?raw";
+import termsMarkdown from "../../../legal/TERMS_OF_SERVICE.md?raw";
+import privacyMarkdown from "../../../legal/PRIVACY_POLICY.md?raw";
+import refundsMarkdown from "../../../legal/REFUNDS_AND_CANCELLATIONS.md?raw";
 
 export const Route = createFileRoute("/terms")({
     component: TermsComponent,
@@ -28,6 +29,15 @@ function TermsComponent() {
                     <div className={proseClasses}>
                         <ReactMarkdown remarkPlugins={[remarkGfm]}>
                             {privacyMarkdown}
+                        </ReactMarkdown>
+                    </div>
+                </div>
+                
+                {/* Refunds & Cancellations Container */}
+                <div className="bg-white rounded-lg shadow-sm border border-gray-200 px-6 py-8 sm:px-8 sm:py-10">
+                    <div className={proseClasses}>
+                        <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                            {refundsMarkdown}
                         </ReactMarkdown>
                     </div>
                 </div>

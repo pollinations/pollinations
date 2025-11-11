@@ -242,7 +242,7 @@ export const proxyRoutes = new Hono<Env>()
         },
     )
     .get(
-        "/image/:prompt",
+        "/image/*",
         track("generate.image"),
         describeRoute({
             tags: ["Image Generation"],
@@ -268,10 +268,21 @@ export const proxyRoutes = new Hono<Env>()
             });
             await checkBalanceForPaidModel(c);
 
+            // Extract prompt from wildcard path (everything after /image/)
+            const fullPath = c.req.path; // e.g., "/api/generate/image/my%20prompt%20here"
+            const promptParam = decodeURIComponent(fullPath.split("/image/")[1] || "");
+            
+            log.debug("[PROXY] Extracted prompt param: {prompt}", {
+                prompt: promptParam,
+                type: typeof promptParam,
+                length: promptParam.length,
+                fullPath: fullPath,
+            });
+
             const targetUrl = proxyUrl(c, `${c.env.IMAGE_SERVICE_URL}/prompt`);
             targetUrl.pathname = joinPaths(
                 targetUrl.pathname,
-                c.req.param("prompt"),
+                promptParam,
             );
 
             log.debug("[PROXY] Proxying to: {url}", {

@@ -5,6 +5,32 @@
 
 export const creativeProjects = [
   {
+    name: "ImaGenz 🎨",
+    url: "https://imagenz.vercel.app",
+    description: "Free, instant AI content generation platform for creating stunning images and creative text without sign-up. Powered by FLUX and Turbo models with lightning-fast generation and real-time community feeds. Available as web app, Telegram bot, and mobile apps (Android/iOS). Over 10 million generations served.",
+    author: "@iamkavy47",
+    repo: "https://github.com/iamkavy47/pbl-sem3",
+    submissionDate: "2025-11-10",
+    order: 1
+  },
+  {
+    name: "AI Image-to-Prompt Generator 🎨",
+    url: "https://imagetoprompt.netlify.app",
+    description: "Professional AI Image-to-Prompt Generator with free unlimited prompts. Upload any image and get detailed AI-generated prompts for recreating similar images. Perfect for artists, designers, and content creators.",
+    author: "@mehediprofilebd-alt",
+    submissionDate: "2025-11-09",
+    order: 1
+  },
+  {
+    name: "SpecAI 🎨",
+    url: "https://specai.pages.dev",
+    description: "Interactive UI for Pollinations AI with custom resolution and seed options. Generate desired images with full control over generation parameters.",
+    author: "@spectre365",
+    repo: "https://github.com/spectre365/specai",
+    submissionDate: "2025-10-23",
+    order: 1
+  },
+  {
     name: "SHICoPIC™ 🎨",
     url: "https://shicopic.netlify.app",
     description: "AI-powered creative image generation tool. Simple interface for creating images with Pollinations API.",
@@ -53,14 +79,6 @@ export const creativeProjects = [
     name: "Green Hope AI 🎨",
     url: "https://aithumbnails.vercel.app/",
     description: "Generate stunning thumbnails with AI, then take full control. Easily edit the text, position, styles, and effects without ever having to start over.",
-    author: "@mustafiz82",
-    submissionDate: "2025-17-25",
-    order: 1
-  },
-  {
-    name: "Green Hope AI 🎨",
-    url: "https://aithumbnails.vercel.app/",
-    description: "Generate stunning thumbnails with AI, then take full control. Easily edit the text, position, styles, and effects without ever having to start over.",
     author: "@Mustafiz82",
     submissionDate: "2025-10-16",
     order: 1
@@ -89,14 +107,6 @@ export const creativeProjects = [
     description: "Freemium image generating SaaS where users can generate AI images via Pollinations API with customizable generator settings and various styling options.",
     author: "@TusharSoni014",
     submissionDate: "2025-10-03",
-    order: 1
-  },
-  {
-    name: "Green Hope AI 🎨",
-    url: "https://aithumbnails.vercel.app/",
-    description: "Generate stunning thumbnails with AI, then take full control. Easily edit the text, position, styles, and effects without ever having to start over.",
-    author: "@Mustafiz82",
-    submissionDate: "2025-10-16",
     order: 1
   },
   {

@@ -3,6 +3,7 @@ import http from "node:http";
 import { parse } from "node:url";
 import debug from "debug";
 import urldecode from "urldecode";
+import { HttpError } from "./httpError.js";
 import { extractToken, getIp } from "../../shared/extractFromRequest.js";
 import { sendImageTelemetry } from "./utils/telemetry.js";
 import { buildTrackingHeaders } from "./utils/trackingHeaders.js";
@@ -163,8 +164,9 @@ const imageGen = async ({
 
     // Check if IP is blocked
     if (isIpBlocked(ip)) {
-        throw new Error(
+        throw new HttpError(
             `Your IP ${ip} has been temporarily blocked due to multiple content violations`,
+            403,
         );
     }
 
@@ -304,8 +306,9 @@ const imageGen = async ({
             const violations = incrementIpViolations(ip);
             if (violations >= MAX_VIOLATIONS) {
                 await sleep(10000);
-                throw new Error(
+                throw new HttpError(
                     `Your IP ${ip} has been temporarily blocked due to multiple content violations`,
+                    403,
                 );
             }
         }
@@ -480,7 +483,9 @@ const checkCacheAndGenerate = async (
         // Determine the appropriate status code (default to 500 if not specified)
         const statusCode = error.status || 500;
         const errorType =
-            statusCode === 401
+            statusCode === 400
+                ? "Bad Request"
+                : statusCode === 401
                 ? "Unauthorized"
                 : statusCode === 403
                   ? "Forbidden"

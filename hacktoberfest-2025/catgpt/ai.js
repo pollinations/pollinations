@@ -1,7 +1,8 @@
 // ai.js - AI-related functionality for CatGPT
 
 // Constants for AI image generation
-const POLLINATIONS_API = 'https://image.pollinations.ai/prompt';
+const POLLINATIONS_API = 'https://enter.pollinations.ai/api/generate/image';
+const POLLINATIONS_API_KEY = 'plln_pk_2EZZcdEns9swqfIJ2yaoyJYWiSsTx38qcIFzCASqDjg96x2qfRvWkz9Qo3vDT66A';
 const ORIGINAL_CATGPT_IMAGE = 'https://raw.githubusercontent.com/pollinations/catgpt/refs/heads/main/images/original-catgpt.png';
 
 // Cloudinary Configuration (Free unsigned upload)
@@ -57,7 +58,7 @@ function generateImageURL(prompt, uploadedImageUrl = null) {
     } else {
         imageParam = encodeURIComponent(ORIGINAL_CATGPT_IMAGE);
     }
-    return `${POLLINATIONS_API}/${encodeURIComponent(prompt)}?model=nanobanana&image=${imageParam}&referrer=pollinations.github.io&quality=high`;
+    return `${POLLINATIONS_API}/${encodeURIComponent(prompt)}?model=nanobanana&image=${imageParam}&quality=high&nologo=true&enhance=true&key=${POLLINATIONS_API_KEY}`;
 }
 
 /**
@@ -185,6 +186,7 @@ if (typeof module !== 'undefined' && module.exports) {
         handleImageUpload,
         generateCatGPTMeme,
         POLLINATIONS_API,
+        POLLINATIONS_API_KEY,
         ORIGINAL_CATGPT_IMAGE,
         CLOUDINARY_CLOUD_NAME,
         CLOUDINARY_UPLOAD_PRESET,
@@ -200,6 +202,7 @@ if (typeof module !== 'undefined' && module.exports) {
         handleImageUpload,
         generateCatGPTMeme,
         POLLINATIONS_API,
+        POLLINATIONS_API_KEY,
         ORIGINAL_CATGPT_IMAGE,
         CLOUDINARY_CLOUD_NAME,
         CLOUDINARY_UPLOAD_PRESET,

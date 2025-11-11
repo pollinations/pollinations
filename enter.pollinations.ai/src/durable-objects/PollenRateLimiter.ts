@@ -206,7 +206,7 @@ export class PollenRateLimiter extends DurableObject {
         refillRate: number;
     }> {
         const now = Date.now();
-        this.refillBucket(now);
+        await this.refillBucket(now);
 
         return {
             currentFill: this.currentFill,

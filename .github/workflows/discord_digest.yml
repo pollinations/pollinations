@@ -1,11 +1,10 @@
-name: Weekly Discord Digest (Monday & Friday)
+name: Simple Weekly Discord Digest (Monday & Friday)
 on:
   schedule:
-    # Run at 12:00 UTC every Monday and Friday
-    - cron: '0 12 * * 1,5'
+    - cron: '0 12 * * 1' 
+  workflow_dispatch:
 
 jobs:
-  # Simple digest - just get recent PRs and send to AI
   post-simple-digest:
     runs-on: ubuntu-latest
     permissions:
@@ -27,9 +26,10 @@ jobs:
       
       - name: Generate and Post Simple Digest
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          POLLI_PAT: ${{ secrets.POLLI_PAT }}
           POLLINATIONS_TOKEN: ${{ secrets.POLLINATIONS_TOKEN }}
           DISCORD_WEBHOOK_DIGEST: ${{ secrets.DISCORD_WEBHOOK_DIGEST }}
           DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
           REPO_FULL_NAME: ${{ github.repository }}
+
         run: python .github/scripts/discord_digest.py

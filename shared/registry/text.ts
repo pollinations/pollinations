@@ -140,6 +140,13 @@ export const TEXT_COSTS = {
             completionTextTokens: perMillion(15.0),
         },
     ],
+    "myceli-grok-4-fast": [
+        {
+            date: PRICING_START_DATE,
+            promptTextTokens: perMillion(0.2),
+            completionTextTokens: perMillion(0.5),
+        },
+    ],
     "sonar": [
         {
             date: PRICING_START_DATE,
@@ -206,6 +213,11 @@ export const TEXT_SERVICES = {
         modelId: "myceli-deepseek-v3.1",
         provider: "azure",
     },
+    "grok": {
+        aliases: ["grok-fast", "grok-4", "grok-4-fast"],
+        modelId: "myceli-grok-4-fast",
+        provider: "azure",
+    },
     "gemini-search": {
         aliases: ["searchgpt", "geminisearch"],
         modelId: "gemini-2.5-flash-lite",
@@ -234,6 +246,11 @@ export const TEXT_SERVICES = {
     "claude": {
         aliases: ["claudyclaude"],
         modelId: "us.anthropic.claude-haiku-4-5-20251001-v1:0",
+        provider: "aws-bedrock",
+    },
+    "claude-large": {
+        aliases: ["sonnet", "claude-4.5", "claude-sonnet-4.5", "claude-sonnet"],
+        modelId: "us.anthropic.claude-sonnet-4-5-20250929-v1:0",
         provider: "aws-bedrock",
     },
     "perplexity-fast": {

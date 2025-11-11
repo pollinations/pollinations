@@ -1,4 +1,5 @@
 import debug from "debug";
+import { HttpError } from "./httpError.ts";
 import dotenv from "dotenv";
 import { fileTypeFromBuffer } from "file-type";
 
@@ -36,7 +37,7 @@ import type { ProgressManager } from "./progressBar.ts";
 // Import model handlers
 import { callBPAIGenWithKontextFallback } from "./models/bpaigenModel.ts";
 import { callSeedreamAPI } from "./models/seedreamModel.ts";
-import type { ImageGenerationResult as FluxImageGenerationResult } from "./models/azureFluxKontextModel.js";
+import { callAzureFluxKontext, type ImageGenerationResult as FluxImageGenerationResult } from "./models/azureFluxKontextModel.js";
 
 dotenv.config();
 
@@ -176,7 +177,8 @@ export const callComfyUI = async (
                 body: JSON.stringify(body),
             });
         } catch (error) {
-            logError(`Fetch failed: ${error.message}`);
+            logError(`Fetch failed for ${safeParams.model}:`, error.message);
+            logError('Request body:', JSON.stringify(body, null, 2));
             throw error;
         }
 
@@ -604,8 +606,9 @@ const callAzureGPTImageWithEndpoint = async (
 
             if (imageUrls.length === 0) {
                 // Handle errors for missing image
-                throw new Error(
+                throw new HttpError(
                     "Image URL is required for GPT Image edit mode but was not provided",
+                    400,
                 );
             }
 
@@ -828,9 +831,7 @@ const generateImage = async (
         const violationCheck = checkViolationRatio(username);
         if (violationCheck.blocked) {
             progress.updateBar(requestId, 35, "Auth", "User blocked");
-            const error: any = new Error(violationCheck.reason);
-            error.status = 403;
-            throw error;
+            throw new HttpError(violationCheck.reason, 403);
         }
 
         // All requests assumed to come from enter.pollinations.ai - tier checks bypassed
@@ -869,7 +870,7 @@ const generateImage = async (
                     );
 
                     // Log the error with safety analysis results
-                    const error = new Error(errorMessage);
+                    const error = new HttpError(errorMessage, 400);
                     await logGptImageError(
                         prompt,
                         safeParams,
@@ -954,7 +955,7 @@ const generateImage = async (
                 );
 
                 // Log the error with safety analysis results
-                const error = new Error(errorMessage);
+                const error = new HttpError(errorMessage, 400);
                 await logGptImageError(
                     prompt,
                     safeParams,
@@ -1199,8 +1200,9 @@ export async function createAndReturnImageCached(
 
         // Safety check
         if (safeParams.safe && isMature) {
-            throw new Error(
+            throw new HttpError(
                 "NSFW content detected. This request cannot be fulfilled when safe mode is enabled.",
+                400,
             );
         }
 

@@ -159,8 +159,8 @@ function RouteComponent() {
                         window.location.href = "/api/polar/customer/portal";
                     }}
                 />
-                <Button as="a" href="/api/docs" color="purple" weight="light">
-                    API Docs
+                <Button as="a" href="/api/docs" className="bg-gray-900 text-white hover:!brightness-90">
+                    API Reference
                 </Button>
             </Header>
             <div className="flex flex-col gap-2">
@@ -173,7 +173,7 @@ function RouteComponent() {
                             weight="light"
                             disabled
                         >
-                            + $10
+                            + $5
                         </Button>
                         <Button
                             as="button"
@@ -181,10 +181,10 @@ function RouteComponent() {
                             weight="light"
                             disabled
                         >
-                            + $25
+                            + $10
                         </Button>
                         <Button as="button" color="purple" weight="light" disabled>
-                            + $50
+                            + $20
                         </Button>
                         <a
                             href="https://github.com/pollinations/pollinations/issues/4826"

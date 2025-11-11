@@ -1,10 +1,9 @@
 import { getRequestData } from "../requestUtils.js";
 import { REDIRECT_BASE_URL } from "./adLlmMapper.js";
 import { REQUIRE_MARKDOWN, markdownRegex } from "./adUtils.js";
-import {
-    handleAuthentication,
-    getUserPreferences,
-} from "../../shared/auth-utils.js";
+
+// Global flag to completely disable ad system
+const ADS_GLOBALLY_DISABLED = true;
 
 // Ads disabled by default (legacy system being phased out)
 const REFERRAL_LINK_PROBABILITY = 0;
@@ -36,6 +35,11 @@ export async function shouldShowAds(
     req = null,
     authResult = null,
 ) {
+    // Early return if ads are globally disabled
+    if (ADS_GLOBALLY_DISABLED) {
+        return { shouldShowAd: false, markerFound: false, globallyDisabled: true };
+    }
+
     log(
         "shouldShowAds called with content length:",
         content?.length,

@@ -30,16 +30,16 @@ function RouteComponent() {
     return (
         <div className="flex flex-col gap-20">
             <Header>
-                <Button as="a" href="/api/docs">
-                    API Reference
-                </Button>
                 <Button
                     as="button"
                     onClick={handleSignIn}
                     disabled={loading}
-                    weight="light"
+                    className="bg-amber-200 text-amber-900 hover:brightness-105"
                 >
                     {loading ? "Signing in..." : "Sign in with Github"}
+                </Button>
+                <Button as="a" href="/api/docs" className="bg-gray-900 text-white hover:!brightness-90">
+                    API Reference
                 </Button>
             </Header>
             <FAQ />

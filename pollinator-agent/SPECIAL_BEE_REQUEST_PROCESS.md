@@ -1,7 +1,7 @@
 # Special Bee Request Process (Updated August 2025)
 
 ## Overview
-Special Bee requests are processed through our tier-based authentication system. **Most requests should receive standard responses** directing users to register at auth.pollinations.ai for seed tier access. Only exceptional projects should be considered for flower tier review.
+Special Bee requests are processed through our tier-based authentication system. **Most requests should receive standard responses** directing users to register at enter.pollinations.ai for seed tier access. Only exceptional projects should be considered for flower tier review.
 
 ## Important Notice
 We are implementing a new system in **early September 2025** that may change how tiers work. Current tier assignments may be adjusted as part of this update.
@@ -26,7 +26,7 @@ Thanks for your interest in Pollinations!
 
 ## 🌱 Get Started
 
-1. **Register**: https://auth.pollinations.ai
+1. **Register**: https://enter.pollinations.ai
 2. **Sign in** with GitHub (@username)
 3. **Get seed tier** access with improved rate limits
 4. **Start building** your project
@@ -45,7 +45,7 @@ Thanks for sharing your [project type] - it looks very promising!
 
 ## 🌱 Get Started
 
-1. **Register**: https://auth.pollinations.ai
+1. **Register**: https://enter.pollinations.ai
 2. **Sign in** with GitHub (@username)
 3. **Get seed tier** access with improved rate limits
 
@@ -68,7 +68,7 @@ For requests that have been approved for flower tier:
 
 1. **Set the tier**:
    ```bash
-   cd /home/ubuntu/pollinations/auth.pollinations.ai
+   cd /home/ubuntu/pollinations/enter.pollinations.ai
    node scripts/set-tier.js [USER_ID] flower --remote
    ```
 
@@ -82,7 +82,7 @@ For requests that have been approved for flower tier:
 
    ## Next Steps
 
-   1. **Register**: https://auth.pollinations.ai
+   1. **Register**: https://enter.pollinations.ai
    2. **Sign in** with your GitHub account (@username)
    3. **Start building** - your enhanced access is now active
 
@@ -119,7 +119,7 @@ Only flag for flower tier if the project meets **MULTIPLE** of these strict crit
 - No live website or GitHub repository
 - Generic AI assistants without unique value proposition
 
-**DEFAULT APPROACH**: When in doubt, give standard response directing to auth.pollinations.ai
+**DEFAULT APPROACH**: When in doubt, give standard response directing to enter.pollinations.ai
 
 ## Response Guidelines
 

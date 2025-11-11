@@ -1,8 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import termsMarkdown from "../../../TERMS_OF_SERVICE.md?raw";
-import privacyMarkdown from "../../../PRIVACY_POLICY.md?raw";
+import termsMarkdown from "../../../legal/TERMS_OF_SERVICE.md?raw";
+import privacyMarkdown from "../../../legal/PRIVACY_POLICY.md?raw";
+import refundsMarkdown from "../../../legal/REFUNDS_AND_CANCELLATIONS.md?raw";
 
 export const Route = createFileRoute("/terms")({
     component: TermsComponent,
@@ -13,15 +14,6 @@ function TermsComponent() {
     
     return (
         <div className="min-h-screen py-12 px-4">
-            {/* Centered Logo */}
-            <div className="flex justify-center mb-12">
-                <img
-                    src="/myceli-ai-logo.svg"
-                    alt="Myceli.AI"
-                    className="h-16 sm:h-20 max-w-[90%]"
-                />
-            </div>
-
             <div className="max-w-4xl mx-auto space-y-8">
                 {/* Terms of Service Container */}
                 <div className="bg-white rounded-lg shadow-sm border border-gray-200 px-6 py-8 sm:px-8 sm:py-10">
@@ -40,12 +32,35 @@ function TermsComponent() {
                         </ReactMarkdown>
                     </div>
                 </div>
+                
+                {/* Refunds & Cancellations Container */}
+                <div className="bg-white rounded-lg shadow-sm border border-gray-200 px-6 py-8 sm:px-8 sm:py-10">
+                    <div className={proseClasses}>
+                        <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                            {refundsMarkdown}
+                        </ReactMarkdown>
+                    </div>
+                </div>
             </div>
 
-            {/* Contact Us - Outside cards, centered */}
-            <div className="text-center mt-12 mb-8">
-                <p className="text-gray-700 text-lg">
-                    For any inquiries, please contact: <a href="mailto:hi@myceli.ai" className="text-blue-600 font-semibold hover:underline">hi@myceli.ai</a>
+            {/* Company Information - Outside cards, centered */}
+            <div className="text-center mt-12 mb-8 text-gray-600">
+                <div className="flex items-center justify-center gap-3 mb-2">
+                    <img
+                        src="/myceli-ai-logo.svg"
+                        alt="Myceli.AI"
+                        className="h-6"
+                    />
+                    <strong className="text-gray-800">Myceli.AI OÜ</strong>
+                </div>
+                <p className="text-sm leading-relaxed">
+                    Registry code: 17186693 · VAT ID: EE102877908
+                    <br />
+                    Registered address: Tornimäe tn 5, 10145 Tallinn, Estonia
+                    <br />
+                    Contact: <a href="mailto:hi@myceli.ai" className="text-blue-600 hover:underline">hi@myceli.ai</a>
+                    <br />
+                    Supervisory authority: Estonian Data Protection Inspectorate
                 </p>
             </div>
         </div>

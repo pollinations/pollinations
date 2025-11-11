@@ -20,11 +20,9 @@ import {
     ErrorStatusCode,
     getDefaultErrorMessage,
     KNOWN_ERROR_STATUS_CODES,
-    UpstreamError,
 } from "@/error.ts";
 import { GenerateImageRequestQueryParamsSchema } from "@/schemas/image.ts";
 import { z } from "zod";
-import { HTTPException } from "hono/http-exception";
 import { ContentfulStatusCode } from "hono/utils/http-status";
 
 const errorResponseDescriptions = Object.fromEntries(
@@ -196,6 +194,7 @@ export const proxyRoutes = new Hono<Env>()
         }),
         track("generate.text"),
         async (c) => {
+            const log = c.get("log");
             await c.var.auth.requireAuthorization({
                 allowAnonymous:
                     c.var.track.freeModelRequested &&
@@ -223,13 +222,18 @@ export const proxyRoutes = new Hono<Env>()
             });
 
             if (!response.ok) {
-                throw new UpstreamError(
-                    response.status as ContentfulStatusCode,
-                    {
-                        message: "The text service returned an error response",
-                        requestUrl: targetUrl,
-                    },
-                );
+                // Pass through the original error response from the upstream service
+                // This preserves the correct HTTP status code instead of wrapping as 500
+                const responseText = await response.text();
+                log.warn("[PROXY] Text service error {status}: {body}", {
+                    status: response.status,
+                    body: responseText,
+                });
+                return new Response(responseText, {
+                    status: response.status,
+                    statusText: response.statusText,
+                    headers: response.headers,
+                });
             }
 
             // Backend returns plain text for text models and raw audio for audio models
@@ -307,7 +311,9 @@ export const proxyRoutes = new Hono<Env>()
                     status: response.status,
                     body: responseText,
                 });
-                // Return the response with the body we just read
+                // Pass through the original error response from the upstream service
+                // This preserves the correct HTTP status code (e.g., 400 for content policy violations)
+                // instead of wrapping errors as 500
                 return new Response(responseText, {
                     status: response.status,
                     statusText: response.statusText,
@@ -420,6 +426,7 @@ async function checkBalanceForPaidModel(c: Context<Env & TrackEnv>) {
 
 // Shared handler for OpenAI-compatible chat completions
 async function handleChatCompletions(c: Context<Env & TrackEnv>) {
+    const log = c.get("log");
     await c.var.auth.requireAuthorization({
         allowAnonymous:
             c.var.track.freeModelRequested && c.env.ALLOW_ANONYMOUS_USAGE,
@@ -441,9 +448,17 @@ async function handleChatCompletions(c: Context<Env & TrackEnv>) {
     });
 
     if (!response.ok) {
-        throw new UpstreamError(response.status as ContentfulStatusCode, {
-            message: "The text service returned an error response",
-            requestUrl: targetUrl,
+        // Pass through the original error response from the upstream service
+        // This preserves the correct HTTP status code instead of wrapping as 500
+        const responseText = await response.text();
+        log.warn("[PROXY] Chat completions error {status}: {body}", {
+            status: response.status,
+            body: responseText,
+        });
+        return new Response(responseText, {
+            status: response.status,
+            statusText: response.statusText,
+            headers: response.headers,
         });
     }
 

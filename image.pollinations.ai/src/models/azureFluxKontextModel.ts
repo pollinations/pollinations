@@ -1,4 +1,5 @@
 import debug from "debug";
+import { HttpError } from "../httpError.ts";
 import { sanitizeString } from "../translateIfNecessary.ts";
 import { analyzeImageSafety, analyzeTextSafety } from "../utils/azureContentSafety.ts";
 import { logGptImageError, logGptImagePrompt } from "../utils/gptImageLogger.ts";
@@ -66,7 +67,7 @@ export async function callAzureFluxKontext(
         const errorMessage = `Prompt contains unsafe content: ${promptSafetyResult.formattedViolations}`;
         logError("Azure Content Safety rejected prompt:", errorMessage);
 
-        const error = new Error(errorMessage);
+        const error = new HttpError(errorMessage, 400);
         await logGptImageError(
             prompt,
             safeParams,
@@ -108,8 +109,9 @@ export async function callAzureFluxKontext(
                 : [safeParams.image];
 
             if (imageUrls.length === 0) {
-                throw new Error(
+                throw new HttpError(
                     "Image URL is required for Flux Kontext edit mode but was not provided",
+                    400,
                 );
             }
 

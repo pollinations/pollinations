@@ -120,6 +120,16 @@ const models: ModelDefinition[] = [
         tools: true,
     },
     {
+        name: "grok",
+        description: "Grok 4 Fast",
+        config: portkeyConfig["myceli-grok-4-fast"],
+        transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
+        community: false,
+        input_modalities: ["text"],
+        output_modalities: ["text"],
+        tools: true,
+    },
+    {
         name: "openai-audio",
         description: "OpenAI GPT-4o Mini Audio Preview",
         voices: [
@@ -158,6 +168,16 @@ const models: ModelDefinition[] = [
         description: "Claude Haiku 4.5",
         config: portkeyConfig["us.anthropic.claude-haiku-4-5-20251001-v1:0"],
         transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
+        input_modalities: ["text", "image"],
+        output_modalities: ["text"],
+        tools: true,
+    },
+    {
+        name: "claude-large",
+        description: "Claude Sonnet 4.5",
+        config: portkeyConfig["us.anthropic.claude-sonnet-4-5-20250929-v1:0"],
+        transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
+        community: false,
         input_modalities: ["text", "image"],
         output_modalities: ["text"],
         tools: true,

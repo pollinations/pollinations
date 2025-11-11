@@ -46,6 +46,25 @@ The variables are kept encrypted in `**/.encrypted.env` files, and only decrypte
 - **With nix:** Variables auto-load via `nix develop` - edit with `sops edit .encrypted.env`
 - **Without nix:** Edit `.env` → Run `sops -e .env > .encrypted.env` → Commit `.encrypted.env`
 
+##### Running Multiple Services
+
+To run multiple services simultaneously during development:
+
+```bash
+# Install dependencies for all services
+npm run install:all
+
+# Run all services (enter, text, image) with auto-restart
+npm run dev
+
+# Run individual services
+npm run dev:enter
+npm run dev:text
+npm run dev:image
+```
+
+The `npm run dev` command uses `concurrently` to run all services with colored output and automatic restart on failure.
+
 ##### Debugging
 For verbose logging and debugging across all services, you can use:
 

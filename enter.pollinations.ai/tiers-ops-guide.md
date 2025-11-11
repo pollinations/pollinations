@@ -18,6 +18,12 @@ Tip: target a specific DB id if needed:
 
 ## Quick Checks (Enter staging / Auth production)
 
+**Note:** Staging database belongs to Thomash's Cloudflare account. Set `CLOUDFLARE_ACCOUNT_ID` if wrangler is logged into a different account:
+
+```bash
+export CLOUDFLARE_ACCOUNT_ID="your-account-id-here"
+```
+
 | What | Command (run inside the service folder) |
 | --- | --- |
 | List tables | `npx wrangler d1 execute DB --remote --command "SELECT name FROM sqlite_master WHERE type='table';"` |

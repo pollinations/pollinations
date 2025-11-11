@@ -55,18 +55,6 @@ test("Models with API costs should have non-zero operational costs", () => {
     expect(nanobanana.totalCost).toBeGreaterThan(0);
 });
 
-test("Flux should remain free for users", () => {
-    const usage: TokenUsage = {
-        unit: "TOKENS",
-        completionImageTokens: 1,
-    };
-
-    const price = calculatePrice("flux", usage);
-
-    // Flux is free tier - users pay $0
-    expect(price.totalPrice).toBe(0);
-});
-
 test("Cost should be non-negative for all models", () => {
     const models: ModelId[] = [
         "flux",

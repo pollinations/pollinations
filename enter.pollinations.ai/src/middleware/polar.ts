@@ -86,7 +86,6 @@ export const polar = createMiddleware<PolarEnv>(async (c, next) => {
         const activeMeters = getSimplifiedMatchingMeters(customerMeters);
         const sortedMeters = sortMetersByDescendingPriority(activeMeters);
 
-        log.debug({ sortedMeters });
         for (const meter of sortedMeters) {
             if (meter.balance > 0) {
                 c.var.polar.balanceCheckResult = {

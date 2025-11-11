@@ -3,17 +3,10 @@ import http from "node:http";
 import { parse } from "node:url";
 import debug from "debug";
 import urldecode from "urldecode";
-import {
-    addAuthDebugHeaders,
-    createAuthDebugResponse,
-    handleAuthentication,
-} from "../../shared/auth-utils.js";
+import { HttpError } from "./httpError.js";
 import { extractToken, getIp } from "../../shared/extractFromRequest.js";
 import { sendImageTelemetry } from "./utils/telemetry.js";
 import { buildTrackingHeaders } from "./utils/trackingHeaders.js";
-
-// Import shared utilities
-import { enqueue } from "../../shared/ipQueue.js";
 import { countFluxJobs, handleRegisterEndpoint } from "./availableServers.js";
 import { cacheImagePromise } from "./cacheGeneratedImages.js";
 import { IMAGE_CONFIG } from "./models.js";
@@ -102,14 +95,7 @@ const setCORSHeaders = (res: ServerResponse) => {
     res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
     res.setHeader("Access-Control-Allow-Headers", "Content-Type");
     res.setHeader("Access-Control-Expose-Headers", [
-        "X-Auth-Status",
-        "X-Auth-Reason",
-        "X-Debug-Token",
-        "X-Debug-Token-Source",
-        "X-Debug-Referrer",
-        "X-Debug-Legacy-Token-Match",
-        "X-Debug-Allowlist-Match",
-        "X-Debug-User-Id",
+        "Content-Length",
     ]);
 };
 
@@ -178,8 +164,9 @@ const imageGen = async ({
 
     // Check if IP is blocked
     if (isIpBlocked(ip)) {
-        throw new Error(
+        throw new HttpError(
             `Your IP ${ip} has been temporarily blocked due to multiple content violations`,
+            403,
         );
     }
 
@@ -319,8 +306,9 @@ const imageGen = async ({
             const violations = incrementIpViolations(ip);
             if (violations >= MAX_VIOLATIONS) {
                 await sleep(10000);
-                throw new Error(
+                throw new HttpError(
                     `Your IP ${ip} has been temporarily blocked due to multiple content violations`,
+                    403,
                 );
             }
         }
@@ -388,113 +376,64 @@ const checkCacheAndGenerate = async (
     let timingInfo = [];
 
     try {
-        // Call authentication ONCE and reuse the result
-        const authResult = await handleAuthentication(req, requestId, logAuth);
-        const isAuthenticated = authResult.authenticated;
-        const hasValidToken = authResult.tokenAuth;
+        // Authentication and rate limiting is now handled by enter.pollinations.ai
+        // Create a minimal authResult for compatibility
+        const authResult: AuthResult = {
+            authenticated: true,
+            tokenAuth: false,
+            referrerAuth: false,
+            bypass: true,
+            reason: "ENTER_GATEWAY",
+            userId: null,
+            username: null,
+            debugInfo: {},
+        };
 
         // Cache the generated image
         const bufferAndMaturity = await cacheImagePromise(
             originalPrompt,
             safeParams,
             async () => {
-                // const ip = getIp(req);
-
-                progress.updateBar(requestId, 10, "Queueing", "Request queued");
+                progress.updateBar(requestId, 10, "Processing", "Generating image");
                 timingInfo = [
                     {
-                        step: "Request received and queued.",
+                        step: "Request received.",
                         timestamp: Date.now(),
                     },
                 ];
-                // sendToFeedListeners({
-                //   ...safeParams,
-                //   prompt: originalPrompt,
-                //   ip: getIp(req), status: "queueing", concurrentRequests: countJobs(true), timingInfo: relativeTiming(timingInfo), referrer, token: extractToken(req) && extractToken(req).slice(0, 2) + "..." });
 
-                // Pass authentication status to generateImage (hasReferrer will be checked there for gptimage)
-                const generateImage = async () => {
-                    timingInfo.push({
-                        step: "Start generating job",
-                        timestamp: Date.now(),
-                    });
-                    const result = await imageGen({
-                        req,
-                        timingInfo,
-                        originalPrompt,
-                        safeParams,
-                        referrer,
-                        progress,
-                        requestId,
-                        authResult,
-                    });
-                    timingInfo.push({
-                        step: "End generating job",
-                        timestamp: Date.now(),
-                    });
-                    return result;
-                };
-
-                // Determine queue configuration based on model first, then authentication
-                let queueConfig = null;
+                // Generate image directly without queue
+                timingInfo.push({
+                    step: "Start generating job",
+                    timestamp: Date.now(),
+                });
                 
-                // Model-specific queue configs - all requests assumed from enter.pollinations.ai
-                const modelName = safeParams.model as string;
-                if (modelName === "nanobanana") {
-                    // 90 second interval - no hourly limit for enter requests
-                    queueConfig = { interval: 90000 }; // 90 second interval
-                    logAuth(`${modelName} model - 90 second interval (enter request - no hourly limit)`);
-                } else if (modelName === "kontext") {
-                    // 30 second interval
-                    queueConfig = { interval: 30000 };
-                    logAuth(`${modelName} model - 30 second interval`);
-                } else if (modelName === "gptimage") {
-                    // 60 second interval
-                    queueConfig = { interval: 60000 };
-                    logAuth("GPTImage model - 60 second interval");
-                } else if (hasValidToken) {
-                    // Token authentication for other models - 7s minimum interval
-                    queueConfig = { interval: 7000 };
-                    logAuth("Token authenticated - using 7s minimum interval");
-                } else {
-                    // Use default queue config for other models with no token
-                    queueConfig = QUEUE_CONFIG;
-                    logAuth("Standard queue with delay (no token)");
-                }
+                progress.setProcessing(requestId);
                 
-                if (hasValidToken) {
-                    progress.updateBar(
-                        requestId,
-                        20,
-                        "Authenticated",
-                        "Token verified",
-                    );
-                }
-
-                // Use the shared queue utility - everyone goes through queue
-                const result = await enqueue(
+                const result = await imageGen({
                     req,
-                    async () => {
-                        // Update progress and process the image
-                        progress.setProcessing(requestId);
-                        return generateImage();
-                    },
-                    { ...queueConfig, forceQueue: true },
-                );
-
+                    timingInfo,
+                    originalPrompt,
+                    safeParams,
+                    referrer,
+                    progress,
+                    requestId,
+                    authResult,
+                });
+                
+                timingInfo.push({
+                    step: "End generating job",
+                    timestamp: Date.now(),
+                });
+                
                 return result;
             },
         );
 
-        // Reuse the authentication result instead of calling again
-
-        // Add debug headers for authentication information
+        // Add headers for response
         const headers = {
             "Content-Type": "image/jpeg",
             "Cache-Control": "public, max-age=31536000, immutable",
-            "X-Auth-Status": isAuthenticated
-                ? "authenticated"
-                : "unauthenticated",
         };
 
         // Add Content-Disposition header with sanitized filename
@@ -511,9 +450,6 @@ const checkCacheAndGenerate = async (
             const filename = `${baseFilename || "generated-image"}.jpg`;
             headers["Content-Disposition"] = `inline; filename="${filename}"`;
         }
-
-        // Add authentication debug headers using shared utility
-        addAuthDebugHeaders(headers, authResult.debugInfo);
 
         // Debug: Log trackingData before building headers
         logApi("=== TRACKING DATA BEFORE HEADERS ===");
@@ -547,24 +483,15 @@ const checkCacheAndGenerate = async (
         // Determine the appropriate status code (default to 500 if not specified)
         const statusCode = error.status || 500;
         const errorType =
-            statusCode === 401
+            statusCode === 400
+                ? "Bad Request"
+                : statusCode === 401
                 ? "Unauthorized"
                 : statusCode === 403
                   ? "Forbidden"
                   : statusCode === 429
                     ? "Too Many Requests"
                     : "Internal Server Error";
-
-        // Extract debug info from error if available
-        const errorDebugInfo = error.details?.debugInfo;
-
-        // Add debug headers for authentication information even in error responses
-        const errorHeaders = {
-            "Content-Type": "application/json",
-            "X-Error-Type": errorType,
-        };
-
-        addAuthDebugHeaders(errorHeaders, errorDebugInfo);
 
         // Log the error response using debug
         logError("Error response:", {
@@ -574,13 +501,16 @@ const checkCacheAndGenerate = async (
             message: error.message,
         });
 
-        res.writeHead(statusCode, errorHeaders);
+        res.writeHead(statusCode, {
+            "Content-Type": "application/json",
+            "X-Error-Type": errorType,
+        });
+        
         // Create a response object with error information
         const responseObj = {
             error: errorType,
             message: error.message,
             details: error.details,
-            debug: createAuthDebugResponse(errorDebugInfo),
             timingInfo: relativeTiming(timingInfo),
             requestId,
             requestParameters: {

@@ -43,7 +43,7 @@ const ChatCompletionRequestMessageContentPartImageSchema = z.object({
     type: z.literal("image_url"),
     image_url: z.object({
         url: z.string(),
-        detail: z.enum(["auto", "low", "high"]).default("auto").optional(),
+        detail: z.enum(["auto", "low", "high"]).optional(),
     }),
 });
 
@@ -358,7 +358,7 @@ export type ContentFilterResult = z.infer<typeof ContentFilterResultSchema>;
 export const PromptFilterResultSchema = z.array(
     z.object({
         prompt_index: z.number().int().nonnegative(),
-        content_filter_results: ContentFilterResultSchema,
+        content_filter_results: ContentFilterResultSchema.optional(),
     }),
 );
 

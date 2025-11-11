@@ -369,6 +369,11 @@ export async function callVertexAIGemini(
             throw error; // Re-throw as-is to preserve the original response
         }
         
+        // Preserve HttpError status codes (e.g., 400 for content policy violations)
+        if (error instanceof HttpError) {
+            throw error;
+        }
+        
         throw new Error(`Vertex AI Gemini image generation failed: ${error.message}`);
     }
 }

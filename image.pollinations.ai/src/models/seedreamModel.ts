@@ -218,6 +218,10 @@ export const callSeedreamAPI = async (
 
     } catch (error) {
         logError("Error calling Seedream API:", error);
+        // Preserve HttpError status codes (e.g., 400 for content policy violations)
+        if (error instanceof HttpError) {
+            throw error;
+        }
         throw new Error(`Seedream API generation failed: ${error.message}`);
     }
 };

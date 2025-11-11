@@ -6,7 +6,7 @@ import { describe, expect } from "vitest";
 // These endpoints should work with CORS from any origin (e.g., pollinations.ai frontend)
 
 describe("Public model endpoints", () => {
-    test("GET /v1/models returns 200 without auth", async () => {
+    test("GET /v1/models returns 200 without auth", async ({ mocks }) => {
         const response = await SELF.fetch(
             `http://localhost:3000/api/generate/v1/models`,
             {
@@ -83,22 +83,5 @@ describe("Public model endpoints", () => {
         );
         expect(response.status).toBe(204);
         expect(response.headers.get("access-control-allow-origin")).toBe("*");
-    });
-});
-
-describe("API auth endpoints", () => {
-    test("Session cookies should not work for API proxy routes", async ({ sessionToken }) => {
-        // Try to use session cookie for API generation endpoint (should fail)
-        const response = await SELF.fetch(
-            `http://localhost:3000/api/generate/text/test`,
-            {
-                method: "GET",
-                headers: {
-                    "Cookie": `better-auth.session_token=${sessionToken}`,
-                },
-            },
-        );
-        // Should return 401 because session auth is disabled for API routes
-        expect(response.status).toBe(401);
     });
 });

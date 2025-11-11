@@ -30,6 +30,16 @@ export function createMockPolar(): MockAPI<MockPolarState> {
             const balance = id === "customer_without_balance" ? 0 : 100;
             return c.json(createMockCustomerState(id, { balance }), 200);
         })
+        .get("/v1/customer-meters", async (c) => {
+            const externalCustomerId = c.req.query("external_customer_id");
+            return c.json({
+                items: createMockCustomerMeters(externalCustomerId || ""),
+                pagination: {
+                    total_count: 2,
+                    max_page: 1,
+                },
+            });
+        })
         .get("/v1/events", async (c) => {
             return c.json({
                 items: state.events,
@@ -122,8 +132,7 @@ function createMockCustomerState(
             },
         ],
         active_meters: [createMockMeter(balance, creditedUnits)],
-        avatar_url:
-            "https://www.gravatar.com/avatar/test-avatar-hash?d=404",
+        avatar_url: "https://www.gravatar.com/avatar/test-avatar-hash?d=404",
     };
 }
 
@@ -153,6 +162,7 @@ const mockCustomerSession = {
     expires_at: "2025-10-26T01:00:44.221Z",
     customer_portal_url:
         "https://sandbox.polar.sh/test-org/portal?customer_session_token=test-session-token-1234&email=test%40example.com",
+    return_url: "http://localhost:3000/",
     customer_id: "test-customer-id-5678",
     customer: {
         id: "test-customer-id-5678",
@@ -174,8 +184,7 @@ const mockCustomerSession = {
         tax_id: null,
         organization_id: "test-org-id-1234",
         deleted_at: null,
-        avatar_url:
-            "https://www.gravatar.com/avatar/test-avatar-hash?d=404",
+        avatar_url: "https://www.gravatar.com/avatar/test-avatar-hash?d=404",
     },
 };
 
@@ -190,6 +199,7 @@ const mockCheckoutSession = {
     url: "https://sandbox.polar.sh/checkout/test-checkout-id-1234",
     expires_at: "2025-10-26T01:15:41.768Z",
     success_url: "http://localhost:3000/",
+    return_url: "http://localhost:3000/",
     embed_origin: null,
     amount: 1000,
     discount_amount: 0,
@@ -223,10 +233,8 @@ const mockCheckoutSession = {
     },
     customer_tax_id: null,
     payment_processor_metadata: {
-        publishable_key:
-            "pk_test_1234567890abcdefghijklmnopqrstuvwxyz",
-        customer_session_client_secret:
-            "test-customer-session-secret-1234",
+        publishable_key: "pk_test_1234567890abcdefghijklmnopqrstuvwxyz",
+        customer_session_client_secret: "test-customer-session-secret-1234",
     },
     billing_address_fields: {
         country: "required",
@@ -239,6 +247,12 @@ const mockCheckoutSession = {
     metadata: {},
     external_customer_id: "test-external-id-5678",
     customer_external_id: "test-external-id-5678",
+    organization_id: "test-org-id-1234",
+    active_trial_interval: "month",
+    active_trial_interval_count: 0,
+    trial_end: null,
+    trial_interval: "month",
+    trial_interval_count: 0,
     products: [
         {
             created_at: "2025-08-28T16:18:57.365Z",
@@ -247,6 +261,9 @@ const mockCheckoutSession = {
             name: "Pollen Bundle Small",
             description: null,
             recurring_interval: null,
+            recurring_interval_count: 0,
+            trial_interval: "month",
+            trial_interval_count: 0,
             is_recurring: false,
             is_archived: false,
             organization_id: "test-org-id-1234",
@@ -275,6 +292,9 @@ const mockCheckoutSession = {
         name: "Pollen Bundle Small",
         description: null,
         recurring_interval: null,
+        recurring_interval_count: 0,
+        trial_interval: "month",
+        trial_interval_count: 0,
         is_recurring: false,
         is_archived: false,
         organization_id: "test-org-id-1234",
@@ -312,3 +332,144 @@ const mockCheckoutSession = {
     attached_custom_fields: [],
     customer_metadata: {},
 };
+
+function createMockCustomerMeters(externalCustomerId: string) {
+    return [
+        {
+            id: "test-meter-balance-id-1",
+            created_at: "2025-11-06T21:09:03.383Z",
+            modified_at: "2025-11-07T21:37:00.582Z",
+            customer_id: "test-customer-id-1234",
+            meter_id: "test-meter-id-pack",
+            consumed_units: 431.1552567399807,
+            credited_units: 705,
+            balance: 273.8447432600193,
+            customer: {
+                id: "test-customer-id-1234",
+                created_at: "2025-11-04T12:42:09.692Z",
+                modified_at: "2025-11-07T21:37:00.586Z",
+                metadata: {},
+                external_id: externalCustomerId,
+                email: "test@example.com",
+                email_verified: false,
+                name: "Test User",
+                billing_address: {
+                    line1: null,
+                    line2: null,
+                    postal_code: null,
+                    city: null,
+                    state: null,
+                    country: "US",
+                },
+                tax_id: null,
+                organization_id: "test-org-id-1234",
+                deleted_at: null,
+                avatar_url:
+                    "https://www.gravatar.com/avatar/test-avatar-hash?d=404",
+            },
+            meter: {
+                metadata: { slug: "v1:meter:pack", priority: 100 },
+                created_at: "2025-11-06T20:02:13.163Z",
+                modified_at: "2025-11-07T21:35:10.825Z",
+                id: "test-meter-id-pack",
+                name: "Usage (pack)",
+                filter: {
+                    conjunction: "and",
+                    clauses: [
+                        {
+                            conjunction: "or",
+                            clauses: [
+                                {
+                                    property: "name",
+                                    operator: "eq",
+                                    value: "generate.text",
+                                },
+                                {
+                                    property: "name",
+                                    operator: "eq",
+                                    value: "generate.image",
+                                },
+                            ],
+                        },
+                        {
+                            property: "selectedMeterSlug",
+                            operator: "eq",
+                            value: "v1:meter:pack",
+                        },
+                    ],
+                },
+                aggregation: { func: "sum", property: "totalPrice" },
+                organization_id: "test-org-id-1234",
+                archived_at: null,
+            },
+        },
+        {
+            id: "test-meter-balance-id-2",
+            created_at: "2025-11-06T22:31:34.828Z",
+            modified_at: "2025-11-07T16:07:00.687Z",
+            customer_id: "test-customer-id-1234",
+            meter_id: "test-meter-id-tier",
+            consumed_units: 20.390926000000025,
+            credited_units: 10,
+            balance: -10.390926000000025,
+            customer: {
+                id: "test-customer-id-1234",
+                created_at: "2025-11-04T12:42:09.692Z",
+                modified_at: "2025-11-07T21:37:00.586Z",
+                metadata: {},
+                external_id: externalCustomerId,
+                email: "test@example.com",
+                email_verified: false,
+                name: "Test User",
+                billing_address: {
+                    line1: null,
+                    line2: null,
+                    postal_code: null,
+                    city: null,
+                    state: null,
+                    country: "US",
+                },
+                tax_id: null,
+                organization_id: "test-org-id-1234",
+                deleted_at: null,
+                avatar_url:
+                    "https://www.gravatar.com/avatar/test-avatar-hash?d=404",
+            },
+            meter: {
+                metadata: { slug: "v1:meter:tier", priority: 200 },
+                created_at: "2025-11-06T20:00:14.214Z",
+                modified_at: "2025-11-07T21:35:11.035Z",
+                id: "test-meter-id-tier",
+                name: "Usage (tier)",
+                filter: {
+                    conjunction: "and",
+                    clauses: [
+                        {
+                            conjunction: "or",
+                            clauses: [
+                                {
+                                    property: "name",
+                                    operator: "eq",
+                                    value: "generate.text",
+                                },
+                                {
+                                    property: "name",
+                                    operator: "eq",
+                                    value: "generate.image",
+                                },
+                            ],
+                        },
+                        {
+                            property: "selectedMeterSlug",
+                            operator: "eq",
+                            value: "v1:meter:tier",
+                        },
+                    ],
+                },
+                aggregation: { func: "sum", property: "totalPrice" },
+                organization_id: "test-org-id-1234",
+                archived_at: null,
+            },
+        },
+    ];
+}

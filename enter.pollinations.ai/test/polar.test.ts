@@ -14,7 +14,8 @@ const routes = [...customerRoutes, ...checkoutRoutes];
 
 test.for(routes)(
     "%s should only be accessible when authenticated via session cookie",
-    async (route, { sessionToken }) => {
+    async (route, { sessionToken, mocks }) => {
+        mocks.enable("polar", "tinybird");
         const anonymousResponse = await SELF.fetch(`${base}${route}`, {
             method: "GET",
         });

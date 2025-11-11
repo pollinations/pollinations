@@ -48,6 +48,7 @@ import { mergeContentFilterResults } from "@/content-filter.ts";
 import { getErrorCode, UpstreamError } from "@/error.ts";
 import { ValidationError } from "@/middleware/validator.ts";
 import { ErrorVariables } from "@/env.ts";
+import { FrontendKeyRateLimitVariables } from "./rateLimit.durable.ts";
 
 export type ModelUsage = {
     model: ModelId;
@@ -91,6 +92,7 @@ export type TrackEnv = {
         LoggerVariables &
         AuthVariables &
         PolarVariables &
+        FrontendKeyRateLimitVariables &
         TrackVariables;
 };
 
@@ -124,10 +126,16 @@ export const track = (eventType: EventType) =>
                     requestTracking,
                     response,
                 );
-                const userTracking = {
+
+                // register pollen consumption with rate limiter
+                await c.var.frontendKeyRateLimit?.consumePollen(
+                    responseTracking.price?.totalPrice || 0,
+                );
+
+                const userTracking: UserData = {
                     userId: c.var.auth.user?.id,
                     userTier: c.var.auth.user?.tier,
-                    userGithubId: c.var.auth.user?.githubId,
+                    userGithubId: `${c.var.auth.user?.githubId}`,
                     userGithubName: c.var.auth.user?.githubUsername,
                     apiKeyId: c.var.auth.apiKey?.id,
                     apiKeyType: c.var.auth.apiKey?.metadata
@@ -158,15 +166,11 @@ export const track = (eventType: EventType) =>
                     responseTracking,
                     errorTracking: collectErrorData(response, c.get("error")),
                 });
-                
-                // Set internal header for rate limiter to read pollen price
-                if (responseTracking.price?.totalPrice) {
-                    c.header("X-Pollen-Price", responseTracking.price.totalPrice.toString());
-                }
+
                 log.trace("Event: {event}", { event });
                 const db = drizzle(c.env.DB);
                 await storeEvents(db, c.var.log, [event]);
-                
+
                 // process events immediately in development/testing
                 if (["test", "development"].includes(c.env.ENVIRONMENT))
                     await processEvents(db, c.var.log, {
@@ -281,7 +285,7 @@ async function* asyncIteratorStream<T>(
 type UserData = {
     userId?: string;
     userTier?: string;
-    userGithubId?: number;
+    userGithubId?: string;
     userGithubName?: string;
     apiKeyId?: string;
     apiKeyType?: ApiKeyType;

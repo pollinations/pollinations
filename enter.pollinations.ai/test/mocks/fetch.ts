@@ -1,10 +1,14 @@
 import type { Hono } from "hono";
 import { vi } from "vitest";
 import { getLogger } from "@logtape/logtape";
+import { inspect } from "node:util";
 
 const originalFetch = globalThis.fetch;
 const activeRequests = new Set<Promise<any>>();
 
+export type MockMap = {
+    [name: string]: MockAPI<any>;
+};
 export type MockHandler = (request: Request) => Promise<Response>;
 export type MockHandlerMap = { [hostname: string]: MockHandler };
 
@@ -35,12 +39,13 @@ type FetchMockOptions = {
     logRequests?: boolean;
 };
 
-export function setupFetchMock(
-    handlers: MockHandlerMap,
+export function createFetchMock<TMocks extends MockMap>(
+    mocks: TMocks,
     options?: FetchMockOptions,
 ) {
     const log = getLogger(["test", "mock"]);
     const opts = options ?? {};
+    let handlers: MockHandlerMap = {};
 
     globalThis.fetch = vi
         .fn()
@@ -72,6 +77,27 @@ export function setupFetchMock(
                 return response;
             },
         );
+
+    const enable = (...names: (keyof TMocks)[]) => {
+        handlers = {};
+        for (const name of names) {
+            const mock = mocks[name];
+            handlers = {
+                ...handlers,
+                ...mock.handlerMap,
+            };
+        }
+    };
+
+    const clear = () => {
+        handlers = {};
+    };
+
+    return {
+        enable,
+        clear,
+        ...mocks,
+    };
 }
 
 export async function teardownFetchMock() {

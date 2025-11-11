@@ -5,6 +5,7 @@ on:
     paths:
       - 'hacktoberfest-2025/**'
     branches: [master, main]
+  workflow_dispatch:
 
 jobs:
   deploy:

@@ -269,11 +269,12 @@ export const proxyRoutes = new Hono<Env>()
             await checkBalanceForPaidModel(c);
 
             // Extract prompt from wildcard path (everything after /image/)
+            // Keep it encoded to preserve special characters when proxying
             const fullPath = c.req.path; // e.g., "/api/generate/image/my%20prompt%20here"
-            const promptParam = decodeURIComponent(fullPath.split("/image/")[1] || "");
+            const promptParam = fullPath.split("/image/")[1] || "";
             
             log.debug("[PROXY] Extracted prompt param: {prompt}", {
-                prompt: promptParam,
+                prompt: decodeURIComponent(promptParam), // Decode only for logging
                 type: typeof promptParam,
                 length: promptParam.length,
                 fullPath: fullPath,

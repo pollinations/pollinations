@@ -333,3 +333,7 @@ gateway/
 .github/act-secrets.env
 
 .secrets
+
+# Debug sessions
+**/debugsession_*/
+debugsession_*/

@@ -79,14 +79,6 @@ export const creativeProjects = [
     name: "Green Hope AI 🎨",
     url: "https://aithumbnails.vercel.app/",
     description: "Generate stunning thumbnails with AI, then take full control. Easily edit the text, position, styles, and effects without ever having to start over.",
-    author: "@mustafiz82",
-    submissionDate: "2025-17-25",
-    order: 1
-  },
-  {
-    name: "Green Hope AI 🎨",
-    url: "https://aithumbnails.vercel.app/",
-    description: "Generate stunning thumbnails with AI, then take full control. Easily edit the text, position, styles, and effects without ever having to start over.",
     author: "@Mustafiz82",
     submissionDate: "2025-10-16",
     order: 1
@@ -115,14 +107,6 @@ export const creativeProjects = [
     description: "Freemium image generating SaaS where users can generate AI images via Pollinations API with customizable generator settings and various styling options.",
     author: "@TusharSoni014",
     submissionDate: "2025-10-03",
-    order: 1
-  },
-  {
-    name: "Green Hope AI 🎨",
-    url: "https://aithumbnails.vercel.app/",
-    description: "Generate stunning thumbnails with AI, then take full control. Easily edit the text, position, styles, and effects without ever having to start over.",
-    author: "@Mustafiz82",
-    submissionDate: "2025-10-16",
     order: 1
   },
   {

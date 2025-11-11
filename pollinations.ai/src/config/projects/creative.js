@@ -5,6 +5,32 @@
 
 export const creativeProjects = [
   {
+    name: "ImaGenz 🎨",
+    url: "https://imagenz.vercel.app",
+    description: "Free, instant AI content generation platform for creating stunning images and creative text without sign-up. Powered by FLUX and Turbo models with lightning-fast generation and real-time community feeds. Available as web app, Telegram bot, and mobile apps (Android/iOS). Over 10 million generations served.",
+    author: "@iamkavy47",
+    repo: "https://github.com/iamkavy47/pbl-sem3",
+    submissionDate: "2025-11-10",
+    order: 1
+  },
+  {
+    name: "AI Image-to-Prompt Generator 🎨",
+    url: "https://imagetoprompt.netlify.app",
+    description: "Professional AI Image-to-Prompt Generator with free unlimited prompts. Upload any image and get detailed AI-generated prompts for recreating similar images. Perfect for artists, designers, and content creators.",
+    author: "@mehediprofilebd-alt",
+    submissionDate: "2025-11-09",
+    order: 1
+  },
+  {
+    name: "SpecAI 🎨",
+    url: "https://specai.pages.dev",
+    description: "Interactive UI for Pollinations AI with custom resolution and seed options. Generate desired images with full control over generation parameters.",
+    author: "@spectre365",
+    repo: "https://github.com/spectre365/specai",
+    submissionDate: "2025-10-23",
+    order: 1
+  },
+  {
     name: "SHICoPIC™ 🎨",
     url: "https://shicopic.netlify.app",
     description: "AI-powered creative image generation tool. Simple interface for creating images with Pollinations API.",

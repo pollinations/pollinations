@@ -52,7 +52,8 @@ describe.for([true, false])(
         test.for(anonymousTestCases(allowAnoymous))(
             "%s should respond %s when unauthenticated",
             { timeout: 30000 },
-            async ([serviceId, expectedStatus]) => {
+            async ([serviceId, expectedStatus], { mocks }) => {
+                mocks.enable("polar", "tinybird");
                 const response = await SELF.fetch(
                     `http://localhost:3000/api/generate/v1/chat/completions`,
                     {
@@ -81,7 +82,8 @@ describe.for([true, false])(
 test.for(authenticatedTestCases())(
     "%s should respond with 200 when using authorization header",
     { timeout: 30000 },
-    async ([serviceId, expectedStatus], { apiKey }) => {
+    async ([serviceId, expectedStatus], { apiKey, mocks }) => {
+        mocks.enable("polar", "tinybird");
         const response = await SELF.fetch(
             `http://localhost:3000/api/generate/v1/chat/completions`,
             {
@@ -110,6 +112,7 @@ test.for(authenticatedTestCases())(
     "%s should respond with 200 when streaming",
     { timeout: 30000 },
     async ([serviceId, expectedStatus], { apiKey, mocks }) => {
+        mocks.enable("polar", "tinybird");
         const response = await SELF.fetch(
             `http://localhost:3000/api/generate/v1/chat/completions`,
             {
@@ -155,7 +158,8 @@ test.for(authenticatedTestCases())(
 test.for(authenticatedTestCases())(
     "GET /text/:prompt with %s should return plain text",
     { timeout: 30000 },
-    async ([serviceId, expectedStatus], { apiKey }) => {
+    async ([serviceId, expectedStatus], { apiKey, mocks }) => {
+        mocks.enable("polar", "tinybird");
         const response = await SELF.fetch(
             `http://localhost:3000/api/generate/text/${encodeURIComponent(testMessageContent())}?model=${serviceId}`,
             {
@@ -183,7 +187,8 @@ test.for(authenticatedTestCases())(
 test(
     "GET /text/:prompt with openai-audio should return raw audio",
     { timeout: 30000 },
-    async ({ apiKey }) => {
+    async ({ apiKey, mocks }) => {
+        mocks.enable("polar", "tinybird");
         const response = await SELF.fetch(
             `http://localhost:3000/api/generate/text/hello?model=openai-audio`,
             {
@@ -207,18 +212,19 @@ test(
 );
 
 // Test that session cookies don't work for API routes (only API keys)
-test(
-    "Session cookies should not authenticate API proxy routes",
-    async ({ sessionToken }) => {
-        const response = await SELF.fetch(
-            `http://localhost:3000/api/generate/text/test`,
-            {
-                method: "GET",
-                headers: {
-                    "Cookie": `better-auth.session_token=${sessionToken}`,
-                },
+test("Session cookies should not authenticate API proxy routes", async ({
+    sessionToken,
+    mocks,
+}) => {
+    mocks.enable("polar", "tinybird");
+    const response = await SELF.fetch(
+        `http://localhost:3000/api/generate/text/test`,
+        {
+            method: "GET",
+            headers: {
+                "Cookie": `better-auth.session_token=${sessionToken}`,
             },
-        );
-        expect(response.status).toBe(401);
-    },
-);
+        },
+    );
+    expect(response.status).toBe(401);
+});

@@ -92,7 +92,9 @@ export const handleError: ErrorHandler<Env> = (err, c) => {
     if (err instanceof HTTPException) {
         const status = err.status;
         const response = createBaseErrorResponse(err, status, timestamp);
-        log.trace("HttpException: {error}", { error: err });
+        log.trace("HttpException: {message}", {
+            message: err.message || getDefaultErrorMessage(err.status),
+        });
         return c.json(response, status);
     }
 

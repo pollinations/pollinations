@@ -1,13 +1,29 @@
 import { createMiddleware } from "hono/factory";
-import type { AuthEnv } from "./auth.ts";
+import type { AuthVariables } from "./auth.ts";
+import { PollenRateLimiter } from "@/durable-objects/PollenRateLimiter.ts";
+import type { LoggerVariables } from "@/middleware/logger.ts";
+import { safeRound } from "@/util.ts";
+import { Env } from "@/env.ts";
+
+export type FrontendKeyRateLimitVariables = {
+    // will be undefined when using a secret api key
+    frontendKeyRateLimit?: {
+        consumePollen: (totalPrice: number) => Promise<void>;
+    };
+};
+
+type FrontendKeyRateLimitEnv = {
+    Bindings: CloudflareBindings;
+    Variables: AuthVariables & LoggerVariables & FrontendKeyRateLimitVariables;
+};
 
 /**
  * Pollen-based rate limiting middleware using Durable Objects for publishable key requests.
- * 
+ *
  * Provides strongly consistent, pollen-based rate limiting with:
  * - Secret API keys (sk_): Skip rate limiting entirely
  * - Publishable keys (pk_): Pollen-based rate limiting with Durable Objects
- * 
+ *
  * Rate limiting strategy:
  * - Token bucket with pollen units (not request counts)
  * - Capacity: 0.1 pollen (allows ~2 average requests burst)
@@ -16,90 +32,76 @@ import type { AuthEnv } from "./auth.ts";
  * - Pre-request check (allow if bucket > 0)
  * - Post-request deduction (actual pollen cost from response tracking)
  */
-export const frontendKeyRateLimit = createMiddleware<AuthEnv>(async (c, next) => {
+export const frontendKeyRateLimit = createMiddleware<
+    FrontendKeyRateLimitEnv & Env
+>(async (c, next) => {
     const log = c.get("log");
-    
-    // Skip rate limiting for secret API keys
-    const apiKey = c.var?.auth?.apiKey;
-    
-    log.debug("[RATE_LIMIT] API Key check: {hasApiKey}, {keyType}, {metadata}", {
-        hasApiKey: !!apiKey,
-        keyType: apiKey?.metadata?.keyType,
-        metadata: apiKey?.metadata,
-    });
-    
-    if (apiKey?.metadata?.keyType === "secret") {
-        log.debug("[RATE_LIMIT] Skipping rate limit for secret key");
-        return next();
-    }
-    
+
     // Only apply to publishable keys
+    const apiKey = c.var?.auth?.apiKey;
     if (apiKey?.metadata?.keyType !== "publishable") {
-        log.debug("[RATE_LIMIT] Skipping rate limit - not a publishable key");
+        log.debug("[RATE_LIMIT] Skipping rate limit, not a publishable key");
         return next();
     }
-    
+
     log.debug("[RATE_LIMIT] Applying rate limit for publishable key: {keyId}", {
         keyId: apiKey.id,
     });
-    
+
     // Get composite identifier: pk_{apiKeyId}:ip:{ip}
     const ip = c.req.header("cf-connecting-ip") || "unknown";
     const identifier = `pk_${apiKey.id}:ip:${ip}`;
-    
+
     // Get Durable Object for this (key + IP) combination
     const id = c.env.POLLEN_RATE_LIMITER.idFromName(identifier);
-    const stub = c.env.POLLEN_RATE_LIMITER.get(id) as DurableObjectStub & {
-        checkRateLimit(): Promise<{ allowed: boolean; remaining: number; waitMs: number }>;
-        consumePollen(cost: number): Promise<void>;
-    };
-    
-    // Check pollen rate limit (pre-request)
+    const stub = c.env.POLLEN_RATE_LIMITER.get(
+        id,
+    ) as DurableObjectStub<PollenRateLimiter>;
+
+    // Check pollen rate limit
     const result = await stub.checkRateLimit();
-    
-    // Set rate limit headers (pollen units) - read capacity from env
+
+    // Set rate limit headers (pollen units)
     const capacity = c.env.POLLEN_BUCKET_CAPACITY ?? 0.1;
     c.header("RateLimit-Limit", capacity.toString());
     c.header("RateLimit-Remaining", result.remaining.toFixed(4)); // Current pollen
-    
+
     if (!result.allowed) {
-        // If waitMs is provided, it's a rate limit exhaustion (not concurrent request)
+        // rate limit exhaustion
         if (result.waitMs !== undefined) {
-            const retryAfterSeconds = parseFloat((result.waitMs / 1000).toFixed(2));
+            const retryAfterSeconds = safeRound(result.waitMs / 1000, 2);
             c.header("Retry-After", Math.ceil(retryAfterSeconds).toString());
-            
-            return c.json({
-                error: "Rate limit exceeded",
-                message: `Rate limit bucket exhausted (${result.remaining.toFixed(2)}/${capacity}). Retry after ${retryAfterSeconds}s. Use secret keys (sk_*) for unlimited requests.`,
-                retryAfterSeconds: retryAfterSeconds,
-                rateLimitRemaining: parseFloat(result.remaining.toFixed(2))
-            }, 429);
+            // TODO: Change this to throw an error to get consistent error responses
+            return c.json(
+                {
+                    error: "Rate limit exceeded",
+                    message: [
+                        `Rate limit bucket exhausted (${result.remaining.toFixed(2)}/${capacity}).`,
+                        `Retry after ${retryAfterSeconds}s. Use secret keys (sk_*) for unlimited requests.`,
+                    ].join(" "),
+                    retryAfterSeconds: retryAfterSeconds,
+                    rateLimitRemaining: safeRound(result.remaining, 2),
+                },
+                429,
+            );
         }
-        
-        // Concurrent request - no wait time, just retry
-        return c.json({
-            error: "Concurrent request in progress",
-            message: "Another request is currently being processed. Please wait until it finishes.",
-            rateLimitRemaining: parseFloat(result.remaining.toFixed(2))
-        }, 429);
+        // concurrent request: no wait time
+        c.header("Retry-After", "0");
+        // TODO: Change this to throw an error to get consistent error responses
+        return c.json(
+            {
+                error: "Concurrent request in progress",
+                message:
+                    "Another request is currently being processed. Please wait until it finishes.",
+                rateLimitRemaining: safeRound(result.remaining, 2),
+            },
+            429,
+        );
     }
-    
-    // Process request
+
+    c.set("frontendKeyRateLimit", {
+        consumePollen: (cost: number) => stub.consumePollen(cost),
+    });
+
     await next();
-    
-    // Deduct actual pollen cost after request completes (post-request)
-    // Use waitUntil() - Durable Object's single-threaded nature ensures sequential processing
-    const pollenPrice = c.res.headers.get("X-Pollen-Price");
-    if (pollenPrice) {
-        const cost = parseFloat(pollenPrice);
-        if (!isNaN(cost) && cost > 0) {
-            c.executionCtx.waitUntil(stub.consumePollen(cost));
-        } else {
-            // No cost but need to clear the in-progress flag
-            c.executionCtx.waitUntil(stub.consumePollen(0));
-        }
-    } else {
-        // No pollen price (cache hit or free model) - still need to clear flag
-        c.executionCtx.waitUntil(stub.consumePollen(0));
-    }
 });

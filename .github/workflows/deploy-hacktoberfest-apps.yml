@@ -4,7 +4,8 @@ on:
   push:
     paths:
       - 'hacktoberfest-2025/**'
-    branches: [main]
+    branches: [master, main, fix/chat-vite-base-path]
+  workflow_dispatch:
 
 jobs:
   deploy:

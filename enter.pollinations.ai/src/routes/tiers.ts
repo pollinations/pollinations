@@ -24,7 +24,7 @@ const TIERS: readonly ActivatableTier[] = ["seed", "flower", "nectar"] as const;
 
 // Get Polar product IDs from environment
 function getTierProductId(env: Cloudflare.Env, tier: ActivatableTier): string {
-    const key = `POLAR_PRODUCT_ID_${tier.toUpperCase()}`;
+    const key = `POLAR_PRODUCT_TIER_${tier.toUpperCase()}`;
     const productId = env[key as keyof Cloudflare.Env];
     if (!productId) {
         throw new Error(`Missing environment variable: ${key}`);

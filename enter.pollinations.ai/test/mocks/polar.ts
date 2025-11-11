@@ -72,6 +72,7 @@ export function createMockPolar(): MockAPI<MockPolarState> {
 
     const handlerMap = {
         "sandbox-api.polar.sh": createHonoMockHandler(polarAPI),
+        "api.polar.sh": createHonoMockHandler(polarAPI),
     };
 
     const reset = () => {

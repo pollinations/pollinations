@@ -179,23 +179,29 @@ function RouteComponent() {
                             weight="light"
                             disabled
                         >
-                            + $5
-                        </Button>
-                        <Button
-                            as="button"
-                            color="purple"
-                            weight="light"
-                            disabled
-                        >
                             + $10
                         </Button>
                         <Button
                             as="button"
                             color="purple"
                             weight="light"
-                            disabled
+                            onClick={() => {
+                                window.location.href =
+                                    "/api/polar/checkout/pollen-pack-medium";
+                            }}
                         >
                             + $20
+                        </Button>
+                        <Button
+                            as="button"
+                            color="purple"
+                            weight="light"
+                            onClick={() => {
+                                window.location.href =
+                                    "/api/polar/checkout/pollen-pack-large";
+                            }}
+                        >
+                            + $50
                         </Button>
                         <a
                             href="https://github.com/pollinations/pollinations/issues/4826"

@@ -60,7 +60,7 @@ const Sidebar = memo(({ chats, activeChatId, onChatSelect, onNewChat, onDeleteCh
           {isExpanded ? (
             <>
               <div className="sidebar-logo-full">
-                <img src="/pollinations-chat-ui/logo-text.svg" alt="Pollinations" />
+                <img src="https://cloudcompile.github.io/pollinations-chat-ui/logo-text.svg" alt="Pollinations" />
               </div>
               
               <button className="sidebar-toggle-btn expanded" onClick={() => setIsExpanded(!isExpanded)} title="Collapse sidebar">
@@ -72,7 +72,7 @@ const Sidebar = memo(({ chats, activeChatId, onChatSelect, onNewChat, onDeleteCh
             </>
           ) : (
             <button className="sidebar-icon-btn pollinations-logo" onClick={() => setIsExpanded(!isExpanded)} title="Expand sidebar">
-              <img src="/pollinations-chat-ui/pollinations-logo.svg" alt="Pollinations" style={{ width: '32px', height: '32px' }} />
+              <img src="https://cloudcompile.github.io/pollinations-chat-ui/pollinations-logo.svg" alt="Pollinations" style={{ width: '32px', height: '32px' }} />
             </button>
           )}
         </div>

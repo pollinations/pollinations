@@ -606,8 +606,9 @@ const callAzureGPTImageWithEndpoint = async (
 
             if (imageUrls.length === 0) {
                 // Handle errors for missing image
-                throw new Error(
+                throw new HttpError(
                     "Image URL is required for GPT Image edit mode but was not provided",
+                    400,
                 );
             }
 
@@ -869,7 +870,7 @@ const generateImage = async (
                     );
 
                     // Log the error with safety analysis results
-                    const error = new Error(errorMessage);
+                    const error = new HttpError(errorMessage, 400);
                     await logGptImageError(
                         prompt,
                         safeParams,
@@ -954,7 +955,7 @@ const generateImage = async (
                 );
 
                 // Log the error with safety analysis results
-                const error = new Error(errorMessage);
+                const error = new HttpError(errorMessage, 400);
                 await logGptImageError(
                     prompt,
                     safeParams,
@@ -1199,8 +1200,9 @@ export async function createAndReturnImageCached(
 
         // Safety check
         if (safeParams.safe && isMature) {
-            throw new Error(
+            throw new HttpError(
                 "NSFW content detected. This request cannot be fulfilled when safe mode is enabled.",
+                400,
             );
         }
 

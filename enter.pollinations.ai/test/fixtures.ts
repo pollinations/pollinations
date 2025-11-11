@@ -5,8 +5,10 @@ import { SELF } from "cloudflare:test";
 import { createMockPolar } from "./mocks/polar.ts";
 import { createMockGithub } from "./mocks/github.ts";
 import { createMockTinybird } from "./mocks/tinybird.ts";
-import { createMockTextService } from "./mocks/textService.ts";
-import { teardownFetchMock, setupFetchMock } from "./mocks/fetch.ts";
+import { createMockTextService } from "./mocks/text-service.ts";
+import { teardownFetchMock, createFetchMock } from "./mocks/fetch.ts";
+import { getLogger, Logger } from "@logtape/logtape";
+import { ensureConfigured } from "@/logger.ts";
 
 const createAuth = () =>
     createAuthClient({
@@ -18,16 +20,22 @@ const createAuth = () =>
         },
     });
 
+const createMocks = () => ({
+    polar: createMockPolar(),
+    tinybird: createMockTinybird(),
+    github: createMockGithub(),
+    textService: createMockTextService(),
+});
+
+type Mocks = ReturnType<typeof createMocks>;
+
 type Fixtures = {
-    mocks: {
-        github: ReturnType<typeof createMockGithub>;
-        polar: ReturnType<typeof createMockPolar>;
-        tinybird: ReturnType<typeof createMockTinybird>;
-        textService: ReturnType<typeof createMockTextService>;
-    };
+    log: Logger;
+    mocks: ReturnType<typeof createFetchMock<Mocks>>;
     auth: ReturnType<typeof createAuth>;
     sessionToken: string;
     apiKey: string;
+    pubApiKey: string;
 };
 
 type SignupData = {
@@ -35,31 +43,21 @@ type SignupData = {
 };
 
 export const test = base.extend<Fixtures>({
+    log: async ({}, use) => {
+        await ensureConfigured("trace");
+        await use(getLogger(["test"]));
+    },
     mocks: async ({}, use) => {
-        const mockPolar = createMockPolar();
-        const mockTinybird = createMockTinybird();
-        const mockGithub = createMockGithub();
-        const mockTextService = createMockTextService();
-        const mockHandlers = {
-            ...mockGithub.handlerMap,
-            ...mockPolar.handlerMap,
-            ...mockTinybird.handlerMap,
-            ...mockTextService.handlerMap,
-        };
-        setupFetchMock(mockHandlers, { logRequests: true });
-        await use({
-            github: mockGithub,
-            polar: mockPolar,
-            tinybird: mockTinybird,
-            textService: mockTextService,
-        });
+        const mocks = createFetchMock(createMocks(), { logRequests: true });
+        await use(mocks);
         await teardownFetchMock();
     },
     auth: async ({}, use) => {
         const auth = createAuth();
         await use(auth);
     },
-    sessionToken: async ({ mocks: _ }, use) => {
+    sessionToken: async ({ mocks }, use) => {
+        mocks.enable("github", "polar", "tinybird");
         const signupUrl = new URL(
             "http://localhost:3000/api/auth/sign-in/social",
         );
@@ -114,6 +112,7 @@ export const test = base.extend<Fixtures>({
         const sessionToken = sessionMatch?.[1];
 
         if (!sessionToken) throw new Error("Failed to get session token");
+        mocks.clear();
         await use(sessionToken);
     },
     apiKey: async ({ auth, sessionToken }, use) => {
@@ -126,8 +125,26 @@ export const test = base.extend<Fixtures>({
             },
         });
         if (!createApiKeyResponse.data)
-            throw new Error("Failed to create API key");
+            throw new Error("Failed to create secret API key");
         const apiKey = createApiKeyResponse.data.key;
+        // expect(apiKey.startsWith("sk_")).toBe(true);
         await use(apiKey);
+    },
+    pubApiKey: async ({ auth, sessionToken }, use) => {
+        const createApiKeyResponse = await auth.apiKey.create({
+            name: "test-api-key",
+            prefix: "pk",
+            metadata: { keyType: "publishable" },
+            fetchOptions: {
+                headers: {
+                    "Cookie": `better-auth.session_token=${sessionToken}`,
+                },
+            },
+        });
+        if (!createApiKeyResponse.data)
+            throw new Error("Failed to create publishable API key");
+        const pubApiKey = createApiKeyResponse.data.key;
+        expect(pubApiKey.startsWith("pk_")).toBe(true);
+        await use(pubApiKey);
     },
 });

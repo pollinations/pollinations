@@ -612,6 +612,11 @@ async function shareMeme() {
 
 // Load example memes
 function loadExamples() {
+    // Skip if examples grid doesn't exist (commented out to save rate limits)
+    if (!examplesGrid) {
+        return;
+    }
+    
     // Clear existing examples
     examplesGrid.innerHTML = '';
     

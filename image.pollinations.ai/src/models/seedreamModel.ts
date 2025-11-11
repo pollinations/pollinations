@@ -1,5 +1,6 @@
 import debug from "debug";
 import { withTimeoutSignal } from "../util.ts";
+import { HttpError } from "../httpError.ts";
 import type { ImageParams } from "../params.ts";
 import type { ImageGenerationResult } from "../createAndReturnImages.ts";
 import type { ProgressManager } from "../progressBar.ts";
@@ -165,8 +166,11 @@ export const callSeedreamAPI = async (
                 "response:",
                 errorText,
             );
-            throw new Error(
-                `Seedream API request failed with status ${response.status}: ${errorText}`,
+            // Pass through the original status code from Seedream API
+            // 400 errors are client errors (invalid parameters, content policy, etc.)
+            throw new HttpError(
+                `Seedream API request failed: ${errorText}`,
+                response.status
             );
         }
 
@@ -214,6 +218,10 @@ export const callSeedreamAPI = async (
 
     } catch (error) {
         logError("Error calling Seedream API:", error);
+        // Preserve HttpError status codes (e.g., 400 for content policy violations)
+        if (error instanceof HttpError) {
+            throw error;
+        }
         throw new Error(`Seedream API generation failed: ${error.message}`);
     }
 };

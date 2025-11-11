@@ -269,8 +269,8 @@ export const proxyRoutes = new Hono<Env>()
             await checkBalanceForPaidModel(c);
 
             // Extract prompt from wildcard path (everything after /image/)
-            const fullPath = c.req.path; // e.g., "/api/generate/image/my prompt here"
-            const promptParam = fullPath.split("/image/")[1] || "";
+            const fullPath = c.req.path; // e.g., "/api/generate/image/my%20prompt%20here"
+            const promptParam = decodeURIComponent(fullPath.split("/image/")[1] || "");
             
             log.debug("[PROXY] Extracted prompt param: {prompt}", {
                 prompt: promptParam,

@@ -100,7 +100,7 @@ export const frontendKeyRateLimit = createMiddleware<
     }
 
     c.set("frontendKeyRateLimit", {
-        consumePollen: stub.consumePollen,
+        consumePollen: (cost: number) => stub.consumePollen(cost),
     });
 
     await next();

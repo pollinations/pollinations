@@ -172,12 +172,15 @@ export const track = (eventType: EventType) =>
                 await storeEvents(db, c.var.log, [event]);
 
                 // process events immediately in development/testing
+                // Don't await to prevent test hangs on external API failures
                 if (["test", "development"].includes(c.env.ENVIRONMENT))
-                    await processEvents(db, c.var.log, {
+                    processEvents(db, c.var.log, {
                         polarAccessToken: c.env.POLAR_ACCESS_TOKEN,
                         polarServer: c.env.POLAR_SERVER,
                         tinybirdIngestUrl: c.env.TINYBIRD_INGEST_URL,
                         tinybirdAccessToken: c.env.TINYBIRD_ACCESS_TOKEN,
+                    }).catch(() => {
+                        /* Ignore errors in test/dev */
                     });
             })(),
         );

@@ -43,5 +43,12 @@
     "buildCommand": "npm run build",
     "outputDir": "dist",
     "description": "Transform prompts into semantic opposites and generate images (React + Vite)"
+  },
+  "chat": {
+    "subdomain": "chat",
+    "buildCommand": "npm run build",
+    "outputDir": "dist",
+    "description": "Pollinations AI chat interface (React + Vite)",
+    "notes": "From PR #5144 - uses base: '/' for Cloudflare Pages"
   }
 }

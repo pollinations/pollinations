@@ -4,7 +4,8 @@
  */
 
 import debug from "debug";
-import fetch from "node-fetch";
+import { withTimeoutSignal } from "./util.ts";
+import { HttpError } from "./httpError.ts";
 import { generateImageWithVertexAI } from "./vertexAIClient.ts";
 import { writeExifMetadata } from "./writeExifMetadata.js";
 import type { ImageParams } from "./params.js";
@@ -264,7 +265,7 @@ export async function callVertexAIGemini(
             // Build informative error message with all available information
             if (geminiExplanation) {
                 // Return Gemini's actual explanation to the user
-                throw new Error(`Gemini: ${geminiExplanation}`);
+                throw new HttpError(`Gemini: ${geminiExplanation}`, 400);
             }
             
             // If we have safety ratings, extract details
@@ -280,19 +281,19 @@ export async function callVertexAIGemini(
                     .join(', ');
                 
                 if (blockedCategories) {
-                    throw new Error(`${finishReason || 'Content blocked'}: ${blockedCategories}`);
+                    throw new HttpError(`${finishReason || 'Content blocked'}: ${blockedCategories}`, 400);
                 } else if (highProbCategories) {
-                    throw new Error(`${finishReason || 'Content flagged'}: ${highProbCategories}`);
+                    throw new HttpError(`${finishReason || 'Content flagged'}: ${highProbCategories}`, 400);
                 }
             }
             
             // Return finish reason if available
             if (finishReason) {
-                throw new Error(`${finishReason}`);
+                throw new HttpError(finishReason, 400);
             }
             
             // Fallback for cases with no additional information
-            throw new Error("No image data returned from Vertex AI");
+            throw new HttpError("No image data returned from Vertex AI", 400);
         }
 
         // Convert base64 to buffer
@@ -366,6 +367,11 @@ export async function callVertexAIGemini(
         const errorMessage = error.message;
         if (errorMessage.startsWith("Gemini:")) {
             throw error; // Re-throw as-is to preserve the original response
+        }
+        
+        // Preserve HttpError status codes (e.g., 400 for content policy violations)
+        if (error instanceof HttpError) {
+            throw error;
         }
         
         throw new Error(`Vertex AI Gemini image generation failed: ${error.message}`);

@@ -1,4 +1,5 @@
 import debug from "debug";
+import { HttpError } from "./httpError.ts";
 import dotenv from "dotenv";
 import { fileTypeFromBuffer } from "file-type";
 
@@ -829,9 +830,7 @@ const generateImage = async (
         const violationCheck = checkViolationRatio(username);
         if (violationCheck.blocked) {
             progress.updateBar(requestId, 35, "Auth", "User blocked");
-            const error: any = new Error(violationCheck.reason);
-            error.status = 403;
-            throw error;
+            throw new HttpError(violationCheck.reason, 403);
         }
 
         // All requests assumed to come from enter.pollinations.ai - tier checks bypassed

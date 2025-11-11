@@ -47,7 +47,7 @@ Here are some AI-generated CatGPT memes created with our generator:
 
 ## 🚀 Features
 
-- **AI-Powered Generation**: Uses Flux model via [enter.pollinations.ai](https://enter.pollinations.ai) API
+- **AI-Powered Generation**: Uses Gemini 2.5 Flash Image (nanobanana) via [enter.pollinations.ai](https://enter.pollinations.ai) API
 - **Instant Memes**: Generate custom cat wisdom in seconds
 - **Share & Download**: Save your favorite memes or share them with friends
 - **No Sign-up Required**: Completely free and open to use
@@ -57,7 +57,7 @@ Here are some AI-generated CatGPT memes created with our generator:
 ## 🛠️ Tech Stack
 
 - **Frontend**: Pure HTML, CSS, and JavaScript (no frameworks needed!)
-- **AI Service**: [enter.pollinations.ai](https://enter.pollinations.ai) - Flux image generation model
+- **AI Service**: [enter.pollinations.ai](https://enter.pollinations.ai) - Gemini 2.5 Flash Image (nanobanana) model
 - **Image Upload**: Cloudinary for reference image hosting
 - **Design**: Psychedelic Gen-Z aesthetic with animated elements
 
@@ -66,10 +66,10 @@ Here are some AI-generated CatGPT memes created with our generator:
 This project has been migrated from the legacy `image.pollinations.ai` to the new `enter.pollinations.ai` API:
 
 - **Old**: `https://image.pollinations.ai/prompt/...?model=nanobanana`
-- **New**: `https://enter.pollinations.ai/api/generate/image/...?model=flux`
+- **New**: `https://enter.pollinations.ai/api/generate/image/...?model=nanobanana`
 
 **Key Changes**:
-- Model changed from `nanobanana` to `flux` (free, high-quality model)
+- Model remains `nanobanana` (Gemini 2.5 Flash Image - high-quality, pollen-based)
 - Authentication now uses API keys from [enter.pollinations.ai](https://enter.pollinations.ai)
 - Better rate limiting and reliability
 - Improved image quality with `enhance=true` parameter

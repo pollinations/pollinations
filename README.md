@@ -17,7 +17,7 @@ We opened 67 issues and closed 38, created 25 PRs with 22 merged (30 total contr
 ## 🆕 Latest News
 
 - **🧠 Sequa AI Integration** - [Sequa.AI](https://sequa.ai) contextual knowledge engine now available! Provides AI assistants with deep, real-time understanding of codebases and documentation. Configure MCP for Pollinations: `https://mcp.sequa.ai/v1/pollinations/contribute` | [Learn more](https://sequa.ai).
-- **🔐 Auth Dashboard** - New and live! Visit [auth.pollinations.ai](https://auth.pollinations.ai) to manage your API tokens and referrer domains. [Learn more](APIDOCS.md#authentication-).
+- **🔐 Auth Dashboard** - New and live! Visit [enter.pollinations.ai](https://enter.pollinations.ai) to manage your API tokens and access enhanced features. [Learn more](APIDOCS.md#authentication-).
 - **💲 Support Us** - You can now support us with our new **Tip Us** button. Optionally connect your Discord account to **Ko-Fi** to get premium Discord roles!
 - **🎵 Audio Generation** - New text-to-speech and speech-to-text capabilities are now available! Try the `openai-audio` model - see our [API documentation](APIDOCS.md#audio-generation-api) for details.
 ---
@@ -26,16 +26,16 @@ We opened 67 issues and closed 38, created 25 PRs with 22 merged (30 total contr
 
 ## 🌟 Introduction
 
-[Pollinations.AI](https://pollinations.ai) is an open-source gen AI startup based in Berlin, providing the most easy-to-use, free text and image generation API available. No signups or API keys required. We prioritize your privacy with zero data storage and completely anonymous usage.
+[Pollinations.AI](https://pollinations.ai) is an open-source gen AI startup based in Berlin, providing easy-to-use text and image generation APIs. We offer both legacy free APIs (no signup required) and our new authenticated API gateway with enhanced features and reliability.
 
 ## 🚀 Key Features
 
 - 🔓 **100% Open Source**
-- 🆓 **_Free to use_**
-- 🔒 **Simplicity and privacy:** No logins, no keys, no data stored
+- 🆓 **Free tier available** - Legacy APIs remain free, new auth system offers daily Pollen grants
+- 🔐 **Flexible Authentication** - Use legacy APIs without signup, or register for enhanced reliability and features
 - 🖼️ **Embed like any normal image or text**
 - 🎵 **Audio generation:** Text-to-speech and speech-to-text capabilities
-- 🌍 Free AI image and text generation APIs
+- 🌍 Multiple AI image and text generation APIs
 - 🤝 Used by various **open-source LLMs**, **bots**, and **communities**
 - 🎣 **_Easy-to-use React hooks_** ([React Hooks Examples](https://react-hooks.pollinations.ai/))
 
@@ -50,6 +50,25 @@ We opened 67 issues and closed 38, created 25 PRs with 22 merged (30 total contr
 ## 🚀 Getting Started
 
 [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/pollinations/pollinations)
+
+### Choose Your API
+
+We offer two ways to use Pollinations.AI:
+
+**🆕 New Authenticated API** ([enter.pollinations.ai](https://enter.pollinations.ai)) - **Recommended**
+- Enhanced reliability and features
+- Pollen-based billing (daily free grants available)
+- Publishable keys (pk_) for client apps, Secret keys (sk_) for servers
+- Access to all models including latest releases
+- [Get started with authentication](https://enter.pollinations.ai)
+
+**🔓 Legacy APIs** (image.pollinations.ai / text.pollinations.ai)
+- No signup required, completely free
+- Being phased out but still functional
+- Use for quick experiments and testing
+- No authentication needed
+
+For production applications, we recommend using the new authenticated API for better reliability and support.
 
 ### Image Generation
 

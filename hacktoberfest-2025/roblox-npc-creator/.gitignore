@@ -1,0 +1,22 @@
+# Roblox Studio files
+*.rbxl
+*.rbxl.lock
+
+# Rojo build output
+build/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Editor files
+.vscode/
+.idea/
+
+# Aftman
+.aftman/
+
+# Allow project files
+!default.project.json
+!package.json
+!aftman.toml

@@ -99,6 +99,10 @@ export function applyStyle(style: AnsiStyle, str: string): string {
     return `${ansiStyles[style]}${str}${resetColor}`;
 }
 
+export function lines(...lines: string[]): string {
+    return lines.join("\n");
+}
+
 export function safeRound(amount: number, precision: number = 6): number {
     if (!isFinite(amount) || isNaN(amount)) {
         return 0;

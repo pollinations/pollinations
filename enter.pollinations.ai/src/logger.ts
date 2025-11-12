@@ -64,4 +64,5 @@ export async function ensureConfigured(logLevel: LogLevel) {
         contextLocalStorage: new AsyncLocalStorage(),
         reset: true,
     });
+    configured = true;
 }

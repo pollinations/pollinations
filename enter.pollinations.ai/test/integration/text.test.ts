@@ -30,13 +30,25 @@ const authenticatedTestCases = (): [ServiceId, number][] => {
     return servicesToTest.map((serviceId) => [serviceId, 200]);
 };
 
-const randomString = (length: number) => {
-    return crypto.getRandomValues(new Uint8Array(length)).join("");
+// use random color instead of string because the random string was
+// triggering the content filter sometimes, probably because it
+// was suspected to be a jailbreak attepmpt
+const randomColor = () => {
+    const r = Math.floor(Math.random() * 256)
+        .toString(16)
+        .padStart(2, "0");
+    const g = Math.floor(Math.random() * 256)
+        .toString(16)
+        .padStart(2, "0");
+    const b = Math.floor(Math.random() * 256)
+        .toString(16)
+        .padStart(2, "0");
+    return `#${r}${g}${b}`;
 };
 
 function testMessageContent() {
     return TEST_DISABLE_CACHE
-        ? `Do you like this string: ${randomString(10)}? Only answer yes or no.`
+        ? `Whats a good name for this color: ${randomColor()}? Just give one name.`
         : "Do you prefer 0, or 1? Just answer with 0 or 1.";
 }
 

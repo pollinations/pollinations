@@ -73,6 +73,7 @@ export type AppRoutes = typeof app;
 
 // Export Durable Object for pollen-based rate limiting
 export { PollenRateLimiter } from "./durable-objects/PollenRateLimiter.ts";
+export { RequestDeduplicator } from "./durable-objects/RequestDeduplicator.ts";
 
 export default {
     fetch: app.fetch,

@@ -257,3 +257,78 @@ test(
         log.info("✓ Request allowed after refill");
     },
 );
+
+// ============================================================================
+// Request Deduplication Tests
+// ============================================================================
+
+test(
+    "Concurrent identical requests are deduplicated",
+    { timeout: 30000 },
+    async ({ pubApiKey, mocks }) => {
+        mocks.enable("textService", "polar", "tinybird");
+
+        const testIp = `192.0.20.${Date.now() % 254}`;
+        const message = `Dedup test ${Date.now()}`;
+
+        // Send two identical requests concurrently
+        const [response1, response2] = await Promise.all([
+            sendTestOpenAIRequest({
+                apiKey: pubApiKey,
+                clientIp: testIp,
+                model: "openai-fast",
+                message,
+            }),
+            sendTestOpenAIRequest({
+                apiKey: pubApiKey,
+                clientIp: testIp,
+                model: "openai-fast",
+                message,
+            }),
+        ]);
+
+        // Both should succeed (second waits for first)
+        expect(response1.status).toBe(200);
+        expect(response2.status).toBe(200);
+
+        await response1.text();
+        await response2.text();
+
+        log.info("✓ Concurrent identical requests both succeeded (deduplicated)");
+    },
+);
+
+test(
+    "Different requests are not deduplicated",
+    { timeout: 30000 },
+    async ({ pubApiKey, mocks }) => {
+        mocks.enable("textService", "polar", "tinybird");
+
+        const testIp = `192.0.21.${Date.now() % 254}`;
+
+        // Send two different requests concurrently
+        const [response1, response2] = await Promise.all([
+            sendTestOpenAIRequest({
+                apiKey: pubApiKey,
+                clientIp: testIp,
+                model: "openai-fast",
+                message: "First message",
+            }),
+            sendTestOpenAIRequest({
+                apiKey: pubApiKey,
+                clientIp: testIp,
+                model: "openai-fast",
+                message: "Second message",
+            }),
+        ]);
+
+        // First succeeds, second hits rate limit (not deduplicated)
+        expect(response1.status).toBe(200);
+        expect(response2.status).toBe(429);
+
+        await response1.text();
+        await response2.text();
+
+        log.info("✓ Different requests not deduplicated (second rate limited)");
+    },
+);

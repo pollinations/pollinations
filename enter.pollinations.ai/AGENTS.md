@@ -32,7 +32,7 @@
 1. **🌐 Publishable Key** (starts with `pk_`)
    - Always visible in dashboard
    - Safe for client-side code (React, Vue, etc.)
-   - IP-based rate limiting: 3 req/burst, 1 refill per 15 sec (~4 req/min)
+   - Pollen-based rate limiting (1 pollen/hour refill)
    - Access to all models
    
 2. **🔒 Secret Key** (starts with `sk_`)
@@ -507,8 +507,8 @@ curl "$BASE_URL/generate/v1/chat/completions" \
 
 ### Authentication
 
-- **Use Secret Keys (`sk_`) for testing**: Better rate limits and can spend pollen
-- **Publishable Keys (`pk_`)**: Only for client-side apps, IP rate limited (100 req/min)
+- **Use Secret Keys (`sk_`) for testing**: No rate limits and can spend pollen
+- **Publishable Keys (`pk_`)**: For client-side apps, pollen-based rate limiting
 
 ### Performance
 

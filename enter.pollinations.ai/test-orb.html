@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ORB Test - Enter Pollinations</title>
+    <style>
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        h1 {
+            margin-top: 0;
+            color: #333;
+        }
+        .input-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #555;
+        }
+        input[type="text"] {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 6px;
+            font-size: 14px;
+            box-sizing: border-box;
+        }
+        input[type="text"]:focus {
+            outline: none;
+            border-color: #4CAF50;
+        }
+        button {
+            background: #4CAF50;
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 6px;
+            font-size: 16px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+        button:hover {
+            background: #45a049;
+        }
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        .image-container {
+            margin-top: 30px;
+            min-height: 200px;
+            border: 2px dashed #ddd;
+            border-radius: 8px;
+            padding: 20px;
+            text-align: center;
+        }
+        .image-container img {
+            max-width: 100%;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+        .status {
+            margin-top: 15px;
+            padding: 12px;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+        .status.loading {
+            background: #e3f2fd;
+            color: #1976d2;
+        }
+        .status.success {
+            background: #e8f5e9;
+            color: #2e7d32;
+        }
+        .status.error {
+            background: #ffebee;
+            color: #c62828;
+        }
+        .info {
+            background: #fff3cd;
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+            font-size: 14px;
+            color: #856404;
+        }
+        .console-log {
+            margin-top: 20px;
+            background: #1e1e1e;
+            color: #d4d4d4;
+            padding: 15px;
+            border-radius: 6px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .console-log .error {
+            color: #f48771;
+        }
+        .console-log .success {
+            color: #89d185;
+        }
+        .console-log .info {
+            color: #6cb6ff;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 ORB Error Test</h1>
+        
+        <div class="info">
+            <strong>Testing:</strong> This page tests if ORB (Opaque Response Blocking) errors occur when loading images via &lt;img&gt; tag.
+            <br><strong>Expected issue:</strong> Rate limit (429) responses with JSON content-type trigger ORB errors.
+        </div>
+
+        <div class="input-group">
+            <label for="apiKey">API Key (pk_* or sk_*):</label>
+            <input type="text" id="apiKey" placeholder="plln_pk_..." value="">
+        </div>
+
+        <div class="input-group">
+            <label for="prompt">Prompt:</label>
+            <input type="text" id="prompt" placeholder="a beautiful sunset" value="test image">
+        </div>
+
+        <div class="input-group">
+            <label for="model">Model:</label>
+            <input type="text" id="model" placeholder="flux" value="flux">
+        </div>
+
+        <button onclick="generateImage()">Generate Image</button>
+        <button onclick="generateMultiple()" style="margin-left: 10px; background: #ff9800;">Generate 5x (Test Rate Limit)</button>
+
+        <div id="status"></div>
+
+        <div class="image-container" id="imageContainer">
+            <p style="color: #999;">Image will appear here</p>
+        </div>
+
+        <div class="console-log" id="console"></div>
+    </div>
+
+    <script>
+        // Console logging
+        function log(message, type = 'info') {
+            const consoleDiv = document.getElementById('console');
+            const timestamp = new Date().toLocaleTimeString();
+            const colorClass = type === 'error' ? 'error' : type === 'success' ? 'success' : 'info';
+            consoleDiv.innerHTML += `<div class="${colorClass}">[${timestamp}] ${message}</div>`;
+            consoleDiv.scrollTop = consoleDiv.scrollHeight;
+            console.log(message);
+        }
+
+        function showStatus(message, type) {
+            const statusDiv = document.getElementById('status');
+            statusDiv.className = `status ${type}`;
+            statusDiv.textContent = message;
+        }
+
+        function generateImage() {
+            const apiKey = document.getElementById('apiKey').value;
+            const prompt = document.getElementById('prompt').value;
+            const model = document.getElementById('model').value;
+
+            if (!apiKey) {
+                showStatus('Please enter an API key', 'error');
+                log('❌ No API key provided', 'error');
+                return;
+            }
+
+            if (!prompt) {
+                showStatus('Please enter a prompt', 'error');
+                log('❌ No prompt provided', 'error');
+                return;
+            }
+
+            const container = document.getElementById('imageContainer');
+            container.innerHTML = '<p style="color: #999;">Loading...</p>';
+            showStatus('Generating image...', 'loading');
+
+            // Build URL with proper encoding
+            const encodedPrompt = encodeURIComponent(prompt);
+            const url = `http://localhost:3000/api/generate/image/${encodedPrompt}?model=${model}&width=512&height=512&key=${apiKey}`;
+            
+            log(`🚀 Generating image: ${prompt}`, 'info');
+            log(`📍 URL: ${url.substring(0, 100)}...`, 'info');
+
+            // Create img element (this is where ORB can occur)
+            const img = document.createElement('img');
+            
+            // Add error handler to catch ORB errors
+            img.onerror = function(e) {
+                log('❌ Image load failed (possible ORB error)', 'error');
+                log(`Error event: ${JSON.stringify(e)}`, 'error');
+                showStatus('Image load failed - check console for ORB error', 'error');
+                container.innerHTML = '<p style="color: #c62828;">❌ Image failed to load (check browser console for ORB error)</p>';
+            };
+
+            img.onload = function() {
+                log('✅ Image loaded successfully', 'success');
+                showStatus('Image loaded successfully!', 'success');
+            };
+
+            // Set src (this triggers the request)
+            img.src = url;
+            container.innerHTML = '';
+            container.appendChild(img);
+        }
+
+        function generateMultiple() {
+            const apiKey = document.getElementById('apiKey').value;
+            const prompt = document.getElementById('prompt').value;
+            const model = document.getElementById('model').value;
+
+            if (!apiKey) {
+                showStatus('Please enter an API key', 'error');
+                log('❌ No API key provided', 'error');
+                return;
+            }
+
+            log('🔥 Generating 5 images rapidly to trigger rate limit...', 'info');
+            showStatus('Generating 5 images to test rate limiting...', 'loading');
+
+            const container = document.getElementById('imageContainer');
+            container.innerHTML = '';
+
+            // Generate 5 images rapidly
+            for (let i = 0; i < 5; i++) {
+                const encodedPrompt = encodeURIComponent(prompt + ' ' + i);
+                const url = `http://localhost:3000/api/generate/image/${encodedPrompt}?model=${model}&width=256&height=256&seed=${i}&key=${apiKey}`;
+                
+                const img = document.createElement('img');
+                img.style.width = '150px';
+                img.style.margin = '5px';
+                
+                img.onerror = function(e) {
+                    log(`❌ Image ${i+1} failed (ORB error likely on rate limit)`, 'error');
+                };
+
+                img.onload = function() {
+                    log(`✅ Image ${i+1} loaded`, 'success');
+                };
+
+                img.src = url;
+                container.appendChild(img);
+            }
+
+            showStatus('Check console for ORB errors on rate-limited requests', 'loading');
+        }
+
+        // Log page load
+        log('📄 Test page loaded', 'info');
+        log('ℹ️  Enter your API key and click "Generate 5x" to test rate limiting', 'info');
+    </script>
+</body>
+</html>

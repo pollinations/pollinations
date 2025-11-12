@@ -73,6 +73,7 @@ export function getRequestData(req) {
         modalities,
         audio,
         reasoning_effort: validated.reasoning_effort,
+        thinking_budget: validated.thinking_budget,
         response_format,
     };
 }

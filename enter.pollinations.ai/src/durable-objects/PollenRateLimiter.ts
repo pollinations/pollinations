@@ -52,6 +52,8 @@ export class PollenRateLimiter extends DurableObject {
         if (now >= this.nextAllowedTime) {
             // Set conservative timeout for request completion
             this.nextAllowedTime = now + this.REQUEST_TIMEOUT_MS;
+            // Persist immediately to survive DO restarts
+            await this.ctx.storage.put("nextAllowedTime", this.nextAllowedTime);
             this.log.debug("Request ALLOWED");
             return { allowed: true };
         }

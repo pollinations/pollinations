@@ -1,0 +1,4 @@
+node_modules/
+uptime-data.json
+package-lock.json
+*.log

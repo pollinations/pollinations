@@ -26,8 +26,17 @@ const LinkItem = styled(Link, {
     backgroundColor: isHovered ? (invert ? Colors.offblack : Colors.offblack) : "transparent",
     width: "40px",
     height: "40px",
-    transition: "all 0.6s ease",
+    transition: "all 0.3s ease",
     textDecoration: "none",
+    boxShadow: isHovered ? "0 4px 12px rgba(255, 97, 216, 0.3)" : "0 2px 6px rgba(0, 0, 0, 0.1)",
+    transform: isHovered ? "translateY(-2px)" : "translateY(0)",
+    animation: isHovered ? "link-border-shift 8s infinite linear" : "none",
+    "@keyframes link-border-shift": {
+        "0%": { borderColor: "#ff61d8" },
+        "33%": { borderColor: "#05ffa1" },
+        "66%": { borderColor: "#ffcc00" },
+        "100%": { borderColor: "#ff61d8" },
+    },
 }));
 
 // Replacing the <img> with a Styled ReactSVG to control the svg fill dynamically

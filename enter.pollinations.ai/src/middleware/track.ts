@@ -10,6 +10,7 @@ import {
     UsageCost,
     UsagePrice,
     PriceDefinition,
+    getServiceDefinition,
 } from "@shared/registry/registry.ts";
 import {
     openaiUsageToTokenUsage,
@@ -24,7 +25,6 @@ import {
 } from "@/schemas/openai.ts";
 import { generateRandomId } from "@/util.ts";
 import { createMiddleware } from "hono/factory";
-import type { LoggerVariables } from "./logger.ts";
 import {
     contentFilterResultsToEventParams,
     priceToEventParams,
@@ -45,10 +45,15 @@ import { TokenUsage } from "../../../shared/registry/registry.js";
 import { removeUnset } from "@/util.ts";
 import { EventSourceParserStream } from "eventsource-parser/stream";
 import { mergeContentFilterResults } from "@/content-filter.ts";
-import { getErrorCode, UpstreamError } from "@/error.ts";
+import {
+    getDefaultErrorMessage,
+    getErrorCode,
+    UpstreamError,
+} from "@/error.ts";
 import { ValidationError } from "@/middleware/validator.ts";
-import { ErrorVariables } from "@/env.ts";
-import { FrontendKeyRateLimitVariables } from "./rateLimit.durable.ts";
+import type { LoggerVariables } from "./logger.ts";
+import type { ErrorVariables } from "@/env.ts";
+import type { FrontendKeyRateLimitVariables } from "./rateLimit.durable.ts";
 
 export type ModelUsage = {
     model: ModelId;
@@ -58,6 +63,7 @@ export type ModelUsage = {
 type RequestTrackingData = {
     modelRequested: string | null;
     resolvedModelRequested: string;
+    modelProvider?: string;
     freeModelRequested: boolean;
     modelPriceDefinition: PriceDefinition;
     streamRequested: boolean;
@@ -136,11 +142,13 @@ export const track = (eventType: EventType) =>
                     userId: c.var.auth.user?.id,
                     userTier: c.var.auth.user?.tier,
                     userGithubId: `${c.var.auth.user?.githubId}`,
-                    userGithubName: c.var.auth.user?.githubUsername,
+                    userGithubUsername: c.var.auth.user?.githubUsername,
                     apiKeyId: c.var.auth.apiKey?.id,
                     apiKeyType: c.var.auth.apiKey?.metadata
                         ?.keyType as ApiKeyType,
-                };
+                    apiKeyName: c.var.auth.apiKey?.name,
+                } satisfies UserData;
+
                 const balanceTracking = {
                     selectedMeterId:
                         c.var.polar.balanceCheckResult?.selectedMeterId,
@@ -152,7 +160,8 @@ export const track = (eventType: EventType) =>
                             meter.balance,
                         ]) || [],
                     ),
-                };
+                } satisfies BalanceData;
+
                 const event = createTrackingEvent({
                     requestId: c.get("requestId"),
                     requestPath: c.req.path,
@@ -173,15 +182,14 @@ export const track = (eventType: EventType) =>
 
                 // process events immediately in development/testing
                 // Don't await to prevent test hangs on external API failures
-                if (["test", "development"].includes(c.env.ENVIRONMENT))
-                    processEvents(db, c.var.log, {
+                if (["test", "development"].includes(c.env.ENVIRONMENT)) {
+                    await processEvents(db, c.var.log, {
                         polarAccessToken: c.env.POLAR_ACCESS_TOKEN,
                         polarServer: c.env.POLAR_SERVER,
                         tinybirdIngestUrl: c.env.TINYBIRD_INGEST_URL,
                         tinybirdAccessToken: c.env.TINYBIRD_ACCESS_TOKEN,
-                    }).catch(() => {
-                        /* Ignore errors in test/dev */
                     });
+                }
             })(),
         );
     });
@@ -191,7 +199,11 @@ async function trackRequest(
     request: HonoRequest,
 ): Promise<RequestTrackingData> {
     const modelRequested = await extractModelRequested(request);
-    const resolvedModelRequested = resolveServiceId(modelRequested, eventType);
+    const resolvedModelRequested = resolveServiceId(
+        modelRequested,
+        eventType,
+    ) as ServiceId;
+    const modelProvider = getServiceDefinition(resolvedModelRequested).provider;
     const freeModelRequested = isFreeService(resolvedModelRequested);
     const modelPriceDefinition = getActivePriceDefinition(
         resolvedModelRequested,
@@ -207,6 +219,7 @@ async function trackRequest(
     return {
         modelRequested,
         resolvedModelRequested,
+        modelProvider,
         modelPriceDefinition,
         freeModelRequested,
         streamRequested,
@@ -289,9 +302,10 @@ type UserData = {
     userId?: string;
     userTier?: string;
     userGithubId?: string;
-    userGithubName?: string;
+    userGithubUsername?: string;
     apiKeyId?: string;
     apiKeyType?: ApiKeyType;
+    apiKeyName?: string;
 };
 
 type BalanceData = {
@@ -641,7 +655,8 @@ function collectErrorData(response: Response, error?: Error): ErrorData {
     return {
         errorResponseCode: getErrorCode(status || response.status),
         errorSource: source,
-        errorMessage: error?.message,
+        errorMessage:
+            error?.message || getDefaultErrorMessage(status || response.status),
         errorStack: error?.stack,
         errorDetails: details,
     };

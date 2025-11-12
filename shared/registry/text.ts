@@ -188,11 +188,12 @@ export const TEXT_SERVICES = {
         modelId: "mistral-small-3.2-24b-instruct-2506",
         provider: "scaleway",
     },
-    "naughty": {
-        aliases: ["mistral-naughty", "mistral-romance", "mistral-nemo-instruct-2407-romance", "mistral-roblox"],
-        modelId: "mistral-nemo-instruct-2407",
-        provider: "scaleway",
-    },
+    // Temporarily disabled
+    // "naughty": {
+    //     aliases: ["mistral-naughty", "mistral-romance", "mistral-nemo-instruct-2407-romance", "mistral-roblox"],
+    //     modelId: "mistral-nemo-instruct-2407",
+    //     provider: "scaleway",
+    // },
     "openai-audio": {
         aliases: ["gpt-4o-mini-audio-preview"],
         modelId: "gpt-4o-mini-audio-preview-2024-12-17",
@@ -228,21 +229,17 @@ export const TEXT_SERVICES = {
         modelId: "us.anthropic.claude-3-5-haiku-20241022-v1:0",
         provider: "aws-bedrock",
     },
-    "unity": {
-        aliases: [],
-        modelId: "mistral-small-3.1-24b-instruct-2503",
-        provider: "scaleway",
-    },
     "midijourney": {
         aliases: [],
         modelId: "gpt-4.1-2025-04-14",
         provider: "azure-openai",
     },
-    "evil": {
-        aliases: [],
-        modelId: "mistral-small-3.1-24b-instruct-2503",
-        provider: "scaleway",
-    },
+    // Temporarily disabled
+    // "evil": {
+    //     aliases: [],
+    //     modelId: "mistral-small-3.1-24b-instruct-2503",
+    //     provider: "scaleway",
+    // },
     "claude": {
         aliases: ["claudyclaude"],
         modelId: "us.anthropic.claude-haiku-4-5-20251001-v1:0",

@@ -64,7 +64,7 @@ export const polar = createMiddleware<PolarEnv>(async (c, next) => {
             try {
                 const response = await client.customerMeters.list({
                     externalCustomerId: userId,
-                    limit: 1000,
+                    limit: 100,
                 });
                 return response.result.items;
             } catch (error) {

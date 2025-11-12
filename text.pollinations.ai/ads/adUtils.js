@@ -1,4 +1,3 @@
-import { sendToAnalytics } from "../sendToAnalytics.js";
 import debug from "debug";
 
 const log = debug("pollinations:adfilter");
@@ -27,12 +26,6 @@ export function sendAdSkippedAnalytics(
     if (!req) return;
 
     log(`Ad skipped: ${reason}, streaming: ${isStreaming}`);
-
-    sendToAnalytics(req, "ad_skipped", {
-        reason,
-        streaming: isStreaming,
-        ...additionalData,
-    });
 }
 
 // Ad URL patterns to detect in conversation history

@@ -76,9 +76,6 @@ bucket_name = "pollinations-images"
 # This configuration uses environment variables from the .env file.
 # Make sure your .env file in the root directory includes:
 #
-# GA_MEASUREMENT_ID=your-ga-measurement-id
-# GA_API_SECRET=your-ga-api-secret
-# TINYBIRD_API_KEY=your-tinybird-api-key
 # CLOUDFLARE_ACCOUNT_ID=your-cloudflare-account-id
 #
 # The deploy.sh script will automatically create a .dev.vars file

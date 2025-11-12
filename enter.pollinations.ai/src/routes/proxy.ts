@@ -343,8 +343,6 @@ function generationHeaders(
 ): Record<string, string> {
     return removeUnset({
         "x-enter-token": enterToken,
-        "x-github-id": `${user?.githubId}`,
-        "x-user-tier": user?.tier,
     });
 }
 

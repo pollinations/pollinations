@@ -5,7 +5,6 @@ import debug from "debug";
 import urldecode from "urldecode";
 import { HttpError } from "./httpError.js";
 import { extractToken, getIp } from "../../shared/extractFromRequest.js";
-import { sendImageTelemetry } from "./utils/telemetry.js";
 import { buildTrackingHeaders } from "./utils/trackingHeaders.js";
 import { countFluxJobs, handleRegisterEndpoint } from "./availableServers.js";
 import { cacheImagePromise } from "./cacheGeneratedImages.js";
@@ -38,10 +37,6 @@ const logAuth = debug("pollinations:auth");
 
 export const currentJobs = [];
 
-// In-memory store for tracking IP violations
-const ipViolations = new Map<string, number>();
-const MAX_VIOLATIONS = 5;
-
 // In-memory hourly rate limiter for seedream and nanobanana
 interface HourlyUsage {
     count: number;
@@ -72,18 +67,6 @@ const checkHourlyLimit = (ip: string): { allowed: boolean; remaining: number; re
     usage.count++;
     const resetIn = HOUR_MS - (now - usage.hourStart);
     return { allowed: true, remaining: HOURLY_LIMIT - usage.count, resetIn };
-};
-
-// Check if an IP is blocked
-const isIpBlocked = (ip: string) => {
-    return (ipViolations.get(ip) || 0) >= MAX_VIOLATIONS;
-};
-
-// Increment violations for an IP
-const incrementIpViolations = (ip: string) => {
-    const currentViolations = ipViolations.get(ip) || 0;
-    ipViolations.set(ip, currentViolations + 1);
-    return currentViolations + 1;
 };
 
 /**
@@ -161,14 +144,6 @@ const imageGen = async ({
     authResult,
 }: ImageGenParams): Promise<ImageGenerationResult> => {
     const ip = getIp(req);
-
-    // Check if IP is blocked
-    if (isIpBlocked(ip)) {
-        throw new HttpError(
-            `Your IP ${ip} has been temporarily blocked due to multiple content violations`,
-            403,
-        );
-    }
 
     const startTime = Date.now();
     
@@ -288,30 +263,8 @@ const imageGen = async ({
         progress.completeBar(requestId, "Image generation complete");
         progress.stop();
 
-        // Send telemetry to Tinybird
-        const endTime = new Date();
-        const duration = endTime.getTime() - startTime;
-        sendImageTelemetry({
-            requestId,
-            model: safeParams.model || "unknown",
-            duration,
-            status: "success",
-            authResult,
-        });
-
         return { buffer, ...maturity };
     } catch (error) {
-        // Check if this was a prohibited content error
-        if (error.message === "Content is prohibited") {
-            const violations = incrementIpViolations(ip);
-            if (violations >= MAX_VIOLATIONS) {
-                await sleep(10000);
-                throw new HttpError(
-                    `Your IP ${ip} has been temporarily blocked due to multiple content violations`,
-                    403,
-                );
-            }
-        }
         // Handle errors gracefully in progress bars
         progress.errorBar(requestId, "Generation failed");
         progress.stop();
@@ -324,18 +277,6 @@ const imageGen = async ({
             prompt: originalPrompt,
             params: safeParams,
             referrer,
-        });
-
-        // Send error telemetry to Tinybird
-        const endTime = new Date();
-        const duration = endTime.getTime() - startTime;
-        sendImageTelemetry({
-            requestId,
-            model: safeParams?.model || "unknown",
-            duration,
-            status: "error",
-            authResult,
-            error,
         });
 
         throw error;

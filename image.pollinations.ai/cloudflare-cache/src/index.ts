@@ -2,7 +2,6 @@ import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { proxy } from "hono/proxy";
 import type { Env } from "./env";
-import { googleAnalytics } from "./middleware/analytics.ts";
 import { exactCache } from "./middleware/exact-cache";
 import { parseImageParams } from "./middleware/parse-image-params.ts";
 import { semanticCache } from "./middleware/semantic-cache.ts";
@@ -35,7 +34,6 @@ function buildTargetUrl(originHost: string, requestUrl: string): URL {
 // cache and proxy image requests
 app.all(
     "/prompt/:prompt",
-    googleAnalytics,
     setConnectingIp,
     turnstileVerification,
     parseImageParams,

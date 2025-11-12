@@ -22,7 +22,7 @@ export const exactCache = createMiddleware<Env>(async (c, next) => {
 
     try {
         const cachedImage = await c.env.IMAGE_BUCKET.get(cacheKey);
-        if (cachedImage && cachedImage.size > 0) {
+        if (cachedImage) {
             console.log("[EXACT] Cache hit");
             setHttpMetadataHeaders(c, cachedImage.httpMetadata);
             c.header("Cache-Control", "public, max-age=31536000, immutable");
@@ -31,11 +31,7 @@ export const exactCache = createMiddleware<Env>(async (c, next) => {
             return c.body(cachedImage.body);
         }
         
-        if (cachedImage?.size === 0) {
-            console.warn("[EXACT] Skipping empty cached image");
-        } else {
-            console.log("[EXACT] Cache miss");
-        }
+        console.log("[EXACT] Cache miss");
         c.header("X-Cache", "MISS");
     } catch (error) {
         console.error("[EXACT] Error retrieving cached image:", error);
@@ -45,14 +41,17 @@ export const exactCache = createMiddleware<Env>(async (c, next) => {
     await next();
 
     // store response image in R2 on the way out
-    const contentLength = c.res?.headers.get("content-length");
+    const contentType = c.res?.headers.get("content-type");
+    const xCache = c.res?.headers.get("x-cache");
+    
+    // Cache if: response is OK, is an image, and not already a cache hit
+    // Note: We don't check Content-Length because responses may use chunked encoding
     if (
         c.res?.ok &&
-        c.res.headers.get("content-type")?.includes("image/") &&
-        !(c.res.headers.get("x-cache") === "HIT") &&
-        contentLength && contentLength !== "0"
+        contentType?.includes("image/") &&
+        xCache !== "HIT"
     ) {
-        console.debug("[EXACT] Caching image response");
+        console.log("[EXACT] Caching image response");
         c.executionCtx.waitUntil(cacheResponse(cacheKey, c));
     }
 });

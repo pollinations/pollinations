@@ -1,6 +1,6 @@
 # Pollinations Image Cache
 
-This Cloudflare Worker handles image caching and analytics for the Pollinations image service.
+This Cloudflare Worker provides exact-match caching for the Pollinations image service.
 
 **Current Configuration**: This cache is configured to work with the AWS EC2 image service endpoint (`ec2-3-80-56-235.compute-1.amazonaws.com:16384`) used by `enter.pollinations.ai`. 
 
@@ -8,9 +8,8 @@ This Cloudflare Worker handles image caching and analytics for the Pollinations 
 
 **Shared Resources**:
 - R2 Bucket: `pollinations-images` (shared with legacy cache)
-- Vectorize Index: `pollinations-image-cache-v3` (binding present but semantic cache disabled)
 
-**Semantic Caching**: DISABLED (`SEMANTIC_CACHE_ENABLED = false`) - only exact cache matching is used.
+**Caching Strategy**: Exact-match only - uses URL path and query parameters as cache keys.
 
 ## Configuration 
 

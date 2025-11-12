@@ -1,10 +1,9 @@
 # ===========================================
 # ENTER.POLLINATIONS.AI IMAGE CACHE
 # ===========================================
-# This worker provides caching for enter.pollinations.ai's image service
+# This worker provides exact-match caching for enter.pollinations.ai's image service
 # Worker name: pollinations-enter-image-cache (separate from legacy cache)
 # Origin: AWS EC2 at ec2-3-80-56-235.compute-1.amazonaws.com:16384
-# Semantic cache: DISABLED (only exact cache matching)
 # Shared resources: R2 bucket "pollinations-images" with legacy cache
 # ===========================================
 
@@ -14,26 +13,17 @@ compatibility_date = "2025-08-01"
 # The account_id will be automatically read from the CLOUDFLARE_ACCOUNT_ID environment variable
 
 # R2 bucket for image storage (shared with legacy cache)
+# Note: remote = true requires Wrangler v4.37.0+. Current version is 4.28.1
+# Upgrade wrangler to use remote R2 bucket in local dev: npm install -g wrangler@latest
 [[r2_buckets]]
 binding = "IMAGE_BUCKET"
 bucket_name = "pollinations-images"
-
-# Vectorize index for semantic caching - COMMENTED OUT (semantic cache disabled)
-# [[vectorize]]
-# binding = "VECTORIZE_INDEX"
-# index_name = "pollinations-image-cache-v3"
-
-# Workers AI for embeddings - COMMENTED OUT (semantic cache disabled)
-# [ai]
-# binding = "AI"
+remote = true  # Connect to remote R2 bucket during local development
 
 # Environment variables
 [vars]
 ORIGIN_HOST = "ec2-3-80-56-235.compute-1.amazonaws.com:16384"
 DEBUG_ANALYTICS = false  # Set to "true" to enable detailed analytics debugging
-SEMANTIC_CACHE_ENABLED = false  # DISABLED for enter.pollinations.ai
-SEMANTIC_THRESHOLD_SHORT = 0.65
-SEMANTIC_THRESHOLD_LONG = 0.85
 
 # Increase limits for long-running operations
 # This requires a paid Workers Unbound plan
@@ -52,20 +42,10 @@ invocation_logs = false
 [env.test.vars]
 ORIGIN_HOST = "ec2-3-80-56-235.compute-1.amazonaws.com:16384"
 DEBUG_ANALYTICS = false  # Set to "true" to enable detailed analytics debugging
-SEMANTIC_CACHE_ENABLED = false  # DISABLED for enter.pollinations.ai
-SEMANTIC_THRESHOLD_SHORT = 0.95
-SEMANTIC_THRESHOLD_LONG = 0.995
 
 [[env.test.r2_buckets]]
 binding = "IMAGE_BUCKET"
 bucket_name = "pollinations-images"
-
-# [[env.test.vectorize]]
-# binding = "VECTORIZE_INDEX"
-# index_name = "pollinations-image-cache-v3-test"
-
-# [env.test.ai]
-# binding = "AI"
 
 # Note: The usage_model setting is deprecated and has been removed
 # Workers Unbound is now configured via account settings in the Cloudflare dashboard

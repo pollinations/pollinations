@@ -3,22 +3,12 @@ import {
     env,
     waitOnExecutionContext,
 } from "cloudflare:test";
-import { test as baseTest, describe, expect } from "vitest";
+import { test, describe, expect } from "vitest";
 import worker from "../src";
-import { createMockVectorize } from "./mock-vectorize";
-
-const test = baseTest.extend<{ env: Cloudflare.Env }>({
-    env: async ({ task: _ }, use) => {
-        await use({
-            ...env,
-            VECTORIZE_INDEX: createMockVectorize(),
-        });
-    },
-});
 
 type CacheHeaders = {
     cache: "HIT" | "MISS";
-    cacheType: "EXACT" | "SEMANTIC" | null;
+    cacheType: "EXACT" | null;
 };
 
 function expectCacheHeaders(response: Response, expectedHeaders: CacheHeaders) {
@@ -28,8 +18,8 @@ function expectCacheHeaders(response: Response, expectedHeaders: CacheHeaders) {
     expect(xCacheType).toBe(expectedHeaders.cacheType);
 }
 
-describe("Cache Integration Tests", () => {
-    test("identical requests produce direct cache hit", async ({ env }) => {
+describe("Exact Cache Integration Tests", () => {
+    test("identical requests produce exact cache hit", async () => {
         const prompt = "A red car driving fast";
 
         let ctx = createExecutionContext();
@@ -63,15 +53,15 @@ describe("Cache Integration Tests", () => {
         });
     }, 120000);
 
-    test("similar requests produce a semantic cache hit", async ({ env }) => {
+    test("different requests produce cache miss", async () => {
         const [promptA, promptB] = [
-            "A biig shark wearing a tuxedo.",
-            "A biiig shark wearing a tuxedo.",
+            "A big shark wearing a tuxedo",
+            "A small fish wearing a hat",
         ];
 
         let ctx = createExecutionContext();
         const responseA = await worker.fetch(
-            new Request(`http://localhost:8787/prompt/${promptA}`),
+            new Request(`http://localhost:8787/prompt/${promptA}?seed=1`),
             env,
             ctx,
         );
@@ -86,7 +76,7 @@ describe("Cache Integration Tests", () => {
 
         ctx = createExecutionContext();
         const responseB = await worker.fetch(
-            new Request(`http://localhost:8787/prompt/${promptB}`),
+            new Request(`http://localhost:8787/prompt/${promptB}?seed=2`),
             env,
             ctx,
         );
@@ -95,8 +85,8 @@ describe("Cache Integration Tests", () => {
         await responseB.arrayBuffer();
 
         expectCacheHeaders(responseB, {
-            cache: "HIT",
-            cacheType: "SEMANTIC",
+            cache: "MISS",
+            cacheType: null,
         });
     }, 120000);
 });

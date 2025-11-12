@@ -25,12 +25,11 @@ type FrontendKeyRateLimitEnv = {
  * - Publishable keys (pk_): Pollen-based rate limiting with Durable Objects
  *
  * Rate limiting strategy:
- * - Token bucket with pollen units (not request counts)
- * - Capacity: 0.1 pollen (allows ~2 average requests burst)
- * - Refill rate: 1/60 pollen per minute = 1 pollen per hour (steady-state throughput)
+ * - Time-based with pollen units (not request counts)
+ * - Refill rate: 1 pollen per hour (steady-state throughput)
  * - Identifier: pk_{apiKeyId}:ip:{ip} (prevents abuse via key + IP)
- * - Pre-request check (allow if bucket > 0)
- * - Post-request deduction (actual pollen cost from response tracking)
+ * - Pre-request check (sets 30s timeout)
+ * - Post-request deduction (actual pollen cost overwrites timeout)
  */
 export const frontendKeyRateLimit = createMiddleware<
     FrontendKeyRateLimitEnv & Env
@@ -61,39 +60,15 @@ export const frontendKeyRateLimit = createMiddleware<
     // Check pollen rate limit
     const result = await stub.checkRateLimit();
 
-    // Set rate limit headers (pollen units)
-    const capacity = c.env.POLLEN_BUCKET_CAPACITY ?? 0.1;
-    c.header("RateLimit-Limit", capacity.toString());
-    c.header("RateLimit-Remaining", result.remaining.toFixed(4)); // Current pollen
-
     if (!result.allowed) {
-        // rate limit exhaustion
-        if (result.waitMs !== undefined) {
-            const retryAfterSeconds = safeRound(result.waitMs / 1000, 2);
-            c.header("Retry-After", Math.ceil(retryAfterSeconds).toString());
-            // TODO: Change this to throw an error to get consistent error responses
-            return c.json(
-                {
-                    error: "Rate limit exceeded",
-                    message: [
-                        `Rate limit bucket exhausted (${result.remaining.toFixed(2)}/${capacity}).`,
-                        `Retry after ${retryAfterSeconds}s. Use secret keys (sk_*) for unlimited requests.`,
-                    ].join(" "),
-                    retryAfterSeconds: retryAfterSeconds,
-                    rateLimitRemaining: safeRound(result.remaining, 2),
-                },
-                429,
-            );
-        }
-        // concurrent request: no wait time
-        c.header("Retry-After", "0");
+        const retryAfterSeconds = safeRound((result.waitMs || 0) / 1000, 2);
+        c.header("Retry-After", Math.ceil(retryAfterSeconds).toString());
         // TODO: Change this to throw an error to get consistent error responses
         return c.json(
             {
-                error: "Concurrent request in progress",
-                message:
-                    "Another request is currently being processed. Please wait until it finishes.",
-                rateLimitRemaining: safeRound(result.remaining, 2),
+                error: "Rate limit exceeded",
+                message: `Rate limit exceeded. Retry after ${retryAfterSeconds}s. Use secret keys (sk_*) for unlimited requests.`,
+                retryAfterSeconds: retryAfterSeconds,
             },
             429,
         );

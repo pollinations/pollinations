@@ -45,7 +45,11 @@ import { TokenUsage } from "../../../shared/registry/registry.js";
 import { removeUnset } from "@/util.ts";
 import { EventSourceParserStream } from "eventsource-parser/stream";
 import { mergeContentFilterResults } from "@/content-filter.ts";
-import { getErrorCode, UpstreamError } from "@/error.ts";
+import {
+    getDefaultErrorMessage,
+    getErrorCode,
+    UpstreamError,
+} from "@/error.ts";
 import { ValidationError } from "@/middleware/validator.ts";
 import type { LoggerVariables } from "./logger.ts";
 import type { ErrorVariables } from "@/env.ts";
@@ -178,16 +182,14 @@ export const track = (eventType: EventType) =>
 
                 // process events immediately in development/testing
                 // Don't await to prevent test hangs on external API failures
-                // TODO: Check why this is necessary
-                if (["test", "development"].includes(c.env.ENVIRONMENT))
-                    processEvents(db, c.var.log, {
+                if (["test", "development"].includes(c.env.ENVIRONMENT)) {
+                    await processEvents(db, c.var.log, {
                         polarAccessToken: c.env.POLAR_ACCESS_TOKEN,
                         polarServer: c.env.POLAR_SERVER,
                         tinybirdIngestUrl: c.env.TINYBIRD_INGEST_URL,
                         tinybirdAccessToken: c.env.TINYBIRD_ACCESS_TOKEN,
-                    }).catch(() => {
-                        /* Ignore errors in test/dev */
                     });
+                }
             })(),
         );
     });
@@ -653,7 +655,8 @@ function collectErrorData(response: Response, error?: Error): ErrorData {
     return {
         errorResponseCode: getErrorCode(status || response.status),
         errorSource: source,
-        errorMessage: error?.message,
+        errorMessage:
+            error?.message || getDefaultErrorMessage(status || response.status),
         errorStack: error?.stack,
         errorDetails: details,
     };

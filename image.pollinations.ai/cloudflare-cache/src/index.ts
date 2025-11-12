@@ -4,7 +4,6 @@ import { proxy } from "hono/proxy";
 import type { Env } from "./env";
 import { exactCache } from "./middleware/exact-cache";
 import { parseImageParams } from "./middleware/parse-image-params.ts";
-import { semanticCache } from "./middleware/semantic-cache.ts";
 import { setConnectingIp } from "./middleware/set-connecting-ip.ts";
 import { turnstileVerification } from "./middleware/turnstile.ts";
 
@@ -38,7 +37,6 @@ app.all(
     turnstileVerification,
     parseImageParams,
     exactCache,
-    semanticCache,
     async (c) => {
         const clientIP = c.get("connectingIp");
         const targetUrl = buildTargetUrl(c.env.ORIGIN_HOST, c.req.url);

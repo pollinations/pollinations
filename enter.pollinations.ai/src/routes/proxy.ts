@@ -257,6 +257,29 @@ export const proxyRoutes = new Hono<Env>()
                 "",
                 "API keys can be created from your dashboard at enter.pollinations.ai.",
             ].join("\n"),
+            request: {
+                query: resolver(GenerateImageRequestQueryParamsSchema),
+            },
+            responses: {
+                200: {
+                    description: "Success - Returns the generated image",
+                    content: {
+                        "image/jpeg": {
+                            schema: {
+                                type: "string",
+                                format: "binary",
+                            },
+                        },
+                        "image/png": {
+                            schema: {
+                                type: "string",
+                                format: "binary",
+                            },
+                        },
+                    },
+                },
+                ...errorResponses(400, 401, 500),
+            },
         }),
         validator("query", GenerateImageRequestQueryParamsSchema),
         async (c) => {

@@ -11,11 +11,13 @@ import {
     cacheResponse,
 } from "@/utils/image-cache.ts";
 import type { Env } from "@/env.ts";
+import type { FrontendKeyRateLimitVariables } from "@/middleware/rateLimit.durable.ts";
 
 type ImageCacheEnv = Env & {
     Bindings: CloudflareBindings & {
         IMAGE_BUCKET: R2Bucket;
     };
+    Variables: FrontendKeyRateLimitVariables;
 };
 
 /**

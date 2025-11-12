@@ -39,7 +39,7 @@ async function sendTestOpenAIRequest({
 }
 
 test(
-    "Verify rate limit headers present",
+    "First request succeeds without rate limit headers",
     { timeout: 30000 },
     async ({ pubApiKey, mocks }) => {
         mocks.enable("textService", "polar", "tinybird");
@@ -53,17 +53,16 @@ test(
 
         await response.text();
 
-        // Verify rate limit headers exist
-        const capacity = response.headers.get("RateLimit-Limit");
-        const remaining = response.headers.get("RateLimit-Remaining");
-
-        expect(capacity).toBeTruthy();
-        expect(remaining).toBeTruthy();
+        // Verify request succeeds
         expect(response.status).toBe(200);
 
-        log.info(
-            `✓ Headers verified: capacity=${capacity}, remaining=${remaining}`,
-        );
+        // Verify NO rate limit headers (simplified rate limiter doesn't expose these)
+        const rateLimitHeader = response.headers.get("RateLimit-Limit");
+        const remainingHeader = response.headers.get("RateLimit-Remaining");
+        expect(rateLimitHeader).toBeNull();
+        expect(remainingHeader).toBeNull();
+
+        log.info("✓ First request succeeded without rate limit headers");
     },
 );
 
@@ -212,18 +211,18 @@ test(
 
 test(
     "Refill allows requests after wait time",
-    { timeout: 30000 },
+    { timeout: 5000 },
     async ({ pubApiKey, mocks }) => {
         mocks.enable("textService", "polar", "tinybird");
 
         const testIp = `192.0.13.${Date.now() % 254}`;
 
-        // First request succeeds
+        // First request succeeds - use openai-fast with very short message for minimal cost
         const response1 = await sendTestOpenAIRequest({
             apiKey: pubApiKey,
             clientIp: testIp,
-            model: "openai",
-            message: "Request 1",
+            model: "openai-fast",
+            message: "Hi", // Very short to minimize pollen cost
         });
 
         expect(response1.status).toBe(200);
@@ -233,8 +232,8 @@ test(
         const response2 = await sendTestOpenAIRequest({
             apiKey: pubApiKey,
             clientIp: testIp,
-            model: "openai",
-            message: "Request 2",
+            model: "openai-fast",
+            message: "Hi",
         });
 
         expect(response2.status).toBe(429);
@@ -250,8 +249,8 @@ test(
         const response3 = await sendTestOpenAIRequest({
             apiKey: pubApiKey,
             clientIp: testIp,
-            model: "openai",
-            message: "Request 3",
+            model: "openai-fast",
+            message: "Hi",
         });
 
         expect(response3.status).toBe(200);

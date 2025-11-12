@@ -20,6 +20,7 @@ import {
     ErrorStatusCode,
     getDefaultErrorMessage,
     KNOWN_ERROR_STATUS_CODES,
+    UpstreamError,
 } from "@/error.ts";
 import { GenerateImageRequestQueryParamsSchema } from "@/schemas/image.ts";
 import { z } from "zod";
@@ -222,17 +223,16 @@ export const proxyRoutes = new Hono<Env>()
             });
 
             if (!response.ok) {
-                // Pass through the original error response from the upstream service
-                // This preserves the correct HTTP status code instead of wrapping as 500
+                // Read upstream error and throw UpstreamError to get structured error response
+                // This preserves the status code while providing consistent error format
                 const responseText = await response.text();
                 log.warn("[PROXY] Text service error {status}: {body}", {
                     status: response.status,
                     body: responseText,
                 });
-                return new Response(responseText, {
-                    status: response.status,
-                    statusText: response.statusText,
-                    headers: response.headers,
+                throw new UpstreamError(response.status as ContentfulStatusCode, {
+                    message: responseText || getDefaultErrorMessage(response.status),
+                    requestUrl: targetUrl,
                 });
             }
 
@@ -341,18 +341,16 @@ export const proxyRoutes = new Hono<Env>()
             });
 
             if (!response.ok) {
+                // Read upstream error and throw UpstreamError to get structured error response
+                // This preserves the status code while providing consistent error format
                 const responseText = await response.text();
-                log.warn("[PROXY] Error {status}: {body}", {
+                log.warn("[PROXY] Image service error {status}: {body}", {
                     status: response.status,
                     body: responseText,
                 });
-                // Pass through the original error response from the upstream service
-                // This preserves the correct HTTP status code (e.g., 400 for content policy violations)
-                // instead of wrapping errors as 500
-                return new Response(responseText, {
-                    status: response.status,
-                    statusText: response.statusText,
-                    headers: response.headers,
+                throw new UpstreamError(response.status as ContentfulStatusCode, {
+                    message: responseText || getDefaultErrorMessage(response.status),
+                    requestUrl: targetUrl,
                 });
             }
 
@@ -481,17 +479,16 @@ async function handleChatCompletions(c: Context<Env & TrackEnv>) {
     });
 
     if (!response.ok) {
-        // Pass through the original error response from the upstream service
-        // This preserves the correct HTTP status code instead of wrapping as 500
+        // Read upstream error and throw UpstreamError to get structured error response
+        // This preserves the status code while providing consistent error format
         const responseText = await response.text();
         log.warn("[PROXY] Chat completions error {status}: {body}", {
             status: response.status,
             body: responseText,
         });
-        return new Response(responseText, {
-            status: response.status,
-            statusText: response.statusText,
-            headers: response.headers,
+        throw new UpstreamError(response.status as ContentfulStatusCode, {
+            message: responseText || getDefaultErrorMessage(response.status),
+            requestUrl: targetUrl,
         });
     }
 

@@ -169,11 +169,6 @@ const listTablesCommand = command({
     },
 });
 
-const commands = [
-    migrateCommand,
-    exportCommand,
-    importCommand,
-    listTablesCommand,
-];
+const commands = [exportCommand, importCommand, listTablesCommand];
 
 run(commands);

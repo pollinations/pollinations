@@ -24,6 +24,19 @@ export const ImageDisplay = memo(function ImageDisplay({ image }) {
 
     // Show error if image has error property
     if (image?.error) {
+        // Handle both string errors and JSON error objects
+        let errorMessage = image.error;
+        let errorDetails = image.message;
+        
+        // If error is an object, extract the message
+        if (typeof image.error === 'object') {
+            errorMessage = image.error.message || image.error.error || 'An error occurred';
+            // Don't show errorDetails if it's the same as errorMessage
+            if (errorDetails === errorMessage) {
+                errorDetails = null;
+            }
+        }
+        
         return (
             <ImageContainer
                 sx={{
@@ -68,12 +81,12 @@ export const ImageDisplay = memo(function ImageDisplay({ image }) {
                             maxWidth: "500px",
                         }}
                     >
-                        {image.error}
-                        {image.message && image.message !== image.error && (
+                        {errorMessage}
+                        {errorDetails && errorDetails !== errorMessage && (
                             <>
                                 <br />
                                 <br />
-                                {image.message}
+                                {errorDetails}
                             </>
                         )}
                     </Typography>

@@ -50,3 +50,11 @@ export const hasAudioInput = (modelName: string, modelType: string): boolean => 
 export const isPersona = (modelName: string): boolean => {
     return (TEXT_SERVICES[modelName as keyof typeof TEXT_SERVICES] as any)?.persona === true;
 };
+
+export const getRealModelId = (modelName: string, modelType: string): string | undefined => {
+    if (modelType === "text") {
+        return (TEXT_SERVICES[modelName as keyof typeof TEXT_SERVICES] as any)?.modelId;
+    } else {
+        return (IMAGE_SERVICES[modelName as keyof typeof IMAGE_SERVICES] as any)?.modelId;
+    }
+};

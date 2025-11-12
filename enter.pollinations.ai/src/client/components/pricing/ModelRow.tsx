@@ -1,6 +1,6 @@
 import type { FC } from "react";
 import type { ModelPrice } from "./types.ts";
-import { hasReasoning, hasVision, hasAudioInput, getModelDescription } from "./model-info.ts";
+import { hasReasoning, hasVision, hasAudioInput, getModelDescription, getRealModelId } from "./model-info.ts";
 import { calculatePerPollen } from "./calculations.ts";
 import { PriceBadge } from "./PriceBadge.tsx";
 
@@ -10,6 +10,7 @@ type ModelRowProps = {
 
 export const ModelRow: FC<ModelRowProps> = ({ model }) => {
     const description = getModelDescription(model.name, model.type);
+    const realModelId = getRealModelId(model.name, model.type);
     const genPerPollen = calculatePerPollen(model);
     
     // Get model capabilities
@@ -17,11 +18,24 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
     const showVision = hasVision(model.name, model.type);
     const showAudioInput = hasAudioInput(model.name, model.type);
 
+    // Only show info icon if real modelId is different from service name
+    const showModelIdInfo = realModelId && realModelId !== model.name;
+
     return (
         <tr className="border-b border-gray-200">
             <td className="py-2 px-2 text-sm font-mono text-gray-700 whitespace-nowrap relative group">
                 <div className="flex items-center gap-2">
                     {model.name}
+                    {showModelIdInfo && (
+                        <span className="relative inline-flex items-center group/info">
+                            <span className="flex items-center justify-center w-3.5 h-3.5 rounded-full bg-pink-100 border border-pink-300 text-pink-500 hover:bg-pink-200 hover:border-pink-400 transition-colors text-[10px] font-bold">
+                                i
+                            </span>
+                            <span className="invisible group-hover/info:visible absolute left-0 top-full mt-1 px-3 py-2 bg-gradient-to-r from-pink-50 to-purple-50 text-gray-800 text-xs rounded-lg shadow-lg border border-pink-200 whitespace-nowrap z-50 pointer-events-none font-mono">
+                                {realModelId}
+                            </span>
+                        </span>
+                    )}
                     {showVision && (
                         <span className="text-base" title={model.type === "image" ? "Vision - supports image input (image-to-image)" : "Vision - supports image input"}>
                             👁️

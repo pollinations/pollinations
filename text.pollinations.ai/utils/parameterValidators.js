@@ -97,6 +97,7 @@ export const validateTextGenerationParams = (data) => {
         model: validateString(data.model, "openai-fast"),
         voice: validateString(data.voice, "alloy"),
         reasoning_effort: validateString(data.reasoning_effort),
+        thinking_budget: validateInt(data.thinking_budget),
         jsonMode: validateJsonMode(data),
     };
 };

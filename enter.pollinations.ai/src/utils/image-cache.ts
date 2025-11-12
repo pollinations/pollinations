@@ -5,6 +5,7 @@
  */
 
 import type { Context } from "hono";
+import { removeUnset } from "@/util.ts";
 
 /**
  * Apply model-specific caching rules to the URL
@@ -89,17 +90,6 @@ function createHash(str: string): string {
     return Math.abs(hash).toString(16).substring(0, 8);
 }
 
-/**
- * Remove undefined values from an object
- */
-function removeUndefined<T extends object>(obj: T): Partial<T> {
-    const newObj = Object.fromEntries(
-        Object.entries(obj).filter(
-            ([_, value]) => value !== undefined && value !== null,
-        ),
-    );
-    return newObj as Partial<T>;
-}
 
 /**
  * Helper function to set HTTP metadata headers from R2 object
@@ -127,6 +117,7 @@ type CacheContext = Context<{
     Variables: {
         connectingIp?: string;
         requestId?: string;
+        log?: any;
     };
 }>;
 
@@ -145,13 +136,13 @@ export async function cacheResponse(
         const imageBuffer = await c.res.clone().arrayBuffer();
 
         // Get client information from request
-        const clientIp = c.get("connectingIp") || c.req.header("cf-connecting-ip") || "";
+        const clientIp = c.req.header("cf-connecting-ip") || "";
 
         // Get additional client information
         const userAgent = c.req.header("user-agent") || "";
         const referer = c.req.header("referer") || c.req.header("referrer") || "";
         const acceptLanguage = c.req.header("accept-language") || "";
-        const requestId = c.get("requestId") || c.req.header("cf-ray") || "";
+        const requestId = c.get("requestId");
 
         // Get request-specific information
         const method = c.req.method || "GET";
@@ -178,8 +169,8 @@ export async function cacheResponse(
         };
 
         const metadata = {
-            httpMetadata: removeUndefined(httpMetadata),
-            customMetadata: removeUndefined({
+            httpMetadata: removeUnset(httpMetadata),
+            customMetadata: removeUnset({
                 // Essential metadata
                 originalUrl: (c.req.url || "").substring(0, 2048),
                 cachedAt: new Date().toISOString(),
@@ -202,7 +193,7 @@ export async function cacheResponse(
 
         return true;
     } catch (error) {
-        console.error("[CACHE] Error caching response:", error);
+        c.get("log")?.error("[CACHE] Error caching response: {error}", { error });
         return false;
     }
 }

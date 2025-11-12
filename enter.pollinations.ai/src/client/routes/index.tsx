@@ -21,6 +21,7 @@ import { TierPanel } from "../components/tier-panel.tsx";
 import { FAQ } from "../components/faq.tsx";
 import { Header } from "../components/header.tsx";
 import { Pricing } from "../components/pricing/index.ts";
+import { UsageSparkline } from "../components/usage-sparkline.tsx";
 
 export const Route = createFileRoute("/")({
     component: RouteComponent,
@@ -197,6 +198,7 @@ function RouteComponent() {
                     </div>
                 </div>
                 <PollenBalance balances={balances} dailyPollen={tierData?.daily_pollen} />
+                <UsageSparkline />
             </div>
             {tierData && (
                 <div className="flex flex-col gap-2">

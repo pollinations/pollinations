@@ -7,6 +7,7 @@ import { cn } from "@/util.ts";
 import { Button } from "../components/button.tsx";
 import { Fragment } from "react";
 import { uniqueNamesGenerator, adjectives, colors, animals } from 'unique-names-generator';
+import { MiniSparkline } from "./mini-sparkline.tsx";
 
 type ApiKey = {
     id: string;
@@ -28,6 +29,35 @@ const Cell: FC<React.ComponentProps<"div">> = ({ children, ...props }) => {
         <span className="flex items-center" {...props}>
             {children}
         </span>
+    );
+};
+
+const KeyUsageSparkline: FC<{ keyId: string }> = ({ keyId }) => {
+    const [data, setData] = useState<{ usage: number[]; total: number } | null>(null);
+
+    useEffect(() => {
+        fetch(`/api/usage?keyId=${keyId}`, { credentials: "include" })
+            .then((r) => r.ok ? r.json() : null)
+            .then((apiData) => {
+                if (apiData?.usage) {
+                    const usage = apiData.usage.map((d: any) => d.pollen_spent || 0);
+                    const total = usage.reduce((sum: number, val: number) => sum + val, 0);
+                    setData({ usage, total });
+                }
+            })
+            .catch(() => setData({ usage: [], total: 0 }));
+    }, [keyId]);
+
+    if (!data) return <span className="text-xs text-gray-400">...</span>;
+    if (data.usage.length === 0) return <span className="text-xs text-gray-400">—</span>;
+
+    return (
+        <div className="flex items-center gap-2">
+            <MiniSparkline data={data.usage} className="w-16 h-4 text-purple-500" />
+            <span className="text-xs text-gray-600 whitespace-nowrap">
+                {data.total.toFixed(2)}
+            </span>
+        </div>
     );
 };
 
@@ -90,10 +120,11 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                 </div>
                 {apiKeys.length ? (
                     <div className="bg-blue-50/30 rounded-2xl p-8 border border-blue-300 overflow-x-auto">
-                        <div className="grid grid-cols-[100px_200px_1fr_70px_40px] gap-x-4 gap-y-4 min-w-[630px]">
+                        <div className="grid grid-cols-[100px_200px_1fr_80px_70px_40px] gap-x-4 gap-y-4 min-w-[730px]">
                             <span className="font-bold text-pink-400 text-sm">Type</span>
                             <span className="font-bold text-pink-400 text-sm">Name</span>
                             <span className="font-bold text-pink-400 text-sm">Key</span>
+                            <span className="font-bold text-pink-400 text-sm">Usage</span>
                             <span className="font-bold text-pink-400 text-sm">Created</span>
                             <span></span>
                             {[...apiKeys].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()).map((apiKey) => {
@@ -122,6 +153,9 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                                             ) : (
                                                 <span className="font-mono text-xs text-gray-500">{apiKey.start}...</span>
                                             )}
+                                        </Cell>
+                                        <Cell>
+                                            <KeyUsageSparkline keyId={apiKey.id} />
                                         </Cell>
                                         <Cell>
                                             <span className="text-xs text-gray-600 whitespace-nowrap">

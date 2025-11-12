@@ -16,14 +16,7 @@ import { createStreamingAdWrapper } from "./ads/streamingAdWrapper.js";
 import {
     getRequestData,
     prepareModelsForOutput,
-    getUserMappedModel,
 } from "./requestUtils.js";
-import { logUserRequest } from "./logging/userLogger.js";
-import { logConversation } from "./logging/simpleLogger.js";
-import {
-    checkAndLogMonitoredStrings,
-    extractTextFromMessages,
-} from "./utils/stringMonitor.js";
 
 // Import shared utilities
 import { getIp } from "../shared/extractFromRequest.js";
@@ -181,45 +174,8 @@ async function handleRequest(req, res, requestData) {
         // Capture the originally requested model before any mapping/overrides
         const requestedModel = requestData.model;
 
-        // Apply user-specific model mapping if user is authenticated
+        // Use request data as-is (no user-specific model mapping)
         let finalRequestData = requestData;
-        if (authResult.username) {
-            try {
-                const mappedModel = getUserMappedModel(authResult.username);
-                if (mappedModel) {
-                    log(
-                        `🔄 Model override: ${requestData.model} → ${mappedModel} for user ${authResult.username}`,
-                    );
-                    finalRequestData = {
-                        ...requestData,
-                        model: mappedModel,
-                    };
-                }
-            } catch (error) {
-                if (error.status === 403) {
-                    await sendErrorResponse(
-                        res,
-                        req,
-                        error,
-                        requestData,
-                        error.status,
-                    );
-                    return;
-                }
-            }
-        }
-
-        // Monitor for specific strings in user input if user is authenticated
-        if (authResult.username && finalRequestData.messages) {
-            const inputText = extractTextFromMessages(
-                finalRequestData.messages,
-            );
-            await checkAndLogMonitoredStrings(
-                inputText,
-                authResult.username,
-                "messages",
-            );
-        }
 
         // Add user info to request data - using authResult directly as a thin proxy
         // Exclude messages from options to prevent overwriting transformed messages
@@ -241,31 +197,6 @@ async function handleRequest(req, res, requestData) {
         // Ensure completion has the request ID
         completion.id = requestId;
 
-        // Log user request/response if enabled
-        if (authResult.username) {
-            const totalProcessingTime = Date.now() - startTime;
-            // Create a non-mutating copy for logging to include the originally requested model
-            const requestForLogging = {
-                ...finalRequestData,
-                requested_model: requestedModel,
-            };
-            logUserRequest(
-                authResult.username,
-                requestForLogging,
-                completion,
-                null,
-                req.queueInfo,
-                totalProcessingTime,
-            );
-        }
-
-        // Simple conversation logging (100% sample, excluding specific users)
-        logConversation(
-            finalRequestData.messages,
-            finalRequestData.model,
-            authResult.username,
-        );
-
         // Check if completion contains an error
         if (completion.error) {
             errorLog(
@@ -284,23 +215,6 @@ async function handleRequest(req, res, requestData) {
             // Add the details if they exist
             if (errorObj.details) {
                 error.response = { data: errorObj.details };
-            }
-
-            // Log error for debugging if user is being tracked
-            if (authResult.username) {
-                const totalProcessingTime = Date.now() - startTime;
-                const requestForLogging = {
-                    ...finalRequestData,
-                    requested_model: requestedModel,
-                };
-                logUserRequest(
-                    authResult.username,
-                    requestForLogging,
-                    null,
-                    error,
-                    req.queueInfo,
-                    totalProcessingTime,
-                );
             }
 
             await sendErrorResponse(

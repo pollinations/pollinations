@@ -23,10 +23,6 @@ import type { TrackingData } from "./utils/trackingHeaders.ts";
 
 // Import GPT Image logging utilities
 import { logGptImageError, logGptImagePrompt } from "./utils/gptImageLogger.ts";
-// Import user stats tracker for violation logging
-import { userStatsTracker } from "./utils/userStatsTracker.ts";
-// Import violation ratio checker
-import { checkViolationRatio, recordGptImageRequest } from "./utils/violationRatioChecker.ts";
 // Import Vertex AI Gemini image generator
 import { callVertexAIGemini } from "./vertexAIImageGenerator.js";
 import { writeExifMetadata } from "./writeExifMetadata.ts";
@@ -824,16 +820,6 @@ const generateImage = async (
                 : "No userInfo provided",
         );
 
-        // Record request and check violation ratio
-        const username = userInfo?.username;
-        recordGptImageRequest(username);
-        
-        const violationCheck = checkViolationRatio(username);
-        if (violationCheck.blocked) {
-            progress.updateBar(requestId, 35, "Auth", "User blocked");
-            throw new HttpError(violationCheck.reason, 403);
-        }
-
         // All requests assumed to come from enter.pollinations.ai - tier checks bypassed
         {
             // For gptimage model, always throw errors instead of falling back
@@ -879,9 +865,6 @@ const generateImage = async (
                         promptSafetyResult,
                     );
                     
-                    // Track violation in user stats
-                    userStatsTracker.recordViolation(userInfo?.username);
-                    
                     throw error;
                 }
 
@@ -900,9 +883,6 @@ const generateImage = async (
                 );
 
                 await logGptImageError(prompt, safeParams, userInfo, error);
-                
-                // Track violation in user stats for generation failures
-                userStatsTracker.recordViolation(userInfo?.username);
 
                 progress.updateBar(requestId, 100, "Error", error.message);
                 throw error;

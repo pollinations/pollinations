@@ -30,11 +30,12 @@ const inflightRequests = new Map<string, Promise<Response>>();
 export const requestDeduplication = createMiddleware<Env>(async (c, next) => {
 	const log = c.get("log");
 	
-	// Only deduplicate GET and POST (our generation endpoints)
-	// GET: /api/generate/image/:prompt (deterministic)
-	// POST: /v1/chat/completions (deterministic for same input)
+	// Deduplicate safe methods (GET, HEAD, OPTIONS, TRACE) and POST
+	// Safe methods: read-only, no side effects
+	// POST: deterministic for our AI generation endpoints
+	// Skip: PUT, DELETE, PATCH (not safe for deduplication)
 	const method = c.req.method;
-	const shouldDeduplicate = ["GET", "POST"].includes(method);
+	const shouldDeduplicate = ["GET", "HEAD", "OPTIONS", "TRACE", "POST"].includes(method);
 	
 	if (!shouldDeduplicate) {
 		log.debug("[DEDUP] Skipping deduplication for method: {method}", { method });

@@ -40,11 +40,10 @@ export class PollenRateLimiter extends DurableObject {
 
     /**
      * Check if request is allowed
-     * @returns allowed status, remaining pollen estimate, and wait time if blocked
+     * @returns allowed status and wait time if blocked
      */
     async checkRateLimit(): Promise<{
         allowed: boolean;
-        remaining: number;
         waitMs?: number;
     }> {
         const now = Date.now();
@@ -54,7 +53,7 @@ export class PollenRateLimiter extends DurableObject {
             // Set conservative timeout for request completion
             this.nextAllowedTime = now + this.REQUEST_TIMEOUT_MS;
             this.log.debug("Request ALLOWED");
-            return { allowed: true, remaining: 0.1 };
+            return { allowed: true };
         }
 
         // Calculate wait time
@@ -63,7 +62,6 @@ export class PollenRateLimiter extends DurableObject {
 
         return {
             allowed: false,
-            remaining: 0,
             waitMs,
         };
     }

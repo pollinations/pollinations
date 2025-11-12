@@ -60,11 +60,6 @@ export const frontendKeyRateLimit = createMiddleware<
     // Check pollen rate limit
     const result = await stub.checkRateLimit();
 
-    // Set rate limit headers (pollen units)
-    const capacity = c.env.POLLEN_BUCKET_CAPACITY ?? 0.1;
-    c.header("RateLimit-Limit", capacity.toString());
-    c.header("RateLimit-Remaining", result.remaining.toFixed(4)); // Current pollen
-
     if (!result.allowed) {
         const retryAfterSeconds = safeRound((result.waitMs || 0) / 1000, 2);
         c.header("Retry-After", Math.ceil(retryAfterSeconds).toString());
@@ -72,12 +67,8 @@ export const frontendKeyRateLimit = createMiddleware<
         return c.json(
             {
                 error: "Rate limit exceeded",
-                message: [
-                    `Rate limit exceeded (${result.remaining.toFixed(2)}/${capacity}).`,
-                    `Retry after ${retryAfterSeconds}s. Use secret keys (sk_*) for unlimited requests.`,
-                ].join(" "),
+                message: `Rate limit exceeded. Retry after ${retryAfterSeconds}s. Use secret keys (sk_*) for unlimited requests.`,
                 retryAfterSeconds: retryAfterSeconds,
-                rateLimitRemaining: safeRound(result.remaining, 2),
             },
             429,
         );

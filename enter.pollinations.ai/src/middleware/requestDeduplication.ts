@@ -77,8 +77,8 @@ async function createRequestKey(c: any): Promise<string> {
 	parts.push(c.req.method);
 	parts.push(c.req.url);
 	
-	// For POST/PUT/PATCH, include body if present
-	if (["POST", "PUT", "PATCH"].includes(c.req.method)) {
+	// For POST, include body if present (GET uses URL params)
+	if (c.req.method === "POST") {
 		try {
 			// Clone the request to read body without consuming it
 			const clonedReq = c.req.raw.clone();

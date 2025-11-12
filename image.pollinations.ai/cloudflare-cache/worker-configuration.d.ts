@@ -8,9 +8,6 @@ declare namespace Cloudflare {
 		SEMANTIC_CACHE_ENABLED: true;
 		SEMANTIC_THRESHOLD_SHORT: 0.95;
 		SEMANTIC_THRESHOLD_LONG: 0.995;
-		GA_MEASUREMENT_ID: string;
-		GA_API_SECRET: string;
-		TINYBIRD_API_KEY: string;
 		IMAGE_BUCKET: R2Bucket;
 		VECTORIZE_INDEX: Vectorize;
 		AI: Ai;

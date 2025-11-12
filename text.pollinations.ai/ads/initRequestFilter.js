@@ -1,4 +1,3 @@
-import { sendToAnalytics } from "../sendToAnalytics.js";
 import debug from "debug";
 import { generateAffiliateAd } from "./adLlmMapper.js";
 import { logAdInteraction } from "./adLogger.js";
@@ -102,19 +101,6 @@ export async function generateAdForContent(
                             req.headers.origin ||
                             "unknown",
                         user_agent: req.headers["user-agent"] || "unknown",
-                    });
-
-                    // Send analytics for the ad impression
-                    sendToAnalytics(req, "ad_impression", {
-                        affiliate_id: "kofi",
-                        affiliate_name: kofiAffiliate.name,
-                        ad_source: "kofi",
-                        streaming: isStreaming,
-                        forced: shouldForceAd,
-                        user_id: authenticatedUserId || null,
-                        username: authResult?.username || null,
-                        authenticated: !!authenticatedUserId,
-                        session_id: req.sessionID || null,
                     });
 
                     // Track per-user ad impression metrics for Ko-fi

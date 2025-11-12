@@ -75,9 +75,7 @@ if [ ! -f ".dev.vars" ]; then
   echo -e "${BLUE}Creating .dev.vars file for local development...${NC}"
   cat > .dev.vars << EOF
 # Generated from .env on $(date)
-GA_MEASUREMENT_ID=${GA_MEASUREMENT_ID}
-GA_API_SECRET=${GA_API_SECRET}
-TINYBIRD_API_KEY=${TINYBIRD_API_KEY}
+# No environment variables currently needed for local development
 EOF
   echo -e "${GREEN}.dev.vars file created for local development.${NC}"
 fi

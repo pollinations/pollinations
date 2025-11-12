@@ -1,6 +1,5 @@
 import { Transform } from "stream";
 import debug from "debug";
-import { sendToAnalytics } from "../sendToAnalytics.js";
 import { logAdInteraction } from "./adLogger.js";
 
 const log = debug("pollinations:adfilter");

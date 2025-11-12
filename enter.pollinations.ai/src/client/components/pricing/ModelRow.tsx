@@ -1,4 +1,4 @@
-import type { FC } from "react";
+import { type FC, useState } from "react";
 import type { ModelPrice } from "./types.ts";
 import { hasReasoning, hasVision, hasAudioInput, getModelDescription, getTextModelId, getImageModelId } from "./model-info.ts";
 import { calculatePerPollen } from "./calculations.ts";
@@ -14,6 +14,7 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
         ? getTextModelId(model.name as any) 
         : getImageModelId(model.name as any);
     const genPerPollen = calculatePerPollen(model);
+    const [showTooltip, setShowTooltip] = useState(false);
     
     // Get model capabilities
     const showReasoning = hasReasoning(model.name, model.type);
@@ -29,11 +30,11 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
                 <div className="flex items-center gap-2">
                     {model.name}
                     {showModelIdInfo && (
-                        <span className="relative inline-flex items-center group/info">
-                            <span className="flex items-center justify-center w-3.5 h-3.5 rounded-full bg-pink-100 border border-pink-300 text-pink-500 hover:bg-pink-200 hover:border-pink-400 transition-colors text-[10px] font-bold">
+                        <span className="relative inline-flex items-center group/info" onClick={() => setShowTooltip(!showTooltip)}>
+                            <span className="flex items-center justify-center w-3.5 h-3.5 rounded-full bg-pink-100 border border-pink-300 text-pink-500 hover:bg-pink-200 hover:border-pink-400 transition-colors text-[10px] font-bold cursor-pointer">
                                 i
                             </span>
-                            <span className="invisible group-hover/info:visible absolute left-0 top-full mt-1 px-3 py-2 bg-gradient-to-r from-pink-50 to-purple-50 text-gray-800 text-xs rounded-lg shadow-lg border border-pink-200 whitespace-nowrap z-50 pointer-events-none font-mono">
+                            <span className={`${showTooltip ? 'visible' : 'invisible'} group-hover/info:visible absolute left-0 top-full mt-1 px-3 py-2 bg-gradient-to-r from-pink-50 to-purple-50 text-gray-800 text-xs rounded-lg shadow-lg border border-pink-200 whitespace-nowrap z-50 pointer-events-none font-mono`}>
                                 {realModelId}
                             </span>
                         </span>

@@ -6,7 +6,10 @@ import {
 
 const createFetchRequest = (messages: PollingsMessage[], jsonMode = true) => ({
   method: 'POST',
-  headers: { 'Content-Type': 'application/json' },
+  headers: { 
+    'Content-Type': 'application/json',
+    'Authorization': `Bearer ${API_CONFIG.API_KEY}`
+  },
   body: JSON.stringify({
     messages,
     model: 'openai',

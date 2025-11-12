@@ -22,28 +22,21 @@ export const exactCache = createMiddleware<Env>(async (c, next) => {
 
     try {
         const cachedImage = await c.env.IMAGE_BUCKET.get(cacheKey);
-        if (cachedImage) {
-            // Validate that cached image has actual content (not empty)
-            // This prevents serving corrupted/empty cache entries
-            // R2 object metadata includes size information
-            const objectSize = (cachedImage as any).size || 0;
-            if (objectSize === 0) {
-                console.warn("[EXACT] Skipping empty cached image (corrupted cache entry)");
-                c.header("X-Cache", "MISS");
-                // Continue to fetch from origin
-            } else {
-                console.log("[EXACT] Cache hit");
-                setHttpMetadataHeaders(c, cachedImage.httpMetadata);
-                c.header("Cache-Control", "public, max-age=31536000, immutable");
-                c.header("X-Cache", "HIT");
-                c.header("X-Cache-Type", "EXACT");
-
-                return c.body(cachedImage.body);
-            }
+        if (cachedImage && cachedImage.size > 0) {
+            console.log("[EXACT] Cache hit");
+            setHttpMetadataHeaders(c, cachedImage.httpMetadata);
+            c.header("Cache-Control", "public, max-age=31536000, immutable");
+            c.header("X-Cache", "HIT");
+            c.header("X-Cache-Type", "EXACT");
+            return c.body(cachedImage.body);
+        }
+        
+        if (cachedImage?.size === 0) {
+            console.warn("[EXACT] Skipping empty cached image");
         } else {
-            c.header("X-Cache", "MISS");
             console.log("[EXACT] Cache miss");
         }
+        c.header("X-Cache", "MISS");
     } catch (error) {
         console.error("[EXACT] Error retrieving cached image:", error);
     }
@@ -52,13 +45,12 @@ export const exactCache = createMiddleware<Env>(async (c, next) => {
     await next();
 
     // store response image in R2 on the way out
+    const contentLength = c.res?.headers.get("content-length");
     if (
         c.res?.ok &&
         c.res.headers.get("content-type")?.includes("image/") &&
-        // don't store it if there is a semantic hit
         !(c.res.headers.get("x-cache") === "HIT") &&
-        // don't cache empty responses (prevents corrupted cache entries)
-        c.res.headers.get("content-length") !== "0"
+        contentLength && contentLength !== "0"
     ) {
         console.debug("[EXACT] Caching image response");
         c.executionCtx.waitUntil(cacheResponse(cacheKey, c));

@@ -10,7 +10,6 @@ import {
 } from "./textGenerationUtils.js";
 
 import { createSseStreamConverter } from "./sseStreamConverter.js";
-import { sendTinybirdEvent } from "./observability/tinybirdTracker.js";
 
 const log = debug(`pollinations:genericopenai`);
 const errorLog = debug(`pollinations:error`);
@@ -263,42 +262,6 @@ export async function genericOpenAIClient(messages, options = {}, config) {
             usage: data.usage,
         });
 
-        // Send telemetry to Tinybird
-        const endTime = new Date();
-        sendTinybirdEvent({
-            startTime: new Date(startTime),
-            endTime,
-            // Use requestedModel for the originally requested model
-            model: normalizedOptions.requestedModel,
-            // model_used should be the provider-returned model identifier
-            modelUsed: data.model,
-            duration: completionTime,
-            status: "success",
-            // Pass the entire usage object rather than individual fields
-            usage: data.usage,
-            // Include raw response data for moderation detection
-            choices: data.choices,
-            project: "text.pollinations.ai",
-            environment: process.env.NODE_ENV || "production",
-            // Spread all user information for better data retention
-            ...normalizedOptions.userInfo,
-            // Include these key fields explicitly for backwards compatibility
-            user:
-                normalizedOptions.userInfo?.username ||
-                normalizedOptions.userInfo?.userId ||
-                "anonymous",
-            referrer: normalizedOptions.userInfo?.referrer || "unknown",
-            cf_ray: normalizedOptions.userInfo?.cf_ray || "",
-            organization: normalizedOptions.userInfo?.userId
-                ? "pollinations"
-                : undefined,
-        }).catch((err) => {
-            errorLog(
-                `[${requestId}] Failed to send telemetry to Tinybird`,
-                err,
-            );
-        });
-
         // Use custom response formatter if provided
         // Pass only choices[0] to formatResponse, reconstruct after
         const originalChoice =
@@ -332,39 +295,6 @@ export async function genericOpenAIClient(messages, options = {}, config) {
             model: modelName,
             provider: config.provider,
             requestId,
-        });
-
-        // Send error telemetry to Tinybird
-        const endTime = new Date();
-        const completionTime = endTime.getTime() - startTime;
-
-        sendTinybirdEvent({
-            startTime: new Date(startTime),
-            endTime,
-            requestId,
-            // Use requestedModel for the originally requested model
-            model: normalizedOptions.requestedModel,
-            duration: completionTime,
-            status: "error",
-            error,
-            project: "text.pollinations.ai",
-            environment: process.env.NODE_ENV || "production",
-            // Include user information if available - prioritize username for better identification
-            user:
-                normalizedOptions.userInfo?.username ||
-                normalizedOptions.userInfo?.userId ||
-                "anonymous",
-            username: normalizedOptions.userInfo?.username, // Explicitly include username field
-            referrer: normalizedOptions.userInfo?.referrer || "unknown",
-            cf_ray: normalizedOptions.userInfo?.cf_ray || "",
-            organization: normalizedOptions.userInfo?.userId
-                ? "pollinations"
-                : undefined,
-        }).catch((err) => {
-            errorLog(
-                `[${requestId}] Failed to send error telemetry to Tinybird`,
-                err,
-            );
         });
 
         // Simply throw the error

@@ -10,8 +10,6 @@ import { generateImageWithVertexAI } from "./vertexAIClient.ts";
 import { writeExifMetadata } from "./writeExifMetadata.js";
 import type { ImageParams } from "./params.js";
 import type { ImageGenerationResult, AuthResult } from "./createAndReturnImages.js";
-import { logNanoBananaError, logNanoBananaErrorsOnly, logNanoBananaPrompt } from "./utils/nanoBananaLogger.ts";
-import { userStatsTracker } from "./utils/userStatsTracker.ts";
 import { generateTransparentImage } from "./utils/transparentImage.ts";
 import type { VertexAIImageData } from "./vertexAIClient.ts";
 
@@ -19,39 +17,6 @@ const log = debug("pollinations:vertex-ai-generator");
 const errorLog = debug("pollinations:vertex-ai-generator:error");
 
 
-
-/**
- * Check if user is blocked from using nano-banana model
- * @param {AuthResult} userInfo - User authentication information
- * @returns {boolean} - True if user is blocked
- */
-function isUserBlockedFromGemini(userInfo: AuthResult): boolean {
-    const blockedUsers = process.env.BLOCKED_USERS_GEMINI?.split(',').map(u => u.trim()) || [];
-    const username = userInfo?.username;
-    return username ? blockedUsers.includes(username) : false;
-}
-
-/**
- * Throw blocking error for banned users
- * @param {string} username - Username of blocked user
- * @param {string} prompt - The prompt they tried to use
- * @param {ImageParams} safeParams - Parameters for image generation
- * @param {AuthResult} userInfo - User authentication information
- */
-async function throwBlockingError(
-    username: string,
-    prompt: string,
-    safeParams: ImageParams,
-    userInfo: AuthResult
-): Promise<never> {
-    const blockError = new Error(`Sorry, you are blocked from using the nano-banana model due to content violations. Please implement a safety checker and reach out if you want to lift the block. Seedream model should be available again soon.`);
-    errorLog(`Blocked user ${username} attempted to use nano-banana model`);
-    
-    // Don't log administrative blocks to the violations file - only log to console/debug
-    // The violations log should only contain actual Vertex AI content policy violations
-    
-    throw blockError;
-}
 
 /**
  * Add simple prefix to help Nano Banana understand the prompt better
@@ -120,17 +85,6 @@ export async function callVertexAIGemini(
     try {
         log("Starting Vertex AI Gemini image generation");
         
-        // Track user request
-        userStatsTracker.recordRequest(userInfo?.username);
-        
-        // Log the original prompt to simple text file (before prefix)
-        await logNanoBananaPrompt(prompt, safeParams, userInfo);
-        
-        // Check if user is blocked from using nano-banana
-        if (isUserBlockedFromGemini(userInfo)) {
-            await throwBlockingError(userInfo.username, prompt, safeParams, userInfo);
-        }
-
         // Process nanobanana request with special logic if needed
         const { processedPrompt, processedParams, transparentImage: generatedTransparentImage } = await processNanobananaRequest(prompt, safeParams);
 
@@ -231,10 +185,7 @@ export async function callVertexAIGemini(
         );
 
         if (hasContentViolation) {
-            // Track violation and log as content policy violation even though request "succeeded"
-            userStatsTracker.recordViolation(userInfo?.username);
             const violationError = new Error("Content policy violation detected in response");
-            await logNanoBananaError(prompt, safeParams, userInfo, violationError, result.fullResponse);
             throw violationError;
         }
 
@@ -247,20 +198,11 @@ export async function callVertexAIGemini(
         
         if (!result.imageData) {
             errorLog("ERROR: No imageData in result from generateImageWithVertexAI - likely content policy violation");
-            // Track violation for "No image data" cases (likely content policy violations)
-            userStatsTracker.recordViolation(userInfo?.username);
             
             // Extract all available information from the response
             const geminiExplanation = result.textResponse;
             const finishReason = result.finishReason;
             const safetyRatings = result.safetyRatings;
-            
-            // Use the specialized error-only logger for "No image data" cases with refusal reasons
-            await logNanoBananaErrorsOnly(prompt, safeParams, userInfo, result.fullResponse, {
-                refusalReason: geminiExplanation || finishReason || 'No specific reason provided',
-                textResponse: geminiExplanation,
-                finishReason: finishReason
-            });
             
             // Build informative error message with all available information
             if (geminiExplanation) {
@@ -359,9 +301,6 @@ export async function callVertexAIGemini(
             textResponse: null,
             finishReason: null
         };
-        
-        // Log error for analysis (especially content policy violations) - use original prompt
-        await logNanoBananaError(prompt, safeParams, userInfo, error, errorResponseData, refusalDetails);
         
         // Preserve Gemini's text response if it's already formatted (starts with "Gemini:")
         const errorMessage = error.message;

@@ -13,7 +13,7 @@ const createFetchRequest = (messages: PollingsMessage[], jsonMode = true) => ({
   body: JSON.stringify({
     messages,
     model: 'claude',
-    jsonMode,
+    response_format: jsonMode ? { type: "json_object" } : undefined,
     // temperature: 1.2,
     seed: Math.floor(Math.random() * 1000000)
   })

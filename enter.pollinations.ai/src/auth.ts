@@ -20,13 +20,17 @@ export function createAuth(env: Cloudflare.Env) {
 
     const db = drizzle(env.DB);
 
+    const PUBLISHABLE_KEY_PREFIX = 'pk';
+    const SECRET_KEY_PREFIX = 'sk';
+    
     const apiKeyPlugin = apiKey({
         enableMetadata: true,
-        defaultPrefix: 'pk', // Default prefix for publishable keys
-        defaultKeyLength: 22, // Minimum key length for validation (pk_ = 22 chars, sk_ = 64 chars)
+        defaultPrefix: PUBLISHABLE_KEY_PREFIX,
+        defaultKeyLength: 16, // Minimum key length for validation (matches custom generator)
         customKeyGenerator: (options: { length: number; prefix: string | undefined; }) => {
-            // Publishable keys (pk_) are SHORT (22 chars), Secret keys (sk_) are LONG (64 chars)
-            const keyLength = options.prefix === 'pk' ? 22 : 64;
+            // Publishable keys (pk_) are SHORT (16 chars), Secret keys (sk_) are LONG (32 chars)
+            const isPublishable = options.prefix === PUBLISHABLE_KEY_PREFIX;
+            const keyLength = isPublishable ? 16 : 32;
             const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
             const randomBytes = crypto.getRandomValues(new Uint8Array(keyLength));
             const key = Array.from(randomBytes, byte => chars[byte % chars.length]).join('');

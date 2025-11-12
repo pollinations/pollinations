@@ -29,12 +29,22 @@ const inflightRequests = new Map<string, Promise<Response>>();
  */
 export const requestDeduplication = createMiddleware<Env>(async (c, next) => {
 	const log = c.get("log");
+	
+	// Only deduplicate idempotent methods (GET, HEAD, OPTIONS, TRACE, PUT, DELETE)
+	// Skip POST, PATCH, CONNECT which are not idempotent
+	const method = c.req.method;
+	const isIdempotent = ["GET", "HEAD", "OPTIONS", "TRACE", "PUT", "DELETE"].includes(method);
+	
+	if (!isIdempotent) {
+		log.debug("[DEDUP] Skipping deduplication for non-idempotent method: {method}", { method });
+		return await next();
+	}
 
 	// Create deduplication key from URL + method + body
 	const key = await createRequestKey(c);
 
 	log.debug("[DEDUP] Deduplicating request: {method} {url}", {
-		method: c.req.method,
+		method,
 		url: c.req.url,
 		key: key.substring(0, 12) + "...",
 	});

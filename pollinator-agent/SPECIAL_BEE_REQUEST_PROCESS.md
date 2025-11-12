@@ -57,7 +57,7 @@ Please register first, then we'll follow up on the upgrade.
 ## Important Update
 We're implementing a new system in early September 2025 that may adjust how tiers work. Current assignments may change as part of this update.
 
-@thomash - Flagged for flower tier review - [brief reason]
+@voodoohop - Flagged for flower tier review - [brief reason]
 
 Happy coding! 🐝
 ```

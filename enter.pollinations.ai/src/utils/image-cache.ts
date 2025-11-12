@@ -115,8 +115,7 @@ export function setHttpMetadataHeaders(
 type CacheContext = Context<{
     Bindings: CloudflareBindings;
     Variables: {
-        connectingIp?: string;
-        requestId?: string;
+        requestId: string;
         log?: any;
     };
 }>;
@@ -147,17 +146,6 @@ export async function cacheResponse(
         // Get request-specific information
         const method = c.req.method || "GET";
         const requestTime = new Date().toISOString();
-
-        // Helper function to sanitize and limit string length
-        const sanitizeValue = (
-            value: string | object | unknown[] | null | undefined,
-            maxLength: number = 256,
-        ) => {
-            if (value === undefined || value === null) return undefined;
-            if (typeof value === "string") return value.substring(0, maxLength);
-            if (typeof value === "object") return undefined; // Skip objects
-            return value;
-        };
 
         // Create metadata object with content type and original URL
         const httpMetadata: R2HTTPMetadata = {

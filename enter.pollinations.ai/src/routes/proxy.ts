@@ -7,6 +7,7 @@ import type { Env } from "../env.ts";
 import { track, TrackEnv } from "@/middleware/track.ts";
 import { removeUnset } from "@/util.ts";
 import { frontendKeyRateLimit } from "@/middleware/rateLimit.durable.ts";
+import { requestDeduplication } from "@/middleware/requestDeduplication.ts";
 import { describeRoute, resolver } from "hono-openapi";
 import { validator } from "@/middleware/validator.ts";
 import {
@@ -101,10 +102,11 @@ export const proxyRoutes = new Hono<Env>()
     )
     // Auth required for all endpoints below (API key only - no session cookies)
     .use(auth({ allowApiKey: true, allowSessionCookie: false }))
-    .use(frontendKeyRateLimit)
     .use(polar)
     .post(
         "/v1/chat/completions",
+        requestDeduplication,
+        frontendKeyRateLimit,
         track("generate.text"),
         describeRoute({
             tags: ["Text Generation"],
@@ -142,6 +144,8 @@ export const proxyRoutes = new Hono<Env>()
     // Undocumented /openai alias for backward compatibility (deprecated)
     .post(
         "/openai",
+        requestDeduplication,
+        frontendKeyRateLimit,
         track("generate.text"),
         describeRoute({
             hide: true, // Hide from OpenAPI docs completely
@@ -178,6 +182,8 @@ export const proxyRoutes = new Hono<Env>()
     )
     .get(
         "/text/:prompt",
+        requestDeduplication,
+        frontendKeyRateLimit,
         describeRoute({
             tags: ["Text Generation"],
             description: [
@@ -243,6 +249,8 @@ export const proxyRoutes = new Hono<Env>()
     )
     .get(
         "/image/*",
+        requestDeduplication,
+        frontendKeyRateLimit,
         track("generate.image"),
         describeRoute({
             tags: ["Image Generation"],

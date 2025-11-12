@@ -7,6 +7,7 @@ import type { Env } from "../env.ts";
 import { track, TrackEnv } from "@/middleware/track.ts";
 import { removeUnset } from "@/util.ts";
 import { frontendKeyRateLimit } from "@/middleware/rateLimit.durable.ts";
+import { imageCache } from "@/middleware/image-cache.ts";
 import { describeRoute, resolver } from "hono-openapi";
 import { validator } from "@/middleware/validator.ts";
 import {
@@ -244,6 +245,8 @@ export const proxyRoutes = new Hono<Env>()
     .get(
         "/image/*",
         track("generate.image"),
+        // ✅ Cache FIRST - before auth/rate limiting
+        imageCache,
         describeRoute({
             tags: ["Image Generation"],
             description: [
@@ -281,6 +284,10 @@ export const proxyRoutes = new Hono<Env>()
                 ...errorResponses(400, 401, 500),
             },
         }),
+        // Only run auth/rate limiting if cache miss:
+        auth({ allowApiKey: true, allowSessionCookie: false }),
+        frontendKeyRateLimit,
+        polar,
         validator("query", GenerateImageRequestQueryParamsSchema),
         async (c) => {
             const log = c.get("log");

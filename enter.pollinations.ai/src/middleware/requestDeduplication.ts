@@ -30,13 +30,14 @@ const inflightRequests = new Map<string, Promise<Response>>();
 export const requestDeduplication = createMiddleware<Env>(async (c, next) => {
 	const log = c.get("log");
 	
-	// Only deduplicate idempotent methods (GET, HEAD, OPTIONS, TRACE, PUT, DELETE)
-	// Skip POST, PATCH, CONNECT which are not idempotent
+	// Only deduplicate GET and POST (our generation endpoints)
+	// GET: /api/generate/image/:prompt (deterministic)
+	// POST: /v1/chat/completions (deterministic for same input)
 	const method = c.req.method;
-	const isIdempotent = ["GET", "HEAD", "OPTIONS", "TRACE", "PUT", "DELETE"].includes(method);
+	const shouldDeduplicate = ["GET", "POST"].includes(method);
 	
-	if (!isIdempotent) {
-		log.debug("[DEDUP] Skipping deduplication for non-idempotent method: {method}", { method });
+	if (!shouldDeduplicate) {
+		log.debug("[DEDUP] Skipping deduplication for method: {method}", { method });
 		return await next();
 	}
 

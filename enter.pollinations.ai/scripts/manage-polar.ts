@@ -1,6 +1,7 @@
 import { Polar } from "@polar-sh/sdk";
 import { command, number, run, string, boolean } from "@drizzle-team/brocli";
 import { inspect } from "node:util";
+import { applyColor, applyStyle } from "../src/util.ts";
 
 const VERSION = "v1";
 
@@ -9,7 +10,8 @@ if (!polarAccessToken) {
     throw new Error("POLAR_ACCESS_TOKEN environment variable is required");
 }
 
-function createPolarClient(server: "sandbox" | "production") {
+function createPolarClient(env: "staging" | "production") {
+    const server = env === "production" ? "production" : "sandbox";
     return new Polar({
         accessToken: polarAccessToken,
         server,
@@ -227,7 +229,7 @@ type UpdateSubscriptionOptions = {
     productId: string;
 };
 
-const UPDATE_PRODUCTS = [
+const UPDATE_SUBSCRIPTION_PRODUCTS = [
     // Seed
     {
         currentProductId: "82ee54e1-5b69-447b-82aa-3c76bccae193",
@@ -247,7 +249,7 @@ const UPDATE_PRODUCTS = [
 
 async function updateSubscriptionProducts(
     polar: Polar,
-    config: typeof UPDATE_PRODUCTS,
+    config: typeof UPDATE_SUBSCRIPTION_PRODUCTS,
     apply: boolean,
 ) {
     const tierMap = Object.fromEntries(
@@ -257,10 +259,22 @@ async function updateSubscriptionProducts(
     const paginator = await polar.subscriptions.list({ limit: 100 });
     for await (const page of paginator) {
         for (const sub of page.result.items) {
+            const coloredEmail = applyColor("blue", sub.customer.email);
+            const subscriptionDetails = applyStyle(
+                "dim",
+                [
+                    `  subscription.productId: ${sub.productId}`,
+                    `  updated.productId: ${tierMap[sub.productId]}`,
+                ].join("\n"),
+            );
+            console.log(`Processing subscription for user: ${coloredEmail}`);
             if (tierMap[sub.productId]) {
-                console.log("Processing user:", sub.customer.email);
+                if (sub.status !== "active") {
+                    console.log(`  Skipping inactive subscription: ${sub.id}`);
+                    continue;
+                }
                 console.log(
-                    `Updating subscription ${sub.id} to ${tierMap[sub.productId]}`,
+                    `  ${applyColor("green", "Updating subscription product:")}\n${subscriptionDetails}`,
                 );
                 if (apply) {
                     try {
@@ -273,16 +287,26 @@ async function updateSubscriptionProducts(
                         });
                         results.push(result);
                     } catch (e) {
-                        console.log(e);
+                        const message = [
+                            `  Failed to update subscription: ${sub.id}\n`,
+                            `  ${e.message}`,
+                        ];
+                        console.error(
+                            ...message.map((line) => applyColor("red", line)),
+                        );
                     }
-                    await new Promise((resolve) => setTimeout(resolve, 500));
+                    // wait a bit as a precaution to not hit the rate limit
+                    await new Promise((resolve) => setTimeout(resolve, 100));
                 }
             } else {
-                console.log("Skipping user:", sub.customer.email);
+                console.log(
+                    `  Product does not match:\n${subscriptionDetails}`,
+                );
             }
+            console.log();
         }
     }
-    console.log(inspect(results, false, 1000));
+    return results;
 }
 
 async function updateSubscription(
@@ -305,8 +329,7 @@ const meterList = command({
         showArchived: boolean().default(false),
     },
     handler: async (opts) => {
-        const server = opts.env === "production" ? "production" : "sandbox";
-        const polar = createPolarClient(server);
+        const polar = createPolarClient(opts.env);
         const response = await polar.meters.list({ limit: 1000 });
         const meters = response.result.items.filter(
             (meter) => meter.archivedAt === null || opts.showArchived,
@@ -324,8 +347,7 @@ const meterUpdate = command({
         env: string().enum("staging", "production").default("staging"),
     },
     handler: async (opts) => {
-        const server = opts.env === "production" ? "production" : "sandbox";
-        const polar = createPolarClient(server);
+        const polar = createPolarClient(opts.env);
         const response = await updatePollenMeter(polar, {
             id: opts.id,
             type: opts.type,
@@ -344,12 +366,27 @@ const meterCreate = command({
         env: string().enum("staging", "production").default("staging"),
     },
     handler: async (opts) => {
-        const server = opts.env === "production" ? "production" : "sandbox";
-        const polar = createPolarClient(server);
+        const polar = createPolarClient(opts.env);
         const response = await createPollenMeter(polar, {
             name: opts.name,
             type: opts.type,
             priority: opts.priority,
+        });
+        console.log(inspect(response, false, 1000));
+    },
+});
+
+const customerMeterList = command({
+    name: "list-meters",
+    options: {
+        userId: string().required(),
+        env: string().enum("staging", "production").default("staging"),
+    },
+    handler: async (opts) => {
+        const polar = createPolarClient(opts.env);
+        const response = await polar.customerMeters.list({
+            limit: 100,
+            externalCustomerId: opts.userId,
         });
         console.log(inspect(response, false, 1000));
     },
@@ -364,8 +401,7 @@ const productCreate = command({
         env: string().enum("staging", "production").default("staging"),
     },
     handler: async (opts) => {
-        const server = opts.env === "production" ? "production" : "sandbox";
-        const polar = createPolarClient(server);
+        const polar = createPolarClient(opts.env);
         const benefits = opts.benefits
             .split(",")
             .map((benefit) => benefit.trim());
@@ -384,8 +420,7 @@ const subscriptionList = command({
         env: string().enum("staging", "production").default("staging"),
     },
     handler: async (opts) => {
-        const server = opts.env === "production" ? "production" : "sandbox";
-        const polar = createPolarClient(server);
+        const polar = createPolarClient(opts.env);
         const subscriptions = await polar.subscriptions.list({ limit: 100000 });
         const activeSub = subscriptions.result.items.find((sub) =>
             sub.customer.email.startsWith("pollen"),
@@ -410,8 +445,7 @@ const subscriptionUpdate = command({
         env: string().enum("staging", "production").default("staging"),
     },
     handler: async (opts) => {
-        const server = opts.env === "production" ? "production" : "sandbox";
-        const polar = createPolarClient(server);
+        const polar = createPolarClient(opts.env);
         const subscription = await updateSubscription(polar, opts);
         console.log(inspect(subscription, false, 1000));
     },
@@ -424,8 +458,7 @@ const tierCreateProducts = command({
         env: string().enum("staging", "production").default("staging"),
     },
     handler: async (opts) => {
-        const server = opts.env === "production" ? "production" : "sandbox";
-        const polar = createPolarClient(server);
+        const polar = createPolarClient(opts.env);
         const products = await createPollenTierBenefitsAndProducts(polar, {
             tiers: TIERS,
             tierMeterId: opts.meterId,
@@ -441,11 +474,10 @@ const tierUpdateSubscriptions = command({
         env: string().enum("staging", "production").default("staging"),
     },
     handler: async (opts) => {
-        const server = opts.env === "production" ? "production" : "sandbox";
-        const polar = createPolarClient(server);
+        const polar = createPolarClient(opts.env);
         const results = await updateSubscriptionProducts(
             polar,
-            UPDATE_PRODUCTS,
+            UPDATE_SUBSCRIPTION_PRODUCTS,
             opts.apply,
         );
         console.log(inspect(results, false, 1000));
@@ -465,6 +497,10 @@ const commands = [
     command({
         name: "tier",
         subcommands: [tierCreateProducts, tierUpdateSubscriptions],
+    }),
+    command({
+        name: "customer",
+        subcommands: [customerMeterList],
     }),
 ];
 

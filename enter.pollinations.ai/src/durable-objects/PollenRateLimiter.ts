@@ -14,12 +14,11 @@ import { getLogger } from "@logtape/logtape";
  * - Expensive requests = longer wait (natural punishment)
  * - Cheap requests = shorter wait (reward efficiency)
  * - Idle users get burst (time accumulates)
- * - 30s timeout prevents stuck requests if consumePollen fails
+ * - No timeout: consumePollen(0) must be called for cache hits
  */
 export class PollenRateLimiter extends DurableObject {
-    private nextAllowedTime!: number;
+    private nextAllowedTime: number = 0;
     private readonly refillRate: number;
-    private readonly REQUEST_TIMEOUT_MS = 30000; // 30s max request time
     private readonly log = getLogger(["durable", "rate-limiter"]);
 
     constructor(ctx: DurableObjectState, env: CloudflareBindings) {
@@ -28,10 +27,10 @@ export class PollenRateLimiter extends DurableObject {
         const refillPerHour = env.POLLEN_REFILL_PER_HOUR ?? 1.0;
         this.refillRate = refillPerHour / 3600000; // Convert per-hour to per-millisecond
 
-        this.ctx.blockConcurrencyWhile(async () => {
-            this.nextAllowedTime =
-                (await ctx.storage.get("nextAllowedTime")) ?? 0;
-
+        // Load state from storage - blockConcurrencyWhile ensures no requests
+        // are delivered until initialization completes, preventing race conditions
+        ctx.blockConcurrencyWhile(async () => {
+            this.nextAllowedTime = (await ctx.storage.get("nextAllowedTime")) ?? 0;
             this.log.debug("Loaded state: nextAllowedTime={nextAllowedTime}", {
                 nextAllowedTime: this.nextAllowedTime,
             });
@@ -50,10 +49,8 @@ export class PollenRateLimiter extends DurableObject {
 
         // Check if enough time has passed
         if (now >= this.nextAllowedTime) {
-            // Set conservative timeout for request completion
-            this.nextAllowedTime = now + this.REQUEST_TIMEOUT_MS;
-            // Persist immediately to survive DO restarts
-            await this.ctx.storage.put("nextAllowedTime", this.nextAllowedTime);
+            // Don't set nextAllowedTime here - let consumePollen() handle it
+            // This prevents stuck rate limiters when consumePollen() isn't called
             this.log.debug("Request ALLOWED");
             return { allowed: true };
         }

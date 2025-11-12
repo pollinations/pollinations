@@ -8,7 +8,6 @@ import { pipe } from "./transforms/pipe.js";
 import { createGoogleSearchTransform } from "./transforms/createGoogleSearchTransform.js";
 
 // Import persona prompts
-import unityPrompt from "./personas/unity.js";
 import midijourneyPrompt from "./personas/midijourney.js";
 import evilPrompt from "./personas/evil.js";
 import chickyTutorPrompt from "./personas/chickytutor.js";
@@ -97,17 +96,18 @@ const models: ModelDefinition[] = [
         output_modalities: ["text"],
         tools: true,
     },
-    {
-        name: "naughty",
-        description: "Mistral Nemo Instruct 2407",
-        config: portkeyConfig["mistral-nemo-instruct-2407"],
-        transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
-        uncensored: true,
-        community: false,
-        input_modalities: ["text"],
-        output_modalities: ["text"],
-        tools: true,
-    },
+    // Temporarily disabled
+    // {
+    //     name: "naughty",
+    //     description: "Mistral Nemo Instruct 2407",
+    //     config: portkeyConfig["mistral-nemo-instruct-2407"],
+    //     transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
+    //     uncensored: true,
+    //     community: false,
+    //     input_modalities: ["text"],
+    //     output_modalities: ["text"],
+    //     tools: true,
+    // },
     {
         name: "deepseek",
         description: "DeepSeek V3.1",
@@ -223,17 +223,6 @@ const models: ModelDefinition[] = [
     // ======================================
 
     {
-        name: "unity",
-        description: "Unity Unrestricted Agent",
-        config: portkeyConfig["mistral-small-3.1-24b-instruct-2503"],
-        transform: createMessageTransform(unityPrompt),
-        uncensored: true,
-        community: true,
-        input_modalities: ["text", "image"],
-        output_modalities: ["text"],
-        tools: true,
-    },
-    {
         name: "midijourney",
         description: "MIDIjourney",
         config: portkeyConfig["gpt-4.1-2025-04-14"],
@@ -243,17 +232,18 @@ const models: ModelDefinition[] = [
         output_modalities: ["text"],
         tools: true,
     },
-    {
-        name: "evil",
-        description: "Evil",
-        config: portkeyConfig["mistral-small-3.1-24b-instruct-2503"],
-        transform: createMessageTransform(evilPrompt),
-        uncensored: true,
-        community: true,
-        input_modalities: ["text", "image"],
-        output_modalities: ["text"],
-        tools: true,
-    },
+    // Temporarily disabled
+    // {
+    //     name: "evil",
+    //     description: "Evil",
+    //     config: portkeyConfig["mistral-small-3.1-24b-instruct-2503"],
+    //     transform: createMessageTransform(evilPrompt),
+    //     uncensored: true,
+    //     community: true,
+    //     input_modalities: ["text", "image"],
+    //     output_modalities: ["text"],
+    //     tools: true,
+    // },
     {
         name: "chickytutor",
         description: "ChickyTutor AI Language Tutor - (chickytutor.com)",

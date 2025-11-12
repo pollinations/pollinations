@@ -46,7 +46,8 @@ export const MESSAGE_CONFIG = {
 export const API_CONFIG = {
   MAX_RETRIES: 3,
   RETRY_DELAY: 1000,
-  ENDPOINT: 'https://text.pollinations.ai/openai'
+  ENDPOINT: 'https://enter.pollinations.ai/api/generate/v1/chat/completions',
+  API_KEY: 'plln_pk_2EZZcdEns9swqfIJ2yaoyJYWiSsTx38qcIFzCASqDjg96x2qfRvWkz9Qo3vDT66A'
 //   ENDPOINT: 'http://localhost:16385/openai'
 } as const;
 

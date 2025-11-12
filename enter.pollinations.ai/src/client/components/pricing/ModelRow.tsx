@@ -1,6 +1,6 @@
 import type { FC } from "react";
 import type { ModelPrice } from "./types.ts";
-import { hasReasoning, hasVision, hasAudioInput, getModelDescription, getRealModelId } from "./model-info.ts";
+import { hasReasoning, hasVision, hasAudioInput, getModelDescription, getTextModelId, getImageModelId } from "./model-info.ts";
 import { calculatePerPollen } from "./calculations.ts";
 import { PriceBadge } from "./PriceBadge.tsx";
 
@@ -10,7 +10,9 @@ type ModelRowProps = {
 
 export const ModelRow: FC<ModelRowProps> = ({ model }) => {
     const description = getModelDescription(model.name, model.type);
-    const realModelId = getRealModelId(model.name, model.type);
+    const realModelId = model.type === "text" 
+        ? getTextModelId(model.name as any) 
+        : getImageModelId(model.name as any);
     const genPerPollen = calculatePerPollen(model);
     
     // Get model capabilities

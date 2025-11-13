@@ -71,6 +71,7 @@ function RouteComponent() {
 
     const [isSigningOut, setIsSigningOut] = useState(false);
     const [isActivating, setIsActivating] = useState(false);
+    const [activationError, setActivationError] = useState<string | null>(null);
 
     const handleSignOut = async () => {
         if (isSigningOut) return; // Prevent double-clicks
@@ -124,6 +125,7 @@ function RouteComponent() {
     const handleActivateTier = async () => {
         if (isActivating || !tierData) return;
         setIsActivating(true);
+        setActivationError(null);
 
         try {
             const response = await fetch("/api/tiers/activate", {
@@ -135,7 +137,7 @@ function RouteComponent() {
 
             if (!response.ok) {
                 const error = (await response.json()) as { message?: string };
-                alert(`Activation failed: ${error.message || "Unknown error"}`);
+                setActivationError(error.message || "Unknown error");
                 setIsActivating(false);
                 return;
             }
@@ -143,7 +145,7 @@ function RouteComponent() {
             const data = (await response.json()) as { checkout_url: string };
             window.location.href = data.checkout_url;
         } catch (error) {
-            alert(`Activation failed: ${error}`);
+            setActivationError(String(error));
             setIsActivating(false);
         }
     };
@@ -223,12 +225,22 @@ function RouteComponent() {
                             fallback data.
                         </div>
                     )}
+                    {activationError && (
+                        <div className="px-3 py-2 bg-red-50 border border-red-200 rounded-lg">
+                            <p className="text-sm text-red-900">
+                                ❌ <strong>Activation Failed:</strong> {activationError}
+                            </p>
+                        </div>
+                    )}
                     <TierPanel
                         status={tierData.active_tier}
                         assigned_tier={tierData.assigned_tier}
                         next_refill_at_utc={tierData.next_refill_at_utc}
                         product_name={tierData.product_name}
                         daily_pollen={tierData.daily_pollen}
+                        subscription_status={tierData.subscription_status}
+                        subscription_ends_at={tierData.subscription_ends_at}
+                        subscription_canceled_at={tierData.subscription_canceled_at}
                     />
                 </div>
             )}

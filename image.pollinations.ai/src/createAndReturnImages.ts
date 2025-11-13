@@ -34,6 +34,7 @@ import type { ProgressManager } from "./progressBar.ts";
 import { callBPAIGenWithKontextFallback } from "./models/bpaigenModel.ts";
 import { callSeedreamAPI } from "./models/seedreamModel.ts";
 import { callAzureFluxKontext, type ImageGenerationResult as FluxImageGenerationResult } from "./models/azureFluxKontextModel.js";
+import { incrementModelCounter } from "./modelCounter.ts";
 
 dotenv.config();
 
@@ -808,6 +809,9 @@ const generateImage = async (
     requestId: string,
     userInfo: AuthResult,
 ): Promise<ImageGenerationResult> => {
+    // Log model usage
+    incrementModelCounter(safeParams.model || 'flux').catch(() => {});
+    
     // Model selection strategy using a more functional approach
     
     // GPT Image model - gpt-image-1-mini

@@ -99,6 +99,10 @@ export const formatMessage = (content) => {
     textContent = textContent.trim();
     // Collapse excessive vertical whitespace (3+ newlines -> 2 newlines)
     textContent = textContent.replace(/\n{3,}/g, '\n\n');
+    // Remove excessive whitespace at the beginning of lines (common in AI responses)
+    textContent = textContent.replace(/^\s+/gm, '');
+    // Remove multiple consecutive spaces (except in code blocks)
+    textContent = textContent.replace(/ {2,}/g, ' ');
     
     // First, render markdown
     let html = md.render(textContent);
@@ -121,6 +125,10 @@ export const formatStreamingMessage = (content) => {
     let textContent = String(content || '');
     textContent = textContent.trim();
     textContent = textContent.replace(/\n{3,}/g, '\n\n');
+    // Remove excessive whitespace at the beginning of lines (common in AI responses)
+    textContent = textContent.replace(/^\s+/gm, '');
+    // Remove multiple consecutive spaces (except in code blocks)
+    textContent = textContent.replace(/ {2,}/g, ' ');
     const html = marked.parse(textContent, { async: false });
     return renderMath(html);
   } catch (error) {

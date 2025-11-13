@@ -16,6 +16,7 @@ import {
     openaiUsageToTokenUsage,
     parseUsageHeaders,
 } from "@shared/registry/usage-headers.ts";
+import { routePath, baseRoutePath } from "hono/route";
 import {
     CompletionUsage,
     CompletionUsageSchema,
@@ -164,7 +165,7 @@ export const track = (eventType: EventType) =>
 
                 const event = createTrackingEvent({
                     requestId: c.get("requestId"),
-                    requestPath: c.req.path,
+                    requestPath: `${baseRoutePath(c)}${routePath(c)}`,
                     startTime,
                     endTime,
                     environment: c.env.ENVIRONMENT,

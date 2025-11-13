@@ -1,9 +1,9 @@
 import { Hono } from "hono";
 import { createHonoMockHandler, type MockAPI } from "./fetch.ts";
-import { SelectGenerationEvent } from "@/db/schema/event.ts";
+import { PolarEvent } from "@/events.ts";
 
 export type MockPolarState = {
-    events: SelectGenerationEvent[];
+    events: PolarEvent[];
 };
 
 export function createMockPolar(): MockAPI<MockPolarState> {
@@ -50,8 +50,16 @@ export function createMockPolar(): MockAPI<MockPolarState> {
             });
         })
         .post("/v1/events/ingest", async (c) => {
-            const body: { events: SelectGenerationEvent[] } =
-                await c.req.json();
+            const body: { events: PolarEvent[] } = await c.req.json();
+            if (
+                body.events.find((event) =>
+                    event.metadata.eventId.includes("simulate_polar_error"),
+                )
+            ) {
+                throw new Error(
+                    "Failed to ingest mock polar events: simulated error",
+                );
+            }
             state.events.push(...body.events);
             return c.json({ inserted: body.events.length });
         })

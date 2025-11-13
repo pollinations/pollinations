@@ -4,9 +4,7 @@ import { SelectGenerationEvent } from "@/db/schema/event.ts";
 
 type TinybirdGenerationEvent = Omit<
     SelectGenerationEvent,
-    | "id"
     | "eventStatus"
-    | "eventProcessingId"
     | "polarDeliveryAttempts"
     | "polarDeliveredAt"
     | "tinybirdDeliveryAttempts"
@@ -34,6 +32,14 @@ export function createMockTinybird(): MockAPI<MockTinybirdState> {
         const events: TinybirdGenerationEvent[] = parseNdjson(
             await c.req.text(),
         );
+        // simulate failure if id starts with "simulate_error"
+        if (
+            events.find((event) => event.id.includes("simulate_tinybird_error"))
+        ) {
+            throw new Error(
+                "Failed to ingest mock tinybird events: simulated error",
+            );
+        }
         state.events.push(...events);
         return c.json(
             {

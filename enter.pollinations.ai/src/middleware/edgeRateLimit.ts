@@ -1,4 +1,5 @@
 import { createMiddleware } from "hono/factory";
+import { HTTPException } from "hono/http-exception";
 import type { Env } from "@/env.ts";
 
 /**
@@ -15,13 +16,7 @@ export const edgeRateLimit = createMiddleware<Env>(async (c, next) => {
     const { success } = await c.env.EDGE_RATE_LIMITER.limit({ key: ip });
     
     if (!success) {
-        return c.json(
-            {
-                error: "Rate limit exceeded",
-                message: "Too many requests. Please slow down.",
-            },
-            429
-        );
+        throw new HTTPException(429);
     }
     
     return next();

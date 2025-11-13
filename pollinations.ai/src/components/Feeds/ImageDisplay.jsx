@@ -25,13 +25,30 @@ export const ImageDisplay = memo(function ImageDisplay({ image }) {
     // Show error if image has error property
     if (image?.error) {
         // Handle both string errors and JSON error objects
-        let errorMessage = image.error;
-        let errorDetails = image.message;
+        let errorMessage = 'An error occurred';
+        let errorDetails = null;
         
-        // If error is an object, extract the message
+        // If error is an object (new backend format), extract the message
         if (typeof image.error === 'object') {
-            errorMessage = image.error.message || image.error.error || 'An error occurred';
+            errorMessage = image.error.error || image.error.message || 'An error occurred';
+            errorDetails = image.error.message || image.error.details;
+            
+            // Ensure we have strings, not objects
+            if (typeof errorMessage === 'object') {
+                errorMessage = JSON.stringify(errorMessage);
+            }
+            if (typeof errorDetails === 'object') {
+                errorDetails = JSON.stringify(errorDetails);
+            }
+            
             // Don't show errorDetails if it's the same as errorMessage
+            if (errorDetails === errorMessage) {
+                errorDetails = null;
+            }
+        } else if (typeof image.error === 'string') {
+            // Old format: error is a string
+            errorMessage = image.error;
+            errorDetails = image.message;
             if (errorDetails === errorMessage) {
                 errorDetails = null;
             }

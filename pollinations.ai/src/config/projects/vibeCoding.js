@@ -92,7 +92,7 @@ export const vibeCodingProjects = [
     name: "Pollinations.DIY",
     url: "https://pollinations.diy",
     description: "A browser-based coding environment based on bolt.diy, featuring integrated Pollinations AI services, visual code editing, and project management tools.",
-    author: "@thomash",
+    author: "@voodoohop",
     submissionDate: "2025-03-01",
     order: 1
   },
@@ -100,7 +100,7 @@ export const vibeCodingProjects = [
     name: "Websim",
     url: "https://websim.ai/c/bXsmNE96e3op5rtUS",
     description: "A web simulation tool that integrates Pollinations.ai.",
-    author: "@thomash",
+    author: "@voodoohop",
     order: 2
   },
   {
@@ -151,7 +151,7 @@ export const vibeCodingProjects = [
     name: "websim-pollinations-ai",
     url: "https://websim.pollinations.ai",
     description: "A lightweight websim for creating web simulations with AI. Usage: https://websim.pollinations.ai/[prompt] - Simply append your prompt to the URL to generate interactive web experiences.",
-    author: "@thomash",
+    author: "@voodoohop",
     repo: "https://github.com/pollinations/pollinations/tree/main/websim.pollinations.ai",
     submissionDate: "2025-08-03",
     order: 0.5

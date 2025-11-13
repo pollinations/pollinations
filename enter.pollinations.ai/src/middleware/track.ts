@@ -1,7 +1,6 @@
 import { processEvents, storeEvents } from "@/events.ts";
 import {
     resolveServiceId,
-    isFreeService,
     getActivePriceDefinition,
     calculateCost,
     calculatePrice,
@@ -64,7 +63,6 @@ type RequestTrackingData = {
     modelRequested: string | null;
     resolvedModelRequested: string;
     modelProvider?: string;
-    freeModelRequested: boolean;
     modelPriceDefinition: PriceDefinition;
     streamRequested: boolean;
     referrerData: ReferrerData;
@@ -86,7 +84,6 @@ export type TrackVariables = {
     track: {
         modelRequested: string | null;
         resolvedModelRequested: string;
-        freeModelRequested: boolean;
         streamRequested: boolean;
         overrideResponseTracking: (response: Response) => void;
     };
@@ -113,7 +110,6 @@ export const track = (eventType: EventType) =>
         c.set("track", {
             modelRequested: requestTracking.modelRequested,
             resolvedModelRequested: requestTracking.resolvedModelRequested,
-            freeModelRequested: requestTracking.freeModelRequested,
             streamRequested: requestTracking.streamRequested,
             overrideResponseTracking: (response: Response) => {
                 responseOverride = response;
@@ -204,7 +200,6 @@ async function trackRequest(
         eventType,
     ) as ServiceId;
     const modelProvider = getServiceDefinition(resolvedModelRequested).provider;
-    const freeModelRequested = isFreeService(resolvedModelRequested);
     const modelPriceDefinition = getActivePriceDefinition(
         resolvedModelRequested,
     );
@@ -221,7 +216,6 @@ async function trackRequest(
         resolvedModelRequested,
         modelProvider,
         modelPriceDefinition,
-        freeModelRequested,
         streamRequested,
         referrerData,
     };
@@ -257,7 +251,7 @@ async function trackResponse(
         responseOk: response.ok,
         responseStatus: response.status,
         cacheData: cacheInfo,
-        isBilledUsage: !requestTracking.freeModelRequested,
+        isBilledUsage: true,
         cost,
         price,
         modelUsed: modelUsage.model,
@@ -358,12 +352,11 @@ function createTrackingEvent({
 
         modelRequested: requestTracking.modelRequested,
         resolvedModelRequested: requestTracking.resolvedModelRequested,
-        freeModelRequested: requestTracking.freeModelRequested,
+        freeModelRequested: false,
         modelUsed: responseTracking.modelUsed,
 
         isBilledUsage:
             responseTracking.responseOk &&
-            !requestTracking.freeModelRequested &&
             !responseTracking.cacheData.cacheHit,
 
         ...balanceTracking,
@@ -530,10 +523,10 @@ async function extractUsageAndContentFilterResults(
     return extractUsageAndContentFilterResultsHeaders(response);
 }
 
-function validateUsage(usage: ModelUsage, freeModelRequested: boolean) {
+function validateUsage(usage: ModelUsage) {
     const includedUsageTypes = Object.keys(usage.usage);
-    if (!freeModelRequested && includedUsageTypes.length === 0) {
-        throw new Error("No usage information found for a non-free model");
+    if (includedUsageTypes.length === 0) {
+        throw new Error("No usage information found");
     }
 }
 

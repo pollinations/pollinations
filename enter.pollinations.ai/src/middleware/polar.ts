@@ -53,7 +53,7 @@ export const polar = createMiddleware<PolarEnv>(async (c, next) => {
         },
         {
             log,
-            ttl: 60, // 1 minute
+            ttl: 20, // 20 seconds - faster updates for subscription changes
             kv: c.env.KV,
             keyGenerator: (userId) => `polar:customer:state:${userId}`,
         },

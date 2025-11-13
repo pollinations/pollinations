@@ -283,9 +283,11 @@ export async function genericOpenAIClient(messages, options = {}, config) {
         }
 
         // Reconstruct the response object with the formatted choice
+        // Preserve non-standard fields like citations (from Perplexity) when present
         return {
             ...data,
             choices: [formattedChoice],
+            ...(data.citations && { citations: data.citations }),
         };
     } catch (error) {
         errorLog(`[${requestId}] Error in text generation`, {

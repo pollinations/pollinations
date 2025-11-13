@@ -8,6 +8,7 @@ import { track, TrackEnv } from "@/middleware/track.ts";
 import { removeUnset } from "@/util.ts";
 import { frontendKeyRateLimit } from "@/middleware/rateLimit.durable.ts";
 import { imageCache } from "@/middleware/image-cache.ts";
+import { edgeRateLimit } from "@/middleware/edgeRateLimit.ts";
 import { describeRoute, resolver } from "hono-openapi";
 import { validator } from "@/middleware/validator.ts";
 import {
@@ -50,6 +51,8 @@ function errorResponses(...codes: ErrorStatusCode[]) {
 }
 
 export const proxyRoutes = new Hono<Env>()
+    // Edge rate limiter: first line of defense (10 req/s per IP)
+    .use("*", edgeRateLimit)
     .get(
         "/v1/models",
         describeRoute({

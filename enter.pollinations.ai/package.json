@@ -17,7 +17,7 @@
         "migrate:production": "wrangler d1 migrations apply DB --remote --env production",
         "migrate:development": "wrangler d1 migrations apply DB --local",
         "build:production": "CLOUDFLARE_ENV=production vite build --mode=production",
-        "deploy:production": "npm run build:production && wrangler deploy",
+        "deploy:production": "npm run build:production && wrangler deploy --env production",
         "push-secrets:staging": "sops exec-file --no-fifo .encrypted.staging.env 'npx wrangler secret bulk {} --env staging'",
         "push-secrets:production": "sops exec-file --no-fifo .encrypted.production.env 'npx wrangler secret bulk {} --env production'"
     },

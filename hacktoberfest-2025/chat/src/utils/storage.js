@@ -52,7 +52,7 @@ export const saveActiveChatId = (chatId) => {
 };
 
 export const getTheme = () => {
-  return localStorage.getItem(STORAGE_KEYS.THEME) || 'dark';
+  return localStorage.getItem(STORAGE_KEYS.THEME) || 'light';
 };
 
 export const saveTheme = (theme) => {

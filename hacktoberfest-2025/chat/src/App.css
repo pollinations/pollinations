@@ -48,5 +48,29 @@
 @media (max-width: 768px) {
   .chat-container {
     margin-left: 0; /* No margin on mobile since sidebar is overlay */
+    width: 100%;
+  }
+  
+  body.sidebar-expanded-mobile .chat-container {
+    filter: blur(8px);
+    pointer-events: none;
+  }
+  
+  /* Better touch targets on mobile */
+  button {
+    min-height: 44px;
+    min-width: 44px;
+  }
+  
+  /* Prevent text selection during gestures */
+  .sidebar,
+  .chat-header {
+    -webkit-user-select: none;
+    user-select: none;
+  }
+  
+  /* Smooth scrolling for mobile */
+  .messages-area {
+    -webkit-overflow-scrolling: touch;
   }
 }

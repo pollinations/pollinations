@@ -3,7 +3,7 @@ name: Deploy to enter-services
 on:
   push:
     branches:
-      - staging
+      - production
       - feature/encrypt-gptimage-env
   workflow_dispatch:
 
@@ -60,7 +60,7 @@ jobs:
             
             # Pull latest changes
             echo "📥 Pulling latest changes..."
-            git pull origin staging
+            git pull origin production
             
             # Update text service
             echo "📝 Updating text.pollinations.ai..."

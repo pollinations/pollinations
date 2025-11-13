@@ -3,7 +3,7 @@ name: Deploy enter.pollinations.ai
 on:
   push:
     branches:
-      - main
+      - production
     paths:
       - 'enter.pollinations.ai/**'
       - 'shared/registry/**'

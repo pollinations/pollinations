@@ -7,11 +7,12 @@ import { validator } from "../middleware/validator.ts";
 import type { Env } from "../env.ts";
 import { describeRoute } from "hono-openapi";
 
-const productSlugSchema = z.literal([
-    "pollen-bundle-small",
-    "pollen-bundle-medium",
-    "pollen-bundle-large",
-]);
+export const productSlugs = [
+    "pollen-pack-small",
+    "pollen-pack-medium",
+    "pollen-pack-large",
+] as const;
+const productSlugSchema = z.literal(productSlugs);
 type ProductSlug = z.infer<typeof productSlugSchema>;
 
 const checkoutParamsSchema = z.object({
@@ -26,11 +27,6 @@ const redirectQuerySchema = z.object({
 });
 
 type ProductMap = { [key in ProductSlug]: string };
-export const products: ProductMap = {
-    "pollen-bundle-small": "c2c433fd-ce3f-44b3-b766-feb3c263b4ff",
-    "pollen-bundle-medium": "70aa83ca-1f21-420a-bb10-348c35f338e9",
-    "pollen-bundle-large": "2258fb2c-113b-4502-bdce-1eba6e5eb931",
-};
 
 export const polarRoutes = new Hono<Env>()
     .use("*", auth({ allowApiKey: false, allowSessionCookie: true }))
@@ -110,6 +106,11 @@ export const polarRoutes = new Hono<Env>()
             const user = c.var.auth.requireUser();
             const { slug } = c.req.valid("param");
             const { redirect } = c.req.valid("query");
+            const products: ProductMap = {
+                "pollen-pack-small": c.env.POLAR_PRODUCT_PACK_SMALL,
+                "pollen-pack-medium": c.env.POLAR_PRODUCT_PACK_MEDIUM,
+                "pollen-pack-large": c.env.POLAR_PRODUCT_PACK_LARGE,
+            };
             try {
                 const polar = c.var.polar.client;
                 const response = await polar.checkouts.create({

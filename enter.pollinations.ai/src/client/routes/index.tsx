@@ -161,7 +161,11 @@ function RouteComponent() {
                         window.location.href = "/api/polar/customer/portal";
                     }}
                 />
-                <Button as="a" href="/api/docs" className="bg-gray-900 text-white hover:!brightness-90">
+                <Button
+                    as="a"
+                    href="/api/docs"
+                    className="bg-gray-900 text-white hover:!brightness-90"
+                >
                     API Reference
                 </Button>
             </Header>
@@ -175,7 +179,7 @@ function RouteComponent() {
                             weight="light"
                             disabled
                         >
-                            + $5
+                            + $10
                         </Button>
                         <Button
                             as="button"
@@ -183,10 +187,15 @@ function RouteComponent() {
                             weight="light"
                             disabled
                         >
-                            + $10
-                        </Button>
-                        <Button as="button" color="purple" weight="light" disabled>
                             + $20
+                        </Button>
+                        <Button
+                            as="button"
+                            color="purple"
+                            weight="light"
+                            disabled
+                        >
+                            + $50
                         </Button>
                         <a
                             href="https://github.com/pollinations/pollinations/issues/4826"
@@ -198,7 +207,10 @@ function RouteComponent() {
                         </a>
                     </div>
                 </div>
-                <PollenBalance balances={balances} dailyPollen={tierData?.daily_pollen} />
+                <PollenBalance
+                    balances={balances}
+                    dailyPollen={tierData?.daily_pollen}
+                />
             </div>
             {tierData && (
                 <div className="flex flex-col gap-2">
@@ -213,8 +225,20 @@ function RouteComponent() {
                                     weight="light"
                                     className="!bg-gray-50"
                                 >
-                                    {isActivating ? "Processing..." : (
-                                        <>Activate <strong>{tierData.product_name || tierData.assigned_tier[0].toUpperCase() + tierData.assigned_tier.slice(1) + " Tier"}</strong></>
+                                    {isActivating ? (
+                                        "Processing..."
+                                    ) : (
+                                        <>
+                                            Activate{" "}
+                                            <strong>
+                                                {tierData.product_name ||
+                                                    tierData.assigned_tier[0].toUpperCase() +
+                                                        tierData.assigned_tier.slice(
+                                                            1,
+                                                        ) +
+                                                        " Tier"}
+                                            </strong>
+                                        </>
                                     )}
                                 </Button>
                             </div>
@@ -229,7 +253,8 @@ function RouteComponent() {
                     {activationError && (
                         <div className="px-3 py-2 bg-red-50 border border-red-200 rounded-lg">
                             <p className="text-sm text-red-900">
-                                ❌ <strong>Activation Failed:</strong> {activationError}
+                                ❌ <strong>Activation Failed:</strong>{" "}
+                                {activationError}
                             </p>
                         </div>
                     )}
@@ -241,7 +266,9 @@ function RouteComponent() {
                         daily_pollen={tierData.daily_pollen}
                         subscription_status={tierData.subscription_status}
                         subscription_ends_at={tierData.subscription_ends_at}
-                        subscription_canceled_at={tierData.subscription_canceled_at}
+                        subscription_canceled_at={
+                            tierData.subscription_canceled_at
+                        }
                     />
                 </div>
             )}

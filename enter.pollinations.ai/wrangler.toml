@@ -107,9 +107,12 @@ zone_name = "pollinations.ai"
 custom_domain = true
 
 [[env.production.d1_databases]]
+remote = true
 binding = "DB"
-database_name = "staging-pollinations-enter-db"
-database_id = "073195b4-d99e-4b67-9575-eb5efe6d3234"
+# database_name = "staging-pollinations-enter-db"
+# database_id = "073195b4-d99e-4b67-9575-eb5efe6d3234"
+database_name = "production-pollinations-enter-db"
+database_id = "f9cf0f09-b7aa-4cd3-8f9d-fa50c97ff1f3"
 migrations_dir = "drizzle"
 
 [[env.production.kv_namespaces]]

@@ -10,6 +10,15 @@ import { z } from "zod";
 type TierStatus = "none" | "seed" | "flower" | "nectar";
 type ActivatableTier = "seed" | "flower" | "nectar";
 
+// Polar subscription shape (only fields we use)
+interface PolarSubscription {
+    productId: string;
+    status?: string;
+    currentPeriodStart?: string;
+    currentPeriodEnd?: string;
+    canceledAt?: string | null;
+}
+
 // Central tier definition
 const TIERS: readonly ActivatableTier[] = ["seed", "flower", "nectar"] as const;
 
@@ -31,6 +40,9 @@ interface TierViewModel {
     daily_pollen?: number;
     next_refill_at_utc: string;
     has_polar_error: boolean;
+    subscription_status?: string;  // e.g., "active", "canceled"
+    subscription_ends_at?: string;  // currentPeriodEnd ISO timestamp
+    subscription_canceled_at?: string;  // canceledAt ISO timestamp
 }
 
 function getTierStatus(userTier: string | null | undefined): TierStatus {
@@ -95,6 +107,9 @@ export const tiersRoutes = new Hono<Env>()
             let daily_pollen: number | undefined;
             let next_refill_at_utc = getNextMidnightUTC(); // Default fallback
             let has_polar_error = false;
+            let subscription_status: string | undefined;
+            let subscription_ends_at: string | undefined;
+            let subscription_canceled_at: string | undefined;
             
             try {
                 // Get customer state from Polar
@@ -106,10 +121,20 @@ export const tiersRoutes = new Hono<Env>()
                 
                 // Find the active subscription (prioritize highest tier if multiple)
                 if (activeSubs.length > 0) {
-                    const activeSub = activeSubs[0];
+                    const activeSub = activeSubs[0] as unknown as PolarSubscription;
                     const activeProductId = activeSub.productId;
                     
                     active_tier = getTierFromProductId(c.env, activeProductId);
+                    
+                    // Extract subscription status information with safe access
+                    subscription_status = activeSub.status ?? undefined;
+                    subscription_ends_at = activeSub.currentPeriodEnd ?? undefined;
+                    subscription_canceled_at = activeSub.canceledAt ?? undefined;
+                    
+                    // Warn if data inconsistency detected
+                    if (activeSub.canceledAt && !activeSub.currentPeriodEnd) {
+                        log.warn("Subscription canceled but missing end date", { userId: user.id });
+                    }
                     
                     // Calculate next refill: 24 hours from subscription start
                     if (activeSub.currentPeriodStart) {
@@ -125,8 +150,7 @@ export const tiersRoutes = new Hono<Env>()
                         
                         // Extract daily pollen from meter_credit benefit
                         const meterBenefit = product.benefits?.find(isMeterCreditBenefit);
-                        // Polar uses "units" property, but check "amount" as fallback
-                        const pollenValue = meterBenefit?.properties?.units ?? meterBenefit?.properties?.amount;
+                        const pollenValue = meterBenefit?.properties?.units;
                         
                         if (pollenValue !== undefined) {
                             daily_pollen = pollenValue;
@@ -142,6 +166,17 @@ export const tiersRoutes = new Hono<Env>()
                 has_polar_error = true;
             }
             
+            // Fetch assigned tier product info for button text (even if no subscription)
+            if (assigned_tier !== "none" && !product_name) {
+                try {
+                    const assignedProductId = getTierProductId(c.env, assigned_tier as ActivatableTier);
+                    const assignedProduct = (await polar.products.get({ id: assignedProductId })) as PolarProductMinimal;
+                    product_name = assignedProduct.name;
+                } catch (error) {
+                    log.warn("Failed to fetch assigned tier product", { tier: assigned_tier });
+                }
+            }
+            
             // Determine if activate button should be shown
             const should_show_activate_button = shouldShowActivateButton(assigned_tier, active_tier);
             
@@ -154,6 +189,9 @@ export const tiersRoutes = new Hono<Env>()
                 daily_pollen,
                 next_refill_at_utc,
                 has_polar_error,
+                subscription_status,
+                subscription_ends_at,
+                subscription_canceled_at,
             };
 
             return c.json(viewModel);

@@ -541,7 +541,11 @@ const server = http.createServer((req, res) => {
             Pragma: "no-cache",
             Expires: "0",
         });
-        res.end(JSON.stringify(getModelCounts()));
+        getModelCounts().then(counts => {
+            res.end(JSON.stringify(counts));
+        }).catch(() => {
+            res.end(JSON.stringify({}));
+        });
         return;
     }
 

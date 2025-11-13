@@ -22,10 +22,13 @@ const ChatInput = ({
   const [isAttachMenuOpen, setIsAttachMenuOpen] = useState(false);
   const [isModelDropdownOpen, setIsModelDropdownOpen] = useState(false);
   const [selectedAttachment, setSelectedAttachment] = useState(null);
+  const [modelSearchTerm, setModelSearchTerm] = useState('');
+  const [isDragging, setIsDragging] = useState(false);
   const inputRef = useRef(null);
   const attachMenuRef = useRef(null);
   const modelDropdownRef = useRef(null);
   const fileInputRef = useRef(null);
+  const dropZoneRef = useRef(null);
   const { isListening, startListening, stopListening, hasSpeechRecognition } = useSpeech();
 
   const isImagineMode = inputValue.includes('/imagine');
@@ -175,6 +178,82 @@ const ChatInput = ({
     reader.readAsDataURL(file);
   };
 
+  const handlePaste = (event) => {
+    const items = event.clipboardData?.items;
+    if (!items) return;
+
+    for (let i = 0; i < items.length; i++) {
+      const item = items[i];
+      if (item.type.startsWith('image/')) {
+        event.preventDefault();
+        const file = item.getAsFile();
+        if (file) {
+          const reader = new FileReader();
+          reader.onload = (e) => {
+            const result = typeof e.target.result === 'string' ? e.target.result : '';
+            const commaIndex = result.indexOf(',');
+            const base64Data = commaIndex >= 0 ? result.slice(commaIndex + 1) : result;
+
+            setSelectedAttachment({
+              file,
+              preview: result,
+              base64: base64Data,
+              name: file.name || 'pasted-image.png',
+              mimeType: file.type || 'image/png',
+              size: file.size,
+              isImage: true
+            });
+          };
+          reader.readAsDataURL(file);
+        }
+        break;
+      }
+    }
+  };
+
+  const handleDragOver = (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+    if (event.currentTarget === dropZoneRef.current) {
+      setIsDragging(false);
+    }
+  };
+
+  const handleDrop = (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+    setIsDragging(false);
+
+    const files = event.dataTransfer?.files;
+    if (!files || files.length === 0) return;
+
+    const file = files[0];
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const result = typeof e.target.result === 'string' ? e.target.result : '';
+      const commaIndex = result.indexOf(',');
+      const base64Data = commaIndex >= 0 ? result.slice(commaIndex + 1) : result;
+      const isImage = file.type.startsWith('image/');
+
+      setSelectedAttachment({
+        file,
+        preview: isImage ? result : null,
+        base64: base64Data,
+        name: file.name,
+        mimeType: file.type || 'application/octet-stream',
+        size: file.size,
+        isImage
+      });
+    };
+    reader.readAsDataURL(file);
+  };
+
   const removeSelectedAttachment = () => {
     setSelectedAttachment(null);
     if (fileInputRef.current) {
@@ -201,7 +280,25 @@ const ChatInput = ({
   };
 
   return (
-    <footer className="chat-input-container">
+    <footer 
+      className="chat-input-container"
+      ref={dropZoneRef}
+      onDragOver={handleDragOver}
+      onDragLeave={handleDragLeave}
+      onDrop={handleDrop}
+    >
+      {isDragging && (
+        <div className="drop-overlay">
+          <div className="drop-box">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+              <polyline points="7 10 12 15 17 10" />
+              <line x1="12" y1="15" x2="12" y2="3" />
+            </svg>
+            <span>Drop your file here</span>
+          </div>
+        </div>
+      )}
       <div className="chat-input-inner">
         {/* Image Preview Above Input */}
         {selectedAttachment && (
@@ -236,6 +333,73 @@ const ChatInput = ({
         
         <div className="chat-input-wrapper-modern">
           <div className="chatbar-top">
+            <div className="chatbar-model-row">
+              <div className="model-selector-wrapper" ref={modelDropdownRef}>
+                <button
+                  type="button"
+                  className="model-chip"
+                  onClick={handleModelBadgeClick}
+                  disabled={!modelsLoaded}
+                  title={modelsLoaded ? modelLabel : 'Loading models...'}
+                >
+                  <span className="model-chip-icon" aria-hidden="true">
+                    {mode === 'imagine' ? '🖼️' : '🌀'}
+                  </span>
+                  <span className="model-chip-name">{modelLabel}</span>
+                  <svg className="model-chip-caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M6 9l6 6 6-6" />
+                  </svg>
+                </button>
+                {isModelDropdownOpen && (
+                  <div className="model-dropdown-compact">
+                    <div className="model-search-container">
+                      <input
+                        type="text"
+                        className="model-search-input"
+                        placeholder="Search models..."
+                        value={modelSearchTerm}
+                        onChange={(e) => setModelSearchTerm(e.target.value)}
+                        onClick={(e) => e.stopPropagation()}
+                      />
+                      {modelSearchTerm && (
+                        <button
+                          type="button"
+                          className="model-search-clear"
+                          onClick={() => setModelSearchTerm('')}
+                          aria-label="Clear search"
+                        >
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <line x1="18" y1="6" x2="6" y2="18"/>
+                            <line x1="6" y1="6" x2="18" y2="18"/>
+                          </svg>
+                        </button>
+                      )}
+                      <svg className="model-search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <circle cx="11" cy="11" r="8"/>
+                        <path d="M21 21l-4.35-4.35"/>
+                      </svg>
+                    </div>
+                    <div className="model-options-container">
+                      {Object.entries(activeModelsMap)
+                        .filter(([key, model]) => 
+                          (model.name || key).toLowerCase().includes(modelSearchTerm.toLowerCase())
+                        )
+                        .map(([key, model]) => (
+                          <button
+                            key={key}
+                            type="button"
+                            className={`model-option-compact ${activeModelId === key ? 'active' : ''}`}
+                            onClick={() => handleModelSelect(key)}
+                          >
+                            {model.name || key}
+                          </button>
+                        ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+
             {(isImagineMode || isCanvasMode) && (
               <div className="chatbar-tags">
                 {isImagineMode && (
@@ -290,6 +454,7 @@ const ChatInput = ({
                 }
               }}
               onKeyDown={handleKeyDown}
+              onPaste={handlePaste}
               placeholder="Type your message here..."
               rows="1"
               className="chat-input-modern"
@@ -342,39 +507,6 @@ const ChatInput = ({
                   style={{ display: 'none' }}
                   onChange={handleFileChange}
                 />
-              </div>
-
-              <div className="model-selector-wrapper" ref={modelDropdownRef}>
-                <button
-                  type="button"
-                  className="model-chip"
-                  onClick={handleModelBadgeClick}
-                  disabled={!modelsLoaded}
-                  title={modelsLoaded ? modelLabel : 'Loading models...'}
-                >
-                  <span className="model-chip-icon" aria-hidden="true">
-                    {mode === 'imagine' ? '🖼️' : '🌀'}
-                  </span>
-                  <span className="model-chip-name">{modelLabel}</span>
-                  <svg className="model-chip-caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="M6 9l6 6 6-6" />
-                  </svg>
-                </button>
-                
-                {isModelDropdownOpen && (
-                  <div className="model-dropdown-compact">
-                    {Object.entries(activeModelsMap).map(([key, model]) => (
-                      <button
-                        key={key}
-                        type="button"
-                        className={`model-option-compact ${activeModelId === key ? 'active' : ''}`}
-                        onClick={() => handleModelSelect(key)}
-                      >
-                        {model.name || key}
-                      </button>
-                    ))}
-                  </div>
-                )}
               </div>
             </div>
 

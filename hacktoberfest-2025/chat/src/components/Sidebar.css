@@ -31,7 +31,7 @@ body.light .sidebar-overlay {
   width: 72px;
   height: 100vh;
   background: var(--bg-primary);
-  border-right: 1px solid var(--border-color);
+  border-right: none;
   display: flex;
   flex-direction: column;
   position: fixed;
@@ -50,12 +50,12 @@ body.light .sidebar-overlay {
 
 body.dark .sidebar {
   background: #000;
-  border-right: 1px solid rgba(255, 255, 255, 0.03);
+  border-right: none;
 }
 
 body.light .sidebar {
   background: #fff;
-  border-right: 1px solid rgba(0, 0, 0, 0.08);
+  border-right: none;
 }
 
 body.light .sidebar.expanded {
@@ -250,6 +250,20 @@ body.light .sidebar-section-title {
   background: rgba(74, 222, 128, 0.1);
 }
 
+.sidebar-icon-btn.sidebar-toggle-icon {
+  color: var(--text-secondary);
+}
+
+.sidebar-icon-btn.sidebar-toggle-icon:hover {
+  color: var(--text-primary);
+  background: var(--sidebar-item-hover);
+}
+
+.sidebar-icon-btn.sidebar-toggle-icon svg {
+  width: 22px;
+  height: 22px;
+}
+
 .chat-list {
   flex: 1;
   padding: 0.5rem;
@@ -352,9 +366,20 @@ body.light .chat-item.active {
   display: flex;
   flex-direction: column;
   align-items: center;
+  margin-top: auto; /* Push to bottom */
 }
 
 body.light .sidebar-footer {
+  border-top: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+/* Always show footer in narrow mode too */
+.sidebar:not(.expanded) .sidebar-footer {
+  padding: 0.5rem 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+body.light .sidebar:not(.expanded) .sidebar-footer {
   border-top: 1px solid rgba(0, 0, 0, 0.08);
 }
 
@@ -423,24 +448,24 @@ body.dark .chat-item.active {
 /* Mobile responsive */
 @media (max-width: 768px) {
   .sidebar {
-    position: fixed;
-    top: 0;
-    left: 0;
-    z-index: 1000;
-    box-shadow: var(--shadow-lg);
     width: 0; /* Hidden when collapsed */
-    overflow: hidden;
   }
   
   .sidebar.expanded {
-    width: 280px; /* Slightly narrower on mobile */
+    width: 85vw; /* Take most of screen on mobile */
+    max-width: 320px;
   }
   
-  /* On mobile, when collapsed, only show the button */
+  /* Show toggle button when sidebar is collapsed on mobile */
+  .sidebar:not(.expanded) {
+    width: 0;
+    border: none;
+  }
+  
   .sidebar:not(.expanded) .sidebar-header {
     position: fixed;
-    top: 16px;
-    left: 16px;
+    top: 1rem;
+    left: 1rem;
     z-index: 1001;
     width: auto;
     padding: 0;
@@ -455,5 +480,9 @@ body.dark .chat-item.active {
     background: var(--bg-primary);
     border: 1px solid var(--border-color);
     box-shadow: var(--shadow-md);
+  }
+  
+  .sidebar:not(.expanded) .sidebar-footer {
+    display: none; /* Hide theme toggle when collapsed on mobile */
   }
 }

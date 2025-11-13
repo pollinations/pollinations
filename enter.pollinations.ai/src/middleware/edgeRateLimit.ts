@@ -16,7 +16,9 @@ export const edgeRateLimit = createMiddleware<Env>(async (c, next) => {
     const { success } = await c.env.EDGE_RATE_LIMITER.limit({ key: ip });
     
     if (!success) {
-        throw new HTTPException(429);
+        throw new HTTPException(429, {
+            message: "Too many requests from this IP. Please slow down.",
+        });
     }
     
     return next();

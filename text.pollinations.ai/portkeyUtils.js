@@ -72,9 +72,10 @@ async function generatePortkeyHeaders(config) {
 
     // Generate headers by prefixing config properties with 'x-portkey-'
     const headers = {
-        // Set to false to receive reasoning/thinking tokens from models
+        // Enable citations and non-OpenAI fields (requires updated Portkey gateway)
         "x-portkey-strict-openai-compliance": "false",
     };
+    
     for (const [key, value] of Object.entries(config)) {
         // Skip special properties that aren't headers
         if (key === "removeSeed" || key === "authKey") continue;

@@ -185,10 +185,7 @@ function RouteComponent() {
                             as="button"
                             color="purple"
                             weight="light"
-                            onClick={() => {
-                                window.location.href =
-                                    "/api/polar/checkout/pollen-pack-medium";
-                            }}
+                            disabled
                         >
                             + $20
                         </Button>
@@ -196,10 +193,7 @@ function RouteComponent() {
                             as="button"
                             color="purple"
                             weight="light"
-                            onClick={() => {
-                                window.location.href =
-                                    "/api/polar/checkout/pollen-pack-large";
-                            }}
+                            disabled
                         >
                             + $50
                         </Button>

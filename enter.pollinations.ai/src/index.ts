@@ -46,9 +46,7 @@ const app = new Hono<Env>()
                 // Allow localhost on any port for development
                 if (origin.startsWith("http://localhost:")) return origin;
                 // Production origins
-                if (origin === "https://enter.pollinations.ai") return origin;
-                if (origin === "https://beta.pollinations.ai") return origin;
-                if (origin === "https://pollinations.ai") return origin;
+                if (origin.endsWith(".pollinations.ai")) return origin;
                 return null;
             },
             credentials: true,

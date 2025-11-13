@@ -70,34 +70,20 @@ async function generatePortkeyHeaders(config) {
         throw new Error("No configuration provided for header generation");
     }
 
-    // Generate headers by prefixing config properties with 'x-portkey-'
-    const headers = {
-        // Enable citations and non-OpenAI fields (requires updated Portkey gateway)
-        "x-portkey-strict-openai-compliance": "false",
+    // Build the complete Portkey config object
+    const portkeyConfig = {
+        strictOpenAiCompliance: false, // Enable citations and non-OpenAI fields
     };
-    
-    for (const [key, value] of Object.entries(config)) {
-        // Skip special properties that aren't headers
-        if (key === "removeSeed" || key === "authKey") continue;
 
-        headers[`x-portkey-${key}`] = value;
-    }
-
-    // Add Authorization header if needed
+    // Get the auth key
+    let apiKey;
     if (config.authKey) {
         try {
-            // Check if authKey is a function (for dynamic tokens)
             if (typeof config.authKey === "function") {
-                // Check if the function returns a Promise (async function)
                 const token = config.authKey();
-                if (token instanceof Promise) {
-                    headers["Authorization"] = `Bearer ${await token}`;
-                } else {
-                    headers["Authorization"] = `Bearer ${token}`;
-                }
+                apiKey = token instanceof Promise ? await token : token;
             } else {
-                // Regular string token
-                headers["Authorization"] = `Bearer ${config.authKey}`;
+                apiKey = config.authKey;
             }
         } catch (error) {
             errorLog("Error getting auth token:", error);
@@ -105,5 +91,23 @@ async function generatePortkeyHeaders(config) {
         }
     }
 
-    return headers;
+    // Add all config properties to the Portkey config object
+    for (const [key, value] of Object.entries(config)) {
+        // Skip internal properties
+        if (key === "removeSeed" || key === "authKey") continue;
+        
+        // Convert kebab-case to snake_case for Portkey
+        const configKey = key.replace(/-/g, "_");
+        portkeyConfig[configKey] = value;
+    }
+
+    // Add api_key if we have one
+    if (apiKey) {
+        portkeyConfig.api_key = apiKey;
+    }
+
+    // Return single x-portkey-config header with complete JSON object
+    return {
+        "x-portkey-config": JSON.stringify(portkeyConfig),
+    };
 }

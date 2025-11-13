@@ -8,6 +8,7 @@ import { extractToken, getIp } from "../../shared/extractFromRequest.js";
 import { buildTrackingHeaders } from "./utils/trackingHeaders.js";
 import { countFluxJobs, handleRegisterEndpoint } from "./availableServers.js";
 import { cacheImagePromise } from "./cacheGeneratedImages.js";
+import { getModelCounts } from "./modelCounter.js";
 import { IMAGE_CONFIG } from "./models.js";
 import {
     type AuthResult,
@@ -529,6 +530,22 @@ const server = http.createServer((req, res) => {
             defaultSideLength: config.defaultSideLength ?? 1024,
         }));
         res.end(JSON.stringify(modelDetails));
+        return;
+    }
+
+    if (pathname === "/model-stats") {
+        res.writeHead(200, {
+            "Content-Type": "application/json",
+            "Cache-Control":
+                "no-store, no-cache, must-revalidate, proxy-revalidate",
+            Pragma: "no-cache",
+            Expires: "0",
+        });
+        getModelCounts().then(counts => {
+            res.end(JSON.stringify(counts));
+        }).catch(() => {
+            res.end(JSON.stringify({}));
+        });
         return;
     }
 

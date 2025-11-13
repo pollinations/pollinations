@@ -24,12 +24,14 @@ async function exportTable(
     database: string,
     table: TableName,
     outputDir: string,
+    remote: boolean,
 ): Promise<string> {
     const outputFile = join(outputDir, `${table}.sql`);
+    const remoteFlag = remote ? "--remote" : "";
     console.log(`Exporting ${table} from ${database}...`);
     try {
         const { stderr } = await execAsync(
-            `npx wrangler d1 export ${database} --table ${table} --output ${outputFile}`,
+            `npx wrangler d1 export ${database} ${remoteFlag} --no-schema --remote --table ${table} --output ${outputFile}`,
         );
         if (stderr) {
             console.warn(`  Warning: ${stderr}`);
@@ -46,11 +48,13 @@ async function importTable(
     database: string,
     table: TableName,
     sqlFile: string,
+    remote: boolean,
 ): Promise<void> {
     console.log(`Importing ${table} into ${database}...`);
+    const remoteFlag = remote ? "--remote" : "";
     try {
         const { stderr } = await execAsync(
-            `npx wrangler d1 execute ${database} --file ${sqlFile}`,
+            `npx wrangler d1 execute ${database} ${remoteFlag} --file ${sqlFile}`,
         );
         if (stderr) {
             console.warn(`  Warning: ${stderr}`);
@@ -77,10 +81,11 @@ const exportCommand = command({
         backupDir: string()
             .alias("d")
             .desc("Directory to store backup files")
-            .default("./db-backup"),
+            .default("./backup"),
         tables: string()
             .desc("Comma-separated list of tables to export (default: all)")
             .default(""),
+        remote: boolean().desc("Export from remote database").default(false),
     },
     handler: async (opts) => {
         const { source, backupDir, tables } = opts;
@@ -99,7 +104,7 @@ const exportCommand = command({
             await ensureDirectoryExists(backupDir);
 
             for (const table of tableList) {
-                await exportTable(source, table, backupDir);
+                await exportTable(source, table, backupDir, opts.remote);
             }
             console.log("\n");
             console.log("  Export completed successfully!");
@@ -124,6 +129,7 @@ const importCommand = command({
                 "Comma-separated list of tables to import (default: all in correct order)",
             )
             .default(""),
+        remote: boolean().desc("Import to remote database").default(false),
     },
     handler: async (opts) => {
         const { target, dir, tables } = opts;
@@ -143,7 +149,7 @@ const importCommand = command({
                 if (!existsSync(sqlFile)) {
                     throw new Error(`Backup file not found: ${sqlFile}`);
                 }
-                await importTable(target, table, sqlFile);
+                await importTable(target, table, sqlFile, opts.remote);
             }
             console.log("\nImport completed successfully!\n");
         } catch (error: any) {

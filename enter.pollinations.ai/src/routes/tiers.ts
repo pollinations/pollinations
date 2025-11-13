@@ -150,8 +150,7 @@ export const tiersRoutes = new Hono<Env>()
                         
                         // Extract daily pollen from meter_credit benefit
                         const meterBenefit = product.benefits?.find(isMeterCreditBenefit);
-                        // Polar uses "units" property, but check "amount" as fallback
-                        const pollenValue = meterBenefit?.properties?.units ?? meterBenefit?.properties?.amount;
+                        const pollenValue = meterBenefit?.properties?.units;
                         
                         if (pollenValue !== undefined) {
                             daily_pollen = pollenValue;

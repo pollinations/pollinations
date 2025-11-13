@@ -38,7 +38,7 @@ function formatCountdown(targetUTC: string): string {
 
 const NoTierScreen: FC = () => {
     return (
-        <div className="rounded-2xl p-6 border-2 border-gray-300 bg-gray-50/30">
+        <div className="rounded-2xl p-6 border-2 border-gray-200 bg-gray-50/30">
             <div className="flex flex-col gap-3">
                 <div className="px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg">
                     <p className="text-sm text-gray-900 leading-relaxed">
@@ -82,7 +82,7 @@ const TierScreen: FC<{
     const endsAt = subscription_ends_at ? new Date(subscription_ends_at).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }) : "";
 
     return (
-        <div className="rounded-2xl p-6 border-2 border-gray-300 bg-gray-50/30">
+        <div className="rounded-2xl p-6 border-2 border-gray-200 bg-gray-50/30">
             <div className="flex flex-col gap-3">
                 <div className="flex items-center gap-3 flex-wrap">
                     <span className="text-3xl font-bold text-gray-900">

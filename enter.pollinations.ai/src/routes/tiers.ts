@@ -167,6 +167,17 @@ export const tiersRoutes = new Hono<Env>()
                 has_polar_error = true;
             }
             
+            // Fetch assigned tier product info for button text (even if no subscription)
+            if (assigned_tier !== "none" && !product_name) {
+                try {
+                    const assignedProductId = getTierProductId(c.env, assigned_tier as ActivatableTier);
+                    const assignedProduct = (await polar.products.get({ id: assignedProductId })) as PolarProductMinimal;
+                    product_name = assignedProduct.name;
+                } catch (error) {
+                    log.warn("Failed to fetch assigned tier product", { tier: assigned_tier });
+                }
+            }
+            
             // Determine if activate button should be shown
             const should_show_activate_button = shouldShowActivateButton(assigned_tier, active_tier);
             

@@ -211,10 +211,11 @@ function RouteComponent() {
                                     disabled={isActivating}
                                     color="green"
                                     weight="light"
+                                    className="!bg-gray-50"
                                 >
-                                    {isActivating
-                                        ? "Processing..."
-                                        : `Activate ${tierData.assigned_tier[0].toUpperCase() + tierData.assigned_tier.slice(1)} Tier`}
+                                    {isActivating ? "Processing..." : (
+                                        <>Activate <strong>{tierData.product_name || tierData.assigned_tier[0].toUpperCase() + tierData.assigned_tier.slice(1) + " Tier"}</strong></>
+                                    )}
                                 </Button>
                             </div>
                         )}

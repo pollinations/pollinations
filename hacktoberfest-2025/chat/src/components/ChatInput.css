@@ -368,6 +368,7 @@ body.dark .canvas-mode-tag {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  display: none;
 }
 
 .image-preview-container {
@@ -458,12 +459,7 @@ body.dark .canvas-mode-tag {
 }
 
 .send-btn-modern:hover:not(:disabled) {
-  transform: translateY(-1px);
   box-shadow: 0 8px 16px rgba(0, 0, 0, 0.18);
-}
-
-.send-btn-modern:active:not(:disabled) {
-  transform: translateY(0);
 }
 
 .send-btn-modern:disabled {

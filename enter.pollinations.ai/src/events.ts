@@ -1,5 +1,5 @@
 import { Polar } from "@polar-sh/sdk";
-import { eq, sql } from "drizzle-orm";
+import { eq, sql, and, gte, or } from "drizzle-orm";
 import type { DrizzleD1Database } from "drizzle-orm/d1";
 import { event } from "./db/schema/event.ts";
 import { batches, generateRandomId, removeUnset } from "./util.ts";
@@ -12,7 +12,8 @@ import { z } from "zod";
 import { Logger } from "@logtape/logtape";
 
 const BUFFER_BATCH_SIZE = 1;
-const INGEST_BATCH_SIZE = 1000;
+const INGEST_BATCH_SIZE = 500;
+const MAX_DELIVERY_ATTEMPTS = 5;
 
 const tbIngestResponseSchema = z.object({
     successful_rows: z.number(),
@@ -34,6 +35,17 @@ export async function storeEvents(
     }
 }
 
+async function* pendingEventBatches(db: DrizzleD1Database, batchSize: number) {
+    while (true) {
+        const { processingId, events } = await preparePendingEvents(
+            db,
+            batchSize,
+        );
+        if (events.length === 0) break;
+        yield { processingId, events };
+    }
+}
+
 export async function processEvents(
     db: DrizzleD1Database,
     log: Logger,
@@ -44,58 +56,67 @@ export async function processEvents(
         tinybirdAccessToken: string;
     },
 ) {
-    const [processingId, events] = await preparePendingEvents(db);
-    if (events.length === 0) return;
-    const polarDelivery = await sendPolarEvents(
-        events,
-        config.polarAccessToken,
-        config.polarServer,
-        log,
-    );
-    const tinybirdDelivery = await sendTinybirdEvents(
-        events,
-        config.tinybirdIngestUrl,
-        config.tinybirdAccessToken,
-        log,
-    );
-    if (
-        ["succeeded", "skipped"].includes(polarDelivery) &&
-        ["succeeded", "skipped"].includes(tinybirdDelivery)
-    ) {
-        log.trace("Event processing complete.");
-        await confirmProcessingEvents(processingId, db);
-    } else {
-        log.trace("Event processing failed, rolling back.");
-        await rollbackProcessingEvents(processingId, db, {
-            polarDelivery,
-            tinybirdDelivery,
-        });
+    for await (const { processingId, events } of pendingEventBatches(
+        db,
+        INGEST_BATCH_SIZE,
+    )) {
+        if (events.length === 0) return;
+        const polarDelivery = await sendPolarEvents(
+            events,
+            config.polarAccessToken,
+            config.polarServer,
+            log,
+        );
+        const tinybirdDelivery = await sendTinybirdEvents(
+            events,
+            config.tinybirdIngestUrl,
+            config.tinybirdAccessToken,
+            log,
+        );
+        if (
+            ["succeeded", "skipped"].includes(polarDelivery) &&
+            ["succeeded", "skipped"].includes(tinybirdDelivery)
+        ) {
+            log.trace("Event processing complete: {processingId}", {
+                processingId,
+            });
+            await confirmProcessingEvents(processingId, db);
+        } else {
+            log.trace("Event processing failed, rolling back: {processingId}", {
+                processingId,
+            });
+            await rollbackProcessingEvents(processingId, db, {
+                polarDelivery,
+                tinybirdDelivery,
+            });
+        }
     }
 }
 
 async function preparePendingEvents(
     db: DrizzleD1Database,
-): Promise<[string, SelectGenerationEvent[]]> {
-    const eventProcessingId = generateRandomId();
+    batchSize: number,
+): Promise<{ processingId: string; events: SelectGenerationEvent[] }> {
+    const processingId = generateRandomId();
 
     // Update events to processing status
     await db
         .update(event)
         .set({
             eventStatus: "processing",
-            eventProcessingId,
+            eventProcessingId: processingId,
             updatedAt: new Date(),
         })
-        .where(eq(event.eventStatus, "pending"));
+        .where(eq(event.eventStatus, "pending"))
+        .limit(batchSize);
 
-    // Fetch the updated events (D1 has column limits on .returning())
-    const pending = await db
+    // Fetch updated events (D1 has column limits on .returning())
+    const events = await db
         .select()
         .from(event)
-        .where(eq(event.eventProcessingId, eventProcessingId));
+        .where(eq(event.eventProcessingId, processingId));
 
-    if (pending.length === 0) return [eventProcessingId, []];
-    return [eventProcessingId, pending];
+    return { processingId, events };
 }
 
 async function rollbackProcessingEvents(
@@ -106,6 +127,20 @@ async function rollbackProcessingEvents(
         tinybirdDelivery: DeliveryStatus;
     },
 ): Promise<void> {
+    // Mark events that exceed MAX_DELIVERY_ATTEMPTS as error
+    await db
+        .update(event)
+        .set({ eventStatus: "error" })
+        .where(
+            and(
+                eq(event.eventProcessingId, processingId),
+                or(
+                    gte(event.polarDeliveryAttempts, MAX_DELIVERY_ATTEMPTS),
+                    gte(event.tinybirdDeliveryAttempts, MAX_DELIVERY_ATTEMPTS),
+                ),
+            ),
+        );
+    // Mark remaining events as pending
     await db
         .update(event)
         .set({
@@ -123,7 +158,12 @@ async function rollbackProcessingEvents(
                 tinybirdDeliveryAttempts: sql`${event.tinybirdDeliveryAttempts} + 1`,
             }),
         })
-        .where(eq(event.eventProcessingId, processingId));
+        .where(
+            and(
+                eq(event.eventProcessingId, processingId),
+                eq(event.eventStatus, "processing"),
+            ),
+        );
 }
 
 async function confirmProcessingEvents(
@@ -140,6 +180,58 @@ async function confirmProcessingEvents(
 
 type DeliveryStatus = "skipped" | "failed" | "succeeded";
 
+function createPolarEvent(event: SelectGenerationEvent) {
+    if (!event.userId) {
+        throw new Error("Failed to create Polar event: missing userId");
+    }
+    if (!event.modelUsed) {
+        throw new Error("Failed to create Polar event: missing modelUsed");
+    }
+    if (!event.totalPrice) {
+        throw new Error("Failed to create Polar event: missing totalPrice");
+    }
+    const metadata = removeUnset({
+        // event
+        eventId: event.id,
+        eventProcessingId: event.eventProcessingId,
+        // request information
+        requestId: event.requestId,
+        startTime: event.startTime.toISOString(),
+        endTime: event.endTime.toISOString(),
+        // model
+        model: event.modelUsed,
+        // token counts
+        tokenCountPromptText: event.tokenCountPromptText,
+        tokenCountPromptAudio: event.tokenCountPromptAudio,
+        tokenCountPromptCached: event.tokenCountPromptCached,
+        tokenCountPromptImage: event.tokenCountPromptImage,
+        tokenCountCompletionText: event.tokenCountCompletionText,
+        tokenCountCompletionReasoning: event.tokenCountCompletionReasoning,
+        // token prices
+        tokenPricePromptText: event.tokenPricePromptText,
+        tokenPricePromptCached: event.tokenPricePromptCached,
+        tokenPricePromptAudio: event.tokenPricePromptAudio,
+        tokenPricePromptImage: event.tokenPricePromptImage,
+        tokenPriceCompletionText: event.tokenPriceCompletionText,
+        tokenPriceCompletionReasoning: event.tokenPriceCompletionReasoning,
+        tokenPriceCompletionAudio: event.tokenPriceCompletionAudio,
+        tokenPriceCompletionImage: event.tokenPriceCompletionImage,
+        // calculated price
+        totalPrice: event.totalPrice,
+        // meter selection
+        selectedMeterId: event.selectedMeterId,
+        selectedMeterSlug: event.selectedMeterSlug,
+        ...flattenBalances(event.balances),
+    });
+    return {
+        name: event.eventType,
+        externalCustomerId: event.userId,
+        metadata,
+    };
+}
+
+export type PolarEvent = ReturnType<typeof createPolarEvent>;
+
 async function sendPolarEvents(
     events: SelectGenerationEvent[],
     polarAccessToken: string,
@@ -154,66 +246,18 @@ async function sendPolarEvents(
         .filter(
             (event) => event.isBilledUsage && event.polarDeliveredAt == null,
         )
-        .map((event) => {
-            if (!event.userId) {
-                throw new Error("Failed to create Polar event: missing userId");
-            }
-            if (!event.modelUsed) {
-                throw new Error(
-                    "Failed to create Polar event: missing modelUsed",
-                );
-            }
-            if (!event.totalPrice) {
-                throw new Error(
-                    "Failed to create Polar event: missing totalPrice",
-                );
-            }
-            const metadata = removeUnset({
-                model: event.modelUsed,
-                // token counts
-                tokenCountPromptText: event.tokenCountPromptText,
-                tokenCountPromptAudio: event.tokenCountPromptAudio,
-                tokenCountPromptCached: event.tokenCountPromptCached,
-                tokenCountPromptImage: event.tokenCountPromptImage,
-                tokenCountCompletionText: event.tokenCountCompletionText,
-                tokenCountCompletionReasoning:
-                    event.tokenCountCompletionReasoning,
-                // token prices
-                tokenPricePromptText: event.tokenPricePromptText,
-                tokenPricePromptCached: event.tokenPricePromptCached,
-                tokenPricePromptAudio: event.tokenPricePromptAudio,
-                tokenPricePromptImage: event.tokenPricePromptImage,
-                tokenPriceCompletionText: event.tokenPriceCompletionText,
-                tokenPriceCompletionReasoning:
-                    event.tokenPriceCompletionReasoning,
-                tokenPriceCompletionAudio: event.tokenPriceCompletionAudio,
-                tokenPriceCompletionImage: event.tokenPriceCompletionImage,
-                // calculated price
-                totalPrice: event.totalPrice,
-                // meter selection
-                selectedMeterId: event.selectedMeterId,
-                selectedMeterSlug: event.selectedMeterSlug,
-                ...flattenBalances(event.balances),
-            });
-            return {
-                name: event.eventType,
-                externalCustomerId: event.userId,
-                metadata,
-            };
-        });
+        .map((event) => createPolarEvent(event));
     if (polarEvents.length === 0) return "skipped";
     let ingested = 0;
-    for (const batch of batches(polarEvents, INGEST_BATCH_SIZE)) {
-        try {
-            const response = await polar.events.ingest({
-                events: batch,
-            });
-            ingested += response.inserted;
-        } catch (error) {
-            log.error("Failed to send Polar event batch: {error}", {
-                error,
-            });
-        }
+    try {
+        const response = await polar.events.ingest({
+            events: polarEvents,
+        });
+        ingested += response.inserted;
+    } catch (error) {
+        log.error("Failed to send Polar event batch: {error}", {
+            error,
+        });
     }
     log.debug("Sent events to Polar: {ingested}", { ingested });
     if (ingested !== polarEvents.length) {
@@ -238,9 +282,7 @@ async function sendTinybirdEvents(
             return removeUnset(
                 omit(
                     event,
-                    "id",
                     "eventStatus",
-                    "eventProcessingId",
                     "polarDeliveryAttempts",
                     "polarDeliveredAt",
                     "tinybirdDeliveryAttempts",
@@ -252,30 +294,28 @@ async function sendTinybirdEvents(
         });
     if (tinybirdEvents.length === 0) return "skipped";
     let ingested = 0;
-    for (const batch of batches(tinybirdEvents, INGEST_BATCH_SIZE)) {
-        try {
-            const response = await fetch(tinybirdIngestUrl, {
-                method: "POST",
-                headers: {
-                    "Authorization": `Bearer ${tinybirdAccessToken}`,
-                    "Content-Type": "application/x-ndjson",
-                },
-                body: batch.map((obj) => JSON.stringify(obj)).join("\n"),
-            });
-            if (!response.ok) {
-                const errorText = await response.text();
-                throw new Error(
-                    `Tinybird API error: ${response.status} - ${errorText}`,
-                );
-            }
-            const body = await response.json();
-            const result = tbIngestResponseSchema.parse(body);
-            ingested += result.successful_rows;
-        } catch (error) {
-            log.error("Failed to send Tinybird event batch: {error}", {
-                error,
-            });
+    try {
+        const response = await fetch(tinybirdIngestUrl, {
+            method: "POST",
+            headers: {
+                "Authorization": `Bearer ${tinybirdAccessToken}`,
+                "Content-Type": "application/x-ndjson",
+            },
+            body: tinybirdEvents.map((obj) => JSON.stringify(obj)).join("\n"),
+        });
+        if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(
+                `Tinybird API error (status=${response.status}): ${errorText}`,
+            );
         }
+        const body = await response.json();
+        const result = tbIngestResponseSchema.parse(body);
+        ingested += result.successful_rows;
+    } catch (error) {
+        log.error("Failed to send Tinybird event batch: {error}", {
+            error,
+        });
     }
     log.debug("Sent events to Tinybird: {ingested}", { ingested });
     if (ingested !== tinybirdEvents.length) {

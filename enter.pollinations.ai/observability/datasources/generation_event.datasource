@@ -4,6 +4,10 @@ DESCRIPTION >
 Generative AI events with usage, pricing, metadata, moderation, and cache info
 
 SCHEMA >
+-- Event
+`event_id`             String            `json:$.id` DEFAULT '',
+`event_processing_id`  String            `json:$.eventProcessingId` DEFAULT '',
+
 -- Request
 `request_id`      String                 `json:$.requestId`,
 `request_path`    String                 `json:$.requestPath`,
@@ -102,6 +106,8 @@ ENGINE_PRIMARY_KEY "start_time, environment, user_id"
 
 FORWARD_QUERY >
   SELECT 
+    '' as event_id,
+    '' as event_processing_id,
     request_id,
     request_path,
     start_time,
@@ -110,23 +116,23 @@ FORWARD_QUERY >
     response_status,
     environment,
     event_type,
-    CAST(user_id, 'String') AS user_id,
+    user_id,
     user_tier,
-    'undefined' AS user_github_id,
-    'undefined' AS user_github_username,
+    user_github_id,
+    user_github_username,
     api_key_id,
-    'undefined' AS api_key_name,
+    api_key_name,
     api_key_type,
-    CAST('undefined', 'LowCardinality(String)') AS selected_meter_id, 
-    CAST('undefined', 'LowCardinality(String)') AS selected_meter_slug, 
-    defaultValueOfTypeName('Map(String,Float64)') AS balances,
+    selected_meter_id, 
+    selected_meter_slug, 
+    balances,
     referrer_url,
     referrer_domain,
     model_requested,
     resolved_model_requested,
     free_model_requested,
     model_used,
-    CAST('undefined', 'LowCardinality(String)') AS model_provider_used,
+    model_provider_used,
     is_billed_usage,
     token_price_prompt_text,
     token_price_prompt_cached,

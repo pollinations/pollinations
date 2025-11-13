@@ -131,7 +131,7 @@ body[data-accent="gradient"] {
 
 /* Apply theme to body */
 body {
-  background: var(--bg-gradient);
+  background: var(--bg-primary);
   color: var(--text-primary);
   transition: background var(--transition-slow), color var(--transition-slow);
 }

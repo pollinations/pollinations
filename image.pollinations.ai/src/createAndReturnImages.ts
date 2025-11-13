@@ -810,7 +810,7 @@ const generateImage = async (
     userInfo: AuthResult,
 ): Promise<ImageGenerationResult> => {
     // Log model usage
-    incrementModelCounter(safeParams.model || 'flux').catch(() => {});
+    incrementModelCounter(safeParams.model || 'flux');
     
     // Model selection strategy using a more functional approach
     

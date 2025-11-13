@@ -9,7 +9,6 @@ metrics/
 processed.txt
 profiling.js
 steps.txt
-model-requests.json
 
 # Environment variables
 cloudflare-cache/.dev.vars

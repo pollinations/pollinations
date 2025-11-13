@@ -41,6 +41,25 @@ const Sidebar = memo(({ chats, activeChatId, onChatSelect, onNewChat, onDeleteCh
     };
   }, [isExpanded]);
 
+  useEffect(() => {
+    const toggleBodyBlur = () => {
+      if (typeof window === 'undefined') return;
+      if (isExpanded && window.innerWidth <= 768) {
+        document.body.classList.add('sidebar-expanded-mobile');
+      } else {
+        document.body.classList.remove('sidebar-expanded-mobile');
+      }
+    };
+
+    toggleBodyBlur();
+    window.addEventListener('resize', toggleBodyBlur);
+
+    return () => {
+      document.body.classList.remove('sidebar-expanded-mobile');
+      window.removeEventListener('resize', toggleBodyBlur);
+    };
+  }, [isExpanded]);
+
   const handleDeleteChat = useCallback((chatId, e) => {
     e.stopPropagation();
     setConfirmModal({
@@ -60,7 +79,7 @@ const Sidebar = memo(({ chats, activeChatId, onChatSelect, onNewChat, onDeleteCh
           {isExpanded ? (
             <>
               <div className="sidebar-logo-full">
-                <img src="https://cloudcompile.github.io/pollinations-chat-ui/logo-text.svg" alt="Pollinations" />
+                <img src="/pollinations-chat-ui/logo-text.svg" alt="Pollinations" />
               </div>
               
               <button className="sidebar-toggle-btn expanded" onClick={() => setIsExpanded(!isExpanded)} title="Collapse sidebar">
@@ -71,8 +90,11 @@ const Sidebar = memo(({ chats, activeChatId, onChatSelect, onNewChat, onDeleteCh
               </button>
             </>
           ) : (
-            <button className="sidebar-icon-btn pollinations-logo" onClick={() => setIsExpanded(!isExpanded)} title="Expand sidebar">
-              <img src="https://cloudcompile.github.io/pollinations-chat-ui/pollinations-logo.svg" alt="Pollinations" style={{ width: '32px', height: '32px' }} />
+            <button className="sidebar-icon-btn sidebar-toggle-icon" onClick={() => setIsExpanded(!isExpanded)} title="Expand sidebar">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <rect x="3" y="3" width="18" height="18" rx="2"/>
+                <path d="M9 3v18"/>
+              </svg>
             </button>
           )}
         </div>
@@ -115,15 +137,13 @@ const Sidebar = memo(({ chats, activeChatId, onChatSelect, onNewChat, onDeleteCh
           </div>
         )}
 
-        {isExpanded && (
-          <div className="sidebar-footer">
-            <button className="sidebar-icon-btn" onClick={onThemeToggle} title="Toggle theme">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/>
-              </svg>
-            </button>
-          </div>
-        )}
+        <div className="sidebar-footer">
+          <button className="sidebar-icon-btn" onClick={onThemeToggle} title="Toggle theme">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/>
+            </svg>
+          </button>
+        </div>
       </aside>
 
     <ConfirmModal

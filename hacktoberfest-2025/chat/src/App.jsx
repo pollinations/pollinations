@@ -29,7 +29,7 @@ function App() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [selectedModel, setSelectedModel] = useState('openai');
   const [selectedImageModel, setSelectedImageModel] = useState('flux');
-  const [theme, setTheme] = useState('dark');
+  const [theme, setTheme] = useState('light');
   const [isShortcutsModalOpen, setIsShortcutsModalOpen] = useState(false);
   const [models, setModels] = useState({});
   const [imageModels, setImageModels] = useState({});
@@ -45,19 +45,15 @@ function App() {
 
   // Debug mode changes
   useEffect(() => {
-    console.log('🔄 Mode changed to:', mode);
   }, [mode]);
 
   // Initialize models on mount
   useEffect(() => {
     const init = async () => {
-      console.log('🚀 Initializing Pollinations API...');
       const { textModels, imageModels } = await initializeModels();
       setModels(textModels);
       setImageModels(imageModels);
       setModelsLoaded(true);
-      console.log('✅ Text models loaded:', Object.keys(textModels));
-      console.log('✅ Image models loaded:', Object.keys(imageModels));
     };
     init();
   }, []);
@@ -73,8 +69,10 @@ function App() {
     // Apply theme to document
     if (savedTheme === 'dark') {
       document.body.classList.add('dark');
+      document.body.classList.remove('light');
     } else {
       document.body.classList.remove('dark');
+      document.body.classList.add('light');
     }
   }, []);
 
@@ -112,7 +110,6 @@ function App() {
   }, [addChat]);
 
   const handleModelChange = useCallback((model) => {
-    console.log('🔄 Model changed to:', model);
     setSelectedModel(model);
     saveSelectedModel(model);
   }, []);
@@ -129,8 +126,10 @@ function App() {
     
     if (newTheme === 'dark') {
       document.body.classList.add('dark');
+      document.body.classList.remove('light');
     } else {
       document.body.classList.remove('dark');
+      document.body.classList.add('light');
     }
   }, [theme]);
 
@@ -258,22 +257,40 @@ function App() {
         },
         // onError
         (error) => {
-          updateMessage(assistantMessageId, {
-            content: `❌ Sorry, there was an error: ${error.message}`,
-            isStreaming: false,
-            isError: true
-          });
+          console.error('Message generation error:', error);
+          if (error.message === 'User aborted') {
+            updateMessage(assistantMessageId, {
+              content: '**Message stopped by user**',
+              isStreaming: false,
+              isError: false
+            });
+          } else {
+            updateMessage(assistantMessageId, {
+              content: 'An error occurred',
+              isStreaming: false,
+              isError: true
+            });
+          }
           setIsGenerating(false);
         },
         // modelId - pass the selected model
         selectedModel
       );
     } catch (error) {
-      updateMessage(assistantMessageId, {
-        content: `❌ Sorry, there was an error: ${error.message}`,
-        isStreaming: false,
-        isError: true
-      });
+      console.error('Message generation error:', error);
+      if (error.message === 'User aborted') {
+        updateMessage(assistantMessageId, {
+          content: '**Message stopped by user**',
+          isStreaming: false,
+          isError: false
+        });
+      } else {
+        updateMessage(assistantMessageId, {
+          content: 'An error occurred',
+          isStreaming: false,
+          isError: true
+        });
+      }
       setIsGenerating(false);
     }
   }, [isGenerating, addMessage, updateMessage, selectedModel]);
@@ -327,15 +344,15 @@ function App() {
       console.log('✅ Image generation complete');
       setIsGenerating(false);
     } catch (error) {
-      console.error('❌ Image generation error:', error);
+      console.error('Image generation error:', error);
       updateMessage(assistantMessageId, {
-        content: `❌ Sorry, there was an error generating the image: ${error.message}`,
+        content: 'An error occurred',
         isStreaming: false,
         isError: true
       });
       setIsGenerating(false);
       // Show toast notification for error
-      if (window?.showToast) window.showToast("Image generation failed: " + error.message, "error");
+      if (window?.showToast) window.showToast("Image generation failed", "error");
     }
   }, [isGenerating, selectedImageModel, addMessage, updateMessage]);
 
@@ -392,11 +409,20 @@ function App() {
           setIsGenerating(false);
         },
         (error) => {
-          updateMessage(assistantMessageId, {
-            content: `❌ Sorry, there was an error: ${error.message}`,
-            isStreaming: false,
-            isError: true
-          });
+          console.error('Message regeneration error:', error);
+          if (error.message === 'User aborted') {
+            updateMessage(assistantMessageId, {
+              content: '**Message stopped by user**',
+              isStreaming: false,
+              isError: false
+            });
+          } else {
+            updateMessage(assistantMessageId, {
+              content: 'An error occurred',
+              isStreaming: false,
+              isError: true
+            });
+          }
           setIsGenerating(false);
         },
         selectedModel

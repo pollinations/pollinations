@@ -282,7 +282,8 @@ export const sendMessage = async (messages, onChunk, onComplete, onError, modelI
       body: JSON.stringify({
         model: selectedModelId,
         messages: formattedMessages,
-        max_tokens: 2000
+        max_tokens: 2000,
+        stream: true
       }),
       signal: abortController.signal
     });
@@ -292,11 +293,37 @@ export const sendMessage = async (messages, onChunk, onComplete, onError, modelI
       throw new Error(`API Error ${response.status}: ${errorText}`);
     }
 
-    const data = await response.json();
-    const fullContent = data?.choices?.[0]?.message?.content || '';
-    console.log('Full response content:', fullContent);
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let fullContent = '';
     
-    if (onChunk) onChunk(fullContent, fullContent, '');
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      
+      const chunk = decoder.decode(value, { stream: true });
+      const lines = chunk.split('\n').filter(line => line.trim() !== '');
+      
+      for (const line of lines) {
+        if (line.startsWith('data: ')) {
+          const data = line.slice(6);
+          if (data === '[DONE]') continue;
+          
+          try {
+            const parsed = JSON.parse(data);
+            const content = parsed?.choices?.[0]?.delta?.content || '';
+            if (content) {
+              fullContent += content;
+              if (onChunk) onChunk(content, fullContent, '');
+            }
+          } catch (e) {
+            console.warn('Failed to parse SSE chunk:', e);
+          }
+        }
+      }
+    }
+    
+    console.log('Full response content:', fullContent);
     if (onComplete) onComplete(fullContent, '');
 
     abortController = null;

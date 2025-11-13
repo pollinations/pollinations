@@ -13,7 +13,7 @@ const escapeHtml = (value) =>
 
 marked.setOptions({
   gfm: true,
-  breaks: true,
+  breaks: false,
   mangle: false,
   headerIds: false,
   highlight(code, language) {
@@ -49,7 +49,7 @@ const md = new MarkdownIt({
   html: false, // Disable HTML for security
   linkify: true,
   typographer: true,
-  breaks: true,
+  breaks: false,
   highlight: function (str, lang) {
     if (lang && hljs.getLanguage(lang)) {
       try {
@@ -95,14 +95,17 @@ export const formatMessage = (content) => {
   try {
     // Ensure content is a string
     let textContent = String(content);
+    
     // Trim leading/trailing whitespace to avoid large gaps when rendering
     textContent = textContent.trim();
+    
     // Collapse excessive vertical whitespace (3+ newlines -> 2 newlines)
     textContent = textContent.replace(/\n{3,}/g, '\n\n');
-    // Remove excessive whitespace at the beginning of lines (common in AI responses)
-    textContent = textContent.replace(/^\s+/gm, '');
-    // Remove multiple consecutive spaces (except in code blocks)
-    textContent = textContent.replace(/ {2,}/g, ' ');
+    
+    // Preserve leading spaces for proper formatting
+    
+    // Remove multiple consecutive spaces (but not in code blocks or inline code)
+    textContent = textContent.replace(/([^`\n])([ ]{2,})([^`\n])/g, '$1 $3');
     
     // First, render markdown
     let html = md.render(textContent);
@@ -123,12 +126,18 @@ export const formatStreamingMessage = (content) => {
 
   try {
     let textContent = String(content || '');
+    
+    // More aggressive whitespace normalization for streaming
     textContent = textContent.trim();
+    
+    // Collapse excessive vertical whitespace (3+ newlines -> 2 newlines)
     textContent = textContent.replace(/\n{3,}/g, '\n\n');
-    // Remove excessive whitespace at the beginning of lines (common in AI responses)
-    textContent = textContent.replace(/^\s+/gm, '');
-    // Remove multiple consecutive spaces (except in code blocks)
-    textContent = textContent.replace(/ {2,}/g, ' ');
+    
+    // Preserve leading spaces for proper formatting
+    
+    // Remove multiple consecutive spaces (but not in code blocks)
+    textContent = textContent.replace(/([^`\n])([ ]{2,})([^`\n])/g, '$1 $3');
+    
     const html = marked.parse(textContent, { async: false });
     return renderMath(html);
   } catch (error) {

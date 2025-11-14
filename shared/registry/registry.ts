@@ -176,6 +176,10 @@ export const ALIAS_MAP = Object.fromEntries(
     ),
 ) as Record<string, ServiceId>;
 
+// Default models - single source of truth
+export const DEFAULT_IMAGE_MODEL = "flux" as const;
+export const DEFAULT_TEXT_MODEL = "openai" as const;
+
 /**
  * Resolve a service ID from a name or alias
  * @param serviceId - Service name, alias, or null/undefined for default
@@ -187,7 +191,7 @@ export function resolveServiceId(
     eventType: EventType,
 ): ServiceId {
     if (!serviceId) {
-        return eventType === "generate.text" ? "openai" : "flux";
+        return eventType === "generate.text" ? DEFAULT_TEXT_MODEL : DEFAULT_IMAGE_MODEL;
     }
     // Check if it's a direct service ID or an alias
     const resolved = SERVICE_REGISTRY[serviceId]

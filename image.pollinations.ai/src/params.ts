@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { MODELS } from "./models.js";
+import { DEFAULT_IMAGE_MODEL } from "../../shared/registry/registry.js";
 import Debug from "debug";
 
 const log = Debug("pollinations:image.params");
@@ -29,8 +30,8 @@ const sanitizedSideLength = z.preprocess((v) => {
 }, z.int().optional());
 
 const sanitizedModel = z.preprocess((v) => {
-    // Use explicit default when model is missing
-    if (v === null || v === undefined || v === "") return "flux";
+    // Use explicit default when model is missing - imported from registry
+    if (v === null || v === undefined || v === "") return DEFAULT_IMAGE_MODEL;
     return v;
 }, z.enum(allowedModels as [ModelName, ...ModelName[]]));
 

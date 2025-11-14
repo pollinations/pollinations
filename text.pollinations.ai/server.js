@@ -877,7 +877,7 @@ async function sendAsOpenAIStream(res, completion, req = null) {
 
 
 async function generateTextBasedOnModel(messages, options) {
-    const model = options.model || "openai-fast";
+    const model = options.model; // Default already applied in validator
     log("Using model:", model, "with options:", JSON.stringify(options));
 
     try {

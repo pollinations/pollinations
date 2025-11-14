@@ -100,7 +100,7 @@ app.use((req, res, next) => {
 
     if (!expectedToken) {
         // If ENTER_TOKEN is not configured, allow all requests (backward compatibility)
-        authLog("⚠️  ENTER_TOKEN not configured - allowing request");
+        authLog("!  ENTER_TOKEN not configured - allowing request");
         return next();
     }
 
@@ -867,6 +867,7 @@ async function generateTextBasedOnModel(messages, options) {
         throw new Error("Model parameter is required");
     }
     const model = options.model;
+
     log("Using model:", model, "with options:", JSON.stringify(options));
 
     try {

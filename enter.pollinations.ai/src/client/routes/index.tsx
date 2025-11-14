@@ -132,7 +132,7 @@ function RouteComponent() {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 credentials: "include",
-                body: JSON.stringify({ target_tier: tierData.assigned_tier }),
+                body: JSON.stringify({ target_tier: tierData.target_tier }),
             });
 
             if (!response.ok) {
@@ -225,31 +225,13 @@ function RouteComponent() {
                                     weight="light"
                                     className="!bg-gray-50"
                                 >
-                                    {isActivating ? (
-                                        "Processing..."
-                                    ) : (
-                                        <>
-                                            Activate{" "}
-                                            <strong>
-                                                {tierData.product_name ||
-                                                    tierData.assigned_tier[0].toUpperCase() +
-                                                        tierData.assigned_tier.slice(
-                                                            1,
-                                                        ) +
-                                                        " Tier"}
-                                            </strong>
-                                        </>
-                                    )}
+                                    {isActivating
+                                        ? "Processing..."
+                                        : `Activate ${tierData.target_tier_name}`}
                                 </Button>
                             </div>
                         )}
                     </div>
-                    {tierData.has_polar_error && (
-                        <div className="px-3 py-2 bg-yellow-50 border border-yellow-200 rounded-lg text-sm text-yellow-900">
-                            Unable to fetch current subscription status. Showing
-                            fallback data.
-                        </div>
-                    )}
                     {activationError && (
                         <div className="px-3 py-2 bg-red-50 border border-red-200 rounded-lg">
                             <p className="text-sm text-red-900">
@@ -260,15 +242,16 @@ function RouteComponent() {
                     )}
                     <TierPanel
                         status={tierData.active_tier}
-                        assigned_tier={tierData.assigned_tier}
+                        target_tier={tierData.target_tier}
                         next_refill_at_utc={tierData.next_refill_at_utc}
-                        product_name={tierData.product_name}
+                        active_tier_name={tierData.active_tier_name}
                         daily_pollen={tierData.daily_pollen}
                         subscription_status={tierData.subscription_status}
                         subscription_ends_at={tierData.subscription_ends_at}
                         subscription_canceled_at={
                             tierData.subscription_canceled_at
                         }
+                        has_polar_error={tierData.has_polar_error}
                     />
                 </div>
             )}

@@ -251,7 +251,7 @@ async function trackResponse(
         );
     const cost = calculateCost(modelUsage.model as ModelId, modelUsage.usage);
     const price = calculatePrice(
-        resolvedModelRequested as ServiceId,
+        modelUsage.model as ServiceId,
         modelUsage.usage,
     );
     return {

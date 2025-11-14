@@ -28,6 +28,12 @@ const sanitizedSideLength = z.preprocess((v) => {
         : undefined;
 }, z.int().optional());
 
+const sanitizedModel = z.preprocess((v) => {
+    // Use explicit default when model is missing
+    if (v === null || v === undefined || v === "") return "flux";
+    return v;
+}, z.enum(allowedModels as [ModelName, ...ModelName[]]));
+
 function adjustImageSizeForModel(
     model: ModelName,
     width?: number,
@@ -53,7 +59,7 @@ export const ImageParamsSchema = z
         width: sanitizedSideLength,
         height: sanitizedSideLength,
         seed: sanitizedSeed,
-        model: z.literal(allowedModels).catch("flux"),
+        model: sanitizedModel,
         enhance: sanitizedBoolean.catch(false),
         nologo: sanitizedBoolean.catch(false),
         negative_prompt: z.coerce.string().catch("worst quality, blurry"),

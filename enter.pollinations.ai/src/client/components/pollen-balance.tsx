@@ -8,16 +8,21 @@ type PollenBalanceProps = {
     dailyPollen?: number;
 };
 
-export const PollenBalance: FC<PollenBalanceProps> = ({ balances, dailyPollen = 15 }) => {
+export const PollenBalance: FC<PollenBalanceProps> = ({
+    balances,
+    dailyPollen = 15,
+}) => {
     // Use real balances
     const freePollen = balances.tier; // Free pollen from tier
     const packPollen = balances.pack; // Pack pollen
     const totalPollen = freePollen + packPollen; // Total available
-    
+
     // Calculate percentages for the segmented gauge
-    const freePercentage = totalPollen > 0 ? (freePollen / totalPollen) * 100 : 0;
-    const packPercentage = totalPollen > 0 ? (packPollen / totalPollen) * 100 : 0;
-    
+    const freePercentage =
+        totalPollen > 0 ? (freePollen / totalPollen) * 100 : 0;
+    const packPercentage =
+        totalPollen > 0 ? (packPollen / totalPollen) * 100 : 0;
+
     return (
         <div className="bg-emerald-100 rounded-2xl p-4 sm:p-8 border border-purple-300">
             <div className="flex flex-row justify-center text-center pb-1">
@@ -30,7 +35,7 @@ export const PollenBalance: FC<PollenBalanceProps> = ({ balances, dailyPollen = 
                     {/* Gauge */}
                     <div className="relative w-full max-w-[500px] h-8 bg-gray-200 rounded-full overflow-hidden border border-purple-400">
                         {/* Pack Pollen - Soft purple for paid */}
-                        <div 
+                        <div
                             className="absolute inset-y-0 left-0 bg-purple-200 transition-all duration-500 ease-out"
                             style={{ width: `${packPercentage}%` }}
                         >
@@ -44,11 +49,11 @@ export const PollenBalance: FC<PollenBalanceProps> = ({ balances, dailyPollen = 
                             )}
                         </div>
                         {/* Free Pollen - Soft teal for free */}
-                        <div 
+                        <div
                             className="absolute inset-y-0 bg-teal-200 transition-all duration-500 ease-out"
-                            style={{ 
+                            style={{
                                 left: `${packPercentage}%`,
-                                width: `${freePercentage}%`
+                                width: `${freePercentage}%`,
                             }}
                         >
                             {/* Free label inside */}
@@ -64,6 +69,11 @@ export const PollenBalance: FC<PollenBalanceProps> = ({ balances, dailyPollen = 
                             )}
                         </div>
                     </div>
+                    {/* Beta message */}
+                    <p className="text-sm text-purple-900 font-medium mt-2">
+                        🎁 During beta, we double your pollen with every
+                        purchase!
+                    </p>
                 </div>
             </div>
         </div>

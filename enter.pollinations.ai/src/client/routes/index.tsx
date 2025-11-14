@@ -150,6 +150,11 @@ function RouteComponent() {
         }
     };
 
+    const handleBuyPollen = (slug: string) => {
+        // Navigate directly to checkout endpoint - server will handle redirect
+        window.location.href = `/api/polar/checkout/${encodeURIComponent(slug)}?redirect=true`;
+    };
+
     return (
         <div className="flex flex-col gap-20">
             <Header>
@@ -177,7 +182,19 @@ function RouteComponent() {
                             as="button"
                             color="purple"
                             weight="light"
-                            disabled
+                            onClick={() =>
+                                handleBuyPollen("v1:product:pack:5x2")
+                            }
+                        >
+                            + $5
+                        </Button>
+                        <Button
+                            as="button"
+                            color="purple"
+                            weight="light"
+                            onClick={() =>
+                                handleBuyPollen("v1:product:pack:10x2")
+                            }
                         >
                             + $10
                         </Button>
@@ -185,7 +202,9 @@ function RouteComponent() {
                             as="button"
                             color="purple"
                             weight="light"
-                            disabled
+                            onClick={() =>
+                                handleBuyPollen("v1:product:pack:20x2")
+                            }
                         >
                             + $20
                         </Button>
@@ -193,18 +212,23 @@ function RouteComponent() {
                             as="button"
                             color="purple"
                             weight="light"
-                            disabled
+                            onClick={() =>
+                                handleBuyPollen("v1:product:pack:50x2")
+                            }
                         >
                             + $50
                         </Button>
-                        <a
+                        <Button
+                            as="a"
                             href="https://github.com/pollinations/pollinations/issues/4826"
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="text-sm text-purple-700 hover:text-purple-900 font-medium transition-colors"
+                            className="!bg-purple-200 !text-purple-900"
+                            color="purple"
+                            weight="light"
                         >
-                            💳 Vote on payment methods →
-                        </a>
+                            💳 Vote on payment methods
+                        </Button>
                     </div>
                 </div>
                 <PollenBalance

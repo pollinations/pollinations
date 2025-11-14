@@ -34,11 +34,6 @@ const SvgArtGenerator = ({
         { seed },
     );
 
-    // Hide the component if there's an error
-    if (svgArt && svgArt.startsWith("An error occurred while generating text:")) {
-        return null;
-    }
-
     return (
         <Container width={width} height={height} style={style}>
             <div dangerouslySetInnerHTML={{ __html: svgArt }} />

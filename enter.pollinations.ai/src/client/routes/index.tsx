@@ -218,11 +218,6 @@ function RouteComponent() {
                     balances={balances}
                     dailyPollen={tierData?.daily_pollen}
                 />
-                <div className="text-center">
-                    <span className="text-sm text-purple-900 font-bold">
-                        ✨ Beta: 2x pollen - buy pollen, we double it
-                    </span>
-                </div>
             </div>
             {tierData && (
                 <div className="flex flex-col gap-2">

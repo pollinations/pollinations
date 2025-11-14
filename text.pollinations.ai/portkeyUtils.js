@@ -70,9 +70,11 @@ async function generatePortkeyHeaders(config) {
         throw new Error("No configuration provided for header generation");
     }
 
-    // Build the complete Portkey config object
-    const portkeyConfig = {
-        strictOpenAiCompliance: false, // Enable citations and non-OpenAI fields
+    // Use individual headers approach (proven to work with Azure OpenAI)
+    // Set strictOpenAiCompliance to false to enable Perplexity citations
+    // NOTE: Must be "strict-open-ai-compliance" (with dash between "open" and "ai")
+    const headers = {
+        "x-portkey-strict-open-ai-compliance": "false",
     };
 
     // Get the auth key
@@ -91,23 +93,21 @@ async function generatePortkeyHeaders(config) {
         }
     }
 
-    // Add all config properties to the Portkey config object
+    // Add all config properties as individual x-portkey-* headers
     for (const [key, value] of Object.entries(config)) {
         // Skip internal properties
         if (key === "removeSeed" || key === "authKey") continue;
         
-        // Convert kebab-case to snake_case for Portkey
-        const configKey = key.replace(/-/g, "_");
-        portkeyConfig[configKey] = value;
+        // Add as individual header with x-portkey- prefix
+        headers[`x-portkey-${key}`] = value;
     }
 
-    // Add api_key if we have one
+    // Add Authorization header if we have an API key
     if (apiKey) {
-        portkeyConfig.api_key = apiKey;
+        headers["Authorization"] = `Bearer ${apiKey}`;
     }
 
-    // Return single x-portkey-config header with complete JSON object
-    return {
-        "x-portkey-config": JSON.stringify(portkeyConfig),
-    };
+    log("Generated Portkey headers:", Object.keys(headers));
+    log("strictOpenAiCompliance header value:", headers["x-portkey-strict-open-ai-compliance"]);
+    return headers;
 }

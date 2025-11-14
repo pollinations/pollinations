@@ -191,7 +191,9 @@ export function resolveServiceId(
     eventType: EventType,
 ): ServiceId {
     if (!serviceId) {
-        return eventType === "generate.text" ? DEFAULT_TEXT_MODEL : DEFAULT_IMAGE_MODEL;
+        return eventType === "generate.text"
+            ? DEFAULT_TEXT_MODEL
+            : DEFAULT_IMAGE_MODEL;
     }
     // Check if it's a direct service ID or an alias
     const resolved = SERVICE_REGISTRY[serviceId]
@@ -412,4 +414,3 @@ export function getProviderByModelId(modelId: string): string | null {
     }
     return null;
 }
-

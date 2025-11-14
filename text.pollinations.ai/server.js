@@ -13,10 +13,7 @@ import { generateTextPortkey } from "./generateTextPortkey.js";
 import { setupFeedEndpoint, sendToFeedListeners } from "./feed.js";
 import { processRequestForAds } from "./ads/initRequestFilter.js";
 import { createStreamingAdWrapper } from "./ads/streamingAdWrapper.js";
-import {
-    getRequestData,
-    prepareModelsForOutput,
-} from "./requestUtils.js";
+import { getRequestData, prepareModelsForOutput } from "./requestUtils.js";
 
 // Import shared utilities
 import { getIp } from "../shared/extractFromRequest.js";
@@ -178,9 +175,7 @@ async function handleRequest(req, res, requestData) {
                 m.aliases?.includes(requestData.model),
         );
 
-        log(
-            `Model lookup: model=${requestData.model}, found=${!!model}`,
-        );
+        log(`Model lookup: model=${requestData.model}, found=${!!model}`);
 
         // All requests from enter.pollinations.ai - tier checks bypassed
         if (!model) {
@@ -340,34 +335,24 @@ export async function sendErrorResponse(
     requestData,
     statusCode = 500,
 ) {
-    // Use error.status if available, otherwise use the provided statusCode
     const responseStatus = error.status || statusCode;
-    const errorType =
-        statusCode === 400
-            ? "Bad Request"
-            : statusCode === 401
-            ? "Unauthorized"
-            : statusCode === 403
-              ? "Forbidden"
-              : statusCode === 404
-                ? "Not Found"
-                : statusCode === 429
-                    ? "Too Many Requests"
-                    : "Internal Server Error";
+    const errorTypes = {
+        400: "Bad Request",
+        401: "Unauthorized",
+        403: "Forbidden",
+        404: "Not Found",
+        429: "Too Many Requests",
+    };
+    const errorType = errorTypes[statusCode] || "Internal Server Error";
 
-    // Create error response matching image service format
     const errorResponse = {
         error: errorType,
         message: error.message || "An error occurred",
-        details: error.details || undefined,
         requestId: Math.random().toString(36).substring(7),
         requestParameters: requestData || {},
     };
 
-    // Remove undefined fields
-    if (errorResponse.details === undefined) {
-        delete errorResponse.details;
-    }
+    if (error.details) errorResponse.details = error.details;
 
     // Extract client information (for logs only)
     const clientInfo = {
@@ -889,7 +874,6 @@ async function sendAsOpenAIStream(res, completion, req = null) {
     res.write("data: [DONE]\n\n");
     res.end();
 }
-
 
 async function generateTextBasedOnModel(messages, options) {
     const model = options.model; // Default already applied in validator

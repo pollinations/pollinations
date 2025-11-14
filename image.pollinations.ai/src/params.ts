@@ -29,11 +29,15 @@ const sanitizedSideLength = z.preprocess((v) => {
         : undefined;
 }, z.int().optional());
 
-const sanitizedModel = z.preprocess((v) => {
-    // Use explicit default when model is missing - imported from registry
-    if (v === null || v === undefined || v === "") return DEFAULT_IMAGE_MODEL;
-    return v;
-}, z.enum(allowedModels as [ModelName, ...ModelName[]]));
+const sanitizedModel = z.preprocess(
+    (v) => {
+        // Use explicit default when model is missing - imported from registry
+        if (v === null || v === undefined || v === "")
+            return DEFAULT_IMAGE_MODEL;
+        return v;
+    },
+    z.enum(allowedModels as [ModelName, ...ModelName[]]),
+);
 
 function adjustImageSizeForModel(
     model: ModelName,
@@ -74,7 +78,9 @@ export const ImageParamsSchema = z
                 if (!value) return [];
                 // Support both pipe (|) and comma (,) separators
                 // Prefer pipe separator if present, otherwise use comma
-                return value.includes("|") ? value.split("|") : value.split(",");
+                return value.includes("|")
+                    ? value.split("|")
+                    : value.split(",");
             })
             .catch([]),
         transparent: sanitizedBoolean.catch(false),

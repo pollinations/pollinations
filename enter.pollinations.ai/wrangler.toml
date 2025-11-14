@@ -153,6 +153,53 @@ POLAR_PRODUCT_PACK_LARGE = "2cb5ca34-d505-450d-a1d4-94e3bb0c1f68"
 IMAGE_SERVICE_URL = "http://ec2-3-80-56-235.compute-1.amazonaws.com:16384"
 TEXT_SERVICE_URL = "http://ec2-3-80-56-235.compute-1.amazonaws.com:16385"
 
+[env.staging]
+
+[[env.staging.routes]]
+pattern = "staging.enter.pollinations.ai"
+zone_name = "pollinations.ai"
+custom_domain = true
+
+[[env.staging.d1_databases]]
+binding = "DB"
+database_name = "staging-pollinations-enter-db"
+database_id = "073195b4-d99e-4b67-9575-eb5efe6d3234"
+migrations_dir = "drizzle"
+
+[[env.staging.kv_namespaces]]
+# staging-pollinations-enter-kv
+binding = "KV"
+id = "eb4ea5149a5a413db53902bf2b8c1d95"
+
+[[env.staging.r2_buckets]]
+binding = "IMAGE_BUCKET"
+bucket_name = "pollinations-images"
+
+[[env.staging.durable_objects.bindings]]
+name = "POLLEN_RATE_LIMITER"
+class_name = "PollenRateLimiter"
+
+[[env.staging.migrations]]
+tag = "v2"
+deleted_classes = ["RateLimiter"]
+new_classes = ["PollenRateLimiter"]
+
+[env.staging.vars]
+ENVIRONMENT = "staging"
+LOG_LEVEL = "debug"
+ALLOW_ANONYMOUS_USAGE = false
+POLAR_SUCCESS_URL = "https://staging.enter.pollinations.ai"
+POLAR_SERVER = "sandbox"
+TINYBIRD_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=generation_event"
+POLAR_PRODUCT_TIER_SEED = "5cbd2495-dba1-4840-8465-46afd9b16679"
+POLAR_PRODUCT_TIER_FLOWER = "ea33ef88-67ff-45d8-906e-bb9357dd549a"
+POLAR_PRODUCT_TIER_NECTAR = "10167875-38e1-459f-8241-106aafc3062c"
+POLAR_PRODUCT_PACK_SMALL = "polar_product_pack_small"
+POLAR_PRODUCT_PACK_MEDIUM = "polar_product_pack_medium"
+POLAR_PRODUCT_PACK_LARGE = "polar_product_pack_large"
+IMAGE_SERVICE_URL = "http://ec2-3-80-56-235.compute-1.amazonaws.com:16384"
+TEXT_SERVICE_URL = "http://ec2-3-80-56-235.compute-1.amazonaws.com:16385"
+
 [env.test]
 
 [[env.test.d1_databases]]

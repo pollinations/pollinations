@@ -6,7 +6,7 @@ const environmentConfig = {
         pollenPackMeterId: "1fcb2fed-e21a-4e1b-9774-cf25db39d11b",
     },
     staging: {
-        baseUrl: "https://enter.pollinations.ai",
+        baseUrl: "https://staging.enter.pollinations.ai",
         authPath: "/api/auth",
         pollenTierMeterId: "1a51d03b-aea0-4e0a-a61c-b3a8914918b4",
         pollenPackMeterId: "1fcb2fed-e21a-4e1b-9774-cf25db39d11b",

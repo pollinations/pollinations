@@ -24,7 +24,6 @@ export function createAzureModelConfig(
     const deploymentId = extractDeploymentName(endpoint) || modelName;
     return {
         provider: "azure-openai",
-        retry: "3",
         "azure-api-key": apiKey,
         "azure-resource-name": resourceName || extractResourceName(endpoint),
         "azure-deployment-id": deploymentId,

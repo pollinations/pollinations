@@ -150,6 +150,20 @@ function RouteComponent() {
         }
     };
 
+    const handleBuyPollen = async (slug: string) => {
+        try {
+            const response = await fetch(
+                `/api/polar/checkout/${encodeURIComponent(slug)}?redirect=true`,
+            );
+            if (response.ok) {
+                const data = (await response.json()) as { url: string };
+                window.location.href = data.url;
+            }
+        } catch (error) {
+            console.error("Failed to create checkout session:", error);
+        }
+    };
+
     return (
         <div className="flex flex-col gap-20">
             <Header>
@@ -177,7 +191,19 @@ function RouteComponent() {
                             as="button"
                             color="purple"
                             weight="light"
-                            disabled
+                            onClick={() =>
+                                handleBuyPollen("v1:product:pack:5x2")
+                            }
+                        >
+                            + $5
+                        </Button>
+                        <Button
+                            as="button"
+                            color="purple"
+                            weight="light"
+                            onClick={() =>
+                                handleBuyPollen("v1:product:pack:10x2")
+                            }
                         >
                             + $10
                         </Button>
@@ -185,7 +211,9 @@ function RouteComponent() {
                             as="button"
                             color="purple"
                             weight="light"
-                            disabled
+                            onClick={() =>
+                                handleBuyPollen("v1:product:pack:20x2")
+                            }
                         >
                             + $20
                         </Button>
@@ -193,7 +221,9 @@ function RouteComponent() {
                             as="button"
                             color="purple"
                             weight="light"
-                            disabled
+                            onClick={() =>
+                                handleBuyPollen("v1:product:pack:50x2")
+                            }
                         >
                             + $50
                         </Button>

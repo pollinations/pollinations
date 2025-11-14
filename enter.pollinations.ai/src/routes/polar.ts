@@ -8,11 +8,12 @@ import type { Env } from "../env.ts";
 import { describeRoute } from "hono-openapi";
 
 export const productSlugs = [
-    "pollen-pack-small",
-    "pollen-pack-medium",
-    "pollen-pack-large",
+    "v1:product:pack:5x2",
+    "v1:product:pack:10x2",
+    "v1:product:pack:20x2",
+    "v1:product:pack:50x2",
 ] as const;
-const productSlugSchema = z.literal(productSlugs);
+const productSlugSchema = z.enum(productSlugs);
 type ProductSlug = z.infer<typeof productSlugSchema>;
 
 const checkoutParamsSchema = z.object({
@@ -107,9 +108,10 @@ export const polarRoutes = new Hono<Env>()
             const { slug } = c.req.valid("param");
             const { redirect } = c.req.valid("query");
             const products: ProductMap = {
-                "pollen-pack-small": c.env.POLAR_PRODUCT_PACK_SMALL,
-                "pollen-pack-medium": c.env.POLAR_PRODUCT_PACK_MEDIUM,
-                "pollen-pack-large": c.env.POLAR_PRODUCT_PACK_LARGE,
+                "v1:product:pack:5x2": c.env.POLAR_PRODUCT_PACK_5X2,
+                "v1:product:pack:10x2": c.env.POLAR_PRODUCT_PACK_10X2,
+                "v1:product:pack:20x2": c.env.POLAR_PRODUCT_PACK_20X2,
+                "v1:product:pack:50x2": c.env.POLAR_PRODUCT_PACK_50X2,
             };
             try {
                 const polar = c.var.polar.client;

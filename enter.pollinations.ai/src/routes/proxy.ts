@@ -4,10 +4,10 @@ import type { ContentfulStatusCode } from "hono/utils/http-status";
 import { auth } from "@/middleware/auth.ts";
 import { polar } from "@/middleware/polar.ts";
 import type { Env } from "../env.ts";
-import { track, type TrackEnv } from "@/middleware/track.ts";
-import { frontendKeyRateLimit } from "@/middleware/rateLimit.durable.ts";
+import { track, TrackEnv } from "@/middleware/track.ts";
+import { frontendKeyRateLimit } from "@/middleware/rate-limit-durable.ts";
 import { imageCache } from "@/middleware/image-cache.ts";
-import { edgeRateLimit } from "@/middleware/edgeRateLimit.ts";
+import { edgeRateLimit } from "@/middleware/rate-limit-edge.ts";
 import { describeRoute, resolver } from "hono-openapi";
 import { validator } from "@/middleware/validator.ts";
 import {
@@ -69,10 +69,7 @@ export const proxyRoutes = new Hono<Env>()
             },
         }),
         async (c) => {
-            const textServiceUrl =
-                c.env.TEXT_SERVICE_URL || "https://text.pollinations.ai";
-            return await proxy(`${textServiceUrl}/openai/models`, {
-                ...c.req,
+            return await proxy(`${c.env.TEXT_SERVICE_URL}/openai/models`, {
                 headers: proxyHeaders(c),
             });
         },
@@ -252,7 +249,6 @@ export const proxyRoutes = new Hono<Env>()
     .get(
         "/image/*",
         track("generate.image"),
-        // ✅ Cache FIRST - before auth/rate limiting
         imageCache,
         describeRoute({
             tags: ["Image Generation"],
@@ -267,9 +263,6 @@ export const proxyRoutes = new Hono<Env>()
                 "",
                 "API keys can be created from your dashboard at enter.pollinations.ai.",
             ].join("\n"),
-            request: {
-                query: resolver(GenerateImageRequestQueryParamsSchema),
-            },
             responses: {
                 200: {
                     description: "Success - Returns the generated image",
@@ -324,11 +317,9 @@ export const proxyRoutes = new Hono<Env>()
                 url: targetUrl.toString(),
             });
 
-            const proxyRequestHeaders = proxyHeaders(c);
-
             const response = await proxy(targetUrl.toString(), {
                 method: c.req.method,
-                headers: proxyRequestHeaders,
+                headers: proxyHeaders(c),
                 body: c.req.raw.body,
             });
 

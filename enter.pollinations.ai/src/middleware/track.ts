@@ -54,7 +54,7 @@ import {
 import { ValidationError } from "@/middleware/validator.ts";
 import type { LoggerVariables } from "./logger.ts";
 import type { ErrorVariables } from "@/env.ts";
-import type { FrontendKeyRateLimitVariables } from "./rateLimit.durable.ts";
+import type { FrontendKeyRateLimitVariables } from "./rate-limit-durable.ts";
 
 export type ModelUsage = {
     model: ModelId;

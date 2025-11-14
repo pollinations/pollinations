@@ -48,22 +48,24 @@ const HOURLY_LIMIT = 10;
 const HOUR_MS = 60 * 60 * 1000;
 
 // Check and update hourly usage for an IP
-const checkHourlyLimit = (ip: string): { allowed: boolean; remaining: number; resetIn: number } => {
+const checkHourlyLimit = (
+    ip: string,
+): { allowed: boolean; remaining: number; resetIn: number } => {
     const now = Date.now();
     const usage = hourlyUsage.get(ip);
-    
+
     // No usage yet or hour has passed - reset
     if (!usage || now - usage.hourStart >= HOUR_MS) {
         hourlyUsage.set(ip, { count: 1, hourStart: now });
         return { allowed: true, remaining: HOURLY_LIMIT - 1, resetIn: HOUR_MS };
     }
-    
+
     // Within the same hour
     if (usage.count >= HOURLY_LIMIT) {
         const resetIn = HOUR_MS - (now - usage.hourStart);
         return { allowed: false, remaining: 0, resetIn };
     }
-    
+
     // Increment and allow
     usage.count++;
     const resetIn = HOUR_MS - (now - usage.hourStart);
@@ -78,9 +80,7 @@ const setCORSHeaders = (res: ServerResponse) => {
     res.setHeader("Access-Control-Allow-Origin", "*");
     res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
     res.setHeader("Access-Control-Allow-Headers", "Content-Type");
-    res.setHeader("Access-Control-Expose-Headers", [
-        "Content-Length",
-    ]);
+    res.setHeader("Access-Control-Expose-Headers", ["Content-Length"]);
 };
 
 /**
@@ -147,7 +147,7 @@ const imageGen = async ({
     const ip = getIp(req);
 
     const startTime = Date.now();
-    
+
     try {
         timingInfo.push({ step: "Start processing", timestamp: Date.now() });
 
@@ -345,7 +345,12 @@ const checkCacheAndGenerate = async (
             originalPrompt,
             safeParams,
             async () => {
-                progress.updateBar(requestId, 10, "Processing", "Generating image");
+                progress.updateBar(
+                    requestId,
+                    10,
+                    "Processing",
+                    "Generating image",
+                );
                 timingInfo = [
                     {
                         step: "Request received.",
@@ -358,9 +363,9 @@ const checkCacheAndGenerate = async (
                     step: "Start generating job",
                     timestamp: Date.now(),
                 });
-                
+
                 progress.setProcessing(requestId);
-                
+
                 const result = await imageGen({
                     req,
                     timingInfo,
@@ -371,12 +376,12 @@ const checkCacheAndGenerate = async (
                     requestId,
                     authResult,
                 });
-                
+
                 timingInfo.push({
                     step: "End generating job",
                     timestamp: Date.now(),
                 });
-                
+
                 return result;
             },
         );
@@ -404,13 +409,16 @@ const checkCacheAndGenerate = async (
 
         // Debug: Log trackingData before building headers
         logApi("=== TRACKING DATA BEFORE HEADERS ===");
-        logApi("bufferAndMaturity.trackingData:", JSON.stringify(bufferAndMaturity.trackingData, null, 2));
+        logApi(
+            "bufferAndMaturity.trackingData:",
+            JSON.stringify(bufferAndMaturity.trackingData, null, 2),
+        );
         logApi("====================================");
 
         // Add tracking headers for enter service (GitHub issue #4170)
         const trackingHeaders = buildTrackingHeaders(
             safeParams.model,
-            bufferAndMaturity.trackingData
+            bufferAndMaturity.trackingData,
         );
         logApi("=== BUILT TRACKING HEADERS ===");
         logApi("trackingHeaders:", JSON.stringify(trackingHeaders, null, 2));
@@ -437,12 +445,12 @@ const checkCacheAndGenerate = async (
             statusCode === 400
                 ? "Bad Request"
                 : statusCode === 401
-                ? "Unauthorized"
-                : statusCode === 403
-                  ? "Forbidden"
-                  : statusCode === 429
-                    ? "Too Many Requests"
-                    : "Internal Server Error";
+                  ? "Unauthorized"
+                  : statusCode === 403
+                    ? "Forbidden"
+                    : statusCode === 429
+                      ? "Too Many Requests"
+                      : "Internal Server Error";
 
         // Log the error response using debug
         logError("Error response:", {
@@ -456,7 +464,7 @@ const checkCacheAndGenerate = async (
             "Content-Type": "application/json",
             "X-Error-Type": errorType,
         });
-        
+
         // Create a response object with error information
         const responseObj = {
             error: errorType,
@@ -534,10 +542,10 @@ const server = http.createServer((req, res) => {
             Pragma: "no-cache",
             Expires: "0",
         });
-        
+
         // Return all available models - enter.pollinations.ai handles access control
         const publicModels = Object.keys(MODELS);
-        
+
         res.end(JSON.stringify(publicModels));
         return;
     }
@@ -552,7 +560,7 @@ const server = http.createServer((req, res) => {
         });
         const modelDetails = Object.entries(MODELS).map(([name, config]) => ({
             name,
-            enhance : config.enhance || false,
+            enhance: config.enhance || false,
             defaultSideLength: config.defaultSideLength ?? 1024,
         }));
         res.end(JSON.stringify(modelDetails));
@@ -567,11 +575,13 @@ const server = http.createServer((req, res) => {
             Pragma: "no-cache",
             Expires: "0",
         });
-        getModelCounts().then(counts => {
-            res.end(JSON.stringify(counts));
-        }).catch(() => {
-            res.end(JSON.stringify({}));
-        });
+        getModelCounts()
+            .then((counts) => {
+                res.end(JSON.stringify(counts));
+            })
+            .catch(() => {
+                res.end(JSON.stringify({}));
+            });
         return;
     }
 
@@ -610,13 +620,15 @@ server.listen(port, () => {
     console.log(`🌸 Image server listening on port ${port}`);
     console.log(`🔗 Test URL: http://localhost:${port}/prompt/pollinations`);
     console.log(`✨ All requests assumed to come from enter.pollinations.ai`);
-    
+
     // Debug environment info
     const debugEnv = process.env.DEBUG;
     if (debugEnv) {
         console.log(`🐛 Debug mode: ${debugEnv}`);
     } else {
-        console.log(`💡 Pro tip: Want debug logs? Run with DEBUG=* for all the deets! ✨`);
+        console.log(
+            `💡 Pro tip: Want debug logs? Run with DEBUG=* for all the deets! ✨`,
+        );
     }
 });
 

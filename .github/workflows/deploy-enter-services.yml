@@ -45,11 +45,14 @@ jobs:
 
       - name: Deploy via SSH
         uses: appleboy/ssh-action@v1.0.0
+        env:
+          ENTER_TOKEN: ${{ secrets.ENTER_TOKEN }}
         with:
           host: ${{ secrets.ENTER_SERVICES_HOST }}
           username: ${{ secrets.ENTER_SERVICES_USER }}
           key: ${{ secrets.ENTER_SERVICES_SSH_KEY }}
           fingerprint: ${{ secrets.ENTER_SERVICES_FINGERPRINT }}
+          envs: ENTER_TOKEN
           script: |
             set -e
             
@@ -91,8 +94,8 @@ jobs:
             echo "🏥 Running health checks..."
             sleep 2  # Give services a moment to fully initialize
             
-            # Load ENTER_TOKEN from text service .env
-            ENTER_TOKEN=$(grep "^ENTER_TOKEN=" text.pollinations.ai/.env | cut -d= -f2)
+            # ENTER_TOKEN is passed as environment variable from GitHub secret
+            echo "Using ENTER_TOKEN: ${ENTER_TOKEN:0:10}..."
             
             # Check text service health
             TEXT_HEALTH=$(curl -s -o /dev/null -w "%{http_code}" -H "x-enter-token: $ENTER_TOKEN" http://localhost:16385/models || echo "000")

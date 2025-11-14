@@ -7,8 +7,8 @@ import { validator } from "../middleware/validator.ts";
 import type { Env } from "../env.ts";
 import { z } from "zod";
 
-type TierStatus = "none" | "seed" | "flower" | "nectar";
-type ActivatableTier = "seed" | "flower" | "nectar";
+type TierStatus = "none" | "seed" | "flower" | "nectar" | "router";
+type ActivatableTier = "seed" | "flower" | "nectar" | "router";
 
 // Polar subscription shape (only fields we use)
 interface PolarSubscription {
@@ -20,7 +20,7 @@ interface PolarSubscription {
 }
 
 // Central tier definition
-const TIERS: readonly ActivatableTier[] = ["seed", "flower", "nectar"] as const;
+const TIERS: readonly ActivatableTier[] = ["seed", "flower", "nectar", "router"] as const;
 
 // Get Polar product IDs from environment
 function getTierProductId(env: Cloudflare.Env, tier: ActivatableTier): string {
@@ -33,10 +33,11 @@ function getTierProductId(env: Cloudflare.Env, tier: ActivatableTier): string {
 }
 
 interface TierViewModel {
-    assigned_tier: TierStatus;  // Tier assigned in Cloudflare DB
+    target_tier: TierStatus;  // Target tier in Cloudflare DB
     active_tier: TierStatus;    // Currently active subscription in Polar
     should_show_activate_button: boolean;  // Show button if no active subscription
-    product_name?: string;
+    active_tier_name?: string;  // Name of ACTIVE tier (for TierPanel display)
+    target_tier_name?: string;  // Name of TARGET tier (for activate button)
     daily_pollen?: number;
     next_refill_at_utc: string;
     has_polar_error: boolean;
@@ -56,8 +57,8 @@ function getTierFromProductId(env: Cloudflare.Env, productId: string): TierStatu
 }
 
 function shouldShowActivateButton(assigned: TierStatus, active: TierStatus): boolean {
-    // Show button if user has assigned tier but no active subscription
-    return assigned !== "none" && active === "none";
+    // Show button if assigned tier differs from active subscription
+    return assigned !== "none" && assigned !== active;
 }
 
 function getNextMidnightUTC(): string {
@@ -82,7 +83,7 @@ function isMeterCreditBenefit(b: unknown): b is MeterCreditBenefit {
 }
 
 const activateRequestSchema = z.object({
-    target_tier: z.enum(["seed", "flower", "nectar"]),
+    target_tier: z.enum(["seed", "flower", "nectar", "router"]),
 });
 
 export const tiersRoutes = new Hono<Env>()
@@ -101,9 +102,9 @@ export const tiersRoutes = new Hono<Env>()
             const polar = c.var.polar.client;
             
             // Get tier assigned in Cloudflare DB
-            const assigned_tier = getTierStatus(user.tier);
+            const target_tier = getTierStatus(user.tier);
             let active_tier: TierStatus = "none";
-            let product_name: string | undefined;
+            let active_tier_name: string | undefined;
             let daily_pollen: number | undefined;
             let next_refill_at_utc = getNextMidnightUTC(); // Default fallback
             let has_polar_error = false;
@@ -146,7 +147,7 @@ export const tiersRoutes = new Hono<Env>()
                     // Fetch product details for the active subscription
                     try {
                         const product = (await polar.products.get({ id: activeProductId })) as PolarProductMinimal;
-                        product_name = product.name;
+                        active_tier_name = product.name;
                         
                         // Extract daily pollen from meter_credit benefit
                         const meterBenefit = product.benefits?.find(isMeterCreditBenefit);
@@ -166,26 +167,29 @@ export const tiersRoutes = new Hono<Env>()
                 has_polar_error = true;
             }
             
-            // Fetch assigned tier product info for button text (even if no subscription)
-            if (assigned_tier !== "none" && !product_name) {
+            // Determine if activate button should be shown
+            // Don't show button if Polar API failed - can't verify state safely
+            const should_show_activate_button = !has_polar_error && shouldShowActivateButton(target_tier, active_tier);
+            
+            // If button should show, fetch target tier's product name for the button
+            let target_tier_name: string | undefined;
+            if (should_show_activate_button && target_tier !== "none") {
                 try {
-                    const assignedProductId = getTierProductId(c.env, assigned_tier as ActivatableTier);
+                    const assignedProductId = getTierProductId(c.env, target_tier as ActivatableTier);
                     const assignedProduct = (await polar.products.get({ id: assignedProductId })) as PolarProductMinimal;
-                    product_name = assignedProduct.name;
+                    target_tier_name = assignedProduct.name;
                 } catch (error) {
-                    log.warn("Failed to fetch assigned tier product", { tier: assigned_tier });
+                    log.warn("Failed to fetch target tier product", { tier: target_tier });
                 }
             }
             
-            // Determine if activate button should be shown
-            const should_show_activate_button = shouldShowActivateButton(assigned_tier, active_tier);
-            
 
             const viewModel: TierViewModel = {
-                assigned_tier,
+                target_tier,
                 active_tier,
                 should_show_activate_button,
-                product_name,
+                active_tier_name,
+                target_tier_name,
                 daily_pollen,
                 next_refill_at_utc,
                 has_polar_error,

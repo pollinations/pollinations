@@ -305,7 +305,16 @@ const checkCacheAndGenerate = async (
         pathname.split("/prompt/")[1] || "random_prompt",
     );
 
-    const safeParams = ImageParamsSchema.parse(query);
+    // Validate parameters with proper error handling
+    const parseResult = ImageParamsSchema.safeParse(query);
+    if (!parseResult.success) {
+        throw new HttpError(
+            `Invalid parameters: ${parseResult.error.issues[0]?.message || "validation failed"}`,
+            400,
+            parseResult.error.issues,
+        );
+    }
+    const safeParams = parseResult.data;
 
     const referrer = req.headers?.["referer"] || req.headers?.origin;
 

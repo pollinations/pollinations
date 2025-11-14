@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React from "react";
 import { usePollinationsText } from "@pollinations/react";
 import ReactMarkdown from "react-markdown";
 import styled from "@emotion/styled";

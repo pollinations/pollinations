@@ -93,7 +93,11 @@ app.use((req, res, next) => {
     next();
 });
 
-// Middleware to verify ENTER_TOKEN
+// Remove the custom JSON parsing middleware and use the standard bodyParser
+app.use(bodyParser.json({ limit: "20mb" }));
+app.use(cors());
+
+// Middleware to verify ENTER_TOKEN (after CORS for consistency)
 app.use((req, res, next) => {
     const token = req.headers["x-enter-token"];
     const expectedToken = process.env.ENTER_TOKEN;
@@ -112,10 +116,6 @@ app.use((req, res, next) => {
     authLog("✅ Valid ENTER_TOKEN from IP:", getIp(req));
     next();
 });
-
-// Remove the custom JSON parsing middleware and use the standard bodyParser
-app.use(bodyParser.json({ limit: "20mb" }));
-app.use(cors());
 // New route handler for root path
 app.get("/", (req, res) => {
     res.redirect(

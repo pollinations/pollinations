@@ -72,8 +72,9 @@ async function generatePortkeyHeaders(config) {
 
     // Use individual headers approach (proven to work with Azure OpenAI)
     // Set strictOpenAiCompliance to false to enable Perplexity citations
+    // NOTE: Must be "strict-open-ai-compliance" (with dash between "open" and "ai")
     const headers = {
-        "x-portkey-strict-openai-compliance": "false",
+        "x-portkey-strict-open-ai-compliance": "false",
     };
 
     // Get the auth key
@@ -107,5 +108,6 @@ async function generatePortkeyHeaders(config) {
     }
 
     log("Generated Portkey headers:", Object.keys(headers));
+    log("strictOpenAiCompliance header value:", headers["x-portkey-strict-open-ai-compliance"]);
     return headers;
 }

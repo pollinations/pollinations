@@ -55,6 +55,15 @@ export function LLMTextManipulator({ text, transforms = [] }) {
         return <span>Generating...</span>;
     }
 
+    // If the transformed text is an error message, fallback to original text
+    if (transformedText.startsWith("An error occurred while generating text:")) {
+        return (
+            <MarkDownStyle>
+                <ReactMarkdown>{text}</ReactMarkdown>
+            </MarkDownStyle>
+        );
+    }
+
     return (
         <MarkDownStyle>
             <ReactMarkdown>{transformedText}</ReactMarkdown>

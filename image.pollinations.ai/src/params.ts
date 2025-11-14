@@ -28,19 +28,6 @@ const sanitizedSideLength = z.preprocess((v) => {
         : undefined;
 }, z.int().optional());
 
-<<<<<<< HEAD
-=======
-const sanitizedModel = z.preprocess(
-    (v) => {
-        // Use explicit default when model is missing - imported from registry
-        if (v === null || v === undefined || v === "")
-            return DEFAULT_IMAGE_MODEL;
-        return v;
-    },
-    z.enum(allowedModels as [ModelName, ...ModelName[]]),
-);
-
->>>>>>> ff7671aa3 (style: apply biome formatting)
 function adjustImageSizeForModel(
     model: ModelName,
     width?: number,

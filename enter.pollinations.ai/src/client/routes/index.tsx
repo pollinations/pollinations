@@ -150,18 +150,9 @@ function RouteComponent() {
         }
     };
 
-    const handleBuyPollen = async (slug: string) => {
-        try {
-            const response = await fetch(
-                `/api/polar/checkout/${encodeURIComponent(slug)}?redirect=true`,
-            );
-            if (response.ok) {
-                const data = (await response.json()) as { url: string };
-                window.location.href = data.url;
-            }
-        } catch (error) {
-            console.error("Failed to create checkout session:", error);
-        }
+    const handleBuyPollen = (slug: string) => {
+        // Navigate directly to checkout endpoint - server will handle redirect
+        window.location.href = `/api/polar/checkout/${encodeURIComponent(slug)}?redirect=true`;
     };
 
     return (
@@ -227,14 +218,17 @@ function RouteComponent() {
                         >
                             + $50
                         </Button>
-                        <a
+                        <Button
+                            as="a"
                             href="https://github.com/pollinations/pollinations/issues/4826"
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="text-sm text-purple-700 hover:text-purple-900 font-medium transition-colors"
+                            className="!bg-purple-200 !text-purple-900"
+                            color="purple"
+                            weight="light"
                         >
-                            💳 Vote on payment methods →
-                        </a>
+                            💳 Vote on payment methods
+                        </Button>
                     </div>
                 </div>
                 <PollenBalance

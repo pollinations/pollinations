@@ -14,12 +14,15 @@
         "gen:types:runtime": "sops -d .encrypted.dev.env > .dev.vars && wrangler types --include-env=false worker-runtime.d.ts",
         "gen:types:bindings": "sops -d .encrypted.dev.env > .dev.vars && wrangler types --include-runtime=false --env-interface CloudflareBindings worker-bindings.d.ts",
         "gen:types": "npm run gen:types:runtime && npm run gen:types:bindings",
+        "migrate:staging": "wrangler d1 migrations apply DB --remote --env staging",
         "migrate:production": "wrangler d1 migrations apply DB --remote --env production",
         "migrate:development": "wrangler d1 migrations apply DB --local",
+        "build:staging": "CLOUDFLARE_ENV=staging vite build --mode=staging",
+        "deploy:staging": "npm run build:staging && wrangler deploy",
         "build:production": "CLOUDFLARE_ENV=production vite build --mode=production",
         "deploy:production": "npm run build:production && wrangler deploy --env production",
         "push-secrets:staging": "sops exec-file --no-fifo .encrypted.staging.env 'npx wrangler secret bulk {} --env staging'",
-        "push-secrets:production": "sops exec-file --no-fifo .encrypted.production.env 'npx wrangler secret bulk {} --env production'"
+        "push-secrets:production": "sops exec-file --no-fifo .encrypted.prod.env 'npx wrangler secret bulk {} --env production'"
     },
     "dependencies": {
         "@ark-ui/react": "^5.27.1",

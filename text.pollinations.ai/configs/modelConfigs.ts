@@ -339,10 +339,7 @@ export const portkeyConfig: PortkeyConfigMap = {
     searchgpt: () => createApiNavyModelConfig(),
     "gpt-4o-mini-search-preview": () => createApiNavyModelConfig(),
     unity: () => createScalewayModelConfig(),
-    "mis-unity": () =>
-        createScalewayModelConfig({
-            retry: "0",
-        }),
+    "mis-unity": () => createScalewayModelConfig(),
     // Nebius model configurations
     "mistralai/Mistral-Nemo-Instruct-2407": () =>
         createNebiusModelConfig({

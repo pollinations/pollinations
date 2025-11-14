@@ -6,6 +6,7 @@
 
 import type { Context } from "hono";
 import { removeUnset } from "@/util.ts";
+import { Logger } from "@logtape/logtape";
 
 /**
  * Apply model-specific caching rules to the URL
@@ -90,7 +91,6 @@ function createHash(str: string): string {
     return Math.abs(hash).toString(16).substring(0, 8);
 }
 
-
 /**
  * Helper function to set HTTP metadata headers from R2 object
  */
@@ -112,13 +112,13 @@ export function setHttpMetadataHeaders(
     }
 }
 
-type CacheContext = Context<{
+type ImageCacheEnv = {
     Bindings: CloudflareBindings;
     Variables: {
         requestId: string;
-        log?: any;
+        log: Logger;
     };
-}>;
+};
 
 /**
  * Store a response in R2
@@ -126,9 +126,9 @@ type CacheContext = Context<{
  * @param {Context} c - Hono context
  * @returns {Promise<boolean>} - Whether the caching was successful
  */
-export async function cacheResponse(
+export async function cacheResponse<TEnv extends ImageCacheEnv>(
     cacheKey: string,
-    c: CacheContext,
+    c: Context<TEnv>,
 ): Promise<boolean> {
     try {
         // Store the image in R2 using the cache key directly
@@ -139,7 +139,8 @@ export async function cacheResponse(
 
         // Get additional client information
         const userAgent = c.req.header("user-agent") || "";
-        const referer = c.req.header("referer") || c.req.header("referrer") || "";
+        const referer =
+            c.req.header("referer") || c.req.header("referrer") || "";
         const acceptLanguage = c.req.header("accept-language") || "";
         const requestId = c.get("requestId");
 
@@ -151,7 +152,8 @@ export async function cacheResponse(
         const httpMetadata: R2HTTPMetadata = {
             contentType: c.res.headers.get("content-type") || "image/jpeg",
             contentEncoding: c.res.headers.get("content-encoding") || undefined,
-            contentDisposition: c.res.headers.get("content-disposition") || undefined,
+            contentDisposition:
+                c.res.headers.get("content-disposition") || undefined,
             contentLanguage: c.res.headers.get("content-language") || undefined,
             cacheControl: c.res.headers.get("cache-control") || undefined,
         };
@@ -181,7 +183,9 @@ export async function cacheResponse(
 
         return true;
     } catch (error) {
-        c.get("log")?.error("[CACHE] Error caching response: {error}", { error });
+        c.get("log")?.error("[CACHE] Error caching response: {error}", {
+            error,
+        });
         return false;
     }
 }

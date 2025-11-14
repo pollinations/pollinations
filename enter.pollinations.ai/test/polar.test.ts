@@ -1,6 +1,6 @@
 import { SELF } from "cloudflare:test";
 import { test } from "./fixtures.ts";
-import { products } from "@/routes/polar.ts";
+import { productSlugs } from "@/routes/polar.ts";
 import { expect } from "vitest";
 
 const base = "http://localhost:3000/api/polar";
@@ -9,7 +9,7 @@ const customerRoutes = [
     "/customer/events",
     "/customer/portal",
 ];
-const checkoutRoutes = Object.keys(products).map((slug) => `/checkout/${slug}`);
+const checkoutRoutes = productSlugs.map((slug) => `/checkout/${slug}`);
 const routes = [...customerRoutes, ...checkoutRoutes];
 
 test.for(routes)(

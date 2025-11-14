@@ -1,11 +1,10 @@
-import { Context, Hono } from "hono";
+import { type Context, Hono } from "hono";
 import { proxy } from "hono/proxy";
+import type { ContentfulStatusCode } from "hono/utils/http-status";
 import { auth } from "@/middleware/auth.ts";
-import type { User } from "@/auth.ts";
 import { polar } from "@/middleware/polar.ts";
 import type { Env } from "../env.ts";
-import { track, TrackEnv } from "@/middleware/track.ts";
-import { removeUnset } from "@/util.ts";
+import { track, type TrackEnv } from "@/middleware/track.ts";
 import { frontendKeyRateLimit } from "@/middleware/rateLimit.durable.ts";
 import { imageCache } from "@/middleware/image-cache.ts";
 import { edgeRateLimit } from "@/middleware/edgeRateLimit.ts";
@@ -14,19 +13,18 @@ import { validator } from "@/middleware/validator.ts";
 import {
     CreateChatCompletionResponseSchema,
     CreateChatCompletionRequestSchema,
-    CreateChatCompletionResponse,
+    type CreateChatCompletionResponse,
     GetModelsResponseSchema,
 } from "@/schemas/openai.ts";
 import {
     createErrorResponseSchema,
-    ErrorStatusCode,
+    type ErrorStatusCode,
     getDefaultErrorMessage,
     KNOWN_ERROR_STATUS_CODES,
     UpstreamError,
 } from "@/error.ts";
 import { GenerateImageRequestQueryParamsSchema } from "@/schemas/image.ts";
 import { z } from "zod";
-import { ContentfulStatusCode } from "hono/utils/http-status";
 
 const errorResponseDescriptions = Object.fromEntries(
     KNOWN_ERROR_STATUS_CODES.map((status) => [
@@ -101,7 +99,9 @@ export const proxyRoutes = new Hono<Env>()
             },
         }),
         async (c) => {
-            return await proxy(`${c.env.IMAGE_SERVICE_URL}/models`);
+            return await proxy(`${c.env.IMAGE_SERVICE_URL}/models`, {
+                headers: proxyHeaders(c),
+            });
         },
     )
     // Auth required for all endpoints below (API key only - no session cookies)
@@ -220,10 +220,7 @@ export const proxyRoutes = new Hono<Env>()
 
             const response = await fetch(targetUrl, {
                 method: "GET",
-                headers: {
-                    ...proxyHeaders(c),
-                    ...generationHeaders(c.env.ENTER_TOKEN, c.var.auth.user),
-                },
+                headers: proxyHeaders(c),
             });
 
             if (!response.ok) {
@@ -234,10 +231,15 @@ export const proxyRoutes = new Hono<Env>()
                     status: response.status,
                     body: responseText,
                 });
-                throw new UpstreamError(response.status as ContentfulStatusCode, {
-                    message: responseText || getDefaultErrorMessage(response.status),
-                    requestUrl: targetUrl,
-                });
+                throw new UpstreamError(
+                    response.status as ContentfulStatusCode,
+                    {
+                        message:
+                            responseText ||
+                            getDefaultErrorMessage(response.status),
+                        requestUrl: targetUrl,
+                    },
+                );
             }
 
             // Backend returns plain text for text models and raw audio for audio models
@@ -305,7 +307,7 @@ export const proxyRoutes = new Hono<Env>()
             // Keep it encoded to preserve special characters when proxying
             const fullPath = c.req.path; // e.g., "/api/generate/image/my%20prompt%20here"
             const promptParam = fullPath.split("/image/")[1] || "";
-            
+
             log.debug("[PROXY] Extracted prompt param: {prompt}", {
                 prompt: decodeURIComponent(promptParam), // Decode only for logging
                 type: typeof promptParam,
@@ -314,35 +316,13 @@ export const proxyRoutes = new Hono<Env>()
             });
 
             const targetUrl = proxyUrl(c, `${c.env.IMAGE_SERVICE_URL}/prompt`);
-            targetUrl.pathname = joinPaths(
-                targetUrl.pathname,
-                promptParam,
-            );
+            targetUrl.pathname = joinPaths(targetUrl.pathname, promptParam);
 
             log.debug("[PROXY] Proxying to: {url}", {
                 url: targetUrl.toString(),
             });
 
-            const genHeaders = generationHeaders(
-                c.env.ENTER_TOKEN,
-                c.var.auth.user,
-            );
-
-            log.debug("[PROXY] Image generation headers: {headers}", {
-                headers: genHeaders,
-            });
-
-            const proxyRequestHeaders = {
-                ...proxyHeaders(c),
-                ...genHeaders,
-            };
-
-            c.get("log")?.debug("[PROXY] Image generation headers: {headers}", {
-                headers: genHeaders,
-            });
-            c.get("log")?.debug("[PROXY] Proxying to: {url}", {
-                url: targetUrl.toString(),
-            });
+            const proxyRequestHeaders = proxyHeaders(c);
 
             const response = await proxy(targetUrl.toString(), {
                 method: c.req.method,
@@ -358,24 +338,20 @@ export const proxyRoutes = new Hono<Env>()
                     status: response.status,
                     body: responseText,
                 });
-                throw new UpstreamError(response.status as ContentfulStatusCode, {
-                    message: responseText || getDefaultErrorMessage(response.status),
-                    requestUrl: targetUrl,
-                });
+                throw new UpstreamError(
+                    response.status as ContentfulStatusCode,
+                    {
+                        message:
+                            responseText ||
+                            getDefaultErrorMessage(response.status),
+                        requestUrl: targetUrl,
+                    },
+                );
             }
 
             return response;
         },
     );
-
-function generationHeaders(
-    enterToken: string,
-    user?: User,
-): Record<string, string> {
-    return removeUnset({
-        "x-enter-token": enterToken,
-    });
-}
 
 function proxyHeaders(c: Context): Record<string, string> {
     const clientIP = c.req.header("cf-connecting-ip") || "";
@@ -386,6 +362,7 @@ function proxyHeaders(c: Context): Record<string, string> {
         "x-forwarded-host": clientHost,
         "x-forwarded-for": clientIP,
         "x-real-ip": clientIP,
+        "x-enter-token": c.env.ENTER_TOKEN,
     };
 }
 
@@ -419,7 +396,7 @@ export function contentFilterResultsToHeaders(
     const completionFilterResults =
         response.choices?.[0]?.content_filter_results;
     const mapToString = (value: unknown) => (value ? String(value) : undefined);
-    return removeUnset({
+    const headers = {
         "x-moderation-prompt-hate-severity": mapToString(
             promptFilterResults?.hate?.severity,
         ),
@@ -453,7 +430,11 @@ export function contentFilterResultsToHeaders(
         "x-moderation-completion-protected-material-code-detected": mapToString(
             completionFilterResults?.protected_material_code?.detected,
         ),
-    });
+    };
+    // Filter out undefined values
+    return Object.fromEntries(
+        Object.entries(headers).filter(([_, value]) => value !== undefined),
+    ) as Record<string, string>;
 }
 
 async function checkBalanceForPaidModel(c: Context<Env & TrackEnv>) {
@@ -481,10 +462,7 @@ async function handleChatCompletions(c: Context<Env & TrackEnv>) {
     const requestBody = await c.req.json();
     const response = await proxy(targetUrl, {
         method: c.req.method,
-        headers: {
-            ...proxyHeaders(c),
-            ...generationHeaders(c.env.ENTER_TOKEN, c.var.auth.user),
-        },
+        headers: proxyHeaders(c),
         body: JSON.stringify(requestBody),
     });
 

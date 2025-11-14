@@ -178,7 +178,9 @@ export const proxyRoutes = new Hono<Env>()
         async (c) => {
             const textServiceUrl =
                 c.env.TEXT_SERVICE_URL || "https://text.pollinations.ai";
-            return await proxy(`${textServiceUrl}/models`);
+            return await proxy(`${textServiceUrl}/models`, {
+                headers: proxyHeaders(c),
+            });
         },
     )
     .get(

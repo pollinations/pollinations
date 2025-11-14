@@ -91,8 +91,11 @@ jobs:
             echo "🏥 Running health checks..."
             sleep 2  # Give services a moment to fully initialize
             
+            # Load ENTER_TOKEN from text service .env
+            ENTER_TOKEN=$(grep "^ENTER_TOKEN=" text.pollinations.ai/.env | cut -d= -f2)
+            
             # Check text service health
-            TEXT_HEALTH=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:16385/models || echo "000")
+            TEXT_HEALTH=$(curl -s -o /dev/null -w "%{http_code}" -H "x-enter-token: $ENTER_TOKEN" http://localhost:16385/models || echo "000")
             if [ "$TEXT_HEALTH" != "200" ]; then
               echo "❌ Text service health check failed (HTTP $TEXT_HEALTH)"
               exit 1
@@ -100,7 +103,7 @@ jobs:
             echo "✅ Text service responding (HTTP 200)"
             
             # Check image service health
-            IMAGE_HEALTH=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:16384/models || echo "000")
+            IMAGE_HEALTH=$(curl -s -o /dev/null -w "%{http_code}" -H "x-enter-token: $ENTER_TOKEN" http://localhost:16384/models || echo "000")
             if [ "$IMAGE_HEALTH" != "200" ]; then
               echo "❌ Image service health check failed (HTTP $IMAGE_HEALTH)"
               exit 1

@@ -10,14 +10,12 @@ import {
     setHttpMetadataHeaders,
     cacheResponse,
 } from "@/utils/image-cache.ts";
-import type { Env } from "@/env.ts";
-import type { FrontendKeyRateLimitVariables } from "@/middleware/rateLimit.durable.ts";
+import type { LoggerVariables } from "@/middleware/logger.ts";
+import { RequestIdVariables } from "hono/request-id";
 
-type ImageCacheEnv = Env & {
-    Bindings: CloudflareBindings & {
-        IMAGE_BUCKET: R2Bucket;
-    };
-    Variables: FrontendKeyRateLimitVariables;
+type ImageCacheEnv = {
+    Bindings: CloudflareBindings;
+    Variables: LoggerVariables & RequestIdVariables;
 };
 
 /**
@@ -28,22 +26,22 @@ type ImageCacheEnv = Env & {
  * - After origin response: caches it asynchronously
  */
 export const imageCache = createMiddleware<ImageCacheEnv>(async (c, next) => {
-    const log = c.get("log");
+    const log = c.get("log").getChild("cache");
 
     // Skip cache if no-cache header is set
     if (c.req.header("no-cache")) {
-        log?.debug("[CACHE] Skipping cache (no-cache header)");
+        log.debug("[CACHE] Skipping cache (no-cache header)");
         return next();
     }
 
     const cacheKey = generateCacheKey(new URL(c.req.url));
-    log?.debug("[CACHE] Cache key: {key}", { key: cacheKey });
+    log.debug("[CACHE] Cache key: {key}", { key: cacheKey });
 
     // Try to get from cache
     try {
         const cachedImage = await c.env.IMAGE_BUCKET.get(cacheKey);
         if (cachedImage) {
-            log?.info("[CACHE] Cache HIT");
+            log.info("[CACHE] Cache HIT");
             setHttpMetadataHeaders(c, cachedImage.httpMetadata);
             c.header("Cache-Control", "public, max-age=31536000, immutable");
             c.header("X-Cache", "HIT");
@@ -51,10 +49,10 @@ export const imageCache = createMiddleware<ImageCacheEnv>(async (c, next) => {
             return c.body(cachedImage.body);
         }
 
-        log?.debug("[CACHE] Cache MISS");
+        log.debug("[CACHE] Cache MISS");
         c.header("X-Cache", "MISS");
     } catch (error) {
-        log?.error("[CACHE] Error retrieving cached image: {error}", {
+        log.error("[CACHE] Error retrieving cached image: {error}", {
             error,
         });
     }
@@ -68,12 +66,8 @@ export const imageCache = createMiddleware<ImageCacheEnv>(async (c, next) => {
 
     // Cache if: response is OK, is an image, and not already a cache hit
     // Note: We don't check Content-Length because responses may use chunked encoding
-    if (
-        c.res?.ok &&
-        contentType?.includes("image/") &&
-        xCache !== "HIT"
-    ) {
-        log?.debug("[CACHE] Caching image response");
+    if (c.res?.ok && contentType?.includes("image/") && xCache !== "HIT") {
+        log.debug("[CACHE] Caching image response");
         c.executionCtx.waitUntil(cacheResponse(cacheKey, c));
     }
 });

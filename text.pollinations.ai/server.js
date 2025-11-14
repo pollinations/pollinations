@@ -336,16 +336,31 @@ export async function sendErrorResponse(
 ) {
     // Use error.status if available, otherwise use the provided statusCode
     const responseStatus = error.status || statusCode;
+    const errorType =
+        statusCode === 400
+            ? "Bad Request"
+            : statusCode === 401
+            ? "Unauthorized"
+            : statusCode === 403
+              ? "Forbidden"
+              : statusCode === 404
+                ? "Not Found"
+                : statusCode === 429
+                    ? "Too Many Requests"
+                    : "Internal Server Error";
 
-    // Create a simplified error response
+    // Create error response matching image service format
     const errorResponse = {
-        error: error.message || "An error occurred",
-        status: responseStatus,
+        error: errorType,
+        message: error.message || "An error occurred",
+        details: error.details || undefined,
+        requestId: Math.random().toString(36).substring(7),
+        requestParameters: requestData || {},
     };
 
-    // Include detailed error information if available, without wrapping
-    if (error.details) {
-        errorResponse.details = error.details;
+    // Remove undefined fields
+    if (errorResponse.details === undefined) {
+        delete errorResponse.details;
     }
 
     // Extract client information (for logs only)

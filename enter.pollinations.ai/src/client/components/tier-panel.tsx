@@ -45,9 +45,7 @@ const NoTierScreen: FC<{ has_polar_error?: boolean }> = ({ has_polar_error }) =>
                 {has_polar_error ? (
                     <div className="px-3 py-2 bg-red-50 border border-red-200 rounded-lg">
                         <p className="text-sm text-red-900 leading-relaxed">
-                            ❌ <strong>Unable to Fetch Subscription Status:</strong> We couldn't connect to the subscription service.
-                            <br />
-                            Please refresh the page or try again later.
+                            ❌ <strong>Unable to Fetch Subscription Status:</strong> We couldn't connect to the subscription service. Please refresh the page or try again later.
                         </p>
                     </div>
                 ) : (

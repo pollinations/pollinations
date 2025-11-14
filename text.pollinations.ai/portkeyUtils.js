@@ -109,6 +109,5 @@ async function generatePortkeyHeaders(config) {
 
     log("Generated Portkey headers:", Object.keys(headers));
     log("strictOpenAiCompliance header value:", headers["x-portkey-strict-open-ai-compliance"]);
-    console.log("[PORTKEY DEBUG] All headers:", JSON.stringify(headers, null, 2));
     return headers;
 }

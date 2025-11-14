@@ -20,6 +20,32 @@ import { translate } from "../config/llmTransforms";
 //   return <span>{".".repeat(dotCount)}</span>
 // }
 
+// Fallback text mapping for when API fails
+const getFallbackText = (text) => {
+    const fallbacks = {
+        "Introduce our open-source platform that provides easy-to-use text and image generation APIs. It requires no sign-ups or API keys, prioritizing user privacy and anonymity. 20 words maximum.":
+            "Free, open-source platform for easy text and image generation. No sign-ups or API keys required.",
+        "Talk to us, reach out.":
+            "Join our community",
+        "Join on Discord (do not use markdown link formatting)":
+            "Join on Discord",
+        "Ask if the user has created a project that integrates Pollinations.AI and would like it to be featured in this section. Keep in short, one sentence":
+            "Have you built something with Pollinations.AI? We'd love to feature your project!",
+        "Introduce our community-driven approach. We're building a platform where developers, creators, and AI enthusiasts can collaborate and innovate.":
+            "Join our community of developers, creators, and AI enthusiasts building the future of generative AI.",
+        "Introduce our Discord channel, make it just a few words. In a single very short sentence.":
+            "Connect with our community",
+        "Highlight our GitHub repository as a hub for collaboration and contribution. In a single very short sentence.":
+            "Contribute to our open-source platform",
+        "Discover how to seamlessly integrate our free image and text generation API into your projects.":
+            "Discover how to integrate our free API into your projects.",
+        "We're grateful to our supporters for their contributions to our platform.":
+            "We're grateful to our supporters for their contributions to our platform.",
+    };
+    
+    return fallbacks[text] || text;
+};
+
 // 2) combine helper
 const combine = (text, transformations, props) => `
 # Context
@@ -55,11 +81,12 @@ export function LLMTextManipulator({ text, transforms = [] }) {
         return <span>Generating...</span>;
     }
 
-    // If the transformed text is an error message, fallback to original text
+    // If the transformed text is an error message, fallback to clean text
     if (transformedText.startsWith("An error occurred while generating text:")) {
+        const fallbackText = getFallbackText(text);
         return (
             <MarkDownStyle>
-                <ReactMarkdown>{text}</ReactMarkdown>
+                <ReactMarkdown>{fallbackText}</ReactMarkdown>
             </MarkDownStyle>
         );
     }

@@ -28,6 +28,11 @@ const AsciiArtGenerator = ({ width = 600, height = 300, style }) => {
 
     const asciiArt = usePollinationsText(prompt, { seed });
 
+    // Hide the component if there's an error
+    if (asciiArt && asciiArt.startsWith("An error occurred while generating text:")) {
+        return null;
+    }
+
     return (
         <AsciiContainer width={width} height={height} style={style}>
             {asciiArt}

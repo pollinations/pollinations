@@ -9,7 +9,7 @@ export const makeParamsSafe = ({
     width = null,
     height = null,
     seed,
-    model = "flux",
+    model, // No default - gateway must provide valid model
     enhance,
     nologo = false,
     negative_prompt = "worst quality, blurry",
@@ -36,10 +36,15 @@ export const makeParamsSafe = ({
     safe = sanitizeBoolean(safe);
     transparent = sanitizeBoolean(transparent);
 
-    // Ensure model is one of the allowed models or default to "flux"
+    // Validate model is provided and allowed
+    if (!model) {
+        throw new Error("Model parameter is required");
+    }
     const allowedModels = Object.keys(MODELS);
     if (!allowedModels.includes(model)) {
-        model = "flux";
+        throw new Error(
+            `Invalid model: ${model}. Allowed models: ${allowedModels.join(", ")}`,
+        );
     }
 
     const defaultSideLength = MODELS[model].defaultSideLength ?? 1024;
@@ -68,8 +73,10 @@ export const makeParamsSafe = ({
 
     // Process image parameter - support for multiple image URLs separated by pipe (|) or comma (,)
     // Always convert to array for consistency (empty array if null/undefined)
-    const imageArray = image 
-        ? (image.includes?.("|") ? image.split?.("|") : image.split?.(",")) 
+    const imageArray = image
+        ? image.includes?.("|")
+            ? image.split?.("|")
+            : image.split?.(",")
         : [];
 
     return {

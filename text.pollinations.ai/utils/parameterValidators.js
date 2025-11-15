@@ -94,7 +94,7 @@ export const validateTextGenerationParams = (data) => {
         seed: validateInt(data.seed),
         stream: validateBoolean(data.stream),
         private: validateBoolean(data.private),
-        model: validateString(data.model, "openai-fast"),
+        model: validateString(data.model), // No default - gateway must provide valid model
         voice: validateString(data.voice, "alloy"),
         reasoning_effort: validateString(data.reasoning_effort),
         thinking_budget: validateInt(data.thinking_budget),

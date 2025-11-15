@@ -181,7 +181,19 @@ function RouteComponent() {
                             as="button"
                             color="purple"
                             weight="light"
-                            disabled
+                            onClick={() =>
+                                handleBuyPollen("v1:product:pack:5x2")
+                            }
+                        >
+                            + $5
+                        </Button>
+                        <Button
+                            as="button"
+                            color="purple"
+                            weight="light"
+                            onClick={() =>
+                                handleBuyPollen("v1:product:pack:10x2")
+                            }
                         >
                             + $10
                         </Button>
@@ -189,7 +201,9 @@ function RouteComponent() {
                             as="button"
                             color="purple"
                             weight="light"
-                            disabled
+                            onClick={() =>
+                                handleBuyPollen("v1:product:pack:20x2")
+                            }
                         >
                             + $20
                         </Button>
@@ -197,7 +211,9 @@ function RouteComponent() {
                             as="button"
                             color="purple"
                             weight="light"
-                            disabled
+                            onClick={() =>
+                                handleBuyPollen("v1:product:pack:50x2")
+                            }
                         >
                             + $50
                         </Button>

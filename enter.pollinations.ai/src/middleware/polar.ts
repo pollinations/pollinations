@@ -82,33 +82,12 @@ export const polar = createMiddleware<PolarEnv>(async (c, next) => {
     );
 
     const requirePositiveBalance = async (userId: string, message?: string) => {
-        log.debug("[POLAR] Checking balance for user: {userId}", { userId });
         const customerMeters = await getCustomerMeters(userId);
-        log.debug("[POLAR] Got {count} customer meters", {
-            count: customerMeters.length,
-        });
         const activeMeters = getSimplifiedMatchingMeters(customerMeters);
-        log.debug("[POLAR] After filtering: {count} active meters", {
-            count: activeMeters.length,
-        });
         const sortedMeters = sortMetersByDescendingPriority(activeMeters);
 
         for (const meter of sortedMeters) {
-            log.debug(
-                "[POLAR] Checking meter: {meterId}, balance: {balance}, slug: {slug}",
-                {
-                    meterId: meter.meterId,
-                    balance: meter.balance,
-                    slug: meter.metadata.slug,
-                },
-            );
             if (meter.balance > 0) {
-                log.debug(
-                    "[POLAR] Found positive balance! Selected meter: {slug}",
-                    {
-                        slug: meter.metadata.slug,
-                    },
-                );
                 c.var.polar.balanceCheckResult = {
                     selectedMeterId: meter.meterId,
                     selectedMeterSlug: meter.metadata.slug,
@@ -119,7 +98,6 @@ export const polar = createMiddleware<PolarEnv>(async (c, next) => {
         }
 
         // no meter with positive balance was found
-        log.debug("[POLAR] No meter with positive balance found!");
         throw new HTTPException(403, {
             message: message || "Your pollen balance is too low.",
         });

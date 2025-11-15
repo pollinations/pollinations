@@ -154,7 +154,6 @@ function RouteComponent() {
         // Navigate directly to checkout endpoint - server will handle redirect
         window.location.href = `/api/polar/checkout/${encodeURIComponent(slug)}?redirect=true`;
     };
-
     return (
         <div className="flex flex-col gap-20">
             <Header>

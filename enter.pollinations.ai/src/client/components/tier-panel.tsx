@@ -1,6 +1,6 @@
 import { useEffect, useState, type FC } from "react";
 
-type TierStatus = "none" | "seed" | "flower" | "nectar" | "router";
+type TierStatus = "none" | "spore" | "seed" | "flower" | "nectar" | "router";
 
 interface TierPanelProps {
     status: TierStatus;
@@ -21,6 +21,7 @@ const TIER_BADGE_COLORS: Record<TierStatus, string> = {
     flower: "bg-fuchsia-100 border border-fuchsia-400 text-fuchsia-800",
     nectar: "bg-amber-100 border border-amber-400 text-amber-800",
     router: "bg-blue-100 border border-blue-400 text-blue-800",
+    spore: "bg-yellow-100 border border-yellow-400 text-yellow-800",
 };
 
 const TIER_ORDER = ["seed", "flower", "nectar"] as const;
@@ -32,35 +33,47 @@ function capitalize(str: string): string {
 function formatCountdown(targetUTC: string): string {
     const diff = new Date(targetUTC).getTime() - Date.now();
     if (diff <= 0) return "0h 0m";
-    
+
     const hours = Math.floor(diff / 3600000);
     const minutes = Math.floor((diff % 3600000) / 60000);
     return `${hours}h ${minutes}m`;
 }
 
-const NoTierScreen: FC<{ has_polar_error?: boolean }> = ({ has_polar_error }) => {
+const NoTierScreen: FC<{ has_polar_error?: boolean }> = ({
+    has_polar_error,
+}) => {
     return (
         <div className="rounded-2xl p-6 border-2 border-gray-200 bg-gray-50/30">
             <div className="flex flex-col gap-3">
                 {has_polar_error ? (
                     <div className="px-3 py-2 bg-red-50 border border-red-200 rounded-lg">
                         <p className="text-sm text-red-900 leading-relaxed">
-                            ❌ <strong>Unable to Fetch Subscription Status:</strong> We couldn't connect to the subscription service. Please refresh the page or try again later.
+                            ❌{" "}
+                            <strong>
+                                Unable to Fetch Subscription Status:
+                            </strong>{" "}
+                            We couldn't connect to the subscription service.
+                            Please refresh the page or try again later.
                         </p>
                     </div>
                 ) : (
                     <div className="px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg">
                         <p className="text-sm text-gray-900 leading-relaxed">
-                            ⭕ <strong>No Active Subscription:</strong> You don't have an active tier subscription yet.
+                            ⭕ <strong>No Active Subscription:</strong> You
+                            don't have an active tier subscription yet.
                             <br />
-                            Click the <strong>Activate Tier</strong> button above to get started.
+                            Click the <strong>Activate Tier</strong> button
+                            above to get started.
                         </p>
                     </div>
                 )}
-                
+
                 <div className="px-3 py-2 bg-amber-50 border border-amber-200 rounded-lg">
                     <p className="text-xs text-amber-900 leading-relaxed">
-                        ⚠️ <strong>Beta Notice:</strong> Daily pollen amounts are experimental values that may change at any time without notice. Tier subscription benefits are not yet finalized.
+                        ⚠️ <strong>Beta Notice:</strong> Daily pollen amounts
+                        are experimental values that may change at any time
+                        without notice. Tier subscription benefits are not yet
+                        finalized.
                     </p>
                 </div>
             </div>
@@ -89,7 +102,13 @@ const TierScreen: FC<{
 
     // Detect cancellation
     const isCanceled = !!subscription_canceled_at && !!subscription_ends_at;
-    const endsAt = subscription_ends_at ? new Date(subscription_ends_at).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }) : "";
+    const endsAt = subscription_ends_at
+        ? new Date(subscription_ends_at).toLocaleDateString("en-US", {
+              year: "numeric",
+              month: "long",
+              day: "numeric",
+          })
+        : "";
 
     return (
         <div className="rounded-2xl p-6 border-2 border-gray-200 bg-gray-50/30">
@@ -98,10 +117,14 @@ const TierScreen: FC<{
                     <span className="text-3xl font-bold text-gray-900">
                         {active_tier_name}
                     </span>
-                    <span className={`inline-flex items-center px-3 py-1 rounded-full font-semibold text-sm ${badgeColors}`}>
+                    <span
+                        className={`inline-flex items-center px-3 py-1 rounded-full font-semibold text-sm ${badgeColors}`}
+                    >
                         {daily_pollen} pollen/day
                     </span>
-                    <span className={`inline-flex items-center px-3 py-1 rounded-full font-semibold text-sm ${isCanceled ? 'bg-red-50 border border-red-200 text-red-900' : 'bg-blue-100 border border-blue-300 text-blue-800'}`}>
+                    <span
+                        className={`inline-flex items-center px-3 py-1 rounded-full font-semibold text-sm ${isCanceled ? "bg-red-50 border border-red-200 text-red-900" : "bg-blue-100 border border-blue-300 text-blue-800"}`}
+                    >
                         ⏱️ {countdown}
                     </span>
                 </div>
@@ -109,20 +132,29 @@ const TierScreen: FC<{
                 {isCanceled ? (
                     <div className="px-3 py-2 bg-red-50 border border-red-200 rounded-lg">
                         <p className="text-sm text-red-900 leading-relaxed">
-                            🔔 <strong>Subscription Ending:</strong> Your subscription is active until <strong>{endsAt}</strong>. It will not auto-renew. Unused pollen does not carry over.
+                            🔔 <strong>Subscription Ending:</strong> Your
+                            subscription is active until{" "}
+                            <strong>{endsAt}</strong>. It will not auto-renew.
+                            Unused pollen does not carry over.
                         </p>
                     </div>
                 ) : (
                     <div className="px-3 py-2 bg-green-50 border border-green-200 rounded-lg">
                         <p className="text-sm text-green-900 leading-relaxed">
-                            ✓ <strong>Active Subscription:</strong> Your subscription is active and will earn you {daily_pollen} pollen daily. Unused pollen does not carry over.
+                            ✓ <strong>Active Subscription:</strong> Your
+                            subscription is active and will earn you{" "}
+                            {daily_pollen} pollen daily. Unused pollen does not
+                            carry over.
                         </p>
                     </div>
                 )}
-                
+
                 <div className="px-3 py-2 bg-amber-50 border border-amber-200 rounded-lg">
                     <p className="text-xs text-amber-900 leading-relaxed">
-                        ⚠️ <strong>Beta Notice:</strong> Daily pollen amounts are experimental values that may change at any time without notice. Tier subscription benefits are not yet finalized.
+                        ⚠️ <strong>Beta Notice:</strong> Daily pollen amounts
+                        are experimental values that may change at any time
+                        without notice. Tier subscription benefits are not yet
+                        finalized.
                     </p>
                 </div>
             </div>
@@ -148,7 +180,9 @@ export const TierPanel: FC<TierPanelProps> = ({
     const displayName = active_tier_name || "Unknown Tier";
     const displayPollen = daily_pollen ?? 0;
 
-    const [countdown, setCountdown] = useState<string>(formatCountdown(next_refill_at_utc));
+    const [countdown, setCountdown] = useState<string>(
+        formatCountdown(next_refill_at_utc),
+    );
 
     useEffect(() => {
         const id = setInterval(() => {
@@ -158,7 +192,7 @@ export const TierPanel: FC<TierPanelProps> = ({
     }, [next_refill_at_utc]);
 
     return (
-        <TierScreen 
+        <TierScreen
             tier={status}
             target_tier={target_tier}
             countdown={countdown}

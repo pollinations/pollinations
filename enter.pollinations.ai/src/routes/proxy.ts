@@ -349,8 +349,14 @@ export const proxyRoutes = new Hono<Env>()
 function proxyHeaders(c: Context): Record<string, string> {
     const clientIP = c.req.header("cf-connecting-ip") || "";
     const clientHost = c.req.header("host") || "";
+    const headers = { ...c.req.header() };
+
+    // Remove Authorization header - we use x-enter-token for backend auth instead
+    delete headers.authorization;
+    delete headers.Authorization;
+
     return {
-        ...c.req.header(),
+        ...headers,
         "x-request-id": c.get("requestId"),
         "x-forwarded-host": clientHost,
         "x-forwarded-for": clientIP,

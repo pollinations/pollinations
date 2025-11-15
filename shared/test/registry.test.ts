@@ -3,7 +3,6 @@ import {
     getModelDefinition,
     calculateCost,
     calculatePrice,
-    isFreeService,
     SERVICE_REGISTRY
 } from "../registry/registry.ts";
 import { perMillion, ZERO_PRICE, ZERO_PRICE_START_DATE, PRICING_START_DATE } from "../registry/price-helpers.ts";
@@ -11,15 +10,6 @@ import { expect, test } from "vitest";
 import type { TokenUsage } from "../registry/registry.ts";
 
 // Test with real services from the registry
-test("isFreeService should return the correct values", async () => {
-    // All services now have pricing - no free services
-    expect(isFreeService("openai-fast")).toBe(false);
-    expect(isFreeService("chickytutor")).toBe(false);
-    expect(isFreeService("midijourney")).toBe(false);
-    expect(isFreeService("openai")).toBe(false);
-    expect(isFreeService("openai-large")).toBe(false);
-});
-
 test("calculateCost should return the correct costs", async () => {
     const usage = {
         unit: "TOKENS",

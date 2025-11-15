@@ -200,9 +200,7 @@ export const proxyRoutes = new Hono<Env>()
         async (c) => {
             const log = c.get("log");
             await c.var.auth.requireAuthorization({
-                allowAnonymous:
-                    c.var.track.freeModelRequested &&
-                    c.env.ALLOW_ANONYMOUS_USAGE,
+                allowAnonymous: false,
             });
             await checkBalanceForPaidModel(c);
 
@@ -292,9 +290,7 @@ export const proxyRoutes = new Hono<Env>()
         async (c) => {
             const log = c.get("log");
             await c.var.auth.requireAuthorization({
-                allowAnonymous:
-                    c.var.track.freeModelRequested &&
-                    c.env.ALLOW_ANONYMOUS_USAGE,
+                allowAnonymous: false,
             });
             await checkBalanceForPaidModel(c);
 
@@ -431,7 +427,7 @@ export function contentFilterResultsToHeaders(
 }
 
 async function checkBalanceForPaidModel(c: Context<Env & TrackEnv>) {
-    if (!c.var.track.freeModelRequested && c.var.auth.user?.id) {
+    if (c.var.auth.user?.id) {
         await c.var.polar.requirePositiveBalance(
             c.var.auth.user.id,
             "Insufficient pollen balance to use this model",
@@ -443,8 +439,7 @@ async function checkBalanceForPaidModel(c: Context<Env & TrackEnv>) {
 async function handleChatCompletions(c: Context<Env & TrackEnv>) {
     const log = c.get("log");
     await c.var.auth.requireAuthorization({
-        allowAnonymous:
-            c.var.track.freeModelRequested && c.env.ALLOW_ANONYMOUS_USAGE,
+        allowAnonymous: false,
     });
 
     await checkBalanceForPaidModel(c);

@@ -2,6 +2,7 @@
 
 import { z } from "zod";
 import { getTextServices } from "../../../shared/registry/registry.ts";
+import { DEFAULT_TEXT_MODEL } from "../../../shared/registry/text.ts";
 
 const FunctionParametersSchema = z.record(z.string(), z.any());
 
@@ -178,7 +179,7 @@ const ThinkingSchema = z
 
 export const CreateChatCompletionRequestSchema = z.object({
     messages: z.array(ChatCompletionRequestMessageSchema),
-    model: z.enum(getTextServices()).optional().default("openai"),
+    model: z.enum(getTextServices()).optional().default(DEFAULT_TEXT_MODEL),
     frequency_penalty: z
         .number()
         .min(-2)

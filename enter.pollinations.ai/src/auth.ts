@@ -78,7 +78,7 @@ export function createAuth(env: Cloudflare.Env) {
                 },
                 tier: {
                     type: "string",
-                    defaultValue: "seed",
+                    defaultValue: "spore",
                     input: false,
                 },
             },
@@ -151,6 +151,7 @@ function onBeforeUserCreate(polar: Polar) {
             await polar.customers.create({
                 email: user.email,
                 name: user.name,
+                externalId: user.id,
             });
 
             return {

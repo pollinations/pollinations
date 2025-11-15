@@ -418,9 +418,9 @@ function createMockCustomerMeters(externalCustomerId: string) {
             modified_at: "2025-11-07T16:07:00.687Z",
             customer_id: "test-customer-id-1234",
             meter_id: "test-meter-id-tier",
-            consumed_units: 20.390926000000025,
-            credited_units: 10,
-            balance: -10.390926000000025,
+            consumed_units: 5.0,
+            credited_units: 100,
+            balance: 95.0,
             customer: {
                 id: "test-customer-id-1234",
                 created_at: "2025-11-04T12:42:09.692Z",

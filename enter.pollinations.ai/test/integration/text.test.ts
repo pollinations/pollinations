@@ -95,7 +95,7 @@ test.for(authenticatedTestCases())(
     "%s should respond with 200 when using authorization header",
     { timeout: 30000 },
     async ([serviceId, expectedStatus], { apiKey, mocks }) => {
-        mocks.enable("polar", "tinybird");
+        mocks.enable("polar", "tinybird", "textService");
         const response = await SELF.fetch(
             `http://localhost:3000/api/generate/v1/chat/completions`,
             {
@@ -124,7 +124,7 @@ test.for(authenticatedTestCases())(
     "%s should respond with 200 when streaming",
     { timeout: 30000 },
     async ([serviceId, expectedStatus], { apiKey, mocks }) => {
-        mocks.enable("polar", "tinybird");
+        mocks.enable("polar", "tinybird", "textService");
         const response = await SELF.fetch(
             `http://localhost:3000/api/generate/v1/chat/completions`,
             {
@@ -171,7 +171,7 @@ test.for(authenticatedTestCases())(
     "GET /text/:prompt with %s should return plain text",
     { timeout: 30000 },
     async ([serviceId, expectedStatus], { apiKey, mocks }) => {
-        mocks.enable("polar", "tinybird");
+        mocks.enable("polar", "tinybird", "textService");
         const response = await SELF.fetch(
             `http://localhost:3000/api/generate/text/${encodeURIComponent(testMessageContent())}?model=${serviceId}`,
             {
@@ -200,7 +200,7 @@ test(
     "GET /text/:prompt with openai-audio should return raw audio",
     { timeout: 30000 },
     async ({ apiKey, mocks }) => {
-        mocks.enable("polar", "tinybird");
+        mocks.enable("polar", "tinybird", "textService");
         const response = await SELF.fetch(
             `http://localhost:3000/api/generate/text/hello?model=openai-audio`,
             {

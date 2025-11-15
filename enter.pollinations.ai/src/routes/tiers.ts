@@ -7,8 +7,8 @@ import { validator } from "../middleware/validator.ts";
 import type { Env } from "../env.ts";
 import { z } from "zod";
 
-type TierStatus = "none" | "seed" | "flower" | "nectar" | "router";
-type ActivatableTier = "seed" | "flower" | "nectar" | "router";
+type TierStatus = "none" | "spore" | "seed" | "flower" | "nectar" | "router";
+type ActivatableTier = "spore" | "seed" | "flower" | "nectar" | "router";
 
 // Polar subscription shape (only fields we use)
 interface PolarSubscription {
@@ -20,7 +20,13 @@ interface PolarSubscription {
 }
 
 // Central tier definition
-const TIERS: readonly ActivatableTier[] = ["seed", "flower", "nectar", "router"] as const;
+const TIERS: readonly ActivatableTier[] = [
+    "spore",
+    "seed",
+    "flower",
+    "nectar",
+    "router",
+] as const;
 
 // Get Polar product IDs from environment
 function getTierProductId(env: Cloudflare.Env, tier: ActivatableTier): string {
@@ -33,30 +39,40 @@ function getTierProductId(env: Cloudflare.Env, tier: ActivatableTier): string {
 }
 
 interface TierViewModel {
-    target_tier: TierStatus;  // Target tier in Cloudflare DB
-    active_tier: TierStatus;    // Currently active subscription in Polar
-    should_show_activate_button: boolean;  // Show button if no active subscription
-    active_tier_name?: string;  // Name of ACTIVE tier (for TierPanel display)
-    target_tier_name?: string;  // Name of TARGET tier (for activate button)
+    target_tier: TierStatus; // Target tier in Cloudflare DB
+    active_tier: TierStatus; // Currently active subscription in Polar
+    should_show_activate_button: boolean; // Show button if no active subscription
+    active_tier_name?: string; // Name of ACTIVE tier (for TierPanel display)
+    target_tier_name?: string; // Name of TARGET tier (for activate button)
     daily_pollen?: number;
     next_refill_at_utc: string;
     has_polar_error: boolean;
-    subscription_status?: string;  // e.g., "active", "canceled"
-    subscription_ends_at?: string;  // currentPeriodEnd ISO timestamp
-    subscription_canceled_at?: string;  // canceledAt ISO timestamp
+    subscription_status?: string; // e.g., "active", "canceled"
+    subscription_ends_at?: string; // currentPeriodEnd ISO timestamp
+    subscription_canceled_at?: string; // canceledAt ISO timestamp
 }
 
 function getTierStatus(userTier: string | null | undefined): TierStatus {
     const normalized = userTier?.toLowerCase();
-    return TIERS.includes(normalized as ActivatableTier) ? normalized as TierStatus : "none";
+    return TIERS.includes(normalized as ActivatableTier)
+        ? (normalized as TierStatus)
+        : "none";
 }
 
-function getTierFromProductId(env: Cloudflare.Env, productId: string): TierStatus {
-    const tier = TIERS.find(tier => getTierProductId(env, tier) === productId);
+function getTierFromProductId(
+    env: Cloudflare.Env,
+    productId: string,
+): TierStatus {
+    const tier = TIERS.find(
+        (tier) => getTierProductId(env, tier) === productId,
+    );
     return tier || "none";
 }
 
-function shouldShowActivateButton(assigned: TierStatus, active: TierStatus): boolean {
+function shouldShowActivateButton(
+    assigned: TierStatus,
+    active: TierStatus,
+): boolean {
     // Show button if assigned tier differs from active subscription
     return assigned !== "none" && assigned !== active;
 }
@@ -72,18 +88,27 @@ const MS_PER_DAY = 24 * 60 * 60 * 1000;
 
 // Minimal Polar product/benefit typing to avoid unsafe any casts
 type MeterCreditProperties = { units?: number; amount?: number }; // Polar uses "units", keeping "amount" for backward compat
-type MeterCreditBenefit = { type: "meter_credit"; properties?: MeterCreditProperties };
+type MeterCreditBenefit = {
+    type: "meter_credit";
+    properties?: MeterCreditProperties;
+};
 type PolarProductMinimal = {
     name: string;
-    benefits?: Array<MeterCreditBenefit | { type: string; properties?: unknown }>;
+    benefits?: Array<
+        MeterCreditBenefit | { type: string; properties?: unknown }
+    >;
 };
 
 function isMeterCreditBenefit(b: unknown): b is MeterCreditBenefit {
-    return !!b && typeof b === "object" && (b as { type?: string }).type === "meter_credit";
+    return (
+        !!b &&
+        typeof b === "object" &&
+        (b as { type?: string }).type === "meter_credit"
+    );
 }
 
 const activateRequestSchema = z.object({
-    target_tier: z.enum(["seed", "flower", "nectar", "router"]),
+    target_tier: z.enum(["spore", "seed", "flower", "nectar", "router"]),
 });
 
 export const tiersRoutes = new Hono<Env>()
@@ -93,15 +118,17 @@ export const tiersRoutes = new Hono<Env>()
         "/view",
         describeRoute({
             tags: ["Auth"],
-            description: "Get the current user's tier status and daily pollen information.",
+            description:
+                "Get the current user's tier status and daily pollen information.",
             hide: ({ c }) => c?.env.ENVIRONMENT !== "development",
         }),
         async (c) => {
             const log = c.get("log");
             const user = c.var.auth.requireUser();
             const polar = c.var.polar.client;
-            
+
             // Get tier assigned in Cloudflare DB
+            log.debug(`User tier from DB: ${user.tier}, email: ${user.email}`);
             const target_tier = getTierStatus(user.tier);
             let active_tier: TierStatus = "none";
             let active_tier_name: string | undefined;
@@ -111,78 +138,104 @@ export const tiersRoutes = new Hono<Env>()
             let subscription_status: string | undefined;
             let subscription_ends_at: string | undefined;
             let subscription_canceled_at: string | undefined;
-            
+
             try {
                 // Get customer state from Polar
                 const customerState = await polar.customers.getStateExternal({
                     externalId: user.id,
                 });
-                
+
                 const activeSubs = customerState.activeSubscriptions || [];
-                
+
                 // Find the active subscription (prioritize highest tier if multiple)
                 if (activeSubs.length > 0) {
-                    const activeSub = activeSubs[0] as unknown as PolarSubscription;
+                    const activeSub =
+                        activeSubs[0] as unknown as PolarSubscription;
                     const activeProductId = activeSub.productId;
-                    
+
                     active_tier = getTierFromProductId(c.env, activeProductId);
-                    
+
                     // Extract subscription status information with safe access
                     subscription_status = activeSub.status ?? undefined;
-                    subscription_ends_at = activeSub.currentPeriodEnd ?? undefined;
-                    subscription_canceled_at = activeSub.canceledAt ?? undefined;
-                    
+                    subscription_ends_at =
+                        activeSub.currentPeriodEnd ?? undefined;
+                    subscription_canceled_at =
+                        activeSub.canceledAt ?? undefined;
+
                     // Warn if data inconsistency detected
                     if (activeSub.canceledAt && !activeSub.currentPeriodEnd) {
-                        log.warn("Subscription canceled but missing end date", { userId: user.id });
+                        log.warn("Subscription canceled but missing end date", {
+                            userId: user.id,
+                        });
                     }
-                    
+
                     // Calculate next refill: 24 hours from subscription start
                     if (activeSub.currentPeriodStart) {
-                        const startTime = new Date(activeSub.currentPeriodStart).getTime();
-                        const daysPassed = Math.floor((Date.now() - startTime) / MS_PER_DAY);
-                        next_refill_at_utc = new Date(startTime + (daysPassed + 1) * MS_PER_DAY).toISOString();
+                        const startTime = new Date(
+                            activeSub.currentPeriodStart,
+                        ).getTime();
+                        const daysPassed = Math.floor(
+                            (Date.now() - startTime) / MS_PER_DAY,
+                        );
+                        next_refill_at_utc = new Date(
+                            startTime + (daysPassed + 1) * MS_PER_DAY,
+                        ).toISOString();
                     }
-                    
+
                     // Fetch product details for the active subscription
                     try {
-                        const product = (await polar.products.get({ id: activeProductId })) as PolarProductMinimal;
+                        const product = (await polar.products.get({
+                            id: activeProductId,
+                        })) as PolarProductMinimal;
                         active_tier_name = product.name;
-                        
+
                         // Extract daily pollen from meter_credit benefit
-                        const meterBenefit = product.benefits?.find(isMeterCreditBenefit);
+                        const meterBenefit =
+                            product.benefits?.find(isMeterCreditBenefit);
                         const pollenValue = meterBenefit?.properties?.units;
-                        
+
                         if (pollenValue !== undefined) {
                             daily_pollen = pollenValue;
                         }
                     } catch (productError) {
-                        log.warn("Failed to fetch product details: {error}", { error: productError });
+                        log.warn("Failed to fetch product details: {error}", {
+                            error: productError,
+                        });
                     }
                 }
             } catch (error) {
                 // If Polar query fails, assume no active subscription
-                log.error("Failed to check subscription status: {error}", { error });
+                log.error("Failed to check subscription status: {error}", {
+                    error,
+                });
                 active_tier = "none";
                 has_polar_error = true;
             }
-            
+
             // Determine if activate button should be shown
             // Don't show button if Polar API failed - can't verify state safely
-            const should_show_activate_button = !has_polar_error && shouldShowActivateButton(target_tier, active_tier);
-            
+            const should_show_activate_button =
+                !has_polar_error &&
+                shouldShowActivateButton(target_tier, active_tier);
+
             // If button should show, fetch target tier's product name for the button
             let target_tier_name: string | undefined;
             if (should_show_activate_button && target_tier !== "none") {
                 try {
-                    const assignedProductId = getTierProductId(c.env, target_tier as ActivatableTier);
-                    const assignedProduct = (await polar.products.get({ id: assignedProductId })) as PolarProductMinimal;
+                    const assignedProductId = getTierProductId(
+                        c.env,
+                        target_tier as ActivatableTier,
+                    );
+                    const assignedProduct = (await polar.products.get({
+                        id: assignedProductId,
+                    })) as PolarProductMinimal;
                     target_tier_name = assignedProduct.name;
                 } catch (error) {
-                    log.warn("Failed to fetch target tier product", { tier: target_tier });
+                    log.warn("Failed to fetch target tier product", {
+                        tier: target_tier,
+                    });
                 }
             }
-            
 
             const viewModel: TierViewModel = {
                 target_tier,
@@ -205,7 +258,8 @@ export const tiersRoutes = new Hono<Env>()
         "/activate",
         describeRoute({
             tags: ["Auth"],
-            description: "Create a Polar checkout session to activate a tier subscription.",
+            description:
+                "Create a Polar checkout session to activate a tier subscription.",
             hide: ({ c }) => c?.env.ENVIRONMENT !== "development",
         }),
         validator("json", activateRequestSchema),

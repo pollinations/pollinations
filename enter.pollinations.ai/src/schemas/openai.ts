@@ -178,7 +178,7 @@ const ThinkingSchema = z
 
 export const CreateChatCompletionRequestSchema = z.object({
     messages: z.array(ChatCompletionRequestMessageSchema),
-    model: z.enum(getTextServices()).optional(),
+    model: z.enum(getTextServices()).optional().default("openai"),
     frequency_penalty: z
         .number()
         .min(-2)

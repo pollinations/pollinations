@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { MODELS } from "./models.js";
+import { DEFAULT_IMAGE_MODEL } from "../../shared/registry/registry.js";
 import Debug from "debug";
 
 const log = Debug("pollinations:image.params");
@@ -28,6 +29,16 @@ const sanitizedSideLength = z.preprocess((v) => {
         : undefined;
 }, z.int().optional());
 
+const sanitizedModel = z.preprocess(
+    (v) => {
+        // Use explicit default when model is missing - imported from registry
+        if (v === null || v === undefined || v === "")
+            return DEFAULT_IMAGE_MODEL;
+        return v;
+    },
+    z.enum(allowedModels as [ModelName, ...ModelName[]]),
+);
+
 function adjustImageSizeForModel(
     model: ModelName,
     width?: number,
@@ -53,7 +64,7 @@ export const ImageParamsSchema = z
         width: sanitizedSideLength,
         height: sanitizedSideLength,
         seed: sanitizedSeed,
-        model: z.literal(allowedModels).catch("flux"),
+        model: sanitizedModel,
         enhance: sanitizedBoolean.catch(false),
         nologo: sanitizedBoolean.catch(false),
         negative_prompt: z.coerce.string().catch("worst quality, blurry"),
@@ -67,7 +78,9 @@ export const ImageParamsSchema = z
                 if (!value) return [];
                 // Support both pipe (|) and comma (,) separators
                 // Prefer pipe separator if present, otherwise use comma
-                return value.includes("|") ? value.split("|") : value.split(",");
+                return value.includes("|")
+                    ? value.split("|")
+                    : value.split(",");
             })
             .catch([]),
         transparent: sanitizedBoolean.catch(false),

@@ -187,13 +187,14 @@ export const TEXT_SERVICES = {
         provider: "scaleway",
     },
     "mistral": {
-        aliases: [
-            "mistral-small-3.1-24b-instruct",
-            "mistral-small-3.1-24b-instruct-2503",
-            "mistral-small-3.2-24b-instruct-2506",
-        ],
+        aliases: ["mistral-small"],
         modelId: "mistral-small-3.2-24b-instruct-2506",
         provider: "scaleway",
+    },
+    "mistral-fast": {
+        aliases: ["llama-3.1-8b", "llama-fast"],
+        modelId: "us.meta.llama3-1-8b-instruct-v1:0",
+        provider: "aws-bedrock",
     },
     // Temporarily disabled
     // "naughty": {

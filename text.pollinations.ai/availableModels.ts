@@ -96,6 +96,16 @@ const models: ModelDefinition[] = [
         output_modalities: ["text"],
         tools: true,
     },
+    {
+        name: "mistral-fast",
+        description: "Llama 3.1 8B (Fast)",
+        config: portkeyConfig["us.meta.llama3-1-8b-instruct-v1:0"],
+        transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
+        community: false,
+        input_modalities: ["text"],
+        output_modalities: ["text"],
+        tools: true,
+    },
     // Temporarily disabled
     // {
     //     name: "naughty",

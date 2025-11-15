@@ -53,7 +53,7 @@ export const ImageParamsSchema = z
         width: sanitizedSideLength,
         height: sanitizedSideLength,
         seed: sanitizedSeed,
-        model: z.literal(allowedModels).catch("flux"),
+        model: z.enum(allowedModels), // No default - will throw if invalid/missing
         enhance: sanitizedBoolean.catch(false),
         nologo: sanitizedBoolean.catch(false),
         negative_prompt: z.coerce.string().catch("worst quality, blurry"),
@@ -67,7 +67,9 @@ export const ImageParamsSchema = z
                 if (!value) return [];
                 // Support both pipe (|) and comma (,) separators
                 // Prefer pipe separator if present, otherwise use comma
-                return value.includes("|") ? value.split("|") : value.split(",");
+                return value.includes("|")
+                    ? value.split("|")
+                    : value.split(",");
             })
             .catch([]),
         transparent: sanitizedBoolean.catch(false),

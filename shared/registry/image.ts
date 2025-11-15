@@ -5,6 +5,8 @@ import type {
 } from "./registry";
 import { ZERO_PRICE, PRICING_START_DATE, perMillion } from "./price-helpers";
 
+export const DEFAULT_IMAGE_MODEL = "flux" as const;
+
 export const IMAGE_COSTS = {
     "flux": [
         {
@@ -21,15 +23,15 @@ export const IMAGE_COSTS = {
     "turbo": [
         {
             date: PRICING_START_DATE,
-            completionImageTokens: 0.0003, 
+            completionImageTokens: 0.0003,
         },
     ],
     "nanobanana": [
         // Gemini 2.5 Flash Image via Vertex AI (currently disabled)
         {
             date: PRICING_START_DATE,
-            promptTextTokens: perMillion(0.30), // $0.30 per 1M input tokens
-            promptImageTokens: perMillion(0.30), // $0.30 per 1M input tokens
+            promptTextTokens: perMillion(0.3), // $0.30 per 1M input tokens
+            promptImageTokens: perMillion(0.3), // $0.30 per 1M input tokens
             completionImageTokens: perMillion(30), // $30 per 1M tokens × 1290 tokens/image = $0.039 per image
         },
     ],
@@ -45,8 +47,8 @@ export const IMAGE_COSTS = {
         {
             date: PRICING_START_DATE,
             promptTextTokens: perMillion(2.0), // $2.00 per 1M text input tokens
-            promptCachedTokens: perMillion(0.20), // $0.20 per 1M cached text input tokens
-            promptImageTokens: perMillion(2.50), // $2.50 per 1M image input tokens
+            promptCachedTokens: perMillion(0.2), // $0.20 per 1M cached text input tokens
+            promptImageTokens: perMillion(2.5), // $2.50 per 1M image input tokens
             completionImageTokens: perMillion(8), // $8.00 per 1M output tokens
         },
     ],
@@ -84,5 +86,3 @@ export const IMAGE_SERVICES = {
         provider: "azure-openai",
     },
 } as const satisfies ServiceRegistry<typeof IMAGE_COSTS>;
-
-

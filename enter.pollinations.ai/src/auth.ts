@@ -78,7 +78,7 @@ export function createAuth(env: Cloudflare.Env) {
                 },
                 tier: {
                     type: "string",
-                    defaultValue: "seed",
+                    defaultValue: "spore",
                     input: false,
                 },
             },

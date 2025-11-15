@@ -739,10 +739,6 @@ const commands = [
         name: "customer",
         subcommands: [customerMigrate],
     }),
-    command({
-        name: "customer",
-        subcommands: [customerMeterList],
-    }),
 ];
 
 run(commands);

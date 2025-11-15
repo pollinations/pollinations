@@ -151,6 +151,7 @@ function onBeforeUserCreate(polar: Polar) {
             await polar.customers.create({
                 email: user.email,
                 name: user.name,
+                externalId: user.id,
             });
 
             return {

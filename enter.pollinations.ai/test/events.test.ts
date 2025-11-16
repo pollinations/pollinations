@@ -7,6 +7,7 @@ import { test } from "./fixtures.ts";
 import worker from "../src/index.ts";
 import { storeEvents } from "../src/events.ts";
 import {
+    event,
     priceToEventParams,
     usageToEventParams,
     type InsertGenerationEvent,
@@ -23,11 +24,18 @@ import {
     calculatePrice,
 } from "@shared/registry/registry.ts";
 import { drizzle } from "drizzle-orm/d1";
+import { eq } from "drizzle-orm";
 import { expect } from "vitest";
 
-function createTextGenerationEvent(
-    modelRequested: ServiceId,
-): InsertGenerationEvent {
+function createTextGenerationEvent({
+    modelRequested,
+    simulateTinybirdError = false,
+    simulatePolarError = false,
+}: {
+    modelRequested: ServiceId;
+    simulateTinybirdError?: boolean;
+    simulatePolarError?: boolean;
+}): InsertGenerationEvent {
     const userId = generateRandomId();
     const resolvedModelRequested = resolveServiceId(
         modelRequested,
@@ -49,8 +57,14 @@ function createTextGenerationEvent(
     const cost = calculateCost(modelUsed as ModelId, usage);
     const price = calculatePrice(resolvedModelRequested, usage);
 
+    let eventId = [
+        simulateTinybirdError ? `simulate_tinybird_error` : "",
+        simulatePolarError ? `simulate_polar_error` : "",
+        generateRandomId(),
+    ].join(":");
+
     return {
-        id: generateRandomId(),
+        id: eventId,
         requestId: generateRandomId(),
         requestPath: "/api/generate/openai",
         startTime: new Date(),
@@ -125,7 +139,9 @@ test("Scheduled handler sends events to Polar.sh and Tinybird", async ({
     mocks.enable("polar", "tinybird");
     const db = drizzle(env.DB);
     const events = Array.from({ length: 2000 }).map(() => {
-        return createTextGenerationEvent("openai-large");
+        return createTextGenerationEvent({
+            modelRequested: "openai-large",
+        });
     });
     log.info("Adding {numEvents} events", { numEvents: events.length });
     await storeEvents(db, log, events);
@@ -134,4 +150,61 @@ test("Scheduled handler sends events to Polar.sh and Tinybird", async ({
     await worker.scheduled(controller, env, ctx);
     expect(mocks.polar.state.events).toHaveLength(events.length);
     expect(mocks.tinybird.state.events).toHaveLength(events.length);
+});
+
+test("Events get set to error status after MAX_DELIVERY_ATTEMPTS", async ({
+    log,
+    mocks,
+}) => {
+    mocks.enable("polar", "tinybird");
+    const db = drizzle(env.DB);
+    const events = [
+        ...Array.from({ length: 500 }).map(() => {
+            return createTextGenerationEvent({
+                modelRequested: "openai-large",
+                simulateTinybirdError: false,
+                simulatePolarError: false,
+            });
+        }),
+        ...Array.from({ length: 500 }).map(() => {
+            return createTextGenerationEvent({
+                modelRequested: "openai-large",
+                simulateTinybirdError: true,
+                simulatePolarError: false,
+            });
+        }),
+        ...Array.from({ length: 500 }).map(() => {
+            return createTextGenerationEvent({
+                modelRequested: "openai-large",
+                simulateTinybirdError: false,
+                simulatePolarError: true,
+            });
+        }),
+    ];
+    log.info("Adding {numEvents} events", { numEvents: events.length });
+    await storeEvents(db, log, events);
+    const controller = createScheduledController();
+    const ctx = createExecutionContext();
+    for (const _ of [Array.from({ length: 10 })]) {
+        await worker.scheduled(controller, env, ctx);
+    }
+    expect(mocks.tinybird.state.events).toHaveLength(1000);
+    expect(mocks.polar.state.events).toHaveLength(1000);
+    const errorEvents = await db
+        .select()
+        .from(event)
+        .where(eq(event.eventStatus, "error"));
+    expect(errorEvents).toHaveLength(1000);
+    errorEvents.forEach((event) => {
+        if (event.id.includes("simulate_tinybird_error")) {
+            expect(event.tinybirdDeliveryAttempts).toEqual(5);
+            expect(event.polarDeliveryAttempts).toEqual(1);
+            expect(event.polarDeliveredAt).toBeDefined();
+        }
+        if (event.id.includes("simulate_polar_error")) {
+            expect(event.polarDeliveryAttempts).toEqual(5);
+            expect(event.tinybirdDeliveryAttempts).toEqual(1);
+            expect(event.tinybirdDeliveredAt).toBeDefined();
+        }
+    });
 });

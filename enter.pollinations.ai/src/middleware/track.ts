@@ -15,6 +15,7 @@ import {
     openaiUsageToTokenUsage,
     parseUsageHeaders,
 } from "@shared/registry/usage-headers.ts";
+import { routePath, baseRoutePath } from "hono/route";
 import {
     CompletionUsage,
     CompletionUsageSchema,
@@ -52,7 +53,7 @@ import {
 import { ValidationError } from "@/middleware/validator.ts";
 import type { LoggerVariables } from "./logger.ts";
 import type { ErrorVariables } from "@/env.ts";
-import type { FrontendKeyRateLimitVariables } from "./rateLimit.durable.ts";
+import type { FrontendKeyRateLimitVariables } from "./rate-limit-durable.ts";
 
 export type ModelUsage = {
     model: ModelId;
@@ -160,7 +161,7 @@ export const track = (eventType: EventType) =>
 
                 const event = createTrackingEvent({
                     requestId: c.get("requestId"),
-                    requestPath: c.req.path,
+                    requestPath: `${baseRoutePath(c)}${routePath(c)}`,
                     startTime,
                     endTime,
                     environment: c.env.ENVIRONMENT,

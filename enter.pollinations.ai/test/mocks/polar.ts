@@ -1,9 +1,9 @@
 import { Hono } from "hono";
 import { createHonoMockHandler, type MockAPI } from "./fetch.ts";
-import { SelectGenerationEvent } from "@/db/schema/event.ts";
+import { PolarEvent } from "@/events.ts";
 
 export type MockPolarState = {
-    events: SelectGenerationEvent[];
+    events: PolarEvent[];
 };
 
 export function createMockPolar(): MockAPI<MockPolarState> {
@@ -50,8 +50,16 @@ export function createMockPolar(): MockAPI<MockPolarState> {
             });
         })
         .post("/v1/events/ingest", async (c) => {
-            const body: { events: SelectGenerationEvent[] } =
-                await c.req.json();
+            const body: { events: PolarEvent[] } = await c.req.json();
+            if (
+                body.events.find((event) =>
+                    event.metadata.eventId.includes("simulate_polar_error"),
+                )
+            ) {
+                throw new Error(
+                    "Failed to ingest mock polar events: simulated error",
+                );
+            }
             state.events.push(...body.events);
             return c.json({ inserted: body.events.length });
         })
@@ -64,6 +72,7 @@ export function createMockPolar(): MockAPI<MockPolarState> {
 
     const handlerMap = {
         "sandbox-api.polar.sh": createHonoMockHandler(polarAPI),
+        "api.polar.sh": createHonoMockHandler(polarAPI),
     };
 
     const reset = () => {
@@ -409,9 +418,9 @@ function createMockCustomerMeters(externalCustomerId: string) {
             modified_at: "2025-11-07T16:07:00.687Z",
             customer_id: "test-customer-id-1234",
             meter_id: "test-meter-id-tier",
-            consumed_units: 20.390926000000025,
-            credited_units: 10,
-            balance: -10.390926000000025,
+            consumed_units: 5.0,
+            credited_units: 100,
+            balance: 95.0,
             customer: {
                 id: "test-customer-id-1234",
                 created_at: "2025-11-04T12:42:09.692Z",

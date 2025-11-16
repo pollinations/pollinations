@@ -13,10 +13,7 @@ import { generateTextPortkey } from "./generateTextPortkey.js";
 import { setupFeedEndpoint, sendToFeedListeners } from "./feed.js";
 import { processRequestForAds } from "./ads/initRequestFilter.js";
 import { createStreamingAdWrapper } from "./ads/streamingAdWrapper.js";
-import {
-    getRequestData,
-    prepareModelsForOutput,
-} from "./requestUtils.js";
+import { getRequestData, prepareModelsForOutput } from "./requestUtils.js";
 
 // Import shared utilities
 import { getIp } from "../shared/extractFromRequest.js";
@@ -96,6 +93,26 @@ app.use((req, res, next) => {
 // Remove the custom JSON parsing middleware and use the standard bodyParser
 app.use(bodyParser.json({ limit: "20mb" }));
 app.use(cors());
+
+// Middleware to verify ENTER_TOKEN (after CORS for consistency)
+app.use((req, res, next) => {
+    const token = req.headers["x-enter-token"];
+    const expectedToken = process.env.ENTER_TOKEN;
+
+    if (!expectedToken) {
+        // If ENTER_TOKEN is not configured, allow all requests (backward compatibility)
+        authLog("⚠️  ENTER_TOKEN not configured - allowing request");
+        return next();
+    }
+
+    if (token !== expectedToken) {
+        authLog("❌ Invalid or missing ENTER_TOKEN from IP:", getIp(req));
+        return res.status(403).json({ error: "Unauthorized" });
+    }
+
+    authLog("✅ Valid ENTER_TOKEN from IP:", getIp(req));
+    next();
+});
 // New route handler for root path
 app.get("/", (req, res) => {
     res.redirect(
@@ -158,9 +175,7 @@ async function handleRequest(req, res, requestData) {
                 m.aliases?.includes(requestData.model),
         );
 
-        log(
-            `Model lookup: model=${requestData.model}, found=${!!model}`,
-        );
+        log(`Model lookup: model=${requestData.model}, found=${!!model}`);
 
         // All requests from enter.pollinations.ai - tier checks bypassed
         if (!model) {
@@ -855,9 +870,12 @@ async function sendAsOpenAIStream(res, completion, req = null) {
     res.end();
 }
 
-
 async function generateTextBasedOnModel(messages, options) {
-    const model = options.model || "openai-fast";
+    // Gateway must provide a valid model - no fallback
+    if (!options.model) {
+        throw new Error("Model parameter is required");
+    }
+    const model = options.model;
     log("Using model:", model, "with options:", JSON.stringify(options));
 
     try {

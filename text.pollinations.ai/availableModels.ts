@@ -285,6 +285,27 @@ const models: ModelDefinition[] = [
         tools: true,
         reasoning: true,
     },
+    {
+        name: "kimi-reasoning",
+        description: "Kimi K2 Thinking - Reasoning Model",
+        config: portkeyConfig["moonshotai/Kimi-K2-Thinking"],
+        transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
+        community: false,
+        input_modalities: ["text"],
+        output_modalities: ["text"],
+        tools: true,
+        reasoning: true,
+    },
+    {
+        name: "glm",
+        description: "GLM-4.6 - 200K Context",
+        config: portkeyConfig["zai-org/GLM-4.6"],
+        transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
+        community: false,
+        input_modalities: ["text"],
+        output_modalities: ["text"],
+        tools: true,
+    },
 ];
 
 // Export models with aliases from registry and computed properties

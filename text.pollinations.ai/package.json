@@ -2,12 +2,11 @@
     "name": "text.pollinations.ai",
     "version": "1.0.0",
     "scripts": {
-        "start": "tsx startServer.js",
-        "dev": "DEBUG=pollinations:* tsx --watch startServer.js",
+        "start": "sops -d .encrypted.env > .env 2>/dev/null || true && tsx startServer.js",
+        "dev": "sops -d .encrypted.env > .env 2>/dev/null || true && clear && DEBUG=pollinations:* tsx startServer.js",
         "type-check": "tsc --noEmit",
         "validate-configs": "tsx configs/validateConfigKeys.ts",
-        "test": "echo \"Error: no test specified\" && exit 1",
-        "dev": "clear && DEBUG=pollinations:* tsx startServer.js"
+        "test": "echo \"Error: no test specified\" && exit 1"
     },
     "keywords": [],
     "author": "",

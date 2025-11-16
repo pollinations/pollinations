@@ -150,6 +150,17 @@ export const portkeyConfig: PortkeyConfigMap = {
             model: "us.anthropic.claude-haiku-4-5-20251001-v1:0",
         }),
 
+    // Intelligence.io configurations
+    "moonshotai/Kimi-K2-Thinking": () =>
+        createIntelligenceModelConfig({
+            model: "moonshotai/Kimi-K2-Thinking",
+            "max-tokens": 4096,
+        }),
+    "zai-org/GLM-4.6": () =>
+        createIntelligenceModelConfig({
+            model: "zai-org/GLM-4.6",
+        }),
+
     // Google Vertex AI configurations
     "gemini-2.5-flash-lite": () => ({
         provider: "vertex-ai",

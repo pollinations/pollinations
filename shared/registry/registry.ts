@@ -43,9 +43,10 @@ export type ModelDefinition = CostDefinition[];
 export type ModelRegistry = Record<string, ModelDefinition>;
 
 export type ServiceDefinition<T extends ModelRegistry> = {
-    aliases: string[];
+    aliases: readonly string[];
     modelId: keyof T;
     provider?: string; // Optional provider identifier (e.g., "azure-openai", "aws-bedrock")
+    cost: readonly CostDefinition[]; // Cost data embedded in service
 };
 
 export type ServiceRegistry<T extends ModelRegistry> = Record<
@@ -130,15 +131,9 @@ type ServiceRegistryEntry<T extends ModelRegistry> = ServiceDefinition<T> & {
 export const SERVICE_REGISTRY = Object.fromEntries(
     Object.entries(SERVICES).map(([name, service]) => {
         const typedService = service as ServiceDefinition<typeof MODELS>;
-        const modelCost = MODELS[typedService.modelId as keyof typeof MODELS];
-        if (!modelCost) {
-            throw new Error(
-                `Model cost not found for service "${name}" with modelId "${String(typedService.modelId)}"`,
-            );
-        }
 
-        // Price = cost (1.0x multiplier)
-        const price = modelCost.map((costDef) => ({ ...costDef }));
+        // Price = cost (1.0x multiplier) - cost is now embedded in service
+        const price = typedService.cost.map((costDef) => ({ ...costDef }));
 
         return [
             name,
@@ -201,7 +196,6 @@ export function isValidService(
     return !!SERVICE_REGISTRY[serviceId];
 }
 
-
 /**
  * Get all service IDs
  */
@@ -235,7 +229,7 @@ export function getServiceDefinition(
 /**
  * Get aliases for a service
  */
-export function getServiceAliases(serviceId: ServiceId): string[] {
+export function getServiceAliases(serviceId: ServiceId): readonly string[] {
     const service = SERVICE_REGISTRY[serviceId];
     return service?.aliases || [];
 }

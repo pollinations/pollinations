@@ -40,15 +40,6 @@ export type PriceDefinition = UsageConversionDefinition;
 
 export type ModelDefinition = CostDefinition[];
 
-export type ModelRegistry = Record<string, ModelDefinition>;
-
-export type ServiceDefinition<T extends ModelRegistry> = {
-    aliases: readonly string[];
-    modelId: keyof T;
-    provider: string; // Provider identifier (e.g., "azure-openai", "aws-bedrock")
-    cost: readonly CostDefinition[]; // Cost data embedded in service
-};
-
 // Pre-build MODEL_REGISTRY (modelId -> sorted cost definitions)
 const MODEL_REGISTRY = Object.fromEntries(
     Object.values({ ...TEXT_SERVICES, ...IMAGE_SERVICES }).map((service) => [
@@ -58,7 +49,16 @@ const MODEL_REGISTRY = Object.fromEntries(
 );
 
 export type ModelId = keyof typeof MODEL_REGISTRY;
-export type ServiceId = keyof typeof TEXT_SERVICES | keyof typeof IMAGE_SERVICES;
+export type ServiceId =
+    | keyof typeof TEXT_SERVICES
+    | keyof typeof IMAGE_SERVICES;
+
+export type ServiceDefinition = {
+    aliases: readonly string[];
+    modelId: ModelId;
+    provider: string;
+    cost: readonly CostDefinition[];
+};
 
 /** Sorts the cost and price definitions by date, in descending order */
 function sortDefinitions<T extends UsageConversionDefinition>(
@@ -97,20 +97,21 @@ function convertUsage(
     };
 }
 
-
 // Generate SERVICE_REGISTRY with computed prices from costs
-type ServiceRegistryEntry = ServiceDefinition<typeof MODEL_REGISTRY> & {
+type ServiceRegistryEntry = ServiceDefinition & {
     price: PriceDefinition[];
 };
 
 const SERVICE_REGISTRY = Object.fromEntries(
-    Object.entries({ ...TEXT_SERVICES, ...IMAGE_SERVICES }).map(([name, service]) => [
-        name,
-        {
-            ...service,
-            price: sortDefinitions([...service.cost]),
-        } as ServiceRegistryEntry,
-    ]),
+    Object.entries({ ...TEXT_SERVICES, ...IMAGE_SERVICES }).map(
+        ([name, service]) => [
+            name,
+            {
+                ...service,
+                price: sortDefinitions([...service.cost]),
+            } as ServiceRegistryEntry,
+        ],
+    ),
 ) as Record<string, ServiceRegistryEntry>;
 
 /**
@@ -193,7 +194,9 @@ export function getServiceAliases(serviceId: ServiceId): readonly string[] {
 /**
  * Get model definition by ID
  */
-export function getModelDefinition(modelId: string): ModelDefinition | undefined {
+export function getModelDefinition(
+    modelId: string,
+): ModelDefinition | undefined {
     return MODEL_REGISTRY[modelId as ModelId];
 }
 
@@ -273,4 +276,3 @@ export function calculatePrice(
         totalPrice,
     };
 }
-

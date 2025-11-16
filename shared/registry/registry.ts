@@ -43,15 +43,11 @@ export type ModelDefinition = CostDefinition[];
 export type ModelRegistry = Record<string, ModelDefinition>;
 
 export type ServiceDefinition<T extends ModelRegistry> = {
-    aliases: string[];
+    aliases: readonly string[];
     modelId: keyof T;
     provider?: string; // Optional provider identifier (e.g., "azure-openai", "aws-bedrock")
+    cost: readonly CostDefinition[]; // Cost data embedded in service
 };
-
-export type ServiceRegistry<T extends ModelRegistry> = Record<
-    string,
-    ServiceDefinition<T>
->;
 
 export type ServiceMargins = {
     [Key in string]: {
@@ -67,14 +63,11 @@ const MODELS = {
 const SERVICES = {
     ...TEXT_SERVICES,
     ...IMAGE_SERVICES,
-} as const satisfies ServiceRegistry<typeof MODELS>;
+} as const;
 
 export type ModelId<TP extends ModelRegistry = typeof MODELS> = keyof TP;
 
-export type ServiceId<
-    TP extends ModelRegistry = typeof MODELS,
-    TS extends ServiceRegistry<TP> = typeof SERVICES,
-> = keyof TS;
+export type ServiceId = keyof typeof SERVICES;
 
 /** Sorts the cost and price definitions by date, in descending order */
 function sortDefinitions<T extends UsageConversionDefinition>(
@@ -130,21 +123,15 @@ type ServiceRegistryEntry<T extends ModelRegistry> = ServiceDefinition<T> & {
 export const SERVICE_REGISTRY = Object.fromEntries(
     Object.entries(SERVICES).map(([name, service]) => {
         const typedService = service as ServiceDefinition<typeof MODELS>;
-        const modelCost = MODELS[typedService.modelId as keyof typeof MODELS];
-        if (!modelCost) {
-            throw new Error(
-                `Model cost not found for service "${name}" with modelId "${String(typedService.modelId)}"`,
-            );
-        }
 
         // Price = cost (1.0x multiplier)
-        const price = modelCost.map((costDef) => ({ ...costDef }));
+        const price = sortDefinitions([...typedService.cost]);
 
         return [
             name,
             {
                 ...service,
-                price: sortDefinitions(price),
+                price,
             } as ServiceRegistryEntry<typeof MODELS>,
         ];
     }),
@@ -201,7 +188,6 @@ export function isValidService(
     return !!SERVICE_REGISTRY[serviceId];
 }
 
-
 /**
  * Get all service IDs
  */
@@ -235,7 +221,7 @@ export function getServiceDefinition(
 /**
  * Get aliases for a service
  */
-export function getServiceAliases(serviceId: ServiceId): string[] {
+export function getServiceAliases(serviceId: ServiceId): readonly string[] {
     const service = SERVICE_REGISTRY[serviceId];
     return service?.aliases || [];
 }
@@ -363,18 +349,3 @@ export function calculateMargins(serviceId: ServiceId): ServiceMargins {
     };
 }
 
-/**
- * Get provider for a model ID by looking it up in the combined services registry
- * Works for both text and image models
- * @param modelId - The provider model ID (e.g., "gpt-5-nano-2025-08-07", "flux")
- * @returns Provider name or null if not found
- */
-export function getProviderByModelId(modelId: string): string | null {
-    // Search through all services to find one that uses this modelId
-    for (const service of Object.values(SERVICES)) {
-        if (service.modelId === modelId) {
-            return service.provider || null;
-        }
-    }
-    return null;
-}

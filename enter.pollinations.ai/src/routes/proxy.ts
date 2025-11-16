@@ -199,12 +199,8 @@ export const proxyRoutes = new Hono<Env>()
         track("generate.text"),
         async (c) => {
             const log = c.get("log");
-            await c.var.auth.requireAuthorization({
-                allowAnonymous:
-                    c.var.track.freeModelRequested &&
-                    c.env.ALLOW_ANONYMOUS_USAGE,
-            });
-            await checkBalanceForPaidModel(c);
+            await c.var.auth.requireAuthorization();
+            await checkBalance(c);
 
             const textServiceUrl =
                 c.env.TEXT_SERVICE_URL || "https://text.pollinations.ai";
@@ -291,12 +287,8 @@ export const proxyRoutes = new Hono<Env>()
         validator("query", GenerateImageRequestQueryParamsSchema),
         async (c) => {
             const log = c.get("log");
-            await c.var.auth.requireAuthorization({
-                allowAnonymous:
-                    c.var.track.freeModelRequested &&
-                    c.env.ALLOW_ANONYMOUS_USAGE,
-            });
-            await checkBalanceForPaidModel(c);
+            await c.var.auth.requireAuthorization();
+            await checkBalance(c);
 
             // Extract prompt from wildcard path (everything after /image/)
             // Keep it encoded to preserve special characters when proxying
@@ -436,8 +428,8 @@ export function contentFilterResultsToHeaders(
     ) as Record<string, string>;
 }
 
-async function checkBalanceForPaidModel(c: Context<Env & TrackEnv>) {
-    if (!c.var.track.freeModelRequested && c.var.auth.user?.id) {
+async function checkBalance(c: Context<Env & TrackEnv>) {
+    if (c.var.auth.user?.id) {
         await c.var.polar.requirePositiveBalance(
             c.var.auth.user.id,
             "Insufficient pollen balance to use this model",
@@ -448,12 +440,9 @@ async function checkBalanceForPaidModel(c: Context<Env & TrackEnv>) {
 // Shared handler for OpenAI-compatible chat completions
 async function handleChatCompletions(c: Context<Env & TrackEnv>) {
     const log = c.get("log");
-    await c.var.auth.requireAuthorization({
-        allowAnonymous:
-            c.var.track.freeModelRequested && c.env.ALLOW_ANONYMOUS_USAGE,
-    });
+    await c.var.auth.requireAuthorization();
 
-    await checkBalanceForPaidModel(c);
+    await checkBalance(c);
 
     const textServiceUrl =
         c.env.TEXT_SERVICE_URL || "https://text.pollinations.ai";

@@ -76,7 +76,6 @@ export const event = sqliteTable("event", {
     // Model
     modelRequested: text("model_requested"),
     resolvedModelRequested: text("resolved_model_requested"),
-    freeModelRequested: integer("free_model_requested", { mode: "boolean" }),
     modelUsed: text("model_used"),
     modelProviderUsed: text("model_provider_used"),
     isBilledUsage: integer("is_billed_usage", { mode: "boolean" }).notNull(),

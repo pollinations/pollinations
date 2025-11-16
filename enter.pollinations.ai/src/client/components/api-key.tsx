@@ -330,23 +330,23 @@ const CreateKeyForm: FC<{
                                     etc.)
                                 </li>
                                 <li>
-                                    IP-based rate limiting: 3 req/burst, 1
-                                    refill per 15 sec (~4 req/min)
+                                    Pollen-based rate limiting: 1 pollen/hour
+                                    refill per IP+key
                                 </li>
                             </ul>
                             <div className="mt-2 p-2 bg-amber-50 border border-amber-200 rounded text-xs">
                                 <div className="font-semibold text-amber-900 mb-1">
-                                    ⚠️ Beta Feature - Heads Up!
+                                    ⚠️ Beta Feature
                                 </div>
                                 <ul className="space-y-0.5 list-disc pl-4 text-amber-800">
-                                    <li>Still working out some bugs fr fr</li>
+                                    <li>Still working out some bugs</li>
                                     <li>
-                                        For stable production apps → use secret
-                                        keys
+                                        For stable production → use secret keys
+                                        (no rate limits)
                                     </li>
                                     <li>
-                                        Need to hide secret keys in your backend
-                                        (not client-side)
+                                        Secret keys must be hidden in your
+                                        backend
                                     </li>
                                 </ul>
                             </div>

@@ -3,7 +3,7 @@ import type {
     ServiceRegistry,
     UsageConversionDefinition,
 } from "./registry";
-import { ZERO_PRICE, PRICING_START_DATE, perMillion } from "./price-helpers";
+import { PRICING_START_DATE, perMillion } from "./price-helpers";
 
 export const DEFAULT_IMAGE_MODEL = "flux" as const;
 

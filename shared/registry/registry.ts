@@ -45,7 +45,6 @@ export type ModelRegistry = Record<string, ModelDefinition>;
 export type ServiceDefinition<T extends ModelRegistry> = {
     aliases: string[];
     modelId: keyof T;
-    free?: boolean; // Optional flag for free models (defaults to false)
     provider?: string; // Optional provider identifier (e.g., "azure-openai", "aws-bedrock")
 };
 
@@ -130,7 +129,6 @@ type ServiceRegistryEntry<T extends ModelRegistry> = ServiceDefinition<T> & {
 // Generate SERVICE_REGISTRY with computed prices from costs
 export const SERVICE_REGISTRY = Object.fromEntries(
     Object.entries(SERVICES).map(([name, service]) => {
-        // Type assertion to ServiceDefinition to access optional free property
         const typedService = service as ServiceDefinition<typeof MODELS>;
         const modelCost = MODELS[typedService.modelId as keyof typeof MODELS];
         if (!modelCost) {
@@ -139,25 +137,8 @@ export const SERVICE_REGISTRY = Object.fromEntries(
             );
         }
 
-        // Generate price from cost based on free flag
-        const isFree = typedService.free ?? false;
-        const price = modelCost.map((costDef) => {
-            if (isFree) {
-                // Free model: all prices are 0
-                const zeroPriceDef: UsageConversionDefinition = {
-                    date: costDef.date,
-                };
-                Object.keys(costDef).forEach((key) => {
-                    if (key !== "date") {
-                        zeroPriceDef[key as UsageType] = 0;
-                    }
-                });
-                return zeroPriceDef;
-            } else {
-                // Paid model: price = cost (multiplier 1.0)
-                return { ...costDef };
-            }
-        });
+        // Price = cost (1.0x multiplier)
+        const price = modelCost.map((costDef) => ({ ...costDef }));
 
         return [
             name,
@@ -220,19 +201,6 @@ export function isValidService(
     return !!SERVICE_REGISTRY[serviceId];
 }
 
-/**
- * Check if a service is free (all pricing rates are 0)
- */
-export function isFreeService(serviceId: ServiceId): boolean {
-    const priceDefinition = getActivePriceDefinition(serviceId);
-    if (!priceDefinition)
-        throw new Error(
-            `Failed to get current price for service: ${serviceId.toString()}`,
-        );
-    return Object.values(omit(priceDefinition, "date")).every(
-        (rate) => rate === 0,
-    );
-}
 
 /**
  * Get all service IDs

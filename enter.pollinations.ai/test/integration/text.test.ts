@@ -1,9 +1,9 @@
-import { isFreeService, getTextServices } from "@shared/registry/registry.ts";
+import { getTextServices } from "@shared/registry/registry.ts";
 import { SELF } from "cloudflare:test";
 import { test } from "../fixtures.ts";
-import { describe, beforeEach, expect } from "vitest";
+import { describe, expect } from "vitest";
 import { env } from "cloudflare:workers";
-import { ServiceId } from "@shared/registry/registry.ts";
+import type { ServiceId } from "@shared/registry/registry.ts";
 
 const TEST_DISABLE_CACHE = true;
 const TEST_ALL_SERVICES = false;
@@ -19,11 +19,9 @@ const servicesToTest = getTextServices().filter(
     (serviceId) => TEST_ALL_SERVICES || REQUIRED_SERVICES.includes(serviceId),
 );
 
-const anonymousTestCases = (allowAnoymous: boolean) => {
-    return servicesToTest.map((serviceId) => [
-        serviceId,
-        isFreeService(serviceId) && allowAnoymous ? 200 : 401,
-    ]);
+const anonymousTestCases = () => {
+    // All models now require authentication, so always expect 401 for anonymous requests
+    return servicesToTest.map((serviceId) => [serviceId, 401]);
 };
 
 const authenticatedTestCases = (): [ServiceId, number][] => {
@@ -53,42 +51,35 @@ function testMessageContent() {
 }
 
 // Send a request to each text model without authentication
-// and makes sure that the response status is in line with
-// the value of ALLOW_ANONYMOUS_USAGE
-describe.for([true, false])(
-    "When ALLOW_ANONYMOUS_USAGE is %s",
-    (allowAnoymous) => {
-        beforeEach(() => {
-            env.ALLOW_ANONYMOUS_USAGE = allowAnoymous;
-        });
-        test.for(anonymousTestCases(allowAnoymous))(
-            "%s should respond %s when unauthenticated",
-            { timeout: 30000 },
-            async ([serviceId, expectedStatus], { mocks }) => {
-                mocks.enable("polar", "tinybird");
-                const response = await SELF.fetch(
-                    `http://localhost:3000/api/generate/v1/chat/completions`,
-                    {
-                        method: "POST",
-                        headers: {
-                            "content-type": "application/json",
-                        },
-                        body: JSON.stringify({
-                            model: serviceId,
-                            messages: [
-                                {
-                                    role: "user",
-                                    content: testMessageContent(),
-                                },
-                            ],
-                        }),
+// All models now require authentication, so all should return 401
+describe("Unauthenticated requests", () => {
+    test.for(anonymousTestCases())(
+        "%s should respond with 401 when unauthenticated",
+        { timeout: 30000 },
+        async ([serviceId, expectedStatus], { mocks }) => {
+            mocks.enable("polar", "tinybird");
+            const response = await SELF.fetch(
+                `http://localhost:3000/api/generate/v1/chat/completions`,
+                {
+                    method: "POST",
+                    headers: {
+                        "content-type": "application/json",
                     },
-                );
-                expect(response.status).toBe(expectedStatus);
-            },
-        );
-    },
-);
+                    body: JSON.stringify({
+                        model: serviceId,
+                        messages: [
+                            {
+                                role: "user",
+                                content: testMessageContent(),
+                            },
+                        ],
+                    }),
+                },
+            );
+            expect(response.status).toBe(expectedStatus);
+        },
+    );
+});
 
 // Sends a request to each text model, using bearer auth
 test.for(authenticatedTestCases())(
@@ -223,7 +214,124 @@ test(
     },
 );
 
-// Test that session cookies don't work for API routes (only API keys)
+// Test audio output (text-to-speech) with modalities
+test(
+    "openai-audio with modalities should return audio output",
+    { timeout: 30000 },
+    async ({ apiKey, mocks }) => {
+        mocks.enable("polar", "tinybird", "textService");
+        const response = await SELF.fetch(
+            `http://localhost:3000/api/generate/v1/chat/completions`,
+            {
+                method: "POST",
+                headers: {
+                    "content-type": "application/json",
+                    "authorization": `Bearer ${apiKey}`,
+                    "referer": env.TESTING_REFERRER,
+                },
+                body: JSON.stringify({
+                    model: "openai-audio",
+                    modalities: ["text", "audio"],
+                    audio: {
+                        voice: "alloy",
+                        format: "wav",
+                    },
+                    messages: [
+                        {
+                            role: "user",
+                            content: "Say hello world",
+                        },
+                    ],
+                }),
+            },
+        );
+        expect(response.status).toBe(200);
+
+        const data = (await response.json()) as {
+            choices: {
+                message: {
+                    audio: {
+                        transcript: string;
+                        data: string;
+                    };
+                };
+            }[];
+            usage: {
+                completion_tokens_details: {
+                    audio_tokens: number;
+                };
+            };
+        };
+        expect(data.choices).toBeDefined();
+        expect(data.choices[0].message.audio).toBeDefined();
+        expect(data.choices[0].message.audio.transcript).toBeDefined();
+        expect(data.choices[0].message.audio.data).toBeDefined();
+        expect(
+            data.usage.completion_tokens_details.audio_tokens,
+        ).toBeGreaterThan(0);
+    },
+);
+
+// Test audio input (transcription) with input_audio content type
+test(
+    "openai-audio with input_audio should transcribe audio",
+    { timeout: 30000 },
+    async ({ apiKey, mocks }) => {
+        mocks.enable("polar", "tinybird", "textService");
+
+        // Sample WAV header (minimal valid WAV file)
+        const sampleAudioBase64 =
+            "UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA=";
+
+        const response = await SELF.fetch(
+            `http://localhost:3000/api/generate/v1/chat/completions`,
+            {
+                method: "POST",
+                headers: {
+                    "content-type": "application/json",
+                    "authorization": `Bearer ${apiKey}`,
+                    "referer": env.TESTING_REFERRER,
+                },
+                body: JSON.stringify({
+                    model: "openai-audio",
+                    modalities: ["text", "audio"],
+                    audio: {
+                        voice: "alloy",
+                        format: "wav",
+                    },
+                    messages: [
+                        {
+                            role: "user",
+                            content: [
+                                {
+                                    type: "text",
+                                    text: "What is in this audio?",
+                                },
+                                {
+                                    type: "input_audio",
+                                    input_audio: {
+                                        data: sampleAudioBase64,
+                                        format: "wav",
+                                    },
+                                },
+                            ],
+                        },
+                    ],
+                }),
+            },
+        );
+        expect(response.status).toBe(200);
+
+        const data = (await response.json()) as any;
+        expect(data.choices).toBeDefined();
+        expect(data.choices[0].message.content).toBeDefined();
+        expect(data.usage.prompt_tokens_details.audio_tokens).toBeGreaterThan(
+            0,
+        );
+    },
+);
+
+// ... (rest of the code remains the same)
 test("Session cookies should not authenticate API proxy routes", async ({
     sessionToken,
     mocks,

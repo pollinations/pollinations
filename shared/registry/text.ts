@@ -4,6 +4,9 @@ import type {
     UsageConversionDefinition,
 } from "./registry";
 import { ZERO_PRICE, PRICING_START_DATE, perMillion } from "./price-helpers";
+
+export const DEFAULT_TEXT_MODEL = "openai" as const;
+
 export const TEXT_COSTS = {
     "gpt-5-mini-2025-08-07": [
         {
@@ -16,16 +19,16 @@ export const TEXT_COSTS = {
     "gpt-5-nano-2025-08-07": [
         {
             date: PRICING_START_DATE,
-            promptTextTokens: perMillion(0.060),
-            promptCachedTokens: perMillion(0.010),
-            completionTextTokens: perMillion(0.44),
+            promptTextTokens: perMillion(0.05),
+            promptCachedTokens: perMillion(0.005),
+            completionTextTokens: perMillion(0.4),
         },
     ],
     "gpt-5-chat-latest": [
         {
             date: PRICING_START_DATE,
             promptTextTokens: perMillion(1.25),
-            promptCachedTokens: perMillion(0.130),
+            promptCachedTokens: perMillion(0.13),
             completionTextTokens: perMillion(10.0),
         },
     ],
@@ -40,9 +43,9 @@ export const TEXT_COSTS = {
     "gpt-4.1-2025-04-14": [
         {
             date: PRICING_START_DATE,
-            promptTextTokens: perMillion(2.20),
+            promptTextTokens: perMillion(2.2),
             promptCachedTokens: perMillion(0.55),
-            completionTextTokens: perMillion(8.80),
+            completionTextTokens: perMillion(8.8),
         },
     ],
     "gpt-4o-mini-audio-preview-2024-12-17": [
@@ -107,9 +110,9 @@ export const TEXT_COSTS = {
     "gemini-2.5-flash-lite": [
         {
             date: PRICING_START_DATE,
-            promptTextTokens: perMillion(0.10),
-            promptCachedTokens: perMillion(0.010),
-            completionTextTokens: perMillion(0.40),
+            promptTextTokens: perMillion(0.1),
+            promptCachedTokens: perMillion(0.01),
+            completionTextTokens: perMillion(0.4),
         },
     ],
     "myceli-deepseek-v3.1": [
@@ -184,9 +187,14 @@ export const TEXT_SERVICES = {
         provider: "scaleway",
     },
     "mistral": {
-        aliases: ["mistral-small-3.1-24b-instruct", "mistral-small-3.1-24b-instruct-2503", "mistral-small-3.2-24b-instruct-2506"],
+        aliases: ["mistral-small"],
         modelId: "mistral-small-3.2-24b-instruct-2506",
         provider: "scaleway",
+    },
+    "mistral-fast": {
+        aliases: ["llama-3.1-8b", "llama-fast"],
+        modelId: "us.meta.llama3-1-8b-instruct-v1:0",
+        provider: "aws-bedrock",
     },
     // Temporarily disabled
     // "naughty": {
@@ -210,7 +218,12 @@ export const TEXT_SERVICES = {
         provider: "vertex-ai",
     },
     "deepseek": {
-        aliases: ["deepseek-v3", "deepseek-v3.1", "deepseek-reasoning", "deepseek-r1-0528"],
+        aliases: [
+            "deepseek-v3",
+            "deepseek-v3.1",
+            "deepseek-reasoning",
+            "deepseek-r1-0528",
+        ],
         modelId: "myceli-deepseek-v3.1",
         provider: "azure",
     },

@@ -1,6 +1,6 @@
 import { omit, safeRound } from "../utils";
-import { TEXT_COSTS, TEXT_SERVICES } from "./text";
-import { IMAGE_COSTS, IMAGE_SERVICES } from "./image";
+import { TEXT_COSTS, TEXT_SERVICES, DEFAULT_TEXT_MODEL } from "./text";
+import { IMAGE_COSTS, IMAGE_SERVICES, DEFAULT_IMAGE_MODEL } from "./image";
 import { EventType } from "./types";
 
 const PRECISION = 8;
@@ -187,7 +187,9 @@ export function resolveServiceId(
     eventType: EventType,
 ): ServiceId {
     if (!serviceId) {
-        return eventType === "generate.text" ? "openai" : "flux";
+        return eventType === "generate.text"
+            ? DEFAULT_TEXT_MODEL
+            : DEFAULT_IMAGE_MODEL;
     }
     // Check if it's a direct service ID or an alias
     const resolved = SERVICE_REGISTRY[serviceId]
@@ -408,4 +410,3 @@ export function getProviderByModelId(modelId: string): string | null {
     }
     return null;
 }
-

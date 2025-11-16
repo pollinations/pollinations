@@ -49,11 +49,6 @@ export type ServiceDefinition<T extends ModelRegistry> = {
     cost: readonly CostDefinition[]; // Cost data embedded in service
 };
 
-export type ServiceRegistry<T extends ModelRegistry> = Record<
-    string,
-    ServiceDefinition<T>
->;
-
 export type ServiceMargins = {
     [Key in string]: {
         [Key in UsageType]?: number;
@@ -68,14 +63,11 @@ const MODELS = {
 const SERVICES = {
     ...TEXT_SERVICES,
     ...IMAGE_SERVICES,
-} as const satisfies ServiceRegistry<typeof MODELS>;
+} as const;
 
 export type ModelId<TP extends ModelRegistry = typeof MODELS> = keyof TP;
 
-export type ServiceId<
-    TP extends ModelRegistry = typeof MODELS,
-    TS extends ServiceRegistry<TP> = typeof SERVICES,
-> = keyof TS;
+export type ServiceId = keyof typeof SERVICES;
 
 /** Sorts the cost and price definitions by date, in descending order */
 function sortDefinitions<T extends UsageConversionDefinition>(
@@ -357,18 +349,3 @@ export function calculateMargins(serviceId: ServiceId): ServiceMargins {
     };
 }
 
-/**
- * Get provider for a model ID by looking it up in the combined services registry
- * Works for both text and image models
- * @param modelId - The provider model ID (e.g., "gpt-5-nano-2025-08-07", "flux")
- * @returns Provider name or null if not found
- */
-export function getProviderByModelId(modelId: string): string | null {
-    // Search through all services to find one that uses this modelId
-    for (const service of Object.values(SERVICES)) {
-        if (service.modelId === modelId) {
-            return service.provider || null;
-        }
-    }
-    return null;
-}

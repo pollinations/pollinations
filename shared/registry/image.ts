@@ -1,8 +1,4 @@
-import type {
-    ModelRegistry,
-    ServiceRegistry,
-    UsageConversionDefinition,
-} from "./registry";
+import type { ModelRegistry } from "./registry";
 import { PRICING_START_DATE, perMillion } from "./price-helpers";
 
 export const DEFAULT_IMAGE_MODEL = "flux" as const;
@@ -84,10 +80,10 @@ export const IMAGE_SERVICES = {
     },
 } as const;
 
-// For backward compatibility - extract costs into separate object
+// Backward compatibility - auto-generate IMAGE_COSTS from service definitions
 export const IMAGE_COSTS = Object.fromEntries(
     Object.entries(IMAGE_SERVICES).map(([_name, service]) => [
         service.modelId,
-        [...service.cost], // Spread to make mutable copy
+        [...service.cost],
     ]),
 ) as ModelRegistry;

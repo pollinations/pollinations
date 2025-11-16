@@ -1,8 +1,4 @@
-import type {
-    ModelRegistry,
-    ServiceRegistry,
-    UsageConversionDefinition,
-} from "./registry";
+import type { ModelRegistry } from "./registry";
 import { PRICING_START_DATE, perMillion } from "./price-helpers";
 
 export const DEFAULT_TEXT_MODEL = "openai" as const;
@@ -252,10 +248,10 @@ export const TEXT_SERVICES = {
     },
 } as const;
 
-// For backward compatibility - extract costs into separate object
+// Backward compatibility - auto-generate TEXT_COSTS from service definitions
 export const TEXT_COSTS = Object.fromEntries(
     Object.entries(TEXT_SERVICES).map(([_name, service]) => [
         service.modelId,
-        [...service.cost], // Spread to make mutable copy
+        [...service.cost],
     ]),
 ) as ModelRegistry;

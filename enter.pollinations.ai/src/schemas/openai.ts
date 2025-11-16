@@ -53,9 +53,18 @@ const ChatCompletionRequestMessageContentPartTextSchema = z.object({
     text: z.string(),
 });
 
+const ChatCompletionRequestMessageContentPartAudioSchema = z.object({
+    type: z.literal("input_audio"),
+    input_audio: z.object({
+        data: z.string(), // base64 encoded audio
+        format: z.enum(["wav", "mp3", "flac", "opus", "pcm16"]),
+    }),
+});
+
 const ChatCompletionRequestMessageContentPartSchema = z.union([
     ChatCompletionRequestMessageContentPartTextSchema,
     ChatCompletionRequestMessageContentPartImageSchema,
+    ChatCompletionRequestMessageContentPartAudioSchema,
 ]);
 
 // Thinking (provider-specific; requires strict_openai_compliance=false)
@@ -180,6 +189,20 @@ const ThinkingSchema = z
 export const CreateChatCompletionRequestSchema = z.object({
     messages: z.array(ChatCompletionRequestMessageSchema),
     model: z.enum(getTextServices()).optional().default(DEFAULT_TEXT_MODEL),
+    modalities: z.array(z.enum(["text", "audio"])).optional(),
+    audio: z
+        .object({
+            voice: z.enum([
+                "alloy",
+                "echo",
+                "fable",
+                "onyx",
+                "nova",
+                "shimmer",
+            ]),
+            format: z.enum(["wav", "mp3", "flac", "opus", "pcm16"]),
+        })
+        .optional(),
     frequency_penalty: z
         .number()
         .min(-2)

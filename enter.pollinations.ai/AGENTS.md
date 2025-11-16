@@ -32,7 +32,7 @@
 1. **🌐 Publishable Key** (starts with `pk_`)
    - Always visible in dashboard
    - Safe for client-side code (React, Vue, etc.)
-   - IP-based rate limiting: 3 req/burst, 1 refill per 15 sec (~4 req/min)
+   - Pollen-based rate limiting: 1 pollen/hour refill per IP+key
    - Access to all models
    
 2. **🔒 Secret Key** (starts with `sk_`)

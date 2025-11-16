@@ -357,8 +357,7 @@ function createTrackingEvent({
         modelUsed: responseTracking.modelUsed,
 
         isBilledUsage:
-            responseTracking.responseOk &&
-            !responseTracking.cacheData.cacheHit,
+            responseTracking.responseOk && !responseTracking.cacheData.cacheHit,
 
         ...balanceTracking,
 
@@ -522,13 +521,6 @@ async function extractUsageAndContentFilterResults(
         return await extractUsageAndContentFilterResultsStream(eventStream);
     }
     return extractUsageAndContentFilterResultsHeaders(response);
-}
-
-function validateUsage(usage: ModelUsage) {
-    const includedUsageTypes = Object.keys(usage.usage);
-    if (includedUsageTypes.length === 0) {
-        throw new Error("No usage information found");
-    }
 }
 
 type CacheData = {

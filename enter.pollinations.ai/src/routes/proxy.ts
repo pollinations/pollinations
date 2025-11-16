@@ -50,8 +50,6 @@ const ModelInfoSchema = z.object({
     output_modalities: z.array(z.string()).optional(),
     tools: z.boolean().optional(),
     reasoning: z.boolean().optional(),
-    vision: z.boolean().optional(),
-    audio: z.boolean().optional(),
     context_window: z.number().optional(),
     voices: z.array(z.string()).optional(),
     persona: z.boolean().optional(),

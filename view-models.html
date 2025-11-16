@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Model Viewer - Pollinations</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        h1 { color: #333; }
+        .controls { 
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        button {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            margin: 5px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        button:hover { background: #45a049; }
+        .model-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 15px;
+        }
+        .model-card {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .model-id { 
+            font-weight: bold;
+            font-size: 18px;
+            color: #2196F3;
+            margin-bottom: 10px;
+        }
+        .model-desc { 
+            color: #666;
+            margin: 8px 0;
+            font-size: 14px;
+        }
+        .pricing {
+            background: #e8f5e9;
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+            font-family: monospace;
+            font-size: 12px;
+        }
+        .badges {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin-top: 10px;
+        }
+        .badge {
+            background: #e3f2fd;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 11px;
+            color: #1976d2;
+        }
+        .alias {
+            background: #fff3e0;
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            color: #f57c00;
+            margin: 2px;
+            display: inline-block;
+        }
+        .loading { text-align: center; padding: 40px; color: #666; }
+        .error { background: #ffebee; color: #c62828; padding: 20px; border-radius: 8px; }
+    </style>
+</head>
+<body>
+    <h1>🌸 Pollinations Model Registry</h1>
+    
+    <div class="controls">
+        <button onclick="loadModels('image')">🖼️ Load Image Models</button>
+        <button onclick="loadModels('text')">💬 Load Text Models (v1/models)</button>
+    </div>
+
+    <div id="output"></div>
+
+    <script>
+        const API_KEY = 'plln_sk_e912DbJqoMFjftrbhNt5pVM78x5vbqL0';
+        const BASE_URL = 'http://localhost:3000/api/generate';
+        
+        async function loadModels(type) {
+            const output = document.getElementById('output');
+            output.innerHTML = '<div class="loading">Loading models...</div>';
+            
+            try {
+                const url = type === 'image' 
+                    ? `${BASE_URL}/image/models?key=${API_KEY}`
+                    : `${BASE_URL}/v1/models?key=${API_KEY}`;
+                    
+                const response = await fetch(url);
+                const data = await response.json();
+                
+                if (type === 'text') {
+                    // OpenAI format
+                    displayOpenAIModels(data);
+                } else {
+                    // ModelInfo format
+                    displayModelInfo(data);
+                }
+            } catch (error) {
+                output.innerHTML = `<div class="error">Error: ${error.message}</div>`;
+            }
+        }
+        
+        function displayModelInfo(models) {
+            const output = document.getElementById('output');
+            output.innerHTML = `<h2>Found ${models.length} models</h2><div class="model-grid"></div>`;
+            const grid = output.querySelector('.model-grid');
+            
+            models.forEach(model => {
+                const card = document.createElement('div');
+                card.className = 'model-card';
+                
+                let pricingHTML = '';
+                if (model.pricing) {
+                    pricingHTML = '<div class="pricing">';
+                    if (model.pricing.image_price) {
+                        pricingHTML += `💰 $${model.pricing.image_price}/image<br>`;
+                    }
+                    if (model.pricing.input_token_price) {
+                        pricingHTML += `📥 $${model.pricing.input_token_price}/token (input)<br>`;
+                    }
+                    if (model.pricing.output_token_price) {
+                        pricingHTML += `📤 $${model.pricing.output_token_price}/token (output)`;
+                    }
+                    pricingHTML += '</div>';
+                }
+                
+                let aliasesHTML = '';
+                if (model.aliases && model.aliases.length > 0) {
+                    aliasesHTML = model.aliases.map(a => `<span class="alias">${a}</span>`).join(' ');
+                }
+                
+                let badgesHTML = '<div class="badges">';
+                if (model.tools) badgesHTML += '<span class="badge">🛠️ Tools</span>';
+                if (model.vision) badgesHTML += '<span class="badge">👁️ Vision</span>';
+                if (model.reasoning) badgesHTML += '<span class="badge">🧠 Reasoning</span>';
+                if (model.audio) badgesHTML += '<span class="badge">🎤 Audio</span>';
+                if (model.community) badgesHTML += '<span class="badge">👥 Community</span>';
+                badgesHTML += '</div>';
+                
+                card.innerHTML = `
+                    <div class="model-id">${model.id}</div>
+                    <div class="model-desc">${model.description || 'No description'}</div>
+                    ${aliasesHTML ? `<div style="margin: 8px 0">${aliasesHTML}</div>` : ''}
+                    ${pricingHTML}
+                    ${badgesHTML}
+                `;
+                
+                grid.appendChild(card);
+            });
+        }
+        
+        function displayOpenAIModels(data) {
+            const output = document.getElementById('output');
+            const models = data.data || data;
+            output.innerHTML = `<h2>Found ${models.length} models (OpenAI format)</h2><div class="model-grid"></div>`;
+            const grid = output.querySelector('.model-grid');
+            
+            models.forEach(model => {
+                const card = document.createElement('div');
+                card.className = 'model-card';
+                card.innerHTML = `
+                    <div class="model-id">${model.id}</div>
+                    <div class="model-desc">Owner: ${model.owned_by || 'unknown'}</div>
+                    <div style="font-size: 12px; color: #999;">Created: ${new Date(model.created * 1000).toLocaleDateString()}</div>
+                `;
+                grid.appendChild(card);
+            });
+        }
+        
+        // Auto-load image models on page load
+        loadModels('image');
+    </script>
+</body>
+</html>

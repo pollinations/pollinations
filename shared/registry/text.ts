@@ -141,7 +141,6 @@ export const TEXT_SERVICES = {
         input_modalities: ["text", "image", "audio"],
         output_modalities: ["audio", "text"],
         tools: true,
-        audio: true,
         persona: false,
     },
     "openai-reasoning": {

@@ -64,7 +64,6 @@ export type ServiceDefinition = {
     output_modalities?: readonly string[];
     tools?: boolean;
     reasoning?: boolean;
-    audio?: boolean;
     context_window?: number;
     voices?: readonly string[];
     persona?: boolean;
@@ -309,7 +308,6 @@ export interface ModelInfo {
     output_modalities?: readonly string[];
     tools?: boolean;
     reasoning?: boolean;
-    audio?: boolean;
     context_window?: number;
     voices?: readonly string[];
     persona?: boolean;
@@ -345,7 +343,6 @@ export function getModelInfo(serviceId: ServiceId): ModelInfo {
         output_modalities: service.output_modalities,
         tools: service.tools,
         reasoning: service.reasoning,
-        audio: service.audio,
         context_window: service.context_window,
         voices: service.voices,
         persona: service.persona,

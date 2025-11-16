@@ -484,47 +484,10 @@ const checkCacheAndGenerate = async (
 const server = http.createServer((req, res) => {
     setCORSHeaders(res);
 
-    // Verify ENTER_TOKEN
-    const token = req.headers["x-enter-token"];
-    const expectedToken = process.env.ENTER_TOKEN;
-
-    if (expectedToken && token !== expectedToken) {
-        logAuth("❌ Invalid or missing ENTER_TOKEN from IP:", getIp(req));
-        res.writeHead(403, { "Content-Type": "application/json" });
-        res.end(JSON.stringify({ error: "Unauthorized" }));
-        return;
-    }
-
-    if (expectedToken) {
-        logAuth("✅ Valid ENTER_TOKEN from IP:", getIp(req));
-    } else {
-        logAuth("⚠️  ENTER_TOKEN not configured - allowing request");
-    }
-
     const parsedUrl = parse(req.url, true);
     const pathname = parsedUrl.pathname;
 
-    if (
-        pathname ===
-        "/.well-known/acme-challenge/w7JbAPtwFN_ntyNHudgKYyaZ7qiesTl4LgFa4fBr1DuEL_Hyd4O3hdIviSop1S3G"
-    ) {
-        res.writeHead(200, { "Content-Type": "text/plain" });
-        res.end(
-            "w7JbAPtwFN_ntyNHudgKYyaZ7qiesTl4LgFa4fBr1DuEL_Hyd4O3hdIviSop1S3G.r54qAqCZSs4xyyeamMffaxyR1FWYVb5OvwUh8EcrhpI",
-        );
-        return;
-    }
-
-    if (pathname === "/crossdomain.xml") {
-        res.writeHead(200, { "Content-Type": "application/xml" });
-        res.end(`<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE cross-domain-policy SYSTEM "http://www.macromedia.com/xml/dtds/cross-domain-policy.dtd">
-<cross-domain-policy>
-  <allow-access-from domain="*" secure="false"/>
-</cross-domain-policy>`);
-        return;
-    }
-
+    // Handle deprecated /models endpoint BEFORE auth check
     if (pathname === "/models") {
         res.writeHead(410, {
             "Content-Type": "application/json",
@@ -544,6 +507,44 @@ const server = http.createServer((req, res) => {
                 documentation: "https://enter.pollinations.ai/api/docs",
             }),
         );
+        return;
+    }
+
+    // Verify ENTER_TOKEN
+    const token = req.headers["x-enter-token"];
+    const expectedToken = process.env.ENTER_TOKEN;
+
+    if (expectedToken && token !== expectedToken) {
+        logAuth("❌ Invalid or missing ENTER_TOKEN from IP:", getIp(req));
+        res.writeHead(403, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({ error: "Unauthorized" }));
+        return;
+    }
+
+    if (expectedToken) {
+        logAuth("✅ Valid ENTER_TOKEN from IP:", getIp(req));
+    } else {
+        logAuth("⚠️  ENTER_TOKEN not configured - allowing request");
+    }
+
+    if (
+        pathname ===
+        "/.well-known/acme-challenge/w7JbAPtwFN_ntyNHudgKYyaZ7qiesTl4LgFa4fBr1DuEL_Hyd4O3hdIviSop1S3G"
+    ) {
+        res.writeHead(200, { "Content-Type": "text/plain" });
+        res.end(
+            "w7JbAPtwFN_ntyNHudgKYyaZ7qiesTl4LgFa4fBr1DuEL_Hyd4O3hdIviSop1S3G.r54qAqCZSs4xyyeamMffaxyR1FWYVb5OvwUh8EcrhpI",
+        );
+        return;
+    }
+
+    if (pathname === "/crossdomain.xml") {
+        res.writeHead(200, { "Content-Type": "application/xml" });
+        res.end(`<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE cross-domain-policy SYSTEM "http://www.macromedia.com/xml/dtds/cross-domain-policy.dtd">
+<cross-domain-policy>
+  <allow-access-from domain="*" secure="false"/>
+</cross-domain-policy>`);
         return;
     }
 

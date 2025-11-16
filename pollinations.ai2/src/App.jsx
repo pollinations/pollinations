@@ -11,9 +11,9 @@ function App() {
         <Routes>
             <Route path="/" element={<Layout />}>
                 <Route index element={<HomePage />} />
-                <Route path="playground" element={<PlayPage />} />
-                <Route path="projects" element={<AppsPage />} />
-                <Route path="integration" element={<DocsPage />} />
+                <Route path="play" element={<PlayPage />} />
+                <Route path="apps" element={<AppsPage />} />
+                <Route path="docs" element={<DocsPage />} />
                 <Route path="community" element={<CommunityPage />} />
                 <Route path="*" element={<Navigate to="/" replace />} />
             </Route>

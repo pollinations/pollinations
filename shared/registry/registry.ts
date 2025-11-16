@@ -124,14 +124,14 @@ export const SERVICE_REGISTRY = Object.fromEntries(
     Object.entries(SERVICES).map(([name, service]) => {
         const typedService = service as ServiceDefinition<typeof MODELS>;
 
-        // Price = cost (1.0x multiplier) - cost is now embedded in service
-        const price = typedService.cost.map((costDef) => ({ ...costDef }));
+        // Price = cost (1.0x multiplier)
+        const price = sortDefinitions([...typedService.cost]);
 
         return [
             name,
             {
                 ...service,
-                price: sortDefinitions(price),
+                price,
             } as ServiceRegistryEntry<typeof MODELS>,
         ];
     }),

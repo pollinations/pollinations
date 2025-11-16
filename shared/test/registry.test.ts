@@ -2,8 +2,7 @@ import {
     resolveServiceId, 
     getModelDefinition,
     calculateCost,
-    calculatePrice,
-    SERVICE_REGISTRY
+    calculatePrice
 } from "../registry/registry.ts";
 import { perMillion, COST_START_DATE } from "../registry/price-helpers.ts";
 import { expect, test } from "vitest";

@@ -98,11 +98,3 @@ export const IMAGE_SERVICES = {
         output_modalities: ["image"],
     },
 } as const;
-
-// Backward compatibility - auto-generate IMAGE_COSTS from service definitions
-export const IMAGE_COSTS = Object.fromEntries(
-    Object.entries(IMAGE_SERVICES).map(([_name, service]) => [
-        service.modelId,
-        [...service.cost],
-    ]),
-) as ModelRegistry;

@@ -348,11 +348,3 @@ export const TEXT_SERVICES = {
         persona: false,
     },
 } as const;
-
-// Backward compatibility - auto-generate TEXT_COSTS from service definitions
-export const TEXT_COSTS = Object.fromEntries(
-    Object.entries(TEXT_SERVICES).map(([_name, service]) => [
-        service.modelId,
-        [...service.cost],
-    ]),
-) as ModelRegistry;

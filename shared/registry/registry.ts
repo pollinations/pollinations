@@ -1,6 +1,6 @@
 import { omit, safeRound } from "../utils";
-import { TEXT_COSTS, TEXT_SERVICES, DEFAULT_TEXT_MODEL } from "./text";
-import { IMAGE_COSTS, IMAGE_SERVICES, DEFAULT_IMAGE_MODEL } from "./image";
+import { TEXT_SERVICES, DEFAULT_TEXT_MODEL } from "./text";
+import { IMAGE_SERVICES, DEFAULT_IMAGE_MODEL } from "./image";
 import { EventType } from "./types";
 
 const PRECISION = 8;
@@ -49,16 +49,13 @@ export type ServiceDefinition<T extends ModelRegistry> = {
     cost: readonly CostDefinition[]; // Cost data embedded in service
 };
 
-export type ServiceMargins = {
-    [Key in string]: {
-        [Key in UsageType]?: number;
-    };
-};
-
-const MODELS = {
-    ...TEXT_COSTS,
-    ...IMAGE_COSTS,
-} as const satisfies ModelRegistry;
+// Build MODELS registry directly from services (modelId -> cost mapping)
+const MODELS = Object.fromEntries(
+    Object.values({ ...TEXT_SERVICES, ...IMAGE_SERVICES }).map((service) => [
+        service.modelId,
+        [...service.cost], // Spread to convert readonly array to mutable
+    ]),
+) satisfies ModelRegistry;
 
 const SERVICES = {
     ...TEXT_SERVICES,
@@ -203,13 +200,6 @@ export function getTextServices(): ServiceId[] {
 }
 
 /**
- * Get text service IDs
- */
-export function getImageServices(): ServiceId[] {
-    return Object.keys(IMAGE_SERVICES) as ServiceId[];
-}
-
-/**
  * Get service definition by ID
  */
 export function getServiceDefinition(
@@ -224,13 +214,6 @@ export function getServiceDefinition(
 export function getServiceAliases(serviceId: ServiceId): readonly string[] {
     const service = SERVICE_REGISTRY[serviceId];
     return service?.aliases || [];
-}
-
-/**
- * Get all model IDs
- */
-export function getModels(): ModelId[] {
-    return Object.keys(MODEL_REGISTRY) as ModelId[];
 }
 
 /**
@@ -314,38 +297,6 @@ export function calculatePrice(
     return {
         ...usagePrice,
         totalPrice,
-    };
-}
-
-/**
- * Calculate profit margins for a service
- */
-export function calculateMargins(serviceId: ServiceId): ServiceMargins {
-    const serviceDefinition = SERVICE_REGISTRY[serviceId];
-    const priceDefinition = getActivePriceDefinition(serviceId);
-    if (!priceDefinition)
-        throw new Error(
-            `Failed to find price definition for service: ${serviceId.toString()}`,
-        );
-    const modelId = serviceDefinition.modelId;
-    const costDefinition = getActiveCostDefinition(modelId);
-    if (!costDefinition)
-        throw new Error(
-            `Failed to find cost definition for model: ${modelId.toString()}`,
-        );
-    return {
-        [modelId]: Object.fromEntries(
-            Object.keys(omit(costDefinition, "date")).map((usageType) => {
-                const usageCost = costDefinition[usageType as UsageType];
-                const usagePrice = priceDefinition[usageType as UsageType];
-                if (!usageCost || !usagePrice) {
-                    throw new Error(
-                        `Failed to find usage cost or price for model: ${modelId.toString()}`,
-                    );
-                }
-                return [usageType, usagePrice - usageCost];
-            }),
-        ),
     };
 }
 

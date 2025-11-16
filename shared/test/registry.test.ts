@@ -21,10 +21,10 @@ test("calculateCost should return the correct costs", async () => {
     // Test with a real model - gpt-5-nano has known pricing
     const cost = calculateCost("gpt-5-nano-2025-08-07", usage);
     
-    // gpt-5-nano pricing: $0.06 per 1M prompt tokens, $0.44 per 1M completion tokens
+    // gpt-5-nano pricing: $0.05 per 1M prompt tokens, $0.4 per 1M completion tokens
     // Cost is returned in dollars (not micro-dollars)
-    expect(cost.promptTextTokens).toBe(0.06); // $0.06
-    expect(cost.completionTextTokens).toBe(0.44); // $0.44
+    expect(cost.promptTextTokens).toBe(0.05); // $0.05
+    expect(cost.completionTextTokens).toBe(0.4); // $0.4
 });
 
 test("calculatePrice should return the correct price", async () => {
@@ -36,12 +36,12 @@ test("calculatePrice should return the correct price", async () => {
     } satisfies TokenUsage;
     
     // Test with openai-fast which has pricing (gpt-5-nano-2025-08-07)
-    // gpt-5-nano pricing: $0.06 per 1M prompt tokens, $0.01 per 1M cached, $0.44 per 1M completion
+    // gpt-5-nano pricing: $0.05 per 1M prompt tokens, $0.005 per 1M cached, $0.4 per 1M completion
     const price = calculatePrice("openai-fast", usage);
-    expect(price.promptTextTokens).toBe(0.06);
-    expect(price.promptCachedTokens).toBe(0.010);
-    expect(price.completionTextTokens).toBe(0.44);
-    expect(price.totalPrice).toBe(0.51); // 0.06 + 0.01 + 0.44
+    expect(price.promptTextTokens).toBe(0.05);
+    expect(price.promptCachedTokens).toBe(0.005);
+    expect(price.completionTextTokens).toBe(0.4);
+    expect(price.totalPrice).toBe(0.455); // 0.05 + 0.005 + 0.4
 });
 
 test("Usage types with undefined cost or price should throw an error", async () => {

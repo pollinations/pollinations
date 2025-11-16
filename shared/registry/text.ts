@@ -164,6 +164,20 @@ export const TEXT_COSTS = {
             completionTextTokens: perMillion(5.0),
         },
     ],
+    "moonshotai/Kimi-K2-Thinking": [
+        {
+            date: PRICING_START_DATE,
+            promptTextTokens: perMillion(0.55),
+            completionTextTokens: perMillion(2.25),
+        },
+    ],
+    "zai-org/GLM-4.6": [
+        {
+            date: PRICING_START_DATE,
+            promptTextTokens: perMillion(0.4),
+            completionTextTokens: perMillion(1.75),
+        },
+    ],
 } as const satisfies ModelRegistry;
 export const TEXT_SERVICES = {
     "openai": {
@@ -272,5 +286,15 @@ export const TEXT_SERVICES = {
         aliases: ["sonar-reasoning"],
         modelId: "sonar-reasoning",
         provider: "perplexity",
+    },
+    "kimi-reasoning": {
+        aliases: ["kimi", "kimi-k2", "kimi-thinking"],
+        modelId: "moonshotai/Kimi-K2-Thinking",
+        provider: "intelligence-io",
+    },
+    "glm": {
+        aliases: ["glm-4", "glm-4.6"],
+        modelId: "zai-org/GLM-4.6",
+        provider: "intelligence-io",
     },
 } as const satisfies ServiceRegistry<typeof TEXT_COSTS>;

@@ -13,10 +13,7 @@ import { generateTextPortkey } from "./generateTextPortkey.js";
 import { setupFeedEndpoint, sendToFeedListeners } from "./feed.js";
 import { processRequestForAds } from "./ads/initRequestFilter.js";
 import { createStreamingAdWrapper } from "./ads/streamingAdWrapper.js";
-import {
-    getRequestData,
-    prepareModelsForOutput,
-} from "./requestUtils.js";
+import { getRequestData, prepareModelsForOutput } from "./requestUtils.js";
 
 // Import shared utilities
 import { getIp } from "../shared/extractFromRequest.js";
@@ -178,9 +175,7 @@ async function handleRequest(req, res, requestData) {
                 m.aliases?.includes(requestData.model),
         );
 
-        log(
-            `Model lookup: model=${requestData.model}, found=${!!model}`,
-        );
+        log(`Model lookup: model=${requestData.model}, found=${!!model}`);
 
         // All requests from enter.pollinations.ai - tier checks bypassed
         if (!model) {
@@ -875,9 +870,12 @@ async function sendAsOpenAIStream(res, completion, req = null) {
     res.end();
 }
 
-
 async function generateTextBasedOnModel(messages, options) {
-    const model = options.model || "openai-fast";
+    // Gateway must provide a valid model - no fallback
+    if (!options.model) {
+        throw new Error("Model parameter is required");
+    }
+    const model = options.model;
     log("Using model:", model, "with options:", JSON.stringify(options));
 
     try {

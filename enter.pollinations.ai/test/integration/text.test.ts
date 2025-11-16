@@ -46,8 +46,8 @@ const randomColor = () => {
 
 function testMessageContent() {
     return TEST_DISABLE_CACHE
-        ? `Whats a good name for this color: ${randomColor()}? Just give one name.`
-        : "Do you prefer 0, or 1? Just answer with 0 or 1.";
+        ? `Color ${randomColor()}? One word only.`
+        : "0 or 1?";
 }
 
 // Send a request to each text model without authentication
@@ -86,7 +86,7 @@ test.for(authenticatedTestCases())(
     "%s should respond with 200 when using authorization header",
     { timeout: 30000 },
     async ([serviceId, expectedStatus], { apiKey, mocks }) => {
-        mocks.enable("polar", "tinybird", "textService");
+        mocks.enable("polar", "tinybird");
         const response = await SELF.fetch(
             `http://localhost:3000/api/generate/v1/chat/completions`,
             {
@@ -115,7 +115,7 @@ test.for(authenticatedTestCases())(
     "%s should respond with 200 when streaming",
     { timeout: 30000 },
     async ([serviceId, expectedStatus], { apiKey, mocks }) => {
-        mocks.enable("polar", "tinybird", "textService");
+        mocks.enable("polar", "tinybird");
         const response = await SELF.fetch(
             `http://localhost:3000/api/generate/v1/chat/completions`,
             {
@@ -162,7 +162,7 @@ test.for(authenticatedTestCases())(
     "GET /text/:prompt with %s should return plain text",
     { timeout: 30000 },
     async ([serviceId, expectedStatus], { apiKey, mocks }) => {
-        mocks.enable("polar", "tinybird", "textService");
+        mocks.enable("polar", "tinybird");
         const response = await SELF.fetch(
             `http://localhost:3000/api/generate/text/${encodeURIComponent(testMessageContent())}?model=${serviceId}`,
             {
@@ -191,9 +191,9 @@ test(
     "GET /text/:prompt with openai-audio should return raw audio",
     { timeout: 30000 },
     async ({ apiKey, mocks }) => {
-        mocks.enable("polar", "tinybird", "textService");
+        mocks.enable("polar", "tinybird");
         const response = await SELF.fetch(
-            `http://localhost:3000/api/generate/text/hello?model=openai-audio`,
+            `http://localhost:3000/api/generate/text/hi?model=openai-audio`,
             {
                 method: "GET",
                 headers: {
@@ -219,7 +219,7 @@ test(
     "openai-audio with modalities should return audio output",
     { timeout: 30000 },
     async ({ apiKey, mocks }) => {
-        mocks.enable("polar", "tinybird", "textService");
+        mocks.enable("polar", "tinybird");
         const response = await SELF.fetch(
             `http://localhost:3000/api/generate/v1/chat/completions`,
             {
@@ -239,7 +239,7 @@ test(
                     messages: [
                         {
                             role: "user",
-                            content: "Say hello world",
+                            content: "Say hi",
                         },
                     ],
                 }),
@@ -277,11 +277,14 @@ test(
     "openai-audio with input_audio should transcribe audio",
     { timeout: 30000 },
     async ({ apiKey, mocks }) => {
-        mocks.enable("polar", "tinybird", "textService");
+        mocks.enable("polar", "tinybird");
 
-        // Sample WAV header (minimal valid WAV file)
-        const sampleAudioBase64 =
-            "UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA=";
+        // Fetch real speech audio from OpenAI sample and convert to base64
+        const audioResponse = await fetch(
+            "https://cdn.openai.com/API/docs/audio/alloy.wav",
+        );
+        const audioBuffer = await audioResponse.arrayBuffer();
+        const sampleAudioBase64 = Buffer.from(audioBuffer).toString("base64");
 
         const response = await SELF.fetch(
             `http://localhost:3000/api/generate/v1/chat/completions`,
@@ -305,7 +308,7 @@ test(
                             content: [
                                 {
                                     type: "text",
-                                    text: "What is in this audio?",
+                                    text: "What's in this?",
                                 },
                                 {
                                     type: "input_audio",

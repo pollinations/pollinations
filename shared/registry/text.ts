@@ -1,5 +1,5 @@
 import type { ModelRegistry } from "./registry";
-import { PRICING_START_DATE, perMillion } from "./price-helpers";
+import { COST_START_DATE, perMillion } from "./price-helpers";
 
 export const DEFAULT_TEXT_MODEL = "openai" as const;
 
@@ -10,7 +10,7 @@ export const TEXT_SERVICES = {
         provider: "azure-openai",
         cost: [
             {
-                date: PRICING_START_DATE,
+                date: COST_START_DATE,
                 promptTextTokens: perMillion(0.25),
                 promptCachedTokens: perMillion(0.025),
                 completionTextTokens: perMillion(2.0),
@@ -23,7 +23,7 @@ export const TEXT_SERVICES = {
         provider: "azure-openai",
         cost: [
             {
-                date: PRICING_START_DATE,
+                date: COST_START_DATE,
                 promptTextTokens: perMillion(0.05),
                 promptCachedTokens: perMillion(0.005),
                 completionTextTokens: perMillion(0.4),
@@ -36,7 +36,7 @@ export const TEXT_SERVICES = {
         provider: "azure-openai",
         cost: [
             {
-                date: PRICING_START_DATE,
+                date: COST_START_DATE,
                 promptTextTokens: perMillion(1.25),
                 promptCachedTokens: perMillion(0.13),
                 completionTextTokens: perMillion(10.0),
@@ -49,7 +49,7 @@ export const TEXT_SERVICES = {
         provider: "scaleway",
         cost: [
             {
-                date: PRICING_START_DATE,
+                date: COST_START_DATE,
                 promptTextTokens: perMillion(0.9),
                 completionTextTokens: perMillion(0.9),
             },
@@ -61,7 +61,7 @@ export const TEXT_SERVICES = {
         provider: "scaleway",
         cost: [
             {
-                date: PRICING_START_DATE,
+                date: COST_START_DATE,
                 promptTextTokens: perMillion(0.15),
                 completionTextTokens: perMillion(0.35),
             },
@@ -73,7 +73,7 @@ export const TEXT_SERVICES = {
         provider: "aws-bedrock",
         cost: [
             {
-                date: PRICING_START_DATE,
+                date: COST_START_DATE,
                 promptTextTokens: perMillion(0.22),
                 completionTextTokens: perMillion(0.22),
             },
@@ -91,7 +91,7 @@ export const TEXT_SERVICES = {
         provider: "azure-openai",
         cost: [
             {
-                date: PRICING_START_DATE,
+                date: COST_START_DATE,
                 promptTextTokens: perMillion(0.165),
                 completionTextTokens: perMillion(0.66),
                 promptAudioTokens: perMillion(11.0),
@@ -105,7 +105,7 @@ export const TEXT_SERVICES = {
         provider: "api-navy",
         cost: [
             {
-                date: PRICING_START_DATE,
+                date: COST_START_DATE,
                 promptTextTokens: perMillion(1.21),
                 promptCachedTokens: perMillion(0.31),
                 completionTextTokens: perMillion(4.84),
@@ -118,7 +118,7 @@ export const TEXT_SERVICES = {
         provider: "vertex-ai",
         cost: [
             {
-                date: PRICING_START_DATE,
+                date: COST_START_DATE,
                 promptTextTokens: perMillion(0.1),
                 promptCachedTokens: perMillion(0.01),
                 completionTextTokens: perMillion(0.4),
@@ -136,7 +136,7 @@ export const TEXT_SERVICES = {
         provider: "azure",
         cost: [
             {
-                date: PRICING_START_DATE,
+                date: COST_START_DATE,
                 promptTextTokens: perMillion(1.25),
                 completionTextTokens: perMillion(5.0),
             },
@@ -148,7 +148,7 @@ export const TEXT_SERVICES = {
         provider: "azure",
         cost: [
             {
-                date: PRICING_START_DATE,
+                date: COST_START_DATE,
                 promptTextTokens: perMillion(0.2),
                 completionTextTokens: perMillion(0.5),
             },
@@ -160,7 +160,7 @@ export const TEXT_SERVICES = {
         provider: "vertex-ai",
         cost: [
             {
-                date: PRICING_START_DATE,
+                date: COST_START_DATE,
                 promptTextTokens: perMillion(0.1),
                 promptCachedTokens: perMillion(0.01),
                 completionTextTokens: perMillion(0.4),
@@ -173,7 +173,7 @@ export const TEXT_SERVICES = {
         provider: "aws-bedrock",
         cost: [
             {
-                date: PRICING_START_DATE,
+                date: COST_START_DATE,
                 promptTextTokens: perMillion(0.8),
                 completionTextTokens: perMillion(4.0),
             },
@@ -185,7 +185,7 @@ export const TEXT_SERVICES = {
         provider: "azure-openai",
         cost: [
             {
-                date: PRICING_START_DATE,
+                date: COST_START_DATE,
                 promptTextTokens: perMillion(2.2),
                 promptCachedTokens: perMillion(0.55),
                 completionTextTokens: perMillion(8.8),
@@ -204,7 +204,7 @@ export const TEXT_SERVICES = {
         provider: "aws-bedrock",
         cost: [
             {
-                date: PRICING_START_DATE,
+                date: COST_START_DATE,
                 promptTextTokens: perMillion(1.0),
                 completionTextTokens: perMillion(5.0),
             },
@@ -216,7 +216,7 @@ export const TEXT_SERVICES = {
         provider: "aws-bedrock",
         cost: [
             {
-                date: PRICING_START_DATE,
+                date: COST_START_DATE,
                 promptTextTokens: perMillion(3.0),
                 completionTextTokens: perMillion(15.0),
             },
@@ -228,7 +228,7 @@ export const TEXT_SERVICES = {
         provider: "perplexity",
         cost: [
             {
-                date: PRICING_START_DATE,
+                date: COST_START_DATE,
                 promptTextTokens: perMillion(1.0),
                 completionTextTokens: perMillion(1.0),
             },
@@ -240,7 +240,7 @@ export const TEXT_SERVICES = {
         provider: "perplexity",
         cost: [
             {
-                date: PRICING_START_DATE,
+                date: COST_START_DATE,
                 promptTextTokens: perMillion(1.0),
                 completionTextTokens: perMillion(5.0),
             },

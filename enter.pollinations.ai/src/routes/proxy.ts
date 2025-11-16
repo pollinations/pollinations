@@ -108,7 +108,7 @@ export const proxyRoutes = new Hono<Env>()
         describeRoute({
             tags: ["Image Generation"],
             description:
-                "Get available image models with pricing and metadata.",
+                "Get a list of available image generation models with pricing, capabilities, and metadata. Use this endpoint to discover which models are available and their costs before making generation requests. Response includes `modelId` (underlying model version), pricing per image, and supported modalities.",
             responses: {
                 200: {
                     description: "Success",
@@ -142,7 +142,8 @@ export const proxyRoutes = new Hono<Env>()
         "/text/models",
         describeRoute({
             tags: ["Text Generation"],
-            description: "Get available text models with pricing and metadata.",
+            description:
+                "Get a list of available text generation models with pricing, capabilities, and metadata. Use this endpoint to discover which models are available and their costs before making generation requests. Response includes `modelId` (underlying model version), token pricing, supported modalities (text, image, audio), and capabilities (tools, reasoning).",
             responses: {
                 200: {
                     description: "Success",

@@ -8,12 +8,15 @@ import path from "path";
 import dotenv from "dotenv";
 import { Transform } from "stream";
 import { availableModels } from "./availableModels.js";
-import { getProviderByModelId } from "../shared/registry/registry.js";
+import {
+    getProviderByModelId,
+    getTextModelsInfo,
+} from "../shared/registry/registry.js";
 import { generateTextPortkey } from "./generateTextPortkey.js";
 import { setupFeedEndpoint, sendToFeedListeners } from "./feed.js";
 import { processRequestForAds } from "./ads/initRequestFilter.js";
 import { createStreamingAdWrapper } from "./ads/streamingAdWrapper.js";
-import { getRequestData, prepareModelsForOutput } from "./requestUtils.js";
+import { getRequestData } from "./requestUtils.js";
 
 // Import shared utilities
 import { getIp } from "../shared/extractFromRequest.js";
@@ -142,8 +145,9 @@ const QUEUE_CONFIG = {
 
 // GET /models request handler
 app.get("/models", (req, res) => {
-    // Use prepareModelsForOutput to remove pricing information and apply sorting
-    res.json(prepareModelsForOutput(availableModels));
+    // Get enriched model info from registry (includes pricing, metadata, provider)
+    const models = getTextModelsInfo().filter((model) => !model.hidden); // Filter out hidden models
+    res.json(models);
 });
 
 setupFeedEndpoint(app);

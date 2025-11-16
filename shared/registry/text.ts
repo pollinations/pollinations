@@ -11,6 +11,7 @@ export const TEXT_COSTS = {
     "gpt-5-mini-2025-08-07": [
         {
             date: PRICING_START_DATE,
+            provider: "azure-openai",
             promptTextTokens: perMillion(0.25),
             promptCachedTokens: perMillion(0.025),
             completionTextTokens: perMillion(2.0),
@@ -19,6 +20,7 @@ export const TEXT_COSTS = {
     "gpt-5-nano-2025-08-07": [
         {
             date: PRICING_START_DATE,
+            provider: "azure-openai",
             promptTextTokens: perMillion(0.05),
             promptCachedTokens: perMillion(0.005),
             completionTextTokens: perMillion(0.4),
@@ -27,6 +29,7 @@ export const TEXT_COSTS = {
     "gpt-5-chat-latest": [
         {
             date: PRICING_START_DATE,
+            provider: "azure-openai",
             promptTextTokens: perMillion(1.25),
             promptCachedTokens: perMillion(0.13),
             completionTextTokens: perMillion(10.0),
@@ -35,6 +38,7 @@ export const TEXT_COSTS = {
     "gpt-4.1-nano-2025-04-14": [
         {
             date: PRICING_START_DATE,
+            provider: "azure-openai",
             promptTextTokens: perMillion(0.11),
             promptCachedTokens: perMillion(0.03),
             completionTextTokens: perMillion(0.44),
@@ -43,6 +47,7 @@ export const TEXT_COSTS = {
     "gpt-4.1-2025-04-14": [
         {
             date: PRICING_START_DATE,
+            provider: "azure-openai",
             promptTextTokens: perMillion(2.2),
             promptCachedTokens: perMillion(0.55),
             completionTextTokens: perMillion(8.8),
@@ -51,6 +56,7 @@ export const TEXT_COSTS = {
     "gpt-4o-mini-audio-preview-2024-12-17": [
         {
             date: PRICING_START_DATE,
+            provider: "azure-openai",
             promptTextTokens: perMillion(0.165),
             completionTextTokens: perMillion(0.66),
             promptAudioTokens: perMillion(11.0),
@@ -60,6 +66,7 @@ export const TEXT_COSTS = {
     "qwen2.5-coder-32b-instruct": [
         {
             date: PRICING_START_DATE,
+            provider: "scaleway",
             promptTextTokens: perMillion(0.9),
             completionTextTokens: perMillion(0.9),
         },
@@ -67,6 +74,7 @@ export const TEXT_COSTS = {
     "mistral-small-3.1-24b-instruct-2503": [
         {
             date: PRICING_START_DATE,
+            provider: "scaleway",
             promptTextTokens: perMillion(0.15),
             completionTextTokens: perMillion(0.35),
         },
@@ -74,6 +82,7 @@ export const TEXT_COSTS = {
     "mistral-small-3.2-24b-instruct-2506": [
         {
             date: PRICING_START_DATE,
+            provider: "scaleway",
             promptTextTokens: perMillion(0.15),
             completionTextTokens: perMillion(0.35),
         },
@@ -81,6 +90,7 @@ export const TEXT_COSTS = {
     "mistral-nemo-instruct-2407": [
         {
             date: PRICING_START_DATE,
+            provider: "scaleway",
             promptTextTokens: perMillion(0.14),
             completionTextTokens: perMillion(0.42),
         },
@@ -88,6 +98,7 @@ export const TEXT_COSTS = {
     "us.meta.llama3-1-8b-instruct-v1:0": [
         {
             date: PRICING_START_DATE,
+            provider: "aws-bedrock",
             promptTextTokens: perMillion(0.22),
             completionTextTokens: perMillion(0.22),
         },
@@ -95,6 +106,7 @@ export const TEXT_COSTS = {
     "us.anthropic.claude-3-5-haiku-20241022-v1:0": [
         {
             date: PRICING_START_DATE,
+            provider: "aws-bedrock",
             promptTextTokens: perMillion(0.8),
             completionTextTokens: perMillion(4.0),
         },
@@ -102,6 +114,7 @@ export const TEXT_COSTS = {
     "openai/o4-mini": [
         {
             date: PRICING_START_DATE,
+            provider: "api-navy",
             promptTextTokens: perMillion(1.21),
             promptCachedTokens: perMillion(0.31),
             completionTextTokens: perMillion(4.84),
@@ -110,6 +123,7 @@ export const TEXT_COSTS = {
     "gemini-2.5-flash-lite": [
         {
             date: PRICING_START_DATE,
+            provider: "vertex-ai",
             promptTextTokens: perMillion(0.1),
             promptCachedTokens: perMillion(0.01),
             completionTextTokens: perMillion(0.4),
@@ -118,6 +132,7 @@ export const TEXT_COSTS = {
     "myceli-deepseek-v3.1": [
         {
             date: PRICING_START_DATE,
+            provider: "azure",
             promptTextTokens: perMillion(1.25),
             completionTextTokens: perMillion(5.0),
         },
@@ -125,6 +140,7 @@ export const TEXT_COSTS = {
     "us.anthropic.claude-haiku-4-5-20251001-v1:0": [
         {
             date: PRICING_START_DATE,
+            provider: "aws-bedrock",
             promptTextTokens: perMillion(1.0),
             completionTextTokens: perMillion(5.0),
         },
@@ -132,6 +148,7 @@ export const TEXT_COSTS = {
     "global.anthropic.claude-haiku-4-5-20251001-v1:0": [
         {
             date: PRICING_START_DATE,
+            provider: "aws-bedrock",
             promptTextTokens: perMillion(1.0),
             completionTextTokens: perMillion(5.0),
         },
@@ -139,6 +156,7 @@ export const TEXT_COSTS = {
     "us.anthropic.claude-sonnet-4-5-20250929-v1:0": [
         {
             date: PRICING_START_DATE,
+            provider: "aws-bedrock",
             promptTextTokens: perMillion(3.0),
             completionTextTokens: perMillion(15.0),
         },
@@ -146,6 +164,7 @@ export const TEXT_COSTS = {
     "myceli-grok-4-fast": [
         {
             date: PRICING_START_DATE,
+            provider: "azure",
             promptTextTokens: perMillion(0.2),
             completionTextTokens: perMillion(0.5),
         },
@@ -153,6 +172,7 @@ export const TEXT_COSTS = {
     "sonar": [
         {
             date: PRICING_START_DATE,
+            provider: "perplexity",
             promptTextTokens: perMillion(1.0),
             completionTextTokens: perMillion(1.0),
         },
@@ -160,6 +180,7 @@ export const TEXT_COSTS = {
     "sonar-reasoning": [
         {
             date: PRICING_START_DATE,
+            provider: "perplexity",
             promptTextTokens: perMillion(1.0),
             completionTextTokens: perMillion(5.0),
         },
@@ -169,32 +190,59 @@ export const TEXT_SERVICES = {
     "openai": {
         aliases: ["gpt-5-mini"],
         modelId: "gpt-5-mini-2025-08-07",
-        provider: "azure-openai",
+        description: "OpenAI GPT-5 Nano",
+        input_modalities: ["text", "image"],
+        output_modalities: ["text"],
+        tools: true,
+        vision: true,
+        community: false,
     },
     "openai-fast": {
         aliases: ["gpt-5-nano"],
         modelId: "gpt-5-nano-2025-08-07",
-        provider: "azure-openai",
+        description: "OpenAI GPT-5 Nano",
+        input_modalities: ["text", "image"],
+        output_modalities: ["text"],
+        tools: true,
+        vision: true,
+        community: false,
     },
     "openai-large": {
         aliases: ["gpt-5-chat"],
         modelId: "gpt-5-chat-latest",
-        provider: "azure-openai",
+        description: "OpenAI GPT-4.1",
+        input_modalities: ["text", "image"],
+        output_modalities: ["text"],
+        tools: true,
+        vision: true,
+        community: false,
     },
     "qwen-coder": {
         aliases: ["qwen2.5-coder-32b-instruct"],
         modelId: "qwen2.5-coder-32b-instruct",
-        provider: "scaleway",
+        description: "Qwen 2.5 Coder 32B",
+        input_modalities: ["text"],
+        output_modalities: ["text"],
+        tools: true,
+        community: false,
     },
     "mistral": {
         aliases: ["mistral-small"],
         modelId: "mistral-small-3.2-24b-instruct-2506",
-        provider: "scaleway",
+        description: "Mistral Small 3.2 24B",
+        input_modalities: ["text"],
+        output_modalities: ["text"],
+        tools: true,
+        community: false,
     },
     "mistral-fast": {
         aliases: ["llama-3.1-8b", "llama-fast"],
         modelId: "us.meta.llama3-1-8b-instruct-v1:0",
-        provider: "aws-bedrock",
+        description: "Llama 3.1 8B (Fast)",
+        input_modalities: ["text"],
+        output_modalities: ["text"],
+        tools: true,
+        community: false,
     },
     // Temporarily disabled
     // "naughty": {
@@ -205,17 +253,49 @@ export const TEXT_SERVICES = {
     "openai-audio": {
         aliases: ["gpt-4o-mini-audio-preview"],
         modelId: "gpt-4o-mini-audio-preview-2024-12-17",
-        provider: "azure-openai",
+        description: "OpenAI GPT-4o Mini Audio Preview",
+        voices: [
+            "alloy",
+            "echo",
+            "fable",
+            "onyx",
+            "nova",
+            "shimmer",
+            "coral",
+            "verse",
+            "ballad",
+            "ash",
+            "sage",
+            "amuch",
+            "dan",
+        ],
+        input_modalities: ["text", "image", "audio"],
+        output_modalities: ["audio", "text"],
+        tools: true,
+        audio: true,
+        vision: true,
+        community: false,
     },
     "openai-reasoning": {
         aliases: ["o4-mini"],
         modelId: "openai/o4-mini",
-        provider: "api-navy",
+        description: "OpenAI o4 Mini",
+        input_modalities: ["text", "image"],
+        output_modalities: ["text"],
+        tools: true,
+        reasoning: true,
+        vision: true,
+        community: false,
     },
     "gemini": {
         aliases: ["gemini-2.5-flash-lite"],
         modelId: "gemini-2.5-flash-lite",
-        provider: "vertex-ai",
+        description: "Gemini 2.5 Flash Lite",
+        input_modalities: ["text", "image"],
+        output_modalities: ["text"],
+        tools: true,
+        vision: true,
+        community: false,
     },
     "deepseek": {
         aliases: [
@@ -225,27 +305,49 @@ export const TEXT_SERVICES = {
             "deepseek-r1-0528",
         ],
         modelId: "myceli-deepseek-v3.1",
-        provider: "azure",
+        description: "DeepSeek V3.1",
+        input_modalities: ["text"],
+        output_modalities: ["text"],
+        tools: true,
+        reasoning: true,
+        community: false,
     },
     "grok": {
         aliases: ["grok-fast", "grok-4", "grok-4-fast"],
         modelId: "myceli-grok-4-fast",
-        provider: "azure",
+        description: "Grok 4 Fast",
+        input_modalities: ["text"],
+        output_modalities: ["text"],
+        tools: true,
+        community: false,
     },
     "gemini-search": {
         aliases: ["searchgpt", "geminisearch"],
         modelId: "gemini-2.5-flash-lite",
-        provider: "vertex-ai",
+        description: "Gemini 2.5 Flash Lite with Google Search",
+        input_modalities: ["text", "image"],
+        output_modalities: ["text"],
+        tools: true,
+        vision: true,
+        community: false,
     },
     "chickytutor": {
         aliases: [],
         modelId: "us.anthropic.claude-3-5-haiku-20241022-v1:0",
-        provider: "aws-bedrock",
+        description: "ChickyTutor AI Language Tutor - (chickytutor.com)",
+        input_modalities: ["text"],
+        output_modalities: ["text"],
+        tools: true,
+        community: true,
     },
     "midijourney": {
         aliases: [],
         modelId: "gpt-4.1-2025-04-14",
-        provider: "azure-openai",
+        description: "MIDIjourney",
+        input_modalities: ["text"],
+        output_modalities: ["text"],
+        tools: true,
+        community: true,
     },
     // Temporarily disabled
     // "evil": {
@@ -256,21 +358,39 @@ export const TEXT_SERVICES = {
     "claude": {
         aliases: ["claudyclaude"],
         modelId: "us.anthropic.claude-haiku-4-5-20251001-v1:0",
-        provider: "aws-bedrock",
+        description: "Claude Haiku 4.5",
+        input_modalities: ["text", "image"],
+        output_modalities: ["text"],
+        tools: true,
+        vision: true,
     },
     "claude-large": {
         aliases: ["sonnet", "claude-4.5", "claude-sonnet-4.5", "claude-sonnet"],
         modelId: "us.anthropic.claude-sonnet-4-5-20250929-v1:0",
-        provider: "aws-bedrock",
+        description: "Claude Sonnet 4.5",
+        input_modalities: ["text", "image"],
+        output_modalities: ["text"],
+        tools: true,
+        vision: true,
+        community: false,
     },
     "perplexity-fast": {
         aliases: ["sonar"],
         modelId: "sonar",
-        provider: "perplexity",
+        description: "Perplexity Sonar - Fast & Affordable",
+        input_modalities: ["text"],
+        output_modalities: ["text"],
+        tools: true,
+        community: false,
     },
     "perplexity-reasoning": {
         aliases: ["sonar-reasoning"],
         modelId: "sonar-reasoning",
-        provider: "perplexity",
+        description: "Perplexity Sonar Reasoning - Advanced Reasoning",
+        input_modalities: ["text"],
+        output_modalities: ["text"],
+        tools: true,
+        reasoning: true,
+        community: false,
     },
 } as const satisfies ServiceRegistry<typeof TEXT_COSTS>;

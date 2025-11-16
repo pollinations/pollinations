@@ -1,7 +1,7 @@
 import { omit, safeRound } from "../utils";
 import { TEXT_COSTS, TEXT_SERVICES, DEFAULT_TEXT_MODEL } from "./text";
 import { IMAGE_COSTS, IMAGE_SERVICES, DEFAULT_IMAGE_MODEL } from "./image";
-import { EventType } from "./types";
+import type { EventType } from "./types";
 
 const PRECISION = 8;
 
@@ -33,10 +33,26 @@ export type UsagePrice = DollarConvertedUsage & {
 
 export type UsageConversionDefinition = {
     date: number;
+    provider?: string; // Provider identifier (e.g., "azure-openai", "aws-bedrock")
 } & { [K in UsageType]?: number };
 
 export type CostDefinition = UsageConversionDefinition;
 export type PriceDefinition = UsageConversionDefinition;
+
+/** User-facing service metadata */
+export interface ServiceMetadata {
+    description?: string;
+    input_modalities?: string[];
+    output_modalities?: string[];
+    tools?: boolean;
+    reasoning?: boolean;
+    vision?: boolean;
+    audio?: boolean;
+    context_window?: number;
+    voices?: string[];
+    community?: boolean;
+    hidden?: boolean;
+}
 
 export type ModelDefinition = CostDefinition[];
 
@@ -45,8 +61,7 @@ export type ModelRegistry = Record<string, ModelDefinition>;
 export type ServiceDefinition<T extends ModelRegistry> = {
     aliases: string[];
     modelId: keyof T;
-    provider?: string; // Optional provider identifier (e.g., "azure-openai", "aws-bedrock")
-};
+} & Partial<ServiceMetadata>; // Add user-facing metadata
 
 export type ServiceRegistry<T extends ModelRegistry> = Record<
     string,
@@ -200,7 +215,6 @@ export function isValidService(
 ): serviceId is ServiceId {
     return !!SERVICE_REGISTRY[serviceId];
 }
-
 
 /**
  * Get all service IDs
@@ -364,17 +378,105 @@ export function calculateMargins(serviceId: ServiceId): ServiceMargins {
 }
 
 /**
- * Get provider for a model ID by looking it up in the combined services registry
+ * Get provider for a model ID from cost definitions
  * Works for both text and image models
  * @param modelId - The provider model ID (e.g., "gpt-5-nano-2025-08-07", "flux")
- * @returns Provider name or null if not found
+ * @returns Provider name or "unknown" if not found
  */
-export function getProviderByModelId(modelId: string): string | null {
-    // Search through all services to find one that uses this modelId
-    for (const service of Object.values(SERVICES)) {
-        if (service.modelId === modelId) {
-            return service.provider || null;
-        }
+export function getProviderByModelId(modelId: string): string {
+    const costDefinition = getActiveCostDefinition(modelId as ModelId);
+    if (!costDefinition) {
+        return "unknown";
     }
-    return null;
+    return costDefinition.provider || "unknown";
+}
+
+/**
+ * Enriched model information for API exposure
+ */
+export interface ModelInfo {
+    id: string;
+    aliases: string[];
+    modelId: string;
+    provider: string;
+    pricing: {
+        input_token_price?: number;
+        output_token_price?: number;
+        cached_token_price?: number;
+        image_price?: number;
+        audio_input_price?: number;
+        audio_output_price?: number;
+        currency: "USD";
+    };
+    // User-facing metadata from ServiceDefinition
+    description?: string;
+    input_modalities?: string[];
+    output_modalities?: string[];
+    tools?: boolean;
+    reasoning?: boolean;
+    vision?: boolean;
+    audio?: boolean;
+    context_window?: number;
+    voices?: string[];
+    community?: boolean;
+    hidden?: boolean;
+}
+
+/**
+ * Get enriched model information for a service
+ * Combines pricing from costs with metadata from service definition
+ */
+export function getModelInfo(serviceId: ServiceId): ModelInfo {
+    const service = SERVICE_REGISTRY[serviceId];
+    const priceDefinition = getActivePriceDefinition(serviceId);
+    const modelId = service.modelId;
+
+    if (!priceDefinition) {
+        throw new Error(`No price definition found for service: ${serviceId}`);
+    }
+
+    // Get provider from cost definition
+    const provider = getProviderByModelId(modelId as string);
+
+    return {
+        id: serviceId as string,
+        aliases: service.aliases,
+        modelId: modelId as string,
+        provider,
+        pricing: {
+            input_token_price: priceDefinition.promptTextTokens,
+            output_token_price: priceDefinition.completionTextTokens,
+            cached_token_price: priceDefinition.promptCachedTokens,
+            image_price: priceDefinition.completionImageTokens,
+            audio_input_price: priceDefinition.promptAudioTokens,
+            audio_output_price: priceDefinition.completionAudioTokens,
+            currency: "USD",
+        },
+        // User-facing metadata from service definition
+        description: service.description,
+        input_modalities: service.input_modalities,
+        output_modalities: service.output_modalities,
+        tools: service.tools,
+        reasoning: service.reasoning,
+        vision: service.vision,
+        audio: service.audio,
+        context_window: service.context_window,
+        voices: service.voices,
+        community: service.community,
+        hidden: service.hidden,
+    };
+}
+
+/**
+ * Get all text models with enriched information
+ */
+export function getTextModelsInfo(): ModelInfo[] {
+    return getTextServices().map(getModelInfo);
+}
+
+/**
+ * Get all image models with enriched information
+ */
+export function getImageModelsInfo(): ModelInfo[] {
+    return getImageServices().map(getModelInfo);
 }

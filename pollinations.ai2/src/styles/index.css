@@ -20,6 +20,11 @@
     box-sizing: border-box;
 }
 
+body,
+html {
+    background-color: #c7d4d6cc; /* offwhite/80 */
+}
+
 :root {
     /* Color system from original site */
     --color-lime: #ecf874;

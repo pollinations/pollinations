@@ -14,7 +14,7 @@ function Layout() {
         <div className="relative min-h-screen bg-offwhite/80">
             {/* Floating Transparent Header */}
             <header className="fixed top-0 left-0 right-0 z-50">
-                <div className="max-w-screen-xl mx-auto px-3 py-3 md:px-6 md:py-4">
+                <div className="max-w-screen-xl mx-auto p-3 md:p-4">
                     <div className="flex items-center gap-2 md:gap-4">
                         {/* Brutalist Tab Navigation - Scrollable on mobile */}
                         <nav className="flex-1 overflow-x-auto scrollbar-hide">
@@ -83,14 +83,14 @@ function Layout() {
             </header>
 
             {/* Main Content - Full Bleed */}
-            <main className="w-full min-h-screen">
+            <main className="w-full min-h-screen pt-24 md:pt-28 pb-20 md:pb-24">
                 <Outlet />
             </main>
 
             {/* Floating Transparent Footer */}
             <footer className="fixed bottom-0 left-0 right-0 z-40">
-                <div className="max-w-screen-xl mx-auto px-3 py-2 md:p-4 text-center">
-                    <p className="font-body text-xs md:text-sm text-offblack/60">
+                <div className="max-w-screen-xl mx-auto p-2 md:p-3 text-center">
+                    <p className="font-body text-xs md:text-sm text-offblack/50">
                         © 2024 Pollinations.AI - Free & Open Source
                     </p>
                     {/* Social icons visible on mobile footer */}

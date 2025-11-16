@@ -196,8 +196,8 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                         <span className="font-semibold">
                             🌐 Publishable keys:
                         </span>{" "}
-                        Beta feature - still working out bugs. For stable
-                        production, use secret keys.
+                        Beta - actively improving stability. For production
+                        apps, we recommend secret keys.
                     </div>
                 )}
             </div>

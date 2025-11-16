@@ -130,7 +130,7 @@ export const proxyRoutes = new Hono<Env>()
         }),
         async (c) => {
             try {
-                const models = getImageModelsInfo().filter((m) => !m.hidden);
+                const models = getImageModelsInfo();
                 return c.json(models);
             } catch (error) {
                 throw new HTTPException(500, {
@@ -164,7 +164,7 @@ export const proxyRoutes = new Hono<Env>()
         }),
         async (c) => {
             try {
-                const models = getTextModelsInfo().filter((m) => !m.hidden);
+                const models = getTextModelsInfo();
                 return c.json(models);
             } catch (error) {
                 throw new HTTPException(500, {

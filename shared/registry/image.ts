@@ -29,7 +29,7 @@ export const IMAGE_SERVICES = {
             },
         ],
         description: "Kontext - Context-aware image generation",
-        input_modalities: ["text"],
+        input_modalities: ["text", "image"],
         output_modalities: ["image"],
     },
     "turbo": {
@@ -62,7 +62,6 @@ export const IMAGE_SERVICES = {
         description: "NanoBanana - Gemini 2.5 Flash Image (currently disabled)",
         input_modalities: ["text", "image"],
         output_modalities: ["image"],
-        hidden: true,
     },
     seedream: {
         aliases: [],
@@ -76,7 +75,7 @@ export const IMAGE_SERVICES = {
             },
         ],
         description: "Seedream 4.0 - ByteDance ARK",
-        input_modalities: ["text"],
+        input_modalities: ["text", "image"],
         output_modalities: ["image"],
     },
     "gptimage": {

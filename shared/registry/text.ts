@@ -20,7 +20,6 @@ export const TEXT_SERVICES = {
         input_modalities: ["text", "image"],
         output_modalities: ["text"],
         tools: true,
-        vision: true,
         persona: false,
     },
     "openai-fast": {
@@ -39,7 +38,6 @@ export const TEXT_SERVICES = {
         input_modalities: ["text", "image"],
         output_modalities: ["text"],
         tools: true,
-        vision: true,
         persona: false,
     },
     "openai-large": {
@@ -58,7 +56,6 @@ export const TEXT_SERVICES = {
         input_modalities: ["text", "image"],
         output_modalities: ["text"],
         tools: true,
-        vision: true,
         persona: false,
     },
     "qwen-coder": {
@@ -145,7 +142,6 @@ export const TEXT_SERVICES = {
         output_modalities: ["audio", "text"],
         tools: true,
         audio: true,
-        vision: true,
         persona: false,
     },
     "openai-reasoning": {
@@ -165,7 +161,6 @@ export const TEXT_SERVICES = {
         output_modalities: ["text"],
         tools: true,
         reasoning: true,
-        vision: true,
         persona: false,
     },
     "gemini": {
@@ -184,7 +179,6 @@ export const TEXT_SERVICES = {
         input_modalities: ["text", "image"],
         output_modalities: ["text"],
         tools: true,
-        vision: true,
         persona: false,
     },
     "deepseek": {
@@ -238,7 +232,6 @@ export const TEXT_SERVICES = {
         input_modalities: ["text", "image"],
         output_modalities: ["text"],
         tools: true,
-        vision: true,
         persona: false,
     },
     "chickytutor": {
@@ -291,7 +284,6 @@ export const TEXT_SERVICES = {
         input_modalities: ["text", "image"],
         output_modalities: ["text"],
         tools: true,
-        vision: true,
         persona: false,
     },
     "claude-large": {
@@ -309,7 +301,6 @@ export const TEXT_SERVICES = {
         input_modalities: ["text", "image"],
         output_modalities: ["text"],
         tools: true,
-        vision: true,
         persona: false,
     },
     "perplexity-fast": {

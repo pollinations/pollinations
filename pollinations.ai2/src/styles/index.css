@@ -1,0 +1,80 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Hide scrollbar but keep functionality */
+@layer utilities {
+    .scrollbar-hide {
+        -ms-overflow-style: none;
+        scrollbar-width: none;
+    }
+    .scrollbar-hide::-webkit-scrollbar {
+        display: none;
+    }
+}
+
+/* Reset and base styles */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+:root {
+    /* Color system from original site */
+    --color-lime: #ecf874;
+    --color-offwhite: #c7d4d6;
+    --color-offblack: #110518;
+    --color-offblack-2: #181a2c;
+    --color-gray-1: #b3b3b3;
+    --color-gray-2: #8a8a8a;
+    --color-special: rgb(191, 64, 64);
+
+    /* Font families */
+    --font-title: "Maven Pro", sans-serif;
+    --font-headline: "Mako", sans-serif;
+    --font-body: "Duru Sans", sans-serif;
+}
+
+body {
+    margin: 0;
+    font-family: var(--font-body);
+    background-color: var(--color-offblack);
+    color: var(--color-offwhite);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    overflow-x: hidden;
+}
+
+#root {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Typography */
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+    font-family: var(--font-title);
+    font-weight: 700;
+}
+
+/* Remove focus outline for mouse users, keep for keyboard */
+:focus:not(:focus-visible) {
+    outline: none;
+}
+
+:focus-visible {
+    outline: 2px solid var(--color-lime);
+    outline-offset: 2px;
+}
+
+/* Links */
+a {
+    color: inherit;
+    text-decoration: none;
+}

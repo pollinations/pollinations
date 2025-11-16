@@ -189,6 +189,17 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                         </div>
                     </div>
                 ) : null}
+                {apiKeys.some(
+                    (k) => k.metadata?.["keyType"] === "publishable",
+                ) && (
+                    <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-lg text-xs text-blue-900">
+                        <span className="font-semibold">
+                            🌐 Publishable keys:
+                        </span>{" "}
+                        Beta feature - still working out bugs. For stable
+                        production, use secret keys.
+                    </div>
+                )}
             </div>
             <Dialog.Root
                 open={!!deleteId}

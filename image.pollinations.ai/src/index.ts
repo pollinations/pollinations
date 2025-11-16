@@ -525,6 +525,28 @@ const server = http.createServer((req, res) => {
         return;
     }
 
+    if (pathname === "/models") {
+        res.writeHead(410, {
+            "Content-Type": "application/json",
+            "Cache-Control":
+                "no-store, no-cache, must-revalidate, proxy-revalidate",
+            Pragma: "no-cache",
+            Expires: "0",
+        });
+        res.end(
+            JSON.stringify({
+                error: "Endpoint moved",
+                message:
+                    "The /models endpoint has been moved to the API gateway. Please use: https://enter.pollinations.ai/api/generate/image/models",
+                deprecated_endpoint: `${req.headers["x-forwarded-proto"] || "http"}://${req.headers.host}/models`,
+                new_endpoint:
+                    "https://enter.pollinations.ai/api/generate/image/models",
+                documentation: "https://enter.pollinations.ai/api/docs",
+            }),
+        );
+        return;
+    }
+
     if (pathname === "/about") {
         res.writeHead(200, {
             "Content-Type": "application/json",

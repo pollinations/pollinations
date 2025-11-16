@@ -139,6 +139,18 @@ const QUEUE_CONFIG = {
 
 // Using getIp from shared auth-utils.js
 
+// Deprecated /models endpoint - moved to gateway
+app.get("/models", (req, res) => {
+    res.status(410).json({
+        error: "Endpoint moved",
+        message:
+            "The /models endpoint has been moved to the API gateway. Please use: https://enter.pollinations.ai/api/generate/text/models",
+        deprecated_endpoint: `${req.protocol}://${req.get("host")}/models`,
+        new_endpoint: "https://enter.pollinations.ai/api/generate/text/models",
+        documentation: "https://enter.pollinations.ai/api/docs",
+    });
+});
+
 setupFeedEndpoint(app);
 
 // Helper function to handle both GET and POST requests

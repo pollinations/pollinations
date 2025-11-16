@@ -25,6 +25,7 @@ import {
 } from "@/error.ts";
 import { GenerateImageRequestQueryParamsSchema } from "@/schemas/image.ts";
 import { z } from "zod";
+import { HTTPException } from "hono/http-exception";
 import { DEFAULT_TEXT_MODEL } from "@shared/registry/text.ts";
 import {
     getTextModelsInfo,
@@ -128,8 +129,15 @@ export const proxyRoutes = new Hono<Env>()
             },
         }),
         async (c) => {
-            const models = getImageModelsInfo().filter((m) => !m.hidden);
-            return c.json(models);
+            try {
+                const models = getImageModelsInfo().filter((m) => !m.hidden);
+                return c.json(models);
+            } catch (error) {
+                throw new HTTPException(500, {
+                    message: "Failed to load image models",
+                    cause: error,
+                });
+            }
         },
     )
     .get(
@@ -155,8 +163,15 @@ export const proxyRoutes = new Hono<Env>()
             },
         }),
         async (c) => {
-            const models = getTextModelsInfo().filter((m) => !m.hidden);
-            return c.json(models);
+            try {
+                const models = getTextModelsInfo().filter((m) => !m.hidden);
+                return c.json(models);
+            } catch (error) {
+                throw new HTTPException(500, {
+                    message: "Failed to load text models",
+                    cause: error,
+                });
+            }
         },
     )
     // Auth required for all endpoints below (API key only - no session cookies)

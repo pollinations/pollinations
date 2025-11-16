@@ -104,7 +104,7 @@ function convertUsage(
 }
 
 // Pre-process registries: sort definitions by date
-export const MODEL_REGISTRY = Object.fromEntries(
+const MODEL_REGISTRY = Object.fromEntries(
     Object.entries(MODELS).map(([name, model]) => [
         name,
         sortDefinitions(model as UsageConversionDefinition[]),
@@ -117,7 +117,7 @@ type ServiceRegistryEntry<T extends ModelRegistry> = ServiceDefinition<T> & {
 };
 
 // Generate SERVICE_REGISTRY with computed prices from costs
-export const SERVICE_REGISTRY = Object.fromEntries(
+const SERVICE_REGISTRY = Object.fromEntries(
     Object.entries(SERVICES).map(([name, service]) => {
         const typedService = service as ServiceDefinition<typeof MODELS>;
 
@@ -135,7 +135,7 @@ export const SERVICE_REGISTRY = Object.fromEntries(
 ) as Record<string, ServiceRegistryEntry<typeof MODELS>>;
 
 // Build alias lookup map: alias -> serviceId
-export const ALIAS_MAP = Object.fromEntries(
+const ALIAS_MAP = Object.fromEntries(
     Object.entries(SERVICES).flatMap(([serviceId, service]) =>
         service.aliases.map((alias) => [alias, serviceId]),
     ),

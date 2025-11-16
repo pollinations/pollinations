@@ -45,7 +45,7 @@ export type ModelRegistry = Record<string, ModelDefinition>;
 export type ServiceDefinition<T extends ModelRegistry> = {
     aliases: readonly string[];
     modelId: keyof T;
-    provider?: string; // Optional provider identifier (e.g., "azure-openai", "aws-bedrock")
+    provider: string; // Provider identifier (e.g., "azure-openai", "aws-bedrock")
     cost: readonly CostDefinition[]; // Cost data embedded in service
 };
 
@@ -236,8 +236,8 @@ export function getModels(): ModelId[] {
 /**
  * Get model definition by ID
  */
-export function getModelDefinition(modelId: ModelId): ModelDefinition {
-    return MODEL_REGISTRY[modelId];
+export function getModelDefinition(modelId: string): ModelDefinition | undefined {
+    return MODEL_REGISTRY[modelId as ModelId];
 }
 
 /**

@@ -1,5 +1,5 @@
 import type { ModelRegistry } from "./registry";
-import { PRICING_START_DATE, perMillion } from "./price-helpers";
+import { COST_START_DATE, perMillion } from "./price-helpers";
 
 export const DEFAULT_IMAGE_MODEL = "flux" as const;
 
@@ -10,7 +10,7 @@ export const IMAGE_SERVICES = {
         provider: "io.net",
         cost: [
             {
-                date: PRICING_START_DATE,
+                date: COST_START_DATE,
                 completionImageTokens: 0.00012, // $0.0088¢ per image (GPU cluster cost - September avg)
             },
         ],
@@ -21,7 +21,7 @@ export const IMAGE_SERVICES = {
         provider: "azure",
         cost: [
             {
-                date: PRICING_START_DATE,
+                date: COST_START_DATE,
                 completionImageTokens: 0.04, // $0.04 per image (Azure pricing)
             },
         ],
@@ -32,7 +32,7 @@ export const IMAGE_SERVICES = {
         provider: "scaleway",
         cost: [
             {
-                date: PRICING_START_DATE,
+                date: COST_START_DATE,
                 completionImageTokens: 0.0003,
             },
         ],
@@ -44,7 +44,7 @@ export const IMAGE_SERVICES = {
         cost: [
             // Gemini 2.5 Flash Image via Vertex AI (currently disabled)
             {
-                date: PRICING_START_DATE,
+                date: COST_START_DATE,
                 promptTextTokens: perMillion(0.3), // $0.30 per 1M input tokens
                 promptImageTokens: perMillion(0.3), // $0.30 per 1M input tokens
                 completionImageTokens: perMillion(30), // $30 per 1M tokens × 1290 tokens/image = $0.039 per image
@@ -58,7 +58,7 @@ export const IMAGE_SERVICES = {
         cost: [
             // ByteDance ARK Seedream 4.0
             {
-                date: PRICING_START_DATE,
+                date: COST_START_DATE,
                 completionImageTokens: 0.03, // $0.03 per image (3 cents)
             },
         ],
@@ -70,7 +70,7 @@ export const IMAGE_SERVICES = {
         cost: [
             // Azure gpt-image-1-mini
             {
-                date: PRICING_START_DATE,
+                date: COST_START_DATE,
                 promptTextTokens: perMillion(2.0), // $2.00 per 1M text input tokens
                 promptCachedTokens: perMillion(0.2), // $0.20 per 1M cached text input tokens
                 promptImageTokens: perMillion(2.5), // $2.50 per 1M image input tokens

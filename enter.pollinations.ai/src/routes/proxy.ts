@@ -199,9 +199,7 @@ export const proxyRoutes = new Hono<Env>()
         track("generate.text"),
         async (c) => {
             const log = c.get("log");
-            await c.var.auth.requireAuthorization({
-                allowAnonymous: false,
-            });
+            await c.var.auth.requireAuthorization();
             await checkBalanceForPaidModel(c);
 
             const textServiceUrl =
@@ -289,9 +287,7 @@ export const proxyRoutes = new Hono<Env>()
         validator("query", GenerateImageRequestQueryParamsSchema),
         async (c) => {
             const log = c.get("log");
-            await c.var.auth.requireAuthorization({
-                allowAnonymous: false,
-            });
+            await c.var.auth.requireAuthorization();
             await checkBalanceForPaidModel(c);
 
             // Extract prompt from wildcard path (everything after /image/)
@@ -444,9 +440,7 @@ async function checkBalanceForPaidModel(c: Context<Env & TrackEnv>) {
 // Shared handler for OpenAI-compatible chat completions
 async function handleChatCompletions(c: Context<Env & TrackEnv>) {
     const log = c.get("log");
-    await c.var.auth.requireAuthorization({
-        allowAnonymous: false,
-    });
+    await c.var.auth.requireAuthorization();
 
     await checkBalanceForPaidModel(c);
 

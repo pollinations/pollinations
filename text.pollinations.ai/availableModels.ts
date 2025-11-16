@@ -58,8 +58,8 @@ const models: ModelDefinition[] = [
     },
     {
         name: "openai-fast",
-        description: "OpenAI GPT-4.1 Nano",
-        config: portkeyConfig["gpt-4.1-nano-2025-04-14"],
+        description: "OpenAI GPT-5 Nano",
+        config: portkeyConfig["gpt-5-nano-2025-08-07"],
         transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
         community: false,
         input_modalities: ["text", "image"],

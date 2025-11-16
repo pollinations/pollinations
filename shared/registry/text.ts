@@ -19,9 +19,9 @@ export const TEXT_COSTS = {
     "gpt-5-nano-2025-08-07": [
         {
             date: PRICING_START_DATE,
-            promptTextTokens: perMillion(0.06),
-            promptCachedTokens: perMillion(0.01),
-            completionTextTokens: perMillion(0.44),
+            promptTextTokens: perMillion(0.05),
+            promptCachedTokens: perMillion(0.005),
+            completionTextTokens: perMillion(0.4),
         },
     ],
     "gpt-5-chat-latest": [

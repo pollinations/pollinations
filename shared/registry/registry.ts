@@ -49,22 +49,16 @@ export type ServiceDefinition<T extends ModelRegistry> = {
     cost: readonly CostDefinition[]; // Cost data embedded in service
 };
 
-// Build MODELS registry directly from services (modelId -> cost mapping)
-const MODELS = Object.fromEntries(
+// Pre-build MODEL_REGISTRY (modelId -> sorted cost definitions)
+const MODEL_REGISTRY = Object.fromEntries(
     Object.values({ ...TEXT_SERVICES, ...IMAGE_SERVICES }).map((service) => [
         service.modelId,
-        [...service.cost], // Spread to convert readonly array to mutable
+        sortDefinitions([...service.cost]),
     ]),
-) satisfies ModelRegistry;
+);
 
-const SERVICES = {
-    ...TEXT_SERVICES,
-    ...IMAGE_SERVICES,
-} as const;
-
-export type ModelId<TP extends ModelRegistry = typeof MODELS> = keyof TP;
-
-export type ServiceId = keyof typeof SERVICES;
+export type ModelId = keyof typeof MODEL_REGISTRY;
+export type ServiceId = keyof typeof TEXT_SERVICES | keyof typeof IMAGE_SERVICES;
 
 /** Sorts the cost and price definitions by date, in descending order */
 function sortDefinitions<T extends UsageConversionDefinition>(
@@ -103,43 +97,21 @@ function convertUsage(
     };
 }
 
-// Pre-process registries: sort definitions by date
-const MODEL_REGISTRY = Object.fromEntries(
-    Object.entries(MODELS).map(([name, model]) => [
-        name,
-        sortDefinitions(model as UsageConversionDefinition[]),
-    ]),
-);
 
-// Internal type for SERVICE_REGISTRY entries (includes computed price field)
-type ServiceRegistryEntry<T extends ModelRegistry> = ServiceDefinition<T> & {
+// Generate SERVICE_REGISTRY with computed prices from costs
+type ServiceRegistryEntry = ServiceDefinition<typeof MODEL_REGISTRY> & {
     price: PriceDefinition[];
 };
 
-// Generate SERVICE_REGISTRY with computed prices from costs
 const SERVICE_REGISTRY = Object.fromEntries(
-    Object.entries(SERVICES).map(([name, service]) => {
-        const typedService = service as ServiceDefinition<typeof MODELS>;
-
-        // Price = cost (1.0x multiplier)
-        const price = sortDefinitions([...typedService.cost]);
-
-        return [
-            name,
-            {
-                ...service,
-                price,
-            } as ServiceRegistryEntry<typeof MODELS>,
-        ];
-    }),
-) as Record<string, ServiceRegistryEntry<typeof MODELS>>;
-
-// Build alias lookup map: alias -> serviceId
-const ALIAS_MAP = Object.fromEntries(
-    Object.entries(SERVICES).flatMap(([serviceId, service]) =>
-        service.aliases.map((alias) => [alias, serviceId]),
-    ),
-) as Record<string, ServiceId>;
+    Object.entries({ ...TEXT_SERVICES, ...IMAGE_SERVICES }).map(([name, service]) => [
+        name,
+        {
+            ...service,
+            price: sortDefinitions([...service.cost]),
+        } as ServiceRegistryEntry,
+    ]),
+) as Record<string, ServiceRegistryEntry>;
 
 /**
  * Resolve a service ID from a name or alias
@@ -156,14 +128,16 @@ export function resolveServiceId(
             ? DEFAULT_TEXT_MODEL
             : DEFAULT_IMAGE_MODEL;
     }
-    // Check if it's a direct service ID or an alias
-    const resolved = SERVICE_REGISTRY[serviceId]
-        ? serviceId
-        : ALIAS_MAP[serviceId];
-    if (resolved) {
-        return resolved as ServiceId;
+    // Check if it's a direct service ID
+    if (SERVICE_REGISTRY[serviceId]) {
+        return serviceId as ServiceId;
     }
-    // Throw error for invalid service/alias
+    // Search for alias in services
+    for (const [sid, service] of Object.entries(SERVICE_REGISTRY)) {
+        if (service.aliases.includes(serviceId)) {
+            return sid as ServiceId;
+        }
+    }
     throw new Error(
         `Invalid service or alias: "${serviceId}". Must be a valid service name or alias.`,
     );
@@ -204,7 +178,7 @@ export function getTextServices(): ServiceId[] {
  */
 export function getServiceDefinition(
     serviceId: ServiceId,
-): ServiceRegistryEntry<typeof MODELS> {
+): ServiceRegistryEntry {
     return SERVICE_REGISTRY[serviceId];
 }
 

@@ -26,6 +26,35 @@ import {
 import { GenerateImageRequestQueryParamsSchema } from "@/schemas/image.ts";
 import { z } from "zod";
 import { DEFAULT_TEXT_MODEL } from "@shared/registry/text.ts";
+import {
+    getTextModelsInfo,
+    getImageModelsInfo,
+} from "../../../shared/registry/registry.js";
+
+// Shared schema for model info responses
+const ModelInfoSchema = z.object({
+    id: z.string(),
+    modelId: z.string(),
+    pricing: z.object({
+        input_token_price: z.number().optional(),
+        output_token_price: z.number().optional(),
+        cached_token_price: z.number().optional(),
+        image_price: z.number().optional(),
+        audio_input_price: z.number().optional(),
+        audio_output_price: z.number().optional(),
+        currency: z.literal("USD"),
+    }),
+    description: z.string().optional(),
+    input_modalities: z.array(z.string()).optional(),
+    output_modalities: z.array(z.string()).optional(),
+    tools: z.boolean().optional(),
+    reasoning: z.boolean().optional(),
+    vision: z.boolean().optional(),
+    audio: z.boolean().optional(),
+    context_window: z.number().optional(),
+    voices: z.array(z.string()).optional(),
+    persona: z.boolean().optional(),
+});
 
 const errorResponseDescriptions = Object.fromEntries(
     KNOWN_ERROR_STATUS_CODES.map((status) => [
@@ -79,15 +108,17 @@ export const proxyRoutes = new Hono<Env>()
         "/image/models",
         describeRoute({
             tags: ["Image Generation"],
-            description: "Get available image models.",
+            description:
+                "Get available image models with pricing and metadata.",
             responses: {
                 200: {
                     description: "Success",
                     content: {
                         "application/json": {
                             schema: resolver(
-                                z.array(z.string()).meta({
-                                    description: "List of available models",
+                                z.array(ModelInfoSchema).meta({
+                                    description:
+                                        "List of models with pricing and metadata",
                                 }),
                             ),
                         },
@@ -97,9 +128,35 @@ export const proxyRoutes = new Hono<Env>()
             },
         }),
         async (c) => {
-            return await proxy(`${c.env.IMAGE_SERVICE_URL}/models`, {
-                headers: proxyHeaders(c),
-            });
+            const models = getImageModelsInfo().filter((m) => !m.hidden);
+            return c.json(models);
+        },
+    )
+    .get(
+        "/text/models",
+        describeRoute({
+            tags: ["Text Generation"],
+            description: "Get available text models with pricing and metadata.",
+            responses: {
+                200: {
+                    description: "Success",
+                    content: {
+                        "application/json": {
+                            schema: resolver(
+                                z.array(ModelInfoSchema).meta({
+                                    description:
+                                        "List of models with pricing and metadata",
+                                }),
+                            ),
+                        },
+                    },
+                },
+                ...errorResponses(500),
+            },
+        }),
+        async (c) => {
+            const models = getTextModelsInfo().filter((m) => !m.hidden);
+            return c.json(models);
         },
     )
     // Auth required for all endpoints below (API key only - no session cookies)
@@ -151,35 +208,6 @@ export const proxyRoutes = new Hono<Env>()
         }),
         validator("json", CreateChatCompletionRequestSchema),
         async (c) => handleChatCompletions(c),
-    )
-    .get(
-        "/text/models",
-        describeRoute({
-            tags: ["Text Generation"],
-            description: "Get available text models.",
-            responses: {
-                200: {
-                    description: "Success",
-                    content: {
-                        "application/json": {
-                            schema: resolver(
-                                z.array(z.string()).meta({
-                                    description: "List of available models",
-                                }),
-                            ),
-                        },
-                    },
-                },
-                ...errorResponses(500),
-            },
-        }),
-        async (c) => {
-            const textServiceUrl =
-                c.env.TEXT_SERVICE_URL || "https://text.pollinations.ai";
-            return await proxy(`${textServiceUrl}/models`, {
-                headers: proxyHeaders(c),
-            });
-        },
     )
     .get(
         "/text/:prompt",

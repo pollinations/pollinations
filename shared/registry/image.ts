@@ -14,6 +14,9 @@ export const IMAGE_SERVICES = {
                 completionImageTokens: 0.00012, // $0.0088¢ per image (GPU cluster cost - September avg)
             },
         ],
+        description: "Flux - Fast and high-quality image generation",
+        input_modalities: ["text"],
+        output_modalities: ["image"],
     },
     "kontext": {
         aliases: [],
@@ -25,6 +28,9 @@ export const IMAGE_SERVICES = {
                 completionImageTokens: 0.04, // $0.04 per image (Azure pricing)
             },
         ],
+        description: "Kontext - Context-aware image generation",
+        input_modalities: ["text"],
+        output_modalities: ["image"],
     },
     "turbo": {
         aliases: [],
@@ -36,6 +42,9 @@ export const IMAGE_SERVICES = {
                 completionImageTokens: 0.0003,
             },
         ],
+        description: "Turbo - Ultra-fast image generation",
+        input_modalities: ["text"],
+        output_modalities: ["image"],
     },
     nanobanana: {
         aliases: [],
@@ -50,6 +59,10 @@ export const IMAGE_SERVICES = {
                 completionImageTokens: perMillion(30), // $30 per 1M tokens × 1290 tokens/image = $0.039 per image
             },
         ],
+        description: "NanoBanana - Gemini 2.5 Flash Image (currently disabled)",
+        input_modalities: ["text", "image"],
+        output_modalities: ["image"],
+        hidden: true,
     },
     seedream: {
         aliases: [],
@@ -62,6 +75,9 @@ export const IMAGE_SERVICES = {
                 completionImageTokens: 0.03, // $0.03 per image (3 cents)
             },
         ],
+        description: "Seedream 4.0 - ByteDance ARK",
+        input_modalities: ["text"],
+        output_modalities: ["image"],
     },
     "gptimage": {
         aliases: ["gpt-image", "gpt-image-1-mini"],
@@ -77,6 +93,9 @@ export const IMAGE_SERVICES = {
                 completionImageTokens: perMillion(8), // $8.00 per 1M output tokens
             },
         ],
+        description: "GPT Image 1 Mini - OpenAI's image generation model",
+        input_modalities: ["text", "image"],
+        output_modalities: ["image"],
     },
 } as const;
 

@@ -47,6 +47,18 @@ export type ServiceDefinition<T extends ModelRegistry> = {
     modelId: keyof T;
     provider: string; // Provider identifier (e.g., "azure-openai", "aws-bedrock")
     cost: readonly CostDefinition[]; // Cost data embedded in service
+    // User-facing metadata
+    description?: string;
+    input_modalities?: readonly string[];
+    output_modalities?: readonly string[];
+    tools?: boolean;
+    reasoning?: boolean;
+    vision?: boolean;
+    audio?: boolean;
+    context_window?: number;
+    voices?: readonly string[];
+    persona?: boolean;
+    hidden?: boolean;
 };
 
 export type ServiceMargins = {
@@ -236,7 +248,9 @@ export function getModels(): ModelId[] {
 /**
  * Get model definition by ID
  */
-export function getModelDefinition(modelId: string): ModelDefinition | undefined {
+export function getModelDefinition(
+    modelId: string,
+): ModelDefinition | undefined {
     return MODEL_REGISTRY[modelId as ModelId];
 }
 
@@ -349,3 +363,85 @@ export function calculateMargins(serviceId: ServiceId): ServiceMargins {
     };
 }
 
+/**
+ * Enriched model information exposed to end users via API
+ * Shows pricing and modelId but not internal details (cost, provider, aliases)
+ */
+export interface ModelInfo {
+    id: string; // Service ID (user-facing name)
+    modelId: string; // Underlying model identifier
+    pricing: {
+        input_token_price?: number;
+        output_token_price?: number;
+        cached_token_price?: number;
+        image_price?: number;
+        audio_input_price?: number;
+        audio_output_price?: number;
+        currency: "USD";
+    };
+    // User-facing metadata
+    description?: string;
+    input_modalities?: readonly string[];
+    output_modalities?: readonly string[];
+    tools?: boolean;
+    reasoning?: boolean;
+    vision?: boolean;
+    audio?: boolean;
+    context_window?: number;
+    voices?: readonly string[];
+    persona?: boolean;
+    hidden?: boolean;
+}
+
+/**
+ * Get enriched model information for a service
+ * Combines pricing from price definitions with metadata from service definition
+ */
+export function getModelInfo(serviceId: ServiceId): ModelInfo {
+    const service = SERVICE_REGISTRY[serviceId];
+    const priceDefinition = getActivePriceDefinition(serviceId);
+
+    if (!priceDefinition) {
+        throw new Error(`No price definition found for service: ${serviceId}`);
+    }
+
+    return {
+        id: serviceId as string,
+        modelId: String(service.modelId),
+        pricing: {
+            input_token_price: priceDefinition.promptTextTokens,
+            output_token_price: priceDefinition.completionTextTokens,
+            cached_token_price: priceDefinition.promptCachedTokens,
+            image_price: priceDefinition.completionImageTokens,
+            audio_input_price: priceDefinition.promptAudioTokens,
+            audio_output_price: priceDefinition.completionAudioTokens,
+            currency: "USD",
+        },
+        // User-facing metadata from service definition
+        description: service.description,
+        input_modalities: service.input_modalities,
+        output_modalities: service.output_modalities,
+        tools: service.tools,
+        reasoning: service.reasoning,
+        vision: service.vision,
+        audio: service.audio,
+        context_window: service.context_window,
+        voices: service.voices,
+        persona: service.persona,
+        hidden: service.hidden,
+    };
+}
+
+/**
+ * Get all text models with enriched information
+ */
+export function getTextModelsInfo(): ModelInfo[] {
+    return getTextServices().map(getModelInfo);
+}
+
+/**
+ * Get all image models with enriched information
+ */
+export function getImageModelsInfo(): ModelInfo[] {
+    return getImageServices().map(getModelInfo);
+}

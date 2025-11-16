@@ -139,12 +139,6 @@ const QUEUE_CONFIG = {
 
 // Using getIp from shared auth-utils.js
 
-// GET /models request handler
-app.get("/models", (req, res) => {
-    // Use prepareModelsForOutput to remove pricing information and apply sorting
-    res.json(prepareModelsForOutput(availableModels));
-});
-
 setupFeedEndpoint(app);
 
 // Helper function to handle both GET and POST requests

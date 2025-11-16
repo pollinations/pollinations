@@ -30,24 +30,10 @@ const authenticatedTestCases = (): [ServiceId, number][] => {
 
 // use random color instead of string because the random string was
 // triggering the content filter sometimes, probably because it
-// was suspected to be a jailbreak attepmpt
-const randomColor = () => {
-    const r = Math.floor(Math.random() * 256)
-        .toString(16)
-        .padStart(2, "0");
-    const g = Math.floor(Math.random() * 256)
-        .toString(16)
-        .padStart(2, "0");
-    const b = Math.floor(Math.random() * 256)
-        .toString(16)
-        .padStart(2, "0");
-    return `#${r}${g}${b}`;
-};
-
 function testMessageContent() {
     return TEST_DISABLE_CACHE
-        ? `Color ${randomColor()}? One word only.`
-        : "0 or 1?";
+        ? `Count: ${Math.floor(Math.random() * 100)}. Reply with one word.`
+        : "Reply: yes or no?";
 }
 
 // Send a request to each text model without authentication

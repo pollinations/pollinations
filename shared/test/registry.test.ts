@@ -5,7 +5,7 @@ import {
     calculatePrice,
     SERVICE_REGISTRY
 } from "../registry/registry.ts";
-import { perMillion, ZERO_PRICE, ZERO_PRICE_START_DATE, PRICING_START_DATE } from "../registry/price-helpers.ts";
+import { perMillion, COST_START_DATE } from "../registry/price-helpers.ts";
 import { expect, test } from "vitest";
 import type { TokenUsage } from "../registry/registry.ts";
 
@@ -84,20 +84,8 @@ test("perMillion should correctly convert dollars per million tokens", async () 
     expect(totalCost).toBe(50_000);
 });
 
-test("ZERO_PRICE constant should have all zero values", async () => {
-    expect(ZERO_PRICE.promptTextTokens).toBe(0.0);
-    expect(ZERO_PRICE.promptCachedTokens).toBe(0.0);
-    expect(ZERO_PRICE.completionTextTokens).toBe(0.0);
-    expect(ZERO_PRICE.promptAudioTokens).toBe(0.0);
-    expect(ZERO_PRICE.completionAudioTokens).toBe(0.0);
-    expect(ZERO_PRICE.completionImageTokens).toBe(0.0);
-    expect(ZERO_PRICE.date).toBe(ZERO_PRICE_START_DATE);
-});
-
 test("Date constants should be properly defined", async () => {
-    expect(ZERO_PRICE_START_DATE).toBe(new Date("2020-01-01 00:00:00").getTime());
-    expect(PRICING_START_DATE).toBe(new Date("2025-08-01 00:00:00").getTime());
-    expect(PRICING_START_DATE).toBeGreaterThan(ZERO_PRICE_START_DATE);
+    expect(COST_START_DATE).toBe(new Date("2025-08-01 00:00:00").getTime());
 });
 
 test("resolveServiceId should throw on invalid service", async () => {

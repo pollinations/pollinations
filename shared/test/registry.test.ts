@@ -99,19 +99,9 @@ test("resolveServiceId should return default service for null/undefined", async 
     expect(result).toBe("openai");
 });
 
-test("resolveServiceId should resolve aliases", async () => {
-    // Test with real aliases from the registry
-    expect(resolveServiceId("openai-large", "generate.text")).toBe(
-        "openai-large",
-    );
-    expect(resolveServiceId("openai-fast", "generate.text")).toBe(
-        "openai-fast",
-    );
-});
-
 test("getModelDefinition returns undefined for invalid model", async () => {
     // getModelDefinition returns undefined for missing models
-    expect(getModelDefinition("invalid-model" as any)).toBeUndefined();
+    expect(getModelDefinition("invalid-model")).toBeUndefined();
 });
 
 // Test alias resolution after PR #5340 refactor

@@ -38,8 +38,8 @@ function testMessageContent() {
 
 // Send a request to each text model without authentication
 // All models now require authentication, so all should return 401
-describe.skip("Unauthenticated requests", () => {
-    test.skip.for(anonymousTestCases())(
+describe("Unauthenticated requests", () => {
+    test.for(anonymousTestCases())(
         "%s should respond with 401 when unauthenticated",
         { timeout: 30000 },
         async ([serviceId, expectedStatus], { mocks }) => {
@@ -68,7 +68,7 @@ describe.skip("Unauthenticated requests", () => {
 });
 
 // Sends a request to each text model, using bearer auth
-test.skip.for(authenticatedTestCases())(
+test.for(authenticatedTestCases())(
     "%s should respond with 200 when using authorization header",
     { timeout: 30000 },
     async ([serviceId, expectedStatus], { apiKey, mocks }) => {
@@ -97,7 +97,7 @@ test.skip.for(authenticatedTestCases())(
     },
 );
 
-test.skip.for(authenticatedTestCases())(
+test.for(authenticatedTestCases())(
     "%s should respond with 200 when streaming",
     { timeout: 30000 },
     async ([serviceId, expectedStatus], { apiKey, mocks }) => {
@@ -144,7 +144,7 @@ test.skip.for(authenticatedTestCases())(
 );
 
 // Test GET /text/:prompt endpoint returns plain text for text models
-test.skip.for(authenticatedTestCases())(
+test.for(authenticatedTestCases())(
     "GET /text/:prompt with %s should return plain text",
     { timeout: 30000 },
     async ([serviceId, expectedStatus], { apiKey, mocks }) => {
@@ -173,7 +173,7 @@ test.skip.for(authenticatedTestCases())(
 );
 
 // Test GET /text/:prompt endpoint returns raw audio for audio models
-test.skip(
+test(
     "GET /text/:prompt with openai-audio should return raw audio",
     { timeout: 30000 },
     async ({ apiKey, mocks }) => {
@@ -201,7 +201,7 @@ test.skip(
 );
 
 // Test audio output (text-to-speech) with modalities
-test.skip(
+test(
     "openai-audio with modalities should return audio output",
     { timeout: 30000 },
     async ({ apiKey, mocks }) => {
@@ -259,7 +259,7 @@ test.skip(
 );
 
 // Test audio input (transcription) with input_audio content type
-test.skip(
+test(
     "openai-audio with input_audio should transcribe audio",
     { timeout: 30000 },
     async ({ apiKey, mocks }) => {
@@ -321,7 +321,7 @@ test.skip(
 );
 
 // ... (rest of the code remains the same)
-test.skip("Session cookies should not authenticate API proxy routes", async ({
+test("Session cookies should not authenticate API proxy routes", async ({
     sessionToken,
     mocks,
 }) => {
@@ -339,7 +339,7 @@ test.skip("Session cookies should not authenticate API proxy routes", async ({
 });
 
 // Test model parameter handling
-test.skip(
+test(
     "POST /v1/chat/completions should accept model parameter",
     { timeout: 30000 },
     async ({ apiKey, mocks }) => {
@@ -371,7 +371,7 @@ test.skip(
 );
 
 // Test invalid model handling
-test.skip(
+test(
     "POST /v1/chat/completions should reject invalid model",
     { timeout: 30000 },
     async ({ apiKey, mocks }) => {
@@ -407,7 +407,7 @@ test.skip(
 );
 
 // Test query parameter authentication
-test.skip(
+test(
     "GET /text/:prompt should accept key query parameter",
     { timeout: 30000 },
     async ({ apiKey, mocks }) => {
@@ -428,7 +428,7 @@ test.skip(
 );
 
 // Test empty message handling
-test.skip(
+test(
     "POST /v1/chat/completions should handle empty messages",
     { timeout: 30000 },
     async ({ apiKey, mocks }) => {
@@ -462,7 +462,7 @@ test.skip(
 );
 
 // Test response headers
-test.skip(
+test(
     "POST /v1/chat/completions should include usage headers",
     { timeout: 30000 },
     async ({ apiKey, mocks }) => {

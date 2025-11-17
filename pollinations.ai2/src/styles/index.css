@@ -13,6 +13,26 @@
     }
 }
 
+/* Hide number input spinners (brutalist design) */
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+input[type="number"] {
+    -moz-appearance: textfield;
+    appearance: textfield;
+}
+
+/* Hide select dropdown arrow (brutalist design) */
+select {
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+    background-image: none;
+}
+
 /* Reset and base styles */
 * {
     margin: 0;
@@ -22,30 +42,7 @@
 
 body,
 html {
-    background-color: #c7d4d6cc; /* offwhite/80 */
-}
-
-:root {
-    /* Color system from original site */
-    --color-lime: #ecf874;
-    --color-offwhite: #c7d4d6;
-    --color-offblack: #110518;
-    --color-offblack-2: #181a2c;
-    --color-gray-1: #b3b3b3;
-    --color-gray-2: #8a8a8a;
-    --color-special: rgb(191, 64, 64);
-
-    /* Font families */
-    --font-title: "Maven Pro", sans-serif;
-    --font-headline: "Mako", sans-serif;
-    --font-body: "Duru Sans", sans-serif;
-}
-
-body {
-    margin: 0;
-    font-family: var(--font-body);
-    background-color: var(--color-offblack);
-    color: var(--color-offwhite);
+    background-color: #c7d4d6cc; /* offwhite/80 from Tailwind config */
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     overflow-x: hidden;
@@ -53,33 +50,14 @@ body {
 
 #root {
     min-height: 100vh;
-    display: flex;
-    flex-direction: column;
 }
 
-/* Typography */
-h1,
-h2,
-h3,
-h4,
-h5,
-h6 {
-    font-family: var(--font-title);
-    font-weight: 700;
-}
-
-/* Remove focus outline for mouse users, keep for keyboard */
+/* Accessibility: Remove focus outline for mouse, keep for keyboard */
 :focus:not(:focus-visible) {
     outline: none;
 }
 
 :focus-visible {
-    outline: 2px solid var(--color-lime);
+    outline: 2px solid #ecf874; /* lime */
     outline-offset: 2px;
-}
-
-/* Links */
-a {
-    color: inherit;
-    text-decoration: none;
 }

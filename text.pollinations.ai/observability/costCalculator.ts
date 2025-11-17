@@ -1,5 +1,5 @@
 import debug from "debug";
-import { TEXT_COSTS } from "../../shared/registry/text.js";
+import { getModelDefinition } from "../../shared/registry/registry.js";
 
 const log = debug("text.pollinations.ai:costCalculator");
 
@@ -40,7 +40,7 @@ export function resolveCost(responseModel: string): CostRates {
         throw new Error("No model name provided for cost resolution");
     }
 
-    const costs = TEXT_COSTS[responseModel as keyof typeof TEXT_COSTS];
+    const costs = getModelDefinition(responseModel);
     if (!costs) {
         throw new Error(
             `Missing cost data for model "${responseModel}". Please contact support@pollinations.ai`,

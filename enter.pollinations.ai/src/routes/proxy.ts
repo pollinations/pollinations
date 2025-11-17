@@ -25,6 +25,7 @@ import {
 } from "@/error.ts";
 import { GenerateImageRequestQueryParamsSchema } from "@/schemas/image.ts";
 import { z } from "zod";
+import { DEFAULT_TEXT_MODEL } from "@shared/registry/text.ts";
 
 const errorResponseDescriptions = Object.fromEntries(
     KNOWN_ERROR_STATUS_CODES.map((status) => [
@@ -206,12 +207,14 @@ export const proxyRoutes = new Hono<Env>()
                 c.env.TEXT_SERVICE_URL || "https://text.pollinations.ai";
 
             // Build URL with prompt in path and model as query param
-            const model = c.req.query("model") || "openai";
+            const model = c.req.query("model") || DEFAULT_TEXT_MODEL;
             const prompt = c.req.param("prompt");
             const targetUrl = proxyUrl(
                 c,
-                `${textServiceUrl}/${encodeURIComponent(prompt)}?model=${model}`,
+                `${textServiceUrl}/${encodeURIComponent(prompt)}`,
             );
+            // Add model param after proxyUrl() to ensure it's always present
+            targetUrl.searchParams.set("model", model);
 
             const response = await fetch(targetUrl, {
                 method: "GET",
@@ -280,10 +283,6 @@ export const proxyRoutes = new Hono<Env>()
                 ...errorResponses(400, 401, 500),
             },
         }),
-        // Only run auth/rate limiting if cache miss:
-        auth({ allowApiKey: true, allowSessionCookie: false }),
-        frontendKeyRateLimit,
-        polar,
         validator("query", GenerateImageRequestQueryParamsSchema),
         async (c) => {
             const log = c.get("log");

@@ -1,4 +1,5 @@
 import { processEvents, storeEvents } from "@/events.ts";
+import { HTTPException } from "hono/http-exception";
 import {
     resolveServiceId,
     getActivePriceDefinition,
@@ -196,10 +197,21 @@ async function trackRequest(
     request: HonoRequest,
 ): Promise<RequestTrackingData> {
     const modelRequested = await extractModelRequested(request);
-    const resolvedModelRequested = resolveServiceId(
-        modelRequested,
-        eventType,
-    ) as ServiceId;
+
+    // Validate model name - throw 400 for invalid models (user error)
+    let resolvedModelRequested: ServiceId;
+    try {
+        resolvedModelRequested = resolveServiceId(
+            modelRequested,
+            eventType,
+        ) as ServiceId;
+    } catch (error) {
+        throw new HTTPException(400, {
+            message:
+                error instanceof Error ? error.message : "Invalid model name",
+        });
+    }
+
     const modelProvider = getServiceDefinition(resolvedModelRequested).provider;
     const modelPriceDefinition = getActivePriceDefinition(
         resolvedModelRequested,

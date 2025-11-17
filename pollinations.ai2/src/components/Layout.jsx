@@ -65,7 +65,7 @@ function Layout() {
                                                 target="_blank"
                                                 rel="noopener noreferrer"
                                                 title={label}
-                                                className="flex-shrink-0 w-8 h-8 md:w-10 md:h-10 flex items-center justify-center bg-offwhite/80 backdrop-blur-md border-4 border-black hover:bg-lime/90 hover:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:-translate-y-1 transition-all p-1.5 md:p-2"
+                                                className="flex-shrink-0 w-8 h-8 md:w-10 md:h-10 flex items-center justify-center bg-offwhite/80 backdrop-blur-md border-r-4 border-b-4 border-offblack/30 hover:bg-lime/90 hover:border-rose hover:shadow-[4px_4px_0px_0px_rgba(255,105,180,1)] transition-all p-1.5 md:p-2"
                                             >
                                                 <img
                                                     src={icon}

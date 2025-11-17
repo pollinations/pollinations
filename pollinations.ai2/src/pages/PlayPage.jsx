@@ -1,11 +1,25 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "../components/ui/button";
+import { TextGenerator } from "../components/TextGenerator";
+import { PLAY_DESCRIPTION } from "../config/content";
+
+// API key for authenticated requests
+const API_KEY = "plln_pk_vAIFVsqh5Kp34gpnHPJhCkKKqxuKL7m8";
 
 function PlayPage() {
     const [prompt, setPrompt] = useState("");
     const [model, setModel] = useState("flux");
     const [result, setResult] = useState(null);
     const [isLoading, setIsLoading] = useState(false);
+
+    // Cleanup blob URLs when result changes
+    useEffect(() => {
+        return () => {
+            if (result && result.startsWith("blob:")) {
+                URL.revokeObjectURL(result);
+            }
+        };
+    }, [result]);
 
     // Image parameters
     const [width, setWidth] = useState(1024);
@@ -39,23 +53,39 @@ function PlayPage() {
 
     const isImageModel = imageModels.some((m) => m.id === model);
 
-    const handleGenerate = () => {
+    const handleGenerate = async () => {
         setIsLoading(true);
 
         if (isImageModel) {
-            const params = new URLSearchParams({
-                model,
-                width,
-                height,
-                seed: seed || Date.now(), // Random if 0
-                enhance: enhance.toString(),
-                nologo: nologo.toString(),
-            });
-            const imageURL = `https://image.pollinations.ai/prompt/${encodeURIComponent(
-                prompt
-            )}?${params}`;
-            setResult(imageURL);
-            setIsLoading(false);
+            try {
+                const params = new URLSearchParams({
+                    model,
+                    width,
+                    height,
+                    seed: seed || Date.now(),
+                    enhance: enhance.toString(),
+                    nologo: nologo.toString(),
+                });
+
+                const response = await fetch(
+                    `https://enter.pollinations.ai/api/generate/image/${encodeURIComponent(
+                        prompt
+                    )}?${params}`,
+                    {
+                        headers: {
+                            Authorization: `Bearer ${API_KEY}`,
+                        },
+                    }
+                );
+
+                const blob = await response.blob();
+                const imageURL = URL.createObjectURL(blob);
+                setResult(imageURL);
+                setIsLoading(false);
+            } catch (error) {
+                console.error("Image generation error:", error);
+                setIsLoading(false);
+            }
         } else {
             // Text generation - will implement
             fetch(
@@ -82,11 +112,12 @@ function PlayPage() {
                         <h1 className="font-title text-4xl md:text-5xl font-black text-offblack mb-3">
                             Play
                         </h1>
-                        <p className="font-body text-offblack/70 text-base leading-relaxed">
-                            Generate images and text with our free AI API.
-                            Choose a model, enter your prompt, and create
-                            amazing content instantly. No sign-up required.
-                        </p>
+                        <TextGenerator
+                            text={PLAY_DESCRIPTION}
+                            seed={12345}
+                            as="div"
+                            className="font-body text-offblack/70 text-base leading-relaxed"
+                        />
                     </div>
 
                     {/* Prompt Input */}
@@ -253,7 +284,9 @@ function PlayPage() {
 
                     {/* Result Display */}
                     {result && (
-                        <div className="bg-offblack/5 p-6">
+                        <div
+                            className={isImageModel ? "" : "bg-offblack/5 p-6"}
+                        >
                             {isImageModel ? (
                                 <img
                                     src={result}

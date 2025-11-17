@@ -1,7 +1,7 @@
 import { omit, safeRound } from "../utils";
 import { TEXT_SERVICES, DEFAULT_TEXT_MODEL } from "./text";
 import { IMAGE_SERVICES, DEFAULT_IMAGE_MODEL } from "./image";
-import { EventType } from "./types";
+import type { EventType } from "./types";
 
 const PRECISION = 8;
 
@@ -66,7 +66,7 @@ export type ServiceDefinition = {
     reasoning?: boolean;
     context_window?: number;
     voices?: readonly string[];
-    persona?: boolean;
+    isSpecialized?: boolean;
 };
 
 /** Sorts the cost and price definitions by date, in descending order */
@@ -288,11 +288,11 @@ export function calculatePrice(
 
 /**
  * Enriched model information exposed to end users via API
- * Shows pricing and modelId but not internal details (cost, provider, aliases)
+ * Shows pricing and aliases but not internal details (modelId, cost, provider)
  */
 export interface ModelInfo {
-    id: string; // Service ID (user-facing name)
-    modelId: string; // Underlying model identifier
+    name: string; // Service name (user-facing identifier)
+    aliases: readonly string[]; // Alternative names for this model
     pricing: {
         input_token_price?: number;
         output_token_price?: number;
@@ -310,7 +310,7 @@ export interface ModelInfo {
     reasoning?: boolean;
     context_window?: number;
     voices?: readonly string[];
-    persona?: boolean;
+    isSpecialized?: boolean;
 }
 
 /**
@@ -326,8 +326,8 @@ export function getModelInfo(serviceId: ServiceId): ModelInfo {
     }
 
     return {
-        id: serviceId as string,
-        modelId: String(service.modelId),
+        name: serviceId as string,
+        aliases: service.aliases,
         pricing: {
             input_token_price: priceDefinition.promptTextTokens,
             output_token_price: priceDefinition.completionTextTokens,
@@ -345,7 +345,7 @@ export function getModelInfo(serviceId: ServiceId): ModelInfo {
         reasoning: service.reasoning,
         context_window: service.context_window,
         voices: service.voices,
-        persona: service.persona,
+        isSpecialized: service.isSpecialized,
     };
 }
 

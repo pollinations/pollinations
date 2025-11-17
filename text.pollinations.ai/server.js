@@ -12,7 +12,7 @@ import { generateTextPortkey } from "./generateTextPortkey.js";
 import { setupFeedEndpoint, sendToFeedListeners } from "./feed.js";
 import { processRequestForAds } from "./ads/initRequestFilter.js";
 import { createStreamingAdWrapper } from "./ads/streamingAdWrapper.js";
-import { getRequestData, prepareModelsForOutput } from "./requestUtils.js";
+import { getRequestData } from "./requestUtils.js";
 
 // Import shared utilities
 import { getIp } from "../shared/extractFromRequest.js";
@@ -661,20 +661,16 @@ app.post("/", async (req, res) => {
 });
 
 app.get("/openai/models", (req, res) => {
-    const models = availableModels
-        .filter((model) => !model.hidden)
-        .map((model) => {
-            // Get provider from cost data using the model's config
-            const config =
-                typeof model.config === "function"
-                    ? model.config()
-                    : model.config;
-            return {
-                id: model.name,
-                object: "model",
-                created: Date.now(),
-            };
-        });
+    const models = availableModels.map((model) => {
+        // Get provider from cost data using the model's config
+        const config =
+            typeof model.config === "function" ? model.config() : model.config;
+        return {
+            id: model.name,
+            object: "model",
+            created: Date.now(),
+        };
+    });
     res.json({
         object: "list",
         data: models,

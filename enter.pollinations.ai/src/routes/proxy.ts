@@ -4,7 +4,7 @@ import type { ContentfulStatusCode } from "hono/utils/http-status";
 import { auth } from "@/middleware/auth.ts";
 import { polar } from "@/middleware/polar.ts";
 import type { Env } from "../env.ts";
-import { track, TrackEnv } from "@/middleware/track.ts";
+import { track, type TrackEnv } from "@/middleware/track.ts";
 import { frontendKeyRateLimit } from "@/middleware/rate-limit-durable.ts";
 import { imageCache } from "@/middleware/image-cache.ts";
 import { edgeRateLimit } from "@/middleware/rate-limit-edge.ts";
@@ -30,12 +30,13 @@ import { DEFAULT_TEXT_MODEL } from "@shared/registry/text.ts";
 import {
     getTextModelsInfo,
     getImageModelsInfo,
+    resolveServiceId,
 } from "../../../shared/registry/registry.js";
 
 // Shared schema for model info responses
 const ModelInfoSchema = z.object({
-    id: z.string(),
-    modelId: z.string(),
+    name: z.string(),
+    aliases: z.array(z.string()),
     pricing: z.object({
         input_token_price: z.number().optional(),
         output_token_price: z.number().optional(),
@@ -52,7 +53,7 @@ const ModelInfoSchema = z.object({
     reasoning: z.boolean().optional(),
     context_window: z.number().optional(),
     voices: z.array(z.string()).optional(),
-    persona: z.boolean().optional(),
+    isSpecialized: z.boolean().optional(),
 });
 
 const errorResponseDescriptions = Object.fromEntries(
@@ -108,7 +109,7 @@ export const proxyRoutes = new Hono<Env>()
         describeRoute({
             tags: ["Image Generation"],
             description:
-                "Get a list of available image generation models with pricing, capabilities, and metadata. Use this endpoint to discover which models are available and their costs before making generation requests. Response includes `modelId` (underlying model version), pricing per image, and supported modalities.",
+                "Get a list of available image generation models with pricing, capabilities, and metadata. Use this endpoint to discover which models are available and their costs before making generation requests. Response includes `aliases` (alternative names you can use), pricing per image, and supported modalities.",
             responses: {
                 200: {
                     description: "Success",
@@ -143,7 +144,7 @@ export const proxyRoutes = new Hono<Env>()
         describeRoute({
             tags: ["Text Generation"],
             description:
-                "Get a list of available text generation models with pricing, capabilities, and metadata. Use this endpoint to discover which models are available and their costs before making generation requests. Response includes `modelId` (underlying model version), token pricing, supported modalities (text, image, audio), and capabilities (tools, reasoning).",
+                "Get a list of available text generation models with pricing, capabilities, and metadata. Use this endpoint to discover which models are available and their costs before making generation requests. Response includes `aliases` (alternative names you can use), token pricing, supported modalities (text, image, audio), and capabilities (tools, reasoning).",
             responses: {
                 200: {
                     description: "Success",
@@ -489,6 +490,23 @@ async function handleChatCompletions(c: Context<Env & TrackEnv>) {
         c.env.TEXT_SERVICE_URL || "https://text.pollinations.ai";
     const targetUrl = proxyUrl(c, `${textServiceUrl}/openai`);
     const requestBody = await c.req.json();
+
+    // Resolve model alias to service ID before proxying
+    if (requestBody.model) {
+        try {
+            const resolvedServiceId = resolveServiceId(
+                requestBody.model,
+                "generate.text",
+            );
+            requestBody.model = resolvedServiceId;
+        } catch (error) {
+            log.warn("[PROXY] Failed to resolve model alias: {model}", {
+                model: requestBody.model,
+                error: String(error),
+            });
+            // Let it pass through - backend will handle invalid model error
+        }
+    }
     const response = await proxy(targetUrl, {
         method: c.req.method,
         headers: proxyHeaders(c),

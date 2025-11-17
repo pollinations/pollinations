@@ -8,7 +8,6 @@ import path from "path";
 import dotenv from "dotenv";
 import { Transform } from "stream";
 import { availableModels } from "./availableModels.js";
-import { getProviderByModelId } from "../shared/registry/registry.js";
 import { generateTextPortkey } from "./generateTextPortkey.js";
 import { setupFeedEndpoint, sendToFeedListeners } from "./feed.js";
 import { processRequestForAds } from "./ads/initRequestFilter.js";
@@ -664,18 +663,10 @@ app.get("/openai/models", (req, res) => {
                 typeof model.config === "function"
                     ? model.config()
                     : model.config;
-            const actualModelName =
-                config?.model ||
-                config?.["azure-model-name"] ||
-                config?.["azure-deployment-id"] ||
-                model.name;
-            const provider = getProviderByModelId(actualModelName) || "unknown";
-
             return {
                 id: model.name,
                 object: "model",
                 created: Date.now(),
-                owned_by: provider,
             };
         });
     res.json({

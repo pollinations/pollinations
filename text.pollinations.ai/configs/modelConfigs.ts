@@ -20,20 +20,17 @@ import {
     createApiNavyModelConfig,
     createPerplexityModelConfig,
 } from "./providerConfigs.js";
-import type { TEXT_COSTS } from "../../shared/registry/text.js";
+import type { ModelId } from "../../shared/registry/registry.js";
 
 const log = debug("pollinations:portkey");
 
 dotenv.config();
 
-// Type constraint: export ValidModelId so availableModels.ts can use it
-export type ValidModelId = keyof typeof TEXT_COSTS;
-
-// Type-safe config object: all keys must be valid model IDs from TEXT_COSTS
+// Type-safe config object: all keys must be valid model IDs from MODEL_REGISTRY
 type PortkeyConfigMap = {
-    [K in ValidModelId]: () => any;
+    [K in ModelId]: () => any;
 } & {
-    [key: string]: () => any; // Allow additional legacy configs not in TEXT_COSTS
+    [key: string]: () => any; // Allow additional legacy configs not in MODEL_REGISTRY
 };
 
 // Unified flat Portkey configuration for all providers and models - using functions that return fresh configurations

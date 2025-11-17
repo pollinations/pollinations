@@ -16,13 +16,14 @@ import chickyTutorPrompt from "./personas/chickytutor.js";
 import { BASE_PROMPTS } from "./prompts/systemPrompts.js";
 
 // Import model configs
-import { portkeyConfig, type ValidModelId } from "./configs/modelConfigs.js";
+import { portkeyConfig } from "./configs/modelConfigs.js";
 
 // Import registry for validation and aliases
 import type { TEXT_SERVICES } from "../shared/registry/text.js";
 import {
     resolveServiceId,
     getServiceAliases,
+    type ModelId,
 } from "../shared/registry/registry.js";
 
 // Type constraint: model names must exist in registry
@@ -31,7 +32,7 @@ type ValidServiceName = keyof typeof TEXT_SERVICES;
 interface ModelDefinition {
     name: ValidServiceName;
     description: string;
-    config: (typeof portkeyConfig)[ValidModelId]; // ✅ Type-safe: must be a valid model ID from TEXT_COSTS
+    config: (typeof portkeyConfig)[ModelId]; // ✅ Type-safe: must be a valid model ID from MODEL_REGISTRY
     transform?: any;
     community?: boolean;
     // aliases removed - now sourced from registry

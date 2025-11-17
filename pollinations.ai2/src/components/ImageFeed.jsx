@@ -59,7 +59,7 @@ export function ImageFeed() {
 
 function FeedCard({ image }) {
     return (
-        <div className="bg-offwhite/90 border-r-4 border-b-4 border-rose shadow-[4px_4px_0px_0px_rgba(255,105,180,1)] hover:shadow-[6px_6px_0px_0px_rgba(255,105,180,1)] transition-all overflow-hidden">
+        <div className="bg-offwhite/90 border-r-4 border-b-4 border-offblack/30 shadow-[4px_4px_0px_0px_rgba(17,5,24,0.3)] hover:border-rose hover:shadow-[4px_4px_0px_0px_rgba(255,105,180,1)] transition-all overflow-hidden">
             {/* Image */}
             <div className="aspect-square overflow-hidden">
                 <img

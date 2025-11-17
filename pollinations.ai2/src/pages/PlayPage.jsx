@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Button } from "../components/ui/button";
 import { TextGenerator } from "../components/TextGenerator";
-import { PLAY_DESCRIPTION } from "../config/content";
+import { PLAY_DESCRIPTION, FEED_DESCRIPTION } from "../config/content";
 import { ImageFeed } from "../components/ImageFeed";
 
 // API key for authenticated requests
@@ -113,7 +113,7 @@ function PlayPage() {
                     <div className="mb-8">
                         <div className="flex items-center gap-4 mb-3">
                             <h1 className="font-title text-4xl md:text-5xl font-black text-offblack">
-                                Play
+                                {view === "play" ? "Play" : "Stream"}
                             </h1>
                             <button
                                 type="button"
@@ -128,8 +128,12 @@ function PlayPage() {
                             </button>
                         </div>
                         <TextGenerator
-                            text={PLAY_DESCRIPTION}
-                            seed={12345}
+                            text={
+                                view === "play"
+                                    ? PLAY_DESCRIPTION
+                                    : FEED_DESCRIPTION
+                            }
+                            seed={view === "play" ? 12345 : 54321}
                             as="div"
                             className="font-body text-offblack/70 text-base leading-relaxed"
                         />

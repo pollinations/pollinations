@@ -4,8 +4,8 @@ import { TextGenerator } from "../components/TextGenerator";
 import { PLAY_DESCRIPTION, FEED_DESCRIPTION } from "../config/content";
 import { ImageFeed } from "../components/ImageFeed";
 
-// API key for authenticated requests
-const API_KEY = "plln_pk_vAIFVsqh5Kp34gpnHPJhCkKKqxuKL7m8";
+// API key for authenticated requests (secret key for local dev)
+const API_KEY = "plln_sk_2d1YAgFDvIjAKPZ1mOFVCGiYNTluWhmc";
 
 function PlayPage() {
     const [view, setView] = useState("play"); // "play" or "feed"
@@ -113,7 +113,7 @@ function PlayPage() {
                     <div className="mb-8">
                         <div className="flex items-center gap-4 mb-3">
                             <h1 className="font-title text-4xl md:text-5xl font-black text-offblack">
-                                {view === "play" ? "Play" : "Stream"}
+                                {view === "play" ? "Create" : "Watch"}
                             </h1>
                             <button
                                 type="button"

@@ -1,4 +1,5 @@
 import { Outlet, NavLink } from "react-router-dom";
+import { useState, useEffect } from "react";
 import logo from "../logo/logo.svg";
 import { SOCIAL_LINKS } from "../config/socialLinksList";
 
@@ -10,12 +11,40 @@ const tabs = [
 ];
 
 function Layout() {
+    const [showFooter, setShowFooter] = useState(false);
+
+    useEffect(() => {
+        const handleScroll = () => {
+            const windowHeight = window.innerHeight;
+            const documentHeight = document.documentElement.scrollHeight;
+            const scrollTop = window.scrollY;
+            const distanceFromBottom =
+                documentHeight - (scrollTop + windowHeight);
+
+            // Show footer when near bottom (within 100px) OR if page is short (no scroll needed)
+            if (distanceFromBottom < 100 || documentHeight <= windowHeight) {
+                setShowFooter(true);
+            } else {
+                setShowFooter(false);
+            }
+        };
+
+        window.addEventListener("scroll", handleScroll, { passive: true });
+        window.addEventListener("resize", handleScroll, { passive: true });
+        // Check immediately on mount
+        handleScroll();
+
+        return () => {
+            window.removeEventListener("scroll", handleScroll);
+            window.removeEventListener("resize", handleScroll);
+        };
+    }, []);
     return (
         <div className="relative min-h-screen bg-offwhite/80">
             {/* Floating Transparent Header */}
             <header className="fixed top-0 left-0 right-0 z-50">
-                <div className="max-w-screen-xl mx-auto p-3 md:p-4">
-                    <div className="flex items-center gap-2 md:gap-4">
+                <div className="w-full px-4 py-3 md:py-4">
+                    <div className="max-w-4xl mx-auto flex items-center gap-2 md:gap-4">
                         {/* Brutalist Tab Navigation - Scrollable on mobile */}
                         <nav className="flex-1 overflow-x-auto scrollbar-hide">
                             <div className="flex gap-1 md:gap-2 items-center min-w-max">
@@ -87,32 +116,68 @@ function Layout() {
                 <Outlet />
             </main>
 
-            {/* Floating Transparent Footer */}
-            <footer className="fixed bottom-0 left-0 right-0 z-40">
-                <div className="max-w-screen-xl mx-auto p-2 md:p-3 text-center">
-                    <p className="font-body text-xs md:text-sm text-offblack/50">
-                        © 2024 Pollinations.AI - Free & Open Source
-                    </p>
-                    {/* Social icons visible on mobile footer */}
-                    <div className="flex sm:hidden gap-2 justify-center mt-2">
-                        {Object.entries(SOCIAL_LINKS)
-                            .slice(0, 4)
-                            .map(([key, { url, icon, label }]) => (
-                                <a
-                                    key={key}
-                                    href={url}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    title={label}
-                                    className="w-7 h-7 flex items-center justify-center bg-offwhite/80 backdrop-blur-sm border-2 border-black p-1"
-                                >
-                                    <img
-                                        src={icon}
-                                        alt={label}
-                                        className="w-full h-full object-contain"
-                                    />
-                                </a>
-                            ))}
+            {/* Floating Transparent Footer - Smart Hide/Show */}
+            <footer
+                className={`fixed bottom-0 left-0 right-0 z-40 bg-offwhite/60 backdrop-blur-sm border-t-2 border-offblack/10 transition-transform duration-300 ${
+                    showFooter ? "translate-y-0" : "translate-y-full"
+                }`}
+            >
+                <div className="w-full px-4 py-3 md:py-4">
+                    <div className="max-w-4xl mx-auto flex flex-col md:flex-row md:items-center md:justify-between gap-3 text-center md:text-left">
+                        {/* Left: Branding */}
+                        <div className="space-y-0.5">
+                            <p className="font-headline text-xs font-black text-offblack uppercase tracking-wider">
+                                Pollinations.AI - 2025
+                            </p>
+                            <p className="font-body text-xs text-offblack/60">
+                                Open source AI innovation from Berlin
+                            </p>
+                        </div>
+
+                        {/* Center: Links */}
+                        <div className="flex items-center justify-center gap-3 text-xs">
+                            <a
+                                href="/terms"
+                                className="font-body text-offblack/60 hover:text-offblack transition-colors"
+                            >
+                                Terms & Conditions
+                            </a>
+                            <span className="text-offblack/30">•</span>
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    navigator.clipboard.writeText(
+                                        "hello@pollinations.ai"
+                                    );
+                                    alert("Email copied to clipboard!");
+                                }}
+                                className="font-body text-offblack/60 hover:text-offblack transition-colors cursor-pointer"
+                            >
+                                hello@pollinations.ai
+                            </button>
+                        </div>
+
+                        {/* Right: Social Links */}
+                        <div className="flex gap-2 justify-center md:justify-end">
+                            {Object.entries(SOCIAL_LINKS)
+                                .slice(0, 5)
+                                .map(([key, { url, icon, label }]) => (
+                                    <a
+                                        key={key}
+                                        href={url}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        title={label}
+                                        className="w-7 h-7 flex items-center justify-center bg-offwhite/80 border-2 border-offblack/20 hover:border-rose hover:bg-lime/90 transition-all p-1"
+                                    >
+                                        <img
+                                            src={icon}
+                                            alt={label}
+                                            className="w-full h-full object-contain"
+                                        />
+                                    </a>
+                                ))}
+                        </div>
                     </div>
                 </div>
             </footer>

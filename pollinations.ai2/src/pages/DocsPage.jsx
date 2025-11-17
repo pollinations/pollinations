@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { TextGenerator } from "../components/TextGenerator";
 import { DOCS_INTRO, DOCS_API_REFERENCE } from "../config/content";
 
-const API_KEY = "plln_pk_vAIFVsqh5Kp34gpnHPJhCkKKqxuKL7m8";
+const API_KEY = "plln_sk_2d1YAgFDvIjAKPZ1mOFVCGiYNTluWhmc";
 
 // Nature-themed prompt presets
 const IMAGE_PROMPTS = [
@@ -48,14 +48,18 @@ function DocsPage() {
                         >
                             Full API Docs
                         </a>
-                        <a
-                            href="https://github.com/pollinations/pollinations/blob/master/enter.pollinations.ai/AGENTS.md"
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="inline-block px-4 py-2 bg-lime/90 border-2 border-rose font-headline uppercase text-xs font-black hover:shadow-[4px_4px_0px_0px_rgba(255,105,180,1)] transition-all"
+                        <button
+                            type="button"
+                            onClick={() => {
+                                // TODO: Replace with actual AGENTS.md content
+                                const agentPrompt = `# Pollinations.AI Agent Prompt\n\nThis is a placeholder for the agent prompt content from AGENTS.md.\n\nThe full content will be added here soon.`;
+                                navigator.clipboard.writeText(agentPrompt);
+                                alert("Agent prompt copied to clipboard!");
+                            }}
+                            className="inline-block px-4 py-2 bg-lime/90 border-2 border-rose font-headline uppercase text-xs font-black hover:shadow-[4px_4px_0px_0px_rgba(255,105,180,1)] transition-all cursor-pointer"
                         >
-                            Agent Prompt
-                        </a>
+                            Agent Prompt 📋
+                        </button>
                     </div>
                 </div>
 

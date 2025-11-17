@@ -2,8 +2,8 @@ import { useState, useEffect } from "react";
 import ReactMarkdown from "react-markdown";
 import { CONTEXT } from "../config/content";
 
-// Pollinations API key
-const API_KEY = "plln_pk_vAIFVsqh5Kp34gpnHPJhCkKKqxuKL7m8";
+// Pollinations API key (secret key for local dev)
+const API_KEY = "plln_sk_2d1YAgFDvIjAKPZ1mOFVCGiYNTluWhmc";
 
 // Build the prompt with context + instructions + text
 const buildPrompt = (text, transforms, props) => {
@@ -79,6 +79,7 @@ function usePollinationsText(prompt, seed) {
 
 // Main text generation component
 export function TextGenerator({
+    prompt,
     text,
     transforms = [],
     seed,
@@ -91,14 +92,17 @@ export function TextGenerator({
     const isMobile =
         typeof window !== "undefined" ? window.innerWidth < 768 : false;
 
-    const prompt = buildPrompt(text, transforms, {
-        userLanguage,
-        isMobile,
-        ...props,
-    });
+    // Support both 'prompt' (direct) and 'text' (with transforms) props
+    const finalPrompt =
+        prompt ||
+        buildPrompt(text, transforms, {
+            userLanguage,
+            isMobile,
+            ...props,
+        });
 
     // Use the new enter.pollinations.ai API
-    const generatedText = usePollinationsText(prompt, seed);
+    const generatedText = usePollinationsText(finalPrompt, seed);
 
     if (!generatedText) {
         return <Component {...props}>...</Component>;

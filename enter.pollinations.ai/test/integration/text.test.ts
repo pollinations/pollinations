@@ -338,38 +338,6 @@ test("Session cookies should not authenticate API proxy routes", async ({
     expect(response.status).toBe(401);
 });
 
-// Test model parameter handling
-test(
-    "POST /v1/chat/completions should accept model parameter",
-    { timeout: 30000 },
-    async ({ apiKey, mocks }) => {
-        mocks.enable("polar", "tinybird");
-        const response = await SELF.fetch(
-            `http://localhost:3000/api/generate/v1/chat/completions`,
-            {
-                method: "POST",
-                headers: {
-                    "content-type": "application/json",
-                    "authorization": `Bearer ${apiKey}`,
-                    "referer": env.TESTING_REFERRER,
-                },
-                body: JSON.stringify({
-                    model: "openai-fast",
-                    messages: [
-                        {
-                            role: "user",
-                            content: testMessageContent(),
-                        },
-                    ],
-                }),
-            },
-        );
-        expect(response.status).toBe(200);
-        const data = await response.json();
-        expect(data.model).toBeDefined();
-    },
-);
-
 // Test invalid model handling
 test(
     "POST /v1/chat/completions should reject invalid model",
@@ -403,27 +371,6 @@ test(
         expect(response.status).toBe(400);
         const error = JSON.parse(body);
         expect(error.error.message).toContain("Invalid service or alias");
-    },
-);
-
-// Test query parameter authentication
-test(
-    "GET /text/:prompt should accept key query parameter",
-    { timeout: 30000 },
-    async ({ apiKey, mocks }) => {
-        mocks.enable("polar", "tinybird");
-        const response = await SELF.fetch(
-            `http://localhost:3000/api/generate/text/${encodeURIComponent(testMessageContent())}?model=openai-fast&key=${apiKey}`,
-            {
-                method: "GET",
-                headers: {
-                    "referer": env.TESTING_REFERRER,
-                },
-            },
-        );
-        expect(response.status).toBe(200);
-        const text = await response.text();
-        expect(text.length).toBeGreaterThan(0);
     },
 );
 

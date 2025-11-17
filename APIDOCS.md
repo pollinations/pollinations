@@ -541,10 +541,5 @@ Register for higher quotas and greater model access at [auth.pollinations.ai](ht
 
 ---
 
-## License
-
-**MIT License**
-
-Feel free to adapt, share, and modify this API and its documentation. Your contributions are always welcome.
 
 *Made with professionalism and care by the Pollinations.AI Team*

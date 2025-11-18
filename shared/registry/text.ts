@@ -374,8 +374,8 @@ export const TEXT_SERVICES = {
         reasoning: true,
         isSpecialized: false,
     },
-    "gemini-3-pro": {
-        aliases: ["gemini-3", "gemini-3-pro-preview"],
+    "gemini-large": {
+        aliases: ["gemini-3-pro", "gemini-3", "gemini-3-pro-preview"],
         modelId: "gemini-3-pro-preview",
         provider: "vertex-ai",
         cost: [

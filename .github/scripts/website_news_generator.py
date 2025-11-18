@@ -271,6 +271,10 @@ def update_news_file(news_content: str, github_token: str, owner: str, repo: str
 
 This PR updates the website news section with this week's major changes.
 
+### News Entries
+
+{news_content}
+
 ### Changes
 - Updated `pollinations.ai/src/config/newsList.js` with latest news entries
 

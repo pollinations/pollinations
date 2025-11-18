@@ -1,0 +1,44 @@
+import * as React from "react";
+import { cva } from "class-variance-authority";
+import { cn } from "../../lib/utils";
+
+// ============================================
+// DIVIDER COMPONENT
+// ============================================
+// Horizontal rule for separating content sections
+// Used consistently across all pages to create visual breaks
+//
+// Examples:
+// - HelloPage: Between major sections (Pollen, Get Pollen, Tiers, etc.)
+// - CommunityPage: Between community info and supporters
+// - DocsPage: Between API sections
+//
+// Spacing variants control vertical margin above/below
+// ============================================
+const dividerVariants = cva("border-t-2 border-offblack/10", {
+    variants: {
+        spacing: {
+            default: "my-12", // Standard section spacing (most common)
+            comfortable: "my-16", // Extra breathing room
+            tight: "my-8", // Compact, less prominent
+            compact: "my-6", // Very tight spacing
+            none: "", // Custom spacing
+        },
+    },
+    defaultVariants: {
+        spacing: "default",
+    },
+});
+
+export const Divider = React.forwardRef(
+    ({ className, spacing, ...props }, ref) => {
+        return (
+            <hr
+                ref={ref}
+                className={cn(dividerVariants({ spacing, className }))}
+                {...props}
+            />
+        );
+    }
+);
+Divider.displayName = "Divider";

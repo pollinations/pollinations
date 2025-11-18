@@ -6,7 +6,7 @@ import { ExternalLinkIcon } from "../icons/ExternalLinkIcon";
 import { SOCIAL_LINKS } from "../config/socialLinksList";
 
 const tabs = [
-    { path: "/hello", label: "GenAI" },
+    { path: "/hello", label: "Hello" },
     { path: "/play", label: "Play" },
     { path: "/apps", label: "Apps" },
     { path: "/docs", label: "Docs" },

@@ -3,7 +3,7 @@ import ReactMarkdown from "react-markdown";
 import { CONTEXT } from "../config/content";
 
 // Pollinations API key (secret key for local dev)
-const API_KEY = "plln_sk_2d1YAgFDvIjAKPZ1mOFVCGiYNTluWhmc";
+const API_KEY = import.meta.env.VITE_POLLINATIONS_API_KEY;
 
 // Build the prompt with context + instructions + text
 const buildPrompt = (text, transforms, props) => {

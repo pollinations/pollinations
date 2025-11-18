@@ -3,7 +3,7 @@
 
 import { useState, useEffect } from "react";
 
-const API_KEY = "plln_sk_2d1YAgFDvIjAKPZ1mOFVCGiYNTluWhmc";
+const API_KEY = import.meta.env.VITE_POLLINATIONS_API_KEY;
 
 export function ImageGenerator({
     prompt,
@@ -30,17 +30,19 @@ export function ImageGenerator({
 
         async function fetchImage() {
             try {
-                const url = new URL(
-                    "https://enter.pollinations.ai/api/generate/image"
-                );
-                url.searchParams.set("prompt", prompt);
-                url.searchParams.set("model", model);
-                url.searchParams.set("width", width.toString());
-                url.searchParams.set("height", height.toString());
-                url.searchParams.set("seed", seed.toString());
-                url.searchParams.set("nologo", "true");
+                const baseUrl = `https://enter.pollinations.ai/api/generate/image/${encodeURIComponent(
+                    prompt
+                )}`;
+                const params = new URLSearchParams({
+                    model: model,
+                    width: width.toString(),
+                    height: height.toString(),
+                    seed: seed.toString(),
+                    nologo: "true",
+                });
+                const url = `${baseUrl}?${params.toString()}`;
 
-                console.log(`🚀 Starting fetch for "${alt}":`, url.toString());
+                console.log(`🚀 Starting fetch for "${alt}":`, url);
                 console.log(
                     `🔑 Using API Key:`,
                     API_KEY.substring(0, 15) + "..."
@@ -51,7 +53,7 @@ export function ImageGenerator({
                 };
                 console.log(`📋 Request headers:`, headers);
 
-                const response = await fetch(url.toString(), {
+                const response = await fetch(url, {
                     method: "GET",
                     headers: headers,
                 });
@@ -157,15 +159,15 @@ export function generateImageUrl({
     model = "flux",
     nologo = true,
 }) {
-    const url = new URL(
-        "https://enter.pollinations.ai/api/generate/image/flux"
-    );
-
-    url.searchParams.set("prompt", prompt);
-    url.searchParams.set("width", width.toString());
-    url.searchParams.set("height", height.toString());
-    url.searchParams.set("seed", seed.toString());
-    url.searchParams.set("nologo", nologo.toString());
-
-    return url.toString();
+    const baseUrl = `https://enter.pollinations.ai/api/generate/image/${encodeURIComponent(
+        prompt
+    )}`;
+    const params = new URLSearchParams({
+        model: model,
+        width: width.toString(),
+        height: height.toString(),
+        seed: seed.toString(),
+        nologo: nologo.toString(),
+    });
+    return `${baseUrl}?${params.toString()}`;
 }

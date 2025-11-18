@@ -5,7 +5,7 @@ import { PLAY_DESCRIPTION, FEED_DESCRIPTION } from "../config/content";
 import { ImageFeed } from "../components/ImageFeed";
 
 // API key for authenticated requests (secret key for local dev)
-const API_KEY = "plln_sk_2d1YAgFDvIjAKPZ1mOFVCGiYNTluWhmc";
+const API_KEY = import.meta.env.VITE_POLLINATIONS_API_KEY;
 
 function PlayPage() {
     const [view, setView] = useState("play"); // "play" or "feed"
@@ -130,10 +130,14 @@ function PlayPage() {
                         <TextGenerator
                             text={
                                 view === "play"
-                                    ? PLAY_DESCRIPTION
-                                    : FEED_DESCRIPTION
+                                    ? PLAY_DESCRIPTION.prompt
+                                    : FEED_DESCRIPTION.prompt
                             }
-                            seed={view === "play" ? 12345 : 54321}
+                            seed={
+                                view === "play"
+                                    ? PLAY_DESCRIPTION.seed
+                                    : FEED_DESCRIPTION.seed
+                            }
                             as="div"
                             className="font-body text-offblack/70 text-base leading-relaxed"
                         />

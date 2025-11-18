@@ -22,22 +22,22 @@ Color palette and font configuration.
 
 ```jsx
 import { TextGenerator } from "../components/TextGenerator";
-import { HOME_HERO_TITLE } from "../config/content";
+import { HOME_HERO_TITLE, SEEDS } from "../config/content";
 import { rephrase, emojify, noLink } from "../config/transforms";
 
 <TextGenerator
     text={HOME_HERO_TITLE}
     transforms={[rephrase, emojify, noLink]}
-    seed={1}
+    seed={SEEDS.HOME_HERO_TITLE}
 />;
 ```
 
 ## Seed Strategy
 
--   Each text element gets a **unique seed number** (1, 2, 3, etc.)
--   Same seed = same output (cached on backend)
--   Generates ~3 variations per language
--   Backend caching handles performance
+-   **Centralized in content.js** - All seeds defined in `SEEDS` object
+-   **Page-based ranges** - Each page gets 100 numbers (Home: 100-199, Play: 200-299, etc.)
+-   **Same seed = same output** - Cached on backend for performance
+-   **Deterministic** - Predictable, organized, no conflicts
 
 ## Adding New Content
 

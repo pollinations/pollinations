@@ -4,6 +4,7 @@ import logo from "../logo/logo.svg";
 import { SOCIAL_LINKS } from "../config/socialLinksList";
 
 const tabs = [
+    { path: "/", label: "Hello" },
     { path: "/play", label: "Play" },
     { path: "/apps", label: "Apps" },
     { path: "/docs", label: "Docs" },
@@ -41,32 +42,22 @@ function Layout() {
     }, []);
     return (
         <div className="relative min-h-screen bg-offwhite/80">
+            {/* Logo - Top Left Floating Brutalist */}
+            <div className="fixed top-4 left-4 z-40 w-16 h-16 md:w-20 md:h-20 pointer-events-none">
+                <img
+                    src={logo}
+                    alt="pollinations.ai"
+                    className="w-full h-full object-contain invert drop-shadow-[4px_4px_0px_rgba(255,105,180,1)]"
+                />
+            </div>
+
             {/* Floating Transparent Header */}
             <header className="fixed top-0 left-0 right-0 z-50">
-                <div className="w-full px-4 py-3 md:py-4">
+                <div className="w-full pl-24 md:pl-28 pr-4 py-3 md:py-4">
                     <div className="max-w-4xl mx-auto flex items-center gap-2 md:gap-4">
                         {/* Brutalist Tab Navigation - Scrollable on mobile */}
                         <nav className="flex-1 overflow-x-auto scrollbar-hide">
                             <div className="flex gap-1 md:gap-2 items-center min-w-max">
-                                {/* Logo Button - Replaces Home */}
-                                <NavLink
-                                    to="/"
-                                    end
-                                    className={({ isActive }) =>
-                                        `flex-shrink-0 w-12 h-12 md:w-16 md:h-16 p-2.5 md:p-3 flex items-center justify-center border-r-4 border-b-4 border-rose transition-all duration-200 ${
-                                            isActive
-                                                ? "bg-lime/90 backdrop-blur-md shadow-[4px_4px_0px_0px_rgba(255,105,180,1)]"
-                                                : "bg-offwhite/80 backdrop-blur-md hover:bg-lime/90 hover:shadow-[4px_4px_0px_0px_rgba(255,105,180,1)]"
-                                        }`
-                                    }
-                                >
-                                    <img
-                                        src={logo}
-                                        alt="pollinations.ai"
-                                        className="w-full h-full object-contain invert"
-                                    />
-                                </NavLink>
-
                                 {tabs.map((tab) => (
                                     <NavLink
                                         key={tab.path}
@@ -94,7 +85,7 @@ function Layout() {
                                                 target="_blank"
                                                 rel="noopener noreferrer"
                                                 title={label}
-                                                className="flex-shrink-0 w-8 h-8 md:w-10 md:h-10 flex items-center justify-center bg-offwhite/80 backdrop-blur-md border-r-4 border-b-4 border-offblack/30 hover:bg-lime/90 hover:border-rose hover:shadow-[4px_4px_0px_0px_rgba(255,105,180,1)] transition-all p-1.5 md:p-2"
+                                                className="flex-shrink-0 w-6 h-6 md:w-8 md:h-8 flex items-center justify-center bg-offwhite/80 backdrop-blur-md border-r-4 border-b-4 border-offblack/30 hover:bg-lime/90 hover:border-rose hover:shadow-[4px_4px_0px_0px_rgba(255,105,180,1)] transition-all p-1 md:p-1.5"
                                             >
                                                 <img
                                                     src={icon}

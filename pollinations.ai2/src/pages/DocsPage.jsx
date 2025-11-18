@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { TextGenerator } from "../components/TextGenerator";
 import { DOCS_INTRO, DOCS_API_REFERENCE } from "../config/content";
 
-const API_KEY = "plln_sk_2d1YAgFDvIjAKPZ1mOFVCGiYNTluWhmc";
+const API_KEY = import.meta.env.VITE_POLLINATIONS_API_KEY;
 
 // Nature-themed prompt presets
 const IMAGE_PROMPTS = [
@@ -25,28 +25,28 @@ function DocsPage() {
     return (
         <div className="w-full px-4 pb-12">
             <div className="max-w-4xl mx-auto space-y-6">
-                {/* Intro Card */}
+                {/* Intro - Full Width */}
                 <div className="bg-offwhite/90 border-r-4 border-b-4 border-rose shadow-[6px_6px_0px_0px_rgba(255,105,180,1)] p-6 md:p-8">
                     <TextGenerator
-                        text={DOCS_INTRO}
-                        seed={77777}
+                        text={DOCS_INTRO.prompt}
+                        seed={DOCS_INTRO.seed}
                         as="div"
                         className="font-body text-offblack/70 text-base leading-relaxed mb-4"
                     />
                     <TextGenerator
-                        text={DOCS_API_REFERENCE}
-                        seed={88888}
+                        text={DOCS_API_REFERENCE.prompt}
+                        seed={DOCS_API_REFERENCE.seed}
                         as="div"
-                        className="font-body text-offblack/70 text-sm leading-relaxed mb-4"
+                        className="font-body text-offblack/70 text-sm leading-relaxed mb-6"
                     />
                     <div className="flex flex-wrap gap-3">
                         <a
                             href="https://enter.pollinations.ai/api/docs"
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="inline-block px-4 py-2 bg-lime/90 border-2 border-rose font-headline uppercase text-xs font-black hover:shadow-[4px_4px_0px_0px_rgba(255,105,180,1)] transition-all"
+                            className="inline-block px-4 py-3 bg-lime/90 border-r-4 border-b-4 border-offblack shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] font-headline uppercase text-xs font-black hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transition-all"
                         >
-                            Full API Docs
+                            📚 Full API Docs
                         </a>
                         <button
                             type="button"
@@ -56,17 +56,11 @@ function DocsPage() {
                                 navigator.clipboard.writeText(agentPrompt);
                                 alert("Agent prompt copied to clipboard!");
                             }}
-                            className="inline-block px-4 py-2 bg-lime/90 border-2 border-rose font-headline uppercase text-xs font-black hover:shadow-[4px_4px_0px_0px_rgba(255,105,180,1)] transition-all cursor-pointer"
+                            className="inline-block px-4 py-3 bg-offblack border-r-4 border-b-4 border-lime shadow-[4px_4px_0px_0px_rgba(190,242,100,1)] font-headline uppercase text-xs font-black text-offwhite hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-[2px_2px_0px_0px_rgba(190,242,100,1)] transition-all cursor-pointer"
                         >
-                            Agent Prompt 📋
+                            🤖 Agent Prompt
                         </button>
                     </div>
-                </div>
-
-                {/* Auth & Model Discovery - Side by Side */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <AuthCard />
-                    <ModelDiscoveryCard />
                 </div>
 
                 {/* Image Generation Card */}
@@ -74,6 +68,12 @@ function DocsPage() {
 
                 {/* Text Generation Card */}
                 <TextGenCard />
+
+                {/* Model Discovery */}
+                <ModelDiscoveryCard />
+
+                {/* Authentication - Call to Action */}
+                <AuthCard />
             </div>
         </div>
     );
@@ -82,45 +82,122 @@ function DocsPage() {
 function AuthCard() {
     return (
         <div className="bg-offwhite/90 border-r-4 border-b-4 border-rose shadow-[6px_6px_0px_0px_rgba(255,105,180,1)] p-6 md:p-8">
-            <h2 className="font-headline text-2xl font-black text-offblack mb-4 uppercase tracking-wider">
-                🔑 Authentication
+            <h2 className="font-headline text-2xl font-black text-offblack mb-6 uppercase tracking-wider">
+                Authentication
             </h2>
-            <div className="space-y-4 font-body text-offblack/80">
-                <p>
-                    Get your API key at{" "}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* Left: Key Types + Get Your Key */}
+                <div className="space-y-4">
+                    <div>
+                        <p className="font-headline text-xs uppercase tracking-wider font-black text-offblack mb-3">
+                            Key Types
+                        </p>
+                        <div className="space-y-3">
+                            {/* Publishable Key */}
+                            <div className="bg-offblack/5 p-4">
+                                <div className="flex items-start gap-3">
+                                    <span className="font-mono text-lg font-black text-lime">
+                                        pk_
+                                    </span>
+                                    <div>
+                                        <p className="font-headline text-xs font-black text-offblack uppercase mb-1">
+                                            Publishable
+                                        </p>
+                                        <p className="text-xs text-offblack/70">
+                                            Client-safe, rate-limited
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Secret Key */}
+                            <div className="bg-offblack/5 p-4">
+                                <div className="flex items-start gap-3">
+                                    <span className="font-mono text-lg font-black text-rose">
+                                        sk_
+                                    </span>
+                                    <div>
+                                        <p className="font-headline text-xs font-black text-offblack uppercase mb-1">
+                                            Secret
+                                        </p>
+                                        <p className="text-xs text-offblack/70">
+                                            Server-only, unlimited
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
                     <a
                         href="https://enter.pollinations.ai"
-                        className="text-offblack font-black underline hover:text-rose transition-colors"
                         target="_blank"
                         rel="noopener noreferrer"
+                        className="inline-block bg-lime/90 border-r-4 border-b-4 border-offblack shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] px-6 py-4 hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transition-all"
                     >
-                        enter.pollinations.ai
+                        <p className="font-headline text-xs uppercase tracking-wider font-black text-offblack mb-2">
+                            Get Your Key
+                        </p>
+                        <p className="font-mono text-sm font-black text-offblack">
+                            enter.pollinations.ai →
+                        </p>
                     </a>
-                </p>
-
-                <div>
-                    <p className="font-black mb-2">Key Types:</p>
-                    <ul className="list-disc list-inside space-y-1 text-sm">
-                        <li>
-                            <span className="font-mono bg-lime/30 px-1">
-                                pk_
-                            </span>{" "}
-                            Publishable (client-safe, rate-limited)
-                        </li>
-                        <li>
-                            <span className="font-mono bg-lime/30 px-1">
-                                sk_
-                            </span>{" "}
-                            Secret (server-only, unlimited)
-                        </li>
-                    </ul>
                 </div>
 
+                {/* Right: Usage Examples */}
                 <div>
-                    <p className="font-black mb-2">Usage:</p>
-                    <div className="font-mono text-xs bg-offblack/5 p-3 space-y-1">
-                        <div>Header: Authorization: Bearer YOUR_KEY</div>
-                        <div>Or: ?key=YOUR_KEY</div>
+                    <p className="font-headline text-xs uppercase tracking-wider font-black text-offblack mb-3">
+                        Usage Examples
+                    </p>
+
+                    {/* Header Method */}
+                    <div className="mb-4">
+                        <p className="font-body text-xs text-offblack/70 mb-2">
+                            <span className="font-black">
+                                Server-side (Recommended):
+                            </span>{" "}
+                            Use secret key in Authorization header
+                        </p>
+                        <div className="font-mono text-xs bg-offblack text-offwhite p-4 border-r-4 border-b-4 border-offblack/50">
+                            <div className="text-lime/80">
+                                {"// Example with fetch"}
+                            </div>
+                            <div className="mt-2">{"fetch(url, {"}</div>
+                            <div className="pl-4">{"  headers: {"}</div>
+                            <div className="pl-8">
+                                <span className="text-rose">
+                                    {'"Authorization"'}
+                                </span>
+                                :{" "}
+                                <span className="text-lime">
+                                    {'"Bearer sk_..."'}
+                                </span>
+                            </div>
+                            <div className="pl-4">{"  }"}</div>
+                            <div className="pl-4">{"});"}</div>
+                        </div>
+                    </div>
+
+                    {/* Query Method */}
+                    <div>
+                        <p className="font-body text-xs text-offblack/70 mb-2">
+                            <span className="font-black">
+                                Client-side (Public):
+                            </span>{" "}
+                            Use publishable key in query parameter
+                        </p>
+                        <div className="font-mono text-xs bg-offblack text-offwhite p-4 border-r-4 border-b-4 border-offblack/50">
+                            <div className="text-lime/80">
+                                {"// Add to URL"}
+                            </div>
+                            <div className="mt-2">
+                                {"https://enter.pollinations.ai/..."}
+                            </div>
+                            <div className="pl-4">
+                                <span className="text-rose">{"?key="}</span>
+                                <span className="text-lime">{"pk_..."}</span>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -189,7 +266,7 @@ function ImageGenCard() {
     return (
         <div className="bg-offwhite/90 border-r-4 border-b-4 border-rose shadow-[6px_6px_0px_0px_rgba(255,105,180,1)] p-6 md:p-8">
             <h2 className="font-headline text-2xl font-black text-offblack mb-4 uppercase tracking-wider">
-                🎨 Image Generation
+                Image Generation
             </h2>
 
             {/* Prompts/Parameters and Image Preview - Side by Side */}
@@ -226,8 +303,7 @@ function ImageGenCard() {
                         </p>
                         <div className="flex flex-wrap gap-2">
                             {[
-                                "model=flux",
-                                "model=turbo",
+                                "model=nanobanana",
                                 "width=1024",
                                 "height=1024",
                                 "seed=42",
@@ -269,27 +345,7 @@ function ImageGenCard() {
 
             {/* URL Display */}
             <div className="mb-4 p-3 bg-offblack/5 font-mono text-xs break-all">
-                <span className="text-offblack/40">
-                    https://enter.pollinations.ai/api/generate/image/
-                </span>
-                <span className="bg-lime/90 px-1 font-black">
-                    {selectedPrompt}
-                </span>
-                {params.size > 0 && (
-                    <>
-                        <span className="text-offblack/40">?</span>
-                        {Array.from(params).map((param, i) => (
-                            <span key={param}>
-                                {i > 0 && (
-                                    <span className="text-offblack/40">&</span>
-                                )}
-                                <span className="bg-lime/90 px-1 font-black">
-                                    {param}
-                                </span>
-                            </span>
-                        ))}
-                    </>
-                )}
+                {buildUrl()}
             </div>
 
             {/* Copy Button */}
@@ -355,7 +411,7 @@ function TextGenCard() {
     return (
         <div className="bg-offwhite/90 border-r-4 border-b-4 border-rose shadow-[6px_6px_0px_0px_rgba(255,105,180,1)] p-6 md:p-8">
             <h2 className="font-headline text-2xl font-black text-offblack mb-4 uppercase tracking-wider">
-                💬 Text Generation
+                Text Generation
             </h2>
 
             {/* Prompts/Parameters and Response - Side by Side */}
@@ -467,47 +523,102 @@ function TextGenCard() {
 }
 
 function ModelDiscoveryCard() {
+    const modelEndpoints = {
+        image: {
+            label: "Image",
+            url: "https://enter.pollinations.ai/api/generate/image/models",
+            path: "/image/models",
+            color: "lime",
+        },
+        openai: {
+            label: "Text (OpenAI)",
+            url: "https://enter.pollinations.ai/api/generate/v1/models",
+            path: "/v1/models",
+            color: "rose",
+        },
+        simple: {
+            label: "Text (Simple)",
+            url: "https://enter.pollinations.ai/api/generate/text/models",
+            path: "/text/models",
+            color: "lime",
+        },
+    };
+
+    const [selectedModel, setSelectedModel] = useState("image");
+    const currentEndpoint = modelEndpoints[selectedModel];
+
     return (
         <div className="bg-offwhite/90 border-r-4 border-b-4 border-rose shadow-[6px_6px_0px_0px_rgba(255,105,180,1)] p-6 md:p-8">
             <h2 className="font-headline text-2xl font-black text-offblack mb-4 uppercase tracking-wider">
-                📚 Model Discovery
+                Model Discovery
             </h2>
-            <div className="space-y-4 font-body text-offblack/80">
-                <div>
-                    <p className="font-black mb-2">Image Models:</p>
-                    <a
-                        href="https://enter.pollinations.ai/api/generate/image/models"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-block font-mono text-xs bg-offblack/5 px-3 py-2 hover:bg-lime/30 transition-colors border-b-2 border-transparent hover:border-rose"
-                    >
-                        /api/generate/image/models
-                    </a>
-                </div>
 
-                <div>
-                    <p className="font-black mb-2">Text Models (OpenAI):</p>
-                    <a
-                        href="https://enter.pollinations.ai/api/generate/v1/models"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-block font-mono text-xs bg-offblack/5 px-3 py-2 hover:bg-lime/30 transition-colors border-b-2 border-transparent hover:border-rose"
-                    >
-                        /api/generate/v1/models
-                    </a>
+            {/* Model Type Selection */}
+            <div className="mb-4">
+                <p className="font-headline text-xs uppercase tracking-wider font-black mb-2">
+                    Select model type:
+                </p>
+                <div className="flex flex-wrap gap-2">
+                    {Object.entries(modelEndpoints).map(
+                        ([key, { label, color }]) => (
+                            <button
+                                key={key}
+                                type="button"
+                                onClick={() => setSelectedModel(key)}
+                                className={`px-3 py-1.5 font-mono text-xs border-2 transition-all cursor-pointer ${
+                                    selectedModel === key
+                                        ? color === "rose"
+                                            ? "bg-rose border-offblack font-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]"
+                                            : "bg-lime/90 border-offblack font-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]"
+                                        : "bg-offblack/10 border-offblack/30 hover:border-rose"
+                                }`}
+                            >
+                                {label}
+                            </button>
+                        )
+                    )}
                 </div>
+            </div>
 
-                <div>
-                    <p className="font-black mb-2">Text Models (Simple):</p>
-                    <a
-                        href="https://enter.pollinations.ai/api/generate/text/models"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-block font-mono text-xs bg-offblack/5 px-3 py-2 hover:bg-lime/30 transition-colors border-b-2 border-transparent hover:border-rose"
-                    >
-                        /api/generate/text/models
-                    </a>
-                </div>
+            {/* URL Display */}
+            <div className="mb-4 p-3 bg-offblack/5 font-mono text-xs break-all">
+                <span className="text-offblack/40">
+                    https://enter.pollinations.ai/api/generate
+                </span>
+                <span
+                    className={`px-1 font-black ${
+                        currentEndpoint.color === "rose"
+                            ? "bg-rose/90 text-offwhite"
+                            : "bg-lime/90"
+                    }`}
+                >
+                    {currentEndpoint.path}
+                </span>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex gap-3">
+                <a
+                    href={currentEndpoint.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className={`inline-block px-4 py-2 border-2 font-headline uppercase text-xs font-black transition-all ${
+                        currentEndpoint.color === "rose"
+                            ? "bg-rose border-offblack hover:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]"
+                            : "bg-lime/90 border-offblack hover:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]"
+                    }`}
+                >
+                    Open API →
+                </a>
+                <button
+                    type="button"
+                    onClick={() =>
+                        navigator.clipboard.writeText(currentEndpoint.url)
+                    }
+                    className="px-4 py-2 bg-offblack border-2 border-offblack font-headline uppercase text-xs font-black text-offwhite hover:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-all"
+                >
+                    Copy URL
+                </button>
             </div>
         </div>
     );

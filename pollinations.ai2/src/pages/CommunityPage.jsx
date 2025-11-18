@@ -1,6 +1,5 @@
 import { TextGenerator } from "../components/TextGenerator";
 import { ImageGenerator } from "../components/ImageGenerator";
-import { Content } from "../components/Content";
 import { SOCIAL_LINKS } from "../config/socialLinksList";
 import {
     COMMUNITY_TITLE,
@@ -9,9 +8,9 @@ import {
     COMMUNITY_GITHUB_SUBTITLE,
     SUPPORTER_TITLE,
     SUPPORTER_SUBTITLE,
-    SUPPORTERS,
     getSupporterLogoPrompt,
 } from "../config/content";
+import { SUPPORTERS } from "../config/supporters";
 
 function CommunityPage() {
     return (
@@ -23,39 +22,45 @@ function CommunityPage() {
                         {COMMUNITY_TITLE}
                     </h1>
                     <TextGenerator
-                        prompt={COMMUNITY_SUBTITLE}
+                        prompt={COMMUNITY_SUBTITLE.prompt}
+                        seed={COMMUNITY_SUBTITLE.seed}
+                        as="div"
                         className="font-body text-base text-offblack/80 leading-relaxed mb-6"
                     />
 
                     {/* Discord & GitHub Cards - Bold brutalist blocks */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         {/* Discord Card */}
-                        <div className="bg-blue-500 p-5 hover:bg-blue-600 transition-colors">
-                            <h2 className="font-headline text-xl font-black text-offwhite mb-3 uppercase tracking-wider">
+                        <div className="bg-offblack p-6 hover:bg-offblack/90 transition-colors">
+                            <h2 className="font-headline text-xl font-black text-offwhite mb-4 uppercase tracking-wider">
                                 💬 Discord
                             </h2>
                             <TextGenerator
-                                prompt={COMMUNITY_DISCORD_SUBTITLE}
-                                className="font-body text-sm text-offwhite/90 mb-4"
+                                prompt={COMMUNITY_DISCORD_SUBTITLE.prompt}
+                                seed={COMMUNITY_DISCORD_SUBTITLE.seed}
+                                as="div"
+                                className="font-body text-sm text-offwhite/80 mb-6"
                             />
                             <a
                                 href={SOCIAL_LINKS.discord.url}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="inline-block px-4 py-2 bg-offwhite font-headline uppercase text-xs font-black text-blue-600 hover:bg-offwhite/90 transition-all"
+                                className="inline-block px-4 py-2 bg-offwhite font-headline uppercase text-xs font-black text-offblack hover:bg-offwhite/90 transition-all"
                             >
                                 Join Discord →
                             </a>
                         </div>
 
                         {/* GitHub Card */}
-                        <div className="bg-offblack p-5 hover:bg-offblack/90 transition-colors">
-                            <h2 className="font-headline text-xl font-black text-offwhite mb-3 uppercase tracking-wider">
+                        <div className="bg-offblack p-6 hover:bg-offblack/90 transition-colors">
+                            <h2 className="font-headline text-xl font-black text-offwhite mb-4 uppercase tracking-wider">
                                 🐙 GitHub
                             </h2>
                             <TextGenerator
-                                prompt={COMMUNITY_GITHUB_SUBTITLE}
-                                className="font-body text-sm text-offwhite/80 mb-4"
+                                prompt={COMMUNITY_GITHUB_SUBTITLE.prompt}
+                                seed={COMMUNITY_GITHUB_SUBTITLE.seed}
+                                as="div"
+                                className="font-body text-sm text-offwhite/80 mb-6"
                             />
                             <a
                                 href={SOCIAL_LINKS.github.url}
@@ -74,11 +79,9 @@ function CommunityPage() {
                     <h2 className="font-headline text-2xl font-black text-offblack mb-3 uppercase tracking-wider">
                         {SUPPORTER_TITLE}
                     </h2>
-                    <Content
-                        value={SUPPORTER_SUBTITLE}
-                        as="p"
-                        className="font-body text-sm text-offblack/70 mb-6"
-                    />
+                    <p className="font-body text-sm text-offblack/70 mb-6">
+                        {SUPPORTER_SUBTITLE}
+                    </p>
                     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
                         {SUPPORTERS.map((supporter) => (
                             <a

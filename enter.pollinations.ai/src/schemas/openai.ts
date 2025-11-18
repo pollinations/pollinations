@@ -1,7 +1,6 @@
 // AI generated based on `https://github.com/Portkey-AI/openapi/blob/master/openapi.yaml` and adaped
 
 import { z } from "zod";
-import { getTextServices } from "../../../shared/registry/registry.ts";
 import { DEFAULT_TEXT_MODEL } from "../../../shared/registry/text.ts";
 
 const FunctionParametersSchema = z.record(z.string(), z.any());
@@ -188,7 +187,7 @@ const ThinkingSchema = z
 
 export const CreateChatCompletionRequestSchema = z.object({
     messages: z.array(ChatCompletionRequestMessageSchema),
-    model: z.enum(getTextServices()).optional().default(DEFAULT_TEXT_MODEL),
+    model: z.string().optional().default(DEFAULT_TEXT_MODEL),
     modalities: z.array(z.enum(["text", "audio"])).optional(),
     audio: z
         .object({

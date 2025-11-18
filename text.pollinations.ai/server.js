@@ -12,7 +12,7 @@ import { generateTextPortkey } from "./generateTextPortkey.js";
 import { setupFeedEndpoint, sendToFeedListeners } from "./feed.js";
 import { processRequestForAds } from "./ads/initRequestFilter.js";
 import { createStreamingAdWrapper } from "./ads/streamingAdWrapper.js";
-import { getRequestData, prepareModelsForOutput } from "./requestUtils.js";
+import { getRequestData } from "./requestUtils.js";
 
 // Import shared utilities
 import { getIp } from "../shared/extractFromRequest.js";
@@ -139,10 +139,16 @@ const QUEUE_CONFIG = {
 
 // Using getIp from shared auth-utils.js
 
-// GET /models request handler
+// Deprecated /models endpoint - moved to gateway
 app.get("/models", (req, res) => {
-    // Use prepareModelsForOutput to remove pricing information and apply sorting
-    res.json(prepareModelsForOutput(availableModels));
+    res.status(410).json({
+        error: "Endpoint moved",
+        message:
+            "The /models endpoint has been moved to the API gateway. Please use: https://enter.pollinations.ai/api/generate/text/models",
+        deprecated_endpoint: `${req.protocol}://${req.get("host")}/models`,
+        new_endpoint: "https://enter.pollinations.ai/api/generate/text/models",
+        documentation: "https://enter.pollinations.ai/api/docs",
+    });
 });
 
 setupFeedEndpoint(app);
@@ -660,20 +666,16 @@ app.post("/", async (req, res) => {
 });
 
 app.get("/openai/models", (req, res) => {
-    const models = availableModels
-        .filter((model) => !model.hidden)
-        .map((model) => {
-            // Get provider from cost data using the model's config
-            const config =
-                typeof model.config === "function"
-                    ? model.config()
-                    : model.config;
-            return {
-                id: model.name,
-                object: "model",
-                created: Date.now(),
-            };
-        });
+    const models = availableModels.map((model) => {
+        // Get provider from cost data using the model's config
+        const config =
+            typeof model.config === "function" ? model.config() : model.config;
+        return {
+            id: model.name,
+            object: "model",
+            created: Date.now(),
+        };
+    });
     res.json({
         object: "list",
         data: models,

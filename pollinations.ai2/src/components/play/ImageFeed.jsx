@@ -132,7 +132,7 @@ export function ImageFeed() {
                 {/* Stats - Top Right */}
                 <div className="absolute top-4 right-4 z-10 flex gap-3">
                     {/* Image Stats */}
-                    <div className="bg-offwhite/95 border-2 border-rose shadow-[3px_3px_0px_0px_rgba(255,105,180,1)] px-3 py-2">
+                    <div className="bg-offwhite/95 border-2 border-rose shadow-rose-3 px-3 py-2">
                         <div className="font-headline text-[10px] uppercase tracking-wider text-offblack/60 font-black">
                             Images
                         </div>
@@ -147,7 +147,7 @@ export function ImageFeed() {
                     </div>
 
                     {/* Text Stats */}
-                    <div className="bg-offwhite/95 border-2 border-lime shadow-[3px_3px_0px_0px_rgba(236,248,116,1)] px-3 py-2">
+                    <div className="bg-offwhite/95 border-2 border-lime shadow-lime-3 px-3 py-2">
                         <div className="font-headline text-[10px] uppercase tracking-wider text-offblack/60 font-black">
                             Texts
                         </div>
@@ -181,7 +181,7 @@ export function ImageFeed() {
                                     alt={image.prompt || "Generated image"}
                                     className={`w-full h-full object-cover ${
                                         index === centerIndex // First set's center image
-                                            ? "border-4 border-rose shadow-[6px_6px_0px_0px_rgba(255,105,180,1)]"
+                                            ? "border-4 border-rose shadow-rose-lg"
                                             : ""
                                     }`}
                                 />
@@ -221,11 +221,11 @@ export function ImageFeed() {
                     onChange={(e) => setSliderValue(Number(e.target.value))}
                     className="w-full h-2 bg-offblack/10 appearance-none cursor-pointer"
                     style={{
-                        background: `linear-gradient(to right, #ecf874 0%, #ecf874 ${
+                        background: `linear-gradient(to right, var(--color-lime) 0%, var(--color-lime) ${
                             ((sliderValue - 1) / 9) * 100
-                        }%, rgba(17,5,24,0.1) ${
+                        }%, color-mix(in srgb, var(--color-offblack) 10%, transparent) ${
                             ((sliderValue - 1) / 9) * 100
-                        }%, rgba(17,5,24,0.1) 100%)`,
+                        }%, color-mix(in srgb, var(--color-offblack) 10%, transparent) 100%)`,
                     }}
                 />
                 <div className="flex justify-between text-xs font-body text-offblack/40">

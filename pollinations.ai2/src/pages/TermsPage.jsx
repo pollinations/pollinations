@@ -12,7 +12,7 @@ function TermsPage() {
 
     return (
         <div className="w-full max-w-4xl mx-auto px-4 py-8 md:py-16">
-            <div className="bg-offwhite border-r-8 border-b-8 border-offblack shadow-[12px_12px_0px_0px_rgba(0,0,0,1)] p-8 md:p-16">
+            <div className="bg-offwhite border-r-8 border-b-8 border-offblack shadow-black-xl p-8 md:p-16">
                 <div className="prose prose-sm md:prose max-w-none">
                     <div
                         className="markdown-content"

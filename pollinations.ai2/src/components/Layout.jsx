@@ -4,6 +4,7 @@ import logo from "../logo/logo.svg";
 import { Button } from "./ui/button";
 import { ExternalLinkIcon } from "../icons/ExternalLinkIcon";
 import { SOCIAL_LINKS } from "../config/socialLinksList";
+import { Colors } from "../config/colors";
 
 const tabs = [
     { path: "/hello", label: "Hello" },
@@ -72,7 +73,10 @@ function Layout() {
                                     <img
                                         src={logo}
                                         alt="pollinations.ai"
-                                        className="w-full h-full object-contain invert drop-shadow-[4px_4px_0px_rgba(255,105,180,1)]"
+                                        className="w-full h-full object-contain"
+                                        style={{
+                                            filter: `brightness(0) drop-shadow(4px 4px 0px ${Colors.rose})`,
+                                        }}
                                     />
                                 </div>
 
@@ -137,7 +141,7 @@ function Layout() {
                                         </span>
                                         <ExternalLinkIcon
                                             className="w-2.5 h-2.5 md:w-3 md:h-3"
-                                            stroke="#ff69b4"
+                                            stroke={Colors.rose}
                                         />
                                     </Button>
                                 </div>

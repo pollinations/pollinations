@@ -12,6 +12,7 @@ import { AuthCard } from "../components/docs/AuthCard";
 import { ImageGenCard } from "../components/docs/ImageGenCard";
 import { TextGenCard } from "../components/docs/TextGenCard";
 import { ModelDiscoveryCard } from "../components/docs/ModelDiscoveryCard";
+import { Colors } from "../config/colors";
 
 function DocsPage() {
     const [agentPromptCopied, setAgentPromptCopied] = useState(false);
@@ -45,7 +46,7 @@ function DocsPage() {
                         size="lg"
                     >
                         Full API Docs
-                        <ExternalLinkIcon stroke="#000" />
+                        <ExternalLinkIcon stroke={Colors.black} />
                     </Button>
                     <Button
                         variant="primary"

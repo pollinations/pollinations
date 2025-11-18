@@ -68,7 +68,7 @@ export function ModelDiscoveryCard() {
                                         onClick={() => setSelectedModel(key)}
                                         className={`px-3 py-1.5 font-mono text-xs border-2 transition-all cursor-pointer ${
                                             selectedModel === key
-                                                ? "bg-lime/90 border-rose font-black shadow-[2px_2px_0px_0px_rgba(255,105,180,1)]"
+                                                ? "bg-lime/90 border-rose font-black shadow-rose-sm"
                                                 : "bg-offblack/10 border-offblack/30 hover:border-rose"
                                         }`}
                                     >

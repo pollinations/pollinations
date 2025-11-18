@@ -121,17 +121,17 @@ input[type="range"]::-webkit-slider-thumb {
     appearance: none;
     width: 20px;
     height: 20px;
-    background: #ff69b4;
+    background: var(--color-rose);
     cursor: pointer;
-    border: 2px solid #110518;
+    border: 2px solid var(--color-offblack);
 }
 
 input[type="range"]::-moz-range-thumb {
     width: 20px;
     height: 20px;
-    background: #ff69b4;
+    background: var(--color-rose);
     cursor: pointer;
-    border: 2px solid #110518;
+    border: 2px solid var(--color-offblack);
     border-radius: 0;
 }
 
@@ -144,7 +144,11 @@ input[type="range"]::-moz-range-thumb {
 
 body,
 html {
-    background-color: #c7d4d6cc; /* offwhite/80 from Tailwind config */
+    background-color: color-mix(
+        in srgb,
+        var(--color-offwhite) 80%,
+        transparent
+    ); /* offwhite/80 */
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     overflow-x: hidden;
@@ -160,6 +164,6 @@ html {
 }
 
 :focus-visible {
-    outline: 2px solid #ecf874; /* lime */
+    outline: 2px solid var(--color-lime);
     outline-offset: 2px;
 }

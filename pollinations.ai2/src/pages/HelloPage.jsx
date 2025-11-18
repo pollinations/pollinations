@@ -5,6 +5,7 @@ import { Divider } from "../components/ui/divider";
 import { PageCard } from "../components/ui/page-card";
 import { PageContainer } from "../components/ui/page-container";
 import { SubCard } from "../components/ui/sub-card";
+import { Colors } from "../config/colors";
 
 function HelloPage() {
     return (
@@ -292,7 +293,7 @@ function HelloPage() {
                             size="lg"
                         >
                             Get Your API Key & Start Building
-                            <ExternalLinkIcon stroke="#ecf874" />
+                            <ExternalLinkIcon stroke={Colors.lime} />
                         </Button>
                         <Button
                             as="a"
@@ -301,7 +302,7 @@ function HelloPage() {
                             size="lg"
                         >
                             Learn More About Sponsorship
-                            <ExternalLinkIcon stroke="#000" />
+                            <ExternalLinkIcon stroke={Colors.black} />
                         </Button>
                     </div>
                 </div>

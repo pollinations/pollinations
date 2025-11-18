@@ -8,6 +8,7 @@ import { Divider } from "../components/ui/divider";
 import { PageCard } from "../components/ui/page-card";
 import { PageContainer } from "../components/ui/page-container";
 import { SubCard } from "../components/ui/sub-card";
+import { Colors } from "../config/colors";
 import {
     COMMUNITY_TITLE,
     COMMUNITY_SUBTITLE,
@@ -53,7 +54,7 @@ function CommunityPage() {
                             size="lg"
                         >
                             Join Discord
-                            <ExternalLinkIcon stroke="#ecf874" />
+                            <ExternalLinkIcon stroke={Colors.lime} />
                         </Button>
                     </SubCard>
 
@@ -77,7 +78,7 @@ function CommunityPage() {
                             size="lg"
                         >
                             Contribute
-                            <ExternalLinkIcon stroke="#ecf874" />
+                            <ExternalLinkIcon stroke={Colors.lime} />
                         </Button>
                     </SubCard>
                 </div>

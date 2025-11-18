@@ -1,5 +1,6 @@
 import { Heading, Label } from "../ui/typography";
 import { ExternalLinkIcon } from "../../icons/ExternalLinkIcon";
+import { Colors } from "../../config/colors";
 
 /**
  * Authentication Card Component
@@ -75,7 +76,7 @@ export function AuthCard() {
                             </p>
                             <ExternalLinkIcon
                                 className="w-3 h-3"
-                                stroke="#ecf874"
+                                stroke={Colors.lime}
                             />
                         </div>
                     </a>

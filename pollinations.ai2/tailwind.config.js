@@ -4,8 +4,10 @@
  * - To change theme: Edit src/config/colors.js
  * - All colors imported from centralized colors.js
  * - Opacity: Add /90, /80, /50 etc. (e.g., bg-lime/90)
+ * - CSS variables available: var(--color-lime), var(--color-rose), etc.
  */
 import { Colors, Fonts, Shadows } from "./src/config/colors.js";
+import plugin from "tailwindcss/plugin";
 
 export default {
     content: ["./index.html", "./src/**/*.{js,ts,jsx,tsx}"],
@@ -38,12 +40,15 @@ export default {
             boxShadow: {
                 // From colors.js Shadows
                 "rose-sm": Shadows.roseSm,
+                "rose-3": Shadows.rose3,
                 "rose-md": Shadows.roseMd,
                 "rose-lg": Shadows.roseLg,
                 "black-sm": Shadows.blackSm,
                 "black-md": Shadows.blackMd,
                 "black-lg": Shadows.blackLg,
+                "black-xl": Shadows.blackXl,
                 "lime-sm": Shadows.limeSm,
+                "lime-3": Shadows.lime3,
                 "lime-md": Shadows.limeMd,
                 "offblack-muted": Shadows.offblackMuted,
 
@@ -54,5 +59,22 @@ export default {
             },
         },
     },
-    plugins: [],
+    plugins: [
+        // Generate CSS custom properties for use in raw CSS
+        plugin(({ addBase }) => {
+            addBase({
+                ":root": {
+                    "--color-lime": Colors.lime,
+                    "--color-rose": Colors.rose,
+                    "--color-offwhite": Colors.offwhite,
+                    "--color-offblack": Colors.offblack,
+                    "--color-offblack-2": Colors.offblack2,
+                    "--color-black": Colors.black,
+                    "--color-gray1": Colors.gray1,
+                    "--color-gray2": Colors.gray2,
+                    "--color-lime-shadow": Colors.limeShadow,
+                },
+            });
+        }),
+    ],
 };

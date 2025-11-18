@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { Button } from "../ui/button";
 import { XIcon } from "../../icons/XIcon";
 import { useModelList } from "../../hooks/useModelList";
+import { Colors } from "../../config/colors";
 
 const API_KEY = import.meta.env.VITE_POLLINATIONS_API_KEY;
 
@@ -235,7 +236,7 @@ export function PlayGenerator() {
                                             >
                                                 <XIcon
                                                     className="w-4 h-4"
-                                                    stroke="#110518"
+                                                    stroke={Colors.offblack}
                                                 />
                                             </Button>
                                         </>

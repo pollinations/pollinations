@@ -39,7 +39,7 @@ export const SOCIAL_LINKS = {
     youtube: {
         label: "YouTube",
         icon: ICONS.youtube,
-        url: "https://www.youtube.com/@pollinations_ai",
+        url: "https://www.youtube.com/c/pollinations",
         width: "28px",
         height: "28px",
     },

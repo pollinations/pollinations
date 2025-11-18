@@ -15,13 +15,15 @@ const IMAGE_PROMPTS = [
 ];
 
 const TEXT_PROMPTS = [
-    "explain pollination",
+    "explain pollinations.ai",
     "write a poem about nature",
     "describe ecosystem harmony",
     "explain symbiosis",
 ];
 
 function DocsPage() {
+    const [agentPromptCopied, setAgentPromptCopied] = useState(false);
+
     return (
         <div className="w-full px-4 pb-12">
             <div className="max-w-4xl mx-auto">
@@ -50,9 +52,20 @@ function DocsPage() {
                             href="https://enter.pollinations.ai/api/docs"
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="inline-block px-4 py-3 bg-lime/90 border-r-4 border-b-4 border-offblack shadow-black-md font-headline uppercase text-xs font-black hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-black-sm transition-all"
+                            className="inline-flex items-center gap-2 px-6 py-4 bg-lime/90 border-r-4 border-b-4 border-offblack shadow-black-md font-headline uppercase text-sm font-black hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-black-sm transition-all"
                         >
-                            📚 Full API Docs
+                            Full API Docs
+                            <svg
+                                className="w-3.5 h-3.5 stroke-offblack"
+                                fill="none"
+                                strokeWidth="2.5"
+                                viewBox="0 0 12 12"
+                            >
+                                <path
+                                    d="M1 11L11 1M11 1H4M11 1v7"
+                                    strokeLinecap="square"
+                                />
+                            </svg>
                         </a>
                         <button
                             type="button"
@@ -60,11 +73,38 @@ function DocsPage() {
                                 // TODO: Replace with actual AGENTS.md content
                                 const agentPrompt = `# Pollinations.AI Agent Prompt\n\nThis is a placeholder for the agent prompt content from AGENTS.md.\n\nThe full content will be added here soon.`;
                                 navigator.clipboard.writeText(agentPrompt);
-                                alert("Agent prompt copied to clipboard!");
+                                setAgentPromptCopied(true);
+                                setTimeout(
+                                    () => setAgentPromptCopied(false),
+                                    2000
+                                );
                             }}
-                            className="inline-block px-4 py-3 bg-offblack border-r-4 border-b-4 border-lime shadow-lime-md font-headline uppercase text-xs font-black text-offwhite hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-lime-sm transition-all cursor-pointer"
+                            className="inline-flex items-center gap-2 px-6 py-4 bg-offblack border-r-4 border-b-4 border-lime shadow-lime-md font-headline uppercase text-sm font-black text-offwhite hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-lime-sm transition-all cursor-pointer relative"
                         >
-                            🤖 Agent Prompt
+                            Agent Prompt
+                            <svg
+                                className="w-4 h-4 stroke-offwhite"
+                                fill="none"
+                                strokeWidth="2"
+                                viewBox="0 0 16 16"
+                            >
+                                <rect
+                                    x="5"
+                                    y="5"
+                                    width="9"
+                                    height="9"
+                                    strokeLinecap="square"
+                                />
+                                <path
+                                    d="M11 5V3H3v8h2"
+                                    strokeLinecap="square"
+                                />
+                            </svg>
+                            {agentPromptCopied && (
+                                <span className="absolute -top-5 left-0 font-headline text-xs font-black text-rose uppercase tracking-wider">
+                                    Copied!
+                                </span>
+                            )}
                         </button>
                     </div>
 
@@ -163,9 +203,22 @@ function AuthCard() {
                         <p className="font-headline text-xs uppercase tracking-wider font-black text-offwhite mb-2">
                             Get Your Key
                         </p>
-                        <p className="font-mono text-sm font-black text-offwhite">
-                            enter.pollinations.ai →
-                        </p>
+                        <div className="flex items-center gap-2">
+                            <p className="font-mono text-sm font-black text-lime">
+                                enter.pollinations.ai
+                            </p>
+                            <svg
+                                className="w-3 h-3 stroke-lime"
+                                fill="none"
+                                strokeWidth="2.5"
+                                viewBox="0 0 12 12"
+                            >
+                                <path
+                                    d="M1 11L11 1M11 1H4M11 1v7"
+                                    strokeLinecap="square"
+                                />
+                            </svg>
+                        </div>
                     </a>
                 </div>
 
@@ -389,7 +442,27 @@ function ImageGenCard() {
 
             {/* URL Display */}
             <div className="mb-4 p-3 bg-offblack/5 font-mono text-xs break-all">
-                {buildUrl()}
+                <span className="text-offblack/40">
+                    https://enter.pollinations.ai/api/generate/image/
+                </span>
+                <span className="bg-lime/90 px-1 font-black">
+                    {selectedPrompt}
+                </span>
+                {params.size > 0 && (
+                    <>
+                        <span className="text-offblack/40">?</span>
+                        {Array.from(params).map((param, i) => (
+                            <span key={param}>
+                                {i > 0 && (
+                                    <span className="text-offblack/40">&</span>
+                                )}
+                                <span className="bg-lime/90 px-1 font-black">
+                                    {param}
+                                </span>
+                            </span>
+                        ))}
+                    </>
+                )}
             </div>
 
             {/* Copy Button */}
@@ -406,26 +479,26 @@ function ImageGenCard() {
 
 function TextGenCard() {
     const [selectedPrompt, setSelectedPrompt] = useState(TEXT_PROMPTS[0]);
-    const [params, setParams] = useState(new Set());
+    const [selectedModel, setSelectedModel] = useState(""); // Empty = default openai
+    const [jsonMode, setJsonMode] = useState(false);
     const [response, setResponse] = useState("");
     const [isLoading, setIsLoading] = useState(false);
 
-    const toggleParam = (param) => {
-        const newParams = new Set(params);
-        if (newParams.has(param)) {
-            newParams.delete(param);
-        } else {
-            newParams.add(param);
-        }
-        setParams(newParams);
+    const toggleModel = (model) => {
+        // If clicking the active model, deactivate it (go back to default)
+        setSelectedModel(selectedModel === model ? "" : model);
     };
 
     const buildUrl = () => {
+        // For display only - show what the equivalent GET URL would look like
         let url = `https://enter.pollinations.ai/api/generate/text/${encodeURIComponent(
             selectedPrompt
         )}`;
-        if (params.size > 0) {
-            url += "?" + Array.from(params).join("&");
+        const params = [];
+        if (selectedModel) params.push(`model=${selectedModel}`);
+        if (jsonMode) params.push("json=true");
+        if (params.length > 0) {
+            url += "?" + params.join("&");
         }
         return url;
     };
@@ -434,6 +507,7 @@ function TextGenCard() {
         const fetchText = async () => {
             setIsLoading(true);
             try {
+                // Use GET to /api/generate/text/{prompt}
                 const url = buildUrl();
                 const res = await fetch(url, {
                     headers: {
@@ -450,7 +524,7 @@ function TextGenCard() {
         };
 
         fetchText();
-    }, [selectedPrompt, params]);
+    }, [selectedPrompt, selectedModel, jsonMode]);
 
     return (
         <div>
@@ -485,33 +559,55 @@ function TextGenCard() {
                         </div>
                     </div>
 
-                    {/* Optional Parameters */}
+                    {/* Model Selection */}
                     <div>
                         <p className="font-headline text-xs uppercase tracking-wider font-black mb-2">
-                            Optional parameters:
+                            Model:
                         </p>
                         <div className="flex flex-wrap gap-2">
                             {[
-                                "model=openai",
-                                "model=mistral",
-                                "model=claude",
-                                "json=true",
-                                "seed=123",
-                            ].map((param) => (
+                                { value: "mistral", label: "model=mistral" },
+                                { value: "claude", label: "model=claude" },
+                                {
+                                    value: "qwen-coder",
+                                    label: "model=qwen-coder",
+                                },
+                            ].map(({ value, label }) => (
                                 <button
-                                    key={param}
+                                    key={value}
                                     type="button"
-                                    onClick={() => toggleParam(param)}
+                                    onClick={() => toggleModel(value)}
                                     className={`px-3 py-1.5 font-mono text-xs border-2 transition-all cursor-pointer ${
-                                        params.has(param)
+                                        selectedModel === value
                                             ? "bg-lime/90 border-rose font-black shadow-rose-sm"
                                             : "bg-offblack/10 border-offblack/30 hover:border-rose"
                                     }`}
                                 >
-                                    {param}
+                                    {label}
                                 </button>
                             ))}
                         </div>
+                        <p className="font-body text-xs text-offblack/50 mt-2">
+                            Default: openai
+                        </p>
+                    </div>
+
+                    {/* Optional Parameters */}
+                    <div>
+                        <p className="font-headline text-xs uppercase tracking-wider font-black mb-2">
+                            Optional:
+                        </p>
+                        <button
+                            type="button"
+                            onClick={() => setJsonMode(!jsonMode)}
+                            className={`px-3 py-1.5 font-mono text-xs border-2 transition-all cursor-pointer ${
+                                jsonMode
+                                    ? "bg-lime/90 border-rose font-black shadow-rose-sm"
+                                    : "bg-offblack/10 border-offblack/30 hover:border-rose"
+                            }`}
+                        >
+                            json=true
+                        </button>
                     </div>
                 </div>
 
@@ -537,19 +633,22 @@ function TextGenCard() {
                 <span className="bg-lime/90 px-1 font-black">
                     {selectedPrompt}
                 </span>
-                {params.size > 0 && (
+                {(selectedModel || jsonMode) && (
                     <>
                         <span className="text-offblack/40">?</span>
-                        {Array.from(params).map((param, i) => (
-                            <span key={param}>
-                                {i > 0 && (
-                                    <span className="text-offblack/40">&</span>
-                                )}
-                                <span className="bg-lime/90 px-1 font-black">
-                                    {param}
-                                </span>
+                        {selectedModel && (
+                            <span className="bg-lime/90 px-1 font-black">
+                                model={selectedModel}
                             </span>
-                        ))}
+                        )}
+                        {selectedModel && jsonMode && (
+                            <span className="text-offblack/40">&</span>
+                        )}
+                        {jsonMode && (
+                            <span className="bg-lime/90 px-1 font-black">
+                                json=true
+                            </span>
+                        )}
                     </>
                 )}
             </div>

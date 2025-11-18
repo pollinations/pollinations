@@ -31,9 +31,9 @@ function CommunityPage() {
                     {/* Discord & GitHub Cards - Bold brutalist blocks */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-12">
                         {/* Discord Card */}
-                        <div className="bg-lime p-6 hover:bg-lime/90 transition-colors">
-                            <h2 className="font-headline text-xl font-black text-offblack mb-4 uppercase tracking-wider">
-                                💬 Discord
+                        <div className="bg-offblack/5 p-6">
+                            <h2 className="font-headline text-xl font-black text-lime mb-4 uppercase tracking-wider">
+                                Discord
                             </h2>
                             <TextGenerator
                                 prompt={COMMUNITY_DISCORD_SUBTITLE.prompt}
@@ -45,16 +45,28 @@ function CommunityPage() {
                                 href={SOCIAL_LINKS.discord.url}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="inline-block px-4 py-2 bg-offblack border-r-4 border-b-4 border-rose shadow-rose-md font-headline uppercase text-xs font-black text-offwhite hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-rose-sm transition-all"
+                                className="inline-flex items-center gap-2 px-6 py-4 bg-offblack border-r-4 border-b-4 border-lime shadow-lime-md font-headline uppercase text-sm font-black text-offwhite hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-lime-sm transition-all"
                             >
-                                Join Discord →
+                                Join Discord
+                                <svg
+                                    className="w-3.5 h-3.5 stroke-lime"
+                                    fill="none"
+                                    strokeWidth="2.5"
+                                    viewBox="0 0 12 12"
+                                    title="External link"
+                                >
+                                    <path
+                                        d="M1 11L11 1M11 1H4M11 1v7"
+                                        strokeLinecap="square"
+                                    />
+                                </svg>
                             </a>
                         </div>
 
                         {/* GitHub Card */}
-                        <div className="bg-lime p-6 hover:bg-lime/90 transition-colors">
-                            <h2 className="font-headline text-xl font-black text-offblack mb-4 uppercase tracking-wider">
-                                🐙 GitHub
+                        <div className="bg-offblack/5 p-6">
+                            <h2 className="font-headline text-xl font-black text-rose mb-4 uppercase tracking-wider">
+                                GitHub
                             </h2>
                             <TextGenerator
                                 prompt={COMMUNITY_GITHUB_SUBTITLE.prompt}
@@ -66,9 +78,21 @@ function CommunityPage() {
                                 href={SOCIAL_LINKS.github.url}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="inline-block px-4 py-2 bg-offblack border-r-4 border-b-4 border-rose shadow-rose-md font-headline uppercase text-xs font-black text-offwhite hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-rose-sm transition-all"
+                                className="inline-flex items-center gap-2 px-6 py-4 bg-offblack border-r-4 border-b-4 border-lime shadow-lime-md font-headline uppercase text-sm font-black text-offwhite hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-lime-sm transition-all"
                             >
-                                Contribute →
+                                Contribute
+                                <svg
+                                    className="w-3.5 h-3.5 stroke-lime"
+                                    fill="none"
+                                    strokeWidth="2.5"
+                                    viewBox="0 0 12 12"
+                                    title="External link"
+                                >
+                                    <path
+                                        d="M1 11L11 1M11 1H4M11 1v7"
+                                        strokeLinecap="square"
+                                    />
+                                </svg>
                             </a>
                         </div>
                     </div>

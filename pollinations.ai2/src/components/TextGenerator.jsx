@@ -35,8 +35,9 @@ function usePollinationsText(prompt, seed) {
 
         async function generateText() {
             try {
+                // Use POST to /v1/chat/completions
                 const response = await fetch(
-                    "https://enter.pollinations.ai/api/generate/openai",
+                    "https://enter.pollinations.ai/api/generate/v1/chat/completions",
                     {
                         method: "POST",
                         headers: {
@@ -45,8 +46,8 @@ function usePollinationsText(prompt, seed) {
                         },
                         body: JSON.stringify({
                             messages: [{ role: "user", content: prompt }],
-                            seed: seed,
                             model: "openai",
+                            seed: seed,
                         }),
                     }
                 );

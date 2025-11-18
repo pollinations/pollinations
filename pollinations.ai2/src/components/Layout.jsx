@@ -4,7 +4,7 @@ import logo from "../logo/logo.svg";
 import { SOCIAL_LINKS } from "../config/socialLinksList";
 
 const tabs = [
-    { path: "/", label: "Hello" },
+    { path: "/hello", label: "GenAI" },
     { path: "/play", label: "Play" },
     { path: "/apps", label: "Apps" },
     { path: "/docs", label: "Docs" },
@@ -13,6 +13,7 @@ const tabs = [
 
 function Layout() {
     const [showFooter, setShowFooter] = useState(false);
+    const [emailCopied, setEmailCopied] = useState(false);
 
     useEffect(() => {
         const handleScroll = () => {
@@ -91,8 +92,8 @@ function Layout() {
                                     </NavLink>
                                 ))}
 
-                                {/* Social Media Links - Hidden on smallest mobile */}
-                                <div className="hidden sm:flex gap-1 md:gap-2 ml-1 md:ml-2">
+                                {/* Social Media Links + Enter Button - Hidden on smallest mobile */}
+                                <div className="hidden sm:flex gap-1 md:gap-2 ml-1 md:ml-2 items-center">
                                     {Object.entries(SOCIAL_LINKS)
                                         .filter(
                                             ([key]) =>
@@ -115,6 +116,29 @@ function Layout() {
                                                 />
                                             </a>
                                         ))}
+
+                                    {/* Enter Button */}
+                                    <a
+                                        href="https://enter.pollinations.ai"
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="flex-shrink-0 h-6 md:h-8 px-2 md:px-3 flex items-center justify-center gap-1 bg-offwhite/80 backdrop-blur-md border-r-4 border-b-4 border-offblack/30 hover:bg-lime/90 hover:border-rose hover:shadow-[4px_4px_0px_0px_rgba(255,105,180,1)] transition-all"
+                                    >
+                                        <span className="font-headline text-[10px] md:text-xs font-black uppercase tracking-wider text-rose">
+                                            Enter
+                                        </span>
+                                        <svg
+                                            className="w-2.5 h-2.5 md:w-3 md:h-3 stroke-rose"
+                                            fill="none"
+                                            strokeWidth="2.5"
+                                            viewBox="0 0 12 12"
+                                        >
+                                            <path
+                                                d="M1 11L11 1M11 1H4M11 1v7"
+                                                strokeLinecap="square"
+                                            />
+                                        </svg>
+                                    </a>
                                 </div>
                             </div>
                         </div>
@@ -168,11 +192,20 @@ function Layout() {
                                         navigator.clipboard.writeText(
                                             "hello@pollinations.ai"
                                         );
-                                        alert("Email copied to clipboard!");
+                                        setEmailCopied(true);
+                                        setTimeout(
+                                            () => setEmailCopied(false),
+                                            2000
+                                        );
                                     }}
-                                    className="font-body text-offblack/60 hover:text-offblack transition-colors cursor-pointer"
+                                    className="font-body text-offblack/60 hover:text-offblack transition-colors cursor-pointer relative"
                                 >
                                     hello@pollinations.ai
+                                    {emailCopied && (
+                                        <span className="absolute -top-5 left-0 font-headline text-xs font-black text-rose uppercase tracking-wider">
+                                            Copied!
+                                        </span>
+                                    )}
                                 </button>
                             </div>
                         </div>

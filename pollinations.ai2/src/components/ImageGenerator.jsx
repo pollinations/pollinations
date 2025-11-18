@@ -23,11 +23,6 @@ export function ImageGenerator({
         let objectUrl = null;
         let cancelled = false;
 
-        console.log(
-            `🔵 ImageGenerator mounted for "${alt}" with prompt:`,
-            prompt.substring(0, 50) + "..."
-        );
-
         async function fetchImage() {
             try {
                 const baseUrl = `https://enter.pollinations.ai/api/generate/image/${encodeURIComponent(
@@ -42,27 +37,14 @@ export function ImageGenerator({
                 });
                 const url = `${baseUrl}?${params.toString()}`;
 
-                console.log(`🚀 Starting fetch for "${alt}":`, url);
-                console.log(
-                    `🔑 Using API Key:`,
-                    API_KEY.substring(0, 15) + "..."
-                );
-
                 const headers = {
                     Authorization: `Bearer ${API_KEY}`,
                 };
-                console.log(`📋 Request headers:`, headers);
 
                 const response = await fetch(url, {
                     method: "GET",
                     headers: headers,
                 });
-
-                console.log(
-                    `📡 Response received for "${alt}":`,
-                    response.status,
-                    response.statusText
-                );
 
                 if (!response.ok) {
                     const errorText = await response.text();
@@ -75,22 +57,11 @@ export function ImageGenerator({
                 }
 
                 const blob = await response.blob();
-                console.log(
-                    `📦 Blob created for "${alt}":`,
-                    blob.size,
-                    "bytes",
-                    blob.type
-                );
 
                 if (!cancelled) {
                     objectUrl = URL.createObjectURL(blob);
-                    console.log(
-                        `🔗 Object URL created for "${alt}":`,
-                        objectUrl
-                    );
                     setImageUrl(objectUrl);
                     setLoading(false);
-                    console.log(`✅ Image fully loaded for "${alt}"`);
                 }
             } catch (error) {
                 console.error(`🔴 COMPLETE ERROR for "${alt}":`, {

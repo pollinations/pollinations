@@ -493,6 +493,32 @@ const checkCacheAndGenerate = async (
 const server = http.createServer((req, res) => {
     setCORSHeaders(res);
 
+    const parsedUrl = parse(req.url, true);
+    const pathname = parsedUrl.pathname;
+
+    // Handle deprecated /models endpoint BEFORE auth check
+    if (pathname === "/models") {
+        res.writeHead(410, {
+            "Content-Type": "application/json",
+            "Cache-Control":
+                "no-store, no-cache, must-revalidate, proxy-revalidate",
+            Pragma: "no-cache",
+            Expires: "0",
+        });
+        res.end(
+            JSON.stringify({
+                error: "Endpoint moved",
+                message:
+                    "The /models endpoint has been moved to the API gateway. Please use: https://enter.pollinations.ai/api/generate/image/models",
+                deprecated_endpoint: `${req.headers["x-forwarded-proto"] || "http"}://${req.headers.host}/models`,
+                new_endpoint:
+                    "https://enter.pollinations.ai/api/generate/image/models",
+                documentation: "https://enter.pollinations.ai/api/docs",
+            }),
+        );
+        return;
+    }
+
     // Verify ENTER_TOKEN
     const token = req.headers["x-enter-token"];
     const expectedToken = process.env.ENTER_TOKEN;
@@ -507,11 +533,8 @@ const server = http.createServer((req, res) => {
     if (expectedToken) {
         logAuth("✅ Valid ENTER_TOKEN from IP:", getIp(req));
     } else {
-        logAuth("⚠️  ENTER_TOKEN not configured - allowing request");
+        logAuth("!  ENTER_TOKEN not configured - allowing request");
     }
-
-    const parsedUrl = parse(req.url, true);
-    const pathname = parsedUrl.pathname;
 
     if (
         pathname ===
@@ -531,22 +554,6 @@ const server = http.createServer((req, res) => {
 <cross-domain-policy>
   <allow-access-from domain="*" secure="false"/>
 </cross-domain-policy>`);
-        return;
-    }
-
-    if (pathname === "/models") {
-        res.writeHead(200, {
-            "Content-Type": "application/json",
-            "Cache-Control":
-                "no-store, no-cache, must-revalidate, proxy-revalidate",
-            Pragma: "no-cache",
-            Expires: "0",
-        });
-
-        // Return all available models - enter.pollinations.ai handles access control
-        const publicModels = Object.keys(MODELS);
-
-        res.end(JSON.stringify(publicModels));
         return;
     }
 

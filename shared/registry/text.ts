@@ -1,7 +1,8 @@
-import type { ModelRegistry } from "./registry";
 import { COST_START_DATE, perMillion } from "./price-helpers";
 
 export const DEFAULT_TEXT_MODEL = "openai" as const;
+export type TextServiceId = keyof typeof TEXT_SERVICES;
+export type TextModelId = (typeof TEXT_SERVICES)[TextServiceId]["modelId"];
 
 export const TEXT_SERVICES = {
     "openai": {

@@ -1,6 +1,10 @@
 import { useState, useEffect } from "react";
 import { TextGenerator } from "../components/TextGenerator";
 import { DOCS_INTRO, DOCS_API_REFERENCE } from "../config/content";
+import { Button } from "../components/ui/button";
+import { ExternalLinkIcon } from "../icons/ExternalLinkIcon";
+import { CopyIcon } from "../icons/CopyIcon";
+import { Title, Heading, Label } from "../components/ui/typography";
 
 const API_KEY = import.meta.env.VITE_POLLINATIONS_API_KEY;
 
@@ -30,9 +34,7 @@ function DocsPage() {
                 {/* One Big Card containing everything */}
                 <div className="bg-offwhite/90 border-r-4 border-b-4 border-rose shadow-rose-lg p-6 md:p-8">
                     {/* Title */}
-                    <h1 className="font-title text-4xl md:text-5xl font-black text-offblack mb-6">
-                        Integrate
-                    </h1>
+                    <Title spacing="comfortable">Integrate</Title>
 
                     {/* Intro */}
                     <TextGenerator
@@ -140,16 +142,14 @@ function DocsPage() {
 function AuthCard() {
     return (
         <div>
-            <h2 className="font-headline text-2xl md:text-3xl font-black text-offblack mb-6 uppercase tracking-widest border-l-4 border-rose pl-4">
+            <Heading variant="section" spacing="comfortable">
                 Authentication
-            </h2>
+            </Heading>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {/* Left: Key Types + Get Your Key */}
                 <div className="space-y-4">
                     <div>
-                        <p className="font-headline text-xs uppercase tracking-wider font-black text-offblack mb-3">
-                            Key Types
-                        </p>
+                        <Label spacing="comfortable">Key Types</Label>
                         <div className="space-y-3">
                             {/* Publishable Key */}
                             <div className="bg-offblack/5 p-4">
@@ -224,9 +224,7 @@ function AuthCard() {
 
                 {/* Right: Usage Examples */}
                 <div>
-                    <p className="font-headline text-xs uppercase tracking-wider font-black text-offblack mb-3">
-                        Usage Examples
-                    </p>
+                    <Label spacing="comfortable">Usage Examples</Label>
 
                     {/* Header Method */}
                     <div className="mb-4">
@@ -362,9 +360,7 @@ function ImageGenCard() {
 
     return (
         <div>
-            <h2 className="font-headline text-2xl md:text-3xl font-black text-offblack mb-4 uppercase tracking-widest border-l-4 border-rose pl-4">
-                Image Generation
-            </h2>
+            <Heading variant="section">Image Generation</Heading>
 
             {/* Prompts/Parameters and Image Preview - Side by Side */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
@@ -372,9 +368,7 @@ function ImageGenCard() {
                 <div className="space-y-4">
                     {/* Prompt Selection */}
                     <div>
-                        <p className="font-headline text-xs uppercase tracking-wider font-black mb-2">
-                            Pick a prompt:
-                        </p>
+                        <Label>Pick a prompt</Label>
                         <div className="flex flex-wrap gap-2">
                             {IMAGE_PROMPTS.map((prompt) => (
                                 <button
@@ -395,9 +389,7 @@ function ImageGenCard() {
 
                     {/* Optional Parameters */}
                     <div>
-                        <p className="font-headline text-xs uppercase tracking-wider font-black mb-2">
-                            Optional parameters:
-                        </p>
+                        <Label>Optional parameters</Label>
                         <div className="flex flex-wrap gap-2">
                             {[
                                 "model=nanobanana",
@@ -466,13 +458,14 @@ function ImageGenCard() {
             </div>
 
             {/* Copy Button */}
-            <button
+            <Button
                 type="button"
                 onClick={() => navigator.clipboard.writeText(buildUrl())}
-                className="px-4 py-2 bg-lime/90 border-2 border-rose font-headline uppercase text-xs font-black hover:shadow-rose-md transition-all"
+                variant="copy"
+                size={null}
             >
                 Copy URL
-            </button>
+            </Button>
         </div>
     );
 }
@@ -528,9 +521,7 @@ function TextGenCard() {
 
     return (
         <div>
-            <h2 className="font-headline text-2xl md:text-3xl font-black text-offblack mb-4 uppercase tracking-widest border-l-4 border-rose pl-4">
-                Text Generation
-            </h2>
+            <Heading variant="section">Text Generation</Heading>
 
             {/* Prompts/Parameters and Response - Side by Side */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
@@ -538,9 +529,7 @@ function TextGenCard() {
                 <div className="space-y-4">
                     {/* Prompt Selection */}
                     <div>
-                        <p className="font-headline text-xs uppercase tracking-wider font-black mb-2">
-                            Pick a prompt:
-                        </p>
+                        <Label>Pick a prompt</Label>
                         <div className="flex flex-wrap gap-2">
                             {TEXT_PROMPTS.map((prompt) => (
                                 <button
@@ -561,9 +550,7 @@ function TextGenCard() {
 
                     {/* Model Selection */}
                     <div>
-                        <p className="font-headline text-xs uppercase tracking-wider font-black mb-2">
-                            Model:
-                        </p>
+                        <Label>Model</Label>
                         <div className="flex flex-wrap gap-2">
                             {[
                                 { value: "mistral", label: "model=mistral" },
@@ -594,9 +581,7 @@ function TextGenCard() {
 
                     {/* Optional Parameters */}
                     <div>
-                        <p className="font-headline text-xs uppercase tracking-wider font-black mb-2">
-                            Optional:
-                        </p>
+                        <Label>Optional</Label>
                         <button
                             type="button"
                             onClick={() => setJsonMode(!jsonMode)}
@@ -654,13 +639,14 @@ function TextGenCard() {
             </div>
 
             {/* Copy Button */}
-            <button
+            <Button
                 type="button"
                 onClick={() => navigator.clipboard.writeText(buildUrl())}
-                className="px-4 py-2 bg-lime/90 border-2 border-rose font-headline uppercase text-xs font-black hover:shadow-rose-md transition-all"
+                variant="copy"
+                size={null}
             >
                 Copy URL
-            </button>
+            </Button>
         </div>
     );
 }
@@ -709,9 +695,7 @@ function ModelDiscoveryCard() {
 
     return (
         <div>
-            <h2 className="font-headline text-2xl md:text-3xl font-black text-offblack mb-4 uppercase tracking-widest border-l-4 border-rose pl-4">
-                Model Discovery
-            </h2>
+            <Heading variant="section">Model Discovery</Heading>
 
             {/* Model Type Selection and Output - Side by Side */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
@@ -719,9 +703,7 @@ function ModelDiscoveryCard() {
                 <div className="space-y-4">
                     {/* Model Type Selection */}
                     <div>
-                        <p className="font-headline text-xs uppercase tracking-wider font-black mb-2">
-                            Select a type:
-                        </p>
+                        <Label>Select a type</Label>
                         <div className="flex flex-wrap gap-2">
                             {Object.entries(modelEndpoints).map(
                                 ([key, { label }]) => (
@@ -753,15 +735,16 @@ function ModelDiscoveryCard() {
                     </div>
 
                     {/* Copy Button */}
-                    <button
+                    <Button
                         type="button"
                         onClick={() =>
                             navigator.clipboard.writeText(currentEndpoint.url)
                         }
-                        className="px-4 py-2 bg-lime/90 border-2 border-rose font-headline uppercase text-xs font-black hover:shadow-rose-md transition-all"
+                        variant="copy"
+                        size={null}
                     >
                         Copy URL
-                    </button>
+                    </Button>
                 </div>
 
                 {/* Right side: Models JSON Output - Fixed Height */}

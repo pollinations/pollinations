@@ -1,6 +1,8 @@
-import { Outlet, NavLink } from "react-router-dom";
+import { NavLink, Outlet } from "react-router-dom";
 import { useState, useEffect } from "react";
 import logo from "../logo/logo.svg";
+import { Button } from "./ui/button";
+import { ExternalLinkIcon } from "../icons/ExternalLinkIcon";
 import { SOCIAL_LINKS } from "../config/socialLinksList";
 
 const tabs = [
@@ -80,15 +82,17 @@ function Layout() {
                                         key={tab.path}
                                         to={tab.path}
                                         end={tab.path === "/"}
-                                        className={({ isActive }) =>
-                                            `px-2 py-2 md:px-5 md:py-3 font-headline text-[10px] md:text-sm font-black uppercase tracking-wider border-r-4 border-b-4 border-rose transition-all duration-200 no-underline whitespace-nowrap ${
-                                                isActive
-                                                    ? "bg-lime/90 backdrop-blur-md text-offblack shadow-[4px_4px_0px_0px_rgba(255,105,180,1)]"
-                                                    : "bg-offwhite/80 backdrop-blur-md text-offblack hover:bg-lime/90 hover:shadow-[4px_4px_0px_0px_rgba(255,105,180,1)]"
-                                            }`
-                                        }
+                                        className="no-underline"
                                     >
-                                        {tab.label}
+                                        {({ isActive }) => (
+                                            <Button
+                                                variant="nav"
+                                                size={null}
+                                                data-active={isActive}
+                                            >
+                                                {tab.label}
+                                            </Button>
+                                        )}
                                     </NavLink>
                                 ))}
 
@@ -101,44 +105,41 @@ function Layout() {
                                                 key === "github"
                                         )
                                         .map(([key, { url, icon, label }]) => (
-                                            <a
+                                            <Button
                                                 key={key}
+                                                as="a"
                                                 href={url}
                                                 target="_blank"
                                                 rel="noopener noreferrer"
                                                 title={label}
-                                                className="flex-shrink-0 w-6 h-6 md:w-8 md:h-8 flex items-center justify-center bg-offwhite/80 backdrop-blur-md border-r-4 border-b-4 border-offblack/30 hover:bg-lime/90 hover:border-rose hover:shadow-[4px_4px_0px_0px_rgba(255,105,180,1)] transition-all p-1 md:p-1.5"
+                                                variant="icon"
+                                                size={null}
                                             >
                                                 <img
                                                     src={icon}
                                                     alt={label}
                                                     className="w-full h-full object-contain"
                                                 />
-                                            </a>
+                                            </Button>
                                         ))}
 
                                     {/* Enter Button */}
-                                    <a
+                                    <Button
+                                        as="a"
                                         href="https://enter.pollinations.ai"
                                         target="_blank"
                                         rel="noopener noreferrer"
-                                        className="flex-shrink-0 h-6 md:h-8 px-2 md:px-3 flex items-center justify-center gap-1 bg-offwhite/80 backdrop-blur-md border-r-4 border-b-4 border-offblack/30 hover:bg-lime/90 hover:border-rose hover:shadow-[4px_4px_0px_0px_rgba(255,105,180,1)] transition-all"
+                                        variant="iconText"
+                                        size={null}
                                     >
                                         <span className="font-headline text-[10px] md:text-xs font-black uppercase tracking-wider text-rose">
                                             Enter
                                         </span>
-                                        <svg
-                                            className="w-2.5 h-2.5 md:w-3 md:h-3 stroke-rose"
-                                            fill="none"
-                                            strokeWidth="2.5"
-                                            viewBox="0 0 12 12"
-                                        >
-                                            <path
-                                                d="M1 11L11 1M11 1H4M11 1v7"
-                                                strokeLinecap="square"
-                                            />
-                                        </svg>
-                                    </a>
+                                        <ExternalLinkIcon
+                                            className="w-2.5 h-2.5 md:w-3 md:h-3"
+                                            stroke="#ff69b4"
+                                        />
+                                    </Button>
                                 </div>
                             </div>
                         </div>
@@ -186,7 +187,7 @@ function Layout() {
                                     Privacy
                                 </a>
                                 <span className="text-offblack/30">•</span>
-                                <button
+                                <Button
                                     type="button"
                                     onClick={() => {
                                         navigator.clipboard.writeText(
@@ -198,7 +199,8 @@ function Layout() {
                                             2000
                                         );
                                     }}
-                                    className="font-body text-offblack/60 hover:text-offblack transition-colors cursor-pointer relative"
+                                    variant="ghost"
+                                    size={null}
                                 >
                                     hello@pollinations.ai
                                     {emailCopied && (
@@ -206,29 +208,31 @@ function Layout() {
                                             Copied!
                                         </span>
                                     )}
-                                </button>
+                                </Button>
                             </div>
                         </div>
 
                         {/* Right: Social Icons Island */}
                         <div className="bg-offwhite/70 backdrop-blur-md px-2 py-2 mx-auto md:mx-0">
-                            <div className="flex gap-2">
+                            <div className="flex gap-3">
                                 {Object.entries(SOCIAL_LINKS).map(
                                     ([key, { url, icon, label }]) => (
-                                        <a
+                                        <Button
                                             key={key}
+                                            as="a"
                                             href={url}
                                             target="_blank"
                                             rel="noopener noreferrer"
                                             title={label}
-                                            className="w-6 h-6 flex items-center justify-center hover:bg-lime/90 transition-all p-1"
+                                            variant="footerIcon"
+                                            size={null}
                                         >
                                             <img
                                                 src={icon}
                                                 alt={label}
-                                                className="w-full h-full object-contain opacity-60 hover:opacity-100 transition-opacity"
+                                                className="w-full h-full object-contain"
                                             />
-                                        </a>
+                                        </Button>
                                     )
                                 )}
                             </div>

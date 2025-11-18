@@ -1,4 +1,7 @@
 import { useState, useEffect } from "react";
+import { Button } from "../components/ui/button";
+import { XIcon } from "../icons/XIcon";
+import { Title } from "../components/ui/typography";
 import { TextGenerator } from "../components/TextGenerator";
 import { PLAY_DESCRIPTION, FEED_DESCRIPTION } from "../config/content";
 import { ImageFeed } from "../components/ImageFeed";
@@ -209,9 +212,9 @@ function PlayPage() {
                     {/* Introduction */}
                     <div className="mb-8">
                         <div className="flex items-center gap-4 mb-3">
-                            <h1 className="font-title text-4xl md:text-5xl font-black text-offblack">
+                            <Title spacing="none">
                                 {view === "play" ? "Create" : "Watch"}
-                            </h1>
+                            </Title>
                             <button
                                 type="button"
                                 onClick={() =>
@@ -278,19 +281,16 @@ function PlayPage() {
                                         const isImage = m.type === "image";
                                         const isActive = model === m.id;
                                         return (
-                                            <button
+                                            <Button
                                                 key={m.id}
                                                 type="button"
                                                 onClick={() => setModel(m.id)}
-                                                className={`relative px-2 py-1.5 font-headline text-[0.65rem] uppercase tracking-wider font-black border-2 transition-all ${
-                                                    isActive
-                                                        ? isImage
-                                                            ? "bg-rose/90 border-offblack shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]"
-                                                            : "bg-lime/90 border-offblack shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]"
-                                                        : isImage
-                                                        ? "bg-offblack/5 border-offblack/30 hover:border-rose hover:bg-offblack/10"
-                                                        : "bg-offblack/5 border-offblack/30 hover:border-lime hover:bg-offblack/10"
-                                                }`}
+                                                variant="model"
+                                                size={null}
+                                                data-active={isActive}
+                                                data-type={
+                                                    isImage ? "image" : "text"
+                                                }
                                             >
                                                 <div
                                                     className={`absolute left-0 top-0 bottom-0 w-1 ${
@@ -300,7 +300,7 @@ function PlayPage() {
                                                     }`}
                                                 />
                                                 {m.name}
-                                            </button>
+                                            </Button>
                                         );
                                     })}
                                 </div>
@@ -353,7 +353,7 @@ function PlayPage() {
                                                                 }`}
                                                                 className="w-full h-full object-cover border-2 border-offblack"
                                                             />
-                                                            <button
+                                                            <Button
                                                                 type="button"
                                                                 onClick={() => {
                                                                     const newImages =
@@ -368,10 +368,14 @@ function PlayPage() {
                                                                         newImages
                                                                     );
                                                                 }}
-                                                                className="absolute top-1 right-1 w-6 h-6 bg-rose border-2 border-offblack font-headline text-xs font-black text-offwhite hover:bg-rose/80 transition-colors"
+                                                                variant="remove"
+                                                                size={null}
                                                             >
-                                                                ×
-                                                            </button>
+                                                                <XIcon
+                                                                    className="w-4 h-4"
+                                                                    stroke="#110518"
+                                                                />
+                                                            </Button>
                                                         </>
                                                     ) : (
                                                         <label className="w-full h-full bg-offblack/5 border-2 border-offblack/30 hover:border-lime hover:bg-offblack/10 transition-colors flex items-center justify-center cursor-pointer">
@@ -539,26 +543,21 @@ function PlayPage() {
                             )}
 
                             {/* Generate Button */}
-                            <button
+                            <Button
                                 type="button"
                                 onClick={handleGenerate}
                                 disabled={!prompt || isLoading}
-                                className={`w-full mb-6 px-6 py-4 font-headline uppercase text-lg font-black border-r-4 border-b-4 transition-all ${
-                                    isImageModel
-                                        ? "bg-rose border-offblack shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]"
-                                        : "bg-lime border-offblack shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]"
-                                } ${
-                                    !prompt || isLoading
-                                        ? "opacity-50 cursor-not-allowed"
-                                        : "cursor-pointer"
-                                }`}
+                                variant="generate"
+                                size={null}
+                                data-type={isImageModel ? "image" : "text"}
+                                className="mb-6"
                             >
                                 {isLoading
                                     ? "Generating..."
                                     : `Generate ${
                                           isImageModel ? "Image" : "Text"
                                       }`}
-                            </button>
+                            </Button>
 
                             {/* Result Display */}
                             {result && (

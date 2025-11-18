@@ -1,3 +1,7 @@
+import { Button } from "../components/ui/button";
+import { ExternalLinkIcon } from "../icons/ExternalLinkIcon";
+import { Title, Heading, Body } from "../components/ui/typography";
+
 function HelloPage() {
     return (
         <div className="w-full px-4 pb-12">
@@ -5,24 +9,21 @@ function HelloPage() {
                 {/* Main Card */}
                 <div className="bg-offwhite/90 border-r-4 border-b-4 border-rose shadow-rose-lg p-6 md:p-8">
                     {/* Title */}
-                    <h1 className="font-title text-4xl md:text-5xl font-black text-offblack mb-12">
-                        Gen AI with a Human Touch
-                    </h1>
-
+                    <Title>Gen AI with a Human Touch</Title>
                     {/* Intro Section */}
                     <div className="mb-12">
-                        <p className="font-body text-base text-offblack/80 leading-relaxed mb-4">
+                        <Body>
                             Tired of faceless, complex, and expensive APIs? We
                             are too. We're a small, passionate team building a
                             different kind of AI platform—one that's simple,
                             beautiful, and built in direct partnership with our
                             community.
-                        </p>
-                        <p className="font-body text-base text-offblack/80 leading-relaxed">
+                        </Body>
+                        <Body spacing="none">
                             Whether you need a reliable API that just works or a
                             partner to sponsor your next big idea, you've found
                             your home.
-                        </p>
+                        </Body>
                     </div>
 
                     {/* Divider */}
@@ -30,17 +31,17 @@ function HelloPage() {
 
                     {/* Pollen Section */}
                     <div className="mb-12">
-                        <h2 className="font-headline text-2xl md:text-3xl font-black text-offblack mb-4 uppercase tracking-widest border-l-4 border-rose pl-4">
+                        <Heading variant="section">
                             Pollen: One Simple Credit for Everything
-                        </h2>
-                        <p className="font-body text-base text-offblack/80 leading-relaxed">
+                        </Heading>
+                        <Body spacing="none">
                             Pollen is our single, unified credit for all
                             generative media. It's the elegant solution to a
                             chaotic landscape, designed to be predictable and
                             fair for every type of builder. It's the fuel for
                             your imagination, and there are multiple ways to
                             fill your tank.
-                        </p>
+                        </Body>
                     </div>
 
                     {/* Divider */}
@@ -48,15 +49,15 @@ function HelloPage() {
 
                     {/* Get Pollen Section */}
                     <div className="mb-12">
-                        <h2 className="font-headline text-2xl md:text-3xl font-black text-offblack mb-6 uppercase tracking-widest border-l-4 border-rose pl-4">
+                        <Heading variant="section" spacing="comfortable">
                             Fuel Your Vision: Get Pollen Your Way
-                        </h2>
-                        <p className="font-body text-base text-offblack/80 leading-relaxed mb-6">
+                        </Heading>
+                        <Body spacing="comfortable">
                             Our platform is designed for flexibility. Every
                             developer can purchase Pollen directly, and those we
                             partner with also receive a daily grant to kickstart
                             their journey.
-                        </p>
+                        </Body>
 
                         {/* Two Column Cards */}
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -65,7 +66,7 @@ function HelloPage() {
                                 <h3 className="font-headline text-lg font-black text-lime mb-4 uppercase tracking-wider">
                                     Simple & Fast: Buy What You Need
                                 </h3>
-                                <p className="font-body text-sm text-offblack/70 leading-relaxed">
+                                <Body size="sm" spacing="none">
                                     Have an idea and just need a great API to
                                     power it?{" "}
                                     <span className="font-black">
@@ -76,7 +77,7 @@ function HelloPage() {
                                     reliable, pay-as-you-go solution for any
                                     project, from a weekend hackathon to a
                                     full-scale application.
-                                </p>
+                                </Body>
                             </div>
 
                             {/* Sponsorship Card */}
@@ -85,7 +86,7 @@ function HelloPage() {
                                     Our Investment in You: The Sponsorship
                                     Program
                                 </h3>
-                                <p className="font-body text-sm text-offblack/70 leading-relaxed">
+                                <Body size="sm" spacing="none">
                                     We sponsor developers building the next wave
                                     of creative apps. As a partner, you receive
                                     a{" "}
@@ -99,7 +100,7 @@ function HelloPage() {
                                         top up with purchased Pollen anytime
                                     </span>{" "}
                                     you need to scale.
-                                </p>
+                                </Body>
                             </div>
                         </div>
                     </div>
@@ -109,10 +110,10 @@ function HelloPage() {
 
                     {/* Sponsorship Tiers */}
                     <div className="mb-12">
-                        <h2 className="font-headline text-2xl md:text-3xl font-black text-offblack mb-4 uppercase tracking-widest border-l-4 border-rose pl-4">
+                        <Heading variant="section">
                             Grow With Us: The Sponsorship Tiers
-                        </h2>
-                        <p className="font-body text-base text-offblack/80 leading-relaxed">
+                        </Heading>
+                        <Body spacing="none">
                             For our sponsored partners, the journey is a
                             gamified path that rewards your progress. You'll
                             start as a <span className="font-black">Spore</span>
@@ -123,7 +124,7 @@ function HelloPage() {
                             <span className="font-black">Nectar</span>,
                             unlocking larger daily grants and server-to-server
                             keys to support your app's launch and scaling.
-                        </p>
+                        </Body>
                     </div>
 
                     {/* Divider */}
@@ -131,14 +132,14 @@ function HelloPage() {
 
                     {/* Creative Launchpad */}
                     <div className="mb-12">
-                        <h2 className="font-headline text-2xl md:text-3xl font-black text-offblack mb-4 uppercase tracking-widest border-l-4 border-rose pl-4">
+                        <Heading variant="section">
                             Your Creative Launchpad
-                        </h2>
-                        <p className="font-body text-base text-offblack/80 leading-relaxed mb-6">
+                        </Heading>
+                        <Body spacing="comfortable">
                             No matter how you get your Pollen, you get access to
                             our high-level creative engines. We handle the
                             complexity so you can focus on your vision.
-                        </p>
+                        </Body>
                         <ul className="space-y-3">
                             <li className="font-body text-sm text-offblack/80 leading-relaxed pl-4 border-l-2 border-lime">
                                 <span className="font-black">
@@ -176,13 +177,13 @@ function HelloPage() {
 
                     {/* The Difference */}
                     <div className="mb-12">
-                        <h2 className="font-headline text-2xl md:text-3xl font-black text-offblack mb-4 uppercase tracking-widest border-l-4 border-rose pl-4">
+                        <Heading variant="section">
                             The Pollinations Difference
-                        </h2>
-                        <p className="font-body text-base text-offblack/80 leading-relaxed mb-6">
+                        </Heading>
+                        <Body spacing="comfortable">
                             Why build with us? Because we're building{" "}
                             <span className="italic">for</span> you.
-                        </p>
+                        </Body>
                         <ul className="space-y-3">
                             <li className="font-body text-sm text-offblack/80 leading-relaxed pl-4 border-l-2 border-rose">
                                 <span className="font-black">
@@ -213,13 +214,13 @@ function HelloPage() {
 
                     {/* Roadmap */}
                     <div className="mb-12">
-                        <h2 className="font-headline text-2xl md:text-3xl font-black text-offblack mb-4 uppercase tracking-widest border-l-4 border-rose pl-4">
+                        <Heading variant="section">
                             The Horizon: An Open Creative Economy
-                        </h2>
-                        <p className="font-body text-base text-offblack/80 leading-relaxed mb-6">
+                        </Heading>
+                        <Body spacing="comfortable">
                             Our roadmap is focused on enabling success for every
                             developer on our platform.
-                        </p>
+                        </Body>
                         <div className="space-y-4">
                             <div className="bg-offblack/5 p-4">
                                 <div className="flex flex-col md:flex-row gap-3">
@@ -245,7 +246,7 @@ function HelloPage() {
                                     </div>
                                     <div className="flex-1">
                                         <p className="font-headline text-sm font-black text-offblack mb-2">
-                                            Launch: The Login & Top-Up Widget
+                                            In-App Purchase
                                         </p>
                                         <p className="font-body text-xs text-offblack/70">
                                             <span className="font-black">
@@ -266,7 +267,7 @@ function HelloPage() {
                                     </div>
                                     <div className="flex-1">
                                         <p className="font-headline text-sm font-black text-offblack mb-2">
-                                            An All-in-One Platform
+                                            Beyond
                                         </p>
                                         <p className="font-body text-xs text-offblack/70">
                                             We're moving towards a complete
@@ -284,13 +285,13 @@ function HelloPage() {
 
                     {/* CTA */}
                     <div>
-                        <h2 className="font-headline text-2xl md:text-3xl font-black text-offblack mb-6 uppercase tracking-widest border-l-4 border-rose pl-4">
+                        <Heading variant="section" spacing="comfortable">
                             Ready to Create?
-                        </h2>
-                        <p className="font-body text-base text-offblack/80 leading-relaxed mb-6">
+                        </Heading>
+                        <Body spacing="comfortable">
                             Stop choosing between power and personality. Build
                             with a platform that offers both.
-                        </p>
+                        </Body>
                         <div className="flex flex-wrap gap-3">
                             <a
                                 href="https://enter.pollinations.ai"

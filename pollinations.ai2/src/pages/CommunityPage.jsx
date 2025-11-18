@@ -1,6 +1,9 @@
 import { TextGenerator } from "../components/TextGenerator";
 import { ImageGenerator } from "../components/ImageGenerator";
 import { SOCIAL_LINKS } from "../config/socialLinksList";
+import { Button } from "../components/ui/button";
+import { ExternalLinkIcon } from "../icons/ExternalLinkIcon";
+import { Title, Heading, Body } from "../components/ui/typography";
 import {
     COMMUNITY_TITLE,
     COMMUNITY_SUBTITLE,
@@ -18,9 +21,7 @@ function CommunityPage() {
             <div className="max-w-4xl mx-auto">
                 {/* One Big Card containing everything */}
                 <div className="bg-offwhite/90 border-r-4 border-b-4 border-rose shadow-rose-lg p-6 md:p-8">
-                    <h1 className="font-title text-4xl md:text-5xl font-black text-offblack mb-4">
-                        {COMMUNITY_TITLE}
-                    </h1>
+                    <Title spacing="tight">{COMMUNITY_TITLE}</Title>
                     <TextGenerator
                         prompt={COMMUNITY_SUBTITLE.prompt}
                         seed={COMMUNITY_SUBTITLE.seed}
@@ -32,68 +33,50 @@ function CommunityPage() {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-12">
                         {/* Discord Card */}
                         <div className="bg-offblack/5 p-6">
-                            <h2 className="font-headline text-xl font-black text-lime mb-4 uppercase tracking-wider">
+                            <Heading variant="lime" as="h2">
                                 Discord
-                            </h2>
+                            </Heading>
                             <TextGenerator
                                 prompt={COMMUNITY_DISCORD_SUBTITLE.prompt}
                                 seed={COMMUNITY_DISCORD_SUBTITLE.seed}
                                 as="div"
                                 className="font-body text-sm text-offblack/70 mb-6"
                             />
-                            <a
+                            <Button
+                                as="a"
                                 href={SOCIAL_LINKS.discord.url}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="inline-flex items-center gap-2 px-6 py-4 bg-offblack border-r-4 border-b-4 border-lime shadow-lime-md font-headline uppercase text-sm font-black text-offwhite hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-lime-sm transition-all"
+                                variant="primary"
+                                size="lg"
                             >
                                 Join Discord
-                                <svg
-                                    className="w-3.5 h-3.5 stroke-lime"
-                                    fill="none"
-                                    strokeWidth="2.5"
-                                    viewBox="0 0 12 12"
-                                    title="External link"
-                                >
-                                    <path
-                                        d="M1 11L11 1M11 1H4M11 1v7"
-                                        strokeLinecap="square"
-                                    />
-                                </svg>
-                            </a>
+                                <ExternalLinkIcon stroke="#ecf874" />
+                            </Button>
                         </div>
 
                         {/* GitHub Card */}
                         <div className="bg-offblack/5 p-6">
-                            <h2 className="font-headline text-xl font-black text-rose mb-4 uppercase tracking-wider">
+                            <Heading variant="rose" as="h2">
                                 GitHub
-                            </h2>
+                            </Heading>
                             <TextGenerator
                                 prompt={COMMUNITY_GITHUB_SUBTITLE.prompt}
                                 seed={COMMUNITY_GITHUB_SUBTITLE.seed}
                                 as="div"
                                 className="font-body text-sm text-offblack/70 mb-6"
                             />
-                            <a
+                            <Button
+                                as="a"
                                 href={SOCIAL_LINKS.github.url}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="inline-flex items-center gap-2 px-6 py-4 bg-offblack border-r-4 border-b-4 border-lime shadow-lime-md font-headline uppercase text-sm font-black text-offwhite hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-lime-sm transition-all"
+                                variant="primary"
+                                size="lg"
                             >
                                 Contribute
-                                <svg
-                                    className="w-3.5 h-3.5 stroke-lime"
-                                    fill="none"
-                                    strokeWidth="2.5"
-                                    viewBox="0 0 12 12"
-                                    title="External link"
-                                >
-                                    <path
-                                        d="M1 11L11 1M11 1H4M11 1v7"
-                                        strokeLinecap="square"
-                                    />
-                                </svg>
-                            </a>
+                                <ExternalLinkIcon stroke="#ecf874" />
+                            </Button>
                         </div>
                     </div>
 
@@ -102,12 +85,10 @@ function CommunityPage() {
 
                     {/* Supporters Section */}
                     <div>
-                        <h2 className="font-headline text-2xl md:text-3xl font-black text-offblack mb-4 uppercase tracking-widest border-l-4 border-rose pl-4">
-                            {SUPPORTER_TITLE}
-                        </h2>
-                        <p className="font-body text-sm text-offblack/70 mb-6">
+                        <Heading variant="section">{SUPPORTER_TITLE}</Heading>
+                        <Body size="sm" spacing="comfortable">
                             {SUPPORTER_SUBTITLE}
-                        </p>
+                        </Body>
                         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
                             {SUPPORTERS.map((supporter) => (
                                 <a

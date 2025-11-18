@@ -1,8 +1,5 @@
 // Import registry for model names and tier validation
-import { IMAGE_SERVICES } from "../../shared/registry/image.ts";
-
-// Type constraint: model names must exist in registry
-type ImageServiceName = keyof typeof IMAGE_SERVICES;
+import { type ImageServiceName } from "../../shared/registry/image.ts";
 
 /**
  * Image-specific configuration for each model
@@ -19,7 +16,7 @@ type ImageModelsConfig = {
     [K in ImageServiceName]: ImageModelConfig;
 };
 
-export const IMAGE_CONFIG: ImageModelsConfig = {
+export const IMAGE_CONFIG = {
     flux: {
         type: "pollinations",
         enhance: true,
@@ -60,7 +57,7 @@ export const IMAGE_CONFIG: ImageModelsConfig = {
         enhance: false,
         defaultSideLength: 1021, // Prime number to detect default size for "auto" mode
     },
-};
+} as const satisfies ImageModelsConfig;
 
 /**
  * Legacy MODELS export for backward compatibility
@@ -73,5 +70,5 @@ export const MODELS = Object.fromEntries(
         {
             ...config,
         },
-    ])
+    ]),
 ) as Record<ImageServiceName, ImageModelConfig>;

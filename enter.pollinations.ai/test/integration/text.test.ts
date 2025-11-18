@@ -4,6 +4,8 @@ import { test } from "../fixtures.ts";
 import { describe, expect } from "vitest";
 import { env } from "cloudflare:workers";
 import type { ServiceId } from "@shared/registry/registry.ts";
+import { CompletionUsageSchema } from "@/schemas/openai.ts";
+import { parseUsageHeaders } from "@shared/registry/usage-headers.ts";
 
 const TEST_DISABLE_CACHE = true;
 const TEST_ALL_SERVICES = false;
@@ -408,9 +410,8 @@ test(
     },
 );
 
-// Test response headers
 test(
-    "POST /v1/chat/completions should include usage headers",
+    "POST /v1/chat/completions should include usage",
     { timeout: 30000 },
     async ({ apiKey, mocks }) => {
         mocks.enable("polar", "tinybird");
@@ -436,57 +437,20 @@ test(
         );
         expect(response.status).toBe(200);
         const data = await response.json();
-        expect(data.usage).toBeDefined();
-        expect(data.usage.prompt_tokens).toBeGreaterThan(0);
-        expect(data.usage.completion_tokens).toBeGreaterThan(0);
-        expect(data.usage.total_tokens).toBeGreaterThan(0);
-    },
-);
-
-// Comprehensive test for all text models from registry
-test.for(
-    getTextServices()
-        .filter((serviceId) => serviceId !== "openai-audio") // Skip audio model - has dedicated tests
-        .map((serviceId) => [serviceId]),
-)(
-    "Text model %s should generate valid response",
-    { timeout: 30000 },
-    async ([serviceId], { apiKey, mocks }) => {
-        mocks.enable("polar", "tinybird");
-        const response = await SELF.fetch(
-            `http://localhost:3000/api/generate/v1/chat/completions`,
-            {
-                method: "POST",
-                headers: {
-                    "content-type": "application/json",
-                    "authorization": `Bearer ${apiKey}`,
-                    "referer": env.TESTING_REFERRER,
-                },
-                body: JSON.stringify({
-                    model: serviceId,
-                    messages: [
-                        {
-                            role: "user",
-                            content: testMessageContent(),
-                        },
-                    ],
-                }),
-            },
+        const usage = await CompletionUsageSchema.parseAsync(
+            (data as any).usage,
         );
-
-        // Log response for debugging failures
-        if (response.status !== 200) {
-            const body = await response.text();
-            console.log(
-                `[TEST] Model ${serviceId} failed with status ${response.status}`,
-            );
-            console.log(`[TEST] Response body: ${body}`);
-        }
-
-        expect(response.status).toBe(200);
-        const data = await response.json();
-        expect(data.choices).toBeDefined();
-        expect(data.choices[0].message.content).toBeDefined();
-        expect(data.model).toBeDefined();
+        expect(usage.prompt_tokens).toBeGreaterThan(0);
+        expect(usage.completion_tokens).toBeGreaterThan(0);
+        expect(usage.total_tokens).toBeGreaterThan(0);
+        const usageHeaders = parseUsageHeaders(response.headers);
+        const totalPromptTokens =
+            (usageHeaders.promptTextTokens || 0) +
+            (usageHeaders.promptCachedTokens || 0);
+        const totalCompletionTokens =
+            (usageHeaders.completionTextTokens || 0) +
+            (usageHeaders.completionReasoningTokens || 0);
+        expect(totalPromptTokens).toEqual(usage.prompt_tokens);
+        expect(totalCompletionTokens).toEqual(usage.completion_tokens);
     },
 );

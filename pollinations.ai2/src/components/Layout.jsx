@@ -131,14 +131,7 @@ function Layout() {
                                 href="/terms"
                                 className="font-body text-offblack/60 hover:text-offblack transition-colors"
                             >
-                                Terms
-                            </a>
-                            <span className="text-offblack/30">•</span>
-                            <a
-                                href="/privacy"
-                                className="font-body text-offblack/60 hover:text-offblack transition-colors"
-                            >
-                                Privacy
+                                Terms & Conditions
                             </a>
                             <span className="text-offblack/30">•</span>
                             <button

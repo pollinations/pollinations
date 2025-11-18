@@ -355,4 +355,42 @@ export const TEXT_SERVICES = {
         reasoning: true,
         persona: false,
     },
+    "kimi-k2-thinking": {
+        aliases: ["kimi-k2", "kimi-thinking"],
+        modelId: "kimi-k2-thinking-maas",
+        provider: "vertex-ai",
+        cost: [
+            {
+                date: COST_START_DATE,
+                promptTextTokens: perMillion(0.0), // Free until Nov 17, 2025
+                completionTextTokens: perMillion(0.0),
+            },
+        ],
+        description:
+            "Moonshot Kimi K2 Thinking - Deep Reasoning & Tool Orchestration (Free Preview)",
+        input_modalities: ["text"],
+        output_modalities: ["text"],
+        tools: true,
+        reasoning: true,
+        isSpecialized: false,
+    },
+    "gemini-3-pro": {
+        aliases: ["gemini-3", "gemini-3-pro-preview"],
+        modelId: "gemini-3-pro-preview",
+        provider: "vertex-ai",
+        cost: [
+            {
+                date: COST_START_DATE,
+                promptTextTokens: perMillion(2.0),
+                completionTextTokens: perMillion(12.0),
+            },
+        ],
+        description:
+            "Google Gemini 3 Pro - Most Intelligent Model with 1M Context (Preview)",
+        input_modalities: ["text", "image", "audio", "video"],
+        output_modalities: ["text"],
+        tools: true,
+        reasoning: true,
+        isSpecialized: false,
+    },
 } as const;

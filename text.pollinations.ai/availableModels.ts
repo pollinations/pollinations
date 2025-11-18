@@ -123,6 +123,16 @@ const models: ModelDefinition[] = [
         config: portkeyConfig["sonar-reasoning"],
         transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
     },
+    {
+        name: "kimi-k2-thinking",
+        config: portkeyConfig["kimi-k2-thinking-maas"],
+        transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
+    },
+    {
+        name: "gemini-3-pro",
+        config: portkeyConfig["gemini-3-pro-preview"],
+        transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
+    },
 ];
 
 // Export models - metadata is in registry (single source of truth)

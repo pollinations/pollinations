@@ -4,7 +4,7 @@ import { DOCS_INTRO, DOCS_API_REFERENCE } from "../config/content";
 import { CopyIcon } from "../icons/CopyIcon";
 import { ExternalLinkIcon } from "../icons/ExternalLinkIcon";
 import { Button } from "../components/ui/button";
-import { Title, Heading, Body } from "../components/ui/typography";
+import { Title } from "../components/ui/typography";
 import { Divider } from "../components/ui/divider";
 import { PageCard } from "../components/ui/page-card";
 import { PageContainer } from "../components/ui/page-container";

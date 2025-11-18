@@ -26,7 +26,7 @@ function DocsPage() {
         <div className="w-full px-4 pb-12">
             <div className="max-w-4xl mx-auto space-y-6">
                 {/* Intro - Full Width */}
-                <div className="bg-offwhite/90 border-r-4 border-b-4 border-rose shadow-[6px_6px_0px_0px_rgba(255,105,180,1)] p-6 md:p-8">
+                <div className="bg-offwhite/90 border-r-4 border-b-4 border-rose shadow-rose-lg p-6 md:p-8">
                     <TextGenerator
                         text={DOCS_INTRO.prompt}
                         seed={DOCS_INTRO.seed}
@@ -44,7 +44,7 @@ function DocsPage() {
                             href="https://enter.pollinations.ai/api/docs"
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="inline-block px-4 py-3 bg-lime/90 border-r-4 border-b-4 border-offblack shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] font-headline uppercase text-xs font-black hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transition-all"
+                            className="inline-block px-4 py-3 bg-lime/90 border-r-4 border-b-4 border-offblack shadow-black-md font-headline uppercase text-xs font-black hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-black-sm transition-all"
                         >
                             📚 Full API Docs
                         </a>
@@ -56,7 +56,7 @@ function DocsPage() {
                                 navigator.clipboard.writeText(agentPrompt);
                                 alert("Agent prompt copied to clipboard!");
                             }}
-                            className="inline-block px-4 py-3 bg-offblack border-r-4 border-b-4 border-lime shadow-[4px_4px_0px_0px_rgba(190,242,100,1)] font-headline uppercase text-xs font-black text-offwhite hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-[2px_2px_0px_0px_rgba(190,242,100,1)] transition-all cursor-pointer"
+                            className="inline-block px-4 py-3 bg-offblack border-r-4 border-b-4 border-lime shadow-lime-md font-headline uppercase text-xs font-black text-offwhite hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-lime-sm transition-all cursor-pointer"
                         >
                             🤖 Agent Prompt
                         </button>
@@ -81,7 +81,7 @@ function DocsPage() {
 
 function AuthCard() {
     return (
-        <div className="bg-offwhite/90 border-r-4 border-b-4 border-rose shadow-[6px_6px_0px_0px_rgba(255,105,180,1)] p-6 md:p-8">
+        <div className="bg-offwhite/90 border-r-4 border-b-4 border-rose shadow-rose-lg p-6 md:p-8">
             <h2 className="font-headline text-2xl font-black text-offblack mb-6 uppercase tracking-wider">
                 Authentication
             </h2>
@@ -133,7 +133,7 @@ function AuthCard() {
                         href="https://enter.pollinations.ai"
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="inline-block bg-lime/90 border-r-4 border-b-4 border-offblack shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] px-6 py-4 hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transition-all"
+                        className="inline-block bg-lime/90 border-r-4 border-b-4 border-offblack shadow-black-md px-6 py-4 hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-black-sm transition-all"
                     >
                         <p className="font-headline text-xs uppercase tracking-wider font-black text-offblack mb-2">
                             Get Your Key
@@ -264,7 +264,7 @@ function ImageGenCard() {
     }, [imageUrl]);
 
     return (
-        <div className="bg-offwhite/90 border-r-4 border-b-4 border-rose shadow-[6px_6px_0px_0px_rgba(255,105,180,1)] p-6 md:p-8">
+        <div className="bg-offwhite/90 border-r-4 border-b-4 border-rose shadow-rose-lg p-6 md:p-8">
             <h2 className="font-headline text-2xl font-black text-offblack mb-4 uppercase tracking-wider">
                 Image Generation
             </h2>
@@ -286,7 +286,7 @@ function ImageGenCard() {
                                     onClick={() => setSelectedPrompt(prompt)}
                                     className={`px-3 py-1.5 font-mono text-xs border-2 transition-all cursor-pointer ${
                                         selectedPrompt === prompt
-                                            ? "bg-lime/90 border-rose font-black shadow-[2px_2px_0px_0px_rgba(255,105,180,1)]"
+                                            ? "bg-lime/90 border-rose font-black shadow-rose-sm"
                                             : "bg-offblack/10 border-offblack/30 hover:border-rose"
                                     }`}
                                 >
@@ -316,7 +316,7 @@ function ImageGenCard() {
                                     onClick={() => toggleParam(param)}
                                     className={`px-3 py-1.5 font-mono text-xs border-2 transition-all cursor-pointer ${
                                         params.has(param)
-                                            ? "bg-lime/90 border-rose font-black shadow-[2px_2px_0px_0px_rgba(255,105,180,1)]"
+                                            ? "bg-lime/90 border-rose font-black shadow-rose-sm"
                                             : "bg-offblack/10 border-offblack/30 hover:border-rose"
                                     }`}
                                 >
@@ -352,7 +352,7 @@ function ImageGenCard() {
             <button
                 type="button"
                 onClick={() => navigator.clipboard.writeText(buildUrl())}
-                className="px-4 py-2 bg-lime/90 border-2 border-rose font-headline uppercase text-xs font-black hover:shadow-[4px_4px_0px_0px_rgba(255,105,180,1)] transition-all"
+                className="px-4 py-2 bg-lime/90 border-2 border-rose font-headline uppercase text-xs font-black hover:shadow-rose-md transition-all"
             >
                 Copy URL
             </button>
@@ -409,7 +409,7 @@ function TextGenCard() {
     }, [selectedPrompt, params]);
 
     return (
-        <div className="bg-offwhite/90 border-r-4 border-b-4 border-rose shadow-[6px_6px_0px_0px_rgba(255,105,180,1)] p-6 md:p-8">
+        <div className="bg-offwhite/90 border-r-4 border-b-4 border-rose shadow-rose-lg p-6 md:p-8">
             <h2 className="font-headline text-2xl font-black text-offblack mb-4 uppercase tracking-wider">
                 Text Generation
             </h2>
@@ -431,7 +431,7 @@ function TextGenCard() {
                                     onClick={() => setSelectedPrompt(prompt)}
                                     className={`px-3 py-1.5 font-mono text-xs border-2 transition-all cursor-pointer ${
                                         selectedPrompt === prompt
-                                            ? "bg-lime/90 border-rose font-black shadow-[2px_2px_0px_0px_rgba(255,105,180,1)]"
+                                            ? "bg-lime/90 border-rose font-black shadow-rose-sm"
                                             : "bg-offblack/10 border-offblack/30 hover:border-rose"
                                     }`}
                                 >
@@ -460,7 +460,7 @@ function TextGenCard() {
                                     onClick={() => toggleParam(param)}
                                     className={`px-3 py-1.5 font-mono text-xs border-2 transition-all cursor-pointer ${
                                         params.has(param)
-                                            ? "bg-lime/90 border-rose font-black shadow-[2px_2px_0px_0px_rgba(255,105,180,1)]"
+                                            ? "bg-lime/90 border-rose font-black shadow-rose-sm"
                                             : "bg-offblack/10 border-offblack/30 hover:border-rose"
                                     }`}
                                 >
@@ -514,7 +514,7 @@ function TextGenCard() {
             <button
                 type="button"
                 onClick={() => navigator.clipboard.writeText(buildUrl())}
-                className="px-4 py-2 bg-lime/90 border-2 border-rose font-headline uppercase text-xs font-black hover:shadow-[4px_4px_0px_0px_rgba(255,105,180,1)] transition-all"
+                className="px-4 py-2 bg-lime/90 border-2 border-rose font-headline uppercase text-xs font-black hover:shadow-rose-md transition-all"
             >
                 Copy URL
             </button>
@@ -548,7 +548,7 @@ function ModelDiscoveryCard() {
     const currentEndpoint = modelEndpoints[selectedModel];
 
     return (
-        <div className="bg-offwhite/90 border-r-4 border-b-4 border-rose shadow-[6px_6px_0px_0px_rgba(255,105,180,1)] p-6 md:p-8">
+        <div className="bg-offwhite/90 border-r-4 border-b-4 border-rose shadow-rose-lg p-6 md:p-8">
             <h2 className="font-headline text-2xl font-black text-offblack mb-4 uppercase tracking-wider">
                 Model Discovery
             </h2>
@@ -568,8 +568,8 @@ function ModelDiscoveryCard() {
                                 className={`px-3 py-1.5 font-mono text-xs border-2 transition-all cursor-pointer ${
                                     selectedModel === key
                                         ? color === "rose"
-                                            ? "bg-rose border-offblack font-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]"
-                                            : "bg-lime/90 border-offblack font-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]"
+                                            ? "bg-rose border-offblack font-black shadow-black-sm"
+                                            : "bg-lime/90 border-offblack font-black shadow-black-sm"
                                         : "bg-offblack/10 border-offblack/30 hover:border-rose"
                                 }`}
                             >
@@ -604,8 +604,8 @@ function ModelDiscoveryCard() {
                     rel="noopener noreferrer"
                     className={`inline-block px-4 py-2 border-2 font-headline uppercase text-xs font-black transition-all ${
                         currentEndpoint.color === "rose"
-                            ? "bg-rose border-offblack hover:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]"
-                            : "bg-lime/90 border-offblack hover:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]"
+                            ? "bg-rose border-offblack hover:shadow-black-md"
+                            : "bg-lime/90 border-offblack hover:shadow-black-md"
                     }`}
                 >
                     Open API →
@@ -615,7 +615,7 @@ function ModelDiscoveryCard() {
                     onClick={() =>
                         navigator.clipboard.writeText(currentEndpoint.url)
                     }
-                    className="px-4 py-2 bg-offblack border-2 border-offblack font-headline uppercase text-xs font-black text-offwhite hover:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-all"
+                    className="px-4 py-2 bg-offblack border-2 border-offblack font-headline uppercase text-xs font-black text-offwhite hover:shadow-black-md transition-all"
                 >
                     Copy URL
                 </button>

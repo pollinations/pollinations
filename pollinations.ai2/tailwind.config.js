@@ -1,42 +1,56 @@
 /** @type {import('tailwindcss').Config} */
 /**
  * THEME GUIDE:
- * - To change theme: Edit colors below and rebuild
- * - Use semantic names (primary/accent) in new code
- * - Original names (lime/rose) kept for existing code
+ * - To change theme: Edit src/config/colors.js
+ * - All colors imported from centralized colors.js
  * - Opacity: Add /90, /80, /50 etc. (e.g., bg-lime/90)
  */
+import { Colors, Fonts, Shadows } from "./src/config/colors.js";
+
 export default {
     content: ["./index.html", "./src/**/*.{js,ts,jsx,tsx}"],
     theme: {
         extend: {
             colors: {
-                // Brand colors
-                lime: "#ecf874",
-                rose: "#ff69b4",
-                offwhite: "#c7d4d6",
-                offblack: "#110518",
+                // Brand colors from colors.js
+                lime: Colors.lime,
+                rose: Colors.rose,
+                offwhite: Colors.offwhite,
+                offblack: Colors.offblack,
+                black: Colors.black,
 
                 // Semantic aliases (easier theming)
-                primary: "#ecf874", // lime - main accent
-                accent: "#ff69b4", // rose - borders/highlights
-                background: "#c7d4d6", // offwhite - page bg
-                foreground: "#110518", // offblack - text
+                primary: Colors.lime,
+                accent: Colors.rose,
+                background: Colors.offwhite,
+                foreground: Colors.offblack,
 
                 // Additional shades
-                "offblack-2": "#181A2C",
-                gray1: "#B3B3B3",
-                gray2: "#8A8A8A",
+                "offblack-2": Colors.offblack2,
+                gray1: Colors.gray1,
+                gray2: Colors.gray2,
             },
             fontFamily: {
-                title: ["Maven Pro", "sans-serif"],
-                headline: ["Mako", "sans-serif"],
-                body: ["Duru Sans", "sans-serif"],
+                title: [Fonts.title, "sans-serif"],
+                headline: [Fonts.headline, "sans-serif"],
+                body: [Fonts.body, "sans-serif"],
             },
             boxShadow: {
-                "brutal": "8px 8px 0px 0px rgba(0,0,0,1)",
-                "brutal-lime": "8px 8px 0px 0px rgba(236,248,116,1)",
-                "brutal-lg": "16px 16px 0px 0px rgba(0,0,0,1)",
+                // From colors.js Shadows
+                "rose-sm": Shadows.roseSm,
+                "rose-md": Shadows.roseMd,
+                "rose-lg": Shadows.roseLg,
+                "black-sm": Shadows.blackSm,
+                "black-md": Shadows.blackMd,
+                "black-lg": Shadows.blackLg,
+                "lime-sm": Shadows.limeSm,
+                "lime-md": Shadows.limeMd,
+                "offblack-muted": Shadows.offblackMuted,
+
+                // Legacy names for backwards compatibility
+                "brutal": Shadows.blackLg,
+                "brutal-lime": `8px 8px 0px 0px ${Colors.limeShadow}`,
+                "brutal-lg": `16px 16px 0px 0px ${Colors.black}`,
             },
         },
     },

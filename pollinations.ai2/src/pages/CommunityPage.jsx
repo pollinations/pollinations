@@ -17,7 +17,7 @@ function CommunityPage() {
         <div className="w-full px-4">
             <div className="max-w-4xl mx-auto space-y-6">
                 {/* Contribute Card */}
-                <div className="bg-offwhite/90 border-r-4 border-b-4 border-rose shadow-[6px_6px_0px_0px_rgba(255,105,180,1)] p-6 md:p-8">
+                <div className="bg-offwhite/90 border-r-4 border-b-4 border-rose shadow-rose-lg p-6 md:p-8">
                     <h1 className="font-title text-4xl md:text-5xl font-black text-offblack mb-4">
                         {COMMUNITY_TITLE}
                     </h1>
@@ -45,7 +45,7 @@ function CommunityPage() {
                                 href={SOCIAL_LINKS.discord.url}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="inline-block px-4 py-2 bg-offblack border-r-4 border-b-4 border-rose shadow-[4px_4px_0px_0px_rgba(255,105,180,1)] font-headline uppercase text-xs font-black text-offwhite hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-[2px_2px_0px_0px_rgba(255,105,180,1)] transition-all"
+                                className="inline-block px-4 py-2 bg-offblack border-r-4 border-b-4 border-rose shadow-rose-md font-headline uppercase text-xs font-black text-offwhite hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-rose-sm transition-all"
                             >
                                 Join Discord →
                             </a>
@@ -66,7 +66,7 @@ function CommunityPage() {
                                 href={SOCIAL_LINKS.github.url}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="inline-block px-4 py-2 bg-offblack border-r-4 border-b-4 border-rose shadow-[4px_4px_0px_0px_rgba(255,105,180,1)] font-headline uppercase text-xs font-black text-offwhite hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-[2px_2px_0px_0px_rgba(255,105,180,1)] transition-all"
+                                className="inline-block px-4 py-2 bg-offblack border-r-4 border-b-4 border-rose shadow-rose-md font-headline uppercase text-xs font-black text-offwhite hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-rose-sm transition-all"
                             >
                                 Contribute →
                             </a>
@@ -75,7 +75,7 @@ function CommunityPage() {
                 </div>
 
                 {/* Supporters Section */}
-                <div className="bg-offwhite/90 border-r-4 border-b-4 border-offblack/30 shadow-[4px_4px_0px_0px_rgba(17,5,24,0.3)] p-6 md:p-8">
+                <div className="bg-offwhite/90 border-r-4 border-b-4 border-offblack/30 shadow-offblack-muted p-6 md:p-8">
                     <h2 className="font-headline text-2xl font-black text-offblack mb-3 uppercase tracking-wider">
                         {SUPPORTER_TITLE}
                     </h2>

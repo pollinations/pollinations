@@ -24,9 +24,15 @@ const TEXT_PROMPTS = [
 function DocsPage() {
     return (
         <div className="w-full px-4 pb-12">
-            <div className="max-w-4xl mx-auto space-y-6">
-                {/* Intro - Full Width */}
+            <div className="max-w-4xl mx-auto">
+                {/* One Big Card containing everything */}
                 <div className="bg-offwhite/90 border-r-4 border-b-4 border-rose shadow-rose-lg p-6 md:p-8">
+                    {/* Title */}
+                    <h1 className="font-title text-4xl md:text-5xl font-black text-offblack mb-6">
+                        Integrate
+                    </h1>
+
+                    {/* Intro */}
                     <TextGenerator
                         text={DOCS_INTRO.prompt}
                         seed={DOCS_INTRO.seed}
@@ -37,9 +43,9 @@ function DocsPage() {
                         text={DOCS_API_REFERENCE.prompt}
                         seed={DOCS_API_REFERENCE.seed}
                         as="div"
-                        className="font-body text-offblack/70 text-sm leading-relaxed mb-6"
+                        className="font-body text-offblack/70 text-base leading-relaxed mb-6"
                     />
-                    <div className="flex flex-wrap gap-3">
+                    <div className="flex flex-wrap gap-3 mb-12">
                         <a
                             href="https://enter.pollinations.ai/api/docs"
                             target="_blank"
@@ -61,19 +67,31 @@ function DocsPage() {
                             🤖 Agent Prompt
                         </button>
                     </div>
+
+                    {/* Divider */}
+                    <div className="my-12 border-t-2 border-offblack/10" />
+
+                    {/* Image Generation */}
+                    <ImageGenCard />
+
+                    {/* Divider */}
+                    <div className="my-12 border-t-2 border-offblack/10" />
+
+                    {/* Text Generation */}
+                    <TextGenCard />
+
+                    {/* Divider */}
+                    <div className="my-12 border-t-2 border-offblack/10" />
+
+                    {/* Model Discovery */}
+                    <ModelDiscoveryCard />
+
+                    {/* Divider */}
+                    <div className="my-12 border-t-2 border-offblack/10" />
+
+                    {/* Authentication */}
+                    <AuthCard />
                 </div>
-
-                {/* Image Generation Card */}
-                <ImageGenCard />
-
-                {/* Text Generation Card */}
-                <TextGenCard />
-
-                {/* Model Discovery */}
-                <ModelDiscoveryCard />
-
-                {/* Authentication - Call to Action */}
-                <AuthCard />
             </div>
         </div>
     );
@@ -81,8 +99,8 @@ function DocsPage() {
 
 function AuthCard() {
     return (
-        <div className="bg-offwhite/90 border-r-4 border-b-4 border-rose shadow-rose-lg p-6 md:p-8">
-            <h2 className="font-headline text-2xl font-black text-offblack mb-6 uppercase tracking-wider">
+        <div>
+            <h2 className="font-headline text-2xl md:text-3xl font-black text-offblack mb-6 uppercase tracking-widest border-l-4 border-rose pl-4">
                 Authentication
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -100,12 +118,17 @@ function AuthCard() {
                                         pk_
                                     </span>
                                     <div>
-                                        <p className="font-headline text-xs font-black text-offblack uppercase mb-1">
+                                        <p className="font-headline text-xs font-black text-offblack uppercase mb-2">
                                             Publishable
                                         </p>
-                                        <p className="text-xs text-offblack/70">
-                                            Client-safe, rate-limited
-                                        </p>
+                                        <ul className="text-xs text-offblack/70 space-y-1">
+                                            <li>Safe for client-side code</li>
+                                            <li>1 pollen/hour per IP+key</li>
+                                            <li className="text-rose font-bold">
+                                                Beta: Use secret keys for
+                                                production
+                                            </li>
+                                        </ul>
                                     </div>
                                 </div>
                             </div>
@@ -117,12 +140,14 @@ function AuthCard() {
                                         sk_
                                     </span>
                                     <div>
-                                        <p className="font-headline text-xs font-black text-offblack uppercase mb-1">
+                                        <p className="font-headline text-xs font-black text-offblack uppercase mb-2">
                                             Secret
                                         </p>
-                                        <p className="text-xs text-offblack/70">
-                                            Server-only, unlimited
-                                        </p>
+                                        <ul className="text-xs text-offblack/70 space-y-1">
+                                            <li>Server-side only</li>
+                                            <li>Never expose publicly</li>
+                                            <li>No rate limits</li>
+                                        </ul>
                                     </div>
                                 </div>
                             </div>
@@ -133,12 +158,12 @@ function AuthCard() {
                         href="https://enter.pollinations.ai"
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="inline-block bg-lime/90 border-r-4 border-b-4 border-offblack shadow-black-md px-6 py-4 hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-black-sm transition-all"
+                        className="inline-block bg-offblack border-r-4 border-b-4 border-lime shadow-lime-md px-6 py-4 hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-lime-sm transition-all"
                     >
-                        <p className="font-headline text-xs uppercase tracking-wider font-black text-offblack mb-2">
+                        <p className="font-headline text-xs uppercase tracking-wider font-black text-offwhite mb-2">
                             Get Your Key
                         </p>
-                        <p className="font-mono text-sm font-black text-offblack">
+                        <p className="font-mono text-sm font-black text-offwhite">
                             enter.pollinations.ai →
                         </p>
                     </a>
@@ -225,8 +250,20 @@ function ImageGenCard() {
         let url = `https://enter.pollinations.ai/api/generate/image/${encodeURIComponent(
             selectedPrompt
         )}`;
+        const urlParams = new URLSearchParams();
         if (params.size > 0) {
-            url += "?" + Array.from(params).join("&");
+            Array.from(params).forEach((p) => {
+                const [key, value] = p.split("=");
+                urlParams.append(key, value);
+            });
+        }
+        // Add default model if not specified
+        if (!Array.from(params).some((p) => p.startsWith("model="))) {
+            urlParams.append("model", "flux");
+        }
+        const paramString = urlParams.toString();
+        if (paramString) {
+            url += "?" + paramString;
         }
         return url;
     };
@@ -236,11 +273,18 @@ function ImageGenCard() {
             setIsLoading(true);
             try {
                 const url = buildUrl();
+                console.log("Fetching image from:", url);
                 const response = await fetch(url, {
                     headers: {
                         Authorization: `Bearer ${API_KEY}`,
                     },
                 });
+                console.log("Response status:", response.status);
+                if (!response.ok) {
+                    throw new Error(
+                        `HTTP ${response.status}: ${response.statusText}`
+                    );
+                }
                 const blob = await response.blob();
                 const imageURL = URL.createObjectURL(blob);
                 setImageUrl(imageURL);
@@ -264,8 +308,8 @@ function ImageGenCard() {
     }, [imageUrl]);
 
     return (
-        <div className="bg-offwhite/90 border-r-4 border-b-4 border-rose shadow-rose-lg p-6 md:p-8">
-            <h2 className="font-headline text-2xl font-black text-offblack mb-4 uppercase tracking-wider">
+        <div>
+            <h2 className="font-headline text-2xl md:text-3xl font-black text-offblack mb-4 uppercase tracking-widest border-l-4 border-rose pl-4">
                 Image Generation
             </h2>
 
@@ -409,8 +453,8 @@ function TextGenCard() {
     }, [selectedPrompt, params]);
 
     return (
-        <div className="bg-offwhite/90 border-r-4 border-b-4 border-rose shadow-rose-lg p-6 md:p-8">
-            <h2 className="font-headline text-2xl font-black text-offblack mb-4 uppercase tracking-wider">
+        <div>
+            <h2 className="font-headline text-2xl md:text-3xl font-black text-offblack mb-4 uppercase tracking-widest border-l-4 border-rose pl-4">
                 Text Generation
             </h2>
 
@@ -528,97 +572,111 @@ function ModelDiscoveryCard() {
             label: "Image",
             url: "https://enter.pollinations.ai/api/generate/image/models",
             path: "/image/models",
-            color: "lime",
+        },
+        text: {
+            label: "Text",
+            url: "https://enter.pollinations.ai/api/generate/text/models",
+            path: "/text/models",
         },
         openai: {
             label: "Text (OpenAI)",
             url: "https://enter.pollinations.ai/api/generate/v1/models",
             path: "/v1/models",
-            color: "rose",
-        },
-        simple: {
-            label: "Text (Simple)",
-            url: "https://enter.pollinations.ai/api/generate/text/models",
-            path: "/text/models",
-            color: "lime",
         },
     };
 
     const [selectedModel, setSelectedModel] = useState("image");
+    const [modelsData, setModelsData] = useState(null);
+    const [isLoading, setIsLoading] = useState(false);
     const currentEndpoint = modelEndpoints[selectedModel];
 
+    useEffect(() => {
+        const fetchModels = async () => {
+            setIsLoading(true);
+            try {
+                const response = await fetch(currentEndpoint.url);
+                const data = await response.json();
+                setModelsData(data);
+                setIsLoading(false);
+            } catch (error) {
+                console.error("Models fetch error:", error);
+                setModelsData({ error: "Failed to load models" });
+                setIsLoading(false);
+            }
+        };
+
+        fetchModels();
+    }, [selectedModel, currentEndpoint.url]);
+
     return (
-        <div className="bg-offwhite/90 border-r-4 border-b-4 border-rose shadow-rose-lg p-6 md:p-8">
-            <h2 className="font-headline text-2xl font-black text-offblack mb-4 uppercase tracking-wider">
+        <div>
+            <h2 className="font-headline text-2xl md:text-3xl font-black text-offblack mb-4 uppercase tracking-widest border-l-4 border-rose pl-4">
                 Model Discovery
             </h2>
 
-            {/* Model Type Selection */}
-            <div className="mb-4">
-                <p className="font-headline text-xs uppercase tracking-wider font-black mb-2">
-                    Select model type:
-                </p>
-                <div className="flex flex-wrap gap-2">
-                    {Object.entries(modelEndpoints).map(
-                        ([key, { label, color }]) => (
-                            <button
-                                key={key}
-                                type="button"
-                                onClick={() => setSelectedModel(key)}
-                                className={`px-3 py-1.5 font-mono text-xs border-2 transition-all cursor-pointer ${
-                                    selectedModel === key
-                                        ? color === "rose"
-                                            ? "bg-rose border-offblack font-black shadow-black-sm"
-                                            : "bg-lime/90 border-offblack font-black shadow-black-sm"
-                                        : "bg-offblack/10 border-offblack/30 hover:border-rose"
-                                }`}
-                            >
-                                {label}
-                            </button>
-                        )
-                    )}
+            {/* Model Type Selection and Output - Side by Side */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                {/* Left side: Controls */}
+                <div className="space-y-4">
+                    {/* Model Type Selection */}
+                    <div>
+                        <p className="font-headline text-xs uppercase tracking-wider font-black mb-2">
+                            Select a type:
+                        </p>
+                        <div className="flex flex-wrap gap-2">
+                            {Object.entries(modelEndpoints).map(
+                                ([key, { label }]) => (
+                                    <button
+                                        key={key}
+                                        type="button"
+                                        onClick={() => setSelectedModel(key)}
+                                        className={`px-3 py-1.5 font-mono text-xs border-2 transition-all cursor-pointer ${
+                                            selectedModel === key
+                                                ? "bg-lime/90 border-rose font-black shadow-[2px_2px_0px_0px_rgba(255,105,180,1)]"
+                                                : "bg-offblack/10 border-offblack/30 hover:border-rose"
+                                        }`}
+                                    >
+                                        {label}
+                                    </button>
+                                )
+                            )}
+                        </div>
+                    </div>
+
+                    {/* URL Display */}
+                    <div className="p-3 bg-offblack/5 font-mono text-xs break-all">
+                        <span className="text-offblack/40">
+                            https://enter.pollinations.ai/api/generate
+                        </span>
+                        <span className="bg-lime/90 px-1 font-black">
+                            {currentEndpoint.path}
+                        </span>
+                    </div>
+
+                    {/* Copy Button */}
+                    <button
+                        type="button"
+                        onClick={() =>
+                            navigator.clipboard.writeText(currentEndpoint.url)
+                        }
+                        className="px-4 py-2 bg-lime/90 border-2 border-rose font-headline uppercase text-xs font-black hover:shadow-rose-md transition-all"
+                    >
+                        Copy URL
+                    </button>
                 </div>
-            </div>
 
-            {/* URL Display */}
-            <div className="mb-4 p-3 bg-offblack/5 font-mono text-xs break-all">
-                <span className="text-offblack/40">
-                    https://enter.pollinations.ai/api/generate
-                </span>
-                <span
-                    className={`px-1 font-black ${
-                        currentEndpoint.color === "rose"
-                            ? "bg-rose/90 text-offwhite"
-                            : "bg-lime/90"
-                    }`}
-                >
-                    {currentEndpoint.path}
-                </span>
-            </div>
-
-            {/* Action Buttons */}
-            <div className="flex gap-3">
-                <a
-                    href={currentEndpoint.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className={`inline-block px-4 py-2 border-2 font-headline uppercase text-xs font-black transition-all ${
-                        currentEndpoint.color === "rose"
-                            ? "bg-rose border-offblack hover:shadow-black-md"
-                            : "bg-lime/90 border-offblack hover:shadow-black-md"
-                    }`}
-                >
-                    Open API →
-                </a>
-                <button
-                    type="button"
-                    onClick={() =>
-                        navigator.clipboard.writeText(currentEndpoint.url)
-                    }
-                    className="px-4 py-2 bg-offblack border-2 border-offblack font-headline uppercase text-xs font-black text-offwhite hover:shadow-black-md transition-all"
-                >
-                    Copy URL
-                </button>
+                {/* Right side: Models JSON Output - Fixed Height */}
+                <div className="bg-offblack/5 p-3 font-mono text-xs text-offblack h-48 overflow-auto scrollbar-hide">
+                    {isLoading ? (
+                        <div className="text-offblack/50">
+                            Loading models...
+                        </div>
+                    ) : modelsData ? (
+                        <pre className="whitespace-pre-wrap break-words">
+                            {JSON.stringify(modelsData, null, 2)}
+                        </pre>
+                    ) : null}
+                </div>
             </div>
         </div>
     );

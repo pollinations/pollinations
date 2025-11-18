@@ -30,34 +30,50 @@ function Layout() {
             }
         };
 
+        const handleMouseMove = (e) => {
+            const windowHeight = window.innerHeight;
+            const mouseY = e.clientY;
+            const distanceFromBottom = windowHeight - mouseY;
+
+            // Show footer when mouse is within 100px of bottom
+            if (distanceFromBottom < 100) {
+                setShowFooter(true);
+            }
+        };
+
         window.addEventListener("scroll", handleScroll, { passive: true });
         window.addEventListener("resize", handleScroll, { passive: true });
+        window.addEventListener("mousemove", handleMouseMove, {
+            passive: true,
+        });
         // Check immediately on mount
         handleScroll();
 
         return () => {
             window.removeEventListener("scroll", handleScroll);
             window.removeEventListener("resize", handleScroll);
+            window.removeEventListener("mousemove", handleMouseMove);
         };
     }, []);
     return (
         <div className="relative min-h-screen bg-offwhite/80">
-            {/* Logo - Top Left Floating Brutalist */}
-            <div className="fixed top-4 left-4 z-40 w-16 h-16 md:w-20 md:h-20 pointer-events-none">
-                <img
-                    src={logo}
-                    alt="pollinations.ai"
-                    className="w-full h-full object-contain invert drop-shadow-[4px_4px_0px_rgba(255,105,180,1)]"
-                />
-            </div>
-
-            {/* Floating Transparent Header */}
+            {/* Floating Transparent Header - Centered */}
             <header className="fixed top-0 left-0 right-0 z-50">
-                <div className="w-full pl-24 md:pl-28 pr-4 py-3 md:py-4">
-                    <div className="max-w-4xl mx-auto flex items-center gap-2 md:gap-4">
-                        {/* Brutalist Tab Navigation - Scrollable on mobile */}
-                        <nav className="flex-1 overflow-x-auto scrollbar-hide">
-                            <div className="flex gap-1 md:gap-2 items-center min-w-max">
+                <div className="w-full px-4 py-3 md:py-4">
+                    <div className="max-w-6xl mx-auto">
+                        {/* Scrollable container for mobile */}
+                        <div className="overflow-x-auto scrollbar-hide">
+                            <div className="flex gap-2 md:gap-3 items-center justify-center min-w-max">
+                                {/* Logo */}
+                                <div className="flex-shrink-0 w-16 h-16 md:w-20 md:h-20">
+                                    <img
+                                        src={logo}
+                                        alt="pollinations.ai"
+                                        className="w-full h-full object-contain invert drop-shadow-[4px_4px_0px_rgba(255,105,180,1)]"
+                                    />
+                                </div>
+
+                                {/* Navigation Tabs */}
                                 {tabs.map((tab) => (
                                     <NavLink
                                         key={tab.path}
@@ -76,9 +92,14 @@ function Layout() {
                                 ))}
 
                                 {/* Social Media Links - Hidden on smallest mobile */}
-                                <div className="hidden sm:flex gap-1 md:gap-2 ml-2 md:ml-4">
-                                    {Object.entries(SOCIAL_LINKS).map(
-                                        ([key, { url, icon, label }]) => (
+                                <div className="hidden sm:flex gap-1 md:gap-2 ml-1 md:ml-2">
+                                    {Object.entries(SOCIAL_LINKS)
+                                        .filter(
+                                            ([key]) =>
+                                                key === "discord" ||
+                                                key === "github"
+                                        )
+                                        .map(([key, { url, icon, label }]) => (
                                             <a
                                                 key={key}
                                                 href={url}
@@ -93,11 +114,10 @@ function Layout() {
                                                     className="w-full h-full object-contain"
                                                 />
                                             </a>
-                                        )
-                                    )}
+                                        ))}
                                 </div>
                             </div>
-                        </nav>
+                        </div>
                     </div>
                 </div>
             </header>
@@ -107,74 +127,78 @@ function Layout() {
                 <Outlet />
             </main>
 
-            {/* Floating Transparent Footer - Smart Hide/Show */}
+            {/* Floating Transparent Footer - Discrete Islands */}
             <footer
-                className={`fixed bottom-0 left-0 right-0 z-40 bg-offwhite/60 backdrop-blur-sm border-t-2 border-offblack/10 transition-transform duration-300 ${
+                className={`fixed bottom-0 left-0 right-0 z-40 transition-transform duration-300 ${
                     showFooter ? "translate-y-0" : "translate-y-full"
                 }`}
             >
                 <div className="w-full px-4 py-3 md:py-4">
-                    <div className="max-w-4xl mx-auto flex flex-col md:flex-row md:items-center md:justify-between gap-3 text-center md:text-left">
-                        {/* Left: Branding */}
-                        <div className="space-y-0.5">
+                    <div className="max-w-6xl mx-auto flex flex-col md:flex-row md:items-end md:justify-between gap-3">
+                        {/* Left: Branding Island */}
+                        <div className="bg-offwhite/70 backdrop-blur-md px-3 py-2 text-center md:text-left">
                             <p className="font-headline text-xs font-black text-offblack uppercase tracking-wider">
                                 Pollinations.AI - 2025
                             </p>
-                            <p className="font-body text-xs text-offblack/60">
+                            <p className="font-body text-[10px] text-offblack/60">
                                 Open source AI innovation from Berlin
                             </p>
                         </div>
 
-                        {/* Center: Links */}
-                        <div className="flex items-center justify-center gap-3 text-xs">
-                            <a
-                                href="/terms"
-                                className="font-body text-offblack/60 hover:text-offblack transition-colors"
-                            >
-                                Terms
-                            </a>
-                            <span className="text-offblack/30">•</span>
-                            <a
-                                href="/privacy"
-                                className="font-body text-offblack/60 hover:text-offblack transition-colors"
-                            >
-                                Privacy
-                            </a>
-                            <span className="text-offblack/30">•</span>
-                            <button
-                                type="button"
-                                onClick={() => {
-                                    navigator.clipboard.writeText(
-                                        "hello@pollinations.ai"
-                                    );
-                                    alert("Email copied to clipboard!");
-                                }}
-                                className="font-body text-offblack/60 hover:text-offblack transition-colors cursor-pointer"
-                            >
-                                hello@pollinations.ai
-                            </button>
+                        {/* Center: Links Island */}
+                        <div className="bg-offwhite/70 backdrop-blur-md px-3 py-2 mx-auto md:mx-0">
+                            <div className="flex items-center gap-3 text-xs">
+                                <a
+                                    href="/terms"
+                                    className="font-body text-offblack/60 hover:text-offblack transition-colors"
+                                >
+                                    Terms
+                                </a>
+                                <span className="text-offblack/30">•</span>
+                                <a
+                                    href="/privacy"
+                                    className="font-body text-offblack/60 hover:text-offblack transition-colors"
+                                >
+                                    Privacy
+                                </a>
+                                <span className="text-offblack/30">•</span>
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        navigator.clipboard.writeText(
+                                            "hello@pollinations.ai"
+                                        );
+                                        alert("Email copied to clipboard!");
+                                    }}
+                                    className="font-body text-offblack/60 hover:text-offblack transition-colors cursor-pointer"
+                                >
+                                    hello@pollinations.ai
+                                </button>
+                            </div>
                         </div>
 
-                        {/* Right: Social Links */}
-                        <div className="flex gap-2 justify-center md:justify-end">
-                            {Object.entries(SOCIAL_LINKS)
-                                .slice(0, 5)
-                                .map(([key, { url, icon, label }]) => (
-                                    <a
-                                        key={key}
-                                        href={url}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        title={label}
-                                        className="w-7 h-7 flex items-center justify-center bg-offwhite/80 border-2 border-offblack/20 hover:border-rose hover:bg-lime/90 transition-all p-1"
-                                    >
-                                        <img
-                                            src={icon}
-                                            alt={label}
-                                            className="w-full h-full object-contain"
-                                        />
-                                    </a>
-                                ))}
+                        {/* Right: Social Icons Island */}
+                        <div className="bg-offwhite/70 backdrop-blur-md px-2 py-2 mx-auto md:mx-0">
+                            <div className="flex gap-2">
+                                {Object.entries(SOCIAL_LINKS).map(
+                                    ([key, { url, icon, label }]) => (
+                                        <a
+                                            key={key}
+                                            href={url}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            title={label}
+                                            className="w-6 h-6 flex items-center justify-center hover:bg-lime/90 transition-all p-1"
+                                        >
+                                            <img
+                                                src={icon}
+                                                alt={label}
+                                                className="w-full h-full object-contain opacity-60 hover:opacity-100 transition-opacity"
+                                            />
+                                        </a>
+                                    )
+                                )}
+                            </div>
                         </div>
                     </div>
                 </div>

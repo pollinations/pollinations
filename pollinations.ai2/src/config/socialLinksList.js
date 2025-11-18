@@ -30,11 +30,18 @@ export const SOCIAL_LINKS = {
         height: "22px",
     },
     x: {
-      label: 'X',
-      icon: ICONS.x,
-      url: 'https://twitter.com/pollinations_ai',
-      width: "20px",
-      height: "20px",
+        label: "X",
+        icon: ICONS.x,
+        url: "https://twitter.com/pollinations_ai",
+        width: "20px",
+        height: "20px",
+    },
+    youtube: {
+        label: "YouTube",
+        icon: ICONS.youtube,
+        url: "https://www.youtube.com/@pollinations_ai",
+        width: "28px",
+        height: "28px",
     },
     tiktok: {
         label: "Tiktok",

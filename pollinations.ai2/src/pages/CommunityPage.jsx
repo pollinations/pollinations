@@ -31,42 +31,42 @@ function CommunityPage() {
                     {/* Discord & GitHub Cards - Bold brutalist blocks */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         {/* Discord Card */}
-                        <div className="bg-offblack p-6 hover:bg-offblack/90 transition-colors">
-                            <h2 className="font-headline text-xl font-black text-offwhite mb-4 uppercase tracking-wider">
+                        <div className="bg-lime p-6 hover:bg-lime/90 transition-colors">
+                            <h2 className="font-headline text-xl font-black text-offblack mb-4 uppercase tracking-wider">
                                 💬 Discord
                             </h2>
                             <TextGenerator
                                 prompt={COMMUNITY_DISCORD_SUBTITLE.prompt}
                                 seed={COMMUNITY_DISCORD_SUBTITLE.seed}
                                 as="div"
-                                className="font-body text-sm text-offwhite/80 mb-6"
+                                className="font-body text-sm text-offblack/70 mb-6"
                             />
                             <a
                                 href={SOCIAL_LINKS.discord.url}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="inline-block px-4 py-2 bg-offwhite font-headline uppercase text-xs font-black text-offblack hover:bg-offwhite/90 transition-all"
+                                className="inline-block px-4 py-2 bg-offblack border-r-4 border-b-4 border-rose shadow-[4px_4px_0px_0px_rgba(255,105,180,1)] font-headline uppercase text-xs font-black text-offwhite hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-[2px_2px_0px_0px_rgba(255,105,180,1)] transition-all"
                             >
                                 Join Discord →
                             </a>
                         </div>
 
                         {/* GitHub Card */}
-                        <div className="bg-offblack p-6 hover:bg-offblack/90 transition-colors">
-                            <h2 className="font-headline text-xl font-black text-offwhite mb-4 uppercase tracking-wider">
+                        <div className="bg-lime p-6 hover:bg-lime/90 transition-colors">
+                            <h2 className="font-headline text-xl font-black text-offblack mb-4 uppercase tracking-wider">
                                 🐙 GitHub
                             </h2>
                             <TextGenerator
                                 prompt={COMMUNITY_GITHUB_SUBTITLE.prompt}
                                 seed={COMMUNITY_GITHUB_SUBTITLE.seed}
                                 as="div"
-                                className="font-body text-sm text-offwhite/80 mb-6"
+                                className="font-body text-sm text-offblack/70 mb-6"
                             />
                             <a
                                 href={SOCIAL_LINKS.github.url}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="inline-block px-4 py-2 bg-offwhite font-headline uppercase text-xs font-black text-offblack hover:bg-offwhite/90 transition-all"
+                                className="inline-block px-4 py-2 bg-offblack border-r-4 border-b-4 border-rose shadow-[4px_4px_0px_0px_rgba(255,105,180,1)] font-headline uppercase text-xs font-black text-offwhite hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-[2px_2px_0px_0px_rgba(255,105,180,1)] transition-all"
                             >
                                 Contribute →
                             </a>
@@ -100,13 +100,8 @@ function CommunityPage() {
                                         )}
                                         width={200}
                                         height={200}
-                                        seed={supporter.name
-                                            .split("")
-                                            .reduce(
-                                                (acc, char) =>
-                                                    acc + char.charCodeAt(0),
-                                                0
-                                            )}
+                                        seed={1}
+                                        model="nanobanana"
                                         alt={supporter.name}
                                         className="w-full h-full object-contain"
                                     />

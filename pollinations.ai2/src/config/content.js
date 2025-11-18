@@ -62,10 +62,11 @@ export const SUPPORTER_SUBTITLE =
     "We're grateful to our supporters for their contributions to our platform.";
 
 // Master prompt for all supporter logos (base template)
-// Combined with company name + description, then each logo gets unique seed from company name
+// Combined with company name + description
 export const SUPPORTER_LOGO_PROMPT = {
-    prompt: "Professional tech company logo design, minimalist icon style, clean geometric shapes, modern corporate branding, centered composition on white background. Company:",
-    // Note: Individual logos get seeds calculated from company names (see CommunityPage.jsx)
+    prompt: "Brutalist logo design with bold geometric shapes, heavy lines, stark contrast, raw minimalist aesthetic, transparent background (no background), flat design style. Company:",
+    seed: 1, // All logos use same seed for consistency
+    model: "nanobanana", // Using nanobanana model
 };
 
 // Helper to generate supporter-specific prompts

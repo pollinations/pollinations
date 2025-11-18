@@ -1,5 +1,4 @@
 import { useState, useEffect } from "react";
-import { Button } from "../components/ui/button";
 import { TextGenerator } from "../components/TextGenerator";
 import { PLAY_DESCRIPTION, FEED_DESCRIPTION } from "../config/content";
 import { ImageFeed } from "../components/ImageFeed";
@@ -283,7 +282,7 @@ function PlayPage() {
                                                 key={m.id}
                                                 type="button"
                                                 onClick={() => setModel(m.id)}
-                                                className={`relative px-2 py-1.5 font-headline text-xs uppercase tracking-wider font-black border-2 transition-all ${
+                                                className={`relative px-2 py-1.5 font-headline text-[0.65rem] uppercase tracking-wider font-black border-2 transition-all ${
                                                     isActive
                                                         ? isImage
                                                             ? "bg-rose/90 border-offblack shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]"
@@ -540,19 +539,26 @@ function PlayPage() {
                             )}
 
                             {/* Generate Button */}
-                            <Button
-                                variant="brutal"
-                                size="lg"
+                            <button
+                                type="button"
                                 onClick={handleGenerate}
                                 disabled={!prompt || isLoading}
-                                className="w-full mb-6"
+                                className={`w-full mb-6 px-6 py-4 font-headline uppercase text-lg font-black border-r-4 border-b-4 transition-all ${
+                                    isImageModel
+                                        ? "bg-rose border-offblack shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]"
+                                        : "bg-lime border-offblack shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]"
+                                } ${
+                                    !prompt || isLoading
+                                        ? "opacity-50 cursor-not-allowed"
+                                        : "cursor-pointer"
+                                }`}
                             >
                                 {isLoading
                                     ? "Generating..."
                                     : `Generate ${
                                           isImageModel ? "Image" : "Text"
                                       }`}
-                            </Button>
+                            </button>
 
                             {/* Result Display */}
                             {result && (

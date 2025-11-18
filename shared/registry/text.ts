@@ -1,7 +1,8 @@
-import type { ModelRegistry } from "./registry";
 import { COST_START_DATE, perMillion } from "./price-helpers";
 
 export const DEFAULT_TEXT_MODEL = "openai" as const;
+export type TextServiceId = keyof typeof TEXT_SERVICES;
+export type TextModelId = (typeof TEXT_SERVICES)[TextServiceId]["modelId"];
 
 export const TEXT_SERVICES = {
     "openai": {
@@ -101,7 +102,7 @@ export const TEXT_SERVICES = {
     },
     "openai-reasoning": {
         aliases: ["o4-mini"],
-        modelId: "openai/o4-mini",
+        modelId: "o4-mini-2025-04-16",
         provider: "api-navy",
         cost: [
             {
@@ -132,7 +133,7 @@ export const TEXT_SERVICES = {
             "deepseek-reasoning",
             "deepseek-r1-0528",
         ],
-        modelId: "myceli-deepseek-v3.1",
+        modelId: "DeepSeek-V3.1",
         provider: "azure",
         cost: [
             {
@@ -144,12 +145,13 @@ export const TEXT_SERVICES = {
     },
     "grok": {
         aliases: ["grok-fast", "grok-4", "grok-4-fast"],
-        modelId: "myceli-grok-4-fast",
+        modelId: "grok-4-fast-non-reasoning",
         provider: "azure",
         cost: [
             {
                 date: COST_START_DATE,
                 promptTextTokens: perMillion(0.2),
+                promptCachedTokens: perMillion(0.2), // Azure doesn't discount cached tokens for third-party models
                 completionTextTokens: perMillion(0.5),
             },
         ],

@@ -156,6 +156,21 @@ export const portkeyConfig: PortkeyConfigMap = {
         "vertex-model-id": "gemini-2.5-flash-lite",
         "strict-openai-compliance": "false",
     }),
+    "gemini-3-pro-preview": () => ({
+        provider: "vertex-ai",
+        authKey: googleCloudAuth.getAccessToken,
+        "vertex-project-id": process.env.GCLOUD_PROJECT_ID,
+        "vertex-region": "global",
+        "vertex-model-id": "gemini-3-pro-preview",
+        "strict-openai-compliance": "false",
+    }),
+    "kimi-k2-thinking-maas": () => ({
+        provider: "openai",
+        authKey: googleCloudAuth.getAccessToken,
+        "custom-host": `https://aiplatform.googleapis.com/v1/projects/${process.env.GCLOUD_PROJECT_ID}/locations/global/endpoints/openapi`,
+        "strict-openai-compliance": "false",
+        model: "moonshotai/kimi-k2-thinking-maas",
+    }),
     // Note: gemini-search service uses same config as gemini, just adds Google Search transform
     "deepseek-ai/deepseek-v3.1-maas": () => ({
         provider: "openai",

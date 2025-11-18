@@ -361,7 +361,6 @@ function createTrackingEvent({
 
         modelRequested: requestTracking.modelRequested,
         resolvedModelRequested: requestTracking.resolvedModelRequested,
-        freeModelRequested: false,
         modelUsed: responseTracking.modelUsed,
 
         isBilledUsage:

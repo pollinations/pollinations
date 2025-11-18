@@ -1,7 +1,9 @@
-import type { ModelRegistry } from "./registry";
 import { COST_START_DATE, perMillion } from "./price-helpers";
 
 export const DEFAULT_IMAGE_MODEL = "flux" as const;
+
+export type ImageServiceId = keyof typeof IMAGE_SERVICES;
+export type ImageModelId = (typeof IMAGE_SERVICES)[ImageServiceId]["modelId"];
 
 export const IMAGE_SERVICES = {
     "flux": {
@@ -46,7 +48,7 @@ export const IMAGE_SERVICES = {
         input_modalities: ["text"],
         output_modalities: ["image"],
     },
-    nanobanana: {
+    "nanobanana": {
         aliases: [],
         modelId: "nanobanana",
         provider: "vertex-ai",
@@ -63,7 +65,7 @@ export const IMAGE_SERVICES = {
         input_modalities: ["text", "image"],
         output_modalities: ["image"],
     },
-    seedream: {
+    "seedream": {
         aliases: [],
         modelId: "seedream",
         provider: "bytedance-ark",

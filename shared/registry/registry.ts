@@ -1,7 +1,17 @@
 import { omit, safeRound } from "../utils";
-import { TEXT_SERVICES, DEFAULT_TEXT_MODEL } from "./text";
-import { IMAGE_SERVICES, DEFAULT_IMAGE_MODEL } from "./image";
-import type { EventType } from "./types";
+import {
+    TEXT_SERVICES,
+    DEFAULT_TEXT_MODEL,
+    TextServiceId,
+    TextModelId,
+} from "./text";
+import {
+    IMAGE_SERVICES,
+    DEFAULT_IMAGE_MODEL,
+    ImageServiceId,
+    ImageModelId,
+} from "./image";
+import { EventType } from "./types";
 
 const PRECISION = 8;
 
@@ -48,10 +58,8 @@ const MODEL_REGISTRY = Object.fromEntries(
     ]),
 );
 
-export type ModelId = keyof typeof MODEL_REGISTRY;
-export type ServiceId =
-    | keyof typeof TEXT_SERVICES
-    | keyof typeof IMAGE_SERVICES;
+export type ModelId = ImageModelId | TextModelId;
+export type ServiceId = ImageServiceId | TextServiceId;
 
 export type ServiceDefinition = {
     aliases: readonly string[];
@@ -181,6 +189,13 @@ export function getServices(): ServiceId[] {
  */
 export function getTextServices(): ServiceId[] {
     return Object.keys(TEXT_SERVICES) as ServiceId[];
+}
+
+/**
+ * Get image service IDs
+ */
+export function getImageServices(): ServiceId[] {
+    return Object.keys(IMAGE_SERVICES) as ServiceId[];
 }
 
 /**
@@ -360,5 +375,5 @@ export function getTextModelsInfo(): ModelInfo[] {
  * Get all image models with enriched information
  */
 export function getImageModelsInfo(): ModelInfo[] {
-    return (Object.keys(IMAGE_SERVICES) as ServiceId[]).map(getModelInfo);
+    return getImageServices().map(getModelInfo);
 }

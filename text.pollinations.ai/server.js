@@ -100,7 +100,7 @@ app.use((req, res, next) => {
 
     if (!expectedToken) {
         // If ENTER_TOKEN is not configured, allow all requests (backward compatibility)
-        authLog("⚠️  ENTER_TOKEN not configured - allowing request");
+        authLog("!  ENTER_TOKEN not configured - allowing request");
         return next();
     }
 
@@ -340,19 +340,24 @@ export async function sendErrorResponse(
     requestData,
     statusCode = 500,
 ) {
-    // Use error.status if available, otherwise use the provided statusCode
     const responseStatus = error.status || statusCode;
+    const errorTypes = {
+        400: "Bad Request",
+        401: "Unauthorized",
+        403: "Forbidden",
+        404: "Not Found",
+        429: "Too Many Requests",
+    };
+    const errorType = errorTypes[statusCode] || "Internal Server Error";
 
-    // Create a simplified error response
     const errorResponse = {
-        error: error.message || "An error occurred",
-        status: responseStatus,
+        error: errorType,
+        message: error.message || "An error occurred",
+        requestId: Math.random().toString(36).substring(7),
+        requestParameters: requestData || {},
     };
 
-    // Include detailed error information if available, without wrapping
-    if (error.details) {
-        errorResponse.details = error.details;
-    }
+    if (error.details) errorResponse.details = error.details;
 
     // Extract client information (for logs only)
     const clientInfo = {
@@ -869,6 +874,7 @@ async function generateTextBasedOnModel(messages, options) {
         throw new Error("Model parameter is required");
     }
     const model = options.model;
+
     log("Using model:", model, "with options:", JSON.stringify(options));
 
     try {

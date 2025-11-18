@@ -305,19 +305,28 @@ const checkCacheAndGenerate = async (
         pathname.split("/prompt/")[1] || "random_prompt",
     );
 
-    const safeParams = ImageParamsSchema.parse(query);
-
     const referrer = req.headers?.["referer"] || req.headers?.origin;
 
     const requestId = Math.random().toString(36).substring(7);
     const progress = createProgressTracker().startRequest(requestId);
     progress.updateBar(requestId, 0, "Starting", "Request received");
 
-    logApi("Request details:", { originalPrompt, safeParams, referrer });
-
     let timingInfo = [];
+    let safeParams;
 
     try {
+        // Validate parameters with proper error handling
+        const parseResult = ImageParamsSchema.safeParse(query);
+        if (!parseResult.success) {
+            throw new HttpError(
+                `Invalid parameters: ${parseResult.error.issues[0]?.message || "validation failed"}`,
+                400,
+                parseResult.error.issues,
+            );
+        }
+        safeParams = parseResult.data;
+
+        logApi("Request details:", { originalPrompt, safeParams, referrer });
         // Authentication and rate limiting is now handled by enter.pollinations.ai
         // Create a minimal authResult for compatibility
         const authResult: AuthResult = {
@@ -524,7 +533,7 @@ const server = http.createServer((req, res) => {
     if (expectedToken) {
         logAuth("✅ Valid ENTER_TOKEN from IP:", getIp(req));
     } else {
-        logAuth("⚠️  ENTER_TOKEN not configured - allowing request");
+        logAuth("!  ENTER_TOKEN not configured - allowing request");
     }
 
     if (

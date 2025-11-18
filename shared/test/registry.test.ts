@@ -1,8 +1,8 @@
-import { 
-    resolveServiceId, 
+import {
+    resolveServiceId,
     getModelDefinition,
     calculateCost,
-    calculatePrice
+    calculatePrice,
 } from "../registry/registry.ts";
 import { perMillion, COST_START_DATE } from "../registry/price-helpers.ts";
 import { expect, test } from "vitest";
@@ -16,10 +16,10 @@ test("calculateCost should return the correct costs", async () => {
         promptCachedTokens: 1_000_000,
         completionTextTokens: 1_000_000,
     } satisfies TokenUsage;
-    
+
     // Test with a real model - gpt-5-nano has known pricing
     const cost = calculateCost("gpt-5-nano-2025-08-07", usage);
-    
+
     // gpt-5-nano pricing: $0.05 per 1M prompt tokens, $0.4 per 1M completion tokens
     // Cost is returned in dollars (not micro-dollars)
     expect(cost.promptTextTokens).toBe(0.05); // $0.05
@@ -33,7 +33,7 @@ test("calculatePrice should return the correct price", async () => {
         promptCachedTokens: 1_000_000,
         completionTextTokens: 1_000_000,
     } satisfies TokenUsage;
-    
+
     // Test with openai-fast which has pricing (gpt-5-nano-2025-08-07)
     // gpt-5-nano pricing: $0.05 per 1M prompt tokens, $0.005 per 1M cached, $0.4 per 1M completion
     const price = calculatePrice("openai-fast", usage);
@@ -48,7 +48,7 @@ test("Usage types with undefined cost or price should throw an error", async () 
         unit: "TOKENS",
         promptImageTokens: 1_000_000,
     } satisfies TokenUsage;
-    
+
     // Should throw when trying to calculate cost for unsupported usage type
     expect(() => calculateCost("gpt-5-nano-2025-08-07", usage)).toThrow();
     expect(() => calculatePrice("openai", usage)).toThrow();
@@ -59,11 +59,11 @@ test("perMillion should correctly convert dollars per million tokens", async () 
     expect(perMillion(1_000_000)).toBe(1.0);
     expect(perMillion(50)).toBe(0.00005);
     expect(perMillion(200)).toBe(0.0002);
-    
+
     // Test edge cases
     expect(perMillion(0)).toBe(0);
     expect(perMillion(1)).toBe(0.000001);
-    
+
     // Test that it matches expected pricing calculations
     const usage = {
         unit: "TOKENS",
@@ -71,12 +71,12 @@ test("perMillion should correctly convert dollars per million tokens", async () 
         promptCachedTokens: 1_000_000,
         completionTextTokens: 1_000_000,
     } satisfies TokenUsage;
-    
+
     // Using perMillion(50) means $50 per million tokens
     // So 1 million tokens * $0.00005 per token = $50
     const priceWithHelper = perMillion(50) * usage.promptTextTokens;
     expect(priceWithHelper).toBe(50);
-    
+
     // Verify it works in registry context (registry multiplies by 1000 for cost)
     const costPerToken = perMillion(50); // 0.00005
     const totalCost = costPerToken * usage.promptTextTokens * 1000; // Cost in registry units
@@ -88,8 +88,9 @@ test("Date constants should be properly defined", async () => {
 });
 
 test("resolveServiceId should throw on invalid service", async () => {
-    expect(() => resolveServiceId("invalid-service", "generate.text"))
-        .toThrow();
+    expect(() =>
+        resolveServiceId("invalid-service", "generate.text"),
+    ).toThrow();
 });
 
 test("resolveServiceId should return default service for null/undefined", async () => {
@@ -98,15 +99,18 @@ test("resolveServiceId should return default service for null/undefined", async 
     expect(result).toBe("openai");
 });
 
-test("resolveServiceId should resolve aliases", async () => {
-    // Test with real aliases from the registry
-    expect(resolveServiceId("openai-large", "generate.text")).toBe("openai-large");
-    expect(resolveServiceId("openai-fast", "generate.text")).toBe("openai-fast");
-});
-
 test("getModelDefinition returns undefined for invalid model", async () => {
     // getModelDefinition returns undefined for missing models
-    expect(getModelDefinition("invalid-model" as any)).toBeUndefined();
+    expect(getModelDefinition("invalid-model")).toBeUndefined();
+});
+
+// Test alias resolution after PR #5340 refactor
+test("resolveServiceId should resolve multiple aliases for same service", async () => {
+    // Test that both aliases resolve to the same service
+    expect(resolveServiceId("gpt-5-nano", "generate.text")).toBe("openai-fast");
+    expect(resolveServiceId("openai-fast", "generate.text")).toBe(
+        "openai-fast",
+    );
 });
 
 // Tier system tests removed - tier gating now handled by enter.pollinations.ai

@@ -27,15 +27,11 @@ import { logGptImageError, logGptImagePrompt } from "./utils/gptImageLogger.ts";
 import { callVertexAIGemini } from "./vertexAIImageGenerator.js";
 import { writeExifMetadata } from "./writeExifMetadata.ts";
 import type { ImageParams } from "./params.ts";
-import { withTimeoutSignal } from "./util.ts";
 import type { ProgressManager } from "./progressBar.ts";
 
 // Import model handlers
 import { callSeedreamAPI } from "./models/seedreamModel.ts";
-import {
-    callAzureFluxKontext,
-    type ImageGenerationResult as FluxImageGenerationResult,
-} from "./models/azureFluxKontextModel.js";
+import { callAzureFluxKontext } from "./models/azureFluxKontextModel.js";
 import { incrementModelCounter } from "./modelCounter.ts";
 
 dotenv.config();
@@ -228,7 +224,7 @@ export const callComfyUI = async (
                 buffer: resizedBuffer,
                 ...rest,
                 trackingData: {
-                    actualModel: "flux",
+                    actualModel: safeParams.model,
                     usage: {
                         completionImageTokens: 1,
                         totalTokenCount: 1,
@@ -249,7 +245,7 @@ export const callComfyUI = async (
             buffer: jpegBuffer,
             ...rest,
             trackingData: {
-                actualModel: "flux",
+                actualModel: safeParams.model,
                 usage: {
                     completionImageTokens: 1,
                     totalTokenCount: 1,

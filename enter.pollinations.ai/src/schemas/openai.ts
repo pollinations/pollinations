@@ -401,6 +401,7 @@ const CompletionChoiceSchema = z.object({
             "content_filter",
             "function_call",
             "", // Perplexity returns empty string
+            "STOP", // Gemini returns uppercase
         ])
         .nullable()
         .optional(),

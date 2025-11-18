@@ -4,6 +4,8 @@ import { test } from "../fixtures.ts";
 import { describe, expect } from "vitest";
 import { env } from "cloudflare:workers";
 import type { ServiceId } from "@shared/registry/registry.ts";
+import { CompletionUsageSchema } from "@/schemas/openai.ts";
+import { parseUsageHeaders } from "@shared/registry/usage-headers.ts";
 
 const TEST_DISABLE_CACHE = true;
 const TEST_ALL_SERVICES = false;
@@ -28,26 +30,12 @@ const authenticatedTestCases = (): [ServiceId, number][] => {
     return servicesToTest.map((serviceId) => [serviceId, 200]);
 };
 
-// use random color instead of string because the random string was
-// triggering the content filter sometimes, probably because it
-// was suspected to be a jailbreak attepmpt
-const randomColor = () => {
-    const r = Math.floor(Math.random() * 256)
-        .toString(16)
-        .padStart(2, "0");
-    const g = Math.floor(Math.random() * 256)
-        .toString(16)
-        .padStart(2, "0");
-    const b = Math.floor(Math.random() * 256)
-        .toString(16)
-        .padStart(2, "0");
-    return `#${r}${g}${b}`;
-};
-
+// Use simple numeric prompts to avoid content filter triggers
+// Changed from random hex colors which looked like jailbreak attempts
 function testMessageContent() {
     return TEST_DISABLE_CACHE
-        ? `Whats a good name for this color: ${randomColor()}? Just give one name.`
-        : "Do you prefer 0, or 1? Just answer with 0 or 1.";
+        ? `Count: ${Math.floor(Math.random() * 100)}. Reply with one word.`
+        : "Reply: yes or no?";
 }
 
 // Send a request to each text model without authentication
@@ -86,7 +74,7 @@ test.for(authenticatedTestCases())(
     "%s should respond with 200 when using authorization header",
     { timeout: 30000 },
     async ([serviceId, expectedStatus], { apiKey, mocks }) => {
-        mocks.enable("polar", "tinybird", "textService");
+        mocks.enable("polar", "tinybird");
         const response = await SELF.fetch(
             `http://localhost:3000/api/generate/v1/chat/completions`,
             {
@@ -115,7 +103,7 @@ test.for(authenticatedTestCases())(
     "%s should respond with 200 when streaming",
     { timeout: 30000 },
     async ([serviceId, expectedStatus], { apiKey, mocks }) => {
-        mocks.enable("polar", "tinybird", "textService");
+        mocks.enable("polar", "tinybird");
         const response = await SELF.fetch(
             `http://localhost:3000/api/generate/v1/chat/completions`,
             {
@@ -162,7 +150,7 @@ test.for(authenticatedTestCases())(
     "GET /text/:prompt with %s should return plain text",
     { timeout: 30000 },
     async ([serviceId, expectedStatus], { apiKey, mocks }) => {
-        mocks.enable("polar", "tinybird", "textService");
+        mocks.enable("polar", "tinybird");
         const response = await SELF.fetch(
             `http://localhost:3000/api/generate/text/${encodeURIComponent(testMessageContent())}?model=${serviceId}`,
             {
@@ -191,9 +179,9 @@ test(
     "GET /text/:prompt with openai-audio should return raw audio",
     { timeout: 30000 },
     async ({ apiKey, mocks }) => {
-        mocks.enable("polar", "tinybird", "textService");
+        mocks.enable("polar", "tinybird");
         const response = await SELF.fetch(
-            `http://localhost:3000/api/generate/text/hello?model=openai-audio`,
+            `http://localhost:3000/api/generate/text/hi?model=openai-audio`,
             {
                 method: "GET",
                 headers: {
@@ -219,7 +207,7 @@ test(
     "openai-audio with modalities should return audio output",
     { timeout: 30000 },
     async ({ apiKey, mocks }) => {
-        mocks.enable("polar", "tinybird", "textService");
+        mocks.enable("polar", "tinybird");
         const response = await SELF.fetch(
             `http://localhost:3000/api/generate/v1/chat/completions`,
             {
@@ -239,7 +227,7 @@ test(
                     messages: [
                         {
                             role: "user",
-                            content: "Say hello world",
+                            content: "Say hi",
                         },
                     ],
                 }),
@@ -277,11 +265,14 @@ test(
     "openai-audio with input_audio should transcribe audio",
     { timeout: 30000 },
     async ({ apiKey, mocks }) => {
-        mocks.enable("polar", "tinybird", "textService");
+        mocks.enable("polar", "tinybird");
 
-        // Sample WAV header (minimal valid WAV file)
-        const sampleAudioBase64 =
-            "UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA=";
+        // Fetch real speech audio from OpenAI sample and convert to base64
+        const audioResponse = await fetch(
+            "https://cdn.openai.com/API/docs/audio/alloy.wav",
+        );
+        const audioBuffer = await audioResponse.arrayBuffer();
+        const sampleAudioBase64 = Buffer.from(audioBuffer).toString("base64");
 
         const response = await SELF.fetch(
             `http://localhost:3000/api/generate/v1/chat/completions`,
@@ -305,7 +296,7 @@ test(
                             content: [
                                 {
                                     type: "text",
-                                    text: "What is in this audio?",
+                                    text: "What's in this?",
                                 },
                                 {
                                     type: "input_audio",
@@ -348,3 +339,118 @@ test("Session cookies should not authenticate API proxy routes", async ({
     );
     expect(response.status).toBe(401);
 });
+
+// Test invalid model handling
+test(
+    "POST /v1/chat/completions should reject invalid model",
+    { timeout: 30000 },
+    async ({ apiKey, mocks }) => {
+        mocks.enable("polar", "tinybird");
+        const response = await SELF.fetch(
+            `http://localhost:3000/api/generate/v1/chat/completions`,
+            {
+                method: "POST",
+                headers: {
+                    "content-type": "application/json",
+                    "authorization": `Bearer ${apiKey}`,
+                    "referer": env.TESTING_REFERRER,
+                },
+                body: JSON.stringify({
+                    model: "invalid-model-name",
+                    messages: [
+                        {
+                            role: "user",
+                            content: testMessageContent(),
+                        },
+                    ],
+                }),
+            },
+        );
+        const body = await response.text();
+        console.log(`[TEST] Invalid model response status: ${response.status}`);
+        console.log(`[TEST] Invalid model response body: ${body}`);
+        // Invalid model is a validation error (user's fault) - should return 400
+        expect(response.status).toBe(400);
+        const error = JSON.parse(body);
+        expect(error.error.message).toContain("Invalid service or alias");
+    },
+);
+
+// Test empty message handling
+test(
+    "POST /v1/chat/completions should handle empty messages",
+    { timeout: 30000 },
+    async ({ apiKey, mocks }) => {
+        mocks.enable("polar", "tinybird");
+        const response = await SELF.fetch(
+            `http://localhost:3000/api/generate/v1/chat/completions`,
+            {
+                method: "POST",
+                headers: {
+                    "content-type": "application/json",
+                    "authorization": `Bearer ${apiKey}`,
+                    "referer": env.TESTING_REFERRER,
+                },
+                body: JSON.stringify({
+                    model: "openai-fast",
+                    messages: [],
+                }),
+            },
+        );
+        const body = await response.text();
+        console.log(
+            `[TEST] Empty messages response status: ${response.status}`,
+        );
+        console.log(`[TEST] Empty messages response body: ${body}`);
+        // Backend accepts empty messages and model generates a response
+        expect(response.status).toBe(200);
+        const data = JSON.parse(body);
+        expect(data.choices).toBeDefined();
+        expect(data.choices[0].message.content).toBeDefined();
+    },
+);
+
+test(
+    "POST /v1/chat/completions should include usage",
+    { timeout: 30000 },
+    async ({ apiKey, mocks }) => {
+        mocks.enable("polar", "tinybird");
+        const response = await SELF.fetch(
+            `http://localhost:3000/api/generate/v1/chat/completions`,
+            {
+                method: "POST",
+                headers: {
+                    "content-type": "application/json",
+                    "authorization": `Bearer ${apiKey}`,
+                    "referer": env.TESTING_REFERRER,
+                },
+                body: JSON.stringify({
+                    model: "openai-fast",
+                    messages: [
+                        {
+                            role: "user",
+                            content: testMessageContent(),
+                        },
+                    ],
+                }),
+            },
+        );
+        expect(response.status).toBe(200);
+        const data = await response.json();
+        const usage = await CompletionUsageSchema.parseAsync(
+            (data as any).usage,
+        );
+        expect(usage.prompt_tokens).toBeGreaterThan(0);
+        expect(usage.completion_tokens).toBeGreaterThan(0);
+        expect(usage.total_tokens).toBeGreaterThan(0);
+        const usageHeaders = parseUsageHeaders(response.headers);
+        const totalPromptTokens =
+            (usageHeaders.promptTextTokens || 0) +
+            (usageHeaders.promptCachedTokens || 0);
+        const totalCompletionTokens =
+            (usageHeaders.completionTextTokens || 0) +
+            (usageHeaders.completionReasoningTokens || 0);
+        expect(totalPromptTokens).toEqual(usage.prompt_tokens);
+        expect(totalCompletionTokens).toEqual(usage.completion_tokens);
+    },
+);

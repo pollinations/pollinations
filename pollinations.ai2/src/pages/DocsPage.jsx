@@ -101,11 +101,25 @@ function AuthCard() {
                                     </span>
                                     <div>
                                         <p className="font-headline text-xs font-black text-offblack uppercase mb-1">
-                                            Publishable
+                                            Publishable Key
                                         </p>
-                                        <p className="text-xs text-offblack/70">
-                                            Client-safe, rate-limited
-                                        </p>
+                                        <ul className="text-xs text-offblack/70 space-y-1 list-disc list-inside">
+                                            <li>
+                                                Always visible in your dashboard
+                                            </li>
+                                            <li>
+                                                Safe for client-side code
+                                                (React, Vue, etc.)
+                                            </li>
+                                            <li>
+                                                Rate limit: 1 pollen/hour refill
+                                                per IP+key
+                                            </li>
+                                            <li className="text-rose font-bold">
+                                                ⚠️ Beta: For production use
+                                                secret keys
+                                            </li>
+                                        </ul>
                                     </div>
                                 </div>
                             </div>
@@ -118,11 +132,18 @@ function AuthCard() {
                                     </span>
                                     <div>
                                         <p className="font-headline text-xs font-black text-offblack uppercase mb-1">
-                                            Secret
+                                            Secret Key
                                         </p>
-                                        <p className="text-xs text-offblack/70">
-                                            Server-only, unlimited
-                                        </p>
+                                        <ul className="text-xs text-offblack/70 space-y-1 list-disc list-inside">
+                                            <li className="font-bold">
+                                                Only shown once - copy it now!
+                                            </li>
+                                            <li>For server-side apps only</li>
+                                            <li>Never expose publicly</li>
+                                            <li className="text-lime font-bold">
+                                                No rate limits
+                                            </li>
+                                        </ul>
                                     </div>
                                 </div>
                             </div>
@@ -236,17 +257,40 @@ function ImageGenCard() {
             setIsLoading(true);
             try {
                 const url = buildUrl();
+                console.log("🖼️ Fetching image from:", url);
+                console.log("🔑 Using API Key:", API_KEY ? "Set" : "Not set");
+
                 const response = await fetch(url, {
                     headers: {
                         Authorization: `Bearer ${API_KEY}`,
                     },
                 });
+
+                console.log(
+                    "📡 Response status:",
+                    response.status,
+                    response.statusText
+                );
+
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    console.error("❌ API Error:", errorText);
+                    throw new Error(`HTTP ${response.status}: ${errorText}`);
+                }
+
                 const blob = await response.blob();
+                console.log(
+                    "✅ Got blob, size:",
+                    blob.size,
+                    "type:",
+                    blob.type
+                );
+
                 const imageURL = URL.createObjectURL(blob);
                 setImageUrl(imageURL);
                 setIsLoading(false);
             } catch (error) {
-                console.error("Image fetch error:", error);
+                console.error("❌ Image fetch error:", error);
                 setIsLoading(false);
             }
         };
@@ -339,13 +383,37 @@ function ImageGenCard() {
                             alt={selectedPrompt}
                             className="w-full h-auto object-contain"
                         />
-                    ) : null}
+                    ) : (
+                        <p className="text-offblack/50 text-xs">
+                            Select options and wait for generation
+                        </p>
+                    )}
                 </div>
             </div>
 
             {/* URL Display */}
             <div className="mb-4 p-3 bg-offblack/5 font-mono text-xs break-all">
-                {buildUrl()}
+                <span className="text-offblack/40">
+                    https://enter.pollinations.ai/api/generate/image/
+                </span>
+                <span className="bg-lime/90 px-1 font-black">
+                    {selectedPrompt}
+                </span>
+                {params.size > 0 && (
+                    <>
+                        <span className="text-offblack/40">?</span>
+                        {Array.from(params).map((param, i) => (
+                            <span key={param}>
+                                {i > 0 && (
+                                    <span className="text-offblack/40">&</span>
+                                )}
+                                <span className="bg-lime/90 px-1 font-black">
+                                    {param}
+                                </span>
+                            </span>
+                        ))}
+                    </>
+                )}
             </div>
 
             {/* Copy Button */}
@@ -528,19 +596,16 @@ function ModelDiscoveryCard() {
             label: "Image",
             url: "https://enter.pollinations.ai/api/generate/image/models",
             path: "/image/models",
-            color: "lime",
+        },
+        text: {
+            label: "Text",
+            url: "https://enter.pollinations.ai/api/generate/text/models",
+            path: "/text/models",
         },
         openai: {
             label: "Text (OpenAI)",
             url: "https://enter.pollinations.ai/api/generate/v1/models",
             path: "/v1/models",
-            color: "rose",
-        },
-        simple: {
-            label: "Text (Simple)",
-            url: "https://enter.pollinations.ai/api/generate/text/models",
-            path: "/text/models",
-            color: "lime",
         },
     };
 
@@ -556,27 +621,23 @@ function ModelDiscoveryCard() {
             {/* Model Type Selection */}
             <div className="mb-4">
                 <p className="font-headline text-xs uppercase tracking-wider font-black mb-2">
-                    Select model type:
+                    Select a type:
                 </p>
                 <div className="flex flex-wrap gap-2">
-                    {Object.entries(modelEndpoints).map(
-                        ([key, { label, color }]) => (
-                            <button
-                                key={key}
-                                type="button"
-                                onClick={() => setSelectedModel(key)}
-                                className={`px-3 py-1.5 font-mono text-xs border-2 transition-all cursor-pointer ${
-                                    selectedModel === key
-                                        ? color === "rose"
-                                            ? "bg-rose border-offblack font-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]"
-                                            : "bg-lime/90 border-offblack font-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]"
-                                        : "bg-offblack/10 border-offblack/30 hover:border-rose"
-                                }`}
-                            >
-                                {label}
-                            </button>
-                        )
-                    )}
+                    {Object.entries(modelEndpoints).map(([key, { label }]) => (
+                        <button
+                            key={key}
+                            type="button"
+                            onClick={() => setSelectedModel(key)}
+                            className={`px-3 py-1.5 font-mono text-xs border-2 transition-all cursor-pointer ${
+                                selectedModel === key
+                                    ? "bg-lime/90 border-rose font-black shadow-[2px_2px_0px_0px_rgba(255,105,180,1)]"
+                                    : "bg-offblack/10 border-offblack/30 hover:border-rose"
+                            }`}
+                        >
+                            {label}
+                        </button>
+                    ))}
                 </div>
             </div>
 
@@ -585,41 +646,21 @@ function ModelDiscoveryCard() {
                 <span className="text-offblack/40">
                     https://enter.pollinations.ai/api/generate
                 </span>
-                <span
-                    className={`px-1 font-black ${
-                        currentEndpoint.color === "rose"
-                            ? "bg-rose/90 text-offwhite"
-                            : "bg-lime/90"
-                    }`}
-                >
+                <span className="bg-lime/90 px-1 font-black">
                     {currentEndpoint.path}
                 </span>
             </div>
 
-            {/* Action Buttons */}
-            <div className="flex gap-3">
-                <a
-                    href={currentEndpoint.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className={`inline-block px-4 py-2 border-2 font-headline uppercase text-xs font-black transition-all ${
-                        currentEndpoint.color === "rose"
-                            ? "bg-rose border-offblack hover:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]"
-                            : "bg-lime/90 border-offblack hover:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]"
-                    }`}
-                >
-                    Open API →
-                </a>
-                <button
-                    type="button"
-                    onClick={() =>
-                        navigator.clipboard.writeText(currentEndpoint.url)
-                    }
-                    className="px-4 py-2 bg-offblack border-2 border-offblack font-headline uppercase text-xs font-black text-offwhite hover:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-all"
-                >
-                    Copy URL
-                </button>
-            </div>
+            {/* Copy Button */}
+            <button
+                type="button"
+                onClick={() =>
+                    navigator.clipboard.writeText(currentEndpoint.url)
+                }
+                className="px-4 py-2 bg-lime/90 border-2 border-rose font-headline uppercase text-xs font-black hover:shadow-[4px_4px_0px_0px_rgba(255,105,180,1)] transition-all"
+            >
+                Copy URL
+            </button>
         </div>
     );
 }

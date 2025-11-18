@@ -5,6 +5,8 @@ import PlayPage from "./pages/PlayPage";
 import AppsPage from "./pages/AppsPage";
 import DocsPage from "./pages/DocsPage";
 import CommunityPage from "./pages/CommunityPage";
+import TermsPage from "./pages/TermsPage";
+import PrivacyPage from "./pages/PrivacyPage";
 
 function App() {
     return (
@@ -15,6 +17,8 @@ function App() {
                 <Route path="apps" element={<AppsPage />} />
                 <Route path="docs" element={<DocsPage />} />
                 <Route path="community" element={<CommunityPage />} />
+                <Route path="terms" element={<TermsPage />} />
+                <Route path="privacy" element={<PrivacyPage />} />
                 <Route path="*" element={<Navigate to="/" replace />} />
             </Route>
         </Routes>

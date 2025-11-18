@@ -1,15 +1,11 @@
 // Color system from original pollinations.ai
 export const Colors = {
     lime: "#ecf874",
-    limeShadow: "#bef264", // Original lime used in shadows (different from main lime)
+    limeShadow: "#bef264",
     rose: "#ff69b4",
     offwhite: "#c7d4d6",
     offblack: "#110518",
-    offblack2: "#181A2C",
     black: "#000000",
-    gray1: "#B3B3B3",
-    gray2: "#8A8A8A",
-    special: "#bf4040",
 };
 
 export const Fonts = {

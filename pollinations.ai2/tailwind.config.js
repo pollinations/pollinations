@@ -26,11 +26,6 @@ export default {
                 accent: Colors.rose,
                 background: Colors.offwhite,
                 foreground: Colors.offblack,
-
-                // Additional shades
-                "offblack-2": Colors.offblack2,
-                gray1: Colors.gray1,
-                gray2: Colors.gray2,
             },
             fontFamily: {
                 title: [Fonts.title, "sans-serif"],
@@ -68,10 +63,7 @@ export default {
                     "--color-rose": Colors.rose,
                     "--color-offwhite": Colors.offwhite,
                     "--color-offblack": Colors.offblack,
-                    "--color-offblack-2": Colors.offblack2,
                     "--color-black": Colors.black,
-                    "--color-gray1": Colors.gray1,
-                    "--color-gray2": Colors.gray2,
                     "--color-lime-shadow": Colors.limeShadow,
                 },
             });

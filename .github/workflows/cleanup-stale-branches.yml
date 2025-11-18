@@ -1,0 +1,233 @@
+name: Clean Up Stale Branches
+
+on:
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Dry run mode (just list branches, don't delete)'
+        required: false
+        default: 'true'
+        type: choice
+        options:
+          - 'true'
+          - 'false'
+      batch_size:
+        description: 'Number of branches to delete per run'
+        required: false
+        default: '50'
+      branch_filter:
+        description: 'Filter branches (all, merged-prs, old-feature, old-issue)'
+        required: false
+        default: 'merged-prs'
+        type: choice
+        options:
+          - 'all'
+          - 'merged-prs'
+          - 'old-feature'
+          - 'old-issue'
+
+jobs:
+  cleanup-branches:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: read
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      
+      - name: Set up environment
+        run: |
+          echo "DRY_RUN=${{ github.event.inputs.dry_run }}" >> $GITHUB_ENV
+          echo "BATCH_SIZE=${{ github.event.inputs.batch_size }}" >> $GITHUB_ENV
+          echo "FILTER=${{ github.event.inputs.branch_filter }}" >> $GITHUB_ENV
+      
+      - name: Fetch all branches
+        run: |
+          git fetch --all --prune
+          git branch -r > /tmp/remote_branches.txt
+      
+      - name: Analyze and identify stale branches
+        id: analyze
+        run: |
+          cat > /tmp/analyze.sh << 'SCRIPT'
+          #!/bin/bash
+          set -e
+          
+          # Protected branches that should NEVER be deleted
+          PROTECTED_BRANCHES=(
+            "main"
+            "master"
+            "develop"
+            "development"
+            "staging"
+            "production"
+          )
+          
+          # Array to store branches to delete
+          BRANCHES_TO_DELETE=()
+          
+          # Get all remote branches
+          mapfile -t ALL_BRANCHES < <(git branch -r | grep -v '\->' | sed 's/origin\///' | tr -d ' ')
+          
+          echo "Total remote branches: ${#ALL_BRANCHES[@]}"
+          
+          # Function to check if branch is protected
+          is_protected() {
+            local branch=$1
+            for protected in "${PROTECTED_BRANCHES[@]}"; do
+              if [[ "$branch" == "$protected" ]]; then
+                return 0
+              fi
+            done
+            return 1
+          }
+          
+          # Function to check if PR was merged
+          is_pr_merged() {
+            local branch=$1
+            # Extract issue number if it exists
+            if [[ $branch =~ ^([0-9]+)- ]]; then
+              local issue_num="${BASH_REMATCH[1]}"
+              # Check if PR exists and is merged
+              gh pr view "$issue_num" --json state,mergedAt --jq '.mergedAt' 2>/dev/null && return 0
+            fi
+            return 1
+          }
+          
+          # Function to get branch age in days
+          get_branch_age_days() {
+            local branch=$1
+            local last_commit_date=$(git log -1 --format=%ct "origin/$branch" 2>/dev/null || echo "0")
+            if [[ "$last_commit_date" == "0" ]]; then
+              echo "999999"
+              return
+            fi
+            local now=$(date +%s)
+            local age_days=$(( (now - last_commit_date) / 86400 ))
+            echo "$age_days"
+          }
+          
+          # Analyze branches based on filter
+          for branch in "${ALL_BRANCHES[@]}"; do
+            # Skip protected branches
+            if is_protected "$branch"; then
+              echo "Skipping protected: $branch"
+              continue
+            fi
+            
+            # Apply filter
+            case "$FILTER" in
+              "merged-prs")
+                # Check if it's an issue-numbered branch
+                if [[ $branch =~ ^[0-9]+- ]]; then
+                  if is_pr_merged "$branch"; then
+                    BRANCHES_TO_DELETE+=("$branch")
+                    echo "Found merged PR branch: $branch"
+                  fi
+                fi
+                ;;
+              
+              "old-issue")
+                # Issue branches older than 6 months
+                if [[ $branch =~ ^[0-9]+- ]]; then
+                  age=$(get_branch_age_days "$branch")
+                  if [[ $age -gt 180 ]]; then
+                    BRANCHES_TO_DELETE+=("$branch")
+                    echo "Found old issue branch: $branch (${age} days)"
+                  fi
+                fi
+                ;;
+              
+              "old-feature")
+                # Feature/fix/hotfix branches older than 6 months
+                if [[ $branch =~ (feature|fix|hotfix|bugfix)/ ]]; then
+                  age=$(get_branch_age_days "$branch")
+                  if [[ $age -gt 180 ]]; then
+                    BRANCHES_TO_DELETE+=("$branch")
+                    echo "Found old feature branch: $branch (${age} days)"
+                  fi
+                fi
+                ;;
+              
+              "all")
+                # All branches older than 6 months
+                age=$(get_branch_age_days "$branch")
+                if [[ $age -gt 180 ]]; then
+                  BRANCHES_TO_DELETE+=("$branch")
+                  echo "Found old branch: $branch (${age} days)"
+                fi
+                ;;
+            esac
+          done
+          
+          echo ""
+          echo "Found ${#BRANCHES_TO_DELETE[@]} branches to delete"
+          
+          # Save list
+          printf '%s\n' "${BRANCHES_TO_DELETE[@]}" > /tmp/branches_to_delete.txt
+          
+          # Apply batch size limit
+          if [[ ${#BRANCHES_TO_DELETE[@]} -gt $BATCH_SIZE ]]; then
+            echo "Limiting to first $BATCH_SIZE branches"
+            head -n "$BATCH_SIZE" /tmp/branches_to_delete.txt > /tmp/branches_to_delete_batch.txt
+          else
+            cp /tmp/branches_to_delete.txt /tmp/branches_to_delete_batch.txt
+          fi
+          
+          SCRIPT
+          
+          chmod +x /tmp/analyze.sh
+          /tmp/analyze.sh
+        env:
+          GH_TOKEN: ${{ github.token }}
+      
+      - name: Delete branches
+        if: github.event.inputs.dry_run == 'false'
+        run: |
+          while IFS= read -r branch; do
+            if [[ -n "$branch" ]]; then
+              echo "Deleting branch: $branch"
+              git push origin --delete "$branch" || echo "Failed to delete $branch"
+              sleep 0.5  # Rate limiting
+            fi
+          done < /tmp/branches_to_delete_batch.txt
+          
+          echo ""
+          echo "Deleted $(wc -l < /tmp/branches_to_delete_batch.txt) branches"
+      
+      - name: Display results
+        run: |
+          echo "==================================="
+          echo "Branch Cleanup Summary"
+          echo "==================================="
+          echo "Mode: ${{ github.event.inputs.dry_run == 'true' && 'DRY RUN' || 'LIVE' }}"
+          echo "Filter: ${{ github.event.inputs.branch_filter }}"
+          echo "Batch size: ${{ github.event.inputs.batch_size }}"
+          echo ""
+          
+          if [[ -f /tmp/branches_to_delete_batch.txt ]]; then
+            echo "Branches processed:"
+            cat /tmp/branches_to_delete_batch.txt
+          fi
+          
+          if [[ -f /tmp/branches_to_delete.txt ]]; then
+            total=$(wc -l < /tmp/branches_to_delete.txt)
+            processed=$(wc -l < /tmp/branches_to_delete_batch.txt)
+            remaining=$((total - processed))
+            echo ""
+            echo "Total found: $total"
+            echo "Processed: $processed"
+            echo "Remaining: $remaining"
+          fi
+          
+          echo "==================================="
+      
+      - name: Upload branch list
+        uses: actions/upload-artifact@v4
+        with:
+          name: branch-cleanup-report
+          path: /tmp/branches_to_delete*.txt

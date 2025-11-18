@@ -14,51 +14,11 @@ const tabs = [
     { path: "/community", label: "Community" },
 ];
 
+import { useFooterVisibility } from "../hooks/useFooterVisibility";
+
 function Layout() {
-    const [showFooter, setShowFooter] = useState(false);
+    const showFooter = useFooterVisibility();
     const [emailCopied, setEmailCopied] = useState(false);
-
-    useEffect(() => {
-        const handleScroll = () => {
-            const windowHeight = window.innerHeight;
-            const documentHeight = document.documentElement.scrollHeight;
-            const scrollTop = window.scrollY;
-            const distanceFromBottom =
-                documentHeight - (scrollTop + windowHeight);
-
-            // Show footer when near bottom (within 100px) OR if page is short (no scroll needed)
-            if (distanceFromBottom < 100 || documentHeight <= windowHeight) {
-                setShowFooter(true);
-            } else {
-                setShowFooter(false);
-            }
-        };
-
-        const handleMouseMove = (e) => {
-            const windowHeight = window.innerHeight;
-            const mouseY = e.clientY;
-            const distanceFromBottom = windowHeight - mouseY;
-
-            // Show footer when mouse is within 100px of bottom
-            if (distanceFromBottom < 100) {
-                setShowFooter(true);
-            }
-        };
-
-        window.addEventListener("scroll", handleScroll, { passive: true });
-        window.addEventListener("resize", handleScroll, { passive: true });
-        window.addEventListener("mousemove", handleMouseMove, {
-            passive: true,
-        });
-        // Check immediately on mount
-        handleScroll();
-
-        return () => {
-            window.removeEventListener("scroll", handleScroll);
-            window.removeEventListener("resize", handleScroll);
-            window.removeEventListener("mousemove", handleMouseMove);
-        };
-    }, []);
     return (
         <div className="relative min-h-screen bg-offwhite/80">
             {/* Floating Transparent Header - Centered */}

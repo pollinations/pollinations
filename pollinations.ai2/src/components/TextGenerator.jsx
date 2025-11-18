@@ -1,9 +1,6 @@
-import { useState, useEffect } from "react";
 import ReactMarkdown from "react-markdown";
 import { CONTEXT } from "../config/content";
-
-// Pollinations API key (secret key for local dev)
-const API_KEY = import.meta.env.VITE_POLLINATIONS_API_KEY;
+import { usePollinationsText } from "../hooks/usePollinationsText";
 
 // Build the prompt with context + instructions + text
 const buildPrompt = (text, transforms, props) => {
@@ -24,59 +21,6 @@ Only output the final text, nothing else. Links should be in markdown format.
 # Input Text
 ${text}`;
 };
-
-// Custom hook for text generation using new enter.pollinations.ai API
-function usePollinationsText(prompt, seed) {
-    const [text, setText] = useState("");
-    const [loading, setLoading] = useState(true);
-
-    useEffect(() => {
-        let cancelled = false;
-
-        async function generateText() {
-            try {
-                // Use POST to /v1/chat/completions
-                const response = await fetch(
-                    "https://enter.pollinations.ai/api/generate/v1/chat/completions",
-                    {
-                        method: "POST",
-                        headers: {
-                            "Content-Type": "application/json",
-                            Authorization: `Bearer ${API_KEY}`,
-                        },
-                        body: JSON.stringify({
-                            messages: [{ role: "user", content: prompt }],
-                            model: "openai",
-                            seed: seed,
-                        }),
-                    }
-                );
-
-                const data = await response.json();
-                const generatedText = data.choices?.[0]?.message?.content || "";
-
-                if (!cancelled) {
-                    setText(generatedText);
-                    setLoading(false);
-                }
-            } catch (error) {
-                console.error("Text generation error:", error);
-                if (!cancelled) {
-                    setText("Failed to generate text");
-                    setLoading(false);
-                }
-            }
-        }
-
-        generateText();
-
-        return () => {
-            cancelled = true;
-        };
-    }, [prompt, seed]);
-
-    return loading ? null : text;
-}
 
 // Main text generation component
 export function TextGenerator({
@@ -102,10 +46,13 @@ export function TextGenerator({
             ...props,
         });
 
-    // Use the new enter.pollinations.ai API
-    const generatedText = usePollinationsText(finalPrompt, seed);
+    // Use the new hook
+    const { text: generatedText, loading } = usePollinationsText(
+        finalPrompt,
+        seed
+    );
 
-    if (!generatedText) {
+    if (loading || !generatedText) {
         return <Component {...props}>...</Component>;
     }
 

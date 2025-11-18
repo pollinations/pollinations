@@ -1,239 +1,304 @@
 import { useState, useEffect, useRef } from "react";
+import { useModelList } from "../../hooks/useModelList";
 
 export function ImageFeed() {
-    const [displayImages, setDisplayImages] = useState([]); // Currently displayed images
-    const [sliderValue, setSliderValue] = useState(6); // Slider position (1-10) - UI only
-    const [imageRate, setImageRate] = useState(0); // Images per second
-    const [textRate, setTextRate] = useState(0); // Texts per second
+    const [selectedModel, setSelectedModel] = useState(null);
     const seenImages = useRef(new Set());
-    const imageQueue = useRef([]); // Queue of ready images
-    const MAX_QUEUE_SIZE = 10; // Queue limit
-    const imageTimestamps = useRef([]); // Track when images arrive
-    const textTimestamps = useRef([]); // Track text generation
+    const imageQueue = useRef([]);
+    const textQueue = useRef([]);
+    const MAX_QUEUE_SIZE = 10;
+    const modelTimestamps = useRef({});
+    const [modelRates, setModelRates] = useState({});
+    const [currentDisplay, setCurrentDisplay] = useState(null);
+    const { imageModels, textModels } = useModelList();
 
-    // Global totals (static for now, could be fetched from API)
-    const TOTAL_IMAGES = 1200000000; // 1.2 billion
-    const TOTAL_TEXTS = 850000000; // 850 million
+    // Auto-select first active model
+    useEffect(() => {
+        if (!selectedModel && Object.keys(modelRates).length > 0) {
+            const activeModels = [...imageModels, ...textModels]
+                .filter((model) => (modelRates[model.id] || 0) > 0)
+                .sort(
+                    (a, b) => (modelRates[b.id] || 0) - (modelRates[a.id] || 0)
+                );
+            if (activeModels.length > 0) {
+                setSelectedModel(activeModels[0].id);
+            }
+        }
+    }, [modelRates, selectedModel, imageModels, textModels]);
 
-    // Connect to feed and fill queue
+    // Image feed
     useEffect(() => {
         const eventSource = new EventSource(
             "https://image.pollinations.ai/feed"
         );
-
         eventSource.onmessage = (event) => {
             try {
                 const data = JSON.parse(event.data);
-
                 if (data.imageURL && data.status === "end_generating") {
-                    // Skip duplicates
-                    if (seenImages.current.has(data.imageURL)) {
-                        return;
+                    const timestamp = Date.now();
+                    if (!modelTimestamps.current[data.model]) {
+                        modelTimestamps.current[data.model] = [];
                     }
+                    modelTimestamps.current[data.model].push(timestamp);
 
-                    // Track timestamp for rate calculation
-                    imageTimestamps.current.push(Date.now());
-
-                    // Only add if queue not full
-                    if (imageQueue.current.length < MAX_QUEUE_SIZE) {
-                        seenImages.current.add(data.imageURL);
-                        imageQueue.current.push(data);
+                    if (!selectedModel || data.model === selectedModel) {
+                        if (
+                            !seenImages.current.has(data.imageURL) &&
+                            imageQueue.current.length < MAX_QUEUE_SIZE
+                        ) {
+                            seenImages.current.add(data.imageURL);
+                            imageQueue.current.push(data);
+                        }
                     }
-                    // If queue is full, refuse entry (image is lost)
                 }
             } catch (error) {
-                console.error("Feed parse error:", error);
+                console.error("Image feed error:", error);
             }
         };
-
-        eventSource.onerror = () => {
-            console.log("Feed connection error, will retry...");
-        };
-
         return () => eventSource.close();
-    }, []);
+    }, [selectedModel]);
 
-    // Calculate rates per second from timestamps
+    // Text feed
+    useEffect(() => {
+        const eventSource = new EventSource(
+            "https://text.pollinations.ai/feed"
+        );
+        eventSource.onmessage = (event) => {
+            try {
+                const data = JSON.parse(event.data);
+                if (data.response) {
+                    const modelId =
+                        data.parameters?.model || data.model || "unknown";
+                    const timestamp = Date.now();
+                    if (!modelTimestamps.current[modelId]) {
+                        modelTimestamps.current[modelId] = [];
+                    }
+                    modelTimestamps.current[modelId].push(timestamp);
+
+                    if (!selectedModel || modelId === selectedModel) {
+                        const userMessage = data.parameters?.messages?.find(
+                            (msg) => msg?.role === "user"
+                        );
+                        const prompt =
+                            userMessage?.content || data.prompt || "No prompt";
+                        if (textQueue.current.length < MAX_QUEUE_SIZE) {
+                            textQueue.current.push({
+                                type: "text",
+                                model: modelId,
+                                response: data.response,
+                                prompt: prompt,
+                            });
+                        }
+                    }
+                }
+            } catch (error) {
+                console.error("Text feed error:", error);
+            }
+        };
+        return () => eventSource.close();
+    }, [selectedModel]);
+
+    // Update display
+    useEffect(() => {
+        const interval = setInterval(() => {
+            const selectedModelData = [...imageModels, ...textModels].find(
+                (m) => m.id === selectedModel
+            );
+            if (!selectedModelData) return;
+
+            if (
+                selectedModelData.type === "image" &&
+                imageQueue.current.length > 0
+            ) {
+                const item = imageQueue.current.shift();
+                setCurrentDisplay({
+                    type: "image",
+                    content: item.imageURL,
+                    prompt: item.prompt || "No prompt",
+                    model: item.model,
+                });
+            } else if (
+                selectedModelData.type === "text" &&
+                textQueue.current.length > 0
+            ) {
+                const item = textQueue.current.shift();
+                setCurrentDisplay({
+                    type: "text",
+                    content: item.response,
+                    prompt: item.prompt,
+                    model: item.model,
+                });
+            }
+        }, 1000);
+        return () => clearInterval(interval);
+    }, [selectedModel, imageModels, textModels]);
+
+    // Calculate rates
     useEffect(() => {
         const interval = setInterval(() => {
             const now = Date.now();
-            const timeWindow = 10000; // 10 second window for smoother average
-
-            // Filter to timestamps within last 10 seconds
-            imageTimestamps.current = imageTimestamps.current.filter(
-                (t) => now - t < timeWindow
-            );
-            textTimestamps.current = textTimestamps.current.filter(
-                (t) => now - t < timeWindow
-            );
-
-            // Calculate rate per second
-            const imgRate = (imageTimestamps.current.length / 10).toFixed(1);
-            const txtRate = (textTimestamps.current.length / 10).toFixed(1);
-
-            setImageRate(parseFloat(imgRate));
-            setTextRate(parseFloat(txtRate));
-        }, 1000); // Update every second
-
+            const newModelRates = {};
+            Object.keys(modelTimestamps.current).forEach((modelId) => {
+                modelTimestamps.current[modelId] = modelTimestamps.current[
+                    modelId
+                ].filter((t) => now - t < 10000);
+                newModelRates[modelId] = parseFloat(
+                    (modelTimestamps.current[modelId].length / 10).toFixed(2)
+                );
+            });
+            setModelRates(newModelRates);
+        }, 1000);
         return () => clearInterval(interval);
     }, []);
 
-    // Simulate text generation timestamps (since we don't have real text feed)
+    // Clear on channel change
     useEffect(() => {
-        const interval = setInterval(() => {
-            // Add 1-3 timestamps to simulate text generation
-            const count = Math.floor(Math.random() * 3) + 1;
-            for (let i = 0; i < count; i++) {
-                textTimestamps.current.push(Date.now());
-            }
-        }, 2000);
+        imageQueue.current = [];
+        textQueue.current = [];
+        seenImages.current.clear();
+        setCurrentDisplay(null);
+    }, [selectedModel]);
 
-        return () => clearInterval(interval);
-    }, []);
-
-    // Pull from queue ONLY when animation completes (every 24s)
-    useEffect(() => {
-        const interval = setInterval(() => {
-            if (imageQueue.current.length > 0) {
-                // Take up to 6 new images at once
-                const newImages = [];
-                for (let i = 0; i < 6 && imageQueue.current.length > 0; i++) {
-                    newImages.push(imageQueue.current.shift());
-                }
-
-                if (newImages.length > 0) {
-                    setDisplayImages((prev) => {
-                        // Replace old images with new batch
-                        const combined = [...prev, ...newImages];
-                        return combined.slice(-6);
-                    });
-                }
-            }
-        }, 24000); // Every 24 seconds - when animation completes full loop
-
-        return () => clearInterval(interval);
-    }, []);
-
-    // Show last 6 images, duplicated for seamless infinite scroll
-    const carouselImages = displayImages.slice(-6);
-    const infiniteImages =
-        carouselImages.length >= 3
-            ? [...carouselImages, ...carouselImages] // Duplicate for seamless loop
-            : carouselImages;
-
-    // Center image is always middle of first set (index 2 or 3)
-    const centerIndex = Math.floor(carouselImages.length / 2);
-    const centerImage = carouselImages[centerIndex];
+    const maxRate = Math.max(...Object.values(modelRates), 0.1);
 
     return (
         <div className="w-full space-y-6">
-            {/* Smooth Gliding Carousel */}
-            <div className="relative overflow-hidden h-[28rem]">
-                {/* Stats - Top Right */}
-                <div className="absolute top-4 right-4 z-10 flex gap-3">
-                    {/* Image Stats */}
-                    <div className="bg-offwhite/95 border-2 border-rose shadow-rose-3 px-3 py-2">
-                        <div className="font-headline text-[10px] uppercase tracking-wider text-offblack/60 font-black">
-                            Images
-                        </div>
-                        <div className="flex items-baseline gap-2">
-                            <div className="font-mono text-xl font-black text-rose leading-none">
-                                {imageRate}/s
-                            </div>
-                            <div className="font-mono text-xs text-offblack/40 leading-none">
-                                {(TOTAL_IMAGES / 1000000000).toFixed(1)}B
-                            </div>
-                        </div>
+            {/* Diagonal Bar Graph Channel Selector */}
+            <div className="space-y-3">
+                <div className="flex items-center gap-3 text-[10px] font-headline uppercase tracking-wider font-black">
+                    <div className="flex items-center gap-1">
+                        <div className="w-3 h-3 bg-rose border border-offblack" />
+                        <span className="text-offblack/50">Image</span>
                     </div>
-
-                    {/* Text Stats */}
-                    <div className="bg-offwhite/95 border-2 border-lime shadow-lime-3 px-3 py-2">
-                        <div className="font-headline text-[10px] uppercase tracking-wider text-offblack/60 font-black">
-                            Texts
-                        </div>
-                        <div className="flex items-baseline gap-2">
-                            <div className="font-mono text-xl font-black text-offblack leading-none">
-                                {textRate}/s
-                            </div>
-                            <div className="font-mono text-xs text-offblack/40 leading-none">
-                                {(TOTAL_TEXTS / 1000000).toFixed(0)}M
-                            </div>
-                        </div>
+                    <div className="flex items-center gap-1">
+                        <div className="w-3 h-3 bg-lime border border-offblack" />
+                        <span className="text-offblack/50">Text</span>
                     </div>
                 </div>
-                {displayImages.length === 0 ? (
-                    <div className="text-center py-24 text-offblack/50 font-body">
-                        <p>Waiting for stream...</p>
-                        <p className="text-xs mt-2">
-                            Queue: {imageQueue.current.length}/{MAX_QUEUE_SIZE}
-                        </p>
-                    </div>
-                ) : (
-                    <div className="flex h-full items-center animate-glide-smooth">
-                        {infiniteImages.map((image, index) => (
-                            <div
-                                key={`${image.imageURL}-${index}`}
-                                className="flex-shrink-0 h-full px-3"
-                                style={{ width: "32vw" }} // Smaller - so you can see ~3 images (one full, two partial)
-                            >
-                                <img
-                                    src={image.imageURL}
-                                    alt={image.prompt || "Generated image"}
-                                    className={`w-full h-full object-cover ${
-                                        index === centerIndex // First set's center image
-                                            ? "border-4 border-rose shadow-rose-lg"
-                                            : ""
+
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+                    {[...imageModels, ...textModels]
+                        .filter((model) => (modelRates[model.id] || 0) > 0)
+                        .sort(
+                            (a, b) =>
+                                (modelRates[b.id] || 0) -
+                                (modelRates[a.id] || 0)
+                        )
+                        .slice(0, 5)
+                        .map((model) => {
+                            const isImage = model.type === "image";
+                            const isActive = selectedModel === model.id;
+                            const rate = modelRates[model.id] || 0;
+                            const strength = Math.min(
+                                (rate / maxRate) * 100,
+                                100
+                            );
+
+                            return (
+                                <button
+                                    key={model.id}
+                                    type="button"
+                                    onClick={() => setSelectedModel(model.id)}
+                                    className={`relative h-32 border-2 transition-all overflow-hidden ${
+                                        isActive
+                                            ? "border-offblack shadow-black-md"
+                                            : "border-offblack/30 hover:border-offblack/60"
+                                    }`}
+                                    title={model.name}
+                                >
+                                    {/* Diagonal strength bar */}
+                                    <div
+                                        className={`absolute bottom-0 left-0 right-0 transition-all duration-700 ${
+                                            isImage
+                                                ? "bg-rose/20"
+                                                : "bg-lime/20"
+                                        }`}
+                                        style={{
+                                            height: `${strength}%`,
+                                            transform: "skewY(-3deg)",
+                                            transformOrigin: "bottom left",
+                                        }}
+                                    />
+
+                                    {/* Diagonal text */}
+                                    <div className="absolute inset-0 flex items-center justify-center p-2">
+                                        <div
+                                            className="font-headline text-[0.65rem] uppercase tracking-wider font-black text-offblack"
+                                            style={{
+                                                transform: "rotate(-12deg)",
+                                                textShadow: isActive
+                                                    ? "2px 2px 0 rgba(255,255,255,0.8)"
+                                                    : "none",
+                                            }}
+                                        >
+                                            {model.name}
+                                        </div>
+                                    </div>
+
+                                    {/* Rate indicator */}
+                                    <div
+                                        className={`absolute bottom-1 right-1 px-1.5 py-0.5 font-mono text-[0.5rem] font-black ${
+                                            isImage
+                                                ? "bg-rose text-offwhite"
+                                                : "bg-lime text-offblack"
+                                        }`}
+                                    >
+                                        {rate.toFixed(2)}/s
+                                    </div>
+                                </button>
+                            );
+                        })}
+                </div>
+            </div>
+
+            {/* Display Card */}
+            <div className="bg-offwhite border-4 border-offblack shadow-black-lg overflow-hidden">
+                <div className="relative bg-offwhite min-h-[32rem] flex items-center justify-center">
+                    {!currentDisplay ? (
+                        <div className="text-center py-24 text-offblack/50 font-body">
+                            <p>Waiting for content...</p>
+                            {selectedModel && (
+                                <p className="text-xs mt-2">
+                                    Listening to {selectedModel}
+                                </p>
+                            )}
+                        </div>
+                    ) : currentDisplay.type === "image" ? (
+                        <img
+                            src={currentDisplay.content}
+                            alt={currentDisplay.prompt}
+                            className="w-full h-full max-h-[32rem] object-contain"
+                        />
+                    ) : (
+                        <div className="w-full p-8 overflow-auto max-h-[32rem] scrollbar-hide">
+                            <p className="font-body text-offblack text-lg leading-relaxed whitespace-pre-wrap">
+                                {currentDisplay.content}
+                            </p>
+                        </div>
+                    )}
+                </div>
+
+                {currentDisplay && (
+                    <div className="border-t-4 border-offblack bg-offwhite/80 p-6 h-32 overflow-hidden">
+                        <div className="flex items-start gap-3 h-full">
+                            <div className="flex-shrink-0">
+                                <div
+                                    className={`w-1 h-full ${
+                                        currentDisplay.type === "image"
+                                            ? "bg-rose"
+                                            : "bg-lime"
                                     }`}
                                 />
                             </div>
-                        ))}
+                            <div className="flex-1 overflow-hidden flex items-center">
+                                <p className="font-body text-offblack text-sm leading-relaxed break-words line-clamp-4">
+                                    {currentDisplay.prompt}
+                                </p>
+                            </div>
+                        </div>
                     </div>
                 )}
             </div>
-
-            {/* Center Image Info */}
-            {centerImage && (
-                <div className="text-center space-y-2 px-4 max-w-4xl mx-auto">
-                    <p className="font-body text-offblack text-base leading-relaxed break-words overflow-wrap-anywhere line-clamp-5">
-                        {centerImage.prompt || "No prompt provided"}
-                    </p>
-                    <p className="font-mono text-offblack/50 text-xs tracking-wider">
-                        Model: {centerImage.model || "Unknown"}
-                    </p>
-                </div>
-            )}
-
-            {/* Speed Control - Hidden for now but keeping for later
-            <div className="max-w-md mx-auto space-y-2">
-                <div className="flex items-center justify-between">
-                    <span className="font-headline text-xs uppercase tracking-wider font-black text-offblack/70">
-                        Speed
-                    </span>
-                    <span className="font-body text-xs text-offblack/50">
-                        4s per image
-                    </span>
-                </div>
-                <input
-                    type="range"
-                    min="1"
-                    max="10"
-                    value={sliderValue}
-                    onChange={(e) => setSliderValue(Number(e.target.value))}
-                    className="w-full h-2 bg-offblack/10 appearance-none cursor-pointer"
-                    style={{
-                        background: `linear-gradient(to right, var(--color-lime) 0%, var(--color-lime) ${
-                            ((sliderValue - 1) / 9) * 100
-                        }%, color-mix(in srgb, var(--color-offblack) 10%, transparent) ${
-                            ((sliderValue - 1) / 9) * 100
-                        }%, color-mix(in srgb, var(--color-offblack) 10%, transparent) 100%)`,
-                    }}
-                />
-                <div className="flex justify-between text-xs font-body text-offblack/40">
-                    <span>Slow</span>
-                    <span>Fast</span>
-                </div>
-            </div>
-            */}
         </div>
     );
 }

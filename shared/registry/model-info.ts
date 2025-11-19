@@ -26,7 +26,7 @@ export const ModelInfoSchema = z.object({
     reasoning: z.boolean().optional(),
     context_window: z.number().optional(),
     voices: z.array(z.string()).optional(),
-    isSpecialized: z.boolean().optional(),
+    is_specialized: z.boolean().optional(),
 });
 
 export type ModelInfo = z.infer<typeof ModelInfoSchema>;
@@ -61,7 +61,7 @@ export function getModelInfo(serviceId: ServiceId): ModelInfo {
         reasoning: service.reasoning,
         context_window: service.contextWindow,
         voices: service.voices,
-        isSpecialized: service.isSpecialized,
+        is_specialized: service.isSpecialized,
     };
 }
 

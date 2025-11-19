@@ -17,11 +17,11 @@
     "react-dom": "^18.2.0",
     "react-markdown": "^10.1.0",
     "react-router-dom": "^6.20.0",
-    "tailwind-merge": "^3.4.0",
+    "tailwind-merge": "^3.4.0"
   },
   "devDependencies": {
     "vite-plugin-svgr": "^4.5.0",
-    "wrangler": "^4.49.0"
+    "wrangler": "^4.49.0",
     "@cloudflare/vite-plugin": "^1.15.0",
     "@vitejs/plugin-react": "^5.0.4",
     "autoprefixer": "^10.4.22",

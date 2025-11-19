@@ -10,8 +10,12 @@ import { PageContainer } from "../components/ui/page-container";
 import { SubCard } from "../components/ui/sub-card";
 import { Colors } from "../config/colors";
 import { COMMUNITY_PAGE } from "../config/content";
+import { useNews } from "../hooks/useNews";
+import ReactMarkdown from "react-markdown";
 
 function CommunityPage() {
+    const { news, loading: newsLoading } = useNews(COMMUNITY_PAGE.newsFilePath);
+
     return (
         <PageContainer>
             <PageCard>
@@ -23,6 +27,54 @@ function CommunityPage() {
                     as="div"
                     className="font-body text-base text-offblack/80 leading-relaxed mb-6"
                 />
+
+                {/* News Section */}
+                {!newsLoading && news.length > 0 && (
+                    <>
+                        <Heading variant="section">
+                            <TextGenerator content={COMMUNITY_PAGE.newsTitle} />
+                        </Heading>
+                        <div className="mb-12 space-y-2">
+                            {news.map((item) => (
+                                <div
+                                    key={item.id}
+                                    className="font-body text-sm text-offblack/80 leading-relaxed"
+                                >
+                                    <ReactMarkdown
+                                        components={{
+                                            a: ({ node, ...props }) => (
+                                                <a
+                                                    {...props}
+                                                    className="text-rose hover:underline font-bold"
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                />
+                                            ),
+                                            code: ({
+                                                node,
+                                                inline,
+                                                ...props
+                                            }) =>
+                                                inline ? (
+                                                    <code
+                                                        {...props}
+                                                        className="bg-offblack/10 px-1 py-0.5 font-mono text-xs"
+                                                    />
+                                                ) : (
+                                                    <code {...props} />
+                                                ),
+                                        }}
+                                    >
+                                        {item.content}
+                                    </ReactMarkdown>
+                                </div>
+                            ))}
+                        </div>
+
+                        {/* Divider */}
+                        <Divider />
+                    </>
+                )}
 
                 {/* Discord & GitHub Cards - Bold brutalist blocks */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-12">

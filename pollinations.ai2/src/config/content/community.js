@@ -12,6 +12,13 @@ export const COMMUNITY_PAGE = {
         maxWords: 40,
     },
 
+    // News section
+    newsTitle: {
+        text: "What's New",
+    },
+
+    newsFilePath: "/NEWS.md",
+
     discordTitle: {
         text: "Discord",
     },

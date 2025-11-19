@@ -4,7 +4,7 @@ import type { ContentfulStatusCode } from "hono/utils/http-status";
 import { auth } from "@/middleware/auth.ts";
 import { polar } from "@/middleware/polar.ts";
 import type { Env } from "../env.ts";
-import { track, TrackEnv } from "@/middleware/track.ts";
+import { track, type TrackEnv } from "@/middleware/track.ts";
 import { frontendKeyRateLimit } from "@/middleware/rate-limit-durable.ts";
 import { imageCache } from "@/middleware/image-cache.ts";
 import { edgeRateLimit } from "@/middleware/rate-limit-edge.ts";
@@ -25,7 +25,36 @@ import {
 } from "@/error.ts";
 import { GenerateImageRequestQueryParamsSchema } from "@/schemas/image.ts";
 import { z } from "zod";
+import { HTTPException } from "hono/http-exception";
 import { DEFAULT_TEXT_MODEL } from "@shared/registry/text.ts";
+import {
+    getTextModelsInfo,
+    getImageModelsInfo,
+    resolveServiceId,
+} from "../../../shared/registry/registry.js";
+
+// Shared schema for model info responses
+const ModelInfoSchema = z.object({
+    name: z.string(),
+    aliases: z.array(z.string()),
+    pricing: z.object({
+        input_token_price: z.number().optional(),
+        output_token_price: z.number().optional(),
+        cached_token_price: z.number().optional(),
+        image_price: z.number().optional(),
+        audio_input_price: z.number().optional(),
+        audio_output_price: z.number().optional(),
+        currency: z.literal("USD"),
+    }),
+    description: z.string().optional(),
+    input_modalities: z.array(z.string()).optional(),
+    output_modalities: z.array(z.string()).optional(),
+    tools: z.boolean().optional(),
+    reasoning: z.boolean().optional(),
+    context_window: z.number().optional(),
+    voices: z.array(z.string()).optional(),
+    isSpecialized: z.boolean().optional(),
+});
 
 const errorResponseDescriptions = Object.fromEntries(
     KNOWN_ERROR_STATUS_CODES.map((status) => [
@@ -79,15 +108,17 @@ export const proxyRoutes = new Hono<Env>()
         "/image/models",
         describeRoute({
             tags: ["Image Generation"],
-            description: "Get available image models.",
+            description:
+                "Get a list of available image generation models with pricing, capabilities, and metadata. Use this endpoint to discover which models are available and their costs before making generation requests. Response includes `aliases` (alternative names you can use), pricing per image, and supported modalities.",
             responses: {
                 200: {
                     description: "Success",
                     content: {
                         "application/json": {
                             schema: resolver(
-                                z.array(z.string()).meta({
-                                    description: "List of available models",
+                                z.array(ModelInfoSchema).meta({
+                                    description:
+                                        "List of models with pricing and metadata",
                                 }),
                             ),
                         },
@@ -97,9 +128,50 @@ export const proxyRoutes = new Hono<Env>()
             },
         }),
         async (c) => {
-            return await proxy(`${c.env.IMAGE_SERVICE_URL}/models`, {
-                headers: proxyHeaders(c),
-            });
+            try {
+                const models = getImageModelsInfo();
+                return c.json(models);
+            } catch (error) {
+                throw new HTTPException(500, {
+                    message: "Failed to load image models",
+                    cause: error,
+                });
+            }
+        },
+    )
+    .get(
+        "/text/models",
+        describeRoute({
+            tags: ["Text Generation"],
+            description:
+                "Get a list of available text generation models with pricing, capabilities, and metadata. Use this endpoint to discover which models are available and their costs before making generation requests. Response includes `aliases` (alternative names you can use), token pricing, supported modalities (text, image, audio), and capabilities (tools, reasoning).",
+            responses: {
+                200: {
+                    description: "Success",
+                    content: {
+                        "application/json": {
+                            schema: resolver(
+                                z.array(ModelInfoSchema).meta({
+                                    description:
+                                        "List of models with pricing and metadata",
+                                }),
+                            ),
+                        },
+                    },
+                },
+                ...errorResponses(500),
+            },
+        }),
+        async (c) => {
+            try {
+                const models = getTextModelsInfo();
+                return c.json(models);
+            } catch (error) {
+                throw new HTTPException(500, {
+                    message: "Failed to load text models",
+                    cause: error,
+                });
+            }
         },
     )
     // Auth required for all endpoints below (API key only - no session cookies)
@@ -151,35 +223,6 @@ export const proxyRoutes = new Hono<Env>()
         }),
         validator("json", CreateChatCompletionRequestSchema),
         async (c) => handleChatCompletions(c),
-    )
-    .get(
-        "/text/models",
-        describeRoute({
-            tags: ["Text Generation"],
-            description: "Get available text models.",
-            responses: {
-                200: {
-                    description: "Success",
-                    content: {
-                        "application/json": {
-                            schema: resolver(
-                                z.array(z.string()).meta({
-                                    description: "List of available models",
-                                }),
-                            ),
-                        },
-                    },
-                },
-                ...errorResponses(500),
-            },
-        }),
-        async (c) => {
-            const textServiceUrl =
-                c.env.TEXT_SERVICE_URL || "https://text.pollinations.ai";
-            return await proxy(`${textServiceUrl}/models`, {
-                headers: proxyHeaders(c),
-            });
-        },
     )
     .get(
         "/text/:prompt",
@@ -447,6 +490,23 @@ async function handleChatCompletions(c: Context<Env & TrackEnv>) {
         c.env.TEXT_SERVICE_URL || "https://text.pollinations.ai";
     const targetUrl = proxyUrl(c, `${textServiceUrl}/openai`);
     const requestBody = await c.req.json();
+
+    // Resolve model alias to service ID before proxying
+    if (requestBody.model) {
+        try {
+            const resolvedServiceId = resolveServiceId(
+                requestBody.model,
+                "generate.text",
+            );
+            requestBody.model = resolvedServiceId;
+        } catch (error) {
+            log.warn("[PROXY] Failed to resolve model alias: {model}", {
+                model: requestBody.model,
+                error: String(error),
+            });
+            // Let it pass through - backend will handle invalid model error
+        }
+    }
     const response = await proxy(targetUrl, {
         method: c.req.method,
         headers: proxyHeaders(c),

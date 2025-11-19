@@ -1,5 +1,4 @@
 import debug from "debug";
-import { validateTextGenerationParams } from "../utils/parameterValidators.js";
 
 const log = debug("pollinations:transforms:parameters");
 
@@ -36,9 +35,9 @@ export function processParameters(messages, options) {
         }
     });
 
-    // Add stream_options for Azure OpenAI models
-    if (updatedOptions.stream && config.provider === "azure-openai") {
-        log("Adding stream_options for Azure OpenAI model");
+    // Add stream_options for all streaming requests to get usage data
+    if (updatedOptions.stream) {
+        log("Adding stream_options to include usage data in stream");
         updatedOptions.stream_options = { include_usage: true };
     }
 
@@ -58,7 +57,7 @@ export function processParameters(messages, options) {
             }
         }
 
-        // Preserve internal properties
+        // Preserve internal properties and stream_options
         if (updatedOptions.additionalHeaders) {
             filteredOptions.additionalHeaders =
                 updatedOptions.additionalHeaders;
@@ -71,6 +70,9 @@ export function processParameters(messages, options) {
         }
         if (updatedOptions.requestedModel) {
             filteredOptions.requestedModel = updatedOptions.requestedModel;
+        }
+        if (updatedOptions.stream_options) {
+            filteredOptions.stream_options = updatedOptions.stream_options;
         }
 
         return { messages, options: filteredOptions };

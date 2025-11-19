@@ -30,7 +30,7 @@ def get_merged_prs(owner: str, repo: str, START_DATE: datetime, token: str):
         "Authorization": f"Bearer {token}"
     }
 
-    query = f"repo:{owner}/{repo} is:pull-request is:merged merged:{START_DATE}..{END_DATE}"
+    query = f"repo:{owner}/{repo} is:pull-request is:merged merged:{START_DATE}..{END_DATE} base:main OR base:master OR base:production"
     params = {"q": query, "per_page": 100, "page": 1}
 
     all_prs = []

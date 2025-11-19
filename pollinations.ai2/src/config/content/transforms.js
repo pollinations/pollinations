@@ -1,7 +1,7 @@
 // Text transformation functions
 // Each returns an instruction string or null
 
-import { STYLES } from "./content/globals";
+import { STYLES } from "./globals";
 
 export const translate = ({ userLanguage }) =>
     userLanguage?.startsWith("en") ? null : `Translate to: ${userLanguage}`;

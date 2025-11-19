@@ -31,7 +31,17 @@ const titleVariants = cva(
     }
 );
 
-export const Title = React.forwardRef(
+import { VariantProps } from "class-variance-authority";
+
+// ... (keep variants definitions)
+
+interface TitleProps
+    extends React.HTMLAttributes<HTMLHeadingElement>,
+        VariantProps<typeof titleVariants> {
+    as?: React.ElementType;
+}
+
+export const Title = React.forwardRef<HTMLHeadingElement, TitleProps>(
     ({ className, spacing, as: Comp = "h1", ...props }, ref) => {
         return (
             <Comp
@@ -96,7 +106,13 @@ const headingVariants = cva(
     }
 );
 
-export const Heading = React.forwardRef(
+interface HeadingProps
+    extends React.HTMLAttributes<HTMLHeadingElement>,
+        VariantProps<typeof headingVariants> {
+    as?: React.ElementType;
+}
+
+export const Heading = React.forwardRef<HTMLHeadingElement, HeadingProps>(
     ({ className, variant, spacing, as: Comp = "h2", ...props }, ref) => {
         return (
             <Comp
@@ -151,7 +167,13 @@ const bodyVariants = cva("font-body leading-relaxed", {
     },
 });
 
-export const Body = React.forwardRef(
+interface BodyProps
+    extends React.HTMLAttributes<HTMLParagraphElement>,
+        VariantProps<typeof bodyVariants> {
+    as?: React.ElementType;
+}
+
+export const Body = React.forwardRef<HTMLParagraphElement, BodyProps>(
     ({ className, size, spacing, as: Comp = "p", ...props }, ref) => {
         return (
             <Comp
@@ -205,7 +227,13 @@ const labelVariants = cva(
     }
 );
 
-export const Label = React.forwardRef(
+interface LabelProps
+    extends React.HTMLAttributes<HTMLLabelElement>,
+        VariantProps<typeof labelVariants> {
+    as?: React.ElementType;
+}
+
+export const Label = React.forwardRef<HTMLLabelElement, LabelProps>(
     ({ className, spacing, display, as: Comp = "label", ...props }, ref) => {
         return (
             <Comp

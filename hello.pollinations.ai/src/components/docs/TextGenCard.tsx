@@ -18,7 +18,7 @@ export function TextGenCard() {
     const [response, setResponse] = useState("");
     const [isLoading, setIsLoading] = useState(false);
 
-    const toggleModel = (model) => {
+    const toggleModel = (model: string) => {
         // If clicking the active model, deactivate it (go back to default)
         setSelectedModel(selectedModel === model ? "" : model);
     };

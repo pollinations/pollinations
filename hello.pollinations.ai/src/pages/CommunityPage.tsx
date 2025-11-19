@@ -125,17 +125,25 @@ function CommunityPage() {
                                                     ),
                                                     code: ({
                                                         node,
-                                                        inline,
+                                                        className,
+                                                        children,
                                                         ...props
-                                                    }) =>
-                                                        inline ? (
+                                                    }: any) => {
+                                                        const match = /language-(\w+)/.exec(className || "");
+                                                        const isInline = !match && !String(children).includes("\n");
+                                                        return isInline ? (
                                                             <code
                                                                 {...props}
                                                                 className="bg-offblack/10 px-1 py-0.5 font-mono text-xs"
-                                                            />
+                                                            >
+                                                                {children}
+                                                            </code>
                                                         ) : (
-                                                            <code {...props} />
-                                                        ),
+                                                            <code {...props} className={className}>
+                                                                {children}
+                                                            </code>
+                                                        );
+                                                    },
                                                     p: ({ node, ...props }) => (
                                                         <p
                                                             {...props}

@@ -1,12 +1,38 @@
 import { useState, useEffect, useRef } from "react";
 import { useModelList } from "../../hooks/useModelList";
 
-export function ImageFeed({ selectedModel, onFeedPromptChange }) {
-    const seenImages = useRef(new Set());
-    const imageQueue = useRef([]);
-    const textQueue = useRef([]);
+interface ImageFeedProps {
+    selectedModel: string;
+    onFeedPromptChange: (prompt: string) => void;
+}
+
+interface FeedItem {
+    type: "image" | "text";
+    content: string;
+    prompt: string;
+    model: string;
+}
+
+interface ImageQueueItem {
+    imageURL: string;
+    prompt: string;
+    model: string;
+    status?: string;
+}
+
+interface TextQueueItem {
+    type: "text";
+    model: string;
+    response: string;
+    prompt: string;
+}
+
+export function ImageFeed({ selectedModel, onFeedPromptChange }: ImageFeedProps) {
+    const seenImages = useRef<Set<string>>(new Set());
+    const imageQueue = useRef<ImageQueueItem[]>([]);
+    const textQueue = useRef<TextQueueItem[]>([]);
     const MAX_QUEUE_SIZE = 10;
-    const [currentDisplay, setCurrentDisplay] = useState(null);
+    const [currentDisplay, setCurrentDisplay] = useState<FeedItem | null>(null);
     const { imageModels, textModels } = useModelList();
 
     // Update parent with current feed prompt
@@ -56,7 +82,7 @@ export function ImageFeed({ selectedModel, onFeedPromptChange }) {
 
                     if (!selectedModel || modelId === selectedModel) {
                         const userMessage = data.parameters?.messages?.find(
-                            (msg) => msg?.role === "user"
+                            (msg: any) => msg?.role === "user"
                         );
                         const prompt =
                             userMessage?.content || data.prompt || "No prompt";
@@ -90,23 +116,27 @@ export function ImageFeed({ selectedModel, onFeedPromptChange }) {
                 imageQueue.current.length > 0
             ) {
                 const item = imageQueue.current.shift();
-                setCurrentDisplay({
-                    type: "image",
-                    content: item.imageURL,
-                    prompt: item.prompt || "No prompt",
-                    model: item.model,
-                });
+                if (item) {
+                    setCurrentDisplay({
+                        type: "image",
+                        content: item.imageURL,
+                        prompt: item.prompt || "No prompt",
+                        model: item.model,
+                    });
+                }
             } else if (
                 selectedModelData.type === "text" &&
                 textQueue.current.length > 0
             ) {
                 const item = textQueue.current.shift();
-                setCurrentDisplay({
-                    type: "text",
-                    content: item.response,
-                    prompt: item.prompt,
-                    model: item.model,
-                });
+                if (item) {
+                    setCurrentDisplay({
+                        type: "text",
+                        content: item.response,
+                        prompt: item.prompt,
+                        model: item.model,
+                    });
+                }
             }
         }, 1000);
         return () => clearInterval(interval);

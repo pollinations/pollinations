@@ -30,7 +30,11 @@ const dividerVariants = cva("border-t-2 border-offblack/10", {
     },
 });
 
-export const Divider = React.forwardRef(
+import { VariantProps } from "class-variance-authority";
+
+interface DividerProps extends React.HTMLAttributes<HTMLHRElement>, VariantProps<typeof dividerVariants> {}
+
+export const Divider = React.forwardRef<HTMLHRElement, DividerProps>(
     ({ className, spacing, ...props }, ref) => {
         return (
             <hr

@@ -13,11 +13,11 @@ export function ImageGenCard() {
     const [selectedPrompt, setSelectedPrompt] = useState(
         DOCS_PAGE.imagePrompts[0]
     );
-    const [params, setParams] = useState(new Set());
+    const [params, setParams] = useState<Set<string>>(new Set());
     const [imageUrl, setImageUrl] = useState("");
     const [isLoading, setIsLoading] = useState(false);
 
-    const toggleParam = (param) => {
+    const toggleParam = (param: string) => {
         const newParams = new Set(params);
         if (newParams.has(param)) {
             newParams.delete(param);

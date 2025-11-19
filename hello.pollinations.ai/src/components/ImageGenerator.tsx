@@ -1,6 +1,17 @@
 import { useImageGeneration } from "../hooks/useImageGeneration";
 import { API, DEFAULTS } from "../config/api";
 
+interface ImageGeneratorProps extends React.ImgHTMLAttributes<HTMLImageElement> {
+    prompt: string;
+    width?: number;
+    height?: number;
+    seed?: number;
+    model?: string;
+    nologo?: boolean;
+    alt?: string;
+    className?: string;
+}
+
 export function ImageGenerator({
     prompt,
     width = DEFAULTS.IMAGE_WIDTH,
@@ -11,7 +22,7 @@ export function ImageGenerator({
     alt = "Generated image",
     className = "",
     ...props
-}) {
+}: ImageGeneratorProps) {
     const { imageUrl, loading, error } = useImageGeneration({
         prompt,
         width,
@@ -60,6 +71,15 @@ export function ImageGenerator({
 
 // Helper function to generate image URL (for use in other contexts)
 // Helper function to generate image URL (for use in other contexts)
+interface GenerateImageUrlOptions {
+    prompt: string;
+    width?: number;
+    height?: number;
+    seed?: number;
+    model?: string;
+    nologo?: boolean;
+}
+
 export function generateImageUrl({
     prompt,
     width = DEFAULTS.IMAGE_WIDTH,
@@ -67,7 +87,7 @@ export function generateImageUrl({
     seed = DEFAULTS.SEED,
     model = DEFAULTS.IMAGE_MODEL,
     nologo = true,
-}) {
+}: GenerateImageUrlOptions) {
     const baseUrl = `${API.IMAGE_GENERATION}/${encodeURIComponent(prompt)}`;
     const params = new URLSearchParams({
         model: model,

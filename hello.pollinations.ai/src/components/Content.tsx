@@ -1,17 +1,25 @@
-// Content component - handles both exact text and LLM-generated text
-// Usage:
-//   <Content value="exact text" />
-//   <Content value={{exact: true, content: "text"}} />
-//   <Content value={{exact: false, content: "prompt for LLM"}} />
-
+import { ElementType, ComponentPropsWithoutRef } from "react";
 import { TextGenerator } from "./TextGenerator";
 
-export function Content({
+interface ContentValue {
+    exact: boolean;
+    content: string;
+}
+
+interface ContentProps<T extends ElementType> {
+    value: string | ContentValue;
+    className?: string;
+    as?: T;
+    [key: string]: any;
+}
+
+export function Content<T extends ElementType = "span">({
     value,
     className = "",
-    as: Component = "span",
+    as,
     ...props
-}) {
+}: ContentProps<T> & Omit<ComponentPropsWithoutRef<T>, keyof ContentProps<T>>) {
+    const Component = as || "span";
     // Handle string input (legacy support)
     if (typeof value === "string") {
         return (
@@ -36,6 +44,7 @@ export function Content({
             // Generate via LLM
             return (
                 <TextGenerator
+                    content={undefined}
                     prompt={content}
                     className={className}
                     as={Component}

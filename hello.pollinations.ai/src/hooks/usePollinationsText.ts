@@ -1,10 +1,24 @@
 import { useState, useEffect } from "react";
 import { API, DEFAULTS, API_KEY } from "../config/api";
 
-export function usePollinationsText(prompt, seed, options = {}) {
-    const [text, setText] = useState("");
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState(null);
+interface PollinationsTextOptions {
+    model?: string;
+}
+
+interface UsePollinationsTextReturn {
+    text: string;
+    loading: boolean;
+    error: any;
+}
+
+export function usePollinationsText(
+    prompt: string | null,
+    seed?: number | number[],
+    options: PollinationsTextOptions = {}
+): UsePollinationsTextReturn {
+    const [text, setText] = useState<string>("");
+    const [loading, setLoading] = useState<boolean>(true);
+    const [error, setError] = useState<any>(null);
 
     useEffect(() => {
         if (!prompt) {
@@ -45,7 +59,7 @@ export function usePollinationsText(prompt, seed, options = {}) {
                     setText(generatedText);
                     setLoading(false);
                 }
-            } catch (err) {
+            } catch (err: any) {
                 if (err.name === "AbortError") {
                     // Request was aborted, do nothing
                     return;

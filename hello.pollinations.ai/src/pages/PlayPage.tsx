@@ -24,8 +24,8 @@ function PlayPage() {
     // Memoize combined models array
     const allModels = useMemo(
         () => [
-            ...imageModels.map((m) => ({ ...m, type: "image" })),
-            ...textModels.map((m) => ({ ...m, type: "text" })),
+            ...imageModels.map((m) => ({ ...m, type: "image" as const })),
+            ...textModels.map((m) => ({ ...m, type: "text" as const })),
         ],
         [imageModels, textModels]
     );

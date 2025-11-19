@@ -56,7 +56,18 @@ const buttonVariants = cva(
     }
 );
 
-const Button = React.forwardRef(
+import { VariantProps } from "class-variance-authority";
+
+export interface ButtonProps
+    extends React.ButtonHTMLAttributes<HTMLButtonElement>,
+        VariantProps<typeof buttonVariants> {
+    as?: React.ElementType;
+    href?: string;
+    target?: string;
+    rel?: string;
+}
+
+const Button = React.forwardRef<HTMLButtonElement | HTMLAnchorElement, ButtonProps>(
     ({ className, variant, size, as, ...props }, ref) => {
         const Comp = as || "button";
         return (

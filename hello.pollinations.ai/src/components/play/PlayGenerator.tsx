@@ -7,16 +7,22 @@ import { TextGenerator } from "../TextGenerator";
 import { PLAY_PAGE } from "../../config/content";
 import { API_KEY } from "../../config/api";
 
+interface PlayGeneratorProps {
+    selectedModel: string;
+    prompt: string;
+    onPromptChange?: (prompt: string) => void;
+}
+
 /**
  * PlayGenerator Component
  * Main generation interface for the Play page
  * Handles prompt input, parameters, and generation
  * Model selection is managed by parent PlayPage
  */
-export function PlayGenerator({ selectedModel, prompt }) {
-    const [result, setResult] = useState(null);
+export function PlayGenerator({ selectedModel, prompt }: PlayGeneratorProps) {
+    const [result, setResult] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(false);
-    const [uploadedImages, setUploadedImages] = useState([]);
+    const [uploadedImages, setUploadedImages] = useState<string[]>([]);
 
     // Fetch available models for type checking
     const { imageModels, textModels } = useModelList();
@@ -57,9 +63,9 @@ export function PlayGenerator({ selectedModel, prompt }) {
             try {
                 const params = new URLSearchParams({
                     model: selectedModel,
-                    width,
-                    height,
-                    seed,
+                    width: width.toString(),
+                    height: height.toString(),
+                    seed: seed.toString(),
                     enhance: enhance.toString(),
                     nologo: nologo.toString(),
                 });
@@ -195,12 +201,14 @@ export function PlayGenerator({ selectedModel, prompt }) {
                                                             new FileReader();
                                                         reader.onloadend =
                                                             () => {
-                                                                setUploadedImages(
-                                                                    [
-                                                                        ...uploadedImages,
-                                                                        reader.result,
-                                                                    ]
-                                                                );
+                                                                    if (typeof reader.result === "string") {
+                                                                        setUploadedImages(
+                                                                            [
+                                                                                ...uploadedImages,
+                                                                                reader.result,
+                                                                            ]
+                                                                        );
+                                                                    }
                                                             };
                                                         reader.readAsDataURL(
                                                             file

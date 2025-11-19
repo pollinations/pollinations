@@ -23,7 +23,9 @@ import { cn } from "../../lib/utils";
 // and should not use this component
 // ============================================
 
-export const PageCard = React.forwardRef(
+interface PageCardProps extends React.HTMLAttributes<HTMLDivElement> {}
+
+export const PageCard = React.forwardRef<HTMLDivElement, PageCardProps>(
     ({ className, children, ...props }, ref) => {
         return (
             <div

@@ -1,5 +1,5 @@
 import * as React from "react";
-import { cva } from "class-variance-authority";
+import { cva, VariantProps } from "class-variance-authority";
 import { cn } from "../../lib/utils";
 
 // ============================================
@@ -35,7 +35,11 @@ const subCardVariants = cva("bg-offblack/5", {
     },
 });
 
-export const SubCard = React.forwardRef(
+interface SubCardProps
+    extends React.HTMLAttributes<HTMLDivElement>,
+        VariantProps<typeof subCardVariants> {}
+
+export const SubCard = React.forwardRef<HTMLDivElement, SubCardProps>(
     ({ className, size, children, ...props }, ref) => {
         return (
             <div

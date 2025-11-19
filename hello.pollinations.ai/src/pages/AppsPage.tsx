@@ -11,7 +11,27 @@ import { Colors } from "../config/colors";
 import { ICONS } from "../icons/icons";
 import { APPS_PAGE } from "../config/content";
 
-const CATEGORIES = [
+interface Project {
+    category: string;
+    name: string;
+    url: string;
+    description: string;
+    author: string;
+    repo: string;
+    submissionDate: string;
+    language: string;
+    order: number;
+    stars?: number;
+    authorEmail?: string;
+    hidden?: boolean;
+}
+
+interface Category {
+    id: string;
+    label: string;
+}
+
+const CATEGORIES: Category[] = [
     { id: "creative", label: "Creative" },
     { id: "chat", label: "Chat" },
     { id: "games", label: "Games" },
@@ -22,21 +42,25 @@ const CATEGORIES = [
 ];
 
 // Helper to extract GitHub username from author field
-function getGitHubUsername(author) {
+function getGitHubUsername(author: string) {
     if (!author) return null;
     // Remove @ symbol if present
     return author.replace(/^@/, "");
 }
 
 // Helper to extract repo name from GitHub URL
-function getRepoName(repoUrl) {
+function getRepoName(repoUrl: string) {
     if (!repoUrl) return null;
     const match = repoUrl.match(/github\.com\/([^/]+\/[^/]+)/);
     return match ? match[1] : null;
 }
 
+interface ProjectCardProps {
+    project: Project;
+}
+
 // Project Card Component
-function ProjectCard({ project }) {
+function ProjectCard({ project }: ProjectCardProps) {
     const githubUsername = getGitHubUsername(project.author);
     const repoName = getRepoName(project.repo);
 
@@ -109,7 +133,7 @@ function ProjectCard({ project }) {
                         <span className="truncate flex-1 min-w-0">
                             {repoName}
                         </span>
-                        {project.stars > 0 && (
+                        {(project.stars || 0) > 0 && (
                             <span className="text-offblack/70 flex-shrink-0">
                                 ⭐ {project.stars}
                             </span>
@@ -126,7 +150,7 @@ export default function AppsPage() {
 
     // Filter projects by category
     const filteredProjects = useMemo(() => {
-        return allProjects.filter((p) => {
+        return (allProjects as Project[]).filter((p) => {
             if (p.hidden) return false;
             return p.category === selectedCategory;
         });

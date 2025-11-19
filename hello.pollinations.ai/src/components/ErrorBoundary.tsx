@@ -1,5 +1,15 @@
-import { Component } from "react";
+import { Component, ErrorInfo, ReactNode } from "react";
 import { Button } from "./ui/button";
+
+interface ErrorBoundaryProps {
+    children: ReactNode;
+}
+
+interface ErrorBoundaryState {
+    hasError: boolean;
+    error: Error | null;
+    errorInfo: ErrorInfo | null;
+}
 
 /**
  * Error Boundary Component
@@ -10,18 +20,18 @@ import { Button } from "./ui/button";
  *   <YourComponent />
  * </ErrorBoundary>
  */
-class ErrorBoundary extends Component {
-    constructor(props) {
+class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
+    constructor(props: ErrorBoundaryProps) {
         super(props);
         this.state = { hasError: false, error: null, errorInfo: null };
     }
 
-    static getDerivedStateFromError(_error) {
+    static getDerivedStateFromError(_error: Error): ErrorBoundaryState {
         // Update state so the next render will show the fallback UI
-        return { hasError: true };
+        return { hasError: true, error: _error, errorInfo: null };
     }
 
-    componentDidCatch(error, errorInfo) {
+    componentDidCatch(error: Error, errorInfo: ErrorInfo) {
         // Log error to console in development
         if (import.meta.env.DEV) {
             console.error("Error caught by boundary:", error, errorInfo);

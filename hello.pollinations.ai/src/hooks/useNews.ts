@@ -4,10 +4,26 @@ import { useState, useEffect } from "react";
  * Hook to fetch and parse NEWS.md file
  * Returns array of news items parsed from markdown
  */
-export function useNews(filePath) {
-    const [news, setNews] = useState([]);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState(null);
+interface NewsItem {
+    id: string;
+    content: string;
+    date: string | null;
+}
+
+interface UseNewsReturn {
+    news: NewsItem[];
+    loading: boolean;
+    error: any;
+}
+
+/**
+ * Hook to fetch and parse NEWS.md file
+ * Returns array of news items parsed from markdown
+ */
+export function useNews(filePath: string): UseNewsReturn {
+    const [news, setNews] = useState<NewsItem[]>([]);
+    const [loading, setLoading] = useState<boolean>(true);
+    const [error, setError] = useState<any>(null);
 
     useEffect(() => {
         if (!filePath) {
@@ -28,7 +44,7 @@ export function useNews(filePath) {
 
                 // Parse markdown list items
                 // Each line starts with "- " and contains date, title, and content
-                const newsItems = text
+                const newsItems: NewsItem[] = text
                     .split("\n")
                     .filter((line) => line.trim().startsWith("- "))
                     .map((line, index) => {

@@ -6,7 +6,7 @@
  * - Opacity: Add /90, /80, /50 etc. (e.g., bg-primary/90)
  * - CSS variables available: var(--color-primary), var(--color-background), etc.
  */
-import { Theme, Palette, Fonts, Shadows } from "./src/config/colors.js";
+import { Theme, Palette, Fonts, Shadows } from "./src/config/colors";
 import plugin from "tailwindcss/plugin";
 
 export default {

@@ -7,7 +7,7 @@ import {
 import { usePollinationsText } from "../hooks/usePollinationsText";
 
 // Build the prompt with context + instructions + text
-const buildPrompt = (text, transforms, props) => {
+const buildPrompt = (text: string, transforms: any[], props: any) => {
     const instructions = transforms
         .map((t) => t(props))
         .filter(Boolean)
@@ -26,17 +26,38 @@ Only output the final text, nothing else. Links should be in markdown format.
 ${text}`;
 };
 
+import { ElementType, ComponentPropsWithoutRef } from "react";
+
+interface ContentObject {
+    text: string;
+    seed?: number | number[];
+    style?: string;
+    transforms?: any[];
+    maxWords?: number;
+    model?: string;
+}
+
+interface TextGeneratorProps<T extends ElementType> {
+    content?: ContentObject;
+    prompt?: string;
+    text?: string;
+    transforms?: any[];
+    seed?: number | number[];
+    as?: T;
+}
+
 // Main text generation component
-export function TextGenerator({
+export function TextGenerator<T extends ElementType = "span">({
     content,
     // Legacy props
     prompt,
     text,
     transforms = [],
     seed,
-    as: Component = "span",
+    as,
     ...props
-}) {
+}: TextGeneratorProps<T> & Omit<ComponentPropsWithoutRef<T>, keyof TextGeneratorProps<T>>) {
+    const Component = as || "span";
     const userLanguage =
         typeof navigator !== "undefined" ? navigator.language || "en" : "en";
 
@@ -76,7 +97,7 @@ export function TextGenerator({
 
             // Add style transform if style is present
             if (hasStyle) {
-                allTransforms.unshift(() => STYLES[style] || null);
+                allTransforms.unshift(() => (STYLES as any)[style] || null);
             }
 
             // Add brevity if maxWords is set
@@ -107,7 +128,7 @@ export function TextGenerator({
         // Legacy support (existing code continues to work)
         finalPrompt =
             prompt ||
-            buildPrompt(text, transforms, {
+            buildPrompt(text || "", transforms, {
                 userLanguage,
                 isMobile,
                 ...props,

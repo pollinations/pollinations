@@ -9,12 +9,27 @@ import { PLAY_PAGE } from "../../config/content";
  * Shows image/text/audio models with color indicators
  * Memoized to prevent unnecessary re-renders
  */
+import { Model } from "../../hooks/useModelList";
+
+interface ModelSelectorProps {
+    models: Model[];
+    selectedModel: string;
+    onSelectModel: (id: string) => void;
+    showLegend?: boolean;
+}
+
+/**
+ * ModelSelector Component
+ * Unified model selection UI used in both Create and Watch views
+ * Shows image/text/audio models with color indicators
+ * Memoized to prevent unnecessary re-renders
+ */
 export const ModelSelector = memo(function ModelSelector({
     models,
     selectedModel,
     onSelectModel,
     showLegend = true,
-}) {
+}: ModelSelectorProps) {
     return (
         <div className="mb-6">
             {showLegend && (

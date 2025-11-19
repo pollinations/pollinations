@@ -27,8 +27,8 @@ export function ModelDiscoveryCard() {
         },
     };
 
-    const [selectedModel, setSelectedModel] = useState("image");
-    const [modelsData, setModelsData] = useState(null);
+    const [selectedModel, setSelectedModel] = useState<keyof typeof modelEndpoints>("image");
+    const [modelsData, setModelsData] = useState<any>(null);
     const [isLoading, setIsLoading] = useState(false);
     const currentEndpoint = modelEndpoints[selectedModel];
 
@@ -73,7 +73,7 @@ export function ModelDiscoveryCard() {
                                     <button
                                         key={key}
                                         type="button"
-                                        onClick={() => setSelectedModel(key)}
+                                        onClick={() => setSelectedModel(key as keyof typeof modelEndpoints)}
                                         className={`px-3 py-1.5 font-mono text-xs border-2 transition-all cursor-pointer ${
                                             selectedModel === key
                                                 ? "bg-lime/90 border-rose font-black shadow-rose-sm"

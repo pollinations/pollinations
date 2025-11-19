@@ -3,7 +3,7 @@
 
 import { STYLES } from "./globals";
 
-export const translate = ({ userLanguage }) =>
+export const translate = ({ userLanguage }: { userLanguage?: string }) =>
     userLanguage?.startsWith("en") ? null : `Translate to: ${userLanguage}`;
 
 export const rephrase = () =>
@@ -12,7 +12,7 @@ export const rephrase = () =>
 export const emojify = () =>
     `Enrich the text with suitable emojis and varied text styles (use bold and italics). Do not rephrase.`;
 
-export const responsive = ({ isMobile }) =>
+export const responsive = ({ isMobile }: { isMobile?: boolean }) =>
     isMobile
         ? `Condense the text to 5 words maximum for mobile. Keep it super short!`
         : null;
@@ -23,11 +23,11 @@ export const keepOriginal = () =>
     `Use the text exactly as provided without any changes`;
 
 // Style injector
-export const applyStyle = ({ style }) => {
+export const applyStyle = ({ style }: { style?: string }) => {
     if (!style) return null;
-    return STYLES[style] || null;
+    return (STYLES as any)[style] || null;
 };
 
 // Brevity control
-export const brevity = ({ maxWords }) =>
+export const brevity = ({ maxWords }: { maxWords?: number }) =>
     maxWords ? `Keep under ${maxWords} words. Be concise and impactful.` : null;

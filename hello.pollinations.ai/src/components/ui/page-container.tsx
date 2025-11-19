@@ -23,7 +23,11 @@ import { cn } from "../../lib/utils";
 // - className: Additional classes for the outer wrapper
 // ============================================
 
-export const PageContainer = React.forwardRef(
+interface PageContainerProps extends React.HTMLAttributes<HTMLDivElement> {
+    noPaddingBottom?: boolean;
+}
+
+export const PageContainer = React.forwardRef<HTMLDivElement, PageContainerProps>(
     ({ className, noPaddingBottom = false, children, ...props }, ref) => {
         return (
             <div

@@ -1,6 +1,22 @@
 import { useState, useEffect } from "react";
 import { API, DEFAULTS, API_KEY } from "../config/api";
 
+interface ImageGenerationOptions {
+    prompt: string;
+    width?: number;
+    height?: number;
+    seed?: number;
+    model?: string;
+    nologo?: boolean;
+    alt?: string;
+}
+
+interface UseImageGenerationReturn {
+    imageUrl: string | null;
+    loading: boolean;
+    error: any;
+}
+
 export function useImageGeneration({
     prompt,
     width = DEFAULTS.IMAGE_WIDTH,
@@ -9,10 +25,10 @@ export function useImageGeneration({
     model = DEFAULTS.IMAGE_MODEL,
     nologo = true,
     alt = "Generated image",
-}) {
-    const [imageUrl, setImageUrl] = useState(null);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState(null);
+}: ImageGenerationOptions): UseImageGenerationReturn {
+    const [imageUrl, setImageUrl] = useState<string | null>(null);
+    const [loading, setLoading] = useState<boolean>(true);
+    const [error, setError] = useState<any>(null);
 
     useEffect(() => {
         if (!prompt) {
@@ -22,7 +38,7 @@ export function useImageGeneration({
 
         const controller = new AbortController();
         const signal = controller.signal;
-        let objectUrl = null;
+        let objectUrl: string | null = null;
 
         setLoading(true);
         setError(null);
@@ -31,10 +47,10 @@ export function useImageGeneration({
             try {
                 const baseUrl = `${API.IMAGE_GENERATION}/${encodeURIComponent(prompt)}`;
                 const params = new URLSearchParams({
-                    model,
-                    width: width.toString(),
-                    height: height.toString(),
-                    seed: seed.toString(),
+                    model: model || "",
+                    width: width?.toString() || "",
+                    height: height?.toString() || "",
+                    seed: seed?.toString() || "",
                     nologo: nologo.toString(),
                 });
                 const url = `${baseUrl}?${params.toString()}`;
@@ -61,7 +77,7 @@ export function useImageGeneration({
                     setImageUrl(objectUrl);
                     setLoading(false);
                 }
-            } catch (err) {
+            } catch (err: any) {
                 if (err.name === "AbortError") {
                     return;
                 }

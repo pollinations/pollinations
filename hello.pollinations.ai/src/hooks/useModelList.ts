@@ -1,15 +1,33 @@
 import { useState, useEffect } from "react";
 import { API_KEY } from "../config/api";
 
+export interface Model {
+    id: string;
+    name: string;
+    type: "image" | "text";
+    hasImageInput: boolean;
+    hasAudioOutput: boolean;
+    inputModalities?: string[];
+    outputModalities?: string[];
+}
+
+interface UseModelListReturn {
+    imageModels: Model[];
+    textModels: Model[];
+    isLoading: boolean;
+    error: any;
+    allModels: Model[];
+}
+
 /**
  * Custom hook to fetch and manage available models from the API
  * Returns formatted lists of image and text models
  */
-export function useModelList() {
-    const [imageModels, setImageModels] = useState([]);
-    const [textModels, setTextModels] = useState([]);
-    const [isLoading, setIsLoading] = useState(true);
-    const [error, setError] = useState(null);
+export function useModelList(): UseModelListReturn {
+    const [imageModels, setImageModels] = useState<Model[]>([]);
+    const [textModels, setTextModels] = useState<Model[]>([]);
+    const [isLoading, setIsLoading] = useState<boolean>(true);
+    const [error, setError] = useState<any>(null);
 
     useEffect(() => {
         const fetchModels = async () => {
@@ -33,7 +51,7 @@ export function useModelList() {
                 const textList = await textRes.json();
 
                 // Format image models - use modality data from API if available
-                const formattedImageModels = imageList.map((m) => {
+                const formattedImageModels: Model[] = imageList.map((m: any) => {
                     const modelId = typeof m === "string" ? m : m.id || m.name;
                     return {
                         id: modelId,
@@ -49,7 +67,7 @@ export function useModelList() {
                 });
 
                 // Format text models - use modality data from API if available
-                const formattedTextModels = textList.map((m) => {
+                const formattedTextModels: Model[] = textList.map((m: any) => {
                     const modelId = typeof m === "string" ? m : m.id || m.name;
                     return {
                         id: modelId,

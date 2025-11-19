@@ -25,7 +25,8 @@ export const APP_CONFIGS = {
         themeColor: "#d6379e",
         seo: {
             title: "pollinations.ai",
-            description: "Free 🐝 Open Source 🌸 Gen AI 🤖 API",
+            description:
+                "Generative AI APIs for developers. Integrate AI models via one simple API. Built for app creators, with sponsorship programs available.",
             url: "https://pollinations.ai",
         },
     },
@@ -43,15 +44,16 @@ export const APP_CONFIGS = {
     },
 
     pollinations2: {
-        name: "pollinations.ai2",
-        outputDir: "pollinations.ai2/public",
+        name: "hello.pollinations.ai",
+        outputDir: "hello.pollinations.ai/public",
         sourceSvg: "../assets/logo.svg",
         ogSourceSvg: "../assets/logo-text.svg",
         themeColor: "#ff6b35",
         seo: {
             title: "pollinations.ai",
-            description: "Free 🐝 Open Source 🌸 Gen AI 🤖 API",
-            url: "https://pollinations.ai",
+            description:
+                "AI creation playground - Generate images, text & audio with open source models",
+            url: "https://hello.pollinations.ai",
         },
     },
 };

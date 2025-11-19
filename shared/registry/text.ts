@@ -362,12 +362,12 @@ export const TEXT_SERVICES = {
         cost: [
             {
                 date: COST_START_DATE,
-                promptTextTokens: perMillion(0.0), // Free until Nov 17, 2025
-                completionTextTokens: perMillion(0.0),
+                promptTextTokens: perMillion(0.6),
+                completionTextTokens: perMillion(2.5),
             },
         ],
         description:
-            "Moonshot Kimi K2 Thinking - Deep Reasoning & Tool Orchestration (Free Preview)",
+            "Moonshot Kimi K2 Thinking - Deep Reasoning & Tool Orchestration",
         input_modalities: ["text"],
         output_modalities: ["text"],
         tools: true,

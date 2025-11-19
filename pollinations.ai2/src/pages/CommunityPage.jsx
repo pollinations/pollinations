@@ -94,41 +94,62 @@ function CommunityPage() {
                         <Heading variant="section">
                             <TextGenerator content={COMMUNITY_PAGE.newsTitle} />
                         </Heading>
-                        <div className="mb-12 space-y-2">
-                            {news.map((item) => (
-                                <div
-                                    key={item.id}
-                                    className="font-body text-sm text-offblack/80 leading-relaxed"
-                                >
-                                    <ReactMarkdown
-                                        components={{
-                                            a: ({ node, ...props }) => (
-                                                <a
-                                                    {...props}
-                                                    className="text-rose hover:underline font-bold"
-                                                    target="_blank"
-                                                    rel="noopener noreferrer"
-                                                />
-                                            ),
-                                            code: ({
-                                                node,
-                                                inline,
-                                                ...props
-                                            }) =>
-                                                inline ? (
-                                                    <code
-                                                        {...props}
-                                                        className="bg-offblack/10 px-1 py-0.5 font-mono text-xs"
-                                                    />
-                                                ) : (
-                                                    <code {...props} />
-                                                ),
-                                        }}
+                        <div className="mb-12 space-y-3">
+                            {news.map((item) => {
+                                // Remove date from content for display
+                                const contentWithoutDate = item.content.replace(
+                                    /\*\*\d{4}-\d{2}-\d{2}\*\*:?\s*/,
+                                    ""
+                                );
+
+                                return (
+                                    <div
+                                        key={item.id}
+                                        className="bg-offblack/5 p-3 border-l-2 border-lime"
                                     >
-                                        {item.content}
-                                    </ReactMarkdown>
-                                </div>
-                            ))}
+                                        {item.date && (
+                                            <span className="inline-block bg-offblack/90 text-lime px-2 py-0.5 font-mono text-xs font-black mb-2">
+                                                {item.date}
+                                            </span>
+                                        )}
+                                        <div className="font-body text-sm text-offblack/80 leading-relaxed">
+                                            <ReactMarkdown
+                                                components={{
+                                                    a: ({ node, ...props }) => (
+                                                        <a
+                                                            {...props}
+                                                            className="text-rose hover:underline font-bold"
+                                                            target="_blank"
+                                                            rel="noopener noreferrer"
+                                                        />
+                                                    ),
+                                                    code: ({
+                                                        node,
+                                                        inline,
+                                                        ...props
+                                                    }) =>
+                                                        inline ? (
+                                                            <code
+                                                                {...props}
+                                                                className="bg-offblack/10 px-1 py-0.5 font-mono text-xs"
+                                                            />
+                                                        ) : (
+                                                            <code {...props} />
+                                                        ),
+                                                    p: ({ node, ...props }) => (
+                                                        <p
+                                                            {...props}
+                                                            className="mb-0"
+                                                        />
+                                                    ),
+                                                }}
+                                            >
+                                                {contentWithoutDate}
+                                            </ReactMarkdown>
+                                        </div>
+                                    </div>
+                                );
+                            })}
                         </div>
 
                         {/* Divider */}

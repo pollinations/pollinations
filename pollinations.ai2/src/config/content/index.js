@@ -6,3 +6,4 @@ export * from "./hello";
 export * from "./play";
 export * from "./docs";
 export * from "./community";
+export * from "./apps";

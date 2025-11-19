@@ -6,17 +6,11 @@ export const DOCS_PAGE = {
     },
 
     intro: {
-        text: "Write 2 sentences about our API being simple, powerful, and elegant. Single endpoint for text, images, audio. This is where your vision takes flight. Keep it inspiring and brief. Gen Z vibe.",
-        seed: 0,
-        style: "genZ",
-        maxWords: 40,
+        text: "Our API is simple, powerful, and elegant. Single endpoint for text, images, and audio—this is where your vision takes flight.",
     },
 
     apiReference: {
-        text: "Write 1-2 sentences explaining we have full API docs for deep dives, and for AI agents working with our API, we have an optimized prompt they can copy/paste. Keep it helpful and brief.",
-        seed: 0,
-        style: "professional",
-        maxWords: 35,
+        text: "Dive into our full API docs for detailed information. AI agents can use our optimized prompt for seamless integration.",
     },
 
     // Top buttons

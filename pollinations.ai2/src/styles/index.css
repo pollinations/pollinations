@@ -121,17 +121,17 @@ input[type="range"]::-webkit-slider-thumb {
     appearance: none;
     width: 20px;
     height: 20px;
-    background: var(--color-rose);
+    background: var(--color-secondary);
     cursor: pointer;
-    border: 2px solid var(--color-offblack);
+    border: 2px solid var(--color-foreground);
 }
 
 input[type="range"]::-moz-range-thumb {
     width: 20px;
     height: 20px;
-    background: var(--color-rose);
+    background: var(--color-secondary);
     cursor: pointer;
-    border: 2px solid var(--color-offblack);
+    border: 2px solid var(--color-foreground);
     border-radius: 0;
 }
 
@@ -146,9 +146,9 @@ body,
 html {
     background-color: color-mix(
         in srgb,
-        var(--color-offwhite) 80%,
+        var(--color-background) 80%,
         transparent
-    ); /* offwhite/80 */
+    ); /* background/80 */
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     overflow-x: hidden;
@@ -164,6 +164,6 @@ html {
 }
 
 :focus-visible {
-    outline: 2px solid var(--color-lime);
+    outline: 2px solid var(--color-primary);
     outline-offset: 2px;
 }

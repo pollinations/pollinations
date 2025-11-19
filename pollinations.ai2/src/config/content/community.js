@@ -6,10 +6,7 @@ export const COMMUNITY_PAGE = {
     },
 
     subtitle: {
-        text: "Write 2-3 sentences about our community-driven approach. We're building a platform where developers, creators, and AI enthusiasts collaborate and innovate. Keep it brief, welcoming, and inspiring. Max 40 words.",
-        seed: 0,
-        style: "friendly",
-        maxWords: 40,
+        text: "We're building a platform where developers, creators, and AI enthusiasts collaborate and innovate together.",
     },
 
     // News section
@@ -24,10 +21,7 @@ export const COMMUNITY_PAGE = {
     },
 
     discordSubtitle: {
-        text: "Write one very short sentence introducing our Discord channel. Max 10 words.",
-        seed: 0,
-        style: "friendly",
-        maxWords: 10,
+        text: "Join our community for real-time discussions and support.",
     },
 
     githubTitle: {
@@ -35,10 +29,7 @@ export const COMMUNITY_PAGE = {
     },
 
     githubSubtitle: {
-        text: "Write one very short sentence about our GitHub repository as a hub for collaboration. Max 10 words.",
-        seed: 0,
-        style: "friendly",
-        maxWords: 10,
+        text: "Collaborate on open-source projects and contribute code.",
     },
 
     // Buttons

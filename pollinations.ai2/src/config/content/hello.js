@@ -7,16 +7,11 @@ export const HELLO_PAGE = {
     },
 
     heroIntro: {
-        text: "Tired of faceless, complex, and expensive APIs? We are too. We're a small, passionate team building a different kind of AI platform—one that's simple, beautiful, and built in direct partnership with our community.",
-        seed: 1,
-        style: "genZ",
+        text: "We're a small, passionate team building a different kind of AI platform—one that's simple, beautiful, and built in direct partnership with our community.",
     },
 
     heroTagline: {
         text: "Whether you need a reliable API that just works or a partner to sponsor your next big idea, you've found your home.",
-        seed: 2,
-        style: "friendly",
-        maxWords: 30,
     },
 
     // Pollen Section
@@ -25,10 +20,7 @@ export const HELLO_PAGE = {
     },
 
     pollenDescription: {
-        text: "Pollen is our single, unified credit for all generative media. It's the elegant solution to a chaotic landscape, designed to be predictable and fair for every type of builder. It's the fuel for your imagination, and there are multiple ways to fill your tank.",
-        seed: 3,
-        style: "genZ",
-        maxWords: 50,
+        text: "Pollen is our single, unified credit for all generative media. It's the elegant solution to a chaotic landscape, designed to be predictable and fair for every type of builder.",
     },
 
     // Get Pollen Section
@@ -38,8 +30,6 @@ export const HELLO_PAGE = {
 
     getPollenIntro: {
         text: "Our platform is designed for flexibility. Every developer can purchase Pollen directly, and those we partner with also receive a daily grant to kickstart their journey.",
-        seed: 4,
-        style: "friendly",
     },
 
     buyCardTitle: {
@@ -47,10 +37,7 @@ export const HELLO_PAGE = {
     },
 
     buyCardDescription: {
-        text: "Have an idea and just need a great API to power it? Buy Pollen packs and start building in minutes. No strings attached. It's the fast, reliable, pay-as-you-go solution for any project, from a weekend hackathon to a full-scale application.",
-        seed: 5,
-        style: "genZ",
-        maxWords: 60,
+        text: "Have an idea and just need a great API to power it? Buy Pollen packs and start building in minutes. No strings attached.",
     },
 
     sponsorshipCardTitle: {
@@ -58,10 +45,7 @@ export const HELLO_PAGE = {
     },
 
     sponsorshipCardDescription: {
-        text: "We sponsor developers building the next wave of creative apps. As a partner, you receive a free daily Pollen grant to de-risk development and get your project off the ground. This daily grant is the perfect launchpad, and you can top up with purchased Pollen anytime you need to scale.",
-        seed: 6,
-        style: "genZ",
-        maxWords: 65,
+        text: "We sponsor developers building the next wave of creative apps. As a partner, you receive a free daily Pollen grant to de-risk development and get your project off the ground.",
     },
 
     // Sponsorship Tiers Section
@@ -70,10 +54,7 @@ export const HELLO_PAGE = {
     },
 
     sponsorshipTiersDescription: {
-        text: "For our sponsored partners, the journey is a gamified path that rewards your progress. You'll start as a Spore, getting a daily grant to prototype with front-end keys. As you build and contribute, you'll grow to Seed, Flower, and Nectar, unlocking larger daily grants and server-to-server keys to support your app's launch and scaling.",
-        seed: 7,
-        style: "friendly",
-        maxWords: 70,
+        text: "For our sponsored partners, the journey is a gamified path that rewards your progress. Start as a Spore with a daily grant, then grow to Seed, Flower, and Nectar.",
     },
 
     // Creative Launchpad Section
@@ -83,28 +64,22 @@ export const HELLO_PAGE = {
 
     creativeLaunchpadIntro: {
         text: "No matter how you get your Pollen, you get access to our high-level creative engines. We handle the complexity so you can focus on your vision.",
-        seed: 8,
-        style: "professional",
     },
 
     creativeLaunchpadFeature1: {
         text: "Build Intelligent Chatbots & Agents: Deploy conversational AI with memory using our end-to-end framework.",
-        seed: 9,
     },
 
     creativeLaunchpadFeature2: {
         text: "Generate Consistent Visual Worlds: Create characters and assets in a coherent style for professional design tools.",
-        seed: 10,
     },
 
     creativeLaunchpadFeature3: {
         text: "Orchestrate Multi-Step Workflows: Chain models to create autonomous agents that can research, summarize, and visualize.",
-        seed: 11,
     },
 
     creativeLaunchpadFeature4: {
         text: "Craft Interactive Media (Coming Soon): Go beyond static outputs with tools to generate video, audio, and more.",
-        seed: 12,
     },
 
     // The Difference Section
@@ -114,23 +89,18 @@ export const HELLO_PAGE = {
 
     differenceIntro: {
         text: "Why build with us? Because we're building for you.",
-        seed: 13,
-        style: "brutalist",
     },
 
     differenceFeature1: {
         text: "We're Accessible: We're a small team you can talk to directly. No support tickets lost in the void.",
-        seed: 14,
     },
 
     differenceFeature2: {
         text: "We're Flexible: Our roadmap is driven by you. We build the features our community needs.",
-        seed: 15,
     },
 
     differenceFeature3: {
         text: "We Love Beauty: We believe tools should be charming and fun to use.",
-        seed: 16,
     },
 
     // Roadmap Section
@@ -140,8 +110,6 @@ export const HELLO_PAGE = {
 
     roadmapIntro: {
         text: "Our roadmap is focused on enabling success for every developer on our platform.",
-        seed: 17,
-        style: "professional",
     },
 
     roadmapComingSoonLabel: {
@@ -154,7 +122,6 @@ export const HELLO_PAGE = {
 
     roadmapComingSoonDescription: {
         text: "The foundational tech allowing client-side apps to spend Pollen, a key step for monetization.",
-        seed: 18,
     },
 
     roadmapQ1Label: {
@@ -167,8 +134,6 @@ export const HELLO_PAGE = {
 
     roadmapQ1Description: {
         text: "The economy opens. Users can buy Pollen inside your app, and you get a bonus for every purchase. This is the goal for our sponsored partners.",
-        seed: 19,
-        style: "genZ",
     },
 
     roadmapOngoingLabel: {
@@ -181,7 +146,6 @@ export const HELLO_PAGE = {
 
     roadmapOngoingDescription: {
         text: "We're moving towards a complete solution for AI app development, including hosting and app discovery.",
-        seed: 20,
     },
 
     // CTA Section
@@ -191,8 +155,6 @@ export const HELLO_PAGE = {
 
     ctaDescription: {
         text: "Stop choosing between power and personality. Build with a platform that offers both.",
-        seed: 21,
-        style: "brutalist",
     },
 
     // CTA Buttons

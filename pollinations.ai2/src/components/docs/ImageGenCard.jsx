@@ -178,7 +178,7 @@ export function ImageGenCard() {
                 </div>
 
                 {/* Right side: Image Preview (no label) */}
-                <div className="bg-offblack/5 p-3 flex items-center justify-center min-h-[300px]">
+                <div className="bg-offblack/5 flex items-center justify-center min-h-[240px] max-w-[300px] max-h-[300px] overflow-hidden">
                     {isLoading ? (
                         <p className="text-offblack/50 text-xs">
                             <TextGenerator
@@ -189,7 +189,7 @@ export function ImageGenCard() {
                         <img
                             src={imageUrl}
                             alt={selectedPrompt}
-                            className="w-full h-auto object-contain"
+                            className="w-full h-full object-cover max-w-[300px] max-h-[300px]"
                         />
                     ) : null}
                 </div>

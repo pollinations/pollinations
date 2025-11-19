@@ -33,39 +33,31 @@ export function useModelList() {
                 const imageList = await imageRes.json();
                 const textList = await textRes.json();
 
-                // TODO: In the future, use /v1/models endpoint which returns:
-                // { name, input_modalities: ["text", "image"], output_modalities: ["text"], ... }
-                // Then check: model.input_modalities?.includes("image")
-
-                // Hardcoded models with image input modality for now
-                const imageInputModels = [
-                    "kontext",
-                    "seedream",
-                    "nanobanana",
-                    "gptimage",
-                ];
-
-                // Format image models - handle both string and object formats
+                // Format image models - use modality data from API if available
                 const formattedImageModels = imageList.map((m) => {
                     const modelId = typeof m === "string" ? m : m.id || m.name;
                     return {
                         id: modelId,
-                        name:
-                            modelId.charAt(0).toUpperCase() + modelId.slice(1),
+                        name: modelId,
                         type: "image",
-                        hasImageInput: imageInputModels.includes(modelId),
+                        hasImageInput: m.input_modalities?.includes("image") || false,
+                        hasAudioOutput: m.output_modalities?.includes("audio") || false,
+                        inputModalities: m.input_modalities,
+                        outputModalities: m.output_modalities,
                     };
                 });
 
-                // Format text models - handle both string and object formats
+                // Format text models - use modality data from API if available
                 const formattedTextModels = textList.map((m) => {
                     const modelId = typeof m === "string" ? m : m.id || m.name;
                     return {
                         id: modelId,
-                        name:
-                            modelId.charAt(0).toUpperCase() + modelId.slice(1),
+                        name: modelId,
                         type: "text",
-                        hasImageInput: false, // Text models don't have image input yet
+                        hasImageInput: m.input_modalities?.includes("image") || false,
+                        hasAudioOutput: m.output_modalities?.includes("audio") || false,
+                        inputModalities: m.input_modalities,
+                        outputModalities: m.output_modalities,
                     };
                 });
 

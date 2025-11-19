@@ -3,10 +3,10 @@
  * THEME GUIDE:
  * - To change theme: Edit src/config/colors.js
  * - All colors imported from centralized colors.js
- * - Opacity: Add /90, /80, /50 etc. (e.g., bg-lime/90)
- * - CSS variables available: var(--color-lime), var(--color-rose), etc.
+ * - Opacity: Add /90, /80, /50 etc. (e.g., bg-primary/90)
+ * - CSS variables available: var(--color-primary), var(--color-background), etc.
  */
-import { Colors, Fonts, Shadows } from "./src/config/colors.js";
+import { Theme, Palette, Fonts, Shadows } from "./src/config/colors.js";
 import plugin from "tailwindcss/plugin";
 
 export default {
@@ -14,18 +14,22 @@ export default {
     theme: {
         extend: {
             colors: {
-                // Brand colors from colors.js
-                lime: Colors.lime,
-                rose: Colors.rose,
-                offwhite: Colors.offwhite,
-                offblack: Colors.offblack,
-                black: Colors.black,
-
-                // Semantic aliases (easier theming)
-                primary: Colors.lime,
-                accent: Colors.rose,
-                background: Colors.offwhite,
-                foreground: Colors.offblack,
+                // Semantic tokens (Use these!)
+                primary: "var(--color-primary)",
+                secondary: "var(--color-secondary)",
+                tertiary: "var(--color-tertiary)",
+                background: "var(--color-background)",
+                surface: "var(--color-surface)",
+                foreground: "var(--color-foreground)",
+                
+                // Raw Palette (Avoid using directly if possible, use semantic tokens)
+                lime: Palette.lime,
+                rose: Palette.rose,
+                cyan: Palette.cyan,
+                offwhite: Palette.offwhite,
+                offblack: Palette.offblack,
+                black: Palette.black,
+                white: Palette.white,
             },
             fontFamily: {
                 title: [Fonts.title, "sans-serif"],
@@ -33,6 +37,12 @@ export default {
                 body: [Fonts.body, "sans-serif"],
             },
             boxShadow: {
+                // Semantic Shadows
+                "primary-sm": Shadows.limeSm,
+                "primary-md": Shadows.limeMd,
+                "secondary-sm": Shadows.roseSm,
+                "secondary-md": Shadows.roseMd,
+                
                 // From colors.js Shadows
                 "rose-sm": Shadows.roseSm,
                 "rose-3": Shadows.rose3,
@@ -49,8 +59,8 @@ export default {
 
                 // Legacy names for backwards compatibility
                 "brutal": Shadows.blackLg,
-                "brutal-lime": `8px 8px 0px 0px ${Colors.limeShadow}`,
-                "brutal-lg": `16px 16px 0px 0px ${Colors.black}`,
+                "brutal-lime": `8px 8px 0px 0px ${Palette.limeShadow}`,
+                "brutal-lg": `16px 16px 0px 0px ${Palette.black}`,
             },
         },
     },
@@ -59,12 +69,21 @@ export default {
         plugin(({ addBase }) => {
             addBase({
                 ":root": {
-                    "--color-lime": Colors.lime,
-                    "--color-rose": Colors.rose,
-                    "--color-offwhite": Colors.offwhite,
-                    "--color-offblack": Colors.offblack,
-                    "--color-black": Colors.black,
-                    "--color-lime-shadow": Colors.limeShadow,
+                    // Semantic Variables
+                    "--color-primary": Theme.primary,
+                    "--color-secondary": Theme.secondary,
+                    "--color-tertiary": Theme.tertiary,
+                    "--color-background": Theme.background,
+                    "--color-surface": Theme.surface,
+                    "--color-foreground": Theme.foreground,
+                    
+                    // Raw Colors (for utility access if needed)
+                    "--color-lime": Palette.lime,
+                    "--color-rose": Palette.rose,
+                    "--color-cyan": Palette.cyan,
+                    "--color-offwhite": Palette.offwhite,
+                    "--color-offblack": Palette.offblack,
+                    "--color-black": Palette.black,
                 },
             });
         }),

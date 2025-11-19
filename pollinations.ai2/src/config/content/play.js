@@ -11,17 +11,11 @@ export const PLAY_PAGE = {
     },
 
     createDescription: {
-        text: "Write a brief, relaxed Gen Z description for our API playground. Explain this is a demo to show how cool our API is - they can test it, play with it, try different models. Not our main product, just a fun trial. We're happy to have them here and hope they enjoy it. If they have requests, they can reach out. Keep it super brief, friendly, and chill. 2-3 sentences max.",
-        seed: 0,
-        style: "genZ",
-        maxWords: 60,
+        text: "Test our API, play with different models, and see what you can create. This is a fun demo playground—not our main product, just a place to explore and experiment.",
     },
 
     feedDescription: {
-        text: "Write a brief, exciting description of the live feed. Explain this is watching the global pulse of our network - real-time generated media flowing through our APIs right now. It's a stream of imagination taking shape, what the community is creating this very moment. Keep it energetic, inspiring, and brief. 2 Gen Z vibe sentences max.",
-        seed: 0,
-        style: "genZ",
-        maxWords: 50,
+        text: "Watch the global pulse of our network in real-time. See what the community is creating right now through our APIs.",
     },
 
     toggleWatchOthers: {

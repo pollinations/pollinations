@@ -40,6 +40,11 @@ export function PlayGenerator() {
     const [nologo, setNologo] = useState(true);
 
     const isImageModel = imageModels.some((m) => m.id === model);
+    
+    // Check if current model has audio output
+    const isAudioModel = [...imageModels, ...textModels].some(
+        (m) => m.id === model && m.hasAudioOutput
+    );
 
     // Check if current model supports image input modality
     const currentModelData = [...imageModels, ...textModels].find(
@@ -151,15 +156,25 @@ export function PlayGenerator() {
                                 <TextGenerator content={PLAY_PAGE.textLabel} />
                             </span>
                         </div>
+                        <div className="flex items-center gap-1">
+                            <div className="w-3 h-3 bg-cyan border border-offblack" />
+                            <span className="text-offblack/50">Audio</span>
+                        </div>
                     </div>
                 </div>
-                <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-5 gap-2">
+                <div className="flex flex-wrap gap-2">
                     {[
                         ...imageModels.map((m) => ({ ...m, type: "image" })),
                         ...textModels.map((m) => ({ ...m, type: "text" })),
                     ].map((m) => {
+                        // Detect audio OUTPUT models using hasAudioOutput field
+                        const hasAudioOutput = m.hasAudioOutput;
                         const isImage = m.type === "image";
+                        const modelType = hasAudioOutput ? "audio" : (isImage ? "image" : "text");
                         const isActive = model === m.id;
+                        
+                        const colorClass = hasAudioOutput ? "bg-cyan" : (isImage ? "bg-rose" : "bg-lime");
+                        
                         return (
                             <Button
                                 key={m.id}
@@ -168,12 +183,10 @@ export function PlayGenerator() {
                                 variant="model"
                                 size={null}
                                 data-active={isActive}
-                                data-type={isImage ? "image" : "text"}
+                                data-type={modelType}
                             >
                                 <div
-                                    className={`absolute left-0 top-0 bottom-0 w-1 ${
-                                        isImage ? "bg-rose" : "bg-lime"
-                                    }`}
+                                    className={`absolute left-0 top-0 bottom-0 w-1 ${colorClass}`}
                                 />
                                 {m.name}
                             </Button>
@@ -411,11 +424,13 @@ export function PlayGenerator() {
                 disabled={!prompt || isLoading}
                 variant="generate"
                 size={null}
-                data-type={isImageModel ? "image" : "text"}
-                className="mb-6"
+                data-type={isAudioModel ? "audio" : (isImageModel ? "image" : "text")}
+                className="mb-6 w-auto mx-auto"
             >
                 {isLoading ? (
                     <TextGenerator content={PLAY_PAGE.generatingText} />
+                ) : isAudioModel ? (
+                    "Generate Audio"
                 ) : isImageModel ? (
                     <TextGenerator content={PLAY_PAGE.generateImageButton} />
                 ) : (

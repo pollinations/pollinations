@@ -129,7 +129,7 @@ const models: ModelDefinition[] = [
         transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
     },
     {
-        name: "gemini-3-pro",
+        name: "gemini-large",
         config: portkeyConfig["gemini-3-pro-preview"],
         transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
     },

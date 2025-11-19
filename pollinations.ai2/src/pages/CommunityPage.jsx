@@ -9,25 +9,17 @@ import { PageCard } from "../components/ui/page-card";
 import { PageContainer } from "../components/ui/page-container";
 import { SubCard } from "../components/ui/sub-card";
 import { Colors } from "../config/colors";
-import {
-    COMMUNITY_TITLE,
-    COMMUNITY_SUBTITLE,
-    COMMUNITY_DISCORD_SUBTITLE,
-    COMMUNITY_GITHUB_SUBTITLE,
-    SUPPORTER_TITLE,
-    SUPPORTER_SUBTITLE,
-    getSupporterLogoPrompt,
-} from "../config/content";
-import { SUPPORTERS } from "../config/supporters";
+import { COMMUNITY_PAGE } from "../config/content";
 
 function CommunityPage() {
     return (
         <PageContainer>
             <PageCard>
-                <Title spacing="tight">{COMMUNITY_TITLE}</Title>
+                <Title spacing="tight">
+                    <TextGenerator content={COMMUNITY_PAGE.title} />
+                </Title>
                 <TextGenerator
-                    prompt={COMMUNITY_SUBTITLE.prompt}
-                    seed={COMMUNITY_SUBTITLE.seed}
+                    content={COMMUNITY_PAGE.subtitle}
                     as="div"
                     className="font-body text-base text-offblack/80 leading-relaxed mb-6"
                 />
@@ -37,11 +29,12 @@ function CommunityPage() {
                     {/* Discord Card */}
                     <SubCard>
                         <Heading variant="lime" as="h2">
-                            Discord
+                            <TextGenerator
+                                content={COMMUNITY_PAGE.discordTitle}
+                            />
                         </Heading>
                         <TextGenerator
-                            prompt={COMMUNITY_DISCORD_SUBTITLE.prompt}
-                            seed={COMMUNITY_DISCORD_SUBTITLE.seed}
+                            content={COMMUNITY_PAGE.discordSubtitle}
                             as="div"
                             className="font-body text-sm text-offblack/70 mb-6"
                         />
@@ -53,7 +46,9 @@ function CommunityPage() {
                             variant="primary"
                             size="lg"
                         >
-                            Join Discord
+                            <TextGenerator
+                                content={COMMUNITY_PAGE.joinDiscordButton}
+                            />
                             <ExternalLinkIcon stroke={Colors.lime} />
                         </Button>
                     </SubCard>
@@ -61,11 +56,12 @@ function CommunityPage() {
                     {/* GitHub Card */}
                     <SubCard>
                         <Heading variant="rose" as="h2">
-                            GitHub
+                            <TextGenerator
+                                content={COMMUNITY_PAGE.githubTitle}
+                            />
                         </Heading>
                         <TextGenerator
-                            prompt={COMMUNITY_GITHUB_SUBTITLE.prompt}
-                            seed={COMMUNITY_GITHUB_SUBTITLE.seed}
+                            content={COMMUNITY_PAGE.githubSubtitle}
                             as="div"
                             className="font-body text-sm text-offblack/70 mb-6"
                         />
@@ -77,7 +73,9 @@ function CommunityPage() {
                             variant="primary"
                             size="lg"
                         >
-                            Contribute
+                            <TextGenerator
+                                content={COMMUNITY_PAGE.contributeButton}
+                            />
                             <ExternalLinkIcon stroke={Colors.lime} />
                         </Button>
                     </SubCard>
@@ -88,12 +86,18 @@ function CommunityPage() {
 
                 {/* Supporters Section */}
                 <div>
-                    <Heading variant="section">{SUPPORTER_TITLE}</Heading>
+                    <Heading variant="section">
+                        <TextGenerator
+                            content={COMMUNITY_PAGE.supportersTitle}
+                        />
+                    </Heading>
                     <Body size="sm" spacing="comfortable">
-                        {SUPPORTER_SUBTITLE}
+                        <TextGenerator
+                            content={COMMUNITY_PAGE.supportersSubtitle}
+                        />
                     </Body>
                     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-                        {SUPPORTERS.map((supporter) => (
+                        {COMMUNITY_PAGE.supportersList.map((supporter) => (
                             <a
                                 key={supporter.name}
                                 href={supporter.url}
@@ -104,14 +108,13 @@ function CommunityPage() {
                                 <div className="w-16 h-16 mb-2 overflow-hidden">
                                     <ImageGenerator
                                         key={`${supporter.name}-logo`}
-                                        prompt={getSupporterLogoPrompt(
-                                            supporter.name,
-                                            supporter.description
-                                        )}
+                                        prompt={`${COMMUNITY_PAGE.supporterLogoPrompt} ${supporter.name}. ${supporter.description}`}
                                         width={200}
                                         height={200}
-                                        seed={1}
-                                        model="nanobanana"
+                                        seed={COMMUNITY_PAGE.supporterLogoSeed}
+                                        model={
+                                            COMMUNITY_PAGE.supporterLogoModel
+                                        }
                                         alt={supporter.name}
                                         className="w-full h-full object-contain"
                                     />

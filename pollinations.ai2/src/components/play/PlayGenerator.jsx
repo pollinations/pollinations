@@ -3,6 +3,8 @@ import { Button } from "../ui/button";
 import { XIcon } from "../../icons/XIcon";
 import { useModelList } from "../../hooks/useModelList";
 import { Colors } from "../../config/colors";
+import { TextGenerator } from "../TextGenerator";
+import { PLAY_PAGE } from "../../config/content";
 
 const API_KEY = import.meta.env.VITE_POLLINATIONS_API_KEY;
 
@@ -134,16 +136,20 @@ export function PlayGenerator() {
             <div className="mb-6">
                 <div className="flex items-center gap-4 mb-3">
                     <label className="font-headline text-offblack uppercase text-xs tracking-wider font-black">
-                        Models
+                        <TextGenerator content={PLAY_PAGE.modelsLabel} />
                     </label>
                     <div className="flex items-center gap-3 text-[10px] font-headline uppercase tracking-wider font-black">
                         <div className="flex items-center gap-1">
                             <div className="w-3 h-3 bg-rose border border-offblack" />
-                            <span className="text-offblack/50">Image</span>
+                            <span className="text-offblack/50">
+                                <TextGenerator content={PLAY_PAGE.imageLabel} />
+                            </span>
                         </div>
                         <div className="flex items-center gap-1">
                             <div className="w-3 h-3 bg-lime border border-offblack" />
-                            <span className="text-offblack/50">Text</span>
+                            <span className="text-offblack/50">
+                                <TextGenerator content={PLAY_PAGE.textLabel} />
+                            </span>
                         </div>
                     </div>
                 </div>
@@ -179,15 +185,15 @@ export function PlayGenerator() {
             {/* Prompt Input */}
             <div className="mb-6">
                 <label className="block font-headline text-offblack mb-2 uppercase text-xs tracking-wider font-black">
-                    Prompt
+                    <TextGenerator content={PLAY_PAGE.promptLabel} />
                 </label>
                 <textarea
                     value={prompt}
                     onChange={(e) => setPrompt(e.target.value)}
                     placeholder={
                         isImageModel
-                            ? "Describe the image you want..."
-                            : "Enter your question or prompt..."
+                            ? PLAY_PAGE.imagePlaceholder.text
+                            : PLAY_PAGE.textPlaceholder.text
                     }
                     className="w-full p-4 bg-offblack/5 text-offblack font-body resize-none focus:outline-none focus:bg-offblack/10 hover:bg-offblack/10 transition-colors"
                     rows={4}
@@ -199,10 +205,10 @@ export function PlayGenerator() {
                 <div className="mb-6">
                     <div className="flex items-baseline gap-2 mb-2">
                         <label className="font-headline text-offblack uppercase text-xs tracking-wider font-black">
-                            Add Images (Optional)
+                            <TextGenerator content={PLAY_PAGE.addImagesLabel} />
                         </label>
                         <span className="font-body text-[10px] text-offblack/40">
-                            up to 4
+                            <TextGenerator content={PLAY_PAGE.upToFourLabel} />
                         </span>
                     </div>
                     <div className="grid grid-cols-4 gap-1 max-w-xs">
@@ -292,7 +298,7 @@ export function PlayGenerator() {
                     >
                         <div>
                             <label className="block font-headline text-offblack mb-2 uppercase text-xs tracking-wider font-black">
-                                Width
+                                <TextGenerator content={PLAY_PAGE.widthLabel} />
                             </label>
                             <input
                                 type="number"
@@ -305,7 +311,9 @@ export function PlayGenerator() {
                         </div>
                         <div>
                             <label className="block font-headline text-offblack mb-2 uppercase text-xs tracking-wider font-black">
-                                Height
+                                <TextGenerator
+                                    content={PLAY_PAGE.heightLabel}
+                                />
                             </label>
                             <input
                                 type="number"
@@ -318,7 +326,7 @@ export function PlayGenerator() {
                         </div>
                         <div>
                             <label className="block font-headline text-offblack mb-2 uppercase text-xs tracking-wider font-black">
-                                Seed
+                                <TextGenerator content={PLAY_PAGE.seedLabel} />
                             </label>
                             <input
                                 type="number"
@@ -326,13 +334,15 @@ export function PlayGenerator() {
                                 onChange={(e) =>
                                     setSeed(Number(e.target.value))
                                 }
-                                placeholder="0 = random"
+                                placeholder={PLAY_PAGE.seedPlaceholder.text}
                                 className="w-full p-3 bg-offblack/5 text-offblack font-body focus:outline-none focus:bg-offblack/10 hover:bg-offblack/10 transition-colors placeholder:text-offblack/40"
                             />
                         </div>
                         <div>
                             <label className="block font-headline text-offblack mb-2 uppercase text-xs tracking-wider font-black">
-                                Enhance
+                                <TextGenerator
+                                    content={PLAY_PAGE.enhanceLabel}
+                                />
                             </label>
                             <label className="relative flex items-center justify-center h-[52px] bg-offblack/5 hover:bg-offblack/10 transition-colors cursor-pointer select-none group">
                                 <input
@@ -362,7 +372,7 @@ export function PlayGenerator() {
                         </div>
                         <div>
                             <label className="block font-headline text-offblack mb-2 uppercase text-xs tracking-wider font-black">
-                                Logo
+                                <TextGenerator content={PLAY_PAGE.logoLabel} />
                             </label>
                             <label className="relative flex items-center justify-center h-[52px] bg-offblack/5 hover:bg-offblack/10 transition-colors cursor-pointer select-none group">
                                 <input
@@ -404,9 +414,13 @@ export function PlayGenerator() {
                 data-type={isImageModel ? "image" : "text"}
                 className="mb-6"
             >
-                {isLoading
-                    ? "Generating..."
-                    : `Generate ${isImageModel ? "Image" : "Text"}`}
+                {isLoading ? (
+                    <TextGenerator content={PLAY_PAGE.generatingText} />
+                ) : isImageModel ? (
+                    <TextGenerator content={PLAY_PAGE.generateImageButton} />
+                ) : (
+                    <TextGenerator content={PLAY_PAGE.generateTextButton} />
+                )}
             </Button>
 
             {/* Result Display */}

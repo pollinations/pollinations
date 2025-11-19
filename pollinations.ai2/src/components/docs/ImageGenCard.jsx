@@ -1,25 +1,19 @@
 import { useState, useEffect } from "react";
 import { Heading, Label } from "../ui/typography";
 import { Button } from "../ui/button";
+import { TextGenerator } from "../TextGenerator";
+import { DOCS_PAGE } from "../../config/content";
 
 const API_KEY = import.meta.env.VITE_POLLINATIONS_API_KEY;
-
-// Nature-themed prompt presets
-const IMAGE_PROMPTS = [
-    "a blooming flower in golden hour",
-    "bees pollinating wildflowers",
-    "organic mycelium network patterns",
-    "harmonious forest ecosystem",
-    "symbiotic nature interactions",
-    "flowing river through biosphere",
-];
 
 /**
  * Image Generation Card Component
  * Interactive demo for the image generation API
  */
 export function ImageGenCard() {
-    const [selectedPrompt, setSelectedPrompt] = useState(IMAGE_PROMPTS[0]);
+    const [selectedPrompt, setSelectedPrompt] = useState(
+        DOCS_PAGE.imagePrompts[0]
+    );
     const [params, setParams] = useState(new Set());
     const [imageUrl, setImageUrl] = useState("");
     const [isLoading, setIsLoading] = useState(false);
@@ -117,7 +111,9 @@ export function ImageGenCard() {
 
     return (
         <div>
-            <Heading variant="section">Image Generation</Heading>
+            <Heading variant="section">
+                <TextGenerator content={DOCS_PAGE.imageGenerationTitle} />
+            </Heading>
 
             {/* Prompts/Parameters and Image Preview - Side by Side */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
@@ -125,9 +121,13 @@ export function ImageGenCard() {
                 <div className="space-y-4">
                     {/* Prompt Selection */}
                     <div>
-                        <Label>Pick a prompt</Label>
+                        <Label>
+                            <TextGenerator
+                                content={DOCS_PAGE.pickPromptLabel}
+                            />
+                        </Label>
                         <div className="flex flex-wrap gap-2">
-                            {IMAGE_PROMPTS.map((prompt) => (
+                            {DOCS_PAGE.imagePrompts.map((prompt) => (
                                 <button
                                     key={prompt}
                                     type="button"
@@ -146,7 +146,11 @@ export function ImageGenCard() {
 
                     {/* Optional Parameters */}
                     <div>
-                        <Label>Optional parameters</Label>
+                        <Label>
+                            <TextGenerator
+                                content={DOCS_PAGE.optionalParametersLabel}
+                            />
+                        </Label>
                         <div className="flex flex-wrap gap-2">
                             {[
                                 "model=nanobanana",
@@ -177,7 +181,9 @@ export function ImageGenCard() {
                 <div className="bg-offblack/5 p-3 flex items-center justify-center min-h-[300px]">
                     {isLoading ? (
                         <p className="text-offblack/50 text-xs">
-                            Generating...
+                            <TextGenerator
+                                content={DOCS_PAGE.generatingLabel}
+                            />
                         </p>
                     ) : imageUrl ? (
                         <img
@@ -221,7 +227,7 @@ export function ImageGenCard() {
                 variant="copy"
                 size={null}
             >
-                Copy URL
+                <TextGenerator content={DOCS_PAGE.copyUrlButton} />
             </Button>
         </div>
     );

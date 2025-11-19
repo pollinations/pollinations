@@ -1,6 +1,8 @@
 // Text transformation functions
 // Each returns an instruction string or null
 
+import { STYLES } from "./content/globals";
+
 export const translate = ({ userLanguage }) =>
     userLanguage?.startsWith("en") ? null : `Translate to: ${userLanguage}`;
 
@@ -19,3 +21,13 @@ export const noLink = () => `Do not use any link URLs`;
 
 export const keepOriginal = () =>
     `Use the text exactly as provided without any changes`;
+
+// Style injector
+export const applyStyle = ({ style }) => {
+    if (!style) return null;
+    return STYLES[style] || null;
+};
+
+// Brevity control
+export const brevity = ({ maxWords }) =>
+    maxWords ? `Keep under ${maxWords} words. Be concise and impactful.` : null;

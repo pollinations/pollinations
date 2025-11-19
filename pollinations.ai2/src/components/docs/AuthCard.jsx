@@ -1,6 +1,8 @@
 import { Heading, Label } from "../ui/typography";
 import { ExternalLinkIcon } from "../../icons/ExternalLinkIcon";
 import { Colors } from "../../config/colors";
+import { TextGenerator } from "../TextGenerator";
+import { DOCS_PAGE } from "../../config/content";
 
 /**
  * Authentication Card Component
@@ -10,13 +12,15 @@ export function AuthCard() {
     return (
         <div>
             <Heading variant="section" spacing="comfortable">
-                Authentication
+                <TextGenerator content={DOCS_PAGE.authenticationTitle} />
             </Heading>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {/* Left: Key Types + Get Your Key */}
                 <div className="space-y-4">
                     <div>
-                        <Label spacing="comfortable">Key Types</Label>
+                        <Label spacing="comfortable">
+                            <TextGenerator content={DOCS_PAGE.keyTypesLabel} />
+                        </Label>
                         <div className="space-y-3">
                             {/* Publishable Key */}
                             <div className="bg-offblack/5 p-4">
@@ -26,14 +30,33 @@ export function AuthCard() {
                                     </span>
                                     <div>
                                         <p className="font-headline text-xs font-black text-offblack uppercase mb-2">
-                                            Publishable
+                                            <TextGenerator
+                                                content={
+                                                    DOCS_PAGE.publishableLabel
+                                                }
+                                            />
                                         </p>
                                         <ul className="text-xs text-offblack/70 space-y-1">
-                                            <li>Safe for client-side code</li>
-                                            <li>1 pollen/hour per IP+key</li>
+                                            <li>
+                                                <TextGenerator
+                                                    content={
+                                                        DOCS_PAGE.publishableFeature1
+                                                    }
+                                                />
+                                            </li>
+                                            <li>
+                                                <TextGenerator
+                                                    content={
+                                                        DOCS_PAGE.publishableFeature2
+                                                    }
+                                                />
+                                            </li>
                                             <li className="text-rose font-bold">
-                                                Beta: Use secret keys for
-                                                production
+                                                <TextGenerator
+                                                    content={
+                                                        DOCS_PAGE.publishableFeature3
+                                                    }
+                                                />
                                             </li>
                                         </ul>
                                     </div>
@@ -48,12 +71,32 @@ export function AuthCard() {
                                     </span>
                                     <div>
                                         <p className="font-headline text-xs font-black text-offblack uppercase mb-2">
-                                            Secret
+                                            <TextGenerator
+                                                content={DOCS_PAGE.secretLabel}
+                                            />
                                         </p>
                                         <ul className="text-xs text-offblack/70 space-y-1">
-                                            <li>Server-side only</li>
-                                            <li>Never expose publicly</li>
-                                            <li>No rate limits</li>
+                                            <li>
+                                                <TextGenerator
+                                                    content={
+                                                        DOCS_PAGE.secretFeature1
+                                                    }
+                                                />
+                                            </li>
+                                            <li>
+                                                <TextGenerator
+                                                    content={
+                                                        DOCS_PAGE.secretFeature2
+                                                    }
+                                                />
+                                            </li>
+                                            <li>
+                                                <TextGenerator
+                                                    content={
+                                                        DOCS_PAGE.secretFeature3
+                                                    }
+                                                />
+                                            </li>
                                         </ul>
                                     </div>
                                 </div>
@@ -68,7 +111,9 @@ export function AuthCard() {
                         className="inline-block bg-offblack border-r-4 border-b-4 border-lime shadow-lime-md px-6 py-4 hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-lime-sm transition-all"
                     >
                         <p className="font-headline text-xs uppercase tracking-wider font-black text-offwhite mb-2">
-                            Get Your Key
+                            <TextGenerator
+                                content={DOCS_PAGE.getYourKeyLabel}
+                            />
                         </p>
                         <div className="flex items-center gap-2">
                             <p className="font-mono text-sm font-black text-lime">
@@ -84,15 +129,16 @@ export function AuthCard() {
 
                 {/* Right: Usage Examples */}
                 <div>
-                    <Label spacing="comfortable">Usage Examples</Label>
+                    <Label spacing="comfortable">
+                        <TextGenerator content={DOCS_PAGE.usageExamplesLabel} />
+                    </Label>
 
                     {/* Header Method */}
                     <div className="mb-4">
                         <p className="font-body text-xs text-offblack/70 mb-2">
-                            <span className="font-black">
-                                Server-side (Recommended):
-                            </span>{" "}
-                            Use secret key in Authorization header
+                            <TextGenerator
+                                content={DOCS_PAGE.serverSideDescription}
+                            />
                         </p>
                         <div className="font-mono text-xs bg-offblack text-offwhite p-4 border-r-4 border-b-4 border-offblack/50">
                             <div className="text-lime/80">
@@ -117,10 +163,9 @@ export function AuthCard() {
                     {/* Query Method */}
                     <div>
                         <p className="font-body text-xs text-offblack/70 mb-2">
-                            <span className="font-black">
-                                Client-side (Public):
-                            </span>{" "}
-                            Use publishable key in query parameter
+                            <TextGenerator
+                                content={DOCS_PAGE.clientSideDescription}
+                            />
                         </p>
                         <div className="font-mono text-xs bg-offblack text-offwhite p-4 border-r-4 border-b-4 border-offblack/50">
                             <div className="text-lime/80">

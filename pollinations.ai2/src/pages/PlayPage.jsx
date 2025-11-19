@@ -3,7 +3,7 @@ import { Title } from "../components/ui/typography";
 import { PageCard } from "../components/ui/page-card";
 import { PageContainer } from "../components/ui/page-container";
 import { TextGenerator } from "../components/TextGenerator";
-import { PLAY_DESCRIPTION, FEED_DESCRIPTION } from "../config/content";
+import { PLAY_PAGE } from "../config/content";
 import { ImageFeed } from "../components/play/ImageFeed";
 import { PlayGenerator } from "../components/play/PlayGenerator";
 
@@ -21,7 +21,13 @@ function PlayPage() {
                 <div className="mb-8">
                     <div className="flex items-center gap-4 mb-3">
                         <Title spacing="none">
-                            {view === "play" ? "Create" : "Watch"}
+                            <TextGenerator
+                                content={
+                                    view === "play"
+                                        ? PLAY_PAGE.createTitle
+                                        : PLAY_PAGE.watchTitle
+                                }
+                            />
                         </Title>
                         <button
                             type="button"
@@ -30,21 +36,20 @@ function PlayPage() {
                             }
                             className="font-body text-sm text-offblack/40 hover:text-offblack/70 transition-colors whitespace-nowrap"
                         >
-                            {view === "play"
-                                ? "Watch what others are making"
-                                : "Back to Play"}
+                            <TextGenerator
+                                content={
+                                    view === "play"
+                                        ? PLAY_PAGE.toggleWatchOthers
+                                        : PLAY_PAGE.toggleBackToPlay
+                                }
+                            />
                         </button>
                     </div>
                     <TextGenerator
-                        text={
+                        content={
                             view === "play"
-                                ? PLAY_DESCRIPTION.prompt
-                                : FEED_DESCRIPTION.prompt
-                        }
-                        seed={
-                            view === "play"
-                                ? PLAY_DESCRIPTION.seed
-                                : FEED_DESCRIPTION.seed
+                                ? PLAY_PAGE.createDescription
+                                : PLAY_PAGE.feedDescription
                         }
                         as="div"
                         className="font-body text-offblack/70 text-base leading-relaxed"

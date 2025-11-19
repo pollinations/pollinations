@@ -1,22 +1,19 @@
 import { useState, useEffect } from "react";
 import { Heading, Label } from "../ui/typography";
 import { Button } from "../ui/button";
+import { TextGenerator } from "../TextGenerator";
+import { DOCS_PAGE } from "../../config/content";
 
 const API_KEY = import.meta.env.VITE_POLLINATIONS_API_KEY;
-
-const TEXT_PROMPTS = [
-    "explain pollinations.ai",
-    "write a poem about nature",
-    "describe ecosystem harmony",
-    "explain symbiosis",
-];
 
 /**
  * Text Generation Card Component
  * Interactive demo for the text generation API
  */
 export function TextGenCard() {
-    const [selectedPrompt, setSelectedPrompt] = useState(TEXT_PROMPTS[0]);
+    const [selectedPrompt, setSelectedPrompt] = useState(
+        DOCS_PAGE.textPrompts[0]
+    );
     const [selectedModel, setSelectedModel] = useState(""); // Empty = default openai
     const [jsonMode, setJsonMode] = useState(false);
     const [response, setResponse] = useState("");
@@ -79,7 +76,9 @@ export function TextGenCard() {
 
     return (
         <div>
-            <Heading variant="section">Text Generation</Heading>
+            <Heading variant="section">
+                <TextGenerator content={DOCS_PAGE.textGenerationTitle} />
+            </Heading>
 
             {/* Prompts/Parameters and Response - Side by Side */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
@@ -87,9 +86,13 @@ export function TextGenCard() {
                 <div className="space-y-4">
                     {/* Prompt Selection */}
                     <div>
-                        <Label>Pick a prompt</Label>
+                        <Label>
+                            <TextGenerator
+                                content={DOCS_PAGE.pickPromptLabel}
+                            />
+                        </Label>
                         <div className="flex flex-wrap gap-2">
-                            {TEXT_PROMPTS.map((prompt) => (
+                            {DOCS_PAGE.textPrompts.map((prompt) => (
                                 <button
                                     key={prompt}
                                     type="button"
@@ -108,7 +111,9 @@ export function TextGenCard() {
 
                     {/* Model Selection */}
                     <div>
-                        <Label>Model</Label>
+                        <Label>
+                            <TextGenerator content={DOCS_PAGE.modelLabel} />
+                        </Label>
                         <div className="flex flex-wrap gap-2">
                             {[
                                 { value: "mistral", label: "model=mistral" },
@@ -133,13 +138,17 @@ export function TextGenCard() {
                             ))}
                         </div>
                         <p className="font-body text-xs text-offblack/50 mt-2">
-                            Default: openai
+                            <TextGenerator
+                                content={DOCS_PAGE.defaultModelLabel}
+                            />
                         </p>
                     </div>
 
                     {/* Optional Parameters */}
                     <div>
-                        <Label>Optional</Label>
+                        <Label>
+                            <TextGenerator content={DOCS_PAGE.optionalLabel} />
+                        </Label>
                         <button
                             type="button"
                             onClick={() => setJsonMode(!jsonMode)}
@@ -158,7 +167,9 @@ export function TextGenCard() {
                 <div className="bg-offblack/5 p-3 min-h-[200px] max-h-[200px] overflow-hidden">
                     {isLoading ? (
                         <p className="text-offblack/50 font-body text-xs">
-                            Generating...
+                            <TextGenerator
+                                content={DOCS_PAGE.generatingLabel}
+                            />
                         </p>
                     ) : (
                         <p className="font-body text-offblack text-xs leading-relaxed whitespace-pre-wrap overflow-y-auto h-full pr-2 scrollbar-hide">
@@ -203,7 +214,7 @@ export function TextGenCard() {
                 variant="copy"
                 size={null}
             >
-                Copy URL
+                <TextGenerator content={DOCS_PAGE.copyUrlButton} />
             </Button>
         </div>
     );

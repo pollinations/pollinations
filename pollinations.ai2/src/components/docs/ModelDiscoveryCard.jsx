@@ -1,6 +1,8 @@
 import { useState, useEffect } from "react";
 import { Heading, Label } from "../ui/typography";
 import { Button } from "../ui/button";
+import { TextGenerator } from "../TextGenerator";
+import { DOCS_PAGE } from "../../config/content";
 
 /**
  * Model Discovery Card Component
@@ -9,17 +11,17 @@ import { Button } from "../ui/button";
 export function ModelDiscoveryCard() {
     const modelEndpoints = {
         image: {
-            label: "Image",
+            label: DOCS_PAGE.imageTypeLabel.text,
             url: "https://enter.pollinations.ai/api/generate/image/models",
             path: "/image/models",
         },
         text: {
-            label: "Text",
+            label: DOCS_PAGE.textTypeLabel.text,
             url: "https://enter.pollinations.ai/api/generate/text/models",
             path: "/text/models",
         },
         openai: {
-            label: "Text (OpenAI)",
+            label: DOCS_PAGE.textOpenAITypeLabel.text,
             url: "https://enter.pollinations.ai/api/generate/v1/models",
             path: "/v1/models",
         },
@@ -50,7 +52,9 @@ export function ModelDiscoveryCard() {
 
     return (
         <div>
-            <Heading variant="section">Model Discovery</Heading>
+            <Heading variant="section">
+                <TextGenerator content={DOCS_PAGE.modelDiscoveryTitle} />
+            </Heading>
 
             {/* Model Type Selection and Output - Side by Side */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
@@ -58,7 +62,11 @@ export function ModelDiscoveryCard() {
                 <div className="space-y-4">
                     {/* Model Type Selection */}
                     <div>
-                        <Label>Select a type</Label>
+                        <Label>
+                            <TextGenerator
+                                content={DOCS_PAGE.selectTypeLabel}
+                            />
+                        </Label>
                         <div className="flex flex-wrap gap-2">
                             {Object.entries(modelEndpoints).map(
                                 ([key, { label }]) => (
@@ -98,7 +106,7 @@ export function ModelDiscoveryCard() {
                         variant="copy"
                         size={null}
                     >
-                        Copy URL
+                        <TextGenerator content={DOCS_PAGE.copyUrlButton} />
                     </Button>
                 </div>
 
@@ -106,7 +114,9 @@ export function ModelDiscoveryCard() {
                 <div className="bg-offblack/5 p-3 font-mono text-xs text-offblack h-48 overflow-auto scrollbar-hide">
                     {isLoading ? (
                         <div className="text-offblack/50">
-                            Loading models...
+                            <TextGenerator
+                                content={DOCS_PAGE.loadingModelsLabel}
+                            />
                         </div>
                     ) : modelsData ? (
                         <pre className="whitespace-pre-wrap break-words">

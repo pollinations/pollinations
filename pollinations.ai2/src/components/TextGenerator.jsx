@@ -1,5 +1,9 @@
 import ReactMarkdown from "react-markdown";
-import { CONTEXT } from "../config/content";
+import {
+    CONTEXT as GLOBAL_CONTEXT,
+    STYLES,
+    DEFAULT_MODEL,
+} from "../config/content/globals";
 import { usePollinationsText } from "../hooks/usePollinationsText";
 
 // Build the prompt with context + instructions + text
@@ -11,7 +15,7 @@ const buildPrompt = (text, transforms, props) => {
         .join("\n");
 
     return `# Context
-${CONTEXT}
+${GLOBAL_CONTEXT}
 
 # Instructions
 ${instructions}
@@ -24,6 +28,8 @@ ${text}`;
 
 // Main text generation component
 export function TextGenerator({
+    content,
+    // Legacy props
     prompt,
     text,
     transforms = [],
@@ -37,21 +43,94 @@ export function TextGenerator({
     const isMobile =
         typeof window !== "undefined" ? window.innerWidth < 768 : false;
 
-    // Support both 'prompt' (direct) and 'text' (with transforms) props
-    const finalPrompt =
-        prompt ||
-        buildPrompt(text, transforms, {
-            userLanguage,
-            isMobile,
-            ...props,
-        });
+    // Prepare generation parameters
+    let finalPrompt = null;
+    let finalSeed = seed;
+    let finalModel = DEFAULT_MODEL;
+    let isExact = false;
+    let exactText = "";
 
-    // Use the new hook
+    // NEW: Unified content object
+    if (content) {
+        const {
+            text: contentText,
+            seed: contentSeed = 0,
+            style,
+            transforms: contentTransforms = [],
+            maxWords,
+            model = DEFAULT_MODEL,
+        } = content;
+
+        // NEW LOGIC: No style + no transforms = exact text (no AI generation)
+        const hasStyle = !!style;
+        const hasTransforms = contentTransforms.length > 0;
+        const shouldGenerate = hasStyle || hasTransforms;
+
+        if (!shouldGenerate) {
+            // Use text as-is (exact)
+            isExact = true;
+            exactText = contentText;
+        } else {
+            // Build transform list
+            const allTransforms = [...contentTransforms];
+
+            // Add style transform if style is present
+            if (hasStyle) {
+                allTransforms.unshift(() => STYLES[style] || null);
+            }
+
+            // Add brevity if maxWords is set
+            if (maxWords) {
+                allTransforms.push(
+                    () =>
+                        `Keep under ${maxWords} words. Be concise and impactful.`
+                );
+            }
+
+            // Handle multiple seeds (variations) - pick random seed on load
+            finalSeed = Array.isArray(contentSeed)
+                ? contentSeed[Math.floor(Math.random() * contentSeed.length)]
+                : contentSeed;
+
+            // Generate prompt
+            finalPrompt = buildPrompt(contentText, allTransforms, {
+                style,
+                maxWords,
+                userLanguage,
+                isMobile,
+                ...props,
+            });
+
+            finalModel = model;
+        }
+    } else {
+        // Legacy support (existing code continues to work)
+        finalPrompt =
+            prompt ||
+            buildPrompt(text, transforms, {
+                userLanguage,
+                isMobile,
+                ...props,
+            });
+    }
+
+    // Call hook unconditionally (React rules)
     const { text: generatedText, loading } = usePollinationsText(
         finalPrompt,
-        seed
+        finalSeed,
+        { model: finalModel }
     );
 
+    // Handle exact text case
+    if (isExact) {
+        return (
+            <Component {...props}>
+                <ReactMarkdown>{exactText}</ReactMarkdown>
+            </Component>
+        );
+    }
+
+    // Handle loading and generated text
     if (loading || !generatedText) {
         return <Component {...props}>...</Component>;
     }

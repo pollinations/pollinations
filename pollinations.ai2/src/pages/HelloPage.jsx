@@ -6,25 +6,24 @@ import { PageCard } from "../components/ui/page-card";
 import { PageContainer } from "../components/ui/page-container";
 import { SubCard } from "../components/ui/sub-card";
 import { Colors } from "../config/colors";
+import { TextGenerator } from "../components/TextGenerator";
+import { HELLO_PAGE } from "../config/content";
 
 function HelloPage() {
     return (
         <PageContainer>
             <PageCard>
                 {/* Title */}
-                <Title>Gen AI with a Human Touch</Title>
+                <Title>
+                    <TextGenerator content={HELLO_PAGE.heroTitle} />
+                </Title>
                 {/* Intro Section */}
                 <div className="mb-12">
                     <Body>
-                        Tired of faceless, complex, and expensive APIs? We are
-                        too. We're a small, passionate team building a different
-                        kind of AI platform—one that's simple, beautiful, and
-                        built in direct partnership with our community.
+                        <TextGenerator content={HELLO_PAGE.heroIntro} />
                     </Body>
                     <Body spacing="none">
-                        Whether you need a reliable API that just works or a
-                        partner to sponsor your next big idea, you've found your
-                        home.
+                        <TextGenerator content={HELLO_PAGE.heroTagline} />
                     </Body>
                 </div>
 
@@ -34,14 +33,10 @@ function HelloPage() {
                 {/* Pollen Section */}
                 <div className="mb-12">
                     <Heading variant="section">
-                        Pollen: One Simple Credit for Everything
+                        <TextGenerator content={HELLO_PAGE.pollenTitle} />
                     </Heading>
                     <Body spacing="none">
-                        Pollen is our single, unified credit for all generative
-                        media. It's the elegant solution to a chaotic landscape,
-                        designed to be predictable and fair for every type of
-                        builder. It's the fuel for your imagination, and there
-                        are multiple ways to fill your tank.
+                        <TextGenerator content={HELLO_PAGE.pollenDescription} />
                     </Body>
                 </div>
 
@@ -51,13 +46,10 @@ function HelloPage() {
                 {/* Get Pollen Section */}
                 <div className="mb-12">
                     <Heading variant="section" spacing="comfortable">
-                        Fuel Your Vision: Get Pollen Your Way
+                        <TextGenerator content={HELLO_PAGE.getPollenTitle} />
                     </Heading>
                     <Body spacing="comfortable">
-                        Our platform is designed for flexibility. Every
-                        developer can purchase Pollen directly, and those we
-                        partner with also receive a daily grant to kickstart
-                        their journey.
+                        <TextGenerator content={HELLO_PAGE.getPollenIntro} />
                     </Body>
 
                     {/* Two Column Cards */}
@@ -65,39 +57,30 @@ function HelloPage() {
                         {/* Buy Pollen Card */}
                         <SubCard>
                             <Heading variant="lime" as="h3">
-                                Simple & Fast: Buy What You Need
+                                <TextGenerator
+                                    content={HELLO_PAGE.buyCardTitle}
+                                />
                             </Heading>
                             <Body size="sm" spacing="none">
-                                Have an idea and just need a great API to power
-                                it?{" "}
-                                <span className="font-black">
-                                    Buy Pollen packs and start building in
-                                    minutes.
-                                </span>{" "}
-                                No strings attached. It's the fast, reliable,
-                                pay-as-you-go solution for any project, from a
-                                weekend hackathon to a full-scale application.
+                                <TextGenerator
+                                    content={HELLO_PAGE.buyCardDescription}
+                                />
                             </Body>
                         </SubCard>
 
                         {/* Sponsorship Card */}
                         <SubCard>
                             <Heading variant="rose" as="h3">
-                                Our Investment in You: The Sponsorship Program
+                                <TextGenerator
+                                    content={HELLO_PAGE.sponsorshipCardTitle}
+                                />
                             </Heading>
                             <Body size="sm" spacing="none">
-                                We sponsor developers building the next wave of
-                                creative apps. As a partner, you receive a{" "}
-                                <span className="font-black">
-                                    free daily Pollen grant
-                                </span>{" "}
-                                to de-risk development and get your project off
-                                the ground. This daily grant is the perfect
-                                launchpad, and you can{" "}
-                                <span className="font-black">
-                                    top up with purchased Pollen anytime
-                                </span>{" "}
-                                you need to scale.
+                                <TextGenerator
+                                    content={
+                                        HELLO_PAGE.sponsorshipCardDescription
+                                    }
+                                />
                             </Body>
                         </SubCard>
                     </div>
@@ -109,19 +92,14 @@ function HelloPage() {
                 {/* Sponsorship Tiers */}
                 <div className="mb-12">
                     <Heading variant="section">
-                        Grow With Us: The Sponsorship Tiers
+                        <TextGenerator
+                            content={HELLO_PAGE.sponsorshipTiersTitle}
+                        />
                     </Heading>
                     <Body spacing="none">
-                        For our sponsored partners, the journey is a gamified
-                        path that rewards your progress. You'll start as a{" "}
-                        <span className="font-black">Spore</span>, getting a
-                        daily grant to prototype with front-end keys. As you
-                        build and contribute, you'll grow to{" "}
-                        <span className="font-black">Seed</span>,{" "}
-                        <span className="font-black">Flower</span>, and{" "}
-                        <span className="font-black">Nectar</span>, unlocking
-                        larger daily grants and server-to-server keys to support
-                        your app's launch and scaling.
+                        <TextGenerator
+                            content={HELLO_PAGE.sponsorshipTiersDescription}
+                        />
                     </Body>
                 </div>
 
@@ -130,40 +108,36 @@ function HelloPage() {
 
                 {/* Creative Launchpad */}
                 <div className="mb-12">
-                    <Heading variant="section">Your Creative Launchpad</Heading>
+                    <Heading variant="section">
+                        <TextGenerator
+                            content={HELLO_PAGE.creativeLaunchpadTitle}
+                        />
+                    </Heading>
                     <Body spacing="comfortable">
-                        No matter how you get your Pollen, you get access to our
-                        high-level creative engines. We handle the complexity so
-                        you can focus on your vision.
+                        <TextGenerator
+                            content={HELLO_PAGE.creativeLaunchpadIntro}
+                        />
                     </Body>
                     <ul className="space-y-3">
                         <li className="font-body text-sm text-offblack/80 leading-relaxed pl-4 border-l-2 border-lime">
-                            <span className="font-black">
-                                Build Intelligent Chatbots & Agents:
-                            </span>{" "}
-                            Deploy conversational AI with memory using our
-                            end-to-end framework.
+                            <TextGenerator
+                                content={HELLO_PAGE.creativeLaunchpadFeature1}
+                            />
                         </li>
                         <li className="font-body text-sm text-offblack/80 leading-relaxed pl-4 border-l-2 border-lime">
-                            <span className="font-black">
-                                Generate Consistent Visual Worlds:
-                            </span>{" "}
-                            Create characters and assets in a coherent style for
-                            professional design tools.
+                            <TextGenerator
+                                content={HELLO_PAGE.creativeLaunchpadFeature2}
+                            />
                         </li>
                         <li className="font-body text-sm text-offblack/80 leading-relaxed pl-4 border-l-2 border-lime">
-                            <span className="font-black">
-                                Orchestrate Multi-Step Workflows:
-                            </span>{" "}
-                            Chain models to create autonomous agents that can
-                            research, summarize, and visualize.
+                            <TextGenerator
+                                content={HELLO_PAGE.creativeLaunchpadFeature3}
+                            />
                         </li>
                         <li className="font-body text-sm text-offblack/80 leading-relaxed pl-4 border-l-2 border-lime">
-                            <span className="font-black">
-                                Craft Interactive Media (Coming Soon):
-                            </span>{" "}
-                            Go beyond static outputs with tools to generate
-                            video, audio, and more.
+                            <TextGenerator
+                                content={HELLO_PAGE.creativeLaunchpadFeature4}
+                            />
                         </li>
                     </ul>
                 </div>
@@ -174,28 +148,26 @@ function HelloPage() {
                 {/* The Difference */}
                 <div className="mb-12">
                     <Heading variant="section">
-                        The Pollinations Difference
+                        <TextGenerator content={HELLO_PAGE.differenceTitle} />
                     </Heading>
                     <Body spacing="comfortable">
-                        Why build with us? Because we're building{" "}
-                        <span className="italic">for</span> you.
+                        <TextGenerator content={HELLO_PAGE.differenceIntro} />
                     </Body>
                     <ul className="space-y-3">
                         <li className="font-body text-sm text-offblack/80 leading-relaxed pl-4 border-l-2 border-rose">
-                            <span className="font-black">
-                                We're Accessible:
-                            </span>{" "}
-                            We're a small team you can talk to directly. No
-                            support tickets lost in the void.
+                            <TextGenerator
+                                content={HELLO_PAGE.differenceFeature1}
+                            />
                         </li>
                         <li className="font-body text-sm text-offblack/80 leading-relaxed pl-4 border-l-2 border-rose">
-                            <span className="font-black">We're Flexible:</span>{" "}
-                            Our roadmap is driven by you. We build the features
-                            our community needs.
+                            <TextGenerator
+                                content={HELLO_PAGE.differenceFeature2}
+                            />
                         </li>
                         <li className="font-body text-sm text-offblack/80 leading-relaxed pl-4 border-l-2 border-rose">
-                            <span className="font-black">We Love Beauty:</span>{" "}
-                            We believe tools should be charming and fun to use.
+                            <TextGenerator
+                                content={HELLO_PAGE.differenceFeature3}
+                            />
                         </li>
                     </ul>
                 </div>
@@ -206,26 +178,35 @@ function HelloPage() {
                 {/* Roadmap */}
                 <div className="mb-12">
                     <Heading variant="section">
-                        The Horizon: An Open Creative Economy
+                        <TextGenerator content={HELLO_PAGE.roadmapTitle} />
                     </Heading>
                     <Body spacing="comfortable">
-                        Our roadmap is focused on enabling success for every
-                        developer on our platform.
+                        <TextGenerator content={HELLO_PAGE.roadmapIntro} />
                     </Body>
                     <div className="space-y-4">
                         <SubCard size="compact">
                             <div className="flex flex-col md:flex-row gap-3">
                                 <div className="font-headline text-xs font-black text-lime uppercase tracking-wider md:w-32">
-                                    Coming Soon
+                                    <TextGenerator
+                                        content={
+                                            HELLO_PAGE.roadmapComingSoonLabel
+                                        }
+                                    />
                                 </div>
                                 <div className="flex-1">
                                     <p className="font-headline text-sm font-black text-offblack mb-2">
-                                        Secure Front-End Spending
+                                        <TextGenerator
+                                            content={
+                                                HELLO_PAGE.roadmapComingSoonTitle
+                                            }
+                                        />
                                     </p>
                                     <p className="font-body text-xs text-offblack/70">
-                                        The foundational tech allowing
-                                        client-side apps to spend Pollen, a key
-                                        step for monetization.
+                                        <TextGenerator
+                                            content={
+                                                HELLO_PAGE.roadmapComingSoonDescription
+                                            }
+                                        />
                                     </p>
                                 </div>
                             </div>
@@ -233,20 +214,22 @@ function HelloPage() {
                         <SubCard size="compact">
                             <div className="flex flex-col md:flex-row gap-3">
                                 <div className="font-headline text-xs font-black text-lime uppercase tracking-wider md:w-32">
-                                    Q1 2026
+                                    <TextGenerator
+                                        content={HELLO_PAGE.roadmapQ1Label}
+                                    />
                                 </div>
                                 <div className="flex-1">
                                     <p className="font-headline text-sm font-black text-offblack mb-2">
-                                        In-App Purchase
+                                        <TextGenerator
+                                            content={HELLO_PAGE.roadmapQ1Title}
+                                        />
                                     </p>
                                     <p className="font-body text-xs text-offblack/70">
-                                        <span className="font-black">
-                                            The economy opens.
-                                        </span>{" "}
-                                        Users can buy Pollen inside your app,
-                                        and you get a bonus for every purchase.
-                                        This is the goal for our sponsored
-                                        partners.
+                                        <TextGenerator
+                                            content={
+                                                HELLO_PAGE.roadmapQ1Description
+                                            }
+                                        />
                                     </p>
                                 </div>
                             </div>
@@ -254,16 +237,24 @@ function HelloPage() {
                         <SubCard size="compact">
                             <div className="flex flex-col md:flex-row gap-3">
                                 <div className="font-headline text-xs font-black text-lime uppercase tracking-wider md:w-32">
-                                    Ongoing
+                                    <TextGenerator
+                                        content={HELLO_PAGE.roadmapOngoingLabel}
+                                    />
                                 </div>
                                 <div className="flex-1">
                                     <p className="font-headline text-sm font-black text-offblack mb-2">
-                                        Beyond
+                                        <TextGenerator
+                                            content={
+                                                HELLO_PAGE.roadmapOngoingTitle
+                                            }
+                                        />
                                     </p>
                                     <p className="font-body text-xs text-offblack/70">
-                                        We're moving towards a complete solution
-                                        for AI app development, including
-                                        hosting and app discovery.
+                                        <TextGenerator
+                                            content={
+                                                HELLO_PAGE.roadmapOngoingDescription
+                                            }
+                                        />
                                     </p>
                                 </div>
                             </div>
@@ -277,11 +268,10 @@ function HelloPage() {
                 {/* CTA */}
                 <div>
                     <Heading variant="section" spacing="comfortable">
-                        Ready to Create?
+                        <TextGenerator content={HELLO_PAGE.ctaTitle} />
                     </Heading>
                     <Body spacing="comfortable">
-                        Stop choosing between power and personality. Build with
-                        a platform that offers both.
+                        <TextGenerator content={HELLO_PAGE.ctaDescription} />
                     </Body>
                     <div className="flex flex-wrap gap-3">
                         <Button
@@ -292,7 +282,9 @@ function HelloPage() {
                             variant="primary"
                             size="lg"
                         >
-                            Get Your API Key & Start Building
+                            <TextGenerator
+                                content={HELLO_PAGE.getApiKeyButton}
+                            />
                             <ExternalLinkIcon stroke={Colors.lime} />
                         </Button>
                         <Button
@@ -301,7 +293,9 @@ function HelloPage() {
                             variant="secondary"
                             size="lg"
                         >
-                            Learn More About Sponsorship
+                            <TextGenerator
+                                content={HELLO_PAGE.learnSponsorshipButton}
+                            />
                             <ExternalLinkIcon stroke={Colors.black} />
                         </Button>
                     </div>

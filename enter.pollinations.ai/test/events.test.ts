@@ -95,7 +95,6 @@ function createTextGenerationEvent({
         referrerUrl: "http://localhost:3000",
         modelRequested,
         resolvedModelRequested,
-        freeModelRequested: false,
         modelUsed,
         modelProviderUsed: undefined,
         isBilledUsage: true,

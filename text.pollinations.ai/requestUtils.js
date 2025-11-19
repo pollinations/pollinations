@@ -77,26 +77,3 @@ export function getRequestData(req) {
         response_format,
     };
 }
-
-/**
- * Prepares model data for output by applying sorting and filtering.
- * Always sorts with community models (community: false first, then community: true).
- * Filters out hidden models from public listings.
- * @param {Array} models - Array of model objects
- * @returns {Array} - Sanitized model array properly sorted, excluding hidden models
- */
-export function prepareModelsForOutput(models) {
-    // Filter out hidden models (no need to remove pricing since it's no longer in model objects)
-    const prepared = models.filter((m) => !m.hidden);
-
-    // Sort models with non-community first, then community models
-    return [
-        ...prepared
-            .filter((m) => m.community === false)
-            .sort((a, b) => a.name.localeCompare(b.name)),
-        ...prepared
-            .filter((m) => m.community === true)
-            .sort((a, b) => a.name.localeCompare(b.name)),
-    ];
-}
-

@@ -1,50 +1,66 @@
-import type { ModelRegistry } from "./registry";
 import { COST_START_DATE, perMillion } from "./price-helpers";
 
 export const DEFAULT_TEXT_MODEL = "openai" as const;
+export type TextServiceId = keyof typeof TEXT_SERVICES;
+export type TextModelId = (typeof TEXT_SERVICES)[TextServiceId]["modelId"];
 
 export const TEXT_SERVICES = {
     "openai": {
-        aliases: ["gpt-5-mini"],
-        modelId: "gpt-5-mini-2025-08-07", // Provider returns this - used for cost lookup
-        provider: "azure-openai",
-        cost: [
-            {
-                date: COST_START_DATE,
-                promptTextTokens: perMillion(0.25),
-                promptCachedTokens: perMillion(0.025),
-                completionTextTokens: perMillion(2.0),
-            },
-        ],
-    },
-    "openai-fast": {
-        aliases: ["gpt-5-nano"],
+        aliases: ["gpt-5-nano", "gpt-5-nano-2025-08-07"],
         modelId: "gpt-5-nano-2025-08-07",
         provider: "azure-openai",
         cost: [
             {
                 date: COST_START_DATE,
-                promptTextTokens: perMillion(0.05),
-                promptCachedTokens: perMillion(0.005),
-                completionTextTokens: perMillion(0.4),
+                promptTextTokens: perMillion(0.06),
+                promptCachedTokens: perMillion(0.01),
+                completionTextTokens: perMillion(0.44),
             },
         ],
+        description: "OpenAI GPT-5 Nano - Ultra Fast & Affordable",
+        input_modalities: ["text", "image"],
+        output_modalities: ["text"],
+        tools: true,
+        isSpecialized: false,
     },
-    "openai-large": {
-        aliases: ["gpt-5-chat"],
-        modelId: "gpt-5-chat-latest",
+    "openai-fast": {
+        aliases: ["gpt-5-nano", "gpt-5-nano-2025-08-07"],
+        modelId: "gpt-5-nano-2025-08-07",
         provider: "azure-openai",
         cost: [
             {
                 date: COST_START_DATE,
-                promptTextTokens: perMillion(1.25),
-                promptCachedTokens: perMillion(0.13),
-                completionTextTokens: perMillion(10.0),
+                promptTextTokens: perMillion(0.06),
+                promptCachedTokens: perMillion(0.01),
+                completionTextTokens: perMillion(0.44),
             },
         ],
+        description: "OpenAI GPT-5 Nano - Ultra Fast & Affordable",
+        input_modalities: ["text", "image"],
+        output_modalities: ["text"],
+        tools: true,
+        isSpecialized: false,
+    },
+    "openai-large": {
+        aliases: ["gpt-4.1", "gpt-4.1-2025-04-14"],
+        modelId: "gpt-4.1-2025-04-14",
+        provider: "azure-openai",
+        cost: [
+            {
+                date: COST_START_DATE,
+                promptTextTokens: perMillion(2.2),
+                promptCachedTokens: perMillion(0.55),
+                completionTextTokens: perMillion(8.8),
+            },
+        ],
+        description: "OpenAI GPT-4.1 - Most Powerful",
+        input_modalities: ["text", "image"],
+        output_modalities: ["text"],
+        tools: true,
+        isSpecialized: false,
     },
     "qwen-coder": {
-        aliases: ["qwen2.5-coder-32b-instruct"],
+        aliases: ["qwen-coder", "qwen2.5-coder-32b-instruct"],
         modelId: "qwen2.5-coder-32b-instruct",
         provider: "scaleway",
         cost: [
@@ -54,9 +70,18 @@ export const TEXT_SERVICES = {
                 completionTextTokens: perMillion(0.9),
             },
         ],
+        description: "Qwen 2.5 Coder 32B - Specialized for Code Generation",
+        input_modalities: ["text"],
+        output_modalities: ["text"],
+        tools: true,
+        isSpecialized: false,
     },
     "mistral": {
-        aliases: ["mistral-small"],
+        aliases: [
+            "mistral-small",
+            "mistral-small-3.2",
+            "mistral-small-3.2-24b-instruct-2506",
+        ],
         modelId: "mistral-small-3.2-24b-instruct-2506",
         provider: "scaleway",
         cost: [
@@ -66,9 +91,18 @@ export const TEXT_SERVICES = {
                 completionTextTokens: perMillion(0.35),
             },
         ],
+        description: "Mistral Small 3.2 24B - Efficient & Cost-Effective",
+        input_modalities: ["text"],
+        output_modalities: ["text"],
+        tools: true,
+        isSpecialized: false,
     },
     "mistral-fast": {
-        aliases: ["llama-3.1-8b", "llama-fast"],
+        aliases: [
+            "llama-3.1-8b-instruct",
+            "llama-3.1-8b",
+            "meta-llama-3.1-8b-instruct",
+        ],
         modelId: "us.meta.llama3-1-8b-instruct-v1:0",
         provider: "aws-bedrock",
         cost: [
@@ -78,15 +112,17 @@ export const TEXT_SERVICES = {
                 completionTextTokens: perMillion(0.22),
             },
         ],
+        description: "Meta Llama 3.1 8B - Fast & Lightweight",
+        input_modalities: ["text"],
+        output_modalities: ["text"],
+        tools: true,
+        isSpecialized: false,
     },
-    // Temporarily disabled
-    // "naughty": {
-    //     aliases: ["mistral-naughty", "mistral-romance", "mistral-nemo-instruct-2407-romance", "mistral-roblox"],
-    //     modelId: "mistral-nemo-instruct-2407",
-    //     provider: "scaleway",
-    // },
     "openai-audio": {
-        aliases: ["gpt-4o-mini-audio-preview"],
+        aliases: [
+            "gpt-4o-mini-audio-preview",
+            "gpt-4o-mini-audio-preview-2024-12-17",
+        ],
         modelId: "gpt-4o-mini-audio-preview-2024-12-17",
         provider: "azure-openai",
         cost: [
@@ -98,6 +134,26 @@ export const TEXT_SERVICES = {
                 completionAudioTokens: perMillion(22.0),
             },
         ],
+        description: "OpenAI GPT-4o Mini Audio - Voice Input & Output",
+        voices: [
+            "alloy",
+            "echo",
+            "fable",
+            "onyx",
+            "nova",
+            "shimmer",
+            "coral",
+            "verse",
+            "ballad",
+            "ash",
+            "sage",
+            "amuch",
+            "dan",
+        ],
+        input_modalities: ["text", "image", "audio"],
+        output_modalities: ["audio", "text"],
+        tools: true,
+        isSpecialized: false,
     },
     "openai-reasoning": {
         aliases: ["o4-mini"],
@@ -111,6 +167,12 @@ export const TEXT_SERVICES = {
                 completionTextTokens: perMillion(4.84),
             },
         ],
+        description: "OpenAI o4 Mini - Advanced Reasoning",
+        input_modalities: ["text", "image"],
+        output_modalities: ["text"],
+        tools: true,
+        reasoning: true,
+        isSpecialized: false,
     },
     "gemini": {
         aliases: ["gemini-2.5-flash-lite"],
@@ -124,6 +186,11 @@ export const TEXT_SERVICES = {
                 completionTextTokens: perMillion(0.4),
             },
         ],
+        description: "Google Gemini 2.5 Flash Lite - Fast & Multimodal",
+        input_modalities: ["text", "image"],
+        output_modalities: ["text"],
+        tools: true,
+        isSpecialized: false,
     },
     "deepseek": {
         aliases: [
@@ -141,6 +208,12 @@ export const TEXT_SERVICES = {
                 completionTextTokens: perMillion(5.0),
             },
         ],
+        description: "DeepSeek V3.1 - Advanced Reasoning & Coding",
+        input_modalities: ["text"],
+        output_modalities: ["text"],
+        tools: true,
+        reasoning: true,
+        isSpecialized: false,
     },
     "grok": {
         aliases: ["grok-fast", "grok-4", "grok-4-fast"],
@@ -154,9 +227,14 @@ export const TEXT_SERVICES = {
                 completionTextTokens: perMillion(0.5),
             },
         ],
+        description: "xAI Grok 4 Fast - High Speed & Real-Time",
+        input_modalities: ["text"],
+        output_modalities: ["text"],
+        tools: true,
+        isSpecialized: false,
     },
     "gemini-search": {
-        aliases: ["searchgpt", "geminisearch"],
+        aliases: ["gemini-search", "gemini-2.5-flash-lite-search"],
         modelId: "gemini-2.5-flash-lite",
         provider: "vertex-ai",
         cost: [
@@ -167,6 +245,11 @@ export const TEXT_SERVICES = {
                 completionTextTokens: perMillion(0.4),
             },
         ],
+        description: "Google Gemini 2.5 Flash Lite - With Google Search",
+        input_modalities: ["text", "image"],
+        output_modalities: ["text"],
+        tools: true,
+        isSpecialized: false,
     },
     "chickytutor": {
         aliases: [],
@@ -179,9 +262,14 @@ export const TEXT_SERVICES = {
                 completionTextTokens: perMillion(4.0),
             },
         ],
+        description: "ChickyTutor AI Language Tutor - (chickytutor.com)",
+        input_modalities: ["text"],
+        output_modalities: ["text"],
+        tools: true,
+        isSpecialized: true,
     },
     "midijourney": {
-        aliases: [],
+        aliases: ["gpt-4.1", "gpt-4.1-2025-04-14"],
         modelId: "gpt-4.1-2025-04-14",
         provider: "azure-openai",
         cost: [
@@ -192,15 +280,14 @@ export const TEXT_SERVICES = {
                 completionTextTokens: perMillion(8.8),
             },
         ],
+        description: "MIDIjourney - AI Music Composition Assistant",
+        input_modalities: ["text"],
+        output_modalities: ["text"],
+        tools: true,
+        isSpecialized: true,
     },
-    // Temporarily disabled
-    // "evil": {
-    //     aliases: [],
-    //     modelId: "mistral-small-3.1-24b-instruct-2503",
-    //     provider: "scaleway",
-    // },
     "claude": {
-        aliases: ["claudyclaude"],
+        aliases: ["claude-haiku-4.5", "claude-haiku"],
         modelId: "us.anthropic.claude-haiku-4-5-20251001-v1:0",
         provider: "aws-bedrock",
         cost: [
@@ -210,9 +297,14 @@ export const TEXT_SERVICES = {
                 completionTextTokens: perMillion(5.0),
             },
         ],
+        description: "Anthropic Claude Haiku 4.5 - Fast & Intelligent",
+        input_modalities: ["text", "image"],
+        output_modalities: ["text"],
+        tools: true,
+        isSpecialized: false,
     },
     "claude-large": {
-        aliases: ["sonnet", "claude-4.5", "claude-sonnet-4.5", "claude-sonnet"],
+        aliases: ["claude-sonnet-4.5", "claude-sonnet"],
         modelId: "us.anthropic.claude-sonnet-4-5-20250929-v1:0",
         provider: "aws-bedrock",
         cost: [
@@ -222,6 +314,11 @@ export const TEXT_SERVICES = {
                 completionTextTokens: perMillion(15.0),
             },
         ],
+        description: "Anthropic Claude Sonnet 4.5 - Most Capable & Balanced",
+        input_modalities: ["text", "image"],
+        output_modalities: ["text"],
+        tools: true,
+        isSpecialized: false,
     },
     "perplexity-fast": {
         aliases: ["sonar"],
@@ -234,6 +331,11 @@ export const TEXT_SERVICES = {
                 completionTextTokens: perMillion(1.0),
             },
         ],
+        description: "Perplexity Sonar - Fast & Affordable",
+        input_modalities: ["text"],
+        output_modalities: ["text"],
+        tools: true,
+        isSpecialized: false,
     },
     "perplexity-reasoning": {
         aliases: ["sonar-reasoning"],
@@ -246,5 +348,49 @@ export const TEXT_SERVICES = {
                 completionTextTokens: perMillion(5.0),
             },
         ],
+        description: "Perplexity Sonar Reasoning - Advanced Reasoning",
+        input_modalities: ["text"],
+        output_modalities: ["text"],
+        tools: true,
+        reasoning: true,
+        persona: false,
+    },
+    "kimi-k2-thinking": {
+        aliases: ["kimi-k2", "kimi-thinking"],
+        modelId: "kimi-k2-thinking-maas",
+        provider: "vertex-ai",
+        cost: [
+            {
+                date: COST_START_DATE,
+                promptTextTokens: perMillion(0.0), // Free until Nov 17, 2025
+                completionTextTokens: perMillion(0.0),
+            },
+        ],
+        description:
+            "Moonshot Kimi K2 Thinking - Deep Reasoning & Tool Orchestration (Free Preview)",
+        input_modalities: ["text"],
+        output_modalities: ["text"],
+        tools: true,
+        reasoning: true,
+        isSpecialized: false,
+    },
+    "gemini-large": {
+        aliases: ["gemini-3-pro", "gemini-3", "gemini-3-pro-preview"],
+        modelId: "gemini-3-pro-preview",
+        provider: "vertex-ai",
+        cost: [
+            {
+                date: COST_START_DATE,
+                promptTextTokens: perMillion(2.0),
+                completionTextTokens: perMillion(12.0),
+            },
+        ],
+        description:
+            "Google Gemini 3 Pro - Most Intelligent Model with 1M Context (Preview)",
+        input_modalities: ["text", "image", "audio", "video"],
+        output_modalities: ["text"],
+        tools: true,
+        reasoning: true,
+        isSpecialized: false,
     },
 } as const;

@@ -192,7 +192,7 @@ async function handleRequest(req, res, requestData) {
             }
         } else {
             log(`Model not found: ${requestData.model}`);
-            const error = new Error(`Model not found: ${requestData.model}. See all available models at https://enter.pollinations.ai`);
+            const error = new Error(`Model not found: ${requestData.model}. This is our legacy API - for the full model list and new features, visit https://enter.pollinations.ai`);
             error.status = 404;
             await sendErrorResponse(res, req, error, requestData, 404);
             return;

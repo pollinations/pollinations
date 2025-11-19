@@ -25,11 +25,7 @@ function App() {
             <Suspense fallback={<PageLoader />}>
                 <Routes>
                     <Route path="/" element={<Layout />}>
-                        <Route
-                            index
-                            element={<Navigate to="/hello" replace />}
-                        />
-                        <Route path="hello" element={<HelloPage />} />
+                        <Route index element={<HelloPage />} />
                         <Route path="play" element={<PlayPage />} />
                         <Route path="apps" element={<AppsPage />} />
                         <Route path="docs" element={<DocsPage />} />
@@ -38,7 +34,7 @@ function App() {
                         <Route path="privacy" element={<PrivacyPage />} />
                         <Route
                             path="*"
-                            element={<Navigate to="/hello" replace />}
+                            element={<Navigate to="/" replace />}
                         />
                     </Route>
                 </Routes>

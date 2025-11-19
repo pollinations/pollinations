@@ -7,7 +7,7 @@ import { SOCIAL_LINKS } from "../config/socialLinksList";
 import { Colors } from "../config/colors";
 
 const tabs = [
-    { path: "/hello", label: "Hello" },
+    { path: "/", label: "Hello" },
     { path: "/play", label: "Play" },
     { path: "/docs", label: "Docs" },
     { path: "/apps", label: "Apps" },

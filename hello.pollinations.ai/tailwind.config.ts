@@ -19,7 +19,7 @@ export default {
                 lime: Palette.lime,
                 pink: Palette.pink,
                 cyan: Palette.cyan,
-                
+
                 // Monochrome Scale
                 charcoal: Palette.charcoal,
                 "gray-dark": Palette.grayDark,
@@ -46,12 +46,6 @@ export default {
                 "lime-sm": Shadows.limeSm,
                 "lime-3": Shadows.lime3,
                 "lime-md": Shadows.limeMd,
-                "charcoal-muted": Shadows.charcoalMuted,
-
-                // Legacy names for backwards compatibility
-                "brutal": Shadows.blackLg,
-                "brutal-lime": `8px 8px 0px 0px ${Palette.lime}`,
-                "brutal-lg": `16px 16px 0px 0px ${Palette.black}`,
             },
         },
     },
@@ -60,13 +54,11 @@ export default {
         plugin(({ addBase }) => {
             addBase({
                 ":root": {
-                    // Raw Colors (for utility access if needed)
+                    // CSS variables for Tailwind colors
                     "--color-yellow": Palette.yellow,
                     "--color-pink": Palette.pink,
                     "--color-cyan": Palette.cyan,
-                    "--color-light-gray": Palette.lightGray,
                     "--color-charcoal": Palette.charcoal,
-                    "--color-black": Palette.black,
                 },
             });
         }),

@@ -9,8 +9,8 @@ import { Colors } from "../config/colors";
 const tabs = [
     { path: "/hello", label: "Hello" },
     { path: "/play", label: "Play" },
-    { path: "/apps", label: "Apps" },
     { path: "/docs", label: "Docs" },
+    { path: "/apps", label: "Apps" },
     { path: "/community", label: "Community" },
 ];
 
@@ -23,12 +23,10 @@ function Layout() {
     const [emailCopied, setEmailCopied] = useState(false);
     return (
         <div className="relative min-h-screen bg-offwhite/80">
-            {/* Floating Transparent Header - Centered */}
+            {/* Floating Transparent Header */}
             <header
                 className={`fixed top-0 left-0 right-0 z-50 transition-transform duration-300 ${
-                    showHeader
-                        ? "translate-y-0"
-                        : "md:translate-y-0 -translate-y-full"
+                    showHeader ? "translate-y-0" : "-translate-y-full"
                 }`}
             >
                 <div className="w-full px-4 py-3 md:py-4">
@@ -49,7 +47,7 @@ function Layout() {
 
                             {/* Navigation Tabs - Two rows right-aligned */}
                             <div className="flex flex-col gap-2 flex-1">
-                                {/* Row 1: Hello, Play, Apps */}
+                                {/* Row 1: Hello, Play, Docs */}
                                 <div className="flex gap-2 justify-end">
                                     {tabs.slice(0, 3).map((tab) => (
                                         <NavLink
@@ -71,7 +69,7 @@ function Layout() {
                                         </NavLink>
                                     ))}
                                 </div>
-                                {/* Row 2: Docs, Community */}
+                                {/* Row 2: Apps, Community */}
                                 <div className="flex gap-2 justify-end">
                                     {tabs.slice(3, 5).map((tab) => (
                                         <NavLink
@@ -339,7 +337,7 @@ function Layout() {
                         {/* Desktop: Original order */}
                         <div className="hidden md:flex md:items-end md:justify-between gap-3">
                             {/* Left: Branding Island */}
-                            <div className="bg-offwhite/70 backdrop-blur-md px-3 py-2 text-left">
+                            <div className="px-3 py-2 text-left">
                                 <p className="font-headline text-xs font-black text-offblack uppercase tracking-wider">
                                     Pollinations.AI - 2025
                                 </p>
@@ -349,7 +347,7 @@ function Layout() {
                             </div>
 
                             {/* Center: Links Island */}
-                            <div className="bg-offwhite/70 backdrop-blur-md px-3 py-2">
+                            <div className="px-3 py-2">
                                 <div className="flex items-center gap-3 text-xs">
                                     <a
                                         href="/terms"
@@ -391,7 +389,7 @@ function Layout() {
                             </div>
 
                             {/* Right: Social Icons Island */}
-                            <div className="bg-offwhite/70 backdrop-blur-md px-2 py-2">
+                            <div className="px-2 py-2">
                                 <div className="flex gap-3">
                                     {Object.entries(SOCIAL_LINKS).map(
                                         ([key, { url, icon, label }]) => (

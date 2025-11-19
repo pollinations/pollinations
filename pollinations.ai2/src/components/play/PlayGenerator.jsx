@@ -5,8 +5,7 @@ import { useModelList } from "../../hooks/useModelList";
 import { Colors } from "../../config/colors";
 import { TextGenerator } from "../TextGenerator";
 import { PLAY_PAGE } from "../../config/content";
-
-const API_KEY = import.meta.env.VITE_POLLINATIONS_API_KEY;
+import { API_KEY } from "../../config/api";
 
 /**
  * PlayGenerator Component

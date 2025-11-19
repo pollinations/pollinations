@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
-
-const API_KEY = import.meta.env.VITE_POLLINATIONS_API_KEY;
+import { API_KEY } from "../config/api";
 
 /**
  * Custom hook to fetch and manage available models from the API
@@ -40,8 +39,10 @@ export function useModelList() {
                         id: modelId,
                         name: modelId,
                         type: "image",
-                        hasImageInput: m.input_modalities?.includes("image") || false,
-                        hasAudioOutput: m.output_modalities?.includes("audio") || false,
+                        hasImageInput:
+                            m.input_modalities?.includes("image") || false,
+                        hasAudioOutput:
+                            m.output_modalities?.includes("audio") || false,
                         inputModalities: m.input_modalities,
                         outputModalities: m.output_modalities,
                     };
@@ -54,8 +55,10 @@ export function useModelList() {
                         id: modelId,
                         name: modelId,
                         type: "text",
-                        hasImageInput: m.input_modalities?.includes("image") || false,
-                        hasAudioOutput: m.output_modalities?.includes("audio") || false,
+                        hasImageInput:
+                            m.input_modalities?.includes("image") || false,
+                        hasAudioOutput:
+                            m.output_modalities?.includes("audio") || false,
                         inputModalities: m.input_modalities,
                         outputModalities: m.output_modalities,
                     };

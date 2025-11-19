@@ -1,7 +1,5 @@
 import { useState, useEffect } from "react";
-import { API, DEFAULTS } from "../config/api";
-
-const API_KEY = import.meta.env.VITE_POLLINATIONS_API_KEY;
+import { API, DEFAULTS, API_KEY } from "../config/api";
 
 export function usePollinationsText(prompt, seed, options = {}) {
     const [text, setText] = useState("");

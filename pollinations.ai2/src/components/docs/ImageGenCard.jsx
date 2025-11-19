@@ -3,8 +3,7 @@ import { Heading, Label } from "../ui/typography";
 import { Button } from "../ui/button";
 import { TextGenerator } from "../TextGenerator";
 import { DOCS_PAGE } from "../../config/content";
-
-const API_KEY = import.meta.env.VITE_POLLINATIONS_API_KEY;
+import { API_KEY } from "../../config/api";
 
 /**
  * Image Generation Card Component

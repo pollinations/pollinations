@@ -1,13 +1,19 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
+import tsconfigPaths from "vite-tsconfig-paths";
+import svgr from "vite-plugin-svgr";
+import { cloudflare } from "@cloudflare/vite-plugin";
 
 export default defineConfig({
-    plugins: [react()],
+    plugins: [react(), tsconfigPaths(), svgr(), cloudflare()],
     server: {
-        port: 3001,
         open: true,
     },
-    build: {
-        outDir: "dist",
+    optimizeDeps: {
+        esbuildOptions: {
+            loader: {
+                ".js": "jsx",
+            },
+        },
     },
 });

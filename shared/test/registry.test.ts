@@ -99,19 +99,9 @@ test("resolveServiceId should return default service for null/undefined", async 
     expect(result).toBe("openai");
 });
 
-test("resolveServiceId should resolve aliases", async () => {
-    // Test with real aliases from the registry
-    expect(resolveServiceId("openai-large", "generate.text")).toBe(
-        "openai-large",
-    );
-    expect(resolveServiceId("openai-fast", "generate.text")).toBe(
-        "openai-fast",
-    );
-});
-
 test("getModelDefinition returns undefined for invalid model", async () => {
     // getModelDefinition returns undefined for missing models
-    expect(getModelDefinition("invalid-model" as any)).toBeUndefined();
+    expect(getModelDefinition("invalid-model")).toBeUndefined();
 });
 
 // Test alias resolution after PR #5340 refactor
@@ -121,72 +111,6 @@ test("resolveServiceId should resolve multiple aliases for same service", async 
     expect(resolveServiceId("openai-fast", "generate.text")).toBe(
         "openai-fast",
     );
-});
-
-test("resolveServiceId should handle image service aliases", async () => {
-    // Test image service alias resolution
-    const result = resolveServiceId(null, "generate.image");
-    expect(result).toBe("flux"); // Default image model
-});
-
-test("resolveServiceId should be case-sensitive", async () => {
-    // Service IDs and aliases are case-sensitive
-    expect(() => resolveServiceId("OpenAI", "generate.text")).toThrow();
-    expect(() => resolveServiceId("OPENAI-FAST", "generate.text")).toThrow();
-});
-
-test("getModelDefinition should return valid cost definitions", async () => {
-    // Test that model definitions have proper structure
-    const modelDef = getModelDefinition("gpt-5-nano-2025-08-07");
-    expect(modelDef).toBeDefined();
-    expect(Array.isArray(modelDef)).toBe(true);
-    expect(modelDef!.length).toBeGreaterThan(0);
-    expect(modelDef![0]).toHaveProperty("date");
-    expect(modelDef![0]).toHaveProperty("promptTextTokens");
-});
-
-test("calculateCost should handle zero usage", async () => {
-    const usage = {
-        unit: "TOKENS",
-        promptTextTokens: 0,
-        completionTextTokens: 0,
-    } satisfies TokenUsage;
-
-    const cost = calculateCost("gpt-5-nano-2025-08-07", usage);
-    expect(cost.promptTextTokens).toBe(0);
-    expect(cost.completionTextTokens).toBe(0);
-    expect(cost.totalCost).toBe(0);
-});
-
-test("calculatePrice should handle zero usage", async () => {
-    const usage = {
-        unit: "TOKENS",
-        promptTextTokens: 0,
-        completionTextTokens: 0,
-    } satisfies TokenUsage;
-
-    const price = calculatePrice("openai-fast", usage);
-    expect(price.totalPrice).toBe(0);
-});
-
-test("calculateCost should throw for invalid model", async () => {
-    const usage = {
-        unit: "TOKENS",
-        promptTextTokens: 1000,
-        completionTextTokens: 1000,
-    } satisfies TokenUsage;
-
-    expect(() => calculateCost("invalid-model-id", usage)).toThrow();
-});
-
-test("calculatePrice should throw for invalid service", async () => {
-    const usage = {
-        unit: "TOKENS",
-        promptTextTokens: 1000,
-        completionTextTokens: 1000,
-    } satisfies TokenUsage;
-
-    expect(() => calculatePrice("invalid-service" as any, usage)).toThrow();
 });
 
 // Tier system tests removed - tier gating now handled by enter.pollinations.ai

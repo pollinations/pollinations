@@ -53,7 +53,7 @@ export const ImageParamsSchema = z
         width: sanitizedSideLength,
         height: sanitizedSideLength,
         seed: sanitizedSeed,
-        model: z.enum(allowedModels), // No default - will throw if invalid/missing
+        model: z.enum(allowedModels),
         enhance: sanitizedBoolean.catch(false),
         nologo: sanitizedBoolean.catch(false),
         negative_prompt: z.coerce.string().catch("worst quality, blurry"),

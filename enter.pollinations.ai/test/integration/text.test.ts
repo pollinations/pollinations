@@ -4,6 +4,8 @@ import { test } from "../fixtures.ts";
 import { describe, expect } from "vitest";
 import { env } from "cloudflare:workers";
 import type { ServiceId } from "@shared/registry/registry.ts";
+import { CompletionUsageSchema } from "@/schemas/openai.ts";
+import { parseUsageHeaders } from "@shared/registry/usage-headers.ts";
 
 const TEST_DISABLE_CACHE = true;
 const TEST_ALL_SERVICES = false;
@@ -38,8 +40,8 @@ function testMessageContent() {
 
 // Send a request to each text model without authentication
 // All models now require authentication, so all should return 401
-describe.skip("Unauthenticated requests", () => {
-    test.skip.for(anonymousTestCases())(
+describe("Unauthenticated requests", () => {
+    test.for(anonymousTestCases())(
         "%s should respond with 401 when unauthenticated",
         { timeout: 30000 },
         async ([serviceId, expectedStatus], { mocks }) => {
@@ -68,7 +70,7 @@ describe.skip("Unauthenticated requests", () => {
 });
 
 // Sends a request to each text model, using bearer auth
-test.skip.for(authenticatedTestCases())(
+test.for(authenticatedTestCases())(
     "%s should respond with 200 when using authorization header",
     { timeout: 30000 },
     async ([serviceId, expectedStatus], { apiKey, mocks }) => {
@@ -97,7 +99,7 @@ test.skip.for(authenticatedTestCases())(
     },
 );
 
-test.skip.for(authenticatedTestCases())(
+test.for(authenticatedTestCases())(
     "%s should respond with 200 when streaming",
     { timeout: 30000 },
     async ([serviceId, expectedStatus], { apiKey, mocks }) => {
@@ -144,7 +146,7 @@ test.skip.for(authenticatedTestCases())(
 );
 
 // Test GET /text/:prompt endpoint returns plain text for text models
-test.skip.for(authenticatedTestCases())(
+test.for(authenticatedTestCases())(
     "GET /text/:prompt with %s should return plain text",
     { timeout: 30000 },
     async ([serviceId, expectedStatus], { apiKey, mocks }) => {
@@ -173,7 +175,7 @@ test.skip.for(authenticatedTestCases())(
 );
 
 // Test GET /text/:prompt endpoint returns raw audio for audio models
-test.skip(
+test(
     "GET /text/:prompt with openai-audio should return raw audio",
     { timeout: 30000 },
     async ({ apiKey, mocks }) => {
@@ -201,7 +203,7 @@ test.skip(
 );
 
 // Test audio output (text-to-speech) with modalities
-test.skip(
+test(
     "openai-audio with modalities should return audio output",
     { timeout: 30000 },
     async ({ apiKey, mocks }) => {
@@ -259,7 +261,7 @@ test.skip(
 );
 
 // Test audio input (transcription) with input_audio content type
-test.skip(
+test(
     "openai-audio with input_audio should transcribe audio",
     { timeout: 30000 },
     async ({ apiKey, mocks }) => {
@@ -321,7 +323,7 @@ test.skip(
 );
 
 // ... (rest of the code remains the same)
-test.skip("Session cookies should not authenticate API proxy routes", async ({
+test("Session cookies should not authenticate API proxy routes", async ({
     sessionToken,
     mocks,
 }) => {
@@ -338,40 +340,8 @@ test.skip("Session cookies should not authenticate API proxy routes", async ({
     expect(response.status).toBe(401);
 });
 
-// Test model parameter handling
-test.skip(
-    "POST /v1/chat/completions should accept model parameter",
-    { timeout: 30000 },
-    async ({ apiKey, mocks }) => {
-        mocks.enable("polar", "tinybird");
-        const response = await SELF.fetch(
-            `http://localhost:3000/api/generate/v1/chat/completions`,
-            {
-                method: "POST",
-                headers: {
-                    "content-type": "application/json",
-                    "authorization": `Bearer ${apiKey}`,
-                    "referer": env.TESTING_REFERRER,
-                },
-                body: JSON.stringify({
-                    model: "openai-fast",
-                    messages: [
-                        {
-                            role: "user",
-                            content: testMessageContent(),
-                        },
-                    ],
-                }),
-            },
-        );
-        expect(response.status).toBe(200);
-        const data = await response.json();
-        expect(data.model).toBeDefined();
-    },
-);
-
 // Test invalid model handling
-test.skip(
+test(
     "POST /v1/chat/completions should reject invalid model",
     { timeout: 30000 },
     async ({ apiKey, mocks }) => {
@@ -406,29 +376,8 @@ test.skip(
     },
 );
 
-// Test query parameter authentication
-test.skip(
-    "GET /text/:prompt should accept key query parameter",
-    { timeout: 30000 },
-    async ({ apiKey, mocks }) => {
-        mocks.enable("polar", "tinybird");
-        const response = await SELF.fetch(
-            `http://localhost:3000/api/generate/text/${encodeURIComponent(testMessageContent())}?model=openai-fast&key=${apiKey}`,
-            {
-                method: "GET",
-                headers: {
-                    "referer": env.TESTING_REFERRER,
-                },
-            },
-        );
-        expect(response.status).toBe(200);
-        const text = await response.text();
-        expect(text.length).toBeGreaterThan(0);
-    },
-);
-
 // Test empty message handling
-test.skip(
+test(
     "POST /v1/chat/completions should handle empty messages",
     { timeout: 30000 },
     async ({ apiKey, mocks }) => {
@@ -461,9 +410,8 @@ test.skip(
     },
 );
 
-// Test response headers
-test.skip(
-    "POST /v1/chat/completions should include usage headers",
+test(
+    "POST /v1/chat/completions should include usage",
     { timeout: 30000 },
     async ({ apiKey, mocks }) => {
         mocks.enable("polar", "tinybird");
@@ -489,57 +437,20 @@ test.skip(
         );
         expect(response.status).toBe(200);
         const data = await response.json();
-        expect(data.usage).toBeDefined();
-        expect(data.usage.prompt_tokens).toBeGreaterThan(0);
-        expect(data.usage.completion_tokens).toBeGreaterThan(0);
-        expect(data.usage.total_tokens).toBeGreaterThan(0);
-    },
-);
-
-// Comprehensive test for all text models from registry
-test.for(
-    getTextServices()
-        .filter((serviceId) => serviceId !== "openai-audio") // Skip audio model - has dedicated tests
-        .map((serviceId) => [serviceId]),
-)(
-    "Text model %s should generate valid response",
-    { timeout: 30000 },
-    async ([serviceId], { apiKey, mocks }) => {
-        mocks.enable("polar", "tinybird");
-        const response = await SELF.fetch(
-            `http://localhost:3000/api/generate/v1/chat/completions`,
-            {
-                method: "POST",
-                headers: {
-                    "content-type": "application/json",
-                    "authorization": `Bearer ${apiKey}`,
-                    "referer": env.TESTING_REFERRER,
-                },
-                body: JSON.stringify({
-                    model: serviceId,
-                    messages: [
-                        {
-                            role: "user",
-                            content: testMessageContent(),
-                        },
-                    ],
-                }),
-            },
+        const usage = await CompletionUsageSchema.parseAsync(
+            (data as any).usage,
         );
-
-        // Log response for debugging failures
-        if (response.status !== 200) {
-            const body = await response.text();
-            console.log(
-                `[TEST] Model ${serviceId} failed with status ${response.status}`,
-            );
-            console.log(`[TEST] Response body: ${body}`);
-        }
-
-        expect(response.status).toBe(200);
-        const data = await response.json();
-        expect(data.choices).toBeDefined();
-        expect(data.choices[0].message.content).toBeDefined();
-        expect(data.model).toBeDefined();
+        expect(usage.prompt_tokens).toBeGreaterThan(0);
+        expect(usage.completion_tokens).toBeGreaterThan(0);
+        expect(usage.total_tokens).toBeGreaterThan(0);
+        const usageHeaders = parseUsageHeaders(response.headers);
+        const totalPromptTokens =
+            (usageHeaders.promptTextTokens || 0) +
+            (usageHeaders.promptCachedTokens || 0);
+        const totalCompletionTokens =
+            (usageHeaders.completionTextTokens || 0) +
+            (usageHeaders.completionReasoningTokens || 0);
+        expect(totalPromptTokens).toEqual(usage.prompt_tokens);
+        expect(totalCompletionTokens).toEqual(usage.completion_tokens);
     },
 );

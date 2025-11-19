@@ -12,7 +12,7 @@ import { generateTextPortkey } from "./generateTextPortkey.js";
 import { setupFeedEndpoint, sendToFeedListeners } from "./feed.js";
 import { processRequestForAds } from "./ads/initRequestFilter.js";
 import { createStreamingAdWrapper } from "./ads/streamingAdWrapper.js";
-import { getRequestData, prepareModelsForOutput } from "./requestUtils.js";
+import { getRequestData } from "./requestUtils.js";
 
 // Import shared utilities
 import { getIp } from "../shared/extractFromRequest.js";
@@ -100,7 +100,7 @@ app.use((req, res, next) => {
 
     if (!expectedToken) {
         // If ENTER_TOKEN is not configured, allow all requests (backward compatibility)
-        authLog("⚠️  ENTER_TOKEN not configured - allowing request");
+        authLog("!  ENTER_TOKEN not configured - allowing request");
         return next();
     }
 
@@ -139,10 +139,16 @@ const QUEUE_CONFIG = {
 
 // Using getIp from shared auth-utils.js
 
-// GET /models request handler
+// Deprecated /models endpoint - moved to gateway
 app.get("/models", (req, res) => {
-    // Use prepareModelsForOutput to remove pricing information and apply sorting
-    res.json(prepareModelsForOutput(availableModels));
+    res.status(410).json({
+        error: "Endpoint moved",
+        message:
+            "The /models endpoint has been moved to the API gateway. Please use: https://enter.pollinations.ai/api/generate/text/models",
+        deprecated_endpoint: `${req.protocol}://${req.get("host")}/models`,
+        new_endpoint: "https://enter.pollinations.ai/api/generate/text/models",
+        documentation: "https://enter.pollinations.ai/api/docs",
+    });
 });
 
 setupFeedEndpoint(app);
@@ -334,19 +340,24 @@ export async function sendErrorResponse(
     requestData,
     statusCode = 500,
 ) {
-    // Use error.status if available, otherwise use the provided statusCode
     const responseStatus = error.status || statusCode;
+    const errorTypes = {
+        400: "Bad Request",
+        401: "Unauthorized",
+        403: "Forbidden",
+        404: "Not Found",
+        429: "Too Many Requests",
+    };
+    const errorType = errorTypes[statusCode] || "Internal Server Error";
 
-    // Create a simplified error response
     const errorResponse = {
-        error: error.message || "An error occurred",
-        status: responseStatus,
+        error: errorType,
+        message: error.message || "An error occurred",
+        requestId: Math.random().toString(36).substring(7),
+        requestParameters: requestData || {},
     };
 
-    // Include detailed error information if available, without wrapping
-    if (error.details) {
-        errorResponse.details = error.details;
-    }
+    if (error.details) errorResponse.details = error.details;
 
     // Extract client information (for logs only)
     const clientInfo = {
@@ -655,20 +666,16 @@ app.post("/", async (req, res) => {
 });
 
 app.get("/openai/models", (req, res) => {
-    const models = availableModels
-        .filter((model) => !model.hidden)
-        .map((model) => {
-            // Get provider from cost data using the model's config
-            const config =
-                typeof model.config === "function"
-                    ? model.config()
-                    : model.config;
-            return {
-                id: model.name,
-                object: "model",
-                created: Date.now(),
-            };
-        });
+    const models = availableModels.map((model) => {
+        // Get provider from cost data using the model's config
+        const config =
+            typeof model.config === "function" ? model.config() : model.config;
+        return {
+            id: model.name,
+            object: "model",
+            created: Date.now(),
+        };
+    });
     res.json({
         object: "list",
         data: models,
@@ -867,6 +874,7 @@ async function generateTextBasedOnModel(messages, options) {
         throw new Error("Model parameter is required");
     }
     const model = options.model;
+
     log("Using model:", model, "with options:", JSON.stringify(options));
 
     try {

@@ -198,13 +198,9 @@ async function trackRequest(
 ): Promise<RequestTrackingData> {
     const modelRequested = await extractModelRequested(request);
 
-    // Validate model name - throw 400 for invalid models (user error)
-    let resolvedModelRequested: ServiceId;
+    let resolvedModelRequested: ServiceId | undefined;
     try {
-        resolvedModelRequested = resolveServiceId(
-            modelRequested,
-            eventType,
-        ) as ServiceId;
+        resolvedModelRequested = resolveServiceId(modelRequested, eventType);
     } catch (error) {
         throw new HTTPException(400, {
             message:
@@ -365,7 +361,6 @@ function createTrackingEvent({
 
         modelRequested: requestTracking.modelRequested,
         resolvedModelRequested: requestTracking.resolvedModelRequested,
-        freeModelRequested: false,
         modelUsed: responseTracking.modelUsed,
 
         isBilledUsage:

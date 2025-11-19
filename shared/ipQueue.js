@@ -174,7 +174,7 @@ export async function enqueue(req, fn, { interval = 6000, cap = 1, forceCap = fa
 	// Check if adding to queue would exceed maxQueueSize
 	if (maxQueueSize && totalInQueue >= maxQueueSize) {
 		const userContext = authResult.username ? `user: ${authResult.username} (${authResult.userId})` : `IP: ${ip}`;
-		const message = `Queue full for ${userContext}: ${totalInQueue} requests already queued (max: ${maxQueueSize})`;
+		const message = `Queue full for ${userContext}: ${totalInQueue} requests already queued (max: ${maxQueueSize}). Get unlimited access at https://enter.pollinations.ai`;
 		
 		errorLog("🚫 RATE LIMIT: %s - tier: %s", message, authResult.tier);
 		

@@ -184,7 +184,7 @@ async function handleRequest(req, res, requestData) {
 
             if (!hasAccess) {
                 const error = new Error(
-                    `Model not found or tier not high enough. Your tier: ${userTier}, required tier: ${model.tier}. To get a token or add a referrer, visit https://auth.pollinations.ai`,
+                    `Model not found or tier not high enough. Your tier: ${userTier}, required tier: ${model.tier}. Get unlimited access at https://enter.pollinations.ai`,
                 );
                 error.status = 402;
                 await sendErrorResponse(res, req, error, requestData, 402);
@@ -192,7 +192,7 @@ async function handleRequest(req, res, requestData) {
             }
         } else {
             log(`Model not found: ${requestData.model}`);
-            const error = new Error(`Model not found: ${requestData.model}`);
+            const error = new Error(`Model not found: ${requestData.model}. See all available models at https://enter.pollinations.ai`);
             error.status = 404;
             await sendErrorResponse(res, req, error, requestData, 404);
             return;

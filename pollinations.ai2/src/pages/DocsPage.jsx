@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { TextGenerator } from "../components/TextGenerator";
-import { DOCS_INTRO, DOCS_API_REFERENCE } from "../config/content";
+import { DOCS_PAGE } from "../config/content";
 import { CopyIcon } from "../icons/CopyIcon";
 import { ExternalLinkIcon } from "../icons/ExternalLinkIcon";
 import { Button } from "../components/ui/button";
@@ -21,18 +21,18 @@ function DocsPage() {
         <PageContainer>
             <PageCard>
                 {/* Title */}
-                <Title spacing="comfortable">Integrate</Title>
+                <Title spacing="comfortable">
+                    <TextGenerator content={DOCS_PAGE.title} />
+                </Title>
 
                 {/* Intro */}
                 <TextGenerator
-                    text={DOCS_INTRO.prompt}
-                    seed={DOCS_INTRO.seed}
+                    content={DOCS_PAGE.intro}
                     as="div"
                     className="font-body text-offblack/70 text-base leading-relaxed mb-4"
                 />
                 <TextGenerator
-                    text={DOCS_API_REFERENCE.prompt}
-                    seed={DOCS_API_REFERENCE.seed}
+                    content={DOCS_PAGE.apiReference}
                     as="div"
                     className="font-body text-offblack/70 text-base leading-relaxed mb-6"
                 />
@@ -45,7 +45,7 @@ function DocsPage() {
                         variant="secondary"
                         size="lg"
                     >
-                        Full API Docs
+                        <TextGenerator content={DOCS_PAGE.fullApiDocsButton} />
                         <ExternalLinkIcon stroke={Colors.black} />
                     </Button>
                     <Button
@@ -59,11 +59,13 @@ function DocsPage() {
                             setTimeout(() => setAgentPromptCopied(false), 2000);
                         }}
                     >
-                        Agent Prompt
+                        <TextGenerator content={DOCS_PAGE.agentPromptButton} />
                         <CopyIcon />
                         {agentPromptCopied && (
                             <span className="absolute -top-5 left-0 font-headline text-xs font-black text-rose uppercase tracking-wider">
-                                Copied!
+                                <TextGenerator
+                                    content={DOCS_PAGE.copiedLabel}
+                                />
                             </span>
                         )}
                     </Button>

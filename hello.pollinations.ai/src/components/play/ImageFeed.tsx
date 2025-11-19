@@ -155,7 +155,7 @@ export function ImageFeed({ selectedModel, onFeedPromptChange }: ImageFeedProps)
             {/* Display */}
             <div className="relative min-h-[32rem] max-h-[32rem] flex items-center justify-center overflow-hidden">
                 {!currentDisplay ? (
-                    <div className="text-center py-24 text-offblack/50 font-body">
+                    <div className="text-center py-24 text-gray font-body">
                         <p>Waiting for content...</p>
                         {selectedModel && (
                             <p className="text-xs mt-2">
@@ -171,7 +171,7 @@ export function ImageFeed({ selectedModel, onFeedPromptChange }: ImageFeedProps)
                     />
                 ) : (
                     <div className="w-full p-8 overflow-auto max-h-[32rem] scrollbar-hide">
-                        <p className="font-body text-offblack text-lg leading-relaxed whitespace-pre-wrap">
+                        <p className="font-body text-charcoal text-lg leading-relaxed whitespace-pre-wrap">
                             {currentDisplay.content}
                         </p>
                     </div>

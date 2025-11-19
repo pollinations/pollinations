@@ -18,12 +18,12 @@ import { cn } from "../../lib/utils";
 // - compact (p-4): Roadmap items, timeline entries
 //
 // Visual Pattern:
-// - Light dark background (bg-offblack/5)
+// - Light background (bg-gray-medium)
 // - No borders (contrast with PageCard's rose border)
 // - Responsive padding
 // ============================================
 
-const subCardVariants = cva("bg-offblack/5", {
+const subCardVariants = cva("bg-gray-medium", {
     variants: {
         size: {
             default: "p-6", // Feature cards (HelloPage, CommunityPage)

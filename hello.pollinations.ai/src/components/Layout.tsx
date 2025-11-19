@@ -22,7 +22,7 @@ function Layout() {
     const showHeader = useHeaderVisibility();
     const [emailCopied, setEmailCopied] = useState(false);
     return (
-        <div className="relative min-h-screen bg-offwhite/80">
+        <div className="relative min-h-screen bg-gray-light">
             {/* Floating Transparent Header */}
             <header
                 className={`fixed top-0 left-0 right-0 z-50 transition-transform duration-300 ${
@@ -30,7 +30,7 @@ function Layout() {
                 }`}
             >
                 <div className="w-full px-4 py-3 md:py-4">
-                    <div className="max-w-4xl mx-auto">
+                    <div className="max-w-4xl mx-auto pl-6 md:pl-8">
                         {/* Mobile: Logo left, Two rows of buttons right */}
                         <div className="md:hidden flex items-center gap-3">
                             {/* Logo - Left side */}
@@ -40,7 +40,7 @@ function Layout() {
                                     alt="pollinations.ai"
                                     className="w-full h-full object-contain"
                                     style={{
-                                        filter: `brightness(0) drop-shadow(4px 4px 0px ${Colors.rose})`,
+                                        filter: `brightness(0) drop-shadow(4px 4px 0px ${Colors.pink})`,
                                     }}
                                 />
                             </div>
@@ -104,7 +104,7 @@ function Layout() {
                                         alt="pollinations.ai"
                                         className="w-full h-full object-contain"
                                         style={{
-                                            filter: `brightness(0) drop-shadow(4px 4px 0px ${Colors.rose})`,
+                                            filter: `brightness(0) drop-shadow(4px 4px 0px ${Colors.pink})`,
                                         }}
                                     />
                                 </div>
@@ -172,12 +172,12 @@ function Layout() {
                                             variant="iconText"
                                             size={null}
                                         >
-                                            <span className="font-headline text-xs font-black uppercase tracking-wider text-rose">
+                                            <span className="font-headline text-xs font-black uppercase tracking-wider text-pink">
                                                 Enter
                                             </span>
                                             <ExternalLinkIcon
                                                 className="w-3 h-3"
-                                                stroke={Colors.rose}
+                                                stroke={Colors.pink}
                                             />
                                         </Button>
                                     </div>
@@ -249,12 +249,12 @@ function Layout() {
                                     size={null}
                                     className="h-10"
                                 >
-                                    <span className="font-headline text-xs font-black uppercase tracking-wider text-rose">
+                                    <span className="font-headline text-xs font-black uppercase tracking-wider text-pink">
                                         Enter
                                     </span>
                                     <ExternalLinkIcon
                                         className="w-3 h-3"
-                                        stroke={Colors.rose}
+                                        stroke={Colors.pink}
                                     />
                                 </Button>
                             </div>
@@ -292,18 +292,18 @@ function Layout() {
                             <div className="flex items-center justify-center gap-3 text-xs">
                                 <a
                                     href="/terms"
-                                    className="font-body text-offblack/60 hover:text-offblack transition-colors"
+                                    className="font-body text-charcoal hover:text-charcoal transition-colors"
                                 >
                                     Terms
                                 </a>
-                                <span className="text-offblack/30">•</span>
+                                <span className="text-gray-light">•</span>
                                 <a
                                     href="/privacy"
-                                    className="font-body text-offblack/60 hover:text-offblack transition-colors"
+                                    className="font-body text-charcoal hover:text-charcoal transition-colors"
                                 >
                                     Privacy
                                 </a>
-                                <span className="text-offblack/30">•</span>
+                                <span className="text-gray-light">•</span>
                                 <Button
                                     type="button"
                                     onClick={() => {
@@ -321,7 +321,7 @@ function Layout() {
                                 >
                                     hello@pollinations.ai
                                     {emailCopied && (
-                                        <span className="absolute -top-5 left-0 font-headline text-xs font-black text-rose uppercase tracking-wider">
+                                        <span className="absolute -top-5 left-0 font-headline text-xs font-black text-pink uppercase tracking-wider">
                                             Copied!
                                         </span>
                                     )}
@@ -331,87 +331,151 @@ function Layout() {
                     </div>
                 </div>
 
-                {/* Desktop: Original discrete islands */}
-                <div className="w-full px-4 py-2 md:py-4">
+                {/* Desktop: Single line with mobile styling */}
+                <div className="hidden md:block w-full px-4 py-3">
                     <div className="max-w-4xl mx-auto">
-                        {/* Desktop: Original order */}
-                        <div className="hidden md:flex md:items-end md:justify-between gap-3">
-                            {/* Left: Branding Island */}
-                            <div className="px-3 py-2 text-left">
-                                <p className="font-headline text-xs font-black text-offblack uppercase tracking-wider">
+                        <div className="flex items-center justify-between gap-6">
+                            {/* Left: Branding Text */}
+                            <div className="text-left flex-shrink-0">
+                                <p className="font-headline text-xs font-black text-charcoal uppercase tracking-wider">
                                     Pollinations.AI - 2025
                                 </p>
-                                <p className="font-body text-[10px] text-offblack/60">
+                                <p className="font-body text-[10px] text-charcoal">
                                     Open source AI innovation from Berlin
                                 </p>
                             </div>
 
-                            {/* Center: Links Island */}
-                            <div className="px-3 py-2">
-                                <div className="flex items-center gap-3 text-xs">
-                                    <a
-                                        href="/terms"
-                                        className="font-body text-offblack/60 hover:text-offblack transition-colors"
-                                    >
+                            {/* Center: Links as Buttons */}
+                            <div className="flex items-center flex-shrink-0">
+                                <Button
+                                    as="a"
+                                    href="/terms"
+                                    variant="iconText"
+                                    size={null}
+                                    className="h-10"
+                                >
+                                    <span className="font-headline text-xs font-black uppercase tracking-wider text-charcoal">
                                         Terms
-                                    </a>
-                                    <span className="text-offblack/30">•</span>
-                                    <a
-                                        href="/privacy"
-                                        className="font-body text-offblack/60 hover:text-offblack transition-colors"
-                                    >
+                                    </span>
+                                </Button>
+                                <Button
+                                    as="a"
+                                    href="/privacy"
+                                    variant="iconText"
+                                    size={null}
+                                    className="h-10"
+                                >
+                                    <span className="font-headline text-xs font-black uppercase tracking-wider text-charcoal">
                                         Privacy
-                                    </a>
-                                    <span className="text-offblack/30">•</span>
-                                    <Button
-                                        type="button"
-                                        onClick={() => {
-                                            navigator.clipboard.writeText(
-                                                "hello@pollinations.ai"
-                                            );
-                                            setEmailCopied(true);
-                                            setTimeout(
-                                                () => setEmailCopied(false),
-                                                2000
-                                            );
-                                        }}
-                                        variant="ghost"
-                                        size={null}
-                                    >
-                                        hello@pollinations.ai
-                                        {emailCopied && (
-                                            <span className="absolute -top-5 left-0 font-headline text-xs font-black text-rose uppercase tracking-wider">
-                                                Copied!
-                                            </span>
-                                        )}
-                                    </Button>
-                                </div>
+                                    </span>
+                                </Button>
+                                <Button
+                                    type="button"
+                                    onClick={() => {
+                                        navigator.clipboard.writeText(
+                                            "hello@pollinations.ai"
+                                        );
+                                        setEmailCopied(true);
+                                        setTimeout(
+                                            () => setEmailCopied(false),
+                                            2000
+                                        );
+                                    }}
+                                    variant="iconText"
+                                    size={null}
+                                    className="h-10"
+                                >
+                                    <span className="font-headline text-xs font-black uppercase tracking-wider text-charcoal">
+                                        Email
+                                    </span>
+                                    {emailCopied && (
+                                        <span className="absolute -top-8 left-0 font-headline text-xs font-black text-pink uppercase tracking-wider">
+                                            Copied!
+                                        </span>
+                                    )}
+                                </Button>
                             </div>
 
-                            {/* Right: Social Icons Island */}
-                            <div className="px-2 py-2">
-                                <div className="flex gap-3">
-                                    {Object.entries(SOCIAL_LINKS).map(
-                                        ([key, { url, icon, label }]) => (
-                                            <Button
-                                                key={key}
-                                                as="a"
-                                                href={url}
-                                                target="_blank"
-                                                rel="noopener noreferrer"
-                                                title={label}
-                                                variant="footerIcon"
-                                                size={null}
-                                            >
-                                                <img
-                                                    src={icon}
-                                                    alt={label}
-                                                    className="w-full h-full object-contain"
-                                                />
-                                            </Button>
-                                        )
-                                    )}
-                                </div>
+                            {/* Right: Social Buttons */}
+                            <div className="flex items-center">
+                                {/* GitHub */}
+                                <Button
+                                    as="a"
+                                    href={SOCIAL_LINKS.github.url}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    title={SOCIAL_LINKS.github.label}
+                                    variant="icon"
+                                    size={null}
+                                    className="w-10 h-10"
+                                >
+                                    <img
+                                        src={SOCIAL_LINKS.github.icon}
+                                        alt={SOCIAL_LINKS.github.label}
+                                        className="w-full h-full object-contain"
+                                    />
+                                </Button>
+                                {/* Discord */}
+                                <Button
+                                    as="a"
+                                    href={SOCIAL_LINKS.discord.url}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    title={SOCIAL_LINKS.discord.label}
+                                    variant="icon"
+                                    size={null}
+                                    className="w-10 h-10"
+                                >
+                                    <img
+                                        src={SOCIAL_LINKS.discord.icon}
+                                        alt={SOCIAL_LINKS.discord.label}
+                                        className="w-full h-full object-contain"
+                                    />
+                                </Button>
+                                {/* Other Social Icons */}
+                                {Object.entries(SOCIAL_LINKS)
+                                    .filter(
+                                        ([key]) =>
+                                            key !== "github" &&
+                                            key !== "discord"
+                                    )
+                                    .map(([key, { url, icon, label }]) => (
+                                        <Button
+                                            key={key}
+                                            as="a"
+                                            href={url}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            title={label}
+                                            variant="icon"
+                                            size={null}
+                                            className="w-10 h-10"
+                                        >
+                                            <img
+                                                src={icon}
+                                                alt={label}
+                                                className="w-full h-full object-contain"
+                                            />
+                                        </Button>
+                                    ))}
+                                {/* Enter Button */}
+                                <Button
+                                    as="a"
+                                    href="https://enter.pollinations.ai"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    variant="iconText"
+                                    size={null}
+                                    className="h-10"
+                                >
+                                    <span className="font-headline text-xs font-black uppercase tracking-wider text-pink">
+                                        Enter
+                                    </span>
+                                    <ExternalLinkIcon
+                                        className="w-3 h-3"
+                                        stroke={Colors.pink}
+                                    />
+                                </Button>
                             </div>
                         </div>
                     </div>

@@ -36,11 +36,11 @@ export function ImageGenerator({
     if (loading) {
         return (
             <div
-                className={`${className} flex items-center justify-center bg-offblack/5`}
+                className={`${className} flex items-center justify-center bg-gray-ultra-light`}
                 style={{ width, height }}
                 {...props}
             >
-                <span className="text-xs text-offblack/40">...</span>
+                <span className="text-xs text-gray">...</span>
             </div>
         );
     }
@@ -48,11 +48,11 @@ export function ImageGenerator({
     if (error || !imageUrl) {
         return (
             <div
-                className={`${className} flex items-center justify-center bg-offblack/5`}
+                className={`${className} flex items-center justify-center bg-gray-ultra-light`}
                 style={{ width, height }}
                 {...props}
             >
-                <span className="text-xs text-offblack/40">✗</span>
+                <span className="text-xs text-gray">✗</span>
             </div>
         );
     }

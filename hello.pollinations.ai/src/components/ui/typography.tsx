@@ -15,11 +15,11 @@ import { cn } from "../../lib/utils";
 // - PlayPage: "Create" / "Watch" (spacing="none" for custom)
 // ============================================
 const titleVariants = cva(
-    "font-title text-4xl md:text-5xl font-black text-offblack",
+    "font-title text-4xl md:text-5xl font-black text-charcoal",
     {
         variants: {
             spacing: {
-                default: "mb-12", // HelloPage - most spacious (default)
+                default: "mb-8", // Default spacing (reduced from mb-12)
                 comfortable: "mb-6", // DocsPage - moderate spacing
                 tight: "mb-4", // CommunityPage - compact
                 none: "", // PlayPage - custom spacing needed
@@ -80,16 +80,16 @@ Title.displayName = "Title";
 //   → Used for: Nested sections, tertiary headings
 // ============================================
 const headingVariants = cva(
-    "font-headline font-black text-offblack uppercase",
+    "font-headline font-black text-charcoal uppercase",
     {
         variants: {
             variant: {
                 // Section headings with border-left accent (H2 - major sections)
                 section:
-                    "text-2xl md:text-3xl tracking-widest border-l-4 border-rose pl-4",
+                    "text-2xl md:text-3xl tracking-widest border-l-4 border-pink pl-4",
                 // Colored headings (H3 - subsections in cards)
-                lime: "text-lg tracking-wider text-lime",
-                rose: "text-lg tracking-wider text-rose",
+                lime: "text-lg tracking-wider text-yellow",
+                rose: "text-lg tracking-wider text-pink",
                 // Simple headings (no border, no color)
                 simple: "text-xl md:text-2xl tracking-wider",
             },
@@ -150,9 +150,9 @@ Heading.displayName = "Heading";
 const bodyVariants = cva("font-body leading-relaxed", {
     variants: {
         size: {
-            base: "text-base text-offblack/80", // Main content
-            sm: "text-sm text-offblack/70", // Supporting text
-            xs: "text-xs text-offblack/70", // Fine print
+            base: "text-base text-charcoal", // Main content
+            sm: "text-sm text-charcoal", // Supporting text
+            xs: "text-xs text-charcoal", // Fine print
         },
         spacing: {
             default: "mb-4", // Standard paragraph spacing
@@ -206,7 +206,7 @@ Body.displayName = "Body";
 // - inline: Next to input or inline content
 // ============================================
 const labelVariants = cva(
-    "font-headline text-xs uppercase tracking-wider font-black text-offblack",
+    "font-headline text-xs uppercase tracking-wider font-black text-charcoal",
     {
         variants: {
             spacing: {

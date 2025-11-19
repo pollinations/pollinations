@@ -133,8 +133,8 @@ export function ImageGenCard() {
                                     onClick={() => setSelectedPrompt(prompt)}
                                     className={`px-3 py-1.5 font-mono text-xs border-2 transition-all cursor-pointer ${
                                         selectedPrompt === prompt
-                                            ? "bg-lime/90 border-rose font-black shadow-rose-sm"
-                                            : "bg-offblack/10 border-offblack/30 hover:border-rose"
+                                            ? "bg-yellow border-pink font-black shadow-pink-sm"
+                                            : "bg-gray-ultra-light border-gray hover:border-pink"
                                     }`}
                                 >
                                     {prompt}
@@ -165,8 +165,8 @@ export function ImageGenCard() {
                                     onClick={() => toggleParam(param)}
                                     className={`px-3 py-1.5 font-mono text-xs border-2 transition-all cursor-pointer ${
                                         params.has(param)
-                                            ? "bg-lime/90 border-rose font-black shadow-rose-sm"
-                                            : "bg-offblack/10 border-offblack/30 hover:border-rose"
+                                            ? "bg-yellow border-pink font-black shadow-pink-sm"
+                                            : "bg-gray-ultra-light border-gray hover:border-pink"
                                     }`}
                                 >
                                     {param}
@@ -177,9 +177,9 @@ export function ImageGenCard() {
                 </div>
 
                 {/* Right side: Image Preview (no label) */}
-                <div className="bg-offblack/5 flex items-center justify-center min-h-[240px] max-w-[300px] max-h-[300px] overflow-hidden">
+                <div className="bg-gray-ultra-light flex items-center justify-center min-h-[240px] max-w-[300px] max-h-[300px] overflow-hidden">
                     {isLoading ? (
-                        <p className="text-offblack/50 text-xs">
+                        <p className="text-gray text-xs">
                             <TextGenerator
                                 content={DOCS_PAGE.generatingLabel}
                             />
@@ -195,22 +195,22 @@ export function ImageGenCard() {
             </div>
 
             {/* URL Display */}
-            <div className="mb-4 p-3 bg-offblack/5 font-mono text-xs break-all">
-                <span className="text-offblack/40">
+            <div className="mb-4 p-3 bg-gray-ultra-light font-mono text-xs break-all">
+                <span className="text-gray">
                     https://enter.pollinations.ai/api/generate/image/
                 </span>
-                <span className="bg-lime/90 px-1 font-black">
+                <span className="bg-yellow px-1 font-black">
                     {selectedPrompt}
                 </span>
                 {params.size > 0 && (
                     <>
-                        <span className="text-offblack/40">?</span>
+                        <span className="text-gray">?</span>
                         {Array.from(params).map((param, i) => (
                             <span key={param}>
                                 {i > 0 && (
-                                    <span className="text-offblack/40">&</span>
+                                    <span className="text-gray">&</span>
                                 )}
-                                <span className="bg-lime/90 px-1 font-black">
+                                <span className="bg-yellow px-1 font-black">
                                     {param}
                                 </span>
                             </span>

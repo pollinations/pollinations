@@ -27,7 +27,8 @@ export function ModelDiscoveryCard() {
         },
     };
 
-    const [selectedModel, setSelectedModel] = useState<keyof typeof modelEndpoints>("image");
+    const [selectedModel, setSelectedModel] =
+        useState<keyof typeof modelEndpoints>("image");
     const [modelsData, setModelsData] = useState<any>(null);
     const [isLoading, setIsLoading] = useState(false);
     const currentEndpoint = modelEndpoints[selectedModel];
@@ -73,11 +74,15 @@ export function ModelDiscoveryCard() {
                                     <button
                                         key={key}
                                         type="button"
-                                        onClick={() => setSelectedModel(key as keyof typeof modelEndpoints)}
+                                        onClick={() =>
+                                            setSelectedModel(
+                                                key as keyof typeof modelEndpoints
+                                            )
+                                        }
                                         className={`px-3 py-1.5 font-mono text-xs border-2 transition-all cursor-pointer ${
                                             selectedModel === key
-                                                ? "bg-lime/90 border-rose font-black shadow-rose-sm"
-                                                : "bg-offblack/10 border-offblack/30 hover:border-rose"
+                                                ? "bg-yellow border-pink font-black shadow-pink-sm"
+                                                : "bg-gray-ultra-light border-gray hover:border-pink"
                                         }`}
                                     >
                                         {label}
@@ -88,11 +93,11 @@ export function ModelDiscoveryCard() {
                     </div>
 
                     {/* URL Display */}
-                    <div className="p-3 bg-offblack/5 font-mono text-xs break-all">
-                        <span className="text-offblack/40">
+                    <div className="p-3 bg-gray-ultra-light font-mono text-xs break-all">
+                        <span className="text-gray">
                             https://enter.pollinations.ai/api/generate
                         </span>
-                        <span className="bg-lime/90 px-1 font-black">
+                        <span className="bg-yellow px-1 font-black">
                             {currentEndpoint.path}
                         </span>
                     </div>
@@ -111,9 +116,9 @@ export function ModelDiscoveryCard() {
                 </div>
 
                 {/* Right side: Models JSON Output - Fixed Height */}
-                <div className="bg-offblack/5 p-3 font-mono text-xs text-offblack h-48 overflow-auto scrollbar-hide">
+                <div className="bg-gray-medium p-3 font-mono text-xs text-charcoal h-48 overflow-auto scrollbar-hide">
                     {isLoading ? (
-                        <div className="text-offblack/50">
+                        <div className="text-gray">
                             <TextGenerator
                                 content={DOCS_PAGE.loadingModelsLabel}
                             />

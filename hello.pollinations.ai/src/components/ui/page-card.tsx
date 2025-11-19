@@ -31,7 +31,7 @@ export const PageCard = React.forwardRef<HTMLDivElement, PageCardProps>(
             <div
                 ref={ref}
                 className={cn(
-                    "bg-offwhite/90 border-r-4 border-b-4 border-rose shadow-rose-lg p-6 md:p-8",
+                    "bg-gray-light border-r-4 border-b-4 border-pink shadow-pink-lg p-6 md:p-8",
                     className
                 )}
                 {...props}

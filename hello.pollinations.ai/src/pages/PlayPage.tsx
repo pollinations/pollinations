@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { Title } from "../components/ui/typography";
+import { Title, Body } from "../components/ui/typography";
 import { PageCard } from "../components/ui/page-card";
 import { PageContainer } from "../components/ui/page-container";
 import { TextGenerator } from "../components/TextGenerator";
@@ -36,44 +36,44 @@ function PlayPage() {
     return (
         <PageContainer>
             <PageCard>
-                {/* Introduction */}
-                <div className="mb-8">
-                    <div className="flex items-center gap-4 mb-3">
-                        <Title spacing="none">
-                            <TextGenerator
-                                content={
-                                    view === "play"
-                                        ? PLAY_PAGE.createTitle
-                                        : PLAY_PAGE.watchTitle
-                                }
-                            />
-                        </Title>
-                        <button
-                            type="button"
-                            onClick={() =>
-                                setView(view === "play" ? "feed" : "play")
+                {/* Title with toggle */}
+                <div className="flex items-center gap-4 mb-8">
+                    <Title spacing="none">
+                        <TextGenerator
+                            content={
+                                view === "play"
+                                    ? PLAY_PAGE.createTitle
+                                    : PLAY_PAGE.watchTitle
                             }
-                            className="font-body text-sm text-offblack/40 hover:text-offblack/70 transition-colors leading-tight text-left"
-                        >
-                            <TextGenerator
-                                content={
-                                    view === "play"
-                                        ? PLAY_PAGE.toggleWatchOthers
-                                        : PLAY_PAGE.toggleBackToPlay
-                                }
-                            />
-                        </button>
-                    </div>
+                        />
+                    </Title>
+                    <button
+                        type="button"
+                        onClick={() =>
+                            setView(view === "play" ? "feed" : "play")
+                        }
+                        className="font-body text-sm text-gray hover:text-charcoal transition-colors"
+                    >
+                        <TextGenerator
+                            content={
+                                view === "play"
+                                    ? PLAY_PAGE.toggleWatchOthers
+                                    : PLAY_PAGE.toggleBackToPlay
+                            }
+                        />
+                    </button>
+                </div>
+
+                {/* Description */}
+                <Body className="mb-8">
                     <TextGenerator
                         content={
                             view === "play"
                                 ? PLAY_PAGE.createDescription
                                 : PLAY_PAGE.feedDescription
                         }
-                        as="div"
-                        className="font-body text-offblack/70 text-base leading-relaxed"
                     />
-                </div>
+                </Body>
 
                 {/* Model Selector - Independent of view state */}
                 <ModelSelector
@@ -84,7 +84,7 @@ function PlayPage() {
 
                 {/* Prompt - Independent of view state */}
                 <div className="mb-6">
-                    <label className="block font-headline text-offblack mb-2 uppercase text-xs tracking-wider font-black">
+                    <label className="block font-headline text-charcoal mb-2 uppercase text-xs tracking-wider font-black">
                         <TextGenerator content={PLAY_PAGE.promptLabel} />
                     </label>
                     {view === "play" ? (
@@ -92,10 +92,10 @@ function PlayPage() {
                             value={prompt}
                             onChange={(e) => setPrompt(e.target.value)}
                             placeholder={PLAY_PAGE.imagePlaceholder.text}
-                            className="w-full h-[7.5rem] p-4 bg-offblack/5 text-offblack font-body resize-none focus:outline-none focus:bg-offblack/10 hover:bg-offblack/10 transition-colors scrollbar-hide"
+                            className="w-full h-[7.5rem] p-4 bg-gray-ultra-light text-charcoal font-body resize-none focus:outline-none focus:bg-gray-ultra-light hover:bg-gray-ultra-light transition-colors scrollbar-hide"
                         />
                     ) : (
-                        <div className="w-full h-[7.5rem] p-4 bg-offblack/5 text-offblack font-body overflow-y-auto break-words scrollbar-hide">
+                        <div className="w-full h-[7.5rem] p-4 bg-gray-medium text-charcoal font-body overflow-y-auto break-words scrollbar-hide">
                             {displayPrompt || "Waiting for content..."}
                         </div>
                     )}

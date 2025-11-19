@@ -98,8 +98,8 @@ export function TextGenCard() {
                                     onClick={() => setSelectedPrompt(prompt)}
                                     className={`px-3 py-1.5 font-mono text-xs border-2 transition-all cursor-pointer ${
                                         selectedPrompt === prompt
-                                            ? "bg-lime/90 border-rose font-black shadow-rose-sm"
-                                            : "bg-offblack/10 border-offblack/30 hover:border-rose"
+                                            ? "bg-yellow border-pink font-black shadow-pink-sm"
+                                            : "bg-gray-ultra-light border-gray hover:border-pink"
                                     }`}
                                 >
                                     {prompt}
@@ -128,15 +128,15 @@ export function TextGenCard() {
                                     onClick={() => toggleModel(value)}
                                     className={`px-3 py-1.5 font-mono text-xs border-2 transition-all cursor-pointer ${
                                         selectedModel === value
-                                            ? "bg-lime/90 border-rose font-black shadow-rose-sm"
-                                            : "bg-offblack/10 border-offblack/30 hover:border-rose"
+                                            ? "bg-yellow border-pink font-black shadow-pink-sm"
+                                            : "bg-gray-ultra-light border-gray hover:border-pink"
                                     }`}
                                 >
                                     {label}
                                 </button>
                             ))}
                         </div>
-                        <p className="font-body text-xs text-offblack/50 mt-2">
+                        <p className="font-body text-xs text-gray mt-2">
                             <TextGenerator
                                 content={DOCS_PAGE.defaultModelLabel}
                             />
@@ -153,8 +153,8 @@ export function TextGenCard() {
                             onClick={() => setJsonMode(!jsonMode)}
                             className={`px-3 py-1.5 font-mono text-xs border-2 transition-all cursor-pointer ${
                                 jsonMode
-                                    ? "bg-lime/90 border-rose font-black shadow-rose-sm"
-                                    : "bg-offblack/10 border-offblack/30 hover:border-rose"
+                                    ? "bg-yellow border-pink font-black shadow-pink-sm"
+                                    : "bg-gray-ultra-light border-gray hover:border-pink"
                             }`}
                         >
                             json=true
@@ -163,15 +163,15 @@ export function TextGenCard() {
                 </div>
 
                 {/* Right side: Response (no label, no border, no scrollbar) */}
-                <div className="bg-offblack/5 p-3 min-h-[200px] max-h-[200px] overflow-hidden">
+                <div className="bg-gray-medium p-3 min-h-[200px] max-h-[200px] overflow-hidden">
                     {isLoading ? (
-                        <p className="text-offblack/50 font-body text-xs">
+                        <p className="text-gray font-body text-xs">
                             <TextGenerator
                                 content={DOCS_PAGE.generatingLabel}
                             />
                         </p>
                     ) : (
-                        <p className="font-body text-offblack text-xs leading-relaxed whitespace-pre-wrap overflow-y-auto h-full pr-2 scrollbar-hide">
+                        <p className="font-body text-charcoal text-xs leading-relaxed whitespace-pre-wrap overflow-y-auto h-full pr-2 scrollbar-hide">
                             {response}
                         </p>
                     )}
@@ -179,26 +179,26 @@ export function TextGenCard() {
             </div>
 
             {/* URL Display */}
-            <div className="mb-4 p-3 bg-offblack/5 font-mono text-xs break-all">
-                <span className="text-offblack/40">
+            <div className="mb-4 p-3 bg-gray-ultra-light font-mono text-xs break-all">
+                <span className="text-gray">
                     https://enter.pollinations.ai/api/generate/text/
                 </span>
-                <span className="bg-lime/90 px-1 font-black">
+                <span className="bg-yellow px-1 font-black">
                     {selectedPrompt}
                 </span>
                 {(selectedModel || jsonMode) && (
                     <>
-                        <span className="text-offblack/40">?</span>
+                        <span className="text-gray">?</span>
                         {selectedModel && (
-                            <span className="bg-lime/90 px-1 font-black">
+                            <span className="bg-yellow px-1 font-black">
                                 model={selectedModel}
                             </span>
                         )}
                         {selectedModel && jsonMode && (
-                            <span className="text-offblack/40">&</span>
+                            <span className="text-gray">&</span>
                         )}
                         {jsonMode && (
-                            <span className="bg-lime/90 px-1 font-black">
+                            <span className="bg-yellow px-1 font-black">
                                 json=true
                             </span>
                         )}

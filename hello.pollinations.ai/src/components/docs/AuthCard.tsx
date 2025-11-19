@@ -23,20 +23,20 @@ export function AuthCard() {
                         </Label>
                         <div className="space-y-3">
                             {/* Publishable Key */}
-                            <div className="bg-offblack/5 p-4">
+                            <div className="bg-gray-medium p-4">
                                 <div className="flex items-start gap-3">
-                                    <span className="font-mono text-lg font-black text-lime">
+                                    <span className="font-mono text-lg font-black text-yellow">
                                         pk_
                                     </span>
                                     <div>
-                                        <p className="font-headline text-xs font-black text-offblack uppercase mb-2">
+                                        <p className="font-headline text-xs font-black text-charcoal uppercase mb-2">
                                             <TextGenerator
                                                 content={
                                                     DOCS_PAGE.publishableLabel
                                                 }
                                             />
                                         </p>
-                                        <ul className="text-xs text-offblack/70 space-y-1">
+                                        <ul className="text-xs text-gray-dark space-y-1">
                                             <li>
                                                 <TextGenerator
                                                     content={
@@ -51,7 +51,7 @@ export function AuthCard() {
                                                     }
                                                 />
                                             </li>
-                                            <li className="text-rose font-bold">
+                                            <li className="text-pink font-bold">
                                                 <TextGenerator
                                                     content={
                                                         DOCS_PAGE.publishableFeature3
@@ -64,18 +64,18 @@ export function AuthCard() {
                             </div>
 
                             {/* Secret Key */}
-                            <div className="bg-offblack/5 p-4">
+                            <div className="bg-gray-medium p-4">
                                 <div className="flex items-start gap-3">
-                                    <span className="font-mono text-lg font-black text-rose">
+                                    <span className="font-mono text-lg font-black text-pink">
                                         sk_
                                     </span>
                                     <div>
-                                        <p className="font-headline text-xs font-black text-offblack uppercase mb-2">
+                                        <p className="font-headline text-xs font-black text-charcoal uppercase mb-2">
                                             <TextGenerator
                                                 content={DOCS_PAGE.secretLabel}
                                             />
                                         </p>
-                                        <ul className="text-xs text-offblack/70 space-y-1">
+                                        <ul className="text-xs text-gray-dark space-y-1">
                                             <li>
                                                 <TextGenerator
                                                     content={
@@ -108,20 +108,20 @@ export function AuthCard() {
                         href="https://enter.pollinations.ai"
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="inline-block bg-offblack border-r-4 border-b-4 border-lime shadow-lime-md px-6 py-4 hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-lime-sm transition-all"
+                        className="inline-block bg-charcoal border-r-4 border-b-4 border-yellow shadow-lime-md px-6 py-4 hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-lime-sm transition-all"
                     >
-                        <p className="font-headline text-xs uppercase tracking-wider font-black text-offwhite mb-2">
+                        <p className="font-headline text-xs uppercase tracking-wider font-black text-white mb-2">
                             <TextGenerator
                                 content={DOCS_PAGE.getYourKeyLabel}
                             />
                         </p>
                         <div className="flex items-center gap-2">
-                            <p className="font-mono text-sm font-black text-lime">
+                            <p className="font-mono text-sm font-black text-yellow">
                                 enter.pollinations.ai
                             </p>
                             <ExternalLinkIcon
                                 className="w-3 h-3"
-                                stroke={Colors.lime}
+                                stroke={Colors.yellow}
                             />
                         </div>
                     </a>
@@ -135,23 +135,23 @@ export function AuthCard() {
 
                     {/* Header Method */}
                     <div className="mb-4">
-                        <p className="font-body text-xs text-offblack/70 mb-2">
+                        <p className="font-body text-xs text-gray-dark mb-2">
                             <TextGenerator
                                 content={DOCS_PAGE.serverSideDescription}
                             />
                         </p>
-                        <div className="font-mono text-xs bg-offblack text-offwhite p-4 border-r-4 border-b-4 border-offblack/50">
-                            <div className="text-lime/80">
+                        <div className="font-mono text-xs bg-charcoal text-light-gray p-4 border-r-4 border-b-4 border-gray">
+                            <div className="text-yellow">
                                 {"// Example with fetch"}
                             </div>
                             <div className="mt-2">{"fetch(url, {"}</div>
                             <div className="pl-4">{"  headers: {"}</div>
                             <div className="pl-8">
-                                <span className="text-rose">
+                                <span className="text-pink">
                                     {'"Authorization"'}
                                 </span>
                                 :{" "}
-                                <span className="text-lime">
+                                <span className="text-yellow">
                                     {'"Bearer sk_..."'}
                                 </span>
                             </div>
@@ -162,21 +162,19 @@ export function AuthCard() {
 
                     {/* Query Method */}
                     <div>
-                        <p className="font-body text-xs text-offblack/70 mb-2">
+                        <p className="font-body text-xs text-gray-dark mb-2">
                             <TextGenerator
                                 content={DOCS_PAGE.clientSideDescription}
                             />
                         </p>
-                        <div className="font-mono text-xs bg-offblack text-offwhite p-4 border-r-4 border-b-4 border-offblack/50">
-                            <div className="text-lime/80">
-                                {"// Add to URL"}
-                            </div>
+                        <div className="font-mono text-xs bg-charcoal text-light-gray p-4 border-r-4 border-b-4 border-gray">
+                            <div className="text-yellow">{"// Add to URL"}</div>
                             <div className="mt-2">
                                 {"https://enter.pollinations.ai/..."}
                             </div>
                             <div className="pl-4">
-                                <span className="text-rose">{"?key="}</span>
-                                <span className="text-lime">{"pk_..."}</span>
+                                <span className="text-pink">{"?key="}</span>
+                                <span className="text-yellow">{"pk_..."}</span>
                             </div>
                         </div>
                     </div>

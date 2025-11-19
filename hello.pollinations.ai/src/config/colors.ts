@@ -1,29 +1,19 @@
 // Raw color palette
 export const Palette = {
-    lime: "#ecf874",
-    limeShadow: "#bef264",
-    rose: "#ff69b4",
-    cyan: "#74f8ec",
-    offwhite: "#c7d4d6",
-    offblack: "#110518",
-    black: "#000000",
-    white: "#ffffff",
-};
+    // Accent Colors
+    yellow: "#ecf874", // 50 uses: Primary CTA buttons, active states, borders, accent text
+    lime: "#bef264", // 11 uses: Brutalist shadows only (shadow-lime-sm/md/lg)
+    pink: "#ff69b4", // 69 uses: Brand accent - borders, shadows, headings, links, model indicators
+    cyan: "#74f8ec", // 4 uses: Audio model indicator only
 
-// Semantic theme tokens
-export const Theme = {
-    primary: Palette.lime,
-    secondary: Palette.rose,
-    tertiary: Palette.cyan,
-    
-    background: Palette.offwhite,
-    surface: Palette.offwhite, // Cards, panels
-    
-    foreground: Palette.offblack, // Main text
-    foregroundMuted: Palette.offblack, // Secondary text (opacity handled in tailwind)
-    
-    shadow: Palette.black,
-    shadowHighlight: Palette.limeShadow,
+    // Monochrome Scale
+    charcoal: "#110518", // 76 uses: Primary text, button backgrounds, borders, brand dark
+    charcoalMuted: "#352F3E", // UNUSED: Defined but not implemented (consider removal)
+    grayDark: "#4a5557", // 36 uses: Body text exclusively (all paragraphs, descriptions)
+    gray: "#6e7a7c", // 33 uses: Secondary text, borders, labels, placeholders
+    grayMedium: "#BFCACC", // Large container backgrounds (SubCard, feature boxes)
+    grayLight: "#c7d4d6", // 18 uses: Header button backgrounds, subtle UI elements
+    grayUltraLight: "#dce4e6", // 38 uses: Inputs, disabled states, small containers
 };
 
 // Legacy export for backwards compatibility during migration
@@ -45,23 +35,23 @@ function hexToRgba(color: string, alpha = 1) {
 
 // Brutalist shadow utilities
 export const Shadows = {
-    // Rose/pink shadows
-    roseSm: `2px 2px 0px 0px ${hexToRgba(Palette.rose, 1)}`,
-    rose3: `3px 3px 0px 0px ${hexToRgba(Palette.rose, 1)}`,
-    roseMd: `4px 4px 0px 0px ${hexToRgba(Palette.rose, 1)}`,
-    roseLg: `6px 6px 0px 0px ${hexToRgba(Palette.rose, 1)}`,
+    // Pink shadows
+    pinkSm: `2px 2px 0px 0px ${hexToRgba(Palette.pink, 1)}`,
+    pink3: `3px 3px 0px 0px ${hexToRgba(Palette.pink, 1)}`,
+    pinkMd: `4px 4px 0px 0px ${hexToRgba(Palette.pink, 1)}`,
+    pinkLg: `6px 6px 0px 0px ${hexToRgba(Palette.pink, 1)}`,
 
-    // Black shadows
-    blackSm: `2px 2px 0px 0px ${hexToRgba(Palette.black, 1)}`,
-    blackMd: `4px 4px 0px 0px ${hexToRgba(Palette.black, 1)}`,
-    blackLg: `8px 8px 0px 0px ${hexToRgba(Palette.black, 1)}`,
-    blackXl: `12px 12px 0px 0px ${hexToRgba(Palette.black, 1)}`,
+    // Black shadows (Mapped to Charcoal)
+    blackSm: `2px 2px 0px 0px ${hexToRgba(Palette.charcoal, 1)}`,
+    blackMd: `4px 4px 0px 0px ${hexToRgba(Palette.charcoal, 1)}`,
+    blackLg: `8px 8px 0px 0px ${hexToRgba(Palette.charcoal, 1)}`,
+    blackXl: `12px 12px 0px 0px ${hexToRgba(Palette.charcoal, 1)}`,
 
-    // Lime shadows (using original shadow lime color)
-    limeSm: `2px 2px 0px 0px ${hexToRgba(Palette.limeShadow, 1)}`,
-    lime3: `3px 3px 0px 0px ${hexToRgba(Palette.limeShadow, 1)}`,
-    limeMd: `4px 4px 0px 0px ${hexToRgba(Palette.limeShadow, 1)}`,
+    // Lime shadows
+    limeSm: `2px 2px 0px 0px ${hexToRgba(Palette.lime, 1)}`,
+    lime3: `3px 3px 0px 0px ${hexToRgba(Palette.lime, 1)}`,
+    limeMd: `4px 4px 0px 0px ${hexToRgba(Palette.lime, 1)}`,
 
-    // Offblack with transparency
-    offblackMuted: `4px 4px 0px 0px ${hexToRgba(Palette.offblack, 0.3)}`,
+    // Charcoal with transparency
+    charcoalMuted: `4px 4px 0px 0px ${hexToRgba(Palette.charcoal, 0.3)}`,
 };

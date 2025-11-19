@@ -19,14 +19,12 @@ function CommunityPage() {
     return (
         <PageContainer>
             <PageCard>
-                <Title spacing="tight">
+                <Title>
                     <TextGenerator content={COMMUNITY_PAGE.title} />
                 </Title>
-                <TextGenerator
-                    content={COMMUNITY_PAGE.subtitle}
-                    as="div"
-                    className="font-body text-base text-offblack/80 leading-relaxed mb-6"
-                />
+                <Body spacing="none" className="mb-8">
+                    <TextGenerator content={COMMUNITY_PAGE.subtitle} />
+                </Body>
 
                 {/* Discord & GitHub Cards - Bold brutalist blocks */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-12">
@@ -40,7 +38,7 @@ function CommunityPage() {
                         <TextGenerator
                             content={COMMUNITY_PAGE.discordSubtitle}
                             as="div"
-                            className="font-body text-sm text-offblack/70 mb-6"
+                            className="font-body text-sm text-gray-dark mb-6"
                         />
                         <Button
                             as="a"
@@ -53,7 +51,7 @@ function CommunityPage() {
                             <TextGenerator
                                 content={COMMUNITY_PAGE.joinDiscordButton}
                             />
-                            <ExternalLinkIcon stroke={Colors.lime} />
+                            <ExternalLinkIcon stroke={Colors.yellow} />
                         </Button>
                     </SubCard>
 
@@ -67,7 +65,7 @@ function CommunityPage() {
                         <TextGenerator
                             content={COMMUNITY_PAGE.githubSubtitle}
                             as="div"
-                            className="font-body text-sm text-offblack/70 mb-6"
+                            className="font-body text-sm text-gray-dark mb-6"
                         />
                         <Button
                             as="a"
@@ -80,7 +78,7 @@ function CommunityPage() {
                             <TextGenerator
                                 content={COMMUNITY_PAGE.contributeButton}
                             />
-                            <ExternalLinkIcon stroke={Colors.lime} />
+                            <ExternalLinkIcon stroke={Colors.yellow} />
                         </Button>
                     </SubCard>
                 </div>
@@ -105,20 +103,20 @@ function CommunityPage() {
                                 return (
                                     <div
                                         key={item.id}
-                                        className="bg-offblack/5 p-3 border-l-2 border-lime"
+                                        className="bg-gray-ultra-light p-3 border-l-2 border-yellow"
                                     >
                                         {item.date && (
-                                            <span className="inline-block bg-offblack/90 text-lime px-2 py-0.5 font-mono text-xs font-black mb-2">
+                                            <span className="inline-block bg-charcoal text-yellow px-2 py-0.5 font-mono text-xs font-black mb-2">
                                                 {item.date}
                                             </span>
                                         )}
-                                        <div className="font-body text-sm text-offblack/80 leading-relaxed">
+                                        <div className="font-body text-sm text-gray-dark leading-relaxed">
                                             <ReactMarkdown
                                                 components={{
                                                     a: ({ node, ...props }) => (
                                                         <a
                                                             {...props}
-                                                            className="text-rose hover:underline font-bold"
+                                                            className="text-pink hover:underline font-bold"
                                                             target="_blank"
                                                             rel="noopener noreferrer"
                                                         />
@@ -129,17 +127,29 @@ function CommunityPage() {
                                                         children,
                                                         ...props
                                                     }: any) => {
-                                                        const match = /language-(\w+)/.exec(className || "");
-                                                        const isInline = !match && !String(children).includes("\n");
+                                                        const match =
+                                                            /language-(\w+)/.exec(
+                                                                className || ""
+                                                            );
+                                                        const isInline =
+                                                            !match &&
+                                                            !String(
+                                                                children
+                                                            ).includes("\n");
                                                         return isInline ? (
                                                             <code
                                                                 {...props}
-                                                                className="bg-offblack/10 px-1 py-0.5 font-mono text-xs"
+                                                                className="bg-gray-ultra-light px-1 py-0.5 font-mono text-xs"
                                                             >
                                                                 {children}
                                                             </code>
                                                         ) : (
-                                                            <code {...props} className={className}>
+                                                            <code
+                                                                {...props}
+                                                                className={
+                                                                    className
+                                                                }
+                                                            >
                                                                 {children}
                                                             </code>
                                                         );
@@ -200,10 +210,10 @@ function CommunityPage() {
                                         className="w-full h-full object-contain"
                                     />
                                 </div>
-                                <p className="font-headline text-xs font-black text-offblack mb-1 leading-tight">
+                                <p className="font-headline text-xs font-black text-charcoal mb-1 leading-tight">
                                     {supporter.name}
                                 </p>
-                                <p className="font-body text-[10px] text-offblack/50 leading-tight line-clamp-2">
+                                <p className="font-body text-[10px] text-gray leading-tight line-clamp-2">
                                     {supporter.description}
                                 </p>
                             </a>

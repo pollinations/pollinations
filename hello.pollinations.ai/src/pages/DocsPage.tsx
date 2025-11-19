@@ -4,7 +4,7 @@ import { DOCS_PAGE } from "../config/content";
 import { CopyIcon } from "../icons/CopyIcon";
 import { ExternalLinkIcon } from "../icons/ExternalLinkIcon";
 import { Button } from "../components/ui/button";
-import { Title } from "../components/ui/typography";
+import { Title, Body } from "../components/ui/typography";
 import { Divider } from "../components/ui/divider";
 import { PageCard } from "../components/ui/page-card";
 import { PageContainer } from "../components/ui/page-container";
@@ -21,21 +21,17 @@ function DocsPage() {
         <PageContainer>
             <PageCard>
                 {/* Title */}
-                <Title spacing="comfortable">
+                <Title>
                     <TextGenerator content={DOCS_PAGE.title} />
                 </Title>
 
                 {/* Intro */}
-                <TextGenerator
-                    content={DOCS_PAGE.intro}
-                    as="div"
-                    className="font-body text-offblack/70 text-base leading-relaxed mb-4"
-                />
-                <TextGenerator
-                    content={DOCS_PAGE.apiReference}
-                    as="div"
-                    className="font-body text-offblack/70 text-base leading-relaxed mb-6"
-                />
+                <Body>
+                    <TextGenerator content={DOCS_PAGE.intro} />
+                </Body>
+                <Body spacing="none" className="mb-8">
+                    <TextGenerator content={DOCS_PAGE.apiReference} />
+                </Body>
                 <div className="flex flex-wrap gap-3 mb-12">
                     <Button
                         as="a"
@@ -46,7 +42,7 @@ function DocsPage() {
                         size="lg"
                     >
                         <TextGenerator content={DOCS_PAGE.fullApiDocsButton} />
-                        <ExternalLinkIcon stroke={Colors.black} />
+                        <ExternalLinkIcon stroke={Colors.charcoal} />
                     </Button>
                     <Button
                         variant="primary"
@@ -62,7 +58,7 @@ function DocsPage() {
                         <TextGenerator content={DOCS_PAGE.agentPromptButton} />
                         <CopyIcon />
                         {agentPromptCopied && (
-                            <span className="absolute -top-5 left-0 font-headline text-xs font-black text-rose uppercase tracking-wider">
+                            <span className="absolute -top-5 left-0 font-headline text-xs font-black text-pink uppercase tracking-wider">
                                 <TextGenerator
                                     content={DOCS_PAGE.copiedLabel}
                                 />

@@ -119,22 +119,22 @@ function HelloPage() {
                         />
                     </Body>
                     <ul className="space-y-3">
-                        <li className="font-body text-sm text-offblack/80 leading-relaxed pl-4 border-l-2 border-lime">
+                        <li className="font-body text-sm text-gray-dark leading-relaxed pl-4 border-l-2 border-yellow">
                             <TextGenerator
                                 content={HELLO_PAGE.creativeLaunchpadFeature1}
                             />
                         </li>
-                        <li className="font-body text-sm text-offblack/80 leading-relaxed pl-4 border-l-2 border-lime">
+                        <li className="font-body text-sm text-gray-dark leading-relaxed pl-4 border-l-2 border-yellow">
                             <TextGenerator
                                 content={HELLO_PAGE.creativeLaunchpadFeature2}
                             />
                         </li>
-                        <li className="font-body text-sm text-offblack/80 leading-relaxed pl-4 border-l-2 border-lime">
+                        <li className="font-body text-sm text-gray-dark leading-relaxed pl-4 border-l-2 border-yellow">
                             <TextGenerator
                                 content={HELLO_PAGE.creativeLaunchpadFeature3}
                             />
                         </li>
-                        <li className="font-body text-sm text-offblack/80 leading-relaxed pl-4 border-l-2 border-lime">
+                        <li className="font-body text-sm text-gray-dark leading-relaxed pl-4 border-l-2 border-yellow">
                             <TextGenerator
                                 content={HELLO_PAGE.creativeLaunchpadFeature4}
                             />
@@ -154,17 +154,17 @@ function HelloPage() {
                         <TextGenerator content={HELLO_PAGE.differenceIntro} />
                     </Body>
                     <ul className="space-y-3">
-                        <li className="font-body text-sm text-offblack/80 leading-relaxed pl-4 border-l-2 border-rose">
+                        <li className="font-body text-sm text-gray-dark leading-relaxed pl-4 border-l-2 border-pink">
                             <TextGenerator
                                 content={HELLO_PAGE.differenceFeature1}
                             />
                         </li>
-                        <li className="font-body text-sm text-offblack/80 leading-relaxed pl-4 border-l-2 border-rose">
+                        <li className="font-body text-sm text-gray-dark leading-relaxed pl-4 border-l-2 border-pink">
                             <TextGenerator
                                 content={HELLO_PAGE.differenceFeature2}
                             />
                         </li>
-                        <li className="font-body text-sm text-offblack/80 leading-relaxed pl-4 border-l-2 border-rose">
+                        <li className="font-body text-sm text-gray-dark leading-relaxed pl-4 border-l-2 border-pink">
                             <TextGenerator
                                 content={HELLO_PAGE.differenceFeature3}
                             />
@@ -186,7 +186,7 @@ function HelloPage() {
                     <div className="space-y-4">
                         <SubCard size="compact">
                             <div className="flex flex-col md:flex-row gap-3">
-                                <div className="font-headline text-xs font-black text-lime uppercase tracking-wider md:w-32">
+                                <div className="font-headline text-xs font-black text-yellow uppercase tracking-wider md:w-32">
                                     <TextGenerator
                                         content={
                                             HELLO_PAGE.roadmapComingSoonLabel
@@ -194,14 +194,14 @@ function HelloPage() {
                                     />
                                 </div>
                                 <div className="flex-1">
-                                    <p className="font-headline text-sm font-black text-offblack mb-2">
+                                    <p className="font-headline text-sm font-black text-charcoal mb-2">
                                         <TextGenerator
                                             content={
                                                 HELLO_PAGE.roadmapComingSoonTitle
                                             }
                                         />
                                     </p>
-                                    <p className="font-body text-xs text-offblack/70">
+                                    <p className="font-body text-xs text-gray-dark">
                                         <TextGenerator
                                             content={
                                                 HELLO_PAGE.roadmapComingSoonDescription
@@ -213,18 +213,18 @@ function HelloPage() {
                         </SubCard>
                         <SubCard size="compact">
                             <div className="flex flex-col md:flex-row gap-3">
-                                <div className="font-headline text-xs font-black text-lime uppercase tracking-wider md:w-32">
+                                <div className="font-headline text-xs font-black text-yellow uppercase tracking-wider md:w-32">
                                     <TextGenerator
                                         content={HELLO_PAGE.roadmapQ1Label}
                                     />
                                 </div>
                                 <div className="flex-1">
-                                    <p className="font-headline text-sm font-black text-offblack mb-2">
+                                    <p className="font-headline text-sm font-black text-charcoal mb-2">
                                         <TextGenerator
                                             content={HELLO_PAGE.roadmapQ1Title}
                                         />
                                     </p>
-                                    <p className="font-body text-xs text-offblack/70">
+                                    <p className="font-body text-xs text-gray-dark">
                                         <TextGenerator
                                             content={
                                                 HELLO_PAGE.roadmapQ1Description
@@ -236,20 +236,20 @@ function HelloPage() {
                         </SubCard>
                         <SubCard size="compact">
                             <div className="flex flex-col md:flex-row gap-3">
-                                <div className="font-headline text-xs font-black text-lime uppercase tracking-wider md:w-32">
+                                <div className="font-headline text-xs font-black text-yellow uppercase tracking-wider md:w-32">
                                     <TextGenerator
                                         content={HELLO_PAGE.roadmapOngoingLabel}
                                     />
                                 </div>
                                 <div className="flex-1">
-                                    <p className="font-headline text-sm font-black text-offblack mb-2">
+                                    <p className="font-headline text-sm font-black text-charcoal mb-2">
                                         <TextGenerator
                                             content={
                                                 HELLO_PAGE.roadmapOngoingTitle
                                             }
                                         />
                                     </p>
-                                    <p className="font-body text-xs text-offblack/70">
+                                    <p className="font-body text-xs text-gray-dark">
                                         <TextGenerator
                                             content={
                                                 HELLO_PAGE.roadmapOngoingDescription
@@ -285,7 +285,7 @@ function HelloPage() {
                             <TextGenerator
                                 content={HELLO_PAGE.getApiKeyButton}
                             />
-                            <ExternalLinkIcon stroke={Colors.lime} />
+                            <ExternalLinkIcon stroke={Colors.yellow} />
                         </Button>
                         <Button
                             as="a"
@@ -296,7 +296,7 @@ function HelloPage() {
                             <TextGenerator
                                 content={HELLO_PAGE.learnSponsorshipButton}
                             />
-                            <ExternalLinkIcon stroke={Colors.black} />
+                            <ExternalLinkIcon stroke={Colors.charcoal} />
                         </Button>
                     </div>
                 </div>

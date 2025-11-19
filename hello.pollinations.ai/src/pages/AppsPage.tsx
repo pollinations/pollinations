@@ -75,19 +75,19 @@ function ProjectCard({ project }: ProjectCardProps) {
                     rel="noopener noreferrer"
                     variant="primary"
                     size="sm"
-                    className="self-start mb-3 w-full relative pr-10 shadow-none hover:shadow-none text-left justify-start bg-offblack/5 hover:bg-lime/20"
+                    className="self-start mb-3 w-full relative pr-10 shadow-none hover:shadow-none text-left justify-start bg-gray-ultra-light hover:bg-gray-ultra-light"
                 >
-                    <span className="font-headline text-base font-black uppercase text-left block text-offblack">
+                    <span className="font-headline text-base font-black uppercase text-left block text-charcoal">
                         {project.name}
                     </span>
                     <ExternalLinkIcon
-                        stroke={Colors.offblack}
+                        stroke={Colors.charcoal}
                         className="w-4 h-4 absolute top-2 right-2"
                     />
                 </Button>
 
                 {project.description && (
-                    <Body className="text-sm text-offblack/70 line-clamp-6 mb-4">
+                    <Body className="text-sm text-gray-dark line-clamp-6 mb-4">
                         {project.description}
                     </Body>
                 )}
@@ -99,7 +99,7 @@ function ProjectCard({ project }: ProjectCardProps) {
                         href={`https://github.com/${githubUsername}`}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-mono font-medium bg-offblack/5 hover:bg-offblack/10 border border-offblack/20 hover:border-offblack/40 transition-all max-w-[200px]"
+                        className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-mono font-medium bg-gray-ultra-light hover:bg-gray-ultra-light border border-gray-light hover:border-gray transition-all max-w-[200px]"
                         title={`View ${project.author} on GitHub`}
                     >
                         <img
@@ -111,7 +111,7 @@ function ProjectCard({ project }: ProjectCardProps) {
                     </a>
                 )}
                 {!githubUsername && project.author && (
-                    <div className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-mono font-medium bg-offblack/5 border border-offblack/20 max-w-[200px]">
+                    <div className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-mono font-medium bg-gray-ultra-light border border-gray-light max-w-[200px]">
                         <span className="truncate">{project.author}</span>
                     </div>
                 )}
@@ -122,7 +122,7 @@ function ProjectCard({ project }: ProjectCardProps) {
                         href={project.repo}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-mono font-medium bg-offblack/5 hover:bg-offblack/10 border border-offblack/20 hover:border-offblack/40 transition-all max-w-[200px]"
+                        className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-mono font-medium bg-gray-ultra-light hover:bg-gray-ultra-light border border-gray-light hover:border-gray transition-all max-w-[200px]"
                         title={`View ${repoName} on GitHub`}
                     >
                         <img
@@ -134,7 +134,7 @@ function ProjectCard({ project }: ProjectCardProps) {
                             {repoName}
                         </span>
                         {(project.stars || 0) > 0 && (
-                            <span className="text-offblack/70 flex-shrink-0">
+                            <span className="text-gray-dark flex-shrink-0">
                                 ⭐ {project.stars}
                             </span>
                         )}
@@ -159,14 +159,12 @@ export default function AppsPage() {
     return (
         <PageContainer>
             <PageCard>
-                <Title spacing="tight">
+                <Title>
                     <TextGenerator content={APPS_PAGE.title} />
                 </Title>
-                <TextGenerator
-                    content={APPS_PAGE.subtitle}
-                    as="div"
-                    className="font-body text-base text-offblack/80 leading-relaxed mb-8"
-                />
+                <Body spacing="none" className="mb-8">
+                    <TextGenerator content={APPS_PAGE.subtitle} />
+                </Body>
 
                 {/* Category Filters */}
                 <div className="flex flex-wrap gap-2 mb-8">
@@ -196,7 +194,7 @@ export default function AppsPage() {
                 {/* No Results */}
                 {filteredProjects.length === 0 && (
                     <div className="text-center py-12">
-                        <Body className="text-offblack/60">
+                        <Body className="text-charcoal">
                             No projects found in this category yet.
                         </Body>
                     </div>

@@ -55,32 +55,32 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
         if (this.state.hasError) {
             // Fallback UI
             return (
-                <div className="min-h-screen flex items-center justify-center px-4 bg-offwhite/80">
-                    <div className="max-w-2xl w-full bg-offwhite/90 border-r-4 border-b-4 border-rose shadow-rose-lg p-6 md:p-8">
-                        <h1 className="font-title text-3xl md:text-4xl font-black text-offblack mb-6">
+                <div className="min-h-screen flex items-center justify-center px-4 bg-gray-light">
+                    <div className="max-w-2xl w-full bg-gray-light border-r-4 border-b-4 border-pink shadow-pink-lg p-6 md:p-8">
+                        <h1 className="font-title text-3xl md:text-4xl font-black text-charcoal mb-6">
                             Something went wrong
                         </h1>
 
                         <div className="space-y-4 mb-6">
-                            <p className="font-body text-base text-offblack/80 leading-relaxed">
+                            <p className="font-body text-base text-gray-dark leading-relaxed">
                                 We encountered an unexpected error. This has
                                 been logged and we'll look into it.
                             </p>
 
                             {import.meta.env.DEV && this.state.error && (
-                                <div className="bg-offblack/5 p-4 font-mono text-xs">
-                                    <p className="font-black text-rose mb-2">
+                                <div className="bg-gray-ultra-light p-4 font-mono text-xs">
+                                    <p className="font-black text-pink mb-2">
                                         Error Details (dev mode):
                                     </p>
-                                    <p className="text-offblack/70 mb-2">
+                                    <p className="text-gray-dark mb-2">
                                         {this.state.error.toString()}
                                     </p>
                                     {this.state.errorInfo && (
                                         <details className="mt-2">
-                                            <summary className="cursor-pointer text-offblack/60 hover:text-offblack">
+                                            <summary className="cursor-pointer text-charcoal hover:text-charcoal">
                                                 Component Stack
                                             </summary>
-                                            <pre className="mt-2 text-offblack/50 whitespace-pre-wrap text-[10px]">
+                                            <pre className="mt-2 text-gray whitespace-pre-wrap text-[10px]">
                                                 {
                                                     this.state.errorInfo
                                                         .componentStack

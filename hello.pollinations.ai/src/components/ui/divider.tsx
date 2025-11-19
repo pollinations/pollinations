@@ -15,7 +15,7 @@ import { cn } from "../../lib/utils";
 //
 // Spacing variants control vertical margin above/below
 // ============================================
-const dividerVariants = cva("border-t-2 border-offblack/10", {
+const dividerVariants = cva("border-t-2 border-gray-medium", {
     variants: {
         spacing: {
             default: "my-12", // Standard section spacing (most common)
@@ -32,7 +32,9 @@ const dividerVariants = cva("border-t-2 border-offblack/10", {
 
 import { VariantProps } from "class-variance-authority";
 
-interface DividerProps extends React.HTMLAttributes<HTMLHRElement>, VariantProps<typeof dividerVariants> {}
+interface DividerProps
+    extends React.HTMLAttributes<HTMLHRElement>,
+        VariantProps<typeof dividerVariants> {}
 
 export const Divider = React.forwardRef<HTMLHRElement, DividerProps>(
     ({ className, spacing, ...props }, ref) => {

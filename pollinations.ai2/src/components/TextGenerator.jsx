@@ -125,7 +125,13 @@ export function TextGenerator({
     if (isExact) {
         return (
             <Component {...props}>
-                <ReactMarkdown>{exactText}</ReactMarkdown>
+                <ReactMarkdown
+                    components={{
+                        p: ({ children }) => <>{children}</>,
+                    }}
+                >
+                    {exactText}
+                </ReactMarkdown>
             </Component>
         );
     }
@@ -137,7 +143,13 @@ export function TextGenerator({
 
     return (
         <Component {...props}>
-            <ReactMarkdown>{generatedText}</ReactMarkdown>
+            <ReactMarkdown
+                components={{
+                    p: ({ children }) => <>{children}</>,
+                }}
+            >
+                {generatedText}
+            </ReactMarkdown>
         </Component>
     );
 }

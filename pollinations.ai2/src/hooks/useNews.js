@@ -31,7 +31,7 @@ export function useNews(filePath) {
                 const newsItems = text
                     .split("\n")
                     .filter((line) => line.trim().startsWith("- "))
-                    .map((line) => {
+                    .map((line, index) => {
                         // Remove leading "- "
                         const content = line.trim().substring(2);
 
@@ -42,7 +42,7 @@ export function useNews(filePath) {
                         const date = dateMatch ? dateMatch[1] : null;
 
                         return {
-                            id: date || Math.random().toString(36),
+                            id: date ? `${date}-${index}` : `news-${index}`,
                             content, // Full markdown content including date
                             date,
                         };

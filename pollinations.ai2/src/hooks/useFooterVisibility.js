@@ -1,33 +1,48 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 
 export function useFooterVisibility(threshold = 100) {
     const [showFooter, setShowFooter] = useState(false);
+    const lastScrollY = useRef(0);
 
     useEffect(() => {
+        const isMobile = window.innerWidth < 768;
+
         const handleScroll = () => {
+            const currentScrollY = window.scrollY;
             const windowHeight = window.innerHeight;
             const documentHeight = document.documentElement.scrollHeight;
-            const scrollTop = window.scrollY;
             const distanceFromBottom =
-                documentHeight - (scrollTop + windowHeight);
+                documentHeight - (currentScrollY + windowHeight);
 
-            // Show footer when near bottom OR if page is short (no scroll needed)
-            if (
-                distanceFromBottom < threshold ||
-                documentHeight <= windowHeight
-            ) {
-                setShowFooter(true);
+            if (isMobile) {
+                // Mobile: Show only at bottom, hide on scroll up
+                if (distanceFromBottom < threshold) {
+                    setShowFooter(true);
+                } else {
+                    setShowFooter(false);
+                }
             } else {
-                setShowFooter(false);
+                // Desktop: Original smart behavior
+                if (
+                    distanceFromBottom < threshold ||
+                    documentHeight <= windowHeight
+                ) {
+                    setShowFooter(true);
+                } else {
+                    setShowFooter(false);
+                }
             }
+
+            lastScrollY.current = currentScrollY;
         };
 
         const handleMouseMove = (e) => {
+            if (isMobile) return; // Skip mouse events on mobile
+
             const windowHeight = window.innerHeight;
             const mouseY = e.clientY;
             const distanceFromBottom = windowHeight - mouseY;
 
-            // Show footer when mouse is within threshold of bottom
             if (distanceFromBottom < threshold) {
                 setShowFooter(true);
             }
@@ -35,17 +50,20 @@ export function useFooterVisibility(threshold = 100) {
 
         window.addEventListener("scroll", handleScroll, { passive: true });
         window.addEventListener("resize", handleScroll, { passive: true });
-        window.addEventListener("mousemove", handleMouseMove, {
-            passive: true,
-        });
+        if (!isMobile) {
+            window.addEventListener("mousemove", handleMouseMove, {
+                passive: true,
+            });
+        }
 
-        // Check immediately on mount
         handleScroll();
 
         return () => {
             window.removeEventListener("scroll", handleScroll);
             window.removeEventListener("resize", handleScroll);
-            window.removeEventListener("mousemove", handleMouseMove);
+            if (!isMobile) {
+                window.removeEventListener("mousemove", handleMouseMove);
+            }
         };
     }, [threshold]);
 

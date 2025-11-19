@@ -31,7 +31,7 @@ const buttonVariants = cva(
                 // Remove button (square rose) - PlayPage image upload remove
                 remove: "absolute top-1 right-1 w-6 h-6 bg-rose flex items-center justify-center hover:bg-rose/70 transition-colors",
                 // Navigation tab (header nav) - Active/inactive states
-                nav: "px-2 py-2 md:px-5 md:py-3 font-headline text-[10px] md:text-sm font-black uppercase tracking-wider border-r-4 border-b-4 border-rose transition-all duration-200 whitespace-nowrap data-[active=true]:bg-lime/90 data-[active=true]:backdrop-blur-md data-[active=true]:text-offblack data-[active=true]:shadow-rose-md data-[active=false]:bg-offwhite/80 data-[active=false]:backdrop-blur-md data-[active=false]:text-offblack data-[active=false]:hover:bg-lime/90 data-[active=false]:hover:shadow-rose-md",
+                nav: "px-5 py-3 md:px-5 md:py-3 font-headline text-sm md:text-sm font-black uppercase tracking-wider border-r-4 border-b-4 border-rose transition-all duration-200 whitespace-nowrap data-[active=true]:bg-lime/90 data-[active=true]:backdrop-blur-md data-[active=true]:text-offblack data-[active=true]:shadow-rose-md data-[active=false]:bg-offwhite/80 data-[active=false]:backdrop-blur-md data-[active=false]:text-offblack data-[active=false]:hover:bg-lime/90 data-[active=false]:hover:shadow-rose-md",
                 // Footer icon (minimal) - Footer social icons
                 footerIcon:
                     "w-6 h-6 flex items-center justify-center hover:bg-lime/90 transition-all p-1",

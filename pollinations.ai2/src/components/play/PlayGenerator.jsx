@@ -11,16 +11,15 @@ const API_KEY = import.meta.env.VITE_POLLINATIONS_API_KEY;
 /**
  * PlayGenerator Component
  * Main generation interface for the Play page
- * Handles model selection, prompt input, parameters, and generation
+ * Handles prompt input, parameters, and generation
+ * Model selection is managed by parent PlayPage
  */
-export function PlayGenerator() {
-    const [prompt, setPrompt] = useState("");
-    const [model, setModel] = useState("flux");
+export function PlayGenerator({ selectedModel, prompt }) {
     const [result, setResult] = useState(null);
     const [isLoading, setIsLoading] = useState(false);
     const [uploadedImages, setUploadedImages] = useState([]);
 
-    // Fetch available models
+    // Fetch available models for type checking
     const { imageModels, textModels } = useModelList();
 
     // Cleanup blob URLs when result changes
@@ -39,16 +38,16 @@ export function PlayGenerator() {
     const [enhance, setEnhance] = useState(false);
     const [nologo, setNologo] = useState(true);
 
-    const isImageModel = imageModels.some((m) => m.id === model);
-    
+    const isImageModel = imageModels.some((m) => m.id === selectedModel);
+
     // Check if current model has audio output
     const isAudioModel = [...imageModels, ...textModels].some(
-        (m) => m.id === model && m.hasAudioOutput
+        (m) => m.id === selectedModel && m.hasAudioOutput
     );
 
     // Check if current model supports image input modality
     const currentModelData = [...imageModels, ...textModels].find(
-        (m) => m.id === model
+        (m) => m.id === selectedModel
     );
     const supportsImageInput = currentModelData?.hasImageInput || false;
 
@@ -58,7 +57,7 @@ export function PlayGenerator() {
         if (isImageModel) {
             try {
                 const params = new URLSearchParams({
-                    model,
+                    model: selectedModel,
                     width,
                     height,
                     seed,
@@ -111,7 +110,7 @@ export function PlayGenerator() {
                             Authorization: `Bearer ${API_KEY}`,
                         },
                         body: JSON.stringify({
-                            model,
+                            model: selectedModel,
                             messages: [
                                 {
                                     role: "user",
@@ -137,82 +136,6 @@ export function PlayGenerator() {
 
     return (
         <>
-            {/* Model Selector - Unified List with Color Indicators */}
-            <div className="mb-6">
-                <div className="flex items-center gap-4 mb-3">
-                    <label className="font-headline text-offblack uppercase text-xs tracking-wider font-black">
-                        <TextGenerator content={PLAY_PAGE.modelsLabel} />
-                    </label>
-                    <div className="flex items-center gap-3 text-[10px] font-headline uppercase tracking-wider font-black">
-                        <div className="flex items-center gap-1">
-                            <div className="w-3 h-3 bg-rose border border-offblack" />
-                            <span className="text-offblack/50">
-                                <TextGenerator content={PLAY_PAGE.imageLabel} />
-                            </span>
-                        </div>
-                        <div className="flex items-center gap-1">
-                            <div className="w-3 h-3 bg-lime border border-offblack" />
-                            <span className="text-offblack/50">
-                                <TextGenerator content={PLAY_PAGE.textLabel} />
-                            </span>
-                        </div>
-                        <div className="flex items-center gap-1">
-                            <div className="w-3 h-3 bg-cyan border border-offblack" />
-                            <span className="text-offblack/50">Audio</span>
-                        </div>
-                    </div>
-                </div>
-                <div className="flex flex-wrap gap-2">
-                    {[
-                        ...imageModels.map((m) => ({ ...m, type: "image" })),
-                        ...textModels.map((m) => ({ ...m, type: "text" })),
-                    ].map((m) => {
-                        // Detect audio OUTPUT models using hasAudioOutput field
-                        const hasAudioOutput = m.hasAudioOutput;
-                        const isImage = m.type === "image";
-                        const modelType = hasAudioOutput ? "audio" : (isImage ? "image" : "text");
-                        const isActive = model === m.id;
-                        
-                        const colorClass = hasAudioOutput ? "bg-cyan" : (isImage ? "bg-rose" : "bg-lime");
-                        
-                        return (
-                            <Button
-                                key={m.id}
-                                type="button"
-                                onClick={() => setModel(m.id)}
-                                variant="model"
-                                size={null}
-                                data-active={isActive}
-                                data-type={modelType}
-                            >
-                                <div
-                                    className={`absolute left-0 top-0 bottom-0 w-1 ${colorClass}`}
-                                />
-                                {m.name}
-                            </Button>
-                        );
-                    })}
-                </div>
-            </div>
-
-            {/* Prompt Input */}
-            <div className="mb-6">
-                <label className="block font-headline text-offblack mb-2 uppercase text-xs tracking-wider font-black">
-                    <TextGenerator content={PLAY_PAGE.promptLabel} />
-                </label>
-                <textarea
-                    value={prompt}
-                    onChange={(e) => setPrompt(e.target.value)}
-                    placeholder={
-                        isImageModel
-                            ? PLAY_PAGE.imagePlaceholder.text
-                            : PLAY_PAGE.textPlaceholder.text
-                    }
-                    className="w-full p-4 bg-offblack/5 text-offblack font-body resize-none focus:outline-none focus:bg-offblack/10 hover:bg-offblack/10 transition-colors"
-                    rows={4}
-                />
-            </div>
-
             {/* Image Upload (only for models with image input modality) */}
             {supportsImageInput && (
                 <div className="mb-6">
@@ -424,8 +347,10 @@ export function PlayGenerator() {
                 disabled={!prompt || isLoading}
                 variant="generate"
                 size={null}
-                data-type={isAudioModel ? "audio" : (isImageModel ? "image" : "text")}
-                className="mb-6 w-auto mx-auto"
+                data-type={
+                    isAudioModel ? "audio" : isImageModel ? "image" : "text"
+                }
+                className="mb-6"
             >
                 {isLoading ? (
                     <TextGenerator content={PLAY_PAGE.generatingText} />

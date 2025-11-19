@@ -32,7 +32,7 @@ function Layout() {
                 }`}
             >
                 <div className="w-full px-4 py-3 md:py-4">
-                    <div className="max-w-6xl mx-auto">
+                    <div className="max-w-4xl mx-auto">
                         {/* Mobile: Logo left, Two rows of buttons right */}
                         <div className="md:hidden flex items-center gap-3">
                             {/* Logo - Left side */}
@@ -96,22 +96,23 @@ function Layout() {
                             </div>
                         </div>
 
-                        {/* Desktop: Horizontal Layout */}
+                        {/* Desktop: Logo left, Buttons right */}
                         <div className="hidden md:block">
-                            <div className="overflow-x-auto scrollbar-hide">
-                                <div className="flex gap-3 items-center justify-center min-w-max">
-                                    {/* Logo */}
-                                    <div className="flex-shrink-0 w-24 h-24">
-                                        <img
-                                            src={logo}
-                                            alt="pollinations.ai"
-                                            className="w-full h-full object-contain"
-                                            style={{
-                                                filter: `brightness(0) drop-shadow(4px 4px 0px ${Colors.rose})`,
-                                            }}
-                                        />
-                                    </div>
+                            <div className="flex items-center justify-between gap-4 overflow-hidden">
+                                {/* Logo - Left side */}
+                                <div className="flex-shrink-0 w-20 h-20">
+                                    <img
+                                        src={logo}
+                                        alt="pollinations.ai"
+                                        className="w-full h-full object-contain"
+                                        style={{
+                                            filter: `brightness(0) drop-shadow(4px 4px 0px ${Colors.rose})`,
+                                        }}
+                                    />
+                                </div>
 
+                                {/* Navigation Tabs + Social Links - Right side */}
+                                <div className="flex gap-3 items-center overflow-x-auto scrollbar-hide">
                                     {/* Navigation Tabs */}
                                     {tabs.map((tab) => (
                                         <NavLink
@@ -133,7 +134,7 @@ function Layout() {
                                     ))}
 
                                     {/* Social Media Links + Enter Button */}
-                                    <div className="flex gap-2 ml-2 items-center">
+                                    <div className="flex gap-2 items-center">
                                         {Object.entries(SOCIAL_LINKS)
                                             .filter(
                                                 ([key]) =>
@@ -203,7 +204,7 @@ function Layout() {
                 {/* Mobile: Transparent footer */}
                 <div className="md:hidden">
                     <div className="w-full px-4 py-3">
-                        <div className="max-w-6xl mx-auto flex flex-col gap-6">
+                        <div className="max-w-4xl mx-auto flex flex-col gap-6">
                             {/* 1. GitHub, Discord, Enter - Brutalist buttons */}
                             <div className="flex gap-3 justify-center">
                                 {/* GitHub */}
@@ -334,7 +335,7 @@ function Layout() {
 
                 {/* Desktop: Original discrete islands */}
                 <div className="w-full px-4 py-2 md:py-4">
-                    <div className="max-w-6xl mx-auto">
+                    <div className="max-w-4xl mx-auto">
                         {/* Desktop: Original order */}
                         <div className="hidden md:flex md:items-end md:justify-between gap-3">
                             {/* Left: Branding Island */}

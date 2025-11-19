@@ -12,7 +12,6 @@ import { ICONS } from "../icons/icons";
 import { APPS_PAGE } from "../config/content";
 
 const CATEGORIES = [
-    { id: "all", label: "All" },
     { id: "creative", label: "Creative" },
     { id: "chat", label: "Chat" },
     { id: "games", label: "Games" },
@@ -21,8 +20,6 @@ const CATEGORIES = [
     { id: "socialbots", label: "Social Bots" },
     { id: "vibes", label: "Vibes" },
 ];
-
-const PROJECTS_PER_PAGE = 6;
 
 // Helper to extract GitHub username from author field
 function getGitHubUsername(author) {
@@ -42,7 +39,7 @@ function getRepoName(repoUrl) {
 function ProjectCard({ project }) {
     const githubUsername = getGitHubUsername(project.author);
     const repoName = getRepoName(project.repo);
-    
+
     return (
         <SubCard className="flex flex-col h-full bg-transparent">
             <div className="flex-1">
@@ -59,9 +56,12 @@ function ProjectCard({ project }) {
                     <span className="font-headline text-base font-black uppercase text-left block text-offblack">
                         {project.name}
                     </span>
-                    <ExternalLinkIcon stroke={Colors.offblack} className="w-4 h-4 absolute top-2 right-2" />
+                    <ExternalLinkIcon
+                        stroke={Colors.offblack}
+                        className="w-4 h-4 absolute top-2 right-2"
+                    />
                 </Button>
-                
+
                 {project.description && (
                     <Body className="text-sm text-offblack/70 line-clamp-6 mb-4">
                         {project.description}
@@ -78,7 +78,11 @@ function ProjectCard({ project }) {
                         className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-mono font-medium bg-offblack/5 hover:bg-offblack/10 border border-offblack/20 hover:border-offblack/40 transition-all max-w-[200px]"
                         title={`View ${project.author} on GitHub`}
                     >
-                        <img src={ICONS.github} alt="GitHub" className="w-3 h-3 opacity-60 flex-shrink-0" />
+                        <img
+                            src={ICONS.github}
+                            alt="GitHub"
+                            className="w-3 h-3 opacity-60 flex-shrink-0"
+                        />
                         <span className="truncate">{project.author}</span>
                     </a>
                 )}
@@ -87,7 +91,7 @@ function ProjectCard({ project }) {
                         <span className="truncate">{project.author}</span>
                     </div>
                 )}
-                
+
                 {/* Repo Badge */}
                 {repoName && (
                     <a
@@ -97,10 +101,18 @@ function ProjectCard({ project }) {
                         className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-mono font-medium bg-offblack/5 hover:bg-offblack/10 border border-offblack/20 hover:border-offblack/40 transition-all max-w-[200px]"
                         title={`View ${repoName} on GitHub`}
                     >
-                        <img src={ICONS.github} alt="GitHub" className="w-3 h-3 opacity-60 flex-shrink-0" />
-                        <span className="truncate flex-1 min-w-0">{repoName}</span>
+                        <img
+                            src={ICONS.github}
+                            alt="GitHub"
+                            className="w-3 h-3 opacity-60 flex-shrink-0"
+                        />
+                        <span className="truncate flex-1 min-w-0">
+                            {repoName}
+                        </span>
                         {project.stars > 0 && (
-                            <span className="text-offblack/70 flex-shrink-0">⭐ {project.stars}</span>
+                            <span className="text-offblack/70 flex-shrink-0">
+                                ⭐ {project.stars}
+                            </span>
                         )}
                     </a>
                 )}
@@ -110,30 +122,15 @@ function ProjectCard({ project }) {
 }
 
 export default function AppsPage() {
-    const [selectedCategory, setSelectedCategory] = useState("all");
-    const [currentPage, setCurrentPage] = useState(1);
+    const [selectedCategory, setSelectedCategory] = useState("creative");
 
     // Filter projects by category
     const filteredProjects = useMemo(() => {
-        if (selectedCategory === "all") {
-            return allProjects.filter(p => !p.hidden);
-        }
-        return allProjects.filter(p => {
+        return allProjects.filter((p) => {
             if (p.hidden) return false;
             return p.category === selectedCategory;
         });
     }, [selectedCategory]);
-
-    // Pagination
-    const totalPages = Math.ceil(filteredProjects.length / PROJECTS_PER_PAGE);
-    const startIndex = (currentPage - 1) * PROJECTS_PER_PAGE;
-    const paginatedProjects = filteredProjects.slice(startIndex, startIndex + PROJECTS_PER_PAGE);
-
-    // Reset to page 1 when category changes
-    const handleCategoryChange = (categoryId) => {
-        setSelectedCategory(categoryId);
-        setCurrentPage(1);
-    };
 
     return (
         <PageContainer>
@@ -154,7 +151,7 @@ export default function AppsPage() {
                             key={cat.id}
                             variant="toggle"
                             data-active={selectedCategory === cat.id}
-                            onClick={() => handleCategoryChange(cat.id)}
+                            onClick={() => setSelectedCategory(cat.id)}
                             className="px-4 py-2 text-sm"
                         >
                             {cat.label}
@@ -164,35 +161,13 @@ export default function AppsPage() {
 
                 {/* Project Grid */}
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
-                    {paginatedProjects.map((project, index) => (
-                        <ProjectCard key={`${project.name}-${index}`} project={project} />
+                    {filteredProjects.map((project, index) => (
+                        <ProjectCard
+                            key={`${project.name}-${index}`}
+                            project={project}
+                        />
                     ))}
                 </div>
-
-                {/* Pagination */}
-                {totalPages > 1 && (
-                    <div className="flex items-center justify-center gap-4">
-                        <button
-                            type="button"
-                            onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-                            disabled={currentPage === 1}
-                            className="px-3 py-1.5 text-xs font-mono text-offblack/60 hover:text-offblack transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
-                        >
-                            Previous
-                        </button>
-                        <div className="text-xs font-mono text-offblack/60">
-                            {currentPage}/{totalPages}
-                        </div>
-                        <button
-                            type="button"
-                            onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-                            disabled={currentPage === totalPages}
-                            className="px-3 py-1.5 text-xs font-mono text-offblack/60 hover:text-offblack transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
-                        >
-                            Next
-                        </button>
-                    </div>
-                )}
 
                 {/* No Results */}
                 {filteredProjects.length === 0 && (

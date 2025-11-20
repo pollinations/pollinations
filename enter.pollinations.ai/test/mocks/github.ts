@@ -32,8 +32,7 @@ export function createMockGithub(): MockAPI<MockGithubState> {
     });
 
     const githubAPI = new Hono()
-        .use("/user", githubAuth)
-        .use("/user/*", githubAuth)
+        .use("*", githubAuth)
         .get("/user/emails", (c) => {
             return c.json([
                 {

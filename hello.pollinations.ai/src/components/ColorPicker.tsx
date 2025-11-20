@@ -1,6 +1,14 @@
 import React, { useEffect, useState } from "react";
 import { ThemeDefinition } from "../config/colors";
-import { RefreshCwIcon, CheckIcon, ShuffleIcon, PaletteIcon, DicesIcon } from "lucide-react";
+import {
+    RefreshCwIcon,
+    CheckIcon,
+    ShuffleIcon,
+    PaletteIcon,
+    DicesIcon,
+    SparklesIcon,
+} from "lucide-react";
+import { useThemeGenerator } from "../hooks/useThemeGenerator";
 
 // ============================================
 // TYPES & HELPERS
@@ -16,7 +24,11 @@ type ThemeState = Record<string, ColorBucketData>;
 const tokenToCssVar = (path: string) => {
     const parts = path.split(".");
     const prefix = parts[0];
-    const rest = parts.slice(1).join("-").replace(/([A-Z])/g, "-$1").toLowerCase();
+    const rest = parts
+        .slice(1)
+        .join("-")
+        .replace(/([A-Z])/g, "-$1")
+        .toLowerCase();
     return `--token-${prefix}-${rest}`;
 };
 
@@ -30,7 +42,9 @@ const getRandomColor = () => {
 };
 
 // Convert old format to new bucket format
-const convertToThemeState = (oldFormat: Record<string, string[]>): ThemeState => {
+const convertToThemeState = (
+    oldFormat: Record<string, string[]>
+): ThemeState => {
     const newState: ThemeState = {};
     Object.entries(oldFormat).forEach(([color, tokens], index) => {
         newState[`bucket-${index}`] = { color, tokens };
@@ -42,11 +56,11 @@ const convertToThemeState = (oldFormat: Record<string, string[]>): ThemeState =>
 // COMPONENTS
 // ============================================
 
-function TokenChip({ 
-    token, 
-    onDragStart 
-}: { 
-    token: string; 
+function TokenChip({
+    token,
+    onDragStart,
+}: {
+    token: string;
     onDragStart: (e: React.DragEvent, token: string) => void;
 }) {
     return (
@@ -112,7 +126,7 @@ function ColorBucket({
         >
             {/* Header: Color Input & Hex */}
             <div className="flex items-center gap-2">
-                <div 
+                <div
                     className="relative w-5 h-5 rounded-full overflow-hidden shadow-sm ring-1 ring-black/5 flex-shrink-0 cursor-pointer"
                     onClick={handleColorInputClick}
                 >
@@ -163,7 +177,25 @@ function ColorBucket({
 
 export function ColorPicker() {
     const [isOpen, setIsOpen] = useState(false);
-    const [theme, setTheme] = useState<ThemeState>(() => convertToThemeState(ThemeDefinition));
+    const [theme, setTheme] = useState<ThemeState>(() =>
+        convertToThemeState(ThemeDefinition)
+    );
+    const [aiPrompt, setAiPrompt] = useState("");
+
+    // AI Theme Generator
+    const {
+        generateTheme,
+        theme: aiGeneratedTheme,
+        loading: aiLoading,
+        error: aiError,
+    } = useThemeGenerator();
+
+    // Apply AI-generated theme when ready
+    useEffect(() => {
+        if (aiGeneratedTheme) {
+            setTheme(convertToThemeState(aiGeneratedTheme));
+        }
+    }, [aiGeneratedTheme]);
 
     // Toggle on Ctrl+E
     useEffect(() => {
@@ -182,7 +214,10 @@ export function ColorPicker() {
         Object.values(theme).forEach((bucket) => {
             bucket.tokens.forEach((tokenPath) => {
                 const cssVar = tokenToCssVar(tokenPath);
-                document.documentElement.style.setProperty(cssVar, bucket.color);
+                document.documentElement.style.setProperty(
+                    cssVar,
+                    bucket.color
+                );
             });
         });
     }, [theme]);
@@ -191,17 +226,19 @@ export function ColorPicker() {
     const handleDrop = (e: React.DragEvent, targetBucketId: string) => {
         e.preventDefault();
         const token = e.dataTransfer.getData("text/plain");
-        
+
         if (!token) return;
 
         setTheme((prev) => {
             const newTheme = { ...prev };
-            
+
             // Remove token from all buckets
             Object.keys(newTheme).forEach((bucketId) => {
                 newTheme[bucketId] = {
                     ...newTheme[bucketId],
-                    tokens: newTheme[bucketId].tokens.filter((t) => t !== token),
+                    tokens: newTheme[bucketId].tokens.filter(
+                        (t) => t !== token
+                    ),
                 };
             });
 
@@ -253,7 +290,7 @@ export function ColorPicker() {
             const bucketIds = Object.keys(prev);
             const allTokens = Object.values(prev).flatMap((b) => b.tokens);
             const newTheme = { ...prev };
-            
+
             // Clear all token arrays but keep colors
             bucketIds.forEach((id) => {
                 newTheme[id] = { ...newTheme[id], tokens: [] };
@@ -261,7 +298,8 @@ export function ColorPicker() {
 
             // Shuffle tokens and distribute
             allTokens.forEach((token) => {
-                const randomId = bucketIds[Math.floor(Math.random() * bucketIds.length)];
+                const randomId =
+                    bucketIds[Math.floor(Math.random() * bucketIds.length)];
                 newTheme[randomId].tokens.push(token);
             });
 
@@ -346,6 +384,63 @@ export function ColorPicker() {
                 >
                     <CheckIcon className="w-3 h-3" />
                 </button>
+            </div>
+
+            {/* AI Theme Generator */}
+            <div className="px-3 py-2 border-b border-gray-100 space-y-2">
+                <div className="flex gap-1 items-start">
+                    <textarea
+                        value={aiPrompt}
+                        onChange={(e) => {
+                            setAiPrompt(e.target.value);
+                            e.target.style.height = "auto";
+                            e.target.style.height =
+                                e.target.scrollHeight + "px";
+                        }}
+                        onKeyDown={(e) => {
+                            if (
+                                e.key === "Enter" &&
+                                !e.shiftKey &&
+                                aiPrompt.trim() &&
+                                !aiLoading
+                            ) {
+                                e.preventDefault();
+                                generateTheme(aiPrompt);
+                            }
+                        }}
+                        placeholder="AI theme prompt..."
+                        className="flex-1 text-xs px-2 py-2 bg-gray-50 border border-gray-200 rounded focus:outline-none focus:border-blue-400 transition-colors resize-none overflow-hidden"
+                        disabled={aiLoading}
+                        rows={1}
+                    />
+                    <button
+                        type="button"
+                        onClick={() => {
+                            if (aiPrompt.trim() && !aiLoading) {
+                                generateTheme(aiPrompt);
+                            }
+                        }}
+                        disabled={aiLoading || !aiPrompt.trim()}
+                        className="p-1 text-purple-500 hover:text-purple-700 disabled:text-gray-300 transition-colors flex-shrink-0"
+                        title="Generate AI Theme"
+                    >
+                        <SparklesIcon
+                            className={`w-3 h-3 ${
+                                aiLoading ? "animate-spin" : ""
+                            }`}
+                        />
+                    </button>
+                </div>
+                {aiError && (
+                    <div className="text-[9px] text-red-500 px-1">
+                        Error: {aiError}
+                    </div>
+                )}
+                {aiLoading && (
+                    <div className="text-[9px] text-gray-500 px-1">
+                        Generating theme...
+                    </div>
+                )}
             </div>
 
             {/* Scrollable Content */}

@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Button } from "../ui/button";
 import { XIcon } from "../../icons/XIcon";
 import { useModelList } from "../../hooks/useModelList";
-import { Colors } from "../../config/colors";
+import { Tokens } from "../../config/colors";
 import { TextGenerator } from "../TextGenerator";
 import { PLAY_PAGE } from "../../config/content";
 import { API_KEY } from "../../config/api";
@@ -145,10 +145,10 @@ export function PlayGenerator({ selectedModel, prompt }: PlayGeneratorProps) {
             {supportsImageInput && (
                 <div className="mb-6">
                     <div className="flex items-baseline gap-2 mb-2">
-                        <label className="font-headline text-charcoal uppercase text-xs tracking-wider font-black">
+                        <label className="font-headline text-text-body-main uppercase text-xs tracking-wider font-black">
                             <TextGenerator content={PLAY_PAGE.addImagesLabel} />
                         </label>
-                        <span className="font-body text-[10px] text-gray">
+                        <span className="font-body text-[10px] text-text-caption">
                             <TextGenerator content={PLAY_PAGE.upToFourLabel} />
                         </span>
                     </div>
@@ -165,7 +165,7 @@ export function PlayGenerator({ selectedModel, prompt }: PlayGeneratorProps) {
                                             <img
                                                 src={hasImage}
                                                 alt={`Upload ${index + 1}`}
-                                                className="w-full h-full object-cover border-2 border-charcoal"
+                                                className="w-full h-full object-cover border-2 border-border-strong"
                                             />
                                             <Button
                                                 type="button"
@@ -183,12 +183,12 @@ export function PlayGenerator({ selectedModel, prompt }: PlayGeneratorProps) {
                                             >
                                                 <XIcon
                                                     className="w-4 h-4"
-                                                    stroke={Colors.charcoal}
+                                                    stroke={Tokens.text.body.main}
                                                 />
                                             </Button>
                                         </>
                                     ) : (
-                                        <label className="w-full h-full bg-gray-ultra-light border-2 border-gray hover:border-yellow hover:bg-gray-ultra-light transition-colors flex items-center justify-center cursor-pointer">
+                                        <label className="w-full h-full bg-input-background border-2 border-border-main hover:border-border-highlight hover:bg-input-background transition-colors flex items-center justify-center cursor-pointer">
                                             <input
                                                 type="file"
                                                 accept="image/*"
@@ -216,7 +216,7 @@ export function PlayGenerator({ selectedModel, prompt }: PlayGeneratorProps) {
                                                     }
                                                 }}
                                             />
-                                            <span className="font-headline text-2xl font-black text-gray-light">
+                                            <span className="font-headline text-2xl font-black text-text-on-color">
                                                 +
                                             </span>
                                         </label>
@@ -240,7 +240,7 @@ export function PlayGenerator({ selectedModel, prompt }: PlayGeneratorProps) {
                         }}
                     >
                         <div>
-                            <label className="block font-headline text-charcoal mb-2 uppercase text-xs tracking-wider font-black">
+                            <label className="block font-headline text-text-body-main mb-2 uppercase text-xs tracking-wider font-black">
                                 <TextGenerator content={PLAY_PAGE.widthLabel} />
                             </label>
                             <input
@@ -249,11 +249,11 @@ export function PlayGenerator({ selectedModel, prompt }: PlayGeneratorProps) {
                                 onChange={(e) =>
                                     setWidth(Number(e.target.value))
                                 }
-                                className="w-full p-3 bg-gray-ultra-light text-charcoal font-body focus:outline-none focus:bg-gray-ultra-light hover:bg-gray-ultra-light transition-colors"
+                                className="w-full p-3 bg-input-background text-text-body-main font-body focus:outline-none focus:bg-input-background hover:bg-input-background transition-colors"
                             />
                         </div>
                         <div>
-                            <label className="block font-headline text-charcoal mb-2 uppercase text-xs tracking-wider font-black">
+                            <label className="block font-headline text-text-body-main mb-2 uppercase text-xs tracking-wider font-black">
                                 <TextGenerator
                                     content={PLAY_PAGE.heightLabel}
                                 />
@@ -264,11 +264,11 @@ export function PlayGenerator({ selectedModel, prompt }: PlayGeneratorProps) {
                                 onChange={(e) =>
                                     setHeight(Number(e.target.value))
                                 }
-                                className="w-full p-3 bg-gray-ultra-light text-charcoal font-body focus:outline-none focus:bg-gray-ultra-light hover:bg-gray-ultra-light transition-colors"
+                                className="w-full p-3 bg-input-background text-text-body-main font-body focus:outline-none focus:bg-input-background hover:bg-input-background transition-colors"
                             />
                         </div>
                         <div>
-                            <label className="block font-headline text-charcoal mb-2 uppercase text-xs tracking-wider font-black">
+                            <label className="block font-headline text-text-body-main mb-2 uppercase text-xs tracking-wider font-black">
                                 <TextGenerator content={PLAY_PAGE.seedLabel} />
                             </label>
                             <input
@@ -278,16 +278,16 @@ export function PlayGenerator({ selectedModel, prompt }: PlayGeneratorProps) {
                                     setSeed(Number(e.target.value))
                                 }
                                 placeholder={PLAY_PAGE.seedPlaceholder.text}
-                                className="w-full p-3 bg-gray-ultra-light text-charcoal font-body focus:outline-none focus:bg-gray-ultra-light hover:bg-gray-ultra-light transition-colors placeholder:text-gray"
+                                className="w-full p-3 bg-input-background text-text-body-main font-body focus:outline-none focus:bg-input-background hover:bg-input-background transition-colors placeholder:text-text-caption"
                             />
                         </div>
                         <div>
-                            <label className="block font-headline text-charcoal mb-2 uppercase text-xs tracking-wider font-black">
+                            <label className="block font-headline text-text-body-main mb-2 uppercase text-xs tracking-wider font-black">
                                 <TextGenerator
                                     content={PLAY_PAGE.enhanceLabel}
                                 />
                             </label>
-                            <label className="relative flex items-center justify-center h-[52px] bg-gray-ultra-light hover:bg-gray-ultra-light transition-colors cursor-pointer select-none group">
+                            <label className="relative flex items-center justify-center h-[52px] bg-input-background hover:bg-input-background transition-colors cursor-pointer select-none group">
                                 <input
                                     type="checkbox"
                                     checked={enhance}
@@ -296,9 +296,9 @@ export function PlayGenerator({ selectedModel, prompt }: PlayGeneratorProps) {
                                     }
                                     className="sr-only peer"
                                 />
-                                <div className="w-6 h-6 border-4 border-pink bg-gray-ultra-light peer-checked:bg-yellow transition-colors group-hover:border-pink" />
+                                <div className="w-6 h-6 border-4 border-border-brand bg-input-background peer-checked:bg-button-secondary-bg transition-colors group-hover:border-border-brand" />
                                 <svg
-                                    className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-4 h-4 text-charcoal opacity-0 peer-checked:opacity-100 transition-opacity pointer-events-none"
+                                    className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-4 h-4 text-text-body-main opacity-0 peer-checked:opacity-100 transition-opacity pointer-events-none"
                                     fill="none"
                                     stroke="currentColor"
                                     viewBox="0 0 24 24"
@@ -314,10 +314,10 @@ export function PlayGenerator({ selectedModel, prompt }: PlayGeneratorProps) {
                             </label>
                         </div>
                         <div>
-                            <label className="block font-headline text-charcoal mb-2 uppercase text-xs tracking-wider font-black">
+                            <label className="block font-headline text-text-body-main mb-2 uppercase text-xs tracking-wider font-black">
                                 <TextGenerator content={PLAY_PAGE.logoLabel} />
                             </label>
-                            <label className="relative flex items-center justify-center h-[52px] bg-gray-ultra-light hover:bg-gray-ultra-light transition-colors cursor-pointer select-none group">
+                            <label className="relative flex items-center justify-center h-[52px] bg-input-background hover:bg-input-background transition-colors cursor-pointer select-none group">
                                 <input
                                     type="checkbox"
                                     checked={nologo}
@@ -326,9 +326,9 @@ export function PlayGenerator({ selectedModel, prompt }: PlayGeneratorProps) {
                                     }
                                     className="sr-only peer"
                                 />
-                                <div className="w-6 h-6 border-4 border-pink bg-gray-ultra-light peer-checked:bg-yellow transition-colors group-hover:border-pink" />
+                                <div className="w-6 h-6 border-4 border-border-brand bg-input-background peer-checked:bg-button-secondary-bg transition-colors group-hover:border-border-brand" />
                                 <svg
-                                    className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-4 h-4 text-charcoal opacity-0 peer-checked:opacity-100 transition-opacity pointer-events-none"
+                                    className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-4 h-4 text-text-body-main opacity-0 peer-checked:opacity-100 transition-opacity pointer-events-none"
                                     fill="none"
                                     stroke="currentColor"
                                     viewBox="0 0 24 24"
@@ -372,7 +372,7 @@ export function PlayGenerator({ selectedModel, prompt }: PlayGeneratorProps) {
 
             {/* Result Display */}
             {result && (
-                <div className={isImageModel ? "" : "bg-gray-ultra-light p-6"}>
+                <div className={isImageModel ? "" : "bg-input-background p-6"}>
                     {isImageModel ? (
                         <img
                             src={result}
@@ -381,7 +381,7 @@ export function PlayGenerator({ selectedModel, prompt }: PlayGeneratorProps) {
                             onLoad={() => setIsLoading(false)}
                         />
                     ) : (
-                        <div className="font-body text-charcoal whitespace-pre-wrap">
+                        <div className="font-body text-text-body-main whitespace-pre-wrap">
                             {result}
                         </div>
                     )}

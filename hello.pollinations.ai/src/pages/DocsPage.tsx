@@ -12,7 +12,6 @@ import { AuthCard } from "../components/docs/AuthCard";
 import { ImageGenCard } from "../components/docs/ImageGenCard";
 import { TextGenCard } from "../components/docs/TextGenCard";
 import { ModelDiscoveryCard } from "../components/docs/ModelDiscoveryCard";
-import { Colors } from "../config/colors";
 
 function DocsPage() {
     const [agentPromptCopied, setAgentPromptCopied] = useState(false);
@@ -42,7 +41,7 @@ function DocsPage() {
                         size="lg"
                     >
                         <TextGenerator content={DOCS_PAGE.fullApiDocsButton} />
-                        <ExternalLinkIcon stroke={Colors.charcoal} />
+                        <ExternalLinkIcon className="w-4 h-4 text-text-body-main" />
                     </Button>
                     <Button
                         variant="primary"
@@ -58,7 +57,7 @@ function DocsPage() {
                         <TextGenerator content={DOCS_PAGE.agentPromptButton} />
                         <CopyIcon />
                         {agentPromptCopied && (
-                            <span className="absolute -top-5 left-0 font-headline text-xs font-black text-pink uppercase tracking-wider">
+                            <span className="absolute -top-5 left-0 font-headline text-xs font-black text-text-brand uppercase tracking-wider">
                                 <TextGenerator
                                     content={DOCS_PAGE.copiedLabel}
                                 />

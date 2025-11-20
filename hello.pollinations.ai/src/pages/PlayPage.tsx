@@ -52,7 +52,7 @@ function PlayPage() {
                         onClick={() =>
                             setView(view === "play" ? "feed" : "play")
                         }
-                        className="font-body text-sm text-gray hover:text-charcoal transition-colors"
+                        className="font-body text-sm text-text-body-tertiary hover:text-text-body-main transition-colors"
                     >
                         <TextGenerator
                             content={
@@ -84,7 +84,7 @@ function PlayPage() {
 
                 {/* Prompt - Independent of view state */}
                 <div className="mb-6">
-                    <label className="block font-headline text-charcoal mb-2 uppercase text-xs tracking-wider font-black">
+                    <label className="block font-headline text-text-body-main mb-2 uppercase text-xs tracking-wider font-black">
                         <TextGenerator content={PLAY_PAGE.promptLabel} />
                     </label>
                     {view === "play" ? (
@@ -92,10 +92,10 @@ function PlayPage() {
                             value={prompt}
                             onChange={(e) => setPrompt(e.target.value)}
                             placeholder={PLAY_PAGE.imagePlaceholder.text}
-                            className="w-full h-[7.5rem] p-4 bg-gray-ultra-light text-charcoal font-body resize-none focus:outline-none focus:bg-gray-ultra-light hover:bg-gray-ultra-light transition-colors scrollbar-hide"
+                            className="w-full h-[7.5rem] p-4 bg-input-background text-text-body-main font-body resize-none focus:outline-none focus:bg-input-background hover:bg-input-background transition-colors scrollbar-hide placeholder:text-text-body-tertiary"
                         />
                     ) : (
-                        <div className="w-full h-[7.5rem] p-4 bg-gray-medium text-charcoal font-body overflow-y-auto break-words scrollbar-hide">
+                        <div className="w-full h-[7.5rem] p-4 bg-surface-elevated text-text-body-main font-body overflow-y-auto break-words scrollbar-hide">
                             {displayPrompt || "Waiting for content..."}
                         </div>
                     )}

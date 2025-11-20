@@ -7,8 +7,7 @@ import { PageContainer } from "../components/ui/page-container";
 import { SubCard } from "../components/ui/sub-card";
 import { ExternalLinkIcon } from "../icons/ExternalLinkIcon";
 import { allProjects } from "../config/projects";
-import { Colors } from "../config/colors";
-import { ICONS } from "../icons/icons";
+import { GithubIcon } from "../icons/SocialIcons";
 import { APPS_PAGE } from "../config/content";
 
 interface Project {
@@ -75,19 +74,16 @@ function ProjectCard({ project }: ProjectCardProps) {
                     rel="noopener noreferrer"
                     variant="primary"
                     size="sm"
-                    className="self-start mb-3 w-full relative pr-10 shadow-none hover:shadow-none text-left justify-start bg-gray-ultra-light hover:bg-gray-ultra-light"
+                    className="self-start mb-3 w-full relative pr-10 shadow-none hover:shadow-none text-left justify-start bg-input-background hover:bg-input-background"
                 >
-                    <span className="font-headline text-base font-black uppercase text-left block text-charcoal">
+                    <span className="font-headline text-base font-black uppercase text-left block text-text-body-main">
                         {project.name}
                     </span>
-                    <ExternalLinkIcon
-                        stroke={Colors.charcoal}
-                        className="w-4 h-4 absolute top-2 right-2"
-                    />
+                    <ExternalLinkIcon className="w-4 h-4 absolute top-2 right-2 text-text-body-main" />
                 </Button>
 
                 {project.description && (
-                    <Body className="text-sm text-gray-dark line-clamp-6 mb-4">
+                    <Body className="text-sm text-text-body-secondary line-clamp-6 mb-4">
                         {project.description}
                     </Body>
                 )}
@@ -99,20 +95,16 @@ function ProjectCard({ project }: ProjectCardProps) {
                         href={`https://github.com/${githubUsername}`}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-mono font-medium bg-gray-ultra-light hover:bg-gray-ultra-light border border-gray-light hover:border-gray transition-all max-w-[200px]"
+                        className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-mono font-medium bg-input-background hover:bg-input-background border border-border-faint hover:border-border-main transition-all max-w-[200px]"
                         title={`View ${project.author} on GitHub`}
                     >
-                        <img
-                            src={ICONS.github}
-                            alt="GitHub"
-                            className="w-3 h-3 opacity-60 flex-shrink-0"
-                        />
-                        <span className="truncate">{project.author}</span>
+                        <GithubIcon className="w-3 h-3 text-text-body-main opacity-60 flex-shrink-0" />
+                        <span className="truncate text-text-body-main">{project.author}</span>
                     </a>
                 )}
                 {!githubUsername && project.author && (
-                    <div className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-mono font-medium bg-gray-ultra-light border border-gray-light max-w-[200px]">
-                        <span className="truncate">{project.author}</span>
+                    <div className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-mono font-medium bg-input-background border border-border-faint max-w-[200px]">
+                        <span className="truncate text-text-body-main">{project.author}</span>
                     </div>
                 )}
 
@@ -122,19 +114,15 @@ function ProjectCard({ project }: ProjectCardProps) {
                         href={project.repo}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-mono font-medium bg-gray-ultra-light hover:bg-gray-ultra-light border border-gray-light hover:border-gray transition-all max-w-[200px]"
+                        className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-mono font-medium bg-input-background hover:bg-input-background border border-border-faint hover:border-border-main transition-all max-w-[200px]"
                         title={`View ${repoName} on GitHub`}
                     >
-                        <img
-                            src={ICONS.github}
-                            alt="GitHub"
-                            className="w-3 h-3 opacity-60 flex-shrink-0"
-                        />
-                        <span className="truncate flex-1 min-w-0">
+                        <GithubIcon className="w-3 h-3 text-text-body-main opacity-60 flex-shrink-0" />
+                        <span className="truncate flex-1 min-w-0 text-text-body-main">
                             {repoName}
                         </span>
                         {(project.stars || 0) > 0 && (
-                            <span className="text-gray-dark flex-shrink-0">
+                            <span className="text-text-body-secondary flex-shrink-0">
                                 ⭐ {project.stars}
                             </span>
                         )}
@@ -194,7 +182,7 @@ export default function AppsPage() {
                 {/* No Results */}
                 {filteredProjects.length === 0 && (
                     <div className="text-center py-12">
-                        <Body className="text-charcoal">
+                        <Body className="text-text-body-main">
                             No projects found in this category yet.
                         </Body>
                     </div>

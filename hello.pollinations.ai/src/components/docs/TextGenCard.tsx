@@ -96,10 +96,10 @@ export function TextGenCard() {
                                     key={prompt}
                                     type="button"
                                     onClick={() => setSelectedPrompt(prompt)}
-                                    className={`px-3 py-1.5 font-mono text-xs border-2 transition-all cursor-pointer ${
+                                    className={`px-3 py-1.5 font-mono text-xs border-2 transition-all cursor-pointer text-text-body-main ${
                                         selectedPrompt === prompt
-                                            ? "bg-yellow border-pink font-black shadow-pink-sm"
-                                            : "bg-gray-ultra-light border-gray hover:border-pink"
+                                            ? "bg-indicator-text border-border-brand font-black shadow-shadow-brand-sm"
+                                            : "bg-input-background border-border-main hover:border-border-brand"
                                     }`}
                                 >
                                     {prompt}
@@ -126,17 +126,17 @@ export function TextGenCard() {
                                     key={value}
                                     type="button"
                                     onClick={() => toggleModel(value)}
-                                    className={`px-3 py-1.5 font-mono text-xs border-2 transition-all cursor-pointer ${
+                                    className={`px-3 py-1.5 font-mono text-xs border-2 transition-all cursor-pointer text-text-body-main ${
                                         selectedModel === value
-                                            ? "bg-yellow border-pink font-black shadow-pink-sm"
-                                            : "bg-gray-ultra-light border-gray hover:border-pink"
+                                            ? "bg-indicator-text border-border-brand font-black shadow-shadow-brand-sm"
+                                            : "bg-input-background border-border-main hover:border-border-brand"
                                     }`}
                                 >
                                     {label}
                                 </button>
                             ))}
                         </div>
-                        <p className="font-body text-xs text-gray mt-2">
+                        <p className="font-body text-xs text-text-caption mt-2">
                             <TextGenerator
                                 content={DOCS_PAGE.defaultModelLabel}
                             />
@@ -151,10 +151,10 @@ export function TextGenCard() {
                         <button
                             type="button"
                             onClick={() => setJsonMode(!jsonMode)}
-                            className={`px-3 py-1.5 font-mono text-xs border-2 transition-all cursor-pointer ${
+                            className={`px-3 py-1.5 font-mono text-xs border-2 transition-all cursor-pointer text-text-body-main ${
                                 jsonMode
-                                    ? "bg-yellow border-pink font-black shadow-pink-sm"
-                                    : "bg-gray-ultra-light border-gray hover:border-pink"
+                                    ? "bg-indicator-text border-border-brand font-black shadow-shadow-brand-sm"
+                                    : "bg-input-background border-border-main hover:border-border-brand"
                             }`}
                         >
                             json=true
@@ -163,15 +163,15 @@ export function TextGenCard() {
                 </div>
 
                 {/* Right side: Response (no label, no border, no scrollbar) */}
-                <div className="bg-gray-medium p-3 min-h-[200px] max-h-[200px] overflow-hidden">
+                <div className="bg-surface-card p-3 min-h-[200px] max-h-[200px] overflow-hidden">
                     {isLoading ? (
-                        <p className="text-gray font-body text-xs">
+                        <p className="text-text-caption font-body text-xs">
                             <TextGenerator
                                 content={DOCS_PAGE.generatingLabel}
                             />
                         </p>
                     ) : (
-                        <p className="font-body text-charcoal text-xs leading-relaxed whitespace-pre-wrap overflow-y-auto h-full pr-2 scrollbar-hide">
+                        <p className="font-body text-text-body-main text-xs leading-relaxed whitespace-pre-wrap overflow-y-auto h-full pr-2 scrollbar-hide">
                             {response}
                         </p>
                     )}
@@ -179,26 +179,26 @@ export function TextGenCard() {
             </div>
 
             {/* URL Display */}
-            <div className="mb-4 p-3 bg-gray-ultra-light font-mono text-xs break-all">
-                <span className="text-gray">
+            <div className="mb-4 p-3 bg-input-background font-mono text-xs text-text-body-main break-all">
+                <span className="text-text-caption">
                     https://enter.pollinations.ai/api/generate/text/
                 </span>
-                <span className="bg-yellow px-1 font-black">
+                <span className="bg-indicator-text px-1 font-black text-text-body-main">
                     {selectedPrompt}
                 </span>
                 {(selectedModel || jsonMode) && (
                     <>
-                        <span className="text-gray">?</span>
+                        <span className="text-text-caption">?</span>
                         {selectedModel && (
-                            <span className="bg-yellow px-1 font-black">
+                            <span className="bg-indicator-text px-1 font-black text-text-body-main">
                                 model={selectedModel}
                             </span>
                         )}
                         {selectedModel && jsonMode && (
-                            <span className="text-gray">&</span>
+                            <span className="text-text-caption">&</span>
                         )}
                         {jsonMode && (
-                            <span className="bg-yellow px-1 font-black">
+                            <span className="bg-indicator-text px-1 font-black text-text-body-main">
                                 json=true
                             </span>
                         )}

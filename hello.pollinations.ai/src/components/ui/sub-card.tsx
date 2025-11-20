@@ -23,7 +23,7 @@ import { cn } from "../../lib/utils";
 // - Responsive padding
 // ============================================
 
-const subCardVariants = cva("bg-gray-medium", {
+const subCardVariants = cva("bg-surface-card", {
     variants: {
         size: {
             default: "p-6", // Feature cards (HelloPage, CommunityPage)

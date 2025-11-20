@@ -1,4 +1,5 @@
 import { TextGenerator } from "../components/TextGenerator";
+import { COMMUNITY_PAGE } from "../config/content";
 import { ImageGenerator } from "../components/ImageGenerator";
 import { SOCIAL_LINKS } from "../config/socialLinksList";
 import { Button } from "../components/ui/button";
@@ -8,8 +9,6 @@ import { Divider } from "../components/ui/divider";
 import { PageCard } from "../components/ui/page-card";
 import { PageContainer } from "../components/ui/page-container";
 import { SubCard } from "../components/ui/sub-card";
-import { Colors } from "../config/colors";
-import { COMMUNITY_PAGE } from "../config/content";
 import { useNews } from "../hooks/useNews";
 import ReactMarkdown from "react-markdown";
 
@@ -38,7 +37,7 @@ function CommunityPage() {
                         <TextGenerator
                             content={COMMUNITY_PAGE.discordSubtitle}
                             as="div"
-                            className="font-body text-sm text-gray-dark mb-6"
+                            className="font-body text-sm text-text-body-secondary mb-6"
                         />
                         <Button
                             as="a"
@@ -51,7 +50,7 @@ function CommunityPage() {
                             <TextGenerator
                                 content={COMMUNITY_PAGE.joinDiscordButton}
                             />
-                            <ExternalLinkIcon stroke={Colors.yellow} />
+                            <ExternalLinkIcon className="w-4 h-4 stroke-text-highlight" />
                         </Button>
                     </SubCard>
 
@@ -65,7 +64,7 @@ function CommunityPage() {
                         <TextGenerator
                             content={COMMUNITY_PAGE.githubSubtitle}
                             as="div"
-                            className="font-body text-sm text-gray-dark mb-6"
+                            className="font-body text-sm text-text-body-secondary mb-6"
                         />
                         <Button
                             as="a"
@@ -78,7 +77,7 @@ function CommunityPage() {
                             <TextGenerator
                                 content={COMMUNITY_PAGE.contributeButton}
                             />
-                            <ExternalLinkIcon stroke={Colors.yellow} />
+                            <ExternalLinkIcon className="w-4 h-4 stroke-text-highlight" />
                         </Button>
                     </SubCard>
                 </div>
@@ -103,20 +102,20 @@ function CommunityPage() {
                                 return (
                                     <div
                                         key={item.id}
-                                        className="bg-gray-ultra-light p-3 border-l-2 border-yellow"
+                                        className="bg-input-background p-3 border-l-2 border-border-highlight"
                                     >
                                         {item.date && (
-                                            <span className="inline-block bg-charcoal text-yellow px-2 py-0.5 font-mono text-xs font-black mb-2">
+                                            <span className="inline-block bg-button-primary-bg text-text-highlight px-2 py-0.5 font-mono text-xs font-black mb-2">
                                                 {item.date}
                                             </span>
                                         )}
-                                        <div className="font-body text-sm text-gray-dark leading-relaxed">
+                                        <div className="font-body text-sm text-text-body-secondary leading-relaxed">
                                             <ReactMarkdown
                                                 components={{
                                                     a: ({ node, ...props }) => (
                                                         <a
                                                             {...props}
-                                                            className="text-pink hover:underline font-bold"
+                                                            className="text-text-brand hover:underline font-bold"
                                                             target="_blank"
                                                             rel="noopener noreferrer"
                                                         />
@@ -139,7 +138,7 @@ function CommunityPage() {
                                                         return isInline ? (
                                                             <code
                                                                 {...props}
-                                                                className="bg-gray-ultra-light px-1 py-0.5 font-mono text-xs"
+                                                                className="bg-input-background px-1 py-0.5 font-mono text-xs"
                                                             >
                                                                 {children}
                                                             </code>
@@ -210,10 +209,10 @@ function CommunityPage() {
                                         className="w-full h-full object-contain"
                                     />
                                 </div>
-                                <p className="font-headline text-xs font-black text-charcoal mb-1 leading-tight">
+                                <p className="font-headline text-xs font-black text-text-body-main mb-1 leading-tight">
                                     {supporter.name}
                                 </p>
-                                <p className="font-body text-[10px] text-gray leading-tight line-clamp-2">
+                                <p className="font-body text-[10px] text-text-body-tertiary leading-tight line-clamp-2">
                                     {supporter.description}
                                 </p>
                             </a>

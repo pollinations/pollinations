@@ -1,10 +1,9 @@
 import { NavLink, Outlet } from "react-router-dom";
 import { useState } from "react";
-import logo from "../logo/logo.svg";
+import { Logo } from "./Logo";
 import { Button } from "./ui/button";
 import { ExternalLinkIcon } from "../icons/ExternalLinkIcon";
 import { SOCIAL_LINKS } from "../config/socialLinksList";
-import { Colors } from "../config/colors";
 
 const tabs = [
     { path: "/", label: "Hello" },
@@ -22,7 +21,7 @@ function Layout() {
     const showHeader = useHeaderVisibility();
     const [emailCopied, setEmailCopied] = useState(false);
     return (
-        <div className="relative min-h-screen bg-gray-light">
+        <div className="relative min-h-screen bg-surface-base">
             {/* Floating Transparent Header */}
             <header
                 className={`fixed top-0 left-0 right-0 z-50 transition-transform duration-300 ${
@@ -34,16 +33,7 @@ function Layout() {
                         {/* Mobile: Logo left, Two rows of buttons right */}
                         <div className="md:hidden flex items-center gap-3">
                             {/* Logo - Left side */}
-                            <div className="flex-shrink-0 w-24 h-24">
-                                <img
-                                    src={logo}
-                                    alt="pollinations.ai"
-                                    className="w-full h-full object-contain"
-                                    style={{
-                                        filter: `brightness(0) drop-shadow(4px 4px 0px ${Colors.pink})`,
-                                    }}
-                                />
-                            </div>
+                            <Logo className="flex-shrink-0 w-24 h-24 object-contain" />
 
                             {/* Navigation Tabs - Two rows right-aligned */}
                             <div className="flex flex-col gap-2 flex-1">
@@ -98,16 +88,7 @@ function Layout() {
                         <div className="hidden md:block">
                             <div className="flex items-center justify-between gap-4 overflow-hidden">
                                 {/* Logo - Left side */}
-                                <div className="flex-shrink-0 w-20 h-20">
-                                    <img
-                                        src={logo}
-                                        alt="pollinations.ai"
-                                        className="w-full h-full object-contain"
-                                        style={{
-                                            filter: `brightness(0) drop-shadow(4px 4px 0px ${Colors.pink})`,
-                                        }}
-                                    />
-                                </div>
+                                <Logo className="flex-shrink-0 w-20 h-20 object-contain" />
 
                                 {/* Navigation Tabs + Social Links - Right side */}
                                 <div className="flex gap-3 items-center overflow-x-auto scrollbar-hide">
@@ -142,7 +123,7 @@ function Layout() {
                                             .map(
                                                 ([
                                                     key,
-                                                    { url, icon, label },
+                                                    { url, icon: Icon, label },
                                                 ]) => (
                                                     <Button
                                                         key={key}
@@ -153,12 +134,9 @@ function Layout() {
                                                         title={label}
                                                         variant="icon"
                                                         size={null}
+                                                        className="text-text-body-main"
                                                     >
-                                                        <img
-                                                            src={icon}
-                                                            alt={label}
-                                                            className="w-full h-full object-contain"
-                                                        />
+                                                        <Icon className="w-full h-full" />
                                                     </Button>
                                                 )
                                             )}
@@ -172,13 +150,10 @@ function Layout() {
                                             variant="iconText"
                                             size={null}
                                         >
-                                            <span className="font-headline text-xs font-black uppercase tracking-wider text-pink">
+                                            <span className="font-headline text-xs font-black uppercase tracking-wider text-text-brand">
                                                 Enter
                                             </span>
-                                            <ExternalLinkIcon
-                                                className="w-3 h-3"
-                                                stroke={Colors.pink}
-                                            />
+                                            <ExternalLinkIcon className="w-4 h-4 text-text-brand" />
                                         </Button>
                                     </div>
                                 </div>
@@ -214,13 +189,9 @@ function Layout() {
                                         title={SOCIAL_LINKS.github.label}
                                         variant="icon"
                                         size={null}
-                                        className="w-10 h-10"
+                                        className="w-10 h-10 text-text-body-main"
                                     >
-                                        <img
-                                            src={SOCIAL_LINKS.github.icon}
-                                            alt={SOCIAL_LINKS.github.label}
-                                            className="w-full h-full object-contain"
-                                        />
+                                        <SOCIAL_LINKS.github.icon className="w-full h-full" />
                                     </Button>
                                     <Button
                                         as="a"
@@ -230,13 +201,9 @@ function Layout() {
                                         title={SOCIAL_LINKS.discord.label}
                                         variant="icon"
                                         size={null}
-                                        className="w-10 h-10"
+                                        className="w-10 h-10 text-text-body-main"
                                     >
-                                        <img
-                                            src={SOCIAL_LINKS.discord.icon}
-                                            alt={SOCIAL_LINKS.discord.label}
-                                            className="w-full h-full object-contain"
-                                        />
+                                        <SOCIAL_LINKS.discord.icon className="w-full h-full" />
                                     </Button>
                                     {/* All Other Social Icons */}
                                     {Object.entries(SOCIAL_LINKS)
@@ -245,25 +212,26 @@ function Layout() {
                                                 key !== "github" &&
                                                 key !== "discord"
                                         )
-                                        .map(([key, { url, icon, label }]) => (
-                                            <Button
-                                                key={key}
-                                                as="a"
-                                                href={url}
-                                                target="_blank"
-                                                rel="noopener noreferrer"
-                                                title={label}
-                                                variant="icon"
-                                                size={null}
-                                                className="w-10 h-10"
-                                            >
-                                                <img
-                                                    src={icon}
-                                                    alt={label}
-                                                    className="w-full h-full object-contain"
-                                                />
-                                            </Button>
-                                        ))}
+                                        .map(
+                                            ([
+                                                key,
+                                                { url, icon: Icon, label },
+                                            ]) => (
+                                                <Button
+                                                    key={key}
+                                                    as="a"
+                                                    href={url}
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    title={label}
+                                                    variant="icon"
+                                                    size={null}
+                                                    className="w-10 h-10 text-text-body-main"
+                                                >
+                                                    <Icon className="w-full h-full" />
+                                                </Button>
+                                            )
+                                        )}
                                 </div>
                                 <Button
                                     as="a"
@@ -274,13 +242,10 @@ function Layout() {
                                     size={null}
                                     className="h-10"
                                 >
-                                    <span className="font-headline text-xs font-black uppercase tracking-wider text-pink">
+                                    <span className="font-headline text-xs font-black uppercase tracking-wider text-text-brand">
                                         Enter
                                     </span>
-                                    <ExternalLinkIcon
-                                        className="w-3 h-3"
-                                        stroke={Colors.pink}
-                                    />
+                                    <ExternalLinkIcon className="w-3 h-3 text-text-brand" />
                                 </Button>
                             </div>
 
@@ -293,7 +258,7 @@ function Layout() {
                                     size={null}
                                     className="h-10"
                                 >
-                                    <span className="font-headline text-xs font-black uppercase tracking-wider text-charcoal">
+                                    <span className="font-headline text-xs font-black uppercase tracking-wider text-text-body-main">
                                         Terms
                                     </span>
                                 </Button>
@@ -304,7 +269,7 @@ function Layout() {
                                     size={null}
                                     className="h-10"
                                 >
-                                    <span className="font-headline text-xs font-black uppercase tracking-wider text-charcoal">
+                                    <span className="font-headline text-xs font-black uppercase tracking-wider text-text-body-main">
                                         Privacy
                                     </span>
                                 </Button>
@@ -324,11 +289,11 @@ function Layout() {
                                     size={null}
                                     className="h-10"
                                 >
-                                    <span className="font-headline text-xs font-black uppercase tracking-wider text-charcoal">
+                                    <span className="font-headline text-xs font-black uppercase tracking-wider text-text-body-main">
                                         Email
                                     </span>
                                     {emailCopied && (
-                                        <span className="absolute -top-8 left-0 font-headline text-xs font-black text-pink uppercase tracking-wider">
+                                        <span className="absolute -top-8 left-0 font-headline text-xs font-black text-text-brand uppercase tracking-wider">
                                             Copied!
                                         </span>
                                     )}
@@ -344,10 +309,10 @@ function Layout() {
                         <div className="flex items-center justify-between gap-6">
                             {/* Left: Branding Text */}
                             <div className="text-left flex-shrink-0">
-                                <p className="font-headline text-xs font-black text-charcoal uppercase tracking-wider">
+                                <p className="font-headline text-xs font-black text-text-body-main uppercase tracking-wider">
                                     Pollinations.AI - 2025
                                 </p>
-                                <p className="font-body text-[10px] text-charcoal">
+                                <p className="font-body text-[10px] text-text-body-main">
                                     Open source AI innovation from Berlin
                                 </p>
                             </div>
@@ -361,7 +326,7 @@ function Layout() {
                                     size={null}
                                     className="h-10"
                                 >
-                                    <span className="font-headline text-xs font-black uppercase tracking-wider text-charcoal">
+                                    <span className="font-headline text-xs font-black uppercase tracking-wider text-text-body-main">
                                         Terms
                                     </span>
                                 </Button>
@@ -372,7 +337,7 @@ function Layout() {
                                     size={null}
                                     className="h-10"
                                 >
-                                    <span className="font-headline text-xs font-black uppercase tracking-wider text-charcoal">
+                                    <span className="font-headline text-xs font-black uppercase tracking-wider text-text-body-main">
                                         Privacy
                                     </span>
                                 </Button>
@@ -392,11 +357,11 @@ function Layout() {
                                     size={null}
                                     className="h-10"
                                 >
-                                    <span className="font-headline text-xs font-black uppercase tracking-wider text-charcoal">
+                                    <span className="font-headline text-xs font-black uppercase tracking-wider text-text-body-main">
                                         Email
                                     </span>
                                     {emailCopied && (
-                                        <span className="absolute -top-8 left-0 font-headline text-xs font-black text-pink uppercase tracking-wider">
+                                        <span className="absolute -top-8 left-0 font-headline text-xs font-black text-text-brand uppercase tracking-wider">
                                             Copied!
                                         </span>
                                     )}
@@ -415,13 +380,9 @@ function Layout() {
                                         title={SOCIAL_LINKS.github.label}
                                         variant="icon"
                                         size={null}
-                                        className="w-10 h-10"
+                                        className="w-10 h-10 text-text-body-main"
                                     >
-                                        <img
-                                            src={SOCIAL_LINKS.github.icon}
-                                            alt={SOCIAL_LINKS.github.label}
-                                            className="w-full h-full object-contain"
-                                        />
+                                        <SOCIAL_LINKS.github.icon className="w-full h-full" />
                                     </Button>
                                     {/* Discord */}
                                     <Button
@@ -432,13 +393,9 @@ function Layout() {
                                         title={SOCIAL_LINKS.discord.label}
                                         variant="icon"
                                         size={null}
-                                        className="w-10 h-10"
+                                        className="w-10 h-10 text-text-body-main"
                                     >
-                                        <img
-                                            src={SOCIAL_LINKS.discord.icon}
-                                            alt={SOCIAL_LINKS.discord.label}
-                                            className="w-full h-full object-contain"
-                                        />
+                                        <SOCIAL_LINKS.discord.icon className="w-full h-full" />
                                     </Button>
                                     {/* All Other Social Icons */}
                                     {Object.entries(SOCIAL_LINKS)
@@ -447,25 +404,26 @@ function Layout() {
                                                 key !== "github" &&
                                                 key !== "discord"
                                         )
-                                        .map(([key, { url, icon, label }]) => (
-                                            <Button
-                                                key={key}
-                                                as="a"
-                                                href={url}
-                                                target="_blank"
-                                                rel="noopener noreferrer"
-                                                title={label}
-                                                variant="icon"
-                                                size={null}
-                                                className="w-10 h-10"
-                                            >
-                                                <img
-                                                    src={icon}
-                                                    alt={label}
-                                                    className="w-full h-full object-contain"
-                                                />
-                                            </Button>
-                                        ))}
+                                        .map(
+                                            ([
+                                                key,
+                                                { url, icon: Icon, label },
+                                            ]) => (
+                                                <Button
+                                                    key={key}
+                                                    as="a"
+                                                    href={url}
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    title={label}
+                                                    variant="icon"
+                                                    size={null}
+                                                    className="w-10 h-10 text-text-body-main"
+                                                >
+                                                    <Icon className="w-full h-full" />
+                                                </Button>
+                                            )
+                                        )}
                                 </div>
                                 {/* Enter Button */}
                                 <Button
@@ -477,13 +435,10 @@ function Layout() {
                                     size={null}
                                     className="h-10"
                                 >
-                                    <span className="font-headline text-xs font-black uppercase tracking-wider text-pink">
+                                    <span className="font-headline text-xs font-black uppercase tracking-wider text-text-brand">
                                         Enter
                                     </span>
-                                    <ExternalLinkIcon
-                                        className="w-3 h-3"
-                                        stroke={Colors.pink}
-                                    />
+                                    <ExternalLinkIcon className="w-3 h-3 text-text-brand" />
                                 </Button>
                             </div>
                         </div>

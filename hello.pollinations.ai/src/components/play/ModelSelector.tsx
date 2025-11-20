@@ -34,25 +34,25 @@ export const ModelSelector = memo(function ModelSelector({
         <div className="mb-6">
             {showLegend && (
                 <div className="flex items-center gap-4 mb-3">
-                    <div className="font-headline text-charcoal uppercase text-xs tracking-wider font-black">
+                    <div className="font-headline text-text-body-main uppercase text-xs tracking-wider font-black">
                         <TextGenerator content={PLAY_PAGE.modelsLabel} />
                     </div>
                     <div className="flex items-center gap-3 text-[10px] font-headline uppercase tracking-wider font-black">
                         <div className="flex items-center gap-1">
-                            <div className="w-3 h-3 bg-pink border border-charcoal" />
-                            <span className="text-gray">
+                            <div className="w-3 h-3 bg-indicator-image border border-border-strong" />
+                            <span className="text-text-caption">
                                 <TextGenerator content={PLAY_PAGE.imageLabel} />
                             </span>
                         </div>
                         <div className="flex items-center gap-1">
-                            <div className="w-3 h-3 bg-yellow border border-charcoal" />
-                            <span className="text-gray">
+                            <div className="w-3 h-3 bg-indicator-text border border-border-strong" />
+                            <span className="text-text-caption">
                                 <TextGenerator content={PLAY_PAGE.textLabel} />
                             </span>
                         </div>
                         <div className="flex items-center gap-1">
-                            <div className="w-3 h-3 bg-cyan border border-charcoal" />
-                            <span className="text-gray">Audio</span>
+                            <div className="w-3 h-3 bg-indicator-audio border border-border-strong" />
+                            <span className="text-text-caption">Audio</span>
                         </div>
                     </div>
                 </div>
@@ -69,10 +69,10 @@ export const ModelSelector = memo(function ModelSelector({
                     const isActive = selectedModel === m.id;
 
                     const colorClass = hasAudioOutput
-                        ? "bg-cyan"
+                        ? "bg-indicator-audio"
                         : isImage
-                        ? "bg-pink"
-                        : "bg-yellow";
+                        ? "bg-indicator-image"
+                        : "bg-indicator-text";
 
                     return (
                         <Button

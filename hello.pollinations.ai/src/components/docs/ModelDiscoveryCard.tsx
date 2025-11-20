@@ -79,10 +79,10 @@ export function ModelDiscoveryCard() {
                                                 key as keyof typeof modelEndpoints
                                             )
                                         }
-                                        className={`px-3 py-1.5 font-mono text-xs border-2 transition-all cursor-pointer ${
+                                        className={`px-3 py-1.5 font-mono text-xs border-2 transition-all cursor-pointer text-text-body-main ${
                                             selectedModel === key
-                                                ? "bg-yellow border-pink font-black shadow-pink-sm"
-                                                : "bg-gray-ultra-light border-gray hover:border-pink"
+                                                ? "bg-indicator-text border-border-brand font-black shadow-shadow-brand-sm"
+                                                : "bg-input-background border-border-main hover:border-border-brand"
                                         }`}
                                     >
                                         {label}
@@ -93,12 +93,12 @@ export function ModelDiscoveryCard() {
                     </div>
 
                     {/* URL Display */}
-                    <div className="p-3 bg-gray-ultra-light font-mono text-xs break-all">
-                        <span className="text-gray">
+                    <div className="p-3 bg-input-background font-mono text-xs text-text-body-main break-all">
+                        <span className="text-text-caption">
                             https://enter.pollinations.ai/api/generate
                         </span>
-                        <span className="bg-yellow px-1 font-black">
-                            {currentEndpoint.path}
+                        <span className="bg-indicator-text px-1 font-black text-text-body-main">
+                            {selectedModel && `/${selectedModel}`}
                         </span>
                     </div>
 
@@ -116,9 +116,9 @@ export function ModelDiscoveryCard() {
                 </div>
 
                 {/* Right side: Models JSON Output - Fixed Height */}
-                <div className="bg-gray-medium p-3 font-mono text-xs text-charcoal h-48 overflow-auto scrollbar-hide">
+                <div className="bg-surface-card p-3 font-mono text-xs text-text-body-main h-48 overflow-auto scrollbar-hide">
                     {isLoading ? (
-                        <div className="text-gray">
+                        <div className="text-text-caption">
                             <TextGenerator
                                 content={DOCS_PAGE.loadingModelsLabel}
                             />

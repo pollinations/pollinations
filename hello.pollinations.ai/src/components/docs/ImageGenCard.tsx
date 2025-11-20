@@ -131,10 +131,10 @@ export function ImageGenCard() {
                                     key={prompt}
                                     type="button"
                                     onClick={() => setSelectedPrompt(prompt)}
-                                    className={`px-3 py-1.5 font-mono text-xs border-2 transition-all cursor-pointer ${
+                                    className={`px-3 py-1.5 font-mono text-xs border-2 transition-all cursor-pointer text-text-body-main ${
                                         selectedPrompt === prompt
-                                            ? "bg-yellow border-pink font-black shadow-pink-sm"
-                                            : "bg-gray-ultra-light border-gray hover:border-pink"
+                                            ? "bg-indicator-text border-border-brand font-black shadow-shadow-brand-sm"
+                                            : "bg-input-background border-border-main hover:border-border-brand"
                                     }`}
                                 >
                                     {prompt}
@@ -163,10 +163,10 @@ export function ImageGenCard() {
                                     key={param}
                                     type="button"
                                     onClick={() => toggleParam(param)}
-                                    className={`px-3 py-1.5 font-mono text-xs border-2 transition-all cursor-pointer ${
+                                    className={`px-3 py-1.5 font-mono text-xs border-2 transition-all cursor-pointer text-text-body-main ${
                                         params.has(param)
-                                            ? "bg-yellow border-pink font-black shadow-pink-sm"
-                                            : "bg-gray-ultra-light border-gray hover:border-pink"
+                                            ? "bg-indicator-text border-border-brand font-black shadow-shadow-brand-sm"
+                                            : "bg-input-background border-border-main hover:border-border-brand"
                                     }`}
                                 >
                                     {param}
@@ -177,9 +177,9 @@ export function ImageGenCard() {
                 </div>
 
                 {/* Right side: Image Preview (no label) */}
-                <div className="bg-gray-ultra-light flex items-center justify-center min-h-[240px] max-w-[300px] max-h-[300px] overflow-hidden">
+                <div className="bg-input-background flex items-center justify-center min-h-[240px] max-w-[300px] max-h-[300px] overflow-hidden">
                     {isLoading ? (
-                        <p className="text-gray text-xs">
+                        <p className="text-text-caption text-xs">
                             <TextGenerator
                                 content={DOCS_PAGE.generatingLabel}
                             />
@@ -195,22 +195,20 @@ export function ImageGenCard() {
             </div>
 
             {/* URL Display */}
-            <div className="mb-4 p-3 bg-gray-ultra-light font-mono text-xs break-all">
-                <span className="text-gray">
+            <div className="mb-4 p-3 bg-input-background font-mono text-xs text-text-body-main break-all">
+                <span className="text-text-caption">
                     https://enter.pollinations.ai/api/generate/image/
                 </span>
-                <span className="bg-yellow px-1 font-black">
+                <span className="bg-indicator-text px-1 font-black text-text-body-main">
                     {selectedPrompt}
                 </span>
                 {params.size > 0 && (
                     <>
-                        <span className="text-gray">?</span>
+                        <span className="text-text-caption">?</span>
                         {Array.from(params).map((param, i) => (
                             <span key={param}>
-                                {i > 0 && (
-                                    <span className="text-gray">&</span>
-                                )}
-                                <span className="bg-yellow px-1 font-black">
+                                {i > 0 && <span className="text-text-caption">&</span>}
+                                <span className="bg-indicator-text px-1 font-black text-text-body-main">
                                     {param}
                                 </span>
                             </span>

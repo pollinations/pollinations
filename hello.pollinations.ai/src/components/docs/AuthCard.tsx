@@ -1,6 +1,5 @@
 import { Heading, Label } from "../ui/typography";
 import { ExternalLinkIcon } from "../../icons/ExternalLinkIcon";
-import { Colors } from "../../config/colors";
 import { TextGenerator } from "../TextGenerator";
 import { DOCS_PAGE } from "../../config/content";
 
@@ -23,20 +22,20 @@ export function AuthCard() {
                         </Label>
                         <div className="space-y-3">
                             {/* Publishable Key */}
-                            <div className="bg-gray-medium p-4">
+                            <div className="bg-surface-card p-4">
                                 <div className="flex items-start gap-3">
-                                    <span className="font-mono text-lg font-black text-yellow">
+                                    <span className="font-mono text-lg font-black text-text-highlight">
                                         pk_
                                     </span>
                                     <div>
-                                        <p className="font-headline text-xs font-black text-charcoal uppercase mb-2">
+                                        <p className="font-headline text-xs font-black text-text-body-main uppercase mb-2">
                                             <TextGenerator
                                                 content={
                                                     DOCS_PAGE.publishableLabel
                                                 }
                                             />
                                         </p>
-                                        <ul className="text-xs text-gray-dark space-y-1">
+                                        <ul className="text-xs text-text-body-secondary space-y-1">
                                             <li>
                                                 <TextGenerator
                                                     content={
@@ -51,7 +50,7 @@ export function AuthCard() {
                                                     }
                                                 />
                                             </li>
-                                            <li className="text-pink font-bold">
+                                            <li className="text-text-brand font-bold">
                                                 <TextGenerator
                                                     content={
                                                         DOCS_PAGE.publishableFeature3
@@ -64,18 +63,18 @@ export function AuthCard() {
                             </div>
 
                             {/* Secret Key */}
-                            <div className="bg-gray-medium p-4">
+                            <div className="bg-surface-card p-4">
                                 <div className="flex items-start gap-3">
-                                    <span className="font-mono text-lg font-black text-pink">
+                                    <span className="font-mono text-lg font-black text-text-brand">
                                         sk_
                                     </span>
                                     <div>
-                                        <p className="font-headline text-xs font-black text-charcoal uppercase mb-2">
+                                        <p className="font-headline text-xs font-black text-text-body-main uppercase mb-2">
                                             <TextGenerator
                                                 content={DOCS_PAGE.secretLabel}
                                             />
                                         </p>
-                                        <ul className="text-xs text-gray-dark space-y-1">
+                                        <ul className="text-xs text-text-body-secondary space-y-1">
                                             <li>
                                                 <TextGenerator
                                                     content={
@@ -108,21 +107,18 @@ export function AuthCard() {
                         href="https://enter.pollinations.ai"
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="inline-block bg-charcoal border-r-4 border-b-4 border-yellow shadow-lime-md px-6 py-4 hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-lime-sm transition-all"
+                        className="inline-block bg-button-primary-bg border-r-4 border-b-4 border-border-highlight shadow-shadow-highlight-md px-6 py-4 hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-shadow-highlight-sm transition-all"
                     >
-                        <p className="font-headline text-xs uppercase tracking-wider font-black text-white mb-2">
+                        <p className="font-headline text-xs font-black uppercase tracking-wider text-text-on-color mb-2">
                             <TextGenerator
                                 content={DOCS_PAGE.getYourKeyLabel}
                             />
                         </p>
                         <div className="flex items-center gap-2">
-                            <p className="font-mono text-sm font-black text-yellow">
+                            <p className="font-mono text-sm font-black text-text-highlight">
                                 enter.pollinations.ai
                             </p>
-                            <ExternalLinkIcon
-                                className="w-3 h-3"
-                                stroke={Colors.yellow}
-                            />
+                            <ExternalLinkIcon className="w-4 h-4 text-text-highlight" />
                         </div>
                     </a>
                 </div>
@@ -135,23 +131,23 @@ export function AuthCard() {
 
                     {/* Header Method */}
                     <div className="mb-4">
-                        <p className="font-body text-xs text-gray-dark mb-2">
+                        <p className="font-body text-xs text-text-body-secondary mb-2">
                             <TextGenerator
                                 content={DOCS_PAGE.serverSideDescription}
                             />
                         </p>
-                        <div className="font-mono text-xs bg-charcoal text-light-gray p-4 border-r-4 border-b-4 border-gray">
-                            <div className="text-yellow">
+                        <div className="font-mono text-xs bg-button-primary-bg text-text-on-color p-4 border-r-4 border-b-4 border-border-main">
+                            <div className="text-text-highlight">
                                 {"// Example with fetch"}
                             </div>
                             <div className="mt-2">{"fetch(url, {"}</div>
                             <div className="pl-4">{"  headers: {"}</div>
                             <div className="pl-8">
-                                <span className="text-pink">
+                                <span className="text-text-brand">
                                     {'"Authorization"'}
                                 </span>
                                 :{" "}
-                                <span className="text-yellow">
+                                <span className="text-text-highlight">
                                     {'"Bearer sk_..."'}
                                 </span>
                             </div>
@@ -162,19 +158,25 @@ export function AuthCard() {
 
                     {/* Query Method */}
                     <div>
-                        <p className="font-body text-xs text-gray-dark mb-2">
+                        <p className="font-body text-xs text-text-body-secondary mb-2">
                             <TextGenerator
                                 content={DOCS_PAGE.clientSideDescription}
                             />
                         </p>
-                        <div className="font-mono text-xs bg-charcoal text-light-gray p-4 border-r-4 border-b-4 border-gray">
-                            <div className="text-yellow">{"// Add to URL"}</div>
+                        <div className="font-mono text-xs bg-button-primary-bg text-text-on-color p-4 border-r-4 border-b-4 border-border-main">
+                            <div className="text-text-highlight">
+                                {"// Add to URL"}
+                            </div>
                             <div className="mt-2">
                                 {"https://enter.pollinations.ai/..."}
                             </div>
                             <div className="pl-4">
-                                <span className="text-pink">{"?key="}</span>
-                                <span className="text-yellow">{"pk_..."}</span>
+                                <span className="text-text-brand">
+                                    {"?key="}
+                                </span>
+                                <span className="text-text-highlight">
+                                    {"pk_..."}
+                                </span>
                             </div>
                         </div>
                     </div>

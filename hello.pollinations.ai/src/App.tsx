@@ -2,6 +2,7 @@ import { Routes, Route, Navigate } from "react-router-dom";
 import { Suspense, lazy } from "react";
 import ErrorBoundary from "./components/ErrorBoundary";
 import Layout from "./components/Layout";
+import { ColorPicker } from "./components/ColorPicker";
 
 // Lazy load pages
 const HelloPage = lazy(() => import("./pages/HelloPage"));
@@ -15,13 +16,14 @@ const PrivacyPage = lazy(() => import("./pages/PrivacyPage"));
 // Loading component
 const PageLoader = () => (
     <div className="min-h-[50vh] flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-pink"></div>
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-border-brand"></div>
     </div>
 );
 
 function App() {
     return (
         <ErrorBoundary>
+            <ColorPicker />
             <Suspense fallback={<PageLoader />}>
                 <Routes>
                     <Route path="/" element={<Layout />}>
@@ -32,10 +34,7 @@ function App() {
                         <Route path="community" element={<CommunityPage />} />
                         <Route path="terms" element={<TermsPage />} />
                         <Route path="privacy" element={<PrivacyPage />} />
-                        <Route
-                            path="*"
-                            element={<Navigate to="/" replace />}
-                        />
+                        <Route path="*" element={<Navigate to="/" replace />} />
                     </Route>
                 </Routes>
             </Suspense>

@@ -199,47 +199,72 @@ function Layout() {
                     showFooter ? "translate-y-0" : "translate-y-full"
                 }`}
             >
-                {/* Mobile: Transparent footer */}
+                {/* Mobile: Simplified footer */}
                 <div className="md:hidden">
                     <div className="w-full px-4 py-3">
-                        <div className="max-w-4xl mx-auto flex flex-col gap-6">
-                            {/* 1. GitHub, Discord, Enter - Brutalist buttons */}
-                            <div className="flex gap-3 justify-center">
-                                {/* GitHub */}
-                                <Button
-                                    as="a"
-                                    href={SOCIAL_LINKS.github.url}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    title={SOCIAL_LINKS.github.label}
-                                    variant="icon"
-                                    size={null}
-                                    className="w-10 h-10"
-                                >
-                                    <img
-                                        src={SOCIAL_LINKS.github.icon}
-                                        alt={SOCIAL_LINKS.github.label}
-                                        className="w-full h-full object-contain"
-                                    />
-                                </Button>
-                                {/* Discord */}
-                                <Button
-                                    as="a"
-                                    href={SOCIAL_LINKS.discord.url}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    title={SOCIAL_LINKS.discord.label}
-                                    variant="icon"
-                                    size={null}
-                                    className="w-10 h-10"
-                                >
-                                    <img
-                                        src={SOCIAL_LINKS.discord.icon}
-                                        alt={SOCIAL_LINKS.discord.label}
-                                        className="w-full h-full object-contain"
-                                    />
-                                </Button>
-                                {/* Enter Button */}
+                        <div className="max-w-4xl mx-auto flex flex-col gap-3">
+                            {/* 1. Social Icons + Enter */}
+                            <div className="flex items-center justify-center gap-3">
+                                <div className="flex items-center">
+                                    <Button
+                                        as="a"
+                                        href={SOCIAL_LINKS.github.url}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        title={SOCIAL_LINKS.github.label}
+                                        variant="icon"
+                                        size={null}
+                                        className="w-10 h-10"
+                                    >
+                                        <img
+                                            src={SOCIAL_LINKS.github.icon}
+                                            alt={SOCIAL_LINKS.github.label}
+                                            className="w-full h-full object-contain"
+                                        />
+                                    </Button>
+                                    <Button
+                                        as="a"
+                                        href={SOCIAL_LINKS.discord.url}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        title={SOCIAL_LINKS.discord.label}
+                                        variant="icon"
+                                        size={null}
+                                        className="w-10 h-10"
+                                    >
+                                        <img
+                                            src={SOCIAL_LINKS.discord.icon}
+                                            alt={SOCIAL_LINKS.discord.label}
+                                            className="w-full h-full object-contain"
+                                        />
+                                    </Button>
+                                    {/* All Other Social Icons */}
+                                    {Object.entries(SOCIAL_LINKS)
+                                        .filter(
+                                            ([key]) =>
+                                                key !== "github" &&
+                                                key !== "discord"
+                                        )
+                                        .map(([key, { url, icon, label }]) => (
+                                            <Button
+                                                key={key}
+                                                as="a"
+                                                href={url}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                title={label}
+                                                variant="icon"
+                                                size={null}
+                                                className="w-10 h-10"
+                                            >
+                                                <img
+                                                    src={icon}
+                                                    alt={label}
+                                                    className="w-full h-full object-contain"
+                                                />
+                                            </Button>
+                                        ))}
+                                </div>
                                 <Button
                                     as="a"
                                     href="https://enter.pollinations.ai"
@@ -259,51 +284,30 @@ function Layout() {
                                 </Button>
                             </div>
 
-                            {/* 2. Other Social Icons */}
-                            <div className="flex gap-3 justify-center">
-                                {Object.entries(SOCIAL_LINKS)
-                                    .filter(
-                                        ([key]) =>
-                                            key !== "github" &&
-                                            key !== "discord"
-                                    )
-                                    .map(([key, { url, icon, label }]) => (
-                                        <Button
-                                            key={key}
-                                            as="a"
-                                            href={url}
-                                            target="_blank"
-                                            rel="noopener noreferrer"
-                                            title={label}
-                                            variant="icon"
-                                            size={null}
-                                            className="w-10 h-10"
-                                        >
-                                            <img
-                                                src={icon}
-                                                alt={label}
-                                                className="w-full h-full object-contain"
-                                            />
-                                        </Button>
-                                    ))}
-                            </div>
-
-                            {/* 3. Links */}
-                            <div className="flex items-center justify-center gap-3 text-xs">
-                                <a
+                            {/* 2. Terms, Privacy, Email */}
+                            <div className="flex items-center justify-center">
+                                <Button
+                                    as="a"
                                     href="/terms"
-                                    className="font-body text-charcoal hover:text-charcoal transition-colors"
+                                    variant="iconText"
+                                    size={null}
+                                    className="h-10"
                                 >
-                                    Terms
-                                </a>
-                                <span className="text-gray-light">•</span>
-                                <a
+                                    <span className="font-headline text-xs font-black uppercase tracking-wider text-charcoal">
+                                        Terms
+                                    </span>
+                                </Button>
+                                <Button
+                                    as="a"
                                     href="/privacy"
-                                    className="font-body text-charcoal hover:text-charcoal transition-colors"
+                                    variant="iconText"
+                                    size={null}
+                                    className="h-10"
                                 >
-                                    Privacy
-                                </a>
-                                <span className="text-gray-light">•</span>
+                                    <span className="font-headline text-xs font-black uppercase tracking-wider text-charcoal">
+                                        Privacy
+                                    </span>
+                                </Button>
                                 <Button
                                     type="button"
                                     onClick={() => {
@@ -316,12 +320,15 @@ function Layout() {
                                             2000
                                         );
                                     }}
-                                    variant="ghost"
+                                    variant="iconText"
                                     size={null}
+                                    className="h-10"
                                 >
-                                    hello@pollinations.ai
+                                    <span className="font-headline text-xs font-black uppercase tracking-wider text-charcoal">
+                                        Email
+                                    </span>
                                     {emailCopied && (
-                                        <span className="absolute -top-5 left-0 font-headline text-xs font-black text-pink uppercase tracking-wider">
+                                        <span className="absolute -top-8 left-0 font-headline text-xs font-black text-pink uppercase tracking-wider">
                                             Copied!
                                         </span>
                                     )}
@@ -397,67 +404,69 @@ function Layout() {
                             </div>
 
                             {/* Right: Social Buttons */}
-                            <div className="flex items-center">
-                                {/* GitHub */}
-                                <Button
-                                    as="a"
-                                    href={SOCIAL_LINKS.github.url}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    title={SOCIAL_LINKS.github.label}
-                                    variant="icon"
-                                    size={null}
-                                    className="w-10 h-10"
-                                >
-                                    <img
-                                        src={SOCIAL_LINKS.github.icon}
-                                        alt={SOCIAL_LINKS.github.label}
-                                        className="w-full h-full object-contain"
-                                    />
-                                </Button>
-                                {/* Discord */}
-                                <Button
-                                    as="a"
-                                    href={SOCIAL_LINKS.discord.url}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    title={SOCIAL_LINKS.discord.label}
-                                    variant="icon"
-                                    size={null}
-                                    className="w-10 h-10"
-                                >
-                                    <img
-                                        src={SOCIAL_LINKS.discord.icon}
-                                        alt={SOCIAL_LINKS.discord.label}
-                                        className="w-full h-full object-contain"
-                                    />
-                                </Button>
-                                {/* Other Social Icons */}
-                                {Object.entries(SOCIAL_LINKS)
-                                    .filter(
-                                        ([key]) =>
-                                            key !== "github" &&
-                                            key !== "discord"
-                                    )
-                                    .map(([key, { url, icon, label }]) => (
-                                        <Button
-                                            key={key}
-                                            as="a"
-                                            href={url}
-                                            target="_blank"
-                                            rel="noopener noreferrer"
-                                            title={label}
-                                            variant="icon"
-                                            size={null}
-                                            className="w-10 h-10"
-                                        >
-                                            <img
-                                                src={icon}
-                                                alt={label}
-                                                className="w-full h-full object-contain"
-                                            />
-                                        </Button>
-                                    ))}
+                            <div className="flex items-center gap-3">
+                                <div className="flex items-center">
+                                    {/* GitHub */}
+                                    <Button
+                                        as="a"
+                                        href={SOCIAL_LINKS.github.url}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        title={SOCIAL_LINKS.github.label}
+                                        variant="icon"
+                                        size={null}
+                                        className="w-10 h-10"
+                                    >
+                                        <img
+                                            src={SOCIAL_LINKS.github.icon}
+                                            alt={SOCIAL_LINKS.github.label}
+                                            className="w-full h-full object-contain"
+                                        />
+                                    </Button>
+                                    {/* Discord */}
+                                    <Button
+                                        as="a"
+                                        href={SOCIAL_LINKS.discord.url}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        title={SOCIAL_LINKS.discord.label}
+                                        variant="icon"
+                                        size={null}
+                                        className="w-10 h-10"
+                                    >
+                                        <img
+                                            src={SOCIAL_LINKS.discord.icon}
+                                            alt={SOCIAL_LINKS.discord.label}
+                                            className="w-full h-full object-contain"
+                                        />
+                                    </Button>
+                                    {/* All Other Social Icons */}
+                                    {Object.entries(SOCIAL_LINKS)
+                                        .filter(
+                                            ([key]) =>
+                                                key !== "github" &&
+                                                key !== "discord"
+                                        )
+                                        .map(([key, { url, icon, label }]) => (
+                                            <Button
+                                                key={key}
+                                                as="a"
+                                                href={url}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                title={label}
+                                                variant="icon"
+                                                size={null}
+                                                className="w-10 h-10"
+                                            >
+                                                <img
+                                                    src={icon}
+                                                    alt={label}
+                                                    className="w-full h-full object-contain"
+                                                />
+                                            </Button>
+                                        ))}
+                                </div>
                                 {/* Enter Button */}
                                 <Button
                                     as="a"

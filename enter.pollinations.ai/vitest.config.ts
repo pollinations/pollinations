@@ -12,8 +12,9 @@ export default defineWorkersConfig(async () => {
     return {
         ...viteConfig,
         test: {
+            globalSetup: ["./test/globalSetup.ts"],
             setupFiles: ["./test/apply-migrations.ts"],
-            reporters: ['default'], // Use default reporter (less verbose than 'verbose')
+            reporters: ["default"], // Use default reporter (less verbose than 'verbose')
             poolOptions: {
                 workers: {
                     singleWorker: true,

@@ -5,10 +5,10 @@ import { SELF } from "cloudflare:test";
 import { createMockPolar } from "./mocks/polar.ts";
 import { createMockGithub } from "./mocks/github.ts";
 import { createMockTinybird } from "./mocks/tinybird.ts";
-import { createMockTextService } from "./mocks/text-service.ts";
 import { teardownFetchMock, createFetchMock } from "./mocks/fetch.ts";
 import { getLogger, Logger } from "@logtape/logtape";
 import { ensureConfigured } from "@/logger.ts";
+import { createMockVcr } from "./mocks/vcr.ts";
 
 const createAuth = () =>
     createAuthClient({
@@ -24,7 +24,7 @@ const createMocks = () => ({
     polar: createMockPolar(),
     tinybird: createMockTinybird(),
     github: createMockGithub(),
-    textService: createMockTextService(),
+    vcr: createMockVcr(globalThis.fetch),
 });
 
 type Mocks = ReturnType<typeof createMocks>;

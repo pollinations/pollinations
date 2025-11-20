@@ -357,7 +357,7 @@ export const TEXT_SERVICES = {
     },
     "kimi-k2-thinking": {
         aliases: ["kimi-k2", "kimi-thinking"],
-        modelId: "kimi-k2-thinking-maas",
+        modelId: "moonshotai/kimi-k2-thinking-maas",
         provider: "vertex-ai",
         cost: [
             {

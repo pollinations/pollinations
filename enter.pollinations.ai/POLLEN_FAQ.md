@@ -51,6 +51,7 @@ Think of Pollen like buying in bulk — the more efficient the model, the more y
 - **GPTImage** — 125 images per Pollen (vision-capable, higher quality)
 - **Seedream** — 33 images per Pollen (premium quality)
 - **Kontext** — 25 images per Pollen (advanced editing)
+- **Nanobanana** — 25 images per Pollen (Premium advanced editing)
 
 **💬 Text Generation** _(~600 token conversations)_:
 

@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Button } from "../ui/button";
 import { XIcon } from "../../icons/XIcon";
 import { useModelList } from "../../hooks/useModelList";
-import { Tokens } from "../../config/colors";
+
 import { TextGenerator } from "../TextGenerator";
 import { PLAY_PAGE } from "../../config/content";
 import { API_KEY } from "../../config/api";
@@ -183,7 +183,7 @@ export function PlayGenerator({ selectedModel, prompt }: PlayGeneratorProps) {
                                             >
                                                 <XIcon
                                                     className="w-4 h-4"
-                                                    stroke={Tokens.text.body.main}
+                                                    stroke="var(--t001)"
                                                 />
                                             </Button>
                                         </>

@@ -6,7 +6,7 @@
  * - Opacity: Add /90, /80, /50 etc. (e.g., bg-primary/90)
  * - CSS variables available: var(--color-primary), var(--color-background), etc.
  */
-import { Tokens, Fonts } from "./src/config/colors";
+import { Fonts, DefaultCssVariables } from "./src/config/colors";
 import plugin from "tailwindcss/plugin";
 
 export default {
@@ -31,46 +31,46 @@ export default {
                 // ============================================
                 // SEMANTIC TOKENS
                 // ============================================
-                
+
                 // Typography
-                "text-body-main": `var(--token-text-body-main, ${Tokens.text.body.main})`,
-                "text-body-secondary": `var(--token-text-body-secondary, ${Tokens.text.body.secondary})`,
-                "text-body-tertiary": `var(--token-text-body-tertiary, ${Tokens.text.body.tertiary})`,
-                "text-caption": `var(--token-text-caption, ${Tokens.text.caption})`,
-                "text-on-color": `var(--token-text-on-color, ${Tokens.text["on-color"]})`,
-                "text-brand": `var(--token-text-brand, ${Tokens.text.brand})`,
-                "text-highlight": `var(--token-text-highlight, ${Tokens.text.highlight})`,
+                "text-body-main": "var(--t001)",
+                "text-body-secondary": "var(--t002)",
+                "text-body-tertiary": "var(--t003)",
+                "text-caption": "var(--t004)",
+                "text-on-color": "var(--t005)",
+                "text-brand": "var(--t006)",
+                "text-highlight": "var(--t007)",
 
                 // Surfaces
-                "surface-page": `var(--token-surface-page, ${Tokens.surface.page})`,
-                "surface-card": `var(--token-surface-card, ${Tokens.surface.card})`,
-                "surface-base": `var(--token-surface-base, ${Tokens.surface.base})`,
-                "input-background": `var(--token-input-background, ${Tokens.input.background})`,
+                "surface-page": "var(--t008)",
+                "surface-card": "var(--t009)",
+                "surface-base": "var(--t010)",
+                "input-background": "var(--t011)",
 
                 // Buttons
-                "button-primary-bg": `var(--token-button-primary-background, ${Tokens.button.primary.background})`,
-                "button-secondary-bg": `var(--token-button-secondary-background, ${Tokens.button.secondary.background})`,
-                "button-disabled-bg": `var(--token-button-disabled-background, ${Tokens.button.disabled.background})`,
-                "button-hover-overlay": `var(--token-button-hover-overlay, ${Tokens.button.hover.overlay})`,
-                "button-active-overlay": `var(--token-button-active-overlay, ${Tokens.button.active.overlay})`,
-                "button-focus-ring": `var(--token-button-focus-ring, ${Tokens.button.focus.ring})`,
+                "button-primary-bg": "var(--t012)",
+                "button-secondary-bg": "var(--t013)",
+                "button-disabled-bg": "var(--t014)",
+                "button-hover-overlay": "var(--t015)",
+                "button-active-overlay": "var(--t016)",
+                "button-focus-ring": "var(--t017)",
 
                 // Indicators
-                "indicator-image": `var(--token-indicator-image, ${Tokens.indicator.image})`,
-                "indicator-text": `var(--token-indicator-text, ${Tokens.indicator.text})`,
-                "indicator-audio": `var(--token-indicator-audio, ${Tokens.indicator.audio})`,
+                "indicator-image": "var(--t018)",
+                "indicator-text": "var(--t019)",
+                "indicator-audio": "var(--t020)",
 
                 // Borders
-                "border-brand": `var(--token-border-brand, ${Tokens.border.brand})`,
-                "border-highlight": `var(--token-border-highlight, ${Tokens.border.highlight})`,
-                "border-main": `var(--token-border-main, ${Tokens.border.main})`,
-                "border-strong": `var(--token-border-strong, ${Tokens.border.strong})`,
-                "border-subtle": `var(--token-border-subtle, ${Tokens.border.subtle})`,
-                "border-faint": `var(--token-border-faint, ${Tokens.border.faint})`,
+                "border-brand": "var(--t021)",
+                "border-highlight": "var(--t022)",
+                "border-main": "var(--t023)",
+                "border-strong": "var(--t024)",
+                "border-subtle": "var(--t025)",
+                "border-faint": "var(--t026)",
 
                 // Logo
-                "logo-main": `var(--token-logo-main, ${Tokens.logo.main})`,
-                "logo-shade": `var(--token-logo-shade, ${Tokens.logo.shade})`,
+                "logo-main": "var(--t036)",
+                "logo-shade": "var(--t037)",
             },
             stroke: {
                 // SVG stroke colors using CSS variables
@@ -104,19 +104,19 @@ export default {
                 // SEMANTIC TOKEN SHADOWS
                 // ============================================
                 // Brand shadows
-                "shadow-brand-sm": `2px 2px 0px 0px var(--token-shadow-brand-sm, ${Tokens.shadow.brand.sm})`,
-                "shadow-brand-md": `4px 4px 0px 0px var(--token-shadow-brand-md, ${Tokens.shadow.brand.md})`,
-                "shadow-brand-lg": `6px 6px 0px 0px var(--token-shadow-brand-lg, ${Tokens.shadow.brand.lg})`,
+                "shadow-brand-sm": "2px 2px 0px 0px var(--t027)",
+                "shadow-brand-md": "4px 4px 0px 0px var(--t028)",
+                "shadow-brand-lg": "6px 6px 0px 0px var(--t029)",
 
                 // Dark shadows
-                "shadow-dark-sm": `2px 2px 0px 0px var(--token-shadow-dark-sm, ${Tokens.shadow.dark.sm})`,
-                "shadow-dark-md": `4px 4px 0px 0px var(--token-shadow-dark-md, ${Tokens.shadow.dark.md})`,
-                "shadow-dark-lg": `6px 6px 0px 0px var(--token-shadow-dark-lg, ${Tokens.shadow.dark.lg})`,
-                "shadow-dark-xl": `12px 12px 0px 0px var(--token-shadow-dark-xl, ${Tokens.shadow.dark.xl})`,
+                "shadow-dark-sm": "2px 2px 0px 0px var(--t030)",
+                "shadow-dark-md": "4px 4px 0px 0px var(--t031)",
+                "shadow-dark-lg": "6px 6px 0px 0px var(--t032)",
+                "shadow-dark-xl": "12px 12px 0px 0px var(--t033)",
 
                 // Highlight shadows
-                "shadow-highlight-sm": `2px 2px 0px 0px var(--token-shadow-highlight-sm, ${Tokens.shadow.highlight.sm})`,
-                "shadow-highlight-md": `4px 4px 0px 0px var(--token-shadow-highlight-md, ${Tokens.shadow.highlight.md})`,
+                "shadow-highlight-sm": "2px 2px 0px 0px var(--t034)",
+                "shadow-highlight-md": "4px 4px 0px 0px var(--t035)",
             },
         },
     },
@@ -131,50 +131,8 @@ export default {
                     "--color-cyan": "#74f8ec",
                     "--color-charcoal": "#110518",
 
-                    // Semantic Token Variables
-                    "--token-text-body-main": Tokens.text.body.main,
-                    "--token-text-body-secondary": Tokens.text.body.secondary,
-                    "--token-text-body-tertiary": Tokens.text.body.tertiary,
-                    "--token-text-caption": Tokens.text.caption,
-                    "--token-text-on-color": Tokens.text["on-color"],
-                    "--token-text-brand": Tokens.text.brand,
-                    "--token-text-highlight": Tokens.text.highlight,
-
-                    "--token-surface-page": Tokens.surface.page,
-                    "--token-surface-card": Tokens.surface.card,
-                    "--token-surface-base": Tokens.surface.base,
-                    "--token-input-background": Tokens.input.background,
-
-                    "--token-button-primary-background": Tokens.button.primary.background,
-                    "--token-button-secondary-background": Tokens.button.secondary.background,
-                    "--token-button-disabled-background": Tokens.button.disabled.background,
-                    "--token-button-hover-overlay": Tokens.button.hover.overlay,
-                    "--token-button-active-overlay": Tokens.button.active.overlay,
-                    "--token-button-focus-ring": Tokens.button.focus.ring,
-
-                    "--token-indicator-image": Tokens.indicator.image,
-                    "--token-indicator-text": Tokens.indicator.text,
-                    "--token-indicator-audio": Tokens.indicator.audio,
-
-                    "--token-border-brand": Tokens.border.brand,
-                    "--token-border-highlight": Tokens.border.highlight,
-                    "--token-border-main": Tokens.border.main,
-                    "--token-border-strong": Tokens.border.strong,
-                    "--token-border-subtle": Tokens.border.subtle,
-                    "--token-border-faint": Tokens.border.faint,
-
-                    "--token-shadow-brand-sm": Tokens.shadow.brand.sm,
-                    "--token-shadow-brand-md": Tokens.shadow.brand.md,
-                    "--token-shadow-brand-lg": Tokens.shadow.brand.lg,
-                    "--token-shadow-dark-sm": Tokens.shadow.dark.sm,
-                    "--token-shadow-dark-md": Tokens.shadow.dark.md,
-                    "--token-shadow-dark-lg": Tokens.shadow.dark.lg,
-                    "--token-shadow-dark-xl": Tokens.shadow.dark.xl,
-                    "--token-shadow-highlight-sm": Tokens.shadow.highlight.sm,
-                    "--token-shadow-highlight-md": Tokens.shadow.highlight.md,
-
-                    "--token-logo-main": Tokens.logo.main,
-                    "--token-logo-shade": Tokens.logo.shade,
+                    // Inject Default Theme Variables
+                    ...DefaultCssVariables,
                 },
             });
         }),

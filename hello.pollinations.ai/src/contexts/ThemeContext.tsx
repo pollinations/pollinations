@@ -1,65 +1,43 @@
-import { createContext, useContext, useState, useMemo } from "react";
+import { createContext, useContext, useState } from "react";
 import type { ReactNode } from "react";
-import {
-    ThemeDefinition as DefaultThemeDefinition,
-    Tokens as DefaultTokens,
-} from "../config/colors";
+import { DefaultTheme } from "../config/defaultTheme";
+import { processTheme, themeToDictionary, dictionaryToTheme } from "../config/themeEngine";
+import { TokenId } from "../config/designTokens";
 
-// Generate tokens from a theme definition
-function generateTokens(themeDef: Record<string, string[]>) {
-    // biome-ignore lint/suspicious/noExplicitAny: Dynamic nested object construction
-    const tokens: any = {};
+// ThemeDefinition is now Hex -> IDs
+type ThemeDefinition = Record<string, TokenId[]>;
 
-    Object.entries(themeDef).forEach(([hexColor, paths]) => {
-        paths.forEach((path) => {
-            const parts = path.split(".");
-            let current = tokens;
-            for (let i = 0; i < parts.length; i++) {
-                const part = parts[i];
-                if (i === parts.length - 1) {
-                    current[part] = hexColor;
-                } else {
-                    current[part] = current[part] || {};
-                    current = current[part];
-                }
-            }
-        });
-    });
-
-    return tokens;
-}
+const DefaultThemeDefinition = themeToDictionary(DefaultTheme);
 
 interface ThemeContextValue {
-    tokens: typeof DefaultTokens;
-    themeDefinition: Record<string, string[]>;
-    setTheme: (newTheme: Record<string, string[]>) => void;
+    themeDefinition: ThemeDefinition;
+    setTheme: (newTheme: ThemeDefinition) => void;
     resetTheme: () => void;
 }
 
 const ThemeContext = createContext<ThemeContextValue | undefined>(undefined);
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
-    const [themeDefinition, setThemeDefinition] = useState<
-        Record<string, string[]>
-    >(DefaultThemeDefinition);
+    const [themeDefinition, setThemeDefinition] = useState<ThemeDefinition>(DefaultThemeDefinition);
 
-    // Generate tokens whenever theme changes
-    const tokens = useMemo(
-        () => generateTokens(themeDefinition),
-        [themeDefinition]
-    );
-
-    const setTheme = (newTheme: Record<string, string[]>) => {
+    const setTheme = (newTheme: ThemeDefinition) => {
         setThemeDefinition(newTheme);
+        // Also apply CSS variables
+        const theme = dictionaryToTheme(newTheme);
+        const { cssVariables } = processTheme(theme);
+        const root = document.documentElement;
+        Object.entries(cssVariables).forEach(([key, value]) => {
+            root.style.setProperty(key, value);
+        });
     };
 
     const resetTheme = () => {
-        setThemeDefinition(DefaultThemeDefinition);
+        setTheme(DefaultThemeDefinition);
     };
 
     return (
         <ThemeContext.Provider
-            value={{ tokens, themeDefinition, setTheme, resetTheme }}
+            value={{ themeDefinition, setTheme, resetTheme }}
         >
             {children}
         </ThemeContext.Provider>

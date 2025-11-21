@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
-import { ThemeDefinition } from "../config/colors";
+import { DefaultTheme } from "../config/defaultTheme";
+import { themeToDictionary, getTokenLabel } from "../config/themeEngine";
 import {
     RefreshCwIcon,
     CheckIcon,
@@ -8,7 +9,8 @@ import {
     DicesIcon,
     SparklesIcon,
 } from "lucide-react";
-import { useThemeGenerator } from "../hooks/useThemeGenerator";
+import { useThemeGenerator, ThemeDefinition } from "../hooks/useThemeGenerator";
+import { TokenId } from "../config/designTokens";
 
 // ============================================
 // TYPES & HELPERS
@@ -16,20 +18,13 @@ import { useThemeGenerator } from "../hooks/useThemeGenerator";
 
 interface ColorBucketData {
     color: string;
-    tokens: string[];
+    tokens: TokenId[];
 }
 
 type ThemeState = Record<string, ColorBucketData>;
 
-const tokenToCssVar = (path: string) => {
-    const parts = path.split(".");
-    const prefix = parts[0];
-    const rest = parts
-        .slice(1)
-        .join("-")
-        .replace(/([A-Z])/g, "-$1")
-        .toLowerCase();
-    return `--token-${prefix}-${rest}`;
+const tokenToCssVar = (id: string) => {
+    return `--${id}`;
 };
 
 const getRandomColor = () => {
@@ -41,16 +36,16 @@ const getRandomColor = () => {
     return color;
 };
 
-// Convert old format to new bucket format
-const convertToThemeState = (
-    oldFormat: Record<string, string[]>
-): ThemeState => {
+// Convert dictionary format to bucket format
+const convertToThemeState = (dict: ThemeDefinition): ThemeState => {
     const newState: ThemeState = {};
-    Object.entries(oldFormat).forEach(([color, tokens], index) => {
+    Object.entries(dict).forEach(([color, tokens], index) => {
         newState[`bucket-${index}`] = { color, tokens };
     });
     return newState;
 };
+
+const DefaultThemeDefinition = themeToDictionary(DefaultTheme);
 
 // ============================================
 // COMPONENTS
@@ -63,6 +58,7 @@ function TokenChip({
     token: string;
     onDragStart: (e: React.DragEvent, token: string) => void;
 }) {
+    const label = getTokenLabel(token);
     return (
         <div
             draggable
@@ -73,6 +69,7 @@ function TokenChip({
                 cursor-grab active:cursor-grabbing hover:border-gray-400 transition-all
                 text-[9px] font-mono text-gray-600 leading-tight
             "
+            title={`${token}: ${label}`} // Show Label on hover
         >
             <div className="w-1 h-1 rounded-full bg-gray-300 group-hover:bg-blue-500" />
             {token}
@@ -154,7 +151,7 @@ function ColorBucket({
                 </button>
             </div>
 
-            {/* Token List */}
+            {/* Token List - wrapped horizontally */}
             <div className="flex flex-wrap gap-1 min-h-[20px]">
                 {bucket.tokens.map((token) => (
                     <TokenChip
@@ -178,7 +175,7 @@ function ColorBucket({
 export function ColorPicker() {
     const [isOpen, setIsOpen] = useState(false);
     const [theme, setTheme] = useState<ThemeState>(() =>
-        convertToThemeState(ThemeDefinition)
+        convertToThemeState(DefaultThemeDefinition)
     );
     const [aiPrompt, setAiPrompt] = useState("");
 
@@ -212,8 +209,8 @@ export function ColorPicker() {
     // Sync CSS variables when theme changes
     useEffect(() => {
         Object.values(theme).forEach((bucket) => {
-            bucket.tokens.forEach((tokenPath) => {
-                const cssVar = tokenToCssVar(tokenPath);
+            bucket.tokens.forEach((tokenId) => {
+                const cssVar = tokenToCssVar(tokenId);
                 document.documentElement.style.setProperty(
                     cssVar,
                     bucket.color
@@ -225,7 +222,7 @@ export function ColorPicker() {
     // Handle Drag & Drop
     const handleDrop = (e: React.DragEvent, targetBucketId: string) => {
         e.preventDefault();
-        const token = e.dataTransfer.getData("text/plain");
+        const token = e.dataTransfer.getData("text/plain") as TokenId;
 
         if (!token) return;
 
@@ -325,13 +322,13 @@ export function ColorPicker() {
 
     // Reset
     const handleReset = () => {
-        setTheme(convertToThemeState(ThemeDefinition));
+        setTheme(convertToThemeState(DefaultThemeDefinition));
     };
 
     return (
         <div
             className={`
-                fixed top-0 left-0 h-full w-[260px] z-[9999] 
+                fixed top-0 left-0 h-full w-auto min-w-[200px] max-w-[200px] z-[9999] 
                 bg-white/95 backdrop-blur-sm border-r border-gray-200 shadow-xl
                 transition-transform duration-300 ease-in-out
                 flex flex-col

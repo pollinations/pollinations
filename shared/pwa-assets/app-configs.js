@@ -9,7 +9,9 @@ export const APP_CONFIGS = {
         outputDir: "enter.pollinations.ai/public",
         sourceSvg: "../assets/logo.svg",
         ogSourceSvg: "../assets/logo-text.svg",
-        themeColor: "#5b2dd8",
+        themeColor: "#D1FAE4",
+        backgroundColor: "#110518",
+        iconBackground: "transparent",
         seo: {
             title: "pollinations.ai - beta",
             description: "authentication and API gateway for pollinations.ai",
@@ -22,7 +24,9 @@ export const APP_CONFIGS = {
         outputDir: "pollinations.ai/public",
         sourceSvg: "../assets/logo.svg",
         ogSourceSvg: "../assets/logo-text.svg",
-        themeColor: "#d6379e",
+        themeColor: "#F9FF7B",
+        backgroundColor: "#110518",
+        iconBackground: "transparent",
         seo: {
             title: "pollinations.ai",
             description:
@@ -31,26 +35,18 @@ export const APP_CONFIGS = {
         },
     },
 
-    image: {
-        name: "image.pollinations.ai",
-        outputDir: "image.pollinations.ai",
-        sourceSvg: "../assets/logo-text.svg",
-        watermark: {
-            enabled: true,
-            width: 200,
-            height: 31,
-            preserveTransparency: true,
-        },
-    },
 
-    pollinations2: {
+
+    hello: {
         name: "hello.pollinations.ai",
         outputDir: "hello.pollinations.ai/public",
         sourceSvg: "../assets/logo.svg",
         ogSourceSvg: "../assets/logo-text.svg",
-        themeColor: "#ff6b35",
+        themeColor: "#C7D4D6",
+        backgroundColor: "#110518",
+        iconBackground: "transparent",
         seo: {
-            title: "pollinations.ai",
+            title: "pollinations.ai - hello",
             description:
                 "AI creation playground - Generate images, text & audio with open source models",
             url: "https://hello.pollinations.ai",

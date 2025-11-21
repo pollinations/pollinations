@@ -31,9 +31,7 @@ const useFetchModels = () => {
                     // Process model objects - API returns objects with name, description, etc.
                     const processedModels = data.map((model) => ({
                         id: model.name,
-                        name: model.description
-                            ? `${model.name} - ${model.description}`
-                            : model.name,
+                        name: model.description || model.name,
                         details: model,
                     }));
                     setModels(processedModels);

@@ -51,9 +51,7 @@ export const useModels = (modelType = "text") => {
                     if (Array.isArray(data)) {
                         const imageModels = data.map((model) => ({
                             id: model.name,
-                            name: model.description
-                                ? `${model.name} - ${model.description}`
-                                : model.name,
+                            name: model.description || model.name,
                             details: model,
                         }));
                         setModels(imageModels);

@@ -7,10 +7,9 @@ import {
     ShuffleIcon,
     PaletteIcon,
     DicesIcon,
-    SparklesIcon,
 } from "lucide-react";
-import { useThemeGenerator, ThemeDefinition } from "../hooks/useThemeGenerator";
-import { TokenId } from "../config/designTokens";
+import type { ThemeDefinition } from "../hooks/useThemeGenerator";
+import type { TokenId } from "../config/designTokens";
 
 // ============================================
 // TYPES & HELPERS
@@ -123,8 +122,9 @@ function ColorBucket({
         >
             {/* Header: Color Input & Hex */}
             <div className="flex items-center gap-2">
-                <div
-                    className="relative w-5 h-5 rounded-full overflow-hidden shadow-sm ring-1 ring-black/5 flex-shrink-0 cursor-pointer"
+                <button
+                    type="button"
+                    className="relative w-5 h-5 rounded-full overflow-hidden shadow-sm ring-1 ring-black/5 flex-shrink-0 cursor-pointer border-none p-0"
                     onClick={handleColorInputClick}
                 >
                     <input
@@ -134,8 +134,9 @@ function ColorBucket({
                         onChange={(e) => handleColorChange(e.target.value)}
                         onBlur={handleColorInputBlur}
                         className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[150%] h-[150%] p-0 m-0 border-0 cursor-pointer pointer-events-none"
+                        tabIndex={-1}
                     />
-                </div>
+                </button>
                 <input
                     type="text"
                     value={bucket.color}
@@ -143,6 +144,7 @@ function ColorBucket({
                     className="w-full text-[10px] font-mono text-gray-500 bg-transparent focus:outline-none focus:text-black"
                 />
                 <button
+                    type="button"
                     onClick={() => onColorChange(bucketId, getRandomColor())}
                     className="p-1 text-gray-400 hover:text-black transition-colors opacity-0 group-hover:opacity-100"
                     title="Randomize this color"
@@ -177,22 +179,6 @@ export function ColorPicker() {
     const [theme, setTheme] = useState<ThemeState>(() =>
         convertToThemeState(DefaultThemeDefinition)
     );
-    const [aiPrompt, setAiPrompt] = useState("");
-
-    // AI Theme Generator
-    const {
-        generateTheme,
-        theme: aiGeneratedTheme,
-        loading: aiLoading,
-        error: aiError,
-    } = useThemeGenerator();
-
-    // Apply AI-generated theme when ready
-    useEffect(() => {
-        if (aiGeneratedTheme) {
-            setTheme(convertToThemeState(aiGeneratedTheme));
-        }
-    }, [aiGeneratedTheme]);
 
     // Toggle on Ctrl+E
     useEffect(() => {
@@ -339,6 +325,7 @@ export function ColorPicker() {
             <div className="flex items-center justify-between px-3 py-2 border-b border-gray-100">
                 <div className="flex gap-1">
                     <button
+                        type="button"
                         onClick={handleReset}
                         className="p-1 text-gray-400 hover:text-black transition-colors"
                         title="Reset"
@@ -346,6 +333,7 @@ export function ColorPicker() {
                         <RefreshCwIcon className="w-3 h-3" />
                     </button>
                     <button
+                        type="button"
                         onClick={handleRandomizeColors}
                         className="p-1 text-gray-400 hover:text-black transition-colors"
                         title="Randomize Colors"
@@ -353,6 +341,7 @@ export function ColorPicker() {
                         <PaletteIcon className="w-3 h-3" />
                     </button>
                     <button
+                        type="button"
                         onClick={handleRandomizeAssignments}
                         className="p-1 text-gray-400 hover:text-black transition-colors"
                         title="Randomize Assignments"
@@ -360,6 +349,7 @@ export function ColorPicker() {
                         <ShuffleIcon className="w-3 h-3" />
                     </button>
                     <button
+                        type="button"
                         onClick={handleSetAllWhite}
                         className="p-1 hover:scale-110 transition-transform"
                         title="Set All to White"
@@ -367,6 +357,7 @@ export function ColorPicker() {
                         <div className="w-3 h-3 bg-white border border-gray-300 rounded-sm" />
                     </button>
                     <button
+                        type="button"
                         onClick={handleSetAllBlack}
                         className="p-1 hover:scale-110 transition-transform"
                         title="Set All to Black"
@@ -375,69 +366,13 @@ export function ColorPicker() {
                     </button>
                 </div>
                 <button
+                    type="button"
                     onClick={() => setIsOpen(false)}
                     className="p-1 text-gray-400 hover:text-black transition-colors"
                     title="Close"
                 >
                     <CheckIcon className="w-3 h-3" />
                 </button>
-            </div>
-
-            {/* AI Theme Generator */}
-            <div className="px-3 py-2 border-b border-gray-100 space-y-2">
-                <div className="flex gap-1 items-start">
-                    <textarea
-                        value={aiPrompt}
-                        onChange={(e) => {
-                            setAiPrompt(e.target.value);
-                            e.target.style.height = "auto";
-                            e.target.style.height =
-                                e.target.scrollHeight + "px";
-                        }}
-                        onKeyDown={(e) => {
-                            if (
-                                e.key === "Enter" &&
-                                !e.shiftKey &&
-                                aiPrompt.trim() &&
-                                !aiLoading
-                            ) {
-                                e.preventDefault();
-                                generateTheme(aiPrompt);
-                            }
-                        }}
-                        placeholder="AI theme prompt..."
-                        className="flex-1 text-xs px-2 py-2 bg-gray-50 border border-gray-200 rounded focus:outline-none focus:border-blue-400 transition-colors resize-none overflow-hidden"
-                        disabled={aiLoading}
-                        rows={1}
-                    />
-                    <button
-                        type="button"
-                        onClick={() => {
-                            if (aiPrompt.trim() && !aiLoading) {
-                                generateTheme(aiPrompt);
-                            }
-                        }}
-                        disabled={aiLoading || !aiPrompt.trim()}
-                        className="p-1 text-purple-500 hover:text-purple-700 disabled:text-gray-300 transition-colors flex-shrink-0"
-                        title="Generate AI Theme"
-                    >
-                        <SparklesIcon
-                            className={`w-3 h-3 ${
-                                aiLoading ? "animate-spin" : ""
-                            }`}
-                        />
-                    </button>
-                </div>
-                {aiError && (
-                    <div className="text-[9px] text-red-500 px-1">
-                        Error: {aiError}
-                    </div>
-                )}
-                {aiLoading && (
-                    <div className="text-[9px] text-gray-500 px-1">
-                        Generating theme...
-                    </div>
-                )}
             </div>
 
             {/* Scrollable Content */}

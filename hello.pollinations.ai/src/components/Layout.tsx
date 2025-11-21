@@ -1,9 +1,12 @@
 import { NavLink, Outlet } from "react-router-dom";
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Logo } from "./Logo";
 import { Button } from "./ui/button";
 import { ExternalLinkIcon } from "../icons/ExternalLinkIcon";
 import { SOCIAL_LINKS } from "../config/socialLinksList";
+import { useTheme } from "../contexts/ThemeContext";
+import { useThemeGenerator } from "../hooks/useThemeGenerator";
+import { SparklesIcon, SendIcon } from "lucide-react";
 
 const tabs = [
     { path: "/", label: "Hello" },
@@ -16,24 +19,142 @@ const tabs = [
 import { useFooterVisibility } from "../hooks/useFooterVisibility";
 import { useHeaderVisibility } from "../hooks/useHeaderVisibility";
 
+// --- Theme Prompt Banner Component ---
+function ThemePromptBanner({
+    isOpen,
+    prompt,
+    setPrompt,
+    loading,
+    onSubmit,
+    inputRef,
+    error,
+}: {
+    isOpen: boolean;
+    prompt: string;
+    setPrompt: (s: string) => void;
+    loading: boolean;
+    onSubmit: (e?: React.FormEvent) => void;
+    inputRef: React.RefObject<HTMLInputElement | null>;
+    error: string | null;
+}) {
+    if (!isOpen) return null;
+
+    return (
+        <div 
+            className="w-full h-16 animate-in fade-in slide-in-from-top-2 duration-200 flex items-center justify-center"
+            style={{ 
+                backgroundColor: 'var(--t010)'
+            }}
+        >
+            <form onSubmit={onSubmit} className="w-full max-w-4xl mx-auto flex items-center h-full px-4 md:px-8 gap-4">
+                <Button
+                    type="submit"
+                    disabled={!prompt.trim() || loading}
+                    variant="icon"
+                    size={null}
+                    className="w-6 h-6 md:w-8 md:h-8 text-text-body-main flex-shrink-0"
+                >
+                    {loading ? (
+                        <SparklesIcon className="w-4 h-4 md:w-5 md:h-5 animate-spin" />
+                    ) : (
+                        <SendIcon className="w-4 h-4 md:w-5 md:h-5" />
+                    )}
+                </Button>
+                
+                <div className="flex-1 relative h-full flex items-center">
+                    <style>
+                        {`
+                            .theme-prompt-input::placeholder {
+                                color: var(--t003) !important;
+                                opacity: 1 !important;
+                            }
+                        `}
+                    </style>
+                    <input
+                        ref={inputRef}
+                        type="text"
+                        value={prompt}
+                        onChange={(e) => setPrompt(e.target.value)}
+                        placeholder="Describe a theme (e.g. 'Cyberpunk Neon')..."
+                        className="theme-prompt-input w-full h-full bg-transparent outline-none text-base md:text-lg font-medium"
+                        style={{ 
+                            color: 'var(--t002)',
+                            caretColor: 'var(--t006)'
+                        }}
+                        disabled={loading}
+                    />
+                </div>
+            </form>
+            {error && (
+                <div className="absolute top-full left-0 right-0 bg-red-500 text-white text-[10px] px-2 py-1 text-center">
+                    {error}
+                </div>
+            )}
+        </div>
+    );
+}
+
 function Layout() {
     const showFooter = useFooterVisibility();
     const showHeader = useHeaderVisibility();
     const [emailCopied, setEmailCopied] = useState(false);
+    
+    // AI Theme Prompt State
+    const [isPromptOpen, setIsPromptOpen] = useState(false);
+    const [prompt, setPrompt] = useState("");
+    const inputRef = useRef<HTMLInputElement>(null);
+    
+    const { setTheme } = useTheme();
+    const { generateTheme, theme: generatedTheme, loading, error } = useThemeGenerator();
+
+    // Focus input when opened
+    useEffect(() => {
+        if (isPromptOpen) {
+            setTimeout(() => inputRef.current?.focus(), 100);
+        }
+    }, [isPromptOpen]);
+
+    // Apply theme when generated
+    useEffect(() => {
+        if (generatedTheme) {
+            setTheme(generatedTheme);
+            setPrompt("");
+        }
+    }, [generatedTheme, setTheme]);
+
+    const handleLogoClick = () => {
+        setIsPromptOpen(!isPromptOpen);
+    };
+
+    const handleSubmit = (e?: React.FormEvent) => {
+        e?.preventDefault();
+        if (prompt.trim() && !loading) {
+            generateTheme(prompt);
+        }
+    };
+
     return (
         <div className="relative min-h-screen bg-surface-base">
-            {/* Floating Transparent Header */}
+            {/* Fixed Header */}
             <header
-                className={`fixed top-0 left-0 right-0 z-50 transition-transform duration-300 ${
+                className={`fixed top-0 left-0 right-0 z-50 transition-transform duration-300 flex flex-col ${
                     showHeader ? "translate-y-0" : "-translate-y-full"
                 }`}
             >
                 <div className="w-full px-4 py-3 md:py-4">
-                    <div className="max-w-4xl mx-auto pl-2 md:pl-8">
+                    <div className="max-w-4xl mx-auto pl-2 md:pl-8 relative">
                         {/* Mobile: Logo left, Two rows of buttons right */}
                         <div className="md:hidden flex items-center gap-3">
                             {/* Logo - Left side */}
-                            <Logo className="flex-shrink-0 w-24 h-24 object-contain" />
+                            <div className="relative">
+                                <button 
+                                    type="button"
+                                    onClick={handleLogoClick}
+                                    className="flex-shrink-0 focus:outline-none transition-transform active:scale-95"
+                                >
+                                    <Logo className="w-24 h-24 object-contain" />
+                                </button>
+                            </div>
 
                             {/* Navigation Tabs - Two rows right-aligned */}
                             <div className="flex flex-col gap-2 flex-1">
@@ -86,9 +207,17 @@ function Layout() {
 
                         {/* Desktop: Logo left, Buttons right */}
                         <div className="hidden md:block">
-                            <div className="flex items-center justify-between gap-4 overflow-hidden">
+                            <div className="flex items-center justify-between gap-4 overflow-visible">
                                 {/* Logo - Left side */}
-                                <Logo className="flex-shrink-0 w-20 h-20 object-contain" />
+                                <div className="relative">
+                                    <button 
+                                        type="button"
+                                        onClick={handleLogoClick}
+                                        className="flex-shrink-0 focus:outline-none transition-transform active:scale-95"
+                                    >
+                                        <Logo className="w-20 h-20 object-contain" />
+                                    </button>
+                                </div>
 
                                 {/* Navigation Tabs + Social Links - Right side */}
                                 <div className="flex gap-3 items-center overflow-x-auto scrollbar-hide">
@@ -161,10 +290,26 @@ function Layout() {
                         </div>
                     </div>
                 </div>
+                
+                {/* Full Width Theme Prompt Banner */}
+                <ThemePromptBanner 
+                    isOpen={isPromptOpen}
+                    prompt={prompt}
+                    setPrompt={setPrompt}
+                    loading={loading}
+                    onSubmit={handleSubmit}
+                    inputRef={inputRef}
+                    error={error}
+                />
             </header>
 
             {/* Main Content - Full Bleed */}
-            <main className="w-full min-h-screen pt-32 md:pt-28 pb-40 md:pb-24">
+            <main 
+                className="w-full min-h-screen pb-40 md:pb-24 transition-all duration-200 pt-[calc(8rem+var(--banner-offset))] md:pt-[calc(7rem+var(--banner-offset))]"
+                style={{ 
+                    '--banner-offset': isPromptOpen ? '4rem' : '0px'
+                } as React.CSSProperties}
+            >
                 <Outlet />
             </main>
 
@@ -438,7 +583,7 @@ function Layout() {
                                     <span className="font-headline text-xs font-black uppercase tracking-wider text-text-brand">
                                         Enter
                                     </span>
-                                    <ExternalLinkIcon className="w-3 h-3 text-text-brand" />
+                                    <ExternalLinkIcon className="w-4 h-4 text-text-brand" />
                                 </Button>
                             </div>
                         </div>

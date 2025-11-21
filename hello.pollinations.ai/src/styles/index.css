@@ -144,11 +144,7 @@ input[type="range"]::-moz-range-thumb {
 
 body,
 html {
-    background-color: color-mix(
-        in srgb,
-        var(--color-background) 80%,
-        transparent
-    ); /* background/80 */
+    background-color: var(--t010);
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     overflow-x: hidden;

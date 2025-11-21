@@ -29,7 +29,7 @@ function Layout() {
                 }`}
             >
                 <div className="w-full px-4 py-3 md:py-4">
-                    <div className="max-w-4xl mx-auto pl-6 md:pl-8">
+                    <div className="max-w-4xl mx-auto pl-2 md:pl-8">
                         {/* Mobile: Logo left, Two rows of buttons right */}
                         <div className="md:hidden flex items-center gap-3">
                             {/* Logo - Left side */}

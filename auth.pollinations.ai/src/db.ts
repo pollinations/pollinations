@@ -6,6 +6,10 @@ export async function upsertUser(
     db: D1Database,
     user: Partial<User> & { github_user_id: string },
 ): Promise<User> {
+    // Check if user already exists
+    const existingUser = await getUser(db, user.github_user_id);
+    const isNewUser = !existingUser;
+
     // Minimal query with only essential fields
     await db
         .prepare(`
@@ -17,6 +21,11 @@ export async function upsertUser(
   `)
         .bind(user.github_user_id, user.username!)
         .run();
+
+    // For new users, assign 'legacy' tier (not part of the tier system)
+    if (isNewUser) {
+        await setUserTier(db, user.github_user_id, "legacy");
+    }
 
     return getUser(db, user.github_user_id) as Promise<User>;
 }
@@ -270,7 +279,7 @@ export async function validateApiTokenComplete(
  * Get a user's tier
  * @param db D1 Database instance
  * @param userId User ID
- * @returns The user's tier (defaults to 'seed' if not set)
+ * @returns The user's tier (null in DB maps to 'seed' for backward compatibility)
  */
 export async function getUserTier(
     db: D1Database,
@@ -283,6 +292,7 @@ export async function getUserTier(
         .bind(userId)
         .first();
 
+    // Backward compatibility: null in database = seed tier
     return result ? (result.tier as UserTier) : "seed";
 }
 

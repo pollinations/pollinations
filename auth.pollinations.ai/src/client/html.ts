@@ -26,28 +26,53 @@ export const generateHTML = () => `<!DOCTYPE html>
             <span class="auth-title">🐝 Auth 🌸</span>
         </h1>
         
-        <!-- Intro section with tagline (visible only when logged out) -->
+        <!-- Intro section (visible only when logged out) -->
         <div id="intro-text">
-            <div style="font-size: 1.25em; color: #222; margin-top: 8px;">
-                <span style="background: #fffbe7; border-radius: 6px; padding: 2px 8px;">
-                    <b>Sign in</b> to unlock <span style="color: #ffb300; font-weight: bold;">all models &amp; features</span>
-                </span>
+            <!-- Primary CTA: New API -->
+            <div style="margin-top: 20px; padding: 28px; background: #f8f9fa; border-radius: 12px; text-align: center; border: 2px solid #e0e0e0;">
+                <h2 style="margin: 0 0 12px 0; color: #333; font-size: 1.6em; font-weight: 600;">
+                    🚀 Our New API is Here
+                </h2>
+                <p style="margin: 0 0 20px 0; color: #666; font-size: 1em; line-height: 1.5;">
+                    Enter the beta now · All models & features · Free & Anonymous
+                </p>
+                <a href="https://enter.pollinations.ai" target="_blank" style="display: inline-block; padding: 12px 28px; background: #333; color: white; text-decoration: none; border-radius: 6px; font-weight: 500; font-size: 1em; transition: background 0.2s;" onmouseover="this.style.background='#555'" onmouseout="this.style.background='#333'">
+                    Go to enter.pollinations.ai →
+                </a>
             </div>
-            <div style="margin-top: 10px; font-size: 1.1em; color: #444;">
-                <span style="display: inline-block; background: #ffe3fa; border-radius: 6px; padding: 2px 10px;">
-                    <b>Free</b> &nbsp;|&nbsp; <b>Anonymous</b> 
-                </span>
+
+            <!-- Divider -->
+            <div style="margin: 32px 0; text-align: center; color: #999; font-size: 0.9em;">
+                <span style="background: white; padding: 0 12px; position: relative; z-index: 1;">or</span>
+                <div style="position: relative; top: -12px; border-top: 1px solid #ddd; z-index: 0;"></div>
             </div>
-            <div style="margin-top: 12px; font-size: 1.05em; color: #7a3cff;">
-                <i>Gen-AI API for everyone <span style="font-size:1.2em;">🌟</span></i>
+
+            <!-- Secondary: Legacy API Access -->
+            <div style="padding: 20px; background: white; border-radius: 8px; border: 1px solid #ddd;">
+                <h3 style="margin: 0 0 10px 0; color: #555; font-size: 1.1em; font-weight: 500;">
+                    Legacy API Access
+                </h3>
+                <p style="margin: 0 0 16px 0; color: #777; font-size: 0.95em; line-height: 1.5;">
+                    Already using the legacy API? Login to manage your tokens and domains.
+                </p>
+                <button id="auth-button" onclick="startAuth()" style="padding: 10px 24px; font-size: 1em;">Login with GitHub</button>
+            </div>
+
+            <!-- Deprecation Notice -->
+            <div style="margin-top: 24px; padding: 14px 16px; background: #fafafa; border-radius: 6px; border-left: 3px solid #999; font-size: 0.9em; color: #666; line-height: 1.6;">
+                <p style="margin: 0;">
+                    <span style="font-weight: 600; color: #555;">ℹ️ Notice:</span> 
+                    The legacy API will be deprecated in the future. It is still fully operational and receiving support, but we encourage new projects to use <b>enter.pollinations.ai</b>.
+                </p>
             </div>
         </div>
 
-        <!-- 🔐 Authentication -->
-        <div id="auth-section" style="margin-top: 40px; display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
-            <button id="auth-button" onclick="startAuth()">Login with GitHub</button>
-            <button id="logout-button" onclick="logout()" class="hidden">Logout</button>
-            <div id="badge-container" class="hidden"></div>
+        <!-- 🔐 Authentication (logged in state) -->
+        <div id="auth-section" style="margin-top: 40px; display:none;">
+            <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
+                <button id="logout-button" onclick="logout()" class="hidden">Logout</button>
+                <div id="badge-container" class="hidden"></div>
+            </div>
         </div>
 
         <!-- 👤 Account Section -->
@@ -58,31 +83,48 @@ export const generateHTML = () => `<!DOCTYPE html>
                     <div class="tier-header">
                         <h2>✨ Tier</h2>
                     </div>
-                    <div class="tier-description">
-                        <p>
-                            <span style="color:#2ecc40; font-weight:bold;">Seed</span> tier is <span style="font-style:italic;"><b>automatic</b></span> on first login.<br>
-                            <span style="color:#ff61d8; font-weight:bold;">Flower</span> and <span style="color:#ffb300; font-weight:bold;">Nectar</span> are assigned in <span style="font-weight:bold; text-decoration:underline dotted #ff61d8;">limited pilots</span> while we're in <span style="color:#7a3cff; font-style:italic;"><b>beta</b></span>.<br>
-                            <span style="font-weight:bold; color:#ffb300;">Higher tiers</span> = <span style="font-style:italic;">more Gen‑AI usage</span>!
+                    
+                    <!-- Deprecation message (shown when tier is legacy) -->
+                    <div id="tier-deprecation-message" class="hidden" style="padding: 20px; background: linear-gradient(135deg, #fff9e6 0%, #ffe8f5 100%); border-radius: 12px; border: 2px solid #ffb300;">
+                        <p style="margin: 0; font-size: 1.1em; color: #333; line-height: 1.6;">
+                            <span style="font-size: 1.3em;">🌸</span> 
+                            <span style="font-weight: bold; color: #7a3cff;">This tier system is closed for now.</span>
+                            <br><br>
+                            <span style="font-style: italic;">Subscribe to the beta of our new API</span>
+                            <br>
+                            <a href="https://enter.pollinations.ai" target="_blank" style="display: inline-block; margin-top: 12px; padding: 10px 20px; background: linear-gradient(135deg, #7a3cff 0%, #ff61d8 100%); color: white; text-decoration: none; border-radius: 8px; font-weight: bold; transition: transform 0.2s;">
+                                <span style="font-size: 1.2em;">🚀</span> Visit enter.pollinations.ai
+                            </a>
                         </p>
                     </div>
-                    <h4>Current:</h4>
-                    <div class="tier-pills">
-                        <div id="seed-pill" class="tier-pill seed">
-                            <span class="tier-emoji">🌱</span> Seed
+                    
+                    <!-- Active tier display (hidden for legacy users) -->
+                    <div id="tier-active-display">
+                        <div class="tier-description">
+                            <p>
+                                <span style="color:#2ecc40; font-weight:bold;">Seed</span>, <span style="color:#ff61d8; font-weight:bold;">Flower</span>, and <span style="color:#ffb300; font-weight:bold;">Nectar</span> tiers were assigned during <span style="color:#7a3cff; font-style:italic;"><b>beta</b></span>.<br>
+                                <span style="font-weight:bold; color:#ffb300;">Higher tiers</span> = <span style="font-style:italic;">more Gen‑AI usage</span>!
+                            </p>
                         </div>
-                        <div id="flower-pill" class="tier-pill flower">
-                            <span class="tier-emoji">🌸</span> Flower
+                        <h4>Current:</h4>
+                        <div class="tier-pills">
+                            <div id="seed-pill" class="tier-pill seed">
+                                <span class="tier-emoji">🌱</span> Seed
+                            </div>
+                            <div id="flower-pill" class="tier-pill flower">
+                                <span class="tier-emoji">🌸</span> Flower
+                            </div>
+                            <div id="nectar-pill" class="tier-pill nectar">
+                                <span class="tier-emoji">🍯</span> Nectar
+                            </div>
+                            <p>
+                                <span style="font-size:1.2em;"></span>
+                                <b><i>Want to <span style="color:black;">upgrade</span> to <span style="color:#ff61d8;">Flower</span> or <span style="color:#ffb300;">Nectar</span> tier?</i></b>
+                                <br>
+                                <br>
+                                <span style="color:#666; font-style:italic;">Higher tier access is currently limited during beta.</span>
+                            </p>
                         </div>
-                        <div id="nectar-pill" class="tier-pill nectar">
-                            <span class="tier-emoji">🍯</span> Nectar
-                        </div>
-                        <p>
-                            <span style="font-size:1.2em;"></span>
-                            <b><i>Want to <span style="color:black;">upgrade</span> to <span style="color:#ff61d8;">Flower</span> or <span style="color:#ffb300;">Nectar</span> tier?</i></b>
-                            <br>
-                            <br>
-                            <span style="color:#666; font-style:italic;">Higher tier access is currently limited during beta.</span>
-                        </p>
                     </div>
                 </div>
 

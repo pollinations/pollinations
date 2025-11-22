@@ -795,10 +795,10 @@ async function handleSetUserTier(
 
         userId = body.user_id;
 
-        if (!body.tier || !["seed", "flower", "nectar"].includes(body.tier)) {
+        if (!body.tier || !["seed", "flower", "nectar", "legacy"].includes(body.tier)) {
             return createErrorResponse(
                 400,
-                "Invalid tier value. Must be one of: seed, flower, nectar",
+                "Invalid tier value. Must be one of: seed, flower, nectar, legacy",
                 corsHeaders,
             );
         }

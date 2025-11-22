@@ -68,11 +68,11 @@ export const ModelSelector = memo(function ModelSelector({
                         : "text";
                     const isActive = selectedModel === m.id;
 
-                    const colorClass = hasAudioOutput
-                        ? "bg-indicator-audio"
+                    const borderColorClass = hasAudioOutput
+                        ? "border-indicator-audio"
                         : isImage
-                        ? "bg-indicator-image"
-                        : "bg-indicator-text";
+                        ? "border-indicator-image"
+                        : "border-indicator-text";
 
                     return (
                         <Button
@@ -83,10 +83,8 @@ export const ModelSelector = memo(function ModelSelector({
                             size={null}
                             data-active={isActive}
                             data-type={modelType}
+                            className={`border-2 ${borderColorClass}`}
                         >
-                            <div
-                                className={`absolute left-0 top-0 bottom-0 w-1 ${colorClass}`}
-                            />
                             {m.name}
                         </Button>
                     );

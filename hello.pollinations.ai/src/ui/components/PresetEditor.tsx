@@ -1,18 +1,18 @@
 import React, { useEffect, useState } from "react";
 import {
     themeToDictionary,
-    ClassicTheme,
     type ThemeDictionary,
 } from "../../content/theme";
 import type { TokenId } from "../../content/theme";
 import { TOKENS } from "../../content/theme/tokens";
+import { PRESETS, DEFAULT_PRESET } from "../../content/theme/presets";
 import { useTheme } from "../contexts/ThemeContext";
 import {
-    RefreshCwIcon,
     CheckIcon,
     ShuffleIcon,
     DicesIcon,
     PaletteIcon,
+    DownloadIcon,
 } from "lucide-react";
 
 // ============================================
@@ -26,7 +26,7 @@ interface ColorBucketData {
 
 type ThemeState = Record<string, ColorBucketData>;
 
-// ColorPicker dev tool helper - get human-readable token label
+// PresetEditor dev tool helper - get human-readable token label
 const getTokenLabel = (id: string): string | undefined => {
     return TOKENS.find((t) => t.id === id)?.description;
 };
@@ -78,7 +78,6 @@ const convertToThemeState = (dict: ThemeDictionary): ThemeState => {
     return newState;
 };
 
-const DefaultThemeDefinition = themeToDictionary(ClassicTheme);
 
 // ============================================
 // COMPONENTS
@@ -179,12 +178,12 @@ function ColorBucket({
                     type="text"
                     value={bucket.color}
                     onChange={(e) => onColorChange(bucketId, e.target.value)}
-                    className="w-full text-[10px] font-mono text-gray-500 bg-transparent focus:outline-none focus:text-black"
+                    className="flex-1 min-w-0 text-[10px] font-mono text-gray-500 bg-transparent focus:outline-none focus:text-black"
                 />
                 <button
                     type="button"
                     onClick={() => onColorChange(bucketId, getRandomColor())}
-                    className="p-1 text-gray-400 hover:text-black transition-colors opacity-0 group-hover:opacity-100"
+                    className="p-1 text-gray-400 hover:text-black transition-colors flex-shrink-0"
                     title="Randomize this color"
                 >
                     <DicesIcon className="w-3 h-3" />
@@ -212,12 +211,13 @@ function ColorBucket({
 // MAIN COMPONENT
 // ============================================
 
-export function ColorPicker() {
+export function PresetEditor() {
     const [isOpen, setIsOpen] = useState(false);
     const { themeDefinition } = useTheme();
     const [theme, setTheme] = useState<ThemeState>(() =>
         convertToThemeState(themeDefinition)
     );
+    const [selectedPresetId, setSelectedPresetId] = useState(DEFAULT_PRESET.id);
 
     // Sync with context theme when it changes
     useEffect(() => {
@@ -350,10 +350,46 @@ export function ColorPicker() {
         });
     };
 
-    // Reset
-    const handleReset = () => {
-        setTheme(convertToThemeState(DefaultThemeDefinition));
+    // Load Preset
+    const handleLoadPreset = (presetId: string) => {
+        const preset = PRESETS.find(p => p.id === presetId);
+        if (preset) {
+            setTheme(convertToThemeState(themeToDictionary(preset.theme)));
+            setSelectedPresetId(presetId);
+        }
     };
+
+    // Download current theme as TypeScript file
+    const handleDownloadPreset = () => {
+        // Convert current theme state to LLMThemeResponse format
+        const slots: Record<string, { hex: string; ids: TokenId[] }> = {};
+        Object.entries(theme).forEach(([_, bucket], index) => {
+            slots[`slot_${index}`] = {
+                hex: bucket.color,
+                ids: bucket.tokens,
+            };
+        });
+
+        // Generate TypeScript file content
+        const content = `import { LLMThemeResponse, processTheme } from "../engine";
+
+export const CustomTheme: LLMThemeResponse = ${JSON.stringify({ slots, borderRadius: {} }, null, 4)};
+
+export const CustomCssVariables = processTheme(CustomTheme).cssVariables;
+`;
+
+        // Trigger download
+        const blob = new Blob([content], { type: "text/typescript" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = "custom-preset.ts";
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    };
+
 
     return (
         <div
@@ -365,58 +401,75 @@ export function ColorPicker() {
                 ${isOpen ? "translate-x-0" : "-translate-x-full"}
             `}
         >
-            {/* Minimal Header */}
-            <div className="flex items-center justify-between px-3 py-2 border-b border-gray-100">
-                <div className="flex gap-1">
+            {/* Header with Preset Selector */}
+            <div className="flex flex-col gap-2 p-3 border-b border-gray-100">
+                {/* Preset Dropdown */}
+                <select
+                    value={selectedPresetId}
+                    onChange={(e) => handleLoadPreset(e.target.value)}
+                    className="w-full px-2 py-1 text-[10px] font-mono bg-white border border-gray-200 rounded focus:outline-none focus:border-black"
+                >
+                    {PRESETS.map((preset) => (
+                        <option key={preset.id} value={preset.id}>
+                            {preset.name}
+                        </option>
+                    ))}
+                </select>
+
+                {/* Action Buttons */}
+                <div className="flex items-center justify-between">
+                    <div className="flex gap-1">
+                        <button
+                            type="button"
+                            onClick={handleDownloadPreset}
+                            className="p-1 text-gray-400 hover:text-black transition-colors"
+                            title="Download Preset"
+                        >
+                            <DownloadIcon className="w-3 h-3" />
+                        </button>
+
+                        <button
+                            type="button"
+                            onClick={handleRandomizeColors}
+                            className="p-1 text-gray-400 hover:text-black transition-colors"
+                            title="Randomize Colors"
+                        >
+                            <PaletteIcon className="w-3 h-3" />
+                        </button>
+                        <button
+                            type="button"
+                            onClick={handleRandomizeAssignments}
+                            className="p-1 text-gray-400 hover:text-black transition-colors"
+                            title="Randomize Assignments"
+                        >
+                            <ShuffleIcon className="w-3 h-3" />
+                        </button>
+                        <button
+                            type="button"
+                            onClick={handleSetAllWhite}
+                            className="p-1 hover:scale-110 transition-transform"
+                            title="Set All to White"
+                        >
+                            <div className="w-3 h-3 bg-white border border-gray-300 rounded-sm" />
+                        </button>
+                        <button
+                            type="button"
+                            onClick={handleSetAllBlack}
+                            className="p-1 hover:scale-110 transition-transform"
+                            title="Set All to Black"
+                        >
+                            <div className="w-3 h-3 bg-black rounded-sm" />
+                        </button>
+                    </div>
                     <button
                         type="button"
-                        onClick={handleReset}
+                        onClick={() => setIsOpen(false)}
                         className="p-1 text-gray-400 hover:text-black transition-colors"
-                        title="Reset"
+                        title="Close"
                     >
-                        <RefreshCwIcon className="w-3 h-3" />
-                    </button>
-                    <button
-                        type="button"
-                        onClick={handleRandomizeColors}
-                        className="p-1 text-gray-400 hover:text-black transition-colors"
-                        title="Randomize Colors"
-                    >
-                        <PaletteIcon className="w-3 h-3" />
-                    </button>
-                    <button
-                        type="button"
-                        onClick={handleRandomizeAssignments}
-                        className="p-1 text-gray-400 hover:text-black transition-colors"
-                        title="Randomize Assignments"
-                    >
-                        <ShuffleIcon className="w-3 h-3" />
-                    </button>
-                    <button
-                        type="button"
-                        onClick={handleSetAllWhite}
-                        className="p-1 hover:scale-110 transition-transform"
-                        title="Set All to White"
-                    >
-                        <div className="w-3 h-3 bg-white border border-gray-300 rounded-sm" />
-                    </button>
-                    <button
-                        type="button"
-                        onClick={handleSetAllBlack}
-                        className="p-1 hover:scale-110 transition-transform"
-                        title="Set All to Black"
-                    >
-                        <div className="w-3 h-3 bg-black rounded-sm" />
+                        <CheckIcon className="w-3 h-3" />
                     </button>
                 </div>
-                <button
-                    type="button"
-                    onClick={() => setIsOpen(false)}
-                    className="p-1 text-gray-400 hover:text-black transition-colors"
-                    title="Close"
-                >
-                    <CheckIcon className="w-3 h-3" />
-                </button>
             </div>
 
             {/* Scrollable Content */}

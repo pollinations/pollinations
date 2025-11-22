@@ -2,7 +2,7 @@ import { Routes, Route, Navigate } from "react-router-dom";
 import { Suspense, lazy } from "react";
 import ErrorBoundary from "./ui/components/ErrorBoundary";
 import Layout from "./ui/components/Layout";
-import { ColorPicker } from "./ui/components/ColorPicker";
+import { PresetEditor } from "./ui/components/PresetEditor";
 
 // Lazy load pages
 const HelloPage = lazy(() => import("./ui/pages/HelloPage"));
@@ -23,7 +23,7 @@ const PageLoader = () => (
 function App() {
     return (
         <ErrorBoundary>
-            <ColorPicker />
+            <PresetEditor />
             <Suspense fallback={<PageLoader />}>
                 <Routes>
                     <Route path="/" element={<Layout />}>

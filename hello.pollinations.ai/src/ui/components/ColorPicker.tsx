@@ -163,6 +163,8 @@ function ColorBucket({
                 >
                     <input
                         ref={colorInputRef}
+                        id={`color-picker-${bucketId}`}
+                        name={`color-picker-${bucketId}`}
                         type="color"
                         value={rgbaToHex(bucket.color)}
                         onChange={(e) => handleColorChange(e.target.value)}
@@ -172,6 +174,8 @@ function ColorBucket({
                     />
                 </button>
                 <input
+                    id={`color-hex-${bucketId}`}
+                    name={`color-hex-${bucketId}`}
                     type="text"
                     value={bucket.color}
                     onChange={(e) => onColorChange(bucketId, e.target.value)}

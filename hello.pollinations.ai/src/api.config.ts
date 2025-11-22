@@ -1,7 +1,4 @@
-// Publishable API Key (safe for frontend - pollinations.ai2 only)
-export const API_KEY = "plln_sk_ru9V1kDJyhjei9BJgBegJbJnmdf2hymU";
-// Development key (faster, no rate limits): plln_sk_ru9V1kDJyhjei9BJgBegJbJnmdf2hymU - NEVER COMMIT
-// Production key: plln_pk_JYeNIYDfEi0dwDT7kPAXujYWyYT2TaKm
+export const API_KEY = "plln_pk_JYeNIYDfEi0dwDT7kPAXujYWyYT2TaKm";
 
 export const API = {
     TEXT_GENERATION:

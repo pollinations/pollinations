@@ -37,40 +37,49 @@ const targetApp = appArg ? appArg.split("=")[1] : "all";
 /**
  * Generate PNG from SVG at specified size
  */
-async function generateIcon(svgBuffer, size, outputPath, backgroundColor, tintColor) {
+async function generateIcon(
+    svgBuffer,
+    size,
+    outputPath,
+    backgroundColor,
+    tintColor,
+) {
     console.log(`  Generating ${size}x${size} → ${outputPath}`);
 
     const background = resolveBackground(backgroundColor);
-    
+
     // Tint the SVG if a tint color is provided
     let inputBuffer = svgBuffer;
     if (tintColor) {
-        const svgString = svgBuffer.toString()
+        const svgString = svgBuffer
+            .toString()
             .replace(/fill="#fff"/g, `fill="${tintColor}"`)
             .replace(/fill:#fff/g, `fill:${tintColor}`);
         inputBuffer = Buffer.from(svgString);
     }
 
-    let pipeline = sharp(inputBuffer)
-        .resize(size, size, {
-            fit: "contain",
-            background: { r: 0, g: 0, b: 0, alpha: 0 },
-        });
+    let pipeline = sharp(inputBuffer).resize(size, size, {
+        fit: "contain",
+        background: { r: 0, g: 0, b: 0, alpha: 0 },
+    });
 
     // Only flatten if background is not transparent
     if (background.alpha !== 0) {
         pipeline = pipeline.flatten({ background });
     }
 
-    await pipeline
-        .png()
-        .toFile(outputPath);
+    await pipeline.png().toFile(outputPath);
 }
 
 /**
  * Generate favicon.ico (32x32 PNG)
  */
-async function generateFavicon(svgBuffer, outputPath, backgroundColor, tintColor) {
+async function generateFavicon(
+    svgBuffer,
+    outputPath,
+    backgroundColor,
+    tintColor,
+) {
     console.log(`  Generating favicon.ico → ${outputPath}`);
 
     const background = resolveBackground(backgroundColor);
@@ -78,26 +87,24 @@ async function generateFavicon(svgBuffer, outputPath, backgroundColor, tintColor
     // Tint the SVG if a tint color is provided
     let inputBuffer = svgBuffer;
     if (tintColor) {
-        const svgString = svgBuffer.toString()
+        const svgString = svgBuffer
+            .toString()
             .replace(/fill="#fff"/g, `fill="${tintColor}"`)
             .replace(/fill:#fff/g, `fill:${tintColor}`);
         inputBuffer = Buffer.from(svgString);
     }
 
-    let pipeline = sharp(inputBuffer)
-        .resize(32, 32, {
-            fit: "contain",
-            background: { r: 0, g: 0, b: 0, alpha: 0 },
-        });
+    let pipeline = sharp(inputBuffer).resize(32, 32, {
+        fit: "contain",
+        background: { r: 0, g: 0, b: 0, alpha: 0 },
+    });
 
     // Only flatten if background is not transparent
     if (background.alpha !== 0) {
         pipeline = pipeline.flatten({ background });
     }
 
-    await pipeline
-        .png()
-        .toFile(outputPath);
+    await pipeline.png().toFile(outputPath);
 }
 
 /**
@@ -125,19 +132,20 @@ async function generateOGImage(
     outputPath,
     backgroundColor,
     textLogoBuffer = null,
-    tintColor = null
+    tintColor = null,
 ) {
     console.log(`  Generating OG image 1200x630 → ${outputPath}`);
 
     const width = 1200;
     const height = 630;
     const background = resolveBackground(backgroundColor);
-    
+
     let logoSource = textLogoBuffer || svgBuffer;
-    
+
     // Tint the logo if needed
     if (tintColor && logoSource) {
-        const svgString = logoSource.toString()
+        const svgString = logoSource
+            .toString()
             .replace(/fill="#fff"/g, `fill="${tintColor}"`)
             .replace(/fill:#fff/g, `fill:${tintColor}`);
         logoSource = Buffer.from(svgString);
@@ -186,13 +194,16 @@ async function generateAssetsForApp(appKey, appConfig) {
         const svgBuffer = readFileSync(appConfig.sourceSvg);
         const outputDir = appConfig.outputDir;
         const theme = appConfig.themeColor;
-        
+
         // Determine backgrounds and tints
         // Icons: Use iconBackground if set, otherwise fallback to backgroundColor or theme
-        const iconBg = resolveBackground(appConfig.iconBackground || appConfig.backgroundColor || theme);
+        const iconBg = resolveBackground(
+            appConfig.iconBackground || appConfig.backgroundColor || theme,
+        );
         // Tint icons if background is transparent (assuming we want colored logo on transparent)
         // OR if explicitly requested. For now, if iconBackground is transparent, we tint with theme.
-        const iconTint = appConfig.iconBackground === 'transparent' ? theme : null;
+        const iconTint =
+            appConfig.iconBackground === "transparent" ? theme : null;
 
         // OG Image: Use backgroundColor if set, otherwise theme
         const ogBg = resolveBackground(appConfig.backgroundColor || theme);
@@ -223,10 +234,15 @@ async function generateAssetsForApp(appKey, appConfig) {
                 size,
                 join(outputDir, `favicon-${size}x${size}.png`),
                 iconBg,
-                iconTint
+                iconTint,
             );
         }
-        await generateFavicon(svgBuffer, join(outputDir, "favicon.ico"), iconBg, iconTint);
+        await generateFavicon(
+            svgBuffer,
+            join(outputDir, "favicon.ico"),
+            iconBg,
+            iconTint,
+        );
 
         // Generate PWA icons
         console.log("\n📱 PWA Icons:");
@@ -236,7 +252,7 @@ async function generateAssetsForApp(appKey, appConfig) {
                 size,
                 join(outputDir, `icon-${size}.png`),
                 iconBg,
-                iconTint
+                iconTint,
             );
         }
 
@@ -252,7 +268,7 @@ async function generateAssetsForApp(appKey, appConfig) {
                 size,
                 join(outputDir, filename),
                 iconBg,
-                iconTint
+                iconTint,
             );
         }
 
@@ -272,7 +288,7 @@ async function generateAssetsForApp(appKey, appConfig) {
                 join(outputDir, "og-image.png"),
                 ogBg,
                 ogBuffer,
-                ogTint
+                ogTint,
             );
         }
 
@@ -285,24 +301,27 @@ async function generateAssetsForApp(appKey, appConfig) {
             // Use writeFileSync for exact copy (sharp modifies SVG)
             writeFileSync(logoTextDest, readFileSync(logoTextSource));
         } else if (appKey === "pollinations" || appKey === "hello") {
-            // Copy both logos to src/logo for React imports
-            const srcLogoDir = join(outputDir, "../src/logo");
+            // Copy both logos to src/assets for React imports
+            const srcLogoDir = join(outputDir, "../src/assets");
             mkdirSync(srcLogoDir, { recursive: true });
             const logoDest = join(srcLogoDir, "logo.svg");
             const logoTextDest = join(srcLogoDir, "logo-text.svg");
             console.log(`  Copying logo → ${logoDest}`);
             console.log(`  Copying logo-text → ${logoTextDest}`);
-            
+
             // Read and replace fill with currentColor for React usage
             // Regex handles both fill="#fff" (attribute) and fill:#fff (inline style)
-            const logoContent = readFileSync(appConfig.sourceSvg, 'utf8')
+            const logoContent = readFileSync(appConfig.sourceSvg, "utf8")
                 .replace(/fill="#fff"/g, 'fill="currentColor"')
-                .replace(/fill:#fff/g, 'fill:currentColor');
-            
-            const logoTextContent = readFileSync(join(__dirname, appConfig.ogSourceSvg), 'utf8')
+                .replace(/fill:#fff/g, "fill:currentColor");
+
+            const logoTextContent = readFileSync(
+                join(__dirname, appConfig.ogSourceSvg),
+                "utf8",
+            )
                 .replace(/fill="#fff"/g, 'fill="currentColor"')
-                .replace(/fill:#fff/g, 'fill:currentColor');
-            
+                .replace(/fill:#fff/g, "fill:currentColor");
+
             writeFileSync(logoDest, logoContent);
             writeFileSync(logoTextDest, logoTextContent);
         }

@@ -113,16 +113,29 @@ RULES:
 
 2.3 TYPOGRAPHY
 
-fonts.title:
-- Display/branding font, more expressive.
+TOKENS:
+- t041: Title Font (Display/Branding)
+- t042: Headline Font (Strong/Readable)
+- t043: Body Font (Highly Legible)
 
-fonts.headline:
-- Sans-serif, strong and readable.
+AVAILABLE FONT LIBRARY (Examples - Choose based on vibe):
 
-fonts.body:
-- Highly legible sans-serif (e.g. "Inter", "SF Pro", "Roboto", "Nunito").
+CLASSIC / NEUTRAL:
+- Maven Pro, Mako, Duru Sans, Lato, Open Sans, PT Sans, Merriweather, Playfair Display
 
-Pick system-available or common web fonts. Names only, no fallbacks or stacks.
+MINIMAL / CLEAN:
+- Inter, Roboto, Quicksand, Poppins, Montserrat, Nunito, Raleway, Work Sans, Outfit
+
+TECH / FUTURISTIC:
+- Orbitron, Rajdhani, Exo 2, Teko, Chakra Petch, Michroma, Audiowide, Share Tech Mono
+
+CREATIVE / DISPLAY:
+- Lora, Fredoka, Abril Fatface, Righteous, Comfortaa, Bangers, Lobster, Pacifico, Cinzel
+
+RULES:
+- Assign one font name to each token (t041, t042, t043).
+- CRITICAL: Choose fonts that strongly match the requested vibe/theme.
+- You MAY choose any Google Font from the categories above (or similar high-quality Google Fonts).
 
 2.4 SPACING
 
@@ -148,7 +161,7 @@ You MUST return ONLY a single JSON object, with no extra text, comments, or expl
       },
       "slot_1": {
         "hex": "#...",
-        "ids": ["t003"]
+        "ids": ["t003", "t004"]
       }
       // additional slots as needed, until all color tokens t001–t037 are assigned exactly once
     }
@@ -156,12 +169,12 @@ You MUST return ONLY a single JSON object, with no extra text, comments, or expl
   "borderRadius": {
     "t038": "8px",
     "t039": "12px",
-    "t040": "8px"
+    "t040": "4px"
   },
   "fonts": {
-    "title": "Font Name",
-    "headline": "Font Name",
-    "body": "Font Name"
+    "t041": "Orbitron",
+    "t042": "Rajdhani",
+    "t043": "Exo 2"
   },
   "spacing": {
     "xs": "4px",

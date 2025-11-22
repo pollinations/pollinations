@@ -24,7 +24,19 @@ interface ColorBucketData {
     tokens: TokenId[];
 }
 
+interface RadiusBucketData {
+    value: string;      // e.g., "0px", "8px", "16px"
+    tokens: TokenId[];  // Radius tokens: t038, t039, t040
+}
+
+interface FontBucketData {
+    value: string;      // e.g., "Maven Pro", "Mako", "Duru Sans"
+    tokens: TokenId[];  // Font tokens: t041, t042, t043
+}
+
 type ThemeState = Record<string, ColorBucketData>;
+type RadiusState = Record<string, RadiusBucketData>; // bucket format
+type FontState = Record<string, FontBucketData>; // bucket format
 
 // PresetEditor dev tool helper - get human-readable token label
 const getTokenLabel = (id: string): string | undefined => {
@@ -76,6 +88,58 @@ const convertToThemeState = (dict: ThemeDictionary): ThemeState => {
         newState[`bucket-${index}`] = { color, tokens };
     });
     return newState;
+};
+
+// Convert radius dictionary to bucket format (fixed 3 buckets, one per token)
+const convertRadiusToState = (radiusDict: Record<string, string>): RadiusState => {
+    const radiusTokens: TokenId[] = ["t038", "t039", "t040"]; // Button, Card, Input
+    const newState: RadiusState = {};
+    
+    radiusTokens.forEach((tokenId, index) => {
+        newState[`radius-bucket-${index}`] = {
+            value: radiusDict[tokenId] || "0px",
+            tokens: [tokenId],
+        };
+    });
+    
+    return newState;
+};
+
+// Convert radius buckets back to dictionary format (for export)
+const convertRadiusToDict = (radiusState: RadiusState): Record<string, string> => {
+    const dict: Record<string, string> = {};
+    Object.values(radiusState).forEach(bucket => {
+        bucket.tokens.forEach(tokenId => {
+            dict[tokenId] = bucket.value;
+        });
+    });
+    return dict;
+};
+
+// Convert font dictionary to bucket format (fixed 3 buckets, one per token)
+const convertFontsToState = (fontDict: Record<string, string>): FontState => {
+    const fontTokens: TokenId[] = ["t041", "t042", "t043"]; // Title, Headline, Body
+    const newState: FontState = {};
+    
+    fontTokens.forEach((tokenId, index) => {
+        newState[`font-bucket-${index}`] = {
+            value: fontDict[tokenId] || (index === 0 ? "Maven Pro" : index === 1 ? "Mako" : "Duru Sans"),
+            tokens: [tokenId],
+        };
+    });
+    
+    return newState;
+};
+
+// Convert font buckets back to dictionary format (for export)
+const convertFontsToDict = (fontState: FontState): Record<string, string> => {
+    const dict: Record<string, string> = {};
+    Object.values(fontState).forEach(bucket => {
+        bucket.tokens.forEach(tokenId => {
+            dict[tokenId] = bucket.value;
+        });
+    });
+    return dict;
 };
 
 
@@ -207,6 +271,133 @@ function ColorBucket({
     );
 }
 
+function RadiusBucket({
+    bucketId,
+    bucket,
+    onChange,
+    onDrop,
+    onDragOver,
+}: {
+    bucketId: string;
+    bucket: RadiusBucketData;
+    onChange: (bucketId: string, newValue: string) => void;
+    onDrop: (e: React.DragEvent, targetBucketId: string) => void;
+    onDragOver: (e: React.DragEvent) => void;
+}) {
+    return (
+        <div
+            onDrop={(e) => onDrop(e, bucketId)}
+            onDragOver={onDragOver}
+            className="
+                flex flex-col gap-1.5 p-2 rounded border border-transparent 
+                bg-gray-50/50 hover:bg-gray-100 hover:border-gray-200 transition-colors
+            "
+        >
+            {/* Header: Value Input */}
+            <div className="flex items-center gap-2">
+                <input
+                    type="text"
+                    value={bucket.value}
+                    onChange={(e) => onChange(bucketId, e.target.value)}
+                    className="flex-1 min-w-0 px-2 py-1 text-[10px] font-mono text-gray-700 bg-white border border-gray-200 rounded focus:outline-none focus:border-black"
+                    placeholder="e.g. 8px, 0px, 1rem"
+                />
+            </div>
+
+            {/* Token List - wrapped horizontally */}
+            <div className="flex flex-wrap gap-1 min-h-[20px]">
+                {bucket.tokens.map((token) => (
+                    <TokenChip
+                        key={token}
+                        token={token}
+                        onDragStart={(e, t) => {
+                            e.dataTransfer.setData("text/plain", t);
+                            e.dataTransfer.effectAllowed = "move";
+                        }}
+                    />
+                ))}
+            </div>
+        </div>
+    );
+}
+
+import { FONT_LIBRARY, type FontDefinition } from "../../content/fonts";
+
+function FontBucket({
+    bucketId,
+    bucket,
+    onChange,
+    onDrop,
+    onDragOver,
+}: {
+    bucketId: string;
+    bucket: FontBucketData;
+    onChange: (bucketId: string, newValue: string) => void;
+    onDrop: (e: React.DragEvent, targetBucketId: string) => void;
+    onDragOver: (e: React.DragEvent) => void;
+}) {
+    // Group fonts by category
+    const fontsByCategory = Object.values(FONT_LIBRARY).reduce((acc, font) => {
+        if (!acc[font.category]) {
+            acc[font.category] = [];
+        }
+        acc[font.category].push(font);
+        return acc;
+    }, {} as Record<string, FontDefinition[]>);
+
+    const categories = ["classic", "minimal", "tech", "creative", "display", "handwriting"];
+    const isInLibrary = Object.values(FONT_LIBRARY).some(f => f.family === bucket.value);
+
+    return (
+        <div
+            onDrop={(e) => onDrop(e, bucketId)}
+            onDragOver={onDragOver}
+            className="
+                flex flex-col gap-1.5 p-2 rounded border border-transparent 
+                bg-gray-50/50 hover:bg-gray-100 hover:border-gray-200 transition-colors
+            "
+        >
+            {/* Header: Font Dropdown */}
+            <div className="flex items-center gap-2">
+                <select
+                    value={bucket.value}
+                    onChange={(e) => onChange(bucketId, e.target.value)}
+                    className="flex-1 min-w-0 px-2 py-1 text-[10px] font-mono text-gray-700 bg-white border border-gray-200 rounded focus:outline-none focus:border-black cursor-pointer"
+                >
+                    {!isInLibrary && <option value={bucket.value}>{bucket.value}</option>}
+                    {categories.map((cat) => {
+                        const fonts = fontsByCategory[cat];
+                        if (!fonts || fonts.length === 0) return null;
+                        return (
+                            <optgroup key={cat} label={cat.toUpperCase()}>
+                                {fonts.map((font) => (
+                                    <option key={font.family} value={font.family}>
+                                        {font.family}
+                                    </option>
+                                ))}
+                            </optgroup>
+                        );
+                    })}
+                </select>
+            </div>
+
+            {/* Token List - wrapped horizontally */}
+            <div className="flex flex-wrap gap-1 min-h-[20px]">
+                {bucket.tokens.map((token) => (
+                    <TokenChip
+                        key={token}
+                        token={token}
+                        onDragStart={(e, t) => {
+                            e.dataTransfer.setData("text/plain", t);
+                            e.dataTransfer.effectAllowed = "move";
+                        }}
+                    />
+                ))}
+            </div>
+        </div>
+    );
+}
+
 // ============================================
 // MAIN COMPONENT
 // ============================================
@@ -217,12 +408,50 @@ export function PresetEditor() {
     const [theme, setTheme] = useState<ThemeState>(() =>
         convertToThemeState(themeDefinition)
     );
+    const [radius, setRadius] = useState<RadiusState>(() =>
+        convertRadiusToState(themeDefinition.borderRadius || {})
+    );
+    const [fonts, setFonts] = useState<FontState>(() =>
+        convertFontsToState(themeDefinition.fonts || {})
+    );
     const [selectedPresetId, setSelectedPresetId] = useState(DEFAULT_PRESET.id);
 
     // Sync with context theme when it changes
     useEffect(() => {
         setTheme(convertToThemeState(themeDefinition));
+        setRadius(convertRadiusToState(themeDefinition.borderRadius || {}));
+        setFonts(convertFontsToState(themeDefinition.fonts || {}));
     }, [themeDefinition]);
+
+    // Sync fonts to CSS variables and load them dynamically
+    useEffect(() => {
+        const root = document.documentElement;
+        const familiesToLoad: string[] = [];
+
+        Object.values(fonts).forEach((data) => {
+            // Sync CSS variable
+            const token = data.tokens[0]; // Assuming 1 token per bucket for fonts
+            if (token) {
+                root.style.setProperty(`--${token}`, data.value);
+            }
+
+            // Collect for loading
+            if (data.value && data.value.trim() !== "") {
+                familiesToLoad.push(data.value);
+            }
+        });
+
+        // Load fonts via WebFontLoader
+        if (familiesToLoad.length > 0) {
+            import("webfontloader").then((WebFont) => {
+                WebFont.load({
+                    google: {
+                        families: familiesToLoad.map(f => `${f}:300,400,500,700`),
+                    },
+                });
+            });
+        }
+    }, [fonts]);
 
     // Toggle on Ctrl+E
     useEffect(() => {
@@ -249,12 +478,39 @@ export function PresetEditor() {
         });
     }, [theme]);
 
-    // Handle Drag & Drop
+    // Sync CSS variables for radius
+    useEffect(() => {
+        Object.values(radius).forEach((bucket) => {
+            bucket.tokens.forEach((tokenId) => {
+                const cssVar = tokenToCssVar(tokenId);
+                document.documentElement.style.setProperty(cssVar, bucket.value);
+            });
+        });
+    }, [radius]);
+
+    // Handle Radius Change - only updates the value, not tokens
+    const handleRadiusChange = (bucketId: string, newValue: string) => {
+        setRadius((prev) => ({
+            ...prev,
+            [bucketId]: {
+                ...prev[bucketId],
+                value: newValue,
+            },
+        }));
+    };
+
+    // Handle Drag & Drop (Colors only)
     const handleDrop = (e: React.DragEvent, targetBucketId: string) => {
         e.preventDefault();
         const token = e.dataTransfer.getData("text/plain") as TokenId;
 
         if (!token) return;
+        
+        // Only allow color tokens (reject radius tokens)
+        const radiusTokens = ["t038", "t039", "t040"];
+        if (radiusTokens.includes(token)) {
+            return; // Reject radius tokens
+        }
 
         setTheme((prev) => {
             const newTheme = { ...prev };
@@ -284,6 +540,93 @@ export function PresetEditor() {
     const handleDragOver = (e: React.DragEvent) => {
         e.preventDefault();
         e.dataTransfer.dropEffect = "move";
+    };
+
+    // Handle Radius Drag & Drop (Radius only)
+    const handleRadiusDrop = (e: React.DragEvent, targetBucketId: string) => {
+        e.preventDefault();
+        const token = e.dataTransfer.getData("text/plain") as TokenId;
+
+        if (!token) return;
+        
+        // Only allow radius tokens (reject color/font tokens)
+        const radiusTokens = ["t038", "t039", "t040"];
+        if (!radiusTokens.includes(token)) {
+            return; 
+        }
+
+        setRadius((prev) => {
+            const newRadius = { ...prev };
+
+            // Remove token from all buckets
+            Object.keys(newRadius).forEach((bucketId) => {
+                newRadius[bucketId] = {
+                    ...newRadius[bucketId],
+                    tokens: newRadius[bucketId].tokens.filter(
+                        (t) => t !== token
+                    ),
+                };
+            });
+
+            // Add to target bucket
+            if (!newRadius[targetBucketId].tokens.includes(token)) {
+                newRadius[targetBucketId] = {
+                    ...newRadius[targetBucketId],
+                    tokens: [...newRadius[targetBucketId].tokens, token],
+                };
+            }
+
+            return newRadius;
+        });
+    };
+
+    // Handle Font Change
+    const handleFontChange = (bucketId: string, newValue: string) => {
+        setFonts((prev) => ({
+            ...prev,
+            [bucketId]: {
+                ...prev[bucketId],
+                value: newValue,
+            },
+        }));
+    };
+
+    // Handle Font Drag & Drop
+    const handleFontDrop = (e: React.DragEvent, targetBucketId: string) => {
+        e.preventDefault();
+        const token = e.dataTransfer.getData("text/plain") as TokenId;
+
+        if (!token) return;
+        
+        // Only allow font tokens
+        const fontTokens = ["t041", "t042", "t043"];
+        if (!fontTokens.includes(token)) {
+            return;
+        }
+
+        setFonts((prev) => {
+            const newFonts = { ...prev };
+
+            // Remove token from all buckets
+            Object.keys(newFonts).forEach((bucketId) => {
+                newFonts[bucketId] = {
+                    ...newFonts[bucketId],
+                    tokens: newFonts[bucketId].tokens.filter(
+                        (t) => t !== token
+                    ),
+                };
+            });
+
+            // Add to target bucket
+            if (!newFonts[targetBucketId].tokens.includes(token)) {
+                newFonts[targetBucketId] = {
+                    ...newFonts[targetBucketId],
+                    tokens: [...newFonts[targetBucketId].tokens, token],
+                };
+            }
+
+            return newFonts;
+        });
     };
 
     // Handle Color Change - only updates the color, not tokens
@@ -354,7 +697,10 @@ export function PresetEditor() {
     const handleLoadPreset = (presetId: string) => {
         const preset = PRESETS.find(p => p.id === presetId);
         if (preset) {
-            setTheme(convertToThemeState(themeToDictionary(preset.theme)));
+            const dict = themeToDictionary(preset.theme);
+            setTheme(convertToThemeState(dict));
+            setRadius(convertRadiusToState(dict.borderRadius || {}));
+            setFonts(convertFontsToState(dict.fonts || {}));
             setSelectedPresetId(presetId);
         }
     };
@@ -370,10 +716,16 @@ export function PresetEditor() {
             };
         });
 
+        // Convert radius buckets to dictionary
+        const radiusDict = convertRadiusToDict(radius);
+        
+        // Convert font buckets to dictionary
+        const fontDict = convertFontsToDict(fonts);
+
         // Generate TypeScript file content
         const content = `import { LLMThemeResponse, processTheme } from "../engine";
 
-export const CustomTheme: LLMThemeResponse = ${JSON.stringify({ slots, borderRadius: {} }, null, 4)};
+export const CustomTheme: LLMThemeResponse = ${JSON.stringify({ slots, borderRadius: radiusDict, fonts: fontDict }, null, 4)};
 
 export const CustomCssVariables = processTheme(CustomTheme).cssVariables;
 `;
@@ -474,6 +826,7 @@ export const CustomCssVariables = processTheme(CustomTheme).cssVariables;
 
             {/* Scrollable Content */}
             <div className="flex-1 overflow-y-auto p-2 space-y-2 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+                {/* Colors Section */}
                 {Object.entries(theme).map(([bucketId, bucket]) => (
                     <ColorBucket
                         key={bucketId}
@@ -484,6 +837,40 @@ export const CustomCssVariables = processTheme(CustomTheme).cssVariables;
                         onDragOver={handleDragOver}
                     />
                 ))}
+
+                {/* Border Radius Section */}
+                <div className="pt-2 mt-2 border-t border-gray-200">
+                    <div className="text-[10px] font-mono text-gray-500 uppercase mb-2 px-2">
+                        Border Radius
+                    </div>
+                    {Object.entries(radius).map(([bucketId, bucket]) => (
+                        <RadiusBucket
+                            key={bucketId}
+                            bucketId={bucketId}
+                            bucket={bucket}
+                            onChange={handleRadiusChange}
+                            onDrop={handleRadiusDrop}
+                            onDragOver={handleDragOver}
+                        />
+                    ))}
+                </div>
+
+                {/* Typography Section */}
+                <div className="pt-2 mt-2 border-t border-gray-200">
+                    <div className="text-[10px] font-mono text-gray-500 uppercase mb-2 px-2">
+                        Typography
+                    </div>
+                    {Object.entries(fonts).map(([bucketId, bucket]) => (
+                        <FontBucket
+                            key={bucketId}
+                            bucketId={bucketId}
+                            bucket={bucket}
+                            onChange={handleFontChange}
+                            onDrop={handleFontDrop}
+                            onDragOver={handleDragOver}
+                        />
+                    ))}
+                </div>
             </div>
         </div>
     );

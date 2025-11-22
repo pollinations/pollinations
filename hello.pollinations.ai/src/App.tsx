@@ -4,6 +4,8 @@ import ErrorBoundary from "./ui/components/ErrorBoundary";
 import Layout from "./ui/components/Layout";
 import { PresetEditor } from "./ui/components/PresetEditor";
 
+import { FontLoader } from "./ui/components/FontLoader";
+
 // Lazy load pages
 const HelloPage = lazy(() => import("./ui/pages/HelloPage"));
 const PlayPage = lazy(() => import("./ui/pages/PlayPage"));
@@ -23,6 +25,7 @@ const PageLoader = () => (
 function App() {
     return (
         <ErrorBoundary>
+            <FontLoader />
             <PresetEditor />
             <Suspense fallback={<PageLoader />}>
                 <Routes>

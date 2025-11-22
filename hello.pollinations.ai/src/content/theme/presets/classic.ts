@@ -1,6 +1,6 @@
-import { LLMThemeResponse, processTheme } from "./themeUtils";
+import { LLMThemeResponse, processTheme } from "../engine";
 
-export const DefaultTheme: LLMThemeResponse = {
+export const ClassicTheme: LLMThemeResponse = {
     slots: {
         "slot_0": {
             hex: "#110518",
@@ -90,7 +90,12 @@ export const DefaultTheme: LLMThemeResponse = {
             ],
         },
     },
+    borderRadius: {
+        "t038": "0px", // button.radius
+        "t039": "0px", // card.radius
+        "t040": "0px", // input.radius
+    },
 };
 
 // Export default CSS variables for use in tailwind.config.ts
-export const DefaultCssVariables = processTheme(DefaultTheme).cssVariables;
+export const ClassicCssVariables = processTheme(ClassicTheme).cssVariables;

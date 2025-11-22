@@ -11,10 +11,10 @@ export interface DesignToken {
         | "indicator"
         | "border"
         | "shadow"
-        | "logo";
-    type: "color";
+        | "logo"
+        | "radius";
+    type: "color" | "radius";
     contrastWith?: TokenId; // ID of the token this must contrast with
-    instructions?: string; // Optional extra context/instructions for the LLM
 }
 
 export const TOKENS: DesignToken[] = [
@@ -66,7 +66,7 @@ export const TOKENS: DesignToken[] = [
         description: "Highlighted Text",
         category: "text",
         type: "color",
-        contrastWith: "t008", // surface.page
+        contrastWith: "t013", // Must be readable on secondary/nav buttons when active
     },
 
     // Surfaces
@@ -106,7 +106,6 @@ export const TOKENS: DesignToken[] = [
         category: "button",
         type: "color",
         contrastWith: "t008", // Should pop from page
-        instructions: "Make this very special and shiny",
     },
     {
         id: "t013",
@@ -266,5 +265,25 @@ export const TOKENS: DesignToken[] = [
         description: "Logo Shade Color",
         category: "logo",
         type: "color",
+    },
+
+    // Radius
+    {
+        id: "t038",
+        description: "Button Radius",
+        category: "radius",
+        type: "radius",
+    },
+    {
+        id: "t039",
+        description: "Card Radius",
+        category: "radius",
+        type: "radius",
+    },
+    {
+        id: "t040",
+        description: "Input Radius",
+        category: "radius",
+        type: "radius",
     },
 ];

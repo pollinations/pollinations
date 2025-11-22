@@ -21,7 +21,6 @@ def get_env(key: str, required: bool = True) -> str:
 
 
 def get_merged_prs(owner: str, repo: str, START_DATE: datetime, token: str):
-    # START_DATE = "2025-10-28T00:00:00Z"
     END_DATE = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
     START_DATE = START_DATE.strftime("%Y-%m-%dT%H:%M:%SZ")
     base_url = "https://api.github.com/search/issues"
@@ -30,52 +29,57 @@ def get_merged_prs(owner: str, repo: str, START_DATE: datetime, token: str):
         "Authorization": f"Bearer {token}"
     }
 
-    query = f"repo:{owner}/{repo} is:pull-request is:merged merged:{START_DATE}..{END_DATE} base:main OR base:master OR base:production"
-    params = {"q": query, "per_page": 100, "page": 1}
-
     all_prs = []
     print(f"Fetching merged PRs from {START_DATE} to {END_DATE}...")
+    
+    # Search each target branch separately (GitHub API doesn't support OR for base branches)
+    target_branches = ['main']
+    pr_numbers_seen = set()  # Avoid duplicates
+    
+    for branch in target_branches:
+        query = f"repo:{owner}/{repo} is:pull-request is:merged merged:{START_DATE}..{END_DATE} base:{branch}"
+        params = {"q": query, "per_page": 100, "page": 1}
+        
+        while True:
+            response = requests.get(base_url, headers=headers, params=params)
+            if response.status_code != 200:
+                print(f"Error searching base:{branch}: {response.status_code} -> {response.text}")
+                break
 
-    while True:
-        response = requests.get(base_url, headers=headers, params=params)
-        if response.status_code != 200:
-            print(f"Error: {response.status_code} -> {response.text}")
-            break
+            data = response.json()
+            items = data.get("items", [])
 
-        data = response.json()
-        items = data.get("items", [])
+            for item in items:
+                pr_number = item['number']
+                if pr_number in pr_numbers_seen:
+                    continue  # Skip duplicates
+                pr_numbers_seen.add(pr_number)
+                
+                pr_url = item['pull_request']['url']
+                pr_response = requests.get(pr_url, headers=headers)
+                if pr_response.status_code == 200:
+                    pr_data = pr_response.json()
+                    all_prs.append({
+                        'number': pr_data['number'],
+                        'title': pr_data['title'],
+                        'body': pr_data['body'],
+                        'author': pr_data['user']['login']
+                    })
+                time.sleep(0.1)
 
-        for item in items:
-            pr_url = item['pull_request']['url']
-            pr_response = requests.get(pr_url, headers=headers)
-            if pr_response.status_code == 200:
-                pr_data = pr_response.json()
-                all_prs.append({
-                    'number': pr_data['number'],
-                    'title': pr_data['title'],
-                    'body': pr_data['body'],
-                    'author': pr_data['user']['login']
-                })
-            time.sleep(0.1)
+            if "next" not in response.links:
+                break
 
-        if "next" not in response.links:
-            break
-
-        params["page"] += 1
+            params["page"] += 1
 
     return all_prs
 
 
 def get_last_digest_time() -> datetime:
+    """Get the start time for PR search - 7 days ago"""
     now = datetime.now(timezone.utc)
-    current_weekday = now.weekday()
-    if current_weekday == 0:
-        days_back = 7
-    else: 
-        days_back = 1 
-        #dummy testing with just 1 day back
-    last_digest = (now - timedelta(days=days_back)).replace(hour=12, minute=0, second=0, microsecond=0)
-    return last_digest
+    seven_days_ago = now - timedelta(days=7)
+    return seven_days_ago
 
 def chunk_prs(prs: List[Dict], chunk_size: int) -> List[List[Dict]]:
     return [prs[i:i + chunk_size] for i in range(0, len(prs), chunk_size)]
@@ -253,8 +257,10 @@ def main():
     github_token = get_env('POLLI_PAT')
     pollinations_token = get_env('POLLINATIONS_TOKEN')
     discord_webhook = os.getenv('DISCORD_WEBHOOK_DIGEST') or get_env('DISCORD_WEBHOOK_URL')
-    owner_name = "pollinations"  
-    repo_name = "pollinations"
+    
+    # Get repo info from environment
+    repo_full_name = get_env('GITHUB_REPOSITORY')
+    owner_name, repo_name = repo_full_name.split('/')
     last_digest_time = get_last_digest_time()
     merged_prs = get_merged_prs(owner_name, repo_name, last_digest_time, github_token)
     print(f"Total merged PRs found: {len(merged_prs)}")

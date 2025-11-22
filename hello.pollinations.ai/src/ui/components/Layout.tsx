@@ -76,6 +76,8 @@ function ThemePromptBanner({
                     </style>
                     <input
                         ref={inputRef}
+                        id="theme-prompt"
+                        name="theme-prompt"
                         type="text"
                         value={prompt}
                         onChange={(e) => setPrompt(e.target.value)}

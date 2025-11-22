@@ -190,6 +190,8 @@ export function PlayGenerator({ selectedModel, prompt }: PlayGeneratorProps) {
                                     ) : (
                                         <label className="w-full h-full bg-input-background border-2 border-border-main hover:border-border-highlight hover:bg-input-background transition-colors flex items-center justify-center cursor-pointer rounded-input">
                                             <input
+                                                id="image-upload"
+                                                name="image-upload"
                                                 type="file"
                                                 accept="image/*"
                                                 className="hidden"
@@ -243,10 +245,15 @@ export function PlayGenerator({ selectedModel, prompt }: PlayGeneratorProps) {
                         }}
                     >
                         <div>
-                            <label className="block font-headline text-text-body-main mb-2 uppercase text-xs tracking-wider font-black">
+                            <label
+                                htmlFor="image-width"
+                                className="block font-headline text-text-body-main mb-2 uppercase text-xs tracking-wider font-black"
+                            >
                                 <TextGenerator content={PLAY_PAGE.widthLabel} />
                             </label>
                             <input
+                                id="image-width"
+                                name="image-width"
                                 type="number"
                                 value={width}
                                 onChange={(e) =>
@@ -256,12 +263,17 @@ export function PlayGenerator({ selectedModel, prompt }: PlayGeneratorProps) {
                             />
                         </div>
                         <div>
-                            <label className="block font-headline text-text-body-main mb-2 uppercase text-xs tracking-wider font-black">
+                            <label
+                                htmlFor="image-height"
+                                className="block font-headline text-text-body-main mb-2 uppercase text-xs tracking-wider font-black"
+                            >
                                 <TextGenerator
                                     content={PLAY_PAGE.heightLabel}
                                 />
                             </label>
                             <input
+                                id="image-height"
+                                name="image-height"
                                 type="number"
                                 value={height}
                                 onChange={(e) =>
@@ -271,10 +283,15 @@ export function PlayGenerator({ selectedModel, prompt }: PlayGeneratorProps) {
                             />
                         </div>
                         <div>
-                            <label className="block font-headline text-text-body-main mb-2 uppercase text-xs tracking-wider font-black">
+                            <label
+                                htmlFor="image-seed"
+                                className="block font-headline text-text-body-main mb-2 uppercase text-xs tracking-wider font-black"
+                            >
                                 <TextGenerator content={PLAY_PAGE.seedLabel} />
                             </label>
                             <input
+                                id="image-seed"
+                                name="image-seed"
                                 type="number"
                                 value={seed}
                                 onChange={(e) =>
@@ -285,13 +302,18 @@ export function PlayGenerator({ selectedModel, prompt }: PlayGeneratorProps) {
                             />
                         </div>
                         <div>
-                            <label className="block font-headline text-text-body-main mb-2 uppercase text-xs tracking-wider font-black">
+                            <label
+                                htmlFor="enhance-prompt"
+                                className="block font-headline text-text-body-main mb-2 uppercase text-xs tracking-wider font-black"
+                            >
                                 <TextGenerator
                                     content={PLAY_PAGE.enhanceLabel}
                                 />
                             </label>
                             <label className="relative flex items-center justify-center h-[52px] bg-input-background hover:bg-input-background transition-colors cursor-pointer select-none group">
                                 <input
+                                    id="enhance-prompt"
+                                    name="enhance-prompt"
                                     type="checkbox"
                                     checked={enhance}
                                     onChange={(e) =>
@@ -317,11 +339,16 @@ export function PlayGenerator({ selectedModel, prompt }: PlayGeneratorProps) {
                             </label>
                         </div>
                         <div>
-                            <label className="block font-headline text-text-body-main mb-2 uppercase text-xs tracking-wider font-black">
+                            <label
+                                htmlFor="remove-logo"
+                                className="block font-headline text-text-body-main mb-2 uppercase text-xs tracking-wider font-black"
+                            >
                                 <TextGenerator content={PLAY_PAGE.logoLabel} />
                             </label>
                             <label className="relative flex items-center justify-center h-[52px] bg-input-background hover:bg-input-background transition-colors cursor-pointer select-none group">
                                 <input
+                                    id="remove-logo"
+                                    name="remove-logo"
                                     type="checkbox"
                                     checked={nologo}
                                     onChange={(e) =>

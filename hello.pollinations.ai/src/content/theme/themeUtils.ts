@@ -15,7 +15,7 @@ export interface ThemeEngineOutput {
 
 // Helper to get token label by ID
 export function getTokenLabel(id: string): string | undefined {
-    return TOKENS.find((t) => t.id === id)?.label;
+    return TOKENS.find((t) => t.id === id)?.description;
 }
 
 export function processTheme(theme: LLMThemeResponse): ThemeEngineOutput {

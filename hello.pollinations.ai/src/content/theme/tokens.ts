@@ -2,8 +2,7 @@ export type TokenId = `t${number}`;
 
 export interface DesignToken {
     id: TokenId;
-    label: string;
-    description: string;
+    description: string; // The main human-readable name/description
     category:
         | "text"
         | "surface"
@@ -14,79 +13,79 @@ export interface DesignToken {
         | "shadow"
         | "logo";
     type: "color";
+    contrastWith?: TokenId; // ID of the token this must contrast with
+    instructions?: string; // Optional extra context/instructions for the LLM
 }
 
 export const TOKENS: DesignToken[] = [
     // Text
     {
         id: "t001",
-        label: "text.body.main",
-        description: "Primary body text color",
+        description: "Primary Body Text",
         category: "text",
         type: "color",
+        contrastWith: "t008", // surface.page
     },
     {
         id: "t002",
-        label: "text.body.secondary",
-        description: "Secondary text color for less emphasis",
+        description: "Secondary Body Text",
         category: "text",
         type: "color",
+        contrastWith: "t008", // surface.page
     },
     {
         id: "t003",
-        label: "text.body.tertiary",
-        description: "Tertiary text color for subtle details",
+        description: "Tertiary Body Text",
         category: "text",
         type: "color",
+        contrastWith: "t008", // surface.page
     },
     {
         id: "t004",
-        label: "text.caption",
-        description: "Caption text color",
+        description: "Caption Text",
         category: "text",
         type: "color",
+        contrastWith: "t008", // surface.page
     },
     {
         id: "t005",
-        label: "text.on-color",
-        description: "Text color on colored backgrounds (e.g. primary buttons)",
+        description: "Text on Primary Color",
         category: "text",
         type: "color",
+        contrastWith: "t012", // button.primary.background
     },
     {
         id: "t006",
-        label: "text.brand",
-        description: "Brand-colored text",
+        description: "Brand Colored Text",
         category: "text",
         type: "color",
+        contrastWith: "t008", // surface.page
     },
     {
         id: "t007",
-        label: "text.highlight",
-        description: "Highlighted text color",
+        description: "Highlighted Text",
         category: "text",
         type: "color",
+        contrastWith: "t008", // surface.page
     },
 
     // Surfaces
     {
         id: "t008",
-        label: "surface.page",
-        description: "Main page background",
+        description: "Page Background",
         category: "surface",
         type: "color",
     },
     {
         id: "t009",
-        label: "surface.card",
-        description: "Card background",
+        description: "Card Background",
         category: "surface",
         type: "color",
+        contrastWith: "t008", // Should distinguish from page
     },
     {
         id: "t010",
-        label: "surface.base",
-        description: "Base surface background",
+        description: "Base Surface",
         category: "surface",
         type: "color",
     },
@@ -94,52 +93,49 @@ export const TOKENS: DesignToken[] = [
     // Input
     {
         id: "t011",
-        label: "input.background",
-        description: "Input field background",
+        description: "Input Field Background",
         category: "input",
         type: "color",
+        contrastWith: "t001", // Text should be readable in it
     },
 
     // Buttons
     {
         id: "t012",
-        label: "button.primary.background",
-        description: "Primary button background",
+        description: "Primary Button Background",
         category: "button",
         type: "color",
+        contrastWith: "t008", // Should pop from page
+        instructions: "Make this very special and shiny",
     },
     {
         id: "t013",
-        label: "button.secondary.background",
-        description: "Secondary button background",
+        description: "Secondary Button Background",
         category: "button",
         type: "color",
+        contrastWith: "t008",
     },
     {
         id: "t014",
-        label: "button.disabled.background",
-        description: "Disabled button background",
+        description: "Disabled Button Background",
         category: "button",
         type: "color",
     },
     {
         id: "t015",
-        label: "button.hover.overlay",
-        description: "Overlay color for button hover state",
+        description: "Button Hover Overlay",
         category: "button",
         type: "color",
     },
     {
         id: "t016",
-        label: "button.active.overlay",
-        description: "Overlay color for button active state",
+        description: "Button Active Overlay",
         category: "button",
         type: "color",
     },
     {
         id: "t017",
-        label: "button.focus.ring",
-        description: "Focus ring color for buttons",
+        description: "Button Focus Ring",
         category: "button",
         type: "color",
     },
@@ -147,22 +143,19 @@ export const TOKENS: DesignToken[] = [
     // Indicators
     {
         id: "t018",
-        label: "indicator.image",
-        description: "Indicator color for image generation",
+        description: "Image Generation Indicator",
         category: "indicator",
         type: "color",
     },
     {
         id: "t019",
-        label: "indicator.text",
-        description: "Indicator color for text generation",
+        description: "Text Generation Indicator",
         category: "indicator",
         type: "color",
     },
     {
         id: "t020",
-        label: "indicator.audio",
-        description: "Indicator color for audio generation",
+        description: "Audio Generation Indicator",
         category: "indicator",
         type: "color",
     },
@@ -170,43 +163,37 @@ export const TOKENS: DesignToken[] = [
     // Borders
     {
         id: "t021",
-        label: "border.brand",
-        description: "Brand-colored border",
+        description: "Brand Border",
         category: "border",
         type: "color",
     },
     {
         id: "t022",
-        label: "border.highlight",
-        description: "Highlighted border",
+        description: "Highlight Border",
         category: "border",
         type: "color",
     },
     {
         id: "t023",
-        label: "border.main",
-        description: "Main border color",
+        description: "Main Border",
         category: "border",
         type: "color",
     },
     {
         id: "t024",
-        label: "border.strong",
-        description: "Strong border color",
+        description: "Strong Border",
         category: "border",
         type: "color",
     },
     {
         id: "t025",
-        label: "border.subtle",
-        description: "Subtle border color",
+        description: "Subtle Border",
         category: "border",
         type: "color",
     },
     {
         id: "t026",
-        label: "border.faint",
-        description: "Faint border color",
+        description: "Faint Border",
         category: "border",
         type: "color",
     },
@@ -214,64 +201,55 @@ export const TOKENS: DesignToken[] = [
     // Shadows
     {
         id: "t027",
-        label: "shadow.brand.sm",
-        description: "Small brand shadow",
+        description: "Small Brand Shadow",
         category: "shadow",
         type: "color",
     },
     {
         id: "t028",
-        label: "shadow.brand.md",
-        description: "Medium brand shadow",
+        description: "Medium Brand Shadow",
         category: "shadow",
         type: "color",
     },
     {
         id: "t029",
-        label: "shadow.brand.lg",
-        description: "Large brand shadow",
+        description: "Large Brand Shadow",
         category: "shadow",
         type: "color",
     },
     {
         id: "t030",
-        label: "shadow.dark.sm",
-        description: "Small dark shadow",
+        description: "Small Dark Shadow",
         category: "shadow",
         type: "color",
     },
     {
         id: "t031",
-        label: "shadow.dark.md",
-        description: "Medium dark shadow",
+        description: "Medium Dark Shadow",
         category: "shadow",
         type: "color",
     },
     {
         id: "t032",
-        label: "shadow.dark.lg",
-        description: "Large dark shadow",
+        description: "Large Dark Shadow",
         category: "shadow",
         type: "color",
     },
     {
         id: "t033",
-        label: "shadow.dark.xl",
-        description: "Extra large dark shadow",
+        description: "Extra Large Dark Shadow",
         category: "shadow",
         type: "color",
     },
     {
         id: "t034",
-        label: "shadow.highlight.sm",
-        description: "Small highlight shadow",
+        description: "Small Highlight Shadow",
         category: "shadow",
         type: "color",
     },
     {
         id: "t035",
-        label: "shadow.highlight.md",
-        description: "Medium highlight shadow",
+        description: "Medium Highlight Shadow",
         category: "shadow",
         type: "color",
     },
@@ -279,15 +257,13 @@ export const TOKENS: DesignToken[] = [
     // Logos
     {
         id: "t036",
-        label: "logo.main",
-        description: "Main logo color",
+        description: "Main Logo Color",
         category: "logo",
         type: "color",
     },
     {
         id: "t037",
-        label: "logo.shade",
-        description: "Logo shade color",
+        description: "Logo Shade Color",
         category: "logo",
         type: "color",
     },

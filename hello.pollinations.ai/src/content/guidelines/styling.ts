@@ -5,9 +5,39 @@
 
 import { TOKENS } from "../theme/tokens";
 
-const TOKEN_LIST = TOKENS.map(
-    (t) => `- ${t.id}: ${t.label} (${t.description})`,
-).join("\n");
+// Group tokens by category for clearer prompt structure
+const tokensByCategory = TOKENS.reduce(
+    (acc, token) => {
+        if (!acc[token.category]) acc[token.category] = [];
+        acc[token.category].push(token);
+        return acc;
+    },
+    {} as Record<string, typeof TOKENS>,
+);
+
+const TOKEN_LIST = Object.entries(tokensByCategory)
+    .map(([category, tokens]) => {
+        const header = `### ${category.toUpperCase()}`;
+        const items = tokens
+            .map((t) => {
+                let line = `- ${t.id}: ${t.description}`;
+                if (t.instructions) {
+                    line += ` (${t.instructions})`;
+                }
+                return line;
+            })
+            .join("\n");
+        return `${header}\n${items}`;
+    })
+    .join("\n\n");
+
+// Generate dynamic contrast rules
+const CONTRAST_RULES = TOKENS.filter((t) => t.contrastWith)
+    .map((t) => {
+        const target = TOKENS.find((target) => target.id === t.contrastWith);
+        return `- ${t.description} (${t.id}) MUST contrast with ${target?.description} (${target?.id})`;
+    })
+    .join("\n");
 
 export const STYLING_GUIDELINES = `You are a professional theme designer creating a complete design system.
 
@@ -21,8 +51,12 @@ Generate colors as "slots" - each slot contains:
 1. A hex color value
 2. An array of token IDs that should use that color
 
-### Available Tokens:
+## AVAILABLE TOKENS
 ${TOKEN_LIST}
+
+## CONTRAST RULES (CRITICAL)
+Ensure high contrast (WCAG AA) for the following pairs:
+${CONTRAST_RULES}
 
 ### Color Output Format:
 {
@@ -45,6 +79,7 @@ ${TOKEN_LIST}
 - Every token ID MUST be assigned exactly once
 - Maintain accessibility (WCAG AA minimum)
 - Group related UI elements (e.g., button states together)
+- BE CREATIVE: You can assign different colors to different buttons if it fits the theme!
 
 ## TYPOGRAPHY
 Choose fonts that match the theme's personality:

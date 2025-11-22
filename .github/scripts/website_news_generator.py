@@ -29,51 +29,57 @@ def get_merged_prs(owner: str, repo: str, START_DATE: datetime, token: str):
         "Authorization": f"Bearer {token}"
     }
 
-    query = f"repo:{owner}/{repo} is:pull-request is:merged merged:{START_DATE}..{END_DATE} base:main OR base:master OR base:production"
-    params = {"q": query, "per_page": 100, "page": 1}
-
     all_prs = []
     print(f"Fetching merged PRs from {START_DATE} to {END_DATE}...")
+    
+    # Search each target branch separately (GitHub API doesn't support OR for base branches)
+    target_branches = ['main']
+    pr_numbers_seen = set()  # Avoid duplicates
+    
+    for branch in target_branches:
+        query = f"repo:{owner}/{repo} is:pull-request is:merged merged:{START_DATE}..{END_DATE} base:{branch}"
+        params = {"q": query, "per_page": 100, "page": 1}
+        
+        while True:
+            response = requests.get(base_url, headers=headers, params=params)
+            if response.status_code != 200:
+                print(f"Error searching base:{branch}: {response.status_code} -> {response.text}")
+                break
 
-    while True:
-        response = requests.get(base_url, headers=headers, params=params)
-        if response.status_code != 200:
-            print(f"Error: {response.status_code} -> {response.text}")
-            break
+            data = response.json()
+            items = data.get("items", [])
 
-        data = response.json()
-        items = data.get("items", [])
+            for item in items:
+                pr_number = item['number']
+                if pr_number in pr_numbers_seen:
+                    continue  # Skip duplicates
+                pr_numbers_seen.add(pr_number)
+                
+                pr_url = item['pull_request']['url']
+                pr_response = requests.get(pr_url, headers=headers)
+                if pr_response.status_code == 200:
+                    pr_data = pr_response.json()
+                    all_prs.append({
+                        'number': pr_data['number'],
+                        'title': pr_data['title'],
+                        'body': pr_data['body'],
+                        'author': pr_data['user']['login']
+                    })
+                time.sleep(0.1)
 
-        for item in items:
-            pr_url = item['pull_request']['url']
-            pr_response = requests.get(pr_url, headers=headers)
-            if pr_response.status_code == 200:
-                pr_data = pr_response.json()
-                all_prs.append({
-                    'number': pr_data['number'],
-                    'title': pr_data['title'],
-                    'body': pr_data['body'],
-                    'author': pr_data['user']['login']
-                })
-            time.sleep(0.1)
+            if "next" not in response.links:
+                break
 
-        if "next" not in response.links:
-            break
-
-        params["page"] += 1
+            params["page"] += 1
 
     return all_prs
 
 
 def get_last_digest_time() -> datetime:
+    """Get the start time for PR search - 7 days ago"""
     now = datetime.now(timezone.utc)
-    current_weekday = now.weekday()
-    if current_weekday == 0:
-        days_back = 7
-    else: 
-        days_back = 1
-    last_digest = (now - timedelta(days=days_back)).replace(hour=12, minute=0, second=0, microsecond=0)
-    return last_digest
+    seven_days_ago = now - timedelta(days=7)
+    return seven_days_ago
 
 
 def chunk_prs(prs: List[Dict], chunk_size: int) -> List[List[Dict]]:
@@ -192,8 +198,11 @@ def parse_message(response: str) -> str:
 def update_news_file(news_content: str, github_token: str, owner: str, repo: str):
     """Update the newsList.js file and create a PR"""
     
+    # Escape backticks in content to prevent breaking the template literal
+    escaped_content = news_content.replace('`', '\\`')
+    
     # Create new file content
-    new_file_content = f'export const newsList = `{news_content}`;'
+    new_file_content = f'export const newsList = `{escaped_content}`;'
     
     # Write to local file
     file_path = 'pollinations.ai/src/config/newsList.js'
@@ -211,9 +220,8 @@ def update_news_file(news_content: str, github_token: str, owner: str, repo: str
         "Authorization": f"Bearer {github_token}"
     }
     
-    # Get default branch
-    repo_response = requests.get(f"{GITHUB_API_BASE}/repos/{owner}/{repo}", headers=headers)
-    default_branch = repo_response.json()['default_branch']
+    # Target main branch explicitly
+    default_branch = "main"
     
     # Get latest commit SHA of default branch
     ref_response = requests.get(
@@ -301,10 +309,15 @@ This PR updates the website news section with this week's major changes.
 
 
 def main():
-    github_token = get_env('POLLI_PAT')
+    github_token = os.getenv('POLLI_PAT') or os.getenv('GITHUB_TOKEN')
+    if not github_token:
+        print("Error: POLLI_PAT or GITHUB_TOKEN is required")
+        sys.exit(1)
     pollinations_token = get_env('POLLINATIONS_TOKEN')
-    owner_name = "pollinations"  
-    repo_name = "pollinations"
+    
+    # Get repo info from environment
+    repo_full_name = get_env('GITHUB_REPOSITORY')
+    owner_name, repo_name = repo_full_name.split('/')
     
     last_digest_time = get_last_digest_time()
     merged_prs = get_merged_prs(owner_name, repo_name, last_digest_time, github_token)
@@ -346,8 +359,8 @@ def main():
         ai_response = call_pollinations_api(sys_prompt, usr_prompt, pollinations_token)
         news_content = parse_message(ai_response)
 
-    if news_content.upper().startswith('SKIP'):
-        print("AI returned SKIP — no major updates for website.")
+    if news_content.upper().startswith('SKIP') or not news_content.strip():
+        print("AI returned SKIP or empty content — no major updates for website.")
         return
     
     # Update file and create PR

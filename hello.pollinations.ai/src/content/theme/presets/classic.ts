@@ -95,6 +95,11 @@ export const ClassicTheme: LLMThemeResponse = {
         "t039": "0px", // card.radius
         "t040": "0px", // input.radius
     },
+    fonts: {
+        t041: "Maven Pro", // Title
+        t042: "Mako", // Headline
+        t043: "Duru Sans", // Body
+    },
 };
 
 // Export default CSS variables for use in tailwind.config.ts

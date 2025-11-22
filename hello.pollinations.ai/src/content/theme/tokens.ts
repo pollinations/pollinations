@@ -12,8 +12,9 @@ export interface DesignToken {
         | "border"
         | "shadow"
         | "logo"
-        | "radius";
-    type: "color" | "radius";
+        | "radius"
+        | "font";
+    type: "color" | "radius" | "font";
     contrastWith?: TokenId; // ID of the token this must contrast with
 }
 
@@ -285,5 +286,25 @@ export const TOKENS: DesignToken[] = [
         description: "Input Radius",
         category: "radius",
         type: "radius",
+    },
+
+    // Typography
+    {
+        id: "t041",
+        description: "Title Font",
+        category: "font",
+        type: "font",
+    },
+    {
+        id: "t042",
+        description: "Headline Font",
+        category: "font",
+        type: "font",
+    },
+    {
+        id: "t043",
+        description: "Body Font",
+        category: "font",
+        type: "font",
     },
 ];

@@ -58,9 +58,14 @@ export const MinimalTheme: LLMThemeResponse = {
         },
     },
     borderRadius: {
-        "t038": "0px",
-        "t039": "0px",
-        "t040": "0px",
+        "t038": "0px", // Button
+        "t039": "0px", // Card
+        "t040": "0px", // Input
+    },
+    fonts: {
+        "t041": "Inter", // Title (Clean/Modern)
+        "t042": "Inter", // Headline (Clean/Modern)
+        "t043": "Roboto", // Body (Neutral/Readable)
     },
 };
 

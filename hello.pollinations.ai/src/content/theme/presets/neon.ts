@@ -64,9 +64,14 @@ export const NeonTheme: LLMThemeResponse = {
         },
     },
     borderRadius: {
-        "t038": "24px",
-        "t039": "16px",
-        "t040": "24px",
+        t038: "24px", // Button
+        t039: "16px", // Card
+        t040: "16px", // Input
+    },
+    fonts: {
+        t041: "Orbitron", // Title (Tech/Sci-Fi)
+        t042: "Rajdhani", // Headline (Tech/Futuristic)
+        t043: "Exo 2", // Body (Tech/Clean)
     },
 };
 

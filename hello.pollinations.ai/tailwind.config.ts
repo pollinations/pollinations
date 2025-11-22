@@ -15,10 +15,11 @@ import {
 import plugin from "tailwindcss/plugin";
 
 // Font family names
+// Font family names
 const Fonts = {
-    title: "Maven Pro",
-    headline: "Mako",
-    body: "Duru Sans",
+    title: "var(--t041, 'Maven Pro')",
+    headline: "var(--t042, 'Mako')",
+    body: "var(--t043, 'Duru Sans')",
 };
 
 export default {

@@ -2,7 +2,7 @@ import { Routes, Route, Navigate } from "react-router-dom";
 import { Suspense, lazy } from "react";
 import ErrorBoundary from "./ui/components/ErrorBoundary";
 import Layout from "./ui/components/Layout";
-import { PresetEditor } from "./ui/components/PresetEditor";
+import { PresetEditor } from "./ui/components/theme";
 
 import { FontLoader } from "./ui/components/FontLoader";
 

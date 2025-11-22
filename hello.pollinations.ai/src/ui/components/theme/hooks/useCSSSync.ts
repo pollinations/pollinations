@@ -1,0 +1,64 @@
+import { useEffect } from "react";
+import type { ThemeState, RadiusState, FontState } from "../types";
+import { tokenToCssVar } from "../utils/color-utils";
+
+export function useColorSync(theme: ThemeState) {
+    useEffect(() => {
+        Object.values(theme).forEach((bucket) => {
+            bucket.tokens.forEach((tokenId) => {
+                const cssVar = tokenToCssVar(tokenId);
+                document.documentElement.style.setProperty(
+                    cssVar,
+                    bucket.color,
+                );
+            });
+        });
+    }, [theme]);
+}
+
+export function useRadiusSync(radius: RadiusState) {
+    useEffect(() => {
+        Object.values(radius).forEach((bucket) => {
+            bucket.tokens.forEach((tokenId) => {
+                const cssVar = tokenToCssVar(tokenId);
+                document.documentElement.style.setProperty(
+                    cssVar,
+                    bucket.value,
+                );
+            });
+        });
+    }, [radius]);
+}
+
+export function useFontSync(fonts: FontState) {
+    useEffect(() => {
+        const root = document.documentElement;
+        const familiesToLoad: string[] = [];
+
+        Object.values(fonts).forEach((data) => {
+            // Sync CSS variable
+            const token = data.tokens[0]; // Assuming 1 token per bucket for fonts
+            if (token) {
+                root.style.setProperty(`--${token}`, `'${data.value}'`);
+            }
+
+            // Collect for loading
+            if (data.value && data.value.trim() !== "") {
+                familiesToLoad.push(data.value);
+            }
+        });
+
+        // Load fonts via WebFontLoader
+        if (familiesToLoad.length > 0) {
+            import("webfontloader").then((WebFont) => {
+                WebFont.load({
+                    google: {
+                        families: familiesToLoad.map(
+                            (f) => `${f}:300,400,500,700`,
+                        ),
+                    },
+                });
+            });
+        }
+    }, [fonts]);
+}

@@ -12,6 +12,7 @@ export interface ThemeSlot {
 export interface LLMThemeResponse {
     slots: Record<string, ThemeSlot>;
     borderRadius?: Record<string, string>;
+    fonts?: Record<string, string>;
 }
 
 export interface ThemeEngineOutput {
@@ -21,6 +22,7 @@ export interface ThemeEngineOutput {
 export interface ThemeDictionary {
     colors: Record<string, TokenId[]>;
     borderRadius?: Record<string, string>;
+    fonts?: Record<string, string>;
 }
 
 // ==============================================
@@ -42,6 +44,14 @@ export function processTheme(theme: LLMThemeResponse): ThemeEngineOutput {
     if (theme.borderRadius) {
         Object.entries(theme.borderRadius).forEach(([id, value]) => {
             cssVariables[`--${id}`] = value;
+        });
+    }
+
+    // Handle Fonts (if provided by theme)
+    if (theme.fonts) {
+        Object.entries(theme.fonts).forEach(([id, value]) => {
+            // Wrap font names in quotes for CSS font-family compatibility
+            cssVariables[`--${id}`] = `'${value}'`;
         });
     }
 
@@ -82,6 +92,7 @@ export function themeToDictionary(theme: LLMThemeResponse): ThemeDictionary {
     return {
         colors,
         borderRadius: theme.borderRadius,
+        fonts: theme.fonts,
     };
 }
 
@@ -98,5 +109,6 @@ export function dictionaryToTheme(dict: ThemeDictionary): LLMThemeResponse {
     return {
         slots,
         borderRadius: dict.borderRadius,
+        fonts: dict.fonts,
     };
 }

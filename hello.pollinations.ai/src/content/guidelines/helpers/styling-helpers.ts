@@ -78,6 +78,7 @@ export function parseThemeResponse(text: string): ThemeDictionary {
     return {
         colors: convertedColors,
         borderRadius: parsed.borderRadius,
+        fonts: parsed.fonts,
     };
 }
 

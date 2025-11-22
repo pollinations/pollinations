@@ -23,7 +23,7 @@ export const ClassicMacroConfig: MacroConfig = {
         tertiary: PALETTE.gray, // t003 -> slot_2
         caption: PALETTE.gray, // t004 -> slot_2
         inverse: PALETTE.grayUltraLight, // t005 -> slot_5
-        brand: PALETTE.pink, // t006 -> slot_6
+        // brand removed in v1.1
         highlight: PALETTE.yellow, // t007 -> slot_7
     },
     surfaces: {
@@ -33,13 +33,17 @@ export const ClassicMacroConfig: MacroConfig = {
     },
     inputs: {
         bg: PALETTE.grayUltraLight, // t011 -> slot_5
+        border: PALETTE.grayMedium, // new v1.1
+        placeholder: PALETTE.gray, // new v1.1
     },
     buttons: {
         primary: {
             bg: PALETTE.charcoal, // t012 -> slot_0
+            border: PALETTE.charcoal, // new v1.1
         },
         secondary: {
             bg: PALETTE.yellow, // t013 -> slot_7
+            border: PALETTE.yellow, // new v1.1
         },
         ghost: {
             disabledBg: PALETTE.grayUltraLight, // t014 -> slot_5
@@ -49,7 +53,7 @@ export const ClassicMacroConfig: MacroConfig = {
         },
     },
     borders: {
-        brand: PALETTE.pink, // t021 -> slot_6
+        // brand removed in v1.1
         highlight: PALETTE.yellow, // t022 -> slot_7
         main: PALETTE.gray, // t023 -> slot_2
         strong: PALETTE.charcoal, // t024 -> slot_0
@@ -74,6 +78,7 @@ export const ClassicMacroConfig: MacroConfig = {
         },
     },
     brandSpecial: {
+        brandMain: PALETTE.pink, // new v1.1 (was brand text/border)
         logoMain: PALETTE.pink, // t036 -> slot_6
         logoAccent: PALETTE.yellow, // t037 -> slot_7
         indicatorImage: PALETTE.pink, // t018 -> slot_6

@@ -13,20 +13,21 @@ export type SemanticTokenId =
     | "surface.card"
     | "surface.base"
 
-    // Inputs
-    | "input.bg"
-    | "input.text" // implied by text.primary usually, but good to have if needed?
-    // input.bg is the Input Field Background token.
-    // We don't have a specific input text color token in tokens.ts, it relies on contrast.
-    // But let's stick to what we have in tokens.ts for the mapping.
-
     // Buttons
     | "button.primary.bg"
+    | "button.primary.border" // new
     | "button.secondary.bg"
+    | "button.secondary.border" // new
     | "button.disabled.bg"
     | "button.hover.overlay"
     | "button.active.overlay"
     | "button.focus.ring"
+
+    // Inputs
+    | "input.bg"
+    | "input.border" // new
+    | "input.placeholder" // new
+    | "input.text" // implied by text.primary usually, but good to have if needed?
 
     // Indicators
     | "indicator.image"

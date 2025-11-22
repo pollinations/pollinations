@@ -1,6 +1,6 @@
 import type { LLMThemeResponse, ThemeSlot } from "./engine";
 import type { MacroConfig } from "./macros";
-import { type SemanticTokenId } from "./semantic";
+import type { SemanticTokenId } from "./semantic";
 
 export function macrosToTheme(config: MacroConfig): LLMThemeResponse {
     const colorMap: Record<string, string[]> = {};
@@ -32,7 +32,7 @@ export function macrosToTheme(config: MacroConfig): LLMThemeResponse {
     addColor("text.tertiary", config.text.tertiary);
     addColor("text.caption", config.text.caption);
     addColor("text.inverse", config.text.inverse);
-    addColor("text.brand", config.text.brand);
+    addColor("text.brand", config.brandSpecial.brandMain); // Driven by brandMain
     addColor("text.highlight", config.text.highlight);
 
     // Surfaces
@@ -42,13 +42,15 @@ export function macrosToTheme(config: MacroConfig): LLMThemeResponse {
 
     // Inputs
     addColor("input.bg", config.inputs.bg);
-    // input.text is usually text.primary, but we don't have a token for it in t0xx
-    // so we skip it for now as per semantic.ts comments
+    addColor("input.border", config.inputs.border);
+    addColor("input.placeholder", config.inputs.placeholder);
 
     // Buttons
     addColor("button.primary.bg", config.buttons.primary.bg);
+    addColor("button.primary.border", config.buttons.primary.border);
     addColor("button.secondary.bg", config.buttons.secondary.bg);
-    addColor("button.disabled.bg", config.buttons.ghost.disabledBg); // Using ghost.disabledBg as general disabled
+    addColor("button.secondary.border", config.buttons.secondary.border);
+    addColor("button.disabled.bg", config.buttons.ghost.disabledBg);
     addColor("button.hover.overlay", config.buttons.ghost.hoverOverlay);
     addColor("button.active.overlay", config.buttons.ghost.activeOverlay);
     addColor("button.focus.ring", config.buttons.ghost.focusRing);
@@ -59,7 +61,7 @@ export function macrosToTheme(config: MacroConfig): LLMThemeResponse {
     addColor("indicator.audio", config.brandSpecial.indicatorAudio);
 
     // Borders
-    addColor("border.brand", config.borders.brand);
+    addColor("border.brand", config.brandSpecial.brandMain); // Driven by brandMain
     addColor("border.highlight", config.borders.highlight);
     addColor("border.main", config.borders.main);
     addColor("border.strong", config.borders.strong);

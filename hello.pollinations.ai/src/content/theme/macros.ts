@@ -4,7 +4,7 @@ export interface TextMacro {
     tertiary: string;
     caption: string;
     inverse: string;
-    brand: string;
+    // brand removed in v1.1 - driven by brandSpecial.brandMain
     highlight: string;
 }
 
@@ -16,10 +16,12 @@ export interface SurfacesMacro {
 
 export interface ButtonPrimaryMacro {
     bg: string;
+    border: string; // new v1.1
 }
 
 export interface ButtonSecondaryMacro {
     bg: string;
+    border: string; // new v1.1
 }
 
 export interface ButtonGhostMacro {
@@ -34,11 +36,12 @@ export interface ButtonGhostMacro {
 
 export interface InputsMacro {
     bg: string;
-    // text?
+    border: string; // new v1.1
+    placeholder: string; // new v1.1
 }
 
 export interface BordersMacro {
-    brand: string;
+    // brand removed in v1.1 - driven by brandSpecial.brandMain
     highlight: string;
     main: string;
     strong: string;
@@ -65,8 +68,12 @@ export interface ShadowsMacro {
 }
 
 export interface BrandSpecialMacro {
+    // Core brand palette
+    brandMain: string; // new v1.1: main brand color used across text/borders
+    // Logos
     logoMain: string;
     logoAccent: string;
+    // Indicators
     indicatorImage: string;
     indicatorText: string;
     indicatorAudio: string;

@@ -38,18 +38,12 @@ export function processTheme(theme: LLMThemeResponse): ThemeEngineOutput {
         });
     });
 
-    // Handle Border Radius (with defaults)
-    const defaultRadius = {
-        "t038": "8px", // button
-        "t039": "12px", // card
-        "t040": "8px", // input
-    };
-
-    const radius = { ...defaultRadius, ...theme.borderRadius };
-
-    Object.entries(radius).forEach(([id, value]) => {
-        cssVariables[`--${id}`] = value;
-    });
+    // Handle Border Radius (if provided by theme)
+    if (theme.borderRadius) {
+        Object.entries(theme.borderRadius).forEach(([id, value]) => {
+            cssVariables[`--${id}`] = value;
+        });
+    }
 
     return { cssVariables };
 }

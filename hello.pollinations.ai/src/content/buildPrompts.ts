@@ -4,11 +4,8 @@
  * Implements the three main pipelines: GEN COPY, GEN STYLE, GEN SUPPORTER LOGO
  */
 
-import {
-    WRITING_GUIDELINES,
-    responsive,
-    translateTo,
-} from "./guidelines/writing";
+import { WRITING_GUIDELINES } from "./guidelines/writing";
+import { responsive, translateTo } from "./guidelines/helpers/writing-helpers";
 import { STYLING_GUIDELINES } from "./guidelines/styling";
 import { DRAWING_GUIDELINES } from "./guidelines/drawing";
 

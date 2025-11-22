@@ -1,11 +1,19 @@
 /**
- * Global Styling Guidelines for Theme Generation
- * Used by the GEN STYLE pipeline - combines token system + full theme styling
+ * Styling Guidelines for GEN STYLE Pipeline
+ * Pure content - prompt templates and guidelines for theme generation
+ * 
+ * Logic functions are in helpers/styling-helpers.ts
  */
 
 import { TOKENS } from "../theme/tokens";
 
-// Group tokens by category for clearer prompt structure
+// ==============================================
+// PROMPT CONSTRUCTION HELPERS
+// ==============================================
+
+/**
+ * Group tokens by category for clearer prompt structure
+ */
 const tokensByCategory = TOKENS.reduce(
     (acc, token) => {
         if (!acc[token.category]) acc[token.category] = [];
@@ -15,15 +23,15 @@ const tokensByCategory = TOKENS.reduce(
     {} as Record<string, typeof TOKENS>,
 );
 
+/**
+ * Generate formatted token list for prompts
+ */
 const TOKEN_LIST = Object.entries(tokensByCategory)
     .map(([category, tokens]) => {
         const header = `### ${category.toUpperCase()}`;
         const items = tokens
             .map((t) => {
-                let line = `- ${t.id}: ${t.description}`;
-                if (t.instructions) {
-                    line += ` (${t.instructions})`;
-                }
+                const line = `- ${t.id}: ${t.description}`;
                 return line;
             })
             .join("\n");
@@ -31,225 +39,144 @@ const TOKEN_LIST = Object.entries(tokensByCategory)
     })
     .join("\n\n");
 
-// Generate dynamic contrast rules
+/**
+ * Generate dynamic contrast rules for prompts
+ */
 const CONTRAST_RULES = TOKENS.filter((t) => t.contrastWith)
-    .map((t) => {
-        const target = TOKENS.find((target) => target.id === t.contrastWith);
-        return `- ${t.description} (${t.id}) MUST contrast with ${target?.description} (${target?.id})`;
-    })
+    .map((t) => `- ${t.id} vs ${t.contrastWith}`)
     .join("\n");
 
-export const STYLING_GUIDELINES = `You are a professional theme designer creating a complete design system.
+// ==============================================
+// MAIN STYLING GUIDELINES
+// ==============================================
 
-## TASK
-Generate a comprehensive theme with colors, fonts, and spacing.
+export const STYLING_GUIDELINES = `You are a Design Token Generator.
 
-## COLOR SYSTEM (Token-Based)
-We use a semantic token system. Each token has a unique ID (e.g. t001).
+INPUT:
+- A short theme description called "VIBE" (e.g. "blue sky and calm").
 
-Generate colors as "slots" - each slot contains:
-1. A hex color value
-2. An array of token IDs that should use that color
+GOAL:
+Create a cohesive design token set that matches the VIBE and returns ONLY a single JSON object with the exact schema below.
 
-## AVAILABLE TOKENS
+--------------------------------
+1. VIBE CLASSIFICATION
+--------------------------------
+From the VIBE, infer:
+- mood: one of ["playful", "serious", "futuristic", "brutalist", "elegant", "soft", "friendly"] (pick the closest)
+- density: one of ["compact", "comfortable", "spacious"]
+
+Use these choices consistently for colors, radii, fonts, and spacing. Do NOT include mood or density in the JSON.
+
+--------------------------------
+2. DESIGN TOKENS
+--------------------------------
+
+2.1 COLOR TOKENS
+
+You must assign EVERY color-related token ID to EXACTLY ONE slot in colors.slots[*].ids.
+
+COLOR TOKEN IDS:
 ${TOKEN_LIST}
 
-## CONTRAST RULES (CRITICAL)
-Ensure high contrast (WCAG AA) for the following pairs:
+IMPORTANT COLOR RULES:
+- Each color token ID t001–t037 MUST appear in EXACTLY ONE slot in colors.slots[*].ids.
+- Do NOT use t038, t039, t040 in any colors.slots ids (they are reserved for borderRadius).
+- "hex" field may be any valid CSS color string (e.g. "#RRGGBB", "#RRGGBBAA", or "rgba(...)") but MUST be valid JSON string.
+
+CONTRAST REQUIREMENTS (WCAG AA intent):
+Ensure these pairs have sufficient contrast:
 ${CONTRAST_RULES}
 
-### Color Output Format:
+CRITICAL - You cannot compute WCAG ratios, but you MUST ensure OBVIOUS high contrast:
+- Light text on dark backgrounds OR dark text on light backgrounds
+- NEVER use similar shades (e.g., #4A5A6A text on #3B4B5B background)
+- Input fields (t011) are ESPECIALLY prone to contrast failures - ensure PRIMARY BODY TEXT (t001) is HIGHLY visible against INPUT BACKGROUND (t011)
+- If t008 (page background) is dark, then t001, t002, t003, t004, t006, t007 must be light (or vice versa)
+- NAVIGATION/BUTTON ACTIVE STATES: t007 (Highlighted Text) is used for active/selected navigation items with t013 (Secondary Button Background) - these MUST have STRONG contrast (e.g., dark text on light button OR light text on dark button)
+
+2.2 RADIUS TOKENS
+
+RADIUS IDS:
+- t038: Button Radius
+- t039: Card Radius
+- t040: Input Radius
+
+RULES:
+- Each of t038, t039, t040 MUST be present as a key in "borderRadius".
+- Do NOT include t038, t039, t040 in colors.slots[*].ids.
+- Choose values based on inferred mood:
+  - Playful/Friendly: 12–24px
+  - Elegant/Soft: 8–12px
+  - Serious/Corporate: 4–6px
+  - Brutalist/Strict: 0px
+  - Futuristic: mix of 2–8px (e.g. sharper buttons, softer cards)
+
+2.3 TYPOGRAPHY
+
+fonts.title:
+- Display/branding font, more expressive.
+
+fonts.headline:
+- Sans-serif, strong and readable.
+
+fonts.body:
+- Highly legible sans-serif (e.g. "Inter", "SF Pro", "Roboto", "Nunito").
+
+Pick system-available or common web fonts. Names only, no fallbacks or stacks.
+
+2.4 SPACING
+
+Set spacing density from inferred "density":
+- "compact": smaller values
+- "comfortable": medium
+- "spacious": larger
+
+All values must be px strings.
+
+--------------------------------
+3. OUTPUT FORMAT (REQUIRED)
+--------------------------------
+
+You MUST return ONLY a single JSON object, with no extra text, comments, or explanations:
+
 {
   "colors": {
     "slots": {
       "slot_0": {
-        "hex": "#110518",
-        "ids": ["t001", "t012", "t024"]
+        "hex": "#...",
+        "ids": ["t001", "t002"]
       },
       "slot_1": {
-        "hex": "#ffffff",
-        "ids": ["t005", "t036"]
+        "hex": "#...",
+        "ids": ["t003"]
       }
+      // additional slots as needed, until all color tokens t001–t037 are assigned exactly once
     }
-  }
-}
-
-### Color Design Rules:
-- Create 6-12 harmonious color slots
-- Every token ID MUST be assigned exactly once
-- Maintain accessibility (WCAG AA minimum)
-- Group related UI elements (e.g., button states together)
-- BE CREATIVE: You can assign different colors to different buttons if it fits the theme!
-
-## TYPOGRAPHY
-Choose fonts that match the theme's personality:
-- **Title**: Display font for hero sections (bold, impactful)
-- **Headline**: Section headers (clear, readable)
-- **Body**: Main content (comfortable for long reading)
-
-### Font Output Format:
-{
+  },
+  "borderRadius": {
+    "t038": "8px",
+    "t039": "12px",
+    "t040": "8px"
+  },
   "fonts": {
-    "title": "Font Family Name",
-    "headline": "Font Family Name",
-    "body": "Font Family Name"
-  }
-}
-
-## SPACING SCALE
-Create a consistent spacing scale following a ratio (1.5x or golden ratio):
-
-### Spacing Output Format:
-{
+    "title": "Font Name",
+    "headline": "Font Name",
+    "body": "Font Name"
+  },
   "spacing": {
     "xs": "4px",
     "sm": "8px",
     "md": "12px",
-    "lg": "18px",
-    "xl": "27px",
-    "2xl": "40px"
+    "lg": "16px",
+    "xl": "24px",
+    "2xl": "32px"
   }
 }
 
-## COMPLETE OUTPUT FORMAT
-Return ONLY valid JSON (no markdown, no comments):
-{
-  "colors": { "slots": { ... } },
-  "fonts": { ... },
-  "spacing": { ... }
-}
-
-## CRITICAL RULES
-- All token IDs must be used exactly once
-- Hex colors must be lowercase with #
-- Use real, common font family names
-- Spacing values must include unit (px, rem, etc.)
-- Return ONLY the JSON object`;
-
-// ==============================================
-// TYPE DEFINITIONS
-// ==============================================
-
-import { TokenId } from "../theme/tokens";
-import { assembleStylePrompt } from "../buildPrompts";
-import { generateText } from "../../services/pollinationsAPI";
-
-// Legacy format for colors (backwards compatibility)
-export type ThemeDefinition = Record<string, TokenId[]>;
-
-// New full theme format
-export interface FullThemeStyle {
-    colors: ThemeDefinition;
-    fonts?: {
-        title: string;
-        headline: string;
-        body: string;
-    };
-    spacing?: {
-        xs: string;
-        sm: string;
-        md: string;
-        lg: string;
-        xl: string;
-        "2xl": string;
-    };
-}
-
-// ==============================================
-// JSON PARSING HELPERS
-// ==============================================
-
-/**
- * Parse and validate LLM response into ThemeDefinition (legacy colors)
- */
-export function parseThemeResponse(text: string): ThemeDefinition {
-    let jsonText = text.trim();
-    jsonText = jsonText.replace(/^```json?\n?/i, "");
-    jsonText = jsonText.replace(/\n?```$/, "");
-    jsonText = jsonText.trim();
-
-    const parsed = JSON.parse(jsonText);
-
-    if (typeof parsed !== "object" || Array.isArray(parsed)) {
-        throw new Error("Invalid theme structure: expected object");
-    }
-
-    // Convert new format (with slots) to dictionary format
-    let convertedTheme: ThemeDefinition = {};
-
-    // Handle new full theme format with colors.slots
-    const slots = parsed.colors?.slots || parsed.slots;
-
-    if (slots) {
-        Object.values(slots).forEach((slot: any) => {
-            const hex = slot.hex;
-            const ids = slot.ids || slot.paths || [];
-            if (!convertedTheme[hex]) {
-                convertedTheme[hex] = [];
-            }
-            // Ensure ids is an array before spreading
-            const idsArray = Array.isArray(ids) ? ids : [ids];
-            convertedTheme[hex].push(...idsArray);
-        });
-    } else {
-        convertedTheme = parsed as ThemeDefinition;
-    }
-
-    return convertedTheme;
-}
-
-/**
- * Parse full theme response (colors + fonts + spacing)
- */
-export function parseFullThemeResponse(text: string): FullThemeStyle {
-    let jsonText = text.trim();
-    jsonText = jsonText.replace(/^```json?\n?/i, "");
-    jsonText = jsonText.replace(/\n?```$/, "");
-    jsonText = jsonText.trim();
-
-    const parsed = JSON.parse(jsonText);
-
-    // If it's the old color-only format, wrap it
-    if (!parsed.colors && !parsed.fonts && !parsed.spacing) {
-        return {
-            colors: parseThemeResponse(text),
-        };
-    }
-
-    return parsed as FullThemeStyle;
-}
-
-// ==============================================
-// THEME GENERATION HELPERS
-// ==============================================
-
-/**
- * Generate theme (legacy - colors only)
- */
-export async function generateTheme(
-    userPrompt: string,
-    signal?: AbortSignal,
-): Promise<ThemeDefinition> {
-    const fullPrompt = `${STYLING_GUIDELINES}
-
-USER REQUEST:
-${userPrompt}
-
-Generate the theme JSON now:`;
-
-    const text = await generateText(fullPrompt, 42, "openai-large", signal);
-    return parseThemeResponse(text);
-}
-
-/**
- * Generate full theme style (colors + fonts + spacing)
- * Uses the GEN STYLE pipeline with styling guidelines
- */
-export async function generateFullTheme(
-    themeDescription: string,
-    signal?: AbortSignal,
-): Promise<FullThemeStyle> {
-    const fullPrompt = assembleStylePrompt(themeDescription);
-    const text = await generateText(fullPrompt, 42, "openai-large", signal);
-    return parseFullThemeResponse(text);
-}
+HARD CONSTRAINTS:
+- Every token ID t001–t040 MUST be used exactly once:
+  - t001–t037: only in colors.slots[*].ids
+  - t038–t040: only as keys in borderRadius
+- Output MUST be valid JSON.
+- Do NOT add any fields beyond this schema.
+- Do NOT add prose, comments, or explanations.`;

@@ -1,6 +1,8 @@
 /**
  * Writing Guidelines for GEN COPY Pipeline
- * Base guidelines + optional prompt modifiers for text generation
+ * Pure content - no logic, just prompt templates and guidelines
+ *
+ * Logic functions are in helpers/writing-helpers.ts
  */
 
 // ==============================================
@@ -28,58 +30,34 @@ Technical Content:
 - Focus on practical value`;
 
 // ==============================================
-// OPTIONAL PROMPT MODIFIERS
+// TRANSLATION PROMPTS
 // ==============================================
 
-export type TransformFn = (context?: any) => string | null;
+export const TRANSLATE_PROMPT =
+    "Translate this text to the user's language if it's not already in that language.";
 
-/**
- * Translate text to user's language
- */
-export function translate(): TransformFn {
-    return () =>
-        "Translate this text to the user's language if it's not already in that language.";
-}
+export const translateToPrompt = (language: string): string =>
+    language.startsWith("en") ? "" : `Translate the output to: ${language}`;
 
-/**
- * Make text responsive to device (mobile vs desktop)
- */
-export function responsive(): TransformFn {
-    return (context?: any) => {
-        const isMobile = context?.isMobile;
-        if (isMobile) {
-            return "Keep it very short (5-15 words maximum). Mobile users need quick, scannable content.";
-        }
-        return "Keep it concise but informative (1-3 sentences).";
-    };
-}
+// ==============================================
+// RESPONSIVE PROMPTS
+// ==============================================
 
-/**
- * Translate to specific language
- */
-export function translateTo(language: string): TransformFn {
-    return () =>
-        language.startsWith("en") ? "" : `Translate the output to: ${language}`;
-}
+export const RESPONSIVE_MOBILE_PROMPT =
+    "Keep it very short (5-15 words maximum). Mobile users need quick, scannable content.";
 
-/**
- * Limit text to a specific word count
- */
-export function brevity(maxWords: number): TransformFn {
-    return () => `Keep under ${maxWords} words. Be concise and impactful.`;
-}
+export const RESPONSIVE_DESKTOP_PROMPT =
+    "Keep it concise but informative (1-3 sentences).";
 
-/**
- * Emphasize call-to-action
- */
-export function cta(): TransformFn {
-    return () =>
-        "Make this a strong call-to-action. Use action verbs and create urgency.";
-}
+// ==============================================
+// MODIFIER PROMPTS
+// ==============================================
 
-/**
- * Remove any links from the text
- */
-export function noLinks(): TransformFn {
-    return () => "Do not include any URLs or links in the output.";
-}
+export const brevityPrompt = (maxWords: number): string =>
+    `Keep under ${maxWords} words. Be concise and impactful.`;
+
+export const CTA_PROMPT =
+    "Make this a strong call-to-action. Use action verbs and create urgency.";
+
+export const NO_LINKS_PROMPT =
+    "Do not include any URLs or links in the output.";

@@ -3,22 +3,20 @@
  * Pure logic - parsing, validation, and theme generation functions
  */
 
-import type { TokenId } from "../../theme/tokens";
-import type { ThemeDictionary } from "../../theme/engine";
+import { ThemeDictionary, themeToDictionary } from "../../theme/engine";
 import { assembleStylePrompt } from "../../buildPrompts";
 import { generateText } from "../../../services/pollinationsAPI";
 import { STYLING_GUIDELINES } from "../styling";
+import type { MacroConfig } from "../../theme/macros";
+import { macrosToTheme } from "../../theme/macros-engine";
 
 // ==============================================
 // TYPE DEFINITIONS
 // ==============================================
 
-// Legacy format for colors (backwards compatibility)
-export type ThemeDefinition = Record<string, TokenId[]>;
-
 // New full theme format
 export interface FullThemeStyle {
-    colors: ThemeDefinition;
+    colors: ThemeDictionary["colors"];
     borderRadius?: Record<string, string>;
     fonts?: {
         title: string;
@@ -54,8 +52,17 @@ export function parseThemeResponse(text: string): ThemeDictionary {
         throw new Error("Invalid theme structure: expected object");
     }
 
-    // Convert new format (with slots) to dictionary format
-    let convertedColors: ThemeDefinition = {};
+    // Check if it's a MacroConfig (has 'text', 'surfaces', 'buttons' etc.)
+    if (parsed.text && parsed.surfaces && parsed.buttons) {
+        // It's a MacroConfig!
+        const macroConfig = parsed as MacroConfig;
+        const llmTheme = macrosToTheme(macroConfig);
+        return themeToDictionary(llmTheme);
+    }
+
+    // Fallback: Handle old format (slots) or raw dictionary
+    // This is kept for backward compatibility if we ever feed old prompts or have legacy data
+    let convertedColors: Record<string, any> = {};
 
     // Handle new full theme format with colors.slots
     const slots = parsed.colors?.slots || parsed.slots;
@@ -72,7 +79,7 @@ export function parseThemeResponse(text: string): ThemeDictionary {
             convertedColors[hex].push(...idsArray);
         });
     } else {
-        convertedColors = parsed as ThemeDefinition;
+        convertedColors = parsed as Record<string, any>;
     }
 
     return {
@@ -86,23 +93,22 @@ export function parseThemeResponse(text: string): ThemeDictionary {
  * Parse full theme response (colors + fonts + spacing)
  */
 export function parseFullThemeResponse(text: string): FullThemeStyle {
-    let jsonText = text.trim();
-    jsonText = jsonText.replace(/^```json?\n?/i, "");
-    jsonText = jsonText.replace(/\n?```$/, "");
-    jsonText = jsonText.trim();
+    // For now, we reuse parseThemeResponse which handles the heavy lifting
+    // The MacroConfig response doesn't explicitly return "spacing" in the same way the old one might have
+    // But our new prompt asks for MacroConfig which maps to tokens.
+    // The old FullThemeStyle interface expects 'spacing'.
+    // The new prompt DOES NOT ask for spacing in the JSON schema I wrote in styling.ts?
+    // Wait, I removed spacing from the JSON schema in styling.ts!
+    // So 'spacing' will be undefined. That's fine for now as it's optional.
 
-    const parsed = JSON.parse(jsonText);
+    const themeDictionary = parseThemeResponse(text);
 
-    // If it's the old color-only format, wrap it
-    if (!parsed.colors && !parsed.fonts && !parsed.spacing) {
-        const themeDictionary = parseThemeResponse(text);
-        return {
-            colors: themeDictionary.colors,
-            borderRadius: themeDictionary.borderRadius,
-        };
-    }
-
-    return parsed as FullThemeStyle;
+    return {
+        colors: themeDictionary.colors,
+        borderRadius: themeDictionary.borderRadius,
+        fonts: themeDictionary.fonts as any, // Cast to match expected structure if needed
+        spacing: undefined, // We dropped spacing from the macro prompt for now
+    };
 }
 
 // ==============================================

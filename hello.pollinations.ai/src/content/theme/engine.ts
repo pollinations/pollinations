@@ -1,12 +1,10 @@
-import type { TokenId } from "./tokens";
-
 // ==============================================
 // TYPES
 // ==============================================
 
 export interface ThemeSlot {
     hex: string;
-    ids: TokenId[];
+    ids: string[];
 }
 
 export interface LLMThemeResponse {
@@ -20,7 +18,7 @@ export interface ThemeEngineOutput {
 }
 
 export interface ThemeDictionary {
-    colors: Record<string, TokenId[]>;
+    colors: Record<string, string[]>;
     borderRadius?: Record<string, string>;
     fonts?: Record<string, string>;
 }
@@ -31,19 +29,24 @@ export interface ThemeDictionary {
 
 export function processTheme(theme: LLMThemeResponse): ThemeEngineOutput {
     const cssVariables: Record<string, string> = {};
+    const tokenIdToHex: Record<string, string> = {};
 
     // Flatten slots to ID → Hex mapping and set CSS variables
     Object.values(theme.slots).forEach((slot) => {
         const ids = Array.isArray(slot.ids) ? slot.ids : [slot.ids];
         ids.forEach((id) => {
-            cssVariables[`--${id}`] = slot.hex;
+            // Sanitize ID for CSS variable (replace . with -)
+            const varName = `--${id.replace(/\./g, "-")}`;
+            cssVariables[varName] = slot.hex;
+            tokenIdToHex[id] = slot.hex;
         });
     });
 
     // Handle Border Radius (if provided by theme)
     if (theme.borderRadius) {
         Object.entries(theme.borderRadius).forEach(([id, value]) => {
-            cssVariables[`--${id}`] = value;
+            cssVariables[`--${id.replace(/\./g, "-")}`] = value;
+            tokenIdToHex[id] = value; // Store for semantic mapping if needed
         });
     }
 
@@ -51,7 +54,8 @@ export function processTheme(theme: LLMThemeResponse): ThemeEngineOutput {
     if (theme.fonts) {
         Object.entries(theme.fonts).forEach(([id, value]) => {
             // Wrap font names in quotes for CSS font-family compatibility
-            cssVariables[`--${id}`] = `'${value}'`;
+            cssVariables[`--${id.replace(/\./g, "-")}`] = `'${value}'`;
+            tokenIdToHex[id] = `'${value}'`;
         });
     }
 
@@ -80,7 +84,7 @@ export function applyTheme(theme: LLMThemeResponse) {
  * Used by ThemeContext for React state management.
  */
 export function themeToDictionary(theme: LLMThemeResponse): ThemeDictionary {
-    const colors: Record<string, TokenId[]> = {};
+    const colors: Record<string, string[]> = {};
     Object.values(theme.slots).forEach((slot) => {
         if (!colors[slot.hex]) {
             colors[slot.hex] = [];

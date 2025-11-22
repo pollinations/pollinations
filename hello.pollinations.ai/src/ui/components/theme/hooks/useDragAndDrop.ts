@@ -1,12 +1,11 @@
 import { useCallback } from "react";
-import type { TokenId } from "../../../../content/theme";
 import {
     isRadiusToken,
     isFontToken,
     isColorToken,
 } from "../utils/token-helpers";
 
-type BucketState<T> = Record<string, { tokens: TokenId[] } & T>;
+type BucketState<T> = Record<string, { tokens: string[] } & T>;
 
 export function useDragAndDrop<T>(
     setState: React.Dispatch<React.SetStateAction<BucketState<T>>>,
@@ -15,7 +14,7 @@ export function useDragAndDrop<T>(
     const handleDrop = useCallback(
         (e: React.DragEvent, targetBucketId: string) => {
             e.preventDefault();
-            const token = e.dataTransfer.getData("text/plain") as TokenId;
+            const token = e.dataTransfer.getData("text/plain");
 
             if (!token || !tokenFilter(token)) {
                 return;

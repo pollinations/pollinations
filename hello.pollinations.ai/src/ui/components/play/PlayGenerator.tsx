@@ -183,7 +183,7 @@ export function PlayGenerator({ selectedModel, prompt }: PlayGeneratorProps) {
                                             >
                                                 <CloseIcon
                                                     className="w-4 h-4"
-                                                    stroke="var(--t001)"
+                                                    stroke="var(--text-primary)"
                                                 />
                                             </Button>
                                         </>

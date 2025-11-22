@@ -1,4 +1,4 @@
-import type { TokenId, ThemeDictionary } from "../../../../content/theme";
+import type { ThemeDictionary } from "../../../../content/theme";
 import type { ThemeState, RadiusState, FontState } from "../types";
 
 // Convert dictionary format to bucket format
@@ -14,10 +14,10 @@ export const convertToThemeState = (dict: ThemeDictionary): ThemeState => {
 export const convertRadiusToState = (
     radiusDict: Record<string, string>,
 ): RadiusState => {
-    const allRadiusTokens: TokenId[] = ["t038", "t039", "t040", "t044"]; // Button, Card, Input, Sub-Card
+    const allRadiusTokens: string[] = ["t038", "t039", "t040", "t044"]; // Button, Card, Input, Sub-Card
 
     // Group tokens by their current radius value
-    const valueGroups: Record<string, TokenId[]> = {};
+    const valueGroups: Record<string, string[]> = {};
     allRadiusTokens.forEach((tokenId) => {
         const value = radiusDict[tokenId] || "0px";
         if (!valueGroups[value]) {
@@ -67,7 +67,7 @@ export const convertRadiusToDict = (
 export const convertFontsToState = (
     fontDict: Record<string, string>,
 ): FontState => {
-    const fontTokens: TokenId[] = ["t041", "t042", "t043"]; // Title, Headline, Body
+    const fontTokens: string[] = ["t041", "t042", "t043"]; // Title, Headline, Body
     const newState: FontState = {};
 
     fontTokens.forEach((tokenId, index) => {

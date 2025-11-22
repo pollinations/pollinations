@@ -1,7 +1,7 @@
-export type TokenId = `t${number}`;
+import type { SemanticTokenId } from "./semantic";
 
 export interface DesignToken {
-    id: TokenId;
+    id: SemanticTokenId;
     description: string; // The main human-readable name/description
     category:
         | "text"
@@ -15,304 +15,301 @@ export interface DesignToken {
         | "radius"
         | "font";
     type: "color" | "radius" | "font";
-    contrastWith?: TokenId; // ID of the token this must contrast with
+    contrastWith?: SemanticTokenId; // ID of the token this must contrast with
 }
 
 export const TOKENS: DesignToken[] = [
-    // Text
+    // TEXT
     {
-        id: "t001",
-        description: "Primary Body Text",
+        id: "text.primary",
+        description: "Primary body text (high contrast)",
         category: "text",
         type: "color",
-        contrastWith: "t008", // surface.page
+        contrastWith: "surface.page",
     },
     {
-        id: "t002",
-        description: "Secondary Body Text",
+        id: "text.secondary",
+        description: "Secondary text (lower contrast)",
         category: "text",
         type: "color",
-        contrastWith: "t008", // surface.page
+        contrastWith: "surface.page",
     },
     {
-        id: "t003",
-        description: "Tertiary Body Text",
+        id: "text.tertiary",
+        description: "Tertiary text (lowest contrast)",
         category: "text",
         type: "color",
-        contrastWith: "t008", // surface.page
+        contrastWith: "surface.page",
     },
     {
-        id: "t004",
-        description: "Caption Text",
+        id: "text.caption",
+        description: "Caption / Label text",
         category: "text",
         type: "color",
-        contrastWith: "t008", // surface.page
+        contrastWith: "surface.page",
     },
     {
-        id: "t005",
-        description: "Text on Primary Color",
+        id: "text.inverse",
+        description: "Text on inverted backgrounds (e.g. buttons)",
         category: "text",
         type: "color",
-        contrastWith: "t012", // button.primary.background
+        contrastWith: "button.primary.bg",
     },
     {
-        id: "t006",
-        description: "Brand Colored Text",
+        id: "text.brand",
+        description: "Brand colored text",
         category: "text",
         type: "color",
-        contrastWith: "t008", // surface.page
+        contrastWith: "surface.page",
     },
     {
-        id: "t007",
-        description: "Highlighted Text",
+        id: "text.highlight",
+        description: "Highlighted text",
         category: "text",
         type: "color",
-        contrastWith: "t013", // Must be readable on secondary/nav buttons when active
+        contrastWith: "surface.page",
     },
 
-    // Surfaces
+    // SURFACES
     {
-        id: "t008",
-        description: "Page Background",
+        id: "surface.page",
+        description: "Main page background",
         category: "surface",
         type: "color",
     },
     {
-        id: "t009",
-        description: "Card Background",
+        id: "surface.card",
+        description: "Card / Container background",
         category: "surface",
         type: "color",
-        contrastWith: "t008", // Should distinguish from page
+        contrastWith: "text.primary",
     },
     {
-        id: "t010",
-        description: "Base Surface",
+        id: "surface.base",
+        description: "Secondary background / Sidebar",
         category: "surface",
         type: "color",
     },
 
-    // Input
+    // INPUTS
     {
-        id: "t011",
-        description: "Input Field Background",
+        id: "input.bg",
+        description: "Input field background",
         category: "input",
         type: "color",
-        contrastWith: "t001", // Text should be readable in it
+        contrastWith: "text.primary",
     },
 
-    // Buttons
+    // BUTTONS
     {
-        id: "t012",
-        description: "Primary Button Background",
+        id: "button.primary.bg",
+        description: "Primary button background",
         category: "button",
         type: "color",
-        contrastWith: "t008", // Should pop from page
+        contrastWith: "text.inverse",
     },
     {
-        id: "t013",
-        description: "Secondary Button Background",
-        category: "button",
-        type: "color",
-        contrastWith: "t008",
-    },
-    {
-        id: "t014",
-        description: "Disabled Button Background",
+        id: "button.secondary.bg",
+        description: "Secondary button background",
         category: "button",
         type: "color",
     },
     {
-        id: "t015",
-        description: "Button Hover Overlay",
+        id: "button.disabled.bg",
+        description: "Disabled button background",
         category: "button",
         type: "color",
     },
     {
-        id: "t016",
-        description: "Button Active Overlay",
+        id: "button.hover.overlay",
+        description: "Hover state overlay",
         category: "button",
         type: "color",
     },
     {
-        id: "t017",
-        description: "Button Focus Ring",
+        id: "button.active.overlay",
+        description: "Active state overlay",
+        category: "button",
+        type: "color",
+    },
+    {
+        id: "button.focus.ring",
+        description: "Focus ring color",
         category: "button",
         type: "color",
     },
 
-    // Indicators
+    // INDICATORS
     {
-        id: "t018",
-        description: "Image Generation Indicator",
+        id: "indicator.image",
+        description: "Image generation indicator",
         category: "indicator",
         type: "color",
     },
     {
-        id: "t019",
-        description: "Text Generation Indicator",
+        id: "indicator.text",
+        description: "Text generation indicator",
         category: "indicator",
         type: "color",
     },
     {
-        id: "t020",
-        description: "Audio Generation Indicator",
+        id: "indicator.audio",
+        description: "Audio generation indicator",
         category: "indicator",
         type: "color",
     },
 
-    // Borders
+    // BORDERS
     {
-        id: "t021",
-        description: "Brand Border",
+        id: "border.brand",
+        description: "Brand colored border",
         category: "border",
         type: "color",
     },
     {
-        id: "t022",
-        description: "Highlight Border",
+        id: "border.highlight",
+        description: "Highlighted border",
         category: "border",
         type: "color",
     },
     {
-        id: "t023",
-        description: "Main Border",
+        id: "border.main",
+        description: "Main border color",
         category: "border",
         type: "color",
     },
     {
-        id: "t024",
-        description: "Strong Border",
+        id: "border.strong",
+        description: "Strong border color",
         category: "border",
         type: "color",
     },
     {
-        id: "t025",
-        description: "Subtle Border",
+        id: "border.subtle",
+        description: "Subtle border color",
         category: "border",
         type: "color",
     },
     {
-        id: "t026",
-        description: "Faint Border",
+        id: "border.faint",
+        description: "Faint border color",
         category: "border",
         type: "color",
     },
 
-    // Shadows
+    // SHADOWS
     {
-        id: "t027",
-        description: "Small Brand Shadow",
+        id: "shadow.brand.sm",
+        description: "Brand shadow small",
         category: "shadow",
         type: "color",
     },
     {
-        id: "t028",
-        description: "Medium Brand Shadow",
+        id: "shadow.brand.md",
+        description: "Brand shadow medium",
         category: "shadow",
         type: "color",
     },
     {
-        id: "t029",
-        description: "Large Brand Shadow",
+        id: "shadow.brand.lg",
+        description: "Brand shadow large",
         category: "shadow",
         type: "color",
     },
     {
-        id: "t030",
-        description: "Small Dark Shadow",
+        id: "shadow.dark.sm",
+        description: "Dark shadow small",
         category: "shadow",
         type: "color",
     },
     {
-        id: "t031",
-        description: "Medium Dark Shadow",
+        id: "shadow.dark.md",
+        description: "Dark shadow medium",
         category: "shadow",
         type: "color",
     },
     {
-        id: "t032",
-        description: "Large Dark Shadow",
+        id: "shadow.dark.lg",
+        description: "Dark shadow large",
         category: "shadow",
         type: "color",
     },
     {
-        id: "t033",
-        description: "Extra Large Dark Shadow",
+        id: "shadow.dark.xl",
+        description: "Dark shadow extra large",
         category: "shadow",
         type: "color",
     },
     {
-        id: "t034",
-        description: "Small Highlight Shadow",
+        id: "shadow.highlight.sm",
+        description: "Highlight shadow small",
         category: "shadow",
         type: "color",
     },
     {
-        id: "t035",
-        description: "Medium Highlight Shadow",
+        id: "shadow.highlight.md",
+        description: "Highlight shadow medium",
         category: "shadow",
         type: "color",
     },
 
-    // Logos
+    // LOGOS
     {
-        id: "t036",
-        description: "Main Logo Color",
+        id: "logo.main",
+        description: "Main logo color",
         category: "logo",
         type: "color",
     },
     {
-        id: "t037",
-        description: "Logo Shade Color",
+        id: "logo.accent",
+        description: "Logo accent color",
         category: "logo",
         type: "color",
     },
 
-    // Radius
+    // RADIUS
     {
-        id: "t038",
-        description: "Button Radius",
+        id: "radius.button",
+        description: "Button border radius",
         category: "radius",
         type: "radius",
     },
     {
-        id: "t039",
-        description: "Card Radius",
+        id: "radius.card",
+        description: "Card border radius",
         category: "radius",
         type: "radius",
     },
     {
-        id: "t040",
-        description: "Input Radius",
+        id: "radius.input",
+        description: "Input border radius",
+        category: "radius",
+        type: "radius",
+    },
+    {
+        id: "radius.subcard",
+        description: "Sub-card border radius",
         category: "radius",
         type: "radius",
     },
 
-    // Typography
+    // FONTS
     {
-        id: "t041",
-        description: "Title Font",
+        id: "font.title",
+        description: "Title font",
         category: "font",
         type: "font",
     },
     {
-        id: "t042",
-        description: "Headline Font",
+        id: "font.headline",
+        description: "Headline font",
         category: "font",
         type: "font",
     },
     {
-        id: "t043",
-        description: "Body Font",
+        id: "font.body",
+        description: "Body font",
         category: "font",
         type: "font",
-    },
-
-    // Additional Radius
-    {
-        id: "t044",
-        description: "Sub-Card Radius",
-        category: "radius",
-        type: "radius",
     },
 ];

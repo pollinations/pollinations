@@ -17,9 +17,9 @@ import plugin from "tailwindcss/plugin";
 // Font family names
 // Font family names
 const Fonts = {
-    title: "var(--t041, 'Maven Pro')",
-    headline: "var(--t042, 'Mako')",
-    body: "var(--t043, 'Duru Sans')",
+    title: "var(--font-title, 'Maven Pro')",
+    headline: "var(--font-headline, 'Mako')",
+    body: "var(--font-body, 'Duru Sans')",
 };
 
 export default {
@@ -46,44 +46,44 @@ export default {
                 // ============================================
 
                 // Typography
-                "text-body-main": "var(--t001)",
-                "text-body-secondary": "var(--t002)",
-                "text-body-tertiary": "var(--t003)",
-                "text-caption": "var(--t004)",
-                "text-on-color": "var(--t005)",
-                "text-brand": "var(--t006)",
-                "text-highlight": "var(--t007)",
+                "text-body-main": "var(--text-primary)",
+                "text-body-secondary": "var(--text-secondary)",
+                "text-body-tertiary": "var(--text-tertiary)",
+                "text-caption": "var(--text-caption)",
+                "text-on-color": "var(--text-inverse)",
+                "text-brand": "var(--text-brand)",
+                "text-highlight": "var(--text-highlight)",
 
                 // Surfaces
-                "surface-page": "var(--t008)",
-                "surface-card": "var(--t009)",
-                "surface-base": "var(--t010)",
-                "input-background": "var(--t011)",
+                "surface-page": "var(--surface-page)",
+                "surface-card": "var(--surface-card)",
+                "surface-base": "var(--surface-base)",
+                "input-background": "var(--input-bg)",
 
                 // Buttons
-                "button-primary-bg": "var(--t012)",
-                "button-secondary-bg": "var(--t013)",
-                "button-disabled-bg": "var(--t014)",
-                "button-hover-overlay": "var(--t015)",
-                "button-active-overlay": "var(--t016)",
-                "button-focus-ring": "var(--t017)",
+                "button-primary-bg": "var(--button-primary-bg)",
+                "button-secondary-bg": "var(--button-secondary-bg)",
+                "button-disabled-bg": "var(--button-disabled-bg)",
+                "button-hover-overlay": "var(--button-hover-overlay)",
+                "button-active-overlay": "var(--button-active-overlay)",
+                "button-focus-ring": "var(--button-focus-ring)",
 
                 // Indicators
-                "indicator-image": "var(--t018)",
-                "indicator-text": "var(--t019)",
-                "indicator-audio": "var(--t020)",
+                "indicator-image": "var(--indicator-image)",
+                "indicator-text": "var(--indicator-text)",
+                "indicator-audio": "var(--indicator-audio)",
 
                 // Borders
-                "border-brand": "var(--t021)",
-                "border-highlight": "var(--t022)",
-                "border-main": "var(--t023)",
-                "border-strong": "var(--t024)",
-                "border-subtle": "var(--t025)",
-                "border-faint": "var(--t026)",
+                "border-brand": "var(--border-brand)",
+                "border-highlight": "var(--border-highlight)",
+                "border-main": "var(--border-main)",
+                "border-strong": "var(--border-strong)",
+                "border-subtle": "var(--border-subtle)",
+                "border-faint": "var(--border-faint)",
 
                 // Logo
-                "logo-main": "var(--t036)",
-                "logo-shade": "var(--t037)",
+                "logo-main": "var(--logo-main)",
+                "logo-shade": "var(--logo-accent)",
             },
             stroke: {
                 // SVG stroke colors using CSS variables
@@ -117,25 +117,27 @@ export default {
                 // SEMANTIC TOKEN SHADOWS
                 // ============================================
                 // Brand shadows
-                "shadow-brand-sm": "2px 2px 0px 0px var(--t027)",
-                "shadow-brand-md": "4px 4px 0px 0px var(--t028)",
-                "shadow-brand-lg": "6px 6px 0px 0px var(--t029)",
+                "shadow-brand-sm": "2px 2px 0px 0px var(--shadow-brand-sm)",
+                "shadow-brand-md": "4px 4px 0px 0px var(--shadow-brand-md)",
+                "shadow-brand-lg": "6px 6px 0px 0px var(--shadow-brand-lg)",
 
                 // Dark shadows
-                "shadow-dark-sm": "2px 2px 0px 0px var(--t030)",
-                "shadow-dark-md": "4px 4px 0px 0px var(--t031)",
-                "shadow-dark-lg": "6px 6px 0px 0px var(--t032)",
-                "shadow-dark-xl": "12px 12px 0px 0px var(--t033)",
+                "shadow-dark-sm": "2px 2px 0px 0px var(--shadow-dark-sm)",
+                "shadow-dark-md": "4px 4px 0px 0px var(--shadow-dark-md)",
+                "shadow-dark-lg": "6px 6px 0px 0px var(--shadow-dark-lg)",
+                "shadow-dark-xl": "12px 12px 0px 0px var(--shadow-dark-xl)",
 
                 // Highlight shadows
-                "shadow-highlight-sm": "2px 2px 0px 0px var(--t034)",
-                "shadow-highlight-md": "4px 4px 0px 0px var(--t035)",
+                "shadow-highlight-sm":
+                    "2px 2px 0px 0px var(--shadow-highlight-sm)",
+                "shadow-highlight-md":
+                    "4px 4px 0px 0px var(--shadow-highlight-md)",
             },
             borderRadius: {
-                button: "var(--t038)",
-                card: "var(--t039)",
-                input: "var(--t040)",
-                "sub-card": "var(--t044)",
+                button: "var(--radius-button)",
+                card: "var(--radius-card)",
+                input: "var(--radius-input)",
+                "sub-card": "var(--radius-subcard)",
             },
         },
     },

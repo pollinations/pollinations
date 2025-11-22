@@ -144,7 +144,7 @@ input[type="range"]::-moz-range-thumb {
 
 body,
 html {
-    background-color: var(--t010);
+    background-color: var(--surface-base);
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     overflow-x: hidden;

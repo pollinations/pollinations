@@ -6,8 +6,13 @@ export const getTokenLabel = (id: string): string | undefined => {
 };
 
 // Token type constants
-export const RADIUS_TOKENS = ["t038", "t039", "t040", "t044"] as const;
-export const FONT_TOKENS = ["t041", "t042", "t043"] as const;
+// Token type constants
+export const RADIUS_TOKENS = TOKENS.filter((t) => t.type === "radius").map(
+    (t) => t.id,
+);
+export const FONT_TOKENS = TOKENS.filter((t) => t.type === "font").map(
+    (t) => t.id,
+);
 export const COLOR_TOKENS = TOKENS.filter((t) => t.type === "color").map(
     (t) => t.id,
 );
@@ -21,5 +26,5 @@ export const isFontToken = (token: string): boolean => {
 };
 
 export const isColorToken = (token: string): boolean => {
-    return COLOR_TOKENS.includes(token as `t${number}`);
+    return (COLOR_TOKENS as readonly string[]).includes(token);
 };

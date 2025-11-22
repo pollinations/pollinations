@@ -1,107 +1,98 @@
-import { LLMThemeResponse, processTheme } from "../engine";
+import { type LLMThemeResponse } from "../engine";
+import type { MacroConfig } from "../macros";
+import { macrosToTheme } from "../macros-engine";
 
-export const ClassicTheme: LLMThemeResponse = {
-    slots: {
-        "slot_0": {
-            hex: "#110518",
-            ids: [
-                "t001", // text.body.main
-                "t012", // button.primary.background
-                "t024", // border.strong
-                "t030", // shadow.dark.sm
-                "t031", // shadow.dark.md
-                "t032", // shadow.dark.lg
-                "t033", // shadow.dark.xl
-            ],
+// Define the 10-color palette used in Classic Theme
+const PALETTE = {
+    charcoal: "#110518", // slot_0
+    grayDark: "#4a5557", // slot_1
+    gray: "#6e7a7c", // slot_2
+    grayMedium: "#BFCACC", // slot_3
+    grayLight: "#c7d4d6", // slot_4
+    grayUltraLight: "#dce4e6", // slot_5
+    pink: "#ff69b4", // slot_6
+    yellow: "#ecf874", // slot_7
+    cyan: "#74f8ec", // slot_8
+    lime: "#bef264", // slot_9
+};
+
+export const ClassicMacroConfig: MacroConfig = {
+    text: {
+        primary: PALETTE.charcoal, // t001 -> slot_0
+        secondary: PALETTE.grayDark, // t002 -> slot_1
+        tertiary: PALETTE.gray, // t003 -> slot_2
+        caption: PALETTE.gray, // t004 -> slot_2
+        inverse: PALETTE.grayUltraLight, // t005 -> slot_5
+        brand: PALETTE.pink, // t006 -> slot_6
+        highlight: PALETTE.yellow, // t007 -> slot_7
+    },
+    surfaces: {
+        page: PALETTE.grayLight, // t008 -> slot_4
+        card: PALETTE.grayMedium, // t009 -> slot_3
+        base: PALETTE.grayLight, // t010 -> slot_4
+    },
+    inputs: {
+        bg: PALETTE.grayUltraLight, // t011 -> slot_5
+    },
+    buttons: {
+        primary: {
+            bg: PALETTE.charcoal, // t012 -> slot_0
         },
-        "slot_1": {
-            hex: "#4a5557",
-            ids: [
-                "t002", // text.body.secondary
-            ],
+        secondary: {
+            bg: PALETTE.yellow, // t013 -> slot_7
         },
-        "slot_2": {
-            hex: "#6e7a7c",
-            ids: [
-                "t004", // text.caption
-                "t003", // text.body.tertiary
-                "t023", // border.main
-            ],
-        },
-        "slot_3": {
-            hex: "#BFCACC",
-            ids: [
-                "t009", // surface.card
-                "t025", // border.subtle
-                "t026", // border.faint
-            ],
-        },
-        "slot_4": {
-            hex: "#c7d4d6",
-            ids: [
-                "t008", // surface.page
-                "t010", // surface.base
-            ],
-        },
-        "slot_5": {
-            hex: "#dce4e6",
-            ids: [
-                "t005", // text.on-color
-                "t011", // input.background
-                "t014", // button.disabled.background
-            ],
-        },
-        "slot_6": {
-            hex: "#ff69b4",
-            ids: [
-                "t006", // text.brand
-                "t018", // indicator.image
-                "t021", // border.brand
-                "t027", // shadow.brand.sm
-                "t028", // shadow.brand.md
-                "t029", // shadow.brand.lg
-                "t017", // button.focus.ring
-                "t036", // logo.main
-            ],
-        },
-        "slot_7": {
-            hex: "#ecf874",
-            ids: [
-                "t007", // text.highlight
-                "t013", // button.secondary.background
-                "t019", // indicator.text
-                "t022", // border.highlight
-                "t015", // button.hover.overlay
-                "t016", // button.active.overlay
-                "t037", // logo.shade
-            ],
-        },
-        "slot_8": {
-            hex: "#74f8ec",
-            ids: [
-                "t020", // indicator.audio
-            ],
-        },
-        "slot_9": {
-            hex: "#bef264",
-            ids: [
-                "t034", // shadow.highlight.sm
-                "t035", // shadow.highlight.md
-            ],
+        ghost: {
+            disabledBg: PALETTE.grayUltraLight, // t014 -> slot_5
+            hoverOverlay: PALETTE.yellow, // t015 -> slot_7
+            activeOverlay: PALETTE.yellow, // t016 -> slot_7
+            focusRing: PALETTE.pink, // t017 -> slot_6
         },
     },
-    borderRadius: {
-        "t038": "0px", // button.radius
-        "t039": "0px", // card.radius
-        "t040": "0px", // input.radius
-        "t044": "0px", // sub-card.radius
+    borders: {
+        brand: PALETTE.pink, // t021 -> slot_6
+        highlight: PALETTE.yellow, // t022 -> slot_7
+        main: PALETTE.gray, // t023 -> slot_2
+        strong: PALETTE.charcoal, // t024 -> slot_0
+        subtle: PALETTE.grayMedium, // t025 -> slot_3
+        faint: PALETTE.grayMedium, // t026 -> slot_3
     },
-    fonts: {
-        t041: "Maven Pro", // Title
-        t042: "Mako", // Headline
-        t043: "Duru Sans", // Body
+    shadows: {
+        brand: {
+            sm: PALETTE.pink, // t027 -> slot_6
+            md: PALETTE.pink, // t028 -> slot_6
+            lg: PALETTE.pink, // t029 -> slot_6
+        },
+        dark: {
+            sm: PALETTE.charcoal, // t030 -> slot_0
+            md: PALETTE.charcoal, // t031 -> slot_0
+            lg: PALETTE.charcoal, // t032 -> slot_0
+            xl: PALETTE.charcoal, // t033 -> slot_0
+        },
+        highlight: {
+            sm: PALETTE.lime, // t034 -> slot_9
+            md: PALETTE.lime, // t035 -> slot_9
+        },
+    },
+    brandSpecial: {
+        logoMain: PALETTE.pink, // t036 -> slot_6
+        logoAccent: PALETTE.yellow, // t037 -> slot_7
+        indicatorImage: PALETTE.pink, // t018 -> slot_6
+        indicatorText: PALETTE.yellow, // t019 -> slot_7
+        indicatorAudio: PALETTE.cyan, // t020 -> slot_8
+    },
+    typography: {
+        title: "Maven Pro", // t041
+        headline: "Mako", // t042
+        body: "Duru Sans", // t043
+    },
+    radius: {
+        button: "0px", // t038
+        card: "0px", // t039
+        input: "0px", // t040
+        subcard: "0px", // t044
     },
 };
 
+export const ClassicTheme: LLMThemeResponse = macrosToTheme(ClassicMacroConfig);
+
 // Export default CSS variables for use in tailwind.config.ts
-export const ClassicCssVariables = processTheme(ClassicTheme).cssVariables;

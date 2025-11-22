@@ -44,7 +44,7 @@ function ThemePromptBanner({
         <div
             className="w-full h-16 animate-in fade-in slide-in-from-top-2 duration-200 flex items-center justify-center"
             style={{
-                backgroundColor: "var(--t010)",
+                backgroundColor: "var(--surface-base)",
             }}
         >
             <form
@@ -69,7 +69,7 @@ function ThemePromptBanner({
                     <style>
                         {`
                             .theme-prompt-input::placeholder {
-                                color: var(--t003) !important;
+                                color: var(--text-tertiary) !important;
                                 opacity: 1 !important;
                             }
                         `}
@@ -84,8 +84,8 @@ function ThemePromptBanner({
                         placeholder="Describe a theme (e.g. 'Cyberpunk Neon')..."
                         className="theme-prompt-input w-full h-full bg-transparent outline-none text-base md:text-lg font-medium rounded-input"
                         style={{
-                            color: "var(--t002)",
-                            caretColor: "var(--t006)",
+                            color: "var(--text-secondary)",
+                            caretColor: "var(--text-brand)",
                         }}
                         disabled={loading}
                     />

@@ -94,6 +94,7 @@ export const ClassicTheme: LLMThemeResponse = {
         "t038": "0px", // button.radius
         "t039": "0px", // card.radius
         "t040": "0px", // input.radius
+        "t044": "0px", // sub-card.radius
     },
     fonts: {
         t041: "Maven Pro", // Title

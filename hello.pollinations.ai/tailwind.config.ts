@@ -135,6 +135,7 @@ export default {
                 button: "var(--t038)",
                 card: "var(--t039)",
                 input: "var(--t040)",
+                "sub-card": "var(--t044)",
             },
         },
     },

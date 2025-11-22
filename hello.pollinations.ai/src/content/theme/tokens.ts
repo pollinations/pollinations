@@ -307,4 +307,12 @@ export const TOKENS: DesignToken[] = [
         category: "font",
         type: "font",
     },
+
+    // Additional Radius
+    {
+        id: "t044",
+        description: "Sub-Card Radius",
+        category: "radius",
+        type: "radius",
+    },
 ];

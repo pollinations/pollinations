@@ -61,6 +61,7 @@ export const MinimalTheme: LLMThemeResponse = {
         "t038": "0px", // Button
         "t039": "0px", // Card
         "t040": "0px", // Input
+        "t044": "0px", // Sub-Card
     },
     fonts: {
         "t041": "Inter", // Title (Clean/Modern)

@@ -1,7 +1,7 @@
 /**
  * Styling Guidelines for GEN STYLE Pipeline
  * Pure content - prompt templates and guidelines for theme generation
- * 
+ *
  * Logic functions are in helpers/styling-helpers.ts
  */
 
@@ -80,7 +80,7 @@ ${TOKEN_LIST}
 
 IMPORTANT COLOR RULES:
 - Each color token ID t001–t037 MUST appear in EXACTLY ONE slot in colors.slots[*].ids.
-- Do NOT use t038, t039, t040 in any colors.slots ids (they are reserved for borderRadius).
+- Do NOT use t038, t039, t040, t044 in any colors.slots ids (they are reserved for borderRadius).
 - "hex" field may be any valid CSS color string (e.g. "#RRGGBB", "#RRGGBBAA", or "rgba(...)") but MUST be valid JSON string.
 
 CONTRAST REQUIREMENTS (WCAG AA intent):
@@ -100,10 +100,11 @@ RADIUS IDS:
 - t038: Button Radius
 - t039: Card Radius
 - t040: Input Radius
+- t044: Sub-Card Radius
 
 RULES:
-- Each of t038, t039, t040 MUST be present as a key in "borderRadius".
-- Do NOT include t038, t039, t040 in colors.slots[*].ids.
+- Each of t038, t039, t040, t044 MUST be present as a key in "borderRadius".
+- Do NOT include t038, t039, t040, t044 in colors.slots[*].ids.
 - Choose values based on inferred mood:
   - Playful/Friendly: 12–24px
   - Elegant/Soft: 8–12px
@@ -169,7 +170,8 @@ You MUST return ONLY a single JSON object, with no extra text, comments, or expl
   "borderRadius": {
     "t038": "8px",
     "t039": "12px",
-    "t040": "4px"
+    "t040": "4px",
+    "t044": "12px"
   },
   "fonts": {
     "t041": "Orbitron",
@@ -187,9 +189,10 @@ You MUST return ONLY a single JSON object, with no extra text, comments, or expl
 }
 
 HARD CONSTRAINTS:
-- Every token ID t001–t040 MUST be used exactly once:
+- Every token ID t001–t044 MUST be used exactly once:
   - t001–t037: only in colors.slots[*].ids
-  - t038–t040: only as keys in borderRadius
+  - t038, t039, t040, t044: only as keys in borderRadius
+  - t041–t043: only as keys in fonts
 - Output MUST be valid JSON.
 - Do NOT add any fields beyond this schema.
 - Do NOT add prose, comments, or explanations.`;

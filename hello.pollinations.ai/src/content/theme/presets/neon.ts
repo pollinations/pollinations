@@ -67,6 +67,7 @@ export const NeonTheme: LLMThemeResponse = {
         t038: "24px", // Button
         t039: "16px", // Card
         t040: "16px", // Input
+        t044: "12px", // Sub-Card
     },
     fonts: {
         t041: "Orbitron", // Title (Tech/Sci-Fi)

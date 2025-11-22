@@ -5,10 +5,8 @@ import { Button } from "./ui/button";
 import { ExternalLinkIcon } from "../assets/ExternalLinkIcon";
 import { SOCIAL_LINKS } from "../../content/copy/socialLinks";
 import { useTheme } from "../contexts/ThemeContext";
-import {
-    generateTheme,
-    ThemeDefinition,
-} from "../../content/guidelines/styling";
+import { generateTheme } from "../../content/guidelines/helpers/styling-helpers";
+import type { ThemeDictionary } from "../../content/theme/engine";
 import { SparklesIcon, SendIcon } from "lucide-react";
 
 const tabs = [
@@ -82,7 +80,7 @@ function ThemePromptBanner({
                         value={prompt}
                         onChange={(e) => setPrompt(e.target.value)}
                         placeholder="Describe a theme (e.g. 'Cyberpunk Neon')..."
-                        className="theme-prompt-input w-full h-full bg-transparent outline-none text-base md:text-lg font-medium"
+                        className="theme-prompt-input w-full h-full bg-transparent outline-none text-base md:text-lg font-medium rounded-input"
                         style={{
                             color: "var(--t002)",
                             caretColor: "var(--t006)",
@@ -93,7 +91,9 @@ function ThemePromptBanner({
             </form>
             {error && (
                 <div className="absolute top-full left-0 right-0 bg-red-500 text-white text-[10px] px-2 py-1 text-center">
-                    {error}
+                    {error && typeof error === "object" && "message" in error
+                        ? (error as Error).message
+                        : String(error)}
                 </div>
             )}
         </div>
@@ -113,7 +113,7 @@ function Layout() {
 
     const { setTheme } = useTheme();
     const [generatedTheme, setGeneratedTheme] =
-        useState<ThemeDefinition | null>(null);
+        useState<ThemeDictionary | null>(null);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<any>(null);
 

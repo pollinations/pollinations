@@ -1,10 +1,11 @@
 import React, { useEffect, useState } from "react";
 import {
     themeToDictionary,
-    getTokenLabel,
-    DefaultTheme,
+    ClassicTheme,
+    type ThemeDictionary,
 } from "../../content/theme";
 import type { TokenId } from "../../content/theme";
+import { TOKENS } from "../../content/theme/tokens";
 import { useTheme } from "../contexts/ThemeContext";
 import {
     RefreshCwIcon,
@@ -25,32 +26,59 @@ interface ColorBucketData {
 
 type ThemeState = Record<string, ColorBucketData>;
 
+// ColorPicker dev tool helper - get human-readable token label
+const getTokenLabel = (id: string): string | undefined => {
+    return TOKENS.find((t) => t.id === id)?.description;
+};
+
 const tokenToCssVar = (id: string) => {
     return `--${id}`;
 };
 
-const getRandomColor = () => {
-    const letters = "0123456789ABCDEF";
-    let color = "#";
-    for (let i = 0; i < 6; i++) {
-        color += letters[Math.floor(Math.random() * 16)];
-    }
-    return color;
+const getRandomColor = (): string => {
+    const r = Math.floor(Math.random() * 256);
+    const g = Math.floor(Math.random() * 256);
+    const b = Math.floor(Math.random() * 256);
+    return `#${r.toString(16).padStart(2, "0")}${g
+        .toString(16)
+        .padStart(2, "0")}${b.toString(16).padStart(2, "0")}`;
 };
 
-// Local type definition (same as in design/themeGenerator.ts)
-type ThemeDefinition = Record<string, TokenId[]>;
+// Convert rgba() to #rrggbb for color inputs (they don't support rgba)
+const rgbaToHex = (color: string): string => {
+    // Already hex - return as is
+    if (color.startsWith("#")) {
+        // Ensure it's #rrggbb format (not #rrggbbaa)
+        return color.substring(0, 7);
+    }
+
+    // Parse rgba(r, g, b, a) format
+    const rgbaMatch = color.match(
+        /rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*[\d.]+)?\)/
+    );
+    if (rgbaMatch) {
+        const r = parseInt(rgbaMatch[1]);
+        const g = parseInt(rgbaMatch[2]);
+        const b = parseInt(rgbaMatch[3]);
+        return `#${r.toString(16).padStart(2, "0")}${g
+            .toString(16)
+            .padStart(2, "0")}${b.toString(16).padStart(2, "0")}`;
+    }
+
+    // Fallback to black if we can't parse
+    return "#000000";
+};
 
 // Convert dictionary format to bucket format
-const convertToThemeState = (dict: ThemeDefinition): ThemeState => {
+const convertToThemeState = (dict: ThemeDictionary): ThemeState => {
     const newState: ThemeState = {};
-    Object.entries(dict).forEach(([color, tokens], index) => {
+    Object.entries(dict.colors).forEach(([color, tokens], index) => {
         newState[`bucket-${index}`] = { color, tokens };
     });
     return newState;
 };
 
-const DefaultThemeDefinition = themeToDictionary(DefaultTheme);
+const DefaultThemeDefinition = themeToDictionary(ClassicTheme);
 
 // ============================================
 // COMPONENTS
@@ -136,7 +164,7 @@ function ColorBucket({
                     <input
                         ref={colorInputRef}
                         type="color"
-                        value={bucket.color}
+                        value={rgbaToHex(bucket.color)}
                         onChange={(e) => handleColorChange(e.target.value)}
                         onBlur={handleColorInputBlur}
                         className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[150%] h-[150%] p-0 m-0 border-0 cursor-pointer pointer-events-none"

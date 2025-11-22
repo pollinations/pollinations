@@ -8,9 +8,9 @@
  */
 import type { Config } from "tailwindcss";
 import {
-    DefaultTheme,
+    ClassicTheme,
     themeToDictionary,
-    DefaultCssVariables,
+    ClassicCssVariables,
 } from "./src/content/theme";
 import plugin from "tailwindcss/plugin";
 
@@ -130,6 +130,11 @@ export default {
                 "shadow-highlight-sm": "2px 2px 0px 0px var(--t034)",
                 "shadow-highlight-md": "4px 4px 0px 0px var(--t035)",
             },
+            borderRadius: {
+                button: "var(--t038)",
+                card: "var(--t039)",
+                input: "var(--t040)",
+            },
         },
     },
     plugins: [
@@ -144,7 +149,7 @@ export default {
                     "--color-charcoal": "#110518",
 
                     // Inject Default Theme Variables
-                    ...DefaultCssVariables,
+                    ...ClassicCssVariables,
                 },
             });
         }),

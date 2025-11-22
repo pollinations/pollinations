@@ -165,7 +165,7 @@ export function PlayGenerator({ selectedModel, prompt }: PlayGeneratorProps) {
                                             <img
                                                 src={hasImage}
                                                 alt={`Upload ${index + 1}`}
-                                                className="w-full h-full object-cover border-2 border-border-strong"
+                                                className="w-full h-full object-cover border-2 border-border-strong rounded-input"
                                             />
                                             <Button
                                                 type="button"
@@ -188,7 +188,7 @@ export function PlayGenerator({ selectedModel, prompt }: PlayGeneratorProps) {
                                             </Button>
                                         </>
                                     ) : (
-                                        <label className="w-full h-full bg-input-background border-2 border-border-main hover:border-border-highlight hover:bg-input-background transition-colors flex items-center justify-center cursor-pointer">
+                                        <label className="w-full h-full bg-input-background border-2 border-border-main hover:border-border-highlight hover:bg-input-background transition-colors flex items-center justify-center cursor-pointer rounded-input">
                                             <input
                                                 type="file"
                                                 accept="image/*"
@@ -252,7 +252,7 @@ export function PlayGenerator({ selectedModel, prompt }: PlayGeneratorProps) {
                                 onChange={(e) =>
                                     setWidth(Number(e.target.value))
                                 }
-                                className="w-full p-3 bg-input-background text-text-body-main font-body focus:outline-none focus:bg-input-background hover:bg-input-background transition-colors"
+                                className="w-full p-3 bg-input-background text-text-body-main font-body focus:outline-none focus:bg-input-background hover:bg-input-background transition-colors rounded-input"
                             />
                         </div>
                         <div>
@@ -267,7 +267,7 @@ export function PlayGenerator({ selectedModel, prompt }: PlayGeneratorProps) {
                                 onChange={(e) =>
                                     setHeight(Number(e.target.value))
                                 }
-                                className="w-full p-3 bg-input-background text-text-body-main font-body focus:outline-none focus:bg-input-background hover:bg-input-background transition-colors"
+                                className="w-full p-3 bg-input-background text-text-body-main font-body focus:outline-none focus:bg-input-background hover:bg-input-background transition-colors rounded-input"
                             />
                         </div>
                         <div>
@@ -281,7 +281,7 @@ export function PlayGenerator({ selectedModel, prompt }: PlayGeneratorProps) {
                                     setSeed(Number(e.target.value))
                                 }
                                 placeholder={PLAY_PAGE.seedPlaceholder.text}
-                                className="w-full p-3 bg-input-background text-text-body-main font-body focus:outline-none focus:bg-input-background hover:bg-input-background transition-colors placeholder:text-text-caption"
+                                className="w-full p-3 bg-input-background text-text-body-main font-body focus:outline-none focus:bg-input-background hover:bg-input-background transition-colors placeholder:text-text-caption rounded-input"
                             />
                         </div>
                         <div>
@@ -299,7 +299,7 @@ export function PlayGenerator({ selectedModel, prompt }: PlayGeneratorProps) {
                                     }
                                     className="sr-only peer"
                                 />
-                                <div className="w-6 h-6 border-4 border-border-brand bg-input-background peer-checked:bg-button-secondary-bg transition-colors group-hover:border-border-brand" />
+                                <div className="w-6 h-6 border-4 border-border-brand bg-input-background peer-checked:bg-button-secondary-bg transition-colors group-hover:border-border-brand rounded-input" />
                                 <svg
                                     className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-4 h-4 text-text-body-main opacity-0 peer-checked:opacity-100 transition-opacity pointer-events-none"
                                     fill="none"
@@ -329,7 +329,7 @@ export function PlayGenerator({ selectedModel, prompt }: PlayGeneratorProps) {
                                     }
                                     className="sr-only peer"
                                 />
-                                <div className="w-6 h-6 border-4 border-border-brand bg-input-background peer-checked:bg-button-secondary-bg transition-colors group-hover:border-border-brand" />
+                                <div className="w-6 h-6 border-4 border-border-brand bg-input-background peer-checked:bg-button-secondary-bg transition-colors group-hover:border-border-brand rounded-input" />
                                 <svg
                                     className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-4 h-4 text-text-body-main opacity-0 peer-checked:opacity-100 transition-opacity pointer-events-none"
                                     fill="none"

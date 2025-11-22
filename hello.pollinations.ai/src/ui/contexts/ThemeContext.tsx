@@ -1,32 +1,29 @@
 import { createContext, useContext, useState } from "react";
 import type { ReactNode } from "react";
-import { DefaultTheme } from "../../content/theme/defaultTheme";
+import { ClassicTheme } from "../../content/theme/presets/classic";
 import {
     processTheme,
     themeToDictionary,
     dictionaryToTheme,
-} from "../../content/theme/themeUtils";
-import { TokenId } from "../../content/theme/tokens";
+    type ThemeDictionary,
+} from "../../content/theme/engine";
 
-// ThemeDefinition is now Hex -> IDs
-type ThemeDefinition = Record<string, TokenId[]>;
-
-const DefaultThemeDefinition = themeToDictionary(DefaultTheme);
+const DefaultThemeDefinition = themeToDictionary(ClassicTheme);
 
 interface ThemeContextValue {
-    themeDefinition: ThemeDefinition;
-    setTheme: (newTheme: ThemeDefinition) => void;
+    themeDefinition: ThemeDictionary;
+    setTheme: (newTheme: ThemeDictionary) => void;
     resetTheme: () => void;
 }
 
 const ThemeContext = createContext<ThemeContextValue | undefined>(undefined);
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
-    const [themeDefinition, setThemeDefinition] = useState<ThemeDefinition>(
+    const [themeDefinition, setThemeDefinition] = useState<ThemeDictionary>(
         DefaultThemeDefinition
     );
 
-    const setTheme = (newTheme: ThemeDefinition) => {
+    const setTheme = (newTheme: ThemeDictionary) => {
         setThemeDefinition(newTheme);
         // Also apply CSS variables
         const theme = dictionaryToTheme(newTheme);

@@ -1,17 +1,17 @@
 import { Routes, Route, Navigate } from "react-router-dom";
 import { Suspense, lazy } from "react";
-import ErrorBoundary from "./components/ErrorBoundary";
-import Layout from "./components/Layout";
-import { ColorPicker } from "./components/ColorPicker";
+import ErrorBoundary from "./ui/components/ErrorBoundary";
+import Layout from "./ui/components/Layout";
+import { ColorPicker } from "./ui/components/ColorPicker";
 
 // Lazy load pages
-const HelloPage = lazy(() => import("./pages/HelloPage"));
-const PlayPage = lazy(() => import("./pages/PlayPage"));
-const AppsPage = lazy(() => import("./pages/AppsPage"));
-const DocsPage = lazy(() => import("./pages/DocsPage"));
-const CommunityPage = lazy(() => import("./pages/CommunityPage"));
-const TermsPage = lazy(() => import("./pages/TermsPage"));
-const PrivacyPage = lazy(() => import("./pages/PrivacyPage"));
+const HelloPage = lazy(() => import("./ui/pages/HelloPage"));
+const PlayPage = lazy(() => import("./ui/pages/PlayPage"));
+const AppsPage = lazy(() => import("./ui/pages/AppsPage"));
+const DocsPage = lazy(() => import("./ui/pages/DocsPage"));
+const CommunityPage = lazy(() => import("./ui/pages/CommunityPage"));
+const TermsPage = lazy(() => import("./ui/pages/TermsPage"));
+const PrivacyPage = lazy(() => import("./ui/pages/PrivacyPage"));
 
 // Loading component
 const PageLoader = () => (

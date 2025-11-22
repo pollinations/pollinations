@@ -6,8 +6,20 @@
  * - Opacity: Add /90, /80, /50 etc. (e.g., bg-primary/90)
  * - CSS variables available: var(--color-primary), var(--color-background), etc.
  */
-import { Fonts, DefaultCssVariables } from "./src/config/colors";
+import type { Config } from "tailwindcss";
+import {
+    DefaultTheme,
+    themeToDictionary,
+    DefaultCssVariables,
+} from "./src/content/theme";
 import plugin from "tailwindcss/plugin";
+
+// Font family names
+const Fonts = {
+    title: "Maven Pro",
+    headline: "Mako",
+    body: "Duru Sans",
+};
 
 export default {
     content: ["./index.html", "./src/**/*.{js,ts,jsx,tsx}"],

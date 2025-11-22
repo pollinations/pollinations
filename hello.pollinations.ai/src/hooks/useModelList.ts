@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { API_KEY } from "../config/api";
+import { API_KEY } from "../api.config";
 
 export interface Model {
     id: string;

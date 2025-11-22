@@ -2,77 +2,95 @@ import { LLMThemeResponse, processTheme } from "../engine";
 
 export const NeonTheme: LLMThemeResponse = {
     slots: {
-        "slot_0": {
+        slot_0: {
             hex: "#0a0e27",
-            ids: ["t001", "t024", "t030", "t031", "t032", "t033"],
+            ids: [
+                "text.primary",
+                "border.strong",
+                "shadow.dark.sm",
+                "shadow.dark.md",
+                "shadow.dark.lg",
+                "shadow.dark.xl",
+            ],
         },
-        "slot_1": {
+        slot_1: {
             hex: "#1a1f3a",
-            ids: ["t002", "t003"],
+            ids: ["text.secondary", "text.tertiary"],
         },
-        "slot_2": {
+        slot_2: {
             hex: "#2a2f4a",
-            ids: ["t004", "t008"],
+            ids: ["text.caption", "surface.page"],
         },
-        "slot_3": {
+        slot_3: {
             hex: "#3a3f5a",
-            ids: ["t009", "t010", "t023"],
+            ids: ["surface.card", "surface.base", "border.main"],
         },
-        "slot_4": {
+        slot_4: {
             hex: "#ffffff",
-            ids: ["t005"],
+            ids: ["text.inverse"],
         },
-        "slot_5": {
+        slot_5: {
             hex: "#00ffff",
-            ids: ["t006", "t018", "t034", "t035"],
+            ids: [
+                "text.brand",
+                "indicator.image",
+                "shadow.highlight.sm",
+                "shadow.highlight.md",
+            ],
         },
-        "slot_6": {
+        slot_6: {
             hex: "#ff00ff",
-            ids: ["t007", "t019", "t036"],
+            ids: ["text.highlight", "indicator.text", "logo.main"],
         },
-        "slot_7": {
+        slot_7: {
             hex: "#ff0080",
-            ids: ["t012", "t021", "t027", "t028", "t029"],
+            ids: [
+                "button.primary.bg",
+                "border.brand",
+                "shadow.brand.sm",
+                "shadow.brand.md",
+                "shadow.brand.lg",
+            ],
         },
-        "slot_8": {
+        slot_8: {
             hex: "#00ff80",
-            ids: ["t013", "t022", "t037"],
+            ids: ["button.secondary.bg", "border.highlight", "logo.accent"],
         },
-        "slot_9": {
+        slot_9: {
             hex: "#4a4f6a",
-            ids: ["t011", "t014"],
+            ids: ["input.bg", "button.ghost.disabledBg"],
         },
-        "slot_10": {
+        slot_10: {
             hex: "rgba(255,0,255,0.2)",
-            ids: ["t015"],
+            ids: ["button.ghost.hoverOverlay"],
         },
-        "slot_11": {
+        slot_11: {
             hex: "rgba(255,0,255,0.4)",
-            ids: ["t016"],
+            ids: ["button.ghost.activeOverlay"],
         },
-        "slot_12": {
+        slot_12: {
             hex: "#00ffff",
-            ids: ["t017"],
+            ids: ["button.ghost.focusRing"],
         },
-        "slot_13": {
+        slot_13: {
             hex: "#ffff00",
-            ids: ["t020"],
+            ids: ["indicator.audio"],
         },
-        "slot_14": {
+        slot_14: {
             hex: "#0080ff",
-            ids: ["t025", "t026"],
+            ids: ["border.subtle", "border.faint"],
         },
     },
     borderRadius: {
-        t038: "24px", // Button
-        t039: "16px", // Card
-        t040: "16px", // Input
-        t044: "12px", // Sub-Card
+        "radius.button": "24px",
+        "radius.card": "16px",
+        "radius.input": "16px",
+        "radius.subcard": "12px",
     },
     fonts: {
-        t041: "Orbitron", // Title (Tech/Sci-Fi)
-        t042: "Rajdhani", // Headline (Tech/Futuristic)
-        t043: "Exo 2", // Body (Tech/Clean)
+        "font.title": "Orbitron",
+        "font.headline": "Rajdhani",
+        "font.body": "Exo 2",
     },
 };
 

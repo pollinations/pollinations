@@ -14,7 +14,12 @@ export const convertToThemeState = (dict: ThemeDictionary): ThemeState => {
 export const convertRadiusToState = (
     radiusDict: Record<string, string>,
 ): RadiusState => {
-    const allRadiusTokens: string[] = ["t038", "t039", "t040", "t044"]; // Button, Card, Input, Sub-Card
+    const allRadiusTokens: string[] = [
+        "radius.button",
+        "radius.card",
+        "radius.input",
+        "radius.subcard",
+    ];
 
     // Group tokens by their current radius value
     const valueGroups: Record<string, string[]> = {};
@@ -67,7 +72,7 @@ export const convertRadiusToDict = (
 export const convertFontsToState = (
     fontDict: Record<string, string>,
 ): FontState => {
-    const fontTokens: string[] = ["t041", "t042", "t043"]; // Title, Headline, Body
+    const fontTokens: string[] = ["font.title", "font.headline", "font.body"];
     const newState: FontState = {};
 
     fontTokens.forEach((tokenId, index) => {

@@ -16,7 +16,7 @@ export type SemanticTokenId =
     // Inputs
     | "input.bg"
     | "input.text" // implied by text.primary usually, but good to have if needed?
-    // Actually looking at tokens.ts, t011 is Input Field Background.
+    // input.bg is the Input Field Background token.
     // We don't have a specific input text color token in tokens.ts, it relies on contrast.
     // But let's stick to what we have in tokens.ts for the mapping.
 

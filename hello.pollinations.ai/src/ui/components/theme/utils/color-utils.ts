@@ -33,5 +33,6 @@ export const rgbaToHex = (color: string): string => {
 };
 
 export const tokenToCssVar = (id: string) => {
-    return `--${id}`;
+    // Replace dots with hyphens for CSS variable names (e.g., text.primary -> --text-primary)
+    return `--${id.replace(/\./g, "-")}`;
 };

@@ -95,4 +95,5 @@ export const ClassicMacroConfig: MacroConfig = {
 
 export const ClassicTheme: LLMThemeResponse = macrosToTheme(ClassicMacroConfig);
 
-// Export default CSS variables for use in tailwind.config.ts
+// Export CSS variables for use in tailwind.config.ts and auto-discovery
+export const ClassicCssVariables = {} as Record<string, string>; // This will be populated by processTheme when needed

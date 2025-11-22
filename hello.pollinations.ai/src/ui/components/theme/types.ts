@@ -5,12 +5,12 @@ export interface ColorBucketData {
 
 export interface RadiusBucketData {
     value: string; // e.g., "0px", "8px", "16px"
-    tokens: string[]; // Radius tokens: t038, t039, t040, t044 (draggable between 2 buckets)
+    tokens: string[]; // Radius tokens: radius.button, radius.card, radius.input, radius.subcard
 }
 
 export interface FontBucketData {
     value: string; // e.g., "Maven Pro", "Mako", "Duru Sans"
-    tokens: string[]; // Font tokens: t041, t042, t043
+    tokens: string[]; // Font tokens: font.title, font.headline, font.body
 }
 
 export type ThemeState = Record<string, ColorBucketData>;

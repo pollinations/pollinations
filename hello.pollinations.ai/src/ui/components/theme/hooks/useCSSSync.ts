@@ -37,10 +37,10 @@ export function useFontSync(fonts: FontState) {
 
         Object.values(fonts).forEach((data) => {
             // Sync CSS variable
-            const token = data.tokens[0]; // Assuming 1 token per bucket for fonts
-            if (token) {
-                root.style.setProperty(`--${token}`, `'${data.value}'`);
-            }
+            data.tokens.forEach((token) => {
+                const cssVar = tokenToCssVar(token);
+                root.style.setProperty(cssVar, `'${data.value}'`);
+            });
 
             // Collect for loading
             if (data.value && data.value.trim() !== "") {

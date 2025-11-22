@@ -18,3 +18,4 @@ build
 # Environment
 .env
 .env.local
+# Note: .encrypted.env is NOT ignored (encrypted, safe to commit)

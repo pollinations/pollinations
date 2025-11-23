@@ -5,27 +5,21 @@ import { Divider } from "../components/ui/divider";
 import { PageCard } from "../components/ui/page-card";
 import { PageContainer } from "../components/ui/page-container";
 import { SubCard } from "../components/ui/sub-card";
-import { HELLO_PAGE } from "../../content";
 import { usePageCopy } from "../contexts/PageCopyContext";
+import type { HELLO_PAGE as HelloPageType } from "../../content/copy/hello";
 
 function HelloPage() {
-    const pageCopy = usePageCopy("HELLO_PAGE", HELLO_PAGE);
+    const pageCopy = usePageCopy<typeof HelloPageType>("HELLO_PAGE");
 
     return (
         <PageContainer>
             <PageCard>
                 {/* Title */}
-                <Title>
-                    {pageCopy.heroTitle.text}
-                </Title>
+                <Title>{pageCopy.heroTitle.text}</Title>
                 {/* Intro Section */}
                 <div className="mb-12">
-                    <Body>
-                        {pageCopy.heroIntro.text}
-                    </Body>
-                    <Body spacing="none">
-                        {pageCopy.heroTagline.text}
-                    </Body>
+                    <Body>{pageCopy.heroIntro.text}</Body>
+                    <Body spacing="none">{pageCopy.heroTagline.text}</Body>
                 </div>
 
                 {/* Divider */}
@@ -163,7 +157,11 @@ function HelloPage() {
                                         {pageCopy.roadmapComingSoonTitle.text}
                                     </p>
                                     <p className="font-body text-xs text-text-body-secondary">
-                                        {pageCopy.roadmapComingSoonDescription.text}
+                                        {
+                                            pageCopy
+                                                .roadmapComingSoonDescription
+                                                .text
+                                        }
                                     </p>
                                 </div>
                             </div>
@@ -193,7 +191,10 @@ function HelloPage() {
                                         {pageCopy.roadmapOngoingTitle.text}
                                     </p>
                                     <p className="font-body text-xs text-text-body-secondary">
-                                        {pageCopy.roadmapOngoingDescription.text}
+                                        {
+                                            pageCopy.roadmapOngoingDescription
+                                                .text
+                                        }
                                     </p>
                                 </div>
                             </div>

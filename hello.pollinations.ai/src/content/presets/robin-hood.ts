@@ -165,6 +165,7 @@ export const CustomCopy: ThemeCopy = {
             text: "We're building a platform where developers, creators, and AI enthusiasts collaborate and innovate together.",
         },
         newsTitle: { text: "Updates for all." },
+        newsFilePath: "/NEWS.md",
         discordTitle: { text: "Merry Men." },
         discordSubtitle: {
             text: "Join the Merry Men for real-time talks and support.",
@@ -173,23 +174,150 @@ export const CustomCopy: ThemeCopy = {
         githubSubtitle: {
             text: "Band together to fork open-source and contribute code.",
         },
+        joinDiscordButton: {
+            text: "Join Discord",
+        },
+        contributeButton: {
+            text: "Contribute",
+        },
         supportersTitle: {
-            text: "Just to confirm, you want 1–3 sentences but under ...",
-        }, // Needs fixing
+            text: "Supporters",
+        },
         supportersSubtitle: {
             text: "Thank you, supporters, for your generous gifts, keeping this platform for all.",
         },
+        supportersList: [
+            {
+                name: "Perplexity AI",
+                url: "https://www.perplexity.ai/",
+                description: "AI-powered search and conversational answer engine",
+            },
+            {
+                name: "AWS Activate",
+                url: "https://aws.amazon.com/",
+                description: "GPU Cloud Credits",
+            },
+            {
+                name: "io.net",
+                url: "https://io.net/",
+                description: "Decentralized GPU network for AI compute",
+            },
+            {
+                name: "BytePlus",
+                url: "https://www.byteplus.com/",
+                description: "Official ByteDance cloud services and AI solutions",
+            },
+            {
+                name: "Google Cloud for Startups",
+                url: "https://cloud.google.com/",
+                description: "GPU Cloud Credits",
+            },
+            {
+                name: "NVIDIA Inception",
+                url: "https://www.nvidia.com/en-us/deep-learning-ai/startups/",
+                description: "AI startup support",
+            },
+            {
+                name: "Azure (MS for Startups)",
+                url: "https://azure.microsoft.com/",
+                description: "OpenAI credits",
+            },
+            {
+                name: "Cloudflare",
+                url: "https://developers.cloudflare.com/workers-ai/",
+                description: "Put the connectivity cloud to work for you.",
+            },
+            {
+                name: "Scaleway",
+                url: "https://www.scaleway.com/",
+                description: "Europe's empowering cloud provider",
+            },
+            {
+                name: "Modal",
+                url: "https://modal.com/",
+                description: "High-performance AI infrastructure",
+            },
+            {
+                name: "NavyAI",
+                url: "https://api.navy/",
+                description: "AI API provider for OpenAI o3 and Gemini models",
+            },
+            {
+                name: "Nebius",
+                url: "https://nebius.com/",
+                description: "AI-optimized cloud infrastructure with NVIDIA GPU clusters",
+            },
+        ],
+        supporterLogoPrompt:
+            "Brutalist logo design with bold geometric shapes, heavy lines, stark contrast, raw minimalist aesthetic, transparent background (no background), flat design style. Company:",
+        supporterLogoSeed: 1,
+        supporterLogoModel: "nanobanana",
     },
     PLAY_PAGE: {
         createTitle: { text: "Guard Commons." },
-        watchTitle: {
-            text: "Just to confirm: under 2 words means a 1- or 2-wor...",
-        }, // Needs fixing
+        watchTitle: { text: "Watch" },
         createDescription: {
             text: "Test our API, try different models, and see what you can create. A demo playground for the people—explore and experiment.",
         },
         feedDescription: {
             text: "Watch the network's real-time heartbeat for the people. See what the community creates through our APIs.",
+        },
+        toggleWatchOthers: {
+            text: "Watch what others are making",
+        },
+        toggleBackToPlay: {
+            text: "Back to Play",
+        },
+        modelsLabel: {
+            text: "Models",
+        },
+        imageLabel: {
+            text: "Image",
+        },
+        textLabel: {
+            text: "Text",
+        },
+        promptLabel: {
+            text: "Prompt",
+        },
+        imagePlaceholder: {
+            text: "Describe the image you want...",
+        },
+        textPlaceholder: {
+            text: "Enter your question or prompt...",
+        },
+        addImagesLabel: {
+            text: "Add Images (Optional)",
+        },
+        upToFourLabel: {
+            text: "up to 4",
+        },
+        widthLabel: {
+            text: "Width",
+        },
+        heightLabel: {
+            text: "Height",
+        },
+        seedLabel: {
+            text: "Seed",
+        },
+        seedPlaceholder: {
+            text: "0 = random",
+        },
+        enhanceLabel: {
+            text: "Enhance",
+        },
+        logoLabel: {
+            text: "Logo",
+        },
+        generatingText: {
+            text: "Generating...",
+        },
+        generateImageButton: {
+            text: "Generate Image",
+        },
+        generateTextButton: {
+            text: "Generate Text",
         },
     },
 };

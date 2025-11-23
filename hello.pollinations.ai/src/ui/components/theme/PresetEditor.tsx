@@ -23,7 +23,11 @@ import { PresetManager } from "./PresetManager";
 
 export function PresetEditor() {
     const [isOpen, setIsOpen] = useState(false);
-    const { themeDefinition } = useTheme();
+    const {
+        themeDefinition,
+        themePrompt,
+        setTheme: setContextTheme,
+    } = useTheme();
 
     // State
     const [theme, setTheme] = useState<ThemeState>(() =>
@@ -35,7 +39,9 @@ export function PresetEditor() {
     const [fonts, setFonts] = useState<FontState>(() =>
         convertFontsToState(themeDefinition.fonts || {})
     );
-    const [selectedPresetId, setSelectedPresetId] = useState(DEFAULT_PRESET.id);
+    const [selectedPresetId, setSelectedPresetId] = useState(
+        themePrompt || DEFAULT_PRESET.id
+    );
 
     // Sync with context theme when it changes
     useEffect(() => {
@@ -43,6 +49,14 @@ export function PresetEditor() {
         setRadius(convertRadiusToState(themeDefinition.borderRadius || {}));
         setFonts(convertFontsToState(themeDefinition.fonts || {}));
     }, [themeDefinition]);
+
+    // Sync selectedPresetId with loaded preset from context
+    useEffect(() => {
+        if (themePrompt) {
+            // themePrompt contains the preset ID
+            setSelectedPresetId(themePrompt);
+        }
+    }, [themePrompt]);
 
     // Sync to CSS
     useColorSync(theme);
@@ -106,10 +120,13 @@ export function PresetEditor() {
         const preset = PRESETS.find((p) => p.id === presetId);
         if (preset) {
             const dict = themeToDictionary(preset.theme);
+            // Update local state
             setTheme(convertToThemeState(dict));
             setRadius(convertRadiusToState(dict.borderRadius || {}));
             setFonts(convertFontsToState(dict.fonts || {}));
             setSelectedPresetId(presetId);
+            // Update context to sync themePrompt
+            setContextTheme(dict, preset.id, preset.copy);
         }
     };
 

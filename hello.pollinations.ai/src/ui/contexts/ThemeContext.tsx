@@ -1,4 +1,10 @@
-import { createContext, useContext, useState, useCallback } from "react";
+import {
+    createContext,
+    useContext,
+    useState,
+    useCallback,
+    useEffect,
+} from "react";
 import type { ReactNode } from "react";
 import { PRESETS } from "../../content/presets";
 import {
@@ -33,11 +39,21 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
         DefaultThemeDefinition
     );
     const [themePrompt, setThemePrompt] = useState<string | null>(
-        randomPreset.name
+        randomPreset.id
     );
     const [presetCopy, setPresetCopy] = useState<ThemeCopy | null>(
         DefaultThemeCopy || null
     );
+
+    // Apply initial theme CSS variables on mount
+    useEffect(() => {
+        const theme = dictionaryToTheme(DefaultThemeDefinition);
+        const { cssVariables } = processTheme(theme);
+        const root = document.documentElement;
+        Object.entries(cssVariables).forEach(([key, value]) => {
+            root.style.setProperty(key, value);
+        });
+    }, []);
 
     const setTheme = useCallback(
         (newTheme: ThemeDictionary, prompt?: string, copy?: ThemeCopy) => {
@@ -56,9 +72,11 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     );
 
     const resetTheme = useCallback(() => {
-        setTheme(DefaultThemeDefinition);
-        setThemePrompt(null);
-        setPresetCopy(null);
+        setTheme(
+            DefaultThemeDefinition,
+            randomPreset.id,
+            DefaultThemeCopy || undefined
+        );
     }, [setTheme]);
 
     return (

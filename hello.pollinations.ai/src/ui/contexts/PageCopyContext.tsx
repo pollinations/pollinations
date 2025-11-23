@@ -2,7 +2,7 @@ import { createContext, useContext, type ReactNode } from "react";
 import { useTheme } from "./ThemeContext";
 
 interface PageCopyContextValue {
-    getPageCopy: <T>(pageName: string, originalPage: T) => T;
+    getPageCopy: <T>(pageName: string) => T;
 }
 
 const PageCopyContext = createContext<PageCopyContextValue | undefined>(
@@ -12,14 +12,20 @@ const PageCopyContext = createContext<PageCopyContextValue | undefined>(
 export function PageCopyProvider({ children }: { children: ReactNode }) {
     const { presetCopy } = useTheme();
 
-    const getPageCopy = <T,>(pageName: string, originalPage: T): T => {
-        // Priority 1: Use preset copy if available
-        if (presetCopy?.[pageName as keyof typeof presetCopy]) {
-            return presetCopy[pageName as keyof typeof presetCopy] as T;
+    const getPageCopy = <T,>(pageName: string): T => {
+        // All presets must have complete copy - no fallback
+        if (!presetCopy) {
+            throw new Error("Preset copy is required but not found");
         }
-        
-        // Priority 2: Fallback to original
-        return originalPage;
+
+        const pageCopyData = presetCopy[pageName as keyof typeof presetCopy];
+        if (!pageCopyData) {
+            throw new Error(
+                `Page copy for ${pageName} is required but not found in preset`
+            );
+        }
+
+        return pageCopyData as T;
     };
 
     return (
@@ -29,11 +35,11 @@ export function PageCopyProvider({ children }: { children: ReactNode }) {
     );
 }
 
-export function usePageCopy<T>(pageName: string, originalPage: T): T {
+export function usePageCopy<T>(pageName: string): T {
     const context = useContext(PageCopyContext);
     if (!context) {
         throw new Error("usePageCopy must be used within a PageCopyProvider");
     }
 
-    return context.getPageCopy(pageName, originalPage);
+    return context.getPageCopy<T>(pageName);
 }

@@ -8,6 +8,7 @@ import { PlayGenerator } from "../components/play/PlayGenerator";
 import { ModelSelector } from "../components/play/ModelSelector";
 import { useModelList } from "../../hooks/useModelList";
 import { usePageCopy } from "../contexts/PageCopyContext";
+import type { PLAY_PAGE as PlayPageType } from "../../content/copy/play";
 
 /**
  * PlayPage - Main playground page
@@ -21,8 +22,8 @@ function PlayPage() {
     const [currentFeedPrompt, setCurrentFeedPrompt] = useState(""); // Prompt from feed
     const { imageModels, textModels } = useModelList();
 
-    // Get page copy (AI-generated or fallback)
-    const pageCopy = usePageCopy("PLAY_PAGE", PLAY_PAGE);
+    // Get page copy from preset
+    const pageCopy = usePageCopy<typeof PlayPageType>("PLAY_PAGE");
 
     // Memoize combined models array
     const allModels = useMemo(

@@ -7,8 +7,8 @@ import { SubCard } from "../components/ui/sub-card";
 import { ExternalLinkIcon } from "../assets/ExternalLinkIcon";
 import { allProjects } from "../../content/copy/apps-list";
 import { GithubIcon } from "../assets/SocialIcons";
-import { APPS_PAGE } from "../../content";
 import { usePageCopy } from "../contexts/PageCopyContext";
+import type { APPS_PAGE as AppsPageType } from "../../content/copy/apps";
 
 interface Project {
     category: string;
@@ -140,8 +140,8 @@ function ProjectCard({ project }: ProjectCardProps) {
 export default function AppsPage() {
     const [selectedCategory, setSelectedCategory] = useState("creative");
 
-    // Get page copy (AI-generated or fallback)
-    const pageCopy = usePageCopy("APPS_PAGE", APPS_PAGE);
+    // Get page copy from preset
+    const pageCopy = usePageCopy<typeof AppsPageType>("APPS_PAGE");
 
     // Filter projects by category
     const filteredProjects = useMemo(() => {

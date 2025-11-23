@@ -22,7 +22,7 @@ import {
 import { ColorBucket } from "./components/ColorBucket";
 import { RadiusBucket } from "./components/RadiusBucket";
 import { FontBucket } from "./components/FontBucket";
-import { PresetHeader } from "./components/PresetHeader";
+import { PresetManager } from "./PresetManager";
 
 export function PresetEditor() {
     const [isOpen, setIsOpen] = useState(false);
@@ -195,9 +195,12 @@ export const CustomCssVariables = processTheme(CustomTheme).cssVariables;
                 ${isOpen ? "translate-x-0" : "-translate-x-full"}
             `}
         >
-            <PresetHeader
+            <PresetManager
                 selectedPresetId={selectedPresetId}
                 presets={PRESETS}
+                theme={theme}
+                radius={radius}
+                fonts={fonts}
                 onPresetChange={handleLoadPreset}
                 onDownload={handleDownloadPreset}
                 onRandomizeColors={handleRandomizeColors}

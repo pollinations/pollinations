@@ -1,13 +1,10 @@
 import { NavLink, Outlet } from "react-router-dom";
-import { useState, useEffect, useRef } from "react";
+import { useState } from "react";
 import { Logo } from "./Logo";
 import { Button } from "./ui/button";
 import { ExternalLinkIcon } from "../assets/ExternalLinkIcon";
 import { SOCIAL_LINKS } from "../../content/copy/socialLinks";
-import { useTheme } from "../contexts/ThemeContext";
-import { generateTheme } from "../../content/guidelines/helpers/styling-helpers";
-import type { ThemeDictionary } from "../../content/theme/engine";
-import { SparklesIcon, SendIcon } from "lucide-react";
+import { AIPromptInput } from "./theme/AIPromptInput";
 
 const tabs = [
     { path: "/", label: "Hello" },
@@ -20,159 +17,14 @@ const tabs = [
 import { useFooterVisibility } from "../../hooks/useFooterVisibility";
 import { useHeaderVisibility } from "../../hooks/useHeaderVisibility";
 
-// --- Theme Prompt Banner Component ---
-function ThemePromptBanner({
-    isOpen,
-    prompt,
-    setPrompt,
-    loading,
-    onSubmit,
-    inputRef,
-    error,
-}: {
-    isOpen: boolean;
-    prompt: string;
-    setPrompt: (s: string) => void;
-    loading: boolean;
-    onSubmit: (e?: React.FormEvent) => void;
-    inputRef: React.RefObject<HTMLInputElement | null>;
-    error: string | null;
-}) {
-    if (!isOpen) return null;
-
-    return (
-        <div
-            className="w-full h-16 animate-in fade-in slide-in-from-top-2 duration-200 flex items-center justify-center"
-            style={{
-                backgroundColor: "var(--surface-base)",
-            }}
-        >
-            <form
-                onSubmit={onSubmit}
-                className="w-full max-w-4xl mx-auto flex items-center h-full px-4 md:px-8 gap-4"
-            >
-                <Button
-                    type="submit"
-                    disabled={!prompt.trim() || loading}
-                    variant="icon"
-                    size={null}
-                    className="w-6 h-6 md:w-8 md:h-8 text-text-body-main flex-shrink-0"
-                >
-                    {loading ? (
-                        <SparklesIcon className="w-4 h-4 md:w-5 md:h-5 animate-spin" />
-                    ) : (
-                        <SendIcon className="w-4 h-4 md:w-5 md:h-5" />
-                    )}
-                </Button>
-
-                <div className="flex-1 relative h-full flex items-center">
-                    <style>
-                        {`
-                            .theme-prompt-input::placeholder {
-                                color: var(--text-tertiary) !important;
-                                opacity: 1 !important;
-                            }
-                        `}
-                    </style>
-                    <input
-                        ref={inputRef}
-                        id="theme-prompt"
-                        name="theme-prompt"
-                        type="text"
-                        value={prompt}
-                        onChange={(e) => setPrompt(e.target.value)}
-                        placeholder="Describe a theme (e.g. 'Cyberpunk Neon')..."
-                        className="theme-prompt-input w-full h-full bg-transparent outline-none text-base md:text-lg font-medium rounded-input"
-                        style={{
-                            color: "var(--text-secondary)",
-                            caretColor: "var(--text-brand)",
-                        }}
-                        disabled={loading}
-                    />
-                </div>
-            </form>
-            {error && (
-                <div className="absolute top-full left-0 right-0 bg-red-500 text-white text-[10px] px-2 py-1 text-center">
-                    {error && typeof error === "object" && "message" in error
-                        ? (error as Error).message
-                        : String(error)}
-                </div>
-            )}
-        </div>
-    );
-}
-
 function Layout() {
     const showFooter = useFooterVisibility();
     const showHeader = useHeaderVisibility();
     const [emailCopied, setEmailCopied] = useState(false);
-
-    // AI Theme Prompt State
     const [isPromptOpen, setIsPromptOpen] = useState(false);
-    const [prompt, setPrompt] = useState("");
-    const [activePrompt, setActivePrompt] = useState<string | null>(null);
-    const inputRef = useRef<HTMLInputElement>(null);
-
-    const { setTheme } = useTheme();
-    const [generatedTheme, setGeneratedTheme] =
-        useState<ThemeDictionary | null>(null);
-    const [loading, setLoading] = useState(false);
-    const [error, setError] = useState<any>(null);
-
-    // Generate theme when activePrompt changes
-    useEffect(() => {
-        if (!activePrompt) return;
-
-        const controller = new AbortController();
-        setLoading(true);
-        setError(null);
-
-        generateTheme(activePrompt, controller.signal)
-            .then((theme) => {
-                if (!controller.signal.aborted) {
-                    setGeneratedTheme(theme);
-                }
-            })
-            .catch((err) => {
-                if (err.name !== "AbortError" && !controller.signal.aborted) {
-                    setError(err);
-                }
-            })
-            .finally(() => {
-                if (!controller.signal.aborted) {
-                    setLoading(false);
-                }
-            });
-
-        return () => controller.abort();
-    }, [activePrompt]);
-
-    // Focus input when opened
-    useEffect(() => {
-        if (isPromptOpen) {
-            setTimeout(() => inputRef.current?.focus(), 100);
-        }
-    }, [isPromptOpen]);
-
-    // Apply theme when generated
-    useEffect(() => {
-        if (generatedTheme) {
-            setTheme(generatedTheme);
-            // Keep the prompt text so user can see what they generated
-            setActivePrompt(null); // Clear active prompt after success
-            setGeneratedTheme(null); // Clear for next generation
-        }
-    }, [generatedTheme, setTheme]);
 
     const handleLogoClick = () => {
         setIsPromptOpen(!isPromptOpen);
-    };
-
-    const handleSubmit = (e?: React.FormEvent) => {
-        e?.preventDefault();
-        if (prompt.trim() && !loading) {
-            setActivePrompt(prompt); // Trigger generation
-        }
     };
 
     return (
@@ -333,16 +185,8 @@ function Layout() {
                     </div>
                 </div>
 
-                {/* Full Width Theme Prompt Banner */}
-                <ThemePromptBanner
-                    isOpen={isPromptOpen}
-                    prompt={prompt}
-                    setPrompt={setPrompt}
-                    loading={loading}
-                    onSubmit={handleSubmit}
-                    inputRef={inputRef}
-                    error={error}
-                />
+                {/* Full Width AI Prompt Input */}
+                <AIPromptInput isOpen={isPromptOpen} />
             </header>
 
             {/* Main Content - Full Bleed */}

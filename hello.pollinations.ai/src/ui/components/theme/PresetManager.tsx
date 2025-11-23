@@ -4,14 +4,10 @@ import {
     PaletteIcon,
     DownloadIcon,
 } from "lucide-react";
-import type { ThemeState, RadiusState, FontState } from "./types";
 
 interface PresetManagerProps {
     selectedPresetId: string;
     presets: Array<{ id: string; name: string }>;
-    theme: ThemeState;
-    radius: RadiusState;
-    fonts: FontState;
     onPresetChange: (presetId: string) => void;
     onDownload: () => void;
     onRandomizeColors: () => void;

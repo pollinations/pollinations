@@ -7,8 +7,7 @@ import {
     convertToThemeState,
     convertRadiusToState,
     convertFontsToState,
-    convertRadiusToDict,
-    convertFontsToDict,
+    convertToMacroConfig,
 } from "./utils/state-converters";
 import { getRandomColor } from "./utils/color-utils";
 import { useKeyboardShortcut } from "./hooks/useKeyboardShortcut";
@@ -152,24 +151,19 @@ export function PresetEditor() {
     };
 
     const handleDownloadPreset = () => {
-        const slots: Record<string, { hex: string; ids: string[] }> = {};
-        Object.entries(theme).forEach(([_, bucket], index) => {
-            slots[`slot_${index}`] = {
-                hex: bucket.color,
-                ids: bucket.tokens,
-            };
-        });
+        const macroConfig = convertToMacroConfig(theme, radius, fonts);
 
-        const radiusDict = convertRadiusToDict(radius);
-        const fontDict = convertFontsToDict(fonts);
+        const content = `import { type LLMThemeResponse, processTheme } from "../engine";
+import type { MacroConfig } from "../macros";
+import { macrosToTheme } from "../macros-engine";
 
-        const content = `import { LLMThemeResponse, processTheme } from "../engine";
-
-export const CustomTheme: LLMThemeResponse = ${JSON.stringify(
-            { slots, borderRadius: radiusDict, fonts: fontDict },
+export const CustomMacroConfig: MacroConfig = ${JSON.stringify(
+            macroConfig,
             null,
             4
         )};
+
+export const CustomTheme: LLMThemeResponse = macrosToTheme(CustomMacroConfig);
 
 export const CustomCssVariables = processTheme(CustomTheme).cssVariables;
 `;
@@ -198,9 +192,6 @@ export const CustomCssVariables = processTheme(CustomTheme).cssVariables;
             <PresetManager
                 selectedPresetId={selectedPresetId}
                 presets={PRESETS}
-                theme={theme}
-                radius={radius}
-                fonts={fonts}
                 onPresetChange={handleLoadPreset}
                 onDownload={handleDownloadPreset}
                 onRandomizeColors={handleRandomizeColors}

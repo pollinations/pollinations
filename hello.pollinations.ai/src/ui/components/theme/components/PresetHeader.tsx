@@ -1,17 +1,9 @@
-import {
-    CheckIcon,
-    ShuffleIcon,
-    PaletteIcon,
-    DownloadIcon,
-} from "lucide-react";
+import { CheckIcon } from "lucide-react";
 
 interface PresetHeaderProps {
     selectedPresetId: string;
     presets: Array<{ id: string; name: string }>;
     onPresetChange: (presetId: string) => void;
-    onDownload: () => void;
-    onRandomizeColors: () => void;
-    onRandomizeAssignments: () => void;
     onSetAllWhite: () => void;
     onSetAllBlack: () => void;
     onClose: () => void;
@@ -21,9 +13,6 @@ export function PresetHeader({
     selectedPresetId,
     presets,
     onPresetChange,
-    onDownload,
-    onRandomizeColors,
-    onRandomizeAssignments,
     onSetAllWhite,
     onSetAllBlack,
     onClose,
@@ -46,31 +35,6 @@ export function PresetHeader({
             {/* Action Buttons */}
             <div className="flex items-center justify-between">
                 <div className="flex gap-1">
-                    <button
-                        type="button"
-                        onClick={onDownload}
-                        className="p-1 text-gray-400 hover:text-black transition-colors"
-                        title="Download Preset"
-                    >
-                        <DownloadIcon className="w-3 h-3" />
-                    </button>
-
-                    <button
-                        type="button"
-                        onClick={onRandomizeColors}
-                        className="p-1 text-gray-400 hover:text-black transition-colors"
-                        title="Randomize Colors"
-                    >
-                        <PaletteIcon className="w-3 h-3" />
-                    </button>
-                    <button
-                        type="button"
-                        onClick={onRandomizeAssignments}
-                        className="p-1 text-gray-400 hover:text-black transition-colors"
-                        title="Randomize Assignments"
-                    >
-                        <ShuffleIcon className="w-3 h-3" />
-                    </button>
                     <button
                         type="button"
                         onClick={onSetAllWhite}

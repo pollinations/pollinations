@@ -1,15 +1,15 @@
-import React from "react";
 import { createRoot } from "react-dom/client";
 import { BrowserRouter } from "react-router-dom";
 import App from "./App";
 import { ThemeProvider } from "./ui/contexts/ThemeContext";
+import { PageCopyProvider } from "./ui/contexts/PageCopyContext";
 import "./styles.css";
 
 const root = createRoot(document.getElementById("root")!);
 
 root.render(
-    <React.StrictMode>
-        <ThemeProvider>
+    <ThemeProvider>
+        <PageCopyProvider>
             <BrowserRouter
                 future={{
                     v7_startTransition: true,
@@ -18,6 +18,6 @@ root.render(
             >
                 <App />
             </BrowserRouter>
-        </ThemeProvider>
-    </React.StrictMode>
+        </PageCopyProvider>
+    </ThemeProvider>
 );

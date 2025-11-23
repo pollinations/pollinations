@@ -1,5 +1,4 @@
 import { useState, useMemo } from "react";
-import { TextGenerator } from "../components/TextGenerator";
 import { Title, Body } from "../components/ui/typography";
 import { Button } from "../components/ui/button";
 import { PageCard } from "../components/ui/page-card";
@@ -9,6 +8,7 @@ import { ExternalLinkIcon } from "../assets/ExternalLinkIcon";
 import { allProjects } from "../../content/copy/apps-list";
 import { GithubIcon } from "../assets/SocialIcons";
 import { APPS_PAGE } from "../../content";
+import { usePageCopy } from "../contexts/PageCopyContext";
 
 interface Project {
     category: string;
@@ -140,6 +140,9 @@ function ProjectCard({ project }: ProjectCardProps) {
 export default function AppsPage() {
     const [selectedCategory, setSelectedCategory] = useState("creative");
 
+    // Get page copy (AI-generated or fallback)
+    const pageCopy = usePageCopy("APPS_PAGE", APPS_PAGE);
+
     // Filter projects by category
     const filteredProjects = useMemo(() => {
         return (allProjects as Project[]).filter((p) => {
@@ -151,11 +154,9 @@ export default function AppsPage() {
     return (
         <PageContainer>
             <PageCard>
-                <Title>
-                    <TextGenerator content={APPS_PAGE.title} />
-                </Title>
+                <Title>{pageCopy.title.text}</Title>
                 <Body spacing="none" className="mb-8">
-                    <TextGenerator content={APPS_PAGE.subtitle} />
+                    {pageCopy.subtitle.text}
                 </Body>
 
                 {/* Category Filters */}

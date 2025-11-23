@@ -1,9 +1,11 @@
 import { useState, useEffect, useRef } from "react";
-import { useModelList } from "../../../hooks/useModelList";
+import type { Model } from "../../../hooks/useModelList";
 
 interface ImageFeedProps {
     selectedModel: string;
     onFeedPromptChange: (prompt: string) => void;
+    imageModels: Model[];
+    textModels: Model[];
 }
 
 interface FeedItem {
@@ -27,13 +29,17 @@ interface TextQueueItem {
     prompt: string;
 }
 
-export function ImageFeed({ selectedModel, onFeedPromptChange }: ImageFeedProps) {
+export function ImageFeed({
+    selectedModel,
+    onFeedPromptChange,
+    imageModels,
+    textModels,
+}: ImageFeedProps) {
     const seenImages = useRef<Set<string>>(new Set());
     const imageQueue = useRef<ImageQueueItem[]>([]);
     const textQueue = useRef<TextQueueItem[]>([]);
     const MAX_QUEUE_SIZE = 10;
     const [currentDisplay, setCurrentDisplay] = useState<FeedItem | null>(null);
-    const { imageModels, textModels } = useModelList();
 
     // Update parent with current feed prompt
     useEffect(() => {

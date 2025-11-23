@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
 import { Heading, Label } from "../ui/typography";
 import { Button } from "../ui/button";
-import { TextGenerator } from "../TextGenerator";
 import { DOCS_PAGE } from "../../../content";
 
 /**
@@ -54,7 +53,7 @@ export function ModelDiscoveryCard() {
     return (
         <div>
             <Heading variant="section">
-                <TextGenerator content={DOCS_PAGE.modelDiscoveryTitle} />
+                {DOCS_PAGE.modelDiscoveryTitle.text}
             </Heading>
 
             {/* Model Type Selection and Output - Side by Side */}
@@ -64,9 +63,7 @@ export function ModelDiscoveryCard() {
                     {/* Model Type Selection */}
                     <div>
                         <Label>
-                            <TextGenerator
-                                content={DOCS_PAGE.selectTypeLabel}
-                            />
+                            {DOCS_PAGE.selectTypeLabel.text}
                         </Label>
                         <div className="flex flex-wrap gap-2">
                             {Object.entries(modelEndpoints).map(
@@ -111,7 +108,7 @@ export function ModelDiscoveryCard() {
                         variant="copy"
                         size={null}
                     >
-                        <TextGenerator content={DOCS_PAGE.copyUrlButton} />
+                        {DOCS_PAGE.copyUrlButton.text}
                     </Button>
                 </div>
 
@@ -119,9 +116,7 @@ export function ModelDiscoveryCard() {
                 <div className="bg-surface-card p-3 font-mono text-xs text-text-body-main h-48 overflow-auto scrollbar-hide">
                     {isLoading ? (
                         <div className="text-text-caption">
-                            <TextGenerator
-                                content={DOCS_PAGE.loadingModelsLabel}
-                            />
+                            {DOCS_PAGE.loadingModelsLabel.text}
                         </div>
                     ) : modelsData ? (
                         <pre className="whitespace-pre-wrap break-words">

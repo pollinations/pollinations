@@ -1,16 +1,13 @@
 import { useEffect, useState } from "react";
 import { themeToDictionary } from "../../../content/theme";
-import { PRESETS, DEFAULT_PRESET } from "../../../content/theme/presets";
+import { PRESETS, DEFAULT_PRESET } from "../../../content/presets";
 import { useTheme } from "../../contexts/ThemeContext";
 import type { ThemeState, RadiusState, FontState } from "./types";
 import {
     convertToThemeState,
     convertRadiusToState,
     convertFontsToState,
-    convertRadiusToDict,
-    convertFontsToDict,
 } from "./utils/state-converters";
-import { getRandomColor } from "./utils/color-utils";
 import { useKeyboardShortcut } from "./hooks/useKeyboardShortcut";
 import { useColorSync, useRadiusSync, useFontSync } from "./hooks/useCSSSync";
 import {
@@ -91,41 +88,6 @@ export function PresetEditor() {
         }));
     };
 
-    const handleRandomizeColors = () => {
-        setTheme((prev) => {
-            const newTheme = { ...prev };
-            Object.keys(newTheme).forEach((bucketId) => {
-                newTheme[bucketId] = {
-                    ...newTheme[bucketId],
-                    color: getRandomColor(),
-                };
-            });
-            return newTheme;
-        });
-    };
-
-    const handleRandomizeAssignments = () => {
-        setTheme((prev) => {
-            const bucketIds = Object.keys(prev);
-            const allTokens = Object.values(prev).flatMap((b) => b.tokens);
-            const newTheme = { ...prev };
-
-            // Clear all token arrays but keep colors
-            bucketIds.forEach((id) => {
-                newTheme[id] = { ...newTheme[id], tokens: [] };
-            });
-
-            // Shuffle tokens and distribute
-            allTokens.forEach((token) => {
-                const randomId =
-                    bucketIds[Math.floor(Math.random() * bucketIds.length)];
-                newTheme[randomId].tokens.push(token);
-            });
-
-            return newTheme;
-        });
-    };
-
     const handleSetAllWhite = () => {
         setTheme((prev) => {
             const allTokens = Object.values(prev).flatMap((b) => b.tokens);
@@ -151,40 +113,6 @@ export function PresetEditor() {
         }
     };
 
-    const handleDownloadPreset = () => {
-        const slots: Record<string, { hex: string; ids: string[] }> = {};
-        Object.entries(theme).forEach(([_, bucket], index) => {
-            slots[`slot_${index}`] = {
-                hex: bucket.color,
-                ids: bucket.tokens,
-            };
-        });
-
-        const radiusDict = convertRadiusToDict(radius);
-        const fontDict = convertFontsToDict(fonts);
-
-        const content = `import { LLMThemeResponse, processTheme } from "../engine";
-
-export const CustomTheme: LLMThemeResponse = ${JSON.stringify(
-            { slots, borderRadius: radiusDict, fonts: fontDict },
-            null,
-            4
-        )};
-
-export const CustomCssVariables = processTheme(CustomTheme).cssVariables;
-`;
-
-        const blob = new Blob([content], { type: "text/typescript" });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = "custom-preset.ts";
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
-    };
-
     return (
         <div
             className={`
@@ -202,11 +130,6 @@ export const CustomCssVariables = processTheme(CustomTheme).cssVariables;
                 radius={radius}
                 fonts={fonts}
                 onPresetChange={handleLoadPreset}
-                onDownload={handleDownloadPreset}
-                onRandomizeColors={handleRandomizeColors}
-                onRandomizeAssignments={handleRandomizeAssignments}
-                onSetAllWhite={handleSetAllWhite}
-                onSetAllBlack={handleSetAllBlack}
                 onClose={() => setIsOpen(false)}
             />
 
@@ -256,6 +179,37 @@ export const CustomCssVariables = processTheme(CustomTheme).cssVariables;
                             onDragOver={fontDnD.handleDragOver}
                         />
                     ))}
+                </div>
+
+                {/* Dev Tools Section */}
+                <div className="pt-2 mt-2 border-t border-gray-200">
+                    <div className="text-[10px] font-mono text-gray-500 uppercase mb-2 px-2">
+                        Dev Tools
+                    </div>
+                    <div className="flex gap-2 px-2">
+                        <button
+                            type="button"
+                            onClick={handleSetAllWhite}
+                            className="flex-1 p-2 hover:scale-105 transition-transform border border-gray-300 rounded flex items-center justify-center gap-1.5"
+                            title="Set All to White"
+                        >
+                            <div className="w-3 h-3 bg-white border border-gray-300 rounded-sm" />
+                            <span className="text-[9px] font-mono text-gray-600">
+                                White
+                            </span>
+                        </button>
+                        <button
+                            type="button"
+                            onClick={handleSetAllBlack}
+                            className="flex-1 p-2 hover:scale-105 transition-transform border border-gray-300 rounded flex items-center justify-center gap-1.5"
+                            title="Set All to Black"
+                        >
+                            <div className="w-3 h-3 bg-black rounded-sm" />
+                            <span className="text-[9px] font-mono text-gray-600">
+                                Black
+                            </span>
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>

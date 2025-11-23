@@ -1,5 +1,5 @@
-import { TextGenerator } from "../components/TextGenerator";
 import { COMMUNITY_PAGE } from "../../content";
+import { usePageCopy } from "../contexts/PageCopyContext";
 import { ImageGenerator } from "../components/ImageGenerator";
 import { SOCIAL_LINKS } from "../../content/copy/socialLinks";
 import { Button } from "../components/ui/button";
@@ -12,17 +12,16 @@ import { SubCard } from "../components/ui/sub-card";
 import { useNews } from "../../hooks/useNews";
 import ReactMarkdown from "react-markdown";
 
-function CommunityPage() {
+export default function CommunityPage() {
+    const pageCopy = usePageCopy("COMMUNITY_PAGE", COMMUNITY_PAGE);
     const { news, loading: newsLoading } = useNews(COMMUNITY_PAGE.newsFilePath);
 
     return (
         <PageContainer>
             <PageCard>
-                <Title>
-                    <TextGenerator content={COMMUNITY_PAGE.title} />
-                </Title>
+                <Title>{pageCopy.title.text}</Title>
                 <Body spacing="none" className="mb-8">
-                    <TextGenerator content={COMMUNITY_PAGE.subtitle} />
+                    {pageCopy.subtitle.text}
                 </Body>
 
                 {/* Discord & GitHub Cards - Bold brutalist blocks */}
@@ -30,15 +29,11 @@ function CommunityPage() {
                     {/* Discord Card */}
                     <SubCard>
                         <Heading variant="lime" as="h2">
-                            <TextGenerator
-                                content={COMMUNITY_PAGE.discordTitle}
-                            />
+                            {pageCopy.discordTitle.text}
                         </Heading>
-                        <TextGenerator
-                            content={COMMUNITY_PAGE.discordSubtitle}
-                            as="div"
-                            className="font-body text-sm text-text-body-secondary mb-6"
-                        />
+                        <div className="font-body text-sm text-text-body-secondary mb-6">
+                            {pageCopy.discordSubtitle.text}
+                        </div>
                         <Button
                             as="a"
                             href={SOCIAL_LINKS.discord.url}
@@ -47,9 +42,7 @@ function CommunityPage() {
                             variant="primary"
                             size="lg"
                         >
-                            <TextGenerator
-                                content={COMMUNITY_PAGE.joinDiscordButton}
-                            />
+                            {pageCopy.joinDiscordButton.text}
                             <ExternalLinkIcon className="w-4 h-4 stroke-text-highlight" />
                         </Button>
                     </SubCard>
@@ -57,15 +50,11 @@ function CommunityPage() {
                     {/* GitHub Card */}
                     <SubCard>
                         <Heading variant="rose" as="h2">
-                            <TextGenerator
-                                content={COMMUNITY_PAGE.githubTitle}
-                            />
+                            {pageCopy.githubTitle.text}
                         </Heading>
-                        <TextGenerator
-                            content={COMMUNITY_PAGE.githubSubtitle}
-                            as="div"
-                            className="font-body text-sm text-text-body-secondary mb-6"
-                        />
+                        <div className="font-body text-sm text-text-body-secondary mb-6">
+                            {pageCopy.githubSubtitle.text}
+                        </div>
                         <Button
                             as="a"
                             href={SOCIAL_LINKS.github.url}
@@ -74,9 +63,7 @@ function CommunityPage() {
                             variant="primary"
                             size="lg"
                         >
-                            <TextGenerator
-                                content={COMMUNITY_PAGE.contributeButton}
-                            />
+                            {pageCopy.contributeButton.text}
                             <ExternalLinkIcon className="w-4 h-4 stroke-text-highlight" />
                         </Button>
                     </SubCard>
@@ -89,7 +76,7 @@ function CommunityPage() {
                 {!newsLoading && news.length > 0 && (
                     <>
                         <Heading variant="section">
-                            <TextGenerator content={COMMUNITY_PAGE.newsTitle} />
+                            {pageCopy.newsTitle.text}
                         </Heading>
                         <div className="mb-12 space-y-3">
                             {news.map((item) => {
@@ -177,14 +164,10 @@ function CommunityPage() {
                 {/* Supporters Section */}
                 <div>
                     <Heading variant="section">
-                        <TextGenerator
-                            content={COMMUNITY_PAGE.supportersTitle}
-                        />
+                        {pageCopy.supportersTitle.text}
                     </Heading>
                     <Body size="sm" spacing="comfortable">
-                        <TextGenerator
-                            content={COMMUNITY_PAGE.supportersSubtitle}
-                        />
+                        {pageCopy.supportersSubtitle.text}
                     </Body>
                     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
                         {COMMUNITY_PAGE.supportersList.map((supporter) => (
@@ -223,5 +206,3 @@ function CommunityPage() {
         </PageContainer>
     );
 }
-
-export default CommunityPage;

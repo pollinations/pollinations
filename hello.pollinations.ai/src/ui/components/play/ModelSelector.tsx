@@ -1,6 +1,5 @@
 import { memo } from "react";
 import { Button } from "../ui/button";
-import { TextGenerator } from "../TextGenerator";
 import { PLAY_PAGE } from "../../../content";
 
 /**
@@ -35,19 +34,19 @@ export const ModelSelector = memo(function ModelSelector({
             {showLegend && (
                 <div className="flex items-center gap-4 mb-3">
                     <div className="font-headline text-text-body-main uppercase text-xs tracking-wider font-black">
-                        <TextGenerator content={PLAY_PAGE.modelsLabel} />
+                        {PLAY_PAGE.modelsLabel.text}
                     </div>
                     <div className="flex items-center gap-3 text-[10px] font-headline uppercase tracking-wider font-black">
                         <div className="flex items-center gap-1">
                             <div className="w-3 h-3 bg-indicator-image border border-border-strong" />
                             <span className="text-text-caption">
-                                <TextGenerator content={PLAY_PAGE.imageLabel} />
+                                {PLAY_PAGE.imageLabel.text}
                             </span>
                         </div>
                         <div className="flex items-center gap-1">
                             <div className="w-3 h-3 bg-indicator-text border border-border-strong" />
                             <span className="text-text-caption">
-                                <TextGenerator content={PLAY_PAGE.textLabel} />
+                                {PLAY_PAGE.textLabel.text}
                             </span>
                         </div>
                         <div className="flex items-center gap-1">

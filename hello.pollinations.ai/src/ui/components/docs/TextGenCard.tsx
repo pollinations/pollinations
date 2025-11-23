@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
 import { Heading, Label } from "../ui/typography";
 import { Button } from "../ui/button";
-import { TextGenerator } from "../TextGenerator";
 import { DOCS_PAGE } from "../../../content";
 import { API_KEY } from "../../../api.config";
 
@@ -76,7 +75,7 @@ export function TextGenCard() {
     return (
         <div>
             <Heading variant="section">
-                <TextGenerator content={DOCS_PAGE.textGenerationTitle} />
+                {DOCS_PAGE.textGenerationTitle.text}
             </Heading>
 
             {/* Prompts/Parameters and Response - Side by Side */}
@@ -86,9 +85,7 @@ export function TextGenCard() {
                     {/* Prompt Selection */}
                     <div>
                         <Label>
-                            <TextGenerator
-                                content={DOCS_PAGE.pickPromptLabel}
-                            />
+                            {DOCS_PAGE.pickPromptLabel.text}
                         </Label>
                         <div className="flex flex-wrap gap-2">
                             {DOCS_PAGE.textPrompts.map((prompt) => (
@@ -111,7 +108,7 @@ export function TextGenCard() {
                     {/* Model Selection */}
                     <div>
                         <Label>
-                            <TextGenerator content={DOCS_PAGE.modelLabel} />
+                            {DOCS_PAGE.modelLabel.text}
                         </Label>
                         <div className="flex flex-wrap gap-2">
                             {[
@@ -137,16 +134,14 @@ export function TextGenCard() {
                             ))}
                         </div>
                         <p className="font-body text-xs text-text-caption mt-2">
-                            <TextGenerator
-                                content={DOCS_PAGE.defaultModelLabel}
-                            />
+                            {DOCS_PAGE.defaultModelLabel.text}
                         </p>
                     </div>
 
                     {/* Optional Parameters */}
                     <div>
                         <Label>
-                            <TextGenerator content={DOCS_PAGE.optionalLabel} />
+                            {DOCS_PAGE.optionalLabel.text}
                         </Label>
                         <button
                             type="button"
@@ -166,9 +161,7 @@ export function TextGenCard() {
                 <div className="bg-surface-card p-3 min-h-[200px] max-h-[200px] overflow-hidden">
                     {isLoading ? (
                         <p className="text-text-caption font-body text-xs">
-                            <TextGenerator
-                                content={DOCS_PAGE.generatingLabel}
-                            />
+                            {DOCS_PAGE.generatingLabel.text}
                         </p>
                     ) : (
                         <p className="font-body text-text-body-main text-xs leading-relaxed whitespace-pre-wrap overflow-y-auto h-full pr-2 scrollbar-hide">
@@ -213,7 +206,7 @@ export function TextGenCard() {
                 variant="copy"
                 size={null}
             >
-                <TextGenerator content={DOCS_PAGE.copyUrlButton} />
+                {DOCS_PAGE.copyUrlButton.text}
             </Button>
         </div>
     );

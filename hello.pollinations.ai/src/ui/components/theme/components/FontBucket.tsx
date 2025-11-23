@@ -1,7 +1,10 @@
 import React from "react";
 import type { FontBucketData } from "../types";
 import { TokenChip } from "./TokenChip";
-import { FONT_LIBRARY, type FontDefinition } from "../../../../content/fonts";
+import {
+    FONT_LIBRARY,
+    type FontDefinition,
+} from "../../../../content/theme/fonts";
 
 interface FontBucketProps {
     bucketId: string;

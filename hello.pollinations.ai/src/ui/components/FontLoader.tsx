@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import WebFont from "webfontloader";
-import { getGoogleFontFamilies } from "../../content/fonts";
+import { getGoogleFontFamilies } from "../../content/theme/fonts";
 
 export function FontLoader() {
     useEffect(() => {

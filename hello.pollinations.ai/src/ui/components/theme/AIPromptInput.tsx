@@ -1,8 +1,13 @@
 import { useState, useEffect, useRef } from "react";
 import { useTheme } from "../../contexts/ThemeContext";
-import { generateTheme } from "../../../content/guidelines/helpers/styling-helpers";
+import { generateTheme } from "../../../content/guideline-helpers/styling-helpers";
+import {
+    generateThemeCopyWithDefaults,
+    type ThemeCopy,
+} from "../../../content/buildPrompts";
 import type { ThemeDictionary } from "../../../content/theme/engine";
-import { SparklesIcon, SendIcon } from "lucide-react";
+import { dictionaryToTheme } from "../../../content/theme/engine";
+import { SparklesIcon, SendIcon, DownloadIcon } from "lucide-react";
 import { Button } from "../ui/button";
 
 interface AIPromptInputProps {
@@ -21,10 +26,11 @@ export function AIPromptInput({ isOpen }: AIPromptInputProps) {
     const [error, setError] = useState<Error | null>(null);
     const [generatedTheme, setGeneratedTheme] =
         useState<ThemeDictionary | null>(null);
+    const [generatedCopy, setGeneratedCopy] = useState<ThemeCopy | null>(null);
     const inputRef = useRef<HTMLInputElement>(null);
     const { setTheme } = useTheme();
 
-    // Generate theme when activePrompt changes
+    // Generate theme AND copy in parallel when activePrompt changes
     useEffect(() => {
         if (!activePrompt) return;
 
@@ -32,25 +38,41 @@ export function AIPromptInput({ isOpen }: AIPromptInputProps) {
         setLoading(true);
         setError(null);
 
-        generateTheme(activePrompt, controller.signal)
-            .then((theme) => {
+        // Check for mobile
+        const isMobile = window.matchMedia("(max-width: 768px)").matches;
+
+        // Parallel generation - Wait for BOTH to complete
+        Promise.all([
+            generateTheme(activePrompt, controller.signal),
+            generateThemeCopyWithDefaults(
+                activePrompt,
+                isMobile,
+                "en",
+                controller.signal
+            ),
+        ])
+            .then(([theme, copy]) => {
                 if (!controller.signal.aborted) {
                     setGeneratedTheme(theme);
+                    setGeneratedCopy(copy);
+
+                    // Apply BOTH at the same time
+                    setTheme(theme, activePrompt, copy);
+                    setActivePrompt(null);
+
+                    console.log("✅ [PRESET READY]");
+                    setLoading(false);
                 }
             })
             .catch((err) => {
                 if (err.name !== "AbortError" && !controller.signal.aborted) {
                     setError(err);
-                }
-            })
-            .finally(() => {
-                if (!controller.signal.aborted) {
                     setLoading(false);
                 }
             });
 
         return () => controller.abort();
-    }, [activePrompt]);
+    }, [activePrompt, setTheme]);
 
     // Focus input when opened
     useEffect(() => {
@@ -59,20 +81,67 @@ export function AIPromptInput({ isOpen }: AIPromptInputProps) {
         }
     }, [isOpen]);
 
-    // Apply theme when generated
-    useEffect(() => {
-        if (generatedTheme) {
-            setTheme(generatedTheme);
-            setActivePrompt(null);
-            setGeneratedTheme(null);
-        }
-    }, [generatedTheme, setTheme]);
+    // Apply theme when generated (keep in state for download)
 
     const handleSubmit = (e?: React.FormEvent) => {
         e?.preventDefault();
         if (prompt.trim() && !loading) {
             setActivePrompt(prompt);
+            // Clear previous generation
+            setGeneratedTheme(null);
+            setGeneratedCopy(null);
         }
+    };
+
+    const handleDownload = () => {
+        if (!generatedTheme || !generatedCopy || !prompt) return;
+
+        // Convert ThemeDictionary to LLMThemeResponse format
+        const themeInSlotFormat = dictionaryToTheme(generatedTheme);
+
+        // Generate preset file content
+        const presetName = prompt
+            .toLowerCase()
+            .replace(/[^a-z0-9]+/g, "-")
+            .replace(/^-|-$/g, "");
+        const capitalizedName = presetName
+            .split("-")
+            .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+            .join("");
+
+        const fileContent = `import { LLMThemeResponse, processTheme } from "../theme/engine";
+import type { ThemeCopy } from "../buildPrompts";
+
+export const ${capitalizedName}Theme: LLMThemeResponse = ${JSON.stringify(
+            themeInSlotFormat,
+            null,
+            2
+        )};
+
+export const ${capitalizedName}CssVariables = processTheme(${capitalizedName}Theme).cssVariables;
+
+// Copy generated with prompt: "${prompt}"
+export const ${capitalizedName}Copy: ThemeCopy = ${JSON.stringify(
+            generatedCopy,
+            null,
+            2
+        )};
+`;
+
+        // Download file
+        const blob = new Blob([fileContent], { type: "text/typescript" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `${presetName}.ts`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+
+        console.log(
+            `✅ Downloaded ${presetName}.ts - Add to /src/content/presets/`
+        );
     };
 
     if (!isOpen) return null;
@@ -88,6 +157,18 @@ export function AIPromptInput({ isOpen }: AIPromptInputProps) {
                 onSubmit={handleSubmit}
                 className="w-full max-w-4xl mx-auto flex items-center h-full px-4 md:px-8 gap-4"
             >
+                {generatedTheme && generatedCopy && (
+                    <Button
+                        type="button"
+                        onClick={handleDownload}
+                        variant="icon"
+                        size={null}
+                        className="w-6 h-6 md:w-8 md:h-8 text-text-body-main flex-shrink-0"
+                    >
+                        <DownloadIcon className="w-4 h-4 md:w-5 md:h-5" />
+                    </Button>
+                )}
+
                 <Button
                     type="submit"
                     disabled={!prompt.trim() || loading}
@@ -109,6 +190,16 @@ export function AIPromptInput({ isOpen }: AIPromptInputProps) {
                                 color: var(--text-tertiary) !important;
                                 opacity: 1 !important;
                             }
+                            
+                            /* Prevent white background on autocomplete */
+                            .theme-prompt-input:-webkit-autofill,
+                            .theme-prompt-input:-webkit-autofill:hover,
+                            .theme-prompt-input:-webkit-autofill:focus,
+                            .theme-prompt-input:-webkit-autofill:active {
+                                -webkit-box-shadow: 0 0 0 1000px var(--surface-base) inset !important;
+                                -webkit-text-fill-color: var(--text-secondary) !important;
+                                caret-color: var(--text-brand) !important;
+                            }
                         `}
                     </style>
                     <input
@@ -125,6 +216,7 @@ export function AIPromptInput({ isOpen }: AIPromptInputProps) {
                             caretColor: "var(--text-brand)",
                         }}
                         disabled={loading}
+                        autoComplete="off"
                     />
                 </div>
             </form>

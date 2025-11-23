@@ -1,5 +1,5 @@
-import type { LLMThemeResponse } from "../engine";
-import { processTheme } from "../engine";
+import type { LLMThemeResponse } from "../theme/engine";
+import { processTheme } from "../theme/engine";
 
 export const MinimalTheme: LLMThemeResponse = {
     slots: {

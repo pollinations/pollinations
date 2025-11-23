@@ -3,14 +3,17 @@
 export const DOCS_PAGE = {
     title: {
         text: "Integrate",
+        transforms: ["responsive", "translateTo", "brevity:3"],
     },
 
     intro: {
         text: "Our API is simple, powerful, and elegant. Single endpoint for text, images, and audio—this is where your vision takes flight.",
+        transforms: ["responsive", "translateTo", "brevity:25"],
     },
 
     apiReference: {
         text: "Dive into our full API docs for detailed information. AI agents can use our optimized prompt for seamless integration.",
+        transforms: ["responsive", "translateTo", "brevity:25"],
     },
 
     // Top buttons
@@ -29,6 +32,7 @@ export const DOCS_PAGE = {
     // ImageGenCard
     imageGenerationTitle: {
         text: "Image Generation",
+        transforms: ["responsive", "translateTo", "brevity:3"],
     },
 
     pickPromptLabel: {
@@ -60,6 +64,7 @@ export const DOCS_PAGE = {
     // TextGenCard
     textGenerationTitle: {
         text: "Text Generation",
+        transforms: ["responsive", "translateTo", "brevity:3"],
     },
 
     modelLabel: {
@@ -85,6 +90,7 @@ export const DOCS_PAGE = {
     // ModelDiscoveryCard
     modelDiscoveryTitle: {
         text: "Model Discovery",
+        transforms: ["responsive", "translateTo", "brevity:3"],
     },
 
     selectTypeLabel: {
@@ -110,6 +116,7 @@ export const DOCS_PAGE = {
     // AuthCard
     authenticationTitle: {
         text: "Authentication",
+        transforms: ["responsive", "translateTo", "brevity:3"],
     },
 
     keyTypesLabel: {

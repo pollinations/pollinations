@@ -1,6 +1,6 @@
-import { type LLMThemeResponse, processTheme } from "../engine";
-import type { MacroConfig } from "../macros";
-import { macrosToTheme } from "../macros-engine";
+import { type LLMThemeResponse, processTheme } from "../theme/engine";
+import type { MacroConfig } from "../theme/macros";
+import { macrosToTheme } from "../theme/macros-engine";
 
 const PALETTE = {
     charcoal: "#110518",

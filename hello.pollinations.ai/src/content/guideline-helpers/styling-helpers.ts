@@ -3,12 +3,12 @@
  * Pure logic - parsing, validation, and theme generation functions
  */
 
-import { ThemeDictionary, themeToDictionary } from "../../theme/engine";
-import { assembleStylePrompt } from "../../buildPrompts";
-import { generateText } from "../../../services/pollinationsAPI";
-import { STYLING_GUIDELINES } from "../styling";
-import type { MacroConfig } from "../../theme/macros";
-import { macrosToTheme } from "../../theme/macros-engine";
+import { ThemeDictionary, themeToDictionary } from "../theme/engine";
+import { assembleStylePrompt } from "../buildPrompts";
+import { generateText } from "../../services/pollinationsAPI";
+import { STYLING_GUIDELINES } from "../guidelines-styling";
+import type { MacroConfig } from "../theme/macros";
+import { macrosToTheme } from "../theme/macros-engine";
 
 // ==============================================
 // TYPE DEFINITIONS
@@ -130,7 +130,7 @@ ${userPrompt}
 Generate the theme JSON now:`;
 
     console.log("🎨 [THEME PROMPT]:", fullPrompt);
-    const text = await generateText(fullPrompt, 42, "openai-large", signal);
+    const text = await generateText(fullPrompt, 42, "openai-fast", signal);
     console.log("🎨 [THEME RESPONSE]:", text);
     return parseThemeResponse(text);
 }
@@ -149,3 +149,9 @@ export async function generateFullTheme(
     console.log("🎨 [THEME RESPONSE]:", text);
     return parseFullThemeResponse(text);
 }
+
+// ==============================================
+// COPY GENERATION HELPERS
+// ==============================================
+
+// Copy types moved to buildPrompts.ts

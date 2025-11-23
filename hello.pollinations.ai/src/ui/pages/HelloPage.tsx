@@ -5,24 +5,26 @@ import { Divider } from "../components/ui/divider";
 import { PageCard } from "../components/ui/page-card";
 import { PageContainer } from "../components/ui/page-container";
 import { SubCard } from "../components/ui/sub-card";
-import { TextGenerator } from "../components/TextGenerator";
 import { HELLO_PAGE } from "../../content";
+import { usePageCopy } from "../contexts/PageCopyContext";
 
 function HelloPage() {
+    const pageCopy = usePageCopy("HELLO_PAGE", HELLO_PAGE);
+
     return (
         <PageContainer>
             <PageCard>
                 {/* Title */}
                 <Title>
-                    <TextGenerator content={HELLO_PAGE.heroTitle} />
+                    {pageCopy.heroTitle.text}
                 </Title>
                 {/* Intro Section */}
                 <div className="mb-12">
                     <Body>
-                        <TextGenerator content={HELLO_PAGE.heroIntro} />
+                        {pageCopy.heroIntro.text}
                     </Body>
                     <Body spacing="none">
-                        <TextGenerator content={HELLO_PAGE.heroTagline} />
+                        {pageCopy.heroTagline.text}
                     </Body>
                 </div>
 
@@ -32,10 +34,10 @@ function HelloPage() {
                 {/* Pollen Section */}
                 <div className="mb-12">
                     <Heading variant="section">
-                        <TextGenerator content={HELLO_PAGE.pollenTitle} />
+                        {pageCopy.pollenTitle.text}
                     </Heading>
                     <Body spacing="none">
-                        <TextGenerator content={HELLO_PAGE.pollenDescription} />
+                        {pageCopy.pollenDescription.text}
                     </Body>
                 </div>
 
@@ -45,10 +47,10 @@ function HelloPage() {
                 {/* Get Pollen Section */}
                 <div className="mb-12">
                     <Heading variant="section" spacing="comfortable">
-                        <TextGenerator content={HELLO_PAGE.getPollenTitle} />
+                        {pageCopy.getPollenTitle.text}
                     </Heading>
                     <Body spacing="comfortable">
-                        <TextGenerator content={HELLO_PAGE.getPollenIntro} />
+                        {pageCopy.getPollenIntro.text}
                     </Body>
 
                     {/* Two Column Cards */}
@@ -56,30 +58,20 @@ function HelloPage() {
                         {/* Buy Pollen Card */}
                         <SubCard>
                             <Heading variant="lime" as="h3">
-                                <TextGenerator
-                                    content={HELLO_PAGE.buyCardTitle}
-                                />
+                                {pageCopy.buyCardTitle.text}
                             </Heading>
                             <Body size="sm" spacing="none">
-                                <TextGenerator
-                                    content={HELLO_PAGE.buyCardDescription}
-                                />
+                                {pageCopy.buyCardDescription.text}
                             </Body>
                         </SubCard>
 
                         {/* Sponsorship Card */}
                         <SubCard>
                             <Heading variant="rose" as="h3">
-                                <TextGenerator
-                                    content={HELLO_PAGE.sponsorshipCardTitle}
-                                />
+                                {pageCopy.sponsorshipCardTitle.text}
                             </Heading>
                             <Body size="sm" spacing="none">
-                                <TextGenerator
-                                    content={
-                                        HELLO_PAGE.sponsorshipCardDescription
-                                    }
-                                />
+                                {pageCopy.sponsorshipCardDescription.text}
                             </Body>
                         </SubCard>
                     </div>
@@ -91,14 +83,10 @@ function HelloPage() {
                 {/* Sponsorship Tiers */}
                 <div className="mb-12">
                     <Heading variant="section">
-                        <TextGenerator
-                            content={HELLO_PAGE.sponsorshipTiersTitle}
-                        />
+                        {pageCopy.sponsorshipTiersTitle.text}
                     </Heading>
                     <Body spacing="none">
-                        <TextGenerator
-                            content={HELLO_PAGE.sponsorshipTiersDescription}
-                        />
+                        {pageCopy.sponsorshipTiersDescription.text}
                     </Body>
                 </div>
 
@@ -108,35 +96,23 @@ function HelloPage() {
                 {/* Creative Launchpad */}
                 <div className="mb-12">
                     <Heading variant="section">
-                        <TextGenerator
-                            content={HELLO_PAGE.creativeLaunchpadTitle}
-                        />
+                        {pageCopy.creativeLaunchpadTitle.text}
                     </Heading>
                     <Body spacing="comfortable">
-                        <TextGenerator
-                            content={HELLO_PAGE.creativeLaunchpadIntro}
-                        />
+                        {pageCopy.creativeLaunchpadIntro.text}
                     </Body>
                     <ul className="space-y-3">
                         <li className="font-body text-sm text-text-body-secondary leading-relaxed pl-4 border-l-2 border-border-highlight">
-                            <TextGenerator
-                                content={HELLO_PAGE.creativeLaunchpadFeature1}
-                            />
+                            {pageCopy.creativeLaunchpadFeature1.text}
                         </li>
                         <li className="font-body text-sm text-text-body-secondary leading-relaxed pl-4 border-l-2 border-border-highlight">
-                            <TextGenerator
-                                content={HELLO_PAGE.creativeLaunchpadFeature2}
-                            />
+                            {pageCopy.creativeLaunchpadFeature2.text}
                         </li>
                         <li className="font-body text-sm text-text-body-secondary leading-relaxed pl-4 border-l-2 border-border-highlight">
-                            <TextGenerator
-                                content={HELLO_PAGE.creativeLaunchpadFeature3}
-                            />
+                            {pageCopy.creativeLaunchpadFeature3.text}
                         </li>
                         <li className="font-body text-sm text-text-body-secondary leading-relaxed pl-4 border-l-2 border-border-highlight">
-                            <TextGenerator
-                                content={HELLO_PAGE.creativeLaunchpadFeature4}
-                            />
+                            {pageCopy.creativeLaunchpadFeature4.text}
                         </li>
                     </ul>
                 </div>
@@ -147,26 +123,20 @@ function HelloPage() {
                 {/* The Difference */}
                 <div className="mb-12">
                     <Heading variant="section">
-                        <TextGenerator content={HELLO_PAGE.differenceTitle} />
+                        {pageCopy.differenceTitle.text}
                     </Heading>
                     <Body spacing="comfortable">
-                        <TextGenerator content={HELLO_PAGE.differenceIntro} />
+                        {pageCopy.differenceIntro.text}
                     </Body>
                     <ul className="space-y-3">
                         <li className="font-body text-sm text-text-body-secondary leading-relaxed pl-4 border-l-2 border-border-brand">
-                            <TextGenerator
-                                content={HELLO_PAGE.differenceFeature1}
-                            />
+                            {pageCopy.differenceFeature1.text}
                         </li>
                         <li className="font-body text-sm text-text-body-secondary leading-relaxed pl-4 border-l-2 border-border-brand">
-                            <TextGenerator
-                                content={HELLO_PAGE.differenceFeature2}
-                            />
+                            {pageCopy.differenceFeature2.text}
                         </li>
                         <li className="font-body text-sm text-text-body-secondary leading-relaxed pl-4 border-l-2 border-border-brand">
-                            <TextGenerator
-                                content={HELLO_PAGE.differenceFeature3}
-                            />
+                            {pageCopy.differenceFeature3.text}
                         </li>
                     </ul>
                 </div>
@@ -177,35 +147,23 @@ function HelloPage() {
                 {/* Roadmap */}
                 <div className="mb-12">
                     <Heading variant="section">
-                        <TextGenerator content={HELLO_PAGE.roadmapTitle} />
+                        {pageCopy.roadmapTitle.text}
                     </Heading>
                     <Body spacing="comfortable">
-                        <TextGenerator content={HELLO_PAGE.roadmapIntro} />
+                        {pageCopy.roadmapIntro.text}
                     </Body>
                     <div className="space-y-4">
                         <SubCard size="compact">
                             <div className="flex flex-col md:flex-row gap-3">
                                 <div className="font-headline text-xs font-black text-text-highlight uppercase tracking-wider md:w-32">
-                                    <TextGenerator
-                                        content={
-                                            HELLO_PAGE.roadmapComingSoonLabel
-                                        }
-                                    />
+                                    {pageCopy.roadmapComingSoonLabel.text}
                                 </div>
                                 <div className="flex-1">
                                     <p className="font-headline text-sm font-black text-text-body-main mb-2">
-                                        <TextGenerator
-                                            content={
-                                                HELLO_PAGE.roadmapComingSoonTitle
-                                            }
-                                        />
+                                        {pageCopy.roadmapComingSoonTitle.text}
                                     </p>
                                     <p className="font-body text-xs text-text-body-secondary">
-                                        <TextGenerator
-                                            content={
-                                                HELLO_PAGE.roadmapComingSoonDescription
-                                            }
-                                        />
+                                        {pageCopy.roadmapComingSoonDescription.text}
                                     </p>
                                 </div>
                             </div>
@@ -213,22 +171,14 @@ function HelloPage() {
                         <SubCard size="compact">
                             <div className="flex flex-col md:flex-row gap-3">
                                 <div className="font-headline text-xs font-black text-text-highlight uppercase tracking-wider md:w-32">
-                                    <TextGenerator
-                                        content={HELLO_PAGE.roadmapQ1Label}
-                                    />
+                                    {pageCopy.roadmapQ1Label.text}
                                 </div>
                                 <div className="flex-1">
                                     <p className="font-headline text-sm font-black text-text-body-main mb-2">
-                                        <TextGenerator
-                                            content={HELLO_PAGE.roadmapQ1Title}
-                                        />
+                                        {pageCopy.roadmapQ1Title.text}
                                     </p>
                                     <p className="font-body text-xs text-text-body-secondary">
-                                        <TextGenerator
-                                            content={
-                                                HELLO_PAGE.roadmapQ1Description
-                                            }
-                                        />
+                                        {pageCopy.roadmapQ1Description.text}
                                     </p>
                                 </div>
                             </div>
@@ -236,24 +186,14 @@ function HelloPage() {
                         <SubCard size="compact">
                             <div className="flex flex-col md:flex-row gap-3">
                                 <div className="font-headline text-xs font-black text-text-highlight uppercase tracking-wider md:w-32">
-                                    <TextGenerator
-                                        content={HELLO_PAGE.roadmapOngoingLabel}
-                                    />
+                                    {pageCopy.roadmapOngoingLabel.text}
                                 </div>
                                 <div className="flex-1">
                                     <p className="font-headline text-sm font-black text-text-body-main mb-2">
-                                        <TextGenerator
-                                            content={
-                                                HELLO_PAGE.roadmapOngoingTitle
-                                            }
-                                        />
+                                        {pageCopy.roadmapOngoingTitle.text}
                                     </p>
                                     <p className="font-body text-xs text-text-body-secondary">
-                                        <TextGenerator
-                                            content={
-                                                HELLO_PAGE.roadmapOngoingDescription
-                                            }
-                                        />
+                                        {pageCopy.roadmapOngoingDescription.text}
                                     </p>
                                 </div>
                             </div>
@@ -267,10 +207,10 @@ function HelloPage() {
                 {/* CTA */}
                 <div>
                     <Heading variant="section" spacing="comfortable">
-                        <TextGenerator content={HELLO_PAGE.ctaTitle} />
+                        {pageCopy.ctaTitle.text}
                     </Heading>
                     <Body spacing="comfortable">
-                        <TextGenerator content={HELLO_PAGE.ctaDescription} />
+                        {pageCopy.ctaDescription.text}
                     </Body>
                     <div className="flex flex-wrap gap-3">
                         <Button
@@ -281,9 +221,7 @@ function HelloPage() {
                             variant="primary"
                             size="lg"
                         >
-                            <TextGenerator
-                                content={HELLO_PAGE.getApiKeyButton}
-                            />
+                            {pageCopy.getApiKeyButton.text}
                             <ExternalLinkIcon className="w-4 h-4 stroke-text-highlight" />
                         </Button>
                         <Button
@@ -292,9 +230,7 @@ function HelloPage() {
                             variant="secondary"
                             size="lg"
                         >
-                            <TextGenerator
-                                content={HELLO_PAGE.learnSponsorshipButton}
-                            />
+                            {pageCopy.learnSponsorshipButton.text}
                             <ExternalLinkIcon className="w-4 h-4 text-text-body-main" />
                         </Button>
                     </div>

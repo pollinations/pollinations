@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
 import { Heading, Label } from "../ui/typography";
 import { Button } from "../ui/button";
-import { TextGenerator } from "../TextGenerator";
 import { DOCS_PAGE } from "../../../content";
 import { API_KEY } from "../../../api.config";
 
@@ -111,7 +110,7 @@ export function ImageGenCard() {
     return (
         <div>
             <Heading variant="section">
-                <TextGenerator content={DOCS_PAGE.imageGenerationTitle} />
+                {DOCS_PAGE.imageGenerationTitle.text}
             </Heading>
 
             {/* Prompts/Parameters and Image Preview - Side by Side */}
@@ -121,9 +120,7 @@ export function ImageGenCard() {
                     {/* Prompt Selection */}
                     <div>
                         <Label>
-                            <TextGenerator
-                                content={DOCS_PAGE.pickPromptLabel}
-                            />
+                            {DOCS_PAGE.pickPromptLabel.text}
                         </Label>
                         <div className="flex flex-wrap gap-2">
                             {DOCS_PAGE.imagePrompts.map((prompt) => (
@@ -146,9 +143,7 @@ export function ImageGenCard() {
                     {/* Optional Parameters */}
                     <div>
                         <Label>
-                            <TextGenerator
-                                content={DOCS_PAGE.optionalParametersLabel}
-                            />
+                            {DOCS_PAGE.optionalParametersLabel.text}
                         </Label>
                         <div className="flex flex-wrap gap-2">
                             {[
@@ -180,9 +175,7 @@ export function ImageGenCard() {
                 <div className="bg-input-background flex items-center justify-center min-h-[240px] max-w-[300px] max-h-[300px] overflow-hidden">
                     {isLoading ? (
                         <p className="text-text-caption text-xs">
-                            <TextGenerator
-                                content={DOCS_PAGE.generatingLabel}
-                            />
+                            {DOCS_PAGE.generatingLabel.text}
                         </p>
                     ) : imageUrl ? (
                         <img
@@ -226,7 +219,7 @@ export function ImageGenCard() {
                 variant="copy"
                 size={null}
             >
-                <TextGenerator content={DOCS_PAGE.copyUrlButton} />
+                {DOCS_PAGE.copyUrlButton.text}
             </Button>
         </div>
     );

@@ -1,42 +1,56 @@
 /**
  * PROMPT ASSEMBLER
  * Central system for combining guidelines + inputs → full prompts
- * Implements the three main pipelines: GEN COPY, GEN STYLE, GEN SUPPORTER LOGO
+ * Implements prompt assembly for COPY, STYLE, and LOGO pipelines
  */
 
-import { WRITING_GUIDELINES } from "./guidelines/writing";
-import { responsive, translateTo } from "./guidelines/helpers/writing-helpers";
-import { STYLING_GUIDELINES } from "./guidelines/styling";
-import { DRAWING_GUIDELINES } from "./guidelines/drawing";
+import { STYLING_GUIDELINES } from "./guidelines-styling";
+import { DRAWING_GUIDELINES } from "./guidelines-drawing";
+import { generateThemeCopy, type PageCopy, type ThemeCopy } from "./guideline-helpers/writing-helpers";
+
+// Import copy files
+import { HELLO_PAGE } from "./copy/hello";
+import { APPS_PAGE } from "./copy/apps";
+import { DOCS_PAGE } from "./copy/docs";
+import { COMMUNITY_PAGE } from "./copy/community";
+import { PLAY_PAGE } from "./copy/play";
+
+// Re-export types for convenience
+export type { PageCopy, ThemeCopy };
 
 /**
- * GEN COPY Pipeline
- * Assembles prompts for text/copy generation
+ * Wrapper for GEN COPY Pipeline
+ * Prepares page copy objects and delegates to writing-helpers
  */
-export function assembleCopyPrompt(
-    websiteInfo: string,
-    targetDuration: "mobile" | "desktop",
-    targetLanguage: string,
-): string {
-    // Pure logic - get transforms from writing guidelines
-    const durationTransform = responsive()({
-        isMobile: targetDuration === "mobile",
-    });
-    const languageTransform = translateTo(targetLanguage)();
+export async function generateThemeCopyWithDefaults(
+    themeVibe: string,
+    isMobile: boolean,
+    targetLanguage = "en",
+    signal?: AbortSignal,
+): Promise<ThemeCopy> {
+    const pageCopyObjects = {
+        HELLO_PAGE,
+        APPS_PAGE,
+        DOCS_PAGE,
+        COMMUNITY_PAGE,
+        PLAY_PAGE,
+    };
 
-    const modifiers = [durationTransform, languageTransform]
-        .filter(Boolean)
-        .join("\n");
-
-    return `${WRITING_GUIDELINES}
-
-${modifiers}
-
-Website Content to Transform:
-${websiteInfo}
-
-Generate the text copy now:`;
+    return generateThemeCopy(
+        themeVibe,
+        isMobile,
+        pageCopyObjects,
+        targetLanguage,
+        signal
+    );
 }
+
+// Re-export for convenience
+export { generateThemeCopy };
+
+// ==============================================
+// PROMPT ASSEMBLY FUNCTIONS
+// ==============================================
 
 /**
  * GEN STYLE Pipeline

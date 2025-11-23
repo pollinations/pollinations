@@ -1,9 +1,8 @@
 import { useState, useEffect } from "react";
 import { Button } from "../ui/button";
 import { CloseIcon } from "../../assets/CloseIcon";
-import { useModelList } from "../../../hooks/useModelList";
+import type { Model } from "../../../hooks/useModelList";
 
-import { TextGenerator } from "../TextGenerator";
 import { PLAY_PAGE } from "../../../content";
 import { API_KEY } from "../../../api.config";
 
@@ -11,6 +10,8 @@ interface PlayGeneratorProps {
     selectedModel: string;
     prompt: string;
     onPromptChange?: (prompt: string) => void;
+    imageModels: Model[];
+    textModels: Model[];
 }
 
 /**
@@ -19,13 +20,15 @@ interface PlayGeneratorProps {
  * Handles prompt input, parameters, and generation
  * Model selection is managed by parent PlayPage
  */
-export function PlayGenerator({ selectedModel, prompt }: PlayGeneratorProps) {
+export function PlayGenerator({
+    selectedModel,
+    prompt,
+    imageModels,
+    textModels,
+}: PlayGeneratorProps) {
     const [result, setResult] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(false);
     const [uploadedImages, setUploadedImages] = useState<string[]>([]);
-
-    // Fetch available models for type checking
-    const { imageModels, textModels } = useModelList();
 
     // Cleanup blob URLs when result changes
     useEffect(() => {
@@ -146,10 +149,10 @@ export function PlayGenerator({ selectedModel, prompt }: PlayGeneratorProps) {
                 <div className="mb-6">
                     <div className="flex items-baseline gap-2 mb-2">
                         <label className="font-headline text-text-body-main uppercase text-xs tracking-wider font-black">
-                            <TextGenerator content={PLAY_PAGE.addImagesLabel} />
+                            {PLAY_PAGE.addImagesLabel.text}
                         </label>
                         <span className="font-body text-[10px] text-text-caption">
-                            <TextGenerator content={PLAY_PAGE.upToFourLabel} />
+                            {PLAY_PAGE.upToFourLabel.text}
                         </span>
                     </div>
                     <div className="grid grid-cols-4 gap-1 max-w-xs">
@@ -249,7 +252,7 @@ export function PlayGenerator({ selectedModel, prompt }: PlayGeneratorProps) {
                                 htmlFor="image-width"
                                 className="block font-headline text-text-body-main mb-2 uppercase text-xs tracking-wider font-black"
                             >
-                                <TextGenerator content={PLAY_PAGE.widthLabel} />
+                                {PLAY_PAGE.widthLabel.text}
                             </label>
                             <input
                                 id="image-width"
@@ -267,9 +270,7 @@ export function PlayGenerator({ selectedModel, prompt }: PlayGeneratorProps) {
                                 htmlFor="image-height"
                                 className="block font-headline text-text-body-main mb-2 uppercase text-xs tracking-wider font-black"
                             >
-                                <TextGenerator
-                                    content={PLAY_PAGE.heightLabel}
-                                />
+                                {PLAY_PAGE.heightLabel.text}
                             </label>
                             <input
                                 id="image-height"
@@ -287,7 +288,7 @@ export function PlayGenerator({ selectedModel, prompt }: PlayGeneratorProps) {
                                 htmlFor="image-seed"
                                 className="block font-headline text-text-body-main mb-2 uppercase text-xs tracking-wider font-black"
                             >
-                                <TextGenerator content={PLAY_PAGE.seedLabel} />
+                                {PLAY_PAGE.seedLabel.text}
                             </label>
                             <input
                                 id="image-seed"
@@ -306,9 +307,7 @@ export function PlayGenerator({ selectedModel, prompt }: PlayGeneratorProps) {
                                 htmlFor="enhance-prompt"
                                 className="block font-headline text-text-body-main mb-2 uppercase text-xs tracking-wider font-black"
                             >
-                                <TextGenerator
-                                    content={PLAY_PAGE.enhanceLabel}
-                                />
+                                {PLAY_PAGE.enhanceLabel.text}
                             </label>
                             <label className="relative flex items-center justify-center h-[52px] bg-input-background hover:bg-input-background transition-colors cursor-pointer select-none group">
                                 <input
@@ -343,7 +342,7 @@ export function PlayGenerator({ selectedModel, prompt }: PlayGeneratorProps) {
                                 htmlFor="remove-logo"
                                 className="block font-headline text-text-body-main mb-2 uppercase text-xs tracking-wider font-black"
                             >
-                                <TextGenerator content={PLAY_PAGE.logoLabel} />
+                                {PLAY_PAGE.logoLabel.text}
                             </label>
                             <label className="relative flex items-center justify-center h-[52px] bg-input-background hover:bg-input-background transition-colors cursor-pointer select-none group">
                                 <input
@@ -389,15 +388,13 @@ export function PlayGenerator({ selectedModel, prompt }: PlayGeneratorProps) {
                 }
                 className="mb-6"
             >
-                {isLoading ? (
-                    <TextGenerator content={PLAY_PAGE.generatingText} />
-                ) : isAudioModel ? (
-                    "Generate Audio"
-                ) : isImageModel ? (
-                    <TextGenerator content={PLAY_PAGE.generateImageButton} />
-                ) : (
-                    <TextGenerator content={PLAY_PAGE.generateTextButton} />
-                )}
+                {isLoading
+                    ? PLAY_PAGE.generatingText.text
+                    : isAudioModel
+                    ? "Generate Audio"
+                    : isImageModel
+                    ? PLAY_PAGE.generateImageButton.text
+                    : PLAY_PAGE.generateTextButton.text}
             </Button>
 
             {/* Result Display */}

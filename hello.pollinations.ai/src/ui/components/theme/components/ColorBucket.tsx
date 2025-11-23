@@ -1,8 +1,7 @@
 import React from "react";
-import { DicesIcon } from "lucide-react";
 import type { ColorBucketData } from "../types";
 import { TokenChip } from "./TokenChip";
-import { rgbaToHex, getRandomColor } from "../utils/color-utils";
+import { rgbaToHex } from "../utils/color-utils";
 
 interface ColorBucketProps {
     bucketId: string;
@@ -77,14 +76,6 @@ export function ColorBucket({
                     onChange={(e) => onColorChange(bucketId, e.target.value)}
                     className="flex-1 min-w-0 text-[10px] font-mono text-gray-500 bg-transparent focus:outline-none focus:text-black"
                 />
-                <button
-                    type="button"
-                    onClick={() => onColorChange(bucketId, getRandomColor())}
-                    className="p-1 text-gray-400 hover:text-black transition-colors flex-shrink-0"
-                    title="Randomize this color"
-                >
-                    <DicesIcon className="w-3 h-3" />
-                </button>
             </div>
 
             {/* Token List - wrapped horizontally */}

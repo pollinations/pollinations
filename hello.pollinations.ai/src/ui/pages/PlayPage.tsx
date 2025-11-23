@@ -2,12 +2,12 @@ import { useState, useMemo } from "react";
 import { Title, Body } from "../components/ui/typography";
 import { PageCard } from "../components/ui/page-card";
 import { PageContainer } from "../components/ui/page-container";
-import { TextGenerator } from "../components/TextGenerator";
 import { PLAY_PAGE } from "../../content";
 import { ImageFeed } from "../components/play/ImageFeed";
 import { PlayGenerator } from "../components/play/PlayGenerator";
 import { ModelSelector } from "../components/play/ModelSelector";
 import { useModelList } from "../../hooks/useModelList";
+import { usePageCopy } from "../contexts/PageCopyContext";
 
 /**
  * PlayPage - Main playground page
@@ -20,6 +20,9 @@ function PlayPage() {
     const [prompt, setPrompt] = useState(""); // Shared prompt state
     const [currentFeedPrompt, setCurrentFeedPrompt] = useState(""); // Prompt from feed
     const { imageModels, textModels } = useModelList();
+
+    // Get page copy (AI-generated or fallback)
+    const pageCopy = usePageCopy("PLAY_PAGE", PLAY_PAGE);
 
     // Memoize combined models array
     const allModels = useMemo(
@@ -39,13 +42,9 @@ function PlayPage() {
                 {/* Title with toggle */}
                 <div className="flex items-center gap-4 mb-8">
                     <Title spacing="none">
-                        <TextGenerator
-                            content={
-                                view === "play"
-                                    ? PLAY_PAGE.createTitle
-                                    : PLAY_PAGE.watchTitle
-                            }
-                        />
+                        {view === "play"
+                            ? pageCopy.createTitle.text
+                            : pageCopy.watchTitle.text}
                     </Title>
                     <button
                         type="button"
@@ -54,25 +53,17 @@ function PlayPage() {
                         }
                         className="font-body text-sm text-text-body-tertiary hover:text-text-body-main transition-colors"
                     >
-                        <TextGenerator
-                            content={
-                                view === "play"
-                                    ? PLAY_PAGE.toggleWatchOthers
-                                    : PLAY_PAGE.toggleBackToPlay
-                            }
-                        />
+                        {view === "play"
+                            ? pageCopy.toggleWatchOthers.text
+                            : pageCopy.toggleBackToPlay.text}
                     </button>
                 </div>
 
                 {/* Description */}
                 <Body className="mb-8">
-                    <TextGenerator
-                        content={
-                            view === "play"
-                                ? PLAY_PAGE.createDescription
-                                : PLAY_PAGE.feedDescription
-                        }
-                    />
+                    {view === "play"
+                        ? pageCopy.createDescription.text
+                        : pageCopy.feedDescription.text}
                 </Body>
 
                 {/* Model Selector - Independent of view state */}
@@ -85,7 +76,7 @@ function PlayPage() {
                 {/* Prompt - Independent of view state */}
                 <div className="mb-6">
                     <label className="block font-headline text-text-body-main mb-2 uppercase text-xs tracking-wider font-black">
-                        <TextGenerator content={PLAY_PAGE.promptLabel} />
+                        {pageCopy.promptLabel.text}
                     </label>
                     {view === "play" ? (
                         <textarea
@@ -107,11 +98,15 @@ function PlayPage() {
                         selectedModel={selectedModel}
                         prompt={prompt}
                         onPromptChange={setPrompt}
+                        imageModels={imageModels}
+                        textModels={textModels}
                     />
                 ) : (
                     <ImageFeed
                         selectedModel={selectedModel}
                         onFeedPromptChange={setCurrentFeedPrompt}
+                        imageModels={imageModels}
+                        textModels={textModels}
                     />
                 )}
             </PageCard>

@@ -35,10 +35,10 @@ function Layout() {
                     showHeader ? "translate-y-0" : "-translate-y-full"
                 }`}
             >
-                <div className="w-full px-4 py-3 md:py-4">
-                    <div className="max-w-4xl mx-auto pl-2 md:pl-8 relative">
+                <div className="w-full px-4 py-3 pb-5 md:py-4 md:pb-5">
+                    <div className="max-w-4xl mx-auto pl-2 md:pl-8 relative overflow-visible">
                         {/* Mobile: Logo left, Two rows of buttons right */}
-                        <div className="md:hidden flex items-center gap-3">
+                        <div className="md:hidden flex items-center gap-3 overflow-visible">
                             {/* Logo - Left side */}
                             <div className="relative">
                                 <button
@@ -51,9 +51,9 @@ function Layout() {
                             </div>
 
                             {/* Navigation Tabs - Two rows right-aligned */}
-                            <div className="flex flex-col gap-2 flex-1">
+                            <div className="flex flex-col gap-2 flex-1 pb-2 overflow-visible">
                                 {/* Row 1: Hello, Play, Docs */}
-                                <div className="flex gap-2 justify-end">
+                                <div className="flex gap-2 justify-end overflow-visible">
                                     {tabs.slice(0, 3).map((tab) => (
                                         <NavLink
                                             key={tab.path}
@@ -75,7 +75,7 @@ function Layout() {
                                     ))}
                                 </div>
                                 {/* Row 2: Apps, Community */}
-                                <div className="flex gap-2 justify-end">
+                                <div className="flex gap-2 justify-end overflow-visible pb-1">
                                     {tabs.slice(3, 5).map((tab) => (
                                         <NavLink
                                             key={tab.path}
@@ -100,8 +100,8 @@ function Layout() {
                         </div>
 
                         {/* Desktop: Logo left, Buttons right */}
-                        <div className="hidden md:block">
-                            <div className="flex items-center justify-between gap-4 overflow-visible">
+                        <div className="hidden md:block overflow-visible">
+                            <div className="flex items-center justify-between gap-4 overflow-visible pb-1">
                                 {/* Logo - Left side */}
                                 <div className="relative">
                                     <button
@@ -114,7 +114,7 @@ function Layout() {
                                 </div>
 
                                 {/* Navigation Tabs + Social Links - Right side */}
-                                <div className="flex gap-3 items-center overflow-x-auto scrollbar-hide">
+                                <div className="flex gap-3 items-center overflow-x-auto overflow-y-visible scrollbar-hide pb-2">
                                     {/* Navigation Tabs */}
                                     {tabs.map((tab) => (
                                         <NavLink

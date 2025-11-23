@@ -7,7 +7,6 @@ export function macrosToTheme(config: MacroConfig): LLMThemeResponse {
     const borderRadius: Record<string, string> = {};
     const fonts: Record<string, string> = {};
 
-    // Helper to add semantic token to color map
     const addColor = (semanticId: SemanticTokenId, hex: string) => {
         if (!colorMap[hex]) {
             colorMap[hex] = [];
@@ -15,12 +14,10 @@ export function macrosToTheme(config: MacroConfig): LLMThemeResponse {
         colorMap[hex].push(semanticId);
     };
 
-    // Helper to add radius
     const addRadius = (semanticId: SemanticTokenId, value: string) => {
         borderRadius[semanticId] = value;
     };
 
-    // Helper to add font
     const addFont = (semanticId: SemanticTokenId, value: string) => {
         fonts[semanticId] = value;
     };
@@ -32,7 +29,7 @@ export function macrosToTheme(config: MacroConfig): LLMThemeResponse {
     addColor("text.tertiary", config.text.tertiary);
     addColor("text.caption", config.text.caption);
     addColor("text.inverse", config.text.inverse);
-    addColor("text.brand", config.brandSpecial.brandMain); // Driven by brandMain
+    addColor("text.brand", config.brandSpecial.brandMain);
     addColor("text.highlight", config.text.highlight);
 
     // Surfaces
@@ -61,7 +58,7 @@ export function macrosToTheme(config: MacroConfig): LLMThemeResponse {
     addColor("indicator.audio", config.brandSpecial.indicatorAudio);
 
     // Borders
-    addColor("border.brand", config.brandSpecial.brandMain); // Driven by brandMain
+    addColor("border.brand", config.brandSpecial.brandMain);
     addColor("border.highlight", config.borders.highlight);
     addColor("border.main", config.borders.main);
     addColor("border.strong", config.borders.strong);
@@ -97,7 +94,7 @@ export function macrosToTheme(config: MacroConfig): LLMThemeResponse {
     // 4. Construct LLMThemeResponse
     const slots: Record<string, ThemeSlot> = {};
     Object.entries(colorMap).forEach(([hex, ids], index) => {
-        slots[`slot_${index}`] = { hex, ids };
+        slots[`slot_${index}`] = { hex, ids: ids as SemanticTokenId[] };
     });
 
     return {

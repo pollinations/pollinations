@@ -4,7 +4,6 @@ export interface TextMacro {
     tertiary: string;
     caption: string;
     inverse: string;
-    // brand removed in v1.1 - driven by brandSpecial.brandMain
     highlight: string;
 }
 
@@ -16,18 +15,15 @@ export interface SurfacesMacro {
 
 export interface ButtonPrimaryMacro {
     bg: string;
-    border: string; // new v1.1
+    border: string;
 }
 
 export interface ButtonSecondaryMacro {
     bg: string;
-    border: string; // new v1.1
+    border: string;
 }
 
 export interface ButtonGhostMacro {
-    // Usually ghost buttons don't have bg, but we might need text color or hover
-    // In current system, we have hover overlay and active overlay which are generic
-    // Let's stick to what we have in tokens.ts
     hoverOverlay: string;
     activeOverlay: string;
     focusRing: string;
@@ -36,12 +32,11 @@ export interface ButtonGhostMacro {
 
 export interface InputsMacro {
     bg: string;
-    border: string; // new v1.1
-    placeholder: string; // new v1.1
+    border: string;
+    placeholder: string;
 }
 
 export interface BordersMacro {
-    // brand removed in v1.1 - driven by brandSpecial.brandMain
     highlight: string;
     main: string;
     strong: string;
@@ -68,12 +63,9 @@ export interface ShadowsMacro {
 }
 
 export interface BrandSpecialMacro {
-    // Core brand palette
-    brandMain: string; // new v1.1: main brand color used across text/borders
-    // Logos
+    brandMain: string;
     logoMain: string;
     logoAccent: string;
-    // Indicators
     indicatorImage: string;
     indicatorText: string;
     indicatorAudio: string;

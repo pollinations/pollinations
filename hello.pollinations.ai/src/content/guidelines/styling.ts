@@ -60,7 +60,6 @@ You MUST return ONLY a single JSON object with this exact structure:
     "tertiary": "#...",     // Least important text
     "caption": "#...",      // Small labels
     "inverse": "#...",      // Text on opposite background (e.g. white on dark)
-    "brand": "#...",        // Text in brand color
     "highlight": "#..."     // Text in highlight color
   },
   "surfaces": {
@@ -69,14 +68,18 @@ You MUST return ONLY a single JSON object with this exact structure:
     "base": "#..."          // Secondary background / sidebar
   },
   "inputs": {
-    "bg": "#..."            // Input field background
+    "bg": "#...",           // Input field background
+    "border": "#...",       // Input field border
+    "placeholder": "#..."   // Input placeholder text
   },
   "buttons": {
     "primary": {
-      "bg": "#..."          // Primary button background
+      "bg": "#...",         // Primary button background
+      "border": "#..."      // Primary button border
     },
     "secondary": {
-      "bg": "#..."          // Secondary button background
+      "bg": "#...",         // Secondary button background
+      "border": "#..."      // Secondary button border
     },
     "ghost": {
       "disabledBg": "#...", // Disabled state background
@@ -86,7 +89,6 @@ You MUST return ONLY a single JSON object with this exact structure:
     }
   },
   "borders": {
-    "brand": "#...",
     "highlight": "#...",
     "main": "#...",
     "strong": "#...",
@@ -99,6 +101,7 @@ You MUST return ONLY a single JSON object with this exact structure:
     "highlight": { "sm": "#...", "md": "#..." }
   },
   "brandSpecial": {
+    "brandMain": "#...",    // Main brand color
     "logoMain": "#...",
     "logoAccent": "#...",
     "indicatorImage": "#...",

@@ -1,4 +1,5 @@
-import { LLMThemeResponse, processTheme } from "../engine";
+import type { LLMThemeResponse } from "../engine";
+import { processTheme } from "../engine";
 
 export const SnowTheme: LLMThemeResponse = {
     slots: {
@@ -8,7 +9,12 @@ export const SnowTheme: LLMThemeResponse = {
         },
         slot_1: {
             hex: "#405066",
-            ids: ["text.tertiary", "text.caption", "border.strong"],
+            ids: [
+                "text.tertiary",
+                "text.caption",
+                "input.placeholder",
+                "border.strong",
+            ],
         },
         slot_2: {
             hex: "#FFFFFF",
@@ -36,31 +42,31 @@ export const SnowTheme: LLMThemeResponse = {
         },
         slot_8: {
             hex: "#F0F3F7",
-            ids: ["input.bg", "border.faint"],
+            ids: ["input.bg", "input.border", "border.faint"],
         },
         slot_9: {
             hex: "#2494D1",
-            ids: ["button.primary.bg", "border.brand"],
+            ids: ["button.primary.bg", "button.primary.border", "border.brand"],
         },
         slot_10: {
             hex: "#D6E6F4",
-            ids: ["button.secondary.bg"],
+            ids: ["button.secondary.bg", "button.secondary.border"],
         },
         slot_11: {
             hex: "#BCCEDB",
-            ids: ["button.ghost.disabledBg"],
+            ids: ["button.disabled.bg"],
         },
         slot_12: {
             hex: "rgba(58,120,168,0.12)",
-            ids: ["button.ghost.hoverOverlay"],
+            ids: ["button.hover.overlay"],
         },
         slot_13: {
             hex: "rgba(37,117,183,0.14)",
-            ids: ["button.ghost.activeOverlay"],
+            ids: ["button.active.overlay"],
         },
         slot_14: {
             hex: "#A2CAE3",
-            ids: ["button.ghost.focusRing"],
+            ids: ["button.focus.ring"],
         },
         slot_15: {
             hex: "#B4F3F2",

@@ -4,7 +4,7 @@ export type SemanticTokenId =
     | "text.secondary"
     | "text.tertiary"
     | "text.caption"
-    | "text.inverse" // text.on-color
+    | "text.inverse"
     | "text.brand"
     | "text.highlight"
 
@@ -15,9 +15,9 @@ export type SemanticTokenId =
 
     // Buttons
     | "button.primary.bg"
-    | "button.primary.border" // new
+    | "button.primary.border"
     | "button.secondary.bg"
-    | "button.secondary.border" // new
+    | "button.secondary.border"
     | "button.disabled.bg"
     | "button.hover.overlay"
     | "button.active.overlay"
@@ -25,9 +25,8 @@ export type SemanticTokenId =
 
     // Inputs
     | "input.bg"
-    | "input.border" // new
-    | "input.placeholder" // new
-    | "input.text" // implied by text.primary usually, but good to have if needed?
+    | "input.border"
+    | "input.placeholder"
 
     // Indicators
     | "indicator.image"
@@ -55,10 +54,9 @@ export type SemanticTokenId =
 
     // Logos
     | "logo.main"
-    | "logo.accent" // logo.shade
+    | "logo.accent"
 
     // Radius
-    // Wait, let's map strictly to tokens.ts first.
     | "radius.button"
     | "radius.card"
     | "radius.input"

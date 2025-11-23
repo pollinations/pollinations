@@ -1,4 +1,5 @@
-import { LLMThemeResponse, processTheme } from "../engine";
+import type { LLMThemeResponse } from "../engine";
+import { processTheme } from "../engine";
 
 export const MinimalTheme: LLMThemeResponse = {
     slots: {
@@ -12,6 +13,7 @@ export const MinimalTheme: LLMThemeResponse = {
                 "text.brand",
                 "text.highlight",
                 "button.primary.bg",
+                "button.primary.border",
                 "border.strong",
                 "shadow.dark.sm",
                 "shadow.dark.md",
@@ -28,11 +30,16 @@ export const MinimalTheme: LLMThemeResponse = {
                 "surface.card",
                 "surface.base",
                 "input.bg",
+                "input.border",
             ],
         },
         slot_2: {
             hex: "#e0e0e0",
-            ids: ["button.secondary.bg", "button.ghost.disabledBg"],
+            ids: [
+                "button.secondary.bg",
+                "button.secondary.border",
+                "button.disabled.bg",
+            ],
         },
         slot_3: {
             hex: "#000000",
@@ -45,7 +52,7 @@ export const MinimalTheme: LLMThemeResponse = {
         slot_5: {
             hex: "rgba(0,0,0,0.05)",
             ids: [
-                "button.ghost.hoverOverlay",
+                "button.hover.overlay",
                 "shadow.brand.sm",
                 "shadow.highlight.sm",
             ],
@@ -53,7 +60,7 @@ export const MinimalTheme: LLMThemeResponse = {
         slot_6: {
             hex: "rgba(0,0,0,0.1)",
             ids: [
-                "button.ghost.activeOverlay",
+                "button.active.overlay",
                 "shadow.brand.md",
                 "shadow.highlight.md",
             ],
@@ -64,11 +71,12 @@ export const MinimalTheme: LLMThemeResponse = {
         },
         slot_8: {
             hex: "#000000",
-            ids: ["button.ghost.focusRing", "border.highlight"],
+            ids: ["button.focus.ring", "border.highlight"],
         },
         slot_9: {
             hex: "#808080",
             ids: [
+                "input.placeholder",
                 "indicator.image",
                 "indicator.text",
                 "indicator.audio",

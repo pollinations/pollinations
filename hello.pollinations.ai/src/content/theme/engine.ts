@@ -2,9 +2,11 @@
 // TYPES
 // ==============================================
 
+import type { SemanticTokenId } from "./semantic";
+
 export interface ThemeSlot {
     hex: string;
-    ids: string[];
+    ids: SemanticTokenId[];
 }
 
 export interface LLMThemeResponse {
@@ -31,29 +33,24 @@ export function processTheme(theme: LLMThemeResponse): ThemeEngineOutput {
     const cssVariables: Record<string, string> = {};
     const tokenIdToHex: Record<string, string> = {};
 
-    // Flatten slots to ID → Hex mapping and set CSS variables
     Object.values(theme.slots).forEach((slot) => {
         const ids = Array.isArray(slot.ids) ? slot.ids : [slot.ids];
         ids.forEach((id) => {
-            // Sanitize ID for CSS variable (replace . with -)
             const varName = `--${id.replace(/\./g, "-")}`;
             cssVariables[varName] = slot.hex;
             tokenIdToHex[id] = slot.hex;
         });
     });
 
-    // Handle Border Radius (if provided by theme)
     if (theme.borderRadius) {
         Object.entries(theme.borderRadius).forEach(([id, value]) => {
             cssVariables[`--${id.replace(/\./g, "-")}`] = value;
-            tokenIdToHex[id] = value; // Store for semantic mapping if needed
+            tokenIdToHex[id] = value;
         });
     }
 
-    // Handle Fonts (if provided by theme)
     if (theme.fonts) {
         Object.entries(theme.fonts).forEach(([id, value]) => {
-            // Wrap font names in quotes for CSS font-family compatibility
             cssVariables[`--${id.replace(/\./g, "-")}`] = `'${value}'`;
             tokenIdToHex[id] = `'${value}'`;
         });
@@ -107,7 +104,7 @@ export function themeToDictionary(theme: LLMThemeResponse): ThemeDictionary {
 export function dictionaryToTheme(dict: ThemeDictionary): LLMThemeResponse {
     const slots: Record<string, ThemeSlot> = {};
     Object.entries(dict.colors).forEach(([hex, ids], index) => {
-        slots[`slot_${index}`] = { hex, ids };
+        slots[`slot_${index}`] = { hex, ids: ids as SemanticTokenId[] };
     });
 
     return {

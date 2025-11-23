@@ -17,8 +17,8 @@ const useFetchModels = () => {
         setLoading(true);
         fetch(`${ENTER_BASE_URL}/generate/image/models`, {
             headers: {
-                "Authorization": `Bearer ${PLAYGROUND_API_KEY}`
-            }
+                "Authorization": `Bearer ${PLAYGROUND_API_KEY}`,
+            },
         })
             .then((res) => {
                 if (!res.ok) {
@@ -28,7 +28,13 @@ const useFetchModels = () => {
             })
             .then((data) => {
                 if (Array.isArray(data)) {
-                    setModels(data);
+                    // Process model objects - API returns objects with name, description, etc.
+                    const processedModels = data.map((model) => ({
+                        id: model.name,
+                        name: model.description || model.name,
+                        details: model,
+                    }));
+                    setModels(processedModels);
                 } else {
                     console.error("Unexpected response format:", data);
                     setModels([]);

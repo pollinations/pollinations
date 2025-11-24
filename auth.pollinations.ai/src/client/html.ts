@@ -139,7 +139,7 @@ export const generateHTML = () => `<!DOCTYPE html>
                                             <span style="color:#666; font-size: 0.9em; display: block; margin-bottom: 5px;">
                                                 Experiencing trouble with tier migration?
                                             </span>
-                                            <a href="https://github.com/pollinations/pollinations/issues/new?title=Tier%20Migration%20Request&body=Please%20migrate%20my%20tier." target="_blank" style="text-decoration: none;">
+                                            <a href="https://github.com/pollinations/pollinations/discussions/5402" target="_blank" style="text-decoration: none;">
                                                 <button class="migration-button">Request Tier Migration</button>
                                             </a>
                                         </div>

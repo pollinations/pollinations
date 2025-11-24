@@ -1,5 +1,6 @@
-import type { LLMThemeResponse } from "../theme/engine";
+import type { LLMThemeResponse } from "../theme/theme-processor";
 import type { ThemeCopy } from "../buildPrompts";
+import { hydrateCopy } from "../guidelines/helpers/writing";
 
 export interface PresetMetadata {
     id: string;
@@ -7,7 +8,7 @@ export interface PresetMetadata {
     description: string;
     theme: LLMThemeResponse;
     cssVariables: Record<string, string>;
-    copy?: ThemeCopy; // Optional - not all presets have custom copy yet
+    copy: ThemeCopy; // Required - all presets must have copy
 }
 
 /**
@@ -18,12 +19,13 @@ export interface PresetMetadata {
  * Requirements:
  * - File must export {Name}Theme: LLMThemeResponse
  * - File must export {Name}CssVariables: Record<string, string>
+ * - File must export {Name}Copy: Record<string, string> (REQUIRED - flat copy format)
  * - Preset ID is derived from filename (e.g., ocean.ts -> "ocean")
  *
  * See README.md for more details.
  */
 const presetModules = import.meta.glob<{
-    [key: string]: LLMThemeResponse | Record<string, string> | ThemeCopy;
+    [key: string]: LLMThemeResponse | Record<string, string>;
 }>("./*.ts", { eager: true });
 
 // Build PRESETS array dynamically
@@ -53,11 +55,19 @@ export const PRESETS: PresetMetadata[] = Object.entries(presetModules)
             return null;
         }
 
+        if (!copyName) {
+            console.warn(
+                `Preset ${id} is missing required Copy export. All presets must have copy.`,
+            );
+            return null;
+        }
+
         const theme = module[themeName] as LLMThemeResponse;
         const cssVariables = module[cssVarsName] as Record<string, string>;
-        const copy = copyName
-            ? (module[copyName] as unknown as ThemeCopy)
-            : undefined;
+        const rawCopy = module[copyName] as Record<string, string>;
+
+        // Hydrate flat copy into full structure
+        const copy = hydrateCopy(rawCopy);
 
         // Generate name from ID (capitalize first letter)
         const name = id.charAt(0).toUpperCase() + id.slice(1);

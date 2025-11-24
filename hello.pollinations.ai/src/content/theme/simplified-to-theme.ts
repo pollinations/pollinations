@@ -1,6 +1,6 @@
-import type { LLMThemeResponse, ThemeSlot } from "./engine";
-import type { MacroConfig } from "./macros";
-import type { SemanticTokenId } from "./semantic";
+import type { LLMThemeResponse, ThemeSlot } from "./theme-processor";
+import type { MacroConfig } from "./simplified-config.types";
+import type { SemanticTokenId } from "./semantic-ids.types";
 
 export function macrosToTheme(config: MacroConfig): LLMThemeResponse {
     const colorMap: Record<string, string[]> = {};
@@ -8,6 +8,7 @@ export function macrosToTheme(config: MacroConfig): LLMThemeResponse {
     const fonts: Record<string, string> = {};
 
     const addColor = (semanticId: SemanticTokenId, hex: string) => {
+        if (typeof hex !== "string" || hex.trim() === "") return;
         if (!colorMap[hex]) {
             colorMap[hex] = [];
         }
@@ -15,10 +16,12 @@ export function macrosToTheme(config: MacroConfig): LLMThemeResponse {
     };
 
     const addRadius = (semanticId: SemanticTokenId, value: string) => {
+        if (typeof value !== "string" || value.trim() === "") return;
         borderRadius[semanticId] = value;
     };
 
     const addFont = (semanticId: SemanticTokenId, value: string) => {
+        if (typeof value !== "string" || value.trim() === "") return;
         fonts[semanticId] = value;
     };
 

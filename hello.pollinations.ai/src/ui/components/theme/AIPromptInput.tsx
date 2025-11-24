@@ -1,12 +1,13 @@
 import { useState, useEffect, useRef } from "react";
 import { useTheme } from "../../contexts/ThemeContext";
-import { generateTheme } from "../../../content/guideline-helpers/styling-helpers";
+import { generateTheme } from "../../../content/guidelines/helpers/styling";
 import {
-    generateThemeCopyWithDefaults,
+    generateCopy,
     type ThemeCopy,
-} from "../../../content/buildPrompts";
-import type { ThemeDictionary } from "../../../content/theme/engine";
-import { dictionaryToTheme } from "../../../content/theme/engine";
+} from "../../../content/guidelines/helpers/writing";
+import { ALL_COPY } from "../../../content/copy/index";
+import type { ThemeDictionary } from "../../../content/theme/theme-processor";
+import { dictionaryToTheme } from "../../../content/theme/theme-processor";
 import { SparklesIcon, SendIcon, DownloadIcon } from "lucide-react";
 import { Button } from "../ui/button";
 
@@ -26,7 +27,10 @@ export function AIPromptInput({ isOpen }: AIPromptInputProps) {
     const [error, setError] = useState<Error | null>(null);
     const [generatedTheme, setGeneratedTheme] =
         useState<ThemeDictionary | null>(null);
-    const [generatedCopy, setGeneratedCopy] = useState<ThemeCopy | null>(null);
+    const [generatedCopy, setGeneratedCopy] = useState<{
+        full: ThemeCopy;
+        flat: Record<string, string>;
+    } | null>(null);
     const inputRef = useRef<HTMLInputElement>(null);
     const { setTheme } = useTheme();
 
@@ -44,20 +48,21 @@ export function AIPromptInput({ isOpen }: AIPromptInputProps) {
         // Parallel generation - Wait for BOTH to complete
         Promise.all([
             generateTheme(activePrompt, controller.signal),
-            generateThemeCopyWithDefaults(
+            generateCopy(
                 activePrompt,
                 isMobile,
+                ALL_COPY,
                 "en",
                 controller.signal
             ),
         ])
-            .then(([theme, copy]) => {
+            .then(([theme, copyResult]) => {
                 if (!controller.signal.aborted) {
                     setGeneratedTheme(theme);
-                    setGeneratedCopy(copy);
+                    setGeneratedCopy(copyResult);
 
-                    // Apply BOTH at the same time
-                    setTheme(theme, activePrompt, copy);
+                    // Apply BOTH at the same time (use full copy for app)
+                    setTheme(theme, activePrompt, copyResult.full);
                     setActivePrompt(null);
 
                     console.log("✅ [PRESET READY]");
@@ -109,7 +114,7 @@ export function AIPromptInput({ isOpen }: AIPromptInputProps) {
             .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
             .join("");
 
-        const fileContent = `import { LLMThemeResponse, processTheme } from "../theme/engine";
+        const fileContent = `import { LLMThemeResponse, processTheme } from "../theme/theme-processor";
 import type { ThemeCopy } from "../buildPrompts";
 
 export const ${capitalizedName}Theme: LLMThemeResponse = ${JSON.stringify(
@@ -121,8 +126,8 @@ export const ${capitalizedName}Theme: LLMThemeResponse = ${JSON.stringify(
 export const ${capitalizedName}CssVariables = processTheme(${capitalizedName}Theme).cssVariables;
 
 // Copy generated with prompt: "${prompt}"
-export const ${capitalizedName}Copy: ThemeCopy = ${JSON.stringify(
-            generatedCopy,
+export const ${capitalizedName}Copy = ${JSON.stringify(
+            generatedCopy.flat,
             null,
             2
         )};

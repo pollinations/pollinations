@@ -7,8 +7,7 @@ import { ImageFeed } from "../components/play/ImageFeed";
 import { PlayGenerator } from "../components/play/PlayGenerator";
 import { ModelSelector } from "../components/play/ModelSelector";
 import { useModelList } from "../../hooks/useModelList";
-import { usePageCopy } from "../contexts/PageCopyContext";
-import type { PLAY_PAGE as PlayPageType } from "../../content/copy/play";
+import { useTheme } from "../contexts/ThemeContext";
 
 /**
  * PlayPage - Main playground page
@@ -23,7 +22,8 @@ function PlayPage() {
     const { imageModels, textModels } = useModelList();
 
     // Get page copy from preset
-    const pageCopy = usePageCopy<typeof PlayPageType>("PLAY_PAGE");
+    const { presetCopy } = useTheme();
+    const pageCopy = presetCopy.PLAY_PAGE;
 
     // Memoize combined models array
     const allModels = useMemo(

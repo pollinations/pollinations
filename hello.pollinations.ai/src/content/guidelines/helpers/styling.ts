@@ -3,12 +3,15 @@
  * Pure logic - parsing, validation, and theme generation functions
  */
 
-import { ThemeDictionary, themeToDictionary } from "../theme/engine";
-import { assembleStylePrompt } from "../buildPrompts";
-import { generateText } from "../../services/pollinationsAPI";
-import { STYLING_GUIDELINES } from "../guidelines-styling";
-import type { MacroConfig } from "../theme/macros";
-import { macrosToTheme } from "../theme/macros-engine";
+import {
+    ThemeDictionary,
+    themeToDictionary,
+} from "../../theme/theme-processor";
+import { assembleStylePrompt } from "../../buildPrompts";
+import { generateText } from "../../../services/pollinationsAPI";
+import { STYLING_GUIDELINES } from "../styling";
+import type { MacroConfig } from "../../theme/simplified-config.types";
+import { macrosToTheme } from "../../theme/simplified-to-theme";
 
 // ==============================================
 // TYPE DEFINITIONS
@@ -62,31 +65,40 @@ export function parseThemeResponse(text: string): ThemeDictionary {
 
     // Fallback: Handle old format (slots) or raw dictionary
     // This is kept for backward compatibility if we ever feed old prompts or have legacy data
-    let convertedColors: Record<string, any> = {};
-
-    // Handle new full theme format with colors.slots
     const slots = parsed.colors?.slots || parsed.slots;
 
     if (slots) {
-        Object.values(slots).forEach((slot: any) => {
-            const hex = slot.hex;
-            const ids = slot.ids || slot.paths || [];
-            if (!convertedColors[hex]) {
-                convertedColors[hex] = [];
-            }
-            // Ensure ids is an array before spreading
-            const idsArray = Array.isArray(ids) ? ids : [ids];
-            convertedColors[hex].push(...idsArray);
+        const normalizedSlots: Record<string, any> = {};
+        Object.entries(slots).forEach(([slotId, slot]: [string, any]) => {
+            normalizedSlots[slotId] = {
+                hex: slot.hex,
+                ids: slot.ids || slot.paths || [],
+            };
         });
-    } else {
-        convertedColors = parsed as Record<string, any>;
+        const llmTheme = {
+            slots: normalizedSlots,
+            borderRadius: parsed.borderRadius,
+            fonts: parsed.fonts,
+        };
+        return themeToDictionary(llmTheme);
     }
 
-    return {
-        colors: convertedColors,
+    // Legacy dictionary format: { "#hex": ["token.a", "token.b"] }
+    const legacySlots: Record<string, any> = {};
+    Object.entries(parsed as Record<string, any>).forEach(
+        ([hex, ids], index) => {
+            legacySlots[`slot_${index}`] = {
+                hex,
+                ids: Array.isArray(ids) ? ids : [ids],
+            };
+        },
+    );
+
+    return themeToDictionary({
+        slots: legacySlots,
         borderRadius: parsed.borderRadius,
         fonts: parsed.fonts,
-    };
+    });
 }
 
 /**

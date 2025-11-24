@@ -5,138 +5,121 @@ export const HELLO_PAGE = {
     // Hero Section - exact text
     heroTitle: {
         text: "Gen AI with a Human Touch",
-        transforms: ["responsive", "translateTo", "brevity:3"],
+        transform: true,
     },
 
     heroIntro: {
         text: "We're a small, passionate team building a different kind of AI platform—one that's simple, beautiful, and built in direct partnership with our community.",
-        transforms: ["responsive", "translateTo", "brevity:25"],
     },
 
     heroTagline: {
         text: "Whether you need a reliable API that just works or a partner to sponsor your next big idea, you've found your home.",
-        transforms: ["responsive", "translateTo", "brevity:25"],
     },
 
     // Pollen Section
     pollenTitle: {
         text: "Pollen: One Simple Credit for Everything",
-        transforms: ["responsive", "translateTo", "brevity:3"],
+        transform: true,
     },
 
     pollenDescription: {
         text: "Pollen is our single, unified credit for all generative media. It's the elegant solution to a chaotic landscape, designed to be predictable and fair for every type of builder.",
-        transforms: ["responsive", "translateTo", "brevity:25"],
     },
 
     // Get Pollen Section
     getPollenTitle: {
         text: "Fuel Your Vision: Get Pollen Your Way",
-        transforms: ["responsive", "translateTo", "brevity:3"],
+        transform: true,
     },
 
     getPollenIntro: {
         text: "Our platform is designed for flexibility. Every developer can purchase Pollen directly, and those we partner with also receive a daily grant to kickstart their journey.",
-        transforms: ["responsive", "translateTo", "brevity:25"],
     },
 
     buyCardTitle: {
         text: "Simple & Fast: Buy What You Need",
-        transforms: ["responsive", "translateTo", "brevity:3"],
+        transform: true,
     },
 
     buyCardDescription: {
         text: "Have an idea and just need a great API to power it? Buy Pollen packs and start building in minutes. No strings attached.",
-        transforms: ["responsive", "translateTo", "brevity:25"],
     },
 
     sponsorshipCardTitle: {
         text: "Our Investment in You: The Sponsorship Program",
-        transforms: ["responsive", "translateTo", "brevity:3"],
+        transform: true,
     },
 
     sponsorshipCardDescription: {
         text: "We sponsor developers building the next wave of creative apps. As a partner, you receive a free daily Pollen grant to de-risk development and get your project off the ground.",
-        transforms: ["responsive", "translateTo", "brevity:25"],
     },
 
     // Sponsorship Tiers Section
     sponsorshipTiersTitle: {
         text: "Grow With Us: The Sponsorship Tiers",
-        transforms: ["responsive", "translateTo", "brevity:3"],
+        transform: true,
     },
 
     sponsorshipTiersDescription: {
         text: "For our sponsored partners, the journey is a gamified path that rewards your progress. Start as a Spore with a daily grant, then grow to Seed, Flower, and Nectar.",
-        transforms: ["responsive", "translateTo", "brevity:25"],
     },
 
     // Creative Launchpad Section
     creativeLaunchpadTitle: {
         text: "Your Creative Launchpad",
-        transforms: ["responsive", "translateTo", "brevity:3"],
+        transform: true,
     },
 
     creativeLaunchpadIntro: {
         text: "No matter how you get your Pollen, you get access to our high-level creative engines. We handle the complexity so you can focus on your vision.",
-        transforms: ["responsive", "translateTo", "brevity:25"],
     },
 
     creativeLaunchpadFeature1: {
         text: "Build Intelligent Chatbots & Agents: Deploy conversational AI with memory using our end-to-end framework.",
-        transforms: ["responsive", "translateTo", "brevity:25"],
     },
 
     creativeLaunchpadFeature2: {
         text: "Generate Consistent Visual Worlds: Create characters and assets in a coherent style for professional design tools.",
-        transforms: ["responsive", "translateTo", "brevity:25"],
     },
 
     creativeLaunchpadFeature3: {
         text: "Orchestrate Multi-Step Workflows: Chain models to create autonomous agents that can research, summarize, and visualize.",
-        transforms: ["responsive", "translateTo", "brevity:25"],
     },
 
     creativeLaunchpadFeature4: {
         text: "Craft Interactive Media (Coming Soon): Go beyond static outputs with tools to generate video, audio, and more.",
-        transforms: ["responsive", "translateTo", "brevity:25"],
     },
 
     // The Difference Section
     differenceTitle: {
         text: "The Pollinations Difference",
-        transforms: ["responsive", "translateTo", "brevity:3"],
+        transform: true,
     },
 
     differenceIntro: {
         text: "Why build with us? Because we're building for you.",
-        transforms: ["responsive", "translateTo", "brevity:25"],
     },
 
     differenceFeature1: {
         text: "We're Accessible: We're a small team you can talk to directly. No support tickets lost in the void.",
-        transforms: ["responsive", "translateTo", "brevity:25"],
     },
 
     differenceFeature2: {
         text: "We're Flexible: Our roadmap is driven by you. We build the features our community needs.",
-        transforms: ["responsive", "translateTo", "brevity:25"],
     },
 
     differenceFeature3: {
         text: "We Love Beauty: We believe tools should be charming and fun to use.",
-        transforms: ["responsive", "translateTo", "brevity:25"],
     },
 
     // Roadmap Section
     roadmapTitle: {
         text: "The Horizon: An Open Creative Economy",
-        transforms: ["responsive", "translateTo", "brevity:3"],
+        transform: true,
     },
 
     roadmapIntro: {
         text: "Our roadmap is focused on enabling success for every developer on our platform.",
-        transforms: ["responsive", "translateTo", "brevity:25"],
     },
 
     roadmapComingSoonLabel: {
@@ -145,12 +128,11 @@ export const HELLO_PAGE = {
 
     roadmapComingSoonTitle: {
         text: "Secure Front-End Spending",
-        transforms: ["responsive", "translateTo", "brevity:3"],
+        transform: true,
     },
 
     roadmapComingSoonDescription: {
         text: "The foundational tech allowing client-side apps to spend Pollen, a key step for monetization.",
-        transforms: ["responsive", "translateTo", "brevity:25"],
     },
 
     roadmapQ1Label: {
@@ -159,12 +141,11 @@ export const HELLO_PAGE = {
 
     roadmapQ1Title: {
         text: "In-App Purchase",
-        transforms: ["responsive", "translateTo", "brevity:3"],
+        transform: true,
     },
 
     roadmapQ1Description: {
         text: "The economy opens. Users can buy Pollen inside your app, and you get a bonus for every purchase. This is the goal for our sponsored partners.",
-        transforms: ["responsive", "translateTo", "brevity:25"],
     },
 
     roadmapOngoingLabel: {
@@ -173,23 +154,21 @@ export const HELLO_PAGE = {
 
     roadmapOngoingTitle: {
         text: "Beyond",
-        transforms: ["responsive", "translateTo", "brevity:3"],
+        transform: true,
     },
 
     roadmapOngoingDescription: {
         text: "We're moving towards a complete solution for AI app development, including hosting and app discovery.",
-        transforms: ["responsive", "translateTo", "brevity:25"],
     },
 
     // CTA Section
     ctaTitle: {
         text: "Ready to Create?",
-        transforms: ["responsive", "translateTo", "brevity:3"],
+        transform: true,
     },
 
     ctaDescription: {
         text: "Stop choosing between power and personality. Build with a platform that offers both.",
-        transforms: ["responsive", "translateTo", "brevity:25"],
     },
 
     // CTA Buttons

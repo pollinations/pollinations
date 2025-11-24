@@ -1,56 +1,44 @@
 /**
  * PROMPT ASSEMBLER
  * Central system for combining guidelines + inputs → full prompts
+ * Pure assembly - no API calls, only string building
  * Implements prompt assembly for COPY, STYLE, and LOGO pipelines
  */
 
-import { STYLING_GUIDELINES } from "./guidelines-styling";
-import { DRAWING_GUIDELINES } from "./guidelines-drawing";
-import { generateThemeCopy, type PageCopy, type ThemeCopy } from "./guideline-helpers/writing-helpers";
-
-// Import copy files
-import { HELLO_PAGE } from "./copy/hello";
-import { APPS_PAGE } from "./copy/apps";
-import { DOCS_PAGE } from "./copy/docs";
-import { COMMUNITY_PAGE } from "./copy/community";
-import { PLAY_PAGE } from "./copy/play";
+import { STYLING_GUIDELINES } from "./guidelines/styling";
+import { DRAWING_GUIDELINES } from "./guidelines/drawing";
+import { WRITING_GUIDELINES } from "./guidelines/writing";
+import type { ThemeCopy } from "./guidelines/helpers/writing";
 
 // Re-export types for convenience
-export type { PageCopy, ThemeCopy };
-
-/**
- * Wrapper for GEN COPY Pipeline
- * Prepares page copy objects and delegates to writing-helpers
- */
-export async function generateThemeCopyWithDefaults(
-    themeVibe: string,
-    isMobile: boolean,
-    targetLanguage = "en",
-    signal?: AbortSignal,
-): Promise<ThemeCopy> {
-    const pageCopyObjects = {
-        HELLO_PAGE,
-        APPS_PAGE,
-        DOCS_PAGE,
-        COMMUNITY_PAGE,
-        PLAY_PAGE,
-    };
-
-    return generateThemeCopy(
-        themeVibe,
-        isMobile,
-        pageCopyObjects,
-        targetLanguage,
-        signal
-    );
-}
-
-// Re-export for convenience
-export { generateThemeCopy };
+export type { ThemeCopy };
 
 // ==============================================
 // PROMPT ASSEMBLY FUNCTIONS
+// Pure functions that combine guidelines + data → prompt strings
+// No API calls - caller is responsible for sending to AI
 // ==============================================
+
+/**
+ * GEN COPY Pipeline
+ * Assembles prompts for copy generation based on theme
+ */
+export function assembleCopyPrompt(
+    themeVibe: string,
+    jobs: Array<{ id: string; text: string; limit: number }>,
+    targetLanguage = "en",
+): string {
+    return `${WRITING_GUIDELINES}
+
+RUNTIME CONTEXT:
+- THEME_VIBE: "${themeVibe}"
+- TARGET_LANGUAGE: "${targetLanguage}"
+
+INPUT JSON:
+${JSON.stringify(jobs, null, 2)}
+
+Generate the JSON Object now:`;
+}
 
 /**
  * GEN STYLE Pipeline

@@ -1,5 +1,4 @@
-import { usePageCopy } from "../contexts/PageCopyContext";
-import type { COMMUNITY_PAGE as CommunityPageType } from "../../content/copy/community";
+import { useTheme } from "../contexts/ThemeContext";
 import { COMMUNITY_PAGE } from "../../content";
 import { ImageGenerator } from "../components/ImageGenerator";
 import { SOCIAL_LINKS } from "../../content/copy/socialLinks";
@@ -14,7 +13,8 @@ import { useNews } from "../../hooks/useNews";
 import ReactMarkdown from "react-markdown";
 
 export default function CommunityPage() {
-    const pageCopy = usePageCopy<typeof CommunityPageType>("COMMUNITY_PAGE");
+    const { presetCopy } = useTheme();
+    const pageCopy = presetCopy.COMMUNITY_PAGE;
     const { news, loading: newsLoading } = useNews(COMMUNITY_PAGE.newsFilePath);
 
     return (

@@ -1,4 +1,4 @@
-import { TOKENS } from "../../../../content/theme/tokens";
+import { TOKENS } from "../../../../content/theme/design-tokens";
 
 // PresetEditor dev tool helper - get human-readable token label
 export const getTokenLabel = (id: string): string | undefined => {

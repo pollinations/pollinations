@@ -4,8 +4,11 @@ import type { ThemeState, RadiusState, FontState } from "../types";
 // Convert dictionary format to bucket format
 export const convertToThemeState = (dict: ThemeDictionary): ThemeState => {
     const newState: ThemeState = {};
-    Object.entries(dict.colors).forEach(([color, tokens], index) => {
-        newState[`bucket-${index}`] = { color, tokens };
+    dict.colors.forEach((bucket, index) => {
+        newState[`bucket-${index}`] = {
+            color: bucket.hex,
+            tokens: bucket.ids,
+        };
     });
     return newState;
 };

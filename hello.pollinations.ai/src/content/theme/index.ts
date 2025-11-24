@@ -1,6 +1,6 @@
 // Re-export all public APIs (pure theme data/logic only)
-export * from "./tokens";
-export * from "./engine";
+export * from "./design-tokens";
+export * from "./theme-processor";
 
 // Note: Styling guidelines moved to content/guidelines-styling.ts
 // Note: themeGenerator moved to content/themeGenerator.ts

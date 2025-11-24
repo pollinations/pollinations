@@ -12,18 +12,25 @@ import {
     themeToDictionary,
     dictionaryToTheme,
     type ThemeDictionary,
-} from "../../content/theme/engine";
+} from "../../content/theme/theme-processor";
 import type { ThemeCopy } from "../../content/buildPrompts";
 
-// Select a random preset on module load
-const randomPreset = PRESETS[Math.floor(Math.random() * PRESETS.length)];
-const DefaultThemeDefinition = themeToDictionary(randomPreset.theme);
-const DefaultThemeCopy = randomPreset.copy;
+// All presets must have copy defined - randomly select one
+const initialPreset = PRESETS[Math.floor(Math.random() * PRESETS.length)];
+
+if (!initialPreset.copy) {
+    throw new Error(
+        `Preset "${initialPreset.id}" is missing copy. All presets must have copy defined.`
+    );
+}
+
+const DefaultThemeDefinition = themeToDictionary(initialPreset.theme);
+const DefaultThemeCopy = initialPreset.copy;
 
 interface ThemeContextValue {
     themeDefinition: ThemeDictionary;
     themePrompt: string | null;
-    presetCopy: ThemeCopy | null;
+    presetCopy: ThemeCopy;
     setTheme: (
         newTheme: ThemeDictionary,
         prompt?: string,
@@ -39,11 +46,9 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
         DefaultThemeDefinition
     );
     const [themePrompt, setThemePrompt] = useState<string | null>(
-        randomPreset.id
+        initialPreset.id
     );
-    const [presetCopy, setPresetCopy] = useState<ThemeCopy | null>(
-        DefaultThemeCopy || null
-    );
+    const [presetCopy, setPresetCopy] = useState<ThemeCopy>(DefaultThemeCopy);
 
     // Apply initial theme CSS variables on mount
     useEffect(() => {
@@ -59,7 +64,9 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
         (newTheme: ThemeDictionary, prompt?: string, copy?: ThemeCopy) => {
             setThemeDefinition(newTheme);
             if (prompt) setThemePrompt(prompt);
-            if (copy) setPresetCopy(copy);
+            if (copy) {
+                setPresetCopy(copy);
+            }
             // Also apply CSS variables
             const theme = dictionaryToTheme(newTheme);
             const { cssVariables } = processTheme(theme);
@@ -72,11 +79,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     );
 
     const resetTheme = useCallback(() => {
-        setTheme(
-            DefaultThemeDefinition,
-            randomPreset.id,
-            DefaultThemeCopy || undefined
-        );
+        setTheme(DefaultThemeDefinition, initialPreset.id, DefaultThemeCopy);
     }, [setTheme]);
 
     return (

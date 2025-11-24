@@ -1,6 +1,5 @@
 import { useState } from "react";
-import { usePageCopy } from "../contexts/PageCopyContext";
-import type { DOCS_PAGE as DocsPageType } from "../../content/copy/docs";
+import { useTheme } from "../contexts/ThemeContext";
 import { CopyIcon } from "../assets/CopyIcon";
 import { ExternalLinkIcon } from "../assets/ExternalLinkIcon";
 import { Button } from "../components/ui/button";
@@ -14,7 +13,8 @@ import { TextGenCard } from "../components/docs/TextGenCard";
 import { ModelDiscoveryCard } from "../components/docs/ModelDiscoveryCard";
 
 function DocsPage() {
-    const pageCopy = usePageCopy<typeof DocsPageType>("DOCS_PAGE");
+    const { presetCopy } = useTheme();
+    const pageCopy = presetCopy.DOCS_PAGE;
     const [agentPromptCopied, setAgentPromptCopied] = useState(false);
 
     return (

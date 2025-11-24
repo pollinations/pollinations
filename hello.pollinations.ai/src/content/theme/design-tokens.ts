@@ -1,4 +1,4 @@
-import type { SemanticTokenId } from "./semantic";
+import type { SemanticTokenId } from "./semantic-ids.types";
 
 export interface DesignToken {
     id: SemanticTokenId;

@@ -14,7 +14,7 @@
 		"editor.defaultFormatter": "biomejs.biome"
 	},
 	"[json]": {
-		"editor.defaultFormatter": "biomejs.biome"
+		"editor.defaultFormatter": "HookyQR.beautify"
 	},
 	"[jsonc]": {
 		"editor.defaultFormatter": "biomejs.biome"

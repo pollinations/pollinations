@@ -3,40 +3,40 @@
 export const COMMUNITY_PAGE = {
     title: {
         text: "Contribute",
-        transforms: ["responsive", "translateTo", "brevity:3"],
+        transform: true,
     },
 
     subtitle: {
         text: "We're building a platform where developers, creators, and AI enthusiasts collaborate and innovate together.",
-        transforms: ["responsive", "translateTo", "brevity:25"],
+        transform: true,
     },
 
     // News section
     newsTitle: {
         text: "What's New",
-        transforms: ["responsive", "translateTo", "brevity:3"],
+        transform: true,
     },
 
     newsFilePath: "/NEWS.md",
 
     discordTitle: {
         text: "Discord",
-        transforms: ["responsive", "translateTo", "brevity:3"],
+        transform: true,
     },
 
     discordSubtitle: {
         text: "Join our community for real-time discussions and support.",
-        transforms: ["responsive", "translateTo", "brevity:25"],
+        transform: true,
     },
 
     githubTitle: {
         text: "GitHub",
-        transforms: ["responsive", "translateTo", "brevity:3"],
+        transform: true,
     },
 
     githubSubtitle: {
         text: "Collaborate on open-source projects and contribute code.",
-        transforms: ["responsive", "translateTo", "brevity:25"],
+        transform: true,
     },
 
     // Buttons
@@ -50,12 +50,12 @@ export const COMMUNITY_PAGE = {
 
     supportersTitle: {
         text: "Supporters",
-        transforms: ["responsive", "translateTo", "brevity:3"],
+        transform: true,
     },
 
     supportersSubtitle: {
         text: "We're grateful to our supporters for their contributions to our platform.",
-        transforms: ["responsive", "translateTo", "brevity:25"],
+        transform: true,
     },
 
     // Supporters data

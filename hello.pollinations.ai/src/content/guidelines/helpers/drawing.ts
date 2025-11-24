@@ -3,8 +3,8 @@
  * Pure logic - logo generation function
  */
 
-import { assembleLogoPrompt } from "../buildPrompts";
-import { generateImage } from "../../services/pollinationsAPI";
+import { assembleLogoPrompt } from "../../buildPrompts";
+import { generateImage } from "../../../services/pollinationsAPI";
 
 // ==============================================
 // TYPE DEFINITIONS

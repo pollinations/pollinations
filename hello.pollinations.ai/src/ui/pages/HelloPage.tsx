@@ -5,11 +5,11 @@ import { Divider } from "../components/ui/divider";
 import { PageCard } from "../components/ui/page-card";
 import { PageContainer } from "../components/ui/page-container";
 import { SubCard } from "../components/ui/sub-card";
-import { usePageCopy } from "../contexts/PageCopyContext";
-import type { HELLO_PAGE as HelloPageType } from "../../content/copy/hello";
+import { useTheme } from "../contexts/ThemeContext";
 
 function HelloPage() {
-    const pageCopy = usePageCopy<typeof HelloPageType>("HELLO_PAGE");
+    const { presetCopy } = useTheme();
+    const pageCopy = presetCopy.HELLO_PAGE;
 
     return (
         <PageContainer>

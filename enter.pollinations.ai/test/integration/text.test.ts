@@ -46,7 +46,7 @@ describe("POST /generate/v1/chat/completions (unauthenticated)", async () => {
         "%s should respond with 401",
         { timeout: 30000 },
         async ([serviceId, expectedStatus], { mocks }) => {
-            mocks.enable("polar", "tinybird", "vcr");
+            await mocks.enable("polar", "tinybird", "vcr");
             const response = await SELF.fetch(
                 `http://localhost:3000/api/generate/v1/chat/completions`,
                 {
@@ -76,7 +76,7 @@ describe("POST /generate/v1/chat/completions (authenticated)", async () => {
         "%s should respond with 200 when using authorization header",
         { timeout: 30000 },
         async ([serviceId, expectedStatus], { apiKey, mocks }) => {
-            mocks.enable("polar", "tinybird", "vcr");
+            await mocks.enable("polar", "tinybird", "vcr");
             const response = await SELF.fetch(
                 `http://localhost:3000/api/generate/v1/chat/completions`,
                 {
@@ -106,7 +106,7 @@ describe("POST /generate/v1/chat/completions (streaming)", async () => {
         "%s should respond with 200 when streaming",
         { timeout: 30000 },
         async ([serviceId, expectedStatus], { apiKey, mocks }) => {
-            mocks.enable("polar", "tinybird", "vcr");
+            await mocks.enable("polar", "tinybird", "vcr");
             const ctx = createExecutionContext();
             const response = await worker.fetch(
                 new Request(
@@ -133,10 +133,10 @@ describe("POST /generate/v1/chat/completions (streaming)", async () => {
                 ctx,
             );
             expect(response.status).toBe(expectedStatus);
+            ctx.passThroughOnException();
 
             // consume the stream
             await response.text();
-
             await waitOnExecutionContext(ctx);
 
             // make sure the recorded events contain usage
@@ -157,7 +157,7 @@ describe("GET /text/:prompt", async () => {
         "%s should return plain text",
         { timeout: 30000 },
         async ([serviceId, expectedStatus], { apiKey, mocks }) => {
-            mocks.enable("polar", "tinybird", "vcr");
+            await mocks.enable("polar", "tinybird", "vcr");
             const response = await SELF.fetch(
                 `http://localhost:3000/api/generate/text/${encodeURIComponent(testMessageContent())}?model=${serviceId}`,
                 {
@@ -185,7 +185,7 @@ test("Session cookies should not authenticate API proxy routes", async ({
     sessionToken,
     mocks,
 }) => {
-    mocks.enable("polar", "tinybird", "vcr");
+    await mocks.enable("polar", "tinybird", "vcr");
     const response = await SELF.fetch(
         `http://localhost:3000/api/generate/text/test`,
         {
@@ -203,7 +203,7 @@ test(
     "POST /v1/chat/completions should reject invalid model",
     { timeout: 30000 },
     async ({ apiKey, mocks }) => {
-        mocks.enable("polar", "tinybird", "vcr");
+        await mocks.enable("polar", "tinybird", "vcr");
         const response = await SELF.fetch(
             `http://localhost:3000/api/generate/v1/chat/completions`,
             {
@@ -235,7 +235,7 @@ test(
     "POST /v1/chat/completions should handle empty messages",
     { timeout: 30000 },
     async ({ apiKey, mocks }) => {
-        mocks.enable("polar", "tinybird", "vcr");
+        await mocks.enable("polar", "tinybird", "vcr");
         const response = await SELF.fetch(
             `http://localhost:3000/api/generate/v1/chat/completions`,
             {
@@ -263,7 +263,7 @@ test(
     "POST /v1/chat/completions should include usage",
     { timeout: 30000 },
     async ({ apiKey, mocks }) => {
-        mocks.enable("polar", "tinybird", "vcr");
+        await mocks.enable("polar", "tinybird", "vcr");
         const response = await SELF.fetch(
             `http://localhost:3000/api/generate/v1/chat/completions`,
             {

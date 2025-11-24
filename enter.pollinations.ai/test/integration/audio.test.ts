@@ -7,7 +7,7 @@ describe("GET /text/:prompt (audio)", () => {
         "GET /text/:prompt with openai-audio should return raw audio",
         { timeout: 30000 },
         async ({ apiKey, mocks }) => {
-            mocks.enable("polar", "tinybird", "vcr");
+            await mocks.enable("polar", "tinybird", "vcr");
             const response = await SELF.fetch(
                 `http://localhost:3000/api/generate/text/hi?model=openai-audio`,
                 {
@@ -33,7 +33,7 @@ describe("GET /text/:prompt (audio)", () => {
         "with modalities, should return audio output",
         { timeout: 30000 },
         async ({ apiKey, mocks }) => {
-            mocks.enable("polar", "tinybird", "vcr");
+            await mocks.enable("polar", "tinybird", "vcr");
             const response = await SELF.fetch(
                 `http://localhost:3000/api/generate/v1/chat/completions`,
                 {
@@ -89,7 +89,7 @@ describe("GET /text/:prompt (audio)", () => {
         "should transcribe input_audio",
         { timeout: 30000 },
         async ({ apiKey, mocks }) => {
-            mocks.enable("polar", "tinybird", "vcr");
+            await mocks.enable("polar", "tinybird", "vcr");
 
             // Fetch real speech audio from OpenAI sample and convert to base64
             const audioResponse = await fetch(

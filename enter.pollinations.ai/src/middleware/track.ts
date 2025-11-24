@@ -180,7 +180,6 @@ export const track = (eventType: EventType) =>
                 await storeEvents(db, c.var.log, [event]);
 
                 // process events immediately in development/testing
-                // Don't await to prevent test hangs on external API failures
                 if (["test", "development"].includes(c.env.ENVIRONMENT)) {
                     await processEvents(db, c.var.log, {
                         polarAccessToken: c.env.POLAR_ACCESS_TOKEN,
@@ -294,7 +293,6 @@ async function* extractResponseStream(
 
     for await (const event of asyncIteratorStream(eventStream)) {
         if (event.data === "[DONE]") return;
-        console.log("chunk: ", event.data);
         yield JSON.parse(event.data);
     }
 }

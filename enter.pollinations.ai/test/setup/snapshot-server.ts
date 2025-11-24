@@ -10,7 +10,7 @@ const SNAPSHOTS_DIR = path.join(process.cwd(), "test", "mocks", "snapshots");
 let server: ReturnType<typeof serve> | null = null;
 const log = getLogger(["test", "mock", "vcr", "storage"]);
 
-export default async function setup({ provide }: TestProject) {
+export async function setup({ provide }: TestProject) {
     await fs.mkdir(SNAPSHOTS_DIR, { recursive: true });
 
     const vcrStorageServer = new Hono()

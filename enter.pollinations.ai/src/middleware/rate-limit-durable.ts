@@ -46,12 +46,15 @@ export const frontendKeyRateLimit = createMiddleware<
     // Get composite identifier: pk_{apiKeyId}:ip:{ip}
     const ip = c.req.header("cf-connecting-ip") || "unknown";
     const identifier = `pk_${apiKey.id}:ip:${ip}`;
-    
-    log.debug("[RATE_LIMIT] Applying rate limit for publishable key: {keyId}, IP: {ip}, identifier: {identifier}", {
-        keyId: apiKey.id,
-        ip,
-        identifier,
-    });
+
+    log.debug(
+        "[RATE_LIMIT] Applying rate limit for publishable key: {keyId}, IP: {ip}, identifier: {identifier}",
+        {
+            keyId: apiKey.id,
+            ip,
+            identifier,
+        },
+    );
 
     // Get Durable Object for this (key + IP) combination
     const id = c.env.POLLEN_RATE_LIMITER.idFromName(identifier);

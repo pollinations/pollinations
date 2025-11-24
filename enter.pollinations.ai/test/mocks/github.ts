@@ -28,7 +28,7 @@ export function createMockGithub(): MockAPI<MockGithubState> {
         if (!authHeader?.includes("mock_github_auth_token")) {
             return c.json({ message: "Bad credentials" }, 401);
         }
-        return next();
+        return await next();
     });
 
     const githubAPI = new Hono()

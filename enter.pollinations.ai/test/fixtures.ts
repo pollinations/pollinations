@@ -57,7 +57,7 @@ export const test = base.extend<Fixtures>({
         await use(auth);
     },
     sessionToken: async ({ mocks }, use) => {
-        mocks.enable("github", "polar", "tinybird");
+        await mocks.enable("github", "polar", "tinybird");
         const signupUrl = new URL(
             "http://localhost:3000/api/auth/sign-in/social",
         );

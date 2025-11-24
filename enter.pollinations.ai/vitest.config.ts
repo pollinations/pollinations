@@ -12,9 +12,13 @@ export default defineWorkersConfig(async () => {
     return {
         ...viteConfig,
         test: {
-            globalSetup: ["./test/globalSetup.ts"],
-            setupFiles: ["./test/apply-migrations.ts"],
-            reporters: ["default"], // Use default reporter (less verbose than 'verbose')
+            globalSetup: ["./test/setup/snapshot-server.ts"],
+            setupFiles: [
+                "./test/setup/apply-migrations.ts",
+                "./test/setup/rejection-handler.ts",
+            ],
+            reporters: ["default"],
+            teardownTimeout: 5000,
             poolOptions: {
                 workers: {
                     singleWorker: true,

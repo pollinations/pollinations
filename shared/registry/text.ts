@@ -61,7 +61,7 @@ export const TEXT_SERVICES = {
     },
     "qwen-coder": {
         aliases: ["qwen-coder", "qwen2.5-coder-32b-instruct"],
-        modelId: "qwen2.5-coder-32b-instruct",
+        modelId: "qwen3-coder-30b-a3b-instruct",
         provider: "scaleway",
         cost: [
             {

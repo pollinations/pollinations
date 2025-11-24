@@ -82,7 +82,7 @@ const ErrorResponseSchema = z.discriminatedUnion("status", [
 
 type ErrorResponse = z.infer<typeof ErrorResponseSchema>;
 
-export const handleError: ErrorHandler<Env> = (err, c) => {
+export const handleError: ErrorHandler<Env> = async (err, c) => {
     const log = c.get("log");
     const timestamp = new Date().toISOString();
 

@@ -39,6 +39,11 @@ type Snapshot = {
     response: ResponseSnapshot;
 };
 
+const hosts = [
+    { name: "text", host: new URL(env.TEXT_SERVICE_URL).host },
+    { name: "image", host: new URL(env.IMAGE_SERVICE_URL).host },
+];
+
 async function getSnapshotHash(request: Request): Promise<string> {
     const hash = crypto.createHash("md5");
     hash.update(request.headers.get("authorization") || "");
@@ -55,15 +60,22 @@ async function getSnapshotHash(request: Request): Promise<string> {
     return hash.digest("hex");
 }
 
-async function getSnapshotFilename(request: Request): Promise<string> {
+async function getSnapshotFilename(
+    hosts: { name: string; host: string }[],
+    request: Request,
+): Promise<string> {
     const url = new URL(request.url);
     const hash = await getSnapshotHash(request);
 
-    const host = url.host
-        .toLowerCase()
-        .replace(/^www\./, "")
-        .replace(/[^a-z0-9]+/g, "-")
-        .replace(/^-+|-+$/g, "");
+    const matchingHost = hosts.find(({ host }) => host === url.host)?.name;
+
+    const host =
+        matchingHost ||
+        url.host
+            .toLowerCase()
+            .replace(/^www\./, "")
+            .replace(/[^a-z0-9]+/g, "-")
+            .replace(/^-+|-+$/g, "");
 
     return `${host}-${hash}.json`;
 }
@@ -95,16 +107,13 @@ async function writeSnapshot(
 
 export function createMockVcr(originalFetch: typeof fetch): MockAPI<{}> {
     const vcr = new Hono().all("*", async (c) => {
-        const snapshotFilename = await getSnapshotFilename(c.req.raw);
+        const snapshotFilename = await getSnapshotFilename(hosts, c.req.raw);
 
         // Replay snapshot if it exists
         try {
             const snapshot = await getSnapshot(snapshotFilename);
-            console.log("Replaying snapshot");
-            console.log(snapshot);
             return replaySnapshotResponse(snapshot);
         } catch (error: any) {
-            console.log(error);
             log.warn(`Missing snapshot: ${snapshotFilename}`);
             if (process.env.TEST_VCR_MODE === "replay") {
                 return new Response(null, { status: 404 });
@@ -122,15 +131,11 @@ export function createMockVcr(originalFetch: typeof fetch): MockAPI<{}> {
         return response;
     });
 
-    const textServiceHost = new URL(env.TEXT_SERVICE_URL).host;
-    const imageServiceHost = new URL(env.IMAGE_SERVICE_URL).host;
-
     return {
         state: {},
-        handlerMap: {
-            [textServiceHost]: createHonoMockHandler(vcr),
-            [imageServiceHost]: createHonoMockHandler(vcr),
-        },
+        handlerMap: Object.fromEntries(
+            hosts.map(({ host }) => [host, createHonoMockHandler(vcr)]),
+        ),
         reset: () => {},
     };
 }
@@ -304,20 +309,16 @@ function replayChunks(
     maxDelayMs: number = 10,
 ): ReadableStream {
     const encoder = new TextEncoder();
-    return new ReadableStream(
-        {
-            async start(controller) {
-                for (const chunk of snapshot) {
-                    await new Promise((resolve) =>
-                        setTimeout(resolve, Math.min(maxDelayMs, chunk.delay)),
-                    );
-                    controller.enqueue(encoder.encode(chunk.data));
-                }
-                controller.close();
-            },
-        },
-        new CountQueuingStrategy({ highWaterMark: 100000 }),
-    );
+    async function* streamGenerator(): AsyncGenerator<Uint8Array<ArrayBuffer>> {
+        for (const chunk of snapshot) {
+            await new Promise((resolve) =>
+                setTimeout(resolve, Math.min(maxDelayMs, chunk.delay)),
+            );
+            yield encoder.encode(chunk.data);
+        }
+    }
+    // @ts-ignore - ReadableStream.from is supported
+    return ReadableStream.from(streamGenerator());
 }
 
 function replayResponseBody(

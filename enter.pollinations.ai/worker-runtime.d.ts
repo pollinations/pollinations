@@ -1,5 +1,5 @@
 /* eslint-disable */
-// Runtime types generated with workerd@1.20251105.0 2025-11-01 nodejs_als,nodejs_compat
+// Runtime types generated with workerd@1.20251118.0 2025-11-01 nodejs_als,nodejs_compat
 // Begin runtime types
 /*! *****************************************************************************
 Copyright (c) Cloudflare. All rights reserved.
@@ -443,7 +443,7 @@ interface StructuredSerializeOptions {
     transfer?: any[];
 }
 declare abstract class Navigator {
-    sendBeacon(url: string, body?: (ReadableStream | string | (ArrayBuffer | ArrayBufferView) | Blob | FormData | URLSearchParams | URLSearchParams)): boolean;
+    sendBeacon(url: string, body?: BodyInit): boolean;
     readonly userAgent: string;
     readonly hardwareConcurrency: number;
     readonly language: string;
@@ -3180,6 +3180,7 @@ interface ContainerStartupOptions {
     entrypoint?: string[];
     enableInternet: boolean;
     env?: Record<string, string>;
+    hardTimeout?: (number | bigint);
 }
 /**
  * The **`MessagePort`** interface of the Channel Messaging API represents one of the two ports of a MessageChannel, allowing messages to be sent from one port and listening out for them arriving at the other.
@@ -6755,20 +6756,8 @@ declare abstract class Ai<AiModelList extends AiModelListType = AiModels> {
     } ? ReadableStream : AiModelList[Name]["postProcessedOutputs"]>;
     models(params?: AiModelsSearchParams): Promise<AiModelsSearchObject[]>;
     toMarkdown(): ToMarkdownService;
-    toMarkdown(files: {
-        name: string;
-        blob: Blob;
-    }[], options?: {
-        gateway?: GatewayOptions;
-        extraHeaders?: object;
-    }): Promise<ConversionResponse[]>;
-    toMarkdown(files: {
-        name: string;
-        blob: Blob;
-    }, options?: {
-        gateway?: GatewayOptions;
-        extraHeaders?: object;
-    }): Promise<ConversionResponse>;
+    toMarkdown(files: MarkdownDocument[], options?: ConversionRequestOptions): Promise<ConversionResponse[]>;
+    toMarkdown(files: MarkdownDocument, options?: ConversionRequestOptions): Promise<ConversionResponse>;
 }
 type GatewayRetries = {
     maxAttempts?: 1 | 2 | 3 | 4 | 5;
@@ -8420,21 +8409,22 @@ declare namespace CloudflareWorkersModule {
         protected ctx: ExecutionContext<Props>;
         protected env: Env;
         constructor(ctx: ExecutionContext, env: Env);
+        email?(message: ForwardableEmailMessage): void | Promise<void>;
         fetch?(request: Request): Response | Promise<Response>;
+        queue?(batch: MessageBatch<unknown>): void | Promise<void>;
+        scheduled?(controller: ScheduledController): void | Promise<void>;
         tail?(events: TraceItem[]): void | Promise<void>;
         tailStream?(event: TailStream.TailEvent<TailStream.Onset>): TailStream.TailEventHandlerType | Promise<TailStream.TailEventHandlerType>;
-        trace?(traces: TraceItem[]): void | Promise<void>;
-        scheduled?(controller: ScheduledController): void | Promise<void>;
-        queue?(batch: MessageBatch<unknown>): void | Promise<void>;
         test?(controller: TestController): void | Promise<void>;
+        trace?(traces: TraceItem[]): void | Promise<void>;
     }
     export abstract class DurableObject<Env = Cloudflare.Env, Props = {}> implements Rpc.DurableObjectBranded {
         [Rpc.__DURABLE_OBJECT_BRAND]: never;
         protected ctx: DurableObjectState<Props>;
         protected env: Env;
         constructor(ctx: DurableObjectState, env: Env);
-        fetch?(request: Request): Response | Promise<Response>;
         alarm?(alarmInfo?: AlarmInvocationInfo): void | Promise<void>;
+        fetch?(request: Request): Response | Promise<Response>;
         webSocketMessage?(ws: WebSocket, message: string | ArrayBuffer): void | Promise<void>;
         webSocketClose?(ws: WebSocket, code: number, reason: string, wasClean: boolean): void | Promise<void>;
         webSocketError?(ws: WebSocket, error: unknown): void | Promise<void>;
@@ -8497,36 +8487,56 @@ declare module "cloudflare:sockets" {
     function _connect(address: string | SocketAddress, options?: SocketOptions): Socket;
     export { _connect as connect };
 }
+type MarkdownDocument = {
+    name: string;
+    blob: Blob;
+};
 type ConversionResponse = {
     name: string;
     mimeType: string;
-} & ({
-    format: "markdown";
+    format: 'markdown';
     tokens: number;
     data: string;
 } | {
-    format: "error";
+    name: string;
+    mimeType: string;
+    format: 'error';
     error: string;
-});
+};
+type ImageConversionOptions = {
+    descriptionLanguage?: 'en' | 'es' | 'fr' | 'it' | 'pt' | 'de';
+};
+type EmbeddedImageConversionOptions = ImageConversionOptions & {
+    convert?: boolean;
+    maxConvertedImages?: number;
+};
+type ConversionOptions = {
+    html?: {
+        images?: EmbeddedImageConversionOptions & {
+            convertOGImage?: boolean;
+        };
+    };
+    docx?: {
+        images?: EmbeddedImageConversionOptions;
+    };
+    image?: ImageConversionOptions;
+    pdf?: {
+        images?: EmbeddedImageConversionOptions;
+        metadata?: boolean;
+    };
+};
+type ConversionRequestOptions = {
+    gateway?: GatewayOptions;
+    extraHeaders?: object;
+    conversionOptions?: ConversionOptions;
+};
 type SupportedFileFormat = {
     mimeType: string;
     extension: string;
 };
 declare abstract class ToMarkdownService {
-    transform(files: {
-        name: string;
-        blob: Blob;
-    }[], options?: {
-        gateway?: GatewayOptions;
-        extraHeaders?: object;
-    }): Promise<ConversionResponse[]>;
-    transform(files: {
-        name: string;
-        blob: Blob;
-    }, options?: {
-        gateway?: GatewayOptions;
-        extraHeaders?: object;
-    }): Promise<ConversionResponse>;
+    transform(files: MarkdownDocument[], options?: ConversionRequestOptions): Promise<ConversionResponse[]>;
+    transform(files: MarkdownDocument, options?: ConversionRequestOptions): Promise<ConversionResponse>;
     supported(): Promise<SupportedFileFormat[]>;
 }
 declare namespace TailStream {

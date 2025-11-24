@@ -41,7 +41,7 @@ export function createFetchMock<TMocks extends MockMap>(
     mocks: TMocks,
     options?: FetchMockOptions,
 ) {
-    const log = getLogger(["test", "mock"]);
+    const log = getLogger(["test", "mock", "fetch"]);
     const opts = options ?? {};
     let handlers: MockHandlerMap = {};
 
@@ -60,7 +60,7 @@ export function createFetchMock<TMocks extends MockMap>(
                     request = new Request(url, init);
                 }
                 if (opts.logRequests) {
-                    log.debug(`[FETCH] ${request.method} ${request.url}`);
+                    log.debug(`${request.method} ${request.url}`);
                 }
 
                 const handler = handlers[url.host];
@@ -76,8 +76,8 @@ export function createFetchMock<TMocks extends MockMap>(
             },
         );
 
-    const enable = (...names: (keyof TMocks)[]) => {
-        handlers = {};
+    const enable = async (...names: (keyof TMocks)[]) => {
+        await clear();
         for (const name of names) {
             const mock = mocks[name];
             handlers = {
@@ -87,7 +87,9 @@ export function createFetchMock<TMocks extends MockMap>(
         }
     };
 
-    const clear = () => {
+    const clear = async () => {
+        await Promise.allSettled(Array.from(activeRequests));
+        activeRequests.clear();
         handlers = {};
     };
 

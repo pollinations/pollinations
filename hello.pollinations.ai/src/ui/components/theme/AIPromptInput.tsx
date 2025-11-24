@@ -8,6 +8,7 @@ import {
 import { ALL_COPY } from "../../../content/copy/index";
 import type { ThemeDictionary } from "../../../content/theme/theme-processor";
 import { dictionaryToTheme } from "../../../content/theme/theme-processor";
+import { generateBackground } from "../../../content/guidelines/helpers/background";
 import { SparklesIcon, SendIcon, DownloadIcon } from "lucide-react";
 import { Button } from "../ui/button";
 
@@ -31,10 +32,13 @@ export function AIPromptInput({ isOpen }: AIPromptInputProps) {
         full: ThemeCopy;
         flat: Record<string, string>;
     } | null>(null);
+    const [generatedBackground, setGeneratedBackground] = useState<string | null>(
+        null
+    );
     const inputRef = useRef<HTMLInputElement>(null);
     const { setTheme } = useTheme();
 
-    // Generate theme AND copy in parallel when activePrompt changes
+    // Generate theme, copy, and background when activePrompt changes
     useEffect(() => {
         if (!activePrompt) return;
 
@@ -45,29 +49,47 @@ export function AIPromptInput({ isOpen }: AIPromptInputProps) {
         // Check for mobile
         const isMobile = window.matchMedia("(max-width: 768px)").matches;
 
-        // Parallel generation - Wait for BOTH to complete
-        Promise.all([
-            generateTheme(activePrompt, controller.signal),
-            generateCopy(
-                activePrompt,
-                isMobile,
-                ALL_COPY,
-                "en",
-                controller.signal
-            ),
-        ])
-            .then(([theme, copyResult]) => {
-                if (!controller.signal.aborted) {
-                    setGeneratedTheme(theme);
-                    setGeneratedCopy(copyResult);
+        // Start copy immediately (takes longest)
+        const copyPromise = generateCopy(
+            activePrompt,
+            isMobile,
+            ALL_COPY,
+            "en",
+            controller.signal
+        );
 
-                    // Apply BOTH at the same time (use full copy for app)
-                    setTheme(theme, activePrompt, copyResult.full);
-                    setActivePrompt(null);
+        // Generate theme first, then background in parallel with copy
+        generateTheme(activePrompt, controller.signal)
+            .then((theme) => {
+                if (controller.signal.aborted) return;
 
-                    console.log("✅ [PRESET READY]");
-                    setLoading(false);
-                }
+                // Generate background (now uses semantic tokens, no color extraction needed)
+                const backgroundPromise = generateBackground(
+                    activePrompt,
+                    controller.signal
+                );
+
+                // Wait for copy and background to complete
+                return Promise.all([
+                    Promise.resolve(theme),
+                    copyPromise,
+                    backgroundPromise,
+                ]);
+            })
+            .then((result) => {
+                if (!result || controller.signal.aborted) return;
+
+                const [theme, copyResult, backgroundHtml] = result;
+                setGeneratedTheme(theme);
+                setGeneratedCopy(copyResult);
+                setGeneratedBackground(backgroundHtml);
+
+                // Apply ALL at the same time
+                setTheme(theme, activePrompt, copyResult.full, backgroundHtml);
+                setActivePrompt(null);
+
+                console.log("✅ [PRESET READY]");
+                setLoading(false);
             })
             .catch((err) => {
                 if (err.name !== "AbortError" && !controller.signal.aborted) {
@@ -95,6 +117,7 @@ export function AIPromptInput({ isOpen }: AIPromptInputProps) {
             // Clear previous generation
             setGeneratedTheme(null);
             setGeneratedCopy(null);
+            setGeneratedBackground(null);
         }
     };
 
@@ -131,6 +154,9 @@ export const ${capitalizedName}Copy = ${JSON.stringify(
             null,
             2
         )};
+
+// Background HTML (base64 encoded to avoid escaping issues)
+export const ${capitalizedName}BackgroundHtml = ${generatedBackground ? `\`${generatedBackground}\`` : 'null'};
 `;
 
         // Download file
@@ -155,7 +181,7 @@ export const ${capitalizedName}Copy = ${JSON.stringify(
         <div
             className="w-full h-16 animate-in fade-in slide-in-from-top-2 duration-200 flex items-center justify-center"
             style={{
-                backgroundColor: "var(--surface-base)",
+                backgroundColor: "transparent",
             }}
         >
             <form
@@ -201,7 +227,7 @@ export const ${capitalizedName}Copy = ${JSON.stringify(
                             .theme-prompt-input:-webkit-autofill:hover,
                             .theme-prompt-input:-webkit-autofill:focus,
                             .theme-prompt-input:-webkit-autofill:active {
-                                -webkit-box-shadow: 0 0 0 1000px var(--surface-base) inset !important;
+                                -webkit-box-shadow: 0 0 0 1000px transparent inset !important;
                                 -webkit-text-fill-color: var(--text-secondary) !important;
                                 caret-color: var(--text-brand) !important;
                             }

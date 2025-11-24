@@ -108,6 +108,12 @@ You MUST return ONLY a single JSON object with this exact structure:
     "indicatorText": "#...",
     "indicatorAudio": "#..."
   },
+  "backgrounds": {
+    "base": "#...",         // WebGL scene background (usually same as surfaces.base)
+    "element1": "#...",     // Primary organic elements (filaments/branches) - use brand/highlight color
+    "element2": "#...",     // Secondary elements (nodes/junctions) - use contrasting color
+    "particle": "#..."      // Floating particles/spores - use accent/highlight color
+  },
   "typography": {
     "title": "Font Name",
     "headline": "Font Name",

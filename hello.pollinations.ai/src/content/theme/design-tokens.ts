@@ -228,6 +228,28 @@ export const TOKENS: DesignToken[] = [
         type: "color",
     },
 
+    // BACKGROUND (WebGL animation)
+    {
+        id: "background.base",
+        description: "WebGL scene background color",
+        type: "color",
+    },
+    {
+        id: "background.element1",
+        description: "Primary organic elements (filaments/branches)",
+        type: "color",
+    },
+    {
+        id: "background.element2",
+        description: "Secondary elements (nodes/junctions)",
+        type: "color",
+    },
+    {
+        id: "background.particle",
+        description: "Floating particles/spores",
+        type: "color",
+    },
+
     // RADIUS
     {
         id: "radius.button",

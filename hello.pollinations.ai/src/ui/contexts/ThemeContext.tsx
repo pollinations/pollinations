@@ -26,15 +26,18 @@ if (!initialPreset.copy) {
 
 const DefaultThemeDefinition = themeToDictionary(initialPreset.theme);
 const DefaultThemeCopy = initialPreset.copy;
+const DefaultBackgroundHtml = initialPreset.backgroundHtml || null;
 
 interface ThemeContextValue {
     themeDefinition: ThemeDictionary;
     themePrompt: string | null;
     presetCopy: ThemeCopy;
+    backgroundHtml: string | null;
     setTheme: (
         newTheme: ThemeDictionary,
         prompt?: string,
-        copy?: ThemeCopy
+        copy?: ThemeCopy,
+        backgroundHtml?: string
     ) => void;
     resetTheme: () => void;
 }
@@ -49,6 +52,9 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
         initialPreset.id
     );
     const [presetCopy, setPresetCopy] = useState<ThemeCopy>(DefaultThemeCopy);
+    const [backgroundHtml, setBackgroundHtml] = useState<string | null>(
+        DefaultBackgroundHtml
+    );
 
     // Apply initial theme CSS variables on mount
     useEffect(() => {
@@ -61,12 +67,21 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     }, []);
 
     const setTheme = useCallback(
-        (newTheme: ThemeDictionary, prompt?: string, copy?: ThemeCopy) => {
+        (
+            newTheme: ThemeDictionary,
+            prompt?: string,
+            copy?: ThemeCopy,
+            newBackgroundHtml?: string
+        ) => {
             setThemeDefinition(newTheme);
             if (prompt) setThemePrompt(prompt);
             if (copy) {
                 setPresetCopy(copy);
             }
+            if (newBackgroundHtml !== undefined) {
+                setBackgroundHtml(newBackgroundHtml);
+            }
+
             // Also apply CSS variables
             const theme = dictionaryToTheme(newTheme);
             const { cssVariables } = processTheme(theme);
@@ -79,7 +94,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     );
 
     const resetTheme = useCallback(() => {
-        setTheme(DefaultThemeDefinition, initialPreset.id, DefaultThemeCopy);
+        setTheme(DefaultThemeDefinition, initialPreset.id, DefaultThemeCopy, "");
     }, [setTheme]);
 
     return (
@@ -88,6 +103,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
                 themeDefinition,
                 themePrompt,
                 presetCopy,
+                backgroundHtml,
                 setTheme,
                 resetTheme,
             }}

@@ -9,6 +9,7 @@ export interface PresetMetadata {
     theme: LLMThemeResponse;
     cssVariables: Record<string, string>;
     copy: ThemeCopy; // Required - all presets must have copy
+    backgroundHtml?: string; // Optional - AI-generated WebGL background
 }
 
 /**
@@ -20,6 +21,7 @@ export interface PresetMetadata {
  * - File must export {Name}Theme: LLMThemeResponse
  * - File must export {Name}CssVariables: Record<string, string>
  * - File must export {Name}Copy: Record<string, string> (REQUIRED - flat copy format)
+ * - File may export {Name}BackgroundHtml: string (optional - AI-generated background)
  * - Preset ID is derived from filename (e.g., ocean.ts -> "ocean")
  *
  * See README.md for more details.
@@ -47,6 +49,9 @@ export const PRESETS: PresetMetadata[] = Object.entries(presetModules)
         const copyName = Object.keys(module).find((key) =>
             key.endsWith("Copy"),
         );
+        const backgroundName = Object.keys(module).find((key) =>
+            key.endsWith("BackgroundHtml"),
+        );
 
         if (!themeName || !cssVarsName) {
             console.warn(
@@ -65,6 +70,9 @@ export const PRESETS: PresetMetadata[] = Object.entries(presetModules)
         const theme = module[themeName] as LLMThemeResponse;
         const cssVariables = module[cssVarsName] as Record<string, string>;
         const rawCopy = module[copyName] as Record<string, string>;
+        const backgroundHtml = backgroundName
+            ? (module[backgroundName] as unknown as string)
+            : undefined;
 
         // Hydrate flat copy into full structure
         const copy = hydrateCopy(rawCopy);
@@ -82,6 +90,7 @@ export const PRESETS: PresetMetadata[] = Object.entries(presetModules)
             theme,
             cssVariables,
             copy,
+            backgroundHtml,
         };
     })
     .filter((preset): preset is PresetMetadata => preset !== null)

@@ -5,6 +5,8 @@ import { Button } from "./ui/button";
 import { ExternalLinkIcon } from "../assets/ExternalLinkIcon";
 import { SOCIAL_LINKS } from "../../content/copy/socialLinks";
 import { AIPromptInput } from "./theme/AIPromptInput";
+import { BackgroundRenderer } from "./BackgroundRenderer";
+import { useTheme } from "../contexts/ThemeContext";
 
 const tabs = [
     { path: "/", label: "Hello" },
@@ -22,13 +24,19 @@ function Layout() {
     const showHeader = useHeaderVisibility();
     const [emailCopied, setEmailCopied] = useState(false);
     const [isPromptOpen, setIsPromptOpen] = useState(false);
+    const { backgroundHtml } = useTheme();
 
     const handleLogoClick = () => {
         setIsPromptOpen(!isPromptOpen);
     };
 
     return (
-        <div className="relative min-h-screen bg-surface-base">
+        <div
+            className={`relative min-h-screen ${
+                backgroundHtml ? "bg-transparent" : "bg-surface-base"
+            }`}
+        >
+            <BackgroundRenderer />
             {/* Fixed Header */}
             <header
                 className={`fixed top-0 left-0 right-0 z-50 transition-transform duration-300 flex flex-col ${

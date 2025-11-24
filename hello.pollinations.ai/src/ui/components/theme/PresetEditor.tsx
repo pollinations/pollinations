@@ -125,8 +125,8 @@ export function PresetEditor() {
             setRadius(convertRadiusToState(dict.borderRadius || {}));
             setFonts(convertFontsToState(dict.fonts || {}));
             setSelectedPresetId(presetId);
-            // Update context to sync themePrompt
-            setContextTheme(dict, preset.id, preset.copy);
+            // Update context to sync themePrompt and background
+            setContextTheme(dict, preset.id, preset.copy, preset.backgroundHtml);
         }
     };
 

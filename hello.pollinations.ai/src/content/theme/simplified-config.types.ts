@@ -84,6 +84,13 @@ export interface RadiusMacro {
     subcard: string;
 }
 
+export interface BackgroundMacro {
+    base: string;
+    element1: string;
+    element2: string;
+    particle: string;
+}
+
 export interface MacroConfig {
     text: TextMacro;
     surfaces: SurfacesMacro;
@@ -96,6 +103,7 @@ export interface MacroConfig {
     borders: BordersMacro;
     shadows: ShadowsMacro;
     brandSpecial: BrandSpecialMacro;
+    backgrounds: BackgroundMacro;
     typography: TypographyMacro;
     radius: RadiusMacro;
 }

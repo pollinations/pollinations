@@ -83,6 +83,12 @@ export const ClassicMacroConfig: MacroConfig = {
         indicatorText: PALETTE.yellow,
         indicatorAudio: PALETTE.cyan,
     },
+    backgrounds: {
+        base: PALETTE.grayLight, // Same as surface.base
+        element1: PALETTE.pink, // Brand color for primary elements (filaments)
+        element2: PALETTE.charcoal, // Dark for secondary elements (nodes)
+        particle: PALETTE.yellow, // Highlight color for particles
+    },
     typography: {
         title: "Maven Pro",
         headline: "Mako",
@@ -176,3 +182,247 @@ export const ClassicCopy = {
     "PLAY_PAGE.toggleWatchOthers": "Watch what others are making",
     "PLAY_PAGE.toggleBackToPlay": "Back to Play",
 };
+// Background HTML (base64 encoded to avoid escaping issues)
+export const ClassicBackgroundHtml = `<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Organic Symbiosis Ambient Background</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <style>
+      html, body {
+        height: 100%;
+        margin: 0;
+        padding: 0;
+        overflow: hidden;
+        background: #F1EEE7;
+      }
+      #bg-canvas {
+        position: fixed;
+        top: 0; left: 0; width: 100vw; height: 100vh;
+        display: block;
+        z-index: 0;
+        background: #F1EEE7;
+      }
+      #overlay-label {
+        position: absolute;
+        left: 16px;
+        bottom: 16px;
+        color: #2E2E2E;
+        font-family: 'Roboto', Arial, sans-serif;
+        font-size: 13px;
+        background: rgba(241,238,231,0.8);
+        padding: 4px 8px;
+        border-radius: 8px;
+        pointer-events: none;
+        user-select: none;
+        letter-spacing: 0.04em;
+        z-index: 1;
+      }
+      @media (max-width: 600px) {
+        #overlay-label {
+          font-size: 11px;
+        }
+      }
+    </style>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400&display=swap" rel="stylesheet">
+  </head>
+  <body>
+    <canvas id="bg-canvas"></canvas>
+    <script type="module">
+      import * as THREE from 'https://esm.sh/three';
+
+      // Theme Prompt: "luminous underground mycelium network"
+      // Colors: #1A1A1A (deep filaments) / #2E2E2E (nodes) / #A49A88 (luminescent spores), BG: #F1EEE7
+
+      let renderer, scene, camera, filaments = [], spores = [], nodes = [];
+      const CANVAS_ID = "bg-canvas";
+      const BG_COLOR = 0xF1EEE7;
+      const FILAMENT_COLOR = 0x1A1A1A; // branch-like lines
+      const NODE_COLOR = 0x2E2E2E; // junction spheres
+      const SPORE_COLOR = 0xA49A88; // floating glowing spores
+      const prefersStatic = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+      function initRenderer() {
+        renderer = new THREE.WebGLRenderer({ canvas: document.getElementById(CANVAS_ID), antialias: true });
+        renderer.setClearColor(BG_COLOR, 1);
+        resize();
+        window.addEventListener("resize", resize, false);
+      }
+
+      function resize() {
+        const dpr = window.devicePixelRatio || 1;
+        renderer.setSize(window.innerWidth, window.innerHeight, false);
+        renderer.setPixelRatio(dpr);
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+      }
+
+      function initCamera() {
+        camera = new THREE.PerspectiveCamera(40, window.innerWidth/window.innerHeight, 0.1, 100);
+        camera.position.set(0, 0, 8.5);
+      }
+
+      function initScene() {
+        scene = new THREE.Scene();
+        // Scene stays gentle, avoid post-processing.
+        createOrganicElements();
+      }
+
+      function createOrganicElements() {
+        // Mycelium filaments: branching, organic splines
+        const filamentMaterial = new THREE.LineBasicMaterial({ color: FILAMENT_COLOR, transparent: true, opacity: 0.34 });
+        const branches = 7, segs = 18, spread = 2.6;
+        for (let i=0; i < branches; i++) {
+          const curve = new THREE.CatmullRomCurve3(
+            Array.from({length: segs}, (_, s) => {
+              const t = s/(segs-1);
+              // Organic, twisty branching
+              const angle = Math.PI*2 * (i/branches) + t*2.1 + Math.sin(i*0.65-t*2.3)*0.2;
+              const rad = spread*(0.5+t*0.8) + Math.sin(t*2.5+i)*0.2;
+              return new THREE.Vector3(
+                Math.cos(angle)*rad + Math.sin(t*3+i)*0.22,
+                Math.sin(angle)*rad + Math.cos(t*4-i)*0.18,
+                Math.sin(t*Math.PI*2+i*0.19)*0.27
+              );
+            })
+          );
+          const geom = new THREE.BufferGeometry().setFromPoints(curve.getPoints(48));
+          const line = new THREE.Line(geom, filamentMaterial.clone());
+          filaments.push(line);
+          scene.add(line);
+        }
+
+        // Nodes: clustering spheres at filament ends
+        const nodeMaterial = new THREE.MeshStandardMaterial({
+          color: NODE_COLOR,
+          metalness: 0.1, roughness: 0.6,
+          transparent: true, opacity: 0.42
+        });
+        for (let i=0; i<branches; i++) {
+          const pt = filaments[i].geometry.attributes.position;
+          const last = pt.count - 1;
+          const pos = new THREE.Vector3(
+            pt.getX(last), pt.getY(last), pt.getZ(last)
+          );
+          const mesh = new THREE.Mesh(
+            new THREE.SphereGeometry(0.28 + 0.06*Math.random(), 14, 12),
+            nodeMaterial.clone()
+          );
+          mesh.position.copy(pos);
+          nodes.push(mesh);
+          scene.add(mesh);
+        }
+
+        // Luminescent spores: subtle glowing particles drifting beneath filaments
+        const sporeGeom = new THREE.SphereGeometry(0.09, 8,8);
+        const sporeMaterial = new THREE.MeshBasicMaterial({
+          color: SPORE_COLOR,
+          transparent: true,
+          opacity: 0.52,
+          blending: THREE.AdditiveBlending,
+          premultipliedAlpha: true
+        });
+        for (let j=0;j<19;j++) {
+          const mesh = new THREE.Mesh(sporeGeom, sporeMaterial.clone());
+          mesh.position.set(
+            (Math.random()-0.5)*5.4,
+            (Math.random()-0.5)*3.8,
+            -0.7 + Math.random()*2.2
+          );
+          mesh.userData = {
+            phase: Math.random()*Math.PI*2,
+            speed: 0.04 + Math.random()*0.07,
+            offset: Math.random()*2
+          }
+          spores.push(mesh);
+          scene.add(mesh);
+        }
+
+        // Subtle dim point lights for organic ambiance
+        const l1 = new THREE.PointLight(0xA49A88, 0.44, 13);
+        l1.position.set(-1.4, 1.4, 2.6);
+        scene.add(l1);
+        const l2 = new THREE.PointLight(0x2E2E2E, 0.16, 8);
+        l2.position.set(2.2, -2, 2.6);
+        scene.add(l2);
+      }
+
+      let clock = new THREE.Clock();
+
+      // Slight camera drift/parallax
+      let camDrift = { x: 0, y: 0 };
+      let mouse = { x: 0, y: 0 };
+      document.addEventListener("mousemove", e => {
+        mouse.x = (e.clientX / window.innerWidth - 0.5)*1.4;
+        mouse.y = (e.clientY / window.innerHeight - 0.5)*1.2;
+      });
+
+      function animate() {
+        const time = clock.getElapsedTime();
+        if (!prefersStatic) {
+          camDrift.x += (mouse.x - camDrift.x)*0.04;
+          camDrift.y += (mouse.y - camDrift.y)*0.04;
+          camera.position.x = camDrift.x*0.35;
+          camera.position.y = camDrift.y*0.35 + Math.sin(time*0.18)*0.04;
+
+          // Filaments gently breathe and pulse
+          filaments.forEach((line, i) => {
+            const arr = line.geometry.attributes.position;
+            for (let idx=0;idx<arr.count;idx++) {
+              let ot = idx/(arr.count-1);
+              let baseX = arr.getX(idx), baseY = arr.getY(idx);
+              let mag = Math.sin(time*0.17+ot*2.3+i*0.97)*0.09*ot;
+              arr.setX(idx, baseX+mag*Math.cos(i+ot*2.3));
+              arr.setY(idx, baseY+mag*Math.sin(i-ot*2.6));
+            }
+            arr.needsUpdate = true;
+          });
+
+          // Spores drift softly
+          spores.forEach((spore, idx) => {
+            const { phase,speed,offset } = spore.userData;
+            spore.position.x += Math.sin(time*speed+phase+offset)*0.0025 + Math.cos(idx+time*0.05)*0.0009;
+            spore.position.y += Math.cos(time*speed+phase-offset)*0.0025 + Math.sin(idx-time*0.05)*0.0014;
+            // Soft flicker effect for luminance
+            spore.material.opacity = 0.38 + Math.abs(Math.sin(time*0.74+phase+offset))*0.22;
+          });
+
+          // Nodes gently pulse glow
+          nodes.forEach((node, i) => {
+            node.material.opacity = 0.38 + Math.sin(time*0.43 + i*0.8)*0.12;
+            node.scale.setScalar(1 + Math.sin(time*0.38 + i*0.6)*0.07);
+          });
+        } else {
+          // Reduced motion: only slight static randomness
+          camera.position.x = 0;
+          camera.position.y = 0;
+          filaments.forEach((line, i) => {
+            const arr = line.geometry.attributes.position;
+            for (let idx=0;idx<arr.count;idx++) {
+              let ot = idx/(arr.count-1);
+              let mag = Math.sin(i*ot*2.3)*0.06*ot;
+              arr.setX(idx, arr.getX(idx)+mag*0.35);
+              arr.setY(idx, arr.getY(idx)+mag*0.23);
+            }
+            arr.needsUpdate = true;
+          });
+        }
+
+        camera.lookAt(0,0,0);
+        renderer.render(scene, camera);
+        if (!prefersStatic) requestAnimationFrame(animate);
+      }
+
+      function start() {
+        initCamera();
+        initRenderer();
+        initScene();
+        if (!prefersStatic) animate();
+        else animate();  // Run once for static
+      }
+
+      start();
+    </script>
+  </body>
+</html>`;

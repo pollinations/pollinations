@@ -83,6 +83,12 @@ export function macrosToTheme(config: MacroConfig): LLMThemeResponse {
     addColor("logo.main", config.brandSpecial.logoMain);
     addColor("logo.accent", config.brandSpecial.logoAccent);
 
+    // Backgrounds
+    addColor("background.base", config.backgrounds.base);
+    addColor("background.element1", config.backgrounds.element1);
+    addColor("background.element2", config.backgrounds.element2);
+    addColor("background.particle", config.backgrounds.particle);
+
     // 2. Map Radius
     addRadius("radius.button", config.radius.button);
     addRadius("radius.card", config.radius.card);

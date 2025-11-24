@@ -56,6 +56,12 @@ export type SemanticTokenId =
     | "logo.main"
     | "logo.accent"
 
+    // Background (WebGL animation)
+    | "background.base"
+    | "background.element1"
+    | "background.element2"
+    | "background.particle"
+
     // Radius
     | "radius.button"
     | "radius.card"

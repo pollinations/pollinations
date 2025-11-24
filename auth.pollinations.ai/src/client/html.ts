@@ -119,10 +119,32 @@ export const generateHTML = () => `<!DOCTYPE html>
                             </div>
                             <p>
                                 <span style="font-size:1.2em;"></span>
-                                <b><i>Want to <span style="color:black;">upgrade</span> to <span style="color:#ff61d8;">Flower</span> or <span style="color:#ffb300;">Nectar</span> tier?</i></b>
                                 <br>
-                                <br>
-                                <span style="color:#666; font-style:italic;">Higher tier access is currently limited during beta.</span>
+                                <div style="display: flex; flex-direction: column; gap: 15px; margin-top: 15px;">
+                                    <div style="background: rgba(0,0,0,0.03); padding: 15px; border-radius: 12px; border: 1px solid rgba(0,0,0,0.05);">
+                                        <p style="margin: 0 0 8px 0; font-size: 0.95em; line-height: 1.5; color: #444;">
+                                            <b>Auth is fully supported</b> but will be deprecated as <a href="https://enter.pollinations.ai" target="_blank" style="color:var(--color-primary); text-decoration:none; font-weight:bold;">Enter</a> takes over.
+                                        </p>
+                                        <p style="margin: 0; font-size: 0.95em; line-height: 1.5; color: #666; font-style: italic;">
+                                            Tiers are frozen during the new <b>Enter</b> beta.
+                                        </p>
+                                    </div>
+                                    
+                                    <div style="display: flex; flex-direction: column; align-items: flex-start; gap: 10px;">
+                                        <a href="https://enter.pollinations.ai" target="_blank" style="text-decoration: none;">
+                                            <button class="beta-button">Join New Beta Experience 🚀</button>
+                                        </a>
+                                        
+                                        <div style="margin-top: 5px;">
+                                            <span style="color:#666; font-size: 0.9em; display: block; margin-bottom: 5px;">
+                                                Experiencing trouble with tier migration?
+                                            </span>
+                                            <a href="https://github.com/pollinations/pollinations/issues/new?title=Tier%20Migration%20Request&body=Please%20migrate%20my%20tier." target="_blank" style="text-decoration: none;">
+                                                <button class="migration-button">Request Tier Migration</button>
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
                             </p>
                         </div>
                     </div>

@@ -144,25 +144,43 @@ button {
     margin-right: 10px;
     margin-bottom: 10px;
     font-family: 'Space Grotesk', sans-serif;
-    position: relative;
-    overflow: hidden;
-    z-index: 1;
+    display: inline-block;
+    line-height: 1;
+    vertical-align: middle;
+    transition: all 0.2s ease;
+    text-align: center;
 }
 
-button::before {
-    content: "";
-    position: absolute;
-    top: 0;
-    left: -100%;
-    width: 100%;
-    height: 100%;
+button:hover {
     background: var(--color-secondary);
-    transition: left 0.3s ease;
-    z-index: -1;
+    transform: translateY(-1px);
 }
 
-button:hover::before {
-    left: 0;
+
+
+.migration-button {
+    background: white;
+    color: var(--color-primary);
+    border: 2px solid var(--color-primary);
+}
+
+.migration-button:hover {
+    color: white;
+}
+
+.beta-button {
+    background: linear-gradient(135deg, var(--color-primary), var(--color-secondary));
+    color: white;
+    border: none;
+    font-weight: bold;
+    font-size: 1.05em;
+    box-shadow: 0 4px 15px rgba(255, 97, 216, 0.3);
+}
+
+.beta-button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(255, 97, 216, 0.4);
+    filter: brightness(1.05);
 }
 
 .status { 
@@ -650,33 +668,39 @@ input:checked + .toggle-slider:before {
 }
 
 .tier-pill {
-    padding: 6px 15px;
+    padding: 8px 15px;
     border-radius: 20px;
     font-size: 0.9rem;
     font-weight: 600;
     transition: all 0.2s;
-    border: 2px solid transparent;
-    background-color: #f0f0f0;
+    background-color: transparent;
+    border: 2px solid #ccc;
     color: #888;
     cursor: default;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    line-height: 1;
 }
 
 .tier-pill.active {
-    color: white;
-    transform: translateY(-1px);
-    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
+    border-width: 4px;
+    font-weight: 800;
 }
 
 .tier-pill.seed.active {
-    background: linear-gradient(135deg, #7ed56f, #28b485);
+    border-color: #28b485;
+    color: #28b485;
 }
 
 .tier-pill.flower.active {
-    background: linear-gradient(135deg, #ff61d8, #ff3b5c);
+    border-color: #ff61d8;
+    color: #ff61d8;
 }
 
 .tier-pill.nectar.active {
-    background: linear-gradient(135deg, #ffcc00, #ff9500);
+    border-color: #ffcc00;
+    color: #ffcc00;
 }
 
 .tier-benefit-item {

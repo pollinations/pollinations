@@ -389,7 +389,6 @@ export const ForestBackgroundHtml = `<!DOCTYPE html>
               transparent: true,
               depthWrite: false
             });
-            nodeMat.emissive = new THREE.Color(COLORS.nodes); // Just a visual hint, not incandescent
             const nodeMesh = new THREE.Mesh(nodeGeom, nodeMat);
             nodeMesh.position.copy(points[n]);
             myceliumGroup.add(nodeMesh);

@@ -14,18 +14,57 @@ function HelloPage() {
     return (
         <PageContainer>
             <PageCard>
-                {/* Title */}
+                {/* Hero */}
                 <Title>{pageCopy.heroTitle.text}</Title>
-                {/* Intro Section */}
                 <div className="mb-12">
                     <Body>{pageCopy.heroIntro.text}</Body>
                     <Body spacing="none">{pageCopy.heroTagline.text}</Body>
                 </div>
 
-                {/* Divider */}
+                {/* CTAs */}
+                <div className="flex flex-wrap gap-3 mb-12">
+                    <Button
+                        as="a"
+                        href="https://enter.pollinations.ai"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        variant="primary"
+                        size="lg"
+                    >
+                        {pageCopy.startCreatingButton.text}
+                        <ExternalLinkIcon className="w-4 h-4 stroke-text-highlight" />
+                    </Button>
+                    <Button
+                        as="a"
+                        href="https://enter.pollinations.ai"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        variant="secondary"
+                        size="lg"
+                    >
+                        {pageCopy.getApiKeyButton.text}
+                        <ExternalLinkIcon className="w-4 h-4 text-text-body-main" />
+                    </Button>
+                </div>
+
                 <Divider />
 
-                {/* Pollen Section */}
+                {/* What Pollinations Is */}
+                <div className="mb-12">
+                    <Heading variant="section">
+                        {pageCopy.whatIsTitle.text}
+                    </Heading>
+                    <Body spacing="comfortable">
+                        {pageCopy.whatIsDescription.text}
+                    </Body>
+                    <Body size="sm" spacing="none">
+                        {pageCopy.whatIsTagline.text}
+                    </Body>
+                </div>
+
+                <Divider />
+
+                {/* Pollen */}
                 <div className="mb-12">
                     <Heading variant="section">
                         {pageCopy.pollenTitle.text}
@@ -35,10 +74,9 @@ function HelloPage() {
                     </Body>
                 </div>
 
-                {/* Divider */}
                 <Divider />
 
-                {/* Get Pollen Section */}
+                {/* How to Get Pollen */}
                 <div className="mb-12">
                     <Heading variant="section" spacing="comfortable">
                         {pageCopy.getPollenTitle.text}
@@ -47,95 +85,209 @@ function HelloPage() {
                         {pageCopy.getPollenIntro.text}
                     </Body>
 
-                    {/* Two Column Cards */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        {/* Buy Pollen Card */}
+                    {/* Two main paths: Buy and Earn */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+                        {/* 1. Buy Pollen */}
                         <SubCard>
                             <Heading variant="lime" as="h3">
                                 {pageCopy.buyCardTitle.text}
                             </Heading>
-                            <Body size="sm" spacing="none">
+                            <Body size="sm" spacing="comfortable">
                                 {pageCopy.buyCardDescription.text}
                             </Body>
+                            <Button
+                                as="a"
+                                href="https://enter.pollinations.ai"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                variant="secondary"
+                                size="sm"
+                            >
+                                {pageCopy.viewPricingButton.text}
+                                <ExternalLinkIcon className="w-3 h-3 text-text-body-main" />
+                            </Button>
                         </SubCard>
 
-                        {/* Sponsorship Card */}
+                        {/* 2. Earn Pollen */}
                         <SubCard>
                             <Heading variant="rose" as="h3">
-                                {pageCopy.sponsorshipCardTitle.text}
+                                {pageCopy.earnCardTitle.text}
                             </Heading>
                             <Body size="sm" spacing="none">
-                                {pageCopy.sponsorshipCardDescription.text}
+                                {pageCopy.earnCardDescription.text}
                             </Body>
                         </SubCard>
                     </div>
+
+                    {/* Earn Pollen Details: Tiers + Quests */}
+                    <div className="space-y-6">
+                        {/* Sponsorship Tiers */}
+                        <div>
+                            <Heading
+                                variant="simple"
+                                as="h3"
+                                spacing="comfortable"
+                            >
+                                {pageCopy.tiersSubtitle.text}
+                            </Heading>
+                            <Body size="sm" spacing="comfortable">
+                                {pageCopy.tiersDescription.text}
+                            </Body>
+                            <div className="space-y-3">
+                                <SubCard size="compact">
+                                    <p className="font-headline text-sm font-black text-text-body-main mb-1">
+                                        {pageCopy.tierSporeTitle.text}
+                                    </p>
+                                    <p className="font-body text-xs text-text-body-secondary">
+                                        {pageCopy.tierSporeDescription.text}
+                                    </p>
+                                </SubCard>
+                                <SubCard size="compact">
+                                    <p className="font-headline text-sm font-black text-text-body-main mb-1">
+                                        {pageCopy.tierSeedTitle.text}
+                                    </p>
+                                    <p className="font-body text-xs text-text-body-secondary">
+                                        {pageCopy.tierSeedDescription.text}
+                                    </p>
+                                </SubCard>
+                                <SubCard size="compact">
+                                    <p className="font-headline text-sm font-black text-text-body-main mb-1">
+                                        {pageCopy.tierFlowerTitle.text}
+                                    </p>
+                                    <p className="font-body text-xs text-text-body-secondary">
+                                        {pageCopy.tierFlowerDescription.text}
+                                    </p>
+                                </SubCard>
+                                <SubCard size="compact">
+                                    <p className="font-headline text-sm font-black text-text-body-main mb-1">
+                                        {pageCopy.tierNectarTitle.text}
+                                    </p>
+                                    <p className="font-body text-xs text-text-body-secondary">
+                                        {pageCopy.tierNectarDescription.text}
+                                    </p>
+                                </SubCard>
+                            </div>
+                        </div>
+
+                        {/* Quests & One-Off Rewards */}
+                        <div>
+                            <div className="flex items-center gap-3 mb-4">
+                                <Heading
+                                    variant="simple"
+                                    as="h3"
+                                    spacing="tight"
+                                >
+                                    {pageCopy.questsSubtitle.text}
+                                </Heading>
+                                <span className="font-headline text-xs font-black text-text-highlight uppercase tracking-wider">
+                                    {pageCopy.questsStatus.text}
+                                </span>
+                            </div>
+                            <Body size="sm">
+                                {pageCopy.questsDescription.text}
+                            </Body>
+                        </div>
+
+                        {/* CTA */}
+                        <div>
+                            <Button
+                                as="a"
+                                href="mailto:hello@pollinations.ai?subject=Sponsorship Inquiry"
+                                variant="secondary"
+                                size="default"
+                            >
+                                {pageCopy.exploreTiersButton.text}
+                                <ExternalLinkIcon className="w-3 h-3 text-text-body-main" />
+                            </Button>
+                        </div>
+                    </div>
                 </div>
 
-                {/* Divider */}
                 <Divider />
 
-                {/* Sponsorship Tiers */}
+                {/* Why Developers Choose Pollinations */}
                 <div className="mb-12">
                     <Heading variant="section">
-                        {pageCopy.sponsorshipTiersTitle.text}
-                    </Heading>
-                    <Body spacing="none">
-                        {pageCopy.sponsorshipTiersDescription.text}
-                    </Body>
-                </div>
-
-                {/* Divider */}
-                <Divider />
-
-                {/* Creative Launchpad */}
-                <div className="mb-12">
-                    <Heading variant="section">
-                        {pageCopy.creativeLaunchpadTitle.text}
+                        {pageCopy.whyChooseTitle.text}
                     </Heading>
                     <Body spacing="comfortable">
-                        {pageCopy.creativeLaunchpadIntro.text}
+                        {pageCopy.whyChooseIntro.text}
                     </Body>
                     <ul className="space-y-3">
-                        <li className="font-body text-sm text-text-body-secondary leading-relaxed pl-4 border-l-2 border-border-highlight">
-                            {pageCopy.creativeLaunchpadFeature1.text}
+                        <li className="font-body text-sm text-text-body-secondary leading-relaxed pl-4 border-l-2 border-border-brand">
+                            {pageCopy.whyChooseFeature1.text}
                         </li>
-                        <li className="font-body text-sm text-text-body-secondary leading-relaxed pl-4 border-l-2 border-border-highlight">
-                            {pageCopy.creativeLaunchpadFeature2.text}
+                        <li className="font-body text-sm text-text-body-secondary leading-relaxed pl-4 border-l-2 border-border-brand">
+                            {pageCopy.whyChooseFeature2.text}
                         </li>
-                        <li className="font-body text-sm text-text-body-secondary leading-relaxed pl-4 border-l-2 border-border-highlight">
-                            {pageCopy.creativeLaunchpadFeature3.text}
+                        <li className="font-body text-sm text-text-body-secondary leading-relaxed pl-4 border-l-2 border-border-brand">
+                            {pageCopy.whyChooseFeature3.text}
                         </li>
-                        <li className="font-body text-sm text-text-body-secondary leading-relaxed pl-4 border-l-2 border-border-highlight">
-                            {pageCopy.creativeLaunchpadFeature4.text}
+                        <li className="font-body text-sm text-text-body-secondary leading-relaxed pl-4 border-l-2 border-border-brand">
+                            {pageCopy.whyChooseFeature4.text}
+                        </li>
+                        <li className="font-body text-sm text-text-body-secondary leading-relaxed pl-4 border-l-2 border-border-brand">
+                            {pageCopy.whyChooseFeature5.text}
                         </li>
                     </ul>
                 </div>
 
-                {/* Divider */}
                 <Divider />
 
-                {/* The Difference */}
+                {/* What You Can Build */}
                 <div className="mb-12">
                     <Heading variant="section">
-                        {pageCopy.differenceTitle.text}
+                        {pageCopy.buildTitle.text}
                     </Heading>
                     <Body spacing="comfortable">
-                        {pageCopy.differenceIntro.text}
+                        {pageCopy.buildIntro.text}
                     </Body>
                     <ul className="space-y-3">
-                        <li className="font-body text-sm text-text-body-secondary leading-relaxed pl-4 border-l-2 border-border-brand">
-                            {pageCopy.differenceFeature1.text}
+                        <li className="font-body text-sm text-text-body-secondary leading-relaxed pl-4 border-l-2 border-border-highlight">
+                            {pageCopy.buildFeature1.text}
                         </li>
-                        <li className="font-body text-sm text-text-body-secondary leading-relaxed pl-4 border-l-2 border-border-brand">
-                            {pageCopy.differenceFeature2.text}
+                        <li className="font-body text-sm text-text-body-secondary leading-relaxed pl-4 border-l-2 border-border-highlight">
+                            {pageCopy.buildFeature2.text}
                         </li>
-                        <li className="font-body text-sm text-text-body-secondary leading-relaxed pl-4 border-l-2 border-border-brand">
-                            {pageCopy.differenceFeature3.text}
+                        <li className="font-body text-sm text-text-body-secondary leading-relaxed pl-4 border-l-2 border-border-highlight">
+                            {pageCopy.buildFeature3.text}
+                        </li>
+                        <li className="font-body text-sm text-text-body-secondary leading-relaxed pl-4 border-l-2 border-border-highlight">
+                            {pageCopy.buildFeature4.text}
                         </li>
                     </ul>
+                    <div className="mt-6">
+                        <Button
+                            as="a"
+                            href="/apps"
+                            variant="secondary"
+                            size="default"
+                        >
+                            {pageCopy.seeAppsButton.text}
+                        </Button>
+                    </div>
                 </div>
 
-                {/* Divider */}
+                <Divider />
+
+                {/* Built With Community */}
+                <div className="mb-12">
+                    <Heading variant="section">
+                        {pageCopy.communityTitle.text}
+                    </Heading>
+                    <Body spacing="comfortable">
+                        {pageCopy.communityDescription.text}
+                    </Body>
+                    <Button
+                        as="a"
+                        href="/community"
+                        variant="secondary"
+                        size="default"
+                    >
+                        {pageCopy.joinCommunityButton.text}
+                    </Button>
+                </div>
+
                 <Divider />
 
                 {/* Roadmap */}
@@ -146,66 +298,61 @@ function HelloPage() {
                     <Body spacing="comfortable">
                         {pageCopy.roadmapIntro.text}
                     </Body>
-                    <div className="space-y-4">
-                        <SubCard size="compact">
-                            <div className="flex flex-col md:flex-row gap-3">
-                                <div className="font-headline text-xs font-black text-text-highlight uppercase tracking-wider md:w-32">
-                                    {pageCopy.roadmapComingSoonLabel.text}
-                                </div>
-                                <div className="flex-1">
-                                    <p className="font-headline text-sm font-black text-text-body-main mb-2">
-                                        {pageCopy.roadmapComingSoonTitle.text}
-                                    </p>
-                                    <p className="font-body text-xs text-text-body-secondary">
-                                        {
-                                            pageCopy
-                                                .roadmapComingSoonDescription
-                                                .text
-                                        }
-                                    </p>
-                                </div>
-                            </div>
-                        </SubCard>
-                        <SubCard size="compact">
-                            <div className="flex flex-col md:flex-row gap-3">
-                                <div className="font-headline text-xs font-black text-text-highlight uppercase tracking-wider md:w-32">
-                                    {pageCopy.roadmapQ1Label.text}
-                                </div>
-                                <div className="flex-1">
-                                    <p className="font-headline text-sm font-black text-text-body-main mb-2">
-                                        {pageCopy.roadmapQ1Title.text}
-                                    </p>
-                                    <p className="font-body text-xs text-text-body-secondary">
-                                        {pageCopy.roadmapQ1Description.text}
-                                    </p>
-                                </div>
-                            </div>
-                        </SubCard>
-                        <SubCard size="compact">
-                            <div className="flex flex-col md:flex-row gap-3">
-                                <div className="font-headline text-xs font-black text-text-highlight uppercase tracking-wider md:w-32">
-                                    {pageCopy.roadmapOngoingLabel.text}
-                                </div>
-                                <div className="flex-1">
-                                    <p className="font-headline text-sm font-black text-text-body-main mb-2">
-                                        {pageCopy.roadmapOngoingTitle.text}
-                                    </p>
-                                    <p className="font-body text-xs text-text-body-secondary">
-                                        {
-                                            pageCopy.roadmapOngoingDescription
-                                                .text
-                                        }
-                                    </p>
-                                </div>
-                            </div>
-                        </SubCard>
+                    <div className="space-y-3">
+                        <div className="pl-4 border-l-2 border-border-highlight">
+                            <p className="font-headline text-sm font-black text-text-body-main mb-1">
+                                {pageCopy.roadmapItem1Title.text}
+                            </p>
+                            <p className="font-body text-xs text-text-body-secondary">
+                                {pageCopy.roadmapItem1Description.text}
+                            </p>
+                        </div>
+                        <div className="pl-4 border-l-2 border-border-highlight">
+                            <p className="font-headline text-sm font-black text-text-body-main mb-1">
+                                {pageCopy.roadmapItem2Title.text}
+                            </p>
+                            <p className="font-body text-xs text-text-body-secondary">
+                                {pageCopy.roadmapItem2Description.text}
+                            </p>
+                        </div>
+                        <div className="pl-4 border-l-2 border-border-highlight">
+                            <p className="font-headline text-sm font-black text-text-body-main mb-1">
+                                {pageCopy.roadmapItem3Title.text}
+                            </p>
+                            <p className="font-body text-xs text-text-body-secondary">
+                                {pageCopy.roadmapItem3Description.text}
+                            </p>
+                        </div>
+                        <div className="pl-4 border-l-2 border-border-highlight">
+                            <p className="font-headline text-sm font-black text-text-body-main mb-1">
+                                {pageCopy.roadmapItem4Title.text}
+                            </p>
+                            <p className="font-body text-xs text-text-body-secondary">
+                                {pageCopy.roadmapItem4Description.text}
+                            </p>
+                        </div>
+                        <div className="pl-4 border-l-2 border-border-highlight">
+                            <p className="font-headline text-sm font-black text-text-body-main mb-1">
+                                {pageCopy.roadmapItem5Title.text}
+                            </p>
+                            <p className="font-body text-xs text-text-body-secondary">
+                                {pageCopy.roadmapItem5Description.text}
+                            </p>
+                        </div>
+                        <div className="pl-4 border-l-2 border-border-highlight">
+                            <p className="font-headline text-sm font-black text-text-body-main mb-1">
+                                {pageCopy.roadmapItem6Title.text}
+                            </p>
+                            <p className="font-body text-xs text-text-body-secondary">
+                                {pageCopy.roadmapItem6Description.text}
+                            </p>
+                        </div>
                     </div>
                 </div>
 
-                {/* Divider */}
                 <Divider />
 
-                {/* CTA */}
+                {/* Final CTA */}
                 <div>
                     <Heading variant="section" spacing="comfortable">
                         {pageCopy.ctaTitle.text}
@@ -227,11 +374,11 @@ function HelloPage() {
                         </Button>
                         <Button
                             as="a"
-                            href="mailto:hello@pollinations.ai?subject=Sponsorship Inquiry"
+                            href="/docs"
                             variant="secondary"
                             size="lg"
                         >
-                            {pageCopy.learnSponsorshipButton.text}
+                            Read the Docs
                             <ExternalLinkIcon className="w-4 h-4 text-text-body-main" />
                         </Button>
                     </div>

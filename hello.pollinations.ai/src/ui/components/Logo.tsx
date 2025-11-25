@@ -8,8 +8,8 @@ interface LogoProps {
 
 export function Logo({
     className = "w-20 h-20",
-    mainColor = "var(--logo-main)",
-    shadeColor = "var(--logo-accent)",
+    mainColor = "rgb(var(--logo-main))",
+    shadeColor = "rgb(var(--logo-accent))",
 }: LogoProps) {
     return (
         <LogoSvg

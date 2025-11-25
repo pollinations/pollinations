@@ -1,0 +1,26 @@
+name: CI Staging
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'enter.pollinations.ai/**'
+      - 'shared/registry/**'
+      - 'text.pollinations.ai/**'
+      - 'image.pollinations.ai/**'
+      - '.github/workflows/ci-setup.yml'
+      - '.github/workflows/ci-test.yml'
+      - '.github/workflows/ci-deploy.yml'
+  workflow_dispatch:
+
+jobs:
+  test:
+    uses: ./.github/workflows/ci-test.yml
+
+  deploy:
+    needs: test
+    uses: ./.github/workflows/ci-deploy.yml
+    secrets: inherit
+    with:
+      environment: staging

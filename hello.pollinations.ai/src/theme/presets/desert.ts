@@ -1,47 +1,46 @@
 import { LLMThemeResponse, processTheme } from "../style/theme-processor";
+import type { ThemeCopy } from "../buildPrompts";
 
 export const DesertTheme: LLMThemeResponse = {
   "slots": {
     "slot_0": {
-      "hex": "#1A1A1A",
+      "hex": "#1F1F1F",
       "ids": [
-        "text.primary",
-        "indicator.text",
-        "shadow.dark.sm"
+        "text.primary"
       ]
     },
     "slot_1": {
-      "hex": "#2C2C2C",
+      "hex": "#3A3A3A",
       "ids": [
         "text.secondary"
       ]
     },
     "slot_2": {
-      "hex": "#9A8F7F",
+      "hex": "#BFA49C",
       "ids": [
         "input.placeholder"
       ]
     },
     "slot_3": {
-      "hex": "#C05A25",
+      "hex": "#8A5C2E",
       "ids": [
         "button.primary.border"
       ]
     },
     "slot_4": {
-      "hex": "#F6E9D6",
+      "hex": "#F7EDE1",
       "ids": [
         "button.secondary.bg"
       ]
     },
     "slot_5": {
-      "hex": "#D8C7A8",
+      "hex": "#D6C6A9",
       "ids": [
         "button.secondary.border"
       ]
     },
     "slot_6": {
-      "hex": "#EEE5D4",
+      "hex": "#EDE6DF",
       "ids": [
         "button.disabled.bg"
       ]
@@ -53,155 +52,147 @@ export const DesertTheme: LLMThemeResponse = {
         "button.active.overlay",
         "shadow.brand.sm",
         "shadow.brand.md",
-        "shadow.brand.lg",
-        "shadow.dark.lg",
-        "shadow.dark.xl"
+        "shadow.brand.lg"
       ]
     },
     "slot_8": {
-      "hex": "#F5C96D",
+      "hex": "#2A2A2A",
       "ids": [
-        "button.focus.ring"
+        "indicator.text",
+        "border.strong",
+        "shadow.dark.lg"
       ]
     },
     "slot_9": {
-      "hex": "#E6B138",
-      "ids": [
-        "indicator.image"
-      ]
-    },
-    "slot_10": {
-      "hex": "#4A90E2",
+      "hex": "#C0562E",
       "ids": [
         "indicator.audio"
       ]
     },
-    "slot_11": {
-      "hex": "#C9B089",
+    "slot_10": {
+      "hex": "#E7D8B9",
       "ids": [
         "border.main"
       ]
     },
+    "slot_11": {
+      "hex": "#C8B89F",
+      "ids": [
+        "border.subtle"
+      ]
+    },
     "slot_12": {
-      "hex": "#3A3A3A",
+      "hex": "#5A5A5A",
       "ids": [
         "text.tertiary"
       ]
     },
     "slot_13": {
-      "hex": "#4B3A2D",
-      "ids": [
-        "border.strong"
-      ]
-    },
-    "slot_14": {
-      "hex": "#DAD2C0",
-      "ids": [
-        "border.subtle"
-      ]
-    },
-    "slot_15": {
-      "hex": "#EEE4D9",
+      "hex": "#EDE1D4",
       "ids": [
         "border.faint"
       ]
     },
-    "slot_16": {
-      "hex": "#0F0F0F",
+    "slot_14": {
+      "hex": "#0E0E0E",
+      "ids": [
+        "shadow.dark.sm"
+      ]
+    },
+    "slot_15": {
+      "hex": "#1A1A1A",
       "ids": [
         "shadow.dark.md"
       ]
     },
-    "slot_17": {
-      "hex": "#F6E0A3",
+    "slot_16": {
+      "hex": "#383838",
       "ids": [
-        "shadow.highlight.sm"
+        "shadow.dark.xl"
       ]
     },
-    "slot_18": {
-      "hex": "#E8D56A",
+    "slot_17": {
+      "hex": "#E1A867",
       "ids": [
         "shadow.highlight.md"
       ]
     },
-    "slot_19": {
-      "hex": "#F6C96A",
+    "slot_18": {
+      "hex": "#7A8A63",
       "ids": [
-        "logo.accent"
-      ]
-    },
-    "slot_20": {
-      "hex": "#8B5E2B",
-      "ids": [
+        "logo.accent",
         "background.element2"
       ]
     },
-    "slot_21": {
-      "hex": "#F6C76A",
+    "slot_19": {
+      "hex": "#FFB07C",
       "ids": [
         "background.particle"
       ]
     },
-    "slot_22": {
-      "hex": "#5A5A5A",
+    "slot_20": {
+      "hex": "#7A7A7A",
       "ids": [
         "text.caption"
       ]
     },
-    "slot_23": {
+    "slot_21": {
       "hex": "#FFFFFF",
       "ids": [
         "text.inverse",
-        "surface.card"
+        "input.bg"
       ]
     },
-    "slot_24": {
-      "hex": "#D96C2B",
+    "slot_22": {
+      "hex": "#D4A373",
       "ids": [
         "text.brand",
         "text.highlight",
         "button.primary.bg",
+        "button.focus.ring",
         "border.brand",
         "border.highlight",
+        "shadow.highlight.sm",
         "logo.main",
         "background.element1"
       ]
     },
-    "slot_25": {
-      "hex": "#F6F0E0",
+    "slot_23": {
+      "hex": "#F5EDE3",
       "ids": [
-        "surface.page"
-      ]
-    },
-    "slot_26": {
-      "hex": "#F0E6D8",
-      "ids": [
-        "surface.base",
+        "surface.page",
+        "indicator.image",
         "background.base"
       ]
     },
-    "slot_27": {
-      "hex": "#F9F3E6",
+    "slot_24": {
+      "hex": "#FFF7EC",
       "ids": [
-        "input.bg"
+        "surface.card"
       ]
     },
-    "slot_28": {
-      "hex": "#DED4C0",
+    "slot_25": {
+      "hex": "#F0E5D6",
+      "ids": [
+        "surface.base"
+      ]
+    },
+    "slot_26": {
+      "hex": "#D2B48C",
       "ids": [
         "input.border"
       ]
     }
   },
   "borderRadius": {
-    "radius.button": "12px",
-    "radius.card": "16px",
+    "radius.button": "16px",
+    "radius.card": "20px",
     "radius.input": "12px",
     "radius.subcard": "14px"
   },
   "fonts": {
     "font.title": "Playfair Display",
-    "font.headline": "Montserrat",
+    "font.headline": "Inter",
     "font.body": "Inter"
   },
   "opacity": {
@@ -216,11 +207,11 @@ export const DesertCssVariables = processTheme(DesertTheme).cssVariables;
 // Copy generated with prompt: "desert"
 export const DesertCopy = {
   "APPS_PAGE.subtitle": "Oasis-built apps, tools, and experiments—Pollinations-powered. Browse, try, ship.",
-  "COMMUNITY_PAGE.subtitle": "We're forging a desert haven where developers, creators, and AI enthusiasts bloom together.",
-  "COMMUNITY_PAGE.discordSubtitle": "Join our sunlit caravan for chats and support.",
-  "COMMUNITY_PAGE.githubSubtitle": "Collaborate on open-source desert-projects and contribute code.",
-  "COMMUNITY_PAGE.supportersSubtitle": "We're grateful to our desert-supporters for their contributions to the platform.",
-  "HELLO_PAGE.heroTitle": "An AI platform for desert developers."
+  "COMMUNITY_PAGE.subtitle": "We're forging a desert haven where developers, creators, and AI enthusiasts collaborate and bloom.",
+  "COMMUNITY_PAGE.discordSubtitle": "Join our desert community for chats and help.",
+  "COMMUNITY_PAGE.githubSubtitle": "Collaborate on open-source trails and contribute code.",
+  "COMMUNITY_PAGE.supportersSubtitle": "We thank our supporters for their contributions to the platform.",
+  "HELLO_PAGE.heroTitle": "Desert AI platform for creative developers."
 };
 
 // Background HTML (raw template literal)
@@ -256,10 +247,10 @@ export const DesertBackgroundHtml = `<!DOCTYPE html>
         color: {{BACKGROUND_ELEMENT2}};
         padding: 4px 10px;
         border-radius: 7px;
-        opacity: 0.62;
-        z-index: 2;
-        letter-spacing: 0.05em;
+        z-index: 10;
         user-select: none;
+        opacity: 0.70;
+        letter-spacing: 0.02em;
         pointer-events: none;
       }
     </style>
@@ -285,205 +276,170 @@ export const DesertBackgroundHtml = `<!DOCTYPE html>
       let prefersReducedMotion;
 
       function initRenderer() {
-        renderer = new THREE.WebGLRenderer({
-          canvas: document.getElementById('bg-canvas'),
-          antialias: true,
-          alpha: false
-        });
-        renderer.setPixelRatio(window.devicePixelRatio);
-        resizeRenderer();
-      }
-
-      function resizeRenderer() {
-        const w = window.innerWidth, h = window.innerHeight;
-        renderer.setSize(w, h, false);
-        camera.aspect = w / h;
-        camera.updateProjectionMatrix();
+        renderer = new THREE.WebGLRenderer({ canvas: document.getElementById('bg-canvas'), antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight, false);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
       }
 
       function initScene() {
         scene = new THREE.Scene();
         scene.background = new THREE.Color(COLORS.sceneBackground);
 
-        // Camera floats slightly above, wide view
-        camera = new THREE.PerspectiveCamera(38, window.innerWidth/window.innerHeight, 0.1, 100);
-        camera.position.set(0, 2.1, 7.8);
-        camera.lookAt(0,0,0);
+        camera = new THREE.PerspectiveCamera(55, window.innerWidth / window.innerHeight, 0.1, 60);
+        camera.position.set(0, 0, 22);
       }
 
       function createOrganicElements() {
-        // ---- Filament network (branching, gently glowing lines) ----
-        // Build a few organic mycelium filaments that branch
-        const filamentMaterial = new THREE.LineBasicMaterial({
-          color: COLORS.filaments,
-          transparent: true,
-          opacity: 0.38,
-          linewidth: 1.4, // ignored in most browsers, style at canvas level
-          premultipliedAlpha: true
-        });
+        // Soft random branches (filaments), glowing junctions (nodes), floating spores
+        const filamentCount = 15;
+        const nodeCount = 18;
+        const sporeCount = 38;
 
-        // 5 filaments, each generated as pseudo-3D branches
-        for (let f=0; f<5; f++) {
-          let points = [new THREE.Vector3(
-            THREE.MathUtils.randFloat(-3.2, 3.2),
-            THREE.MathUtils.randFloat(-1.3, 2.5),
-            THREE.MathUtils.randFloat(-1.5, 2)
-          )];
-          let numBranches = THREE.MathUtils.randInt(7,13);
-          for (let b=1; b<=numBranches; b++) {
-            const prev = points[points.length-1];
-            // Subtle 3D random walk, biasing to branch out horizontally
-            points.push(new THREE.Vector3(
-              prev.x + THREE.MathUtils.randFloat(-1.0,1.0),
-              prev.y + THREE.MathUtils.randFloat(-0.15,0.25),
-              prev.z + THREE.MathUtils.randFloat(-0.6,0.6)
-            ));
+        // Filaments: branched lines
+        for (let i = 0; i < filamentCount; i++) {
+          const points = [];
+          let baseAngle = Math.random() * Math.PI * 2;
+          let radius = 7 + Math.random() * 3;
+          let segments = 6 + Math.floor(Math.random() * 3);
+          let spread = 2 + Math.random() * 1.6;
+
+          let cur = new THREE.Vector3(
+            Math.cos(baseAngle) * radius,
+            Math.sin(baseAngle) * radius,
+            (Math.random()-0.5) * 3
+          );
+
+          for (let s = 0; s < segments; s++) {
+            const branch = cur.clone();
+            branch.x += (Math.sin(baseAngle + s * 0.4) * spread + (Math.random()-0.5)*0.5) * 0.8;
+            branch.y += (Math.cos(baseAngle + s * 0.5) * spread  + (Math.random()-0.5)*0.3) * 0.7;
+            branch.z += ((Math.random()-0.5)*1.4) * 0.6;
+            points.push(branch.clone());
           }
-          const geo = new THREE.BufferGeometry().setFromPoints(points);
-          const line = new THREE.Line(geo, filamentMaterial.clone());
-          filaments.push(line);
-          scene.add(line);
+
+          const curve = new THREE.CatmullRomCurve3(points);
+          const geometry = new THREE.BufferGeometry().setFromPoints(curve.getPoints(32));
+          const filamentMat = new THREE.LineBasicMaterial({
+            color: COLORS.filaments,
+            linewidth: 2,
+            opacity: 0.72 + Math.random()*0.2,
+            transparent: true
+          });
+          filaments.push(new THREE.Line(geometry, filamentMat));
         }
 
-        // ---- Node spheres (synapse-like junctions) ----
-        const nodeGeometry = new THREE.SphereGeometry(0.18, 12, 7);
-        const nodeMaterial = new THREE.MeshBasicMaterial({
-          color: COLORS.nodes,
-          transparent: true,
-          opacity: 0.6,
-          premultipliedAlpha: true
-        });
+        // Nodes: softly glowing orbs at filament junctions
+        for (let i = 0; i < nodeCount; i++) {
+          const geom = new THREE.SphereGeometry(0.36 + Math.random()*0.18, 16, 16);
+          const mat = new THREE.MeshBasicMaterial({
+            color: COLORS.nodes,
+            transparent: true,
+            opacity: 0.72 + Math.random()*0.2
+          });
+          const mesh = new THREE.Mesh(geom, mat);
 
-        // Place nodes at some filament branch ends
-        for (let i=0; i<filaments.length; i++) {
-          const geo = filaments[i].geometry;
-          const pts = geo.attributes.position;
-          // Node at the end
-          let endPos = new THREE.Vector3(
-            pts.getX(pts.count-1),
-            pts.getY(pts.count-1),
-            pts.getZ(pts.count-1)
+          // Place near some filament branches
+          let angle = Math.random() * Math.PI * 2;
+          let radius = 5.3 + Math.random() * 5.8;
+          mesh.position.set(
+            Math.cos(angle) * radius + (Math.random()-0.5)*1.5,
+            Math.sin(angle) * radius + (Math.random()-0.5)*1.7,
+            (Math.random()-0.5)*6
           );
-          let node = new THREE.Mesh(nodeGeometry, nodeMaterial.clone());
-          node.position.copy(endPos);
-          node.userData.base = endPos.clone();
-          nodes.push(node);
-          scene.add(node);
-          // And a few sprinkled randomly elsewhere
-          for (let n=0; n<2; n++) {
-            let idx = THREE.MathUtils.randInt(2, pts.count-2);
-            let pos = new THREE.Vector3(
-              pts.getX(idx),
-              pts.getY(idx),
-              pts.getZ(idx)
-            );
-            let extra = new THREE.Mesh(nodeGeometry, nodeMaterial.clone());
-            extra.position.copy(pos);
-            extra.userData.base = pos.clone();
-            nodes.push(extra);
-            scene.add(extra);
-          }
+          nodes.push(mesh);
         }
 
-        // ---- Floating spores (small, softly glowing particles) ----
-        const sporeMaterial = new THREE.MeshBasicMaterial({
-          color: COLORS.particles,
-          transparent: true,
-          opacity: 0.43,
-          premultipliedAlpha: true
-        });
-
-        const sporeGeometry = new THREE.SphereGeometry(THREE.MathUtils.randFloat(0.06,0.12), 8, 5);
-
-        for (let s=0; s<30; s++) {
-          let spore = new THREE.Mesh(
-            sporeGeometry,
-            sporeMaterial.clone()
+        // Spores: tiny floating particles
+        for (let i = 0; i < sporeCount; i++) {
+          const geom = new THREE.SphereGeometry(0.12 + Math.random()*0.06, 10, 10);
+          const mat = new THREE.MeshBasicMaterial({
+            color: COLORS.particles,
+            transparent: true,
+            opacity: 0.4 + Math.random()*0.5
+          });
+          const mesh = new THREE.Mesh(geom, mat);
+          mesh.position.set(
+            (Math.random()-0.5)*13,
+            (Math.random()-0.5)*7.5,
+            (Math.random()-0.5)*12
           );
-          // Float in central area
-          spore.position.set(
-            THREE.MathUtils.randFloat(-4.5,4.5),
-            THREE.MathUtils.randFloat(-2.1,2.7),
-            THREE.MathUtils.randFloat(-2.5,2.5)
-          );
-          // Slight different radius for spores for variation
-          spore.scale.setScalar(THREE.MathUtils.randFloat(0.7, 1.4));
-          // Store base position for drift
-          spore.userData.base = spore.position.clone();
-          spore.userData.phase = THREE.MathUtils.randFloat(0,Math.PI*2);
-          spores.push(spore);
-          scene.add(spore);
+          mesh.userData = {
+            basePos: mesh.position.clone(),
+            floatPhase: Math.random()*Math.PI*2,
+            floatMag: 0.6 + Math.random()*0.5,
+            speed: 0.08 + Math.random()*0.06
+          };
+          spores.push(mesh);
         }
+
+        filaments.forEach(f => scene.add(f));
+        nodes.forEach(n => scene.add(n));
+        spores.forEach(s => scene.add(s));
       }
 
-      // Simple camera drift and node pulse
-      let clock = new THREE.Clock();
+      function onResize() {
+        renderer.setSize(window.innerWidth, window.innerHeight, false);
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+      }
 
-      function animate() {
-        requestAnimationFrame(animate);
+      function getPrefersReducedMotion() {
+        return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      }
 
-        if (prefersReducedMotion) {
-          renderer.render(scene, camera);
-          return;
+      // Subtle camera drift and animated spores
+      let timeStart = performance.now();
+      let camDriftPhase = Math.random() * Math.PI * 2;
+
+      function animate(now) {
+        prefersReducedMotion = getPrefersReducedMotion();
+        let elapsed = (now - timeStart) * 0.001;
+
+        // Camera drift (gentle sway)
+        if (!prefersReducedMotion) {
+          camera.position.x = Math.sin(elapsed*0.15 + camDriftPhase) * 0.8;
+          camera.position.y = Math.sin(elapsed*0.13 + camDriftPhase*0.7) * 0.5;
+          camera.lookAt(0, 0, 0);
+        } else {
+          camera.position.x = 0;
+          camera.position.y = 0;
+          camera.lookAt(0, 0, 0);
         }
 
-        let t = clock.getElapsedTime();
+        // Spores float gently, unless reduced motion
+        spores.forEach(spore => {
+          if (!prefersReducedMotion) {
+            let ud = spore.userData;
+            let floatY = Math.sin(elapsed*ud.speed + ud.floatPhase) * ud.floatMag;
+            spore.position.y = ud.basePos.y + floatY * 0.5;
+            spore.position.x = ud.basePos.x + Math.sin(elapsed*ud.speed*0.8 + ud.floatPhase*1.5)*0.36;
+          } else {
+            spore.position.copy(spore.userData.basePos);
+          }
+        });
 
-        // Subtle camera drifting and parallax
-        camera.position.x = Math.sin(t/19) * 0.36;
-        camera.position.y = 2.1 + Math.sin(t/33) * 0.22;
-        camera.position.z = 7.8 + Math.cos(t/21) * 0.22;
-        camera.lookAt(0,0,0);
-
-        // Gentle filament opacity breathing effect
-        for (let f=0; f<filaments.length; f++) {
-          let mat = filaments[f].material;
-          mat.opacity = 0.32 + Math.sin(t/3 + f)*0.045;
-        }
-
-        // Node pulse (synapse junctions gently breathing)
-        for (let i=0; i<nodes.length; i++) {
-          let node = nodes[i];
-          let base = node.userData.base;
-          let phase = t/2 + i*0.6;
-          let pulse = 1 + Math.sin(phase)*0.10;
-          node.position.set(
-            base.x,
-            base.y + Math.sin(phase)*0.09,
-            base.z
-          );
-          node.scale.setScalar(pulse);
-        }
-
-        // Spore drift, vertical only, each with its own phase
-        for (let i=0; i<spores.length; i++) {
-          let spore = spores[i];
-          let base = spore.userData.base;
-          let drift = Math.sin(t/6 + spore.userData.phase) * 0.22 + Math.cos(t/5 + i)*0.07;
-          spore.position.set(base.x, base.y + drift, base.z);
-        }
+        // Nodes pulse a little
+        nodes.forEach(node => {
+          if (!prefersReducedMotion) {
+            node.material.opacity = 0.68 + Math.sin(elapsed*0.7 + node.position.x*0.2)*0.16;
+          }
+        });
 
         renderer.render(scene, camera);
+        requestAnimationFrame(animate);
       }
 
-      function checkReducedMotion() {
-        const mq = window.matchMedia('(prefers-reduced-motion: reduce)');
-        prefersReducedMotion = mq.matches;
-        // Optionally listen for change
-        mq.addEventListener?.('change', e => {
-          prefersReducedMotion = e.matches;
-        });
+      // Start!
+      function start() {
+        prefersReducedMotion = getPrefersReducedMotion();
+        initRenderer();
+        initScene();
+        createOrganicElements();
+        window.addEventListener('resize', onResize, { passive: true });
+        requestAnimationFrame(animate);
       }
 
-      function onResize() { resizeRenderer(); }
-
-      // --- Init ---
-      checkReducedMotion();
-      initScene();
-      createOrganicElements();
-      initRenderer();
-      window.addEventListener('resize', onResize);
-      animate();
+      start();
     </script>
   </body>
 </html>`;

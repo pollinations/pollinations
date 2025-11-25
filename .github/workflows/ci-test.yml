@@ -36,3 +36,6 @@ jobs:
     - name: Test ${{ matrix.package.name }}
       working-directory: ${{ matrix.package.dir }}
       run: npm run test
+      env:
+        CLOUDFLARE_API_TOKEN: '' # Empty to prevent remote mode
+        WRANGLER_SEND_METRICS: 'false'

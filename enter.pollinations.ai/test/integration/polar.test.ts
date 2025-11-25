@@ -16,16 +16,22 @@ test.for(routes)(
     "%s should only be accessible when authenticated via session cookie",
     async (route, { sessionToken, mocks }) => {
         await mocks.enable("polar", "tinybird");
-        const anonymousResponse = await SELF.fetch(`${base}${route}`, {
-            method: "GET",
-        });
-        expect(anonymousResponse.status).toBe(401);
-        const sessionCookieResponse = await SELF.fetch(`${base}${route}`, {
-            method: "GET",
-            headers: {
-                cookie: `better-auth.session_token=${sessionToken}`,
+        const anonymousResponse = await SELF.fetch(
+            `${base}${route}?redirect=false`,
+            {
+                method: "GET",
             },
-        });
+        );
+        expect(anonymousResponse.status).toBe(401);
+        const sessionCookieResponse = await SELF.fetch(
+            `${base}${route}?redirect=false`,
+            {
+                method: "GET",
+                headers: {
+                    cookie: `better-auth.session_token=${sessionToken}`,
+                },
+            },
+        );
         expect(sessionCookieResponse.status).toBe(200);
     },
 );

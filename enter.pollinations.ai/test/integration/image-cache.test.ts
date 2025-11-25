@@ -19,7 +19,7 @@ describe("Image Cache Integration Tests", () => {
         "identical image requests produce exact cache hit",
         { timeout: 30000 },
         async ({ apiKey, mocks }) => {
-            mocks.enable("polar", "tinybird");
+            await mocks.enable("polar", "tinybird");
 
             // First request - should be cache MISS
             const responseA = await SELF.fetch(
@@ -63,7 +63,7 @@ describe("Image Cache Integration Tests", () => {
         "cache hit works without authentication (cache-first pattern)",
         { timeout: 30000 },
         async ({ apiKey, mocks }) => {
-            mocks.enable("polar", "tinybird");
+            await mocks.enable("polar", "tinybird");
 
             // First request with auth - populate cache
             const responseA = await SELF.fetch(
@@ -105,7 +105,7 @@ describe("Image Cache Integration Tests", () => {
         "different image requests produce cache miss",
         { timeout: 30000 },
         async ({ apiKey, mocks }) => {
-            mocks.enable("polar", "tinybird");
+            await mocks.enable("polar", "tinybird");
 
             // First request
             const responseA = await SELF.fetch(

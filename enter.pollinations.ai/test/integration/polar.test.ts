@@ -1,5 +1,5 @@
 import { SELF } from "cloudflare:test";
-import { test } from "./fixtures.ts";
+import { test } from "../fixtures.ts";
 import { productSlugs } from "@/routes/polar.ts";
 import { expect } from "vitest";
 
@@ -15,7 +15,7 @@ const routes = [...customerRoutes, ...checkoutRoutes];
 test.for(routes)(
     "%s should only be accessible when authenticated via session cookie",
     async (route, { sessionToken, mocks }) => {
-        mocks.enable("polar", "tinybird");
+        await mocks.enable("polar", "tinybird");
         const anonymousResponse = await SELF.fetch(`${base}${route}`, {
             method: "GET",
         });

@@ -89,7 +89,6 @@ export const polarRoutes = new Hono<Env>()
                     url: result.customerPortalUrl,
                 });
             } catch (e) {
-                console.log(e);
                 throw new HTTPException(500, { cause: e });
             }
         },
@@ -127,7 +126,6 @@ export const polarRoutes = new Hono<Env>()
                     url: response.url,
                 });
             } catch (e) {
-                console.log(e);
                 throw new HTTPException(500, { cause: e });
             }
         },

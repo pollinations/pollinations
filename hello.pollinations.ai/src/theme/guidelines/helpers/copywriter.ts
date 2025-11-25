@@ -5,7 +5,7 @@
 
 import { assembleCopyPrompt } from "../../buildPrompts";
 import { generateText } from "../../../services/pollinationsAPI";
-import { ALL_COPY } from "../../copy/index";
+import { ALL_COPY } from "../../copyright/index";
 
 const MODEL = "gemini-large";
 

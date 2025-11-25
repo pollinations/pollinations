@@ -3,7 +3,7 @@
  * Combines prompt assembly + API calls for background generation
  */
 
-import { BACKGROUND_GUIDELINES } from "../background";
+import { BACKGROUND_GUIDELINES } from "../animator";
 import { generateText } from "../../../services/pollinationsAPI";
 
 const MODEL = "gemini-large";

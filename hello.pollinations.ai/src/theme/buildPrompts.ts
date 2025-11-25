@@ -5,9 +5,9 @@
  * Implements prompt assembly for COPY, STYLE, and LOGO pipelines
  */
 
-import { STYLING_GUIDELINES } from "./guidelines/styling";
-import { DRAWING_GUIDELINES } from "./guidelines/drawing";
-import { WRITING_GUIDELINES } from "./guidelines/writing";
+import { STYLING_GUIDELINES } from "./guidelines/designer";
+import { DRAWING_GUIDELINES } from "./guidelines/illustrator";
+import { WRITING_GUIDELINES } from "./guidelines/copywriter";
 import type { ThemeCopy } from "./guidelines/helpers/copywriter";
 
 // Re-export types for convenience

@@ -9,7 +9,7 @@ import {
 } from "../../style/theme-processor";
 import { assembleStylePrompt } from "../../buildPrompts";
 import { generateText } from "../../../services/pollinationsAPI";
-import { STYLING_GUIDELINES } from "../styling";
+import { STYLING_GUIDELINES } from "../designer";
 import type { MacroConfig } from "../../style/simplified-config.types";
 import { macrosToTheme } from "../../style/simplified-to-theme";
 

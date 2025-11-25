@@ -405,8 +405,7 @@ export const MountainBackgroundHtml = `<!DOCTYPE html>
           let material = new THREE.LineBasicMaterial({
             color: COLORS.filaments,
             opacity: 0.47,
-            transparent: true,
-            premultipliedAlpha: true
+            transparent: true
           });
           let line = new THREE.Line(geometry, material);
           filamentGroup.add(line);
@@ -428,8 +427,7 @@ export const MountainBackgroundHtml = `<!DOCTYPE html>
             let material = new THREE.MeshBasicMaterial({
               color: COLORS.nodes,
               opacity: 0.58,
-              transparent: true,
-              premultipliedAlpha: true
+              transparent: true
             });
             let mesh = new THREE.Mesh(sphereGeom, material);
             mesh.position.copy(pt);
@@ -453,7 +451,6 @@ export const MountainBackgroundHtml = `<!DOCTYPE html>
             color: COLORS.particles,
             opacity: 0.54 + Math.random()*0.28,
             transparent: true,
-            premultipliedAlpha: true,
             blending: THREE.AdditiveBlending
           });
           let mesh = new THREE.Mesh(geom, mat);

@@ -420,8 +420,7 @@ export const OceanBackgroundHtml = `<!DOCTYPE html>
           const mat = new THREE.MeshBasicMaterial({
             color: COLORS.particles,
             transparent: true,
-            opacity: 0.22 + Math.random()*0.5,
-            premultipliedAlpha: true
+            opacity: 0.22 + Math.random()*0.5
           });
           const mesh = new THREE.Mesh(geo, mat);
           mesh.position.copy(pos);

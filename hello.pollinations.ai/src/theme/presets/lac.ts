@@ -323,14 +323,12 @@ export const LacBackgroundHtml = `<!DOCTYPE html>
         const filamentMaterial = new THREE.LineBasicMaterial({
           color: COLORS.filaments,
           transparent: true,
-          opacity: 0.37,
-          premultipliedAlpha: true
+          opacity: 0.37
         });
         const nodeMaterial = new THREE.MeshBasicMaterial({
           color: COLORS.nodes,
           transparent: true,
-          opacity: 0.7,
-          premultipliedAlpha: true
+          opacity: 0.7
         });
         const filamentCount = 14;
         const nodesPerFilament = 5 + Math.floor(Math.random() * 4);
@@ -372,8 +370,7 @@ export const LacBackgroundHtml = `<!DOCTYPE html>
         let particleMaterial = new THREE.MeshBasicMaterial({
           color: COLORS.particles,
           transparent: true,
-          opacity: 0.48,
-          premultipliedAlpha: true
+          opacity: 0.48
         });
         const particleGeometry = new THREE.SphereGeometry(0.11, 12, 6);
         const particleCount = 28;

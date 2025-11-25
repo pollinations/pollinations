@@ -1,4 +1,4 @@
-import { LLMThemeResponse, processTheme } from "../theme/theme-processor";
+import { LLMThemeResponse, processTheme } from "../style/theme-processor";
 
 export const BeachTheme: LLMThemeResponse = {
     "slots": {
@@ -140,6 +140,11 @@ export const BeachTheme: LLMThemeResponse = {
         "font.title": "Pacifico",
         "font.headline": "Montserrat",
         "font.body": "Nunito",
+    },
+    "opacity": {
+        "opacity.card": "0.95",
+        "opacity.overlay": "0.85",
+        "opacity.glass": "0.75",
     },
 };
 

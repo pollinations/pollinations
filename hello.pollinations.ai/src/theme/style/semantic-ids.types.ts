@@ -71,4 +71,9 @@ export type SemanticTokenId =
     // Fonts
     | "font.title"
     | "font.headline"
-    | "font.body";
+    | "font.body"
+
+    // Opacity
+    | "opacity.card"
+    | "opacity.overlay"
+    | "opacity.glass";

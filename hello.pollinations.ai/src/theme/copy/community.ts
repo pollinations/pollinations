@@ -3,35 +3,31 @@
 export const COMMUNITY_PAGE = {
     title: {
         text: "Contribute",
-        transform: true,
     },
 
     subtitle: {
-        text: "We're building a platform where developers, creators, and AI enthusiasts collaborate and innovate together.",
+        text: "We're crafting a haven where developers, creators, and AI enthusiasts collaborate and bloom together.",
         transform: true,
     },
 
     // News section
     newsTitle: {
         text: "What's New",
-        transform: true,
     },
 
     newsFilePath: "/NEWS.md",
 
     discordTitle: {
         text: "Discord",
-        transform: true,
     },
 
     discordSubtitle: {
-        text: "Join our community for real-time discussions and support.",
+        text: "Join our sunlit community for chats and support.",
         transform: true,
     },
 
     githubTitle: {
         text: "GitHub",
-        transform: true,
     },
 
     githubSubtitle: {
@@ -50,11 +46,10 @@ export const COMMUNITY_PAGE = {
 
     supportersTitle: {
         text: "Supporters",
-        transform: true,
     },
 
     supportersSubtitle: {
-        text: "We're grateful to our supporters for their contributions to our platform.",
+        text: "We're grateful to our supporters for their contributions to the platform.",
         transform: true,
     },
 

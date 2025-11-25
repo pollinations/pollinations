@@ -6,12 +6,12 @@
 import {
     ThemeDictionary,
     themeToDictionary,
-} from "../../theme/theme-processor";
+} from "../../style/theme-processor";
 import { assembleStylePrompt } from "../../buildPrompts";
 import { generateText } from "../../../services/pollinationsAPI";
 import { STYLING_GUIDELINES } from "../styling";
-import type { MacroConfig } from "../../theme/simplified-config.types";
-import { macrosToTheme } from "../../theme/simplified-to-theme";
+import type { MacroConfig } from "../../style/simplified-config.types";
+import { macrosToTheme } from "../../style/simplified-to-theme";
 
 // ==============================================
 // TYPE DEFINITIONS
@@ -26,6 +26,7 @@ export interface FullThemeStyle {
         headline: string;
         body: string;
     };
+    opacity?: Record<string, string>;
     spacing?: {
         xs: string;
         sm: string;
@@ -79,6 +80,7 @@ export function parseThemeResponse(text: string): ThemeDictionary {
             slots: normalizedSlots,
             borderRadius: parsed.borderRadius,
             fonts: parsed.fonts,
+            opacity: parsed.opacity,
         };
         return themeToDictionary(llmTheme);
     }
@@ -98,6 +100,7 @@ export function parseThemeResponse(text: string): ThemeDictionary {
         slots: legacySlots,
         borderRadius: parsed.borderRadius,
         fonts: parsed.fonts,
+        opacity: parsed.opacity,
     });
 }
 
@@ -119,6 +122,7 @@ export function parseFullThemeResponse(text: string): FullThemeStyle {
         colors: themeDictionary.colors,
         borderRadius: themeDictionary.borderRadius,
         fonts: themeDictionary.fonts as any, // Cast to match expected structure if needed
+        opacity: themeDictionary.opacity,
         spacing: undefined, // We dropped spacing from the macro prompt for now
     };
 }

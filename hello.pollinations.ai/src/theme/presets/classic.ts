@@ -1,7 +1,7 @@
-import type { LLMThemeResponse } from "../theme/theme-processor";
-import { processTheme } from "../theme/theme-processor";
-import { macrosToTheme } from "../theme/simplified-to-theme";
-import type { MacroConfig } from "../theme/simplified-config.types";
+import type { LLMThemeResponse } from "../style/theme-processor";
+import { processTheme } from "../style/theme-processor";
+import { macrosToTheme } from "../style/simplified-to-theme";
+import type { MacroConfig } from "../style/simplified-config.types";
 
 const PALETTE = {
     charcoal: "#110518",
@@ -99,6 +99,11 @@ export const ClassicMacroConfig: MacroConfig = {
         card: "0px",
         input: "0px",
         subcard: "0px",
+    },
+    opacity: {
+        card: "0.5",
+        overlay: "0.4",
+        glass: "0.3",
     },
 };
 
@@ -237,10 +242,17 @@ export const ClassicBackgroundHtml = `<!DOCTYPE html>
 
       let renderer, scene, camera, filaments = [], spores = [], nodes = [];
       const CANVAS_ID = "bg-canvas";
-      const BG_COLOR = 0xF1EEE7;
-      const FILAMENT_COLOR = 0x1A1A1A; // branch-like lines
-      const NODE_COLOR = 0x2E2E2E; // junction spheres
-      const SPORE_COLOR = 0xA49A88; // floating glowing spores
+      const COLORS = {
+        sceneBackground: '{{BACKGROUND_BASE}}',
+        filaments: '{{BACKGROUND_ELEMENT1}}',
+        nodes: '{{BACKGROUND_ELEMENT2}}',
+        particles: '{{BACKGROUND_PARTICLE}}'
+      };
+
+      const BG_COLOR = parseInt(COLORS.sceneBackground.replace('#', ''), 16);
+      const FILAMENT_COLOR = parseInt(COLORS.filaments.replace('#', ''), 16); // branch-like lines
+      const NODE_COLOR = parseInt(COLORS.nodes.replace('#', ''), 16); // junction spheres
+      const SPORE_COLOR = parseInt(COLORS.particles.replace('#', ''), 16); // floating glowing spores
       const prefersStatic = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
       function initRenderer() {
@@ -294,9 +306,8 @@ export const ClassicBackgroundHtml = `<!DOCTYPE html>
         }
 
         // Nodes: clustering spheres at filament ends
-        const nodeMaterial = new THREE.MeshStandardMaterial({
+        const nodeMaterial = new THREE.MeshBasicMaterial({
           color: NODE_COLOR,
-          metalness: 0.1, roughness: 0.6,
           transparent: true, opacity: 0.42
         });
         for (let i=0; i<branches; i++) {

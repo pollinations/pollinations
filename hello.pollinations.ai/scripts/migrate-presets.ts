@@ -1,6 +1,6 @@
 import fs from "fs";
 import path from "path";
-import { extractCopyJobs } from "../src/content/guideline-helpers/writing-helpers";
+import { extractCopyJobs } from "../src/theme/guidelines/helpers/writing";
 
 // Helper to extract flat copy from a full copy object
 function flattenCopy(fullCopy: any): Record<string, string> {

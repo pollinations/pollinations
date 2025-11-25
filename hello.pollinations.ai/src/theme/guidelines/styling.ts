@@ -47,6 +47,12 @@ You will define the theme using high-level "Macros".
 - serious/brutalist: small/none (0-4px)
 - modern: medium (6-8px)
 
+2.4 OPACITY
+- card: Main card transparency (0.9-1.0 for solid surfaces, 0.7-0.9 for glass effect)
+- overlay: Modal/overlay transparency (0.8-0.95)
+- glass: Frosted glass effect (0.6-0.8)
+- Values must be between 0.0 and 1.0
+
 --------------------------------
 3. OUTPUT FORMAT (REQUIRED)
 --------------------------------
@@ -124,6 +130,11 @@ You MUST return ONLY a single JSON object with this exact structure:
     "card": "12px",
     "input": "4px",
     "subcard": "8px"
+  },
+  "opacity": {
+    "card": "0.95",        // Card/surface transparency (0.9-1.0 for solid, 0.7-0.9 for glass effect)
+    "overlay": "0.85",     // Overlay/modal transparency (0.8-0.95)
+    "glass": "0.75"        // Glass effect transparency (0.6-0.8 for frosted glass)
   }
 }
 
@@ -132,4 +143,5 @@ HARD CONSTRAINTS:
 - Do NOT add any fields beyond this schema.
 - Do NOT add prose, comments, or explanations.
 - All colors must be valid CSS hex strings (e.g. "#RRGGBB").
+- All opacity values must be decimal numbers between 0.0 and 1.0 (e.g. "0.95").
 `;

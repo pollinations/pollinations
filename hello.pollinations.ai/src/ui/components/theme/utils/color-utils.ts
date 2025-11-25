@@ -23,6 +23,20 @@ export const rgbaToHex = (color: string): string => {
     return "#000000";
 };
 
+// Convert hex to RGB format for CSS variables (returns "r g b" string - space-separated for modern CSS)
+export const hexToRgb = (hex: string): string => {
+    // Remove # if present
+    const cleaned = hex.replace("#", "");
+    
+    // Parse hex values
+    const r = parseInt(cleaned.substring(0, 2), 16);
+    const g = parseInt(cleaned.substring(2, 4), 16);
+    const b = parseInt(cleaned.substring(4, 6), 16);
+    
+    // Return as "r g b" format (space-separated) for modern CSS rgb() syntax
+    return `${r} ${g} ${b}`;
+};
+
 export const tokenToCssVar = (id: string) => {
     // Replace dots with hyphens for CSS variable names (e.g., text.primary -> --text-primary)
     return `--${id.replace(/\./g, "-")}`;

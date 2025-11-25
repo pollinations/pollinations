@@ -4,12 +4,10 @@ export const PLAY_PAGE = {
     // Page titles and navigation
     createTitle: {
         text: "Create",
-        transform: true,
     },
 
     watchTitle: {
         text: "Watch",
-        transform: true,
     },
 
     createDescription: {

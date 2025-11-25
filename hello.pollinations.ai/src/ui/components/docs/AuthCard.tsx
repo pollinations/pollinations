@@ -1,6 +1,6 @@
 import { Heading, Label } from "../ui/typography";
 import { ExternalLinkIcon } from "../../assets/ExternalLinkIcon";
-import { DOCS_PAGE } from "../../../content";
+import { DOCS_PAGE } from "../../../theme";
 
 /**
  * Authentication Card Component
@@ -32,13 +32,25 @@ export function AuthCard() {
                                         </p>
                                         <ul className="text-xs text-text-body-secondary space-y-1">
                                             <li>
-                                                {DOCS_PAGE.publishableFeature1.text}
+                                                {
+                                                    DOCS_PAGE
+                                                        .publishableFeature1
+                                                        .text
+                                                }
                                             </li>
                                             <li>
-                                                {DOCS_PAGE.publishableFeature2.text}
+                                                {
+                                                    DOCS_PAGE
+                                                        .publishableFeature2
+                                                        .text
+                                                }
                                             </li>
                                             <li className="text-text-brand font-bold">
-                                                {DOCS_PAGE.publishableFeature3.text}
+                                                {
+                                                    DOCS_PAGE
+                                                        .publishableFeature3
+                                                        .text
+                                                }
                                             </li>
                                         </ul>
                                     </div>

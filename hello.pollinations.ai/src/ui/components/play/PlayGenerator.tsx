@@ -3,7 +3,7 @@ import { Button } from "../ui/button";
 import { CloseIcon } from "../../assets/CloseIcon";
 import type { Model } from "../../../hooks/useModelList";
 
-import { PLAY_PAGE } from "../../../content";
+import { PLAY_PAGE } from "../../../theme";
 import { API_KEY } from "../../../api.config";
 
 interface PlayGeneratorProps {

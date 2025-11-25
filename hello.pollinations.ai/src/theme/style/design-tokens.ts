@@ -3,7 +3,7 @@ import type { SemanticTokenId } from "./semantic-ids.types";
 export interface DesignToken {
     id: SemanticTokenId;
     description: string; // The main human-readable name/description
-    type: "color" | "radius" | "font";
+    type: "color" | "radius" | "font" | "opacity";
 }
 
 export const TOKENS: DesignToken[] = [
@@ -287,5 +287,22 @@ export const TOKENS: DesignToken[] = [
         id: "font.body",
         description: "Body font",
         type: "font",
+    },
+
+    // OPACITY
+    {
+        id: "opacity.card",
+        description: "Card/surface transparency (0.9-1.0 solid, 0.7-0.9 glass)",
+        type: "opacity",
+    },
+    {
+        id: "opacity.overlay",
+        description: "Overlay/modal transparency (0.8-0.95)",
+        type: "opacity",
+    },
+    {
+        id: "opacity.glass",
+        description: "Glass effect transparency (0.6-0.8)",
+        type: "opacity",
     },
 ];

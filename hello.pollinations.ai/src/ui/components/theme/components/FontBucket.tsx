@@ -4,7 +4,7 @@ import { TokenChip } from "./TokenChip";
 import {
     FONT_LIBRARY,
     type FontDefinition,
-} from "../../../../content/theme/font-catalog";
+} from "../../../../theme/style/font-catalog";
 
 interface FontBucketProps {
     bucketId: string;

@@ -6,6 +6,7 @@ export function macrosToTheme(config: MacroConfig): LLMThemeResponse {
     const colorMap: Record<string, string[]> = {};
     const borderRadius: Record<string, string> = {};
     const fonts: Record<string, string> = {};
+    const opacity: Record<string, string> = {};
 
     const addColor = (semanticId: SemanticTokenId, hex: string) => {
         if (typeof hex !== "string" || hex.trim() === "") return;
@@ -23,6 +24,11 @@ export function macrosToTheme(config: MacroConfig): LLMThemeResponse {
     const addFont = (semanticId: SemanticTokenId, value: string) => {
         if (typeof value !== "string" || value.trim() === "") return;
         fonts[semanticId] = value;
+    };
+
+    const addOpacity = (semanticId: SemanticTokenId, value: string) => {
+        if (typeof value !== "string" || value.trim() === "") return;
+        opacity[semanticId] = value;
     };
 
     // 1. Map Colors
@@ -100,7 +106,12 @@ export function macrosToTheme(config: MacroConfig): LLMThemeResponse {
     addFont("font.headline", config.typography.headline);
     addFont("font.body", config.typography.body);
 
-    // 4. Construct LLMThemeResponse
+    // 4. Map Opacity
+    addOpacity("opacity.card", config.opacity.card);
+    addOpacity("opacity.overlay", config.opacity.overlay);
+    addOpacity("opacity.glass", config.opacity.glass);
+
+    // 5. Construct LLMThemeResponse
     const slots: Record<string, ThemeSlot> = {};
     Object.entries(colorMap).forEach(([hex, ids], index) => {
         slots[`slot_${index}`] = { hex, ids: ids as SemanticTokenId[] };
@@ -110,5 +121,6 @@ export function macrosToTheme(config: MacroConfig): LLMThemeResponse {
         slots,
         borderRadius,
         fonts,
+        opacity,
     };
 }

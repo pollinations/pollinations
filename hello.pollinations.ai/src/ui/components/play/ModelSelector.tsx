@@ -1,6 +1,6 @@
 import { memo } from "react";
 import { Button } from "../ui/button";
-import { PLAY_PAGE } from "../../../content";
+import { PLAY_PAGE } from "../../../theme";
 
 /**
  * ModelSelector Component

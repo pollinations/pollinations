@@ -3,7 +3,6 @@
 export const DOCS_PAGE = {
     title: {
         text: "Integrate",
-        transform: true,
     },
 
     intro: {

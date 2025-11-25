@@ -9,9 +9,9 @@
 import type { Config } from "tailwindcss";
 import {
     ClassicTheme,
-    themeToDictionary,
     ClassicCssVariables,
-} from "./src/content/theme";
+} from "./src/theme/presets/classic";
+import { themeToDictionary } from "./src/theme/style";
 import plugin from "tailwindcss/plugin";
 
 // Font family names
@@ -46,44 +46,47 @@ export default {
                 // ============================================
 
                 // Typography
-                "text-body-main": "var(--text-primary)",
-                "text-body-secondary": "var(--text-secondary)",
-                "text-body-tertiary": "var(--text-tertiary)",
-                "text-caption": "var(--text-caption)",
-                "text-on-color": "var(--text-inverse)",
-                "text-brand": "var(--text-brand)",
-                "text-highlight": "var(--text-highlight)",
+                "text-body-main": "rgb(var(--text-primary))",
+                "text-body-secondary": "rgb(var(--text-secondary))",
+                "text-body-tertiary": "rgb(var(--text-tertiary))",
+                "text-caption": "rgb(var(--text-caption))",
+                "text-on-color": "rgb(var(--text-inverse))",
+                "text-brand": "rgb(var(--text-brand))",
+                "text-highlight": "rgb(var(--text-highlight))",
 
-                // Surfaces
-                "surface-page": "var(--surface-page)",
-                "surface-card": "var(--surface-card)",
-                "surface-base": "var(--surface-base)",
-                "input-background": "var(--input-bg)",
+                // Surfaces (with opacity support)
+                "surface-page":
+                    "rgb(var(--surface-page) / var(--opacity-card, 1))",
+                "surface-card":
+                    "rgb(var(--surface-card) / var(--opacity-card, 1))",
+                "surface-base":
+                    "rgb(var(--surface-base) / var(--opacity-card, 1))",
+                "input-background": "rgb(var(--input-bg) / 1)",
 
                 // Buttons
-                "button-primary-bg": "var(--button-primary-bg)",
-                "button-secondary-bg": "var(--button-secondary-bg)",
-                "button-disabled-bg": "var(--button-disabled-bg)",
-                "button-hover-overlay": "var(--button-hover-overlay)",
-                "button-active-overlay": "var(--button-active-overlay)",
-                "button-focus-ring": "var(--button-focus-ring)",
+                "button-primary-bg": "rgb(var(--button-primary-bg))",
+                "button-secondary-bg": "rgb(var(--button-secondary-bg))",
+                "button-disabled-bg": "rgb(var(--button-disabled-bg))",
+                "button-hover-overlay": "rgb(var(--button-hover-overlay))",
+                "button-active-overlay": "rgb(var(--button-active-overlay))",
+                "button-focus-ring": "rgb(var(--button-focus-ring))",
 
                 // Indicators
-                "indicator-image": "var(--indicator-image)",
-                "indicator-text": "var(--indicator-text)",
-                "indicator-audio": "var(--indicator-audio)",
+                "indicator-image": "rgb(var(--indicator-image))",
+                "indicator-text": "rgb(var(--indicator-text))",
+                "indicator-audio": "rgb(var(--indicator-audio))",
 
                 // Borders
-                "border-brand": "var(--border-brand)",
-                "border-highlight": "var(--border-highlight)",
-                "border-main": "var(--border-main)",
-                "border-strong": "var(--border-strong)",
-                "border-subtle": "var(--border-subtle)",
-                "border-faint": "var(--border-faint)",
+                "border-brand": "rgb(var(--border-brand))",
+                "border-highlight": "rgb(var(--border-highlight))",
+                "border-main": "rgb(var(--border-main))",
+                "border-strong": "rgb(var(--border-strong))",
+                "border-subtle": "rgb(var(--border-subtle))",
+                "border-faint": "rgb(var(--border-faint))",
 
                 // Logo
-                "logo-main": "var(--logo-main)",
-                "logo-shade": "var(--logo-accent)",
+                "logo-main": "rgb(var(--logo-main))",
+                "logo-shade": "rgb(var(--logo-accent))",
             },
             stroke: {
                 // SVG stroke colors using CSS variables

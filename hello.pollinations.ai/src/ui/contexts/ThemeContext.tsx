@@ -6,14 +6,14 @@ import {
     useEffect,
 } from "react";
 import type { ReactNode } from "react";
-import { PRESETS } from "../../content/presets";
+import { PRESETS } from "../../theme/presets";
 import {
     processTheme,
     themeToDictionary,
     dictionaryToTheme,
     type ThemeDictionary,
-} from "../../content/theme/theme-processor";
-import type { ThemeCopy } from "../../content/buildPrompts";
+} from "../../theme/style/theme-processor";
+import type { ThemeCopy } from "../../theme/buildPrompts";
 
 // All presets must have copy defined - randomly select one
 const initialPreset = PRESETS[Math.floor(Math.random() * PRESETS.length)];
@@ -94,7 +94,12 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     );
 
     const resetTheme = useCallback(() => {
-        setTheme(DefaultThemeDefinition, initialPreset.id, DefaultThemeCopy, "");
+        setTheme(
+            DefaultThemeDefinition,
+            initialPreset.id,
+            DefaultThemeCopy,
+            ""
+        );
     }, [setTheme]);
 
     return (

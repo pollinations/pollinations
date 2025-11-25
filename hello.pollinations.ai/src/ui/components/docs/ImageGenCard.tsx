@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Heading, Label } from "../ui/typography";
 import { Button } from "../ui/button";
-import { DOCS_PAGE } from "../../../content";
+import { DOCS_PAGE } from "../../../theme";
 import { API_KEY } from "../../../api.config";
 
 /**
@@ -119,9 +119,7 @@ export function ImageGenCard() {
                 <div className="space-y-4">
                     {/* Prompt Selection */}
                     <div>
-                        <Label>
-                            {DOCS_PAGE.pickPromptLabel.text}
-                        </Label>
+                        <Label>{DOCS_PAGE.pickPromptLabel.text}</Label>
                         <div className="flex flex-wrap gap-2">
                             {DOCS_PAGE.imagePrompts.map((prompt) => (
                                 <button
@@ -142,9 +140,7 @@ export function ImageGenCard() {
 
                     {/* Optional Parameters */}
                     <div>
-                        <Label>
-                            {DOCS_PAGE.optionalParametersLabel.text}
-                        </Label>
+                        <Label>{DOCS_PAGE.optionalParametersLabel.text}</Label>
                         <div className="flex flex-wrap gap-2">
                             {[
                                 "model=nanobanana",

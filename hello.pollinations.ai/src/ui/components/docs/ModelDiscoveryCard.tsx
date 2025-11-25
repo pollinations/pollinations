@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Heading, Label } from "../ui/typography";
 import { Button } from "../ui/button";
-import { DOCS_PAGE } from "../../../content";
+import { DOCS_PAGE } from "../../../theme";
 
 /**
  * Model Discovery Card Component
@@ -62,9 +62,7 @@ export function ModelDiscoveryCard() {
                 <div className="space-y-4">
                     {/* Model Type Selection */}
                     <div>
-                        <Label>
-                            {DOCS_PAGE.selectTypeLabel.text}
-                        </Label>
+                        <Label>{DOCS_PAGE.selectTypeLabel.text}</Label>
                         <div className="flex flex-wrap gap-2">
                             {Object.entries(modelEndpoints).map(
                                 ([key, { label }]) => (

@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Heading, Label } from "../ui/typography";
 import { Button } from "../ui/button";
-import { DOCS_PAGE } from "../../../content";
+import { DOCS_PAGE } from "../../../theme";
 import { API_KEY } from "../../../api.config";
 
 /**
@@ -84,9 +84,7 @@ export function TextGenCard() {
                 <div className="space-y-4">
                     {/* Prompt Selection */}
                     <div>
-                        <Label>
-                            {DOCS_PAGE.pickPromptLabel.text}
-                        </Label>
+                        <Label>{DOCS_PAGE.pickPromptLabel.text}</Label>
                         <div className="flex flex-wrap gap-2">
                             {DOCS_PAGE.textPrompts.map((prompt) => (
                                 <button
@@ -107,9 +105,7 @@ export function TextGenCard() {
 
                     {/* Model Selection */}
                     <div>
-                        <Label>
-                            {DOCS_PAGE.modelLabel.text}
-                        </Label>
+                        <Label>{DOCS_PAGE.modelLabel.text}</Label>
                         <div className="flex flex-wrap gap-2">
                             {[
                                 { value: "mistral", label: "model=mistral" },
@@ -140,9 +136,7 @@ export function TextGenCard() {
 
                     {/* Optional Parameters */}
                     <div>
-                        <Label>
-                            {DOCS_PAGE.optionalLabel.text}
-                        </Label>
+                        <Label>{DOCS_PAGE.optionalLabel.text}</Label>
                         <button
                             type="button"
                             onClick={() => setJsonMode(!jsonMode)}

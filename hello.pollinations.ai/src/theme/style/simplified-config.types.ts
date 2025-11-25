@@ -91,6 +91,12 @@ export interface BackgroundMacro {
     particle: string;
 }
 
+export interface OpacityMacro {
+    card: string;
+    overlay: string;
+    glass: string;
+}
+
 export interface MacroConfig {
     text: TextMacro;
     surfaces: SurfacesMacro;
@@ -106,4 +112,5 @@ export interface MacroConfig {
     backgrounds: BackgroundMacro;
     typography: TypographyMacro;
     radius: RadiusMacro;
+    opacity: OpacityMacro;
 }

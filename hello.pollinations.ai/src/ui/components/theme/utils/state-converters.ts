@@ -1,5 +1,5 @@
-import type { ThemeDictionary } from "../../../../content/theme";
-import type { ThemeState, RadiusState, FontState } from "../types";
+import type { ThemeDictionary } from "../../../../theme/style";
+import type { ThemeState, RadiusState, FontState, OpacityState } from "../types";
 
 // Convert dictionary format to bucket format
 export const convertToThemeState = (dict: ThemeDictionary): ThemeState => {
@@ -100,6 +100,42 @@ export const convertFontsToDict = (
 ): Record<string, string> => {
     const dict: Record<string, string> = {};
     Object.values(fontState).forEach((bucket) => {
+        bucket.tokens.forEach((tokenId) => {
+            dict[tokenId] = bucket.value;
+        });
+    });
+    return dict;
+};
+
+// Convert opacity dictionary to bucket format (fixed 3 buckets, one per token)
+export const convertOpacityToState = (
+    opacityDict: Record<string, string>,
+): OpacityState => {
+    const opacityTokens: string[] = [
+        "opacity.card",
+        "opacity.overlay",
+        "opacity.glass",
+    ];
+    const newState: OpacityState = {};
+
+    opacityTokens.forEach((tokenId, index) => {
+        newState[`opacity-bucket-${index}`] = {
+            value:
+                opacityDict[tokenId] ||
+                (index === 0 ? "0.95" : index === 1 ? "0.85" : "0.75"),
+            tokens: [tokenId],
+        };
+    });
+
+    return newState;
+};
+
+// Convert opacity buckets back to dictionary format (for export)
+export const convertOpacityToDict = (
+    opacityState: OpacityState,
+): Record<string, string> => {
+    const dict: Record<string, string> = {};
+    Object.values(opacityState).forEach((bucket) => {
         bucket.tokens.forEach((tokenId) => {
             dict[tokenId] = bucket.value;
         });

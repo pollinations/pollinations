@@ -1,24 +1,32 @@
 import { useEffect, useState } from "react";
-import { themeToDictionary } from "../../../content/theme";
-import { PRESETS, DEFAULT_PRESET } from "../../../content/presets";
+import { themeToDictionary } from "../../../theme/style";
+import { PRESETS, DEFAULT_PRESET } from "../../../theme/presets";
 import { useTheme } from "../../contexts/ThemeContext";
-import type { ThemeState, RadiusState, FontState } from "./types";
+import type { ThemeState, RadiusState, FontState, OpacityState } from "./types";
 import {
     convertToThemeState,
     convertRadiusToState,
     convertFontsToState,
+    convertOpacityToState,
 } from "./utils/state-converters";
 import { useKeyboardShortcut } from "./hooks/useKeyboardShortcut";
-import { useColorSync, useRadiusSync, useFontSync } from "./hooks/useCSSSync";
+import {
+    useColorSync,
+    useRadiusSync,
+    useFontSync,
+    useOpacitySync,
+} from "./hooks/useCSSSync";
 import {
     useDragAndDrop,
     colorTokenFilter,
     radiusTokenFilter,
     fontTokenFilter,
+    opacityTokenFilter,
 } from "./hooks/useDragAndDrop";
 import { ColorBucket } from "./components/ColorBucket";
 import { RadiusBucket } from "./components/RadiusBucket";
 import { FontBucket } from "./components/FontBucket";
+import { OpacityBucket } from "./components/OpacityBucket";
 import { PresetManager } from "./PresetManager";
 
 export function PresetEditor() {
@@ -39,6 +47,9 @@ export function PresetEditor() {
     const [fonts, setFonts] = useState<FontState>(() =>
         convertFontsToState(themeDefinition.fonts || {})
     );
+    const [opacity, setOpacity] = useState<OpacityState>(() =>
+        convertOpacityToState(themeDefinition.opacity || {})
+    );
     const [selectedPresetId, setSelectedPresetId] = useState(
         themePrompt || DEFAULT_PRESET.id
     );
@@ -48,6 +59,7 @@ export function PresetEditor() {
         setTheme(convertToThemeState(themeDefinition));
         setRadius(convertRadiusToState(themeDefinition.borderRadius || {}));
         setFonts(convertFontsToState(themeDefinition.fonts || {}));
+        setOpacity(convertOpacityToState(themeDefinition.opacity || {}));
     }, [themeDefinition]);
 
     // Sync selectedPresetId with loaded preset from context
@@ -62,11 +74,13 @@ export function PresetEditor() {
     useColorSync(theme);
     useRadiusSync(radius);
     useFontSync(fonts);
+    useOpacitySync(opacity);
 
     // Drag and drop
     const colorDnD = useDragAndDrop(setTheme, colorTokenFilter);
     const radiusDnD = useDragAndDrop(setRadius, radiusTokenFilter);
     const fontDnD = useDragAndDrop(setFonts, fontTokenFilter);
+    const opacityDnD = useDragAndDrop(setOpacity, opacityTokenFilter);
 
     // Toggle on Ctrl+E
     useKeyboardShortcut("e", true, () => setIsOpen((prev) => !prev));
@@ -102,6 +116,16 @@ export function PresetEditor() {
         }));
     };
 
+    const handleOpacityChange = (bucketId: string, newValue: string) => {
+        setOpacity((prev) => ({
+            ...prev,
+            [bucketId]: {
+                ...prev[bucketId],
+                value: newValue,
+            },
+        }));
+    };
+
     const handleSetAllWhite = () => {
         setTheme((prev) => {
             const allTokens = Object.values(prev).flatMap((b) => b.tokens);
@@ -124,9 +148,15 @@ export function PresetEditor() {
             setTheme(convertToThemeState(dict));
             setRadius(convertRadiusToState(dict.borderRadius || {}));
             setFonts(convertFontsToState(dict.fonts || {}));
+            setOpacity(convertOpacityToState(dict.opacity || {}));
             setSelectedPresetId(presetId);
             // Update context to sync themePrompt and background
-            setContextTheme(dict, preset.id, preset.copy, preset.backgroundHtml);
+            setContextTheme(
+                dict,
+                preset.id,
+                preset.copy,
+                preset.backgroundHtml
+            );
         }
     };
 
@@ -194,6 +224,23 @@ export function PresetEditor() {
                             onChange={handleFontChange}
                             onDrop={fontDnD.handleDrop}
                             onDragOver={fontDnD.handleDragOver}
+                        />
+                    ))}
+                </div>
+
+                {/* Opacity Section */}
+                <div className="pt-2 mt-2 border-t border-gray-200">
+                    <div className="text-[10px] font-mono text-gray-500 uppercase mb-2 px-2">
+                        Opacity
+                    </div>
+                    {Object.entries(opacity).map(([bucketId, bucket]) => (
+                        <OpacityBucket
+                            key={bucketId}
+                            bucketId={bucketId}
+                            bucket={bucket}
+                            onChange={handleOpacityChange}
+                            onDrop={opacityDnD.handleDrop}
+                            onDragOver={opacityDnD.handleDragOver}
                         />
                     ))}
                 </div>

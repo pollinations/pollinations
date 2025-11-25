@@ -2,7 +2,7 @@ import { useState, useMemo } from "react";
 import { Title, Body } from "../components/ui/typography";
 import { PageCard } from "../components/ui/page-card";
 import { PageContainer } from "../components/ui/page-container";
-import { PLAY_PAGE } from "../../content";
+import { PLAY_PAGE } from "../../theme";
 import { ImageFeed } from "../components/play/ImageFeed";
 import { PlayGenerator } from "../components/play/PlayGenerator";
 import { ModelSelector } from "../components/play/ModelSelector";

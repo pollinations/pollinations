@@ -1,4 +1,4 @@
-import { HELLO_PAGE } from "../src/content/copy/hello";
+import { HELLO_PAGE } from "../src/theme/copy/hello";
 
 const API_KEY =
     process.env.VITE_POLLINATIONS_API_KEY ||

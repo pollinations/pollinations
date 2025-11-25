@@ -23,6 +23,16 @@ const normalizeHex = (value: string | undefined): string | null => {
     return trimmed.startsWith("#") ? trimmed.slice(0, 7) : `#${trimmed}`;
 };
 
+const hexToRgb = (hex: string): string | null => {
+    const normalized = normalizeHex(hex);
+    if (!normalized) return null;
+    const r = Number.parseInt(normalized.slice(1, 3), 16);
+    const g = Number.parseInt(normalized.slice(3, 5), 16);
+    const b = Number.parseInt(normalized.slice(5, 7), 16);
+    if (Number.isNaN(r) || Number.isNaN(g) || Number.isNaN(b)) return null;
+    return `${r} ${g} ${b}`;
+};
+
 const normalizeRadius = (value: string | undefined): string | null => {
     if (!value || typeof value !== "string") return null;
     const trimmed = value.trim();
@@ -40,6 +50,15 @@ const normalizeFont = (value: string | undefined): string | null => {
     // Basic safety: allow letters/numbers/space/dash only
     if (!/^[\w\s-]+$/.test(trimmed)) return null;
     return trimmed;
+};
+
+const normalizeOpacity = (value: string | undefined): string | null => {
+    if (!value || typeof value !== "string") return null;
+    const trimmed = value.trim();
+    const num = Number.parseFloat(trimmed);
+    // Validate opacity is between 0 and 1
+    if (Number.isNaN(num) || num < 0 || num > 1) return null;
+    return num.toString();
 };
 
 const isSemanticToken = (id: string): id is SemanticTokenId =>
@@ -61,6 +80,7 @@ export interface LLMThemeResponse {
     slots: Record<string, ThemeSlot>;
     borderRadius?: Record<string, string>;
     fonts?: Record<string, string>;
+    opacity?: Record<string, string>;
 }
 
 export interface ThemeEngineOutput {
@@ -71,6 +91,7 @@ export interface ThemeDictionary {
     colors: Array<{ hex: string; ids: SemanticTokenId[] }>;
     borderRadius?: Record<string, string>;
     fonts?: Record<string, string>;
+    opacity?: Record<string, string>;
 }
 
 // ==============================================
@@ -83,10 +104,11 @@ export function processTheme(theme: LLMThemeResponse): ThemeEngineOutput {
     Object.values(theme.slots).forEach((slot) => {
         const hex = normalizeHex(slot.hex);
         if (!hex) return;
+        const rgb = hexToRgb(hex);
+        if (!rgb) return;
         const ids = normalizeSlotIds(slot.ids);
         ids.forEach((id) => {
-            const varName = toCssVar(id);
-            cssVariables[varName] = hex;
+            cssVariables[toCssVar(id)] = rgb; // Store as RGB only
         });
     });
 
@@ -104,6 +126,15 @@ export function processTheme(theme: LLMThemeResponse): ThemeEngineOutput {
             const normalized = normalizeFont(value);
             if (normalized && isSemanticToken(id)) {
                 cssVariables[toCssVar(id)] = `'${normalized}'`;
+            }
+        });
+    }
+
+    if (theme.opacity) {
+        Object.entries(theme.opacity).forEach(([id, value]) => {
+            const normalized = normalizeOpacity(value);
+            if (normalized && isSemanticToken(id)) {
+                cssVariables[toCssVar(id)] = normalized;
             }
         });
     }
@@ -165,7 +196,15 @@ export function themeToDictionary(theme: LLMThemeResponse): ThemeDictionary {
         }
     });
 
-    return { colors, borderRadius, fonts };
+    const opacity: Record<string, string> = {};
+    Object.entries(theme.opacity || {}).forEach(([id, value]) => {
+        const normalized = normalizeOpacity(value);
+        if (normalized && isSemanticToken(id)) {
+            opacity[id] = normalized;
+        }
+    });
+
+    return { colors, borderRadius, fonts, opacity };
 }
 
 /**
@@ -194,5 +233,6 @@ export function dictionaryToTheme(dict: ThemeDictionary): LLMThemeResponse {
         slots,
         borderRadius: dict.borderRadius,
         fonts: dict.fonts,
+        opacity: dict.opacity,
     };
 }

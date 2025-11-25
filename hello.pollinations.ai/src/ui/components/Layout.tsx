@@ -3,7 +3,7 @@ import { useState } from "react";
 import { Logo } from "./Logo";
 import { Button } from "./ui/button";
 import { ExternalLinkIcon } from "../assets/ExternalLinkIcon";
-import { SOCIAL_LINKS } from "../../content/copy/socialLinks";
+import { SOCIAL_LINKS } from "../../theme/copy/socialLinks";
 import { AIPromptInput } from "./theme/AIPromptInput";
 import { BackgroundRenderer } from "./BackgroundRenderer";
 import { useTheme } from "../contexts/ThemeContext";

@@ -1,4 +1,4 @@
-import type { LLMThemeResponse } from "../theme/theme-processor";
+import type { LLMThemeResponse } from "../style/theme-processor";
 import type { ThemeCopy } from "../buildPrompts";
 import { hydrateCopy } from "../guidelines/helpers/writing";
 

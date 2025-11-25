@@ -54,6 +54,11 @@ IMPORTANT: Use these placeholder tokens for colors in your scene:
 - Secondary elements (nodes/junctions): {{BACKGROUND_ELEMENT2}}
 - Floating particles/spores: {{BACKGROUND_PARTICLE}}
 
+IMPORTANT: Color & Material Rules
+- You MUST use 'MeshBasicMaterial' or 'LineBasicMaterial' for all objects.
+- Do NOT use Standard/Physical materials as they react to light and alter the theme colors.
+- The placeholders will be replaced with Hex strings (e.g. "#ffffff") at runtime.
+
 Example usage in your generated code:
 const COLORS = {
   sceneBackground: '{{BACKGROUND_BASE}}',
@@ -62,7 +67,12 @@ const COLORS = {
   particles: '{{BACKGROUND_PARTICLE}}'
 };
 
+// Use directly with THREE.Color
 scene.background = new THREE.Color(COLORS.sceneBackground);
-filamentMaterial.color = new THREE.Color(COLORS.filaments);
 
-These placeholders will be replaced with actual theme colors at runtime.`;
+// Or convert to integer if needed for specific Three.js methods
+// const bgInt = parseInt(COLORS.sceneBackground.replace('#', ''), 16);
+
+const material = new THREE.MeshBasicMaterial({ 
+  color: COLORS.filaments 
+});`;

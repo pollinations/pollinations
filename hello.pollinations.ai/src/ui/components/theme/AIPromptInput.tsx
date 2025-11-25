@@ -1,14 +1,14 @@
 import { useState, useEffect, useRef } from "react";
 import { useTheme } from "../../contexts/ThemeContext";
-import { generateTheme } from "../../../content/guidelines/helpers/styling";
+import { generateTheme } from "../../../theme/guidelines/helpers/styling";
 import {
     generateCopy,
     type ThemeCopy,
-} from "../../../content/guidelines/helpers/writing";
-import { ALL_COPY } from "../../../content/copy/index";
-import type { ThemeDictionary } from "../../../content/theme/theme-processor";
-import { dictionaryToTheme } from "../../../content/theme/theme-processor";
-import { generateBackground } from "../../../content/guidelines/helpers/background";
+} from "../../../theme/guidelines/helpers/writing";
+import { ALL_COPY } from "../../../theme/copy/index";
+import type { ThemeDictionary } from "../../../theme/style/theme-processor";
+import { dictionaryToTheme } from "../../../theme/style/theme-processor";
+import { generateBackground } from "../../../theme/guidelines/helpers/background";
 import { SparklesIcon, SendIcon, DownloadIcon } from "lucide-react";
 import { Button } from "../ui/button";
 
@@ -32,9 +32,9 @@ export function AIPromptInput({ isOpen }: AIPromptInputProps) {
         full: ThemeCopy;
         flat: Record<string, string>;
     } | null>(null);
-    const [generatedBackground, setGeneratedBackground] = useState<string | null>(
-        null
-    );
+    const [generatedBackground, setGeneratedBackground] = useState<
+        string | null
+    >(null);
     const inputRef = useRef<HTMLInputElement>(null);
     const { setTheme } = useTheme();
 
@@ -155,8 +155,10 @@ export const ${capitalizedName}Copy = ${JSON.stringify(
             2
         )};
 
-// Background HTML (base64 encoded to avoid escaping issues)
-export const ${capitalizedName}BackgroundHtml = ${generatedBackground ? `\`${generatedBackground}\`` : 'null'};
+// Background HTML (raw template literal)
+export const ${capitalizedName}BackgroundHtml = ${
+            generatedBackground ? `\`${generatedBackground.replace(/`/g, "\\`")}\`` : "null"
+        };
 `;
 
         // Download file

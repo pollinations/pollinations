@@ -1,6 +1,6 @@
 import type { LLMThemeResponse } from "../style/theme-processor";
 import type { ThemeCopy } from "../buildPrompts";
-import { hydrateCopy } from "../guidelines/helpers/writing";
+import { hydrateCopy } from "../guidelines/helpers/copywriter";
 
 export interface PresetMetadata {
     id: string;

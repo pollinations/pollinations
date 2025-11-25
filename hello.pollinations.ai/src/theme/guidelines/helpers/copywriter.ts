@@ -7,6 +7,8 @@ import { assembleCopyPrompt } from "../../buildPrompts";
 import { generateText } from "../../../services/pollinationsAPI";
 import { ALL_COPY } from "../../copy/index";
 
+const MODEL = "gemini-large";
+
 // ==============================================
 // TYPE DEFINITIONS
 // ==============================================
@@ -62,7 +64,7 @@ export async function generateCopy(
         const response = await generateText(
             fullPrompt,
             42,
-            "openai-fast",
+            MODEL,
             signal,
         );
 

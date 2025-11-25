@@ -8,7 +8,7 @@
 import { STYLING_GUIDELINES } from "./guidelines/styling";
 import { DRAWING_GUIDELINES } from "./guidelines/drawing";
 import { WRITING_GUIDELINES } from "./guidelines/writing";
-import type { ThemeCopy } from "./guidelines/helpers/writing";
+import type { ThemeCopy } from "./guidelines/helpers/copywriter";
 
 // Re-export types for convenience
 export type { ThemeCopy };

@@ -6,6 +6,8 @@
 import { assembleLogoPrompt } from "../../buildPrompts";
 import { generateImage } from "../../../services/pollinationsAPI";
 
+const MODEL = "nanobanana";
+
 // ==============================================
 // TYPE DEFINITIONS
 // ==============================================
@@ -47,7 +49,7 @@ export async function generateSupporterLogo(
             width,
             height,
             seed,
-            model: "flux",
+            model: MODEL,
             nologo: true,
         },
         signal,

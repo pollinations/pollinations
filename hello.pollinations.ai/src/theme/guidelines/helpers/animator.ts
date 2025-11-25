@@ -6,6 +6,8 @@
 import { BACKGROUND_GUIDELINES } from "../background";
 import { generateText } from "../../../services/pollinationsAPI";
 
+const MODEL = "gemini-large";
+
 export async function generateBackground(
     themePrompt: string,
     signal?: AbortSignal,
@@ -16,8 +18,7 @@ export async function generateBackground(
     );
 
     console.log("🎨 [BACKGROUND PROMPT]:", fullPrompt);
-    // Using openai-large as requested (Gemini Large equivalent in this context)
-    const html = await generateText(fullPrompt, 42, "openai-large", signal);
+    const html = await generateText(fullPrompt, 42, MODEL, signal);
 
     // Clean up markdown code blocks if present
     let cleanHtml = html.trim();

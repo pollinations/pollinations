@@ -1,14 +1,14 @@
 import { useState, useEffect, useRef } from "react";
 import { useTheme } from "../../contexts/ThemeContext";
-import { generateTheme } from "../../../theme/guidelines/helpers/styling";
+import { generateTheme } from "../../../theme/guidelines/helpers/designer";
 import {
     generateCopy,
     type ThemeCopy,
-} from "../../../theme/guidelines/helpers/writing";
+} from "../../../theme/guidelines/helpers/copywriter";
 import { ALL_COPY } from "../../../theme/copy/index";
 import type { ThemeDictionary } from "../../../theme/style/theme-processor";
 import { dictionaryToTheme } from "../../../theme/style/theme-processor";
-import { generateBackground } from "../../../theme/guidelines/helpers/background";
+import { generateBackground } from "../../../theme/guidelines/helpers/animator";
 import { SparklesIcon, SendIcon, DownloadIcon } from "lucide-react";
 import { Button } from "../ui/button";
 

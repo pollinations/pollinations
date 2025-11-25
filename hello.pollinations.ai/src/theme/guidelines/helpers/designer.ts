@@ -13,6 +13,8 @@ import { STYLING_GUIDELINES } from "../styling";
 import type { MacroConfig } from "../../style/simplified-config.types";
 import { macrosToTheme } from "../../style/simplified-to-theme";
 
+const MODEL = "gemini-large";
+
 // ==============================================
 // TYPE DEFINITIONS
 // ==============================================
@@ -146,7 +148,7 @@ ${userPrompt}
 Generate the theme JSON now:`;
 
     console.log("🎨 [THEME PROMPT]:", fullPrompt);
-    const text = await generateText(fullPrompt, 42, "openai-fast", signal);
+    const text = await generateText(fullPrompt, 42, MODEL, signal);
     console.log("🎨 [THEME RESPONSE]:", text);
     return parseThemeResponse(text);
 }
@@ -161,7 +163,7 @@ export async function generateFullTheme(
 ): Promise<FullThemeStyle> {
     const fullPrompt = assembleStylePrompt(themeDescription);
     console.log("🎨 [THEME PROMPT]:", fullPrompt);
-    const text = await generateText(fullPrompt, 42, "openai-large", signal);
+    const text = await generateText(fullPrompt, 42, MODEL, signal);
     console.log("🎨 [THEME RESPONSE]:", text);
     return parseFullThemeResponse(text);
 }

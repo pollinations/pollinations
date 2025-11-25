@@ -3,6 +3,7 @@ import {
     isRadiusToken,
     isFontToken,
     isColorToken,
+    isOpacityToken,
 } from "../utils/token-helpers";
 
 type BucketState<T> = Record<string, { tokens: string[] } & T>;
@@ -59,3 +60,4 @@ export function useDragAndDrop<T>(
 export const colorTokenFilter = (token: string) => isColorToken(token);
 export const radiusTokenFilter = (token: string) => isRadiusToken(token);
 export const fontTokenFilter = (token: string) => isFontToken(token);
+export const opacityTokenFilter = (token: string) => isOpacityToken(token);

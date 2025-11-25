@@ -4,6 +4,7 @@ import debug from "debug";
 import { resolveModelConfig } from "./utils/modelResolver.js";
 import { generateHeaders } from "./transforms/headerGenerator.js";
 import { sanitizeMessages } from "./transforms/messageSanitizer.js";
+import { createImageUrlToBase64Transform } from "./transforms/imageUrlToBase64Transform.js";
 import { processParameters } from "./transforms/parameterProcessor.js";
 import { findModelByName } from "./availableModels.js";
 
@@ -111,7 +112,21 @@ export async function generateTextPortkey(messages, options = {}) {
                 !!processedOptions.modelConfig,
             );
 
-            // 3. Sanitize messages
+            // 3. Convert image URLs to base64 for Vertex AI
+            const imageUrlTransform = createImageUrlToBase64Transform();
+            result = await imageUrlTransform(
+                processedMessages,
+                processedOptions,
+            );
+            processedMessages = result.messages;
+            processedOptions = result.options;
+            log(
+                "After imageUrlTransform:",
+                !!processedOptions.modelDef,
+                !!processedOptions.modelConfig,
+            );
+
+            // 4. Sanitize messages
             result = sanitizeMessages(processedMessages, processedOptions);
             processedMessages = result.messages;
             processedOptions = result.options;
@@ -121,7 +136,7 @@ export async function generateTextPortkey(messages, options = {}) {
                 !!processedOptions.modelConfig,
             );
 
-            // 4. Process parameters (limit checking removed - handled by enter.pollinations.ai)
+            // 5. Process parameters (limit checking removed - handled by enter.pollinations.ai)
             result = processParameters(processedMessages, processedOptions);
             processedMessages = result.messages;
             processedOptions = result.options;

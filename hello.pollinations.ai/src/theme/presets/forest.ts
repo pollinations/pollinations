@@ -472,7 +472,6 @@ export const ForestBackgroundHtml = `<!DOCTYPE html>
       window.addEventListener('resize', onWindowResize);
 
       // Bootstrap
-      setRendererSize();
       initRenderer();
       initScene();
       createOrganicElements();

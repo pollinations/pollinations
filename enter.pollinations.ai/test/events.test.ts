@@ -135,7 +135,7 @@ test("Scheduled handler sends events to Polar.sh and Tinybird", async ({
     log,
     mocks,
 }) => {
-    mocks.enable("polar", "tinybird");
+    await mocks.enable("polar", "tinybird");
     const db = drizzle(env.DB);
     const events = Array.from({ length: 2000 }).map(() => {
         return createTextGenerationEvent({
@@ -155,7 +155,7 @@ test("Events get set to error status after MAX_DELIVERY_ATTEMPTS", async ({
     log,
     mocks,
 }) => {
-    mocks.enable("polar", "tinybird");
+    await mocks.enable("polar", "tinybird");
     const db = drizzle(env.DB);
     const events = [
         ...Array.from({ length: 500 }).map(() => {

@@ -42,7 +42,7 @@ test(
     "First request succeeds without rate limit headers",
     { timeout: 30000 },
     async ({ pubApiKey, mocks }) => {
-        mocks.enable("textService", "polar", "tinybird");
+        await mocks.enable("polar", "tinybird", "vcr");
 
         const response = await sendTestOpenAIRequest({
             apiKey: pubApiKey,
@@ -70,7 +70,7 @@ test(
     "Expensive requests cause longer waits",
     { timeout: 30000 },
     async ({ pubApiKey, mocks }) => {
-        mocks.enable("textService", "polar", "tinybird");
+        await mocks.enable("polar", "tinybird", "vcr");
 
         const testIp = `192.0.10.${Date.now() % 254}`;
 
@@ -108,7 +108,7 @@ test(
     "Secret keys bypass rate limiting",
     { timeout: 30000 },
     async ({ apiKey, mocks }) => {
-        mocks.enable("textService", "polar", "tinybird");
+        await mocks.enable("polar", "tinybird", "vcr");
 
         // Make request with secret key
         const response = await sendTestOpenAIRequest({
@@ -134,7 +134,7 @@ test(
     "Blocks with 429 when rate limit exhausted",
     { timeout: 60000 },
     async ({ pubApiKey, mocks }) => {
-        mocks.enable("textService", "polar", "tinybird");
+        await mocks.enable("polar", "tinybird", "vcr");
 
         const testIp = `192.0.12.${Date.now() % 254}`;
 
@@ -163,9 +163,7 @@ test(
         expect(retryAfter).toBeTruthy();
         expect(parseFloat(retryAfter || "0")).toBeGreaterThan(0);
 
-        log.info(
-            `✓ Rate limit triggered: Retry-After=${retryAfter}s`,
-        );
+        log.info(`✓ Rate limit triggered: Retry-After=${retryAfter}s`);
     },
 );
 
@@ -173,7 +171,7 @@ test(
     "Sequential requests respect rate limit",
     { timeout: 30000 },
     async ({ pubApiKey, mocks }) => {
-        mocks.enable("textService", "polar", "tinybird");
+        await mocks.enable("polar", "tinybird", "vcr");
 
         const testIp = `192.0.99.${Date.now() % 254}`;
 
@@ -213,7 +211,7 @@ test(
     "Refill allows requests after wait time",
     { timeout: 5000 },
     async ({ pubApiKey, mocks }) => {
-        mocks.enable("textService", "polar", "tinybird");
+        await mocks.enable("polar", "tinybird", "vcr");
 
         const testIp = `192.0.13.${Date.now() % 254}`;
 
@@ -237,7 +235,9 @@ test(
         });
 
         expect(response2.status).toBe(429);
-        const retryAfter = parseFloat(response2.headers.get("Retry-After") || "0");
+        const retryAfter = parseFloat(
+            response2.headers.get("Retry-After") || "0",
+        );
         log.info(`Request blocked, retry after ${retryAfter}s`);
 
         // Wait for refill + small buffer

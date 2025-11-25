@@ -61,7 +61,7 @@ export const TEXT_SERVICES = {
     },
     "qwen-coder": {
         aliases: ["qwen-coder", "qwen2.5-coder-32b-instruct"],
-        modelId: "qwen2.5-coder-32b-instruct",
+        modelId: "qwen3-coder-30b-a3b-instruct",
         provider: "scaleway",
         cost: [
             {
@@ -357,7 +357,7 @@ export const TEXT_SERVICES = {
     },
     "kimi-k2-thinking": {
         aliases: ["kimi-k2", "kimi-thinking"],
-        modelId: "kimi-k2-thinking-maas",
+        modelId: "moonshotai/kimi-k2-thinking-maas",
         provider: "vertex-ai",
         cost: [
             {

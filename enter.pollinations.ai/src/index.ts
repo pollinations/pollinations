@@ -14,8 +14,8 @@ import { getLogger } from "@logtape/logtape";
 import type { Env } from "./env.ts";
 import { drizzle } from "drizzle-orm/d1";
 
-const authRoutes = new Hono<Env>().on(["GET", "POST"], "*", (c) => {
-    return createAuth(c.env).handler(c.req.raw);
+const authRoutes = new Hono<Env>().on(["GET", "POST"], "*", async (c) => {
+    return await createAuth(c.env).handler(c.req.raw);
 });
 
 export const api = new Hono<Env>()
@@ -61,8 +61,8 @@ const app = new Hono<Env>()
     .route("/api", api)
     .route("/api/docs", docsRoutes);
 
-app.notFound((c) => {
-    return handleError(new HTTPException(404), c);
+app.notFound(async (c) => {
+    return await handleError(new HTTPException(404), c);
 });
 
 app.onError(handleError);

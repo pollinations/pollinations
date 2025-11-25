@@ -427,6 +427,7 @@ export const OceanBackgroundHtml = `<!DOCTYPE html>
           scene.add(mesh);
           spores.push({
             obj: mesh,
+            origin: pos.clone(),
             driftAxis: new THREE.Vector3(
               Math.random()-0.5,
               Math.random()-0.5,
@@ -439,6 +440,7 @@ export const OceanBackgroundHtml = `<!DOCTYPE html>
       }
 
       function animate(time) {
+        if (time === undefined) time = performance.now();
         // Reduce motion if requested
         if (prefersReducedMotion) {
           renderer.render(scene, camera);
@@ -475,7 +477,7 @@ export const OceanBackgroundHtml = `<!DOCTYPE html>
         spores.forEach(s => {
           let driftOffset = Math.sin(time*s.driftSpeed + s.floatPhase)*0.7;
           let off = s.driftAxis.clone().multiplyScalar( driftOffset );
-          s.obj.position.add( off );
+          s.obj.position.copy(s.origin).add( off );
           let scaleBob = 1 + Math.cos(time*0.8 + s.floatPhase)*0.15;
           s.obj.scale.set(scaleBob, scaleBob, scaleBob);
         });

@@ -85,9 +85,34 @@ sudo systemctl restart ionet-flux-worker1-gpu0 ionet-flux-worker1-gpu1
 - ~50GB disk space
 - HuggingFace token with access to Flux models
 
+## Docker
+
+Build and run with Docker:
+
+```bash
+# Build (takes 15-20 min due to nunchaku compilation)
+docker build -t flux-schnell-nunchaku .
+
+# Run on GPU 0
+docker run --gpus '"device=0"' -p 8000:8000 \
+  -e HF_TOKEN=your_huggingface_token \
+  flux-schnell-nunchaku
+
+# Run on specific GPU with custom port
+docker run --gpus '"device=1"' -p 8001:8000 \
+  -e HF_TOKEN=your_token \
+  -e PORT=8000 \
+  -e PUBLIC_IP=52.205.25.210 \
+  -e PUBLIC_PORT=8001 \
+  flux-schnell-nunchaku
+```
+
+**Note:** The Dockerfile builds nunchaku for RTX 4090 (SM 8.9). For other GPUs, modify `TORCH_CUDA_ARCH_LIST` in the Dockerfile.
+
 ## Files
 
-- `setup.sh` - Main deployment script
+- `setup.sh` - Main deployment script (for bare metal)
+- `Dockerfile` - Container build (for Docker/K8s)
 - `server.py` - FastAPI server
 - `requirements.txt` - Python dependencies
 - `safety_checker/` - NSFW content filter

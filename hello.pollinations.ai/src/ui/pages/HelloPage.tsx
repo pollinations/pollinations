@@ -331,22 +331,6 @@ function HelloPage() {
                                 {pageCopy.roadmapItem4Description.text}
                             </p>
                         </div>
-                        <div className="pl-4 border-l-2 border-border-highlight">
-                            <p className="font-headline text-sm font-black text-text-body-main mb-1">
-                                {pageCopy.roadmapItem5Title.text}
-                            </p>
-                            <p className="font-body text-xs text-text-body-secondary">
-                                {pageCopy.roadmapItem5Description.text}
-                            </p>
-                        </div>
-                        <div className="pl-4 border-l-2 border-border-highlight">
-                            <p className="font-headline text-sm font-black text-text-body-main mb-1">
-                                {pageCopy.roadmapItem6Title.text}
-                            </p>
-                            <p className="font-body text-xs text-text-body-secondary">
-                                {pageCopy.roadmapItem6Description.text}
-                            </p>
-                        </div>
                     </div>
                 </div>
 

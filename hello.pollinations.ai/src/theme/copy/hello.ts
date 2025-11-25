@@ -214,27 +214,11 @@ export const HELLO_PAGE = {
     },
 
     roadmapItem4Title: {
-        text: "Real-Time Models",
+        text: "Expanded Modalities & Models",
     },
 
     roadmapItem4Description: {
-        text: "Responsive, interactive experiences.",
-    },
-
-    roadmapItem5Title: {
-        text: "Video Generation",
-    },
-
-    roadmapItem5Description: {
-        text: "Expand beyond static media.",
-    },
-
-    roadmapItem6Title: {
-        text: "Expanded Model Catalog",
-    },
-
-    roadmapItem6Description: {
-        text: "More choices, same simple Pollen system.",
+        text: "Real-time experiences, video generation, and a growing catalog—more choices, same simple Pollen system.",
     },
 
     // CTA Section

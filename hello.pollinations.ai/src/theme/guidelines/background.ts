@@ -35,9 +35,17 @@ Technical constraints
 - Use requestAnimationFrame for the render loop.
 - Keep geometry and object counts low to stay performant on laptops and phones.
 - Avoid heavy post-processing, physics engines, or complex custom shaders.
-- Material blending: If using MultiplyBlending, AdditiveBlending, or SubtractiveBlending, you MUST set material.premultipliedAlpha = true to avoid console errors.
-- Respect prefers-reduced-motion:
-  - If it is enabled, render a mostly static scene (no or minimal animation).
+- Transparent Materials:
+  - Set 'transparent: true' and 'depthWrite: false' to prevent z-fighting artifacts.
+  - Do NOT set 'premultipliedAlpha: true' unless you are certain the renderer requires it (usually it causes errors).
+- Animation Loop Safety:
+  - Handle the case where 'time' is undefined in the first frame (e.g., if (!time) time = performance.now()).
+  - Use origin-relative movement (e.g., position.copy(origin).add(offset)) instead of cumulative addition (position.add(offset)) to prevent floating point drift and NaN errors.
+- Geometry Safety:
+  - If updating geometry with 'setFromPoints', ensure the initial buffer size matches the maximum number of points you will ever set.
+- Renderer Initialization:
+  - Always call 'initRenderer()' before using the renderer instance.
+- Respect prefers-reduced-motion: If it is enabled, render a mostly static scene (no or minimal animation).
 
 Structure
 - <body> contains only:
@@ -57,6 +65,7 @@ IMPORTANT: Use these placeholder tokens for colors in your scene:
 IMPORTANT: Color & Material Rules
 - You MUST use 'MeshBasicMaterial' or 'LineBasicMaterial' for all objects.
 - Do NOT use Standard/Physical materials as they react to light and alter the theme colors.
+- Do NOT set 'emissive' property on Basic materials (it does not exist and causes crashes).
 - The placeholders will be replaced with Hex strings (e.g. "#ffffff") at runtime.
 
 Example usage in your generated code:

@@ -400,7 +400,8 @@ export const MountainBackgroundHtml = `<!DOCTYPE html>
           }
 
           let curve = new THREE.CatmullRomCurve3(points);
-          let geometry = new THREE.BufferGeometry().setFromPoints(curve.getPoints(segments*7));
+          // Match the point count used in animate() loop: points.length * 7
+          let geometry = new THREE.BufferGeometry().setFromPoints(curve.getPoints(points.length*7));
           let material = new THREE.LineBasicMaterial({
             color: COLORS.filaments,
             opacity: 0.47,

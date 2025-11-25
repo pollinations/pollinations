@@ -137,7 +137,7 @@ export function AIPromptInput({ isOpen }: AIPromptInputProps) {
             .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
             .join("");
 
-        const fileContent = `import { LLMThemeResponse, processTheme } from "../theme/theme-processor";
+        const fileContent = `import { LLMThemeResponse, processTheme } from "../style/theme-processor";
 import type { ThemeCopy } from "../buildPrompts";
 
 export const ${capitalizedName}Theme: LLMThemeResponse = ${JSON.stringify(
@@ -157,7 +157,9 @@ export const ${capitalizedName}Copy = ${JSON.stringify(
 
 // Background HTML (raw template literal)
 export const ${capitalizedName}BackgroundHtml = ${
-            generatedBackground ? `\`${generatedBackground.replace(/`/g, "\\`")}\`` : "null"
+            generatedBackground
+                ? `\`${generatedBackground.replace(/`/g, "\\`")}\``
+                : "null"
         };
 `;
 

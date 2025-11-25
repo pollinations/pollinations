@@ -344,7 +344,6 @@ export const MountainBackgroundHtml = `<!DOCTYPE html>
           antialias: true, 
           alpha: false 
         });
-        renderer.setClearColor(COLORS.sceneBackground, 1);
         resizeRenderer();
         window.addEventListener('resize', resizeRenderer, false);
       }
@@ -405,7 +404,8 @@ export const MountainBackgroundHtml = `<!DOCTYPE html>
           let material = new THREE.LineBasicMaterial({
             color: COLORS.filaments,
             opacity: 0.47,
-            transparent: true
+            transparent: true,
+            depthWrite: false
           });
           let line = new THREE.Line(geometry, material);
           filamentGroup.add(line);
@@ -427,7 +427,8 @@ export const MountainBackgroundHtml = `<!DOCTYPE html>
             let material = new THREE.MeshBasicMaterial({
               color: COLORS.nodes,
               opacity: 0.58,
-              transparent: true
+              transparent: true,
+              depthWrite: false
             });
             let mesh = new THREE.Mesh(sphereGeom, material);
             mesh.position.copy(pt);
@@ -451,7 +452,8 @@ export const MountainBackgroundHtml = `<!DOCTYPE html>
             color: COLORS.particles,
             opacity: 0.54 + Math.random()*0.28,
             transparent: true,
-            blending: THREE.AdditiveBlending
+            blending: THREE.AdditiveBlending,
+            depthWrite: false
           });
           let mesh = new THREE.Mesh(geom, mat);
           mesh.position.copy(pos);

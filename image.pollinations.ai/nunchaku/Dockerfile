@@ -1,90 +1,73 @@
-FROM nvidia/cuda:12.4.0-devel-ubuntu22.04
+# Flux Schnell Server with Nunchaku Quantization
+# 
+# Build for RTX 4090 (SM 8.9):
+#   docker build -t flux-schnell-nunchaku .
+#
+# Run:
+#   docker run --gpus all -p 8000:8000 -e HF_TOKEN=your_token flux-schnell-nunchaku
 
-# Set environment variables
+FROM nvidia/cuda:12.8.0-devel-ubuntu24.04
+
+# Prevent interactive prompts during package installation
 ENV DEBIAN_FRONTEND=noninteractive
-ENV PYTHONUNBUFFERED=1
-ENV PYTHON_VERSION=3.11
 
 # Install system dependencies
 RUN apt-get update && apt-get install -y \
-    software-properties-common \
-    && add-apt-repository ppa:deadsnakes/ppa \
-    && apt-get update && apt-get install -y \
-    python${PYTHON_VERSION} \
+    python3.12 \
+    python3.12-venv \
+    python3.12-dev \
     python3-pip \
-    python3.11-dev \
-    python3-setuptools \
-    python3-pkg-resources \
-    libgl1-mesa-glx \
-    libglib2.0-0 \
     git \
-    ninja-build \
-    gcc-11 \
-    g++-11 \
+    wget \
     && rm -rf /var/lib/apt/lists/*
 
-# Set gcc/g++ 11 as default
-RUN update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-11 110 \
-    --slave /usr/bin/g++ g++ /usr/bin/g++-11 \
-    --slave /usr/bin/gcov gcov /usr/bin/gcov-11
+# Set up Python alternatives
+RUN update-alternatives --install /usr/bin/python python /usr/bin/python3.12 1 && \
+    update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.12 1
 
-# Set Python 3.11 as default
-RUN update-alternatives --install /usr/bin/python3 python3 /usr/bin/python${PYTHON_VERSION} 1 \
-    && update-alternatives --set python3 /usr/bin/python${PYTHON_VERSION} \
-    && ln -s /usr/bin/python3 /usr/bin/python
+# Set CUDA environment variables
+ENV PATH=/usr/local/cuda-12.8/bin:$PATH
+ENV CUDA_HOME=/usr/local/cuda-12.8
+ENV LD_LIBRARY_PATH=/usr/local/cuda-12.8/lib64:$LD_LIBRARY_PATH
 
-# Upgrade pip and install basic packages
-RUN python3 -m pip install --no-cache-dir --upgrade pip setuptools wheel
-
-# Install numpy first
-RUN pip3 install --no-cache-dir numpy
-
-# Install PyTorch
-RUN pip3 install --no-cache-dir \
-    torch==2.4.1 \
-    torchvision==0.19.1 \
-    torchaudio==2.4.1 \
-    --index-url https://download.pytorch.org/whl/cu121
-
-# Install other dependencies
-RUN pip3 install --no-cache-dir \
-    diffusers \
-    ninja \
-    transformers \
-    accelerate \
-    sentencepiece \
-    protobuf \
-    huggingface_hub \
-    peft \
-    opencv-python \
-    einops \
-    gradio \
-    spaces \
-    GPUtil \
-    fastapi \
-    uvicorn \
-    pydantic
-
-# Clone and install nunchaku
+# Create app directory
 WORKDIR /app
-RUN git clone https://github.com/mit-han-lab/nunchaku.git \
-    && cd nunchaku \
-    && git submodule init \
-    && git submodule update \
-    && python3 -m pip install -e .
 
-# Install hf_transfer separately to keep cache layers
-RUN pip3 install --no-cache-dir hf_transfer
+# Create and activate virtual environment
+RUN python3.12 -m venv /app/venv
+ENV PATH="/app/venv/bin:$PATH"
 
-# Install aiohttp for async HTTP requests
-RUN pip3 install --no-cache-dir aiohttp
+# Upgrade pip
+RUN pip install --upgrade pip
 
-# Copy server code and safety checker
+# Install PyTorch with CUDA 12.8 support
+RUN pip install torch torchvision --index-url https://download.pytorch.org/whl/cu128
+
+# Copy and install Python requirements
+COPY requirements.txt .
+RUN pip install -r requirements.txt
+
+# Clone and build nunchaku from source for RTX 4090 (SM 8.9)
+# This takes 10-15 minutes during build
+RUN git clone --recursive https://github.com/mit-han-lab/nunchaku.git /tmp/nunchaku && \
+    cd /tmp/nunchaku && \
+    TORCH_CUDA_ARCH_LIST="8.9" pip install -e . && \
+    rm -rf /tmp/nunchaku/.git
+
+# Copy application code
 COPY server.py .
-COPY safety_checker ./safety_checker
+COPY safety_checker/ ./safety_checker/
 
-# Expose the port
+# Expose port
 EXPOSE 8000
 
+# Environment variables (can be overridden at runtime)
+ENV PORT=8000
+ENV CUDA_VISIBLE_DEVICES=0
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=120s --retries=3 \
+    CMD curl -f http://localhost:${PORT}/docs || exit 1
+
 # Run the server
-CMD ["python3", "-m", "server"]
+CMD ["python", "server.py"]

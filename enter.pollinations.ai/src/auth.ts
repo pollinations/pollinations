@@ -66,6 +66,7 @@ export function createAuth(env: Cloudflare.Env) {
             schema: betterAuthSchema,
             provider: "sqlite",
         }),
+        trustedOrigins: ["https://enter.pollinations.ai", "http://localhost"],
         user: {
             additionalFields: {
                 githubId: {

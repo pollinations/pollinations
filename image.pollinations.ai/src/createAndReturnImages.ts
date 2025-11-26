@@ -1023,17 +1023,16 @@ const generateImage = async (
     }
 
     if (safeParams.model === "kontext") {
-        // Azure Flux Kontext model requires seed tier or higher
-        // NOTE: Allow bypass for enter.pollinations.ai requests
-        if (!fromEnter && !hasSufficientTier(userInfo.tier, "nectar")) {
+        // Kontext model is only available on enter.pollinations.ai
+        if (!fromEnter) {
             const errorText =
-                "Access to kontext model is limited to users in the nectar tier or higher. Please visit https://enter.pollinations.ai to get started.";
+                "Kontext model is only available on enter.pollinations.ai. Visit https://enter.pollinations.ai to get started.";
             logError(errorText);
             progress.updateBar(
                 requestId,
                 35,
                 "Auth",
-                "Kontext model requires seed tier",
+                "Kontext model disabled on legacy API",
             );
             const error: any = new Error(errorText);
             error.status = 403;

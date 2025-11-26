@@ -467,12 +467,10 @@ const checkCacheAndGenerate = async (
                     queueConfig = { interval: 90000 }; // 90 second interval
                     logAuth(`${modelName} model - 90 second interval, ${remaining}/${HOURLY_LIMIT} images remaining this hour${fromEnter ? ' (enter request - no hourly limit)' : ''}`);
                 } else if (modelName === "kontext") {
-                    // Kontext model requires seed tier or higher (checked via registry)
-                    // NOTE: Skip tier check for enter.pollinations.ai requests
-                    // (rate limiting is handled separately by ipQueue)
+                    // Kontext model is only available on enter.pollinations.ai
                     const fromEnter = isEnterRequest(req);
-                    if (!fromEnter && !canAccessService("kontext", authResult.tier)) {
-                        throw new Error("Kontext model requires nectar tier or higher. Visit https://enter.pollinations.ai to get started.");
+                    if (!fromEnter) {
+                        throw new Error("Kontext model is only available on enter.pollinations.ai. Visit https://enter.pollinations.ai to get started.");
                     }
                     // 30 second interval with tier-based cap from model config
                     const cap = IMAGE_CONFIG.kontext.tierCaps?.[authResult.tier] || 1;

@@ -1,9 +1,9 @@
 // Re-export all content APIs
-export * from "./copyright/hello";
-export * from "./copyright/docs";
-export * from "./copyright/community";
-export * from "./copyright/play";
-export * from "./copyright/apps";
+export * from "./copy/hello";
+export * from "./copy/docs";
+export * from "./copy/community";
+export * from "./copy/play";
+export * from "./copy/apps";
 
 // Re-export AI generation utilities
 // Note: Prompts (edited frequently) at top level, helpers (stable logic) in subfolder

@@ -5,7 +5,7 @@ import {
     generateCopy,
     type ThemeCopy,
 } from "../../../theme/guidelines/helpers/copywriter";
-import { ALL_COPY } from "../../../theme/copyright/index";
+import { ALL_COPY } from "../../../theme/copy/index";
 import type { ThemeDictionary } from "../../../theme/style/theme-processor";
 import { dictionaryToTheme } from "../../../theme/style/theme-processor";
 import { generateBackground } from "../../../theme/guidelines/helpers/animator";

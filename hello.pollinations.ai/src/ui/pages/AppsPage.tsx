@@ -5,7 +5,7 @@ import { PageCard } from "../components/ui/page-card";
 import { PageContainer } from "../components/ui/page-container";
 import { SubCard } from "../components/ui/sub-card";
 import { ExternalLinkIcon } from "../assets/ExternalLinkIcon";
-import { allProjects } from "../../theme/copyright/apps-list";
+import { allProjects } from "../../theme/copy/apps-list";
 import { GithubIcon } from "../assets/SocialIcons";
 import { useTheme } from "../contexts/ThemeContext";
 

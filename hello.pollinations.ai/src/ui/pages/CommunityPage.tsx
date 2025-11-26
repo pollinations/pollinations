@@ -1,7 +1,7 @@
 import { useTheme } from "../contexts/ThemeContext";
 import { COMMUNITY_PAGE } from "../../theme";
 import { ImageGenerator } from "../components/ImageGenerator";
-import { SOCIAL_LINKS } from "../../theme/copyright/socialLinks";
+import { SOCIAL_LINKS } from "../../theme/copy/socialLinks";
 import { Button } from "../components/ui/button";
 import { ExternalLinkIcon } from "../assets/ExternalLinkIcon";
 import { Title, Heading, Body } from "../components/ui/typography";

@@ -35,9 +35,13 @@ function detectMimeType(url, contentType) {
         // Invalid URL, skip
     }
 
-    // Default to jpeg if can't detect
+    // Default to jpeg if can't detect - log warning as this may cause issues
+    errorLog(`Could not detect MIME type for ${url}, defaulting to image/jpeg`);
     return "image/jpeg";
 }
+
+// Max image size: 20MB
+const MAX_IMAGE_SIZE = 20 * 1024 * 1024;
 
 /**
  * Fetch image and convert to base64 data URL
@@ -46,7 +50,7 @@ async function fetchImageAsBase64(url) {
     try {
         log(`Fetching image: ${url}`);
         const response = await fetch(url, {
-            timeout: 30000, // 30 second timeout
+            signal: AbortSignal.timeout(30000), // 30 second timeout
             headers: {
                 "User-Agent": "Pollinations/1.0",
             },
@@ -56,9 +60,32 @@ async function fetchImageAsBase64(url) {
             throw new Error(`HTTP ${response.status}: ${response.statusText}`);
         }
 
+        // Validate content type
         const contentType = response.headers.get("content-type");
+        if (contentType && !contentType.startsWith("image/")) {
+            throw new Error(
+                `Invalid content type: ${contentType}, expected image/*`,
+            );
+        }
+
+        // Validate size from header if available
+        const contentLength = response.headers.get("content-length");
+        if (contentLength && parseInt(contentLength, 10) > MAX_IMAGE_SIZE) {
+            throw new Error(
+                `Image too large: ${contentLength} bytes (max ${MAX_IMAGE_SIZE})`,
+            );
+        }
+
         const mimeType = detectMimeType(url, contentType);
         const arrayBuffer = await response.arrayBuffer();
+
+        // Validate actual size
+        if (arrayBuffer.byteLength > MAX_IMAGE_SIZE) {
+            throw new Error(
+                `Image too large: ${arrayBuffer.byteLength} bytes (max ${MAX_IMAGE_SIZE})`,
+            );
+        }
+
         const base64 = Buffer.from(arrayBuffer).toString("base64");
 
         log(`Converted image to base64: ${mimeType}, ${base64.length} chars`);
@@ -127,8 +154,18 @@ async function processMessageContent(content) {
         return content;
     }
 
-    const processedParts = await Promise.all(content.map(processContentPart));
-    return processedParts;
+    // Use allSettled to allow partial success - don't fail entire message if one image fails
+    const results = await Promise.allSettled(content.map(processContentPart));
+    return results.map((result, index) => {
+        if (result.status === "fulfilled") {
+            return result.value;
+        }
+        // On rejection, return original part
+        errorLog(
+            `Failed to process content part ${index}: ${result.reason?.message}`,
+        );
+        return content[index];
+    });
 }
 
 /**

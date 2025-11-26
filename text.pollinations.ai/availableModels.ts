@@ -86,6 +86,11 @@ const models: ModelDefinition[] = [
         transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
     },
     {
+        name: "claude-xlarge",
+        config: portkeyConfig["global.anthropic.claude-opus-4-5-20251101-v1:0"],
+        transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
+    },
+    {
         name: "openai-reasoning",
         config: portkeyConfig["openai/o4-mini"],
         transform: pipe(

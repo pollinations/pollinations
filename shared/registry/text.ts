@@ -320,6 +320,23 @@ export const TEXT_SERVICES = {
         tools: true,
         isSpecialized: false,
     },
+    "claude-xlarge": {
+        aliases: ["claude-opus-4.5", "claude-opus"],
+        modelId: "global.anthropic.claude-opus-4-5-20251101-v1:0",
+        provider: "aws-bedrock",
+        cost: [
+            {
+                date: COST_START_DATE,
+                promptTextTokens: perMillion(5.0),
+                completionTextTokens: perMillion(25.0),
+            },
+        ],
+        description: "Anthropic Claude Opus 4.5 - Most Intelligent Model",
+        input_modalities: ["text", "image"],
+        output_modalities: ["text"],
+        tools: true,
+        isSpecialized: false,
+    },
     "perplexity-fast": {
         aliases: ["sonar"],
         modelId: "sonar",

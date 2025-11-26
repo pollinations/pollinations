@@ -71,11 +71,13 @@ export const IMAGE_SERVICES = {
         provider: "vertex-ai",
         cost: [
             // Gemini 3 Pro Image via Vertex AI
+            // 1K/2K image: 1120 tokens = $0.134/image ($120/M tokens)
+            // 4K image: 2000 tokens = $0.24/image
             {
                 date: COST_START_DATE,
                 promptTextTokens: perMillion(1.25), // $1.25 per 1M input tokens
                 promptImageTokens: perMillion(1.25), // $1.25 per 1M input tokens
-                completionImageTokens: perMillion(50), // $50 per 1M tokens (estimated)
+                completionImageTokens: perMillion(120), // $120 per 1M tokens = $0.134 per 1K image
             },
         ],
         description: "NanoBanana Pro - Gemini 3 Pro Image (4K, Thinking)",

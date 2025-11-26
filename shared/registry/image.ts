@@ -53,7 +53,7 @@ export const IMAGE_SERVICES = {
         modelId: "nanobanana",
         provider: "vertex-ai",
         cost: [
-            // Gemini 2.5 Flash Image via Vertex AI (currently disabled)
+            // Gemini 2.5 Flash Image via Vertex AI
             {
                 date: COST_START_DATE,
                 promptTextTokens: perMillion(0.3), // $0.30 per 1M input tokens
@@ -61,7 +61,24 @@ export const IMAGE_SERVICES = {
                 completionImageTokens: perMillion(30), // $30 per 1M tokens × 1290 tokens/image = $0.039 per image
             },
         ],
-        description: "NanoBanana - Gemini 2.5 Flash Image (currently disabled)",
+        description: "NanoBanana - Gemini 2.5 Flash Image",
+        input_modalities: ["text", "image"],
+        output_modalities: ["image"],
+    },
+    "nanobanana-pro": {
+        aliases: [],
+        modelId: "nanobanana-pro",
+        provider: "vertex-ai",
+        cost: [
+            // Gemini 3 Pro Image via Vertex AI
+            {
+                date: COST_START_DATE,
+                promptTextTokens: perMillion(1.25), // $1.25 per 1M input tokens
+                promptImageTokens: perMillion(1.25), // $1.25 per 1M input tokens
+                completionImageTokens: perMillion(50), // $50 per 1M tokens (estimated)
+            },
+        ],
+        description: "NanoBanana Pro - Gemini 3 Pro Image (4K, Thinking)",
         input_modalities: ["text", "image"],
         output_modalities: ["image"],
     },

@@ -39,8 +39,9 @@ async function processNanobananaRequest(
     prompt: string,
     safeParams: ImageParams
 ): Promise<{ processedPrompt: string, processedParams: ImageParams, transparentImage?: VertexAIImageData }> {
-    // Check if this is a nanobanana request with height/width parameters
-    if (safeParams.model !== "nanobanana" || !safeParams.width || !safeParams.height) {
+    // Check if this is a nanobanana/nanobanana-pro request with height/width parameters
+    const isNanoBananaModel = safeParams.model === "nanobanana" || safeParams.model === "nanobanana-pro";
+    if (!isNanoBananaModel || !safeParams.width || !safeParams.height) {
         // Return original values for non-nanobanana models or when dimensions are missing
         return { processedPrompt: prompt, processedParams: safeParams };
     }
@@ -157,11 +158,17 @@ export async function callVertexAIGemini(
             log(`Added transparent image to processed images. Total images: ${processedImages.length}`);
         }
         
+        // Determine the Vertex AI model based on the model parameter
+        const vertexModel = safeParams.model === "nanobanana-pro" 
+            ? "gemini-3-pro-image-preview"  // Nano Banana Pro
+            : "gemini-2.5-flash-image-preview";  // Nano Banana (default)
+        
         const vertexRequest = {
             prompt: enhancedPrompt,
             width: processedParams.width,
             height: processedParams.height,
-            referenceImages: processedImages
+            referenceImages: processedImages,
+            model: vertexModel
         };
 
         // Generate image using Vertex AI

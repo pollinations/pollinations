@@ -20,6 +20,7 @@ export interface VertexAIImageRequest {
     width?: number;
     height?: number;
     referenceImages?: VertexAIImageData[];
+    model?: string; // Model ID: gemini-2.5-flash-image-preview (default) or gemini-3-pro-image-preview
 }
 
 export interface VertexAIPart {
@@ -65,7 +66,9 @@ export async function generateImageWithVertexAI(
             throw new Error("GCLOUD_PROJECT_ID environment variable not set");
         }
 
-        const endpoint = `https://aiplatform.googleapis.com/v1/projects/${projectId}/locations/global/publishers/google/models/gemini-2.5-flash-image-preview:generateContent`;
+        // Use provided model or default to gemini-2.5-flash-image-preview (Nano Banana)
+        const modelId = request.model || "gemini-2.5-flash-image-preview";
+        const endpoint = `https://aiplatform.googleapis.com/v1/projects/${projectId}/locations/global/publishers/google/models/${modelId}:generateContent`;
         
         log("Using endpoint:", endpoint);
 

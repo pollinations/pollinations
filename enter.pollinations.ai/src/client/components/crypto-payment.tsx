@@ -1,6 +1,6 @@
 /**
  * CryptoPayment Component
- * 
+ *
  * Allows users to connect their external wallet and purchase pollen
  * using USDC on Base network via the x402 protocol.
  */
@@ -53,10 +53,18 @@ export function CryptoPayment() {
                     const data = (await response.json()) as CryptoStatus;
                     setCryptoStatus(data);
                 } else {
-                    setCryptoStatus({ enabled: false, network: "", walletAddress: "" });
+                    setCryptoStatus({
+                        enabled: false,
+                        network: "",
+                        walletAddress: "",
+                    });
                 }
             } catch {
-                setCryptoStatus({ enabled: false, network: "", walletAddress: "" });
+                setCryptoStatus({
+                    enabled: false,
+                    network: "",
+                    walletAddress: "",
+                });
             } finally {
                 setIsLoading(false);
             }
@@ -87,21 +95,29 @@ export function CryptoPayment() {
             });
 
             if (response.status === 402) {
-                const paymentReq = (await response.json()) as { paymentRequirements?: { price?: string }[] };
+                const paymentReq = (await response.json()) as {
+                    paymentRequirements?: { price?: string }[];
+                };
                 setError(
                     `Payment of ${paymentReq.paymentRequirements?.[0]?.price || `$${amount}`} USDC required. ` +
-                    "x402 payment signing coming soon!"
+                        "x402 payment signing coming soon!",
                 );
                 return;
             }
 
             if (!response.ok) {
-                const errorData = (await response.json().catch(() => ({}))) as { message?: string };
+                const errorData = (await response.json().catch(() => ({}))) as {
+                    message?: string;
+                };
                 throw new Error(errorData.message || "Payment failed");
             }
 
-            const result = (await response.json()) as { pollen_credited: number };
-            setSuccess(`Successfully purchased ${result.pollen_credited.toLocaleString()} pollen!`);
+            const result = (await response.json()) as {
+                pollen_credited: number;
+            };
+            setSuccess(
+                `Successfully purchased ${result.pollen_credited.toLocaleString()} pollen!`,
+            );
         } catch (err) {
             setError(err instanceof Error ? err.message : "Payment failed");
         } finally {
@@ -112,7 +128,9 @@ export function CryptoPayment() {
     if (isLoading) {
         return (
             <div className="p-4 bg-gray-50 rounded-lg">
-                <p className="text-gray-500">Checking crypto payment availability...</p>
+                <p className="text-gray-500">
+                    Checking crypto payment availability...
+                </p>
             </div>
         );
     }
@@ -122,22 +140,29 @@ export function CryptoPayment() {
     }
 
     return (
-        <div className="flex flex-col gap-4 p-4 bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg border border-blue-100">
-            <div className="flex items-center gap-2">
-                <span className="text-xl">💎</span>
-                <h3 className="font-bold text-gray-900">Pay with Crypto</h3>
-                <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full">
-                    USDC on Base
-                </span>
+        <div className="flex flex-col gap-3 p-4 bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg border border-blue-100">
+            <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                    <span className="text-lg">💎</span>
+                    <span className="font-semibold text-gray-900">
+                        Pay with Crypto
+                    </span>
+                    <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full">
+                        USDC
+                    </span>
+                </div>
+                <span className="text-xs text-gray-500">0% fees</span>
             </div>
 
             {!isConnected ? (
-                <div className="flex flex-col gap-3">
-                    <p className="text-sm text-gray-600">
-                        Connect your wallet to pay with USDC. 0% fees, instant settlement.
-                    </p>
-                    <div className="flex flex-wrap gap-2">
-                        {connectors.map((connector) => (
+                <div className="flex flex-wrap items-center gap-2">
+                    <span className="text-sm text-gray-600">Connect:</span>
+                    {connectors.map((connector) => {
+                        const displayName =
+                            connector.name === "Injected"
+                                ? "Browser Wallet"
+                                : connector.name;
+                        return (
                             <Button
                                 key={connector.uid}
                                 as="button"
@@ -147,10 +172,10 @@ export function CryptoPayment() {
                                 disabled={isConnecting}
                                 onClick={() => connect({ connector })}
                             >
-                                {connector.name}
+                                {displayName}
                             </Button>
-                        ))}
-                    </div>
+                        );
+                    })}
                 </div>
             ) : (
                 <div className="flex flex-col gap-3">
@@ -182,7 +207,11 @@ export function CryptoPayment() {
                                     weight="light"
                                     size="small"
                                     className="ml-2"
-                                    onClick={() => switchChain({ chainId: expectedChain.id })}
+                                    onClick={() =>
+                                        switchChain({
+                                            chainId: expectedChain.id,
+                                        })
+                                    }
                                 >
                                     Switch Network
                                 </Button>
@@ -200,7 +229,9 @@ export function CryptoPayment() {
                                 disabled={isPurchasing !== null || isWrongChain}
                                 onClick={() => handlePurchase(pack.amount)}
                             >
-                                {isPurchasing === pack.amount ? "Processing..." : `${pack.label} USDC`}
+                                {isPurchasing === pack.amount
+                                    ? "Processing..."
+                                    : `${pack.label} USDC`}
                             </Button>
                         ))}
                     </div>
@@ -218,12 +249,16 @@ export function CryptoPayment() {
                 </div>
             )}
 
-            <p className="text-xs text-gray-500">
-                Powered by{" "}
-                <a href="https://x402.org" target="_blank" rel="noopener noreferrer" className="underline hover:text-gray-700">
-                    x402 protocol
-                </a>
-                {" "}• No fees • ~2 second settlement
+            <p className="text-xs text-gray-400">
+                <a
+                    href="https://x402.org"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="underline hover:text-gray-600"
+                >
+                    x402
+                </a>{" "}
+                • Base network • ~2s settlement
             </p>
         </div>
     );

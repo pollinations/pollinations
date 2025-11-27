@@ -7,14 +7,19 @@ const VERSION = "v1";
 
 const TIERS = [
     {
+        name: "🌿 Spore",
+        slug: "spore",
+        pollenGrantAmount: 1,
+    },
+    {
         name: "🌱 Seed",
         slug: "seed",
-        pollenGrantAmount: 10,
+        pollenGrantAmount: 3,
     },
     {
         name: "🌸 Flower",
         slug: "flower",
-        pollenGrantAmount: 15,
+        pollenGrantAmount: 10,
     },
     {
         name: "🍯 Nectar",

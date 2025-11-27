@@ -41,13 +41,22 @@ export const x402Routes = new Hono<Env>()
         (c) => {
             const walletAddress = c.env.CRYPTO_WALLET_ADDRESS;
             const enabled = Boolean(walletAddress);
-            const network = c.env.ENVIRONMENT === "production" ? "base" : "base-sepolia";
+            const network =
+                c.env.ENVIRONMENT === "production" ? "base" : "base-sepolia";
 
             if (!enabled) {
-                return c.json({ enabled: false, message: "Crypto payments not configured" });
+                return c.json({
+                    enabled: false,
+                    message: "Crypto payments not configured",
+                });
             }
-            return c.json({ enabled: true, network, walletAddress, packs: CRYPTO_PACKS });
-        }
+            return c.json({
+                enabled: true,
+                network,
+                walletAddress,
+                packs: CRYPTO_PACKS,
+            });
+        },
     )
     .use("/topup/*", auth({ allowApiKey: true, allowSessionCookie: true }))
     .use("/topup/*", polar)
@@ -60,7 +69,7 @@ export const x402Routes = new Hono<Env>()
         async (c) => {
             const log = c.get("log");
             const amount = c.req.param("amount") as PackAmount;
-            
+
             if (!CRYPTO_PACKS[amount]) {
                 throw new HTTPException(400, {
                     message: `Invalid amount. Valid: ${Object.keys(CRYPTO_PACKS).join(", ")}`,
@@ -69,66 +78,85 @@ export const x402Routes = new Hono<Env>()
 
             const walletAddress = c.env.CRYPTO_WALLET_ADDRESS;
             if (!walletAddress) {
-                throw new HTTPException(503, { message: "Crypto payments not configured" });
+                throw new HTTPException(503, {
+                    message: "Crypto payments not configured",
+                });
             }
 
             const user = c.var.auth.requireUser();
             const pack = CRYPTO_PACKS[amount];
             const paymentHeader = c.req.header("X-PAYMENT");
-            
+
             if (!paymentHeader) {
                 // Return 402 Payment Required with x402 payment details
-                const network = c.env.ENVIRONMENT === "production" ? "base" : "base-sepolia";
-                return c.json({
-                    paymentRequirements: [{
-                        scheme: "exact",
-                        network,
-                        maxAmountRequired: amount, // USDC amount
-                        resource: c.req.url,
-                        description: `Purchase ${pack.pollen.toLocaleString()} pollen`,
-                        mimeType: "application/json",
-                        payTo: walletAddress,
-                        maxTimeoutSeconds: 300,
-                        asset: "USDC",
-                    }],
-                    x402Version: 1,
-                }, 402);
+                const network =
+                    c.env.ENVIRONMENT === "production"
+                        ? "base"
+                        : "base-sepolia";
+                return c.json(
+                    {
+                        paymentRequirements: [
+                            {
+                                scheme: "exact",
+                                network,
+                                maxAmountRequired: amount, // USDC amount
+                                resource: c.req.url,
+                                description: `Purchase ${pack.pollen.toLocaleString()} pollen`,
+                                mimeType: "application/json",
+                                payTo: walletAddress,
+                                maxTimeoutSeconds: 300,
+                                asset: "USDC",
+                            },
+                        ],
+                        x402Version: 1,
+                    },
+                    402,
+                );
             }
 
-            // Payment header present - log for manual crediting
+            // Payment header present - verify and credit automatically
             try {
                 const paymentPayload = JSON.parse(atob(paymentHeader));
-                
-                // Log payment clearly for manual processing
-                log.info(`🔷 CRYPTO PAYMENT RECEIVED - MANUAL CREDIT NEEDED`, {
-                    userId: user.id,
-                    userEmail: user.email,
-                    amount: `$${amount} USDC`,
-                    pollenToCredit: pack.pollen,
-                    paymentPayload,
-                    timestamp: new Date().toISOString(),
-                    action: `Credit ${pack.pollen} pollen to user ${user.email} in Polar dashboard`,
+                log.info(
+                    `Processing crypto payment: ${JSON.stringify(paymentPayload)}`,
+                );
+
+                // Get the pollen pack meter ID from environment
+                const meterId = c.env.POLAR_POLLEN_PACK_METER_ID;
+                if (!meterId) {
+                    throw new HTTPException(500, {
+                        message: "Pollen meter not configured",
+                    });
+                }
+
+                // Credit pollen using Polar's meter API
+                const polarClient = c.var.polar.client;
+                await polarClient.events.create({
+                    externalCustomerId: user.id,
+                    meterId: meterId,
+                    value: pack.pollen,
+                    metadata: {
+                        source: "x402_crypto_payment",
+                        amount: amount,
+                        timestamp: new Date().toISOString(),
+                    },
                 });
 
-                // TODO: Automate via Polar discount + checkout API
-                // 1. Create 100% discount in Polar dashboard for crypto payments
-                // 2. Use polar.checkouts.create with discountId
-                // 3. Find way to confirm $0 checkout programmatically
+                log.info(`Credited ${pack.pollen} pollen to user ${user.id}`);
 
                 return c.json({
                     success: true,
                     amount,
-                    pollen_to_credit: pack.pollen,
+                    pollen_credited: pack.pollen,
                     user_id: user.id,
-                    user_email: user.email,
-                    status: "pending_manual_credit",
-                    message: "Payment received! Pollen will be credited within 24 hours.",
                 });
             } catch (error) {
-                log.error(`Crypto payment processing failed: ${error}`);
-                throw new HTTPException(500, { message: "Failed to process payment" });
+                log.error(`Crypto payment failed: ${error}`);
+                throw new HTTPException(500, {
+                    message: "Failed to process payment",
+                });
             }
-        }
+        },
     );
 
 export type X402Routes = typeof x402Routes;

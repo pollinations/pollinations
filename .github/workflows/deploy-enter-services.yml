@@ -22,13 +22,13 @@ jobs:
           SOPS_AGE_KEY: ${{ secrets.SOPS_AGE_KEY }}
         run: |
           # Decrypt .encrypted.env files to .env
-          if [ -f "text.pollinations.ai/.encrypted.env" ]; then
-            sops -d text.pollinations.ai/.encrypted.env > text.pollinations.ai/.env
+          if [ -f "text.pollinations.ai/secrets/env.json" ]; then
+            sops --output-type dotenv -d text.pollinations.ai/secrets/env.json > text.pollinations.ai/.env
             echo "✅ Decrypted text.pollinations.ai/.env"
           fi
           
-          if [ -f "image.pollinations.ai/.encrypted.env" ]; then
-            sops -d image.pollinations.ai/.encrypted.env > image.pollinations.ai/.env
+          if [ -f "image.pollinations.ai/secrets/env.json" ]; then
+            sops --output-type dotenv -d image.pollinations.ai/secrets/env.json > image.pollinations.ai/.env
             echo "✅ Decrypted image.pollinations.ai/.env"
           fi
 

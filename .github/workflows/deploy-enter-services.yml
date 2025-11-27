@@ -105,8 +105,8 @@ jobs:
             fi
             echo "✅ Text service responding (HTTP 200)"
             
-            # Check image service health
-            IMAGE_HEALTH=$(curl -s -o /dev/null -w "%{http_code}" -H "x-enter-token: $ENTER_TOKEN" http://localhost:16384/models || echo "000")
+            # Check image service health (use /about - /models returns 410 deprecated)
+            IMAGE_HEALTH=$(curl -s -o /dev/null -w "%{http_code}" -H "x-enter-token: $ENTER_TOKEN" http://localhost:16384/about || echo "000")
             if [ "$IMAGE_HEALTH" != "200" ]; then
               echo "❌ Image service health check failed (HTTP $IMAGE_HEALTH)"
               exit 1

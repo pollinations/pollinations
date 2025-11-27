@@ -98,4 +98,20 @@ export const IMAGE_SERVICES = {
         input_modalities: ["text", "image"],
         output_modalities: ["image"],
     },
+    "veo": {
+        aliases: ["veo-3.1-fast", "video"],
+        modelId: "veo",
+        provider: "vertex-ai",
+        cost: [
+            // Veo 3.1 Fast - $0.15 per second of video
+            // We bill by "video seconds" - each second is counted like a token
+            {
+                date: COST_START_DATE,
+                completionVideoSeconds: 0.15, // $0.15 per second of video
+            },
+        ],
+        description: "Veo 3.1 Fast - Google's video generation model",
+        input_modalities: ["text"],
+        output_modalities: ["video"],
+    },
 } as const;

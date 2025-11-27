@@ -23,7 +23,8 @@ export type UsageType =
     | "completionTextTokens"
     | "completionReasoningTokens"
     | "completionAudioTokens"
-    | "completionImageTokens";
+    | "completionImageTokens"
+    | "completionVideoSeconds";
 
 export type TokenUsage = {
     unit: "TOKENS";
@@ -315,6 +316,7 @@ export interface ModelInfo {
         image_price?: number;
         audio_input_price?: number;
         audio_output_price?: number;
+        video_second_price?: number;
         currency: "USD";
     };
     // User-facing metadata
@@ -350,6 +352,7 @@ export function getModelInfo(serviceId: ServiceId): ModelInfo {
             image_price: priceDefinition.completionImageTokens,
             audio_input_price: priceDefinition.promptAudioTokens,
             audio_output_price: priceDefinition.completionAudioTokens,
+            video_second_price: priceDefinition.completionVideoSeconds,
             currency: "USD",
         },
         // User-facing metadata from service definition

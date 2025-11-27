@@ -64,9 +64,11 @@ export const imageCache = createMiddleware<ImageCacheEnv>(async (c, next) => {
     const contentType = c.res?.headers.get("content-type");
     const xCache = c.res?.headers.get("x-cache");
 
-    // Cache if: response is OK, is an image, and not already a cache hit
+    // Cache if: response is OK, is an image or video, and not already a cache hit
     // Note: We don't check Content-Length because responses may use chunked encoding
-    if (c.res?.ok && contentType?.includes("image/") && xCache !== "HIT") {
+    const isMediaContent =
+        contentType?.includes("image/") || contentType?.includes("video/");
+    if (c.res?.ok && isMediaContent && xCache !== "HIT") {
         log.debug("[CACHE] Caching image response");
         c.executionCtx.waitUntil(cacheResponse(cacheKey, c));
     }

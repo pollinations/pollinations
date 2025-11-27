@@ -91,6 +91,9 @@ export const event = sqliteTable("event", {
     ).notNull(),
     tokenPriceCompletionAudio: real("token_price_completion_audio").notNull(),
     tokenPriceCompletionImage: real("token_price_completion_image").notNull(),
+    tokenPriceCompletionVideoSeconds: real(
+        "token_price_completion_video_seconds",
+    ).notNull(),
 
     // Usage
     tokenCountPromptText: integer("token_count_prompt_text").notNull(),
@@ -106,6 +109,9 @@ export const event = sqliteTable("event", {
     ).notNull(),
     tokenCountCompletionImage: integer(
         "token_count_completion_image",
+    ).notNull(),
+    tokenCountCompletionVideoSeconds: integer(
+        "token_count_completion_video_seconds",
     ).notNull(),
 
     // Totals
@@ -175,6 +181,7 @@ export type GenerationEventPriceParams = {
     tokenPriceCompletionReasoning: number;
     tokenPriceCompletionAudio: number;
     tokenPriceCompletionImage: number;
+    tokenPriceCompletionVideoSeconds: number;
 };
 
 export type GenerationEventUsageParams = {
@@ -186,6 +193,7 @@ export type GenerationEventUsageParams = {
     tokenCountCompletionReasoning: number;
     tokenCountCompletionAudio: number;
     tokenCountCompletionImage: number;
+    tokenCountCompletionVideoSeconds: number;
 };
 
 export function priceToEventParams(
@@ -210,6 +218,8 @@ export function priceToEventParams(
             priceDefinition?.completionAudioTokens || 0,
         tokenPriceCompletionImage:
             priceDefinition?.completionImageTokens || 0,
+        tokenPriceCompletionVideoSeconds:
+            priceDefinition?.completionVideoSeconds || 0,
     };
 }
 
@@ -225,6 +235,7 @@ export function usageToEventParams(
         tokenCountCompletionReasoning: usage?.completionReasoningTokens || 0,
         tokenCountCompletionAudio: usage?.completionAudioTokens || 0,
         tokenCountCompletionImage: usage?.completionImageTokens || 0,
+        tokenCountCompletionVideoSeconds: usage?.completionVideoSeconds || 0,
     };
 }
 

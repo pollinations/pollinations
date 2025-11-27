@@ -1,8 +1,8 @@
 // Import registry for model names and tier validation
-import { type ImageServiceName } from "../../shared/registry/image.ts";
+import type { ImageServiceId } from "../../shared/registry/image.ts";
 
 /**
- * Image-specific configuration for each model
+ * Image/Video-specific configuration for each model
  * Model names are enforced to match IMAGE_SERVICES from the registry
  * Tier gating is handled by enter.pollinations.ai - this only contains implementation details
  */
@@ -10,10 +10,15 @@ interface ImageModelConfig {
     type: string;
     enhance: boolean;
     defaultSideLength?: number; // Optional - defaults to 1024 if not specified
+    // Video-specific options
+    isVideo?: boolean;
+    defaultDuration?: number; // Default duration in seconds for video models
+    maxDuration?: number; // Maximum duration in seconds
+    defaultResolution?: "720p" | "1080p";
 }
 
 type ImageModelsConfig = {
-    [K in ImageServiceName]: ImageModelConfig;
+    [K in ImageServiceId]: ImageModelConfig;
 };
 
 export const IMAGE_CONFIG = {
@@ -57,6 +62,16 @@ export const IMAGE_CONFIG = {
         enhance: false,
         defaultSideLength: 1021, // Prime number to detect default size for "auto" mode
     },
+
+    // Veo 3.1 Fast - Video generation via Vertex AI
+    veo: {
+        type: "vertex-ai-video",
+        enhance: false,
+        isVideo: true,
+        defaultDuration: 4, // Cheapest option: 4 seconds
+        maxDuration: 8,
+        defaultResolution: "720p",
+    },
 } as const satisfies ImageModelsConfig;
 
 /**
@@ -71,4 +86,4 @@ export const MODELS = Object.fromEntries(
             ...config,
         },
     ]),
-) as Record<ImageServiceName, ImageModelConfig>;
+) as Record<ImageServiceId, ImageModelConfig>;

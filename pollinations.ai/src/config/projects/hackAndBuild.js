@@ -5,6 +5,15 @@
 
 export const hackAndBuildProjects = [
   {
+    name: "VisionText (VS Code Extension) 👁️",
+    url: "https://github.com/techcow2/visiontext",
+    description: "VS Code extension to transform images into text descriptions and generate AI images on the fly for your codebase. Official marketplace approval pending.",
+    author: "@techcow2",
+    repo: "https://github.com/techcow2/visiontext",
+    submissionDate: "2025-11-27",
+    order: 1
+  },
+  {
     name: "Pollinations PR Summarizer 🛠️",
     url: "https://github.com/marketplace/actions/pollinations-pr-summary",
     description: "GitHub Action that automatically analyzes pull requests using Pollinations Text API. Generates concise summaries, detects risk levels and breaking changes, posts analysis as PR comments, and responds to developer commands like !Pollinations for real-time AI assistance. No API key required.",

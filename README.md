@@ -288,8 +288,9 @@ Pollinations.AI is used in various projects, including:
 | [Imagen](https://altkriz.github.io/imagen/) ([⭐ 3](https://github.com/altkriz/imagen)) | A beautiful web interface for generating images using Pollinations.ai API with... | @altkriz |
 | [CatGPT Meme Generator 🐱](https://pollinations.github.io/catgpt/) ([⭐ 2](https://github.com/pollinations/catgpt)) | Transform your questions into sassy cat wisdom! An AI-powered meme generator... | @voodoohop |
 | [Dreamscape AI](https://dreamscape.pinkpixel.dev) ([⭐ 2](https://github.com/pinkpixel-dev/dreamscape-ai)) | Dreamscape AI is a creative studio for generating, enhancing, and transforming... | @sizzlebop |
-| 🆕 🤖 [ImaGenz 🎨](https://imagenz.vercel.app) ([⭐ 0](https://github.com/iamkavy47/pbl-sem3)) | Free, instant AI content generation platform for creating stunning images and... | @iamkavy47 |
-| 🆕 [AI Image-to-Prompt Generator 🎨](https://imagetoprompt.netlify.app) | Professional AI Image-to-Prompt Generator with free unlimited prompts. Upload... | @mehediprofilebd-alt |
+| 🆕 SRT Translator CLI 🎬 ([⭐ 0](https://github.com/smarques/subs-cli)) | A Python tool to translate SRT subtitle files using the Pollinations AI API... | @smarques |
+| 🤖 [ImaGenz 🎨](https://imagenz.vercel.app) ([⭐ 0](https://github.com/iamkavy47/pbl-sem3)) | Free, instant AI content generation platform for creating stunning images and... | @iamkavy47 |
+| [AI Image-to-Prompt Generator 🎨](https://imagetoprompt.netlify.app) | Professional AI Image-to-Prompt Generator with free unlimited prompts. Upload... | @mehediprofilebd-alt |
 | [SpecAI 🎨](https://specai.pages.dev) ([⭐ 0](https://github.com/spectre365/specai)) | Interactive UI for Pollinations AI with custom resolution and seed options.... | @spectre365 |
 | [SHICoPIC™ 🎨](https://shicopic.netlify.app) ([⭐ 0](https://github.com/Shervinuri/SHICoPIC)) | AI-powered creative image generation tool. Simple interface for creating images... | @Shervinuri |
 | [Better Call Us: Autonomous AI Instagram System 📸](https://www.instagram.com/bettercallus.io/?hl=en) ([⭐ 0](No response)) | A fully autonomous Instagram content automation system powered by... | muzz404 |
@@ -417,6 +418,7 @@ Pollinations.AI is used in various projects, including:
 | DominiSigns ([⭐ 4](https://github.com/cmunozdev/DominiSigns)) | Avatar Translator for Dominican Sign Language that uses artificial intelligence... | @cmunozdev |
 | [🌱 Strain Navigator](https://www.strainnavigator.com/) ([⭐ 1](https://github.com/Tolerable/strainnavigator)) | A collection of tools to help Growers, Breeders & Seed Bankers. Free & Open... | @Tolerable |
 | YankoviC ([⭐ 1](https://github.com/Sweaterdog/YankoviC)) | A programming language interpreter written in JavaScript that emulates C/C++... | @Sweaterdog |
+| 🆕 VisionText (VS Code Extension) 👁️ ([⭐ 0](https://github.com/techcow2/visiontext)) | VS Code extension to transform images into text descriptions and generate AI... | @techcow2 |
 | [Pollinations PR Summarizer 🛠️](https://github.com/marketplace/actions/pollinations-pr-summary) ([⭐ 0](https://github.com/CloudCompile/pollinations-pr-review)) | GitHub Action that automatically analyzes pull requests using Pollinations Text... | @CloudCompile |
 | [Blossom-ai (Python SDK) 🐍](https://pypistats.org/packages/eclips-blossom-ai) ([⭐ 0](https://github.com/PrimeevolutionZ/blossom-ai)) | Python SDK for Pollinations AI. Simple and easy-to-use wrapper for accessing... | @PrimeevolutionZ |
 | 🤖 [Herramientas IA 🛠️](https://proyectodescartes.org/descartescms/herramientas-ia) | Comprehensive collection of 120+ AI tools and educational applications powered... | @Juanrivera126 |
@@ -507,6 +509,7 @@ Pollinations.AI is used in various projects, including:
 | Project | Description | Creator |
 |---------|-------------|--------|
 | 🤖 Pollinations Discord Bot ([⭐ 17](https://github.com/Zingzy/pollinations.ai-bot)) | AI Image Generation Discord Bot using Pollinations.ai. Written in Python with... | @zingy |
+| 🆕 🤖 [TeleChars AI 🤖 🇪🇸](https://extras.marcosfrg.x10.mx/TGChars) | Plataforma de creación de personajes con IA para Telegram. Soporta STM, LTM, y... | @MarcosFRG |
 | 🤖 [ExodusAI 🤖](https://api.whatsapp.com/send/?phone=6285150984232&text=Hi&type=phone_number&app_absent=0) | AI-powered chatbot and image generator platform on WhatsApp. Integrated with... | @FIkriBotDev |
 | 🤖 [🎮 Gacha](https://discord.com/oauth2/authorize?client_id=1377330983740903586) | Your Sassy All-in-One AI Discord Bot. A powerful, sassy, and slightly... | `_dr_misterio_` |
 | [Pollix AI](http://t.me/pollixrobot) | Pollix AI is your multilingual AI assistant for fast replies, image... | @bladedev |

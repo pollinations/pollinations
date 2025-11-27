@@ -97,8 +97,8 @@ jobs:
             # ENTER_TOKEN is passed as environment variable from GitHub secret
             echo "Using ENTER_TOKEN: ${ENTER_TOKEN:0:10}..."
             
-            # Check text service health
-            TEXT_HEALTH=$(curl -s -o /dev/null -w "%{http_code}" -H "x-enter-token: $ENTER_TOKEN" http://localhost:16385/models || echo "000")
+            # Check text service health (use /openai/models - /models returns 410 deprecated)
+            TEXT_HEALTH=$(curl -s -o /dev/null -w "%{http_code}" -H "x-enter-token: $ENTER_TOKEN" http://localhost:16385/openai/models || echo "000")
             if [ "$TEXT_HEALTH" != "200" ]; then
               echo "❌ Text service health check failed (HTTP $TEXT_HEALTH)"
               exit 1

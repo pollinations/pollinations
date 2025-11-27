@@ -1,6 +1,6 @@
 #!/bin/bash
 # Deploy Portkey API Gateway to Cloudflare Workers
-# This script clones the Portkey gateway repo at a specific commit and deploys it
+# This script fetches the Portkey gateway repo at a specific commit and deploys it
 
 set -e
 
@@ -16,18 +16,26 @@ echo "🚀 Deploying Portkey Gateway"
 echo "   Commit: $PORTKEY_COMMIT"
 echo "   Environment: $ENVIRONMENT"
 
-# Clone the repository
-echo "📦 Cloning Portkey gateway..."
-git clone --depth 100 "$PORTKEY_REPO" "$CLONE_DIR"
+# Fetch specific commit (works regardless of depth/branch)
+echo "📦 Fetching Portkey gateway at commit $PORTKEY_COMMIT..."
+mkdir -p "$CLONE_DIR"
 cd "$CLONE_DIR"
+git init -q
+git remote add origin "$PORTKEY_REPO"
+git fetch --depth 1 origin "$PORTKEY_COMMIT"
+git checkout FETCH_HEAD -q
 
-# Checkout specific commit
-echo "🔖 Checking out commit $PORTKEY_COMMIT..."
-git checkout "$PORTKEY_COMMIT"
+# Verify commit
+ACTUAL_COMMIT=$(git rev-parse HEAD)
+if [ "$ACTUAL_COMMIT" != "$PORTKEY_COMMIT" ]; then
+    echo "❌ Commit mismatch! Expected $PORTKEY_COMMIT but got $ACTUAL_COMMIT"
+    exit 1
+fi
+echo "✓ Verified commit: $ACTUAL_COMMIT"
 
 # Install dependencies
 echo "📥 Installing dependencies..."
-npm install
+npm ci --prefer-offline 2>/dev/null || npm install
 
 # Deploy to Cloudflare
 echo "☁️ Deploying to Cloudflare Workers..."
@@ -41,7 +49,7 @@ fi
 
 # Cleanup
 echo "🧹 Cleaning up..."
-cd -
+cd - > /dev/null
 rm -rf "$CLONE_DIR"
 
 echo "✅ Portkey Gateway deployed successfully!"

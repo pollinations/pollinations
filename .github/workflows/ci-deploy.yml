@@ -24,9 +24,6 @@ jobs:
         with:
           working-directory: ./enter.pollinations.ai
 
-      - name: Setup SOPS
-        uses: nhedger/setup-sops@v2
-
       - name: Push Secrets
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}

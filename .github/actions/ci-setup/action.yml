@@ -25,3 +25,7 @@ runs:
       working-directory: ${{ inputs.working-directory }}
       run: npm ci
       shell: bash
+
+    - name: Setup SOPS
+      uses: nhedger/setup-sops@v2
+

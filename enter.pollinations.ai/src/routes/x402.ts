@@ -1,8 +1,8 @@
 /**
  * x402 Crypto Payment Routes
- * 
+ *
  * Implements USDC payments on Base network using the x402 protocol.
- * 
+ *
  * MVP: Logs payments for manual crediting via Polar dashboard.
  * TODO: Automate via Polar discount API once we confirm $0 checkout flow.
  */

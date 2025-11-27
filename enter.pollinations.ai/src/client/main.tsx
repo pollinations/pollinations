@@ -1,4 +1,6 @@
 import { createRouter, RouterProvider } from "@tanstack/react-router";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { WagmiProvider } from "wagmi";
 import { apiKeyClient } from "better-auth/client/plugins";
 import { createAuthClient } from "better-auth/react";
 import { hc } from "hono/client";
@@ -7,8 +9,12 @@ import ReactDOM from "react-dom/client";
 import type { AppRoutes } from "../index.ts";
 import { routeTree } from "./routeTree.gen";
 import { config } from "./config.ts";
+import { wagmiConfig } from "./wagmi.ts";
 import { createAuth } from "@/auth.ts";
 import { inferAdditionalFields } from "better-auth/client/plugins";
+
+// React Query client for wagmi
+const queryClient = new QueryClient();
 
 // Register the router instance for type safety
 declare module "@tanstack/react-router" {
@@ -62,7 +68,11 @@ if (!rootElement.innerHTML) {
     const root = ReactDOM.createRoot(rootElement);
     root.render(
         <StrictMode>
-            <App />
+            <WagmiProvider config={wagmiConfig}>
+                <QueryClientProvider client={queryClient}>
+                    <App />
+                </QueryClientProvider>
+            </WagmiProvider>
         </StrictMode>,
     );
 }

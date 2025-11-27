@@ -5,6 +5,15 @@
 
 export const creativeProjects = [
   {
+    name: "SRT Translator CLI 🎬",
+    url: "https://github.com/smarques/subs-cli",
+    description: "A Python tool to translate SRT subtitle files using the Pollinations AI API while preserving timing information. It might take a few hours to translate the subs for a full-length movie, but it's completely free!",
+    author: "@smarques",
+    repo: "https://github.com/smarques/subs-cli",
+    submissionDate: "2025-11-27",
+    order: 1
+  },
+  {
     name: "ImaGenz 🎨",
     url: "https://imagenz.vercel.app",
     description: "Free, instant AI content generation platform for creating stunning images and creative text without sign-up. Powered by FLUX and Turbo models with lightning-fast generation and real-time community feeds. Available as web app, Telegram bot, and mobile apps (Android/iOS). Over 10 million generations served.",

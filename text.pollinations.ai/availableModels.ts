@@ -76,13 +76,18 @@ const models: ModelDefinition[] = [
         config: portkeyConfig["gpt-4o-mini-audio-preview-2024-12-17"],
     },
     {
-        name: "claude",
+        name: "claude-fast",
         config: portkeyConfig["us.anthropic.claude-haiku-4-5-20251001-v1:0"],
         transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
     },
     {
-        name: "claude-large",
+        name: "claude",
         config: portkeyConfig["us.anthropic.claude-sonnet-4-5-20250929-v1:0"],
+        transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
+    },
+    {
+        name: "claude-large",
+        config: portkeyConfig["global.anthropic.claude-opus-4-5-20251101-v1:0"],
         transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
     },
     {

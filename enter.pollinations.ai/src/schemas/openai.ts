@@ -267,7 +267,7 @@ const ChatCompletionMessageContentBlockSchema = z.union([
 ]);
 
 const ChatCompletionResponseMessageSchema = z.object({
-    content: z.string().nullable(),
+    content: z.string().nullish(),
     tool_calls: ChatCompletionMessageToolCallsSchema.nullish(),
     role: z.literal("assistant"),
     function_call: z
@@ -393,18 +393,7 @@ const UserTierSchema = z.literal(["anonymous", "seed", "flower", "nectar"]);
 export type UserTier = z.infer<typeof UserTierSchema>;
 
 const CompletionChoiceSchema = z.object({
-    finish_reason: z
-        .enum([
-            "stop",
-            "length",
-            "tool_calls",
-            "content_filter",
-            "function_call",
-            "", // Perplexity returns empty string
-            "STOP", // Gemini returns uppercase
-        ])
-        .nullable()
-        .optional(),
+    finish_reason: z.string().nullable().optional(),
     index: z.number().int().nonnegative(),
     message: ChatCompletionResponseMessageSchema,
     logprobs: ChatCompletionChoiceLogprobsSchema.nullish(),
@@ -461,17 +450,7 @@ export const CreateChatCompletionStreamResponseSchema = z.object({
         z.object({
             delta: ChatCompletionStreamResponseDeltaSchema,
             logprobs: ChatCompletionChoiceLogprobsSchema.optional(),
-            finish_reason: z
-                .enum([
-                    "stop",
-                    "length",
-                    "tool_calls",
-                    "content_filter",
-                    "function_call",
-                    "", // Perplexity returns empty string
-                ])
-                .nullable()
-                .optional(),
+            finish_reason: z.string().nullable().optional(),
             index: z.number().int().nonnegative(),
         }),
     ),

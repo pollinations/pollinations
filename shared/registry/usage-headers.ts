@@ -1,4 +1,4 @@
-import { TokenUsage, UsageType } from "./registry.js";
+import type { TokenUsage, UsageType } from "./registry.js";
 
 /**
  * Mapping from TokenUsage field names to HTTP header names
@@ -12,6 +12,7 @@ export const USAGE_TYPE_HEADERS: Record<UsageType, string> = {
     completionReasoningTokens: "x-usage-completion-reasoning-tokens",
     completionAudioTokens: "x-usage-completion-audio-tokens",
     completionImageTokens: "x-usage-completion-image-tokens",
+    completionVideoSeconds: "x-usage-completion-video-seconds",
 };
 
 /**
@@ -123,5 +124,17 @@ export function createImageTokenUsage(
     return {
         unit: "TOKENS",
         completionImageTokens,
+    };
+}
+
+/**
+ * Helper for video services: create TokenUsage with video seconds
+ */
+export function createVideoSecondsUsage(
+    completionVideoSeconds: number,
+): TokenUsage {
+    return {
+        unit: "TOKENS",
+        completionVideoSeconds,
     };
 }

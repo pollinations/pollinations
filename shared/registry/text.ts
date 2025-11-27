@@ -286,7 +286,7 @@ export const TEXT_SERVICES = {
         tools: true,
         isSpecialized: true,
     },
-    "claude": {
+    "claude-fast": {
         aliases: ["claude-haiku-4.5", "claude-haiku"],
         modelId: "us.anthropic.claude-haiku-4-5-20251001-v1:0",
         provider: "aws-bedrock",
@@ -303,7 +303,7 @@ export const TEXT_SERVICES = {
         tools: true,
         isSpecialized: false,
     },
-    "claude-large": {
+    "claude": {
         aliases: ["claude-sonnet-4.5", "claude-sonnet"],
         modelId: "us.anthropic.claude-sonnet-4-5-20250929-v1:0",
         provider: "aws-bedrock",
@@ -315,6 +315,23 @@ export const TEXT_SERVICES = {
             },
         ],
         description: "Anthropic Claude Sonnet 4.5 - Most Capable & Balanced",
+        input_modalities: ["text", "image"],
+        output_modalities: ["text"],
+        tools: true,
+        isSpecialized: false,
+    },
+    "claude-large": {
+        aliases: ["claude-opus-4.5", "claude-opus"],
+        modelId: "global.anthropic.claude-opus-4-5-20251101-v1:0",
+        provider: "aws-bedrock",
+        cost: [
+            {
+                date: COST_START_DATE,
+                promptTextTokens: perMillion(5.0),
+                completionTextTokens: perMillion(25.0),
+            },
+        ],
+        description: "Anthropic Claude Opus 4.5 - Most Intelligent Model",
         input_modalities: ["text", "image"],
         output_modalities: ["text"],
         tools: true,

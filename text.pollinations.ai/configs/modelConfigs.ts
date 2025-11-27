@@ -146,6 +146,10 @@ export const portkeyConfig: PortkeyConfigMap = {
         createBedrockFargateModelConfig({
             model: "us.anthropic.claude-haiku-4-5-20251001-v1:0",
         }),
+    "global.anthropic.claude-opus-4-5-20251101-v1:0": () =>
+        createBedrockFargateModelConfig({
+            model: "global.anthropic.claude-opus-4-5-20251101-v1:0",
+        }),
 
     // Google Vertex AI configurations
     "gemini-2.5-flash-lite": () => ({

@@ -242,6 +242,7 @@ export function createBedrockLambdaModelConfig(additionalConfig = {}) {
         "custom-host":
             "https://s4gu3klsuhlqkol3x3qq6bv6em0cwqnu.lambda-url.us-east-1.on.aws/api/v1",
         authKey: process.env.AWS_BEARER_TOKEN_BEDROCK,
+        defaultOptions: { max_tokens: 16384 },
         ...additionalConfig,
     };
 }
@@ -258,6 +259,7 @@ export function createBedrockFargateModelConfig(additionalConfig = {}) {
         "custom-host":
             "http://bedroc-Proxy-He0yOirTrdQe-378478291.us-east-1.elb.amazonaws.com/api/v1",
         authKey: process.env.AWS_BEARER_TOKEN_BEDROCK_FARGATE,
+        defaultOptions: { max_tokens: 16384 },
         ...additionalConfig,
     };
 }

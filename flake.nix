@@ -135,12 +135,10 @@
             fi
 
             # decrypt and load environment variables
-            for file in $FLAKE_PATH/**/.encrypted.env; do
+            for file in $FLAKE_PATH/**/secrets/env.json; do
               echo "Decrypting: $file"
-              eval "$(sops decrypt $file \
-                | grep -v '^#' \
-                | grep -v '^$' \
-                | sed 's/^/export /' \
+              eval "$(sops decrypt "$file" \
+                | jq -r 'to_entries | .[] | "export \(.key)=\(.value | @sh)"'
               )"
             done
 

@@ -45,3 +45,24 @@ If any match → **Seed** ✓
 
 # Update tier
 Update via enter.pollinations.ai admin API or database.
+
+# Batch Processing
+
+## Evaluate all spore/seed users
+```bash
+export ENTER_ADMIN_TOKEN=your_token
+export TIER_EVAL_GIST_ID=your_gist_id  # optional, persists state
+.claude/skills/tier-evaluator/batch-evaluate.sh
+```
+
+## Track processed users
+Uses a GitHub Gist to store `processed-users.json`:
+```json
+{
+  "processed": {
+    "username": {"tier": "flower", "date": "2025-01-01T00:00:00Z"}
+  }
+}
+```
+
+First run creates the gist, subsequent runs update it.

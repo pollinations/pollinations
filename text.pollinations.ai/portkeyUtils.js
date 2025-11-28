@@ -70,30 +70,22 @@ async function generatePortkeyHeaders(config) {
         throw new Error("No configuration provided for header generation");
     }
 
-    // Generate headers by prefixing config properties with 'x-portkey-'
-    const headers = {};
-    for (const [key, value] of Object.entries(config)) {
-        // Skip special properties that aren't headers
-        if (key === "removeSeed" || key === "authKey") continue;
+    // Use individual headers approach (proven to work with Azure OpenAI)
+    // Set strictOpenAiCompliance to false to enable Perplexity citations
+    // NOTE: Must be "strict-open-ai-compliance" (with dash between "open" and "ai")
+    const headers = {
+        "x-portkey-strict-open-ai-compliance": "false",
+    };
 
-        headers[`x-portkey-${key}`] = value;
-    }
-
-    // Add Authorization header if needed
+    // Get the auth key
+    let apiKey;
     if (config.authKey) {
         try {
-            // Check if authKey is a function (for dynamic tokens)
             if (typeof config.authKey === "function") {
-                // Check if the function returns a Promise (async function)
                 const token = config.authKey();
-                if (token instanceof Promise) {
-                    headers["Authorization"] = `Bearer ${await token}`;
-                } else {
-                    headers["Authorization"] = `Bearer ${token}`;
-                }
+                apiKey = token instanceof Promise ? await token : token;
             } else {
-                // Regular string token
-                headers["Authorization"] = `Bearer ${config.authKey}`;
+                apiKey = config.authKey;
             }
         } catch (error) {
             errorLog("Error getting auth token:", error);
@@ -101,5 +93,21 @@ async function generatePortkeyHeaders(config) {
         }
     }
 
+    // Add all config properties as individual x-portkey-* headers
+    for (const [key, value] of Object.entries(config)) {
+        // Skip internal properties
+        if (key === "removeSeed" || key === "authKey") continue;
+        
+        // Add as individual header with x-portkey- prefix
+        headers[`x-portkey-${key}`] = value;
+    }
+
+    // Add Authorization header if we have an API key
+    if (apiKey) {
+        headers["Authorization"] = `Bearer ${apiKey}`;
+    }
+
+    log("Generated Portkey headers:", Object.keys(headers));
+    log("strictOpenAiCompliance header value:", headers["x-portkey-strict-open-ai-compliance"]);
     return headers;
 }

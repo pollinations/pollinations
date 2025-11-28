@@ -20,22 +20,30 @@ export function createAuth(env: Cloudflare.Env) {
 
     const db = drizzle(env.DB);
 
+    const PUBLISHABLE_KEY_PREFIX = "pk";
+    const SECRET_KEY_PREFIX = "sk";
+
     const apiKeyPlugin = apiKey({
         enableMetadata: true,
-        defaultPrefix: 'pk', // Default prefix for publishable keys
-        defaultKeyLength: 22, // Minimum key length for validation (pk_ = 22 chars, sk_ = 64 chars)
-        customKeyGenerator: (options: { length: number; prefix: string | undefined; }) => {
-            // Publishable keys (pk_) are SHORT (22 chars), Secret keys (sk_) are LONG (64 chars)
-            const keyLength = options.prefix === 'pk' ? 22 : 64;
-            const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-            const randomBytes = crypto.getRandomValues(new Uint8Array(keyLength));
-            const key = Array.from(randomBytes, byte => chars[byte % chars.length]).join('');
+        defaultPrefix: PUBLISHABLE_KEY_PREFIX,
+        defaultKeyLength: 16, // Minimum key length for validation (matches custom generator)
+        customKeyGenerator: (options: {
+            length: number;
+            prefix: string | undefined;
+        }) => {
+            // Publishable keys (pk_) are SHORT (16 chars), Secret keys (sk_) are LONG (32 chars)
+            const isPublishable = options.prefix === PUBLISHABLE_KEY_PREFIX;
+            const keyLength = isPublishable ? 16 : 32;
+            const chars =
+                "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+            const randomBytes = crypto.getRandomValues(
+                new Uint8Array(keyLength),
+            );
+            const key = Array.from(
+                randomBytes,
+                (byte) => chars[byte % chars.length],
+            ).join("");
             return options.prefix ? `${options.prefix}_${key}` : key;
-        },
-        permissions: {
-            defaultPermissions: {
-                "tier": ["flower"],
-            },
         },
         rateLimit: {
             enabled: true,
@@ -58,6 +66,7 @@ export function createAuth(env: Cloudflare.Env) {
             schema: betterAuthSchema,
             provider: "sqlite",
         }),
+        trustedOrigins: ["https://enter.pollinations.ai", "http://localhost"],
         user: {
             additionalFields: {
                 githubId: {
@@ -70,7 +79,7 @@ export function createAuth(env: Cloudflare.Env) {
                 },
                 tier: {
                     type: "string",
-                    defaultValue: "seed",
+                    defaultValue: "spore",
                     input: false,
                 },
             },
@@ -143,6 +152,7 @@ function onBeforeUserCreate(polar: Polar) {
             await polar.customers.create({
                 email: user.email,
                 name: user.name,
+                externalId: user.id,
             });
 
             return {
@@ -202,4 +212,3 @@ function onUserUpdate(polar: Polar) {
         }
     };
 }
-

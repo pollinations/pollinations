@@ -1,7 +1,7 @@
 // AI generated based on `https://github.com/Portkey-AI/openapi/blob/master/openapi.yaml` and adaped
 
 import { z } from "zod";
-import { getTextServices } from "../../../shared/registry/registry.ts";
+import { DEFAULT_TEXT_MODEL } from "../../../shared/registry/text.ts";
 
 const FunctionParametersSchema = z.record(z.string(), z.any());
 
@@ -52,9 +52,18 @@ const ChatCompletionRequestMessageContentPartTextSchema = z.object({
     text: z.string(),
 });
 
+const ChatCompletionRequestMessageContentPartAudioSchema = z.object({
+    type: z.literal("input_audio"),
+    input_audio: z.object({
+        data: z.string(), // base64 encoded audio
+        format: z.enum(["wav", "mp3", "flac", "opus", "pcm16"]),
+    }),
+});
+
 const ChatCompletionRequestMessageContentPartSchema = z.union([
     ChatCompletionRequestMessageContentPartTextSchema,
     ChatCompletionRequestMessageContentPartImageSchema,
+    ChatCompletionRequestMessageContentPartAudioSchema,
 ]);
 
 // Thinking (provider-specific; requires strict_openai_compliance=false)
@@ -178,7 +187,21 @@ const ThinkingSchema = z
 
 export const CreateChatCompletionRequestSchema = z.object({
     messages: z.array(ChatCompletionRequestMessageSchema),
-    model: z.enum(getTextServices()).optional(),
+    model: z.string().optional().default(DEFAULT_TEXT_MODEL),
+    modalities: z.array(z.enum(["text", "audio"])).optional(),
+    audio: z
+        .object({
+            voice: z.enum([
+                "alloy",
+                "echo",
+                "fable",
+                "onyx",
+                "nova",
+                "shimmer",
+            ]),
+            format: z.enum(["wav", "mp3", "flac", "opus", "pcm16"]),
+        })
+        .optional(),
     frequency_penalty: z
         .number()
         .min(-2)
@@ -216,6 +239,8 @@ export const CreateChatCompletionRequestSchema = z.object({
     stream: z.boolean().nullable().optional().default(false),
     stream_options: ChatCompletionStreamOptionsSchema,
     thinking: ThinkingSchema,
+    reasoning_effort: z.enum(["low", "medium", "high"]).optional(),
+    thinking_budget: z.number().int().min(0).optional(),
     temperature: z.number().min(0).max(2).nullable().optional().default(1),
     top_p: z.number().min(0).max(1).nullable().optional().default(1),
     tools: z.array(ChatCompletionToolSchema).optional(),
@@ -242,7 +267,7 @@ const ChatCompletionMessageContentBlockSchema = z.union([
 ]);
 
 const ChatCompletionResponseMessageSchema = z.object({
-    content: z.string().nullable(),
+    content: z.string().nullish(),
     tool_calls: ChatCompletionMessageToolCallsSchema.nullish(),
     role: z.literal("assistant"),
     function_call: z
@@ -260,6 +285,8 @@ const ChatCompletionResponseMessageSchema = z.object({
             expires_at: z.number().int().optional(),
         })
         .nullish(),
+    // DeepSeek reasoning format
+    reasoning_content: z.string().nullish(),
 });
 
 const ChatCompletionTokenTopLogprobSchema = z.object({
@@ -366,17 +393,7 @@ const UserTierSchema = z.literal(["anonymous", "seed", "flower", "nectar"]);
 export type UserTier = z.infer<typeof UserTierSchema>;
 
 const CompletionChoiceSchema = z.object({
-    finish_reason: z
-        .enum([
-            "stop",
-            "length",
-            "tool_calls",
-            "content_filter",
-            "function_call",
-            "", // Perplexity returns empty string
-        ])
-        .nullable()
-        .optional(),
+    finish_reason: z.string().nullable().optional(),
     index: z.number().int().nonnegative(),
     message: ChatCompletionResponseMessageSchema,
     logprobs: ChatCompletionChoiceLogprobsSchema.nullish(),
@@ -393,6 +410,7 @@ export const CreateChatCompletionResponseSchema = z.object({
     object: z.literal("chat.completion"),
     usage: CompletionUsageSchema,
     user_tier: UserTierSchema.optional(),
+    citations: z.array(z.string()).optional(), // Perplexity citations
 });
 
 export type CreateChatCompletionResponse = z.infer<
@@ -421,6 +439,9 @@ const ChatCompletionStreamResponseDeltaSchema = z.object({
         .optional(),
     tool_calls: z.array(ChatCompletionMessageToolCallChunkSchema).optional(),
     role: z.enum(["system", "user", "assistant", "tool"]).optional(),
+    // Reasoning/thinking fields for streaming
+    reasoning_content: z.string().optional(),
+    content_blocks: z.array(ChatCompletionMessageContentBlockSchema).optional(),
 });
 
 export const CreateChatCompletionStreamResponseSchema = z.object({
@@ -429,17 +450,7 @@ export const CreateChatCompletionStreamResponseSchema = z.object({
         z.object({
             delta: ChatCompletionStreamResponseDeltaSchema,
             logprobs: ChatCompletionChoiceLogprobsSchema.optional(),
-            finish_reason: z
-                .enum([
-                    "stop",
-                    "length",
-                    "tool_calls",
-                    "content_filter",
-                    "function_call",
-                    "", // Perplexity returns empty string
-                ])
-                .nullable()
-                .optional(),
+            finish_reason: z.string().nullable().optional(),
             index: z.number().int().nonnegative(),
         }),
     ),

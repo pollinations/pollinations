@@ -71,6 +71,7 @@ function RouteComponent() {
 
     const [isSigningOut, setIsSigningOut] = useState(false);
     const [isActivating, setIsActivating] = useState(false);
+    const [activationError, setActivationError] = useState<string | null>(null);
 
     const handleSignOut = async () => {
         if (isSigningOut) return; // Prevent double-clicks
@@ -124,18 +125,19 @@ function RouteComponent() {
     const handleActivateTier = async () => {
         if (isActivating || !tierData) return;
         setIsActivating(true);
+        setActivationError(null);
 
         try {
             const response = await fetch("/api/tiers/activate", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 credentials: "include",
-                body: JSON.stringify({ target_tier: tierData.assigned_tier }),
+                body: JSON.stringify({ target_tier: tierData.target_tier }),
             });
 
             if (!response.ok) {
                 const error = (await response.json()) as { message?: string };
-                alert(`Activation failed: ${error.message || "Unknown error"}`);
+                setActivationError(error.message || "Unknown error");
                 setIsActivating(false);
                 return;
             }
@@ -143,11 +145,15 @@ function RouteComponent() {
             const data = (await response.json()) as { checkout_url: string };
             window.location.href = data.checkout_url;
         } catch (error) {
-            alert(`Activation failed: ${error}`);
+            setActivationError(String(error));
             setIsActivating(false);
         }
     };
 
+    const handleBuyPollen = (slug: string) => {
+        // Navigate directly to checkout endpoint - server will handle redirect
+        window.location.href = `/api/polar/checkout/${encodeURIComponent(slug)}?redirect=true`;
+    };
     return (
         <div className="flex flex-col gap-20">
             <Header>
@@ -159,8 +165,12 @@ function RouteComponent() {
                         window.location.href = "/api/polar/customer/portal";
                     }}
                 />
-                <Button as="a" href="/api/docs" color="purple" weight="light">
-                    API Docs
+                <Button
+                    as="a"
+                    href="/api/docs"
+                    className="bg-gray-900 text-white hover:!brightness-90"
+                >
+                    API Reference
                 </Button>
             </Header>
             <div className="flex flex-col gap-2">
@@ -171,9 +181,9 @@ function RouteComponent() {
                             as="button"
                             color="purple"
                             weight="light"
-                            onClick={() => {
-                                window.location.href = "/api/polar/checkout/pollen-bundle-small";
-                            }}
+                            onClick={() =>
+                                handleBuyPollen("v1:product:pack:5x2")
+                            }
                         >
                             + $5
                         </Button>
@@ -181,24 +191,49 @@ function RouteComponent() {
                             as="button"
                             color="purple"
                             weight="light"
-                            disabled
+                            onClick={() =>
+                                handleBuyPollen("v1:product:pack:10x2")
+                            }
                         >
                             + $10
                         </Button>
-                        <Button as="button" color="purple" weight="light" disabled>
+                        <Button
+                            as="button"
+                            color="purple"
+                            weight="light"
+                            onClick={() =>
+                                handleBuyPollen("v1:product:pack:20x2")
+                            }
+                        >
                             + $20
                         </Button>
-                        <a
+                        <Button
+                            as="button"
+                            color="purple"
+                            weight="light"
+                            onClick={() =>
+                                handleBuyPollen("v1:product:pack:50x2")
+                            }
+                        >
+                            + $50
+                        </Button>
+                        <Button
+                            as="a"
                             href="https://github.com/pollinations/pollinations/issues/4826"
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="text-sm text-purple-700 hover:text-purple-900 font-medium transition-colors"
+                            className="!bg-purple-200 !text-purple-900"
+                            color="purple"
+                            weight="light"
                         >
-                            💳 Vote on payment methods →
-                        </a>
+                            💳 Vote on payment methods
+                        </Button>
                     </div>
                 </div>
-                <PollenBalance balances={balances} dailyPollen={tierData?.daily_pollen} />
+                <PollenBalance
+                    balances={balances}
+                    dailyPollen={tierData?.daily_pollen}
+                />
             </div>
             {tierData && (
                 <div className="flex flex-col gap-2">
@@ -211,26 +246,35 @@ function RouteComponent() {
                                     disabled={isActivating}
                                     color="green"
                                     weight="light"
+                                    className="!bg-gray-50"
                                 >
                                     {isActivating
                                         ? "Processing..."
-                                        : `Activate ${tierData.assigned_tier[0].toUpperCase() + tierData.assigned_tier.slice(1)} Tier`}
+                                        : `Activate ${tierData.target_tier_name}`}
                                 </Button>
                             </div>
                         )}
                     </div>
-                    {tierData.has_polar_error && (
-                        <div className="px-3 py-2 bg-yellow-50 border border-yellow-200 rounded-lg text-sm text-yellow-900">
-                            Unable to fetch current subscription status. Showing
-                            fallback data.
+                    {activationError && (
+                        <div className="px-3 py-2 bg-red-50 border border-red-200 rounded-lg">
+                            <p className="text-sm text-red-900">
+                                ❌ <strong>Activation Failed:</strong>{" "}
+                                {activationError}
+                            </p>
                         </div>
                     )}
                     <TierPanel
                         status={tierData.active_tier}
-                        assigned_tier={tierData.assigned_tier}
+                        target_tier={tierData.target_tier}
                         next_refill_at_utc={tierData.next_refill_at_utc}
-                        product_name={tierData.product_name}
+                        active_tier_name={tierData.active_tier_name}
                         daily_pollen={tierData.daily_pollen}
+                        subscription_status={tierData.subscription_status}
+                        subscription_ends_at={tierData.subscription_ends_at}
+                        subscription_canceled_at={
+                            tierData.subscription_canceled_at
+                        }
+                        has_polar_error={tierData.has_polar_error}
                     />
                 </div>
             )}

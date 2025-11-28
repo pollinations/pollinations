@@ -1,5 +1,6 @@
 import debug from "debug";
 import { withTimeoutSignal } from "../util.ts";
+import { HttpError } from "../httpError.ts";
 import type { ImageParams } from "../params.ts";
 import type { ImageGenerationResult } from "../createAndReturnImages.ts";
 import type { ProgressManager } from "../progressBar.ts";
@@ -85,15 +86,59 @@ export const callSeedreamAPI = async (
         if (safeParams.image && safeParams.image.length > 0) {
             logOps("Adding reference images for image-to-image generation:", safeParams.image.length, "images");
             
+            // Update progress for image processing
+            progress.updateBar(requestId, 40, "Processing", "Downloading reference images...");
+            
             // Seedream 4.0 supports up to 10 reference images
             const imageUrls = Array.isArray(safeParams.image) 
                 ? safeParams.image.slice(0, 10) // Limit to max 10 images
                 : [safeParams.image];
             
-            // For single image, pass as string; for multiple images, pass as array
-            requestBody.image = imageUrls.length === 1 ? imageUrls[0] : imageUrls;
+            // Download and convert images to base64 to bypass hosting provider blocks
+            const processedImages: string[] = [];
             
-            logOps("Image-to-image mode enabled with", imageUrls.length, "reference image(s)");
+            for (let i = 0; i < imageUrls.length; i++) {
+                const imageUrl = imageUrls[i];
+                try {
+                    logOps(`Downloading reference image ${i + 1}/${imageUrls.length} from: ${imageUrl}`);
+                    
+                    // Download the image
+                    const imageResponse = await withTimeoutSignal(
+                        (signal) => fetch(imageUrl, { signal }),
+                        30000, // 30 second timeout
+                    );
+                    
+                    if (!imageResponse.ok) {
+                        logError(`Failed to fetch reference image ${i + 1}: ${imageResponse.status}`);
+                        continue; // Skip this image and continue with others
+                    }
+                    
+                    // Convert to base64
+                    const imageBuffer = await imageResponse.arrayBuffer();
+                    const base64Data = Buffer.from(imageBuffer).toString('base64');
+                    
+                    // Determine MIME type from response headers
+                    const contentType = imageResponse.headers.get('content-type') || 'image/jpeg';
+                    
+                    // Create data URL format: data:image/jpeg;base64,<base64data>
+                    const dataUrl = `data:${contentType};base64,${base64Data}`;
+                    processedImages.push(dataUrl);
+                    
+                    logOps(`Successfully processed reference image ${i + 1}: ${contentType}, ${base64Data.length} chars`);
+                } catch (error) {
+                    logError(`Error processing reference image ${i + 1}:`, error.message);
+                    // Continue with other images
+                }
+            }
+            
+            if (processedImages.length === 0) {
+                throw new Error("Failed to download any reference images");
+            }
+            
+            // For single image, pass as string; for multiple images, pass as array
+            requestBody.image = processedImages.length === 1 ? processedImages[0] : processedImages;
+            
+            logOps("Image-to-image mode enabled with", processedImages.length, "processed reference image(s)");
         }
 
         logOps("Seedream API request body:", JSON.stringify(requestBody, null, 2));
@@ -121,8 +166,11 @@ export const callSeedreamAPI = async (
                 "response:",
                 errorText,
             );
-            throw new Error(
-                `Seedream API request failed with status ${response.status}: ${errorText}`,
+            // Pass through the original status code from Seedream API
+            // 400 errors are client errors (invalid parameters, content policy, etc.)
+            throw new HttpError(
+                `Seedream API request failed: ${errorText}`,
+                response.status
             );
         }
 
@@ -170,6 +218,10 @@ export const callSeedreamAPI = async (
 
     } catch (error) {
         logError("Error calling Seedream API:", error);
+        // Preserve HttpError status codes (e.g., 400 for content policy violations)
+        if (error instanceof HttpError) {
+            throw error;
+        }
         throw new Error(`Seedream API generation failed: ${error.message}`);
     }
 };

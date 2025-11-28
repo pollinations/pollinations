@@ -1,8 +1,5 @@
 // Import registry for model names and tier validation
-import { IMAGE_SERVICES } from "../../shared/registry/image.ts";
-
-// Type constraint: model names must exist in registry
-type ImageServiceName = keyof typeof IMAGE_SERVICES;
+import { type ImageServiceId } from "../../shared/registry/image.ts";
 
 /**
  * Image-specific configuration for each model
@@ -16,10 +13,10 @@ interface ImageModelConfig {
 }
 
 type ImageModelsConfig = {
-    [K in ImageServiceName]: ImageModelConfig;
+    [K in ImageServiceId]: ImageModelConfig;
 };
 
-export const IMAGE_CONFIG: ImageModelsConfig = {
+export const IMAGE_CONFIG = {
     flux: {
         type: "pollinations",
         enhance: true,
@@ -54,13 +51,20 @@ export const IMAGE_CONFIG: ImageModelsConfig = {
         defaultSideLength: 1024,
     },
 
+    // Gemini 3 Pro Image via Vertex AI - high quality image generation (Nano Banana Pro)
+    "nanobanana-pro": {
+        type: "vertex-ai-pro",
+        enhance: false,
+        defaultSideLength: 1024,
+    },
+
     // Azure GPT Image model - gpt-image-1-mini
     gptimage: {
         type: "azure",
         enhance: false,
         defaultSideLength: 1021, // Prime number to detect default size for "auto" mode
     },
-};
+} as const satisfies ImageModelsConfig;
 
 /**
  * Legacy MODELS export for backward compatibility
@@ -73,5 +77,5 @@ export const MODELS = Object.fromEntries(
         {
             ...config,
         },
-    ])
-) as Record<ImageServiceName, ImageModelConfig>;
+    ]),
+) as Record<ImageServiceId, ImageModelConfig>;

@@ -3,19 +3,12 @@ import http from "node:http";
 import { parse } from "node:url";
 import debug from "debug";
 import urldecode from "urldecode";
-import {
-    addAuthDebugHeaders,
-    createAuthDebugResponse,
-    handleAuthentication,
-} from "../../shared/auth-utils.js";
+import { HttpError } from "./httpError.js";
 import { extractToken, getIp } from "../../shared/extractFromRequest.js";
-import { sendImageTelemetry } from "./utils/telemetry.js";
 import { buildTrackingHeaders } from "./utils/trackingHeaders.js";
-
-// Import shared utilities
-import { enqueue } from "../../shared/ipQueue.js";
 import { countFluxJobs, handleRegisterEndpoint } from "./availableServers.js";
 import { cacheImagePromise } from "./cacheGeneratedImages.js";
+import { getModelCounts } from "./modelCounter.js";
 import { IMAGE_CONFIG } from "./models.js";
 import {
     type AuthResult,
@@ -45,10 +38,6 @@ const logAuth = debug("pollinations:auth");
 
 export const currentJobs = [];
 
-// In-memory store for tracking IP violations
-const ipViolations = new Map<string, number>();
-const MAX_VIOLATIONS = 5;
-
 // In-memory hourly rate limiter for seedream and nanobanana
 interface HourlyUsage {
     count: number;
@@ -59,38 +48,28 @@ const HOURLY_LIMIT = 10;
 const HOUR_MS = 60 * 60 * 1000;
 
 // Check and update hourly usage for an IP
-const checkHourlyLimit = (ip: string): { allowed: boolean; remaining: number; resetIn: number } => {
+const checkHourlyLimit = (
+    ip: string,
+): { allowed: boolean; remaining: number; resetIn: number } => {
     const now = Date.now();
     const usage = hourlyUsage.get(ip);
-    
+
     // No usage yet or hour has passed - reset
     if (!usage || now - usage.hourStart >= HOUR_MS) {
         hourlyUsage.set(ip, { count: 1, hourStart: now });
         return { allowed: true, remaining: HOURLY_LIMIT - 1, resetIn: HOUR_MS };
     }
-    
+
     // Within the same hour
     if (usage.count >= HOURLY_LIMIT) {
         const resetIn = HOUR_MS - (now - usage.hourStart);
         return { allowed: false, remaining: 0, resetIn };
     }
-    
+
     // Increment and allow
     usage.count++;
     const resetIn = HOUR_MS - (now - usage.hourStart);
     return { allowed: true, remaining: HOURLY_LIMIT - usage.count, resetIn };
-};
-
-// Check if an IP is blocked
-const isIpBlocked = (ip: string) => {
-    return (ipViolations.get(ip) || 0) >= MAX_VIOLATIONS;
-};
-
-// Increment violations for an IP
-const incrementIpViolations = (ip: string) => {
-    const currentViolations = ipViolations.get(ip) || 0;
-    ipViolations.set(ip, currentViolations + 1);
-    return currentViolations + 1;
 };
 
 /**
@@ -101,9 +80,7 @@ const setCORSHeaders = (res: ServerResponse) => {
     res.setHeader("Access-Control-Allow-Origin", "*");
     res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
     res.setHeader("Access-Control-Allow-Headers", "Content-Type");
-    res.setHeader("Access-Control-Expose-Headers", [
-        "Content-Length",
-    ]);
+    res.setHeader("Access-Control-Expose-Headers", ["Content-Length"]);
 };
 
 /**
@@ -169,15 +146,8 @@ const imageGen = async ({
 }: ImageGenParams): Promise<ImageGenerationResult> => {
     const ip = getIp(req);
 
-    // Check if IP is blocked
-    if (isIpBlocked(ip)) {
-        throw new Error(
-            `Your IP ${ip} has been temporarily blocked due to multiple content violations`,
-        );
-    }
-
     const startTime = Date.now();
-    
+
     try {
         timingInfo.push({ step: "Start processing", timestamp: Date.now() });
 
@@ -294,29 +264,8 @@ const imageGen = async ({
         progress.completeBar(requestId, "Image generation complete");
         progress.stop();
 
-        // Send telemetry to Tinybird
-        const endTime = new Date();
-        const duration = endTime.getTime() - startTime;
-        sendImageTelemetry({
-            requestId,
-            model: safeParams.model || "unknown",
-            duration,
-            status: "success",
-            authResult,
-        });
-
         return { buffer, ...maturity };
     } catch (error) {
-        // Check if this was a prohibited content error
-        if (error.message === "Content is prohibited") {
-            const violations = incrementIpViolations(ip);
-            if (violations >= MAX_VIOLATIONS) {
-                await sleep(10000);
-                throw new Error(
-                    `Your IP ${ip} has been temporarily blocked due to multiple content violations`,
-                );
-            }
-        }
         // Handle errors gracefully in progress bars
         progress.errorBar(requestId, "Generation failed");
         progress.stop();
@@ -329,18 +278,6 @@ const imageGen = async ({
             prompt: originalPrompt,
             params: safeParams,
             referrer,
-        });
-
-        // Send error telemetry to Tinybird
-        const endTime = new Date();
-        const duration = endTime.getTime() - startTime;
-        sendImageTelemetry({
-            requestId,
-            model: safeParams?.model || "unknown",
-            duration,
-            status: "error",
-            authResult,
-            error,
         });
 
         throw error;
@@ -368,120 +305,88 @@ const checkCacheAndGenerate = async (
         pathname.split("/prompt/")[1] || "random_prompt",
     );
 
-    const safeParams = ImageParamsSchema.parse(query);
-
     const referrer = req.headers?.["referer"] || req.headers?.origin;
 
     const requestId = Math.random().toString(36).substring(7);
     const progress = createProgressTracker().startRequest(requestId);
     progress.updateBar(requestId, 0, "Starting", "Request received");
 
-    logApi("Request details:", { originalPrompt, safeParams, referrer });
-
     let timingInfo = [];
+    let safeParams;
 
     try {
-        // Call authentication ONCE and reuse the result
-        const authResult = await handleAuthentication(req, requestId, logAuth);
-        const isAuthenticated = authResult.authenticated;
-        const hasValidToken = authResult.tokenAuth;
+        // Validate parameters with proper error handling
+        const parseResult = ImageParamsSchema.safeParse(query);
+        if (!parseResult.success) {
+            throw new HttpError(
+                `Invalid parameters: ${parseResult.error.issues[0]?.message || "validation failed"}`,
+                400,
+                parseResult.error.issues,
+            );
+        }
+        safeParams = parseResult.data;
+
+        logApi("Request details:", { originalPrompt, safeParams, referrer });
+        // Authentication and rate limiting is now handled by enter.pollinations.ai
+        // Create a minimal authResult for compatibility
+        const authResult: AuthResult = {
+            authenticated: true,
+            tokenAuth: false,
+            referrerAuth: false,
+            bypass: true,
+            reason: "ENTER_GATEWAY",
+            userId: null,
+            username: null,
+            debugInfo: {},
+        };
 
         // Cache the generated image
         const bufferAndMaturity = await cacheImagePromise(
             originalPrompt,
             safeParams,
             async () => {
-                // const ip = getIp(req);
-
-                progress.updateBar(requestId, 10, "Queueing", "Request queued");
+                progress.updateBar(
+                    requestId,
+                    10,
+                    "Processing",
+                    "Generating image",
+                );
                 timingInfo = [
                     {
-                        step: "Request received and queued.",
+                        step: "Request received.",
                         timestamp: Date.now(),
                     },
                 ];
-                // sendToFeedListeners({
-                //   ...safeParams,
-                //   prompt: originalPrompt,
-                //   ip: getIp(req), status: "queueing", concurrentRequests: countJobs(true), timingInfo: relativeTiming(timingInfo), referrer, token: extractToken(req) && extractToken(req).slice(0, 2) + "..." });
 
-                // Pass authentication status to generateImage (hasReferrer will be checked there for gptimage)
-                const generateImage = async () => {
-                    timingInfo.push({
-                        step: "Start generating job",
-                        timestamp: Date.now(),
-                    });
-                    const result = await imageGen({
-                        req,
-                        timingInfo,
-                        originalPrompt,
-                        safeParams,
-                        referrer,
-                        progress,
-                        requestId,
-                        authResult,
-                    });
-                    timingInfo.push({
-                        step: "End generating job",
-                        timestamp: Date.now(),
-                    });
-                    return result;
-                };
+                // Generate image directly without queue
+                timingInfo.push({
+                    step: "Start generating job",
+                    timestamp: Date.now(),
+                });
 
-                // Determine queue configuration based on model first, then authentication
-                let queueConfig = null;
-                
-                // Model-specific queue configs - all requests assumed from enter.pollinations.ai
-                const modelName = safeParams.model as string;
-                if (modelName === "nanobanana") {
-                    // 90 second interval - no hourly limit for enter requests
-                    queueConfig = { interval: 90000 }; // 90 second interval
-                    logAuth(`${modelName} model - 90 second interval (enter request - no hourly limit)`);
-                } else if (modelName === "kontext") {
-                    // 30 second interval
-                    queueConfig = { interval: 30000 };
-                    logAuth(`${modelName} model - 30 second interval`);
-                } else if (modelName === "gptimage") {
-                    // 60 second interval
-                    queueConfig = { interval: 60000 };
-                    logAuth("GPTImage model - 60 second interval");
-                } else if (hasValidToken) {
-                    // Token authentication for other models - 7s minimum interval
-                    queueConfig = { interval: 7000 };
-                    logAuth("Token authenticated - using 7s minimum interval");
-                } else {
-                    // Use default queue config for other models with no token
-                    queueConfig = QUEUE_CONFIG;
-                    logAuth("Standard queue with delay (no token)");
-                }
-                
-                if (hasValidToken) {
-                    progress.updateBar(
-                        requestId,
-                        20,
-                        "Authenticated",
-                        "Token verified",
-                    );
-                }
+                progress.setProcessing(requestId);
 
-                // Use the shared queue utility - everyone goes through queue
-                const result = await enqueue(
+                const result = await imageGen({
                     req,
-                    async () => {
-                        // Update progress and process the image
-                        progress.setProcessing(requestId);
-                        return generateImage();
-                    },
-                    { ...queueConfig, forceQueue: true },
-                );
+                    timingInfo,
+                    originalPrompt,
+                    safeParams,
+                    referrer,
+                    progress,
+                    requestId,
+                    authResult,
+                });
+
+                timingInfo.push({
+                    step: "End generating job",
+                    timestamp: Date.now(),
+                });
 
                 return result;
             },
         );
 
-        // Reuse the authentication result instead of calling again
-
-        // Add debug headers for authentication information
+        // Add headers for response
         const headers = {
             "Content-Type": "image/jpeg",
             "Cache-Control": "public, max-age=31536000, immutable",
@@ -502,18 +407,18 @@ const checkCacheAndGenerate = async (
             headers["Content-Disposition"] = `inline; filename="${filename}"`;
         }
 
-        // Add authentication debug headers using shared utility
-        addAuthDebugHeaders(headers, authResult.debugInfo);
-
         // Debug: Log trackingData before building headers
         logApi("=== TRACKING DATA BEFORE HEADERS ===");
-        logApi("bufferAndMaturity.trackingData:", JSON.stringify(bufferAndMaturity.trackingData, null, 2));
+        logApi(
+            "bufferAndMaturity.trackingData:",
+            JSON.stringify(bufferAndMaturity.trackingData, null, 2),
+        );
         logApi("====================================");
 
         // Add tracking headers for enter service (GitHub issue #4170)
         const trackingHeaders = buildTrackingHeaders(
             safeParams.model,
-            bufferAndMaturity.trackingData
+            bufferAndMaturity.trackingData,
         );
         logApi("=== BUILT TRACKING HEADERS ===");
         logApi("trackingHeaders:", JSON.stringify(trackingHeaders, null, 2));
@@ -537,24 +442,15 @@ const checkCacheAndGenerate = async (
         // Determine the appropriate status code (default to 500 if not specified)
         const statusCode = error.status || 500;
         const errorType =
-            statusCode === 401
-                ? "Unauthorized"
-                : statusCode === 403
-                  ? "Forbidden"
-                  : statusCode === 429
-                    ? "Too Many Requests"
-                    : "Internal Server Error";
-
-        // Extract debug info from error if available
-        const errorDebugInfo = error.details?.debugInfo;
-
-        // Add debug headers for authentication information even in error responses
-        const errorHeaders = {
-            "Content-Type": "application/json",
-            "X-Error-Type": errorType,
-        };
-
-        addAuthDebugHeaders(errorHeaders, errorDebugInfo);
+            statusCode === 400
+                ? "Bad Request"
+                : statusCode === 401
+                  ? "Unauthorized"
+                  : statusCode === 403
+                    ? "Forbidden"
+                    : statusCode === 429
+                      ? "Too Many Requests"
+                      : "Internal Server Error";
 
         // Log the error response using debug
         logError("Error response:", {
@@ -564,13 +460,16 @@ const checkCacheAndGenerate = async (
             message: error.message,
         });
 
-        res.writeHead(statusCode, errorHeaders);
+        res.writeHead(statusCode, {
+            "Content-Type": "application/json",
+            "X-Error-Type": errorType,
+        });
+
         // Create a response object with error information
         const responseObj = {
             error: errorType,
             message: error.message,
             details: error.details,
-            debug: createAuthDebugResponse(errorDebugInfo),
             timingInfo: relativeTiming(timingInfo),
             requestId,
             requestParameters: {
@@ -597,6 +496,46 @@ const server = http.createServer((req, res) => {
     const parsedUrl = parse(req.url, true);
     const pathname = parsedUrl.pathname;
 
+    // Handle deprecated /models endpoint BEFORE auth check
+    if (pathname === "/models") {
+        res.writeHead(410, {
+            "Content-Type": "application/json",
+            "Cache-Control":
+                "no-store, no-cache, must-revalidate, proxy-revalidate",
+            Pragma: "no-cache",
+            Expires: "0",
+        });
+        res.end(
+            JSON.stringify({
+                error: "Endpoint moved",
+                message:
+                    "The /models endpoint has been moved to the API gateway. Please use: https://enter.pollinations.ai/api/generate/image/models",
+                deprecated_endpoint: `${req.headers["x-forwarded-proto"] || "http"}://${req.headers.host}/models`,
+                new_endpoint:
+                    "https://enter.pollinations.ai/api/generate/image/models",
+                documentation: "https://enter.pollinations.ai/api/docs",
+            }),
+        );
+        return;
+    }
+
+    // Verify ENTER_TOKEN
+    const token = req.headers["x-enter-token"];
+    const expectedToken = process.env.ENTER_TOKEN;
+
+    if (expectedToken && token !== expectedToken) {
+        logAuth("❌ Invalid or missing ENTER_TOKEN from IP:", getIp(req));
+        res.writeHead(403, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({ error: "Unauthorized" }));
+        return;
+    }
+
+    if (expectedToken) {
+        logAuth("✅ Valid ENTER_TOKEN from IP:", getIp(req));
+    } else {
+        logAuth("!  ENTER_TOKEN not configured - allowing request");
+    }
+
     if (
         pathname ===
         "/.well-known/acme-challenge/w7JbAPtwFN_ntyNHudgKYyaZ7qiesTl4LgFa4fBr1DuEL_Hyd4O3hdIviSop1S3G"
@@ -618,22 +557,6 @@ const server = http.createServer((req, res) => {
         return;
     }
 
-    if (pathname === "/models") {
-        res.writeHead(200, {
-            "Content-Type": "application/json",
-            "Cache-Control":
-                "no-store, no-cache, must-revalidate, proxy-revalidate",
-            Pragma: "no-cache",
-            Expires: "0",
-        });
-        
-        // Return all available models - enter.pollinations.ai handles access control
-        const publicModels = Object.keys(MODELS);
-        
-        res.end(JSON.stringify(publicModels));
-        return;
-    }
-
     if (pathname === "/about") {
         res.writeHead(200, {
             "Content-Type": "application/json",
@@ -644,10 +567,28 @@ const server = http.createServer((req, res) => {
         });
         const modelDetails = Object.entries(MODELS).map(([name, config]) => ({
             name,
-            enhance : config.enhance || false,
+            enhance: config.enhance || false,
             defaultSideLength: config.defaultSideLength ?? 1024,
         }));
         res.end(JSON.stringify(modelDetails));
+        return;
+    }
+
+    if (pathname === "/model-stats") {
+        res.writeHead(200, {
+            "Content-Type": "application/json",
+            "Cache-Control":
+                "no-store, no-cache, must-revalidate, proxy-revalidate",
+            Pragma: "no-cache",
+            Expires: "0",
+        });
+        getModelCounts()
+            .then((counts) => {
+                res.end(JSON.stringify(counts));
+            })
+            .catch(() => {
+                res.end(JSON.stringify({}));
+            });
         return;
     }
 
@@ -686,13 +627,15 @@ server.listen(port, () => {
     console.log(`🌸 Image server listening on port ${port}`);
     console.log(`🔗 Test URL: http://localhost:${port}/prompt/pollinations`);
     console.log(`✨ All requests assumed to come from enter.pollinations.ai`);
-    
+
     // Debug environment info
     const debugEnv = process.env.DEBUG;
     if (debugEnv) {
         console.log(`🐛 Debug mode: ${debugEnv}`);
     } else {
-        console.log(`💡 Pro tip: Want debug logs? Run with DEBUG=* for all the deets! ✨`);
+        console.log(
+            `💡 Pro tip: Want debug logs? Run with DEBUG=* for all the deets! ✨`,
+        );
     }
 });
 

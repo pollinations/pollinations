@@ -28,12 +28,11 @@ export function createMockGithub(): MockAPI<MockGithubState> {
         if (!authHeader?.includes("mock_github_auth_token")) {
             return c.json({ message: "Bad credentials" }, 401);
         }
-        return next();
+        return await next();
     });
 
     const githubAPI = new Hono()
-        .use("/user", githubAuth)
-        .use("/user/*", githubAuth)
+        .use("*", githubAuth)
         .get("/user/emails", (c) => {
             return c.json([
                 {

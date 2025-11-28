@@ -4,6 +4,11 @@ DESCRIPTION >
 Generative AI events with usage, pricing, metadata, moderation, and cache info
 
 SCHEMA >
+-- Event
+`event_id`             String            `json:$.id` DEFAULT '',
+`event_processing_id`  String            `json:$.eventProcessingId` DEFAULT '',
+
+-- Request
 `request_id`      String                 `json:$.requestId`,
 `request_path`    String                 `json:$.requestPath`,
 `start_time`      DateTime               `json:$.startTime`,
@@ -14,13 +19,18 @@ SCHEMA >
 `event_type`      LowCardinality(String) `json:$.eventType`,
 
 -- User
-`user_id`         LowCardinality(String) `json:$.userId` DEFAULT 'undefined',
-`user_tier`       LowCardinality(String) `json:$.userTier` DEFAULT 'undefined',
-`api_key_id`      String                 `json:$.apiKeyId` DEFAULT 'undefined',
-`api_key_type`    LowCardinality(String) `json:$.apiKeyType` DEFAULT 'undefined',
+`user_id`               String                  `json:$.userId` DEFAULT 'undefined',
+`user_tier`             LowCardinality(String)  `json:$.userTier` DEFAULT 'undefined',
+`user_github_id`        String                  `json:$.userGithubId` DEFAULT 'undefined',
+`user_github_username`  String                  `json:$.userGithubUsername` DEFAULT 'undefined',
+
+-- API Key
+`api_key_id`            String                  `json:$.apiKeyId` DEFAULT 'undefined',
+`api_key_name`          String                  `json:$.apiKeyName` DEFAULT 'undefined',
+`api_key_type`          LowCardinality(String)  `json:$.apiKeyType` DEFAULT 'undefined',
 
 -- Meter
-`selected_meter_id`     String                  `json:$.selectedMeterId` DEFAULT 'undefined',
+`selected_meter_id`     LowCardinality(String)  `json:$.selectedMeterId` DEFAULT 'undefined',
 `selected_meter_slug`   LowCardinality(String)  `json:$.selectedMeterSlug` DEFAULT 'undefined',
 `balances`              Map(String, Float64)    `json:$.balances` DEFAULT map(),
 
@@ -31,8 +41,8 @@ SCHEMA >
 -- Model
 `model_requested`           LowCardinality(String) `json:$.modelRequested` DEFAULT 'undefined',
 `resolved_model_requested`  LowCardinality(String) `json:$.resolvedModelRequested` DEFAULT 'undefined',
-`free_model_requested`      Nullable(Bool)         `json:$.freeModelRequested`,
 `model_used`                LowCardinality(String) `json:$.modelUsed` DEFAULT 'undefined',
+`model_provider_used`       LowCardinality(String) `json:$.modelProviderUsed` DEFAULT 'undefined',
 `is_billed_usage`           Bool                   `json:$.isBilledUsage`,
 
 -- Pricing
@@ -95,8 +105,10 @@ ENGINE_PRIMARY_KEY "start_time, environment, user_id"
 
 FORWARD_QUERY >
   SELECT 
+    event_id,
+    event_processing_id,
     request_id,
-    defaultValueOfTypeName('String') AS request_path,
+    request_path,
     start_time,
     end_time,
     response_time,
@@ -105,17 +117,20 @@ FORWARD_QUERY >
     event_type,
     user_id,
     user_tier,
-    defaultValueOfTypeName('String') AS api_key_id,
-    defaultValueOfTypeName('LowCardinality(String)') AS api_key_type,
-    defaultValueOfTypeName('String') AS selected_meter_id,
-    defaultValueOfTypeName('LowCardinality(String)') AS selected_meter_slug,
-    defaultValueOfTypeName('Map(String, Float64)') AS balances,
+    user_github_id,
+    user_github_username,
+    api_key_id,
+    api_key_name,
+    api_key_type,
+    selected_meter_id, 
+    selected_meter_slug, 
+    balances,
     referrer_url,
     referrer_domain,
     model_requested,
-    defaultValueOfTypeName('LowCardinality(String)') AS resolved_model_requested,
-    defaultValueOfTypeName('Nullable(Bool)') AS free_model_requested,
+    resolved_model_requested,
     model_used,
+    model_provider_used,
     is_billed_usage,
     token_price_prompt_text,
     token_price_prompt_cached,
@@ -151,8 +166,8 @@ FORWARD_QUERY >
     cache_semantic_similarity,
     cache_semantic_threshold,
     cache_key,
-    defaultValueOfTypeName('LowCardinality(String)') AS error_response_code,
-    defaultValueOfTypeName('LowCardinality(String)') AS error_source,
-    defaultValueOfTypeName('String') AS error_message,
-    defaultValueOfTypeName('String') AS error_stack,
-    defaultValueOfTypeName('String') AS error_details
+    error_response_code,
+    error_source,
+    error_message,
+    error_stack,
+    error_details

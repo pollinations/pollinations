@@ -1,4 +1,3 @@
-import { sendToAnalytics } from "../sendToAnalytics.js";
 import debug from "debug";
 import { generateAffiliateAd } from "./adLlmMapper.js";
 import { logAdInteraction } from "./adLogger.js";
@@ -12,11 +11,13 @@ import { shouldProceedWithAd, sendAdSkippedAnalytics } from "./adUtils.js";
 //     extractTrackingData,
 //     trackImpression,
 // } from "./nexAdFormatter.js";
-import { handleAuthentication } from "../../shared/auth-utils.js";
 import { incrementUserMetric } from "../../shared/userMetrics.js";
 
 const log = debug("pollinations:adfilter");
 const errorLog = debug("pollinations:adfilter:error");
+
+// Global flag to disable ad system
+const ADS_GLOBALLY_DISABLED = true;
 
 /**
  * Main function to generate ads for content
@@ -32,23 +33,15 @@ export async function generateAdForContent(
     messages = [],
     isStreaming = false,
 ) {
+    // Early return if ads are globally disabled
+    if (ADS_GLOBALLY_DISABLED) {
+        return null;
+    }
+
     try {
-        // Get authenticated user ID if available - do this once at the top
+        // Authentication removed - ads are globally disabled anyway
         let authResult = null;
         let authenticatedUserId = null;
-
-        try {
-            authResult = await handleAuthentication(req);
-            if (authResult.authenticated && authResult.userId) {
-                authenticatedUserId = authResult.userId;
-                log(`Authenticated user ID: ${authenticatedUserId}`);
-            }
-        } catch (error) {
-            // Authentication failed, continue without user ID
-            log(
-                "Authentication failed or not provided, continuing without user ID",
-            );
-        }
 
         // Check if we should show ads - pass auth result to avoid duplicate authentication
         const { shouldShowAd, markerFound, forceAd } = await shouldShowAds(
@@ -108,19 +101,6 @@ export async function generateAdForContent(
                             req.headers.origin ||
                             "unknown",
                         user_agent: req.headers["user-agent"] || "unknown",
-                    });
-
-                    // Send analytics for the ad impression
-                    sendToAnalytics(req, "ad_impression", {
-                        affiliate_id: "kofi",
-                        affiliate_name: kofiAffiliate.name,
-                        ad_source: "kofi",
-                        streaming: isStreaming,
-                        forced: shouldForceAd,
-                        user_id: authenticatedUserId || null,
-                        username: authResult?.username || null,
-                        authenticated: !!authenticatedUserId,
-                        session_id: req.sessionID || null,
                     });
 
                     // Track per-user ad impression metrics for Ko-fi

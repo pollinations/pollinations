@@ -5,7 +5,6 @@ on:
     types: [closed]
     branches:
       - main
-      - master
 jobs:
   review-merged-pr:
     # Only run if PR was merged
@@ -43,4 +42,6 @@ jobs:
           PR_BRANCH: ${{ github.event.pull_request.head.ref }}
           PR_BASE_BRANCH: ${{ github.event.pull_request.base.ref }}
         run: python .github/scripts/pr_review_discord.py
+
+
 

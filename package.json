@@ -1,0 +1,17 @@
+{
+  "name": "pollinations-monorepo",
+  "private": true,
+  "scripts": {
+    "install:all": "npm install --prefix enter.pollinations.ai && npm install --prefix text.pollinations.ai && npm install --prefix image.pollinations.ai",
+    "dev": "concurrently --kill-others-on-fail --prefix '[{name}]' --names 'enter,text,image' -c 'auto' 'npm run dev --prefix enter.pollinations.ai' 'npm run dev --prefix text.pollinations.ai' 'npm run dev --prefix image.pollinations.ai'",
+    "dev:enter": "npm run dev --prefix enter.pollinations.ai",
+    "dev:text": "npm run dev --prefix text.pollinations.ai",
+    "dev:image": "npm run dev --prefix image.pollinations.ai"
+  },
+  "devDependencies": {
+    "concurrently": "^9.2.1"
+  },
+  "dependencies": {
+    "lefthook": "^2.0.4"
+  }
+}

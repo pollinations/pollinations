@@ -1,4 +1,5 @@
 import debug from "debug";
+import { HttpError } from "./httpError.ts";
 import dotenv from "dotenv";
 import { fileTypeFromBuffer } from "file-type";
 
@@ -22,21 +23,16 @@ import type { TrackingData } from "./utils/trackingHeaders.ts";
 
 // Import GPT Image logging utilities
 import { logGptImageError, logGptImagePrompt } from "./utils/gptImageLogger.ts";
-// Import user stats tracker for violation logging
-import { userStatsTracker } from "./utils/userStatsTracker.ts";
-// Import violation ratio checker
-import { checkViolationRatio, recordGptImageRequest } from "./utils/violationRatioChecker.ts";
 // Import Vertex AI Gemini image generator
 import { callVertexAIGemini } from "./vertexAIImageGenerator.js";
 import { writeExifMetadata } from "./writeExifMetadata.ts";
 import type { ImageParams } from "./params.ts";
-import { withTimeoutSignal } from "./util.ts";
 import type { ProgressManager } from "./progressBar.ts";
 
 // Import model handlers
-import { callBPAIGenWithKontextFallback } from "./models/bpaigenModel.ts";
 import { callSeedreamAPI } from "./models/seedreamModel.ts";
-import { callAzureFluxKontext, type ImageGenerationResult as FluxImageGenerationResult } from "./models/azureFluxKontextModel.js";
+import { callAzureFluxKontext } from "./models/azureFluxKontextModel.js";
+import { incrementModelCounter } from "./modelCounter.ts";
 
 dotenv.config();
 
@@ -129,7 +125,7 @@ export const callComfyUI = async (
         // 4 steps up to 20 concurrent, then gradually down to 1 at 50+ concurrent
         const steps = Math.max(
             1,
-            Math.round(4 - Math.max(0, concurrentRequests - 20) / 10)
+            Math.round(4 - Math.max(0, concurrentRequests - 20) / 10),
         );
         logOps("calculated_steps", steps);
 
@@ -176,7 +172,8 @@ export const callComfyUI = async (
                 body: JSON.stringify(body),
             });
         } catch (error) {
-            logError(`Fetch failed: ${error.message}`);
+            logError(`Fetch failed for ${safeParams.model}:`, error.message);
+            logError("Request body:", JSON.stringify(body, null, 2));
             throw error;
         }
 
@@ -223,16 +220,16 @@ export const callComfyUI = async (
                 })
                 .jpeg()
                 .toBuffer();
-            return { 
-                buffer: resizedBuffer, 
+            return {
+                buffer: resizedBuffer,
                 ...rest,
                 trackingData: {
-                    actualModel: 'flux',
+                    actualModel: safeParams.model,
                     usage: {
                         completionImageTokens: 1,
-                        totalTokenCount: 1
-                    }
-                }
+                        totalTokenCount: 1,
+                    },
+                },
             };
         }
 
@@ -244,16 +241,16 @@ export const callComfyUI = async (
             })
             .toBuffer();
 
-        return { 
-            buffer: jpegBuffer, 
+        return {
+            buffer: jpegBuffer,
             ...rest,
             trackingData: {
-                actualModel: 'flux',
+                actualModel: safeParams.model,
                 usage: {
                     completionImageTokens: 1,
-                    totalTokenCount: 1
-                }
-            }
+                    totalTokenCount: 1,
+                },
+            },
         };
     } catch (e) {
         logError("Error in callComfyUI:", e);
@@ -367,17 +364,17 @@ async function callCloudflareModel(
         imageBuffer = Buffer.from(data.result.image, "base64");
     }
 
-    return { 
-        buffer: imageBuffer, 
-        isMature: false, 
+    return {
+        buffer: imageBuffer,
+        isMature: false,
         isChild: false,
         trackingData: {
             actualModel: registryModelName,
             usage: {
                 completionImageTokens: 1,
-                totalTokenCount: 1
-            }
-        }
+                totalTokenCount: 1,
+            },
+        },
     };
 }
 
@@ -527,7 +524,7 @@ const callAzureGPTImageWithEndpoint = async (
 
     // Check if we need to use the edits endpoint instead of generations
     const isEditMode = safeParams.image && safeParams.image.length > 0;
-    
+
     // Use gpt-image-1 (full version) if input images are provided, otherwise use gpt-image-1-mini
     if (isEditMode) {
         // Replace model name with full version for edit mode
@@ -536,15 +533,16 @@ const callAzureGPTImageWithEndpoint = async (
         endpoint = endpoint.replace("/images/generations", "/images/edits");
         logCloudflare(`Using Azure gpt-image-1 (full) in edit mode`);
     } else {
-        logCloudflare(
-            `Using Azure gpt-image-1-mini in generation mode`,
-        );
+        logCloudflare(`Using Azure gpt-image-1-mini in generation mode`);
     }
 
     // Map safeParams to Azure API parameters
     // Use "auto" if dimensions are at default (1021x1021 - prime number), otherwise use user-specified dimensions
-    const isDefaultSize = safeParams.width === 1021 && safeParams.height === 1021;
-    const size = isDefaultSize ? "auto" : `${safeParams.width}x${safeParams.height}`;
+    const isDefaultSize =
+        safeParams.width === 1021 && safeParams.height === 1021;
+    const size = isDefaultSize
+        ? "auto"
+        : `${safeParams.width}x${safeParams.height}`;
 
     // Use requested quality - enter.pollinations.ai handles tier-based access control
     const quality = safeParams.quality === "high" ? "high" : "medium";
@@ -604,8 +602,9 @@ const callAzureGPTImageWithEndpoint = async (
 
             if (imageUrls.length === 0) {
                 // Handle errors for missing image
-                throw new Error(
+                throw new HttpError(
                     "Image URL is required for GPT Image edit mode but was not provided",
+                    400,
                 );
             }
 
@@ -668,12 +667,10 @@ const callAzureGPTImageWithEndpoint = async (
 
                     // Use the image[] array notation as required by Azure OpenAI API
                     // Create a Blob with explicit MIME type to avoid application/octet-stream
-                    const imageBlob = new Blob([imageArrayBuffer], { type: mimeType });
-                    formData.append(
-                        "image[]",
-                        imageBlob,
-                        `image${extension}`,
-                    );
+                    const imageBlob = new Blob([imageArrayBuffer], {
+                        type: mimeType,
+                    });
+                    formData.append("image[]", imageBlob, `image${extension}`);
                 } catch (error) {
                     // More specific error handling for image processing
                     logError(`Error processing image ${i + 1}:`, error.message);
@@ -745,8 +742,9 @@ const callAzureGPTImageWithEndpoint = async (
 
     // Extract token usage from Azure OpenAI response
     // Azure returns usage in format: { prompt_tokens, completion_tokens, total_tokens }
-    const outputTokens = data.usage?.completion_tokens || data.usage?.total_tokens || 1;
-    
+    const outputTokens =
+        data.usage?.completion_tokens || data.usage?.total_tokens || 1;
+
     logCloudflare(`GPT Image token usage: ${outputTokens} completion tokens`);
 
     // Azure doesn't provide content safety information directly, so we'll set defaults
@@ -759,9 +757,9 @@ const callAzureGPTImageWithEndpoint = async (
             actualModel: safeParams.model,
             usage: {
                 completionImageTokens: outputTokens,
-                totalTokenCount: outputTokens
-            }
-        }
+                totalTokenCount: outputTokens,
+            },
+        },
     };
 };
 
@@ -781,15 +779,13 @@ export const callAzureGPTImage = async (
         return await callAzureGPTImageWithEndpoint(
             prompt,
             safeParams,
-            userInfo
+            userInfo,
         );
     } catch (error) {
         logError("Error calling Azure GPT Image API:", error);
         throw error;
     }
 };
-
-
 
 /**
  * Generates an image using the appropriate model based on safeParams
@@ -809,8 +805,11 @@ const generateImage = async (
     requestId: string,
     userInfo: AuthResult,
 ): Promise<ImageGenerationResult> => {
+    // Log model usage
+    incrementModelCounter(safeParams.model).catch(() => {});
+
     // Model selection strategy using a more functional approach
-    
+
     // GPT Image model - gpt-image-1-mini
     if (safeParams.model === "gptimage") {
         // Detailed logging of authentication info for GPT image access
@@ -820,18 +819,6 @@ const generateImage = async (
                 ? `authenticated=${userInfo.authenticated}, tokenAuth=${userInfo.tokenAuth}, referrerAuth=${userInfo.referrerAuth}, reason=${userInfo.reason}, userId=${userInfo.userId || "none"}`
                 : "No userInfo provided",
         );
-
-        // Record request and check violation ratio
-        const username = userInfo?.username;
-        recordGptImageRequest(username);
-        
-        const violationCheck = checkViolationRatio(username);
-        if (violationCheck.blocked) {
-            progress.updateBar(requestId, 35, "Auth", "User blocked");
-            const error: any = new Error(violationCheck.reason);
-            error.status = 403;
-            throw error;
-        }
 
         // All requests assumed to come from enter.pollinations.ai - tier checks bypassed
         {
@@ -869,7 +856,7 @@ const generateImage = async (
                     );
 
                     // Log the error with safety analysis results
-                    const error = new Error(errorMessage);
+                    const error = new HttpError(errorMessage, 400);
                     await logGptImageError(
                         prompt,
                         safeParams,
@@ -877,10 +864,7 @@ const generateImage = async (
                         error,
                         promptSafetyResult,
                     );
-                    
-                    // Track violation in user stats
-                    userStatsTracker.recordViolation(userInfo?.username);
-                    
+
                     throw error;
                 }
 
@@ -899,9 +883,6 @@ const generateImage = async (
                 );
 
                 await logGptImageError(prompt, safeParams, userInfo, error);
-                
-                // Track violation in user stats for generation failures
-                userStatsTracker.recordViolation(userInfo?.username);
 
                 progress.updateBar(requestId, 100, "Error", error.message);
                 throw error;
@@ -909,8 +890,8 @@ const generateImage = async (
         }
     }
 
-    // Nano Banana - Gemini Image generation using Vertex AI
-    if (safeParams.model === "nanobanana") {
+    // Nano Banana / Nano Banana Pro - Gemini Image generation using Vertex AI
+    if (safeParams.model === "nanobanana" || safeParams.model === "nanobanana-pro") {
         // Detailed logging of authentication info for Nano Banana access
         logError(
             "Nano Banana authentication check:",
@@ -942,10 +923,7 @@ const generateImage = async (
 
             if (!promptSafetyResult.safe) {
                 const errorMessage = `Prompt contains unsafe content: ${promptSafetyResult.formattedViolations}`;
-                logError(
-                    "Azure Content Safety rejected prompt:",
-                    errorMessage,
-                );
+                logError("Azure Content Safety rejected prompt:", errorMessage);
                 progress.updateBar(
                     requestId,
                     100,
@@ -954,7 +932,7 @@ const generateImage = async (
                 );
 
                 // Log the error with safety analysis results
-                const error = new Error(errorMessage);
+                const error = new HttpError(errorMessage, 400);
                 await logGptImageError(
                     prompt,
                     safeParams,
@@ -965,11 +943,12 @@ const generateImage = async (
                 throw error;
             }
 
+            const modelDisplayName = safeParams.model === "nanobanana-pro" ? "Nano Banana Pro" : "Nano Banana";
             progress.updateBar(
                 requestId,
                 35,
                 "Processing",
-                "Generating with Nano Banana...",
+                `Generating with ${modelDisplayName}...`,
             );
             return await callVertexAIGemini(prompt, safeParams, userInfo);
         } catch (error) {
@@ -1017,7 +996,12 @@ const generateImage = async (
         // All requests assumed to come from enter.pollinations.ai
         try {
             // Use ByteDance ARK Seedream API for high-quality image generation
-            return await callSeedreamAPI(prompt, safeParams, progress, requestId);
+            return await callSeedreamAPI(
+                prompt,
+                safeParams,
+                progress,
+                requestId,
+            );
         } catch (error) {
             logError("Seedream generation failed:", error.message);
             progress.updateBar(requestId, 100, "Error", error.message);
@@ -1026,7 +1010,12 @@ const generateImage = async (
     }
 
     if (safeParams.model === "flux") {
-        progress.updateBar(requestId, 25, "Processing", "Using registered servers");
+        progress.updateBar(
+            requestId,
+            25,
+            "Processing",
+            "Using registered servers",
+        );
         return await callComfyUI(prompt, safeParams, concurrentRequests);
     }
 
@@ -1123,14 +1112,9 @@ const processImageBuffer = async (
           );
 
     // Convert format to JPEG (gptimage PNG support temporarily disabled)
-    progress.updateBar(
-        requestId,
-        85,
-        "Processing",
-        "Converting to JPEG...",
-    );
+    progress.updateBar(requestId, 85, "Processing", "Converting to JPEG...");
     processedBuffer = await convertToJpeg(processedBuffer);
-    
+
     // GPT Image PNG format support (temporarily disabled - uncomment to reactivate)
     // if (safeParams.model !== "gptimage") {
     //     progress.updateBar(
@@ -1199,8 +1183,9 @@ export async function createAndReturnImageCached(
 
         // Safety check
         if (safeParams.safe && isMature) {
-            throw new Error(
+            throw new HttpError(
                 "NSFW content detected. This request cannot be fulfilled when safe mode is enabled.",
+                400,
             );
         }
 
@@ -1224,11 +1209,11 @@ export async function createAndReturnImageCached(
             requestId,
         );
 
-        return { 
-            buffer: processedBuffer, 
-            isChild, 
+        return {
+            buffer: processedBuffer,
+            isChild,
             isMature,
-            trackingData: result.trackingData
+            trackingData: result.trackingData,
         };
     } catch (error) {
         logError("Error in createAndReturnImageCached:", error);

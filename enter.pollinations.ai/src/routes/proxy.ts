@@ -1,23 +1,24 @@
-import { Context, Hono } from "hono";
+import { type Context, Hono } from "hono";
 import { proxy } from "hono/proxy";
-import { auth } from "@/middleware/auth.ts";
-import type { User } from "@/auth.ts";
-import { polar } from "@/middleware/polar.ts";
+import type { ContentfulStatusCode } from "hono/utils/http-status";
+import { auth, AuthVariables } from "@/middleware/auth.ts";
+import { polar, PolarVariables } from "@/middleware/polar.ts";
 import type { Env } from "../env.ts";
-import { track, TrackEnv } from "@/middleware/track.ts";
-import { removeUnset } from "@/util.ts";
-import { frontendKeyRateLimit } from "@/middleware/rateLimit.durable.ts";
+import { track, type TrackEnv } from "@/middleware/track.ts";
+import { frontendKeyRateLimit } from "@/middleware/rate-limit-durable.ts";
+import { imageCache } from "@/middleware/image-cache.ts";
+import { edgeRateLimit } from "@/middleware/rate-limit-edge.ts";
 import { describeRoute, resolver } from "hono-openapi";
 import { validator } from "@/middleware/validator.ts";
 import {
     CreateChatCompletionResponseSchema,
     CreateChatCompletionRequestSchema,
-    CreateChatCompletionResponse,
+    type CreateChatCompletionResponse,
     GetModelsResponseSchema,
 } from "@/schemas/openai.ts";
 import {
     createErrorResponseSchema,
-    ErrorStatusCode,
+    type ErrorStatusCode,
     getDefaultErrorMessage,
     KNOWN_ERROR_STATUS_CODES,
     UpstreamError,
@@ -25,7 +26,109 @@ import {
 import { GenerateImageRequestQueryParamsSchema } from "@/schemas/image.ts";
 import { z } from "zod";
 import { HTTPException } from "hono/http-exception";
-import { ContentfulStatusCode } from "hono/utils/http-status";
+import { DEFAULT_TEXT_MODEL } from "@shared/registry/text.ts";
+import {
+    getTextModelsInfo,
+    getImageModelsInfo,
+    resolveServiceId,
+} from "../../../shared/registry/registry.js";
+import { createFactory } from "hono/factory";
+
+// Shared schema for model info responses
+const ModelInfoSchema = z.object({
+    name: z.string(),
+    aliases: z.array(z.string()),
+    pricing: z.object({
+        input_token_price: z.number().optional(),
+        output_token_price: z.number().optional(),
+        cached_token_price: z.number().optional(),
+        image_price: z.number().optional(),
+        audio_input_price: z.number().optional(),
+        audio_output_price: z.number().optional(),
+        currency: z.literal("USD"),
+    }),
+    description: z.string().optional(),
+    input_modalities: z.array(z.string()).optional(),
+    output_modalities: z.array(z.string()).optional(),
+    tools: z.boolean().optional(),
+    reasoning: z.boolean().optional(),
+    context_window: z.number().optional(),
+    voices: z.array(z.string()).optional(),
+    isSpecialized: z.boolean().optional(),
+});
+
+const factory = createFactory<Env>();
+
+// Shared handler for OpenAI-compatible chat completions
+const chatCompletionHandlers = factory.createHandlers(
+    track("generate.text"),
+    validator("json", CreateChatCompletionRequestSchema),
+    async (c) => {
+        const log = c.get("log");
+        await c.var.auth.requireAuthorization();
+
+        await checkBalance(c.var);
+
+        const textServiceUrl =
+            c.env.TEXT_SERVICE_URL || "https://text.pollinations.ai";
+        const targetUrl = proxyUrl(c, `${textServiceUrl}/openai`);
+        const requestBody = await c.req.json();
+
+        // Resolve model alias to service ID before proxying
+        if (requestBody.model) {
+            try {
+                const resolvedServiceId = resolveServiceId(
+                    requestBody.model,
+                    "generate.text",
+                );
+                requestBody.model = resolvedServiceId;
+            } catch (error) {
+                log.warn("[PROXY] Failed to resolve model alias: {model}", {
+                    model: requestBody.model,
+                    error: String(error),
+                });
+                // Let it pass through - backend will handle invalid model error
+            }
+        }
+        const response = await proxy(targetUrl, {
+            method: c.req.method,
+            headers: proxyHeaders(c),
+            body: JSON.stringify(requestBody),
+        });
+
+        if (!response.ok) {
+            // Read upstream error and throw UpstreamError to get structured error response
+            // This preserves the status code while providing consistent error format
+            const responseText = await response.text();
+            log.warn("[PROXY] Chat completions error {status}: {body}", {
+                status: response.status,
+                body: responseText,
+            });
+            throw new UpstreamError(response.status as ContentfulStatusCode, {
+                message:
+                    responseText || getDefaultErrorMessage(response.status),
+                requestUrl: targetUrl,
+            });
+        }
+
+        // add content filter headers if not streaming
+        let contentFilterHeaders = {};
+        if (!c.var.track.streamRequested) {
+            const responseJson = await response.clone().json();
+            const parsedResponse =
+                CreateChatCompletionResponseSchema.parse(responseJson);
+            contentFilterHeaders =
+                contentFilterResultsToHeaders(parsedResponse);
+        }
+
+        return new Response(response.body, {
+            headers: {
+                ...Object.fromEntries(response.headers),
+                ...contentFilterHeaders,
+            },
+        });
+    },
+);
 
 const errorResponseDescriptions = Object.fromEntries(
     KNOWN_ERROR_STATUS_CODES.map((status) => [
@@ -50,6 +153,8 @@ function errorResponses(...codes: ErrorStatusCode[]) {
 }
 
 export const proxyRoutes = new Hono<Env>()
+    // Edge rate limiter: first line of defense (10 req/s per IP)
+    .use("*", edgeRateLimit)
     .get(
         "/v1/models",
         describeRoute({
@@ -68,10 +173,7 @@ export const proxyRoutes = new Hono<Env>()
             },
         }),
         async (c) => {
-            const textServiceUrl =
-                c.env.TEXT_SERVICE_URL || "https://text.pollinations.ai";
-            return await proxy(`${textServiceUrl}/openai/models`, {
-                ...c.req,
+            return await proxy(`${c.env.TEXT_SERVICE_URL}/openai/models`, {
                 headers: proxyHeaders(c),
             });
         },
@@ -80,15 +182,17 @@ export const proxyRoutes = new Hono<Env>()
         "/image/models",
         describeRoute({
             tags: ["Image Generation"],
-            description: "Get available image models.",
+            description:
+                "Get a list of available image generation models with pricing, capabilities, and metadata. Use this endpoint to discover which models are available and their costs before making generation requests. Response includes `aliases` (alternative names you can use), pricing per image, and supported modalities.",
             responses: {
                 200: {
                     description: "Success",
                     content: {
                         "application/json": {
                             schema: resolver(
-                                z.array(z.string()).meta({
-                                    description: "List of available models",
+                                z.array(ModelInfoSchema).meta({
+                                    description:
+                                        "List of models with pricing and metadata",
                                 }),
                             ),
                         },
@@ -98,7 +202,50 @@ export const proxyRoutes = new Hono<Env>()
             },
         }),
         async (c) => {
-            return await proxy(`${c.env.IMAGE_SERVICE_URL}/models`);
+            try {
+                const models = getImageModelsInfo();
+                return c.json(models);
+            } catch (error) {
+                throw new HTTPException(500, {
+                    message: "Failed to load image models",
+                    cause: error,
+                });
+            }
+        },
+    )
+    .get(
+        "/text/models",
+        describeRoute({
+            tags: ["Text Generation"],
+            description:
+                "Get a list of available text generation models with pricing, capabilities, and metadata. Use this endpoint to discover which models are available and their costs before making generation requests. Response includes `aliases` (alternative names you can use), token pricing, supported modalities (text, image, audio), and capabilities (tools, reasoning).",
+            responses: {
+                200: {
+                    description: "Success",
+                    content: {
+                        "application/json": {
+                            schema: resolver(
+                                z.array(ModelInfoSchema).meta({
+                                    description:
+                                        "List of models with pricing and metadata",
+                                }),
+                            ),
+                        },
+                    },
+                },
+                ...errorResponses(500),
+            },
+        }),
+        async (c) => {
+            try {
+                const models = getTextModelsInfo();
+                return c.json(models);
+            } catch (error) {
+                throw new HTTPException(500, {
+                    message: "Failed to load text models",
+                    cause: error,
+                });
+            }
         },
     )
     // Auth required for all endpoints below (API key only - no session cookies)
@@ -107,7 +254,6 @@ export const proxyRoutes = new Hono<Env>()
     .use(polar)
     .post(
         "/v1/chat/completions",
-        track("generate.text"),
         describeRoute({
             tags: ["Text Generation"],
             description: [
@@ -138,45 +284,15 @@ export const proxyRoutes = new Hono<Env>()
                 ...errorResponses(400, 401, 500),
             },
         }),
-        validator("json", CreateChatCompletionRequestSchema),
-        async (c) => handleChatCompletions(c),
+        ...chatCompletionHandlers,
     )
     // Undocumented /openai alias for backward compatibility (deprecated)
     .post(
         "/openai",
-        track("generate.text"),
         describeRoute({
             hide: true, // Hide from OpenAPI docs completely
         }),
-        validator("json", CreateChatCompletionRequestSchema),
-        async (c) => handleChatCompletions(c),
-    )
-    .get(
-        "/text/models",
-        describeRoute({
-            tags: ["Text Generation"],
-            description: "Get available text models.",
-            responses: {
-                200: {
-                    description: "Success",
-                    content: {
-                        "application/json": {
-                            schema: resolver(
-                                z.array(z.string()).meta({
-                                    description: "List of available models",
-                                }),
-                            ),
-                        },
-                    },
-                },
-                ...errorResponses(500),
-            },
-        }),
-        async (c) => {
-            const textServiceUrl =
-                c.env.TEXT_SERVICE_URL || "https://text.pollinations.ai";
-            return await proxy(`${textServiceUrl}/models`);
-        },
+        ...chatCompletionHandlers,
     )
     .get(
         "/text/:prompt",
@@ -196,37 +312,42 @@ export const proxyRoutes = new Hono<Env>()
         }),
         track("generate.text"),
         async (c) => {
-            await c.var.auth.requireAuthorization({
-                allowAnonymous:
-                    c.var.track.freeModelRequested &&
-                    c.env.ALLOW_ANONYMOUS_USAGE,
-            });
-            await checkBalanceForPaidModel(c);
+            const log = c.get("log");
+            await c.var.auth.requireAuthorization();
+            await checkBalance(c.var);
 
             const textServiceUrl =
                 c.env.TEXT_SERVICE_URL || "https://text.pollinations.ai";
 
             // Build URL with prompt in path and model as query param
-            const model = c.req.query("model") || "openai";
+            const model = c.req.query("model") || DEFAULT_TEXT_MODEL;
             const prompt = c.req.param("prompt");
             const targetUrl = proxyUrl(
                 c,
-                `${textServiceUrl}/${encodeURIComponent(prompt)}?model=${model}`,
+                `${textServiceUrl}/${encodeURIComponent(prompt)}`,
             );
+            // Add model param after proxyUrl() to ensure it's always present
+            targetUrl.searchParams.set("model", model);
 
             const response = await fetch(targetUrl, {
                 method: "GET",
-                headers: {
-                    ...proxyHeaders(c),
-                    ...generationHeaders(c.env.ENTER_TOKEN, c.var.auth.user),
-                },
+                headers: proxyHeaders(c),
             });
 
             if (!response.ok) {
+                // Read upstream error and throw UpstreamError to get structured error response
+                // This preserves the status code while providing consistent error format
+                const responseText = await response.text();
+                log.warn("[PROXY] Text service error {status}: {body}", {
+                    status: response.status,
+                    body: responseText,
+                });
                 throw new UpstreamError(
                     response.status as ContentfulStatusCode,
                     {
-                        message: "The text service returned an error response",
+                        message:
+                            responseText ||
+                            getDefaultErrorMessage(response.status),
                         requestUrl: targetUrl,
                     },
                 );
@@ -238,8 +359,9 @@ export const proxyRoutes = new Hono<Env>()
         },
     )
     .get(
-        "/image/:prompt",
+        "/image/*",
         track("generate.image"),
+        imageCache,
         describeRoute({
             tags: ["Image Generation"],
             description: [
@@ -253,92 +375,97 @@ export const proxyRoutes = new Hono<Env>()
                 "",
                 "API keys can be created from your dashboard at enter.pollinations.ai.",
             ].join("\n"),
+            responses: {
+                200: {
+                    description: "Success - Returns the generated image",
+                    content: {
+                        "image/jpeg": {
+                            schema: {
+                                type: "string",
+                                format: "binary",
+                            },
+                        },
+                        "image/png": {
+                            schema: {
+                                type: "string",
+                                format: "binary",
+                            },
+                        },
+                    },
+                },
+                ...errorResponses(400, 401, 500),
+            },
         }),
         validator("query", GenerateImageRequestQueryParamsSchema),
         async (c) => {
             const log = c.get("log");
-            await c.var.auth.requireAuthorization({
-                allowAnonymous:
-                    c.var.track.freeModelRequested &&
-                    c.env.ALLOW_ANONYMOUS_USAGE,
+            await c.var.auth.requireAuthorization();
+            await checkBalance(c.var);
+
+            // Extract prompt from wildcard path (everything after /image/)
+            // Keep it encoded to preserve special characters when proxying
+            const fullPath = c.req.path; // e.g., "/api/generate/image/my%20prompt%20here"
+            const promptParam = fullPath.split("/image/")[1] || "";
+
+            log.debug("[PROXY] Extracted prompt param: {prompt}", {
+                prompt: decodeURIComponent(promptParam), // Decode only for logging
+                type: typeof promptParam,
+                length: promptParam.length,
+                fullPath: fullPath,
             });
-            await checkBalanceForPaidModel(c);
 
             const targetUrl = proxyUrl(c, `${c.env.IMAGE_SERVICE_URL}/prompt`);
-            targetUrl.pathname = joinPaths(
-                targetUrl.pathname,
-                c.req.param("prompt"),
-            );
+            targetUrl.pathname = joinPaths(targetUrl.pathname, promptParam);
 
             log.debug("[PROXY] Proxying to: {url}", {
                 url: targetUrl.toString(),
             });
 
-            const genHeaders = generationHeaders(
-                c.env.ENTER_TOKEN,
-                c.var.auth.user,
-            );
-
-            log.debug("[PROXY] Image generation headers: {headers}", {
-                headers: genHeaders,
-            });
-
-            const proxyRequestHeaders = {
-                ...proxyHeaders(c),
-                ...genHeaders,
-            };
-
-            c.get("log")?.debug("[PROXY] Image generation headers: {headers}", {
-                headers: genHeaders,
-            });
-            c.get("log")?.debug("[PROXY] Proxying to: {url}", {
-                url: targetUrl.toString(),
-            });
-
             const response = await proxy(targetUrl.toString(), {
                 method: c.req.method,
-                headers: proxyRequestHeaders,
+                headers: proxyHeaders(c),
                 body: c.req.raw.body,
             });
 
             if (!response.ok) {
+                // Read upstream error and throw UpstreamError to get structured error response
+                // This preserves the status code while providing consistent error format
                 const responseText = await response.text();
-                log.warn("[PROXY] Error {status}: {body}", {
+                log.warn("[PROXY] Image service error {status}: {body}", {
                     status: response.status,
                     body: responseText,
                 });
-                // Return the response with the body we just read
-                return new Response(responseText, {
-                    status: response.status,
-                    statusText: response.statusText,
-                    headers: response.headers,
-                });
+                throw new UpstreamError(
+                    response.status as ContentfulStatusCode,
+                    {
+                        message:
+                            responseText ||
+                            getDefaultErrorMessage(response.status),
+                        requestUrl: targetUrl,
+                    },
+                );
             }
 
             return response;
         },
     );
 
-function generationHeaders(
-    enterToken: string,
-    user?: User,
-): Record<string, string> {
-    return removeUnset({
-        "x-enter-token": enterToken,
-        "x-github-id": `${user?.githubId}`,
-        "x-user-tier": user?.tier,
-    });
-}
-
 function proxyHeaders(c: Context): Record<string, string> {
     const clientIP = c.req.header("cf-connecting-ip") || "";
     const clientHost = c.req.header("host") || "";
+    const headers = { ...c.req.header() };
+
+    // Remove Authorization header - we use x-enter-token for backend auth instead
+    delete headers.authorization;
+    delete headers.Authorization;
+
     return {
-        ...c.req.header(),
+        ...headers,
         "x-request-id": c.get("requestId"),
         "x-forwarded-host": clientHost,
         "x-forwarded-for": clientIP,
         "x-real-ip": clientIP,
+        "x-enter-token": c.env.ENTER_TOKEN,
     };
 }
 
@@ -372,7 +499,7 @@ export function contentFilterResultsToHeaders(
     const completionFilterResults =
         response.choices?.[0]?.content_filter_results;
     const mapToString = (value: unknown) => (value ? String(value) : undefined);
-    return removeUnset({
+    const headers = {
         "x-moderation-prompt-hate-severity": mapToString(
             promptFilterResults?.hate?.severity,
         ),
@@ -406,60 +533,18 @@ export function contentFilterResultsToHeaders(
         "x-moderation-completion-protected-material-code-detected": mapToString(
             completionFilterResults?.protected_material_code?.detected,
         ),
-    });
+    };
+    // Filter out undefined values
+    return Object.fromEntries(
+        Object.entries(headers).filter(([_, value]) => value !== undefined),
+    ) as Record<string, string>;
 }
 
-async function checkBalanceForPaidModel(c: Context<Env & TrackEnv>) {
-    if (!c.var.track.freeModelRequested && c.var.auth.user?.id) {
-        await c.var.polar.requirePositiveBalance(
-            c.var.auth.user.id,
+async function checkBalance({ auth, polar }: AuthVariables & PolarVariables) {
+    if (auth.user?.id) {
+        await polar.requirePositiveBalance(
+            auth.user.id,
             "Insufficient pollen balance to use this model",
         );
     }
-}
-
-// Shared handler for OpenAI-compatible chat completions
-async function handleChatCompletions(c: Context<Env & TrackEnv>) {
-    await c.var.auth.requireAuthorization({
-        allowAnonymous:
-            c.var.track.freeModelRequested && c.env.ALLOW_ANONYMOUS_USAGE,
-    });
-
-    await checkBalanceForPaidModel(c);
-
-    const textServiceUrl =
-        c.env.TEXT_SERVICE_URL || "https://text.pollinations.ai";
-    const targetUrl = proxyUrl(c, `${textServiceUrl}/openai`);
-    const requestBody = await c.req.json();
-    const response = await proxy(targetUrl, {
-        method: c.req.method,
-        headers: {
-            ...proxyHeaders(c),
-            ...generationHeaders(c.env.ENTER_TOKEN, c.var.auth.user),
-        },
-        body: JSON.stringify(requestBody),
-    });
-
-    if (!response.ok) {
-        throw new UpstreamError(response.status as ContentfulStatusCode, {
-            message: "The text service returned an error response",
-            requestUrl: targetUrl,
-        });
-    }
-
-    // add content filter headers if not streaming
-    let contentFilterHeaders = {};
-    if (!c.var.track.streamRequested) {
-        const responseJson = await response.clone().json();
-        const parsedResponse =
-            CreateChatCompletionResponseSchema.parse(responseJson);
-        contentFilterHeaders = contentFilterResultsToHeaders(parsedResponse);
-    }
-
-    return new Response(response.body, {
-        headers: {
-            ...Object.fromEntries(response.headers),
-            ...contentFilterHeaders,
-        },
-    });
 }

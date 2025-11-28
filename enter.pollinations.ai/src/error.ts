@@ -82,7 +82,7 @@ const ErrorResponseSchema = z.discriminatedUnion("status", [
 
 type ErrorResponse = z.infer<typeof ErrorResponseSchema>;
 
-export const handleError: ErrorHandler<Env> = (err, c) => {
+export const handleError: ErrorHandler<Env> = async (err, c) => {
     const log = c.get("log");
     const timestamp = new Date().toISOString();
 
@@ -92,7 +92,9 @@ export const handleError: ErrorHandler<Env> = (err, c) => {
     if (err instanceof HTTPException) {
         const status = err.status;
         const response = createBaseErrorResponse(err, status, timestamp);
-        log.trace("HttpException: {error}", { error: err });
+        log.trace("HttpException: {message}", {
+            message: err.message || getDefaultErrorMessage(err.status),
+        });
         return c.json(response, status);
     }
 

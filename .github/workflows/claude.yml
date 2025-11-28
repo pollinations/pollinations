@@ -43,7 +43,7 @@ jobs:
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
           claude_args: |
-            --model claude-sonnet-4-5-20250929
+            --model claude-opus-4-5-20251101
             --allowedTools mcp_sequa_search_web
             --system-prompt "When reviewing code, be extremely concise. Use bullet points only. No paragraphs or verbose explanations. Format: - **Issue**: brief description - **Fix**: one-line solution. Maximum 3-5 bullets per review."
             --mcp-config '{

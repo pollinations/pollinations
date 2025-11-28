@@ -2,6 +2,9 @@ import { describe, it, expect, beforeAll } from "vitest";
 import fetch from "node-fetch";
 
 const BASE_URL = process.env.TEST_BASE_URL || "http://localhost:16385";
+const ENTER_TOKEN =
+    process.env.ENTER_TOKEN ||
+    "cZOpvvV4xpbOe1IOYrN0R2a3zxHEAcLntneihfU3f2Y3Pfy5";
 
 beforeAll(() => {
     console.log(`Testing usage headers against: ${BASE_URL}`);
@@ -180,5 +183,56 @@ describe("Usage headers - Streaming (Issue #4638)", () => {
                 if (done) break;
             }
         }
+    }, 30000);
+
+    it("should include usage object in streaming response (stream_options)", async () => {
+        const response = await fetch(`${BASE_URL}/openai/chat/completions`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "x-enter-token": ENTER_TOKEN,
+            },
+            body: JSON.stringify({
+                model: "openai-fast",
+                messages: [{ role: "user", content: "Say hi" }],
+                max_tokens: 20,
+                stream: true,
+            }),
+        });
+
+        expect(response.status).toBe(200);
+
+        // Parse SSE stream and look for usage object
+        let foundUsage = false;
+        let usageData = null;
+
+        const text = await response.text();
+        const lines = text.split("\n");
+
+        for (const line of lines) {
+            if (line.startsWith("data: ")) {
+                const data = line.slice(6);
+                if (data === "[DONE]") continue;
+
+                try {
+                    const parsed = JSON.parse(data);
+                    if (parsed.usage) {
+                        foundUsage = true;
+                        usageData = parsed.usage;
+                    }
+                } catch {
+                    // Ignore parse errors
+                }
+            }
+        }
+
+        expect(foundUsage).toBe(true);
+        expect(usageData).toBeTruthy();
+        expect(usageData.prompt_tokens).toBeGreaterThan(0);
+        expect(usageData.completion_tokens).toBeGreaterThan(0);
+        expect(usageData.total_tokens).toBeGreaterThan(0);
+        expect(usageData.total_tokens).toBe(
+            usageData.prompt_tokens + usageData.completion_tokens,
+        );
     }, 30000);
 });

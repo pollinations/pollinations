@@ -1,7 +1,7 @@
 import { processEvents, storeEvents } from "@/events.ts";
+import { HTTPException } from "hono/http-exception";
 import {
     resolveServiceId,
-    isFreeService,
     getActivePriceDefinition,
     calculateCost,
     calculatePrice,
@@ -10,11 +10,13 @@ import {
     UsageCost,
     UsagePrice,
     PriceDefinition,
+    getServiceDefinition,
 } from "@shared/registry/registry.ts";
 import {
     openaiUsageToTokenUsage,
     parseUsageHeaders,
 } from "@shared/registry/usage-headers.ts";
+import { routePath, baseRoutePath } from "hono/route";
 import {
     CompletionUsage,
     CompletionUsageSchema,
@@ -24,7 +26,6 @@ import {
 } from "@/schemas/openai.ts";
 import { generateRandomId } from "@/util.ts";
 import { createMiddleware } from "hono/factory";
-import type { LoggerVariables } from "./logger.ts";
 import {
     contentFilterResultsToEventParams,
     priceToEventParams,
@@ -45,9 +46,16 @@ import { TokenUsage } from "../../../shared/registry/registry.js";
 import { removeUnset } from "@/util.ts";
 import { EventSourceParserStream } from "eventsource-parser/stream";
 import { mergeContentFilterResults } from "@/content-filter.ts";
-import { getErrorCode, UpstreamError } from "@/error.ts";
+import {
+    getDefaultErrorMessage,
+    getErrorCode,
+    UpstreamError,
+} from "@/error.ts";
 import { ValidationError } from "@/middleware/validator.ts";
-import { ErrorVariables } from "@/env.ts";
+import type { LoggerVariables } from "./logger.ts";
+import type { ErrorVariables } from "@/env.ts";
+import type { FrontendKeyRateLimitVariables } from "./rate-limit-durable.ts";
+import { getLogger } from "@logtape/logtape";
 
 export type ModelUsage = {
     model: ModelId;
@@ -57,7 +65,7 @@ export type ModelUsage = {
 type RequestTrackingData = {
     modelRequested: string | null;
     resolvedModelRequested: string;
-    freeModelRequested: boolean;
+    modelProvider?: string;
     modelPriceDefinition: PriceDefinition;
     streamRequested: boolean;
     referrerData: ReferrerData;
@@ -79,7 +87,6 @@ export type TrackVariables = {
     track: {
         modelRequested: string | null;
         resolvedModelRequested: string;
-        freeModelRequested: boolean;
         streamRequested: boolean;
         overrideResponseTracking: (response: Response) => void;
     };
@@ -91,6 +98,7 @@ export type TrackEnv = {
         LoggerVariables &
         AuthVariables &
         PolarVariables &
+        FrontendKeyRateLimitVariables &
         TrackVariables;
 };
 
@@ -105,7 +113,6 @@ export const track = (eventType: EventType) =>
         c.set("track", {
             modelRequested: requestTracking.modelRequested,
             resolvedModelRequested: requestTracking.resolvedModelRequested,
-            freeModelRequested: requestTracking.freeModelRequested,
             streamRequested: requestTracking.streamRequested,
             overrideResponseTracking: (response: Response) => {
                 responseOverride = response;
@@ -118,21 +125,29 @@ export const track = (eventType: EventType) =>
 
         c.executionCtx.waitUntil(
             (async () => {
-                const response = responseOverride || c.res;
+                const response = responseOverride || c.res.clone();
                 const responseTracking = await trackResponse(
                     eventType,
                     requestTracking,
                     response,
                 );
-                const userTracking = {
+
+                // register pollen consumption with rate limiter
+                await c.var.frontendKeyRateLimit?.consumePollen(
+                    responseTracking.price?.totalPrice || 0,
+                );
+
+                const userTracking: UserData = {
                     userId: c.var.auth.user?.id,
                     userTier: c.var.auth.user?.tier,
-                    userGithubId: c.var.auth.user?.githubId,
-                    userGithubName: c.var.auth.user?.githubUsername,
+                    userGithubId: `${c.var.auth.user?.githubId}`,
+                    userGithubUsername: c.var.auth.user?.githubUsername,
                     apiKeyId: c.var.auth.apiKey?.id,
                     apiKeyType: c.var.auth.apiKey?.metadata
                         ?.keyType as ApiKeyType,
-                };
+                    apiKeyName: c.var.auth.apiKey?.name,
+                } satisfies UserData;
+
                 const balanceTracking = {
                     selectedMeterId:
                         c.var.polar.balanceCheckResult?.selectedMeterId,
@@ -144,10 +159,11 @@ export const track = (eventType: EventType) =>
                             meter.balance,
                         ]) || [],
                     ),
-                };
+                } satisfies BalanceData;
+
                 const event = createTrackingEvent({
                     requestId: c.get("requestId"),
-                    requestPath: c.req.path,
+                    requestPath: `${baseRoutePath(c)}${routePath(c)}`,
                     startTime,
                     endTime,
                     environment: c.env.ENVIRONMENT,
@@ -158,23 +174,20 @@ export const track = (eventType: EventType) =>
                     responseTracking,
                     errorTracking: collectErrorData(response, c.get("error")),
                 });
-                
-                // Set internal header for rate limiter to read pollen price
-                if (responseTracking.price?.totalPrice) {
-                    c.header("X-Pollen-Price", responseTracking.price.totalPrice.toString());
-                }
+
                 log.trace("Event: {event}", { event });
                 const db = drizzle(c.env.DB);
                 await storeEvents(db, c.var.log, [event]);
-                
+
                 // process events immediately in development/testing
-                if (["test", "development"].includes(c.env.ENVIRONMENT))
+                if (["test", "development"].includes(c.env.ENVIRONMENT)) {
                     await processEvents(db, c.var.log, {
                         polarAccessToken: c.env.POLAR_ACCESS_TOKEN,
                         polarServer: c.env.POLAR_SERVER,
                         tinybirdIngestUrl: c.env.TINYBIRD_INGEST_URL,
                         tinybirdAccessToken: c.env.TINYBIRD_ACCESS_TOKEN,
                     });
+                }
             })(),
         );
     });
@@ -184,8 +197,18 @@ async function trackRequest(
     request: HonoRequest,
 ): Promise<RequestTrackingData> {
     const modelRequested = await extractModelRequested(request);
-    const resolvedModelRequested = resolveServiceId(modelRequested, eventType);
-    const freeModelRequested = isFreeService(resolvedModelRequested);
+
+    let resolvedModelRequested: ServiceId | undefined;
+    try {
+        resolvedModelRequested = resolveServiceId(modelRequested, eventType);
+    } catch (error) {
+        throw new HTTPException(400, {
+            message:
+                error instanceof Error ? error.message : "Invalid model name",
+        });
+    }
+
+    const modelProvider = getServiceDefinition(resolvedModelRequested).provider;
     const modelPriceDefinition = getActivePriceDefinition(
         resolvedModelRequested,
     );
@@ -200,8 +223,8 @@ async function trackRequest(
     return {
         modelRequested,
         resolvedModelRequested,
+        modelProvider,
         modelPriceDefinition,
-        freeModelRequested,
         streamRequested,
         referrerData,
     };
@@ -212,6 +235,7 @@ async function trackResponse(
     requestTracking: RequestTrackingData,
     response: Response,
 ): Promise<ResponseTrackingData> {
+    const log = getLogger(["hono", "track", "response"]);
     const { resolvedModelRequested } = requestTracking;
     const cacheInfo = extractCacheHeaders(response);
     if (!response.ok || cacheInfo.cacheHit) {
@@ -228,6 +252,16 @@ async function trackResponse(
             requestTracking,
             response,
         );
+    if (!modelUsage) {
+        log.error("Failed to extract model usage");
+        return {
+            responseOk: response.ok,
+            responseStatus: response.status,
+            cacheData: cacheInfo,
+            isBilledUsage: false,
+            contentFilterResults,
+        };
+    }
     const cost = calculateCost(modelUsage.model as ModelId, modelUsage.usage);
     const price = calculatePrice(
         resolvedModelRequested as ServiceId,
@@ -237,7 +271,7 @@ async function trackResponse(
         responseOk: response.ok,
         responseStatus: response.status,
         cacheData: cacheInfo,
-        isBilledUsage: !requestTracking.freeModelRequested,
+        isBilledUsage: true,
         cost,
         price,
         modelUsed: modelUsage.model,
@@ -252,10 +286,10 @@ async function* extractResponseStream(
     if (!response.body) return;
 
     const textDecoder = new TextDecoderStream();
-    const parser = new EventSourceParserStream();
+    const sseParser = new EventSourceParserStream();
     const eventStream = response.body
         .pipeThrough(textDecoder)
-        .pipeThrough(parser);
+        .pipeThrough(sseParser);
 
     for await (const event of asyncIteratorStream(eventStream)) {
         if (event.data === "[DONE]") return;
@@ -281,10 +315,11 @@ async function* asyncIteratorStream<T>(
 type UserData = {
     userId?: string;
     userTier?: string;
-    userGithubId?: number;
-    userGithubName?: string;
+    userGithubId?: string;
+    userGithubUsername?: string;
     apiKeyId?: string;
     apiKeyType?: ApiKeyType;
+    apiKeyName?: string;
 };
 
 type BalanceData = {
@@ -337,13 +372,9 @@ function createTrackingEvent({
 
         modelRequested: requestTracking.modelRequested,
         resolvedModelRequested: requestTracking.resolvedModelRequested,
-        freeModelRequested: requestTracking.freeModelRequested,
         modelUsed: responseTracking.modelUsed,
 
-        isBilledUsage:
-            responseTracking.responseOk &&
-            !requestTracking.freeModelRequested &&
-            !responseTracking.cacheData.cacheHit,
+        isBilledUsage: responseTracking.isBilledUsage,
 
         ...balanceTracking,
 
@@ -419,9 +450,10 @@ function extractUsageAndContentFilterResultsHeaders(response: Response): {
 async function extractUsageAndContentFilterResultsStream(
     events: AsyncIterable<unknown>,
 ): Promise<{
-    modelUsage: ModelUsage;
+    modelUsage: ModelUsage | null;
     contentFilterResults: GenerationEventContentFilterParams;
 }> {
+    const log = getLogger(["hono", "track", "stream"]);
     const EventSchema = z.object({
         model: z.string(),
         usage: CompletionUsageSchema.nullish(),
@@ -467,15 +499,24 @@ async function extractUsageAndContentFilterResultsStream(
 
         if (parseResult.data?.usage) {
             if (usage) {
-                throw new Error("Multiple usage objects found in event stream");
+                log.warn("Multiple usage objects found in event stream");
             }
             usage = parseResult.data?.usage;
             model = parseResult.data?.model;
         }
     }
 
-    if (!usage) {
-        throw new Error("No usage object found in event stream");
+    const contentFilterResults = contentFilterResultsToEventParams({
+        promptFilterResults,
+        completionFilterResults,
+    });
+
+    if (!model || !usage) {
+        log.error("No usage object found in event stream");
+        return {
+            modelUsage: null,
+            contentFilterResults,
+        };
     }
 
     return {
@@ -483,10 +524,7 @@ async function extractUsageAndContentFilterResultsStream(
             model: model as ModelId,
             usage: openaiUsageToTokenUsage(usage),
         },
-        contentFilterResults: contentFilterResultsToEventParams({
-            promptFilterResults,
-            completionFilterResults,
-        }),
+        contentFilterResults,
     };
 }
 
@@ -495,7 +533,7 @@ async function extractUsageAndContentFilterResults(
     requestTracking: RequestTrackingData,
     response: Response,
 ): Promise<{
-    modelUsage: ModelUsage;
+    modelUsage: ModelUsage | null;
     contentFilterResults: GenerationEventContentFilterParams;
 }> {
     if (
@@ -503,17 +541,10 @@ async function extractUsageAndContentFilterResults(
         requestTracking.streamRequested &&
         response.body instanceof ReadableStream
     ) {
-        const eventStream = extractResponseStream(response.clone());
+        const eventStream = extractResponseStream(response);
         return await extractUsageAndContentFilterResultsStream(eventStream);
     }
     return extractUsageAndContentFilterResultsHeaders(response);
-}
-
-function validateUsage(usage: ModelUsage, freeModelRequested: boolean) {
-    const includedUsageTypes = Object.keys(usage.usage);
-    if (!freeModelRequested && includedUsageTypes.length === 0) {
-        throw new Error("No usage information found for a non-free model");
-    }
 }
 
 type CacheData = {
@@ -634,7 +665,8 @@ function collectErrorData(response: Response, error?: Error): ErrorData {
     return {
         errorResponseCode: getErrorCode(status || response.status),
         errorSource: source,
-        errorMessage: error?.message,
+        errorMessage:
+            error?.message || getDefaultErrorMessage(status || response.status),
         errorStack: error?.stack,
         errorDetails: details,
     };

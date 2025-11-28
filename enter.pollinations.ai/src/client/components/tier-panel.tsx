@@ -1,13 +1,17 @@
 import { useEffect, useState, type FC } from "react";
 
-type TierStatus = "none" | "seed" | "flower" | "nectar";
+type TierStatus = "none" | "spore" | "seed" | "flower" | "nectar" | "router";
 
 interface TierPanelProps {
     status: TierStatus;
-    assigned_tier: TierStatus;
+    target_tier: TierStatus;
     next_refill_at_utc: string;
-    product_name?: string;
+    active_tier_name?: string;
     daily_pollen?: number;
+    subscription_status?: string;
+    subscription_ends_at?: string;
+    subscription_canceled_at?: string;
+    has_polar_error?: boolean;
 }
 
 // Badge colors for each tier level
@@ -16,6 +20,8 @@ const TIER_BADGE_COLORS: Record<TierStatus, string> = {
     seed: "bg-emerald-100 border border-emerald-400 text-emerald-800",
     flower: "bg-fuchsia-100 border border-fuchsia-400 text-fuchsia-800",
     nectar: "bg-amber-100 border border-amber-400 text-amber-800",
+    router: "bg-blue-100 border border-blue-400 text-blue-800",
+    spore: "bg-yellow-100 border border-yellow-400 text-yellow-800",
 };
 
 const TIER_ORDER = ["seed", "flower", "nectar"] as const;
@@ -27,25 +33,49 @@ function capitalize(str: string): string {
 function formatCountdown(targetUTC: string): string {
     const diff = new Date(targetUTC).getTime() - Date.now();
     if (diff <= 0) return "0h 0m";
-    
+
     const hours = Math.floor(diff / 3600000);
     const minutes = Math.floor((diff % 3600000) / 60000);
     return `${hours}h ${minutes}m`;
 }
 
-const NoTierScreen: FC = () => {
+const NoTierScreen: FC<{ has_polar_error?: boolean }> = ({
+    has_polar_error,
+}) => {
     return (
-        <div className="rounded-2xl p-8 border-2 border-gray-300">
+        <div className="rounded-2xl p-6 border-2 border-gray-200 bg-gray-50/30">
             <div className="flex flex-col gap-3">
-                <div className="flex items-center gap-3">
-                    <span className="text-3xl">🥺</span>
-                    <span className="text-xl text-gray-900">
-                        No active tier subscription
-                    </span>
+                {has_polar_error ? (
+                    <div className="px-3 py-2 bg-red-50 border border-red-200 rounded-lg">
+                        <p className="text-sm text-red-900 leading-relaxed">
+                            ❌{" "}
+                            <strong>
+                                Unable to Fetch Subscription Status:
+                            </strong>{" "}
+                            We couldn't connect to the subscription service.
+                            Please refresh the page or try again later.
+                        </p>
+                    </div>
+                ) : (
+                    <div className="px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg">
+                        <p className="text-sm text-gray-900 leading-relaxed">
+                            ⭕ <strong>No Active Subscription:</strong> You
+                            don't have an active tier subscription yet.
+                            <br />
+                            Click the <strong>Activate Tier</strong> button
+                            above to get started.
+                        </p>
+                    </div>
+                )}
+
+                <div className="px-3 py-2 bg-amber-50 border border-amber-200 rounded-lg">
+                    <p className="text-xs text-amber-900 leading-relaxed">
+                        ⚠️ <strong>Beta Notice:</strong> Daily pollen amounts
+                        are experimental values that may change at any time
+                        without notice. Tier subscription benefits are not yet
+                        finalized.
+                    </p>
                 </div>
-                <p className="text-sm text-gray-700 ml-11">
-                    Activate your tier by clicking the <span className="text-blue-600">Activate Tier</span> button above.
-                </p>
             </div>
         </div>
     );
@@ -53,61 +83,78 @@ const NoTierScreen: FC = () => {
 
 const TierScreen: FC<{
     tier: TierStatus;
-    assigned_tier: TierStatus;
+    target_tier: TierStatus;
     countdown: string;
-    product_name: string;
+    active_tier_name: string;
     daily_pollen: number;
+    subscription_canceled_at?: string;
+    subscription_ends_at?: string;
 }> = ({
     tier,
-    assigned_tier,
+    target_tier,
     countdown,
-    product_name,
+    active_tier_name,
     daily_pollen,
+    subscription_canceled_at,
+    subscription_ends_at,
 }) => {
     const badgeColors = TIER_BADGE_COLORS[tier];
 
-    // Detect tier change
-    const tierWillChange = assigned_tier !== "none" && assigned_tier !== tier;
-    const isUpgrade = tierWillChange && 
-        TIER_ORDER.indexOf(assigned_tier as "seed" | "flower" | "nectar") > TIER_ORDER.indexOf(tier as "seed" | "flower" | "nectar");
-    const assignedTierName = assigned_tier !== "none" ? capitalize(assigned_tier) : "";
+    // Detect cancellation
+    const isCanceled = !!subscription_canceled_at && !!subscription_ends_at;
+    const endsAt = subscription_ends_at
+        ? new Date(subscription_ends_at).toLocaleDateString("en-US", {
+              year: "numeric",
+              month: "long",
+              day: "numeric",
+          })
+        : "";
 
     return (
-        <div className="rounded-2xl p-6 border-2 border-gray-300 bg-gray-50/30">
+        <div className="rounded-2xl p-6 border-2 border-gray-200 bg-gray-50/30">
             <div className="flex flex-col gap-3">
                 <div className="flex items-center gap-3 flex-wrap">
                     <span className="text-3xl font-bold text-gray-900">
-                        {product_name}
+                        {active_tier_name}
                     </span>
-                    <span className={`inline-flex items-center px-3 py-1 rounded-full font-semibold text-sm ${badgeColors}`}>
+                    <span
+                        className={`inline-flex items-center px-3 py-1 rounded-full font-semibold text-sm ${badgeColors}`}
+                    >
                         {daily_pollen} pollen/day
                     </span>
-                    <span className="inline-flex items-center px-3 py-1 rounded-full font-semibold text-sm bg-blue-100 border border-blue-300 text-blue-800">
+                    <span
+                        className={`inline-flex items-center px-3 py-1 rounded-full font-semibold text-sm ${isCanceled ? "bg-red-50 border border-red-200 text-red-900" : "bg-blue-100 border border-blue-300 text-blue-800"}`}
+                    >
                         ⏱️ {countdown}
                     </span>
                 </div>
 
-                <div className="px-3 py-2 bg-green-50 border border-green-200 rounded-lg">
-                    <p className="text-sm text-green-900 leading-relaxed">
-                        {tierWillChange ? (
-                            <>
-                                ✓ <strong>Active Subscription:</strong> Your tier will be <strong>{isUpgrade ? "upgraded" : "downgraded"} to {assignedTierName} Tier</strong> when pollen refills (in {countdown}).
-                                <br />
-                                Unused pollen does not carry over.
-                            </>
-                        ) : (
-                            <>
-                                ✓ <strong>Active Subscription:</strong> Your tier subscription is active and will earn you {daily_pollen} pollen daily.
-                                <br />
-                                Unused pollen does not carry over.
-                            </>
-                        )}
-                    </p>
-                </div>
-                
+                {isCanceled ? (
+                    <div className="px-3 py-2 bg-red-50 border border-red-200 rounded-lg">
+                        <p className="text-sm text-red-900 leading-relaxed">
+                            🔔 <strong>Subscription Ending:</strong> Your
+                            subscription is active until{" "}
+                            <strong>{endsAt}</strong>. It will not auto-renew.
+                            Unused pollen does not carry over.
+                        </p>
+                    </div>
+                ) : (
+                    <div className="px-3 py-2 bg-green-50 border border-green-200 rounded-lg">
+                        <p className="text-sm text-green-900 leading-relaxed">
+                            ✓ <strong>Active Subscription:</strong> Your
+                            subscription is active and will earn you{" "}
+                            {daily_pollen} pollen daily. Unused pollen does not
+                            carry over.
+                        </p>
+                    </div>
+                )}
+
                 <div className="px-3 py-2 bg-amber-50 border border-amber-200 rounded-lg">
                     <p className="text-xs text-amber-900 leading-relaxed">
-                        ⚠️ <strong>Beta Notice:</strong> Daily pollen amounts are experimental values that may change at any time without notice. Tier subscription benefits are not yet finalized.
+                        ⚠️ <strong>Beta Notice:</strong> Daily pollen amounts
+                        are experimental values that may change at any time
+                        without notice. Tier subscription benefits are not yet
+                        finalized.
                     </p>
                 </div>
             </div>
@@ -117,20 +164,25 @@ const TierScreen: FC<{
 
 export const TierPanel: FC<TierPanelProps> = ({
     status,
-    assigned_tier,
+    target_tier,
     next_refill_at_utc,
-    product_name,
+    active_tier_name,
     daily_pollen,
+    subscription_canceled_at,
+    subscription_ends_at,
+    has_polar_error,
 }) => {
     if (status === "none") {
-        return <NoTierScreen />;
+        return <NoTierScreen has_polar_error={has_polar_error} />;
     }
 
     // These should always be defined when status !== "none", but provide fallbacks for type safety
-    const displayName = product_name || "Unknown Tier";
+    const displayName = active_tier_name || "Unknown Tier";
     const displayPollen = daily_pollen ?? 0;
 
-    const [countdown, setCountdown] = useState<string>(formatCountdown(next_refill_at_utc));
+    const [countdown, setCountdown] = useState<string>(
+        formatCountdown(next_refill_at_utc),
+    );
 
     useEffect(() => {
         const id = setInterval(() => {
@@ -140,12 +192,14 @@ export const TierPanel: FC<TierPanelProps> = ({
     }, [next_refill_at_utc]);
 
     return (
-        <TierScreen 
+        <TierScreen
             tier={status}
-            assigned_tier={assigned_tier}
+            target_tier={target_tier}
             countdown={countdown}
-            product_name={displayName}
+            active_tier_name={displayName}
             daily_pollen={displayPollen}
+            subscription_canceled_at={subscription_canceled_at}
+            subscription_ends_at={subscription_ends_at}
         />
     );
 };

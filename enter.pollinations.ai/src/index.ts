@@ -14,8 +14,8 @@ import { getLogger } from "@logtape/logtape";
 import type { Env } from "./env.ts";
 import { drizzle } from "drizzle-orm/d1";
 
-const authRoutes = new Hono<Env>().on(["GET", "POST"], "*", (c) => {
-    return createAuth(c.env).handler(c.req.raw);
+const authRoutes = new Hono<Env>().on(["GET", "POST"], "*", async (c) => {
+    return await createAuth(c.env).handler(c.req.raw);
 });
 
 export const api = new Hono<Env>()
@@ -36,11 +36,15 @@ const app = new Hono<Env>()
                 return c.redirect("/api/docs", 302);
             }
             // Don't rewrite /assets, /api, or static files - let them fall through to asset handler
-            else if (!c.req.path.startsWith("/api/") && !c.req.path.startsWith("/assets/") && !c.req.path.match(/\.(js|css|png|jpg|svg|ico|webmanifest)$/)) {
+            else if (
+                !c.req.path.startsWith("/api/") &&
+                !c.req.path.startsWith("/assets/") &&
+                !c.req.path.match(/\.(js|css|png|jpg|svg|ico|webmanifest)$/)
+            ) {
                 // Rewrite other paths: /image/models -> /api/generate/image/models
                 c.req.raw = new Request(
                     c.req.url.replace(c.req.path, "/api/generate" + c.req.path),
-                    c.req.raw
+                    c.req.raw,
                 );
             }
         }
@@ -66,9 +70,7 @@ const app = new Hono<Env>()
                 // Allow localhost on any port for development
                 if (origin.startsWith("http://localhost:")) return origin;
                 // Production origins
-                if (origin === "https://enter.pollinations.ai") return origin;
-                if (origin === "https://beta.pollinations.ai") return origin;
-                if (origin === "https://pollinations.ai") return origin;
+                if (origin.endsWith(".pollinations.ai")) return origin;
                 return null;
             },
             credentials: true,
@@ -84,11 +86,11 @@ const app = new Hono<Env>()
     .route("/api/docs", docsRoutes);
 
 app.notFound(async (c) => {
-    // Serve static assets for non-API routes
+    // Serve static assets for non-API routes (needed for gen.pollinations.ai)
     if (c.env.ASSETS) {
         return c.env.ASSETS.fetch(c.req.raw);
     }
-    return handleError(new HTTPException(404), c);
+    return await handleError(new HTTPException(404), c);
 });
 
 app.onError(handleError);

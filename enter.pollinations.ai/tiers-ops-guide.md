@@ -18,6 +18,12 @@ Tip: target a specific DB id if needed:
 
 ## Quick Checks (Enter staging / Auth production)
 
+**Note:** Staging database belongs to Thomash's Cloudflare account. Set `CLOUDFLARE_ACCOUNT_ID` if wrangler is logged into a different account:
+
+```bash
+export CLOUDFLARE_ACCOUNT_ID="your-account-id-here"
+```
+
 | What | Command (run inside the service folder) |
 | --- | --- |
 | List tables | `npx wrangler d1 execute DB --remote --command "SELECT name FROM sqlite_master WHERE type='table';"` |
@@ -62,9 +68,9 @@ npx wrangler d1 execute DB --remote --command "<SQL>"
 
 | Var | Example |
 | --- | --- |
-| `POLAR_PRODUCT_ID_SEED` | `19c3291a-e1fa-4a03-a08a-3de9ab84af5d` |
-| `POLAR_PRODUCT_ID_FLOWER` | `c675a78a-d954-4739-bfad-c0c8aa3e5576` |
-| `POLAR_PRODUCT_ID_NECTAR` | `dfe978ca-8e07-41fa-992a-ae19ab96e66c` |
+| `POLAR_PRODUCT_TIER_SEED` | `19c3291a-e1fa-4a03-a08a-3de9ab84af5d` |
+| `POLAR_PRODUCT_TIER_FLOWER` | `c675a78a-d954-4739-bfad-c0c8aa3e5576` |
+| `POLAR_PRODUCT_TIER_NECTAR` | `dfe978ca-8e07-41fa-992a-ae19ab96e66c` |
 
 Notes:
 - If Polar returns a productId that doesn’t match these, Enter will show "no active tier".
@@ -77,7 +83,7 @@ Notes:
 | Get Enter tier view (requires session) | Open `/api/tiers/view` on staging |
 
 Look for:
-- `productIds` from Polar must match `POLAR_PRODUCT_ID_*` in `wrangler.toml` of that env.
+- `productIds` from Polar must match `POLAR_PRODUCT_TIER_*` in `wrangler.toml` of that env.
 - `/api/tiers/view` shows:
   - `assigned_tier` (from D1 DB)
   - `active_tier` (from Polar)

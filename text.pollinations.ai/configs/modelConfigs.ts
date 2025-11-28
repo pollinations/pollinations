@@ -16,23 +16,21 @@ import {
     createDeepSeekModelConfig,
     createDeepSeekReasoningConfig,
     createMyceliDeepSeekV31Config,
+    createMyceliGrok4FastConfig,
     createApiNavyModelConfig,
     createPerplexityModelConfig,
 } from "./providerConfigs.js";
-import type { TEXT_COSTS } from "../../shared/registry/text.js";
+import type { ModelId } from "../../shared/registry/registry.js";
 
 const log = debug("pollinations:portkey");
 
 dotenv.config();
 
-// Type constraint: export ValidModelId so availableModels.ts can use it
-export type ValidModelId = keyof typeof TEXT_COSTS;
-
-// Type-safe config object: all keys must be valid model IDs from TEXT_COSTS
+// Type-safe config object: all keys must be valid model IDs from MODEL_REGISTRY
 type PortkeyConfigMap = {
-    [K in ValidModelId]: () => any;
+    [K in ModelId]: () => any;
 } & {
-    [key: string]: () => any; // Allow additional legacy configs not in TEXT_COSTS
+    [key: string]: () => any; // Allow additional legacy configs not in MODEL_REGISTRY
 };
 
 // Unified flat Portkey configuration for all providers and models - using functions that return fresh configurations
@@ -133,7 +131,7 @@ export const portkeyConfig: PortkeyConfigMap = {
             model: "global.anthropic.claude-haiku-4-5-20251001-v1:0",
         }),
     "us.anthropic.claude-sonnet-4-5-20250929-v1:0": () =>
-        createBedrockLambdaModelConfig({
+        createBedrockFargateModelConfig({
             model: "us.anthropic.claude-sonnet-4-5-20250929-v1:0",
         }),
     "us.anthropic.claude-sonnet-4-20250514-v1:0": () =>
@@ -148,6 +146,10 @@ export const portkeyConfig: PortkeyConfigMap = {
         createBedrockFargateModelConfig({
             model: "us.anthropic.claude-haiku-4-5-20251001-v1:0",
         }),
+    "global.anthropic.claude-opus-4-5-20251101-v1:0": () =>
+        createBedrockFargateModelConfig({
+            model: "global.anthropic.claude-opus-4-5-20251101-v1:0",
+        }),
 
     // Google Vertex AI configurations
     "gemini-2.5-flash-lite": () => ({
@@ -157,6 +159,21 @@ export const portkeyConfig: PortkeyConfigMap = {
         "vertex-region": "us-central1",
         "vertex-model-id": "gemini-2.5-flash-lite",
         "strict-openai-compliance": "false",
+    }),
+    "gemini-3-pro-preview": () => ({
+        provider: "vertex-ai",
+        authKey: googleCloudAuth.getAccessToken,
+        "vertex-project-id": process.env.GCLOUD_PROJECT_ID,
+        "vertex-region": "global",
+        "vertex-model-id": "gemini-3-pro-preview",
+        "strict-openai-compliance": "false",
+    }),
+    "kimi-k2-thinking-maas": () => ({
+        provider: "openai",
+        authKey: googleCloudAuth.getAccessToken,
+        "custom-host": `https://aiplatform.googleapis.com/v1/projects/${process.env.GCLOUD_PROJECT_ID}/locations/global/endpoints/openapi`,
+        "strict-openai-compliance": "false",
+        model: "moonshotai/kimi-k2-thinking-maas",
     }),
     // Note: gemini-search service uses same config as gemini, just adds Google Search transform
     "deepseek-ai/deepseek-v3.1-maas": () => ({
@@ -338,10 +355,7 @@ export const portkeyConfig: PortkeyConfigMap = {
     searchgpt: () => createApiNavyModelConfig(),
     "gpt-4o-mini-search-preview": () => createApiNavyModelConfig(),
     unity: () => createScalewayModelConfig(),
-    "mis-unity": () =>
-        createScalewayModelConfig({
-            retry: "0",
-        }),
+    "mis-unity": () => createScalewayModelConfig(),
     // Nebius model configurations
     "mistralai/Mistral-Nemo-Instruct-2407": () =>
         createNebiusModelConfig({
@@ -414,6 +428,7 @@ export const portkeyConfig: PortkeyConfigMap = {
     "DeepSeek-V3-0324": () => createDeepSeekModelConfig(),
     "MAI-DS-R1": () => createDeepSeekReasoningConfig(),
     "myceli-deepseek-v3.1": () => createMyceliDeepSeekV31Config(),
+    "myceli-grok-4-fast": () => createMyceliGrok4FastConfig(),
     // Custom endpoints
     "elixposearch-endpoint": () => createElixpoSearchModelConfig(),
     // AWS Bedrock Lambda endpoint

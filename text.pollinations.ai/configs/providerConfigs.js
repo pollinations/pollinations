@@ -24,7 +24,6 @@ export function createAzureModelConfig(
     const deploymentId = extractDeploymentName(endpoint) || modelName;
     return {
         provider: "azure-openai",
-        retry: "3",
         "azure-api-key": apiKey,
         "azure-resource-name": resourceName || extractResourceName(endpoint),
         "azure-deployment-id": deploymentId,
@@ -90,12 +89,25 @@ export function createDeepSeekReasoningConfig(additionalConfig = {}) {
 export function createMyceliDeepSeekV31Config(additionalConfig = {}) {
     return {
         provider: "openai",
-        "custom-host": process.env.AZURE_MYCELI_DEEPSEEK_R1_ENDPOINT,
+        "custom-host": "https://myceli.services.ai.azure.com/openai/v1",
         authKey: process.env.AZURE_MYCELI_DEEPSEEK_R1_API_KEY,
-        "auth-header-name": "Authorization",
-        "auth-header-value-prefix": "",
-        model: "myceli-deepseek-v3.1",
+        model: "DeepSeek-V3.1-2",
         "max-tokens": 8192,
+        ...additionalConfig,
+    };
+}
+
+/**
+ * Creates a Myceli Grok 4 Fast model configuration
+ * @param {Object} additionalConfig - Additional configuration to merge with base config
+ * @returns {Object} - Myceli Grok 4 Fast model configuration
+ */
+export function createMyceliGrok4FastConfig(additionalConfig = {}) {
+    return {
+        provider: "openai",
+        "custom-host": "https://myceli.services.ai.azure.com/openai/v1",
+        authKey: process.env.AZURE_MYCELI_DEEPSEEK_R1_API_KEY,
+        model: "grok-4-fast-non-reasoning",
         ...additionalConfig,
     };
 }
@@ -230,6 +242,7 @@ export function createBedrockLambdaModelConfig(additionalConfig = {}) {
         "custom-host":
             "https://s4gu3klsuhlqkol3x3qq6bv6em0cwqnu.lambda-url.us-east-1.on.aws/api/v1",
         authKey: process.env.AWS_BEARER_TOKEN_BEDROCK,
+        defaultOptions: { max_tokens: 16384 },
         ...additionalConfig,
     };
 }
@@ -246,6 +259,7 @@ export function createBedrockFargateModelConfig(additionalConfig = {}) {
         "custom-host":
             "http://bedroc-Proxy-He0yOirTrdQe-378478291.us-east-1.elb.amazonaws.com/api/v1",
         authKey: process.env.AWS_BEARER_TOKEN_BEDROCK_FARGATE,
+        defaultOptions: { max_tokens: 16384 },
         ...additionalConfig,
     };
 }

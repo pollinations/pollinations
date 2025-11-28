@@ -14,10 +14,7 @@ export type AuthVariables = {
         user?: User;
         session?: Session;
         apiKey?: ApiKey;
-        requireAuthorization: (options?: {
-            allowAnonymous: boolean;
-            message?: string;
-        }) => Promise<void>;
+        requireAuthorization: (options?: { message?: string }) => Promise<void>;
         requireUser: () => User;
     };
 };
@@ -59,7 +56,7 @@ function extractApiKey(c: Context<AuthEnv>): string | null {
 export const auth = (options: AuthOptions) =>
     createMiddleware<AuthEnv>(async (c, next) => {
         const log = c.get("log");
-        const client = createAuth(c.env) as Auth;
+        const client = createAuth(c.env);
 
         const authenticateSession = async (): Promise<AuthResult | null> => {
             if (!options.allowSessionCookie) return null;
@@ -120,20 +117,13 @@ export const auth = (options: AuthOptions) =>
         });
 
         const requireAuthorization = async (options?: {
-            allowAnonymous?: boolean;
             message?: string;
         }): Promise<void> => {
-            log.debug(
-                "[AUTH] Checking authorization: {hasUser}, {allowAnonymous}",
-                {
-                    hasUser: !!user,
-                    allowAnonymous: options?.allowAnonymous,
-                },
-            );
-            if (!user && !options?.allowAnonymous) {
-                log.debug(
-                    "[AUTH] Authorization failed: No user and anonymous not allowed",
-                );
+            log.debug("[AUTH] Checking authorization: {hasUser}", {
+                hasUser: !!user,
+            });
+            if (!user) {
+                log.debug("[AUTH] Authorization failed: No user");
                 throw new HTTPException(401, {
                     message: options?.message,
                 });

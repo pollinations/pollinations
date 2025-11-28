@@ -53,7 +53,7 @@ export const polar = createMiddleware<PolarEnv>(async (c, next) => {
         },
         {
             log,
-            ttl: 60, // 1 minute
+            ttl: 60, // 60 seconds (minimum allowed value)
             kv: c.env.KV,
             keyGenerator: (userId) => `polar:customer:state:${userId}`,
         },
@@ -64,7 +64,7 @@ export const polar = createMiddleware<PolarEnv>(async (c, next) => {
             try {
                 const response = await client.customerMeters.list({
                     externalCustomerId: userId,
-                    limit: 1000,
+                    limit: 100,
                 });
                 return response.result.items;
             } catch (error) {
@@ -75,7 +75,7 @@ export const polar = createMiddleware<PolarEnv>(async (c, next) => {
         },
         {
             log,
-            ttl: 60, // 1 minute
+            ttl: 60, // 60 seconds (minimum allowed value)
             kv: c.env.KV,
             keyGenerator: (userId) => `polar:customer:meters:${userId}`,
         },
@@ -86,7 +86,6 @@ export const polar = createMiddleware<PolarEnv>(async (c, next) => {
         const activeMeters = getSimplifiedMatchingMeters(customerMeters);
         const sortedMeters = sortMetersByDescendingPriority(activeMeters);
 
-        log.debug({ sortedMeters });
         for (const meter of sortedMeters) {
             if (meter.balance > 0) {
                 c.var.polar.balanceCheckResult = {

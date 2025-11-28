@@ -8,26 +8,13 @@ import path from "path";
 import dotenv from "dotenv";
 import { Transform } from "stream";
 import { availableModels } from "./availableModels.js";
-import { getProviderByModelId } from "../shared/registry/registry.js";
 import { generateTextPortkey } from "./generateTextPortkey.js";
 import { setupFeedEndpoint, sendToFeedListeners } from "./feed.js";
 import { processRequestForAds } from "./ads/initRequestFilter.js";
 import { createStreamingAdWrapper } from "./ads/streamingAdWrapper.js";
-import {
-    getRequestData,
-    prepareModelsForOutput,
-    getUserMappedModel,
-} from "./requestUtils.js";
-import { logUserRequest } from "./logging/userLogger.js";
-import { logConversation } from "./logging/simpleLogger.js";
-import {
-    checkAndLogMonitoredStrings,
-    extractTextFromMessages,
-} from "./utils/stringMonitor.js";
+import { getRequestData } from "./requestUtils.js";
 
 // Import shared utilities
-import { enqueue } from "../shared/ipQueue.js";
-import { handleAuthentication } from "../shared/auth-utils.js";
 import { getIp } from "../shared/extractFromRequest.js";
 import {
     buildUsageHeaders,
@@ -105,6 +92,26 @@ app.use((req, res, next) => {
 // Remove the custom JSON parsing middleware and use the standard bodyParser
 app.use(bodyParser.json({ limit: "20mb" }));
 app.use(cors());
+
+// Middleware to verify ENTER_TOKEN (after CORS for consistency)
+app.use((req, res, next) => {
+    const token = req.headers["x-enter-token"];
+    const expectedToken = process.env.ENTER_TOKEN;
+
+    if (!expectedToken) {
+        // If ENTER_TOKEN is not configured, allow all requests (backward compatibility)
+        authLog("!  ENTER_TOKEN not configured - allowing request");
+        return next();
+    }
+
+    if (token !== expectedToken) {
+        authLog("❌ Invalid or missing ENTER_TOKEN from IP:", getIp(req));
+        return res.status(403).json({ error: "Unauthorized" });
+    }
+
+    authLog("✅ Valid ENTER_TOKEN from IP:", getIp(req));
+    next();
+});
 // New route handler for root path
 app.get("/", (req, res) => {
     res.redirect(
@@ -132,10 +139,16 @@ const QUEUE_CONFIG = {
 
 // Using getIp from shared auth-utils.js
 
-// GET /models request handler
+// Deprecated /models endpoint - moved to gateway
 app.get("/models", (req, res) => {
-    // Use prepareModelsForOutput to remove pricing information and apply sorting
-    res.json(prepareModelsForOutput(availableModels));
+    res.status(410).json({
+        error: "Endpoint moved",
+        message:
+            "The /models endpoint has been moved to the API gateway. Please use: https://enter.pollinations.ai/api/generate/text/models",
+        deprecated_endpoint: `${req.protocol}://${req.get("host")}/models`,
+        new_endpoint: "https://enter.pollinations.ai/api/generate/text/models",
+        documentation: "https://enter.pollinations.ai/api/docs",
+    });
 });
 
 setupFeedEndpoint(app);
@@ -167,9 +180,7 @@ async function handleRequest(req, res, requestData) {
                 m.aliases?.includes(requestData.model),
         );
 
-        log(
-            `Model lookup: model=${requestData.model}, found=${!!model}`,
-        );
+        log(`Model lookup: model=${requestData.model}, found=${!!model}`);
 
         // All requests from enter.pollinations.ai - tier checks bypassed
         if (!model) {
@@ -183,45 +194,8 @@ async function handleRequest(req, res, requestData) {
         // Capture the originally requested model before any mapping/overrides
         const requestedModel = requestData.model;
 
-        // Apply user-specific model mapping if user is authenticated
+        // Use request data as-is (no user-specific model mapping)
         let finalRequestData = requestData;
-        if (authResult.username) {
-            try {
-                const mappedModel = getUserMappedModel(authResult.username);
-                if (mappedModel) {
-                    log(
-                        `🔄 Model override: ${requestData.model} → ${mappedModel} for user ${authResult.username}`,
-                    );
-                    finalRequestData = {
-                        ...requestData,
-                        model: mappedModel,
-                    };
-                }
-            } catch (error) {
-                if (error.status === 403) {
-                    await sendErrorResponse(
-                        res,
-                        req,
-                        error,
-                        requestData,
-                        error.status,
-                    );
-                    return;
-                }
-            }
-        }
-
-        // Monitor for specific strings in user input if user is authenticated
-        if (authResult.username && finalRequestData.messages) {
-            const inputText = extractTextFromMessages(
-                finalRequestData.messages,
-            );
-            await checkAndLogMonitoredStrings(
-                inputText,
-                authResult.username,
-                "messages",
-            );
-        }
 
         // Add user info to request data - using authResult directly as a thin proxy
         // Exclude messages from options to prevent overwriting transformed messages
@@ -243,31 +217,6 @@ async function handleRequest(req, res, requestData) {
         // Ensure completion has the request ID
         completion.id = requestId;
 
-        // Log user request/response if enabled
-        if (authResult.username) {
-            const totalProcessingTime = Date.now() - startTime;
-            // Create a non-mutating copy for logging to include the originally requested model
-            const requestForLogging = {
-                ...finalRequestData,
-                requested_model: requestedModel,
-            };
-            logUserRequest(
-                authResult.username,
-                requestForLogging,
-                completion,
-                null,
-                req.queueInfo,
-                totalProcessingTime,
-            );
-        }
-
-        // Simple conversation logging (100% sample, excluding specific users)
-        logConversation(
-            finalRequestData.messages,
-            finalRequestData.model,
-            authResult.username,
-        );
-
         // Check if completion contains an error
         if (completion.error) {
             errorLog(
@@ -286,23 +235,6 @@ async function handleRequest(req, res, requestData) {
             // Add the details if they exist
             if (errorObj.details) {
                 error.response = { data: errorObj.details };
-            }
-
-            // Log error for debugging if user is being tracked
-            if (authResult.username) {
-                const totalProcessingTime = Date.now() - startTime;
-                const requestForLogging = {
-                    ...finalRequestData,
-                    requested_model: requestedModel,
-                };
-                logUserRequest(
-                    authResult.username,
-                    requestForLogging,
-                    null,
-                    error,
-                    req.queueInfo,
-                    totalProcessingTime,
-                );
             }
 
             await sendErrorResponse(
@@ -408,19 +340,24 @@ export async function sendErrorResponse(
     requestData,
     statusCode = 500,
 ) {
-    // Use error.status if available, otherwise use the provided statusCode
     const responseStatus = error.status || statusCode;
+    const errorTypes = {
+        400: "Bad Request",
+        401: "Unauthorized",
+        403: "Forbidden",
+        404: "Not Found",
+        429: "Too Many Requests",
+    };
+    const errorType = errorTypes[statusCode] || "Internal Server Error";
 
-    // Create a simplified error response
     const errorResponse = {
-        error: error.message || "An error occurred",
-        status: responseStatus,
+        error: errorType,
+        message: error.message || "An error occurred",
+        requestId: Math.random().toString(36).substring(7),
+        requestParameters: requestData || {},
     };
 
-    // Include detailed error information if available, without wrapping
-    if (error.details) {
-        errorResponse.details = error.details;
-    }
+    if (error.details) errorResponse.details = error.details;
 
     // Extract client information (for logs only)
     const clientInfo = {
@@ -655,41 +592,9 @@ async function processRequest(req, res, requestData) {
         return res.status(403).json(errorResponse);
     }
 
-    // Check authentication status
-    const authResult = await handleAuthentication(req, null, authLog);
-    // Store authentication result in request for later use
-    req.authResult = authResult;
-    // Use the new explicit authentication fields
-    const isTokenAuthenticated = authResult.tokenAuth;
-    const hasReferrer = authResult.referrerAuth;
-
-    // Determine queue configuration based on authentication
-    // Note: ipQueue.js handles tier-based caps and enter.pollinations.ai bypass automatically
-    let queueConfig;
-
-    if (isTokenAuthenticated) {
-        // Token authentication - ipQueue will automatically apply tier-based caps
-        queueConfig = { interval: 3000 }; // cap will be set by ipQueue based on tier
-        authLog(
-            "Token authenticated - ipQueue will apply tier-based concurrency",
-        );
-    } else if (hasReferrer) {
-        // Referrer authentication uses base configuration
-        queueConfig = { interval: 9000 };
-        authLog("Referrer authenticated - using base configuration");
-    } else {
-        // Use default queue config with interval
-        queueConfig = QUEUE_CONFIG;
-        authLog("No authentication - standard queue with delay");
-    }
-
-    // Use shared queue for rate limiting with max queue size
-    await enqueue(req, () => handleRequest(req, res, requestData), {
-        ...queueConfig,
-    });
-
-    // Note: We've removed the duplicate handleRequest calls that were causing the headers error
-    // The shared enqueue function above now handles all queue logic, including authentication status
+    // Authentication and rate limiting is now handled by enter.pollinations.ai
+    // Just call handleRequest directly
+    await handleRequest(req, res, requestData);
 }
 
 // Helper function to check if a model is an audio model and add necessary parameters
@@ -761,28 +666,16 @@ app.post("/", async (req, res) => {
 });
 
 app.get("/openai/models", (req, res) => {
-    const models = availableModels
-        .filter((model) => !model.hidden)
-        .map((model) => {
-            // Get provider from cost data using the model's config
-            const config =
-                typeof model.config === "function"
-                    ? model.config()
-                    : model.config;
-            const actualModelName =
-                config?.model ||
-                config?.["azure-model-name"] ||
-                config?.["azure-deployment-id"] ||
-                model.name;
-            const provider = getProviderByModelId(actualModelName) || "unknown";
-
-            return {
-                id: model.name,
-                object: "model",
-                created: Date.now(),
-                owned_by: provider,
-            };
-        });
+    const models = availableModels.map((model) => {
+        // Get provider from cost data using the model's config
+        const config =
+            typeof model.config === "function" ? model.config() : model.config;
+        return {
+            id: model.name,
+            object: "model",
+            created: Date.now(),
+        };
+    });
     res.json({
         object: "list",
         data: models,
@@ -975,9 +868,13 @@ async function sendAsOpenAIStream(res, completion, req = null) {
     res.end();
 }
 
-
 async function generateTextBasedOnModel(messages, options) {
-    const model = options.model || "openai-fast";
+    // Gateway must provide a valid model - no fallback
+    if (!options.model) {
+        throw new Error("Model parameter is required");
+    }
+    const model = options.model;
+
     log("Using model:", model, "with options:", JSON.stringify(options));
 
     try {

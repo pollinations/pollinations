@@ -1,9 +1,3 @@
-#!/usr/bin/env python3
-"""
-Scalable Weekly Digest Generator
-Handles large PR volumes by chunking, then merging into one cohesive digest
-"""
-
 import os
 import sys
 import json
@@ -13,207 +7,181 @@ import requests
 from typing import Dict, List
 from datetime import datetime, timedelta, timezone
 
-# Configuration
 GITHUB_API_BASE = "https://api.github.com"
 POLLINATIONS_API_BASE = "https://enter.pollinations.ai/api/generate/openai"
 MODEL = "openai-large"
-CHUNK_SIZE = 50  # PRs per chunk - adjust based on your needs
+CHUNK_SIZE = 50
 
 def get_env(key: str, required: bool = True) -> str:
-    """Get environment variable"""
     value = os.getenv(key)
     if required and not value:
-        print(f"❌ Error: {key} environment variable is required")
+        print(f"Error: {key} environment variable is required")
         sys.exit(1)
     return value
 
-def get_recent_merged_prs(repo: str, token: str, since_time: datetime) -> List[Dict]:
-    """Get recently merged PRs since last digest with pagination"""
+
+def get_merged_prs(owner: str, repo: str, START_DATE: datetime, token: str):
+    END_DATE = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+    START_DATE = START_DATE.strftime("%Y-%m-%dT%H:%M:%SZ")
+    base_url = "https://api.github.com/search/issues"
     headers = {
-        "Authorization": f"Bearer {token}",
         "Accept": "application/vnd.github+json",
-        "X-GitHub-Api-Version": "2022-11-28"
+        "Authorization": f"Bearer {token}"
     }
+
+    all_prs = []
+    print(f"Fetching merged PRs from {START_DATE} to {END_DATE}...")
     
-    merged_prs = []
-    page = 1
-    per_page = 100
+    # Search each target branch separately (GitHub API doesn't support OR for base branches)
+    target_branches = ['main']
+    pr_numbers_seen = set()  # Avoid duplicates
     
-    print(f"📦 Fetching merged PRs for {repo} since {since_time.isoformat()}...")
-    
-    while True:
-        url = f"{GITHUB_API_BASE}/repos/{repo}/pulls"
-        params = {
-            "state": "closed",
-            "sort": "updated",
-            "direction": "desc",
-            "per_page": per_page,
-            "page": page
-        }
+    for branch in target_branches:
+        query = f"repo:{owner}/{repo} is:pull-request is:merged merged:{START_DATE}..{END_DATE} base:{branch}"
+        params = {"q": query, "per_page": 100, "page": 1}
         
-        response = requests.get(url, headers=headers, params=params)
-        
-        if response.status_code != 200:
-            print(f"❌ GitHub API error: {response.status_code}")
-            print(response.text)
-            sys.exit(1)
-        
-        prs = response.json()
-        if not prs:
-            break
-        
-        for pr in prs:
-            merged_at = pr.get('merged_at')
-            if not merged_at:
-                continue
-            
-            merged_time = datetime.fromisoformat(merged_at.replace('Z', '+00:00'))
-            if merged_time > since_time:
-                merged_prs.append({
-                    'number': pr.get('number', 0),
-                    'title': pr.get('title', 'No title'),
-                    'body': pr.get('body', 'No description'),
-                    'author': pr.get('user', {}).get('login', 'Unknown'),
-                    'merged_at': merged_at,
-                    'url': pr.get('html_url', '#')
-                })
-            else:
-                print(f"✅ Stopped: reached PR older than cutoff (page {page}).")
-                merged_prs.sort(key=lambda x: x['number'])
-                return merged_prs
-        
-        print(f"📄 Page {page} fetched ({len(prs)} PRs).")
-        page += 1
-        time.sleep(0.3)
-    
-    merged_prs.sort(key=lambda x: x['number'])
-    print(f"✅ Total merged PRs found: {len(merged_prs)}")
-    return merged_prs
+        while True:
+            response = requests.get(base_url, headers=headers, params=params)
+            if response.status_code != 200:
+                print(f"Error searching base:{branch}: {response.status_code} -> {response.text}")
+                break
+
+            data = response.json()
+            items = data.get("items", [])
+
+            for item in items:
+                pr_number = item['number']
+                if pr_number in pr_numbers_seen:
+                    continue  # Skip duplicates
+                pr_numbers_seen.add(pr_number)
+                
+                pr_url = item['pull_request']['url']
+                pr_response = requests.get(pr_url, headers=headers)
+                if pr_response.status_code == 200:
+                    pr_data = pr_response.json()
+                    all_prs.append({
+                        'number': pr_data['number'],
+                        'title': pr_data['title'],
+                        'body': pr_data['body'],
+                        'author': pr_data['user']['login']
+                    })
+                time.sleep(0.1)
+
+            if "next" not in response.links:
+                break
+
+            params["page"] += 1
+
+    return all_prs
+
 
 def get_last_digest_time() -> datetime:
-    """Get the time of the last digest based on the fixed Monday/Friday schedule"""
+    """Get the start time for PR search - 7 days ago"""
     now = datetime.now(timezone.utc)
-    current_weekday = now.weekday()
-    
-    if current_weekday == 0:  # Monday
-        days_back = 3
-        last_digest = now.replace(hour=12, minute=0, second=0, microsecond=0) - timedelta(days=days_back)
-    elif current_weekday == 4:  # Friday  
-        days_back = 4
-        last_digest = now.replace(hour=12, minute=0, second=0, microsecond=0) - timedelta(days=days_back)
-    else:
-        last_digest = now - timedelta(days=3)
-    
-    return last_digest
+    seven_days_ago = now - timedelta(days=7)
+    return seven_days_ago
 
 def chunk_prs(prs: List[Dict], chunk_size: int) -> List[List[Dict]]:
-    """Split PRs into manageable chunks"""
     return [prs[i:i + chunk_size] for i in range(0, len(prs), chunk_size)]
 
-def create_chunk_prompt(prs: List[Dict], chunk_num: int, total_chunks: int) -> tuple:
-    """Create prompt for analyzing a chunk of PRs"""
-    system_prompt = """You are analyzing a subset of merged PRs for a weekly digest.
-Extract ONLY user-facing changes - features, improvements, bug fixes that users will notice.
-Focus on WHAT changed for users, not technical implementation details.
+def create_digest_prompt(prs: List[Dict], is_final: bool = False, all_changes: List[str] = None) -> tuple:
+    MONTH = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+    end_date = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+    start_date = get_last_digest_time().strftime("%Y-%m-%dT%H:%M:%SZ")
+    date_str = f"From {start_date.split('T')[0].split('-')[2]} {MONTH[int(start_date.split('T')[0].split('-')[1]) - 1]} {start_date.split('T')[0].split('-')[0]} to {end_date.split('T')[0].split('-')[2]} {MONTH[int(end_date.split('T')[0].split('-')[1]) - 1]} {end_date.split('T')[0].split('-')[0]}"
+    print(f"Creating digest prompt for period: {date_str}")
+    system_prompt = f"""You are creating a weekly digest for the Pollinations AI Discord community.
+    Extract ONLY major, user-impacting changes - the real wins, not the fixes or maintenance.
+    Ignore: bug fixes, styling updates, UI tweaks, refactors, dependency updates, code cleanup, error handling.
+    Include: new features, model additions, performance gains, API improvements, significant workflow enhancements, user experience upgrades.
+    In general ignore the updates or modifications that does not impact the users directly, its a user-facing message rather then developer/internal focused.
 
-FORMAT your response as a simple bullet list:
-- Feature/improvement/fix description (brief, user-focused)
-- Another change
-- etc.
+    CONTEXT: Pollinations is an open-source AI platform. Your audience is USERS who care about what they can DO now.
 
-If a PR has no user-facing impact, skip it entirely.
-If NO PRs in this batch have user impact, return only: SKIP"""
+    OUTPUT FORMAT:
+    ```
+    [Greet <@&1424461167883194418> naturally and casually in a playful, witty way. short]
 
-    user_prompt = f"""Analyze batch {chunk_num}/{total_chunks} ({len(prs)} PRs):
+    ## 🌸 Weekly Update - {date_str}
+    (do not change anything from the mentioned date_str, strictly use it as is)
 
-"""
-    
-    for pr in prs:
-        user_prompt += f"""PR #{pr['number']}: {pr['title']}
-Description: {pr['body'][:300] if pr['body'] else 'No description'}
+    [Create sections that make sense - you have COMPLETE FREEDOM]
+    [MAKE SURE THAT WE PUT ALL THE INFO IN SOMEWHERE AROUND 200-400 WORDS TOTAL]
+    [Examples: "🎮 Discord Bot", "🚀 New Models", "⚡ Performance", "🔄 API Changes", "✨ Feature Drops", etc.]
 
-"""
-    
-    user_prompt += "\nList only user-facing changes as bullet points."
-    
-    return system_prompt, user_prompt
+    ### [Section with emoji]
+    - Major change with clear user benefit
+    - Another significant addition
+    - Focus on what users can now do
 
-def create_final_digest_prompt(all_changes: List[str]) -> tuple:
-    """Create prompt for final digest compilation"""
-    today = datetime.now(timezone.utc)
-    week_ago = today - timedelta(days=4)
-    
-    if week_ago.month == today.month:
-        date_str = f"{week_ago.strftime('%b %d')}-{today.strftime('%d, %Y')}"
+    ### [Another section if needed]
+    - More impactful changes
+    - Keep it user-focused and exciting
+
+    [Add as many sections as needed - organize however makes most sense!]
+    ```
+
+    CRITICAL RULES:
+    - Greet <@&1424461167883194418> naturally - be witty and creative!
+    - Write for USERS - focus on impact and excitement, not technical details
+    - Only include MAJOR changes that matter to users
+    - NO PR numbers, NO author names, NO technical jargon
+    - Skip all bug fixes, error handling, and maintenance work
+    - Skip styling and UI cosmetics completely
+    - If no major impactful changes found, return only: SKIP
+    - Be witty, fun, and celebratory about real wins
+    - Do not add unnecessary length to the output
+    - Keep it as concise and brief as possible while still covering whats needed
+    - Focus mainly on changes that impact the user's who use services powered by pollinations rather than developers who use pollinations.
+    - Give the final output as whole that isn't overloaded with technical info nor full of clutter but appealing to users while being fairly simple! 
+
+    TONE: Conversational, witty, celebratory. Highlight the cool stuff.
+    LENGTH: Keep it punchy but complete"""
+
+    if is_final:
+        combined_changes = "\n\n---\n\n".join(all_changes)
+        user_prompt = f"""Here are the major changes from this week:
+        {combined_changes}
+
+        Create a polished, witty weekly digest that celebrates these wins and makes them exciting for users. Group logically and present the real impact."""
     else:
-        date_str = f"{week_ago.strftime('%b %d')} - {today.strftime('%b %d, %Y')}"
-    
-    system_prompt = f"""You are creating the FINAL weekly digest for Pollinations AI Discord community.
-You've been given pre-filtered user-facing changes. Now create ONE polished, engaging message.
+        user_prompt = f"""Analyze these {len(prs)} merged PRs and extract only MAJOR, user-impacting changes:"""
+        for i, pr in enumerate(prs, 1):
+            user_prompt += f"""PR #{pr['number']}: {pr['title']}
+            Author: {pr['author'] if 'author' in pr else 'Some Contributor'}
+            Description: {pr['body'][:500] if pr['body'] else 'No description'}"""
 
-CONTEXT: Pollinations is an open-source AI platform. Your audience is USERS, not developers.
+        user_prompt += """Extract only major changes that impact users (new features, significant improvements, API enhancements, performance wins).
+        Ignore bug fixes, styling, code cleanup, dependency updates, error handling.
+        If no major impactful changes found, return only: SKIP"""
 
-OUTPUT FORMAT:
-[Greet <@&1424461167883194418> naturally and casually in a playful way]
-🌸 Weekly Update - {date_str}
-[Choose section name with emoji based on changes]
-Polished description of change (benefits-focused)
-Another change
-Keep concise and clear
-[Another section if it makes sense]
-More organized changes
-Group logically for users
-[Add sections as needed - organize however makes most sense!]
-RULES:
-- Greet <@&1424461167883194418> creatively and playfully
-- Group related changes into logical sections (Discord Bot, New Features, Bug Fixes, etc.)
-- Use emojis that fit each section
-- Remove duplicate or very similar items
-- Polish the language to be engaging and user-focused
-- NO PR numbers, NO author names, NO technical jargon
-- Keep it concise but complete
-- A bit of fun and playfulness is encouraged!
-
-TONE: Conversational, friendly, exciting about improvements"""
-
-    combined_changes = "\n\n---\n\n".join(all_changes)
-    
-    user_prompt = f"""Here are the user-facing changes from this week:
-
-{combined_changes}
-
-Create a polished weekly digest that groups these changes logically and presents them in an engaging way for users."""
-    
     return system_prompt, user_prompt
+
 
 def call_pollinations_api(system_prompt: str, user_prompt: str, token: str) -> str:
-    """Call Pollinations AI API"""
     seed = random.randint(0, 2147483647)
-    
     headers = {
         "Authorization": f"Bearer {token}",
         "Content-Type": "application/json"
     }
-    
     payload = {
         "model": MODEL,
         "messages": [
             {"role": "system", "content": system_prompt},
             {"role": "user", "content": user_prompt}
         ],
-        "temperature": 0.3,
-        "seed": seed
+        "temperature": 0.7,
+        "seed": seed,
+        "max_tokens": 250
     }
-    
     response = requests.post(
         POLLINATIONS_API_BASE,
         headers=headers,
         json=payload,
         timeout=120
     )
-    
     if response.status_code != 200:
-        print(f"❌ API error: {response.status_code}")
+        print(f"API error: {response.status_code}")
         print(response.text)
         sys.exit(1)
     
@@ -221,12 +189,12 @@ def call_pollinations_api(system_prompt: str, user_prompt: str, token: str) -> s
         result = response.json()
         return result['choices'][0]['message']['content']
     except (KeyError, IndexError, json.JSONDecodeError) as e:
-        print(f"❌ Error parsing API response: {e}")
+        print(f"Error parsing API response: {e}")
         print(f"Response: {response.text}")
         sys.exit(1)
 
+
 def parse_message(response: str) -> str:
-    """Clean up AI response"""
     message = response.strip()
     
     if message.startswith('```'):
@@ -239,19 +207,16 @@ def parse_message(response: str) -> str:
     
     return message.strip()
 
+
 def chunk_message(message: str, max_length: int = 1900) -> List[str]:
-    """Split message into chunks at natural breakpoints"""
     if len(message) <= max_length:
         return [message]
-    
     chunks = []
     remaining = message
-    
     while remaining:
         if len(remaining) <= max_length:
             chunks.append(remaining)
             break
-        
         chunk = remaining[:max_length]
         split_point = max_length
         
@@ -269,11 +234,9 @@ def chunk_message(message: str, max_length: int = 1900) -> List[str]:
         
         chunks.append(remaining[:split_point].rstrip())
         remaining = remaining[split_point:].lstrip()
-    
     return chunks
 
 def post_to_discord(webhook_url: str, message: str):
-    """Post message to Discord with automatic chunking if needed"""
     chunks = chunk_message(message)
     
     for i, chunk in enumerate(chunks):
@@ -284,135 +247,64 @@ def post_to_discord(webhook_url: str, message: str):
         response = requests.post(webhook_url, json=payload)
         
         if response.status_code not in [200, 204]:
-            print(f"❌ Discord error: {response.status_code}")
+            print(f"Discord error: {response.status_code}")
             print(response.text)
             sys.exit(1)
     
-    print("✅ Digest posted to Discord.")
+    print("Digest posted to Discord.")
 
 def main():
-    # Get environment variables
-    github_token = get_env('GITHUB_TOKEN')
+    github_token = get_env('POLLI_PAT')
     pollinations_token = get_env('POLLINATIONS_TOKEN')
     discord_webhook = os.getenv('DISCORD_WEBHOOK_DIGEST') or get_env('DISCORD_WEBHOOK_URL')
-    repo_name = get_env('REPO_FULL_NAME')
     
-    # Get last digest time
+    # Get repo info from environment
+    repo_full_name = get_env('GITHUB_REPOSITORY')
+    owner_name, repo_name = repo_full_name.split('/')
     last_digest_time = get_last_digest_time()
-    
-    # Get recent merged PRs
-    merged_prs = get_recent_merged_prs(repo_name, github_token, last_digest_time)
-    
+    merged_prs = get_merged_prs(owner_name, repo_name, last_digest_time, github_token)
+    print(f"Total merged PRs found: {len(merged_prs)}")
     if not merged_prs:
-        print("ℹ️ No merged PRs found for this period. Skipping.")
+        print("No merged PRs found for this period. Skipping.")
         return
-    
-    print(f"\n📊 Processing {len(merged_prs)} PRs...")
-    
-    # For small batches, use single call (your original approach)
+
+    print(f"Processing {len(merged_prs)} PRs...")
     if len(merged_prs) <= CHUNK_SIZE:
-        print("🧠 Small batch - using single AI call...")
-        
-        today = datetime.now(timezone.utc)
-        week_ago = today - timedelta(days=4)
-        
-        if week_ago.month == today.month:
-            date_str = f"{week_ago.strftime('%b %d')}-{today.strftime('%d, %Y')}"
-        else:
-            date_str = f"{week_ago.strftime('%b %d')} - {today.strftime('%b %d, %Y')}"
-        
-        system_prompt = f"""You are creating a weekly digest for the Pollinations AI Discord community.
-Analyze the merged PRs and create ONE clean, engaging update message for USERS of the platform.
-
-CONTEXT: Pollinations is an open-source AI platform. You're talking to USERS who use the service, NOT developers.
-
-OUTPUT FORMAT:
-[Greet <@&1424461167883194418> naturally and casually in a playful way]
-🌸 Weekly Update - {date_str}
-[Create sections that make sense for what actually changed - you have COMPLETE FREEDOM]
-[Examples: "🎮 Discord Bot", "🚀 New Models", "⚡ Speed Improvements", "🎨 UI Updates", "🔧 Bug Fixes", etc.]
-[Your chosen section name with emoji]
-What changed for users (brief, clear)
-Another user-facing change
-Focus on benefits users will notice
-[Another section if needed]
-More changes that affect users
-Keep it user-focused
-[Add as many sections as needed - organize however makes most sense!]
-YOUR COMPLETE FREEDOM:
-- Choose ANY section names that fit the changes
-- Create ANY number of sections (1-5 typically)
-- Use ANY emojis that make sense
-- Group changes however is most logical for users
-- Focus on what USERS will experience, not technical details
-
-CRITICAL RULES:
-- Greet <@&1424461167883194418> naturally and casually - be creative with your greeting!
-- Write for USERS, not developers - focus on benefits they'll see
-- Keep bullet points concise and clear
-- NO PR numbers, NO author names, NO technical jargon
-- Skip internal/developer changes that don't affect users
-- If no user-facing changes, return only one word "SKIP"
-- A bit of fun and sarcasm is ok! 
-
-TONE: Conversational, friendly, focus on user benefits and playful
-LENGTH: Keep it concise but complete"""
-
-        user_prompt = f"""Analyze these {len(merged_prs)} merged PRs and create a weekly digest:
-
-"""
-        
-        for pr in merged_prs:
-            user_prompt += f"""PR #{pr['number']}: {pr['title']}
-Author: {pr['author']}
-Description: {pr['body'][:500] if pr['body'] else 'No description'}
-
-"""
-        
-        user_prompt += """
-Create a clean weekly digest focusing on user impact. Group related changes naturally.
-Remember: Focus on WHAT changed for users, not WHO changed it or technical details."""
-        
+        print("Small batch - using single AI call...")
+        system_prompt, user_prompt = create_digest_prompt(merged_prs)
         ai_response = call_pollinations_api(system_prompt, user_prompt, pollinations_token)
         message = parse_message(ai_response)
         
     else:
-        # For large batches, use chunking approach
-        print(f"🧩 Large batch - chunking into {CHUNK_SIZE} PR batches...")
+        print(f"Large batch - chunking into {CHUNK_SIZE} PR batches...")
         
         pr_chunks = chunk_prs(merged_prs, CHUNK_SIZE)
         all_changes = []
-        
-        # Step 1: Extract user-facing changes from each chunk
         for i, chunk in enumerate(pr_chunks, 1):
-            print(f"  📦 Processing chunk {i}/{len(pr_chunks)} ({len(chunk)} PRs)...")
-            
-            sys_prompt, usr_prompt = create_chunk_prompt(chunk, i, len(pr_chunks))
+            print(f"Processing chunk {i}/{len(pr_chunks)} ({len(chunk)} PRs)...")
+            sys_prompt, usr_prompt = create_digest_prompt(chunk)
             response = call_pollinations_api(sys_prompt, usr_prompt, pollinations_token)
             changes = parse_message(response)
             
             if not changes.upper().startswith('SKIP'):
                 all_changes.append(changes)
-            
-            time.sleep(0.5)  # Rate limiting
+            time.sleep(0.5)  
         
         if not all_changes:
-            print("ℹ️ No user-facing changes found across all chunks.")
+            print("No functional changes found across all chunks.")
             return
         
-        # Step 2: Compile final digest
-        print("🎨 Creating final polished digest...")
-        sys_prompt, usr_prompt = create_final_digest_prompt(all_changes)
+        print("Creating final polished digest...")
+        sys_prompt, usr_prompt = create_digest_prompt([], is_final=True, all_changes=all_changes)
         ai_response = call_pollinations_api(sys_prompt, usr_prompt, pollinations_token)
         message = parse_message(ai_response)
-    
-    # Check if AI said to skip
+
     if message.upper().startswith('SKIP'):
-        print("ℹ️ AI returned SKIP — no user-facing updates.")
+        print("AI returned SKIP — no functional updates.")
         return
-    
-    # Post to Discord
     post_to_discord(discord_webhook, message)
 
 if __name__ == "__main__":
     main()
+
+

@@ -23,14 +23,18 @@
         zsh-config = pkgs.writeTextFile {
           name = "config.zsh";
           text = ''
-            # initialize shell
-            eval "$(${pkgs.starship}/bin/starship init zsh)"
-            ${pkgs.figlet}/bin/figlet -f small "Pollinations"
             # shell improvements
             source ${pkgs.zsh-syntax-highlighting}/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
             source ${pkgs.zsh-autosuggestions}/share/zsh-autosuggestions/zsh-autosuggestions.zsh
             fpath=(${pkgs.zsh-completions}/share/zsh/site-functions $fpath)
             autoload -U compinit && compinit
+            # fzf
+            source ${pkgs.fzf}/share/fzf/key-bindings.zsh
+            source ${pkgs.fzf}/share/fzf/completion.zsh
+            export FZF_DEFAULT_OPTS="--height 40% --layout=reverse --color=16"
+            # initialize shell
+            eval "$(${pkgs.starship}/bin/starship init zsh)"
+            ${pkgs.figlet}/bin/figlet -f small "Pollinations"
           '';
         };
 
@@ -83,6 +87,7 @@
             zsh-autosuggestions
             zsh-completions
             starship
+            fzf
             figlet
             git
             sops
@@ -115,6 +120,9 @@
           shellHook = ''
             # runs each time the shell is entered
 
+            # prevents nix from messing with the time
+            unset SOURCE_DATE_EPOCH
+
             # enable recursive globbing
             shopt -s globstar
 
@@ -127,12 +135,10 @@
             fi
 
             # decrypt and load environment variables
-            for file in **/.encrypted.env; do
+            for file in $FLAKE_PATH/**/secrets/env.json; do
               echo "Decrypting: $file"
-              eval "$(sops decrypt $file \
-                | grep -v '^#' \
-                | grep -v '^$' \
-                | sed 's/^/export /' \
+              eval "$(sops decrypt "$file" \
+                | jq -r 'to_entries | .[] | "export \(.key)=\(.value | @sh)"'
               )"
             done
 

@@ -14,7 +14,7 @@ export type ApiKeyType = (typeof apiKeyTypeValues)[number];
 export const event = sqliteTable("event", {
     id: text("id").primaryKey(),
 
-    // Event processing
+    // Event Processing (internal)
     eventProcessingId: text("event_processing_id"),
     eventStatus: text("event_status", { enum: eventStatusValues })
         .$type<EventStatus>()
@@ -39,7 +39,7 @@ export const event = sqliteTable("event", {
         .$onUpdateFn(() => new Date())
         .notNull(),
 
-    // Request identification and timing
+    // Request
     requestId: text("request_id").notNull(),
     requestPath: text("request_path"),
     startTime: integer("start_time", { mode: "timestamp_ms" }).notNull(),
@@ -49,15 +49,20 @@ export const event = sqliteTable("event", {
     environment: text("environment"),
     eventType: text("event_type").$type<EventType>().notNull(),
 
-    // User information
+    // User
     userId: text("user_id"),
     userTier: text("user_tier"),
+    userGithubId: text("user_github_id"),
+    userGithubUsername: text("user_github_username"),
+
+    // API Key
     apiKeyId: text("api_key_id"),
+    apiKeyName: text("api_key_name"),
     apiKeyType: text("api_key_type", {
         enum: apiKeyTypeValues,
     }).$type<ApiKeyType>(),
 
-    // Meter selection and balance
+    // Meter
     selectedMeterId: text("selected_meter_id"),
     selectedMeterSlug: text("selected_meter_slug"),
     balances: text("balances", { mode: "json" }).$type<
@@ -65,17 +70,17 @@ export const event = sqliteTable("event", {
     >(),
 
     // Referrer
-    referrerDomain: text("referrer_domain"),
     referrerUrl: text("referrer_url"),
+    referrerDomain: text("referrer_domain"),
 
-    // Model information
+    // Model
     modelRequested: text("model_requested"),
     resolvedModelRequested: text("resolved_model_requested"),
-    freeModelRequested: integer("free_model_requested", { mode: "boolean" }),
     modelUsed: text("model_used"),
+    modelProviderUsed: text("model_provider_used"),
     isBilledUsage: integer("is_billed_usage", { mode: "boolean" }).notNull(),
 
-    // Token pricing
+    // Pricing
     tokenPricePromptText: real("token_price_prompt_text").notNull(),
     tokenPricePromptCached: real("token_price_prompt_cached").notNull(),
     tokenPricePromptAudio: real("token_price_prompt_audio").notNull(),
@@ -87,7 +92,7 @@ export const event = sqliteTable("event", {
     tokenPriceCompletionAudio: real("token_price_completion_audio").notNull(),
     tokenPriceCompletionImage: real("token_price_completion_image").notNull(),
 
-    // Token usage
+    // Usage
     tokenCountPromptText: integer("token_count_prompt_text").notNull(),
     tokenCountPromptAudio: integer("token_count_prompt_audio").notNull(),
     tokenCountPromptCached: integer("token_count_prompt_cached").notNull(),
@@ -107,7 +112,7 @@ export const event = sqliteTable("event", {
     totalCost: real("total_cost").notNull(),
     totalPrice: real("total_price").notNull(),
 
-    // Prompt moderation results
+    // Prompt Moderation
     moderationPromptHateSeverity: text("moderation_prompt_hate_severity"),
     moderationPromptSelfHarmSeverity: text(
         "moderation_prompt_self_harm_severity",
@@ -121,7 +126,7 @@ export const event = sqliteTable("event", {
         { mode: "boolean" },
     ),
 
-    // Completion moderation results
+    // Completion Moderation
     moderationCompletionHateSeverity: text(
         "moderation_completion_hate_severity",
     ),
@@ -143,7 +148,7 @@ export const event = sqliteTable("event", {
         { mode: "boolean" },
     ),
 
-    // Cache information
+    // Cache
     cacheHit: integer("cache_hit", { mode: "boolean" }),
     cacheType: text("cache_type"),
     cacheSemanticSimilarity: real("cache_semantic_similarity"),

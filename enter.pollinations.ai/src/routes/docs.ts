@@ -7,8 +7,8 @@ export const createDocsRoutes = (apiRouter: Hono<Env>) => {
     return new Hono<Env>()
         .get("/", (c, next) =>
             Scalar<Env>({
-                pageTitle: "Pollinations.AI API Docs",
-                title: "Pollinations.AI API Docs",
+                pageTitle: "Pollinations.AI API Reference",
+                title: "Pollinations.AI API Reference",
                 theme: "saturn",
                 sources: [
                     { url: "/api/docs/open-api/generate-schema", title: "API" },
@@ -60,7 +60,7 @@ export const createDocsRoutes = (apiRouter: Hono<Env>) => {
                             "curl 'https://enter.pollinations.ai/api/generate/v1/chat/completions' \\",
                             "  -H 'Authorization: Bearer YOUR_API_KEY' \\",
                             "  -H 'Content-Type: application/json' \\",
-                            "  -d '{\"model\": \"openai\", \"messages\": [{\"role\": \"user\", \"content\": \"Hello\"}]}'",
+                            '  -d \'{"model": "openai", "messages": [{"role": "user", "content": "Hello"}]}\'',
                             "```",
                             "",
                             "### Simple Text Endpoint",
@@ -73,7 +73,7 @@ export const createDocsRoutes = (apiRouter: Hono<Env>) => {
                             "curl 'https://enter.pollinations.ai/api/generate/v1/chat/completions' \\",
                             "  -H 'Authorization: Bearer YOUR_API_KEY' \\",
                             "  -H 'Content-Type: application/json' \\",
-                            "  -d '{\"model\": \"openai\", \"messages\": [{\"role\": \"user\", \"content\": \"Write a poem\"}], \"stream\": true}' \\",
+                            '  -d \'{"model": "openai", "messages": [{"role": "user", "content": "Write a poem"}], "stream": true}\' \\',
                             "  --no-buffer",
                             "```",
                             "",

@@ -962,7 +962,7 @@ async function generateTextBasedOnModel(messages, options) {
                     message:
                         error.message ||
                         "An error occurred during text generation",
-                    status: error.code || 500,
+                    status: error.status || error.code || 500,
                     details: errorDetails,
                 },
             };

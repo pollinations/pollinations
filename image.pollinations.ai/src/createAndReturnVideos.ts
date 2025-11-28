@@ -10,6 +10,7 @@ import {
     callVeoAPI,
     type VideoGenerationResult,
 } from "./models/veoVideoModel.ts";
+import { callSeedanceAPI } from "./models/seedanceVideoModel.ts";
 export type { VideoGenerationResult };
 import { incrementModelCounter } from "./modelCounter.ts";
 
@@ -47,20 +48,30 @@ export async function createAndReturnVideo(
             "Starting video generation...",
         );
 
-        // Currently only veo model is supported for video
-        if (safeParams.model !== "veo") {
+        // Route to appropriate video model
+        let result: VideoGenerationResult;
+
+        if (safeParams.model === "veo") {
+            // Google Veo 3.1 Fast
+            result = await callVeoAPI(prompt, safeParams, progress, requestId);
+        } else if (
+            safeParams.model === "seedance" ||
+            safeParams.model === "seedance-pro" ||
+            safeParams.model === "seedance-pro-fast" ||
+            safeParams.model === "seedance-lite"
+        ) {
+            // BytePlus Seedance (Pro-Fast is default for "seedance")
+            result = await callSeedanceAPI(
+                prompt,
+                safeParams,
+                progress,
+                requestId,
+            );
+        } else {
             throw new Error(
                 `Video generation not supported for model: ${safeParams.model}`,
             );
         }
-
-        // Generate video using Veo API
-        const result = await callVeoAPI(
-            prompt,
-            safeParams,
-            progress,
-            requestId,
-        );
 
         logOps("Video generation complete:", {
             durationSeconds: result.durationSeconds,
@@ -80,5 +91,12 @@ export async function createAndReturnVideo(
  * @returns {boolean}
  */
 export function isVideoModel(model: string): boolean {
-    return model === "veo";
+    const videoModels = [
+        "veo",
+        "seedance",
+        "seedance-pro",
+        "seedance-pro-fast",
+        "seedance-lite",
+    ];
+    return videoModels.includes(model);
 }

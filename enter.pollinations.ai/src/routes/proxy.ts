@@ -90,12 +90,6 @@ const chatCompletionHandlers = factory.createHandlers(
                 // Let it pass through - backend will handle invalid model error
             }
         }
-
-        log.debug("[PROXY] Chat completions request to {url}: {body}", {
-            url: targetUrl,
-            body: JSON.stringify(requestBody),
-        });
-
         const response = await proxy(targetUrl, {
             method: c.req.method,
             headers: proxyHeaders(c),
@@ -110,24 +104,9 @@ const chatCompletionHandlers = factory.createHandlers(
                 status: response.status,
                 body: responseText,
             });
-
-            // Try to extract meaningful error message from upstream JSON
-            let errorMessage = getDefaultErrorMessage(response.status);
-            try {
-                const parsed = JSON.parse(responseText);
-                // Use the most specific error message available
-                errorMessage =
-                    parsed?.details?.error?.message ||
-                    parsed?.message ||
-                    parsed?.error ||
-                    errorMessage;
-            } catch {
-                // If not JSON, use raw text
-                errorMessage = responseText || errorMessage;
-            }
-
             throw new UpstreamError(response.status as ContentfulStatusCode, {
-                message: errorMessage,
+                message:
+                    responseText || getDefaultErrorMessage(response.status),
                 requestUrl: targetUrl,
             });
         }

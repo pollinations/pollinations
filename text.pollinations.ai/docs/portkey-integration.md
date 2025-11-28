@@ -69,6 +69,51 @@ fetch('http://localhost:16385/openai', {
 .then(data => console.log(data));
 ```
 
+## AWS Bedrock Native Provider
+
+Claude models (Opus, Sonnet) use Portkey's native AWS Bedrock provider for direct access without intermediate proxies.
+
+### IAM User Setup
+
+The `portkey-bedrock-access` IAM user provides credentials for Portkey to access Bedrock:
+
+```bash
+# Create IAM user
+aws iam create-user --user-name portkey-bedrock-access
+
+# Attach Bedrock full access policy
+aws iam attach-user-policy --user-name portkey-bedrock-access \
+  --policy-arn arn:aws:iam::aws:policy/AmazonBedrockFullAccess
+
+# Create access keys (save these securely!)
+aws iam create-access-key --user-name portkey-bedrock-access
+```
+
+### Environment Variables
+
+Add to `.env` (or SOPS-encrypted `secrets/env.json`):
+
+```
+AWS_ACCESS_KEY_ID=<access-key-from-above>
+AWS_SECRET_ACCESS_KEY=<secret-key-from-above>
+AWS_REGION=us-east-1
+```
+
+### Supported Models
+
+| Model | Bedrock Model ID |
+|-------|------------------|
+| claude-large | global.anthropic.claude-opus-4-5-20251101-v1:0 |
+| claude-sonnet-4 | us.anthropic.claude-sonnet-4-20250514-v1:0 |
+| claude-sonnet-4.5 | us.anthropic.claude-sonnet-4-5-20250929-v1:0 |
+
+### Benefits vs Fargate Proxy (Deprecated)
+
+- ✅ Supports array content in messages
+- ✅ Supports `cache_control` for Anthropic prompt caching
+- ✅ Lower latency (direct to Bedrock)
+- ✅ No extra infrastructure to maintain
+
 ## Advanced Configuration
 
 ### Model Mapping

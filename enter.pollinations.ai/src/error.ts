@@ -90,7 +90,7 @@ export const handleError: ErrorHandler<Env> = async (err, c) => {
     c.set("error", err);
 
     // Check for UpstreamError first (more specific than HTTPException)
-    // Use name check as fallback for bundling/prototype chain issues
+    // Use multiple fallbacks for bundling/prototype chain issues
     if (err instanceof UpstreamError || err.name === "UpstreamError") {
         const status = (err as UpstreamError).status;
         const response = createBaseErrorResponse(err, status, timestamp);
@@ -98,6 +98,21 @@ export const handleError: ErrorHandler<Env> = async (err, c) => {
             message: err.message || getDefaultErrorMessage(status),
         });
         return c.json(response, status);
+    }
+
+    // Check if error message contains HTTP status pattern (e.g., from upstream proxy errors)
+    // This handles cases where UpstreamError gets converted to plain Error by bundling
+    const statusMatch = err.message?.match(/^(\d{3})\s/);
+    if (statusMatch) {
+        const status = parseInt(statusMatch[1], 10) as ContentfulStatusCode;
+        if (status >= 400 && status < 600) {
+            const response = createBaseErrorResponse(err, status, timestamp);
+            log.trace("UpstreamError (from message): {status} {message}", {
+                status,
+                message: err.message,
+            });
+            return c.json(response, status);
+        }
     }
 
     if (err instanceof HTTPException) {

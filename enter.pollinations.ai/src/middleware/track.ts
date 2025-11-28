@@ -137,6 +137,20 @@ export const track = (eventType: EventType) =>
                     responseTracking.price?.totalPrice || 0,
                 );
 
+                // decrement local balance cache for billable usage
+                if (
+                    responseTracking.isBilledUsage &&
+                    c.var.auth.user?.id &&
+                    c.var.polar.balanceCheckResult?.selectedMeterId &&
+                    responseTracking.price?.totalPrice
+                ) {
+                    await c.var.polar.decrementBalance(
+                        c.var.auth.user.id,
+                        c.var.polar.balanceCheckResult.selectedMeterId,
+                        responseTracking.price.totalPrice,
+                    );
+                }
+
                 const userTracking: UserData = {
                     userId: c.var.auth.user?.id,
                     userTier: c.var.auth.user?.tier,

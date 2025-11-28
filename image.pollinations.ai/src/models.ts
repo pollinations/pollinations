@@ -52,10 +52,11 @@ export const IMAGE_CONFIG = {
     },
 
     // Gemini 3 Pro Image via Vertex AI - high quality image generation (Nano Banana Pro)
+    // Supports 1K, 2K, and 4K output resolutions
     "nanobanana-pro": {
         type: "vertex-ai-pro",
         enhance: false,
-        defaultSideLength: 1024,
+        defaultSideLength: 2048, // Default to 2K, supports up to 4K (3840x2160)
     },
 
     // Azure GPT Image model - gpt-image-1-mini

@@ -115,42 +115,12 @@ export const IMAGE_SERVICES = {
         output_modalities: ["video"],
     },
     "seedance": {
-        aliases: ["seedance-pro-fast"],
+        aliases: ["seedance-lite"],
         modelId: "seedance",
         provider: "bytedance-ark",
         cost: [
-            // Seedance Pro-Fast (default) - ~$0.70/M tokens, ~$0.17 per 5-sec 720p video
-            // Token formula: (height × width × FPS × duration) / 1024
-            {
-                date: COST_START_DATE,
-                completionVideoSeconds: 0.034, // ~$0.17 per 5 seconds
-            },
-        ],
-        description: "Seedance Pro-Fast - ByteDance video generation (default)",
-        input_modalities: ["text", "image"],
-        output_modalities: ["video"],
-    },
-    "seedance-pro": {
-        aliases: [],
-        modelId: "seedance-pro",
-        provider: "bytedance-ark",
-        cost: [
-            // Seedance Pro - $2.50/M tokens, ~$0.61 per 5-sec 720p video
-            {
-                date: COST_START_DATE,
-                completionVideoSeconds: 0.122, // ~$0.61 per 5 seconds
-            },
-        ],
-        description: "Seedance Pro - ByteDance highest quality video",
-        input_modalities: ["text", "image"],
-        output_modalities: ["video"],
-    },
-    "seedance-lite": {
-        aliases: [],
-        modelId: "seedance-lite",
-        provider: "bytedance-ark",
-        cost: [
             // Seedance Lite - $1.80/M tokens, ~$0.14 per 5-sec 720p video
+            // Token formula: (height × width × FPS × duration) / 1024
             {
                 date: COST_START_DATE,
                 completionVideoSeconds: 0.028, // ~$0.14 per 5 seconds

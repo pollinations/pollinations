@@ -10,8 +10,8 @@ const logOps = debug("pollinations:seedance:ops");
 const logError = debug("pollinations:seedance:error");
 
 // Seedance API constants
-// Model options: seedance-1-0-pro, seedance-1-0-pro-fast, seedance-1-0-lite
-const DEFAULT_MODEL = "seedance-1-0-pro-fast"; // Best balance of speed/cost/quality
+// Using Seedance Lite - fastest and cheapest option
+const DEFAULT_MODEL = "seedance-1-0-lite";
 
 interface SeedanceTaskResponse {
     id?: string;
@@ -85,28 +85,17 @@ export const callSeedanceAPI = async (
     const resolution =
         safeParams.height && safeParams.height <= 480 ? "480p" : "720p";
 
-    // Determine model variant
-    // seedance-pro: highest quality
-    // seedance-pro-fast: 3x faster, 72% cheaper (default)
-    // seedance-lite: fastest, cheapest, 720p only
-    let modelId = DEFAULT_MODEL;
-    if (safeParams.model === "seedance-pro") {
-        modelId = "seedance-1-0-pro";
-    } else if (safeParams.model === "seedance-lite") {
-        modelId = "seedance-1-0-lite";
-    }
-
     logOps("Video params:", {
         durationSeconds,
         aspectRatio,
         resolution,
-        modelId,
+        model: DEFAULT_MODEL,
         hasImage: !!safeParams.image,
     });
 
     // Build request body
     const requestBody: any = {
-        model: modelId,
+        model: DEFAULT_MODEL,
         prompt: prompt,
         duration: durationSeconds,
         aspect_ratio: aspectRatio,
@@ -250,7 +239,7 @@ export const callSeedanceAPI = async (
         mimeType: "video/mp4",
         durationSeconds: durationSeconds,
         trackingData: {
-            actualModel: `seedance-${modelId.replace("seedance-1-0-", "")}`,
+            actualModel: "seedance-lite",
             usage: {
                 completionVideoSeconds: durationSeconds,
                 totalTokenCount: tokenCount,

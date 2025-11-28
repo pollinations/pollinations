@@ -54,12 +54,8 @@ export async function createAndReturnVideo(
         if (safeParams.model === "veo") {
             // Google Veo 3.1 Fast
             result = await callVeoAPI(prompt, safeParams, progress, requestId);
-        } else if (
-            safeParams.model === "seedance" ||
-            safeParams.model === "seedance-pro" ||
-            safeParams.model === "seedance-lite"
-        ) {
-            // BytePlus Seedance (Pro-Fast is default for "seedance")
+        } else if (safeParams.model === "seedance") {
+            // BytePlus Seedance Lite
             result = await callSeedanceAPI(
                 prompt,
                 safeParams,
@@ -90,6 +86,5 @@ export async function createAndReturnVideo(
  * @returns {boolean}
  */
 export function isVideoModel(model: string): boolean {
-    const videoModels = ["veo", "seedance", "seedance-pro", "seedance-lite"];
-    return videoModels.includes(model);
+    return model === "veo" || model === "seedance";
 }

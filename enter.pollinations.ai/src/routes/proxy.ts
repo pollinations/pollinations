@@ -19,9 +19,7 @@ import {
 import {
     createErrorResponseSchema,
     type ErrorStatusCode,
-    getDefaultErrorMessage,
     KNOWN_ERROR_STATUS_CODES,
-    UpstreamError,
 } from "@/error.ts";
 import { GenerateImageRequestQueryParamsSchema } from "@/schemas/image.ts";
 import { z } from "zod";
@@ -97,37 +95,30 @@ const chatCompletionHandlers = factory.createHandlers(
         });
 
         if (!response.ok) {
-            // Read upstream error and throw UpstreamError to get structured error response
-            // This preserves the status code while providing consistent error format
+            // Thin proxy: pass through upstream error as-is
             const responseText = await response.text();
-            log.warn("[PROXY] Chat completions error {status}: {body}", {
+            log.warn("[PROXY] Upstream error {status}: {body}", {
                 status: response.status,
                 body: responseText,
             });
 
-            // Try to extract meaningful error message from upstream JSON
-            // Fall back to raw text if parsing fails
-            let errorMessage =
-                responseText || getDefaultErrorMessage(response.status);
+            // Try to parse as JSON, fall back to raw text
+            let upstreamError: unknown;
             try {
-                const parsed = JSON.parse(responseText);
-                // Use the most specific error message available
-                const extracted =
-                    parsed?.details?.error?.message ||
-                    parsed?.error?.message ||
-                    parsed?.message ||
-                    (typeof parsed?.error === "string" ? parsed.error : null);
-                if (extracted) {
-                    errorMessage = extracted;
-                }
+                upstreamError = JSON.parse(responseText);
             } catch {
-                // Not JSON or parse failed - use raw text as-is
+                upstreamError = responseText;
             }
 
-            throw new UpstreamError(response.status as ContentfulStatusCode, {
-                message: errorMessage,
-                requestUrl: targetUrl,
-            });
+            // Return upstream response directly with same status code
+            return c.json(
+                {
+                    success: false,
+                    upstream: upstreamError,
+                    status: response.status,
+                },
+                response.status as ContentfulStatusCode,
+            );
         }
 
         // add content filter headers if not streaming
@@ -354,21 +345,27 @@ export const proxyRoutes = new Hono<Env>()
             });
 
             if (!response.ok) {
-                // Read upstream error and throw UpstreamError to get structured error response
-                // This preserves the status code while providing consistent error format
+                // Thin proxy: pass through upstream error as-is
                 const responseText = await response.text();
                 log.warn("[PROXY] Text service error {status}: {body}", {
                     status: response.status,
                     body: responseText,
                 });
-                throw new UpstreamError(
-                    response.status as ContentfulStatusCode,
+
+                let upstreamError: unknown;
+                try {
+                    upstreamError = JSON.parse(responseText);
+                } catch {
+                    upstreamError = responseText;
+                }
+
+                return c.json(
                     {
-                        message:
-                            responseText ||
-                            getDefaultErrorMessage(response.status),
-                        requestUrl: targetUrl,
+                        success: false,
+                        upstream: upstreamError,
+                        status: response.status,
                     },
+                    response.status as ContentfulStatusCode,
                 );
             }
 
@@ -447,21 +444,27 @@ export const proxyRoutes = new Hono<Env>()
             });
 
             if (!response.ok) {
-                // Read upstream error and throw UpstreamError to get structured error response
-                // This preserves the status code while providing consistent error format
+                // Thin proxy: pass through upstream error as-is
                 const responseText = await response.text();
                 log.warn("[PROXY] Image service error {status}: {body}", {
                     status: response.status,
                     body: responseText,
                 });
-                throw new UpstreamError(
-                    response.status as ContentfulStatusCode,
+
+                let upstreamError: unknown;
+                try {
+                    upstreamError = JSON.parse(responseText);
+                } catch {
+                    upstreamError = responseText;
+                }
+
+                return c.json(
                     {
-                        message:
-                            responseText ||
-                            getDefaultErrorMessage(response.status),
-                        requestUrl: targetUrl,
+                        success: false,
+                        upstream: upstreamError,
+                        status: response.status,
                     },
+                    response.status as ContentfulStatusCode,
                 );
             }
 

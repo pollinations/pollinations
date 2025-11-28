@@ -18,8 +18,9 @@ type BalanceCheckResult = {
 const LOCAL_BALANCE_KEY_PREFIX = "polar:local:balance:";
 // TTL for local balance cache (5 minutes)
 const LOCAL_BALANCE_TTL = 300;
-// Threshold to force sync with Polar (when total balance is low)
-const SYNC_THRESHOLD = 0.5;
+// Threshold to force sync with Polar (negative = allow some overdraft before syncing)
+// -10 means users can go up to 10 pollen negative before we force a Polar sync
+const SYNC_THRESHOLD = -10;
 
 export type PolarVariables = {
     polar: {

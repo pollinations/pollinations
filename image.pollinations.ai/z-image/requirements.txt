@@ -1,0 +1,24 @@
+# Z-Image-Turbo Server Dependencies
+# Note: PyTorch is installed separately with CUDA support
+
+# Core ML - diffusers from source required for Z-Image support
+git+https://github.com/huggingface/diffusers
+accelerate>=1.9
+transformers>=4.50
+safetensors
+sentencepiece
+protobuf
+
+# Server
+fastapi
+uvicorn
+pydantic
+python-multipart
+aiohttp
+
+# Utils
+pillow
+numpy
+tqdm
+requests
+huggingface-hub

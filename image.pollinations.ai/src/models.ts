@@ -73,7 +73,7 @@ export const IMAGE_CONFIG = {
         defaultResolution: "720p",
     },
 
-    // BytePlus Seedance Lite - Fast & cheap video generation
+    // BytePlus Seedance - Video generation
     seedance: {
         type: "bytedance-ark-video",
         enhance: false,

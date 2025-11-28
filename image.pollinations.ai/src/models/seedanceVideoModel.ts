@@ -10,7 +10,7 @@ const logOps = debug("pollinations:seedance:ops");
 const logError = debug("pollinations:seedance:error");
 
 // Seedance API constants
-// Using Seedance Lite - fastest and cheapest option
+// Using Seedance (BytePlus video generation)
 const DEFAULT_MODEL = "seedance-1-0-lite";
 
 interface SeedanceTaskResponse {
@@ -239,7 +239,7 @@ export const callSeedanceAPI = async (
         mimeType: "video/mp4",
         durationSeconds: durationSeconds,
         trackingData: {
-            actualModel: "seedance-lite",
+            actualModel: "seedance",
             usage: {
                 completionVideoSeconds: durationSeconds,
                 totalTokenCount: tokenCount,

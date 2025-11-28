@@ -114,4 +114,20 @@ export const IMAGE_SERVICES = {
         input_modalities: ["text"],
         output_modalities: ["video"],
     },
+    "seedance": {
+        aliases: [],
+        modelId: "seedance",
+        provider: "bytedance-ark",
+        cost: [
+            // Seedance - ~$0.14 per 5-sec 720p video
+            // Token formula: (height × width × FPS × duration) / 1024
+            {
+                date: COST_START_DATE,
+                completionVideoSeconds: 0.028, // ~$0.14 per 5 seconds
+            },
+        ],
+        description: "Seedance - BytePlus video generation",
+        input_modalities: ["text", "image"],
+        output_modalities: ["video"],
+    },
 } as const;

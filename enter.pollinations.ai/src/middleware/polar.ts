@@ -135,7 +135,24 @@ export const polar = createMiddleware<PolarEnv>(async (c, next) => {
         meterId: string,
         amount: number,
     ): Promise<void> => {
-        const meters = await getLocalBalance(userId);
+        let meters = await getLocalBalance(userId);
+
+        // If cache expired/missing, fetch fresh state to ensure we don't lose this decrement
+        if (!meters) {
+            try {
+                const customerMeters = await getCustomerMeters(userId);
+                const activeMeters =
+                    getSimplifiedMatchingMeters(customerMeters);
+                meters = sortMetersByDescendingPriority(activeMeters);
+            } catch (err) {
+                log.warn(
+                    "Failed to fetch meters for decrement recovery: {err}",
+                    { err },
+                );
+                return;
+            }
+        }
+
         if (!meters) return;
 
         const meter = meters.find((m) => m.meterId === meterId);

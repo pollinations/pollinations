@@ -53,12 +53,29 @@ export const getModelPrices = (): ModelPrice[] => {
         });
     }
 
-    // Add image models
+    // Add image/video models
     for (const [serviceName, serviceConfig] of Object.entries(IMAGE_SERVICES)) {
         const costHistory = serviceConfig.cost;
         if (!costHistory) continue;
 
         const latestCost: CostDefinition = costHistory[0];
+
+        // Check if this is a video model (has completionVideoSeconds pricing)
+        const isVideoModel = latestCost.completionVideoSeconds !== undefined;
+
+        if (isVideoModel) {
+            // Video pricing (per second)
+            prices.push({
+                name: serviceName,
+                type: "video",
+                perToken: false,
+                perSecondPrice: formatPrice(
+                    latestCost.completionVideoSeconds,
+                    (v: number) => `$${v.toFixed(3)}/sec`,
+                ),
+            });
+            continue;
+        }
 
         // Auto-detect token-based pricing: models with promptTextTokens or promptImageTokens
         const isTokenBased =

@@ -20,6 +20,7 @@ import {
     createErrorResponseSchema,
     type ErrorStatusCode,
     KNOWN_ERROR_STATUS_CODES,
+    getDefaultErrorMessage,
 } from "@/error.ts";
 import { GenerateImageRequestQueryParamsSchema } from "@/schemas/image.ts";
 import { z } from "zod";

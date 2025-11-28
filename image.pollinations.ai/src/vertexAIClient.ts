@@ -127,16 +127,18 @@ export async function generateImageWithVertexAI(
             request.height
         ) {
             const totalPixels = request.width * request.height;
-            // 4K = ~8.3M pixels (3840x2160), 2K = ~2M pixels (1920x1080), 1K = ~1M pixels (1024x1024)
-            // Using 0.8 multiplier as tolerance: users requesting non-standard aspect ratios
-            // near a resolution tier (e.g., 3200x2400 = 7.68M px) should get that tier's quality
-            if (totalPixels >= 3840 * 2160 * 0.8) {
-                imageSize = "4K";
-            } else if (totalPixels >= 1920 * 1080 * 0.8) {
-                imageSize = "2K";
-            } else {
-                imageSize = "1K";
-            }
+            // Pick closest resolution tier based on pixel count
+            const tiers = [
+                { name: "1K", pixels: 1024 * 1024 }, // ~1.0M
+                { name: "2K", pixels: 1920 * 1080 }, // ~2.1M
+                { name: "4K", pixels: 3840 * 2160 }, // ~8.3M
+            ];
+            imageSize = tiers.reduce((closest, tier) =>
+                Math.abs(tier.pixels - totalPixels) <
+                Math.abs(closest.pixels - totalPixels)
+                    ? tier
+                    : closest,
+            ).name;
             log(
                 `Determined image size: ${imageSize} for ${totalPixels} total pixels`,
             );

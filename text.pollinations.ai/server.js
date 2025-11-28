@@ -348,7 +348,7 @@ export async function sendErrorResponse(
         404: "Not Found",
         429: "Too Many Requests",
     };
-    const errorType = errorTypes[statusCode] || "Internal Server Error";
+    const errorType = errorTypes[responseStatus] || "Internal Server Error";
 
     const errorResponse = {
         error: errorType,

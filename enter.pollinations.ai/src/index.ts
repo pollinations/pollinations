@@ -26,27 +26,52 @@ export const api = new Hono<Env>()
 
 const docsRoutes = createDocsRoutes(api);
 
+// Check if request is for the gen.pollinations.ai API gateway
+function isGenDomain(hostname: string): boolean {
+    return hostname === "gen.pollinations.ai" || hostname === "gen.localhost";
+}
+
 const app = new Hono<Env>()
     // Path rewriting middleware for gen.pollinations.ai
     .use("*", async (c, next) => {
         const hostname = new URL(c.req.url).hostname;
-        if (hostname === "gen.pollinations.ai") {
+        if (isGenDomain(hostname)) {
+            const path = c.req.path;
+
             // Redirect root to /api/docs
-            if (c.req.path === "/") {
+            if (path === "/" || path === "/docs") {
                 return c.redirect("/api/docs", 302);
             }
-            // Don't rewrite /assets, /api, or static files - let them fall through to asset handler
-            else if (
-                !c.req.path.startsWith("/api/") &&
-                !c.req.path.startsWith("/assets/") &&
-                !c.req.path.match(/\.(js|css|png|jpg|svg|ico|webmanifest)$/)
-            ) {
-                // Rewrite other paths: /image/models -> /api/generate/image/models
+
+            // Convenience: /models -> /api/generate/text/models (most common use case)
+            if (path === "/models") {
                 c.req.raw = new Request(
-                    c.req.url.replace(c.req.path, "/api/generate" + c.req.path),
+                    c.req.url.replace(path, "/api/generate/text/models"),
                     c.req.raw,
                 );
+                return await next();
             }
+
+            // Don't rewrite /assets, /api, or static files - let them fall through
+            if (
+                path.startsWith("/api/") ||
+                path.startsWith("/assets/") ||
+                path.match(/\.(js|css|png|jpg|svg|ico|webmanifest)$/)
+            ) {
+                return await next();
+            }
+
+            // Rewrite API paths: /image/*, /text/*, /v1/*, /openai -> /api/generate/*
+            // Examples:
+            //   /image/models -> /api/generate/image/models
+            //   /image/my-prompt -> /api/generate/image/my-prompt
+            //   /text/hello -> /api/generate/text/hello
+            //   /v1/chat/completions -> /api/generate/v1/chat/completions
+            //   /openai -> /api/generate/openai
+            c.req.raw = new Request(
+                c.req.url.replace(path, "/api/generate" + path),
+                c.req.raw,
+            );
         }
         await next();
     })

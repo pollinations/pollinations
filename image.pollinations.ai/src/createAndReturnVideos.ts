@@ -57,7 +57,6 @@ export async function createAndReturnVideo(
         } else if (
             safeParams.model === "seedance" ||
             safeParams.model === "seedance-pro" ||
-            safeParams.model === "seedance-pro-fast" ||
             safeParams.model === "seedance-lite"
         ) {
             // BytePlus Seedance (Pro-Fast is default for "seedance")
@@ -91,12 +90,6 @@ export async function createAndReturnVideo(
  * @returns {boolean}
  */
 export function isVideoModel(model: string): boolean {
-    const videoModels = [
-        "veo",
-        "seedance",
-        "seedance-pro",
-        "seedance-pro-fast",
-        "seedance-lite",
-    ];
+    const videoModels = ["veo", "seedance", "seedance-pro", "seedance-lite"];
     return videoModels.includes(model);
 }

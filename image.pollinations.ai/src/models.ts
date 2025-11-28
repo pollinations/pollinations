@@ -72,6 +72,36 @@ export const IMAGE_CONFIG = {
         maxDuration: 8,
         defaultResolution: "720p",
     },
+
+    // BytePlus Seedance - Video generation (Pro-Fast is default)
+    seedance: {
+        type: "bytedance-ark-video",
+        enhance: false,
+        isVideo: true,
+        defaultDuration: 5,
+        maxDuration: 10,
+        defaultResolution: "720p",
+    },
+
+    // Seedance Pro - Highest quality video
+    "seedance-pro": {
+        type: "bytedance-ark-video",
+        enhance: false,
+        isVideo: true,
+        defaultDuration: 5,
+        maxDuration: 10,
+        defaultResolution: "720p",
+    },
+
+    // Seedance Lite - Fast & cheap video
+    "seedance-lite": {
+        type: "bytedance-ark-video",
+        enhance: false,
+        isVideo: true,
+        defaultDuration: 5,
+        maxDuration: 10,
+        defaultResolution: "720p",
+    },
 } as const satisfies ImageModelsConfig;
 
 /**

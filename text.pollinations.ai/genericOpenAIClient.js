@@ -145,6 +145,14 @@ export async function genericOpenAIClient(messages, options = {}, config) {
                     errorDetails = errorText;
                 }
 
+                // Log the raw upstream error response
+                errorLog(`[${requestId}] Upstream error response:`, {
+                    status: response.status,
+                    statusText: response.statusText,
+                    rawBody: errorText,
+                    parsedDetails: errorDetails,
+                });
+
                 // Build a cleaner error message
                 const errorMessage = `${response.status} ${response.statusText}`;
 

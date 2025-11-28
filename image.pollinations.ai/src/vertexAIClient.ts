@@ -384,6 +384,12 @@ export async function testVertexAIConnection(): Promise<boolean> {
             prompt: "A simple test image of a banana",
         });
 
+        if (!result.imageData) {
+            log(
+                "Test completed but no image generated (possibly blocked by safety)",
+            );
+            return false;
+        }
         log(
             "Test successful - generated image:",
             result.mimeType,

@@ -32,6 +32,7 @@ const SERVERS = {
     flux: [] as Server[],
     translate: [] as Server[],
     turbo: [] as Server[],
+    zimage: [] as Server[],
 };
 
 const SERVER_TIMEOUT = 45000; // 45 seconds

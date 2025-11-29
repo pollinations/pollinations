@@ -117,4 +117,20 @@ export const IMAGE_SERVICES = {
         input_modalities: ["text", "image"],
         output_modalities: ["image"],
     },
+    "zimage": {
+        aliases: ["z-image", "z-image-turbo"],
+        modelId: "zimage",
+        provider: "self-hosted",
+        cost: [
+            // Z-Image-Turbo (6B params, 9 steps)
+            // Self-hosted on L40S, ~0.9s for 512x512, ~3.5s for 1024x1024
+            {
+                date: COST_START_DATE,
+                completionImageTokens: 0.0002, // ~$0.0002 per image (GPU cost estimate)
+            },
+        ],
+        description: "Z-Image-Turbo - Fast 6B parameter image generation",
+        input_modalities: ["text"],
+        output_modalities: ["image"],
+    },
 } as const;

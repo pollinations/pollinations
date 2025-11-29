@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as TermsRouteImport } from './routes/terms'
 import { Route as SignInRouteImport } from './routes/sign-in'
 import { Route as DeviceRouteImport } from './routes/device'
+import { Route as CallbackRouteImport } from './routes/callback'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as OauthConsentRouteImport } from './routes/oauth/consent'
 
@@ -30,6 +31,11 @@ const DeviceRoute = DeviceRouteImport.update({
   path: '/device',
   getParentRoute: () => rootRouteImport,
 } as any)
+const CallbackRoute = CallbackRouteImport.update({
+  id: '/callback',
+  path: '/callback',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
@@ -43,6 +49,7 @@ const OauthConsentRoute = OauthConsentRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/callback': typeof CallbackRoute
   '/device': typeof DeviceRoute
   '/sign-in': typeof SignInRoute
   '/terms': typeof TermsRoute
@@ -50,6 +57,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/callback': typeof CallbackRoute
   '/device': typeof DeviceRoute
   '/sign-in': typeof SignInRoute
   '/terms': typeof TermsRoute
@@ -58,6 +66,7 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/callback': typeof CallbackRoute
   '/device': typeof DeviceRoute
   '/sign-in': typeof SignInRoute
   '/terms': typeof TermsRoute
@@ -65,14 +74,28 @@ export interface FileRoutesById {
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/device' | '/sign-in' | '/terms' | '/oauth/consent'
+  fullPaths:
+    | '/'
+    | '/callback'
+    | '/device'
+    | '/sign-in'
+    | '/terms'
+    | '/oauth/consent'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/device' | '/sign-in' | '/terms' | '/oauth/consent'
-  id: '__root__' | '/' | '/device' | '/sign-in' | '/terms' | '/oauth/consent'
+  to: '/' | '/callback' | '/device' | '/sign-in' | '/terms' | '/oauth/consent'
+  id:
+    | '__root__'
+    | '/'
+    | '/callback'
+    | '/device'
+    | '/sign-in'
+    | '/terms'
+    | '/oauth/consent'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  CallbackRoute: typeof CallbackRoute
   DeviceRoute: typeof DeviceRoute
   SignInRoute: typeof SignInRoute
   TermsRoute: typeof TermsRoute
@@ -102,6 +125,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DeviceRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/callback': {
+      id: '/callback'
+      path: '/callback'
+      fullPath: '/callback'
+      preLoaderRoute: typeof CallbackRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -121,6 +151,7 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  CallbackRoute: CallbackRoute,
   DeviceRoute: DeviceRoute,
   SignInRoute: SignInRoute,
   TermsRoute: TermsRoute,

@@ -143,28 +143,18 @@ export const deviceVerification = sqliteTable("device_verification", {
 });
 
 // OIDC Provider tables for "Login with Pollinations"
+// Schema matches better-auth oidcProvider plugin expectations
 export const oauthApplication = sqliteTable("oauth_application", {
   id: text("id").primaryKey(),
   clientId: text("client_id").notNull().unique(),
-  clientSecret: text("client_secret").notNull(),
-  clientName: text("client_name").notNull(),
-  clientUri: text("client_uri"),
-  logoUri: text("logo_uri"),
-  tosUri: text("tos_uri"),
-  policyUri: text("policy_uri"),
-  redirectUris: text("redirect_uris").notNull(), // JSON array
-  grantTypes: text("grant_types"), // JSON array
-  responseTypes: text("response_types"), // JSON array
-  tokenEndpointAuthMethod: text("token_endpoint_auth_method"),
-  scope: text("scope"),
-  contacts: text("contacts"), // JSON array
-  jwksUri: text("jwks_uri"),
-  jwks: text("jwks"), // JSON object
-  softwareId: text("software_id"),
-  softwareVersion: text("software_version"),
-  softwareStatement: text("software_statement"),
+  clientSecret: text("client_secret"),
+  name: text("name").notNull(), // Changed from clientName to match plugin
+  icon: text("icon"),
   metadata: text("metadata"), // JSON object for custom metadata
+  redirectUrls: text("redirect_urls").notNull(), // Comma-separated, not JSON
+  type: text("type").notNull(), // web, native, user-agent-based, public
   disabled: integer("disabled", { mode: "boolean" }).default(false),
+  userId: text("user_id").references(() => user.id, { onDelete: "cascade" }),
   createdAt: integer("created_at", { mode: "timestamp" })
     .defaultNow()
     .notNull(),
@@ -177,14 +167,14 @@ export const oauthApplication = sqliteTable("oauth_application", {
 export const oauthAccessToken = sqliteTable("oauth_access_token", {
   id: text("id").primaryKey(),
   accessToken: text("access_token").notNull().unique(),
-  refreshToken: text("refresh_token"),
+  refreshToken: text("refresh_token").unique(),
   accessTokenExpiresAt: integer("access_token_expires_at", { mode: "timestamp" }).notNull(),
   refreshTokenExpiresAt: integer("refresh_token_expires_at", { mode: "timestamp" }),
   clientId: text("client_id").notNull(),
   userId: text("user_id")
     .notNull()
     .references(() => user.id, { onDelete: "cascade" }),
-  scope: text("scope"),
+  scopes: text("scopes"), // Changed from 'scope' to 'scopes' to match plugin
   createdAt: integer("created_at", { mode: "timestamp" })
     .defaultNow()
     .notNull(),
@@ -200,7 +190,7 @@ export const oauthConsent = sqliteTable("oauth_consent", {
     .notNull()
     .references(() => user.id, { onDelete: "cascade" }),
   clientId: text("client_id").notNull(),
-  scope: text("scope"),
+  scopes: text("scopes"), // Changed from 'scope' to 'scopes' to match plugin
   consentGiven: integer("consent_given", { mode: "boolean" }).default(false).notNull(),
   createdAt: integer("created_at", { mode: "timestamp" })
     .defaultNow()

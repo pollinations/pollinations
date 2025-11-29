@@ -11,7 +11,7 @@
 # 4. POST /api/device/exchange-for-api-key - Exchange session for API key
 # =============================================================================
 
-API_URL="${1:-http://localhost:3001/api}"
+API_URL="${1:-http://localhost:3000/api}"
 CLIENT_ID="${2:-pollinations-cli}"
 
 echo "=============================================="
@@ -80,34 +80,34 @@ while true; do
 done
 
 echo ""
-echo "3. Exchanging session token for API key..."
+echo "3. Exchanging session token for OAuth access token..."
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo ""
 
-EXCHANGE_RESPONSE=$(curl -s -X POST "$API_URL/device/exchange-for-api-key" \
+EXCHANGE_RESPONSE=$(curl -s -X POST "$API_URL/device/exchange-for-access-token" \
   -H "Authorization: Bearer $ACCESS_TOKEN" \
   -H "Content-Type: application/json")
 
-API_KEY=$(echo $EXCHANGE_RESPONSE | jq -r '.api_key // "null"')
-KEY_NAME=$(echo $EXCHANGE_RESPONSE | jq -r '.key_name // "null"')
+OAUTH_TOKEN=$(echo $EXCHANGE_RESPONSE | jq -r '.access_token // "null"')
+EXPIRES_IN=$(echo $EXCHANGE_RESPONSE | jq -r '.expires_in // "null"')
 
-if [ "$API_KEY" == "null" ] || [ -z "$API_KEY" ]; then
-    echo "❌ Failed to exchange for API key"
+if [ "$OAUTH_TOKEN" == "null" ] || [ -z "$OAUTH_TOKEN" ]; then
+    echo "❌ Failed to exchange for access token"
     echo "Response: $EXCHANGE_RESPONSE"
     exit 1
 fi
 
-echo "✅ Got API key!"
-echo "   Key Name: $KEY_NAME"
-echo "   API Key: ${API_KEY:0:15}..."
+echo "✅ Got OAuth access token!"
+echo "   Token: ${OAUTH_TOKEN:0:20}..."
+echo "   Expires in: ${EXPIRES_IN}s ($(($EXPIRES_IN / 60)) minutes)"
 echo ""
 
-echo "4. Testing API key with /api/generate..."
+echo "4. Testing OAuth token with /api/generate..."
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo ""
 
 echo "4a. GET /api/generate/v1/models"
-MODELS_RESPONSE=$(curl -s "$API_URL/generate/v1/models" -H "Authorization: Bearer $API_KEY")
+MODELS_RESPONSE=$(curl -s "$API_URL/generate/v1/models" -H "Authorization: Bearer $OAUTH_TOKEN")
 echo "Models: $(echo $MODELS_RESPONSE | jq -r '.data[].id' 2>/dev/null | head -5 || echo "$MODELS_RESPONSE")"
 
 echo ""
@@ -115,13 +115,15 @@ echo "=============================================="
 echo "✅ Device Flow Complete!"
 echo "=============================================="
 echo ""
-echo "Your API key is ready to use:"
+echo "Your OAuth access token is ready to use (expires in ${EXPIRES_IN}s):"
 echo ""
-echo "  export POLLINATIONS_API_KEY='$API_KEY'"
+echo "  export POLLINATIONS_TOKEN='$OAUTH_TOKEN'"
 echo ""
 echo "  # Generate text"
-echo "  curl -H 'Authorization: Bearer \$POLLINATIONS_API_KEY' \\"
+echo "  curl -H 'Authorization: Bearer \$POLLINATIONS_TOKEN' \\"
 echo "       -H 'Content-Type: application/json' \\"
 echo "       -d '{\"model\": \"openai\", \"messages\": [{\"role\": \"user\", \"content\": \"Hello!\"}]}' \\"
 echo "       $API_URL/generate/v1/chat/completions"
+echo ""
+echo "⚠️  Note: This token expires in $(($EXPIRES_IN / 60)) minutes. Re-run the device flow to get a new token."
 echo ""

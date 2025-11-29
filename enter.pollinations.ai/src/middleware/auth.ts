@@ -28,6 +28,7 @@ export type AuthOptions = {
     allowSessionCookie: boolean;
     allowApiKey: boolean;
     allowBearerSessionToken?: boolean; // RFC 8628 Device Flow support
+    allowOAuthAccessToken?: boolean; // OAuth 2.0 access token support
 };
 
 type ApiKey = {
@@ -120,6 +121,54 @@ export const auth = (options: AuthOptions) =>
                 };
             };
 
+        /**
+         * Authenticate via OAuth 2.0 access token
+         * This allows OAuth clients to use their access_token directly for API calls
+         */
+        const authenticateOAuthAccessToken =
+            async (): Promise<AuthResult | null> => {
+                if (!options.allowOAuthAccessToken) return null;
+                const token = extractBearerToken(c);
+                if (!token) return null;
+
+                // Skip if it looks like an API key (pk_ or sk_ prefix)
+                if (token.startsWith("pk_") || token.startsWith("sk_"))
+                    return null;
+
+                log.debug("[AUTH] Checking OAuth access token: {hasToken}", {
+                    hasToken: !!token,
+                    tokenPrefix: token?.substring(0, 8),
+                });
+
+                const db = drizzle(c.env.DB, { schema });
+                const oauthToken = await db.query.oauthAccessToken.findFirst({
+                    where: eq(schema.oauthAccessToken.accessToken, token),
+                });
+
+                if (!oauthToken) {
+                    log.debug("[AUTH] OAuth access token not found");
+                    return null;
+                }
+
+                if (oauthToken.accessTokenExpiresAt < new Date()) {
+                    log.debug("[AUTH] OAuth access token expired");
+                    return null;
+                }
+
+                const user = await db.query.user.findFirst({
+                    where: eq(schema.user.id, oauthToken.userId),
+                });
+
+                log.debug("[AUTH] OAuth access token validated: {found}", {
+                    found: !!user,
+                    userId: user?.id,
+                });
+
+                return {
+                    user: user as User,
+                };
+            };
+
         const authenticateApiKey = async (): Promise<AuthResult | null> => {
             if (!options.allowApiKey) return null;
             const apiKey = extractBearerToken(c);
@@ -158,10 +207,12 @@ export const auth = (options: AuthOptions) =>
 
         // Authentication priority:
         // 1. Bearer session token (RFC 8628 Device Flow - CLI/API clients)
-        // 2. Session cookie (browser clients)
-        // 3. API key (programmatic access)
+        // 2. OAuth access token (OAuth 2.0 clients)
+        // 3. Session cookie (browser clients)
+        // 4. API key (programmatic access)
         const { user, session, apiKey } =
             (await authenticateBearerSessionToken()) ||
+            (await authenticateOAuthAccessToken()) ||
             (await authenticateSession()) ||
             (await authenticateApiKey()) ||
             {};

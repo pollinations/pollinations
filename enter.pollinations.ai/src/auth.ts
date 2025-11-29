@@ -78,8 +78,47 @@ export function createAuth(env: Cloudflare.Env) {
     const oidcProviderPlugin = oidcProvider({
         loginPage: "/sign-in",
         consentPage: "/oauth/consent",
-        // Trusted first-party clients can skip consent
-        // Third-party apps will be registered dynamically via API
+        // Trusted first-party clients - bypass DB lookup and skip consent
+        trustedClients: [
+            {
+                clientId: "test-app",
+                clientSecret: "test-secret",
+                type: "web" as const,
+                name: "Test OAuth App",
+                disabled: false,
+                metadata: null,
+                redirectUrls: [
+                    // Allow any localhost callback for dev testing
+                    "http://localhost:3000/callback",
+                    "http://localhost:5173/callback",
+                    "http://localhost:8080/callback",
+                    "http://localhost:8000/callback",
+                    "http://127.0.0.1:3000/callback",
+                    "http://127.0.0.1:5173/callback",
+                    "http://127.0.0.1:8080/callback",
+                    // Test pages that redirect back to themselves
+                    "http://localhost:8080/test-oidc.html",
+                    "http://localhost:3000/test-oidc.html",
+                    "http://localhost:5173/test-oidc.html",
+                ],
+                skipConsent: true,
+            },
+            {
+                clientId: "pollinations-mcp",
+                clientSecret: "mcp-secret",
+                type: "public" as const,
+                name: "Pollinations MCP Server",
+                disabled: false,
+                metadata: null,
+                redirectUrls: [
+                    "http://localhost:3000/callback",
+                    "http://localhost:8080/callback",
+                    "http://127.0.0.1:3000/callback",
+                    "http://127.0.0.1:8080/callback",
+                ],
+                skipConsent: true,
+            },
+        ],
     });
 
     return betterAuth({

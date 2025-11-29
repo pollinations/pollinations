@@ -41,22 +41,7 @@ function DeviceVerification() {
             // Format code: remove dashes and spaces
             const formattedCode = userCode.replace(/[-\s]/g, "").toUpperCase();
 
-            // First verify the code exists using better-auth's device endpoint
-            const verifyRes = await fetch(
-                `/api/auth/device?user_code=${formattedCode}`,
-            );
-            const verifyData = (await verifyRes.json()) as any;
-
-            if (!verifyRes.ok || verifyData.error) {
-                throw new Error(
-                    verifyData.error_description ||
-                        verifyData.message ||
-                        verifyData.error ||
-                        "Invalid or expired code",
-                );
-            }
-
-            // Now approve the device
+            // Approve the device directly - it validates the code internally
             const approveRes = await fetch("/api/auth/device/approve", {
                 method: "POST",
                 headers: {
@@ -75,9 +60,10 @@ function DeviceVerification() {
                     throw new Error("Please sign in to verify device");
                 }
                 throw new Error(
-                    approveData.error ||
+                    approveData.error_description ||
                         approveData.message ||
-                        "Approval failed",
+                        approveData.error ||
+                        "Invalid or expired code",
                 );
             }
 

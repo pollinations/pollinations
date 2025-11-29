@@ -1,0 +1,76 @@
+{
+  "request": {
+    "url": "http://ec2-3-80-56-235.compute-1.amazonaws.com:16385/openai",
+    "method": "POST",
+    "body": {
+      "type": "json",
+      "data": {
+        "model": "gemini-large",
+        "messages": [
+          {
+            "role": "user",
+            "content": "Reply: yes or no?"
+          }
+        ]
+      }
+    },
+    "params": {}
+  },
+  "response": {
+    "status": 200,
+    "statusText": "OK",
+    "headers": {
+      "access-control-allow-origin": "*",
+      "connection": "keep-alive",
+      "content-length": "548",
+      "content-type": "application/json; charset=utf-8",
+      "date": "Sat, 29 Nov 2025 21:02:53 GMT",
+      "etag": "W/\"224-X2H8a5jsAqepPRmi2jAhUnfvbFA\"",
+      "keep-alive": "timeout=5",
+      "x-model-used": "gemini-3-pro-preview",
+      "x-powered-by": "Express",
+      "x-usage-completion-reasoning-tokens": "770",
+      "x-usage-prompt-text-tokens": "259",
+      "x-usage-total-tokens": "1029"
+    },
+    "body": {
+      "type": "json",
+      "data": {
+        "id": "pllns_c07b71e01d19cb5de0a3ef4552a38f6b",
+        "object": "chat.completion",
+        "created": 1764450173,
+        "model": "gemini-3-pro-preview",
+        "provider": "vertex-ai",
+        "choices": [
+          {
+            "message": {
+              "role": "assistant",
+              "content": "Yes. Why not live dangerously?",
+              "content_blocks": [
+                {
+                  "type": "text",
+                  "text": "Yes. Why not live dangerously?"
+                }
+              ]
+            },
+            "index": 0,
+            "finish_reason": "STOP"
+          }
+        ],
+        "usage": {
+          "prompt_tokens": 259,
+          "completion_tokens": 7,
+          "total_tokens": 1036,
+          "completion_tokens_details": {
+            "reasoning_tokens": 770,
+            "audio_tokens": 0
+          },
+          "prompt_tokens_details": {
+            "cached_tokens": 0,
+            "audio_tokens": 0
+          }
+        }
+      }
+    }
+  }
+}

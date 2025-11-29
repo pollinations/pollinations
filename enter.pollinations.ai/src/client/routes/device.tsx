@@ -1,7 +1,6 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
 import { useState, useEffect } from "react";
 
-
 export const Route = createFileRoute("/device")({
     component: DeviceVerification,
     validateSearch: (search: Record<string, unknown>) => {
@@ -20,7 +19,9 @@ export const Route = createFileRoute("/device")({
 function DeviceVerification() {
     const { code } = Route.useSearch() as { code?: string };
     const [userCode, setUserCode] = useState(code || "");
-    const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
+    const [status, setStatus] = useState<
+        "idle" | "loading" | "success" | "error"
+    >("idle");
     const [message, setMessage] = useState("");
     const { auth, user } = Route.useRouteContext();
 
@@ -32,36 +33,59 @@ function DeviceVerification() {
         }
     }, [code, user, status]);
 
-    
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setStatus("loading");
-        
+
         try {
-            const res = await fetch("/api/device/verify", {
+            // Format code: remove dashes and spaces
+            const formattedCode = userCode.replace(/[-\s]/g, "").toUpperCase();
+
+            // First verify the code exists using better-auth's device endpoint
+            const verifyRes = await fetch(
+                `/api/auth/device?user_code=${formattedCode}`,
+            );
+            const verifyData = (await verifyRes.json()) as any;
+
+            if (!verifyRes.ok || verifyData.error) {
+                throw new Error(
+                    verifyData.error_description ||
+                        verifyData.message ||
+                        verifyData.error ||
+                        "Invalid or expired code",
+                );
+            }
+
+            // Now approve the device
+            const approveRes = await fetch("/api/auth/device/approve", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
                 },
-                body: JSON.stringify({ 
-                    user_code: userCode,
+                credentials: "include",
+                body: JSON.stringify({
+                    userCode: formattedCode,
                 }),
             });
-            
-            const data = await res.json() as any;
-            
-            if (!res.ok) {
-                if (res.status === 401) {
+
+            const approveData = (await approveRes.json()) as any;
+
+            if (!approveRes.ok) {
+                if (approveRes.status === 401) {
                     throw new Error("Please sign in to verify device");
                 }
-                throw new Error(data.error || data.message || "Verification failed");
+                throw new Error(
+                    approveData.error ||
+                        approveData.message ||
+                        "Approval failed",
+                );
             }
-            
+
             setStatus("success");
-            setMessage("Device verified successfully! You can now close this window.");
+            setMessage("Device approved! You can now close this window.");
         } catch (err: any) {
             setStatus("error");
-            setMessage(err.message || JSON.stringify(err));
+            setMessage(err.message || String(err));
         }
     };
 
@@ -69,9 +93,13 @@ function DeviceVerification() {
         return (
             <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100 p-4">
                 <div className="bg-white p-8 rounded-lg shadow-md w-full max-w-md text-center">
-                    <h1 className="text-2xl font-bold mb-4">Device Verification</h1>
-                    <p className="mb-6 text-gray-600">You need to be signed in to verify a device.</p>
-                    <a 
+                    <h1 className="text-2xl font-bold mb-4">
+                        Device Verification
+                    </h1>
+                    <p className="mb-6 text-gray-600">
+                        You need to be signed in to verify a device.
+                    </p>
+                    <a
                         href={`/sign-in?redirect=${encodeURIComponent(window.location.href)}`}
                         className="inline-block w-full py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
                     >
@@ -85,8 +113,10 @@ function DeviceVerification() {
     return (
         <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100 p-4">
             <div className="bg-white p-8 rounded-lg shadow-md w-full max-w-md">
-                <h1 className="text-2xl font-bold mb-6 text-center">Device Verification</h1>
-                
+                <h1 className="text-2xl font-bold mb-6 text-center">
+                    Device Verification
+                </h1>
+
                 {status === "success" ? (
                     <div className="text-green-600 text-center p-4 bg-green-50 rounded">
                         {message}
@@ -94,32 +124,39 @@ function DeviceVerification() {
                 ) : (
                     <form onSubmit={handleSubmit} className="space-y-4">
                         <div>
-                            <label htmlFor="code" className="block text-sm font-medium text-gray-700 mb-1">
+                            <label
+                                htmlFor="code"
+                                className="block text-sm font-medium text-gray-700 mb-1"
+                            >
                                 Enter Code
                             </label>
                             <input
                                 type="text"
                                 id="code"
                                 value={userCode}
-                                onChange={(e) => setUserCode(e.target.value.toUpperCase())}
+                                onChange={(e) =>
+                                    setUserCode(e.target.value.toUpperCase())
+                                }
                                 placeholder="XXXX-XXXX"
                                 className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
                                 required
                             />
                         </div>
-                        
+
                         {status === "error" && (
                             <div className="text-red-600 text-sm p-2 bg-red-50 rounded border border-red-200">
                                 {message}
                             </div>
                         )}
-                        
+
                         <button
                             type="submit"
                             disabled={status === "loading"}
                             className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50"
                         >
-                            {status === "loading" ? "Verifying..." : "Verify Device"}
+                            {status === "loading"
+                                ? "Verifying..."
+                                : "Verify Device"}
                         </button>
                     </form>
                 )}

@@ -1,4 +1,5 @@
 import { COST_START_DATE, perMillion } from "./price-helpers";
+import type { ServiceDefinition } from "./registry";
 
 export const DEFAULT_IMAGE_MODEL = "flux" as const;
 
@@ -17,8 +18,8 @@ export const IMAGE_SERVICES = {
             },
         ],
         description: "Flux - Fast and high-quality image generation",
-        input_modalities: ["text"],
-        output_modalities: ["image"],
+        inputModalities: ["text"],
+        outputModalities: ["image"],
     },
     "kontext": {
         aliases: [],
@@ -31,8 +32,8 @@ export const IMAGE_SERVICES = {
             },
         ],
         description: "Kontext - Context-aware image generation",
-        input_modalities: ["text", "image"],
-        output_modalities: ["image"],
+        inputModalities: ["text", "image"],
+        outputModalities: ["image"],
     },
     "turbo": {
         aliases: [],
@@ -45,8 +46,8 @@ export const IMAGE_SERVICES = {
             },
         ],
         description: "Turbo - Ultra-fast image generation",
-        input_modalities: ["text"],
-        output_modalities: ["image"],
+        inputModalities: ["text"],
+        outputModalities: ["image"],
     },
     "nanobanana": {
         aliases: [],
@@ -62,8 +63,8 @@ export const IMAGE_SERVICES = {
             },
         ],
         description: "NanoBanana - Gemini 2.5 Flash Image",
-        input_modalities: ["text", "image"],
-        output_modalities: ["image"],
+        inputModalities: ["text", "image"],
+        outputModalities: ["image"],
     },
     "nanobanana-pro": {
         aliases: [],
@@ -81,8 +82,8 @@ export const IMAGE_SERVICES = {
             },
         ],
         description: "NanoBanana Pro - Gemini 3 Pro Image (4K, Thinking)",
-        input_modalities: ["text", "image"],
-        output_modalities: ["image"],
+        inputModalities: ["text", "image"],
+        outputModalities: ["image"],
     },
     "seedream": {
         aliases: [],
@@ -96,8 +97,8 @@ export const IMAGE_SERVICES = {
             },
         ],
         description: "Seedream 4.0 - ByteDance ARK",
-        input_modalities: ["text", "image"],
-        output_modalities: ["image"],
+        inputModalities: ["text", "image"],
+        outputModalities: ["image"],
     },
     "gptimage": {
         aliases: ["gpt-image", "gpt-image-1-mini"],
@@ -114,7 +115,7 @@ export const IMAGE_SERVICES = {
             },
         ],
         description: "GPT Image 1 Mini - OpenAI's image generation model",
-        input_modalities: ["text", "image"],
-        output_modalities: ["image"],
+        inputModalities: ["text", "image"],
+        outputModalities: ["image"],
     },
-} as const;
+} as const satisfies Record<string, ServiceDefinition<string>>;

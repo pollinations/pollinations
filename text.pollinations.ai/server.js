@@ -942,18 +942,15 @@ async function generateTextBasedOnModel(messages, options) {
 
         // For streaming errors, return a special error response that can be streamed
         if (options.stream) {
-            // Create a detailed error response - check both error.details and error.response.data
+            // Get error details from error.details or parse error.response.data
             let errorDetails = error.details || null;
-
             if (!errorDetails && error.response?.data) {
                 try {
-                    // Try to parse the data as JSON
                     errorDetails =
                         typeof error.response.data === "string"
                             ? JSON.parse(error.response.data)
                             : error.response.data;
-                } catch (e) {
-                    // If parsing fails, use the raw data
+                } catch {
                     errorDetails = error.response.data;
                 }
             }

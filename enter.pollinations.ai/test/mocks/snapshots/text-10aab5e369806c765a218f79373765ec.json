@@ -1,0 +1,71 @@
+{
+  "request": {
+    "url": "http://ec2-3-80-56-235.compute-1.amazonaws.com:16385/openai",
+    "method": "POST",
+    "body": {
+      "type": "json",
+      "data": {
+        "model": "claude-large",
+        "messages": [
+          {
+            "role": "user",
+            "content": "Reply: yes or no?"
+          }
+        ]
+      }
+    },
+    "params": {}
+  },
+  "response": {
+    "status": 200,
+    "statusText": "OK",
+    "headers": {
+      "access-control-allow-origin": "*",
+      "connection": "keep-alive",
+      "content-length": "434",
+      "content-type": "application/json; charset=utf-8",
+      "date": "Sat, 29 Nov 2025 21:02:22 GMT",
+      "etag": "W/\"1b2-UrUUNUBv8z7dppWZ7tvz7Nw1C+U\"",
+      "keep-alive": "timeout=5",
+      "x-model-used": "global.anthropic.claude-opus-4-5-20251101-v1:0",
+      "x-powered-by": "Express",
+      "x-usage-completion-text-tokens": "4",
+      "x-usage-prompt-text-tokens": "283",
+      "x-usage-total-tokens": "287"
+    },
+    "body": {
+      "type": "json",
+      "data": {
+        "id": "pllns_c197b774dcecbc800aea2681a3e42ec7",
+        "object": "chat.completion",
+        "created": 1764450142,
+        "model": "global.anthropic.claude-opus-4-5-20251101-v1:0",
+        "provider": "bedrock",
+        "choices": [
+          {
+            "index": 0,
+            "message": {
+              "role": "assistant",
+              "content": "yes",
+              "content_blocks": [
+                {
+                  "type": "text",
+                  "text": "yes"
+                }
+              ]
+            },
+            "finish_reason": "end_turn"
+          }
+        ],
+        "usage": {
+          "prompt_tokens": 283,
+          "completion_tokens": 4,
+          "total_tokens": 287,
+          "prompt_tokens_details": {
+            "cached_tokens": 0
+          }
+        }
+      }
+    }
+  }
+}

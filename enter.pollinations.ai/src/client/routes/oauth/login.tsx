@@ -203,6 +203,7 @@ function getScopeDescription(scope: string): string {
         profile: "Access your profile information",
         email: "Access your email address",
         "api:generate": "Generate images and text",
+        "pollen:spend": "Spend your pollen balance",
     };
     return descriptions[scope] || scope;
 }

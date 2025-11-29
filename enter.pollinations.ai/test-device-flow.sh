@@ -68,32 +68,44 @@ while true; do
 done
 
 echo ""
-echo "3. Testing Bearer token authentication (RFC 8628 compliant)..."
+echo "3. Testing API key with /api/generate routes..."
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo ""
 
-# Test the new RFC 8628 compliant endpoints using Bearer token
-echo "3a. GET /api/device/session (Bearer token)"
-SESSION_RESPONSE=$(curl -s "$API_URL/device/session" -H "Authorization: Bearer $ACCESS_TOKEN")
-echo "Session Response: $SESSION_RESPONSE" | jq .
+# The access_token is now a real sk_ API key that works with /api/generate
+echo "3a. GET /api/generate/v1/models (list available text models)"
+MODELS_RESPONSE=$(curl -s "$API_URL/generate/v1/models" -H "Authorization: Bearer $ACCESS_TOKEN")
+echo "Models: $MODELS_RESPONSE" | jq '.data[].id' 2>/dev/null || echo "$MODELS_RESPONSE"
 
 echo ""
-echo "3b. GET /api/device/me (Bearer token)"
-ME_RESPONSE=$(curl -s "$API_URL/device/me" -H "Authorization: Bearer $ACCESS_TOKEN")
-echo "User Info: $ME_RESPONSE" | jq .
+echo "3b. POST /api/generate/v1/chat/completions (text generation)"
+TEXT_RESPONSE=$(curl -s "$API_URL/generate/v1/chat/completions" \
+  -H "Authorization: Bearer $ACCESS_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"model": "openai", "messages": [{"role": "user", "content": "Say hello in one word"}]}')
+echo "Text Response: $TEXT_RESPONSE" | jq '.choices[0].message.content' 2>/dev/null || echo "$TEXT_RESPONSE"
 
 echo ""
-echo "3c. GET /api/device/api-keys (Bearer token)"
-API_KEYS_RESPONSE=$(curl -s "$API_URL/device/api-keys" -H "Authorization: Bearer $ACCESS_TOKEN")
-echo "API Keys: $API_KEYS_RESPONSE" | jq .
+echo "3c. GET /api/generate/image/models (list available image models)"
+IMAGE_MODELS=$(curl -s "$API_URL/generate/image/models" -H "Authorization: Bearer $ACCESS_TOKEN")
+echo "Image Models: $IMAGE_MODELS" | jq '.[].name' 2>/dev/null || echo "$IMAGE_MODELS"
 
 echo ""
 echo "=============================================="
-echo "Test Complete!"
+echo "✅ Device Flow Complete!"
 echo "=============================================="
 echo ""
-echo "Your Bearer token can be used with any endpoint:"
+echo "Your API key is ready to use:"
 echo ""
-echo "  curl -H 'Authorization: Bearer $ACCESS_TOKEN' \\"
-echo "       $API_URL/device/me"
+echo "  export POLLINATIONS_API_KEY='$ACCESS_TOKEN'"
+echo ""
+echo "  # Generate text"
+echo "  curl -H 'Authorization: Bearer \$POLLINATIONS_API_KEY' \\"
+echo "       -H 'Content-Type: application/json' \\"
+echo "       -d '{\"model\": \"openai\", \"messages\": [{\"role\": \"user\", \"content\": \"Hello!\"}]}' \\"
+echo "       $API_URL/generate/v1/chat/completions"
+echo ""
+echo "  # Generate image"
+echo "  curl -H 'Authorization: Bearer \$POLLINATIONS_API_KEY' \\"
+echo "       '$API_URL/generate/image/A%20cute%20robot' -o robot.jpg"
 echo ""

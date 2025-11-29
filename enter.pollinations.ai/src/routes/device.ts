@@ -170,35 +170,34 @@ app.post(
             return c.json({ error: "authorization_pending" }, 400);
         }
 
-        // Create session for the user
-        // We need to manually create a session using better-auth or insert into DB
-        // Using better-auth internal API if possible, or manual insertion
-        // Better-auth doesn't expose "createSession" easily in the public API without a request context usually.
-        // But we can use the database adapter directly or try to construct a session.
+        // Create an API key for the user (instead of session token)
+        // This allows immediate use with /api/generate routes
+        const auth = createAuth(c.env);
 
-        // Let's use the database to create a session manually for now as it's cleaner than faking a request.
-        // Or better, use auth.api.createSession if available?
-        // Checking auth.ts... it returns `betterAuth(...)`.
+        // Generate device name from User-Agent or use default
+        const userAgent = c.req.header("User-Agent") || "CLI";
+        const deviceName = userAgent.includes("curl")
+            ? "CLI (curl)"
+            : userAgent.includes("node")
+              ? "CLI (Node.js)"
+              : userAgent.includes("python")
+                ? "CLI (Python)"
+                : "CLI Device";
 
-        // Let's try to use the internal db adapter or just insert into session table.
-        // Inserting into session table is safe if we generate a valid token.
+        const keyName = `${deviceName} - ${new Date().toLocaleDateString()}`;
 
-        const token = crypto.randomUUID(); // Session token
-        const expiresAt = new Date(Date.now() + 1000 * 60 * 60 * 24 * 30); // 30 days
-
-        // We need to import 'session' table from schema
-        const { session } = await import("../db/schema/better-auth");
-
-        await db.insert(session).values({
-            id: crypto.randomUUID(),
-            userId: record.userId,
-            token,
-            expiresAt,
-            createdAt: new Date(),
-            updatedAt: new Date(),
-            userAgent: c.req.header("User-Agent"),
-            ipAddress: c.req.header("CF-Connecting-IP"),
+        // Use better-auth's API to create a secret key
+        const keyResult = await auth.api.createApiKey({
+            body: {
+                name: keyName,
+                prefix: "sk", // Secret key for full API access
+                userId: record.userId,
+            },
         });
+
+        if (!keyResult?.key) {
+            return c.json({ error: "failed_to_create_key" }, 500);
+        }
 
         // Cleanup verification record
         await db
@@ -206,9 +205,11 @@ app.post(
             .where(eq(deviceVerification.id, record.id));
 
         return c.json({
-            access_token: token,
+            access_token: keyResult.key, // Return the actual sk_ key
             token_type: "Bearer",
-            expires_in: 30 * 24 * 60 * 60,
+            // API keys don't expire by default, but we can indicate this
+            expires_in: null,
+            key_name: keyName,
         });
     },
 );

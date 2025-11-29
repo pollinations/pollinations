@@ -11,6 +11,9 @@ import { APIError } from "better-auth/api";
 import { admin, apiKey, openAPI } from "better-auth/plugins";
 import { drizzle } from "drizzle-orm/d1";
 import * as betterAuthSchema from "./db/schema/better-auth.ts";
+import { getLogger } from "@logtape/logtape";
+
+const log = getLogger(["auth", "polar"]);
 
 export function createAuth(env: Cloudflare.Env) {
     const polar = new Polar({
@@ -126,6 +129,7 @@ function polarPlugin(polar: Polar): BetterAuthPlugin {
 
 function onBeforeUserCreate(polar: Polar) {
     return async (user: Partial<User>, ctx?: GenericEndpointContext) => {
+        const startTotal = Date.now();
         if (!ctx) return;
         try {
             if (!user.email) {
@@ -139,8 +143,12 @@ function onBeforeUserCreate(polar: Polar) {
             const { result } = await polar.customers.list({
                 email: user.email,
             });
+
             const existingCustomer = result.items[0];
             if (existingCustomer?.externalId) {
+                log.debug("onBeforeUserCreate linked existing - {duration}ms", {
+                    duration: Date.now() - startTotal,
+                });
                 return {
                     data: {
                         ...user,
@@ -155,11 +163,18 @@ function onBeforeUserCreate(polar: Polar) {
                 externalId: user.id,
             });
 
+            log.debug("onBeforeUserCreate created new - {duration}ms", {
+                duration: Date.now() - startTotal,
+            });
             return {
                 data: user,
             };
         } catch (e: unknown) {
             const messageOrError = e instanceof Error ? e.message : e;
+            log.error("onBeforeUserCreate ERROR {duration}ms: {error}", {
+                duration: Date.now() - startTotal,
+                error: messageOrError,
+            });
             throw new APIError("INTERNAL_SERVER_ERROR", {
                 message: `Polar customer creation failed. Error: ${messageOrError}`,
             });
@@ -169,11 +184,13 @@ function onBeforeUserCreate(polar: Polar) {
 
 function onAfterUserCreate(polar: Polar) {
     return async (user: GenericUser, ctx?: GenericEndpointContext) => {
+        const startTotal = Date.now();
         if (!ctx) return;
         try {
             const { result } = await polar.customers.list({
                 email: user.email,
             });
+
             const existingCustomer = result.items[0];
 
             if (existingCustomer && existingCustomer.externalId !== user.id) {
@@ -184,8 +201,16 @@ function onAfterUserCreate(polar: Polar) {
                     },
                 });
             }
+
+            log.debug("onAfterUserCreate - {duration}ms", {
+                duration: Date.now() - startTotal,
+            });
         } catch (e: unknown) {
             const messageOrError = e instanceof Error ? e.message : e;
+            log.error("onAfterUserCreate ERROR {duration}ms: {error}", {
+                duration: Date.now() - startTotal,
+                error: messageOrError,
+            });
             throw new APIError("INTERNAL_SERVER_ERROR", {
                 message: `Polar customer update failed. Error: ${messageOrError}`,
             });

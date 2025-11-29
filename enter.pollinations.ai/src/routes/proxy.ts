@@ -226,8 +226,14 @@ export const proxyRoutes = new Hono<Env>()
             }
         },
     )
-    // Auth required for all endpoints below (API key only - no session cookies)
-    .use(auth({ allowApiKey: true, allowSessionCookie: false }))
+    // Auth required for all endpoints below (API key, OAuth token - no session cookies)
+    .use(
+        auth({
+            allowApiKey: true,
+            allowSessionCookie: false,
+            allowOAuthAccessToken: true,
+        }),
+    )
     .use(frontendKeyRateLimit)
     .use(polar)
     .post(

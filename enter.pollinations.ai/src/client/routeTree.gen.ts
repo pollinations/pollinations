@@ -11,7 +11,11 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as TermsRouteImport } from './routes/terms'
 import { Route as SignInRouteImport } from './routes/sign-in'
+import { Route as DeviceRouteImport } from './routes/device'
+import { Route as CallbackRouteImport } from './routes/callback'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as OauthLoginRouteImport } from './routes/oauth/login'
+import { Route as OauthConsentRouteImport } from './routes/oauth/consent'
 
 const TermsRoute = TermsRouteImport.update({
   id: '/terms',
@@ -23,40 +27,98 @@ const SignInRoute = SignInRouteImport.update({
   path: '/sign-in',
   getParentRoute: () => rootRouteImport,
 } as any)
+const DeviceRoute = DeviceRouteImport.update({
+  id: '/device',
+  path: '/device',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CallbackRoute = CallbackRouteImport.update({
+  id: '/callback',
+  path: '/callback',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const OauthLoginRoute = OauthLoginRouteImport.update({
+  id: '/oauth/login',
+  path: '/oauth/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const OauthConsentRoute = OauthConsentRouteImport.update({
+  id: '/oauth/consent',
+  path: '/oauth/consent',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/callback': typeof CallbackRoute
+  '/device': typeof DeviceRoute
   '/sign-in': typeof SignInRoute
   '/terms': typeof TermsRoute
+  '/oauth/consent': typeof OauthConsentRoute
+  '/oauth/login': typeof OauthLoginRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/callback': typeof CallbackRoute
+  '/device': typeof DeviceRoute
   '/sign-in': typeof SignInRoute
   '/terms': typeof TermsRoute
+  '/oauth/consent': typeof OauthConsentRoute
+  '/oauth/login': typeof OauthLoginRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/callback': typeof CallbackRoute
+  '/device': typeof DeviceRoute
   '/sign-in': typeof SignInRoute
   '/terms': typeof TermsRoute
+  '/oauth/consent': typeof OauthConsentRoute
+  '/oauth/login': typeof OauthLoginRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/sign-in' | '/terms'
+  fullPaths:
+    | '/'
+    | '/callback'
+    | '/device'
+    | '/sign-in'
+    | '/terms'
+    | '/oauth/consent'
+    | '/oauth/login'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/sign-in' | '/terms'
-  id: '__root__' | '/' | '/sign-in' | '/terms'
+  to:
+    | '/'
+    | '/callback'
+    | '/device'
+    | '/sign-in'
+    | '/terms'
+    | '/oauth/consent'
+    | '/oauth/login'
+  id:
+    | '__root__'
+    | '/'
+    | '/callback'
+    | '/device'
+    | '/sign-in'
+    | '/terms'
+    | '/oauth/consent'
+    | '/oauth/login'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  CallbackRoute: typeof CallbackRoute
+  DeviceRoute: typeof DeviceRoute
   SignInRoute: typeof SignInRoute
   TermsRoute: typeof TermsRoute
+  OauthConsentRoute: typeof OauthConsentRoute
+  OauthLoginRoute: typeof OauthLoginRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -75,6 +137,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SignInRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/device': {
+      id: '/device'
+      path: '/device'
+      fullPath: '/device'
+      preLoaderRoute: typeof DeviceRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/callback': {
+      id: '/callback'
+      path: '/callback'
+      fullPath: '/callback'
+      preLoaderRoute: typeof CallbackRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -82,13 +158,31 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/oauth/login': {
+      id: '/oauth/login'
+      path: '/oauth/login'
+      fullPath: '/oauth/login'
+      preLoaderRoute: typeof OauthLoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/oauth/consent': {
+      id: '/oauth/consent'
+      path: '/oauth/consent'
+      fullPath: '/oauth/consent'
+      preLoaderRoute: typeof OauthConsentRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  CallbackRoute: CallbackRoute,
+  DeviceRoute: DeviceRoute,
   SignInRoute: SignInRoute,
   TermsRoute: TermsRoute,
+  OauthConsentRoute: OauthConsentRoute,
+  OauthLoginRoute: OauthLoginRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

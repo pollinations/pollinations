@@ -8,7 +8,13 @@ import {
 } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { APIError } from "better-auth/api";
-import { admin, apiKey, openAPI } from "better-auth/plugins";
+import {
+    admin,
+    apiKey,
+    openAPI,
+    oidcProvider,
+    deviceAuthorization,
+} from "better-auth/plugins";
 import { drizzle } from "drizzle-orm/d1";
 import * as betterAuthSchema from "./db/schema/better-auth.ts";
 
@@ -60,13 +66,83 @@ export function createAuth(env: Cloudflare.Env) {
         disableDefaultReference: true,
     });
 
+    // Device Authorization (RFC 8628) for CLI/IoT login
+    const deviceAuthPlugin = deviceAuthorization({
+        verificationUri: "/device",
+        expiresIn: "10m", // 10 minutes for code entry
+        // Allow any client_id for simplicity (we're the only client)
+        validateClient: async () => true,
+    });
+
+    // OIDC Provider - "Login with Pollinations" for third-party apps
+    const oidcProviderPlugin = oidcProvider({
+        loginPage: "/oauth/login",
+        consentPage: "/oauth/consent",
+        // Trusted first-party clients - bypass DB lookup and skip consent
+        trustedClients: [
+            {
+                clientId: "test-app",
+                clientSecret: "test-secret",
+                type: "web" as const,
+                name: "Test OAuth App",
+                disabled: false,
+                metadata: null,
+                redirectUrls: [
+                    // Allow any localhost callback for dev testing
+                    "http://localhost:3000/callback",
+                    "http://localhost:5173/callback",
+                    "http://localhost:8080/callback",
+                    "http://localhost:8000/callback",
+                    "http://127.0.0.1:3000/callback",
+                    "http://127.0.0.1:5173/callback",
+                    "http://127.0.0.1:8080/callback",
+                    // Test pages that redirect back to themselves
+                    "http://localhost:8080/test-oidc.html",
+                    "http://localhost:3000/test-oidc.html",
+                    "http://localhost:5173/test-oidc.html",
+                    "http://localhost:3000/demo-image-gen.html",
+                    "http://localhost:5173/demo-image-gen.html",
+                    "http://localhost:8080/demo-image-gen.html",
+                    "http://localhost:3000/demo-image-gen",
+                    "http://localhost:5173/demo-image-gen",
+                    "http://localhost:8080/demo-image-gen",
+                ],
+                skipConsent: true,
+            },
+            {
+                clientId: "pollinations-mcp",
+                clientSecret: "mcp-secret",
+                type: "public" as const,
+                name: "Pollinations MCP Server",
+                disabled: false,
+                metadata: null,
+                redirectUrls: [
+                    "http://localhost:3000/callback",
+                    "http://localhost:8080/callback",
+                    "http://127.0.0.1:3000/callback",
+                    "http://127.0.0.1:8080/callback",
+                ],
+                skipConsent: true,
+            },
+        ],
+    });
+
     return betterAuth({
         basePath: "/api/auth",
         database: drizzleAdapter(db, {
             schema: betterAuthSchema,
             provider: "sqlite",
         }),
-        trustedOrigins: ["https://enter.pollinations.ai", "http://localhost"],
+        trustedOrigins: [
+            "https://enter.pollinations.ai",
+            "http://localhost",
+            "http://localhost:3000",
+            "http://localhost:5173",
+            "http://localhost:8080",
+            "http://127.0.0.1:3000",
+            "http://127.0.0.1:5173",
+            "http://127.0.0.1:8080",
+        ],
         user: {
             additionalFields: {
                 githubId: {
@@ -93,8 +169,19 @@ export function createAuth(env: Cloudflare.Env) {
                     githubUsername: profile.login,
                 }),
             },
+            discord: {
+                clientId: env.DISCORD_CLIENT_ID,
+                clientSecret: env.DISCORD_CLIENT_SECRET,
+            },
         },
-        plugins: [adminPlugin, apiKeyPlugin, polarPlugin(polar), openAPIPlugin],
+        plugins: [
+            adminPlugin,
+            apiKeyPlugin,
+            deviceAuthPlugin,
+            polarPlugin(polar),
+            openAPIPlugin,
+            oidcProviderPlugin,
+        ],
         telemetry: { enabled: false },
     });
 }

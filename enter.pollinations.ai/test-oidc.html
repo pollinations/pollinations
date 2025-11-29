@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Login with Pollinations</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 700px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+        h2 {
+            color: #555;
+            font-size: 18px;
+            margin-top: 0;
+        }
+        p {
+            color: #666;
+            line-height: 1.6;
+        }
+        button {
+            background: #f59e0b;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            margin-top: 10px;
+            margin-right: 10px;
+        }
+        button:hover {
+            background: #d97706;
+        }
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        .result {
+            margin-top: 20px;
+            padding: 15px;
+            background: #f0f0f0;
+            border-radius: 8px;
+            font-family: monospace;
+            font-size: 13px;
+            word-break: break-all;
+            white-space: pre-wrap;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .success { background: #d1fae5; color: #065f46; }
+        .error { background: #fee2e2; color: #991b1b; }
+        .info { background: #dbeafe; color: #1e40af; }
+        .warning { background: #fef3c7; color: #92400e; }
+        .step {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin: 10px 0;
+            padding: 10px;
+            background: #f9fafb;
+            border-radius: 8px;
+        }
+        .step-num {
+            background: #f59e0b;
+            color: white;
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            flex-shrink: 0;
+        }
+        .step.done .step-num { background: #10b981; }
+        .step.active .step-num { background: #3b82f6; }
+        .token-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+            font-size: 13px;
+        }
+        .token-table th {
+            background: #f59e0b;
+            color: white;
+            padding: 10px;
+            text-align: left;
+            font-weight: 600;
+        }
+        .token-table td {
+            padding: 10px;
+            border-bottom: 1px solid #e5e7eb;
+            vertical-align: top;
+        }
+        .token-table tr:hover {
+            background: #fef3c7;
+        }
+        .token-label {
+            font-weight: 600;
+            color: #374151;
+            white-space: nowrap;
+        }
+        .token-value {
+            font-family: monospace;
+            word-break: break-all;
+            color: #1f2937;
+            max-width: 400px;
+        }
+        .token-value.truncated {
+            cursor: pointer;
+        }
+        .token-value.truncated:hover {
+            color: #f59e0b;
+        }
+        .copy-btn {
+            background: #e5e7eb;
+            border: none;
+            padding: 4px 8px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 11px;
+            margin-left: 8px;
+        }
+        .copy-btn:hover {
+            background: #d1d5db;
+        }
+        .jwt-claims {
+            background: #f0fdf4;
+            padding: 10px;
+            border-radius: 6px;
+            margin-top: 10px;
+            font-size: 12px;
+        }
+        .jwt-claims h4 {
+            margin: 0 0 8px 0;
+            color: #166534;
+        }
+        .claim-row {
+            display: flex;
+            gap: 10px;
+            padding: 4px 0;
+            border-bottom: 1px solid #dcfce7;
+        }
+        .claim-key {
+            font-weight: 600;
+            color: #166534;
+            min-width: 100px;
+        }
+        .claim-value {
+            color: #15803d;
+            word-break: break-all;
+        }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h1>🐝 Test OIDC Provider</h1>
+        <p>Complete OAuth 2.0 flow test for Pollinations OIDC Provider.</p>
+        
+        <div class="step" id="step1">
+            <span class="step-num">1</span>
+            <span>Get Authorization Code</span>
+        </div>
+        <div class="step" id="step2">
+            <span class="step-num">2</span>
+            <span>Exchange Code for Tokens</span>
+        </div>
+        
+        <button onclick="startLogin()" id="loginBtn">Start OAuth Flow</button>
+        <button onclick="resetFlow()" id="resetBtn" style="background: #6b7280;">Reset</button>
+        <button onclick="testApiCall()" id="testApiBtn" style="background: #8b5cf6; display: none;">Test API Call</button>
+        
+        <div id="result"></div>
+        
+        <div id="tokenDisplay" style="display: none; margin-top: 20px;"></div>
+        
+        <div id="apiResult" style="display: none; margin-top: 20px; padding: 15px; background: #1e1e2e; border-radius: 8px; border: 1px solid #6366f1;">
+            <h3 style="margin: 0 0 10px 0; color: #a5b4fc;">API Response</h3>
+            <pre id="apiResponse" style="margin: 0; white-space: pre-wrap; word-break: break-all; color: #e2e8f0; font-size: 12px;"></pre>
+        </div>
+    </div>
+
+    <script>
+        const CLIENT_ID = 'test-app';
+        const CLIENT_SECRET = 'test-secret';
+        // Redirect back to THIS page (not /callback)
+        const REDIRECT_URI = window.location.origin + window.location.pathname;
+        const AUTH_SERVER = 'http://localhost:3000';
+        const SCOPES = 'openid profile email';
+        
+        // Store state for verification
+        let savedState = localStorage.getItem('oauth_state');
+        let savedRedirectUri = localStorage.getItem('oauth_redirect_uri');
+        let accessToken = null;
+
+        // Check if we're returning from OAuth flow
+        window.onload = async function() {
+            const params = new URLSearchParams(window.location.search);
+            const code = params.get('code');
+            const state = params.get('state');
+            const error = params.get('error');
+            
+            if (error) {
+                const errorDesc = params.get('error_description') || 'Unknown error';
+                showResult('error', `❌ Authorization failed!\n\nError: ${error}\nDescription: ${errorDesc}`);
+                markStep(1, 'error');
+                cleanUrl();
+                return;
+            }
+            
+            if (code) {
+                markStep(1, 'done');
+                showResult('info', `✅ Step 1 Complete!\n\nCode: ${code}\nState: ${state}\n\n🔄 Exchanging code for tokens...`);
+                
+                // Verify state
+                if (savedState && state !== savedState) {
+                    showResult('error', `❌ State mismatch!\n\nExpected: ${savedState}\nReceived: ${state}`);
+                    cleanUrl();
+                    return;
+                }
+                
+                // Step 2: Exchange code for tokens
+                markStep(2, 'active');
+                await exchangeCodeForTokens(code);
+                
+                // Clean URL after token exchange
+                cleanUrl();
+            }
+        };
+
+        function startLogin() {
+            // Generate and save state
+            savedState = generateState();
+            savedRedirectUri = REDIRECT_URI;
+            localStorage.setItem('oauth_state', savedState);
+            localStorage.setItem('oauth_redirect_uri', savedRedirectUri);
+            
+            markStep(1, 'active');
+            showResult('info', '🔄 Redirecting to authorization server...');
+            
+            // Build authorization URL
+            const authUrl = new URL(`${AUTH_SERVER}/api/auth/oauth2/authorize`);
+            authUrl.searchParams.set('client_id', CLIENT_ID);
+            authUrl.searchParams.set('redirect_uri', REDIRECT_URI);
+            authUrl.searchParams.set('response_type', 'code');
+            authUrl.searchParams.set('scope', SCOPES);
+            authUrl.searchParams.set('state', savedState);
+            
+            window.location.href = authUrl.toString();
+        }
+
+        async function exchangeCodeForTokens(code) {
+            try {
+                const response = await fetch(`${AUTH_SERVER}/api/auth/oauth2/token`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: new URLSearchParams({
+                        grant_type: 'authorization_code',
+                        code: code,
+                        redirect_uri: savedRedirectUri || REDIRECT_URI,
+                        client_id: CLIENT_ID,
+                        client_secret: CLIENT_SECRET,
+                    }),
+                });
+                
+                const text = await response.text();
+                let data;
+                try {
+                    data = JSON.parse(text);
+                } catch (e) {
+                    markStep(2, 'error');
+                    showResult('error', `❌ Token exchange failed!\n\nStatus: ${response.status}\nResponse: ${text || '(empty)'}`);
+                    return;
+                }
+                
+                if (!response.ok) {
+                    markStep(2, 'error');
+                    showResult('error', `❌ Token exchange failed!\n\nStatus: ${response.status}\n\n${JSON.stringify(data, null, 2)}`);
+                    return;
+                }
+                
+                markStep(2, 'done');
+                accessToken = data.access_token;
+                
+                // Display tokens in a nice table
+                displayTokens(data);
+                
+                // Show the Test API button now that we have tokens
+                showTestApiButton();
+                
+                showResult('success', `🎉 OAuth Flow Complete! Tokens received.\n\n📝 Click "Test API Call" to make an API request with your access token.`);
+                
+            } catch (err) {
+                markStep(2, 'error');
+                showResult('error', `❌ Token exchange error!\n\n${err.message}`);
+            }
+        }
+
+
+        function resetFlow() {
+            localStorage.removeItem('oauth_state');
+            localStorage.removeItem('oauth_redirect_uri');
+            accessToken = null;
+            savedState = null;
+            savedRedirectUri = null;
+            
+            document.querySelectorAll('.step').forEach(el => {
+                el.classList.remove('done', 'active', 'error');
+            });
+            
+            document.getElementById('result').className = 'result';
+            document.getElementById('result').textContent = '';
+            document.getElementById('testApiBtn').style.display = 'none';
+            document.getElementById('apiResult').style.display = 'none';
+            document.getElementById('tokenDisplay').style.display = 'none';
+            cleanUrl();
+        }
+
+        function showResult(type, message) {
+            const el = document.getElementById('result');
+            el.className = 'result ' + type;
+            el.textContent = message;
+        }
+
+        function markStep(num, status) {
+            const step = document.getElementById(`step${num}`);
+            step.classList.remove('done', 'active', 'error');
+            if (status) step.classList.add(status);
+        }
+
+        function generateState() {
+            return Math.random().toString(36).substring(2, 15);
+        }
+
+        function cleanUrl() {
+            window.history.replaceState({}, document.title, window.location.pathname);
+        }
+
+        async function testApiCall() {
+            if (!accessToken) {
+                alert('No access token available. Complete the OAuth flow first.');
+                return;
+            }
+
+            const apiResultDiv = document.getElementById('apiResult');
+            const apiResponsePre = document.getElementById('apiResponse');
+            
+            apiResultDiv.style.display = 'block';
+            apiResponsePre.textContent = '🔄 Making API call with OAuth access token...';
+
+            try {
+                // Test the simple text endpoint with gemini-search for current news
+                const prompt = encodeURIComponent('What are the latest news and developments around OAuth authentication and AI? Give a brief summary.');
+                const response = await fetch(`${AUTH_SERVER}/api/generate/text/${prompt}?model=gemini-search`, {
+                    headers: {
+                        'Authorization': `Bearer ${accessToken}`,
+                    },
+                });
+
+                const text = await response.text();
+                
+                if (response.ok) {
+                    apiResponsePre.textContent = `✅ API Call Successful! (HTTP ${response.status})\n\nEndpoint: GET /api/generate/text/...\nAuth: Bearer ${accessToken.substring(0, 8)}...\n\nResponse:\n${text}`;
+                } else {
+                    apiResponsePre.textContent = `❌ API Call Failed (HTTP ${response.status})\n\nEndpoint: GET /api/generate/text/...\nAuth: Bearer ${accessToken.substring(0, 8)}...\n\nResponse:\n${text}`;
+                }
+            } catch (err) {
+                apiResponsePre.textContent = `❌ API Call Error\n\n${err.message}`;
+            }
+        }
+
+        function showTestApiButton() {
+            document.getElementById('testApiBtn').style.display = 'inline-block';
+        }
+
+        function displayTokens(tokenData) {
+            const container = document.getElementById('tokenDisplay');
+            container.style.display = 'block';
+            
+            // Decode JWT id_token if present
+            let jwtClaims = null;
+            if (tokenData.id_token) {
+                try {
+                    const parts = tokenData.id_token.split('.');
+                    if (parts.length === 3) {
+                        jwtClaims = JSON.parse(atob(parts[1]));
+                    }
+                } catch (e) {
+                    console.error('Failed to decode JWT:', e);
+                }
+            }
+
+            // Build the table HTML
+            let html = `
+                <h3 style="margin: 0 0 10px 0; color: #374151;">🎫 OAuth Tokens</h3>
+                <table class="token-table">
+                    <thead>
+                        <tr>
+                            <th>Token</th>
+                            <th>Value</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+
+            // Add each token field
+            const fields = [
+                { key: 'access_token', label: '🔑 Access Token', copyable: true },
+                { key: 'token_type', label: '📋 Token Type' },
+                { key: 'expires_in', label: '⏱️ Expires In', format: (v) => `${v} seconds (${Math.round(v/60)} min)` },
+                { key: 'scope', label: '🎯 Scope' },
+                { key: 'refresh_token', label: '🔄 Refresh Token', copyable: true },
+                { key: 'id_token', label: '🪪 ID Token', truncate: true, copyable: true },
+            ];
+
+            for (const field of fields) {
+                const value = tokenData[field.key];
+                if (value === undefined) continue;
+                
+                let displayValue = field.format ? field.format(value) : value;
+                let valueClass = 'token-value';
+                
+                if (field.truncate && displayValue.length > 50) {
+                    valueClass += ' truncated';
+                    displayValue = displayValue.substring(0, 50) + '...';
+                }
+
+                const copyBtn = field.copyable 
+                    ? `<button class="copy-btn" onclick="copyToClipboard('${tokenData[field.key]}')">Copy</button>`
+                    : '';
+
+                html += `
+                    <tr>
+                        <td class="token-label">${field.label}</td>
+                        <td class="${valueClass}">${displayValue}${copyBtn}</td>
+                    </tr>
+                `;
+            }
+
+            html += `</tbody></table>`;
+
+            // Add JWT claims if available
+            if (jwtClaims) {
+                html += `
+                    <div class="jwt-claims">
+                        <h4>🪪 ID Token Claims (decoded)</h4>
+                `;
+                
+                const claimLabels = {
+                    sub: '👤 Subject (User ID)',
+                    aud: '🎯 Audience (Client)',
+                    iss: '🏢 Issuer',
+                    iat: '📅 Issued At',
+                    exp: '⏰ Expires',
+                    name: '📛 Name',
+                    email: '📧 Email',
+                    email_verified: '✅ Email Verified',
+                    given_name: '👤 Given Name',
+                    profile: '🖼️ Profile URL',
+                };
+
+                for (const [key, value] of Object.entries(jwtClaims)) {
+                    let displayValue = value;
+                    if (key === 'iat' || key === 'exp') {
+                        displayValue = new Date(value * 1000).toLocaleString();
+                    }
+                    const label = claimLabels[key] || key;
+                    html += `<div class="claim-row"><span class="claim-key">${label}</span><span class="claim-value">${displayValue}</span></div>`;
+                }
+                
+                html += `</div>`;
+            }
+
+            container.innerHTML = html;
+        }
+
+        function copyToClipboard(text) {
+            navigator.clipboard.writeText(text).then(() => {
+                alert('Copied to clipboard!');
+            }).catch(err => {
+                console.error('Failed to copy:', err);
+            });
+        }
+    </script>
+</body>
+</html>

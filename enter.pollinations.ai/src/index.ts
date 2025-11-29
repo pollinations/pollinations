@@ -26,8 +26,57 @@ export const api = new Hono<Env>()
 
 const docsRoutes = createDocsRoutes(api);
 
+// Check if request is for the gen.pollinations.ai API gateway
+function isGenDomain(hostname: string): boolean {
+    return hostname === "gen.pollinations.ai" || hostname === "gen.localhost";
+}
+
 const app = new Hono<Env>()
+    // Path rewriting middleware for gen.pollinations.ai
+    .use("*", async (c, next) => {
+        const hostname = new URL(c.req.url).hostname;
+        if (isGenDomain(hostname)) {
+            const path = c.req.path;
+
+            // Redirect root to /api/docs
+            if (path === "/" || path === "/docs") {
+                return c.redirect("/api/docs", 302);
+            }
+
+            // Convenience: /models -> /api/generate/text/models (most common use case)
+            if (path === "/models") {
+                c.req.raw = new Request(
+                    c.req.url.replace(path, "/api/generate/text/models"),
+                    c.req.raw,
+                );
+                return await next();
+            }
+
+            // Don't rewrite /assets, /api, or static files - let them fall through
+            if (
+                path.startsWith("/api/") ||
+                path.startsWith("/assets/") ||
+                path.match(/\.(js|css|png|jpg|svg|ico|webmanifest)$/)
+            ) {
+                return await next();
+            }
+
+            // Rewrite API paths: /image/*, /text/*, /v1/*, /openai -> /api/generate/*
+            // Examples:
+            //   /image/models -> /api/generate/image/models
+            //   /image/my-prompt -> /api/generate/image/my-prompt
+            //   /text/hello -> /api/generate/text/hello
+            //   /v1/chat/completions -> /api/generate/v1/chat/completions
+            //   /openai -> /api/generate/openai
+            c.req.raw = new Request(
+                c.req.url.replace(path, "/api/generate" + path),
+                c.req.raw,
+            );
+        }
+        await next();
+    })
     // Permissive CORS for public API endpoints (require API keys)
+    // Also applies to gen.pollinations.ai root paths (rewritten to /api/generate)
     .use(
         "/api/generate/*",
         cors({
@@ -62,6 +111,10 @@ const app = new Hono<Env>()
     .route("/api/docs", docsRoutes);
 
 app.notFound(async (c) => {
+    // Serve static assets for non-API routes (needed for gen.pollinations.ai)
+    if (c.env.ASSETS) {
+        return c.env.ASSETS.fetch(c.req.raw);
+    }
     return await handleError(new HTTPException(404), c);
 });
 

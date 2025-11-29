@@ -1,5 +1,5 @@
 import { createRouter, RouterProvider } from "@tanstack/react-router";
-import { apiKeyClient } from "better-auth/client/plugins";
+import { apiKeyClient, oidcClient } from "better-auth/client/plugins";
 import { createAuthClient } from "better-auth/react";
 import { hc } from "hono/client";
 import { type FC, type PropsWithChildren, StrictMode } from "react";
@@ -22,6 +22,7 @@ const authClient = createAuthClient({
     basePath: config.authPath,
     plugins: [
         apiKeyClient(),
+        oidcClient(),
         inferAdditionalFields<ReturnType<typeof createAuth>>(),
     ],
 });

@@ -1,16 +1,18 @@
 #!/bin/bash
 # =============================================================================
 # Device Authorization Flow Test Script (RFC 8628)
+# Uses better-auth's official deviceAuthorization plugin
 # =============================================================================
-# This script tests the OAuth 2.0 Device Authorization Grant flow.
-# The access_token returned can be used as a Bearer token for all API calls.
-#
-# Usage:
-#   ./test-device-flow.sh                    # Use default local URL
-#   ./test-device-flow.sh https://enter.pollinations.ai/api  # Use production
+# 
+# Flow:
+# 1. POST /api/auth/device/code - Get device_code and user_code
+# 2. User visits verification URL and approves in browser
+# 3. POST /api/auth/device/token - Poll for session token
+# 4. POST /api/device/exchange-for-api-key - Exchange session for API key
 # =============================================================================
 
 API_URL="${1:-http://localhost:3001/api}"
+CLIENT_ID="${2:-pollinations-cli}"
 
 echo "=============================================="
 echo "Device Authorization Flow Test (RFC 8628)"
@@ -19,16 +21,19 @@ echo "API URL: $API_URL"
 echo ""
 
 echo "1. Requesting device code..."
-RESPONSE=$(curl -s -X POST "$API_URL/device/code")
+RESPONSE=$(curl -s -X POST "$API_URL/auth/device/code" \
+  -H "Content-Type: application/json" \
+  -d "{\"client_id\": \"$CLIENT_ID\"}")
 echo "Response: $RESPONSE"
 
-DEVICE_CODE=$(echo $RESPONSE | jq -r '.device_code')
-USER_CODE=$(echo $RESPONSE | jq -r '.user_code')
-VERIFICATION_URI=$(echo $RESPONSE | jq -r '.verification_uri')
-TOKEN_TYPE=$(echo $RESPONSE | jq -r '.token_type // "Bearer"')
+DEVICE_CODE=$(echo $RESPONSE | jq -r '.device_code // .deviceCode')
+USER_CODE=$(echo $RESPONSE | jq -r '.user_code // .userCode')
+VERIFICATION_URI=$(echo $RESPONSE | jq -r '.verification_uri // .verificationUri')
+INTERVAL=$(echo $RESPONSE | jq -r '.interval // 5')
 
-if [ "$DEVICE_CODE" == "null" ]; then
+if [ "$DEVICE_CODE" == "null" ] || [ -z "$DEVICE_CODE" ]; then
     echo "❌ Failed to get device code"
+    echo "Response: $RESPONSE"
     exit 1
 fi
 
@@ -46,49 +51,64 @@ sleep 2
 
 echo "2. Polling for token..."
 while true; do
-    POLL_RESPONSE=$(curl -s -X POST "$API_URL/device/token" -H "Content-Type: application/json" -d "{\"device_code\": \"$DEVICE_CODE\"}")
-    ERROR=$(echo $POLL_RESPONSE | jq -r '.error')
+    POLL_RESPONSE=$(curl -s -X POST "$API_URL/auth/device/token" \
+      -H "Content-Type: application/json" \
+      -d "{
+        \"grant_type\": \"urn:ietf:params:oauth:grant-type:device_code\",
+        \"device_code\": \"$DEVICE_CODE\",
+        \"client_id\": \"$CLIENT_ID\"
+      }")
+    
+    ERROR=$(echo $POLL_RESPONSE | jq -r '.error // "null"')
+    ACCESS_TOKEN=$(echo $POLL_RESPONSE | jq -r '.access_token // .accessToken // "null"')
     
     if [ "$ERROR" == "authorization_pending" ]; then
-        echo "⏳ Authorization pending... waiting 5s"
-        sleep 5
-    elif [ "$ERROR" == "null" ]; then
-        ACCESS_TOKEN=$(echo $POLL_RESPONSE | jq -r '.access_token')
-        TOKEN_TYPE=$(echo $POLL_RESPONSE | jq -r '.token_type')
-        EXPIRES_IN=$(echo $POLL_RESPONSE | jq -r '.expires_in')
-        echo "✅ Success!"
-        echo "   Token Type: $TOKEN_TYPE"
-        echo "   Expires In: $EXPIRES_IN seconds"
-        echo "   Access Token: ${ACCESS_TOKEN:0:20}..."
+        echo "⏳ Authorization pending... waiting ${INTERVAL}s"
+        sleep $INTERVAL
+    elif [ "$ACCESS_TOKEN" != "null" ] && [ -n "$ACCESS_TOKEN" ]; then
+        echo "✅ Got session token!"
+        echo "   Token: ${ACCESS_TOKEN:0:20}..."
         break
-    else
+    elif [ "$ERROR" != "null" ]; then
         echo "❌ Error: $ERROR"
+        echo "Response: $POLL_RESPONSE"
         exit 1
+    else
+        echo "⏳ Waiting... (response: $POLL_RESPONSE)"
+        sleep $INTERVAL
     fi
 done
 
 echo ""
-echo "3. Testing API key with /api/generate routes..."
+echo "3. Exchanging session token for API key..."
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo ""
 
-# The access_token is now a real sk_ API key that works with /api/generate
-echo "3a. GET /api/generate/v1/models (list available text models)"
-MODELS_RESPONSE=$(curl -s "$API_URL/generate/v1/models" -H "Authorization: Bearer $ACCESS_TOKEN")
-echo "Models: $MODELS_RESPONSE" | jq '.data[].id' 2>/dev/null || echo "$MODELS_RESPONSE"
-
-echo ""
-echo "3b. POST /api/generate/v1/chat/completions (text generation)"
-TEXT_RESPONSE=$(curl -s "$API_URL/generate/v1/chat/completions" \
+EXCHANGE_RESPONSE=$(curl -s -X POST "$API_URL/device/exchange-for-api-key" \
   -H "Authorization: Bearer $ACCESS_TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{"model": "openai", "messages": [{"role": "user", "content": "Say hello in one word"}]}')
-echo "Text Response: $TEXT_RESPONSE" | jq '.choices[0].message.content' 2>/dev/null || echo "$TEXT_RESPONSE"
+  -H "Content-Type: application/json")
 
+API_KEY=$(echo $EXCHANGE_RESPONSE | jq -r '.api_key // "null"')
+KEY_NAME=$(echo $EXCHANGE_RESPONSE | jq -r '.key_name // "null"')
+
+if [ "$API_KEY" == "null" ] || [ -z "$API_KEY" ]; then
+    echo "❌ Failed to exchange for API key"
+    echo "Response: $EXCHANGE_RESPONSE"
+    exit 1
+fi
+
+echo "✅ Got API key!"
+echo "   Key Name: $KEY_NAME"
+echo "   API Key: ${API_KEY:0:15}..."
 echo ""
-echo "3c. GET /api/generate/image/models (list available image models)"
-IMAGE_MODELS=$(curl -s "$API_URL/generate/image/models" -H "Authorization: Bearer $ACCESS_TOKEN")
-echo "Image Models: $IMAGE_MODELS" | jq '.[].name' 2>/dev/null || echo "$IMAGE_MODELS"
+
+echo "4. Testing API key with /api/generate..."
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo ""
+
+echo "4a. GET /api/generate/v1/models"
+MODELS_RESPONSE=$(curl -s "$API_URL/generate/v1/models" -H "Authorization: Bearer $API_KEY")
+echo "Models: $(echo $MODELS_RESPONSE | jq -r '.data[].id' 2>/dev/null | head -5 || echo "$MODELS_RESPONSE")"
 
 echo ""
 echo "=============================================="
@@ -97,15 +117,11 @@ echo "=============================================="
 echo ""
 echo "Your API key is ready to use:"
 echo ""
-echo "  export POLLINATIONS_API_KEY='$ACCESS_TOKEN'"
+echo "  export POLLINATIONS_API_KEY='$API_KEY'"
 echo ""
 echo "  # Generate text"
 echo "  curl -H 'Authorization: Bearer \$POLLINATIONS_API_KEY' \\"
 echo "       -H 'Content-Type: application/json' \\"
 echo "       -d '{\"model\": \"openai\", \"messages\": [{\"role\": \"user\", \"content\": \"Hello!\"}]}' \\"
 echo "       $API_URL/generate/v1/chat/completions"
-echo ""
-echo "  # Generate image"
-echo "  curl -H 'Authorization: Bearer \$POLLINATIONS_API_KEY' \\"
-echo "       '$API_URL/generate/image/A%20cute%20robot' -o robot.jpg"
 echo ""

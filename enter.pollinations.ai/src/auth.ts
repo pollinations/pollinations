@@ -8,7 +8,13 @@ import {
 } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { APIError } from "better-auth/api";
-import { admin, apiKey, openAPI } from "better-auth/plugins";
+import {
+    admin,
+    apiKey,
+    openAPI,
+    oidcProvider,
+    deviceAuthorization,
+} from "better-auth/plugins";
 import { drizzle } from "drizzle-orm/d1";
 import * as betterAuthSchema from "./db/schema/better-auth.ts";
 
@@ -60,6 +66,22 @@ export function createAuth(env: Cloudflare.Env) {
         disableDefaultReference: true,
     });
 
+    // Device Authorization (RFC 8628) for CLI/IoT login
+    const deviceAuthPlugin = deviceAuthorization({
+        verificationUri: "/device",
+        expiresIn: "10m", // 10 minutes for code entry
+        // Allow any client_id for simplicity (we're the only client)
+        validateClient: async () => true,
+    });
+
+    // OIDC Provider - "Login with Pollinations" for third-party apps
+    const oidcProviderPlugin = oidcProvider({
+        loginPage: "/sign-in",
+        consentPage: "/oauth/consent",
+        // Trusted first-party clients can skip consent
+        // Third-party apps will be registered dynamically via API
+    });
+
     return betterAuth({
         basePath: "/api/auth",
         database: drizzleAdapter(db, {
@@ -94,7 +116,14 @@ export function createAuth(env: Cloudflare.Env) {
                 }),
             },
         },
-        plugins: [adminPlugin, apiKeyPlugin, polarPlugin(polar), openAPIPlugin],
+        plugins: [
+            adminPlugin,
+            apiKeyPlugin,
+            deviceAuthPlugin,
+            polarPlugin(polar),
+            openAPIPlugin,
+            oidcProviderPlugin,
+        ],
         telemetry: { enabled: false },
     });
 }

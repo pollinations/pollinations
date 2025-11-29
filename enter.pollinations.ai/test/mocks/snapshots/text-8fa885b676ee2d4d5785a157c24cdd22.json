@@ -1,0 +1,77 @@
+{
+  "request": {
+    "url": "http://ec2-3-80-56-235.compute-1.amazonaws.com:16385/openai",
+    "method": "POST",
+    "body": {
+      "type": "json",
+      "data": {
+        "model": "gemini-search",
+        "messages": [
+          {
+            "role": "user",
+            "content": "Reply: yes or no?"
+          }
+        ]
+      }
+    },
+    "params": {}
+  },
+  "response": {
+    "status": 200,
+    "statusText": "OK",
+    "headers": {
+      "access-control-allow-origin": "*",
+      "connection": "keep-alive",
+      "content-length": "717",
+      "content-type": "application/json; charset=utf-8",
+      "date": "Sat, 29 Nov 2025 21:02:16 GMT",
+      "etag": "W/\"2cd-tcAQOFLqmAXC3vG9Pw7YmaqJgjA\"",
+      "keep-alive": "timeout=5",
+      "x-model-used": "gemini-2.5-flash-lite",
+      "x-powered-by": "Express",
+      "x-usage-completion-text-tokens": "24",
+      "x-usage-prompt-text-tokens": "6",
+      "x-usage-total-tokens": "30"
+    },
+    "body": {
+      "type": "json",
+      "data": {
+        "id": "pllns_247c9ebd3bf8f6cee8ed3c6a99b6ca1f",
+        "object": "chat.completion",
+        "created": 1764450136,
+        "model": "gemini-2.5-flash-lite",
+        "provider": "vertex-ai",
+        "choices": [
+          {
+            "message": {
+              "role": "assistant",
+              "content": "I need more context to answer \"yes\" or \"no\". Please provide the question you would like me to answer.",
+              "content_blocks": [
+                {
+                  "type": "text",
+                  "text": "I need more context to answer \"yes\" or \"no\". Please provide the question you would like me to answer."
+                }
+              ]
+            },
+            "index": 0,
+            "finish_reason": "STOP",
+            "groundingMetadata": {}
+          }
+        ],
+        "usage": {
+          "prompt_tokens": 6,
+          "completion_tokens": 24,
+          "total_tokens": 30,
+          "completion_tokens_details": {
+            "reasoning_tokens": 0,
+            "audio_tokens": 0
+          },
+          "prompt_tokens_details": {
+            "cached_tokens": 0,
+            "audio_tokens": 0
+          }
+        }
+      }
+    }
+  }
+}

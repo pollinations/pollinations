@@ -83,7 +83,7 @@ export async function processEvents(
         }
     }
     // Clear successfully sent events
-    clearExpiredEvents(db);
+    await clearExpiredEvents(db);
 }
 
 type PendingEventsStats = {
@@ -221,13 +221,12 @@ async function confirmProcessingEvents(
 }
 
 async function clearExpiredEvents(db: DrizzleD1Database): Promise<void> {
+    // Calculate timestamp for 1 day ago (createdAt is stored as Unix timestamp integer)
+    const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
     await db
         .delete(event)
         .where(
-            and(
-                eq(event.eventStatus, "sent"),
-                lt(event.createdAt, sql`strftime('%s', 'now', '-1 day')`),
-            ),
+            and(eq(event.eventStatus, "sent"), lt(event.createdAt, oneDayAgo)),
         );
 }
 

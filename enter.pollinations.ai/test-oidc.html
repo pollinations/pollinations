@@ -180,10 +180,6 @@
             <span class="step-num">2</span>
             <span>Exchange Code for Tokens</span>
         </div>
-        <div class="step" id="step3">
-            <span class="step-num">3</span>
-            <span>Get User Info</span>
-        </div>
         
         <button onclick="startLogin()" id="loginBtn">Start OAuth Flow</button>
         <button onclick="resetFlow()" id="resetBtn" style="background: #6b7280;">Reset</button>
@@ -309,11 +305,7 @@
                 // Show the Test API button now that we have tokens
                 showTestApiButton();
                 
-                showResult('success', `✅ Step 2 Complete! Tokens received.\n\n🔄 Fetching user info...`);
-                
-                // Step 3: Get user info
-                markStep(3, 'active');
-                await getUserInfo(data.access_token);
+                showResult('success', `🎉 OAuth Flow Complete! Tokens received.\n\n📝 Click "Test API Call" to make an API request with your access token.`);
                 
             } catch (err) {
                 markStep(2, 'error');
@@ -321,36 +313,6 @@
             }
         }
 
-        async function getUserInfo(token) {
-            try {
-                const response = await fetch(`${AUTH_SERVER}/api/auth/oauth2/userinfo`, {
-                    headers: {
-                        'Authorization': `Bearer ${token}`,
-                    },
-                });
-                
-                const text = await response.text();
-                let data;
-                try {
-                    data = text ? JSON.parse(text) : {};
-                } catch (e) {
-                    data = { raw: text || '(empty response)' };
-                }
-                
-                if (!response.ok) {
-                    markStep(3, 'error');
-                    showResult('warning', `⚠️ User info endpoint returned ${response.status}, but tokens work!\n\nClick "Test API Call" to verify the access token works for API requests.`);
-                    return;
-                }
-                
-                markStep(3, 'done');
-                showResult('success', `🎉 OAuth Flow Complete!\n\nUser Info:\n${JSON.stringify(data, null, 2)}\n\n📝 Click "Test API Call" to make an API request with your access token.`);
-                
-            } catch (err) {
-                markStep(3, 'error');
-                showResult('warning', `⚠️ User info error: ${err.message}\n\nBut tokens were received! Click "Test API Call" to verify.`);
-            }
-        }
 
         function resetFlow() {
             localStorage.removeItem('oauth_state');

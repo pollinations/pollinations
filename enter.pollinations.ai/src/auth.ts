@@ -76,7 +76,7 @@ export function createAuth(env: Cloudflare.Env) {
 
     // OIDC Provider - "Login with Pollinations" for third-party apps
     const oidcProviderPlugin = oidcProvider({
-        loginPage: "/sign-in",
+        loginPage: "/oauth/login",
         consentPage: "/oauth/consent",
         // Trusted first-party clients - bypass DB lookup and skip consent
         trustedClients: [
@@ -100,6 +100,12 @@ export function createAuth(env: Cloudflare.Env) {
                     "http://localhost:8080/test-oidc.html",
                     "http://localhost:3000/test-oidc.html",
                     "http://localhost:5173/test-oidc.html",
+                    "http://localhost:3000/demo-image-gen.html",
+                    "http://localhost:5173/demo-image-gen.html",
+                    "http://localhost:8080/demo-image-gen.html",
+                    "http://localhost:3000/demo-image-gen",
+                    "http://localhost:5173/demo-image-gen",
+                    "http://localhost:8080/demo-image-gen",
                 ],
                 skipConsent: true,
             },
@@ -127,7 +133,16 @@ export function createAuth(env: Cloudflare.Env) {
             schema: betterAuthSchema,
             provider: "sqlite",
         }),
-        trustedOrigins: ["https://enter.pollinations.ai", "http://localhost"],
+        trustedOrigins: [
+            "https://enter.pollinations.ai",
+            "http://localhost",
+            "http://localhost:3000",
+            "http://localhost:5173",
+            "http://localhost:8080",
+            "http://127.0.0.1:3000",
+            "http://127.0.0.1:5173",
+            "http://127.0.0.1:8080",
+        ],
         user: {
             additionalFields: {
                 githubId: {

@@ -267,20 +267,32 @@ export async function deleteCacheEntry(
     let vectorDeleted = false;
 
     // Delete from R2
+    // Note: R2 delete() returns void and doesn't throw if key doesn't exist
+    // We first check if the object exists to provide accurate feedback
     try {
-        await env.IMAGE_BUCKET.delete(cacheKey);
-        console.log("[DELETE] Deleted from R2:", cacheKey);
-        r2Deleted = true;
+        const existingObject = await env.IMAGE_BUCKET.head(cacheKey);
+        if (existingObject) {
+            await env.IMAGE_BUCKET.delete(cacheKey);
+            console.log("[DELETE] Deleted from R2:", cacheKey);
+            r2Deleted = true;
+        } else {
+            console.log("[DELETE] Object not found in R2:", cacheKey);
+        }
     } catch (error) {
         console.error("[DELETE] Error deleting from R2:", error);
     }
 
     // Delete from Vectorize
+    // Note: Vectorize deletes are asynchronous and may take a few seconds to propagate
     try {
         const vectorStore = createVectorizeStore(env.VECTORIZE_INDEX);
         const vectorId = await createSimpleHash(cacheKey);
         vectorDeleted = await vectorStore.deleteById(vectorId);
-        console.log("[DELETE] Deleted from Vectorize:", vectorId);
+        if (vectorDeleted) {
+            console.log("[DELETE] Deleted from Vectorize:", vectorId);
+        } else {
+            console.log("[DELETE] Vector not found or delete failed:", vectorId);
+        }
     } catch (error) {
         console.error("[DELETE] Error deleting from Vectorize:", error);
     }

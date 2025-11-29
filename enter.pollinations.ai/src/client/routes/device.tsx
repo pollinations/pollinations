@@ -1,5 +1,5 @@
-import { createFileRoute, redirect } from "@tanstack/react-router";
-import { useState, useEffect } from "react";
+import { createFileRoute } from "@tanstack/react-router";
+import { useState, useEffect, useCallback } from "react";
 
 export const Route = createFileRoute("/device")({
     component: DeviceVerification,
@@ -23,57 +23,63 @@ function DeviceVerification() {
         "idle" | "loading" | "success" | "error"
     >("idle");
     const [message, setMessage] = useState("");
-    const { auth, user } = Route.useRouteContext();
+    const { user } = Route.useRouteContext();
+
+    const handleSubmit = useCallback(
+        async (e?: React.FormEvent) => {
+            e?.preventDefault();
+            setStatus("loading");
+
+            try {
+                // Format code: remove dashes and spaces
+                const formattedCode = userCode
+                    .replace(/[-\s]/g, "")
+                    .toUpperCase();
+
+                // Approve the device directly - it validates the code internally
+                const approveRes = await fetch("/api/auth/device/approve", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    credentials: "include",
+                    body: JSON.stringify({
+                        userCode: formattedCode,
+                    }),
+                });
+
+                const approveData = (await approveRes.json()) as Record<
+                    string,
+                    unknown
+                >;
+
+                if (!approveRes.ok) {
+                    if (approveRes.status === 401) {
+                        throw new Error("Please sign in to verify device");
+                    }
+                    throw new Error(
+                        (approveData.error_description ||
+                            approveData.message ||
+                            approveData.error ||
+                            "Invalid or expired code") as string,
+                    );
+                }
+
+                setStatus("success");
+                setMessage("Device approved! You can now close this window.");
+            } catch (err) {
+                setStatus("error");
+                setMessage(err instanceof Error ? err.message : String(err));
+            }
+        },
+        [userCode],
+    );
 
     useEffect(() => {
         if (code && status === "idle" && user) {
-            // Auto-submit when code is present and user is authenticated
-            setMessage("Verifying code automatically...");
-            handleSubmit(new Event("submit") as any);
+            handleSubmit();
         }
-    }, [code, user, status]);
-
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
-        setStatus("loading");
-
-        try {
-            // Format code: remove dashes and spaces
-            const formattedCode = userCode.replace(/[-\s]/g, "").toUpperCase();
-
-            // Approve the device directly - it validates the code internally
-            const approveRes = await fetch("/api/auth/device/approve", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                credentials: "include",
-                body: JSON.stringify({
-                    userCode: formattedCode,
-                }),
-            });
-
-            const approveData = (await approveRes.json()) as any;
-
-            if (!approveRes.ok) {
-                if (approveRes.status === 401) {
-                    throw new Error("Please sign in to verify device");
-                }
-                throw new Error(
-                    approveData.error_description ||
-                        approveData.message ||
-                        approveData.error ||
-                        "Invalid or expired code",
-                );
-            }
-
-            setStatus("success");
-            setMessage("Device approved! You can now close this window.");
-        } catch (err: any) {
-            setStatus("error");
-            setMessage(err.message || String(err));
-        }
-    };
+    }, [code, user, status, handleSubmit]);
 
     if (!user) {
         return (

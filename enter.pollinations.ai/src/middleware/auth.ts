@@ -7,6 +7,7 @@ import { drizzle } from "drizzle-orm/d1";
 import { eq } from "drizzle-orm";
 import * as schema from "@/db/schema/better-auth.ts";
 import type { Context } from "hono";
+import { isApiKeyToken } from "@/utils/token.ts";
 
 export type AuthVariables = {
     auth: {
@@ -83,8 +84,7 @@ export const auth = (options: AuthOptions) =>
                 if (!token) return null;
 
                 // Skip if it looks like an API key (pk_ or sk_ prefix)
-                if (token.startsWith("pk_") || token.startsWith("sk_"))
-                    return null;
+                if (isApiKeyToken(token)) return null;
 
                 log.debug("[AUTH] Checking Bearer session token: {hasToken}", {
                     hasToken: !!token,
@@ -132,8 +132,7 @@ export const auth = (options: AuthOptions) =>
                 if (!token) return null;
 
                 // Skip if it looks like an API key (pk_ or sk_ prefix)
-                if (token.startsWith("pk_") || token.startsWith("sk_"))
-                    return null;
+                if (isApiKeyToken(token)) return null;
 
                 log.debug("[AUTH] Checking OAuth access token: {hasToken}", {
                     hasToken: !!token,

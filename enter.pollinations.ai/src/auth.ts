@@ -169,6 +169,10 @@ export function createAuth(env: Cloudflare.Env) {
                     githubUsername: profile.login,
                 }),
             },
+            discord: {
+                clientId: env.DISCORD_CLIENT_ID,
+                clientSecret: env.DISCORD_CLIENT_SECRET,
+            },
         },
         plugins: [
             adminPlugin,

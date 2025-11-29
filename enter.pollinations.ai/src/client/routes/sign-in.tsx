@@ -6,20 +6,27 @@ import { Header } from "../components/header.tsx";
 
 export const Route = createFileRoute("/sign-in")({
     component: RouteComponent,
-    beforeLoad: ({ context }) => {
+    validateSearch: (search: Record<string, unknown>) => {
+        return {
+            redirect: search.redirect as string | undefined,
+        };
+    },
+    beforeLoad: ({ context, search }) => {
         // redirect if already signed in
-        if (context.user) throw redirect({ to: "/" });
+        if (context.user) throw redirect({ to: search.redirect || "/" });
     },
 });
 
 function RouteComponent() {
     const { auth } = Route.useRouteContext();
+    const { redirect: redirectUrl } = Route.useSearch();
     const [loading, setLoading] = useState(false);
 
     const handleSignIn = async () => {
         setLoading(true);
         const { error } = await auth.signIn.social({
             provider: "github",
+            callbackURL: redirectUrl || "/",
         });
         if (error) {
             setLoading(false);

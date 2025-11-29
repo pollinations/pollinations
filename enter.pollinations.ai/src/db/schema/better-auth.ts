@@ -109,3 +109,20 @@ export const apikey = sqliteTable("apikey", {
   permissions: text("permissions"),
   metadata: text("metadata"),
 });
+
+export const deviceVerification = sqliteTable("device_verification", {
+  id: text("id").primaryKey(),
+  userCode: text("user_code").notNull().unique(),
+  deviceCode: text("device_code").notNull().unique(),
+  verificationUri: text("verification_uri").notNull(),
+  expiresAt: integer("expires_at", { mode: "timestamp" }).notNull(),
+  createdAt: integer("created_at", { mode: "timestamp" })
+    .defaultNow()
+    .notNull(),
+  updatedAt: integer("updated_at", { mode: "timestamp" })
+    .defaultNow()
+    .$onUpdate(() => /* @__PURE__ */ new Date())
+    .notNull(),
+  userId: text("user_id").references(() => user.id, { onDelete: "cascade" }),
+  verified: integer("verified", { mode: "boolean" }).default(false).notNull(),
+});

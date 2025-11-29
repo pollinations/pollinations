@@ -39,8 +39,8 @@ window.addEventListener('load', function() {
         // Show user section and domain section
         document.getElementById('user-section').classList.remove('hidden');
         document.getElementById('domain-section').classList.remove('hidden');
-        // Toggle auth/logout buttons
-        document.getElementById('auth-button').classList.add('hidden');
+        // Show auth section and logout button
+        document.getElementById('auth-section').style.display = 'block';
         document.getElementById('logout-button').classList.remove('hidden');
         
         // Store in localStorage for persistence
@@ -70,8 +70,8 @@ window.addEventListener('load', function() {
             userId = localStorage.getItem('github_user_id');
             showStatus('auth-status', '✅ Authenticated as ' + storedUsername + ' 🎉', 'success');
             
-            // Toggle auth/logout buttons
-            document.getElementById('auth-button').classList.add('hidden');
+            // Show auth section and logout button
+            document.getElementById('auth-section').style.display = 'block';
             document.getElementById('logout-button').classList.remove('hidden');
             
             document.getElementById('user-section').classList.remove('hidden');
@@ -108,9 +108,10 @@ window.logout = function() {
     userId = null;
     currentDomains = [];
     apiToken = null;
+    userTier = 'seed';
     
-    // Toggle auth/logout buttons
-    document.getElementById('auth-button').classList.remove('hidden');
+    // Hide auth section and logout button
+    document.getElementById('auth-section').style.display = 'none';
     document.getElementById('logout-button').classList.add('hidden');
     
     // Hide sections
@@ -145,8 +146,8 @@ function handleTokenError() {
     apiToken = null;
     userTier = 'seed';
     
-    // Toggle auth/logout buttons
-    document.getElementById('auth-button').classList.remove('hidden');
+    // Hide auth section and logout button
+    document.getElementById('auth-section').style.display = 'none';
     document.getElementById('logout-button').classList.add('hidden');
     
     // Hide sections
@@ -379,15 +380,31 @@ async function getUserTier() {
 
 // Update the tier display in the UI
 function updateTierDisplay() {
-    // Reset all pills
-    document.querySelectorAll('.tier-pill').forEach(pill => {
-        pill.classList.remove('active');
-    });
+    const tierSection = document.getElementById('tier-section');
+    const tierActiveDisplay = document.getElementById('tier-active-display');
+    const deprecationMessage = document.getElementById('tier-deprecation-message');
     
-    // Activate the current tier pill
-    const activePill = document.getElementById(userTier + '-pill');
-    if (activePill) {
-        activePill.classList.add('active');
+    if (!tierSection) return;
+    
+    if (userTier === 'legacy') {
+        // Show deprecation message, hide active tier display
+        if (deprecationMessage) deprecationMessage.classList.remove('hidden');
+        if (tierActiveDisplay) tierActiveDisplay.classList.add('hidden');
+    } else {
+        // Hide deprecation message, show active tier display
+        if (deprecationMessage) deprecationMessage.classList.add('hidden');
+        if (tierActiveDisplay) tierActiveDisplay.classList.remove('hidden');
+        
+        // Reset all pills
+        document.querySelectorAll('.tier-pill').forEach(pill => {
+            pill.classList.remove('active');
+        });
+        
+        // Activate the current tier pill
+        const activePill = document.getElementById(userTier + '-pill');
+        if (activePill) {
+            activePill.classList.add('active');
+        }
     }
 }
 

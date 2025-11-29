@@ -22,7 +22,7 @@ export interface GitHubUser {
 }
 
 // User tier types
-export type UserTier = "seed" | "flower" | "nectar";
+export type UserTier = "seed" | "flower" | "nectar" | "legacy";
 
 export interface UserTierInfo {
     user_id: string;

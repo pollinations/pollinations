@@ -62,7 +62,7 @@ export const TEXT_SERVICES = {
     },
     "qwen-coder": {
         aliases: ["qwen2.5-coder-32b-instruct"],
-        modelId: "qwen2.5-coder-32b-instruct",
+        modelId: "qwen3-coder-30b-a3b-instruct",
         provider: "scaleway",
         cost: [
             {
@@ -287,7 +287,7 @@ export const TEXT_SERVICES = {
         tools: true,
         isSpecialized: true,
     },
-    "claude": {
+    "claude-fast": {
         aliases: ["claude-haiku-4.5", "claude-haiku"],
         modelId: "us.anthropic.claude-haiku-4-5-20251001-v1:0",
         provider: "aws-bedrock",
@@ -304,7 +304,7 @@ export const TEXT_SERVICES = {
         tools: true,
         isSpecialized: false,
     },
-    "claude-large": {
+    "claude": {
         aliases: ["claude-sonnet-4.5", "claude-sonnet"],
         modelId: "us.anthropic.claude-sonnet-4-5-20250929-v1:0",
         provider: "aws-bedrock",
@@ -316,6 +316,23 @@ export const TEXT_SERVICES = {
             },
         ],
         description: "Anthropic Claude Sonnet 4.5 - Most Capable & Balanced",
+        inputModalities: ["text", "image"],
+        outputModalities: ["text"],
+        tools: true,
+        isSpecialized: false,
+    },
+    "claude-large": {
+        aliases: ["claude-opus-4.5", "claude-opus"],
+        modelId: "global.anthropic.claude-opus-4-5-20251101-v1:0",
+        provider: "aws-bedrock",
+        cost: [
+            {
+                date: COST_START_DATE,
+                promptTextTokens: perMillion(5.0),
+                completionTextTokens: perMillion(25.0),
+            },
+        ],
+        description: "Anthropic Claude Opus 4.5 - Most Intelligent Model",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
         tools: true,
@@ -355,5 +372,43 @@ export const TEXT_SERVICES = {
         tools: true,
         reasoning: true,
         persona: false,
+    },
+    "kimi-k2-thinking": {
+        aliases: ["kimi-k2", "kimi-thinking"],
+        modelId: "moonshotai/kimi-k2-thinking-maas",
+        provider: "vertex-ai",
+        cost: [
+            {
+                date: COST_START_DATE,
+                promptTextTokens: perMillion(0.6),
+                completionTextTokens: perMillion(2.5),
+            },
+        ],
+        description:
+            "Moonshot Kimi K2 Thinking - Deep Reasoning & Tool Orchestration",
+        inputModalities: ["text"],
+        outputModalities: ["text"],
+        tools: true,
+        reasoning: true,
+        isSpecialized: false,
+    },
+    "gemini-large": {
+        aliases: ["gemini-3-pro", "gemini-3", "gemini-3-pro-preview"],
+        modelId: "gemini-3-pro-preview",
+        provider: "vertex-ai",
+        cost: [
+            {
+                date: COST_START_DATE,
+                promptTextTokens: perMillion(2.0),
+                completionTextTokens: perMillion(12.0),
+            },
+        ],
+        description:
+            "Google Gemini 3 Pro - Most Intelligent Model with 1M Context (Preview)",
+        inputModalities: ["text", "image", "audio", "video"],
+        outputModalities: ["text"],
+        tools: true,
+        reasoning: true,
+        isSpecialized: false,
     },
 } as const satisfies Record<string, ServiceDefinition<string>>;

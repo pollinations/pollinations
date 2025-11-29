@@ -55,6 +55,7 @@ import { ValidationError } from "@/middleware/validator.ts";
 import type { LoggerVariables } from "./logger.ts";
 import type { ErrorVariables } from "@/env.ts";
 import type { FrontendKeyRateLimitVariables } from "./rate-limit-durable.ts";
+import { getLogger } from "@logtape/logtape";
 
 export type ModelUsage = {
     model: ModelId;
@@ -124,7 +125,7 @@ export const track = (eventType: EventType) =>
 
         c.executionCtx.waitUntil(
             (async () => {
-                const response = responseOverride || c.res;
+                const response = responseOverride || c.res.clone();
                 const responseTracking = await trackResponse(
                     eventType,
                     requestTracking,
@@ -135,6 +136,20 @@ export const track = (eventType: EventType) =>
                 await c.var.frontendKeyRateLimit?.consumePollen(
                     responseTracking.price?.totalPrice || 0,
                 );
+
+                // decrement local balance cache for billable usage
+                if (
+                    responseTracking.isBilledUsage &&
+                    c.var.auth.user?.id &&
+                    c.var.polar.balanceCheckResult?.selectedMeterId &&
+                    responseTracking.price?.totalPrice
+                ) {
+                    await c.var.polar.decrementBalance(
+                        c.var.auth.user.id,
+                        c.var.polar.balanceCheckResult.selectedMeterId,
+                        responseTracking.price.totalPrice,
+                    );
+                }
 
                 const userTracking: UserData = {
                     userId: c.var.auth.user?.id,
@@ -179,7 +194,6 @@ export const track = (eventType: EventType) =>
                 await storeEvents(db, c.var.log, [event]);
 
                 // process events immediately in development/testing
-                // Don't await to prevent test hangs on external API failures
                 if (["test", "development"].includes(c.env.ENVIRONMENT)) {
                     await processEvents(db, c.var.log, {
                         polarAccessToken: c.env.POLAR_ACCESS_TOKEN,
@@ -235,6 +249,7 @@ async function trackResponse(
     requestTracking: RequestTrackingData,
     response: Response,
 ): Promise<ResponseTrackingData> {
+    const log = getLogger(["hono", "track", "response"]);
     const { resolvedModelRequested } = requestTracking;
     const cacheInfo = extractCacheHeaders(response);
     if (!response.ok || cacheInfo.cacheHit) {
@@ -251,6 +266,16 @@ async function trackResponse(
             requestTracking,
             response,
         );
+    if (!modelUsage) {
+        log.error("Failed to extract model usage");
+        return {
+            responseOk: response.ok,
+            responseStatus: response.status,
+            cacheData: cacheInfo,
+            isBilledUsage: false,
+            contentFilterResults,
+        };
+    }
     const cost = calculateCost(modelUsage.model as ModelId, modelUsage.usage);
     const price = calculatePrice(
         resolvedModelRequested as ServiceId,
@@ -275,10 +300,10 @@ async function* extractResponseStream(
     if (!response.body) return;
 
     const textDecoder = new TextDecoderStream();
-    const parser = new EventSourceParserStream();
+    const sseParser = new EventSourceParserStream();
     const eventStream = response.body
         .pipeThrough(textDecoder)
-        .pipeThrough(parser);
+        .pipeThrough(sseParser);
 
     for await (const event of asyncIteratorStream(eventStream)) {
         if (event.data === "[DONE]") return;
@@ -363,8 +388,7 @@ function createTrackingEvent({
         resolvedModelRequested: requestTracking.resolvedModelRequested,
         modelUsed: responseTracking.modelUsed,
 
-        isBilledUsage:
-            responseTracking.responseOk && !responseTracking.cacheData.cacheHit,
+        isBilledUsage: responseTracking.isBilledUsage,
 
         ...balanceTracking,
 
@@ -440,9 +464,10 @@ function extractUsageAndContentFilterResultsHeaders(response: Response): {
 async function extractUsageAndContentFilterResultsStream(
     events: AsyncIterable<unknown>,
 ): Promise<{
-    modelUsage: ModelUsage;
+    modelUsage: ModelUsage | null;
     contentFilterResults: GenerationEventContentFilterParams;
 }> {
+    const log = getLogger(["hono", "track", "stream"]);
     const EventSchema = z.object({
         model: z.string(),
         usage: CompletionUsageSchema.nullish(),
@@ -488,15 +513,24 @@ async function extractUsageAndContentFilterResultsStream(
 
         if (parseResult.data?.usage) {
             if (usage) {
-                throw new Error("Multiple usage objects found in event stream");
+                log.warn("Multiple usage objects found in event stream");
             }
             usage = parseResult.data?.usage;
             model = parseResult.data?.model;
         }
     }
 
-    if (!usage) {
-        throw new Error("No usage object found in event stream");
+    const contentFilterResults = contentFilterResultsToEventParams({
+        promptFilterResults,
+        completionFilterResults,
+    });
+
+    if (!model || !usage) {
+        log.error("No usage object found in event stream");
+        return {
+            modelUsage: null,
+            contentFilterResults,
+        };
     }
 
     return {
@@ -504,10 +538,7 @@ async function extractUsageAndContentFilterResultsStream(
             model: model as ModelId,
             usage: openaiUsageToTokenUsage(usage),
         },
-        contentFilterResults: contentFilterResultsToEventParams({
-            promptFilterResults,
-            completionFilterResults,
-        }),
+        contentFilterResults,
     };
 }
 
@@ -516,7 +547,7 @@ async function extractUsageAndContentFilterResults(
     requestTracking: RequestTrackingData,
     response: Response,
 ): Promise<{
-    modelUsage: ModelUsage;
+    modelUsage: ModelUsage | null;
     contentFilterResults: GenerationEventContentFilterParams;
 }> {
     if (
@@ -524,7 +555,7 @@ async function extractUsageAndContentFilterResults(
         requestTracking.streamRequested &&
         response.body instanceof ReadableStream
     ) {
-        const eventStream = extractResponseStream(response.clone());
+        const eventStream = extractResponseStream(response);
         return await extractUsageAndContentFilterResultsStream(eventStream);
     }
     return extractUsageAndContentFilterResultsHeaders(response);

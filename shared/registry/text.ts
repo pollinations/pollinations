@@ -1,5 +1,5 @@
 import { COST_START_DATE, perMillion } from "./price-helpers";
-import { ServiceDefinition } from "./registry";
+import type { ServiceDefinition } from "./registry";
 
 export const DEFAULT_TEXT_MODEL = "openai" as const;
 export type TextServiceId = keyof typeof TEXT_SERVICES;
@@ -61,7 +61,7 @@ export const TEXT_SERVICES = {
         isSpecialized: false,
     },
     "qwen-coder": {
-        aliases: ["qwen-coder", "qwen2.5-coder-32b-instruct"],
+        aliases: ["qwen2.5-coder-32b-instruct"],
         modelId: "qwen2.5-coder-32b-instruct",
         provider: "scaleway",
         cost: [
@@ -235,7 +235,7 @@ export const TEXT_SERVICES = {
         isSpecialized: false,
     },
     "gemini-search": {
-        aliases: ["gemini-search", "gemini-2.5-flash-lite-search"],
+        aliases: ["gemini-2.5-flash-lite-search"],
         modelId: "gemini-2.5-flash-lite",
         provider: "vertex-ai",
         cost: [

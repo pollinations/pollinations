@@ -40,6 +40,8 @@ Registration gives you access to the Pollinations API and the **Spore tier**, wh
 Registered developers receive daily Pollen grants to support experimentation based on their tier.
 Pollen grants are always spent before your purchased Pollen balance, and it expires each day.
 
+💚 **Thanks to our supporters**, daily Pollen is available to everyone—keeping AI accessible for the whole community.
+
 ## What can I create with Pollen?
 
 Think of Pollen like buying in bulk — the more efficient the model, the more you get! (**$1 ≈ 1 Pollen**)

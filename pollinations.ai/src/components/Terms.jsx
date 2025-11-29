@@ -184,61 +184,79 @@ const ContactSection = styled.div`
 `;
 
 const Terms = () => {
-  const [copied, setCopied] = useState(false);
+    const [copied, setCopied] = useState(false);
 
-  const copyEmail = (e) => {
-    e.preventDefault();
-    navigator.clipboard.writeText('hello@pollinations.ai');
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
+    const copyEmail = (e) => {
+        e.preventDefault();
+        navigator.clipboard.writeText("hello@pollinations.ai");
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+    };
 
-  return (
-    <PageContainer>
-      <LogoContainer>
-        <Link to="/">
-          <img src="/logo-text.svg" alt="Pollinations.ai" />
-        </Link>
-      </LogoContainer>
+    return (
+        <PageContainer>
+            <LogoContainer>
+                <Link to="/">
+                    <img src="/logo-text.svg" alt="Pollinations.ai" />
+                </Link>
+            </LogoContainer>
 
-      <ContentWrapper>
-        <DocumentSection>
-          <MarkdownContent>
-            <Markdown>{termsMarkdown}</Markdown>
-          </MarkdownContent>
-        </DocumentSection>
-        
-        <DocumentSection>
-          <MarkdownContent>
-            <Markdown>{privacyMarkdown}</Markdown>
-          </MarkdownContent>
-        </DocumentSection>
-      </ContentWrapper>
+            <ContentWrapper>
+                <DocumentSection>
+                    <MarkdownContent>
+                        <Markdown>{termsMarkdown}</Markdown>
+                    </MarkdownContent>
+                </DocumentSection>
 
-      <ContactSection>
-        <p style={{ marginBottom: '1rem' }}>
-          🌸 <strong>Join the Community</strong>
-        </p>
-        <p>
-          <a href="https://github.com/pollinations" target="_blank" rel="noopener noreferrer">GitHub</a>
-          {' • '}
-          <a 
-            href="mailto:hello@pollinations.ai" 
-            onClick={copyEmail}
-            style={{ cursor: 'pointer', position: 'relative' }}
-            title="Click to copy email"
-          >
-            {copied ? '✓ Copied!' : 'Email'}
-          </a>
-          {' • '}
-          <a href="https://discord.gg/k9F7SyTgqn" target="_blank" rel="noopener noreferrer">Discord</a>
-        </p>
-        <p style={{ marginTop: '1rem', opacity: 0.7, fontSize: '0.95rem' }}>
-          Open source • Free forever • Built by the community
-        </p>
-      </ContactSection>
-    </PageContainer>
-  );
+                <DocumentSection>
+                    <MarkdownContent>
+                        <Markdown>{privacyMarkdown}</Markdown>
+                    </MarkdownContent>
+                </DocumentSection>
+            </ContentWrapper>
+
+            <ContactSection>
+                <p style={{ marginBottom: "1rem" }}>
+                    🌸 <strong>Join the Community</strong>
+                </p>
+                <p>
+                    <a
+                        href="https://github.com/pollinations"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                    >
+                        GitHub
+                    </a>
+                    {" • "}
+                    <a
+                        href="mailto:hello@pollinations.ai"
+                        onClick={copyEmail}
+                        style={{ cursor: "pointer", position: "relative" }}
+                        title="Click to copy email"
+                    >
+                        {copied ? "✓ Copied!" : "Email"}
+                    </a>
+                    {" • "}
+                    <a
+                        href="https://discord.gg/k9F7SyTgqn"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                    >
+                        Discord
+                    </a>
+                </p>
+                <p
+                    style={{
+                        marginTop: "1rem",
+                        opacity: 0.7,
+                        fontSize: "0.95rem",
+                    }}
+                >
+                    Open source • Community-built • Privacy-respecting
+                </p>
+            </ContactSection>
+        </PageContainer>
+    );
 };
 
 export default Terms;

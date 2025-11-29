@@ -1,7 +1,7 @@
 # Pollinations.AI API Docs 🌸
 ## The World's Most Accessible Open GenAI Platform
 
-Create amazing text, images, and audio with our APIs—no signup required to get started! 🚀  
+APIs built by developers, for developers. We build everything in the open. 🚀  
 Think of Pollinations.AI as a digital garden where you can plant a "seed" (your idea) and watch it grow into text, images, or audio with the help of AI. Our APIs are like tools in your gardening shed—easy to use, powerful, and ready to help you create something beautiful.
 
 ## Quick Start
@@ -727,7 +727,7 @@ function ChatBot() {
 **Playground**: Try these hooks live at [react-hooks.pollinations.ai](https://react-hooks.pollinations.ai).
 
 ## Authentication & Rate Limits
-You can use Pollinations.AI without signing up, but registering gives you higher limits and extra features, like removing watermarks.
+Thanks to our supporters, daily Pollen grants keep AI accessible for everyone. Register for higher limits and extra features like removing watermarks.
 
 ### Authentication Methods
 #### Referrer (Web Apps)

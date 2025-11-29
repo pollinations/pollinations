@@ -26,17 +26,16 @@ We opened 67 issues and closed 38, created 25 PRs with 22 merged (30 total contr
 
 ## 🌟 Introduction
 
-[Pollinations.AI](https://pollinations.ai) is an open-source gen AI startup based in Berlin, providing the most easy-to-use, free text and image generation API available. No signups or API keys required. We prioritize your privacy with zero data storage and completely anonymous usage.
+[Pollinations.AI](https://pollinations.ai) is an open-source gen AI platform based in Berlin, powering 500+ community projects with accessible text and image generation APIs. We build in the open and keep AI accessible to everyone—thanks to our amazing supporters.
 
 ## 🚀 Key Features
 
-- 🔓 **100% Open Source**
-- 🆓 **_Free to use_**
-- 🔒 **Simplicity and privacy:** No logins, no keys, no data stored
+- 🔓 **100% Open Source** — code, decisions, roadmap all public
+- 🤝 **Community-Built** — 500+ projects already using our APIs
+- 🔒 **Privacy-Respecting** — no accounts needed to get started
 - 🖼️ **Embed like any normal image or text**
 - 🎵 **Audio generation:** Text-to-speech and speech-to-text capabilities
-- 🌍 Free AI image and text generation APIs
-- 🤝 Used by various **open-source LLMs**, **bots**, and **communities**
+- 🌱 **Supporter-Funded** — daily Pollen keeps AI accessible for everyone
 - 🎣 **_Easy-to-use React hooks_** ([React Hooks Examples](https://react-hooks.pollinations.ai/))
 
 <a href="https://star-history.com/#pollinations/pollinations&Date">

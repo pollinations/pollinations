@@ -94,38 +94,40 @@ function OAuthLoginPage() {
                         </p>
                     </div>
 
-                    {/* Scopes */}
-                    {scopes.length > 0 && (
-                        <div className="mb-6 p-4 bg-gray-50 rounded-lg">
-                            <h2 className="text-sm font-semibold text-gray-700 mb-2">
-                                This app will be able to:
-                            </h2>
-                            <ul className="space-y-1">
-                                {scopes.map((s) => (
-                                    <li
-                                        key={s}
-                                        className="flex items-center gap-2 text-sm text-gray-600"
+                    {/* Permissions */}
+                    <div className="mb-6 p-4 bg-gray-50 rounded-lg">
+                        <h2 className="text-sm font-semibold text-gray-700 mb-2">
+                            Pollinations will be able to:
+                        </h2>
+                        <ul className="space-y-1">
+                            {scopes.map((s) => (
+                                <li
+                                    key={s}
+                                    className="flex items-center gap-2 text-sm text-gray-600"
+                                >
+                                    <svg
+                                        className="w-4 h-4 text-green-500 flex-shrink-0"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        viewBox="0 0 24 24"
                                     >
-                                        <svg
-                                            className="w-4 h-4 text-green-500 flex-shrink-0"
-                                            fill="none"
-                                            stroke="currentColor"
-                                            viewBox="0 0 24 24"
-                                        >
-                                            <title>Check</title>
-                                            <path
-                                                strokeLinecap="round"
-                                                strokeLinejoin="round"
-                                                strokeWidth={2}
-                                                d="M5 13l4 4L19 7"
-                                            />
-                                        </svg>
-                                        <span>{getScopeDescription(s)}</span>
-                                    </li>
-                                ))}
-                            </ul>
-                        </div>
-                    )}
+                                        <title>Check</title>
+                                        <path
+                                            strokeLinecap="round"
+                                            strokeLinejoin="round"
+                                            strokeWidth={2}
+                                            d="M5 13l4 4L19 7"
+                                        />
+                                    </svg>
+                                    <span>{getScopeDescription(s)}</span>
+                                </li>
+                            ))}
+                        </ul>
+                        <p className="mt-3 text-sm text-gray-600 border-t border-gray-200 pt-3">
+                            The app will be able to generate media using your
+                            Pollen balance.
+                        </p>
+                    </div>
 
                     {/* Login Buttons */}
                     <div className="space-y-3">
@@ -203,7 +205,6 @@ function getScopeDescription(scope: string): string {
         profile: "Access your profile information",
         email: "Access your email address",
         "api:generate": "Generate images and text",
-        "pollen:spend": "Spend your pollen balance",
     };
     return descriptions[scope] || scope;
 }

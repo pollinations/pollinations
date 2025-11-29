@@ -228,7 +228,7 @@ const REDIRECT_URI = window.location.href.split('?')[0];
             authUrl.searchParams.set('client_id', CLIENT_ID);
             authUrl.searchParams.set('redirect_uri', REDIRECT_URI);
             authUrl.searchParams.set('response_type', 'code');
-            authUrl.searchParams.set('scope', 'api:generate pollen:spend');
+            authUrl.searchParams.set('scope', 'openid profile email');
             authUrl.searchParams.set('state', state);
             
             window.location.href = authUrl.toString();

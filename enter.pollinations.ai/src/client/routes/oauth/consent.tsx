@@ -187,7 +187,6 @@ function getScopeDescription(scope: string): string {
         profile: "Access your profile information (name, avatar)",
         email: "Access your email address",
         "api:generate": "Generate images and text using your account",
-        "pollen:spend": "Spend your pollen balance",
     };
     return descriptions[scope] || scope;
 }

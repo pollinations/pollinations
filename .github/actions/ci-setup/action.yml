@@ -1,0 +1,31 @@
+name: CI Setup
+
+description: Setup node and install dependencies
+
+inputs:
+  working-directory:
+    description: 'Working directory'
+    required: true
+  node-version:
+    description: 'Node.js version'
+    required: false
+    default: '24'
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ inputs.node-version }}
+        cache: 'npm'
+        cache-dependency-path: ${{ inputs.working-directory }}/package-lock.json
+    
+    - name: Install dependencies
+      working-directory: ${{ inputs.working-directory }}
+      run: npm ci
+      shell: bash
+
+    - name: Setup SOPS
+      uses: nhedger/setup-sops@v2
+

@@ -12,7 +12,10 @@ export default defineWorkersConfig(async () => {
     return {
         ...viteConfig,
         test: {
-            globalSetup: ["./test/setup/snapshot-server.ts"],
+            globalSetup: [
+                "./test/setup/snapshot-server.ts",
+                "./test/setup/ensure-asset-dir.ts",
+            ],
             setupFiles: [
                 "./test/setup/apply-migrations.ts",
                 "./test/setup/rejection-handler.ts",

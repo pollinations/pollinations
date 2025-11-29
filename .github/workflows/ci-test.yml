@@ -1,0 +1,41 @@
+name: CI Test
+
+on:
+  pull_request:
+    paths:
+      - 'enter.pollinations.ai/**'
+      - 'shared/registry/**'
+  workflow_call:
+
+jobs:
+  test-all:
+    strategy:
+      matrix:
+        package:
+          - { name: 'enter', dir: './enter.pollinations.ai' }
+          # - { name: 'text', dir: './text.pollinations.ai' }
+          # - { name: 'image', dir: './image.pollinations.ai' }
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./enter.pollinations.ai
+    
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    - name: Setup ${{ matrix.package.name }}
+      uses: ./.github/actions/ci-setup
+      with:
+        working-directory: ${{ matrix.package.dir }}
+
+    - name: Typecheck ${{ matrix.package.name }}
+      working-directory: ${{ matrix.package.dir }}
+      run: npm run typecheck
+
+    - name: Test ${{ matrix.package.name }}
+      working-directory: ${{ matrix.package.dir }}
+      run: npm run test
+      env:
+        CLOUDFLARE_API_TOKEN: '' # Empty to prevent remote mode
+        WRANGLER_SEND_METRICS: 'false'

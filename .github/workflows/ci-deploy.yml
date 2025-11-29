@@ -1,0 +1,44 @@
+name: CI Deploy
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Target Environment'
+        required: true
+        type: choice
+        options:
+          - staging
+  workflow_call:
+    inputs:
+      environment:
+        required: true
+        type: string
+
+jobs:
+  deploy-enter:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Setup
+        uses: ./.github/actions/ci-setup
+        with:
+          working-directory: ./enter.pollinations.ai
+
+      - name: Push Secrets
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          SOPS_AGE_KEY: ${{ secrets.SOPS_AGE_KEY }}
+        run: npm run push-secrets:${{ inputs.environment }}
+
+      - name: Migrate D1
+        run: npm run migrate:${{ inputs.environment }}
+
+      # We need a separate data source for staging
+      # - name: Migrate Tinybird
+      #   run: npm run migrate:tinybird:staging
+
+      - name: Build and Deploy (${{ inputs.environment }})
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        run: npm run deploy:${{ inputs.environment }}
+        working-directory: ./enter.pollinations.ai

@@ -27,6 +27,7 @@ export type AuthEnv = {
 export type AuthOptions = {
     allowSessionCookie: boolean;
     allowApiKey: boolean;
+    allowBearerSessionToken?: boolean; // RFC 8628 Device Flow support
 };
 
 type ApiKey = {
@@ -43,7 +44,7 @@ type AuthResult = {
 };
 
 /** Extracts Bearer token from Authorization header (RFC 6750) or query parameter */
-function extractApiKey(c: Context<AuthEnv>): string | null {
+function extractBearerToken(c: Context<AuthEnv>): string | null {
     // Try Authorization header first (RFC 6750)
     const auth = c.req.header("authorization");
     const match = auth?.match(/^Bearer (.+)$/);
@@ -70,9 +71,58 @@ export const auth = (options: AuthOptions) =>
             };
         };
 
+        /**
+         * Authenticate via Bearer session token (RFC 8628 Device Flow)
+         * This validates session tokens passed as Bearer tokens, supporting CLI/API clients
+         */
+        const authenticateBearerSessionToken =
+            async (): Promise<AuthResult | null> => {
+                if (!options.allowBearerSessionToken) return null;
+                const token = extractBearerToken(c);
+                if (!token) return null;
+
+                // Skip if it looks like an API key (pk_ or sk_ prefix)
+                if (token.startsWith("pk_") || token.startsWith("sk_"))
+                    return null;
+
+                log.debug("[AUTH] Checking Bearer session token: {hasToken}", {
+                    hasToken: !!token,
+                    tokenPrefix: token?.substring(0, 8),
+                });
+
+                const db = drizzle(c.env.DB, { schema });
+                const sessionRecord = await db.query.session.findFirst({
+                    where: eq(schema.session.token, token),
+                });
+
+                if (!sessionRecord) {
+                    log.debug("[AUTH] Session token not found");
+                    return null;
+                }
+
+                if (sessionRecord.expiresAt < new Date()) {
+                    log.debug("[AUTH] Session token expired");
+                    return null;
+                }
+
+                const user = await db.query.user.findFirst({
+                    where: eq(schema.user.id, sessionRecord.userId),
+                });
+
+                log.debug("[AUTH] Bearer session token validated: {found}", {
+                    found: !!user,
+                    userId: user?.id,
+                });
+
+                return {
+                    user: user as User,
+                    session: sessionRecord as Session,
+                };
+            };
+
         const authenticateApiKey = async (): Promise<AuthResult | null> => {
             if (!options.allowApiKey) return null;
-            const apiKey = extractApiKey(c);
+            const apiKey = extractBearerToken(c);
             log.debug("[AUTH] Extracted API key: {hasKey}", {
                 hasKey: !!apiKey,
                 keyPrefix: apiKey?.substring(0, 8),
@@ -106,8 +156,15 @@ export const auth = (options: AuthOptions) =>
             };
         };
 
+        // Authentication priority:
+        // 1. Bearer session token (RFC 8628 Device Flow - CLI/API clients)
+        // 2. Session cookie (browser clients)
+        // 3. API key (programmatic access)
         const { user, session, apiKey } =
-            (await authenticateSession()) || (await authenticateApiKey()) || {};
+            (await authenticateBearerSessionToken()) ||
+            (await authenticateSession()) ||
+            (await authenticateApiKey()) ||
+            {};
 
         log.debug("[AUTH] Authentication result: {authenticated}", {
             authenticated: !!user,

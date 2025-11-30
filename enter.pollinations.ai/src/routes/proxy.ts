@@ -93,8 +93,10 @@ const chatCompletionHandlers = factory.createHandlers(
         let contentFilterHeaders = {};
         if (!c.var.track.streamRequested) {
             const responseJson = await response.clone().json();
-            const parsedResponse =
-                CreateChatCompletionResponseSchema.parse(responseJson);
+            const parsedResponse = CreateChatCompletionResponseSchema.parse(
+                responseJson,
+                { reportInput: true },
+            );
             contentFilterHeaders =
                 contentFilterResultsToHeaders(parsedResponse);
         }

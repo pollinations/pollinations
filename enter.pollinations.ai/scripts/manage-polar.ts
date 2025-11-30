@@ -688,19 +688,16 @@ const userUpdateTier = command({
 
         console.log(`🔍 Searching for subscription: ${opts.email}`);
 
-        // Find user's subscription
+        // Find user's subscription using async iterator
         let subscription = null;
-        for (let page = 1; ; page++) {
-            const response = await polar.subscriptions.list({
-                limit: 100,
-                page,
-            });
-            subscription = response.result.items.find(
+        const paginator = await polar.subscriptions.list({ limit: 100 });
+        for await (const page of paginator) {
+            subscription = page.result.items.find(
                 (s) =>
                     s.customer.email?.toLowerCase() ===
                     opts.email.toLowerCase(),
             );
-            if (subscription || response.result.items.length < 100) break;
+            if (subscription) break;
         }
 
         if (!subscription) {

@@ -234,7 +234,6 @@ async function trackResponse(
     requestTracking: RequestTrackingData,
     response: Response,
 ): Promise<ResponseTrackingData> {
-    const log = getLogger(["hono", "track", "response"]);
     const { resolvedModelRequested } = requestTracking;
     const cacheInfo = extractCacheHeaders(response);
     if (!response.ok || cacheInfo.cacheHit) {
@@ -252,14 +251,10 @@ async function trackResponse(
             response,
         );
     if (!modelUsage) {
-        log.error("Failed to extract model usage");
-        return {
-            responseOk: response.ok,
-            responseStatus: response.status,
-            cacheData: cacheInfo,
-            isBilledUsage: false,
-            contentFilterResults,
-        };
+        throw new Error(
+            "Failed to extract model usage from streaming response. " +
+                "SSE parser did not find usage data in the event stream.",
+        );
     }
     const cost = calculateCost(modelUsage.model as ModelId, modelUsage.usage);
     const price = calculatePrice(

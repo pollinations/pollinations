@@ -96,13 +96,6 @@ describe("POST /generate/v1/chat/completions (authenticated)", async () => {
 });
 
 describe("POST /generate/v1/chat/completions (streaming)", async () => {
-    // TODO: Tinybird event assertions disabled for streaming tests
-    // Root cause: VCR replayed streams don't properly trigger usage extraction
-    // in extractUsageAndContentFilterResultsStream(), resulting in modelUsage: null
-    // and isBilledUsage: false, so no event gets stored.
-    // Fix requires either: (1) VCR to capture/replay usage data separately, or
-    // (2) fix stream format compatibility between VCR replay and usage extraction.
-    // See: src/middleware/track.ts lines 449-527
     test.for(authenticatedTestCases())(
         "%s should respond with 200 when streaming",
         { timeout: 30000 },
@@ -133,15 +126,15 @@ describe("POST /generate/v1/chat/completions (streaming)", async () => {
             // consume the stream
             await response.text();
 
-            // TODO: Re-enable when VCR streaming + usage extraction is fixed
-            // const events = mocks.tinybird.state.events;
-            // expect(events).toHaveLength(1);
-            // events.forEach((event) => {
-            //     expect(event.modelUsed).toBeDefined();
-            //     expect(event.tokenCountPromptText).toBeGreaterThan(0);
-            //     expect(event.tokenCountCompletionText).toBeGreaterThan(0);
-            //     expect(event.totalCost).toBeGreaterThan(0);
-            // });
+            // Verify streaming responses trigger proper event processing with usage data
+            const events = mocks.tinybird.state.events;
+            expect(events).toHaveLength(1);
+            events.forEach((event) => {
+                expect(event.modelUsed).toBeDefined();
+                expect(event.tokenCountPromptText).toBeGreaterThan(0);
+                expect(event.tokenCountCompletionText).toBeGreaterThan(0);
+                expect(event.totalCost).toBeGreaterThan(0);
+            });
         },
     );
 });

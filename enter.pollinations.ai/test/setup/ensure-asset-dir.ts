@@ -17,3 +17,6 @@ export function setup() {
         console.log(`Created assets directory: ${assetsDir}`);
     }
 }
+
+// Vitest globalSetup expects default export
+export default setup;

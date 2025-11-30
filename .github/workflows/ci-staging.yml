@@ -9,7 +9,7 @@ on:
       - 'shared/registry/**'
       - 'text.pollinations.ai/**'
       - 'image.pollinations.ai/**'
-      - '.github/workflows/ci-setup.yml'
+      - '.github/actions/ci-setup/**'
       - '.github/workflows/ci-test.yml'
       - '.github/workflows/ci-deploy.yml'
   workflow_dispatch:

@@ -18,7 +18,7 @@ jobs:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: ./enter.pollinations.ai
+        working-directory: ${{ matrix.package.dir }}
     
     steps:
     - name: Checkout

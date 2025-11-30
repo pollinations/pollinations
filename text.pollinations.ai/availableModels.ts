@@ -62,11 +62,12 @@ const models: ModelDefinition[] = [
         config: portkeyConfig["myceli-deepseek-v3.1"],
         transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
     },
-    {
-        name: "grok",
-        config: portkeyConfig["myceli-grok-4-fast"],
-        transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
-    },
+    // grok temporarily disabled - timing out in tests
+    // {
+    //     name: "grok",
+    //     config: portkeyConfig["myceli-grok-4-fast"],
+    //     transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
+    // },
     {
         name: "openai-audio",
         config: portkeyConfig["gpt-4o-mini-audio-preview-2024-12-17"],

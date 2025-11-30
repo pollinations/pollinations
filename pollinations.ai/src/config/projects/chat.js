@@ -535,7 +535,7 @@ export const chatProjects = [
         name: "Xibe-chat-cli 💬",
         url: "https://pypi.org/project/xibe-chat-cli/",
         description:
-            "AI chat + image generation in CLI with rich text UI. Open-source Python package for terminal-based AI interactions.",
+            "AI chat and image generation directly in your terminal with a rich text UI. Open-source Python package available on PyPI for seamless CLI-based AI interactions.",
         author: "@R3AP3Redit",
         repo: "https://github.com/iotserver24/xibe-chat-cli",
         submissionDate: "2025-11-30",

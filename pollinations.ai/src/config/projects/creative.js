@@ -920,7 +920,7 @@ export const creativeProjects = [
         name: "AI Stickers Generator 🎨",
         url: "https://ai-stickers-generator.vercel.app/",
         description:
-            "Generate custom AI stickers from text prompts. Create unique sticker designs for messaging apps and social media.",
+            "Turn text prompts into unique AI-generated stickers instantly. Perfect for messaging apps, social media, or personal creative projects.",
         author: "@KristijanPill",
         submissionDate: "2025-11-21",
         order: 1,

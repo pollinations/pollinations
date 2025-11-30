@@ -947,7 +947,7 @@ export const creativeProjects = [
         name: "LINE Blessing Images Bot 🇹🇼",
         url: "https://line.me/R/ti/p/@blessing-ai",
         description:
-            "LINE chatbot for generating personalized blessing images with AI. Multiple themes (Good Morning, Birthday, Health), customizable artistic styles, and one-click sharing.",
+            "Create and share personalized AI blessing images directly in LINE. Choose from themes like Good Morning, Birthday, and Health wishes with customizable artistic styles - perfect for sharing joy with friends and family.",
         author: "@nickyeh611",
         submissionDate: "2025-10-28",
         language: "zh-TW",

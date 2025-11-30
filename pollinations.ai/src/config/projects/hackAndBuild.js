@@ -376,7 +376,6 @@ export const hackAndBuildProjects = [
     },
     {
         name: "PDF-to-Speech 🔊",
-        url: "https://github.com/Ak-Yadav/pdf_to_speech",
         description:
             "Python tool to convert PDF documents to speech using Pollinations AI text-to-speech capabilities. Extract text from PDFs and generate natural audio output.",
         author: "@Ak-Yadav",

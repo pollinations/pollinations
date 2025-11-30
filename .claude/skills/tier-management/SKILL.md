@@ -9,6 +9,7 @@ Before using this skill, ensure you have:
 - **GitHub CLI**: `brew install gh && gh auth login`
 - **Node.js/npx**: `brew install node`
 - **Wrangler**: `npm install -g wrangler`
+- **jq**: `brew install jq` (for parsing JSON)
 - **sops**: `brew install sops` (for decrypting secrets)
 
 Must run from the `pollinations` repo root with access to `enter.pollinations.ai/`.

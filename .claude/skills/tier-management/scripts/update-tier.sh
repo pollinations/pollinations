@@ -48,29 +48,22 @@ cd "$ENTER_DIR"
 
 log "Looking up user: $USER_QUERY"
 
-# Find user
-USER_INFO=$(npx wrangler d1 execute DB --remote --env production \
-    --command "SELECT github_username, email, tier FROM user WHERE LOWER(github_username) LIKE '%${USER_QUERY}%' OR LOWER(email) LIKE '%${USER_QUERY}%';" 2>/dev/null | tail -n +8)
+# Find user (wrangler outputs JSON)
+USER_JSON=$(npx wrangler d1 execute DB --remote --env production --json \
+    --command "SELECT github_username, email, tier FROM user WHERE LOWER(github_username) LIKE '%${USER_QUERY}%' OR LOWER(email) LIKE '%${USER_QUERY}%' LIMIT 1;" 2>/dev/null)
 
-if [ -z "$USER_INFO" ] || echo "$USER_INFO" | grep -q "0 rows"; then
+# Parse JSON with jq
+USERNAME=$(echo "$USER_JSON" | jq -r '.[0].results[0].github_username // empty')
+EMAIL=$(echo "$USER_JSON" | jq -r '.[0].results[0].email // empty')
+CURRENT_TIER=$(echo "$USER_JSON" | jq -r '.[0].results[0].tier // empty')
+
+if [ -z "$USERNAME" ]; then
     error "User not found: $USER_QUERY"
 fi
-
-echo "$USER_INFO"
-echo ""
-
-# Extract username and email from output
-USERNAME=$(echo "$USER_INFO" | grep "│" | head -1 | awk -F '│' '{print $2}' | tr -d ' ')
-EMAIL=$(echo "$USER_INFO" | grep "│" | head -1 | awk -F '│' '{print $3}' | tr -d ' ')
-CURRENT_TIER=$(echo "$USER_INFO" | grep "│" | head -1 | awk -F '│' '{print $4}' | tr -d ' ')
 
 # Validate extracted username (prevent injection from malformed DB data)
 if [[ ! "$USERNAME" =~ ^[a-zA-Z0-9_-]+$ ]]; then
     error "Invalid username format from database"
-fi
-
-if [ -z "$USERNAME" ]; then
-    error "Could not parse user info"
 fi
 
 log "Found: $USERNAME ($EMAIL) - current tier: $CURRENT_TIER"
@@ -103,8 +96,12 @@ fi
 
 # Verify
 log "Verifying update..."
-npx wrangler d1 execute DB --remote --env production \
-    --command "SELECT github_username, tier FROM user WHERE github_username='$USERNAME';" 2>/dev/null | tail -n +8
+VERIFY_JSON=$(npx wrangler d1 execute DB --remote --env production --json \
+    --command "SELECT github_username, tier FROM user WHERE github_username='$USERNAME';" 2>/dev/null)
+VERIFIED_TIER=$(echo "$VERIFY_JSON" | jq -r '.[0].results[0].tier // empty')
 
-echo ""
-log "✅ Tier updated: $USERNAME → $TARGET_TIER"
+if [ "$VERIFIED_TIER" = "$TARGET_TIER" ]; then
+    log "✅ Tier updated: $USERNAME → $TARGET_TIER"
+else
+    error "Verification failed: expected $TARGET_TIER but got $VERIFIED_TIER"
+fi

@@ -938,7 +938,7 @@ export const creativeProjects = [
         name: "GPTAI.host 🛠️",
         url: "https://gptai.host/",
         description:
-            "Free and unlimited AI tools platform with text generation, image generation, and audio generation. No registration required.",
+            "Completely free AI toolkit offering unlimited text, image, and audio generation. No registration or API keys needed - just start creating instantly.",
         author: "@carlseo",
         submissionDate: "2025-10-28",
         order: 1,

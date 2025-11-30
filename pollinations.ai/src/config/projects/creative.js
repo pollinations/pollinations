@@ -910,7 +910,7 @@ export const creativeProjects = [
         name: "Pollinations Gallery 🖼️",
         url: "https://leofy18.github.io/gallery/",
         description:
-            "Interactive gallery showcasing AI-generated images powered by Pollinations. Browse and explore creative AI art.",
+            "Curated gallery of AI-generated artwork powered by Pollinations. Explore, browse, and discover stunning creative pieces from the community.",
         author: "@leofy18",
         repo: "https://github.com/leofy18/gallery",
         submissionDate: "2025-11-25",

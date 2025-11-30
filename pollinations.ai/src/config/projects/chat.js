@@ -545,7 +545,7 @@ export const chatProjects = [
         name: "Fikiri Chat AI 💬",
         url: "https://fikirichat.netlify.app/",
         description:
-            "Multi-model AI chat platform supporting various LLMs through Pollinations API. Clean interface for conversational AI interactions.",
+            "Multi-model AI chat platform with seamless LLM switching via Pollinations API. Features a clean, intuitive interface designed for natural conversational interactions.",
         author: "@brianmativo",
         submissionDate: "2025-11-24",
         order: 1,

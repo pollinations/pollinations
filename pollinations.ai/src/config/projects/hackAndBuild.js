@@ -377,7 +377,7 @@ export const hackAndBuildProjects = [
     {
         name: "PDF-to-Speech 🔊",
         description:
-            "Python tool to convert PDF documents to speech using Pollinations AI text-to-speech capabilities. Extract text from PDFs and generate natural audio output.",
+            "Convert any PDF document into natural-sounding audio using Pollinations AI TTS. Open-source Python tool that extracts text and generates high-quality speech output.",
         author: "@Ak-Yadav",
         repo: "https://github.com/Ak-Yadav/pdf_to_speech",
         submissionDate: "2025-11-25",

@@ -1,16 +1,10 @@
 import { getTextServices } from "@shared/registry/registry.ts";
-import {
-    createExecutionContext,
-    env,
-    SELF,
-    waitOnExecutionContext,
-} from "cloudflare:test";
+import { SELF } from "cloudflare:test";
 import { test } from "../fixtures.ts";
 import { describe, expect } from "vitest";
 import type { ServiceId } from "@shared/registry/registry.ts";
 import { CompletionUsageSchema } from "@/schemas/openai.ts";
 import { parseUsageHeaders } from "@shared/registry/usage-headers.ts";
-import worker from "@/index.ts";
 
 const TEST_DISABLE_CACHE = false;
 const TEST_ALL_SERVICES = true;
@@ -102,46 +96,52 @@ describe("POST /generate/v1/chat/completions (authenticated)", async () => {
 });
 
 describe("POST /generate/v1/chat/completions (streaming)", async () => {
+    // TODO: Tinybird event assertions disabled for streaming tests
+    // Root cause: VCR replayed streams don't properly trigger usage extraction
+    // in extractUsageAndContentFilterResultsStream(), resulting in modelUsage: null
+    // and isBilledUsage: false, so no event gets stored.
+    // Fix requires either: (1) VCR to capture/replay usage data separately, or
+    // (2) fix stream format compatibility between VCR replay and usage extraction.
+    // See: src/middleware/track.ts lines 449-527
     test.for(authenticatedTestCases())(
         "%s should respond with 200 when streaming",
         { timeout: 30000 },
         async ([serviceId, expectedStatus], { apiKey, mocks }) => {
             await mocks.enable("polar", "tinybird", "vcr");
-            const ctx = createExecutionContext();
-            const response = await worker.fetch(
-                new Request(
-                    `http://localhost:3000/api/generate/v1/chat/completions`,
-                    {
-                        method: "POST",
-                        headers: {
-                            "content-type": "application/json",
-                            "authorization": `Bearer ${apiKey}`,
-                        },
-                        body: JSON.stringify({
-                            model: serviceId,
-                            messages: [
-                                {
-                                    role: "user",
-                                    content: testMessageContent(),
-                                },
-                            ],
-                            stream: true,
-                        }),
+            const response = await SELF.fetch(
+                `http://localhost:3000/api/generate/v1/chat/completions`,
+                {
+                    method: "POST",
+                    headers: {
+                        "content-type": "application/json",
+                        "authorization": `Bearer ${apiKey}`,
                     },
-                ),
-                env,
-                ctx,
+                    body: JSON.stringify({
+                        model: serviceId,
+                        messages: [
+                            {
+                                role: "user",
+                                content: testMessageContent(),
+                            },
+                        ],
+                        stream: true,
+                    }),
+                },
             );
             expect(response.status).toBe(expectedStatus);
-            ctx.passThroughOnException();
 
             // consume the stream
             await response.text();
-            await waitOnExecutionContext(ctx);
 
-            // Note: Tinybird event assertions removed because VCR mock replaying
-            // doesn't trigger async event processing for streaming responses.
-            // Tinybird events are tested in non-streaming tests.
+            // TODO: Re-enable when VCR streaming + usage extraction is fixed
+            // const events = mocks.tinybird.state.events;
+            // expect(events).toHaveLength(1);
+            // events.forEach((event) => {
+            //     expect(event.modelUsed).toBeDefined();
+            //     expect(event.tokenCountPromptText).toBeGreaterThan(0);
+            //     expect(event.tokenCountCompletionText).toBeGreaterThan(0);
+            //     expect(event.totalCost).toBeGreaterThan(0);
+            // });
         },
     );
 });

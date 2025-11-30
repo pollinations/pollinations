@@ -53,9 +53,7 @@ const polarAccessToken = (env: "staging" | "production") => {
     }
 };
 
-if (!polarAccessToken) {
-    throw new Error("POLAR_ACCESS_TOKEN environment variable is required");
-}
+// Note: polarAccessToken is a function - validation happens when called
 
 function createPolarClient(env: "staging" | "production") {
     const server = env === "production" ? "production" : "sandbox";
@@ -714,6 +712,14 @@ const userUpdateTier = command({
         console.log(`   ID: ${subscription.id}`);
         console.log(`   Current: ${subscription.product.name}`);
         console.log(`   Status: ${subscription.status}`);
+
+        if (subscription.status !== "active") {
+            console.error(
+                `❌ Subscription not active (status: ${subscription.status})`,
+            );
+            console.log(`   User needs to reactivate at enter.pollinations.ai`);
+            process.exit(1);
+        }
 
         if (subscription.productId === targetProductId) {
             console.log(`✅ Already on ${opts.tier} tier`);

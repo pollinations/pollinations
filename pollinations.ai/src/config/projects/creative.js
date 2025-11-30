@@ -900,7 +900,7 @@ export const creativeProjects = [
         name: "Prompt Vision 🎨",
         url: "https://promptvision.jagrut.me",
         description:
-            "Generate images via prompts and share with the community. Features AI prompt suggestions and search query capabilities.",
+            "Create and share AI-generated images with the community. Features intelligent prompt suggestions and powerful search capabilities for discovering creations.",
         author: "@jagrut-bhole",
         repo: "https://github.com/jagrut-bhole/promptvision",
         submissionDate: "2025-11-27",

@@ -531,4 +531,52 @@ export const chatProjects = [
         submissionDate: "2025-11-29",
         order: 1,
     },
+    {
+        name: "Xibe-chat-cli 💬",
+        url: "https://pypi.org/project/xibe-chat-cli/",
+        description:
+            "AI chat + image generation in CLI with rich text UI. Open-source Python package for terminal-based AI interactions.",
+        author: "@R3AP3Redit",
+        repo: "https://github.com/iotserver24/xibe-chat-cli",
+        submissionDate: "2025-11-30",
+        order: 1,
+    },
+    {
+        name: "Fikiri Chat AI 💬",
+        url: "https://fikirichat.netlify.app/",
+        description:
+            "Multi-model AI chat platform supporting various LLMs through Pollinations API. Clean interface for conversational AI interactions.",
+        author: "@brianmativo",
+        submissionDate: "2025-11-24",
+        order: 1,
+    },
+    {
+        name: "PollinationsFreeAI 🆓",
+        url: "https://pollinations-free-ai.vercel.app/",
+        description:
+            "Free AI platform leveraging Pollinations for text and image generation. No signup required.",
+        author: "@Poli-Chat",
+        repo: "https://github.com/Poli-Chat/PollinationsFreeAI",
+        submissionDate: "2025-11-23",
+        order: 1,
+    },
+    {
+        name: "Samaritan AI 🤖",
+        url: "https://samaritan-ai-web.vercel.app/",
+        description:
+            "AI assistant platform with chat capabilities powered by Pollinations. Features clean UI and multiple conversation threads.",
+        author: "@mdarman4002",
+        submissionDate: "2025-11-22",
+        order: 1,
+    },
+    {
+        name: "ReThink AI 🇮🇩",
+        url: "https://rethink.co.id",
+        description:
+            "Hybrid AI platform for Indonesian market combining proprietary LLM (ReThink V1) with Pollinations API. Features Gemini 2.5 Flash and Flux Pro image generation.",
+        author: "@Djongoks",
+        submissionDate: "2025-10-28",
+        language: "id-ID",
+        order: 1,
+    },
 ];

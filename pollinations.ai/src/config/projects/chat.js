@@ -573,7 +573,7 @@ export const chatProjects = [
         name: "ReThink AI 🇮🇩",
         url: "https://rethink.co.id",
         description:
-            "Hybrid AI platform for Indonesian market combining proprietary LLM (ReThink V1) with Pollinations API. Features Gemini 2.5 Flash and Flux Pro image generation.",
+            "High-performance AI platform tailored for Indonesia, blending a custom-trained LLM (ReThink V1) with Pollinations API. Achieves 100/100 Lighthouse scores with Gemini 2.5 Flash and Flux Pro integration.",
         author: "@Djongoks",
         submissionDate: "2025-10-28",
         language: "id-ID",

@@ -4,6 +4,8 @@ description: Update a user's tier (DB + Polar subscription)
 
 # Update User Tier
 
+> **Note**: For Claude users, prefer the `tier-management` skill at `.claude/skills/tier-management/SKILL.md`
+
 ## Prerequisites
 - Must be in `enter.pollinations.ai` directory
 - Need access to sops for decrypting secrets

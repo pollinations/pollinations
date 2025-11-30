@@ -126,8 +126,6 @@ function createTextGenerationEvent({
         errorResponseCode: undefined,
         errorSource: undefined,
         errorMessage: undefined,
-        errorStack: undefined,
-        errorDetails: undefined,
     };
 }
 

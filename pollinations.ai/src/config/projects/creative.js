@@ -5,6 +5,16 @@
 
 export const creativeProjects = [
     {
+        name: "ViralFlow AI 🎬",
+        url: "https://github.com/FabioArieiraBaia/ViralFlow",
+        description:
+            "Automated viral video generator using Gemini 2.5 for scripts/TTS and Pollinations.ai for image generation. Features AI scriptwriting, cinematic TTS, and video rendering with effects.",
+        author: "@FabioArieiraBaia",
+        repo: "https://github.com/FabioArieiraBaia/ViralFlow",
+        submissionDate: "2025-11-30",
+        order: 1,
+    },
+    {
         name: "SRT Translator CLI 🎬",
         url: "https://github.com/smarques/subs-cli",
         description:

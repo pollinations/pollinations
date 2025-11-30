@@ -25,7 +25,7 @@
       "cache-control": "no-cache",
       "connection": "keep-alive",
       "content-type": "text/event-stream; charset=utf-8",
-      "date": "Sat, 29 Nov 2025 21:03:37 GMT",
+      "date": "Sun, 30 Nov 2025 16:13:51 GMT",
       "transfer-encoding": "chunked",
       "x-powered-by": "Express"
     },
@@ -33,19 +33,19 @@
       "type": "stream",
       "data": [
         {
-          "data": "data: {\"id\":\"84a41852-efb2-",
-          "delay": 3
+          "data": "data: {\"id\":\"57fb628b-6d75-",
+          "delay": 17
         },
         {
-          "data": "4bd2-ac3d-98939a402257\",\"object\":\"chat.completion.chunk\",\"created\":1764450217,\"model\":\"sonar\",\"provider\":\"perplexity-ai\",\"citations\":[\"https://www.interactico.com/blog/yes-or-no-poll-questions\",\"https://mangolanguages.com/resources/learn/grammar/english/how-to-ask-questions-in-english/study-resource-other-ways-to-answer-yes-no-questions-in-english\",\"https://qualaroo.com/blog/yes-or-no-surveys/\"],\"choices\":[{\"delta\":{\"role\":\"assistant\",\"content\":\"Yes\"},\"index\":0}]}\n\n",
-          "delay": 0
+          "data": "4dce-ae3b-7c73d1c052a7\",\"object\":\"chat.completion.chunk\",\"created\":1764519231,\"model\":\"sonar\",\"provider\":\"perplexity-ai\",\"citations\":[\"https://promova.com/blog/yes-or-no-questions\",\"https://www.interactico.com/blog/yes-or-no-poll-questions\",\"https://mangolanguages.com/resources/learn/grammar/english/how-to-ask-questions-in-english/study-resource-other-ways-to-answer-yes-no-questions-in-english\"],\"choices\":[{\"delta\":{\"role\":\"assistant\",\"content\":\"Yes\"},\"index\":0}]}\n\ndata: {\"id\":\"57fb628b-6d75-4dce-ae3b-7c73d1c052a7\",\"object\":\"chat.completion.chunk\",\"created\":1764519231,\"model\":\"sonar\",\"provider\":\"perplexity-ai\",\"citations\":[\"https://promova.com/blog/yes-or-no-questions\",\"https://www.interactico.com/blog/yes-or-no-poll-questions\",\"https://mangolanguages.com/resources/learn/grammar/english/how-to-ask-questions-in-english/study-resource-other-ways-to-answer-yes-no-questions-in-english\"],\"choices\":[{\"delta\":{\"role\":\"assistant\",\"content\":\".\"},\"index\":0}]}\n\n",
+          "delay": 1
         },
         {
-          "data": "data: {\"id\":\"84a41852-efb2-",
-          "delay": 13
+          "data": "data: {\"id\":\"57fb628b-6d75-",
+          "delay": 16
         },
         {
-          "data": "4bd2-ac3d-98939a402257\",\"object\":\"chat.completion.done\",\"created\":1764450217,\"model\":\"sonar\",\"provider\":\"perplexity-ai\",\"citations\":[\"https://www.interactico.com/blog/yes-or-no-poll-questions\",\"https://mangolanguages.com/resources/learn/grammar/english/how-to-ask-questions-in-english/study-resource-other-ways-to-answer-yes-no-questions-in-english\",\"https://qualaroo.com/blog/yes-or-no-surveys/\"],\"choices\":[{\"delta\":{\"role\":\"assistant\",\"content\":\"\"},\"index\":0,\"finish_reason\":\"stop\"}],\"usage\":{\"prompt_tokens\":253,\"completion_tokens\":1,\"total_tokens\":254,\"search_context_size\":\"low\",\"cost\":{\"input_tokens_cost\":0,\"output_tokens_cost\":0,\"request_cost\":0.005,\"total_cost\":0.005}}}\n\ndata: [DONE]\n\n",
+          "data": "4dce-ae3b-7c73d1c052a7\",\"object\":\"chat.completion.done\",\"created\":1764519231,\"model\":\"sonar\",\"provider\":\"perplexity-ai\",\"citations\":[\"https://promova.com/blog/yes-or-no-questions\",\"https://www.interactico.com/blog/yes-or-no-poll-questions\",\"https://mangolanguages.com/resources/learn/grammar/english/how-to-ask-questions-in-english/study-resource-other-ways-to-answer-yes-no-questions-in-english\"],\"choices\":[{\"delta\":{\"role\":\"assistant\",\"content\":\"\"},\"index\":0,\"finish_reason\":\"stop\"}],\"usage\":{\"prompt_tokens\":253,\"completion_tokens\":2,\"total_tokens\":255,\"search_context_size\":\"low\",\"cost\":{\"input_tokens_cost\":0,\"output_tokens_cost\":0,\"request_cost\":0.005,\"total_cost\":0.005}}}\n\ndata: [DONE]\n\n",
           "delay": 0
         }
       ]

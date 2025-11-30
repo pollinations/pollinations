@@ -5,7 +5,7 @@
     "body": {
       "type": "json",
       "data": {
-        "model": "midijourney",
+        "model": "openai-fast",
         "messages": [
           {
             "role": "user",
@@ -22,17 +22,17 @@
     "headers": {
       "access-control-allow-origin": "*",
       "connection": "keep-alive",
-      "content-length": "1214",
+      "content-length": "1237",
       "content-type": "application/json; charset=utf-8",
-      "date": "Sun, 30 Nov 2025 16:12:37 GMT",
-      "etag": "W/\"4be-5T2Y6Dfc0YB1NLuaPhBvdrBCyQ8\"",
+      "date": "Sun, 30 Nov 2025 16:12:19 GMT",
+      "etag": "W/\"4d5-KC/QmAdHOwVgqffvbw3mj48FlMU\"",
       "keep-alive": "timeout=5",
-      "x-model-used": "gpt-4.1-2025-04-14",
+      "x-model-used": "gpt-5-nano-2025-08-07",
       "x-powered-by": "Express",
-      "x-usage-completion-text-tokens": "2",
-      "x-usage-prompt-cached-tokens": "1152",
-      "x-usage-prompt-text-tokens": "19",
-      "x-usage-total-tokens": "1173"
+      "x-usage-completion-reasoning-tokens": "384",
+      "x-usage-completion-text-tokens": "19",
+      "x-usage-prompt-text-tokens": "253",
+      "x-usage-total-tokens": "656"
     },
     "body": {
       "type": "json",
@@ -70,15 +70,15 @@
             "logprobs": null,
             "message": {
               "annotations": [],
-              "content": "no",
+              "content": "What should I answer yes or no to?",
               "refusal": null,
               "role": "assistant"
             }
           }
         ],
-        "created": 1764519157,
-        "id": "pllns_184ccbd84442e6914ac72ce9384de66b",
-        "model": "gpt-4.1-2025-04-14",
+        "created": 1764519137,
+        "id": "pllns_e259caf19cf4df074950167695bba8a2",
+        "model": "gpt-5-nano-2025-08-07",
         "object": "chat.completion",
         "prompt_filter_results": [
           {
@@ -107,21 +107,21 @@
             }
           }
         ],
-        "system_fingerprint": "fp_f99638a8d7",
+        "system_fingerprint": null,
         "usage": {
-          "completion_tokens": 2,
+          "completion_tokens": 403,
           "completion_tokens_details": {
             "accepted_prediction_tokens": 0,
             "audio_tokens": 0,
-            "reasoning_tokens": 0,
+            "reasoning_tokens": 384,
             "rejected_prediction_tokens": 0
           },
-          "prompt_tokens": 1171,
+          "prompt_tokens": 253,
           "prompt_tokens_details": {
             "audio_tokens": 0,
-            "cached_tokens": 1152
+            "cached_tokens": 0
           },
-          "total_tokens": 1173
+          "total_tokens": 656
         }
       }
     }

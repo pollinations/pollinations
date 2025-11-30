@@ -252,23 +252,7 @@ export const TEXT_SERVICES = {
         tools: true,
         isSpecialized: false,
     },
-    "chickytutor": {
-        aliases: [],
-        modelId: "us.anthropic.claude-3-5-haiku-20241022-v1:0",
-        provider: "aws-bedrock",
-        cost: [
-            {
-                date: COST_START_DATE,
-                promptTextTokens: perMillion(0.8),
-                completionTextTokens: perMillion(4.0),
-            },
-        ],
-        description: "ChickyTutor AI Language Tutor - (chickytutor.com)",
-        inputModalities: ["text"],
-        outputModalities: ["text"],
-        tools: true,
-        isSpecialized: true,
-    },
+    // "chickytutor" temporarily disabled - specialized model with issues
     "midijourney": {
         aliases: [],
         modelId: "gpt-4.1-2025-04-14",

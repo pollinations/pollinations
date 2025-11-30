@@ -24,8 +24,8 @@
       "connection": "keep-alive",
       "content-length": "434",
       "content-type": "application/json; charset=utf-8",
-      "date": "Sat, 29 Nov 2025 21:02:20 GMT",
-      "etag": "W/\"1b2-OXsAzeIAhfTqWn8iYIKjahbTI1k\"",
+      "date": "Sun, 30 Nov 2025 16:12:41 GMT",
+      "etag": "W/\"1b2-TaesPF3wZ9SwUf/iOSC4uUl/DJ8\"",
       "keep-alive": "timeout=5",
       "x-model-used": "us.anthropic.claude-sonnet-4-5-20250929-v1:0",
       "x-powered-by": "Express",
@@ -36,9 +36,9 @@
     "body": {
       "type": "json",
       "data": {
-        "id": "pllns_e46588f4900b437312bd79d66f1bac6d",
+        "id": "pllns_2dd8a0231835790eebba092180ba6b69",
         "object": "chat.completion",
-        "created": 1764450140,
+        "created": 1764519161,
         "model": "us.anthropic.claude-sonnet-4-5-20250929-v1:0",
         "provider": "bedrock",
         "choices": [

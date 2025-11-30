@@ -15,21 +15,21 @@
       "access-control-allow-origin": "*",
       "cache-control": "public, max-age=31536000, immutable",
       "connection": "keep-alive",
-      "content-length": "173",
+      "content-length": "52",
       "content-type": "text/plain; charset=utf-8",
-      "date": "Sat, 29 Nov 2025 21:04:18 GMT",
-      "etag": "W/\"ad-/K3NvTugMh5avK2+KC+ZsdzbApc\"",
+      "date": "Sun, 30 Nov 2025 16:14:30 GMT",
+      "etag": "W/\"34-lDCihJOu0sonfp8C8cJMYjDY5/o\"",
       "keep-alive": "timeout=5",
       "x-model-used": "gpt-5-nano-2025-08-07",
       "x-powered-by": "Express",
       "x-usage-completion-reasoning-tokens": "512",
-      "x-usage-completion-text-tokens": "50",
+      "x-usage-completion-text-tokens": "23",
       "x-usage-prompt-text-tokens": "253",
-      "x-usage-total-tokens": "815"
+      "x-usage-total-tokens": "788"
     },
     "body": {
       "type": "text",
-      "data": "Could you share the statement or question you want me to answer with yes or no? I’ll respond with a simple yes or no. If you want, I can also add a quick reason afterward."
+      "data": "Sure—what question should I answer with yes or no?"
     }
   }
 }

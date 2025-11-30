@@ -22,34 +22,34 @@
     "headers": {
       "access-control-allow-origin": "*",
       "connection": "keep-alive",
-      "content-length": "494",
+      "content-length": "492",
       "content-type": "application/json; charset=utf-8",
-      "date": "Sat, 29 Nov 2025 21:01:50 GMT",
-      "etag": "W/\"1ee-VptjqHDRAVOf6ZqIWYcZOTmGTog\"",
+      "date": "Sun, 30 Nov 2025 16:12:26 GMT",
+      "etag": "W/\"1ec-IAxUChq9qkF3iwU8NVBvFuf0CDg\"",
       "keep-alive": "timeout=5",
       "x-model-used": "gemini-2.5-flash-lite",
       "x-powered-by": "Express",
-      "x-usage-completion-text-tokens": "2",
+      "x-usage-completion-text-tokens": "1",
       "x-usage-prompt-text-tokens": "259",
-      "x-usage-total-tokens": "261"
+      "x-usage-total-tokens": "260"
     },
     "body": {
       "type": "json",
       "data": {
-        "id": "pllns_fbcb18f7d061524a505c6ce247e38524",
+        "id": "pllns_f330052dfe26f038db3558589986e4d8",
         "object": "chat.completion",
-        "created": 1764450110,
+        "created": 1764519146,
         "model": "gemini-2.5-flash-lite",
         "provider": "vertex-ai",
         "choices": [
           {
             "message": {
               "role": "assistant",
-              "content": "Yes.",
+              "content": "Yes",
               "content_blocks": [
                 {
                   "type": "text",
-                  "text": "Yes."
+                  "text": "Yes"
                 }
               ]
             },
@@ -59,8 +59,8 @@
         ],
         "usage": {
           "prompt_tokens": 259,
-          "completion_tokens": 2,
-          "total_tokens": 261,
+          "completion_tokens": 1,
+          "total_tokens": 260,
           "completion_tokens_details": {
             "reasoning_tokens": 0,
             "audio_tokens": 0

@@ -25,7 +25,7 @@
       "cache-control": "no-cache",
       "connection": "keep-alive",
       "content-type": "text/event-stream; charset=utf-8",
-      "date": "Sat, 29 Nov 2025 21:03:29 GMT",
+      "date": "Sun, 30 Nov 2025 16:13:43 GMT",
       "transfer-encoding": "chunked",
       "x-powered-by": "Express"
     },
@@ -34,26 +34,10 @@
       "data": [
         {
           "data": "data: {\"id\":\"vertex-ai-1764",
-          "delay": 26
+          "delay": 24
         },
         {
-          "data": "450209896\",\"object\":\"chat.completion.chunk\",\"created\":1764450209,\"model\":\"gemini-2.5-flash-lite\",\"provider\":\"vertex-ai\",\"choices\":[{\"delta\":{\"role\":\"assistant\",\"content\":\"I\",\"content_blocks\":[{\"index\":0,\"delta\":{\"text\":\"I\"}}]},\"index\":0,\"finish_reason\":null,\"groundingMetadata\":{}}]}\n\n",
-          "delay": 0
-        },
-        {
-          "data": "data: {\"id\":\"vertex-ai-17",
-          "delay": 0
-        },
-        {
-          "data": "64450209896\",\"object\":\"chat.completion.chunk\",\"created\":1764450209,\"model\":\"gemini-2.5-flash-lite\",\"provider\":\"vertex-ai\",\"choices\":[{\"delta\":{\"role\":\"assistant\",\"content\":\" need more information to answer \\\"yes\\\" or \\\"no.\\\" Please provide the question\",\"content_blocks\":[{\"index\":0,\"delta\":{\"text\":\" need more information to answer \\\"yes\\\" or \\\"no.\\\" Please provide the question\"}}]},\"index\":0,\"finish_reason\":null,\"groundingMetadata\":{}}]}\n\n",
-          "delay": 0
-        },
-        {
-          "data": "data: {\"id\":\"vertex-ai-17",
-          "delay": 0
-        },
-        {
-          "data": "64450209896\",\"object\":\"chat.completion.chunk\",\"created\":1764450209,\"model\":\"gemini-2.5-flash-lite\",\"provider\":\"vertex-ai\",\"choices\":[{\"delta\":{\"role\":\"assistant\",\"content\":\" you would like me to answer.\",\"content_blocks\":[{\"index\":0,\"delta\":{\"text\":\" you would like me to answer.\"}}]},\"index\":0,\"finish_reason\":\"STOP\",\"groundingMetadata\":{}}],\"usage\":{\"prompt_tokens\":6,\"completion_tokens\":24,\"total_tokens\":30,\"completion_tokens_details\":{\"reasoning_tokens\":0,\"audio_tokens\":0},\"prompt_tokens_details\":{\"audio_tokens\":0}}}\n\n",
+          "data": "519223075\",\"object\":\"chat.completion.chunk\",\"created\":1764519223,\"model\":\"gemini-2.5-flash-lite\",\"provider\":\"vertex-ai\",\"choices\":[{\"delta\":{\"role\":\"assistant\",\"content\":\"Please\",\"content_blocks\":[{\"index\":0,\"delta\":{\"text\":\"Please\"}}]},\"index\":0,\"finish_reason\":null,\"groundingMetadata\":{}}]}\n\ndata: {\"id\":\"vertex-ai-1764519223075\",\"object\":\"chat.completion.chunk\",\"created\":1764519223,\"model\":\"gemini-2.5-flash-lite\",\"provider\":\"vertex-ai\",\"choices\":[{\"delta\":{\"role\":\"assistant\",\"content\":\" provide me with the question you would like me to answer with a \\\"yes\\\" or \\\"\",\"content_blocks\":[{\"index\":0,\"delta\":{\"text\":\" provide me with the question you would like me to answer with a \\\"yes\\\" or \\\"\"}}]},\"index\":0,\"finish_reason\":null,\"groundingMetadata\":{}}]}\n\ndata: {\"id\":\"vertex-ai-1764519223075\",\"object\":\"chat.completion.chunk\",\"created\":1764519223,\"model\":\"gemini-2.5-flash-lite\",\"provider\":\"vertex-ai\",\"choices\":[{\"delta\":{\"role\":\"assistant\",\"content\":\"no\\\".\",\"content_blocks\":[{\"index\":0,\"delta\":{\"text\":\"no\\\".\"}}]},\"index\":0,\"finish_reason\":\"STOP\",\"groundingMetadata\":{}}],\"usage\":{\"prompt_tokens\":6,\"completion_tokens\":21,\"total_tokens\":27,\"completion_tokens_details\":{\"reasoning_tokens\":0,\"audio_tokens\":0},\"prompt_tokens_details\":{\"audio_tokens\":0}}}\n\n",
           "delay": 0
         }
       ]

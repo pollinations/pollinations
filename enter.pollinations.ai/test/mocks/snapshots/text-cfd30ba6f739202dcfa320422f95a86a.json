@@ -15,21 +15,21 @@
       "access-control-allow-origin": "*",
       "cache-control": "public, max-age=31536000, immutable",
       "connection": "keep-alive",
-      "content-length": "4",
+      "content-length": "3",
       "content-type": "text/plain; charset=utf-8",
-      "date": "Sat, 29 Nov 2025 21:04:22 GMT",
-      "etag": "W/\"4-xTxWLatLM7PkLzvE2OVxlDmpwVU\"",
+      "date": "Sun, 30 Nov 2025 16:14:35 GMT",
+      "etag": "W/\"3-U5fgWD8U9siN4Gse8o9GCh+1sK4\"",
       "keep-alive": "timeout=5",
       "x-model-used": "o4-mini-2025-04-16",
       "x-powered-by": "Express",
-      "x-usage-completion-reasoning-tokens": "192",
-      "x-usage-completion-text-tokens": "21",
+      "x-usage-completion-reasoning-tokens": "64",
+      "x-usage-completion-text-tokens": "20",
       "x-usage-prompt-text-tokens": "256",
-      "x-usage-total-tokens": "469"
+      "x-usage-total-tokens": "340"
     },
     "body": {
       "type": "text",
-      "data": "Yes."
+      "data": "Yes"
     }
   }
 }

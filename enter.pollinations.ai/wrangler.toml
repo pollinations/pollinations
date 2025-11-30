@@ -28,7 +28,6 @@ id = "aa0d0aceb6bd45de93032270c7adf4ab"
 [[r2_buckets]]
 binding = "IMAGE_BUCKET"
 bucket_name = "pollinations-images"
-remote = true
 
 [[durable_objects.bindings]]
 name = "POLLEN_RATE_LIMITER"
@@ -77,7 +76,6 @@ id = "aa0d0aceb6bd45de93032270c7adf4ab"
 [[env.local.r2_buckets]]
 binding = "IMAGE_BUCKET"
 bucket_name = "pollinations-images"
-remote = true
 
 [env.local.vars]
 ENVIRONMENT = "local"
@@ -109,7 +107,6 @@ zone_name = "pollinations.ai"
 custom_domain = true
 
 [[env.production.d1_databases]]
-remote = true
 binding = "DB"
 database_name = "production-pollinations-enter-db"
 database_id = "f9cf0f09-b7aa-4cd3-8f9d-fa50c97ff1f3"

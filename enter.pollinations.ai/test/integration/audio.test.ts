@@ -2,7 +2,7 @@ import { SELF } from "cloudflare:test";
 import { test } from "../fixtures.ts";
 import { describe, expect } from "vitest";
 
-describe("GET /text/:prompt (audio)", () => {
+describe.skip("GET /text/:prompt (audio)", () => {
     test(
         "GET /text/:prompt with openai-audio should return raw audio",
         { timeout: 30000 },

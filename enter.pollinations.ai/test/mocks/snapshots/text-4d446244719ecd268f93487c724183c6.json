@@ -22,36 +22,36 @@
     "headers": {
       "access-control-allow-origin": "*",
       "connection": "keep-alive",
-      "content-length": "651",
+      "content-length": "640",
       "content-type": "application/json; charset=utf-8",
-      "date": "Sat, 29 Nov 2025 21:02:25 GMT",
-      "etag": "W/\"28b-yotgSQwcyXHGEmhAxu1MfyJbzhc\"",
+      "date": "Sun, 30 Nov 2025 16:12:45 GMT",
+      "etag": "W/\"280-B64ETcGq8qvomrKxfyY5xiqW3vk\"",
       "keep-alive": "timeout=5",
       "x-model-used": "sonar",
       "x-powered-by": "Express",
-      "x-usage-completion-text-tokens": "2",
+      "x-usage-completion-text-tokens": "1",
       "x-usage-prompt-text-tokens": "253",
-      "x-usage-total-tokens": "255"
+      "x-usage-total-tokens": "254"
     },
     "body": {
       "type": "json",
       "data": {
-        "id": "pllns_c9c98bbdcebad505827f52a815e8f040",
+        "id": "pllns_d997fb45027d6b75d9a23a21a8c61576",
         "object": "chat.completion",
-        "created": 1764450145,
+        "created": 1764519165,
         "model": "sonar",
         "provider": "perplexity-ai",
         "citations": [
           "https://promova.com/blog/yes-or-no-questions",
           "https://www.interactico.com/blog/yes-or-no-poll-questions",
           "https://mangolanguages.com/resources/learn/grammar/english/how-to-ask-questions-in-english/study-resource-other-ways-to-answer-yes-no-questions-in-english",
-          "https://meetroi.com/responding-to-yes-or-no-questions/"
+          "https://qualaroo.com/blog/yes-or-no-surveys/"
         ],
         "choices": [
           {
             "message": {
               "role": "assistant",
-              "content": "Yes."
+              "content": "Yes"
             },
             "index": 0,
             "logprobs": null,
@@ -60,8 +60,8 @@
         ],
         "usage": {
           "prompt_tokens": 253,
-          "completion_tokens": 2,
-          "total_tokens": 255
+          "completion_tokens": 1,
+          "total_tokens": 254
         }
       }
     }

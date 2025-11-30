@@ -9,7 +9,7 @@ import { createGoogleSearchTransform } from "./transforms/createGoogleSearchTran
 
 // Import persona prompts
 import midijourneyPrompt from "./personas/midijourney.js";
-import chickyTutorPrompt from "./personas/chickytutor.js";
+// import chickyTutorPrompt from "./personas/chickytutor.js"; // temporarily disabled
 
 // Import system prompts
 import { BASE_PROMPTS } from "./prompts/systemPrompts.js";
@@ -56,11 +56,7 @@ const models: ModelDefinition[] = [
         config: portkeyConfig["mistral-small-3.2-24b-instruct-2506"],
         transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
     },
-    {
-        name: "mistral-fast",
-        config: portkeyConfig["us.meta.llama3-1-8b-instruct-v1:0"],
-        transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
-    },
+    // mistral-fast temporarily disabled - Bedrock max_tokens issue (PR #5503)
     {
         name: "deepseek",
         config: portkeyConfig["myceli-deepseek-v3.1"],
@@ -113,11 +109,7 @@ const models: ModelDefinition[] = [
         config: portkeyConfig["gpt-4.1-2025-04-14"],
         transform: createMessageTransform(midijourneyPrompt),
     },
-    {
-        name: "chickytutor",
-        config: portkeyConfig["us.anthropic.claude-3-5-haiku-20241022-v1:0"],
-        transform: createMessageTransform(chickyTutorPrompt),
-    },
+    // chickytutor temporarily disabled - specialized model with issues
     {
         name: "perplexity-fast",
         config: portkeyConfig["sonar"],

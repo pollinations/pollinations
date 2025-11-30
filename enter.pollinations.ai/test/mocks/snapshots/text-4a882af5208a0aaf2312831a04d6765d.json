@@ -24,8 +24,8 @@
       "connection": "keep-alive",
       "content-length": "433",
       "content-type": "application/json; charset=utf-8",
-      "date": "Sat, 29 Nov 2025 21:02:18 GMT",
-      "etag": "W/\"1b1-N6vsjXrmUpJjBvcMLx5eut0unOQ\"",
+      "date": "Sun, 30 Nov 2025 16:12:38 GMT",
+      "etag": "W/\"1b1-yRtm6IocH7e3zuhVRFKW0jpzplQ\"",
       "keep-alive": "timeout=5",
       "x-model-used": "us.anthropic.claude-haiku-4-5-20251001-v1:0",
       "x-powered-by": "Express",
@@ -36,9 +36,9 @@
     "body": {
       "type": "json",
       "data": {
-        "id": "pllns_f39bc36b4c31e99d44e2c951118a36b3",
+        "id": "pllns_674ba78d62cf35e5a82c6f8586217562",
         "object": "chat.completion",
-        "created": 1764450138,
+        "created": 1764519158,
         "model": "us.anthropic.claude-haiku-4-5-20251001-v1:0",
         "provider": "bedrock",
         "choices": [

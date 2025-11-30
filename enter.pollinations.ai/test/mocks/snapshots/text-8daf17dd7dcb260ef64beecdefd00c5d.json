@@ -25,7 +25,7 @@
       "cache-control": "no-cache",
       "connection": "keep-alive",
       "content-type": "text/event-stream; charset=utf-8",
-      "date": "Sat, 29 Nov 2025 21:03:02 GMT",
+      "date": "Sun, 30 Nov 2025 16:13:35 GMT",
       "transfer-encoding": "chunked",
       "x-powered-by": "Express"
     },
@@ -34,7 +34,7 @@
       "data": [
         {
           "data": "data: {\"error\":{\"message\":\"4",
-          "delay": 61
+          "delay": 80
         },
         {
           "data": "00: An error occurred (ValidationException) when calling the ConverseStream operation: The maximum tokens you requested exceeds the model limit of 8192. Try again with a maximum tokens value that is lower than 8192.\"}}\n\n",

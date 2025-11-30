@@ -33,6 +33,12 @@ case "$TARGET_TIER" in
     *) error "Invalid tier: $TARGET_TIER (must be: spore, seed, flower, nectar, router)" ;;
 esac
 
+# Sanitize USER_QUERY to prevent SQL injection
+# Only allow: alphanumeric, @, ., -, _
+if [[ ! "$USER_QUERY" =~ ^[a-zA-Z0-9@._-]+$ ]]; then
+    error "Invalid characters in query. Only alphanumeric, @, ., -, _ allowed."
+fi
+
 # Must be run from enter.pollinations.ai
 ENTER_DIR="$(dirname "$0")/../../../../enter.pollinations.ai"
 if [ ! -d "$ENTER_DIR" ]; then
@@ -57,6 +63,11 @@ echo ""
 USERNAME=$(echo "$USER_INFO" | grep "│" | head -1 | awk -F '│' '{print $2}' | tr -d ' ')
 EMAIL=$(echo "$USER_INFO" | grep "│" | head -1 | awk -F '│' '{print $3}' | tr -d ' ')
 CURRENT_TIER=$(echo "$USER_INFO" | grep "│" | head -1 | awk -F '│' '{print $4}' | tr -d ' ')
+
+# Validate extracted username (prevent injection from malformed DB data)
+if [[ ! "$USERNAME" =~ ^[a-zA-Z0-9_-]+$ ]]; then
+    error "Invalid username format from database"
+fi
 
 if [ -z "$USERNAME" ]; then
     error "Could not parse user info"

@@ -441,6 +441,7 @@ const UserTierSchema = z.literal(["anonymous", "seed", "flower", "nectar"]);
 export type UserTier = z.infer<typeof UserTierSchema>;
 
 const CompletionChoiceSchema = z.object({
+    // Accept any string - backends may return various values (stop, length, error, max_tokens, etc.)
     finish_reason: z.string().nullable().optional(),
     index: z.number().int().nonnegative().optional(), // Optional for non-OpenAI providers
     message: ChatCompletionResponseMessageSchema.optional(), // Optional for non-OpenAI providers
@@ -498,6 +499,7 @@ export const CreateChatCompletionStreamResponseSchema = z.object({
         z.object({
             delta: ChatCompletionStreamResponseDeltaSchema,
             logprobs: ChatCompletionChoiceLogprobsSchema.optional(),
+            // Accept any string - backends may return various values
             finish_reason: z.string().nullable().optional(),
             index: z.number().int().nonnegative(),
         }),

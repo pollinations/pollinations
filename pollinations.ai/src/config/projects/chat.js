@@ -564,7 +564,7 @@ export const chatProjects = [
         name: "Samaritan AI 🤖",
         url: "https://samaritan-ai-web.vercel.app/",
         description:
-            "AI assistant platform with chat capabilities powered by Pollinations. Features clean UI and multiple conversation threads.",
+            "Intelligent AI assistant platform powered by Pollinations. Offers a polished UI with support for multiple conversation threads and context-aware responses.",
         author: "@mdarman4002",
         submissionDate: "2025-11-22",
         order: 1,

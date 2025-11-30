@@ -1,6 +1,18 @@
 ---
 name: tier-management
-description: Evaluate and update Pollinations user tiers. Use when asked to check, upgrade, or manage user tiers in enter.pollinations.ai.
+description: Evaluate and update Pollinations user tiers. Requires: gh CLI, npx/wrangler, sops.
+---
+
+# Requirements
+
+Before using this skill, ensure you have:
+- **GitHub CLI**: `brew install gh && gh auth login`
+- **Node.js/npx**: `brew install node`
+- **Wrangler**: `npm install -g wrangler`
+- **sops**: `brew install sops` (for decrypting secrets)
+
+Must run from the `pollinations` repo root with access to `enter.pollinations.ai/`.
+
 ---
 
 # Tier Levels

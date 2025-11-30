@@ -125,7 +125,6 @@ export const tiersRoutes = new Hono<Env>()
         async (c) => {
             const log = c.get("log");
             const user = c.var.auth.requireUser();
-            const polar = c.var.polar.client;
 
             // Get tier assigned in Cloudflare DB
             log.debug(`User tier from DB: ${user.tier}, email: ${user.email}`);
@@ -140,10 +139,10 @@ export const tiersRoutes = new Hono<Env>()
             let subscription_canceled_at: string | undefined;
 
             try {
-                // Get customer state from Polar
-                const customerState = await polar.customers.getStateExternal({
-                    externalId: user.id,
-                });
+                // Get customer state from Polar (cached)
+                const customerState = await c.var.polar.getCustomerState(
+                    user.id,
+                );
 
                 const activeSubs = customerState.activeSubscriptions || [];
 

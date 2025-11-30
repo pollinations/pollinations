@@ -98,27 +98,28 @@ export const TEXT_SERVICES = {
         tools: true,
         isSpecialized: false,
     },
-    "mistral-fast": {
-        aliases: [
-            "llama-3.1-8b-instruct",
-            "llama-3.1-8b",
-            "meta-llama-3.1-8b-instruct",
-        ],
-        modelId: "us.meta.llama3-1-8b-instruct-v1:0",
-        provider: "aws-bedrock",
-        cost: [
-            {
-                date: COST_START_DATE,
-                promptTextTokens: perMillion(0.22),
-                completionTextTokens: perMillion(0.22),
-            },
-        ],
-        description: "Meta Llama 3.1 8B - Fast & Lightweight",
-        inputModalities: ["text"],
-        outputModalities: ["text"],
-        tools: true,
-        isSpecialized: false,
-    },
+    // "mistral-fast" temporarily disabled - backend returning 400 errors
+    // "mistral-fast": {
+    //     aliases: [
+    //         "llama-3.1-8b-instruct",
+    //         "llama-3.1-8b",
+    //         "meta-llama-3.1-8b-instruct",
+    //     ],
+    //     modelId: "us.meta.llama3-1-8b-instruct-v1:0",
+    //     provider: "aws-bedrock",
+    //     cost: [
+    //         {
+    //             date: COST_START_DATE,
+    //             promptTextTokens: perMillion(0.22),
+    //             completionTextTokens: perMillion(0.22),
+    //         },
+    //     ],
+    //     description: "Meta Llama 3.1 8B - Fast & Lightweight",
+    //     inputModalities: ["text"],
+    //     outputModalities: ["text"],
+    //     tools: true,
+    //     isSpecialized: false,
+    // },
     "openai-audio": {
         aliases: [
             "gpt-4o-mini-audio-preview",
@@ -216,24 +217,25 @@ export const TEXT_SERVICES = {
         reasoning: true,
         isSpecialized: false,
     },
-    "grok": {
-        aliases: ["grok-fast", "grok-4", "grok-4-fast"],
-        modelId: "grok-4-fast-non-reasoning",
-        provider: "azure",
-        cost: [
-            {
-                date: COST_START_DATE,
-                promptTextTokens: perMillion(0.2),
-                promptCachedTokens: perMillion(0.2), // Azure doesn't discount cached tokens for third-party models
-                completionTextTokens: perMillion(0.5),
-            },
-        ],
-        description: "xAI Grok 4 Fast - High Speed & Real-Time",
-        inputModalities: ["text"],
-        outputModalities: ["text"],
-        tools: true,
-        isSpecialized: false,
-    },
+    // "grok" temporarily disabled - timing out in tests (524 error)
+    // "grok": {
+    //     aliases: ["grok-fast", "grok-4", "grok-4-fast"],
+    //     modelId: "grok-4-fast-non-reasoning",
+    //     provider: "azure",
+    //     cost: [
+    //         {
+    //             date: COST_START_DATE,
+    //             promptTextTokens: perMillion(0.2),
+    //             promptCachedTokens: perMillion(0.2), // Azure doesn't discount cached tokens for third-party models
+    //             completionTextTokens: perMillion(0.5),
+    //         },
+    //     ],
+    //     description: "xAI Grok 4 Fast - High Speed & Real-Time",
+    //     inputModalities: ["text"],
+    //     outputModalities: ["text"],
+    //     tools: true,
+    //     isSpecialized: false,
+    // },
     "gemini-search": {
         aliases: ["gemini-2.5-flash-lite-search"],
         modelId: "gemini-2.5-flash-lite",

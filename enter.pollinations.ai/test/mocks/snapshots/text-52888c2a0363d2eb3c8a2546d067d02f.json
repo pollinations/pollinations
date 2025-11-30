@@ -1,6 +1,6 @@
 {
   "request": {
-    "url": "http://ec2-3-80-56-235.compute-1.amazonaws.com:16385/Reply%3A%20yes%20or%20no%3F?model=mistral-fast",
+    "url": "http://ec2-3-80-56-235.compute-1.amazonaws.com:16385/Reply%3A%20yes%20or%20no%3F?model=grok",
     "method": "GET",
     "body": {
       "type": "empty",
@@ -9,24 +9,24 @@
     "params": {}
   },
   "response": {
-    "status": 400,
-    "statusText": "Bad Request",
+    "status": 524,
+    "statusText": "unknown",
     "headers": {
       "access-control-allow-origin": "*",
       "connection": "keep-alive",
-      "content-length": "472",
+      "content-length": "285",
       "content-type": "application/json; charset=utf-8",
-      "date": "Sun, 30 Nov 2025 16:14:33 GMT",
-      "etag": "W/\"1d8-W7I6GGQ+O5L55jtXKs6lBTkNMKQ\"",
+      "date": "Sun, 30 Nov 2025 16:18:32 GMT",
+      "etag": "W/\"11d-CGTxvv+x03Vy6k2cpM97M4yGfhY\"",
       "keep-alive": "timeout=5",
       "x-powered-by": "Express"
     },
     "body": {
       "type": "json",
       "data": {
-        "error": "Bad Request",
-        "message": "400 Bad Request",
-        "requestId": "3hcrja",
+        "error": "Internal Server Error",
+        "message": "524 <none>",
+        "requestId": "6up78a",
         "requestParameters": {
           "messages": [
             {
@@ -35,13 +35,13 @@
             }
           ],
           "jsonMode": false,
-          "model": "mistral-fast",
+          "model": "grok",
           "referrer": null,
           "isPrivate": false,
           "voice": "alloy"
         },
         "details": {
-          "detail": "An error occurred (ValidationException) when calling the Converse operation: The maximum tokens you requested exceeds the model limit of 8192. Try again with a maximum tokens value that is lower than 8192."
+          "html-message": "error code: 524"
         }
       }
     }

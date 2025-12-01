@@ -520,3 +520,53 @@ curl "$BASE_URL/generate/v1/chat/completions" \
 - **Check response headers** for cache status: `x-cache: HIT` or `MISS`
 - **Use small images** (256x256) for quick tests
 - **Monitor your balance** at https://enter.pollinations.ai after tests
+
+---
+
+## 🎫 User Tier Management
+
+> Claude skill available: `.claude/skills/tier-management/SKILL.md`
+
+### Tier Levels
+
+| Tier | Emoji | Pollen/Day | Criteria |
+|------|-------|------------|----------|
+| spore | 🍄 | 5 | Default (new accounts) |
+| seed | 🌱 | 10 | GitHub engagement |
+| flower | 🌸 | 15 | Contributed code/project |
+| nectar | 🍯 | 20 | Strategic partners |
+| router | 🔌 | 100 | Infrastructure partners |
+
+### Quick Tier Update
+
+```bash
+cd enter.pollinations.ai
+
+# 1. Find user
+npx wrangler d1 execute DB --remote --env production \
+  --command "SELECT github_username, email, tier FROM user WHERE LOWER(github_username) LIKE '%USERNAME%';"
+
+# 2. Update DB tier
+npx wrangler d1 execute DB --remote --env production \
+  --command "UPDATE user SET tier='flower' WHERE github_username='USERNAME';"
+
+# 3. Update Polar subscription
+export POLAR_ACCESS_TOKEN=$(sops -d secrets/prod.vars.json | grep POLAR_ACCESS_TOKEN | cut -d'"' -f4)
+npx tsx scripts/manage-polar.ts user update-tier --email USER@EMAIL.COM --tier flower
+```
+
+### Evaluate User for Upgrade
+
+**Flower tier** (any ONE qualifies):
+- Has commits: `gh api 'search/commits?q=repo:pollinations/pollinations+author:USERNAME' --jq '.total_count'`
+- Has project: `grep -ri "author.*USERNAME" pollinations.ai/src/config/projects/`
+
+**Seed tier** (any ONE qualifies):
+- Issue involvement: `gh api 'search/issues?q=repo:pollinations/pollinations+involves:USERNAME' --jq '.total_count'`
+- Starred repo: `.claude/skills/tier-management/fetch-stargazers.sh USERNAME`
+
+### Notes
+
+- **DB tier** = what user CAN activate
+- **Polar subscription** = what user HAS activated  
+- If no Polar subscription, user must click "Activate" at enter.pollinations.ai

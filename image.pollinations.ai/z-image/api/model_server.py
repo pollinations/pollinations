@@ -4,18 +4,20 @@ import multiprocessing as mp
 from multiprocessing.managers import BaseManager
 from diffusers import ZImagePipeline
 from functools import partial
+from PIL import Image, ImageFilter
 from loguru import logger
 from config import SAFETY_CHECKER_MODEL, IMAGE_GENERATOR_MODEL, UPSCALER_MODEL, IPC_SECRET_KEY, IPC_PORT
 from basicsr.archs.rrdbnet_arch import RRDBNet
 from realesrgan import RealESRGANer
 from transformers import AutoFeatureExtractor
-from utility import StableDiffusionSafetyChecker
-
+from utility import StableDiffusionSafetyChecker, numpy_to_pil, replace_numpy_with_python, replace_sets_with_lists
+import time
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 use_half = torch.cuda.is_available()
 
 class ipcModules:
+    start_time = time.time()
     logger.info("Loading IPC Device...")
     def __init__(self):
         self.pipe = None
@@ -43,9 +45,11 @@ class ipcModules:
             device=device
         )
         print("Upscaler model loaded successfully!")
-        print("Loading safety checker...")
+        end_time = time.time()
+        print(f"Model loading took  [without safety checker] {end_time - self.start_time:.2f} seconds")
 
-    def _load_safety_checker(self):
+    def load_safety_checker(self):
+        print("Loading safety checker...")
         self.safety_feature_extractor = AutoFeatureExtractor.from_pretrained(
             SAFETY_CHECKER_MODEL,
             cache_dir="model_cache"
@@ -54,7 +58,27 @@ class ipcModules:
             SAFETY_CHECKER_MODEL,
             cache_dir="model_cache"
         ).to("cuda")
+        print("Safety checker loaded successfully!")
         return self.safety_feature_extractor, self.safety_checker_model
+    
+    
+    def check_nsfw(self, image_array, safety_checker_adj: float = 0.0):
+        if isinstance(image_array, list) and not isinstance(image_array[0], Image.Image):
+            x_image = numpy_to_pil(image_array)
+        else:
+            x_image = image_array if isinstance(image_array, list) else [image_array]
+        
+        safety_checker_input = self.safety_feature_extractor(x_image, return_tensors="pt").to("cuda")
+        has_nsfw_concept, concepts = self.safety_checker_model(
+            images=x_image,
+            clip_input=safety_checker_input.pixel_values,
+            safety_checker_adj=safety_checker_adj,
+        )
+
+        return (
+            replace_numpy_with_python(replace_sets_with_lists(has_nsfw_concept)),
+            replace_numpy_with_python(replace_sets_with_lists(concepts))
+        )
 
 
     

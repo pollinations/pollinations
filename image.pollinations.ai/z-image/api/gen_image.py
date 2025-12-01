@@ -1,6 +1,7 @@
 import os
 import io
 import base64
+import numpy as np
 import torch
 from multiprocessing.managers import BaseManager
 from safety_checker import check_nsfw
@@ -59,14 +60,16 @@ def generate_image(
 
 if __name__ == "__main__":
     result = generate_image(
-        prompt="A fantasy landscape with mountains and a river, vibrant colors, highly detailed",
-        width=800,
-        height=600,
+        prompt="a cute girl",
+        width=512,
+        height=512,
         steps=9,
         safety_checker_adj=0.5
     )
     image_data = base64.b64decode(result["image"])
-    image_data = server.enhance_x2(Image.open(io.BytesIO(image_data)), outscale=2)[0]
-    image = Image.fromarray(image_data)
+    pil_image = Image.open(io.BytesIO(image_data))
+    image_array = np.array(pil_image)
+    enhanced_data = server.enhance_x2(image_array, outscale=2)
+    image = Image.fromarray(enhanced_data[0])
     image.save("generated_image.jpg")
-    print(result["has_nsfw_concept"], result["concept"], result["width"], result["height"], result["seed"])
+    # print(result["has_nsfw_concept"], result["concept"], result["width"], result["height"], result["seed"])

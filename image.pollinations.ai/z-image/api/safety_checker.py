@@ -6,35 +6,23 @@ from loguru import logger
 from multiprocessing.managers import BaseManager
 from config import IPC_SECRET_KEY, IPC_PORT
 from torchvision import transforms
-from utility import numpy_to_pil, replace_sets_with_lists, replace_numpy_with_python
-
 
 
 class ModelManager(BaseManager): pass
 ModelManager.register('service')
-manager = ModelManager(address=('localhost', IPC_PORT), authkey=IPC_SECRET_KEY)
-manager.connect()
-server = manager.service()
-safety_feature_extractor, safety_checker_model = server._load_safety_checker()
 
-def check_nsfw(image_array, safety_checker_adj: float = 0.0):
-    if isinstance(image_array, list) and not isinstance(image_array[0], Image.Image):
-        x_image = numpy_to_pil(image_array)
-    else:
-        x_image = image_array if isinstance(image_array, list) else [image_array]
-    
-    safety_checker_input = safety_feature_extractor(x_image, return_tensors="pt").to("cuda")
-    has_nsfw_concept, concepts = safety_checker_model(
-        images=x_image,
-        clip_input=safety_checker_input.pixel_values,
-        safety_checker_adj=safety_checker_adj,
-    )
+_safety_feature_extractor = None
+_safety_checker_model = None
+_manager = None
+_server = None
 
-    return (
-        replace_numpy_with_python(replace_sets_with_lists(has_nsfw_concept)),
-        replace_numpy_with_python(replace_sets_with_lists(concepts))
-    )
-
+def _init_safety_checker():
+    global _safety_feature_extractor, _safety_checker_model, _manager, _server
+    if _safety_feature_extractor is None:
+        _manager = ModelManager(address=('localhost', IPC_PORT), authkey=IPC_SECRET_KEY)
+        _manager.connect()
+        _server = _manager.service()
+        _safety_feature_extractor, _safety_checker_model = _server.load_safety_checker()
 
 def get_safe_images(image_tensor, safety_checker_adj: float = 0.0):
     x_samples_numpy = image_tensor.cpu().permute(0, 2, 3, 1).numpy()
@@ -65,4 +53,3 @@ if __name__ == "__main__":
     result_np = safe_image[0].permute(1, 2, 0).numpy()
     result_pil = Image.fromarray((result_np * 255).round().astype("uint8"))
     result_pil.save("safe_image.jpg")
-    

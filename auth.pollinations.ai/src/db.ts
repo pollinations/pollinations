@@ -2,20 +2,26 @@ import type { User, UserTier } from "./types";
 import type { D1Database } from "@cloudflare/workers-types";
 
 // Ultra-simplified user management - only store github_user_id and username
+// NEW REGISTRATIONS ARE DISABLED - only existing users can log in
 export async function upsertUser(
     db: D1Database,
     user: Partial<User> & { github_user_id: string },
 ): Promise<User> {
-    // Minimal query with only essential fields
+    // Check if user already exists - block new signups
+    const existingUser = await getUser(db, user.github_user_id);
+    if (!existingUser) {
+        throw new Error("NEW_REGISTRATIONS_DISABLED");
+    }
+
+    // Update existing user only
     await db
         .prepare(`
-    INSERT INTO users (github_user_id, username)
-    VALUES (?, ?)
-    ON CONFLICT(github_user_id) DO UPDATE SET
-      username = excluded.username,
+    UPDATE users SET
+      username = ?,
       updated_at = CURRENT_TIMESTAMP
+    WHERE github_user_id = ?
   `)
-        .bind(user.github_user_id, user.username!)
+        .bind(user.username!, user.github_user_id)
         .run();
 
     return getUser(db, user.github_user_id) as Promise<User>;

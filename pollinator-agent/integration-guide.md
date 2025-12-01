@@ -193,7 +193,7 @@ When adding Pollinations.AI to repositories, emphasize these key features:
    - Clear title: "Add Pollinations.AI API"
    - Detailed description including:
      - What Pollinations.AI is
-     - Key features (free, no signup, etc.)
+     - Key features
      - Link to API documentation
      - Confirmation of HTTPS/CORS support
      - Any other information required by contribution guidelines

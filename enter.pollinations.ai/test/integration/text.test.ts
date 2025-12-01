@@ -147,6 +147,7 @@ describe("POST /generate/v1/chat/completions (streaming)", async () => {
                 expect(event.tokenCountPromptText).toBeGreaterThan(0);
                 expect(event.tokenCountCompletionText).toBeGreaterThan(0);
                 expect(event.totalCost).toBeGreaterThan(0);
+                expect(event.totalPrice).toBeGreaterThanOrEqual(0);
             });
         },
     );

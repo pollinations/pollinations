@@ -58,13 +58,25 @@ gh api 'search/issues?q=repo:pollinations/pollinations+involves:USERNAME' --jq '
 
 # Update User Tier
 
-## Quick Method (Script)
+> ⚠️ **IMPORTANT**: You MUST update BOTH the database AND Polar subscription. 
+> The DB tier controls what tier the user CAN activate. The Polar subscription is what they HAVE activated.
+
+## Recommended: Use the Script
+
 ```bash
 .claude/skills/tier-management/scripts/update-tier.sh USERNAME TIER
 ```
-Example: `.claude/skills/tier-management/scripts/update-tier.sh ez-vivek flower`
 
-This handles both DB and Polar updates automatically.
+**Example:**
+```bash
+.claude/skills/tier-management/scripts/update-tier.sh s0974092 flower
+```
+
+This script automatically:
+1. Finds the user by username or email
+2. Updates the database tier
+3. Updates the Polar subscription (via sops for auth)
+4. Verifies the change
 
 ## Manual Method
 

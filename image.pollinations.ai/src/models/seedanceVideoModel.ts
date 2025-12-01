@@ -1,6 +1,5 @@
 import debug from "debug";
 import sleep from "await-sleep";
-import { withTimeoutSignal } from "../util.ts";
 import { HttpError } from "../httpError.ts";
 import type { ImageParams } from "../params.ts";
 import type { ProgressManager } from "../progressBar.ts";
@@ -129,10 +128,7 @@ export const callSeedanceAPI = async (
 
         // Download and convert image to base64
         try {
-            const imageResponse = await withTimeoutSignal(
-                (signal) => fetch(imageUrl, { signal }),
-                30000,
-            );
+            const imageResponse = await fetch(imageUrl);
 
             if (!imageResponse.ok) {
                 throw new Error(
@@ -184,19 +180,14 @@ export const callSeedanceAPI = async (
         "https://ark.ap-southeast.bytepluses.com/api/v3/contents/generations/tasks";
     logOps("Generate endpoint:", generateEndpoint);
 
-    const generateResponse = await withTimeoutSignal(
-        (signal) =>
-            fetch(generateEndpoint, {
-                method: "POST",
-                headers: {
-                    "Authorization": `Bearer ${apiKey}`,
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify(requestBody),
-                signal,
-            }),
-        60000, // 60 second timeout for task creation
-    );
+    const generateResponse = await fetch(generateEndpoint, {
+        method: "POST",
+        headers: {
+            "Authorization": `Bearer ${apiKey}`,
+            "Content-Type": "application/json",
+        },
+        body: JSON.stringify(requestBody),
+    });
 
     if (!generateResponse.ok) {
         const errorText = await generateResponse.text();
@@ -276,18 +267,13 @@ async function pollSeedanceTask(
             `Generating video... (${attempt}/${maxAttempts})`,
         );
 
-        const pollResponse = await withTimeoutSignal(
-            (signal) =>
-                fetch(pollUrl, {
-                    method: "GET",
-                    headers: {
-                        "Authorization": `Bearer ${apiKey}`,
-                        "Content-Type": "application/json",
-                    },
-                    signal,
-                }),
-            30000,
-        );
+        const pollResponse = await fetch(pollUrl, {
+            method: "GET",
+            headers: {
+                "Authorization": `Bearer ${apiKey}`,
+                "Content-Type": "application/json",
+            },
+        });
 
         if (!pollResponse.ok) {
             const errorText = await pollResponse.text();
@@ -322,10 +308,7 @@ async function pollSeedanceTask(
                 "Downloading video...",
             );
 
-            const videoResponse = await withTimeoutSignal(
-                (signal) => fetch(videoUrl, { signal }),
-                60000, // 60 second timeout for video download
-            );
+            const videoResponse = await fetch(videoUrl);
 
             if (!videoResponse.ok) {
                 throw new HttpError(

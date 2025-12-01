@@ -21,6 +21,7 @@ import { TierPanel } from "../components/tier-panel.tsx";
 import { FAQ } from "../components/faq.tsx";
 import { Header } from "../components/header.tsx";
 import { Pricing } from "../components/pricing/index.ts";
+import { NewsBanner } from "../components/news-banner.tsx";
 
 export const Route = createFileRoute("/")({
     component: RouteComponent,
@@ -155,143 +156,146 @@ function RouteComponent() {
         window.location.href = `/api/polar/checkout/${encodeURIComponent(slug)}?redirect=true`;
     };
     return (
-        <div className="flex flex-col gap-20">
-            <Header>
-                <User
-                    githubUsername={user?.githubUsername || ""}
-                    githubAvatarUrl={user?.image || ""}
-                    onSignOut={handleSignOut}
-                    onUserPortal={() => {
-                        window.location.href = "/api/polar/customer/portal";
-                    }}
-                />
-                <Button
-                    as="a"
-                    href="/api/docs"
-                    className="bg-gray-900 text-white hover:!brightness-90"
-                >
-                    API Reference
-                </Button>
-            </Header>
-            <div className="flex flex-col gap-2">
-                <div className="flex flex-col sm:flex-row justify-between gap-3">
-                    <h2 className="font-bold flex-1">Balance</h2>
-                    <div className="flex flex-wrap gap-3 items-center">
-                        <Button
-                            as="button"
-                            color="purple"
-                            weight="light"
-                            onClick={() =>
-                                handleBuyPollen("v1:product:pack:5x2")
-                            }
-                        >
-                            + $5
-                        </Button>
-                        <Button
-                            as="button"
-                            color="purple"
-                            weight="light"
-                            onClick={() =>
-                                handleBuyPollen("v1:product:pack:10x2")
-                            }
-                        >
-                            + $10
-                        </Button>
-                        <Button
-                            as="button"
-                            color="purple"
-                            weight="light"
-                            onClick={() =>
-                                handleBuyPollen("v1:product:pack:20x2")
-                            }
-                        >
-                            + $20
-                        </Button>
-                        <Button
-                            as="button"
-                            color="purple"
-                            weight="light"
-                            onClick={() =>
-                                handleBuyPollen("v1:product:pack:50x2")
-                            }
-                        >
-                            + $50
-                        </Button>
-                        <Button
-                            as="a"
-                            href="https://github.com/pollinations/pollinations/issues/4826"
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="!bg-purple-200 !text-purple-900"
-                            color="purple"
-                            weight="light"
-                        >
-                            💳 Vote on payment methods
-                        </Button>
-                    </div>
-                </div>
-                <PollenBalance
-                    balances={balances}
-                    dailyPollen={tierData?.daily_pollen}
-                />
-            </div>
-            {tierData && (
+        <div className="flex flex-col gap-6">
+            <NewsBanner />
+            <div className="flex flex-col gap-20">
+                <Header>
+                    <User
+                        githubUsername={user?.githubUsername || ""}
+                        githubAvatarUrl={user?.image || ""}
+                        onSignOut={handleSignOut}
+                        onUserPortal={() => {
+                            window.location.href = "/api/polar/customer/portal";
+                        }}
+                    />
+                    <Button
+                        as="a"
+                        href="/api/docs"
+                        className="bg-gray-900 text-white hover:!brightness-90"
+                    >
+                        API Reference
+                    </Button>
+                </Header>
                 <div className="flex flex-col gap-2">
                     <div className="flex flex-col sm:flex-row justify-between gap-3">
-                        <h2 className="font-bold flex-1">Tier</h2>
-                        {tierData.should_show_activate_button && (
-                            <div className="flex gap-3">
-                                <Button
-                                    onClick={handleActivateTier}
-                                    disabled={isActivating}
-                                    color="green"
-                                    weight="light"
-                                    className="!bg-gray-50"
-                                >
-                                    {isActivating
-                                        ? "Processing..."
-                                        : `Activate ${tierData.target_tier_name}`}
-                                </Button>
-                            </div>
-                        )}
-                    </div>
-                    {activationError && (
-                        <div className="px-3 py-2 bg-red-50 border border-red-200 rounded-lg">
-                            <p className="text-sm text-red-900">
-                                ❌ <strong>Activation Failed:</strong>{" "}
-                                {activationError}
-                            </p>
+                        <h2 className="font-bold flex-1">Balance</h2>
+                        <div className="flex flex-wrap gap-3 items-center">
+                            <Button
+                                as="button"
+                                color="purple"
+                                weight="light"
+                                onClick={() =>
+                                    handleBuyPollen("v1:product:pack:5x2")
+                                }
+                            >
+                                + $5
+                            </Button>
+                            <Button
+                                as="button"
+                                color="purple"
+                                weight="light"
+                                onClick={() =>
+                                    handleBuyPollen("v1:product:pack:10x2")
+                                }
+                            >
+                                + $10
+                            </Button>
+                            <Button
+                                as="button"
+                                color="purple"
+                                weight="light"
+                                onClick={() =>
+                                    handleBuyPollen("v1:product:pack:20x2")
+                                }
+                            >
+                                + $20
+                            </Button>
+                            <Button
+                                as="button"
+                                color="purple"
+                                weight="light"
+                                onClick={() =>
+                                    handleBuyPollen("v1:product:pack:50x2")
+                                }
+                            >
+                                + $50
+                            </Button>
+                            <Button
+                                as="a"
+                                href="https://github.com/pollinations/pollinations/issues/4826"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="!bg-purple-200 !text-purple-900"
+                                color="purple"
+                                weight="light"
+                            >
+                                💳 Vote on payment methods
+                            </Button>
                         </div>
-                    )}
-                    <TierPanel
-                        status={tierData.active_tier}
-                        target_tier={tierData.target_tier}
-                        next_refill_at_utc={tierData.next_refill_at_utc}
-                        active_tier_name={tierData.active_tier_name}
-                        daily_pollen={tierData.daily_pollen}
-                        subscription_status={tierData.subscription_status}
-                        subscription_ends_at={tierData.subscription_ends_at}
-                        subscription_canceled_at={
-                            tierData.subscription_canceled_at
-                        }
-                        has_polar_error={tierData.has_polar_error}
+                    </div>
+                    <PollenBalance
+                        balances={balances}
+                        dailyPollen={tierData?.daily_pollen}
                     />
                 </div>
-            )}
-            <ApiKeyList
-                apiKeys={apiKeys}
-                onCreate={handleCreateApiKey}
-                onDelete={handleDeleteApiKey}
-            />
-            <FAQ />
-            <Pricing />
-            <div className="text-center py-8">
-                <Link
-                    to="/terms"
-                    className="text-sm text-gray-500 hover:text-gray-700 transition-colors"
-                >
-                    Terms & Conditions
-                </Link>
+                {tierData && (
+                    <div className="flex flex-col gap-2">
+                        <div className="flex flex-col sm:flex-row justify-between gap-3">
+                            <h2 className="font-bold flex-1">Tier</h2>
+                            {tierData.should_show_activate_button && (
+                                <div className="flex gap-3">
+                                    <Button
+                                        onClick={handleActivateTier}
+                                        disabled={isActivating}
+                                        color="green"
+                                        weight="light"
+                                        className="!bg-gray-50"
+                                    >
+                                        {isActivating
+                                            ? "Processing..."
+                                            : `Activate ${tierData.target_tier_name}`}
+                                    </Button>
+                                </div>
+                            )}
+                        </div>
+                        {activationError && (
+                            <div className="px-3 py-2 bg-red-50 border border-red-200 rounded-lg">
+                                <p className="text-sm text-red-900">
+                                    ❌ <strong>Activation Failed:</strong>{" "}
+                                    {activationError}
+                                </p>
+                            </div>
+                        )}
+                        <TierPanel
+                            status={tierData.active_tier}
+                            target_tier={tierData.target_tier}
+                            next_refill_at_utc={tierData.next_refill_at_utc}
+                            active_tier_name={tierData.active_tier_name}
+                            daily_pollen={tierData.daily_pollen}
+                            subscription_status={tierData.subscription_status}
+                            subscription_ends_at={tierData.subscription_ends_at}
+                            subscription_canceled_at={
+                                tierData.subscription_canceled_at
+                            }
+                            has_polar_error={tierData.has_polar_error}
+                        />
+                    </div>
+                )}
+                <ApiKeyList
+                    apiKeys={apiKeys}
+                    onCreate={handleCreateApiKey}
+                    onDelete={handleDeleteApiKey}
+                />
+                <FAQ />
+                <Pricing />
+                <div className="text-center py-8">
+                    <Link
+                        to="/terms"
+                        className="text-sm text-gray-500 hover:text-gray-700 transition-colors"
+                    >
+                        Terms & Conditions
+                    </Link>
+                </div>
             </div>
         </div>
     );

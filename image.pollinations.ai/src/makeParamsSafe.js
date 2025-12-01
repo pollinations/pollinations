@@ -2,7 +2,7 @@ import { MODELS } from "./models.ts";
 
 /**
  * Sanitizes and adjusts parameters for image generation.
- * @param {{ width: number|null, height: number|null, seed: number|string, model: string, enhance: boolean|string, nologo: boolean|string, negative_prompt: string, nofeed: boolean|string, safe: boolean|string, quality: string, image: string|null, transparent: boolean|string }} params
+ * @param {{ width: number|null, height: number|null, seed: number|string, model: string, enhance: boolean|string, nologo: boolean|string, negative_prompt: string, nofeed: boolean|string, safe: boolean|string, quality: string, image: string|null, transparent: boolean|string, duration: number|string, aspectRatio: string, audio: boolean|string }} params
  * @returns {Object} - The sanitized parameters.
  */
 export const makeParamsSafe = ({
@@ -19,6 +19,10 @@ export const makeParamsSafe = ({
     quality = "medium",
     image = null,
     transparent = false,
+    // Video-specific parameters (for veo model)
+    duration = 4,
+    aspectRatio = "16:9",
+    audio = false,
 }) => {
     // Sanitize boolean parameters - always return a boolean value
     const sanitizeBoolean = (value) => {
@@ -35,6 +39,19 @@ export const makeParamsSafe = ({
     nofeed = sanitizeBoolean(nofeed) || sanitizeBoolean(isPrivate);
     safe = sanitizeBoolean(safe);
     transparent = sanitizeBoolean(transparent);
+    audio = sanitizeBoolean(audio);
+
+    // Validate video-specific parameters
+    const validDurations = [4, 6, 8];
+    duration = parseInt(duration);
+    if (!validDurations.includes(duration)) {
+        duration = 4; // Default to cheapest: 4 seconds
+    }
+
+    const validAspectRatios = ["16:9", "9:16"];
+    if (!validAspectRatios.includes(aspectRatio)) {
+        aspectRatio = "16:9";
+    }
 
     // Validate model is provided and allowed
     if (!model) {
@@ -92,5 +109,9 @@ export const makeParamsSafe = ({
         quality,
         image: imageArray,
         transparent,
+        // Video params
+        duration,
+        aspectRatio,
+        audio,
     };
 };

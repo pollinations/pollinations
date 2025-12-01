@@ -268,6 +268,10 @@ function createPolarEvent(event: SelectGenerationEvent) {
         tokenPriceCompletionReasoning: event.tokenPriceCompletionReasoning,
         tokenPriceCompletionAudio: event.tokenPriceCompletionAudio,
         tokenPriceCompletionImage: event.tokenPriceCompletionImage,
+        tokenCountCompletionVideoSeconds:
+            event.tokenCountCompletionVideoSeconds,
+        tokenPriceCompletionVideoSeconds:
+            event.tokenPriceCompletionVideoSeconds,
         // calculated price
         totalPrice: event.totalPrice,
         // meter selection

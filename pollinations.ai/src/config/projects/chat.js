@@ -531,4 +531,52 @@ export const chatProjects = [
         submissionDate: "2025-11-29",
         order: 1,
     },
+    {
+        name: "Xibe-chat-cli 💬",
+        url: "https://pypi.org/project/xibe-chat-cli/",
+        description:
+            "AI chat and image generation directly in your terminal with a rich text UI. Open-source Python package available on PyPI for seamless CLI-based AI interactions.",
+        author: "@R3AP3Redit",
+        repo: "https://github.com/iotserver24/xibe-chat-cli",
+        submissionDate: "2025-11-30",
+        order: 1,
+    },
+    {
+        name: "Fikiri Chat AI 💬",
+        url: "https://fikirichat.netlify.app/",
+        description:
+            "Multi-model AI chat platform with seamless LLM switching via Pollinations API. Features a clean, intuitive interface designed for natural conversational interactions.",
+        author: "@brianmativo",
+        submissionDate: "2025-11-24",
+        order: 1,
+    },
+    {
+        name: "PollinationsFreeAI 🆓",
+        url: "https://pollinations-free-ai.vercel.app/",
+        description:
+            "Free AI platform leveraging Pollinations for text and image generation. No signup required.",
+        author: "@Poli-Chat",
+        repo: "https://github.com/Poli-Chat/PollinationsFreeAI",
+        submissionDate: "2025-11-23",
+        order: 1,
+    },
+    {
+        name: "Samaritan AI 🤖",
+        url: "https://samaritan-ai-web.vercel.app/",
+        description:
+            "Intelligent AI assistant platform powered by Pollinations. Offers a polished UI with support for multiple conversation threads and context-aware responses.",
+        author: "@mdarman4002",
+        submissionDate: "2025-11-22",
+        order: 1,
+    },
+    {
+        name: "ReThink AI 🇮🇩",
+        url: "https://rethink.web.id",
+        description:
+            "High-performance AI platform tailored for Indonesia, blending a custom-trained LLM (ReThink V1) with Pollinations API. Achieves 100/100 Lighthouse scores with Gemini 2.5 Flash and Flux Pro integration.",
+        author: "@Djongoks",
+        submissionDate: "2025-10-28",
+        language: "id-ID",
+        order: 1,
+    },
 ];

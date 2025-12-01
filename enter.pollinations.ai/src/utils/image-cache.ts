@@ -107,7 +107,8 @@ export function setHttpMetadataHeaders(
             c.header(headerName, value);
         }
     } else {
-        // Fallback to default content type
+        // Fallback to default content type (image/jpeg for images, leave unset for videos)
+        // Video content types should be preserved from origin response
         c.header("Content-Type", "image/jpeg");
     }
 }

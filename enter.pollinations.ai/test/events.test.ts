@@ -2,6 +2,7 @@ import {
     createExecutionContext,
     createScheduledController,
     env,
+    waitOnExecutionContext,
 } from "cloudflare:test";
 import { test } from "./fixtures.ts";
 import worker from "../src/index.ts";
@@ -204,4 +205,138 @@ test("Events get set to error status after MAX_DELIVERY_ATTEMPTS", async ({
             expect(event.tinybirdDeliveredAt).toBeDefined();
         }
     });
+});
+
+test("Events are not processed if count is below minBatchSize and events are recent", async ({
+    log,
+    mocks,
+}) => {
+    await mocks.enable("polar", "tinybird");
+    const db = drizzle(env.DB);
+    const events = Array.from({ length: 50 }).map(() => {
+        return createTextGenerationEvent({
+            modelRequested: "openai-large",
+        });
+    });
+    log.info("Adding {numEvents} events (below min batch size)", {
+        numEvents: events.length,
+    });
+    await storeEvents(db, log, events);
+
+    const controller = createScheduledController();
+    const ctx = createExecutionContext();
+    await worker.scheduled(controller, env, ctx);
+    await waitOnExecutionContext(ctx);
+
+    expect(mocks.polar.state.events).toHaveLength(0);
+    expect(mocks.tinybird.state.events).toHaveLength(0);
+
+    const pendingEvents = await db
+        .select()
+        .from(event)
+        .where(eq(event.eventStatus, "pending"));
+    expect(pendingEvents).toHaveLength(50);
+});
+
+test("Events are processed if count meets minBatchSize threshold", async ({
+    log,
+    mocks,
+}) => {
+    await mocks.enable("polar", "tinybird");
+    const db = drizzle(env.DB);
+    const events = Array.from({ length: 150 }).map(() => {
+        return createTextGenerationEvent({
+            modelRequested: "openai-large",
+        });
+    });
+    log.info("Adding {numEvents} events (above min batch size)", {
+        numEvents: events.length,
+    });
+    await storeEvents(db, log, events);
+
+    const controller = createScheduledController();
+    const ctx = createExecutionContext();
+    await worker.scheduled(controller, env, ctx);
+    await waitOnExecutionContext(ctx);
+
+    expect(mocks.polar.state.events).toHaveLength(150);
+    expect(mocks.tinybird.state.events).toHaveLength(150);
+});
+
+test("Events are processed if older than 30 seconds even if below minBatchSize", async ({
+    log,
+    mocks,
+}) => {
+    await mocks.enable("polar", "tinybird");
+    const db = drizzle(env.DB);
+    const events = Array.from({ length: 50 }).map(() => {
+        return createTextGenerationEvent({
+            modelRequested: "openai-large",
+        });
+    });
+    log.info("Adding {numEvents} old events (below min batch size)", {
+        numEvents: events.length,
+    });
+    await storeEvents(db, log, events);
+
+    const oldTimestamp = new Date(Date.now() - 60 * 1000);
+    await db
+        .update(event)
+        .set({ createdAt: oldTimestamp })
+        .where(eq(event.eventStatus, "pending"));
+
+    const controller = createScheduledController();
+    const ctx = createExecutionContext();
+    await worker.scheduled(controller, env, ctx);
+    await waitOnExecutionContext(ctx);
+
+    expect(mocks.polar.state.events).toHaveLength(50);
+    expect(mocks.tinybird.state.events).toHaveLength(50);
+});
+
+test("Expired sent events are cleared after processing", async ({
+    log,
+    mocks,
+}) => {
+    await mocks.enable("polar", "tinybird");
+    const db = drizzle(env.DB);
+    const events = Array.from({ length: 150 }).map(() => {
+        return createTextGenerationEvent({
+            modelRequested: "openai-large",
+        });
+    });
+    log.info("Adding {numEvents} events", { numEvents: events.length });
+    await storeEvents(db, log, events);
+
+    const controller = createScheduledController();
+    const ctx = createExecutionContext();
+    await worker.scheduled(controller, env, ctx);
+    await waitOnExecutionContext(ctx);
+
+    const sentEvents = await db
+        .select()
+        .from(event)
+        .where(eq(event.eventStatus, "sent"));
+    expect(sentEvents).toHaveLength(150);
+
+    const twoDaysAgo = new Date(Date.now() - 2 * 24 * 60 * 60 * 1000);
+    await db
+        .update(event)
+        .set({ createdAt: twoDaysAgo })
+        .where(eq(event.eventStatus, "sent"));
+
+    const newEvents = Array.from({ length: 100 }).map(() => {
+        return createTextGenerationEvent({
+            modelRequested: "openai-large",
+        });
+    });
+    await storeEvents(db, log, newEvents);
+    await worker.scheduled(controller, env, ctx);
+    await waitOnExecutionContext(ctx);
+
+    const remainingEvents = await db.select().from(event);
+    const remainingSentEvents = remainingEvents.filter(
+        (e) => e.eventStatus === "sent",
+    );
+    expect(remainingSentEvents).toHaveLength(100);
 });

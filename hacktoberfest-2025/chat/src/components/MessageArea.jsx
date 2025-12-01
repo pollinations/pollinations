@@ -1,5 +1,7 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { formatMessage, formatStreamingMessage } from '../utils/markdown';
+import MemoizedMessageContent from './MemoizedMessageContent';
+import ThinkingProcess from './ThinkingProcess';
 import './MessageArea.css';
 
 const MessageArea = ({ messages, isGenerating, isUserTyping, onRegenerate }) => {
@@ -49,7 +51,7 @@ const MessageArea = ({ messages, isGenerating, isUserTyping, onRegenerate }) => 
     }));
   }, []);
 
-  const parseThinkTags = useCallback((text = '') => {
+  const parseThinkTags = useCallback((text = '', isStreaming = false) => {
     if (!text) {
       return {
         cleanedContent: '',
@@ -79,7 +81,8 @@ const MessageArea = ({ messages, isGenerating, isUserTyping, onRegenerate }) => 
         if (trimmedReasoning) {
           blocks.push(trimmedReasoning);
         }
-      } else {
+      } else if (isStreaming) {
+        // Only capture pending reasoning if the message is actively streaming
         pendingReasoning = innerContent;
       }
 
@@ -124,7 +127,7 @@ const MessageArea = ({ messages, isGenerating, isUserTyping, onRegenerate }) => 
     <main className="messages-area">
       <div className="messages-container">
         {messages.map((message) => {
-          const { cleanedContent, reasoningBlocks, pendingReasoning } = parseThinkTags(message.content || '');
+          const { cleanedContent, reasoningBlocks, pendingReasoning } = parseThinkTags(message.content || '', message.isStreaming);
           const reasoningSegments = [];
 
           if (message.reasoning && message.reasoning.trim()) {
@@ -135,6 +138,7 @@ const MessageArea = ({ messages, isGenerating, isUserTyping, onRegenerate }) => 
             reasoningSegments.push(...reasoningBlocks);
           }
 
+          // Only show pending reasoning if message is actively streaming
           if (message.isStreaming && pendingReasoning) {
             reasoningSegments.push(pendingReasoning);
           }
@@ -150,6 +154,7 @@ const MessageArea = ({ messages, isGenerating, isUserTyping, onRegenerate }) => 
             : (message.content || '');
 
           const hasReasoning = Boolean(displayReasoning);
+          const isThinking = message.isStreaming && pendingReasoning;
 
           const attachmentsArray = Array.isArray(message.attachments) ? message.attachments : [];
           const legacyAttachments = attachmentsArray.length === 0 && message.image && message.image.src
@@ -164,17 +169,6 @@ const MessageArea = ({ messages, isGenerating, isUserTyping, onRegenerate }) => 
 
           return (
             <div key={message.id} className={`message-row ${message.role}`}>
-              <div className={`message-avatar ${message.role}`}>
-                {message.role === 'user' ? (
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <circle cx="12" cy="8" r="5"/>
-                    <path d="M20 21a8 8 0 00-16 0"/>
-                  </svg>
-                ) : (
-                  <img src="pollinations-logo.svg" alt="AI" className="ai-logo" />
-                )}
-              </div>
-              
               <div className={`message-bubble ${message.role} ${message.isStreaming ? 'streaming' : ''} ${message.isError ? 'error' : ''}`}>
                 {/* Display uploaded attachments if present (user messages) */}
                 {attachmentsToRender.length > 0 && (
@@ -266,17 +260,10 @@ const MessageArea = ({ messages, isGenerating, isUserTyping, onRegenerate }) => 
                   <>
                     {/* Show reasoning if present */}
                     {hasReasoning && (
-                      <details className="message-reasoning">
-                        <summary className="reasoning-toggle">
-                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                            <path d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/>
-                          </svg>
-                          <span>Reasoning</span>
-                        </summary>
-                        <div className="reasoning-content">
-                          {displayReasoning}
-                        </div>
-                      </details>
+                      <ThinkingProcess 
+                        isThinking={isThinking} 
+                        content={displayReasoning} 
+                      />
                     )}
                     
                     {message.isError ? (
@@ -290,14 +277,13 @@ const MessageArea = ({ messages, isGenerating, isUserTyping, onRegenerate }) => 
                       </div>
                     ) : message.isStreaming ? (
                       <div
-                        className="message-content"
+                        className="message-content streaming-content"
                         dangerouslySetInnerHTML={{ __html: formatStreamingMessage(displayContent) }}
                       />
                     ) : (
-                      <div
-                        className="message-content"
-                        dangerouslySetInnerHTML={{ __html: formatMessage(displayContent) }}
-                      />
+                      <div className="message-content">
+                        <MemoizedMessageContent content={displayContent} />
+                      </div>
                     )}
                   </>
                 ) : (
@@ -344,11 +330,8 @@ const MessageArea = ({ messages, isGenerating, isUserTyping, onRegenerate }) => 
             <div className="message-avatar assistant">
               <img src="pollinations-logo.svg" alt="AI" className="ai-logo" />
             </div>
-            <div className="message-bubble assistant thinking-bubble">
-              <div 
-                className="thinking-content message-content"
-                dangerouslySetInnerHTML={{ __html: formatMessage('*Thinking...*') }}
-              />
+            <div className="message-bubble assistant">
+              <ThinkingProcess isThinking={true} content="" />
             </div>
           </div>
         )}

@@ -118,4 +118,36 @@ export const IMAGE_SERVICES = {
         inputModalities: ["text", "image"],
         outputModalities: ["image"],
     },
+    "veo": {
+        aliases: ["veo-3.1-fast", "video"],
+        modelId: "veo",
+        provider: "vertex-ai",
+        cost: [
+            // Veo 3.1 Fast - $0.15 per second of video
+            // We bill by "video seconds" - each second is counted like a token
+            {
+                date: COST_START_DATE,
+                completionVideoSeconds: 0.15, // $0.15 per second of video
+            },
+        ],
+        description: "Veo 3.1 Fast - Google's video generation model (preview)",
+        inputModalities: ["text"],
+        outputModalities: ["video"],
+    },
+    "seedance": {
+        aliases: [],
+        modelId: "seedance",
+        provider: "bytedance-ark",
+        cost: [
+            // Seedance - ~$0.14 per 5-sec 720p video
+            // Token formula: (height × width × FPS × duration) / 1024
+            {
+                date: COST_START_DATE,
+                completionVideoSeconds: 0.028, // ~$0.14 per 5 seconds
+            },
+        ],
+        description: "Seedance - BytePlus video generation (preview)",
+        inputModalities: ["text", "image"],
+        outputModalities: ["video"],
+    },
 } as const satisfies Record<string, ServiceDefinition<string>>;

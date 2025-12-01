@@ -37,6 +37,10 @@ export const GenerateImageRequestQueryParamsSchema = z.object({
         .default([]),
     transparent: z.coerce.boolean().optional().default(false),
     guidance_scale: z.coerce.number().optional(),
+    // Video-specific params (for veo model)
+    duration: z.coerce.number().int().optional(),
+    aspectRatio: z.string().optional(),
+    audio: z.coerce.boolean().optional().default(false),
 });
 
 export type GenerateImageRequestQueryParams = z.infer<

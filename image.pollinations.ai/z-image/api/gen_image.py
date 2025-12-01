@@ -5,7 +5,7 @@ import numpy as np
 import torch
 from multiprocessing.managers import BaseManager
 from PIL import Image
-from config import IPC_SECRET_KEY, IPC_PORT, MAX_H, MAX_W
+from config import IPC_SECRET_KEY, IPC_PORT, MAX_H, MAX_W, UPSCALE_VALUE
 
 class ModelManager(BaseManager): pass
 ModelManager.register('service')
@@ -48,7 +48,12 @@ def generate_image(
     upscaled_image = safe_image
     if upscale:
         image_np = np.array(safe_image)
-        upscaled_array, _ = server.enhance_x2(image_np, outscale=2)
+        if UPSCALE_VALUE == 2:
+            upscaled_array, _ = server.enhance_x2(image_np, outscale=2)
+        elif UPSCALE_VALUE == 4:
+            upscaled_array, _ = server.enhance_x4(image_np, outscale=4)
+        else:
+            upscaled_array = image_np
         upscaled_image = Image.fromarray(upscaled_array)
     
     img_byte_arr = io.BytesIO()

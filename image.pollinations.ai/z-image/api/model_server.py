@@ -6,7 +6,7 @@ from diffusers import ZImagePipeline
 from functools import partial
 from PIL import Image, ImageFilter
 from loguru import logger
-from config import SAFETY_CHECKER_MODEL, IMAGE_GENERATOR_MODEL, UPSCALER_MODEL, IPC_SECRET_KEY, IPC_PORT, NSFW_ALLOW
+from config import SAFETY_CHECKER_MODEL, IMAGE_GENERATOR_MODEL, UPSCALER_MODEL_x2, UPSCALER_MODEL_x4, IPC_SECRET_KEY, IPC_PORT, NSFW_ALLOW, UPSCALE_VALUE
 from basicsr.archs.rrdbnet_arch import RRDBNet
 from realesrgan import RealESRGANer
 from transformers import AutoFeatureExtractor
@@ -25,6 +25,7 @@ class ipcModules:
     def __init__(self):
         self.pipe = None
         self.upsampler_x2 = None
+        self.upsampler_x4 = None
         self.safety_feature_extractor = None
         self.safety_checker_model = None
         self._load_model()
@@ -40,9 +41,22 @@ class ipcModules:
         print("Model loaded successfully!")
         print("Loading upscaler model...")
         model_x2 = RRDBNet(num_in_ch=3, num_out_ch=3, num_feat=64, num_block=23, num_grow_ch=32, scale=2)
+        model_x4 = RRDBNet(num_in_ch=3, num_out_ch=3, num_feat=64, num_block=23, num_grow_ch=32, scale=4)
+
+        self.upsampler_x4 = RealESRGANer(
+            scale=4,
+            model_path=UPSCALER_MODEL_x4,
+            model=model_x4,
+            tile=512,
+            tile_pad=10,
+            pre_pad=0,
+            half=use_half,
+            device=device
+        )
+
         self.upsampler_x2 = RealESRGANer(
             scale=2,
-            model_path=UPSCALER_MODEL,
+            model_path=UPSCALER_MODEL_x2,
             model=model_x2,
             tile=512,
             tile_pad=10,
@@ -148,6 +162,13 @@ class ipcModules:
         except Exception as e:
             logger.error(f"Error in x2 enhancement: {e}")
             raise
+    def enhance_x4(self, img_array, outscale=4):
+        try:
+            return self.upsampler_x4.enhance(img_array, outscale=outscale)
+        except Exception as e:
+            logger.error(f"Error in x4 enhancement: {e}")
+            raise
+
 
 if __name__ == "__main__":
     try:

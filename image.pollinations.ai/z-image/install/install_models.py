@@ -25,4 +25,5 @@ def download_model(model_name="RealESRGAN_x4plus.pth"):
         
         print(f"Model downloaded: {UPSCALER_MODEL_PATH}/{model_name}")
 if __name__ == "__main__":
-    download_model()
+    download_model("RealESRGAN_x2plus.pth")
+    download_model("RealESRGAN_x4plus.pth")

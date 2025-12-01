@@ -1,4 +1,5 @@
 import { COST_START_DATE, perMillion } from "./price-helpers";
+import type { ServiceDefinition } from "./registry";
 
 export const DEFAULT_IMAGE_MODEL = "flux" as const;
 
@@ -17,8 +18,8 @@ export const IMAGE_SERVICES = {
             },
         ],
         description: "Flux - Fast and high-quality image generation",
-        input_modalities: ["text"],
-        output_modalities: ["image"],
+        inputModalities: ["text"],
+        outputModalities: ["image"],
     },
     "kontext": {
         aliases: [],
@@ -31,8 +32,8 @@ export const IMAGE_SERVICES = {
             },
         ],
         description: "Kontext - Context-aware image generation",
-        input_modalities: ["text", "image"],
-        output_modalities: ["image"],
+        inputModalities: ["text", "image"],
+        outputModalities: ["image"],
     },
     "turbo": {
         aliases: [],
@@ -45,15 +46,15 @@ export const IMAGE_SERVICES = {
             },
         ],
         description: "Turbo - Ultra-fast image generation",
-        input_modalities: ["text"],
-        output_modalities: ["image"],
+        inputModalities: ["text"],
+        outputModalities: ["image"],
     },
     "nanobanana": {
         aliases: [],
         modelId: "nanobanana",
         provider: "vertex-ai",
         cost: [
-            // Gemini 2.5 Flash Image via Vertex AI (currently disabled)
+            // Gemini 2.5 Flash Image via Vertex AI
             {
                 date: COST_START_DATE,
                 promptTextTokens: perMillion(0.3), // $0.30 per 1M input tokens
@@ -61,9 +62,28 @@ export const IMAGE_SERVICES = {
                 completionImageTokens: perMillion(30), // $30 per 1M tokens × 1290 tokens/image = $0.039 per image
             },
         ],
-        description: "NanoBanana - Gemini 2.5 Flash Image (currently disabled)",
-        input_modalities: ["text", "image"],
-        output_modalities: ["image"],
+        description: "NanoBanana - Gemini 2.5 Flash Image",
+        inputModalities: ["text", "image"],
+        outputModalities: ["image"],
+    },
+    "nanobanana-pro": {
+        aliases: [],
+        modelId: "nanobanana-pro",
+        provider: "vertex-ai",
+        cost: [
+            // Gemini 3 Pro Image via Vertex AI
+            // 1K/2K image: 1120 tokens = $0.134/image ($120/M tokens)
+            // 4K image: 2000 tokens = $0.24/image
+            {
+                date: COST_START_DATE,
+                promptTextTokens: perMillion(1.25), // $1.25 per 1M input tokens
+                promptImageTokens: perMillion(1.25), // $1.25 per 1M input tokens
+                completionImageTokens: perMillion(120), // $120 per 1M tokens = $0.134 per 1K image
+            },
+        ],
+        description: "NanoBanana Pro - Gemini 3 Pro Image (4K, Thinking)",
+        inputModalities: ["text", "image"],
+        outputModalities: ["image"],
     },
     "seedream": {
         aliases: [],
@@ -77,8 +97,8 @@ export const IMAGE_SERVICES = {
             },
         ],
         description: "Seedream 4.0 - ByteDance ARK",
-        input_modalities: ["text", "image"],
-        output_modalities: ["image"],
+        inputModalities: ["text", "image"],
+        outputModalities: ["image"],
     },
     "gptimage": {
         aliases: ["gpt-image", "gpt-image-1-mini"],
@@ -95,8 +115,8 @@ export const IMAGE_SERVICES = {
             },
         ],
         description: "GPT Image 1 Mini - OpenAI's image generation model",
-        input_modalities: ["text", "image"],
-        output_modalities: ["image"],
+        inputModalities: ["text", "image"],
+        outputModalities: ["image"],
     },
     "veo": {
         aliases: ["veo-3.1-fast", "video"],
@@ -110,8 +130,24 @@ export const IMAGE_SERVICES = {
                 completionVideoSeconds: 0.15, // $0.15 per second of video
             },
         ],
-        description: "Veo 3.1 Fast - Google's video generation model",
-        input_modalities: ["text"],
-        output_modalities: ["video"],
+        description: "Veo 3.1 Fast - Google's video generation model (preview)",
+        inputModalities: ["text"],
+        outputModalities: ["video"],
     },
-} as const;
+    "seedance": {
+        aliases: [],
+        modelId: "seedance",
+        provider: "bytedance-ark",
+        cost: [
+            // Seedance - ~$0.14 per 5-sec 720p video
+            // Token formula: (height × width × FPS × duration) / 1024
+            {
+                date: COST_START_DATE,
+                completionVideoSeconds: 0.028, // ~$0.14 per 5 seconds
+            },
+        ],
+        description: "Seedance - BytePlus video generation (preview)",
+        inputModalities: ["text", "image"],
+        outputModalities: ["video"],
+    },
+} as const satisfies Record<string, ServiceDefinition<string>>;

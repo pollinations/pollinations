@@ -12,6 +12,7 @@ import {
     ImageModelId,
 } from "./image";
 import { EventType } from "./types";
+import { z } from "zod";
 
 const PRECISION = 8;
 
@@ -62,20 +63,21 @@ const MODEL_REGISTRY = Object.fromEntries(
 export type ModelId = ImageModelId | TextModelId;
 export type ServiceId = ImageServiceId | TextServiceId;
 
-export type ServiceDefinition = {
-    aliases: readonly string[];
-    modelId: ModelId;
+export type ServiceDefinition<TModelId extends string = ModelId> = {
+    aliases: string[];
+    modelId: TModelId;
     provider: string;
-    cost: readonly CostDefinition[];
+    cost: CostDefinition[];
     // User-facing metadata
     description?: string;
-    input_modalities?: readonly string[];
-    output_modalities?: readonly string[];
+    inputModalities?: string[];
+    outputModalities?: string[];
     tools?: boolean;
     reasoning?: boolean;
-    context_window?: number;
-    voices?: readonly string[];
+    contextWindow?: number;
+    voices?: string[];
     isSpecialized?: boolean;
+    persona?: boolean;
 };
 
 /** Sorts the cost and price definitions by date, in descending order */
@@ -357,11 +359,11 @@ export function getModelInfo(serviceId: ServiceId): ModelInfo {
         },
         // User-facing metadata from service definition
         description: service.description,
-        input_modalities: service.input_modalities,
-        output_modalities: service.output_modalities,
+        input_modalities: service.inputModalities,
+        output_modalities: service.outputModalities,
         tools: service.tools,
         reasoning: service.reasoning,
-        context_window: service.context_window,
+        context_window: service.contextWindow,
         voices: service.voices,
         isSpecialized: service.isSpecialized,
     };

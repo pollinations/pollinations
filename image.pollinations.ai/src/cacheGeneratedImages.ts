@@ -51,7 +51,8 @@ const generateCachePath = (prompt: string, extraParams: object): string => {
 
     // Use .mp4 extension for video models, .jpg for images
     const model = (extraParams as { model?: string })?.model;
-    const ext = model === "veo" ? ".mp4" : ".jpg";
+    const isVideo = model === "veo" || model === "seedance";
+    const ext = isVideo ? ".mp4" : ".jpg";
     return `${sanitizedPrompt}_${hash}${ext}`;
 };
 

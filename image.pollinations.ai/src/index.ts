@@ -348,17 +348,24 @@ const checkCacheAndGenerate = async (
         // Check if this is a video model
         const isVideo = isVideoModel(safeParams.model);
 
-        // Handle video generation separately
+        // Handle video generation separately (with caching)
         if (isVideo) {
             progress.updateBar(requestId, 10, "Processing", "Generating video");
             timingInfo = [{ step: "Request received.", timestamp: Date.now() }];
             progress.setProcessing(requestId);
 
-            const videoResult = await createAndReturnVideo(
+            // Cache video generation same as images
+            const videoResult = await cacheImagePromise(
                 originalPrompt,
                 safeParams,
-                progress,
-                requestId,
+                async () => {
+                    return createAndReturnVideo(
+                        originalPrompt,
+                        safeParams,
+                        progress,
+                        requestId,
+                    );
+                },
             );
 
             timingInfo.push({ step: "Video generated", timestamp: Date.now() });

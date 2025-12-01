@@ -49,8 +49,14 @@ class ipcModules:
         print("Loading safety checker...")
 
     def _load_safety_checker(self):
-        self.safety_feature_extractor = AutoFeatureExtractor.from_pretrained(SAFETY_CHECKER_MODEL)
-        self.safety_checker_model = StableDiffusionSafetyChecker.from_pretrained(SAFETY_CHECKER_MODEL).to("cuda")
+        self.safety_feature_extractor = AutoFeatureExtractor.from_pretrained(
+            SAFETY_CHECKER_MODEL,
+            cache_dir="model_cache"
+        )
+        self.safety_checker_model = StableDiffusionSafetyChecker.from_pretrained(
+            SAFETY_CHECKER_MODEL,
+            cache_dir="model_cache"
+        ).to("cuda")
         return self.safety_feature_extractor, self.safety_checker_model
 
 

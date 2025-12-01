@@ -12,6 +12,7 @@ from realesrgan import RealESRGANer
 from transformers import AutoFeatureExtractor
 from utility import StableDiffusionSafetyChecker, numpy_to_pil, replace_numpy_with_python, replace_sets_with_lists
 import time
+import numpy as np
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 use_half = torch.cuda.is_available()
@@ -22,7 +23,10 @@ class ipcModules:
     def __init__(self):
         self.pipe = None
         self.upsampler_x2 = None
+        self.safety_feature_extractor = None
+        self.safety_checker_model = None
         self._load_model()
+        self._load_safety_checker()
 
     def _load_model(self):
         print("Loading Z-Image model...")
@@ -45,10 +49,8 @@ class ipcModules:
             device=device
         )
         print("Upscaler model loaded successfully!")
-        end_time = time.time()
-        print(f"Model loading took  [without safety checker] {end_time - self.start_time:.2f} seconds")
 
-    def load_safety_checker(self):
+    def _load_safety_checker(self):
         print("Loading safety checker...")
         self.safety_feature_extractor = AutoFeatureExtractor.from_pretrained(
             SAFETY_CHECKER_MODEL,
@@ -59,9 +61,9 @@ class ipcModules:
             cache_dir="model_cache"
         ).to("cuda")
         print("Safety checker loaded successfully!")
-        return self.safety_feature_extractor, self.safety_checker_model
-    
-    
+        end_time = time.time()
+        print(f"Total model loading took {end_time - self.start_time:.2f} seconds")
+
     def check_nsfw(self, image_array, safety_checker_adj: float = 0.0):
         if isinstance(image_array, list) and not isinstance(image_array[0], Image.Image):
             x_image = numpy_to_pil(image_array)
@@ -80,8 +82,26 @@ class ipcModules:
             replace_numpy_with_python(replace_sets_with_lists(concepts))
         )
 
+    def get_safe_images(self, image_tensor, safety_checker_adj: float = 0.0):
+        x_samples_numpy = image_tensor.cpu().permute(0, 2, 3, 1).numpy()
+        has_nsfw, concepts = self.check_nsfw(x_samples_numpy, safety_checker_adj)
+        x = torch.from_numpy(x_samples_numpy).permute(0, 3, 1, 2)
 
-    
+        for index, unsafe_value in enumerate(has_nsfw):
+            try:
+                if unsafe_value is True:
+                    img_np = x_samples_numpy[index]
+                    img_pil = Image.fromarray((img_np * 255).round().astype("uint8"))
+                    blurred_pil = img_pil.filter(ImageFilter.GaussianBlur(radius=16))
+                    blurred_np = (np.array(blurred_pil) / 255.0).astype("float32")
+                    blurred_tensor = torch.from_numpy(blurred_np).permute(2, 0, 1).unsqueeze(0)
+                    
+                    x[index] = blurred_tensor.squeeze(0)
+            except Exception as e:
+                logger.warning(f"Error blurring image {index}: {e}")
+
+        return x
+
     def generate(self, prompt: str, width: int, height: int, steps: int, seed: int | None, safety_checker_adj: float):
         if seed is None:
             seed = int.from_bytes(os.urandom(2), "big")
@@ -98,7 +118,17 @@ class ipcModules:
                 guidance_scale=0.0,
             )
         
-        return output.images[0], seed
+        image_tensor = output.images[0]
+        if isinstance(image_tensor, Image.Image):
+            image_array = np.array(image_tensor).astype("float32") / 255.0
+            image_tensor = torch.from_numpy(image_array).permute(2, 0, 1).unsqueeze(0)
+        
+        safe_image_tensor = self.get_safe_images(image_tensor, safety_checker_adj)
+        safe_image = Image.fromarray((safe_image_tensor[0].permute(1, 2, 0).cpu().numpy() * 255).round().astype("uint8"))
+        
+        has_nsfw, concept = self.check_nsfw(np.array(safe_image), safety_checker_adj)
+        
+        return safe_image, seed, has_nsfw, concept
 
     def enhance_x2(self, img_array, outscale=2):
         try:

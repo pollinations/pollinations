@@ -7,7 +7,7 @@ const VERSION = "v1";
 
 const TIERS = [
     {
-        name: "🌿 Spore",
+        name: "🦠 Spore",
         slug: "spore",
         pollenGrantAmount: 1,
     },
@@ -29,6 +29,9 @@ const TIERS = [
 ];
 
 const PACKS = [
+    {
+        pollenGrantAmount: 5,
+    },
     {
         pollenGrantAmount: 10,
     },

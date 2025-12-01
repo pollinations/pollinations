@@ -6,7 +6,7 @@ import { calculatePerPollen } from "./calculations.ts";
 
 type ModelTableProps = {
     models: ModelPrice[];
-    type: "text" | "media";
+    type: "text" | "image" | "video";
 };
 
 // Helper to convert per pollen string to numeric value for sorting
@@ -48,7 +48,7 @@ export const ModelTable: FC<ModelTableProps> = ({ models, type }) => {
         ? sortedModels.filter(m => isPersona(m.name))
         : [];
 
-    const tableLabel = type === "text" ? "Text" : "Media";
+    const tableLabel = type === "text" ? "Text" : type === "image" ? "Image" : "Video";
 
     return (
         <table className="table-fixed w-full min-w-[700px]">
@@ -59,7 +59,7 @@ export const ModelTable: FC<ModelTableProps> = ({ models, type }) => {
                         </th>
                         <th className="text-center text-sm font-bold text-pink-500 pt-0 pb-1 px-2 whitespace-nowrap w-[140px] align-top">
                             <div>Per pollen*</div>
-                            <div className="text-xs font-normal text-pink-400 opacity-70 italic">{type === "text" ? "responses" : "images/sec"}</div>
+                            <div className="text-xs font-normal text-pink-400 opacity-70 italic">{type === "text" ? "responses" : type === "image" ? "images" : "seconds"}</div>
                         </th>
                         <th className="text-center text-sm font-bold text-pink-500 pt-0 pb-1 px-2 whitespace-nowrap w-[190px] align-top">
                             <div>Input</div>

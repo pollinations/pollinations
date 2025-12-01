@@ -571,7 +571,7 @@ export const chatProjects = [
     },
     {
         name: "ReThink AI 🇮🇩",
-        url: "https://rethink.co.id",
+        url: "https://rethink.web.id",
         description:
             "High-performance AI platform tailored for Indonesia, blending a custom-trained LLM (ReThink V1) with Pollinations API. Achieves 100/100 Lighthouse scores with Gemini 2.5 Flash and Flux Pro integration.",
         author: "@Djongoks",

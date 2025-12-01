@@ -43,13 +43,16 @@ def generate_image(
         prompt, width, height, steps, seed, safety_checker_adj
     )
     
+    # Handle list/array response - take first element if it's a batch
+    nsfw_result = has_nsfw[0] if isinstance(has_nsfw, (list, np.ndarray)) else has_nsfw
+    
     img_byte_arr = io.BytesIO()
     safe_image.save(img_byte_arr, format='JPEG', quality=95)
     img_base64 = base64.b64encode(img_byte_arr.getvalue()).decode('utf-8')
 
     return {
         "image": img_base64,
-        "has_nsfw_concept": has_nsfw,
+        "has_nsfw_concept": bool(nsfw_result),
         "concept": concept,
         "width": width,
         "height": height,
@@ -82,4 +85,3 @@ def testGenerateImage():
 
 if __name__ == "__main__":
     testCheckSafety()
-    

@@ -66,41 +66,43 @@ class ipcModules:
         print(f"Total model loading took {end_time - self.start_time:.2f} seconds")
 
     def check_nsfw(self, image_array, safety_checker_adj: float = 0.0):
-        if isinstance(image_array, list) and not isinstance(image_array[0], Image.Image):
+        if isinstance(image_array, np.ndarray):
+            if image_array.max() <= 1.0:
+                image_array = (image_array * 255).astype("uint8")
+            else:
+                image_array = image_array.astype("uint8")
+            x_image = Image.fromarray(image_array)
+            x_image = [x_image]
+        elif isinstance(image_array, list) and not isinstance(image_array[0], Image.Image):
             x_image = numpy_to_pil(image_array)
         else:
             x_image = image_array if isinstance(image_array, list) else [image_array]
-        
+
         safety_checker_input = self.safety_feature_extractor(x_image, return_tensors="pt").to("cuda")
         has_nsfw_concept, concepts = self.safety_checker_model(
             images=x_image,
-            clip_input=safety_checker_input.pixel_values,
-            safety_checker_adj=safety_checker_adj,
+            clip_input=safety_checker_input.pixel_values
         )
+        has_nsfw_bool = bool(has_nsfw_concept[0])
 
         return (
-            replace_numpy_with_python(replace_sets_with_lists(has_nsfw_concept)),
-            replace_numpy_with_python(replace_sets_with_lists(concepts))
+            has_nsfw_bool,
+            replace_numpy_with_python(replace_sets_with_lists(concepts[0] if isinstance(concepts, list) else concepts))
         )
 
 
     def get_safe_images(self, image_tensor, safety_checker_adj: float = 0.0):
         x_samples_numpy = image_tensor.cpu().permute(0, 2, 3, 1).numpy()
-        has_nsfw, concepts = self.check_nsfw(x_samples_numpy, safety_checker_adj)
-        x = torch.from_numpy(x_samples_numpy).permute(0, 3, 1, 2)
+        has_nsfw, concepts = self.check_nsfw(x_samples_numpy[0], safety_checker_adj)
+        x = image_tensor
 
-        for index, unsafe_value in enumerate(has_nsfw):
-            try:
-                if unsafe_value is True:
-                    img_np = x_samples_numpy[index]
-                    img_pil = Image.fromarray((img_np * 255).round().astype("uint8"))
-                    blurred_pil = img_pil.filter(ImageFilter.GaussianBlur(radius=16))
-                    blurred_np = (np.array(blurred_pil) / 255.0).astype("float32")
-                    blurred_tensor = torch.from_numpy(blurred_np).permute(2, 0, 1).unsqueeze(0)
-                    
-                    x[index] = blurred_tensor.squeeze(0)
-            except Exception as e:
-                logger.warning(f"Error blurring image {index}: {e}")
+        if has_nsfw:
+            img_np = x_samples_numpy[0]
+            img_pil = Image.fromarray((img_np * 255).round().astype("uint8"))
+            blurred_pil = img_pil.filter(ImageFilter.GaussianBlur(radius=16))
+            blurred_np = (np.array(blurred_pil) / 255.0).astype("float32")
+            blurred_tensor = torch.from_numpy(blurred_np).permute(2, 0, 1).unsqueeze(0)
+            x = blurred_tensor
 
         return x
 

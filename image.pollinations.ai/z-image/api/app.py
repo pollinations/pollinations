@@ -34,7 +34,7 @@ async def gen():
         image_data,
         mimetype='image/jpeg',
         headers={
-            "Content-Disposition": "inline; filename=generated.jpg"
+            "Content-Disposition": f"inline; filename={prompt[:10]}.jpg"
         }
     )
 

@@ -130,7 +130,7 @@ export const IMAGE_SERVICES = {
                 completionVideoSeconds: 0.15, // $0.15 per second of video
             },
         ],
-        description: "Veo 3.1 Fast - Google's video generation model",
+        description: "Veo 3.1 Fast - Google's video generation model (preview)",
         inputModalities: ["text"],
         outputModalities: ["video"],
     },
@@ -146,7 +146,7 @@ export const IMAGE_SERVICES = {
                 completionVideoSeconds: 0.028, // ~$0.14 per 5 seconds
             },
         ],
-        description: "Seedance - BytePlus video generation",
+        description: "Seedance - BytePlus video generation (preview)",
         inputModalities: ["text", "image"],
         outputModalities: ["video"],
     },

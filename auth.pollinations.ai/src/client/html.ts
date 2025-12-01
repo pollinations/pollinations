@@ -26,19 +26,33 @@ export const generateHTML = () => `<!DOCTYPE html>
             <span class="auth-title">🐝 Auth 🌸</span>
         </h1>
         
-        <!-- Intro section with tagline (visible only when logged out) -->
+        <!-- Registration Closed Notice -->
         <div id="intro-text">
-            <div style="font-size: 1.25em; color: #222; margin-top: 8px;">
-                <span style="background: #fffbe7; border-radius: 6px; padding: 2px 8px;">
-                    <b>Sign in</b> to unlock <span style="color: #ffb300; font-weight: bold;">all models &amp; features</span>
-                </span>
+            <!-- Registration Closed Box -->
+            <div style="margin-top: 16px; padding: 20px; background: linear-gradient(135deg, #fff5f5 0%, #ffe8f5 100%); border: 2px dashed #ff9999; border-radius: 12px;">
+                <h3 style="margin: 0 0 12px 0; color: #d63384; font-size: 1.3em;">
+                    ✨ Registration Closed ✨
+                </h3>
+                <p style="margin: 0 0 16px 0; color: #444; font-size: 1.05em;">
+                    This login is for <b>existing users only</b>.<br>
+                    New accounts should head over to:
+                </p>
+                <a href="https://enter.pollinations.ai" target="_blank" style="display: inline-block; background: #1a1a1a; color: white; padding: 10px 24px; border-radius: 24px; text-decoration: none; font-weight: bold;">
+                    🚀 enter.pollinations.ai
+                </a>
             </div>
-            <div style="margin-top: 10px; font-size: 1.1em; color: #444;">
-                <span style="display: inline-block; background: #ffe3fa; border-radius: 6px; padding: 2px 10px;">
-                    <b>Free</b> &nbsp;|&nbsp; <b>Anonymous</b> 
-                </span>
+
+            <!-- Deprecation Notice -->
+            <div style="margin-top: 20px; padding: 12px 16px; background: #fffbe6; border-radius: 8px; border-left: 4px solid #ffb300;">
+                <p style="margin: 0; color: #333; font-size: 0.95em;">
+                    <b>⚠️ Deprecation Notice:</b> This service will be deprecated in a few weeks.
+                </p>
+                <p style="margin: 8px 0 0 0; color: #666; font-size: 0.9em;">
+                    Please move your workflows to <b>enter.pollinations.ai</b>
+                </p>
             </div>
-            <div style="margin-top: 12px; font-size: 1.05em; color: #7a3cff;">
+
+            <div style="margin-top: 16px; font-size: 1.05em; color: #7a3cff;">
                 <i>Gen-AI API for everyone <span style="font-size:1.2em;">🌟</span></i>
             </div>
         </div>

@@ -303,148 +303,237 @@ TusharSoni014         ███      ████      ███    ██      
 - **Nice to have**: Kubernetes, vLLM, TGI, quantization, CI/CD
 - **Style**: High ownership, fast iteration, reliability
 
-### MLOps Skills Matrix
+### Top 5 External MLOps Candidates (Deep Analysis)
 
-| Contributor | Python | DevOps | Docker | GPU/ML | CI/CD | Code Style | Fit Score |
-|-------------|--------|--------|--------|--------|-------|------------|-----------|
-| **eulervoid** | ████ | █████ | █████ | ███ | █████ | Functional, test-driven | **9/10** ⭐ |
-| **voodoohop** | ████ | ████ | ████ | █████ | ████ | Architect, rapid iteration | **8/10** |
-| **aandrew-me** | ██ | ███ | ███ | ███ | ██ | Minimalist Go, CLI-focused | **6/10** |
-| **vgrichina** | ██ | ███ | ██ | ██ | ██ | Creative, distributed systems | **5/10** |
-| **dclm** | █████ | ██ | ██ | █████ | ██ | Research, notebooks | **5/10** |
-| **Circuit-Overtime** | ████ | ███ | ██ | ███ | ███ | Experimental, community | **4/10** |
+> **Note**: eulervoid and voodoohop are already on the team. Below are the top 5 **external** candidates for an MLOps/Inference Engineer role.
 
-### Detailed Profiles for MLOps Role
+| Rank | Candidate | Python | GPU/ML | Docker | CI/CD | Fit Score |
+|------|-----------|--------|--------|--------|-------|-----------|
+| 🥇 | **1038lab** | █████ | █████ | ████ | ███ | **8.5/10** |
+| 🥈 | **Zingzy** | █████ | ██ | ███ | ███ | **7/10** |
+| 🥉 | **techcow2** | ████ | ███ | ███ | ████ | **6.5/10** |
+| 4 | **aandrew-me** | ██ | ███ | ███ | ██ | **6/10** |
+| 5 | **KTS-o7** | ████ | ███ | ██ | ██ | **5.5/10** |
 
-#### ⭐ eulervoid - **STRONGEST MLOps CANDIDATE** (Fit: 9/10)
+---
 
-**Pollinations PRs**: 56 merged PRs (all high quality)
+### 🥇 1038lab - **STRONGEST EXTERNAL MLOps CANDIDATE** (Fit: 8.5/10)
+
+**GitHub**: [1038lab](https://github.com/1038lab) | **Repos**: 28 (all ML-focused!)
+
+**Why This Person**:
+1038lab is a **ComfyUI custom node specialist** who builds GPU-accelerated ML inference nodes. Their entire portfolio is MLOps-relevant: model loading, GPU inference, ONNX runtime, HuggingFace integration.
 
 **MLOps-Specific Evidence**:
-- ✅ **Docker/Containerization**: Docker images for text/image services
-- ✅ **CI/CD Pipelines**: Integration tests, GitHub Actions, streaming error handling
-- ✅ **Secrets Management**: Implemented sops/age encryption (`flake.nix`, `.sops.yaml`)
-- ✅ **Infrastructure as Code**: Nix flakes for reproducible dev environments
-- ✅ **Testing**: Comprehensive test coverage (135+ lines of event processing tests)
-- ✅ **TypeScript Migration**: Led image.pollinations.ai TypeScript migration with Zod schemas
+- ✅ **GPU/ML Deployment**: Every project uses CUDA/GPU inference
+- ✅ **Model Serving**: Qwen-VL, OmniGen, MiniCPM, JoyCaption, SparkTTS
+- ✅ **ONNX Runtime**: `onnxruntime-gpu>=1.15.0` in production
+- ✅ **HuggingFace Integration**: `huggingface-hub>=0.19.0`
+- ✅ **Segmentation Models**: SAM, SAM2, SAM3, BiRefNet, RMBG-2.0
+- ✅ **ComfyUI-Pollinations**: Built native Pollinations integration
 
-**Code Quality Metrics**:
-- **PR Size**: Small, focused PRs (avg 30-50 lines changed)
-- **Code Style**: Functional, pure functions, proper error handling
-- **Documentation**: Clear PR descriptions with bullet points
-- **Test Coverage**: Adds tests proactively ("As this is quite critical, I'd like to add tests before merge")
+**Key Repositories** (most recent, high activity):
+| Repo | Description | MLOps Relevance |
+|------|-------------|-----------------|
+| `ComfyUI-RMBG` | Background removal with RMBG-2.0, SAM, BiRefNet | GPU inference, model loading |
+| `ComfyUI-QwenVL` | Qwen2.5-VL, Qwen3-VL multimodal AI | Vision-language models |
+| `ComfyUI-OmniGen` | Text-to-image generation/editing | Diffusion model serving |
+| `ComfyUI-JoyCaption` | LLaVA model image captioning, GGUF support | Quantized model deployment |
+| `ComfyUI-SparkTTS` | LLM-powered TTS system | Audio ML serving |
+| `ComfyUI-FlashVSR` | Video super-resolution | Video ML pipeline |
+| `Safetensors-Converter` | Convert AI models to safetensors | Model format tooling |
 
-**Notable PRs**:
-- `#5534` - Event processing tests (135 lines, comprehensive edge cases)
-- `#5287` - Fix failing tests, type errors, minor cleanup
-- `#3283` - Nix flake with sops secrets management
-- `#3261` - TypeScript migration with Zod schemas and fuzz tests
-- `#3158` - Biome formatter/linter setup
+**Technical Stack**:
+```
+onnxruntime-gpu, segment-anything, groundingdino-py, huggingface-hub,
+opencv-python, hydra-core, transformers, torch
+```
 
-**External Repos** (5 public):
-- `llm` - CLI chat with LLMs
-- `split-tree`, `circle-tree` - Generative art (algorithmic thinking)
+**Pollinations Engagement**:
+- 1 tier request (#2857) for ComfyUI-Pollinations node
+- Active builder in AI/ML ecosystem
 
-**Work Style**:
-- 🔧 High ownership - writes tests before merging critical code
-- ⚡ Fast iteration - multiple PRs per week when active
-- 🛡️ Reliability focus - defensive coding, proper error handling
-- 📋 Clean commits - descriptive messages, organized changes
+**Work Style Assessment**:
+- 🔬 **Research-to-Production**: Implements bleeding-edge models (SAM3, Qwen3-VL)
+- 📦 **Clean Packaging**: Proper requirements.txt, README docs
+- 🎯 **Focused**: All 28 repos are ML-related
+- 🔧 **Active**: Continuous updates (Nov 2025: FlashVSR, QwenVL updates)
+
+**Gaps**:
+- ⚠️ No Kubernetes/vLLM/TGI experience visible
+- ⚠️ No CI/CD pipelines in repos
+- ⚠️ Windows-focused (ComfyUI typical)
+
+**Hiring Recommendation**: **STRONG HIRE** for ML model deployment. Would excel at GPU inference optimization, model serving, and ComfyUI/HuggingFace integrations. Consider for contractor role on model deployment tasks.
 
 ---
 
-#### voodoohop - **Lead Architect** (Fit: 8/10)
+### 🥈 Zingzy - **Python Bot/API Developer** (Fit: 7/10)
 
-**Pollinations PRs**: 1,072+ PRs (project lead)
+**GitHub**: [Zingzy](https://github.com/Zingzy) | **Repos**: 24
+
+**Why This Person**:
+Zingzy built the most popular Pollinations Discord bot (800+ servers, 50k+ images) and has contributed code directly to the Pollinations repo. Strong Python, API integration, and community engagement.
+
+**Pollinations Contributions**:
+| PR | Description | Status |
+|----|-------------|--------|
+| `#2223` | Transparent background images in API | ✅ Merged |
+| `#2216` | Transparency support for gptimage | ✅ Merged |
+| `#2189` | Pollinations Discord Bot (Flower tier request) | ✅ Granted |
 
 **MLOps-Relevant Skills**:
-- ✅ **API Infrastructure**: Built entire text/image API gateway
-- ✅ **Model Integration**: Nano Banana (Gemini), Seedream, multiple providers
-- ✅ **Streaming**: SSE streaming, chunked responses
-- ✅ **Caching**: Semantic caching with Vectorize, R2 storage
-- ⚠️ **Less pure MLOps**: More API/architecture than deployment/serving
+- ✅ **Python**: Strong (hPyT has 500+ stars)
+- ✅ **API Integration**: Pollinations API, Discord.py
+- ✅ **Image Processing**: QR detection, image manipulation
+- ⚠️ **No GPU/ML Experience**: Bot/API focused
+- ⚠️ **No Docker/Kubernetes**: Desktop app focus
 
-**Code Quality**:
-- **Style**: Rapid prototyping, architecture-first
-- **PR Size**: Variable (small fixes to large features)
-- **Iteration Speed**: Extremely fast, multiple PRs daily
-
-**External Repos** (64 repos):
-- `musicgen-remixer` - ML audio generation
-- `discord-pollinations-family` - Bot orchestration
-- `koishi-plugin-pollinations` - AI plugin development
-
----
-
-#### aandrew-me - **CLI/Systems Developer** (Fit: 6/10)
-
-**Pollinations PRs**: 0 (external contributor via tgpt)
-
-**Relevant Skills**:
-- ✅ **Go Programming**: tgpt (2,854⭐) - Terminal GPT
-- ✅ **Cross-Platform**: Desktop apps for Windows/Linux/Mac
-- ✅ **Binary Builds**: ffmpeg-builds, static binaries
-- ⚠️ **No Python**: Primary language is Go
-- ⚠️ **No GPU/ML Deployment**: Consumer app focus
-
-**External Repos** (29 repos):
-- `tgpt` - 2,854⭐ AI chatbot CLI (Go)
-- `ytDownloader` - Desktop app (Electron)
-- `gotts` - TTS CLI tool (Go)
-- `ffmpeg-builds` - Static binary distribution
+**Key Repositories**:
+| Repo | Stars | Description |
+|------|-------|-------------|
+| `hPyT` | 500+ | Windows title bar manipulation (Python) |
+| `pollinations.ai-bot` | N/A | Discord bot (800+ servers, 50k+ images) |
+| `polliChat` | N/A | AI Image Chat Companion |
+| `qrcode-api` | N/A | Python QR code generator API |
+| `http-server` | N/A | Multi-threaded HTTP server in Python |
 
 **Work Style**:
-- Minimalist, no-bloat code
-- Strong cross-platform experience
-- Would need Python/ML onboarding
+- 🐍 **Pythonic**: Clean, idiomatic code
+- 🤝 **Collaborative**: Responsive to PR feedback
+- 📱 **User-Focused**: Builds end-user tools
+- 🎓 **Student**: Learning-oriented (study-sync, dev-tools)
+
+**Hiring Recommendation**: **GOOD for Python API work**, but would need significant ML/GPU training. Better suited for API integration, bot development, or Python SDK work than pure MLOps.
 
 ---
 
-#### vgrichina - **Creative Systems** (Fit: 5/10)
+### 🥉 techcow2 - **DevOps/Automation Enthusiast** (Fit: 6.5/10)
 
-**Pollinations PRs**: 0 (external contributor)
+**GitHub**: [techcow2](https://github.com/techcow2) | **Repos**: 15
 
-**Relevant Skills**:
-- ✅ **Distributed Systems**: fast-near, nearfs, web4
-- ✅ **JavaScript/Node.js**: Extensive Node experience
-- ⚠️ **Web3 Focus**: Blockchain, NEAR protocol
-- ⚠️ **Limited ML**: nanobanana-berrry-hackathon only ML project
+**Why This Person**:
+Active Pollinations community member with 8 issues/PRs. Builds AI-powered tools and has server automation experience. Shows initiative with documentation improvements.
 
-**External Repos** (81 repos):
-- `web4` - Decentralized apps with WASM
-- `fast-near` - High-performance RPC
-- `nearfs` - Distributed file system
-- `nanobanana-berrry-hackathon` - Pollinations integration
+**Pollinations Contributions**:
+| Type | # | Description |
+|------|---|-------------|
+| PRs | 2 | MCP client config docs (#2849), README fixes (#2945) |
+| Issues | 6 | Project submissions, tier requests |
+| Projects | 3 | VisionText, DirPixel, TubularAI |
+
+**MLOps-Relevant Skills**:
+- ✅ **Server Automation**: `ubuntu-ez-setup` (security hardening scripts)
+- ✅ **ML Deployment Scripts**: `Wan2GP-One-Click-Script` (one-click ML installer)
+- ✅ **Python Desktop Apps**: dir-pixel, autowiz
+- ✅ **VS Code Extensions**: visiontext (Pollinations integration)
+- ⚠️ **Beginner GPU/ML**: Uses APIs, not model serving
+
+**Key Repositories**:
+| Repo | Description | Relevance |
+|------|-------------|-----------|
+| `Wan2GP-One-Click-Script` | Automated Wan2GP ML installation | ML deployment scripting |
+| `ubuntu-ez-setup` | Ubuntu server hardening | DevOps automation |
+| `NetSim` | AI web simulation generator | AI application |
+| `dir-pixel` | Batch image replacement with Pollinations | Python/API |
+| `visiontext` | VS Code extension for image→text | IDE integration |
+| `LMSA` | LM Studio Android frontend | LLM UI experience |
+
+**Work Style**:
+- 📝 **Documentation-Oriented**: Improves docs, writes setup scripts
+- 🔧 **Automation-First**: One-click installers, batch tools
+- 🎯 **Practical**: Builds tools for real workflows
+- 🤖 **AI-Coding Enthusiast**: Tips-Tricks-for-AI-Coder repo
+
+**Hiring Recommendation**: **GOOD for DevOps scripting**, setup automation, and documentation. Could assist with deployment scripts, one-click installers, and user-facing tooling. Would need ML model training for core MLOps work.
 
 ---
 
-#### dclm - **Early Research** (Fit: 5/10)
+### 4. aandrew-me - **Systems Programmer (Go)** (Fit: 6/10)
 
-**Pollinations PRs**: Historical (2021)
+**GitHub**: [aandrew-me](https://github.com/aandrew-me) | **Repos**: 29
 
-**Relevant Skills**:
-- ✅ **Python/ML**: Original Colab notebooks
-- ✅ **Research Background**: Generative AI pioneer
-- ⚠️ **Not Recently Active**: Last contributions 2021
-- ⚠️ **Notebook Style**: Research vs production
+**Why This Person**:
+Creator of `tgpt` (2,854⭐), one of the most popular terminal GPT clients. Strong systems programming skills, but Go-focused rather than Python/ML.
+
+**MLOps-Relevant Skills**:
+- ✅ **CLI Tools**: tgpt, gotts, ytDownloader
+- ✅ **Cross-Platform Builds**: ffmpeg-builds, binary distribution
+- ✅ **API Integration**: Multiple AI API integrations
+- ⚠️ **No Python**: Primary language is Go
+- ⚠️ **No GPU/ML**: Consumer app focus, API-based
+
+**Key Repositories**:
+| Repo | Stars | Description |
+|------|-------|-------------|
+| `tgpt` | 2,854 | Terminal GPT (Go) - AI chatbot without API keys |
+| `ytDownloader` | 500+ | Desktop video downloader (Electron) |
+| `gotts` | N/A | Terminal TTS with free voices (Go) |
+| `ffmpeg-builds` | N/A | Static ffmpeg binary distribution |
+| `textToImage` | N/A | StableDiffusion/OpenAI image gen |
+
+**Work Style**:
+- 🚀 **Minimalist**: No-bloat, focused tools
+- 🔨 **Systems-Oriented**: Binary builds, cross-platform
+- 📦 **Distribution Expert**: Package management, installers
+- 🌐 **Multi-Platform**: Windows, Linux, Mac
+
+**Hiring Recommendation**: **POSSIBLE for CLI tooling/Go work**. Strong systems background but would require significant Python/ML onboarding. Best suited for building distribution tools, CLI interfaces, or cross-platform installers rather than core MLOps.
 
 ---
 
-### MLOps Hiring Recommendation
+### 5. KTS-o7 - **CS Student + ML Enthusiast** (Fit: 5.5/10)
 
-**Immediate Hire**: **eulervoid** ⭐
-- Strongest DevOps/infrastructure skills in the community
-- Already MEMBER with deep codebase knowledge
-- Test-driven, reliable, clean code
-- Would excel at: GPU deployment, model serving, CI/CD pipelines
+**GitHub**: [KTS-o7](https://github.com/KTS-o7) | **Repos**: 66
 
-**Internal Promotion Path**: **voodoohop** → Technical oversight
-- Already handles architecture decisions
-- Could mentor MLOps hire on API/model integration
+**Why This Person**:
+CS student with AI/ML lab experience and created `pollinations-python` SDK fork. Academic ML background but limited production experience.
 
-**External Candidates to Cultivate**:
-- **aandrew-me**: Strong systems background, would need Python/ML training
-- **vgrichina**: Distributed systems experience, creative problem solver
+**MLOps-Relevant Skills**:
+- ✅ **Python**: Primary language
+- ✅ **ML Coursework**: AIML-Lab, Compiler-Design
+- ✅ **Parallel Processing**: PADP-Lab (parallel/distributed)
+- ✅ **Pollinations SDK**: pollinations-python wrapper library
+- ⚠️ **Academic Focus**: Lab code vs production
+- ⚠️ **No GPU Deployment**: Model training only
+
+**Key Repositories**:
+| Repo | Description | Relevance |
+|------|-------------|-----------|
+| `pollinations-python` | Pollinations API wrapper | SDK development |
+| `AIML-Lab` | 5th sem AI/ML programs | ML fundamentals |
+| `PADP-Lab` | Parallel & distributed processing | Parallelization |
+| `virOS` | Multi-threaded kernel | Systems programming |
+| `graph-rca` | Graph-based root cause analysis | ML research |
+| `better_bing_image_downloader` | Bulk image downloader | Data collection |
+
+**Work Style**:
+- 📚 **Academic**: Strong fundamentals
+- 🧪 **Research-Oriented**: Minor projects, lab experiments
+- 📈 **Growing**: Leetcode journey, consistent learning
+- 🔧 **Toolkit Builder**: Helper libraries, utilities
+
+**Hiring Recommendation**: **INTERN/JUNIOR candidate**. Good fundamentals but needs production experience. Could be cultivated for future MLOps role with mentorship. Best suited for SDK development, documentation, or research assistance.
+
+---
+
+### Hiring Summary Matrix
+
+| Candidate | Immediate Hire? | Best Role | Onboarding Needed |
+|-----------|-----------------|-----------|-------------------|
+| **1038lab** | ✅ Yes | GPU Model Deployment | CI/CD, Kubernetes |
+| **Zingzy** | 🟡 Maybe | Python API/Bot Dev | ML fundamentals |
+| **techcow2** | 🟡 Maybe | DevOps Automation | ML model serving |
+| **aandrew-me** | ⚠️ No | CLI Tooling (Go) | Python, ML stack |
+| **KTS-o7** | ⚠️ No (Intern?) | SDK/Research | Production systems |
+
+### Action Items
+
+1. **Reach out to 1038lab** - Strongest external candidate. Their ComfyUI ML nodes demonstrate exactly the skills needed.
+2. **Offer Zingzy contributor role** - Already contributing PRs, could expand to API/SDK work.
+3. **Engage techcow2 for DevOps tasks** - Good for automation scripts, documentation.
+4. **Keep aandrew-me for CLI projects** - If Go-based tooling needed.
+5. **Mentor KTS-o7 long-term** - Academic background could develop into MLOps role.
 
 ## How to Update
 

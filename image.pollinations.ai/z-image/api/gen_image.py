@@ -57,9 +57,19 @@ def generate_image(
         "prompt": prompt
     }
 
-if __name__ == "__main__":
+def testCheckSafety() -> tuple[list[bool], list[dict]]:
+    test_image_path = "testImg.jpg"
+    if os.path.exists(test_image_path):
+        test_image = Image.open(test_image_path).convert("RGB")
+        test_image_np = np.array(test_image).astype("float32") / 255.0
+        has_nsfw, concepts = server.check_nsfw(test_image_np, safety_checker_adj=0.0)
+        print(f"NSFW: {has_nsfw}, Concepts: {concepts}")
+    else:
+        print(f"Test image '{test_image_path}' not found.")
+
+def testGenerateImage():
     result = generate_image(
-        prompt="a cute flower",
+        prompt="a beautiful landscape with mountains and a river",
         width=512,
         height=512,
         steps=9,
@@ -67,7 +77,9 @@ if __name__ == "__main__":
     )
     image_data = base64.b64decode(result["image"])
     pil_image = Image.open(io.BytesIO(image_data))
-    image_array = np.array(pil_image)
-    enhanced_data = server.enhance_x2(image_array, outscale=2)
-    image = Image.fromarray(enhanced_data[0])
-    image.save("generated_image.jpg")
+    pil_image.save("generated_test_image.jpg")
+    print("Generated image saved as 'generated_test_image.jpg'.")
+
+if __name__ == "__main__":
+    testCheckSafety()
+    

@@ -13,6 +13,7 @@ from transformers import AutoFeatureExtractor
 from utility import StableDiffusionSafetyChecker, numpy_to_pil, replace_numpy_with_python, replace_sets_with_lists
 import time
 import numpy as np
+from PIL import Image
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 use_half = torch.cuda.is_available()
@@ -25,7 +26,7 @@ class ipcModules:
         self.upsampler_x2 = None
         self.safety_feature_extractor = None
         self.safety_checker_model = None
-        self._load_model()
+        # self._load_model()
         self._load_safety_checker()
 
     def _load_model(self):
@@ -81,6 +82,7 @@ class ipcModules:
             replace_numpy_with_python(replace_sets_with_lists(has_nsfw_concept)),
             replace_numpy_with_python(replace_sets_with_lists(concepts))
         )
+
 
     def get_safe_images(self, image_tensor, safety_checker_adj: float = 0.0):
         x_samples_numpy = image_tensor.cpu().permute(0, 2, 3, 1).numpy()
@@ -146,3 +148,5 @@ if __name__ == "__main__":
     server_obj = manager.get_server()
     print(f"Model server running on port {IPC_PORT}")
     server_obj.serve_forever()
+
+    

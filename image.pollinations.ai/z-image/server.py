@@ -16,7 +16,7 @@ from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 from diffusers import ZImagePipeline
 
-from safety_checker.censor import check_safety
+from safety_checker import check_safety
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)

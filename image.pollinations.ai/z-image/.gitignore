@@ -22,7 +22,9 @@ model-cache/
 .vscode/
 *.swp
 *.swo
-
+*.jpg
+*.jpeg
+*.png
 # OS
 .DS_Store
 Thumbs.db

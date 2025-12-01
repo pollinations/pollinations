@@ -6,6 +6,7 @@ from abc import ABC
 from diffusers.pipelines.stable_diffusion.safety_checker import StableDiffusionSafetyChecker as BaseSafetyChecker, cosine_distance
 from diffusers.utils import logging
 from transformers import CLIPConfig, AutoFeatureExtractor
+from torchvision import transforms
 
 logger = logging.get_logger(__name__)
 
@@ -141,3 +142,14 @@ def get_safe_images(image_tensor, safety_checker_adj: float = 0.0):
             logger.warning(f"Error blurring image {index}: {e}")
 
     return x
+
+if __name__ == "__main__":
+    image_path = "test_image.png"
+    pil_image = Image.open(image_path)
+    transform = transforms.ToTensor()
+    image_tensor = transform(pil_image).unsqueeze(0)  
+    safe_image = get_safe_images(image_tensor, safety_checker_adj=0.0)
+    result_np = safe_image[0].permute(1, 2, 0).numpy()
+    result_pil = Image.fromarray((result_np * 255).round().astype("uint8"))
+    result_pil.save("safe_image.png")
+    

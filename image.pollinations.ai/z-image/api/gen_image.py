@@ -14,7 +14,7 @@ pipe = ZImagePipeline.from_pretrained(
 
 
 def find_nearest_valid_dimensions(width: float, height: float) -> tuple[int, int]:
-    MAX_PIXELS = 1024 * 1024
+    MAX_PIXELS = 512 * 512
     start_w = round(width)
     start_h = round(height)
     current_pixels = start_w * start_h
@@ -28,7 +28,7 @@ def find_nearest_valid_dimensions(width: float, height: float) -> tuple[int, int
     nearest_h = max(nearest_h, 256)
     return nearest_w, nearest_h
 
-    
+
 def generate_image(
     prompt: str,
     width: int = 512,

@@ -1,0 +1,54 @@
+{
+  "request": {
+    "url": "http://ec2-3-80-56-235.compute-1.amazonaws.com:16385/openai",
+    "method": "POST",
+    "body": {
+      "type": "json",
+      "data": {
+        "model": "mistral",
+        "messages": [
+          {
+            "role": "user",
+            "content": "Reply: yes or no?"
+          }
+        ],
+        "stream": true
+      }
+    },
+    "params": {}
+  },
+  "response": {
+    "status": 200,
+    "statusText": "OK",
+    "headers": {
+      "access-control-allow-origin": "*",
+      "cache-control": "no-cache",
+      "connection": "keep-alive",
+      "content-type": "text/event-stream; charset=utf-8",
+      "date": "Sat, 29 Nov 2025 21:03:02 GMT",
+      "transfer-encoding": "chunked",
+      "x-powered-by": "Express"
+    },
+    "body": {
+      "type": "stream",
+      "data": [
+        {
+          "data": "data: {\"id\":\"chatcmpl-02925",
+          "delay": 25
+        },
+        {
+          "data": "bba-785a-474e-97e2-188c966cc1ab\",\"object\":\"chat.completion.chunk\",\"created\":1764450181,\"model\":\"mistral-small-3.2-24b-instruct-2506\",\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"\"},\"logprobs\":null,\"finish_reason\":null}],\"prompt_token_ids\":null}\n\ndata: {\"id\":\"chatcmpl-02925bba-785a-474e-97e2-188c966cc1ab\",\"object\":\"chat.completion.chunk\",\"created\":1764450181,\"model\":\"mistral-small-3.2-24b-instruct-2506\",\"choices\":[{\"index\":0,\"delta\":{\"content\":\"Yes\"},\"logprobs\":null,\"finish_reason\":null,\"token_ids\":null}]}\n\ndata: {\"id\":\"chatcmpl-02925bba-785a-474e-97e2-188c966cc1ab\",\"object\":\"chat.completion.chunk\",\"created\":1764450181,\"model\":\"mistral-small-3.2-24b-instruct-2506\",\"choices\":[{\"index\":0,\"delta\":{\"content\":\".\"},\"logprobs\":null,\"finish_reason\":null,\"token_ids\":null}]}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"id\":\"chatcmpl-029",
+          "delay": 0
+        },
+        {
+          "data": "25bba-785a-474e-97e2-188c966cc1ab\",\"object\":\"chat.completion.chunk\",\"created\":1764450181,\"model\":\"mistral-small-3.2-24b-instruct-2506\",\"choices\":[{\"index\":0,\"delta\":{\"content\":\"\"},\"logprobs\":null,\"finish_reason\":\"stop\",\"stop_reason\":null,\"token_ids\":null}]}\n\ndata: {\"id\":\"chatcmpl-02925bba-785a-474e-97e2-188c966cc1ab\",\"object\":\"chat.completion.chunk\",\"created\":1764450181,\"model\":\"mistral-small-3.2-24b-instruct-2506\",\"choices\":[],\"usage\":{\"prompt_tokens\":264,\"total_tokens\":267,\"completion_tokens\":3}}\n\ndata: [DONE]\n\n",
+          "delay": 0
+        }
+      ]
+    }
+  }
+}

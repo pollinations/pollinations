@@ -348,7 +348,7 @@ export async function sendErrorResponse(
         404: "Not Found",
         429: "Too Many Requests",
     };
-    const errorType = errorTypes[statusCode] || "Internal Server Error";
+    const errorType = errorTypes[responseStatus] || "Internal Server Error";
 
     const errorResponse = {
         error: errorType,
@@ -357,7 +357,9 @@ export async function sendErrorResponse(
         requestParameters: requestData || {},
     };
 
-    if (error.details) errorResponse.details = error.details;
+    // Include upstream error details if available
+    const errorDetails = error.details || error.response?.data;
+    if (errorDetails) errorResponse.details = errorDetails;
 
     // Extract client information (for logs only)
     const clientInfo = {
@@ -940,18 +942,15 @@ async function generateTextBasedOnModel(messages, options) {
 
         // For streaming errors, return a special error response that can be streamed
         if (options.stream) {
-            // Create a detailed error response
-            let errorDetails = null;
-
-            if (error.response?.data) {
+            // Get error details from error.details or parse error.response.data
+            let errorDetails = error.details || null;
+            if (!errorDetails && error.response?.data) {
                 try {
-                    // Try to parse the data as JSON
                     errorDetails =
                         typeof error.response.data === "string"
                             ? JSON.parse(error.response.data)
                             : error.response.data;
-                } catch (e) {
-                    // If parsing fails, use the raw data
+                } catch {
                     errorDetails = error.response.data;
                 }
             }
@@ -962,7 +961,7 @@ async function generateTextBasedOnModel(messages, options) {
                     message:
                         error.message ||
                         "An error occurred during text generation",
-                    status: error.code || 500,
+                    status: error.status || error.code || 500,
                     details: errorDetails,
                 },
             };

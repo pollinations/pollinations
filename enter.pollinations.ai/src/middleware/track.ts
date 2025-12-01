@@ -51,7 +51,6 @@ import {
     getErrorCode,
     UpstreamError,
 } from "@/error.ts";
-import { ValidationError } from "@/middleware/validator.ts";
 import type { LoggerVariables } from "./logger.ts";
 import type { ErrorVariables } from "@/env.ts";
 import type { FrontendKeyRateLimitVariables } from "./rate-limit-durable.ts";
@@ -646,28 +645,20 @@ type ErrorData = {
     errorResponseCode?: string;
     errorSource?: string;
     errorMessage?: string;
-    errorStack?: string;
-    errorDetails?: string;
+    // errorStack and errorDetails removed to reduce D1 memory usage
 };
 
 function collectErrorData(response: Response, error?: Error): ErrorData {
     if (response.ok && !error) return {};
-    let status, source, details;
-    if (error instanceof ValidationError) {
-        details = JSON.stringify(z.flattenError(error.zodError));
-    } else if (error instanceof UpstreamError) {
+    let source: string | undefined;
+    if (error instanceof UpstreamError) {
         source = error.requestUrl?.hostname;
-        details = JSON.stringify({
-            requestUrl: error.requestUrl,
-            requestBody: error.requestBody,
-        });
     }
+    // Note: errorStack and errorDetails removed to reduce D1 memory usage
+    // Stack traces and details are still logged but not stored in the database
     return {
-        errorResponseCode: getErrorCode(status || response.status),
+        errorResponseCode: getErrorCode(response.status),
         errorSource: source,
-        errorMessage:
-            error?.message || getDefaultErrorMessage(status || response.status),
-        errorStack: error?.stack,
-        errorDetails: details,
+        errorMessage: error?.message || getDefaultErrorMessage(response.status),
     };
 }

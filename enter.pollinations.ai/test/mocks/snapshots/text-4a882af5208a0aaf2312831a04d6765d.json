@@ -1,0 +1,71 @@
+{
+  "request": {
+    "url": "http://ec2-3-80-56-235.compute-1.amazonaws.com:16385/openai",
+    "method": "POST",
+    "body": {
+      "type": "json",
+      "data": {
+        "model": "claude-fast",
+        "messages": [
+          {
+            "role": "user",
+            "content": "Reply: yes or no?"
+          }
+        ]
+      }
+    },
+    "params": {}
+  },
+  "response": {
+    "status": 200,
+    "statusText": "OK",
+    "headers": {
+      "access-control-allow-origin": "*",
+      "connection": "keep-alive",
+      "content-length": "433",
+      "content-type": "application/json; charset=utf-8",
+      "date": "Sat, 29 Nov 2025 21:02:18 GMT",
+      "etag": "W/\"1b1-N6vsjXrmUpJjBvcMLx5eut0unOQ\"",
+      "keep-alive": "timeout=5",
+      "x-model-used": "us.anthropic.claude-haiku-4-5-20251001-v1:0",
+      "x-powered-by": "Express",
+      "x-usage-completion-text-tokens": "5",
+      "x-usage-prompt-text-tokens": "283",
+      "x-usage-total-tokens": "288"
+    },
+    "body": {
+      "type": "json",
+      "data": {
+        "id": "pllns_f39bc36b4c31e99d44e2c951118a36b3",
+        "object": "chat.completion",
+        "created": 1764450138,
+        "model": "us.anthropic.claude-haiku-4-5-20251001-v1:0",
+        "provider": "bedrock",
+        "choices": [
+          {
+            "index": 0,
+            "message": {
+              "role": "assistant",
+              "content": "Yes.",
+              "content_blocks": [
+                {
+                  "type": "text",
+                  "text": "Yes."
+                }
+              ]
+            },
+            "finish_reason": "end_turn"
+          }
+        ],
+        "usage": {
+          "prompt_tokens": 283,
+          "completion_tokens": 5,
+          "total_tokens": 288,
+          "prompt_tokens_details": {
+            "cached_tokens": 0
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,54 @@
+{
+  "request": {
+    "url": "http://ec2-3-80-56-235.compute-1.amazonaws.com:16385/openai",
+    "method": "POST",
+    "body": {
+      "type": "json",
+      "data": {
+        "model": "perplexity-fast",
+        "messages": [
+          {
+            "role": "user",
+            "content": "Reply: yes or no?"
+          }
+        ],
+        "stream": true
+      }
+    },
+    "params": {}
+  },
+  "response": {
+    "status": 200,
+    "statusText": "OK",
+    "headers": {
+      "access-control-allow-origin": "*",
+      "cache-control": "no-cache",
+      "connection": "keep-alive",
+      "content-type": "text/event-stream; charset=utf-8",
+      "date": "Sat, 29 Nov 2025 21:03:37 GMT",
+      "transfer-encoding": "chunked",
+      "x-powered-by": "Express"
+    },
+    "body": {
+      "type": "stream",
+      "data": [
+        {
+          "data": "data: {\"id\":\"84a41852-efb2-",
+          "delay": 3
+        },
+        {
+          "data": "4bd2-ac3d-98939a402257\",\"object\":\"chat.completion.chunk\",\"created\":1764450217,\"model\":\"sonar\",\"provider\":\"perplexity-ai\",\"citations\":[\"https://www.interactico.com/blog/yes-or-no-poll-questions\",\"https://mangolanguages.com/resources/learn/grammar/english/how-to-ask-questions-in-english/study-resource-other-ways-to-answer-yes-no-questions-in-english\",\"https://qualaroo.com/blog/yes-or-no-surveys/\"],\"choices\":[{\"delta\":{\"role\":\"assistant\",\"content\":\"Yes\"},\"index\":0}]}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"id\":\"84a41852-efb2-",
+          "delay": 13
+        },
+        {
+          "data": "4bd2-ac3d-98939a402257\",\"object\":\"chat.completion.done\",\"created\":1764450217,\"model\":\"sonar\",\"provider\":\"perplexity-ai\",\"citations\":[\"https://www.interactico.com/blog/yes-or-no-poll-questions\",\"https://mangolanguages.com/resources/learn/grammar/english/how-to-ask-questions-in-english/study-resource-other-ways-to-answer-yes-no-questions-in-english\",\"https://qualaroo.com/blog/yes-or-no-surveys/\"],\"choices\":[{\"delta\":{\"role\":\"assistant\",\"content\":\"\"},\"index\":0,\"finish_reason\":\"stop\"}],\"usage\":{\"prompt_tokens\":253,\"completion_tokens\":1,\"total_tokens\":254,\"search_context_size\":\"low\",\"cost\":{\"input_tokens_cost\":0,\"output_tokens_cost\":0,\"request_cost\":0.005,\"total_cost\":0.005}}}\n\ndata: [DONE]\n\n",
+          "delay": 0
+        }
+      ]
+    }
+  }
+}

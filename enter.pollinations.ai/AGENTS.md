@@ -58,8 +58,6 @@ export BASE_URL="https://enter.pollinations.ai/api"
 
 > **All models require authentication.** Image models have NO tier requirements - only pollen balance matters.
 
-### 🆓 Free Models
-
 **Flux** (Default Model)
 
 ```bash
@@ -74,9 +72,6 @@ curl "$BASE_URL/generate/image/test2?model=flux&width=512&height=512&seed=123" \
 # Alternative: Use query parameter for auth
 curl "$BASE_URL/generate/image/test3?model=flux&key=$TOKEN"
 ```
-
-### 💎 Paid Models (Require Pollen)
-
 **GPT Image**
 ```bash
 curl "$BASE_URL/generate/image/test1?model=gptimage&width=512&height=512" \
@@ -400,12 +395,12 @@ BASE_URL="https://enter.pollinations.ai/api"
 echo "🧪 Testing Enter Service"
 echo "========================"
 
-# Test free model
-echo "1. Testing FREE model (flux)..."
-curl -s "$BASE_URL/generate/image/test_free?model=flux&width=256&height=256" \
+# Test included model (no additional pollen)
+echo "1. Testing INCLUDED model (flux)..."
+curl -s "$BASE_URL/generate/image/test_included?model=flux&width=256&height=256" \
   -w "   HTTP: %{http_code}\n" -o /dev/null
 
-# Test paid model
+# Test paid model (requires pollen)
 echo "2. Testing PAID model (gptimage)..."
 curl -s "$BASE_URL/generate/image/test_paid?model=gptimage&width=256&height=256" \
   -H "Authorization: Bearer $TOKEN" \

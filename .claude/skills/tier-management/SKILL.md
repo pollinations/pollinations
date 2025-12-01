@@ -20,11 +20,25 @@ Must run from the `pollinations` repo root with access to `enter.pollinations.ai
 
 | Tier | Emoji | Pollen/Day | Criteria |
 |------|-------|------------|----------|
-| spore | 🍄 | 5 | Default (new accounts) |
-| seed | 🌱 | 10 | GitHub engagement |
-| flower | 🌸 | 15 | Contributed code/project |
+| spore | 🍄 | 1 | Default (new signups) |
+| seed | 🌱 | 3 | GitHub engagement |
+| flower | 🌸 | 10 | Contributed code/project |
 | nectar | 🍯 | 20 | Strategic partners |
 | router | 🔌 | 100 | Infrastructure partners |
+
+---
+
+# Upgrade Paths
+
+## 🍄 Spore → 🌱 Seed
+- ⭐ Starred the pollinations repo
+- 💬 Opened an issue or PR
+- 💳 Made a purchase
+
+## 🌱 Seed → 🌸 Flower
+- 🛠️ Pushed code to pollinations/pollinations
+- 📦 Has a project in our showcase
+- 🌐 Built something open-source using our API
 
 ---
 

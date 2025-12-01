@@ -1,5 +1,5 @@
 // Import registry for model names and tier validation
-import type { ImageServiceId } from "../../shared/registry/image.ts";
+import { type ImageServiceId } from "../../shared/registry/image.ts";
 
 /**
  * Image/Video-specific configuration for each model

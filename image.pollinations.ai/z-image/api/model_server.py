@@ -13,6 +13,7 @@ from transformers import AutoFeatureExtractor
 from utility import StableDiffusionSafetyChecker, numpy_to_pil, replace_numpy_with_python, replace_sets_with_lists
 import time
 import numpy as np
+import sys
 from PIL import Image
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -64,6 +65,7 @@ class ipcModules:
         print("Safety checker loaded successfully!")
         end_time = time.time()
         print(f"Total model loading took {end_time - self.start_time:.2f} seconds")
+        print("[MODELS LOADED]")
 
     def check_nsfw(self, image_array, safety_checker_adj: float = 0.0):
         if isinstance(image_array, np.ndarray):
@@ -148,13 +150,20 @@ class ipcModules:
             raise
 
 if __name__ == "__main__":
-    server = ipcModules()
-    class ModelManager(BaseManager):
-        pass
-    ModelManager.register('service', callable=lambda: server)
-    manager = ModelManager(address=('localhost', IPC_PORT), authkey=IPC_SECRET_KEY)
-    server_obj = manager.get_server()
-    print(f"Model server running on port {IPC_PORT}")
-    server_obj.serve_forever()
-
+    try:
+        server = ipcModules()
+        class ModelManager(BaseManager):
+            pass
+        ModelManager.register('service', callable=lambda: server)
+        manager = ModelManager(address=('localhost', IPC_PORT), authkey=IPC_SECRET_KEY)
+        server_obj = manager.get_server()
+        print(f"Model server running on port {IPC_PORT}")
+        print("[SERVER_READY]")
+        sys.stdout.flush()
+        server_obj.serve_forever()
+    except Exception as e:
+        print(f"[SERVER_ERROR] {e}")
+        import traceback
+        traceback.print_exc()
+        exit(1)
 

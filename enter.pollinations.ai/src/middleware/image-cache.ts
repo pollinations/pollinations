@@ -8,6 +8,7 @@ import { createMiddleware } from "hono/factory";
 import {
     generateCacheKey,
     setHttpMetadataHeaders,
+    setCustomHeaders,
     cacheResponse,
 } from "@/utils/image-cache.ts";
 import type { LoggerVariables } from "@/middleware/logger.ts";
@@ -43,6 +44,7 @@ export const imageCache = createMiddleware<ImageCacheEnv>(async (c, next) => {
         if (cachedImage) {
             log.info("[CACHE] Cache HIT");
             setHttpMetadataHeaders(c, cachedImage.httpMetadata);
+            setCustomHeaders(c, cachedImage.customMetadata);
             c.header("Cache-Control", "public, max-age=31536000, immutable");
             c.header("X-Cache", "HIT");
             c.header("X-Cache-Type", "EXACT");

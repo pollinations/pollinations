@@ -112,6 +112,25 @@ export function setHttpMetadataHeaders(
     }
 }
 
+/**
+ * Helper function to restore custom headers from R2 customMetadata
+ * Headers stored as "header_x_foo_bar" are restored as "x-foo-bar"
+ */
+export function setCustomHeaders(
+    c: Context,
+    customMetadata?: Record<string, string>,
+) {
+    if (!customMetadata) return;
+
+    for (const [key, value] of Object.entries(customMetadata)) {
+        if (key.startsWith("header_") && value) {
+            // Convert "header_x_model_used" back to "x-model-used"
+            const headerName = key.slice(7).replace(/_/g, "-");
+            c.header(headerName, value);
+        }
+    }
+}
+
 type ImageCacheEnv = {
     Bindings: CloudflareBindings;
     Variables: {
@@ -158,6 +177,15 @@ export async function cacheResponse<TEnv extends ImageCacheEnv>(
             cacheControl: c.res.headers.get("cache-control") || undefined,
         };
 
+        // Extract all x-* headers from response (for tracking, billing, etc.)
+        const customHeaders: Record<string, string> = {};
+        for (const [key, value] of c.res.headers.entries()) {
+            if (key.startsWith("x-") && value) {
+                // Store as "header_x_model_used" to restore as "x-model-used"
+                customHeaders[`header_${key.replace(/-/g, "_")}`] = value;
+            }
+        }
+
         const metadata = {
             httpMetadata: removeUnset(httpMetadata),
             customMetadata: removeUnset({
@@ -175,6 +203,9 @@ export async function cacheResponse<TEnv extends ImageCacheEnv>(
                 method,
                 requestTime,
                 requestId,
+
+                // All x-* headers from origin response
+                ...customHeaders,
             }),
         };
 

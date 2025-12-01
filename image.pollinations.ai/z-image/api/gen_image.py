@@ -2,17 +2,17 @@ import os
 import io
 import base64
 import torch
-from diffusers import ZImagePipeline
+from multiprocessing.managers import BaseManager
 from safety_checker import check_nsfw
 from PIL import Image
-MODEL_ID = "Tongyi-MAI/Z-Image-Turbo"
+from config import IPC_SECRET_KEY, IPC_PORT
 
-pipe = ZImagePipeline.from_pretrained(
-    MODEL_ID,
-    torch_dtype=torch.bfloat16,
-).to("cuda")
-
-
+class ModelManager(BaseManager): pass
+ModelManager.register('service')
+manager = ModelManager(address=('localhost', IPC_PORT), authkey=IPC_SECRET_KEY)
+manager.connect()
+server = manager.service()
+    
 def find_nearest_valid_dimensions(width: float, height: float) -> tuple[int, int]:
     MAX_PIXELS = 512 * 512
     start_w = round(width)
@@ -37,21 +37,11 @@ def generate_image(
     seed: int | None = None,
     safety_checker_adj: float = 0.5
 ) -> dict:
-    if seed is None:
-        seed = int.from_bytes(os.urandom(2), "big")
-    generator = torch.Generator("cuda").manual_seed(seed)
+    
     width, height = find_nearest_valid_dimensions(width, height)
-
-    with torch.inference_mode():
-        output = pipe(
-            prompt=prompt,
-            generator=generator,
-            width=width,
-            height=height,
-            num_inference_steps=steps,
-            guidance_scale=0.0,
-        )
-    image = output.images[0]
+    
+    image, seed = server.generate(prompt, width, height, steps, seed, safety_checker_adj)
+    
     has_nsfw, concepts = check_nsfw([image], safety_checker_adj)
     img_byte_arr = io.BytesIO()
     image.save(img_byte_arr, format='JPEG', quality=95)

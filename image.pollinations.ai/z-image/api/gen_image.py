@@ -66,6 +66,7 @@ if __name__ == "__main__":
         safety_checker_adj=0.5
     )
     image_data = base64.b64decode(result["image"])
-    image = Image.open(io.BytesIO(image_data))
+    image_data = server.enhance_x2(Image.open(io.BytesIO(image_data)), outscale=2)[0]
+    image = Image.fromarray(image_data)
     image.save("generated_image.jpg")
     print(result["has_nsfw_concept"], result["concept"], result["width"], result["height"], result["seed"])

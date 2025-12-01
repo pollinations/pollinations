@@ -1,7 +1,7 @@
 import os.path
 import numpy as np
 import torch
-from PIL import Image
+from PIL import Image, ImageFilter
 from abc import ABC
 from diffusers.pipelines.stable_diffusion.safety_checker import StableDiffusionSafetyChecker as BaseSafetyChecker, cosine_distance
 from diffusers.utils import logging
@@ -131,7 +131,7 @@ def get_safe_images(image_tensor, safety_checker_adj: float = 0.0):
                 img_pil = Image.fromarray((img_np * 255).round().astype("uint8"))
                 
                 # Apply blur filter
-                blurred_pil = img_pil.filter(Image.BLUR)
+                blurred_pil = img_pil.filter(ImageFilter.GaussianBlur(radius=8))
                 
                 # Convert back to tensor
                 blurred_np = (np.array(blurred_pil) / 255.0).astype("float32")
@@ -144,12 +144,12 @@ def get_safe_images(image_tensor, safety_checker_adj: float = 0.0):
     return x
 
 if __name__ == "__main__":
-    image_path = "test_image.png"
+    image_path = "testImg2.jpg"
     pil_image = Image.open(image_path)
     transform = transforms.ToTensor()
     image_tensor = transform(pil_image).unsqueeze(0)  
     safe_image = get_safe_images(image_tensor, safety_checker_adj=0.0)
     result_np = safe_image[0].permute(1, 2, 0).numpy()
     result_pil = Image.fromarray((result_np * 255).round().astype("uint8"))
-    result_pil.save("safe_image.png")
+    result_pil.save("safe_image.jpg")
     

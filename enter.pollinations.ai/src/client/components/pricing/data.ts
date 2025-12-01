@@ -68,7 +68,7 @@ export const getModelPrices = (): ModelPrice[] => {
                 perToken: false,
                 perSecondPrice: formatPrice(
                     latestCost.completionVideoSeconds,
-                    (v: number) => `$${v.toFixed(3)}/sec`,
+                    (v: number) => `🌸${v.toFixed(3)}/sec`,
                 ),
             });
         } else if (latestCost.promptTextTokens || latestCost.promptImageTokens) {

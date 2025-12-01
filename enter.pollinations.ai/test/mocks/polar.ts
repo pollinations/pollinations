@@ -262,6 +262,8 @@ const mockCheckoutSession = {
     trial_end: null,
     trial_interval: "month",
     trial_interval_count: 0,
+    allow_trial: false,
+    prices: {},
     products: [
         {
             created_at: "2025-08-28T16:18:57.365Z",
@@ -276,11 +278,13 @@ const mockCheckoutSession = {
             is_recurring: false,
             is_archived: false,
             organization_id: "test-org-id-1234",
+            allow_trial: false,
             prices: [
                 {
                     created_at: "2025-08-28T16:18:57.370Z",
                     modified_at: "2025-08-28T16:18:57.876Z",
                     id: "test-price-id-1234",
+                    source: "catalog",
                     amount_type: "fixed",
                     is_archived: false,
                     product_id: "test-product-id-1234",
@@ -307,11 +311,13 @@ const mockCheckoutSession = {
         is_recurring: false,
         is_archived: false,
         organization_id: "test-org-id-1234",
+        allow_trial: false,
         prices: [
             {
                 created_at: "2025-08-28T16:18:57.370Z",
                 modified_at: "2025-08-28T16:18:57.876Z",
                 id: "test-price-id-1234",
+                source: "catalog",
                 amount_type: "fixed",
                 is_archived: false,
                 product_id: "test-product-id-1234",
@@ -328,6 +334,7 @@ const mockCheckoutSession = {
         created_at: "2025-08-28T16:18:57.370Z",
         modified_at: "2025-08-28T16:18:57.876Z",
         id: "test-price-id-1234",
+        source: "catalog",
         amount_type: "fixed",
         is_archived: false,
         product_id: "test-product-id-1234",

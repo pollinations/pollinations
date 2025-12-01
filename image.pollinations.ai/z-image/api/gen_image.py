@@ -36,7 +36,7 @@ def generate_image(
     steps: int = 9,
     seed: int | None = None,
     safety_checker_adj: float = 0.5,
-    upscale: bool = False
+    upscale: bool = True
 ) -> dict:
     
     width, height = find_nearest_valid_dimensions(width, height)
@@ -45,8 +45,6 @@ def generate_image(
     )
     
     nsfw_result = has_nsfw[0] if isinstance(has_nsfw, (list, np.ndarray)) else has_nsfw
-    
-    # Upscale if requested
     upscaled_image = safe_image
     if upscale:
         image_np = np.array(safe_image)
@@ -80,7 +78,7 @@ def testCheckSafety() -> tuple[list[bool], list[dict]]:
 
 def testGenerateImage():
     result = generate_image(
-        prompt="a beautiful landscape with mountains and a river",
+        prompt="a cute teddy bear",
         width=512,
         height=512,
         steps=9,
@@ -100,7 +98,7 @@ def testGenerateImage():
     print(f"Upscaled: {result['upscaled']}")
     
     if result['has_nsfw_concept']:
-        print("⚠️  Image flagged as NSFW - Gaussian blur applied to the image")
+        print("Image flagged as NSFW - Gaussian blur applied to the image")
 
 if __name__ == "__main__":
     testGenerateImage()

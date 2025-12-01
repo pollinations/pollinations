@@ -3,6 +3,7 @@ __pycache__/
 *$py.class
 venv/
 .venv/
+testImages/
 env/
 model_cache/
 *.safetensors

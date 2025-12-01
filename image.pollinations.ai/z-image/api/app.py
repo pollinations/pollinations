@@ -1,10 +1,11 @@
 from quart import Quart, request, Response
+from quart_cors import cors
 from gen_image import generate_image, find_nearest_valid_dimensions
 import base64
-import io
-from PIL import Image
 
 app = Quart(__name__)
+app = cors(app, allow_origin="http://localhost:9000")
+
 
 @app.route('/gen', methods=['GET'])
 async def gen():
@@ -12,15 +13,19 @@ async def gen():
     width = request.args.get('width', default=512, type=int)
     height = request.args.get('height', default=512, type=int)
     seed = request.args.get('seed', default=None, type=int)
+    steps = request.args.get('steps', default=9, type=int)
+
+    
     width, height = find_nearest_valid_dimensions(
-        min(width, 512),
-        min(height, 512)
+        min(width, 1024),
+        min(height, 1024)
     )
 
     result = generate_image(
         prompt=prompt,
         width=width,
         height=height,
+        steps=steps,
         seed=seed
     )
 
@@ -34,4 +39,4 @@ async def gen():
     )
 
 if __name__ == "__main__":
-    app.run(port=8000)
+    app.run(port=9000)

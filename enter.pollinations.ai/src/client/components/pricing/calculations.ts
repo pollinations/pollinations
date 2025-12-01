@@ -142,6 +142,18 @@ export const calculatePerPollen = (model: ModelPrice): string => {
     }
 
     // ========================================================================
+    // VIDEO MODELS
+    // ========================================================================
+    if (model.type === "video" && model.perSecondPrice) {
+        const costPerSecond = parseFloat(model.perSecondPrice);
+        if (costPerSecond === 0) return "—";
+
+        // Show seconds per pollen
+        const secondsPerPollen = 1 / costPerSecond;
+        return `${secondsPerPollen.toFixed(1)} sec`;
+    }
+
+    // ========================================================================
     // IMAGE MODELS
     // ========================================================================
     if (model.type === "image") {

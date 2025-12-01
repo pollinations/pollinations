@@ -26,11 +26,11 @@
   --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.15);
   --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.2);
   
-  --accent-gradient: linear-gradient(135deg, #7CA58E, #C65792);
-  --accent-hover: linear-gradient(135deg, #8cb59d, #d166a0);
+  --accent-gradient: linear-gradient(135deg, #C65792, #5fffa4);
+  --accent-hover: linear-gradient(135deg, #d166a0, #aefecf);
   
   /* Message colors */
-  --msg-user-bg: linear-gradient(135deg, #7CA58E, #C65792);
+  --msg-user-bg: #77e4d7;
   --msg-assistant-bg: #f8f9fa;
   --msg-user-text: #ffffff;
   --msg-assistant-text: #1a1a1a;
@@ -40,6 +40,12 @@
   --sidebar-border: #e2e8f0;
   --sidebar-item-hover: #f1f5f9;
   --sidebar-item-active: rgba(124, 165, 142, 0.15);
+  
+  /* Danger/Error colors */
+  --danger-bg: rgba(239, 68, 68, 0.1);
+  --danger-color: #ef4444;
+  --danger-hover-bg: #ef4444;
+  --danger-hover-color: #ffffff;
   
   /* Transitions */
   --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
@@ -79,8 +85,11 @@ body.dark {
   --sidebar-item-hover: rgba(212, 251, 228, 0.06);
   --sidebar-item-active: rgba(124, 165, 142, 0.2);
   
-  /* Logo filter for dark mode - makes it lighter/brighter */
-  --logo-filter: brightness(1.8) saturate(0.9);
+  /* Danger/Error colors */
+  --danger-bg: rgba(239, 68, 68, 0.2);
+  --danger-color: #fca5a5;
+  --danger-hover-bg: #fca5a5;
+  --danger-hover-color: #000000;
 }
 
 /* Accent color themes for user messages */

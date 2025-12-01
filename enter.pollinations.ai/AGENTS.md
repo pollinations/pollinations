@@ -58,8 +58,6 @@ export BASE_URL="https://enter.pollinations.ai/api"
 
 > **All models require authentication.** Image models have NO tier requirements - only pollen balance matters.
 
-### 🆓 Free Models
-
 **Flux** (Default Model)
 
 ```bash
@@ -74,9 +72,6 @@ curl "$BASE_URL/generate/image/test2?model=flux&width=512&height=512&seed=123" \
 # Alternative: Use query parameter for auth
 curl "$BASE_URL/generate/image/test3?model=flux&key=$TOKEN"
 ```
-
-### 💎 Paid Models (Require Pollen)
-
 **GPT Image**
 ```bash
 curl "$BASE_URL/generate/image/test1?model=gptimage&width=512&height=512" \
@@ -400,12 +395,12 @@ BASE_URL="https://enter.pollinations.ai/api"
 echo "🧪 Testing Enter Service"
 echo "========================"
 
-# Test free model
-echo "1. Testing FREE model (flux)..."
-curl -s "$BASE_URL/generate/image/test_free?model=flux&width=256&height=256" \
+# Test included model (no additional pollen)
+echo "1. Testing INCLUDED model (flux)..."
+curl -s "$BASE_URL/generate/image/test_included?model=flux&width=256&height=256" \
   -w "   HTTP: %{http_code}\n" -o /dev/null
 
-# Test paid model
+# Test paid model (requires pollen)
 echo "2. Testing PAID model (gptimage)..."
 curl -s "$BASE_URL/generate/image/test_paid?model=gptimage&width=256&height=256" \
   -H "Authorization: Bearer $TOKEN" \
@@ -520,3 +515,53 @@ curl "$BASE_URL/generate/v1/chat/completions" \
 - **Check response headers** for cache status: `x-cache: HIT` or `MISS`
 - **Use small images** (256x256) for quick tests
 - **Monitor your balance** at https://enter.pollinations.ai after tests
+
+---
+
+## 🎫 User Tier Management
+
+> Claude skill available: `.claude/skills/tier-management/SKILL.md`
+
+### Tier Levels
+
+| Tier | Emoji | Pollen/Day | Criteria |
+|------|-------|------------|----------|
+| spore | 🍄 | 5 | Default (new accounts) |
+| seed | 🌱 | 10 | GitHub engagement |
+| flower | 🌸 | 15 | Contributed code/project |
+| nectar | 🍯 | 20 | Strategic partners |
+| router | 🔌 | 100 | Infrastructure partners |
+
+### Quick Tier Update
+
+```bash
+cd enter.pollinations.ai
+
+# 1. Find user
+npx wrangler d1 execute DB --remote --env production \
+  --command "SELECT github_username, email, tier FROM user WHERE LOWER(github_username) LIKE '%USERNAME%';"
+
+# 2. Update DB tier
+npx wrangler d1 execute DB --remote --env production \
+  --command "UPDATE user SET tier='flower' WHERE github_username='USERNAME';"
+
+# 3. Update Polar subscription
+export POLAR_ACCESS_TOKEN=$(sops -d secrets/prod.vars.json | grep POLAR_ACCESS_TOKEN | cut -d'"' -f4)
+npx tsx scripts/manage-polar.ts user update-tier --email USER@EMAIL.COM --tier flower
+```
+
+### Evaluate User for Upgrade
+
+**Flower tier** (any ONE qualifies):
+- Has commits: `gh api 'search/commits?q=repo:pollinations/pollinations+author:USERNAME' --jq '.total_count'`
+- Has project: `grep -ri "author.*USERNAME" pollinations.ai/src/config/projects/`
+
+**Seed tier** (any ONE qualifies):
+- Issue involvement: `gh api 'search/issues?q=repo:pollinations/pollinations+involves:USERNAME' --jq '.total_count'`
+- Starred repo: `.claude/skills/tier-management/fetch-stargazers.sh USERNAME`
+
+### Notes
+
+- **DB tier** = what user CAN activate
+- **Polar subscription** = what user HAS activated  
+- If no Polar subscription, user must click "Activate" at enter.pollinations.ai

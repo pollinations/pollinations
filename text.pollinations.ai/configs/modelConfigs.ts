@@ -121,6 +121,7 @@ export const portkeyConfig: PortkeyConfigMap = {
     "us.meta.llama3-1-8b-instruct-v1:0": () =>
         createBedrockLambdaModelConfig({
             model: "us.meta.llama3-1-8b-instruct-v1:0",
+            "max-tokens": 4096, // Llama 3.1 8B has 8192 limit
         }),
     "us.anthropic.claude-3-5-haiku-20241022-v1:0": () =>
         createBedrockLambdaModelConfig({

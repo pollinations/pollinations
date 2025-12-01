@@ -10,8 +10,9 @@ const logOps = debug("pollinations:seedance:ops");
 const logError = debug("pollinations:seedance:error");
 
 // Seedance API constants
-// Using Seedance (BytePlus video generation)
-const DEFAULT_MODEL = "seedance-1-0-lite";
+// Using Seedance Lite T2V (BytePlus video generation)
+// Model ID includes date suffix as required by BytePlus
+const DEFAULT_MODEL = "seedance-1-0-lite-t2v-250428";
 
 interface SeedanceTaskResponse {
     id?: string;
@@ -25,13 +26,8 @@ interface SeedanceTaskResponse {
 
 interface SeedanceTaskResult {
     id?: string;
-    task_id?: string;
     status?: string;
-    video?: {
-        url?: string;
-        duration?: number;
-    };
-    output?: {
+    content?: {
         video_url?: string;
     };
     error?: {
@@ -39,7 +35,7 @@ interface SeedanceTaskResult {
         message: string;
     };
     usage?: {
-        tokens_used?: number;
+        completion_tokens?: number;
         total_tokens?: number;
     };
 }
@@ -79,11 +75,11 @@ export const callSeedanceAPI = async (
     );
 
     // Determine video parameters
-    const durationSeconds = safeParams.duration || 5; // Default 5 seconds
+    // Minimum values for fastest generation: 2s duration, 480p resolution
+    const durationSeconds = safeParams.duration || 2; // Default 2 seconds (minimum)
     const aspectRatio = safeParams.aspectRatio || "16:9";
-    // Resolution: 720p or 480p (Seedance Lite only supports 720p)
-    const resolution =
-        safeParams.height && safeParams.height <= 480 ? "480p" : "720p";
+    // Resolution: 480p for faster generation, 720p for quality
+    const resolution = "480p"; // Always use 480p for now (fastest)
 
     logOps("Video params:", {
         durationSeconds,
@@ -93,20 +89,23 @@ export const callSeedanceAPI = async (
         hasImage: !!safeParams.image,
     });
 
-    // Build request body
+    // Build text command with parameters (BytePlus format)
+    // Parameters are appended to prompt as --param value
+    let textCommand = `${prompt} --resolution ${resolution} --duration ${durationSeconds} --watermark false`;
+    if (safeParams.seed !== undefined && safeParams.seed !== -1) {
+        textCommand += ` --seed ${safeParams.seed}`;
+    }
+
+    // Build request body using content array format (required by BytePlus API)
     const requestBody: any = {
         model: DEFAULT_MODEL,
-        prompt: prompt,
-        duration: durationSeconds,
-        aspect_ratio: aspectRatio,
-        resolution: resolution,
-        watermark: false,
+        content: [
+            {
+                type: "text",
+                text: textCommand,
+            },
+        ],
     };
-
-    // Add seed if specified
-    if (safeParams.seed !== undefined && safeParams.seed !== -1) {
-        requestBody.seed = safeParams.seed;
-    }
 
     // Add image for image-to-video generation
     if (safeParams.image && safeParams.image.length > 0) {
@@ -141,7 +140,12 @@ export const callSeedanceAPI = async (
                 imageResponse.headers.get("content-type") || "image/jpeg";
             const dataUrl = `data:${contentType};base64,${base64Data}`;
 
-            requestBody.image = dataUrl;
+            // Add image to content array
+            requestBody.content.push({
+                type: "image_url",
+                image_url: { url: dataUrl },
+                role: "first_frame",
+            });
             logOps("Image processed successfully");
         } catch (error) {
             logError("Error processing reference image:", error.message);
@@ -152,17 +156,14 @@ export const callSeedanceAPI = async (
         }
     }
 
-    logOps(
-        "Seedance API request body:",
-        JSON.stringify(
-            {
-                ...requestBody,
-                image: requestBody.image ? "[base64]" : undefined,
-            },
-            null,
-            2,
+    // Log request body (hide base64 data)
+    const logBody = {
+        model: requestBody.model,
+        content: requestBody.content.map((c: any) =>
+            c.type === "image_url" ? { ...c, image_url: { url: "[base64]" } } : c
         ),
-    );
+    };
+    logOps("Seedance API request body:", JSON.stringify(logBody, null, 2));
 
     // Step 1: Create video generation task
     progress.updateBar(
@@ -172,9 +173,9 @@ export const callSeedanceAPI = async (
         "Initiating video generation...",
     );
 
-    // BytePlus ARK video generation endpoint
+    // BytePlus ARK video generation endpoint (must use /contents/generations/tasks)
     const generateEndpoint =
-        "https://ark.ap-southeast.bytepluses.com/api/v3/videos/generations";
+        "https://ark.ap-southeast.bytepluses.com/api/v3/contents/generations/tasks";
     logOps("Generate endpoint:", generateEndpoint);
 
     const generateResponse = await withTimeoutSignal(
@@ -224,16 +225,6 @@ export const callSeedanceAPI = async (
 
     progress.updateBar(requestId, 95, "Success", "Video generation completed");
 
-    // Calculate token usage for billing
-    // Token formula: (height × width × FPS × duration) / 1024
-    // 720p = 1280×720, 480p = 854×480, assume 24 FPS
-    const width = resolution === "720p" ? 1280 : 854;
-    const height = resolution === "720p" ? 720 : 480;
-    const fps = 24;
-    const tokenCount = Math.ceil(
-        (width * height * fps * durationSeconds) / 1024,
-    );
-
     return {
         buffer: result.buffer,
         mimeType: "video/mp4",
@@ -242,7 +233,6 @@ export const callSeedanceAPI = async (
             actualModel: "seedance",
             usage: {
                 completionVideoSeconds: durationSeconds,
-                totalTokenCount: tokenCount,
             },
         },
     };
@@ -262,7 +252,7 @@ async function pollSeedanceTask(
     progress: ProgressManager,
     requestId: string,
 ): Promise<{ buffer: Buffer }> {
-    const pollUrl = `https://ark.ap-southeast.bytepluses.com/api/v3/videos/generations/${taskId}`;
+    const pollUrl = `https://ark.ap-southeast.bytepluses.com/api/v3/contents/generations/tasks/${taskId}`;
     logOps("Poll URL:", pollUrl);
 
     const maxAttempts = 120; // 4 minutes max (2 second intervals)
@@ -302,17 +292,15 @@ async function pollSeedanceTask(
         }
 
         const pollData: SeedanceTaskResult = await pollResponse.json();
-        logOps("Poll response status:", pollData.status);
+        // Log full response for debugging
+        logOps("Poll response FULL:", JSON.stringify(pollData, null, 2));
 
         const status = pollData.status?.toLowerCase();
+        logOps("Parsed status:", status);
 
-        if (
-            status === "completed" ||
-            status === "succeeded" ||
-            status === "complete"
-        ) {
-            // Check for video URL
-            const videoUrl = pollData.video?.url || pollData.output?.video_url;
+        if (status === "succeeded") {
+            // Check for video URL (API returns content.video_url)
+            const videoUrl = pollData.content?.video_url;
 
             if (!videoUrl) {
                 throw new HttpError("No video URL in completed response", 500);

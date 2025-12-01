@@ -23,7 +23,6 @@ export interface VideoGenerationResult {
         actualModel: string;
         usage: {
             completionVideoSeconds: number;
-            totalTokenCount: number;
         };
     };
 }
@@ -184,9 +183,7 @@ export const callVeoAPI = async (
         trackingData: {
             actualModel: "veo",
             usage: {
-                // Bill by seconds - each second counts as one unit
                 completionVideoSeconds: durationSeconds,
-                totalTokenCount: durationSeconds, // For compatibility with token-based billing
             },
         },
     };

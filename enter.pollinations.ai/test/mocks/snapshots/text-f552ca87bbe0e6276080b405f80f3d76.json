@@ -5,11 +5,11 @@
     "body": {
       "type": "json",
       "data": {
-        "model": "openai-fast",
+        "model": "openai",
         "messages": [
           {
             "role": "user",
-            "content": "Say yes"
+            "content": "Reply: yes or no?"
           }
         ]
       }
@@ -22,17 +22,17 @@
     "headers": {
       "access-control-allow-origin": "*",
       "connection": "keep-alive",
-      "content-length": "1212",
+      "content-length": "1249",
       "content-type": "application/json; charset=utf-8",
-      "date": "Fri, 28 Nov 2025 09:17:34 GMT",
-      "etag": "W/\"4bc-51CtozCkGHmvymzwCmR+YUmB2h0\"",
+      "date": "Sat, 29 Nov 2025 21:01:38 GMT",
+      "etag": "W/\"4e1-6v6raVsPRYVmMP1koZgNDHcdI0g\"",
       "keep-alive": "timeout=5",
       "x-model-used": "gpt-5-nano-2025-08-07",
       "x-powered-by": "Express",
-      "x-usage-completion-reasoning-tokens": "320",
-      "x-usage-completion-text-tokens": "30",
-      "x-usage-prompt-text-tokens": "249",
-      "x-usage-total-tokens": "599"
+      "x-usage-completion-reasoning-tokens": "384",
+      "x-usage-completion-text-tokens": "20",
+      "x-usage-prompt-text-tokens": "253",
+      "x-usage-total-tokens": "657"
     },
     "body": {
       "type": "json",
@@ -43,6 +43,10 @@
               "hate": {
                 "filtered": false,
                 "severity": "safe"
+              },
+              "protected_material_code": {
+                "filtered": false,
+                "detected": false
               },
               "protected_material_text": {
                 "filtered": false,
@@ -66,14 +70,14 @@
             "logprobs": null,
             "message": {
               "annotations": [],
-              "content": "Yes. What would you like me to say yes to, or how can I help with this?",
+              "content": "What statement should I answer with yes or no?",
               "refusal": null,
               "role": "assistant"
             }
           }
         ],
-        "created": 1764321451,
-        "id": "pllns_3e0f582dca28724c7e5ea66fc4c92938",
+        "created": 1764450095,
+        "id": "pllns_45ae720d35bbe4dec02e0409f3faf5b0",
         "model": "gpt-5-nano-2025-08-07",
         "object": "chat.completion",
         "prompt_filter_results": [
@@ -105,19 +109,19 @@
         ],
         "system_fingerprint": null,
         "usage": {
-          "completion_tokens": 350,
+          "completion_tokens": 404,
           "completion_tokens_details": {
             "accepted_prediction_tokens": 0,
             "audio_tokens": 0,
-            "reasoning_tokens": 320,
+            "reasoning_tokens": 384,
             "rejected_prediction_tokens": 0
           },
-          "prompt_tokens": 249,
+          "prompt_tokens": 253,
           "prompt_tokens_details": {
             "audio_tokens": 0,
             "cached_tokens": 0
           },
-          "total_tokens": 599
+          "total_tokens": 657
         }
       }
     }

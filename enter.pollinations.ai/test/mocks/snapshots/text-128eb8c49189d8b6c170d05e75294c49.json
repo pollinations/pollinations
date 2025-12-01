@@ -1,0 +1,34 @@
+{
+  "request": {
+    "url": "http://ec2-3-80-56-235.compute-1.amazonaws.com:16385/Reply%3A%20yes%20or%20no%3F?model=gemini-search",
+    "method": "GET",
+    "body": {
+      "type": "empty",
+      "data": null
+    },
+    "params": {}
+  },
+  "response": {
+    "status": 200,
+    "statusText": "OK",
+    "headers": {
+      "access-control-allow-origin": "*",
+      "cache-control": "public, max-age=31536000, immutable",
+      "connection": "keep-alive",
+      "content-length": "3",
+      "content-type": "text/plain; charset=utf-8",
+      "date": "Sat, 29 Nov 2025 21:04:46 GMT",
+      "etag": "W/\"3-+zYPnAmsjF7bLxi+XeToDqTEMNA\"",
+      "keep-alive": "timeout=5",
+      "x-model-used": "gemini-2.5-flash-lite",
+      "x-powered-by": "Express",
+      "x-usage-completion-text-tokens": "1",
+      "x-usage-prompt-text-tokens": "6",
+      "x-usage-total-tokens": "7"
+    },
+    "body": {
+      "type": "text",
+      "data": "yes"
+    }
+  }
+}

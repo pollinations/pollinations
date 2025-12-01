@@ -125,7 +125,6 @@ export const tiersRoutes = new Hono<Env>()
         async (c) => {
             const log = c.get("log");
             const user = c.var.auth.requireUser();
-            const polar = c.var.polar.client;
 
             // Get tier assigned in Cloudflare DB
             log.debug(`User tier from DB: ${user.tier}, email: ${user.email}`);
@@ -140,10 +139,10 @@ export const tiersRoutes = new Hono<Env>()
             let subscription_canceled_at: string | undefined;
 
             try {
-                // Get customer state from Polar
-                const customerState = await polar.customers.getStateExternal({
-                    externalId: user.id,
-                });
+                // Get customer state from Polar (cached)
+                const customerState = await c.var.polar.getCustomerState(
+                    user.id,
+                );
 
                 const activeSubs = customerState.activeSubscriptions || [];
 
@@ -184,7 +183,7 @@ export const tiersRoutes = new Hono<Env>()
 
                     // Fetch product details for the active subscription
                     try {
-                        const product = (await polar.products.get({
+                        const product = (await c.var.polar.client.products.get({
                             id: activeProductId,
                         })) as PolarProductMinimal;
                         active_tier_name = product.name;
@@ -226,13 +225,15 @@ export const tiersRoutes = new Hono<Env>()
                         c.env,
                         target_tier as ActivatableTier,
                     );
-                    const assignedProduct = (await polar.products.get({
-                        id: assignedProductId,
-                    })) as PolarProductMinimal;
+                    const assignedProduct =
+                        (await c.var.polar.client.products.get({
+                            id: assignedProductId,
+                        })) as PolarProductMinimal;
                     target_tier_name = assignedProduct.name;
                 } catch (error) {
-                    log.warn("Failed to fetch target tier product", {
+                    log.warn("Failed to fetch target tier product: {error}", {
                         tier: target_tier,
+                        error,
                     });
                 }
             }

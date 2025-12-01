@@ -8,11 +8,8 @@ from loguru import logger
 from config import SAFETY_CHECKER_MODEL, IMAGE_GENERATOR_MODEL, UPSCALER_MODEL, IPC_SECRET_KEY, IPC_PORT
 from basicsr.archs.rrdbnet_arch import RRDBNet
 from realesrgan import RealESRGANer
-from diffusers.pipelines.stable_diffusion.safety_checker import StableDiffusionSafetyChecker as BaseSafetyChecker, cosine_distance
-from diffusers.utils import logging
-from transformers import CLIPConfig, AutoFeatureExtractor
-from torchvision import transforms
-from safety_checker import StableDiffusionSafetyChecker
+from transformers import AutoFeatureExtractor
+from utility import StableDiffusionSafetyChecker
 
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -29,7 +26,7 @@ class ipcModules:
         print("Loading Z-Image model...")
         self.pipe = ZImagePipeline.from_pretrained(
             IMAGE_GENERATOR_MODEL,
-            dtype=torch.bfloat16,
+            torch_dtype=torch.bfloat16,
             cache_dir="model_cache",
         ).to(device)
         print("Model loaded successfully!")

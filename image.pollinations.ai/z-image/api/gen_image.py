@@ -5,7 +5,7 @@ import torch
 from multiprocessing.managers import BaseManager
 from safety_checker import check_nsfw
 from PIL import Image
-from config import IPC_SECRET_KEY, IPC_PORT
+from config import IPC_SECRET_KEY, IPC_PORT, MAX_H, MAX_W
 
 class ModelManager(BaseManager): pass
 ModelManager.register('service')
@@ -14,7 +14,7 @@ manager.connect()
 server = manager.service()
     
 def find_nearest_valid_dimensions(width: float, height: float) -> tuple[int, int]:
-    MAX_PIXELS = 512 * 512
+    MAX_PIXELS = MAX_W * MAX_H
     start_w = round(width)
     start_h = round(height)
     current_pixels = start_w * start_h

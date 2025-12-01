@@ -398,7 +398,7 @@ Legend: █ = Skill Level (1-5)  │  Python/GPU/ML = Must-haves  │  Docker/CI
 | qrcode-api | — | Python QR code generator API |
 | http-server | — | Multi-threaded HTTP server |
 
-**� VERDICT**: **GOOD for Python API/SDK work**. Already contributing code. Better for bot/API development than pure MLOps.
+**🎯 VERDICT**: **GOOD for Python API/SDK work**. Already contributing code. Better for bot/API development than pure MLOps.
 
 ---
 

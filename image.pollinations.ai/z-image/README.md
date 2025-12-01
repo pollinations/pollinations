@@ -8,23 +8,21 @@ FastAPI server for Z-Image-Turbo (6B parameter text-to-image model from Tongyi-M
 - **1024×1024**: ~3.5s
 - **VRAM**: ~20GB peak
 
-## Quick Start
+## Working Mechanism
 
-```bash
-# Install dependencies
-pip install torch torchvision --index-url https://download.pytorch.org/whl/cu124
-pip install -r requirements.txt
+```mermaid
+flowchart TD
+  A[Client] -- POST /generate --> B[FastAPI Server (server.py)]
+  B -- Validate & parse request --> C[Image Generation Handler (gen_image.py)]
+  C -- Load model/config --> D[Model Server (model_server.py)]
+  D -- Generate image --> E[Utility Functions (utility.py)]
+  E -- Return image --> B
+  B -- Send response --> A
 
-# Run server
-python server.py
+  B -- GET /health --> F[Health Check]
+  F -- Return status --> B
 ```
 
-## Docker
-
-```bash
-docker build -t z-image-turbo .
-docker run --gpus all -p 10002:10002 z-image-turbo
-```
 
 ## API
 
@@ -39,13 +37,4 @@ docker run --gpus all -p 10002:10002 z-image-turbo
   "seed": 42
 }
 ```
-
-### GET /health
-
-Returns model status.
-
-## Environment Variables
-
-- `PORT`: Server port (default: 10002)
-- `PUBLIC_IP`: IP for heartbeat registration
-- `SERVICE_TYPE`: Service type for registration (default: zimage)
+> Build with 💖 for Pollinations.ai 

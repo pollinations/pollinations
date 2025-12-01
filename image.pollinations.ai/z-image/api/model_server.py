@@ -6,7 +6,7 @@ from diffusers import ZImagePipeline
 from functools import partial
 from PIL import Image, ImageFilter
 from loguru import logger
-from config import SAFETY_CHECKER_MODEL, IMAGE_GENERATOR_MODEL, UPSCALER_MODEL, IPC_SECRET_KEY, IPC_PORT
+from config import SAFETY_CHECKER_MODEL, IMAGE_GENERATOR_MODEL, UPSCALER_MODEL, IPC_SECRET_KEY, IPC_PORT, NSFW_ALLOW
 from basicsr.archs.rrdbnet_arch import RRDBNet
 from realesrgan import RealESRGANer
 from transformers import AutoFeatureExtractor
@@ -92,6 +92,9 @@ class ipcModules:
 
 
     def get_safe_images(self, image_tensor, safety_checker_adj: float = 0.0):
+        if NSFW_ALLOW:
+            return image_tensor
+        
         x_samples_numpy = image_tensor.cpu().permute(0, 2, 3, 1).numpy()
         has_nsfw, concepts = self.check_nsfw(x_samples_numpy[0], safety_checker_adj)
         x = image_tensor
@@ -130,7 +133,10 @@ class ipcModules:
         safe_image_tensor = self.get_safe_images(image_tensor, safety_checker_adj)
         safe_image = Image.fromarray((safe_image_tensor[0].permute(1, 2, 0).cpu().numpy() * 255).round().astype("uint8"))
         
-        has_nsfw, concept = self.check_nsfw(np.array(safe_image), safety_checker_adj)
+        has_nsfw = False
+        concept = []
+        if not NSFW_ALLOW:
+            has_nsfw, concept = self.check_nsfw(np.array(safe_image), safety_checker_adj)
         
         return safe_image, seed, has_nsfw, concept
 
@@ -151,4 +157,4 @@ if __name__ == "__main__":
     print(f"Model server running on port {IPC_PORT}")
     server_obj.serve_forever()
 
-    
+

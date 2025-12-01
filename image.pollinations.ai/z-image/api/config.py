@@ -2,6 +2,7 @@ IMAGE_GENERATOR_MODEL = "Tongyi-MAI/Z-Image-Turbo"
 SAFETY_CHECKER_MODEL = "CompVis/stable-diffusion-safety-checker"
 UPSCALER_MODEL = "model_cache/RealESRGAN_x2plus.pth"
 IPC_SECRET_KEY = b"secret"
+NSFW_ALLOW=True
 IPC_PORT = 7002
 MAX_H = 512
 MAX_W = 512

@@ -5,9 +5,14 @@ from multiprocessing.managers import BaseManager
 from diffusers import ZImagePipeline
 from functools import partial
 from loguru import logger
-from config import MODEL_ID, IPC_SECRET_KEY, IPC_PORT, MODEL_PATH_x2
+from config import SAFETY_CHECKER_MODEL, IMAGE_GENERATOR_MODEL, UPSCALER_MODEL, IPC_SECRET_KEY, IPC_PORT
 from basicsr.archs.rrdbnet_arch import RRDBNet
 from realesrgan import RealESRGANer
+from diffusers.pipelines.stable_diffusion.safety_checker import StableDiffusionSafetyChecker as BaseSafetyChecker, cosine_distance
+from diffusers.utils import logging
+from transformers import CLIPConfig, AutoFeatureExtractor
+from torchvision import transforms
+from safety_checker import StableDiffusionSafetyChecker
 
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -17,21 +22,22 @@ class ipcModules:
     logger.info("Loading IPC Device...")
     def __init__(self):
         self.pipe = None
-        
+        self.upsampler_x2 = None
         self._load_model()
 
     def _load_model(self):
-        model_x2 = RRDBNet(num_in_ch=3, num_out_ch=3, num_feat=64, num_block=23, num_grow_ch=32, scale=2)
         print("Loading Z-Image model...")
         self.pipe = ZImagePipeline.from_pretrained(
-            MODEL_ID,
+            IMAGE_GENERATOR_MODEL,
             dtype=torch.bfloat16,
+            cache_dir="model_cache",
         ).to(device)
         print("Model loaded successfully!")
         print("Loading upscaler model...")
+        model_x2 = RRDBNet(num_in_ch=3, num_out_ch=3, num_feat=64, num_block=23, num_grow_ch=32, scale=2)
         self.upsampler_x2 = RealESRGANer(
             scale=2,
-            model_path=MODEL_PATH_x2,
+            model_path=UPSCALER_MODEL,
             model=model_x2,
             tile=512,
             tile_pad=10,
@@ -39,6 +45,14 @@ class ipcModules:
             half=use_half,
             device=device
         )
+        print("Upscaler model loaded successfully!")
+        print("Loading safety checker...")
+
+    def _load_safety_checker(self):
+        self.safety_feature_extractor = AutoFeatureExtractor.from_pretrained(SAFETY_CHECKER_MODEL)
+        self.safety_checker_model = StableDiffusionSafetyChecker.from_pretrained(SAFETY_CHECKER_MODEL).to("cuda")
+        return self.safety_feature_extractor, self.safety_checker_model
+
 
     
     def generate(self, prompt: str, width: int, height: int, steps: int, seed: int | None, safety_checker_adj: float):

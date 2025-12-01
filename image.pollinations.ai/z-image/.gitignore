@@ -4,8 +4,7 @@ __pycache__/
 venv/
 .venv/
 env/
-upscaler/
-model-cache/
+model_cache/
 *.safetensors
 *.bin
 *.ckpt

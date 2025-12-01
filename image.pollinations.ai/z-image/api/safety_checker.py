@@ -6,15 +6,19 @@ from abc import ABC
 from diffusers.pipelines.stable_diffusion.safety_checker import StableDiffusionSafetyChecker as BaseSafetyChecker, cosine_distance
 from diffusers.utils import logging
 from transformers import CLIPConfig, AutoFeatureExtractor
+from multiprocessing.managers import BaseManager
+from config import IPC_SECRET_KEY, IPC_PORT
 from torchvision import transforms
+from utility import numpy_to_pil, replace_sets_with_lists, replace_numpy_with_python
+
 
 logger = logging.get_logger(__name__)
-
-safety_model_id = "CompVis/stable-diffusion-safety-checker"
-safety_feature_extractor = None
-safety_checker_model = None
-warning_image = ""
-
+class ModelManager(BaseManager): pass
+ModelManager.register('service')
+manager = ModelManager(address=('localhost', IPC_PORT), authkey=IPC_SECRET_KEY)
+manager.connect()
+server = manager.service()
+safety_feature_extractor, safety_checker_model = server._load_safety_checker()
 
 class StableDiffusionSafetyChecker(BaseSafetyChecker, ABC):
     def __init__(self, config: CLIPConfig):
@@ -56,52 +60,14 @@ class StableDiffusionSafetyChecker(BaseSafetyChecker, ABC):
 
 
 
-def _init_models():
-    global safety_feature_extractor, safety_checker_model
-    if safety_feature_extractor is None:
-        safety_feature_extractor = AutoFeatureExtractor.from_pretrained(safety_model_id)
-        safety_checker_model = StableDiffusionSafetyChecker.from_pretrained(safety_model_id).to("cuda")
 
-
-def _numpy_to_pil(images):
-    if images.ndim == 3:
-        images = images[None, ...]
-    images = (images * 255).round().astype("uint8")
-    return [Image.fromarray(image) for image in images]
-
-
-def _replace_sets_with_lists(obj):
-    if isinstance(obj, dict):
-        for k, v in obj.items():
-            obj[k] = _replace_sets_with_lists(v)
-    elif isinstance(obj, list):
-        for i, v in enumerate(obj):
-            obj[i] = _replace_sets_with_lists(v)
-    elif isinstance(obj, set):
-        obj = list(obj)
-    return obj
-
-
-def _replace_numpy_with_python(obj):
-    if isinstance(obj, dict):
-        for k, v in obj.items():
-            obj[k] = _replace_numpy_with_python(v)
-    elif isinstance(obj, list):
-        for i, v in enumerate(obj):
-            obj[i] = _replace_numpy_with_python(v)
-    elif isinstance(obj, np.generic):
-        obj = obj.item()
-    return obj
 
 
 
 
 def check_nsfw(image_array, safety_checker_adj: float = 0.0):
-
-    _init_models()
-    
     if isinstance(image_array, list) and not isinstance(image_array[0], Image.Image):
-        x_image = _numpy_to_pil(image_array)
+        x_image = numpy_to_pil(image_array)
     else:
         x_image = image_array if isinstance(image_array, list) else [image_array]
     
@@ -113,8 +79,8 @@ def check_nsfw(image_array, safety_checker_adj: float = 0.0):
     )
 
     return (
-        _replace_numpy_with_python(_replace_sets_with_lists(has_nsfw_concept)),
-        _replace_numpy_with_python(_replace_sets_with_lists(concepts))
+        replace_numpy_with_python(replace_sets_with_lists(has_nsfw_concept)),
+        replace_numpy_with_python(replace_sets_with_lists(concepts))
     )
 
 

@@ -1,0 +1,34 @@
+{
+  "request": {
+    "url": "http://ec2-3-80-56-235.compute-1.amazonaws.com:16385/Reply%3A%20yes%20or%20no%3F?model=gemini-large",
+    "method": "GET",
+    "body": {
+      "type": "empty",
+      "data": null
+    },
+    "params": {}
+  },
+  "response": {
+    "status": 200,
+    "statusText": "OK",
+    "headers": {
+      "access-control-allow-origin": "*",
+      "cache-control": "public, max-age=31536000, immutable",
+      "connection": "keep-alive",
+      "content-length": "91",
+      "content-type": "text/plain; charset=utf-8",
+      "date": "Sat, 29 Nov 2025 21:05:19 GMT",
+      "etag": "W/\"5b-CY6iVanWyH+naOKZxuNCtFUxmno\"",
+      "keep-alive": "timeout=5",
+      "x-model-used": "gemini-3-pro-preview",
+      "x-powered-by": "Express",
+      "x-usage-completion-reasoning-tokens": "638",
+      "x-usage-prompt-text-tokens": "259",
+      "x-usage-total-tokens": "897"
+    },
+    "body": {
+      "type": "text",
+      "data": "Yes. \n\nI'm feeling optimistic, so let's go with yes. Now, what exactly did I just agree to?"
+    }
+  }
+}

@@ -161,12 +161,10 @@ export const event = sqliteTable("event", {
     cacheSemanticThreshold: real("cache_semantic_threshold"),
     cacheKey: text("cache_key"),
 
-    // Error
+    // Error (stack/details removed to reduce D1 memory usage)
     errorResponseCode: text("error_response_code"),
     errorSource: text("error_source"),
     errorMessage: text("error_message"),
-    errorStack: text("error_stack"),
-    errorDetails: text("error_details"),
 });
 
 export type InsertGenerationEvent = typeof event.$inferInsert;

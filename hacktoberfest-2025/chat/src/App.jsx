@@ -8,7 +8,7 @@ import MessageArea from './components/MessageArea';
 import ChatInput from './components/ChatInput';
 import KeyboardShortcutsModal from './components/KeyboardShortcutsModal';
 import ConfirmModal from './components/ConfirmModal';
-import './App.css';
+import SettingsPanel from './components/SettingsPanel';
 
 function App() {
   const {
@@ -42,6 +42,13 @@ function App() {
     isDangerous: false
   });
   const [mode, setMode] = useState('chat');
+  const [sessionSettings, setSessionSettings] = useState({
+    systemPrompt: 'You are a helpful AI assistant who speaks concisely and helpfully.',
+    maxTokens: 2000,
+    temperature: 0.7,
+    topP: 1
+  });
+  const [isSettingsPanelOpen, setIsSettingsPanelOpen] = useState(false);
 
   // Debug mode changes
   useEffect(() => {
@@ -173,6 +180,13 @@ function App() {
     });
   };
 
+  const handleSessionSettingsChange = useCallback((field, value) => {
+    setSessionSettings(prev => ({
+      ...prev,
+      [field]: value
+    }));
+  }, []);
+
   const handleSendMessage = useCallback(async ({ text = '', attachment = null } = {}) => {
     const trimmedContent = typeof text === 'string' ? text.trim() : '';
 
@@ -227,16 +241,15 @@ function App() {
 
     // Create assistant message placeholder
     const assistantMessageId = Date.now().toString(36) + Math.random().toString(36).substr(2);
-    addMessage('assistant', '', assistantMessageId);
+    addMessage('assistant', '', assistantMessageId, { isStreaming: true });
     
-    // Immediately set it to streaming state
-    updateMessage(assistantMessageId, {
-      isStreaming: true
-    });
-    
+    const runtimeMessages = sessionSettings.systemPrompt?.trim()
+      ? [{ role: 'system', content: sessionSettings.systemPrompt.trim() }, ...updatedChat.messages]
+      : updatedChat.messages;
+
     try {
       await sendMessage(
-        updatedChat.messages,
+        runtimeMessages,
         // onChunk
         (chunk, fullContent, fullReasoning) => {
           // Update the message content in real-time for streaming
@@ -274,7 +287,12 @@ function App() {
           setIsGenerating(false);
         },
         // modelId - pass the selected model
-        selectedModel
+        selectedModel,
+        {
+          maxTokens: sessionSettings.maxTokens,
+          temperature: sessionSettings.temperature,
+          topP: sessionSettings.topP
+        }
       );
     } catch (error) {
       console.error('Message generation error:', error);
@@ -293,7 +311,7 @@ function App() {
       }
       setIsGenerating(false);
     }
-  }, [isGenerating, addMessage, updateMessage, selectedModel]);
+  }, [isGenerating, addMessage, updateMessage, selectedModel, sessionSettings]);
 
   const handleStopGeneration = useCallback(() => {
     stopGeneration();
@@ -322,7 +340,6 @@ function App() {
     addMessage('assistant', 'Generating image...', assistantMessageId);
 
     try {
-      console.log('🎨 Starting image generation with prompt:', prompt);
       
       // Generate the image with selected model
       const imageData = await generateImage(prompt, {
@@ -341,7 +358,6 @@ function App() {
         isStreaming: false
       });
 
-      console.log('✅ Image generation complete');
       setIsGenerating(false);
     } catch (error) {
       console.error('Image generation error:', error);
@@ -377,24 +393,22 @@ function App() {
     // Remove all messages after the last user message
     removeMessagesAfter(lastUserMessage.timestamp);
 
-    // Log to check if messages are correctly removed
-    console.log('Messages after removal:', getActiveChat().messages);
-
     // Wait a bit for state to update
     setTimeout(() => {
       // Regenerate the response by re-processing the messages
-      setIsGenerating(true);
-      console.log('State after timeout, isGenerating:', isGenerating);
-
       const updatedChat = getActiveChat();
-      console.log('Updated chat messages before API call:', updatedChat.messages);
       // Create assistant message
       const assistantMessageId = Date.now().toString(36) + Math.random().toString(36).substr(2);
-      console.log('Generated assistantMessageId:', assistantMessageId);
-      addMessage('assistant', '', assistantMessageId);
+      addMessage('assistant', '', assistantMessageId, { isStreaming: true });
       
+      setIsGenerating(true);
+      
+      const runtimeMessages = sessionSettings.systemPrompt?.trim()
+        ? [{ role: 'system', content: sessionSettings.systemPrompt.trim() }, ...updatedChat.messages]
+        : updatedChat.messages;
+
       sendMessage(
-        updatedChat.messages,
+        runtimeMessages,
         (chunk, fullContent) => {
           updateMessage(assistantMessageId, {
             content: fullContent,
@@ -425,7 +439,12 @@ function App() {
           }
           setIsGenerating(false);
         },
-        selectedModel
+        selectedModel,
+        {
+          maxTokens: sessionSettings.maxTokens,
+          temperature: sessionSettings.temperature,
+          topP: sessionSettings.topP
+        }
       );
     }, 100);
   };
@@ -443,6 +462,7 @@ function App() {
         onNewChat={addChat}
         onDeleteChat={deleteChat}
         onThemeToggle={handleThemeToggle}
+        onOpenSettings={() => setIsSettingsPanelOpen(true)}
       />
       
       <div className={`chat-container ${isChatEmpty ? 'chat-container-empty' : ''}`}>
@@ -473,6 +493,13 @@ function App() {
       <KeyboardShortcutsModal
         isOpen={isShortcutsModalOpen}
         onClose={() => setIsShortcutsModalOpen(false)}
+      />
+
+      <SettingsPanel
+        isOpen={isSettingsPanelOpen}
+        settings={sessionSettings}
+        onChange={handleSessionSettingsChange}
+        onClose={() => setIsSettingsPanelOpen(false)}
       />
 
       <ConfirmModal

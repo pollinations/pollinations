@@ -1,0 +1,44 @@
+name: Deploy Portkey Gateway
+
+on:
+  push:
+    branches:
+      - production
+    paths:
+      - 'text.pollinations.ai/scripts/deploy-portkey.sh'
+      - '.github/workflows/deploy-portkey-gateway.yml'
+  workflow_dispatch:
+    inputs:
+      commit:
+        description: 'Portkey gateway commit SHA (leave empty for default)'
+        required: false
+        default: ''
+      environment:
+        description: 'Deployment environment'
+        required: false
+        default: 'production'
+        type: choice
+        options:
+          - production
+          - staging
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Deploy Portkey Gateway
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          PORTKEY_COMMIT: ${{ github.event.inputs.commit }}
+          PORTKEY_ENV: ${{ github.event.inputs.environment || 'production' }}
+        run: |
+          chmod +x ./text.pollinations.ai/scripts/deploy-portkey.sh
+          ./text.pollinations.ai/scripts/deploy-portkey.sh

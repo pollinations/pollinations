@@ -1,5 +1,6 @@
 import debug from "debug";
-import googleCloudAuth from "../../auth/googleCloudAuth.ts";
+import sleep from "await-sleep";
+import googleCloudAuth from "../../auth/googleCloudAuth.ts"
 import { HttpError } from "../httpError.ts";
 import type { ImageParams } from "../params.ts";
 import type { ProgressManager } from "../progressBar.ts";
@@ -23,7 +24,6 @@ export interface VideoGenerationResult {
         actualModel: string;
         usage: {
             completionVideoSeconds: number;
-            totalTokenCount: number;
         };
     };
 }
@@ -184,9 +184,7 @@ export const callVeoAPI = async (
         trackingData: {
             actualModel: "veo",
             usage: {
-                // Bill by seconds - each second counts as one unit
                 completionVideoSeconds: durationSeconds,
-                totalTokenCount: durationSeconds, // For compatibility with token-based billing
             },
         },
     };
@@ -304,6 +302,3 @@ async function pollVeoOperation(
     throw new HttpError("Video generation timed out after 3 minutes", 504);
 }
 
-function sleep(ms: number): Promise<void> {
-    return new Promise((resolve) => setTimeout(resolve, ms));
-}

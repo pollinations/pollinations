@@ -98,6 +98,7 @@ body.light .chat-input-wrapper-modern {
 
 .chatbar-model-row {
   display: flex;
+  justify-content: center;
   justify-content: flex-start;
   align-items: center;
   margin-bottom: 0.25rem;
@@ -529,7 +530,7 @@ body.light .send-btn-modern:hover:not(:disabled) {
 }
 
 .model-chip-name {
-  max-width: 150px;
+  max-width: 400px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;

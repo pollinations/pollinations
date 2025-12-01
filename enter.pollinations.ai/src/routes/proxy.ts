@@ -27,35 +27,13 @@ import { GenerateImageRequestQueryParamsSchema } from "@/schemas/image.ts";
 import { z } from "zod";
 import { HTTPException } from "hono/http-exception";
 import { DEFAULT_TEXT_MODEL } from "@shared/registry/text.ts";
+import { resolveServiceId } from "@shared/registry/registry.ts";
 import {
-    getTextModelsInfo,
+    ModelInfoSchema,
     getImageModelsInfo,
-    resolveServiceId,
-} from "../../../shared/registry/registry.js";
+    getTextModelsInfo,
+} from "@shared/registry/model-info.ts";
 import { createFactory } from "hono/factory";
-
-// Shared schema for model info responses
-const ModelInfoSchema = z.object({
-    name: z.string(),
-    aliases: z.array(z.string()),
-    pricing: z.object({
-        input_token_price: z.number().optional(),
-        output_token_price: z.number().optional(),
-        cached_token_price: z.number().optional(),
-        image_price: z.number().optional(),
-        audio_input_price: z.number().optional(),
-        audio_output_price: z.number().optional(),
-        currency: z.literal("USD"),
-    }),
-    description: z.string().optional(),
-    input_modalities: z.array(z.string()).optional(),
-    output_modalities: z.array(z.string()).optional(),
-    tools: z.boolean().optional(),
-    reasoning: z.boolean().optional(),
-    context_window: z.number().optional(),
-    voices: z.array(z.string()).optional(),
-    isSpecialized: z.boolean().optional(),
-});
 
 const factory = createFactory<Env>();
 
@@ -115,8 +93,10 @@ const chatCompletionHandlers = factory.createHandlers(
         let contentFilterHeaders = {};
         if (!c.var.track.streamRequested) {
             const responseJson = await response.clone().json();
-            const parsedResponse =
-                CreateChatCompletionResponseSchema.parse(responseJson);
+            const parsedResponse = CreateChatCompletionResponseSchema.parse(
+                responseJson,
+                { reportInput: true },
+            );
             contentFilterHeaders =
                 contentFilterResultsToHeaders(parsedResponse);
         }

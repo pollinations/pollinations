@@ -53,9 +53,7 @@ const polarAccessToken = (env: "staging" | "production") => {
     }
 };
 
-if (!polarAccessToken) {
-    throw new Error("POLAR_ACCESS_TOKEN environment variable is required");
-}
+// Note: polarAccessToken is a function - validation happens when called
 
 function createPolarClient(env: "staging" | "production") {
     const server = env === "production" ? "production" : "sandbox";
@@ -649,6 +647,105 @@ const tierSlugMap = {
     "v1:product:tier:20": "v1:product:tier:nectar",
 };
 
+// Production tier product IDs
+const TIER_PRODUCT_IDS = {
+    production: {
+        spore: "01a31c1a-7af7-4958-9b73-c10e2fac5f70",
+        seed: "fe32ee28-c7c4-4e7a-87fa-6ffc062e3658",
+        flower: "dfb4c4f6-2004-4205-a358-b1f7bb3b310e",
+        nectar: "066f91a4-8ed1-4329-b5f7-3f71e992ed28",
+        router: "0286ea62-540f-4b19-954f-b8edb9095c43",
+    },
+    staging: {
+        spore: "19fa1660-a90c-453d-8132-4d228cc7db39",
+        seed: "c6f94c1b-c119-4e59-9f18-59391c8afee3",
+        flower: "18bdd5c4-dcb3-4a15-8ca6-1c0b45f76b84",
+        nectar: "a438764a-c486-4ff4-8f85-e66199c6b26f",
+        router: "9256189e-ad01-4608-8102-4ebfc4b506e0",
+    },
+} as const;
+
+type TierName = "spore" | "seed" | "flower" | "nectar" | "router";
+
+const userUpdateTier = command({
+    name: "update-tier",
+    desc: "Update a user's Polar subscription to a new tier (immediate, with proration)",
+    options: {
+        email: string().required().desc("User's email address"),
+        tier: string()
+            .enum("spore", "seed", "flower", "nectar", "router")
+            .required()
+            .desc("Target tier"),
+        env: string().enum("staging", "production").default("production"),
+        dryRun: boolean()
+            .default(false)
+            .desc("Show what would be done without making changes"),
+    },
+    handler: async (opts) => {
+        const polar = createPolarClient(opts.env);
+        const tierProductIds = TIER_PRODUCT_IDS[opts.env];
+        const targetProductId = tierProductIds[opts.tier as TierName];
+
+        console.log(`🔍 Searching for subscription: ${opts.email}`);
+
+        // Find user's subscription using async iterator
+        let subscription = null;
+        const paginator = await polar.subscriptions.list({ limit: 100 });
+        for await (const page of paginator) {
+            subscription = page.result.items.find(
+                (s) =>
+                    s.customer.email?.toLowerCase() ===
+                    opts.email.toLowerCase(),
+            );
+            if (subscription) break;
+        }
+
+        if (!subscription) {
+            console.error(`❌ No subscription found for ${opts.email}`);
+            process.exit(1);
+        }
+
+        console.log(`📋 Found subscription:`);
+        console.log(`   ID: ${subscription.id}`);
+        console.log(`   Current: ${subscription.product.name}`);
+        console.log(`   Status: ${subscription.status}`);
+
+        if (subscription.status !== "active") {
+            console.error(
+                `❌ Subscription not active (status: ${subscription.status})`,
+            );
+            console.log(`   User needs to reactivate at enter.pollinations.ai`);
+            process.exit(1);
+        }
+
+        if (subscription.productId === targetProductId) {
+            console.log(`✅ Already on ${opts.tier} tier`);
+            return;
+        }
+
+        if (opts.dryRun) {
+            console.log(
+                `\n🔄 Would update: ${subscription.product.name} → ${opts.tier}`,
+            );
+            console.log(`   (Use without --dryRun to apply)`);
+            return;
+        }
+
+        console.log(`\n🔄 Updating subscription...`);
+        const result = await polar.subscriptions.update({
+            id: subscription.id,
+            subscriptionUpdate: {
+                productId: targetProductId,
+                prorationBehavior: "prorate",
+            },
+        });
+
+        console.log(
+            `✅ Updated: ${subscription.product.name} → ${result.product.name}`,
+        );
+    },
+});
+
 const tierMigrate = command({
     name: "migrate",
     options: {
@@ -738,6 +835,10 @@ const commands = [
     command({
         name: "customer",
         subcommands: [customerMigrate],
+    }),
+    command({
+        name: "user",
+        subcommands: [userUpdateTier],
     }),
 ];
 

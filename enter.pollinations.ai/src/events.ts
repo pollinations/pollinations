@@ -1,5 +1,5 @@
 import { Polar } from "@polar-sh/sdk";
-import { eq, sql, and, gte, or } from "drizzle-orm";
+import { eq, sql, and, gte, or, lt, count, min } from "drizzle-orm";
 import type { DrizzleD1Database } from "drizzle-orm/d1";
 import { event } from "./db/schema/event.ts";
 import { batches, generateRandomId, removeUnset } from "./util.ts";
@@ -12,7 +12,8 @@ import { z } from "zod";
 import { Logger } from "@logtape/logtape";
 
 const BUFFER_BATCH_SIZE = 1;
-const INGEST_BATCH_SIZE = 500;
+const INGEST_MIN_BATCH_SIZE = 100;
+const INGEST_MAX_BATCH_SIZE = 500;
 const MAX_DELIVERY_ATTEMPTS = 5;
 
 const tbIngestResponseSchema = z.object({
@@ -35,17 +36,6 @@ export async function storeEvents(
     }
 }
 
-async function* pendingEventBatches(db: DrizzleD1Database, batchSize: number) {
-    while (true) {
-        const { processingId, events } = await preparePendingEvents(
-            db,
-            batchSize,
-        );
-        if (events.length === 0) break;
-        yield { processingId, events };
-    }
-}
-
 export async function processEvents(
     db: DrizzleD1Database,
     log: Logger,
@@ -58,7 +48,8 @@ export async function processEvents(
 ) {
     for await (const { processingId, events } of pendingEventBatches(
         db,
-        INGEST_BATCH_SIZE,
+        INGEST_MIN_BATCH_SIZE,
+        INGEST_MAX_BATCH_SIZE,
     )) {
         if (events.length === 0) return;
         const polarDelivery = await sendPolarEvents(
@@ -91,13 +82,48 @@ export async function processEvents(
             });
         }
     }
+    // Clear successfully sent events
+    await clearExpiredEvents(db);
+}
+
+type PendingEventsStats = {
+    count: number;
+    oldestCreatedAt: Date | null;
+};
+
+async function checkPendingEvents(
+    db: DrizzleD1Database,
+): Promise<PendingEventsStats> {
+    const result = await db
+        .select({ count: count(), oldestCreatedAt: min(event.createdAt) })
+        .from(event)
+        .where(eq(event.eventStatus, "pending"));
+    const stats: PendingEventsStats = result[0];
+    if (!stats) {
+        throw new Error("Failed to count pending events");
+    }
+    return stats;
 }
 
 async function preparePendingEvents(
     db: DrizzleD1Database,
-    batchSize: number,
+    minBatchSize: number,
+    maxBatchSize: number,
 ): Promise<{ processingId: string; events: SelectGenerationEvent[] }> {
     const processingId = generateRandomId();
+
+    // Only create a processing batch if there are at least minBatchSize
+    // pending events, or if events are older than 30 seconds
+    const pendingStats = await checkPendingEvents(db);
+    const secondsSinceOldestPendingEvent = Math.floor(
+        (Date.now() - (pendingStats.oldestCreatedAt?.getTime() || 0)) / 1000,
+    );
+    if (
+        pendingStats.count < minBatchSize &&
+        secondsSinceOldestPendingEvent < 30
+    ) {
+        return { processingId, events: [] };
+    }
 
     // Update events to processing status
     await db
@@ -108,7 +134,7 @@ async function preparePendingEvents(
             updatedAt: new Date(),
         })
         .where(eq(event.eventStatus, "pending"))
-        .limit(batchSize);
+        .limit(maxBatchSize);
 
     // Fetch updated events (D1 has column limits on .returning())
     const events = await db
@@ -117,6 +143,22 @@ async function preparePendingEvents(
         .where(eq(event.eventProcessingId, processingId));
 
     return { processingId, events };
+}
+
+async function* pendingEventBatches(
+    db: DrizzleD1Database,
+    minBatchSize: number,
+    maxBatchSize: number,
+) {
+    while (true) {
+        const { processingId, events } = await preparePendingEvents(
+            db,
+            minBatchSize,
+            maxBatchSize,
+        );
+        if (events.length === 0) break;
+        yield { processingId, events };
+    }
 }
 
 async function rollbackProcessingEvents(
@@ -176,6 +218,16 @@ async function confirmProcessingEvents(
             eventStatus: "sent",
         })
         .where(eq(event.eventProcessingId, processingId));
+}
+
+async function clearExpiredEvents(db: DrizzleD1Database): Promise<void> {
+    // Calculate timestamp for 1 day ago (createdAt is stored as Unix timestamp integer)
+    const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+    await db
+        .delete(event)
+        .where(
+            and(eq(event.eventStatus, "sent"), lt(event.createdAt, oneDayAgo)),
+        );
 }
 
 type DeliveryStatus = "skipped" | "failed" | "succeeded";

@@ -16,18 +16,18 @@ const TOKENS_PER_WORD = 1.3;
 
 /** Base chat workload (standard text conversation) */
 const WORKLOAD_CHAT = {
-    input: 50,                                    // ~40 words typical prompt
-    output: Math.round(150 * TOKENS_PER_WORD),   // ~150 words typical response
+    input: 50, // ~40 words typical prompt
+    output: Math.round(150 * TOKENS_PER_WORD), // ~150 words typical response
 };
 
 /** Reasoning workload (models with reasoning capabilities) */
 const WORKLOAD_REASONING = {
-    input: 50,                                    // Same prompt size
-    output: Math.round(300 * TOKENS_PER_WORD),   // ~300 words (longer, detailed)
+    input: 50, // Same prompt size
+    output: Math.round(300 * TOKENS_PER_WORD), // ~300 words (longer, detailed)
     reasoning: Math.round(230 * TOKENS_PER_WORD), // ~230 words reasoning overhead
 };
 
-/** 
+/**
  * Vision workload - OpenAI tile calculation for standard 1024×1024 image
  * Formula: base_tokens + (tokens_per_tile × num_tiles)
  * - Image resized to fit 2048×2048 square
@@ -35,25 +35,26 @@ const WORKLOAD_REASONING = {
  * - 1024×1024 = 2×2 = 4 tiles
  * Source: https://platform.openai.com/docs/guides/vision
  */
-const IMAGE_TOKENS_1024 = 85 + (170 * Math.ceil(1024/512) * Math.ceil(1024/512));
+const IMAGE_TOKENS_1024 =
+    85 + 170 * Math.ceil(1024 / 512) * Math.ceil(1024 / 512);
 
 /**
  * Model-specific image token counts for 1024×1024 images
  * Different providers use different token counting methods
  */
 const MODEL_IMAGE_TOKENS: Record<string, number> = {
-    'gptimage': IMAGE_TOKENS_1024,     // 765 tokens (OpenAI tile calculation)
-    'nanobanana': 1290,                // 1290 tokens (Vertex AI Gemini actual usage)
+    "gptimage": IMAGE_TOKENS_1024, // 765 tokens (OpenAI tile calculation)
+    "nanobanana": 1290, // 1290 tokens (Vertex AI Gemini actual usage)
 };
 
-/** 
+/**
  * Audio pricing per minute (OpenAI realtime API rates)
  * Fixed per-minute costs, not token-based
  * Source: https://platform.openai.com/docs/guides/realtime
  */
 const AUDIO_COST_PER_MIN = {
-    input: 0.06,     // USD per minute of input audio
-    output: 0.24,    // USD per minute of output audio (TTS)
+    input: 0.06, // USD per minute of input audio
+    output: 0.24, // USD per minute of output audio (TTS)
 };
 
 /** Format large numbers with K/M abbreviations */
@@ -67,31 +68,31 @@ function formatLargeNumber(num: number): string {
         // Round to nearest 10 for larger numbers
         rounded = Math.round(num / 10) * 10;
     }
-    
+
     if (rounded >= 1_000_000) {
         const millions = rounded / 1_000_000;
         return `${millions.toFixed(millions >= 10 ? 0 : 1)}M`;
     }
-    
+
     if (rounded >= 1_000) {
         const thousands = rounded / 1_000;
         return `${thousands.toFixed(thousands >= 10 ? 0 : 1)}K`;
     }
-    
+
     return `${rounded}`;
 }
 
 /**
  * Calculate "Per Pollen" value for a model using workload profiles.
  * Automatically selects profile based on model capabilities.
- * 
+ *
  * Returns human-readable capacity:
  * - Text models: "500" (responses)
  * - Image models: "50" (images)
  * - Audio models: "25.3 min" (minutes of audio)
  */
 export const calculatePerPollen = (model: ModelPrice): string => {
-    const modalities = getModalities(model.name, model.type);
+    const modalities = getModalities(model.name);
     const primaryOutput = modalities.output[0];
 
     // ========================================================================
@@ -100,33 +101,33 @@ export const calculatePerPollen = (model: ModelPrice): string => {
     if (model.type === "text" && primaryOutput === "text") {
         const inputPrice = parseFloat(model.promptTextPrice || "0");
         const outputPrice = parseFloat(model.completionTextPrice || "0");
-        
+
         if (inputPrice === 0 && outputPrice === 0) return "—";
-        
+
         // Auto-select workload based on capabilities
-        const isReasoning = hasReasoning(model.name, model.type);
+        const isReasoning = hasReasoning(model.name);
         const workload = isReasoning ? WORKLOAD_REASONING : WORKLOAD_CHAT;
-        
+
         // Full cost formula: input + output + reasoning (if applicable)
-        let costPerRequest = (
-            (inputPrice * workload.input) +
-            (outputPrice * workload.output)
-        ) / 1_000_000;
-        
+        let costPerRequest =
+            (inputPrice * workload.input + outputPrice * workload.output) /
+            1_000_000;
+
         // Add reasoning tokens if model supports it
         if (isReasoning) {
             const reasoningPrice = parseFloat(model.completionTextPrice || "0"); // Same as output for now
-            costPerRequest += (reasoningPrice * WORKLOAD_REASONING.reasoning) / 1_000_000;
+            costPerRequest +=
+                (reasoningPrice * WORKLOAD_REASONING.reasoning) / 1_000_000;
         }
-        
+
         // Add vision tokens if model supports it
-        if (hasVision(model.name, model.type) && model.promptImagePrice) {
+        if (hasVision(model.name) && model.promptImagePrice) {
             const imagePrice = parseFloat(model.promptImagePrice);
             costPerRequest += (imagePrice * IMAGE_TOKENS_1024) / 1_000_000;
         }
-        
+
         if (costPerRequest === 0) return "—";
-        
+
         const requestsPerPollen = 1 / costPerRequest;
         return formatLargeNumber(requestsPerPollen);
     }
@@ -141,6 +142,18 @@ export const calculatePerPollen = (model: ModelPrice): string => {
     }
 
     // ========================================================================
+    // VIDEO MODELS
+    // ========================================================================
+    if (model.type === "video" && model.perSecondPrice) {
+        const costPerSecond = parseFloat(model.perSecondPrice);
+        if (costPerSecond === 0) return "—";
+
+        // Show seconds per pollen
+        const secondsPerPollen = 1 / costPerSecond;
+        return `${secondsPerPollen.toFixed(1)} sec`;
+    }
+
+    // ========================================================================
     // IMAGE MODELS
     // ========================================================================
     if (model.type === "image") {
@@ -148,21 +161,22 @@ export const calculatePerPollen = (model: ModelPrice): string => {
         if (model.perImagePrice) {
             const costPerImage = parseFloat(model.perImagePrice);
             if (costPerImage === 0) return "—";
-            
+
             const imagesPerPollen = 1 / costPerImage;
             return formatLargeNumber(imagesPerPollen);
         }
-        
+
         // Case 2: Per-token pricing (e.g., gptimage, nanobanana)
         if (model.perToken && model.completionImagePrice) {
             const tokenPrice = parseFloat(model.completionImagePrice);
-            
+
             // Use model-specific token count, fallback to OpenAI calculation
-            const tokenCount = MODEL_IMAGE_TOKENS[model.name] || IMAGE_TOKENS_1024;
+            const tokenCount =
+                MODEL_IMAGE_TOKENS[model.name] || IMAGE_TOKENS_1024;
             const costPerImage = (tokenPrice * tokenCount) / 1_000_000;
-            
+
             if (costPerImage === 0) return "—";
-            
+
             const imagesPerPollen = 1 / costPerImage;
             return formatLargeNumber(imagesPerPollen);
         }

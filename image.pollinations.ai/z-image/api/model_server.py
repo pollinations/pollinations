@@ -25,7 +25,7 @@ class ipcModules:
         print("Loading Z-Image model...")
         self.pipe = ZImagePipeline.from_pretrained(
             MODEL_ID,
-            torch_dtype=torch.bfloat16,
+            dtype=torch.bfloat16,
         ).to(device)
         print("Model loaded successfully!")
         print("Loading upscaler model...")
@@ -65,7 +65,7 @@ class ipcModules:
         except Exception as e:
             logger.error(f"Error in x2 enhancement: {e}")
             raise
-        
+
 if __name__ == "__main__":
     server = ipcModules()
     class ModelManager(BaseManager):

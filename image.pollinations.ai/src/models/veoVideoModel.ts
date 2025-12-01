@@ -1,5 +1,6 @@
 import debug from "debug";
-import googleCloudAuth from "../../auth/googleCloudAuth.ts";
+import sleep from "await-sleep";
+import googleCloudAuth from "../../auth/googleCloudAuth.ts"
 import { HttpError } from "../httpError.ts";
 import type { ImageParams } from "../params.ts";
 import type { ProgressManager } from "../progressBar.ts";
@@ -301,6 +302,3 @@ async function pollVeoOperation(
     throw new HttpError("Video generation timed out after 3 minutes", 504);
 }
 
-function sleep(ms: number): Promise<void> {
-    return new Promise((resolve) => setTimeout(resolve, ms));
-}

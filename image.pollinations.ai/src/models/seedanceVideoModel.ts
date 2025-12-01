@@ -1,4 +1,5 @@
 import debug from "debug";
+import sleep from "await-sleep";
 import { withTimeoutSignal } from "../util.ts";
 import { HttpError } from "../httpError.ts";
 import type { ImageParams } from "../params.ts";
@@ -40,6 +41,11 @@ interface SeedanceTaskResult {
     };
 }
 
+interface SeedanceRequestBody {
+    model: string;
+    content: Array<{ type: string; text?: string; image_url?: { url: string }; role?: string }>;
+}
+
 /**
  * Generates a video using BytePlus Seedance API
  * Supports both text-to-video and image-to-video generation
@@ -78,8 +84,8 @@ export const callSeedanceAPI = async (
     // Minimum values for fastest generation: 2s duration, 480p resolution
     const durationSeconds = safeParams.duration || 2; // Default 2 seconds (minimum)
     const aspectRatio = safeParams.aspectRatio || "16:9";
-    // Resolution: 480p for faster generation, 720p for quality
-    const resolution = "480p"; // Always use 480p for now (fastest)
+    // Resolution: default to 720p
+    const resolution = "720p"
 
     logOps("Video params:", {
         durationSeconds,
@@ -97,7 +103,7 @@ export const callSeedanceAPI = async (
     }
 
     // Build request body using content array format (required by BytePlus API)
-    const requestBody: any = {
+    const requestBody: SeedanceRequestBody = {
         model: DEFAULT_MODEL,
         content: [
             {
@@ -354,6 +360,3 @@ async function pollSeedanceTask(
     throw new HttpError("Video generation timed out after 4 minutes", 504);
 }
 
-function sleep(ms: number): Promise<void> {
-    return new Promise((resolve) => setTimeout(resolve, ms));
-}

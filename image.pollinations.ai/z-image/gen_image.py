@@ -4,7 +4,7 @@ import base64
 import torch
 from diffusers import ZImagePipeline
 from safety_checker import check_nsfw
-
+from PIL import Image
 MODEL_ID = "Tongyi-MAI/Z-Image-Turbo"
 
 pipe = ZImagePipeline.from_pretrained(
@@ -14,7 +14,6 @@ pipe = ZImagePipeline.from_pretrained(
 
 
 def find_nearest_valid_dimensions(width: float, height: float) -> tuple[int, int]:
-    """Find the nearest dimensions that are multiples of 8, capped at 1024x1024."""
     MAX_PIXELS = 1024 * 1024
     start_w = round(width)
     start_h = round(height)
@@ -23,17 +22,17 @@ def find_nearest_valid_dimensions(width: float, height: float) -> tuple[int, int
         scale = (MAX_PIXELS / current_pixels) ** 0.5
         start_w = round(start_w * scale)
         start_h = round(start_h * scale)
-    nearest_w = round(start_w / 8) * 8
-    nearest_h = round(start_h / 8) * 8
+    nearest_w = round(start_w / 16) * 16
+    nearest_h = round(start_h / 16) * 16
     nearest_w = max(nearest_w, 256)
     nearest_h = max(nearest_h, 256)
     return nearest_w, nearest_h
 
-
+    
 def generate_image(
     prompt: str,
-    width: int = 1024,
-    height: int = 1024,
+    width: int = 512,
+    height: int = 512,
     steps: int = 9,
     seed: int | None = None,
     safety_checker_adj: float = 0.5
@@ -67,3 +66,16 @@ def generate_image(
         "seed": seed,
         "prompt": prompt
     }
+
+if __name__ == "__main__":
+    result = generate_image(
+        prompt="A fantasy landscape with mountains and a river, vibrant colors, highly detailed",
+        width=800,
+        height=600,
+        steps=9,
+        safety_checker_adj=0.5
+    )
+    image_data = base64.b64decode(result["image"])
+    image = Image.open(io.BytesIO(image_data))
+    image.save("generated_image.jpg")
+    print(result["has_nsfw_concept"], result["concept"], result["width"], result["height"], result["seed"])

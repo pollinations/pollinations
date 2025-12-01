@@ -1,6 +1,6 @@
 # Pollinations Contributors
 
-Tracking key contributors to the Pollinations project. Updated: 2025-11-28
+Tracking key contributors to the Pollinations project. Updated: 2025-12-01
 
 ## Core Team (MEMBER)
 
@@ -264,15 +264,18 @@ TusharSoni014         ███      ████      ███    ██      
 | **cemalgnlts** | 🧩 Extension | BeeCoder - VS Code Copilot connector. IDE integration specialist |
 | **TusharSoni014** | 🚀 Product | Craftura AI (SaaS). Freemium model. Good product sense |
 
-## Recent Activity (Nov 2025)
+## Recent Activity (Nov-Dec 2025)
 
 ### voodoohop
+- Preserve usage headers in image cache for pollen billing (#5513)
+- Correct ReThink AI URL (#5512)
+- Add max-tokens limit for Llama 3.1 8B (#5503)
 - Local balance tracking to reduce Polar API rate limits (#5453)
 - Nano Banana Pro (Gemini 3 Pro Image) model (#5427)
-- Cleanup unused BPAIGen fallback code (#5444)
-- OpenAI schema relaxation for multi-provider compatibility (#5456)
 
 ### eulervoid
+- Event processing tests with comprehensive edge cases (#5534) ⭐
+- Clear event buffer, improve batching logic (#5441)
 - Fix secret decryption oversights (#5436)
 - Organize secrets and use JSON (#5433)
 - Improved integration tests, streaming error handling (#5379)
@@ -290,6 +293,158 @@ TusharSoni014         ███      ████      ███    ██      
 1. **Circuit-Overtime** - Already MEMBER, strong Python/Discord skills, community-oriented
 2. **YoannDev90** - Active in community support, could take on more technical tasks
 3. **CloudCompile** - Documentation skills, could expand to API/SDK docs
+
+---
+
+## 🎯 MLOps Role Fit Analysis
+
+**Role Requirements**: MLOps/Inference Engineer
+- **Must have**: Python, DevOps, Docker, GPU/ML deployment
+- **Nice to have**: Kubernetes, vLLM, TGI, quantization, CI/CD
+- **Style**: High ownership, fast iteration, reliability
+
+### MLOps Skills Matrix
+
+| Contributor | Python | DevOps | Docker | GPU/ML | CI/CD | Code Style | Fit Score |
+|-------------|--------|--------|--------|--------|-------|------------|-----------|
+| **eulervoid** | ████ | █████ | █████ | ███ | █████ | Functional, test-driven | **9/10** ⭐ |
+| **voodoohop** | ████ | ████ | ████ | █████ | ████ | Architect, rapid iteration | **8/10** |
+| **aandrew-me** | ██ | ███ | ███ | ███ | ██ | Minimalist Go, CLI-focused | **6/10** |
+| **vgrichina** | ██ | ███ | ██ | ██ | ██ | Creative, distributed systems | **5/10** |
+| **dclm** | █████ | ██ | ██ | █████ | ██ | Research, notebooks | **5/10** |
+| **Circuit-Overtime** | ████ | ███ | ██ | ███ | ███ | Experimental, community | **4/10** |
+
+### Detailed Profiles for MLOps Role
+
+#### ⭐ eulervoid - **STRONGEST MLOps CANDIDATE** (Fit: 9/10)
+
+**Pollinations PRs**: 56 merged PRs (all high quality)
+
+**MLOps-Specific Evidence**:
+- ✅ **Docker/Containerization**: Docker images for text/image services
+- ✅ **CI/CD Pipelines**: Integration tests, GitHub Actions, streaming error handling
+- ✅ **Secrets Management**: Implemented sops/age encryption (`flake.nix`, `.sops.yaml`)
+- ✅ **Infrastructure as Code**: Nix flakes for reproducible dev environments
+- ✅ **Testing**: Comprehensive test coverage (135+ lines of event processing tests)
+- ✅ **TypeScript Migration**: Led image.pollinations.ai TypeScript migration with Zod schemas
+
+**Code Quality Metrics**:
+- **PR Size**: Small, focused PRs (avg 30-50 lines changed)
+- **Code Style**: Functional, pure functions, proper error handling
+- **Documentation**: Clear PR descriptions with bullet points
+- **Test Coverage**: Adds tests proactively ("As this is quite critical, I'd like to add tests before merge")
+
+**Notable PRs**:
+- `#5534` - Event processing tests (135 lines, comprehensive edge cases)
+- `#5287` - Fix failing tests, type errors, minor cleanup
+- `#3283` - Nix flake with sops secrets management
+- `#3261` - TypeScript migration with Zod schemas and fuzz tests
+- `#3158` - Biome formatter/linter setup
+
+**External Repos** (5 public):
+- `llm` - CLI chat with LLMs
+- `split-tree`, `circle-tree` - Generative art (algorithmic thinking)
+
+**Work Style**:
+- 🔧 High ownership - writes tests before merging critical code
+- ⚡ Fast iteration - multiple PRs per week when active
+- 🛡️ Reliability focus - defensive coding, proper error handling
+- 📋 Clean commits - descriptive messages, organized changes
+
+---
+
+#### voodoohop - **Lead Architect** (Fit: 8/10)
+
+**Pollinations PRs**: 1,072+ PRs (project lead)
+
+**MLOps-Relevant Skills**:
+- ✅ **API Infrastructure**: Built entire text/image API gateway
+- ✅ **Model Integration**: Nano Banana (Gemini), Seedream, multiple providers
+- ✅ **Streaming**: SSE streaming, chunked responses
+- ✅ **Caching**: Semantic caching with Vectorize, R2 storage
+- ⚠️ **Less pure MLOps**: More API/architecture than deployment/serving
+
+**Code Quality**:
+- **Style**: Rapid prototyping, architecture-first
+- **PR Size**: Variable (small fixes to large features)
+- **Iteration Speed**: Extremely fast, multiple PRs daily
+
+**External Repos** (64 repos):
+- `musicgen-remixer` - ML audio generation
+- `discord-pollinations-family` - Bot orchestration
+- `koishi-plugin-pollinations` - AI plugin development
+
+---
+
+#### aandrew-me - **CLI/Systems Developer** (Fit: 6/10)
+
+**Pollinations PRs**: 0 (external contributor via tgpt)
+
+**Relevant Skills**:
+- ✅ **Go Programming**: tgpt (2,854⭐) - Terminal GPT
+- ✅ **Cross-Platform**: Desktop apps for Windows/Linux/Mac
+- ✅ **Binary Builds**: ffmpeg-builds, static binaries
+- ⚠️ **No Python**: Primary language is Go
+- ⚠️ **No GPU/ML Deployment**: Consumer app focus
+
+**External Repos** (29 repos):
+- `tgpt` - 2,854⭐ AI chatbot CLI (Go)
+- `ytDownloader` - Desktop app (Electron)
+- `gotts` - TTS CLI tool (Go)
+- `ffmpeg-builds` - Static binary distribution
+
+**Work Style**:
+- Minimalist, no-bloat code
+- Strong cross-platform experience
+- Would need Python/ML onboarding
+
+---
+
+#### vgrichina - **Creative Systems** (Fit: 5/10)
+
+**Pollinations PRs**: 0 (external contributor)
+
+**Relevant Skills**:
+- ✅ **Distributed Systems**: fast-near, nearfs, web4
+- ✅ **JavaScript/Node.js**: Extensive Node experience
+- ⚠️ **Web3 Focus**: Blockchain, NEAR protocol
+- ⚠️ **Limited ML**: nanobanana-berrry-hackathon only ML project
+
+**External Repos** (81 repos):
+- `web4` - Decentralized apps with WASM
+- `fast-near` - High-performance RPC
+- `nearfs` - Distributed file system
+- `nanobanana-berrry-hackathon` - Pollinations integration
+
+---
+
+#### dclm - **Early Research** (Fit: 5/10)
+
+**Pollinations PRs**: Historical (2021)
+
+**Relevant Skills**:
+- ✅ **Python/ML**: Original Colab notebooks
+- ✅ **Research Background**: Generative AI pioneer
+- ⚠️ **Not Recently Active**: Last contributions 2021
+- ⚠️ **Notebook Style**: Research vs production
+
+---
+
+### MLOps Hiring Recommendation
+
+**Immediate Hire**: **eulervoid** ⭐
+- Strongest DevOps/infrastructure skills in the community
+- Already MEMBER with deep codebase knowledge
+- Test-driven, reliable, clean code
+- Would excel at: GPU deployment, model serving, CI/CD pipelines
+
+**Internal Promotion Path**: **voodoohop** → Technical oversight
+- Already handles architecture decisions
+- Could mentor MLOps hire on API/model integration
+
+**External Candidates to Cultivate**:
+- **aandrew-me**: Strong systems background, would need Python/ML training
+- **vgrichina**: Distributed systems experience, creative problem solver
 
 ## How to Update
 

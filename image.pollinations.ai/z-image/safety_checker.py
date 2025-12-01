@@ -126,14 +126,9 @@ def get_safe_images(image_tensor, safety_checker_adj: float = 0.0):
     for index, unsafe_value in enumerate(has_nsfw):
         try:
             if unsafe_value is True:
-                # Convert tensor to PIL image for blurring
                 img_np = x_samples_numpy[index]
                 img_pil = Image.fromarray((img_np * 255).round().astype("uint8"))
-                
-                # Apply blur filter
-                blurred_pil = img_pil.filter(ImageFilter.GaussianBlur(radius=8))
-                
-                # Convert back to tensor
+                blurred_pil = img_pil.filter(ImageFilter.GaussianBlur(radius=16))
                 blurred_np = (np.array(blurred_pil) / 255.0).astype("float32")
                 blurred_tensor = torch.from_numpy(blurred_np).permute(2, 0, 1).unsqueeze(0)
                 

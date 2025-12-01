@@ -53,13 +53,13 @@ export const getModelPrices = (): ModelPrice[] => {
         });
     }
 
-    // Add image/video models - use output_modalities to determine type
+    // Add image/video models - use outputModalities to determine type
     for (const [serviceName, serviceConfig] of Object.entries(IMAGE_SERVICES)) {
         const costHistory = serviceConfig.cost;
         if (!costHistory) continue;
 
         const latestCost: CostDefinition = costHistory[0];
-        const outputType = serviceConfig.output_modalities?.[0] || "image";
+        const outputType = serviceConfig.outputModalities?.[0] || "image";
 
         if (outputType === "video") {
             prices.push({

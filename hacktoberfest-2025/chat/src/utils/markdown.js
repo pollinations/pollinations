@@ -107,11 +107,31 @@ export const formatMessage = (content) => {
     // Remove multiple consecutive spaces (but not in code blocks or inline code)
     textContent = textContent.replace(/([^`\n])([ ]{2,})([^`\n])/g, '$1 $3');
     
+    // Extract chart markers before rendering markdown
+    const chartRegex = /__CHART__(.*?)__CHART__/g;
+    const charts = [];
+    let match;
+    while ((match = chartRegex.exec(textContent)) !== null) {
+      try {
+        charts.push(JSON.parse(match[1]));
+      } catch (e) {
+        console.error('Failed to parse chart data:', e);
+      }
+    }
+    
+    // Remove chart markers from text
+    textContent = textContent.replace(chartRegex, '');
+    
     // First, render markdown
     let html = md.render(textContent);
     
     // Then, render LaTeX math equations
     html = renderMath(html);
+    
+    // Append chart data for component to render
+    if (charts.length > 0) {
+      html += `<div data-charts='${JSON.stringify(charts).replace(/'/g, "&apos;")}'></div>`;
+    }
     
     return html;
   } catch (error) {

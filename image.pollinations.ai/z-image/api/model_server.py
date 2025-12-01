@@ -26,7 +26,7 @@ class ipcModules:
         self.upsampler_x2 = None
         self.safety_feature_extractor = None
         self.safety_checker_model = None
-        # self._load_model()
+        self._load_model()
         self._load_safety_checker()
 
     def _load_model(self):

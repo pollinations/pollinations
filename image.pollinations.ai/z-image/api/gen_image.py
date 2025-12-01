@@ -35,7 +35,8 @@ def generate_image(
     height: int = 512,
     steps: int = 9,
     seed: int | None = None,
-    safety_checker_adj: float = 0.5
+    safety_checker_adj: float = 0.5,
+    upscale: bool = False
 ) -> dict:
     
     width, height = find_nearest_valid_dimensions(width, height)
@@ -43,21 +44,28 @@ def generate_image(
         prompt, width, height, steps, seed, safety_checker_adj
     )
     
-    # Handle list/array response - take first element if it's a batch
     nsfw_result = has_nsfw[0] if isinstance(has_nsfw, (list, np.ndarray)) else has_nsfw
     
+    # Upscale if requested
+    upscaled_image = safe_image
+    if upscale:
+        image_np = np.array(safe_image)
+        upscaled_array, _ = server.enhance_x2(image_np, outscale=2)
+        upscaled_image = Image.fromarray(upscaled_array)
+    
     img_byte_arr = io.BytesIO()
-    safe_image.save(img_byte_arr, format='JPEG', quality=95)
+    upscaled_image.save(img_byte_arr, format='JPEG', quality=95)
     img_base64 = base64.b64encode(img_byte_arr.getvalue()).decode('utf-8')
 
     return {
         "image": img_base64,
         "has_nsfw_concept": bool(nsfw_result),
         "concept": concept,
-        "width": width,
-        "height": height,
+        "width": upscaled_image.width,
+        "height": upscaled_image.height,
         "seed": seed,
-        "prompt": prompt
+        "prompt": prompt,
+        "upscaled": upscale
     }
 
 def testCheckSafety() -> tuple[list[bool], list[dict]]:
@@ -76,12 +84,23 @@ def testGenerateImage():
         width=512,
         height=512,
         steps=9,
-        safety_checker_adj=0.5
+        safety_checker_adj=0.5,
+        upscale=True
     )
+    
     image_data = base64.b64decode(result["image"])
     pil_image = Image.open(io.BytesIO(image_data))
     pil_image.save("generated_test_image.jpg")
-    print("Generated image saved as 'generated_test_image.jpg'.")
+    
+    print(f"Generated image saved as 'generated_test_image.jpg'")
+    print(f"NSFW Detected: {result['has_nsfw_concept']}")
+    print(f"Concepts: {result['concept']}")
+    print(f"Seed: {result['seed']}")
+    print(f"Dimensions: {result['width']}x{result['height']}")
+    print(f"Upscaled: {result['upscaled']}")
+    
+    if result['has_nsfw_concept']:
+        print("⚠️  Image flagged as NSFW - Gaussian blur applied to the image")
 
 if __name__ == "__main__":
-    testCheckSafety()
+    testGenerateImage()

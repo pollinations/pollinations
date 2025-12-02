@@ -254,6 +254,30 @@ const MessageArea = ({ messages, isGenerating, isUserTyping, onRegenerate }) => 
                     )}
                   </div>
                 )}
+
+                {/* Display generated video if present (assistant messages) */}
+                {message.videoUrl && (
+                  <div className={`message-video-container ${!message.videoUrl.startsWith('data:') ? 'loading' : ''}`}>
+                    <video
+                      src={message.videoUrl}
+                      className="message-video"
+                      controls
+                      loop
+                      muted
+                      playsInline
+                    />
+                    {message.videoPrompt && (
+                      <div className="video-prompt">
+                        <strong>Prompt:</strong> {message.videoPrompt}
+                      </div>
+                    )}
+                    {message.videoModel && (
+                      <div className="video-model">
+                        <strong>Model:</strong> {message.videoModel}
+                      </div>
+                    )}
+                  </div>
+                )}
                 
                 {/* Display text content */}
                 {message.role === 'assistant' ? (

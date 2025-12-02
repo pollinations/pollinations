@@ -4,12 +4,89 @@ on:
   push:
     branches:
       - production
-      - feature/encrypt-gptimage-env
+      - staging
   workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to deploy to'
+        required: true
+        default: 'staging'
+        type: choice
+        options:
+          - staging
+          - production
 
 jobs:
-  deploy:
+  deploy-staging:
+    if: github.ref == 'refs/heads/staging' || (github.event_name == 'workflow_dispatch' && github.event.inputs.environment == 'staging')
     runs-on: ubuntu-latest
+    environment: staging
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup SOPS
+        uses: nhedger/setup-sops@v2
+
+      - name: Decrypt .env files with SOPS
+        env:
+          SOPS_AGE_KEY: ${{ secrets.SOPS_AGE_KEY }}
+        run: |
+          if [ -f "text.pollinations.ai/secrets/env.json" ]; then
+            sops --output-type dotenv -d text.pollinations.ai/secrets/env.json > text.pollinations.ai/.env
+            echo "✅ Decrypted text.pollinations.ai/.env"
+          fi
+          
+          if [ -f "image.pollinations.ai/secrets/env.json" ]; then
+            sops --output-type dotenv -d image.pollinations.ai/secrets/env.json > image.pollinations.ai/.env
+            echo "✅ Decrypted image.pollinations.ai/.env"
+          fi
+
+      - name: Copy .env files to staging server
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.ENTER_SERVICES_STAGING_HOST }}
+          username: ${{ secrets.ENTER_SERVICES_STAGING_USER }}
+          key: ${{ secrets.ENTER_SERVICES_STAGING_SSH_KEY }}
+          fingerprint: ${{ secrets.ENTER_SERVICES_STAGING_FINGERPRINT }}
+          source: "text.pollinations.ai/.env,image.pollinations.ai/.env"
+          target: "/home/ubuntu/pollinations/"
+          strip_components: 0
+
+      - name: Deploy to staging via SSH
+        uses: appleboy/ssh-action@v1.0.0
+        env:
+          ENTER_TOKEN: ${{ secrets.ENTER_TOKEN }}
+        with:
+          host: ${{ secrets.ENTER_SERVICES_STAGING_HOST }}
+          username: ${{ secrets.ENTER_SERVICES_STAGING_USER }}
+          key: ${{ secrets.ENTER_SERVICES_STAGING_SSH_KEY }}
+          fingerprint: ${{ secrets.ENTER_SERVICES_STAGING_FINGERPRINT }}
+          envs: ENTER_TOKEN
+          script: |
+            set -e
+            echo "🚀 Deploying to STAGING..."
+            cd /home/ubuntu/pollinations
+            git pull origin staging
+            
+            cd text.pollinations.ai
+            npm install
+            
+            cd ../image.pollinations.ai
+            npm install
+            
+            sudo systemctl restart text-pollinations.service image-pollinations.service
+            sleep 10
+            
+            sudo systemctl is-active text-pollinations.service || exit 1
+            sudo systemctl is-active image-pollinations.service || exit 1
+            
+            echo "🎉 Staging deployment complete!"
+
+  deploy-production:
+    if: github.ref == 'refs/heads/production' || (github.event_name == 'workflow_dispatch' && github.event.inputs.environment == 'production')
+    runs-on: ubuntu-latest
+    environment: production
     steps:
       - name: Checkout code
         uses: actions/checkout@v4

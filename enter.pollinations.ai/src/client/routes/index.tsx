@@ -268,7 +268,6 @@ function RouteComponent() {
                         )}
                         <TierPanel
                             status={tierData.active_tier}
-                            target_tier={tierData.target_tier}
                             next_refill_at_utc={tierData.next_refill_at_utc}
                             active_tier_name={tierData.active_tier_name}
                             daily_pollen={tierData.daily_pollen}
@@ -279,12 +278,6 @@ function RouteComponent() {
                             }
                             has_polar_error={tierData.has_polar_error}
                         />
-                        <p className="text-xs text-purple-700 bg-gradient-to-r from-purple-50/80 to-indigo-50/80 border border-purple-200/50 rounded-lg px-3 py-2 mt-3">
-                            ✨ <strong>We're in beta!</strong> We're learning
-                            what works best for our community and may adjust
-                            pollen values and tier rules as we go. Thanks for
-                            being part of the journey!
-                        </p>
                     </div>
                 )}
                 <ApiKeyList

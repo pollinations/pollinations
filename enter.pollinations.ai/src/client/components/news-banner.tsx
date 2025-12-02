@@ -18,7 +18,7 @@ export const NewsBanner: FC = () => {
     if (dismissed) return null;
 
     return (
-        <div className="relative bg-white/60 border border-gray-200 rounded-lg p-4 text-sm">
+        <div className="relative bg-violet-50/60 border border-violet-200 rounded-lg p-4 text-sm">
             <button
                 type="button"
                 onClick={handleDismiss}

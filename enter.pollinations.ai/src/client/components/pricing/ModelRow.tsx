@@ -15,15 +15,15 @@ type ModelRowProps = {
 };
 
 export const ModelRow: FC<ModelRowProps> = ({ model }) => {
-    const modelDescription = getModelDescription(model.name, model.type);
+    const modelDescription = getModelDescription(model.name);
     const genPerPollen = calculatePerPollen(model);
     const [showTooltip, setShowTooltip] = useState(false);
 
     // Get model capabilities
-    const showReasoning = hasReasoning(model.name, model.type);
-    const showVision = hasVision(model.name, model.type);
-    const showAudioInput = hasAudioInput(model.name, model.type);
-    const showSearch = hasSearch(model.name, model.type);
+    const showReasoning = hasReasoning(model.name);
+    const showVision = hasVision(model.name);
+    const showAudioInput = hasAudioInput(model.name);
+    const showSearch = hasSearch(model.name);
 
     // Show info icon if we have a description to display
     const showDescriptionInfo =

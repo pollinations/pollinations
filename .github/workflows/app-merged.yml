@@ -71,7 +71,7 @@ jobs:
                     owner: context.repo.owner,
                     repo: context.repo.repo,
                     issue_number: issueNumber,
-                    body: `## 🎉 Project Approved!\n\nYour project has been added to the [Pollinations showcase](https://pollinations.ai)!\n\nThank you for your contribution to the community! 🌸`
+                    body: `## 🎉 App Approved!\n\nYour app has been added to the [Pollinations showcase](https://pollinations.ai)!\n\nThank you for your contribution to the community! 🌸`
                   });
                   
                   console.log(`Set app:approved label and posted comment on issue #${issueNumber}`);

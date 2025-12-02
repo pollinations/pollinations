@@ -34,6 +34,7 @@ export interface InputsMacro {
     bg: string;
     border: string;
     placeholder: string;
+    text: string;
 }
 
 export interface BordersMacro {

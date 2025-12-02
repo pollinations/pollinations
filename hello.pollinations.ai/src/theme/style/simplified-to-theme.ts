@@ -50,6 +50,7 @@ export function macrosToTheme(config: MacroConfig): LLMThemeResponse {
     addColor("input.bg", config.inputs.bg);
     addColor("input.border", config.inputs.border);
     addColor("input.placeholder", config.inputs.placeholder);
+    addColor("input.text", config.inputs.text);
 
     // Buttons
     addColor("button.primary.bg", config.buttons.primary.bg);

@@ -77,6 +77,11 @@ export const TOKENS: DesignToken[] = [
         description: "Input placeholder text",
         type: "color",
     },
+    {
+        id: "input.text",
+        description: "Input field text (user typed content)",
+        type: "color",
+    },
 
     // BUTTONS
     {

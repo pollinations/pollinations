@@ -7,10 +7,7 @@
  * - CSS variables available: var(--color-primary), var(--color-background), etc.
  */
 import type { Config } from "tailwindcss";
-import {
-    ClassicTheme,
-    ClassicCssVariables,
-} from "./src/theme/presets/classic";
+import { ClassicTheme, ClassicCssVariables } from "./src/theme/presets/classic";
 import { themeToDictionary } from "./src/theme/style";
 import plugin from "tailwindcss/plugin";
 
@@ -62,6 +59,7 @@ export default {
                 "surface-base":
                     "rgb(var(--surface-base) / var(--opacity-card, 1))",
                 "input-background": "rgb(var(--input-bg) / 1)",
+                "input-text": "rgb(var(--input-text))",
 
                 // Buttons
                 "button-primary-bg": "rgb(var(--button-primary-bg))",

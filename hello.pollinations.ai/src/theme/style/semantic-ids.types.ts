@@ -27,6 +27,7 @@ export type SemanticTokenId =
     | "input.bg"
     | "input.border"
     | "input.placeholder"
+    | "input.text"
 
     // Indicators
     | "indicator.image"

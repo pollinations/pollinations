@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { themeToDictionary } from "../../../theme/style";
 import { PRESETS, DEFAULT_PRESET } from "../../../theme/presets";
 import { useTheme } from "../../contexts/ThemeContext";
@@ -8,6 +8,7 @@ import {
     convertRadiusToState,
     convertFontsToState,
     convertOpacityToState,
+    convertStateToThemeDictionary,
 } from "./utils/state-converters";
 import { useKeyboardShortcut } from "./hooks/useKeyboardShortcut";
 import {
@@ -54,13 +55,36 @@ export function PresetEditor() {
         themePrompt || DEFAULT_PRESET.id
     );
 
+    // Track if change is from context to avoid circular updates
+    const isFromContext = useRef(false);
+
     // Sync with context theme when it changes
     useEffect(() => {
+        isFromContext.current = true;
         setTheme(convertToThemeState(themeDefinition));
         setRadius(convertRadiusToState(themeDefinition.borderRadius || {}));
         setFonts(convertFontsToState(themeDefinition.fonts || {}));
         setOpacity(convertOpacityToState(themeDefinition.opacity || {}));
+        // Reset flag after state updates are processed
+        requestAnimationFrame(() => {
+            isFromContext.current = false;
+        });
     }, [themeDefinition]);
+
+    // Sync local state changes back to context (so download captures changes)
+    useEffect(() => {
+        // Skip if this change originated from context
+        if (isFromContext.current) return;
+
+        const updatedTheme = convertStateToThemeDictionary(
+            theme,
+            radius,
+            fonts,
+            opacity
+        );
+        // Only update theme definition, preserve prompt/copy/background
+        setContextTheme(updatedTheme);
+    }, [theme, radius, fonts, opacity, setContextTheme]);
 
     // Sync selectedPresetId with loaded preset from context
     useEffect(() => {

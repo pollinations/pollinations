@@ -1,5 +1,10 @@
 import type { ThemeDictionary } from "../../../../theme/style";
-import type { ThemeState, RadiusState, FontState, OpacityState } from "../types";
+import type {
+    ThemeState,
+    RadiusState,
+    FontState,
+    OpacityState,
+} from "../types";
 
 // Convert dictionary format to bucket format
 export const convertToThemeState = (dict: ThemeDictionary): ThemeState => {
@@ -141,4 +146,25 @@ export const convertOpacityToDict = (
         });
     });
     return dict;
+};
+
+// Convert all local state back to ThemeDictionary format (for syncing to context)
+export const convertStateToThemeDictionary = (
+    themeState: ThemeState,
+    radiusState: RadiusState,
+    fontState: FontState,
+    opacityState: OpacityState,
+): ThemeDictionary => {
+    // Convert color buckets to array format
+    const colors = Object.values(themeState).map((bucket) => ({
+        hex: bucket.color,
+        ids: bucket.tokens as ThemeDictionary["colors"][0]["ids"],
+    }));
+
+    return {
+        colors,
+        borderRadius: convertRadiusToDict(radiusState),
+        fonts: convertFontsToDict(fontState),
+        opacity: convertOpacityToDict(opacityState),
+    };
 };

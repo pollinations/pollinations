@@ -17,6 +17,9 @@ interface AIPromptInputProps {
  * Handles user text input for AI interactions
  * Currently used for theme generation, but designed to be reusable
  */
+// Only enable theme generation in development
+const isDev = import.meta.env.DEV;
+
 export function AIPromptInput({ isOpen }: AIPromptInputProps) {
     const [prompt, setPrompt] = useState("");
     const [activePrompt, setActivePrompt] = useState<string | null>(null);
@@ -196,56 +199,61 @@ export const ${capitalizedName}BackgroundHtml = ${
                     <DownloadIcon className="w-4 h-4 md:w-5 md:h-5" />
                 </Button>
 
-                <Button
-                    type="submit"
-                    disabled={!prompt.trim() || loading}
-                    variant="icon"
-                    size={null}
-                    className="w-6 h-6 md:w-8 md:h-8 text-text-body-main flex-shrink-0"
-                >
-                    {loading ? (
-                        <SparklesIcon className="w-4 h-4 md:w-5 md:h-5 animate-spin" />
-                    ) : (
-                        <SendIcon className="w-4 h-4 md:w-5 md:h-5" />
-                    )}
-                </Button>
+                {/* Theme generation UI - only in development */}
+                {isDev && (
+                    <>
+                        <Button
+                            type="submit"
+                            disabled={!prompt.trim() || loading}
+                            variant="icon"
+                            size={null}
+                            className="w-6 h-6 md:w-8 md:h-8 text-text-body-main flex-shrink-0"
+                        >
+                            {loading ? (
+                                <SparklesIcon className="w-4 h-4 md:w-5 md:h-5 animate-spin" />
+                            ) : (
+                                <SendIcon className="w-4 h-4 md:w-5 md:h-5" />
+                            )}
+                        </Button>
 
-                <div className="flex-1 relative h-full flex items-center">
-                    <style>
-                        {`
-                            .theme-prompt-input::placeholder {
-                                color: rgb(var(--text-tertiary)) !important;
-                                opacity: 1 !important;
-                            }
-                            
-                            /* Prevent white background on autocomplete */
-                            .theme-prompt-input:-webkit-autofill,
-                            .theme-prompt-input:-webkit-autofill:hover,
-                            .theme-prompt-input:-webkit-autofill:focus,
-                            .theme-prompt-input:-webkit-autofill:active {
-                                -webkit-box-shadow: 0 0 0 1000px transparent inset !important;
-                                -webkit-text-fill-color: rgb(var(--input-text)) !important;
-                                caret-color: rgb(var(--text-brand)) !important;
-                            }
-                        `}
-                    </style>
-                    <input
-                        ref={inputRef}
-                        id="theme-prompt"
-                        name="theme-prompt"
-                        type="text"
-                        value={prompt}
-                        onChange={(e) => setPrompt(e.target.value)}
-                        placeholder="Describe a theme (e.g. 'Cyberpunk Neon')..."
-                        className="theme-prompt-input w-full h-full bg-transparent outline-none text-base md:text-lg font-medium rounded-input"
-                        style={{
-                            color: "rgb(var(--input-text))",
-                            caretColor: "rgb(var(--text-brand))",
-                        }}
-                        disabled={loading}
-                        autoComplete="off"
-                    />
-                </div>
+                        <div className="flex-1 relative h-full flex items-center">
+                            <style>
+                                {`
+                                    .theme-prompt-input::placeholder {
+                                        color: rgb(var(--text-tertiary)) !important;
+                                        opacity: 1 !important;
+                                    }
+                                    
+                                    /* Prevent white background on autocomplete */
+                                    .theme-prompt-input:-webkit-autofill,
+                                    .theme-prompt-input:-webkit-autofill:hover,
+                                    .theme-prompt-input:-webkit-autofill:focus,
+                                    .theme-prompt-input:-webkit-autofill:active {
+                                        -webkit-box-shadow: 0 0 0 1000px transparent inset !important;
+                                        -webkit-text-fill-color: rgb(var(--input-text)) !important;
+                                        caret-color: rgb(var(--text-brand)) !important;
+                                    }
+                                `}
+                            </style>
+                            <input
+                                ref={inputRef}
+                                id="theme-prompt"
+                                name="theme-prompt"
+                                type="text"
+                                value={prompt}
+                                onChange={(e) => setPrompt(e.target.value)}
+                                placeholder="Describe a theme (e.g. 'Cyberpunk Neon')..."
+                                className="theme-prompt-input w-full h-full bg-transparent outline-none text-base md:text-lg font-medium rounded-input"
+                                style={{
+                                    color: "rgb(var(--input-text))",
+                                    caretColor: "rgb(var(--text-brand))",
+                                }}
+                                disabled={loading}
+                                autoComplete="off"
+                            />
+                        </div>
+                    </>
+                )}
             </form>
             {error && (
                 <div className="absolute top-full left-0 right-0 bg-red-500 text-white text-[10px] px-2 py-1 text-center">

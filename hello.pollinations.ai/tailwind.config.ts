@@ -7,8 +7,7 @@
  * - CSS variables available: var(--color-primary), var(--color-background), etc.
  */
 import type { Config } from "tailwindcss";
-import { ClassicTheme, ClassicCssVariables } from "./src/theme/presets/classic";
-import { themeToDictionary } from "./src/theme/style";
+import { BioluminescentMyceliumNetworkAtDawnVeryBrightColorsYellowOrangeVioletGreenRoseUnpredicatableSoftAndEvolvingNoFastFlashingAndALotOfElementsFlyingAndBondingAroundPhysicsAtSightCssVariables as DefaultCssVariables } from "./src/theme/presets/bioluminescent-mycelium-network-at-dawn-very-bright-colors-yellow-orange-violet-green-rose-unpredicatable-soft-and-evolving-no-fast-flashing-and-a-lot-of-elements-flying-and-bonding-around-physics-at-sight";
 import plugin from "tailwindcss/plugin";
 
 // Font family names
@@ -154,7 +153,7 @@ export default {
                     "--color-charcoal": "#110518",
 
                     // Inject Default Theme Variables
-                    ...ClassicCssVariables,
+                    ...DefaultCssVariables,
                 },
             });
         }),

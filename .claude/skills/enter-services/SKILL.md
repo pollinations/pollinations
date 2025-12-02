@@ -199,8 +199,8 @@ ssh enter-services-staging "sudo apt-get install -y build-essential"
 
 # Notes
 
-- **Production** uses GitHub Actions workflow (`deploy-enter-services.yml`)
-- **Staging** is manual deployment for testing
-- Always test on staging before pushing to production
+- **Production** deploys on push to `production` branch
+- **Staging** deploys on push to `staging` branch
+- Always test on staging before merging to production
 - The Cloudflare Worker (enter.pollinations.ai) routes to EC2 services
 - Text service: port 16385, Image service: port 16384

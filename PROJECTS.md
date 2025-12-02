@@ -281,6 +281,7 @@ Pollinations.AI is used in various projects, including:
 | [Pollinations Chat](https://websim.ai/@AdrianoDev1/pollinations-ai-assistant/4) | Pollinations' integrated AI for text and images, totally free and unlimited. | @adrianoprogramer |
 | [LiteAI](https://liteai.chat/) | A free, fast, and anonymous AI chat and image generation platform with no login... | LiteAI Team |
 | 🤖 [UR Imagine & Chat AI](https://urimagine.netlify.app/) | A versatile AI platform offering both image generation and chat... | @ur_imagine |
+| 🆕 [Noir Ink Tattoo Studio](https://noir-ink.netlify.app/) ([⭐ 0](https://github.com/Jairedddy/Noir-Ink-Tattoo-Studio)) | A sophisticated, monochrome tattoo studio and supply store featuring AI-powered... | Jairedddy |
 
 ### Social Bots 🤖
 

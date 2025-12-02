@@ -48,7 +48,6 @@ jobs:
           host: ${{ secrets.ENTER_SERVICES_STAGING_HOST }}
           username: ${{ secrets.ENTER_SERVICES_STAGING_USER }}
           key: ${{ secrets.ENTER_SERVICES_STAGING_SSH_KEY }}
-          fingerprint: ${{ secrets.ENTER_SERVICES_STAGING_FINGERPRINT }}
           source: "text.pollinations.ai/.env,image.pollinations.ai/.env"
           target: "/home/ubuntu/pollinations/"
           strip_components: 0
@@ -61,7 +60,6 @@ jobs:
           host: ${{ secrets.ENTER_SERVICES_STAGING_HOST }}
           username: ${{ secrets.ENTER_SERVICES_STAGING_USER }}
           key: ${{ secrets.ENTER_SERVICES_STAGING_SSH_KEY }}
-          fingerprint: ${{ secrets.ENTER_SERVICES_STAGING_FINGERPRINT }}
           envs: ENTER_TOKEN
           script: |
             set -e
@@ -115,7 +113,6 @@ jobs:
           host: ${{ secrets.ENTER_SERVICES_HOST }}
           username: ${{ secrets.ENTER_SERVICES_USER }}
           key: ${{ secrets.ENTER_SERVICES_SSH_KEY }}
-          fingerprint: ${{ secrets.ENTER_SERVICES_FINGERPRINT }}
           source: "text.pollinations.ai/.env,image.pollinations.ai/.env"
           target: "/home/ubuntu/pollinations/"
           strip_components: 0
@@ -128,7 +125,6 @@ jobs:
           host: ${{ secrets.ENTER_SERVICES_HOST }}
           username: ${{ secrets.ENTER_SERVICES_USER }}
           key: ${{ secrets.ENTER_SERVICES_SSH_KEY }}
-          fingerprint: ${{ secrets.ENTER_SERVICES_FINGERPRINT }}
           envs: ENTER_TOKEN
           script: |
             set -e

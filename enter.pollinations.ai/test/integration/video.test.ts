@@ -55,17 +55,15 @@ describe("Video Generation Integration Tests", () => {
      * Note: I2V requires a valid accessible image URL.
      * The backend validates the image can be fetched.
      */
-    // Skip I2V test until backend is deployed with the fix
-    // The fix switches to seedance-1-0-lite-i2v model when image is provided
-    test.skip(
+    test(
         "seedance I2V should return video/mp4",
         { timeout: 120000 },
         async ({ apiKey, mocks }) => {
             await mocks.enable("polar", "tinybird", "vcr");
 
-            // Use a proper image - favicon.ico is not valid for video generation
+            // Use a simple white image - results in smaller compressed video
             const imageUrl =
-                "https://image.pollinations.ai/prompt/a%20cat?width=512&height=512&nologo=true&seed=42";
+                "https://image.pollinations.ai/prompt/pure%20white%20background?width=512&height=512&nologo=true&seed=42";
 
             const response = await SELF.fetch(
                 `http://localhost:3000/api/generate/image/animate%20this%20image?model=seedance&duration=2&image=${encodeURIComponent(imageUrl)}`,
@@ -140,7 +138,7 @@ describe("Video Generation Integration Tests", () => {
  * Expensive video tests - skipped by default
  * Run manually with: npm test -- --grep "Veo"
  */
-describe.skip("Veo Video Generation (Expensive)", () => {
+describe("Veo Video Generation", () => {
     test(
         "veo T2V should return video/mp4",
         { timeout: 180000 }, // Veo takes longer

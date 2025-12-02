@@ -175,6 +175,8 @@ export const ${capitalizedName}BackgroundHtml = ${
         );
     };
 
+    // Hide completely in production
+    if (!isDev) return null;
     if (!isOpen) return null;
 
     return (

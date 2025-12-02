@@ -42,6 +42,13 @@ body:
       description: Provide a link to your project's GitHub repository (if available)
       placeholder: "https://github.com/your-repo"
 
+  - type: input
+    id: discord-contact
+    attributes:
+      label: Discord Username
+      description: Your Discord username so we can reach you (optional)
+      placeholder: "e.g., username or username#1234"
+
   - type: dropdown
     id: project-category
     attributes:

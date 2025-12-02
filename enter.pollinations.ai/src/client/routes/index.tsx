@@ -268,7 +268,6 @@ function RouteComponent() {
                         )}
                         <TierPanel
                             status={tierData.active_tier}
-                            target_tier={tierData.target_tier}
                             next_refill_at_utc={tierData.next_refill_at_utc}
                             active_tier_name={tierData.active_tier_name}
                             daily_pollen={tierData.daily_pollen}

@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useChat } from './hooks/useChat';
-import { sendMessage, stopGeneration, initializeModels, generateImage } from './utils/api';
+import { sendMessage, stopGeneration, initializeModels, generateImage, generateVideo } from './utils/api';
 import { getSelectedModel, saveSelectedModel, getTheme, saveTheme } from './utils/storage';
 import Sidebar from './components/Sidebar';
 import ChatHeader from './components/ChatHeader';
@@ -9,6 +9,7 @@ import ChatInput from './components/ChatInput';
 import KeyboardShortcutsModal from './components/KeyboardShortcutsModal';
 import ConfirmModal from './components/ConfirmModal';
 import SettingsPanel from './components/SettingsPanel';
+import TutorialModal from './components/TutorialModal';
 
 function App() {
   const {
@@ -29,10 +30,12 @@ function App() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [selectedModel, setSelectedModel] = useState('openai');
   const [selectedImageModel, setSelectedImageModel] = useState('flux');
+  const [selectedVideoModel, setSelectedVideoModel] = useState('veo');
   const [theme, setTheme] = useState('light');
   const [isShortcutsModalOpen, setIsShortcutsModalOpen] = useState(false);
   const [models, setModels] = useState({});
   const [imageModels, setImageModels] = useState({});
+  const [videoModels, setVideoModels] = useState({});
   const [modelsLoaded, setModelsLoaded] = useState(false);
   const [confirmModal, setConfirmModal] = useState({
     isOpen: false,
@@ -49,6 +52,20 @@ function App() {
     topP: 1
   });
   const [isSettingsPanelOpen, setIsSettingsPanelOpen] = useState(false);
+  const [isTutorialOpen, setIsTutorialOpen] = useState(false);
+
+  // Show tutorial on first visit
+  useEffect(() => {
+    const hasSeenTutorial = localStorage.getItem('hasSeenTutorial');
+    if (!hasSeenTutorial) {
+      setIsTutorialOpen(true);
+    }
+  }, []);
+
+  const handleCloseTutorial = useCallback(() => {
+    setIsTutorialOpen(false);
+    localStorage.setItem('hasSeenTutorial', 'true');
+  }, []);
 
   // Debug mode changes
   useEffect(() => {
@@ -57,9 +74,10 @@ function App() {
   // Initialize models on mount
   useEffect(() => {
     const init = async () => {
-      const { textModels, imageModels } = await initializeModels();
+      const { textModels, imageModels, videoModels } = await initializeModels();
       setModels(textModels);
       setImageModels(imageModels);
+      setVideoModels(videoModels);
       setModelsLoaded(true);
     };
     init();
@@ -68,9 +86,11 @@ function App() {
   useEffect(() => {
     const savedModel = getSelectedModel();
     const savedImageModel = localStorage.getItem('selectedImageModel') || 'flux';
+    const savedVideoModel = localStorage.getItem('selectedVideoModel') || 'veo';
     const savedTheme = getTheme();
     setSelectedModel(savedModel);
     setSelectedImageModel(savedImageModel);
+    setSelectedVideoModel(savedVideoModel);
     setTheme(savedTheme);
     
     // Apply theme to document
@@ -124,6 +144,11 @@ function App() {
   const handleImageModelChange = useCallback((model) => {
     setSelectedImageModel(model);
     localStorage.setItem('selectedImageModel', model);
+  }, []);
+
+  const handleVideoModelChange = useCallback((model) => {
+    setSelectedVideoModel(model);
+    localStorage.setItem('selectedVideoModel', model);
   }, []);
 
   const handleThemeToggle = useCallback(() => {
@@ -372,6 +397,56 @@ function App() {
     }
   }, [isGenerating, selectedImageModel, addMessage, updateMessage]);
 
+  const handleGenerateVideo = useCallback(async (prompt) => {
+    if (!prompt.trim() || isGenerating) return;
+
+    // Add user message with the prompt
+    const updatedChat = addMessage('user', `/video ${prompt}`);
+    
+    // Set generating state
+    setIsGenerating(true);
+
+    if (!updatedChat) {
+      console.error("Could not find active chat to generate video.");
+      setIsGenerating(false);
+      // Show toast notification for error
+      if (window?.showToast) window.showToast("Could not find active chat to generate video.", "error");
+      return;
+    }
+
+    // Create assistant message placeholder for the video
+    const assistantMessageId = Date.now().toString(36) + Math.random().toString(36).substr(2);
+    addMessage('assistant', 'Generating video... This may take a minute.', assistantMessageId);
+
+    try {
+      // Generate the video with selected model
+      const videoData = await generateVideo(prompt, {
+        model: selectedVideoModel
+      });
+
+      // Update the message with the generated video
+      updateMessage(assistantMessageId, {
+        content: '',
+        videoUrl: videoData.url,
+        videoPrompt: videoData.prompt,
+        videoModel: videoData.model,
+        isStreaming: false
+      });
+
+      setIsGenerating(false);
+    } catch (error) {
+      console.error('Video generation error:', error);
+      updateMessage(assistantMessageId, {
+        content: 'An error occurred while generating video',
+        isStreaming: false,
+        isError: true
+      });
+      setIsGenerating(false);
+      // Show toast notification for error
+      if (window?.showToast) window.showToast("Video generation failed", "error");
+    }
+  }, [isGenerating, selectedVideoModel, addMessage, updateMessage]);
+
   const handleRegenerateMessage = async () => {
     const activeChat = getActiveChat();
     if (!activeChat || isGenerating) return;
@@ -477,16 +552,20 @@ function App() {
           isGenerating={isGenerating}
           onStop={handleStopGeneration}
           onGenerateImage={handleGenerateImage}
+          onGenerateVideo={handleGenerateVideo}
           setIsUserTyping={() => {}}
           onModeChange={setMode}
           selectedModel={selectedModel}
           selectedImageModel={selectedImageModel}
+          selectedVideoModel={selectedVideoModel}
           mode={mode}
           models={models}
           imageModels={imageModels}
+          videoModels={videoModels}
           modelsLoaded={modelsLoaded}
           onModelChange={handleModelChange}
           onImageModelChange={handleImageModelChange}
+          onVideoModelChange={handleVideoModelChange}
         />
       </div>
 
@@ -511,6 +590,11 @@ function App() {
         confirmText="Delete"
         cancelText="Cancel"
         isDangerous={confirmModal.isDangerous}
+      />
+
+      <TutorialModal
+        isOpen={isTutorialOpen}
+        onClose={handleCloseTutorial}
       />
     </div>
   );

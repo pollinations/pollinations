@@ -82,6 +82,14 @@ When handling project submission issues (labeled as **APPS** in GitHub):
    Closes #[Issue]
    ```
 
+## Discord Configuration
+
+**Pollinations Discord Server:**
+- **Guild ID**: `885844321461485618`
+- **Server**: https://discord.gg/pollinations
+
+Use this guild ID when interacting with Discord MCP tools for announcements, community management, etc.
+
 ## Repository Structure
 
 Key directories and their purposes:

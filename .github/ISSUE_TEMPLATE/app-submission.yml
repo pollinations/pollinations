@@ -36,15 +36,6 @@ body:
       required: true
 
   - type: input
-    id: contact-info
-    attributes:
-      label: Contact Information
-      description: How can we reach you? (Discord username, GitHub username, email, or social profile link)
-      placeholder: "e.g., @username or https://profile.example.com"
-    validations:
-      required: true
-
-  - type: input
     id: github-repo
     attributes:
       label: GitHub Repository URL

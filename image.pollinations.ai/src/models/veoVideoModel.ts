@@ -1,6 +1,6 @@
 import debug from "debug";
 import sleep from "await-sleep";
-import googleCloudAuth from "../../auth/googleCloudAuth.ts"
+import googleCloudAuth from "../../auth/googleCloudAuth.ts";
 import { HttpError } from "../httpError.ts";
 import type { ImageParams } from "../params.ts";
 import type { ProgressManager } from "../progressBar.ts";
@@ -84,8 +84,8 @@ export const callVeoAPI = async (
         throw new HttpError("Failed to get Google Cloud access token", 500);
     }
 
-    // Determine video parameters
-    const durationSeconds = safeParams.duration || 4; // Default to cheapest: 4 seconds
+    // Determine video parameters - pass through to Veo API, let it validate
+    const durationSeconds = safeParams.duration || 4;
     const aspectRatio = safeParams.aspectRatio || "16:9";
     // Audio is disabled by default - user must explicitly pass audio=true to enable
     const generateAudio = safeParams.audio === true;
@@ -301,4 +301,3 @@ async function pollVeoOperation(
 
     throw new HttpError("Video generation timed out after 3 minutes", 504);
 }
-

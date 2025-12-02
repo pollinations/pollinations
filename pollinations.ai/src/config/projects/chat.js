@@ -578,5 +578,15 @@ export const chatProjects = [
         submissionDate: "2025-10-28",
         language: "id-ID",
         order: 1,
-    },
+    },,
+  {
+    "name": "Noir Ink Tattoo Studio",
+    "url": "https://noir-ink.netlify.app/",
+    "description": "A sophisticated, monochrome tattoo studio and supply store featuring AI-powered design generation, comprehensive booking system, and educational resources.",
+    "author": "Jairedddy",
+    "repo": "https://github.com/Jairedddy/Noir-Ink-Tattoo-Studio",
+    "category": "chat",
+    "submissionDate": "2025-12-02",
+    "order": 5
+  }
 ];

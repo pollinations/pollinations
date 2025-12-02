@@ -1,11 +1,13 @@
 // API utilities for Pollinations chat - Enhanced version from vanilla
 const BASE_IMAGE_URL = 'https://enter.pollinations.ai/api/generate/image';
+const BASE_VIDEO_URL = 'https://enter.pollinations.ai/api/generate/video';
 const TEXT_MODELS_ENDPOINT = 'https://enter.pollinations.ai/api/generate/v1/models';
 const IMAGE_MODELS_ENDPOINT = 'https://enter.pollinations.ai/api/generate/image/models';
-const API_TOKEN = import.meta.env.VITE_POLLINATIONS_API_KEY;
+const API_TOKEN = 'plln_sk_PENx8AtHMF9BJ00rWOUFz4LFCgimBsW8';
 
 let textModels = [];
 let imageModels = [];
+let videoModels = [];
 let abortController = null;
 
 // Cache for models to avoid repeated API calls
@@ -79,43 +81,49 @@ export const loadModels = async () => {
     if (imageResponse.status === 'fulfilled' && imageResponse.value.ok) {
       const imageData = await imageResponse.value.json();
       if (Array.isArray(imageData)) {
-        imageModels = imageData.map(model => {
-          // Handle simple string array format
+        // Separate image and video models based on output_modalities
+        const allMediaModels = imageData.map(model => {
           const modelId = typeof model === 'string' ? model : (model.name || model.id || model);
+          const outputModalities = model.output_modalities || ['image'];
           return {
             id: modelId,
             name: (typeof model === 'object' && model.description) ? model.description : getRealModelName(modelId),
             description: model.description || modelId,
-            type: 'image',
-            tier: model.tier || 'unknown'
+            type: outputModalities.includes('video') ? 'video' : 'image',
+            tier: model.tier || 'unknown',
+            outputModalities
           };
         });
+        
+        imageModels = allMediaModels.filter(m => m.type === 'image');
+        videoModels = allMediaModels.filter(m => m.type === 'video');
       }
     } else {
       console.error('❌ Failed to load image models from endpoint');
       imageModels = [];
+      videoModels = [];
     }
 
     // Cache the results
-    const result = { textModels, imageModels };
+    const result = { textModels, imageModels, videoModels };
     modelsCache = result;
     modelsCacheTime = Date.now();
 
     return result;
   } catch (error) {
     console.error('❌ Error loading models:', error);
-    return { textModels: [], imageModels: [] };
+    return { textModels: [], imageModels: [], videoModels: [] };
   }
 };
 
 // Get all models
 export const getModels = () => {
-  return { textModels, imageModels };
+  return { textModels, imageModels, videoModels };
 };
 
 // Initialize models (will be called from App.jsx)
 export const initializeModels = async () => {
-  const { textModels: loadedTextModels, imageModels: loadedImageModels } = await loadModels();
+  const { textModels: loadedTextModels, imageModels: loadedImageModels, videoModels: loadedVideoModels } = await loadModels();
   
   // Populate MODELS object with text models
   const textModelsObj = {};
@@ -129,12 +137,18 @@ export const initializeModels = async () => {
     imageModelsObj[model.id] = { name: model.name, ...model };
   });
   
-  return { textModels: textModelsObj, imageModels: imageModelsObj };
+  // Populate video models object
+  const videoModelsObj = {};
+  loadedVideoModels.forEach(model => {
+    videoModelsObj[model.id] = { name: model.name, ...model };
+  });
+  
+  return { textModels: textModelsObj, imageModels: imageModelsObj, videoModels: videoModelsObj };
 };
 
 // Get current model info
 const getCurrentModelInfo = (modelId) => {
-  const allModels = [...textModels, ...imageModels];
+  const allModels = [...textModels, ...imageModels, ...videoModels];
   return allModels.find(m => m.id === modelId);
 };
 
@@ -584,4 +598,63 @@ export const generateImage = async (prompt, options = {}) => {
   }
 };
 
+// Generate video from text prompt
+export const generateVideo = async (prompt, options = {}) => {
+  try {
+    const {
+      model = 'veo',
+      seed = Math.floor(Math.random() * 2147483647),
+      nologo = false,
+      nofeed = false
+    } = options;
 
+    // Build URL with prompt in path and parameters as query string
+    const params = new URLSearchParams({
+      model,
+      seed: seed.toString(),
+      nologo: nologo.toString(),
+      nofeed: nofeed.toString()
+    });
+
+    // Encode the prompt for URL path
+    const encodedPrompt = encodeURIComponent(prompt);
+    const url = `${BASE_VIDEO_URL}/${encodedPrompt}?${params.toString()}`;
+    
+    console.log(`🎬 Generating video with prompt: "${prompt}"`);
+    console.log(`📐 Parameters: model: ${model}, seed: ${seed}`);
+
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${API_TOKEN}`
+      }
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`Video generation failed: ${response.status} - ${errorText}`);
+    }
+
+    // Get the video as a blob
+    const blob = await response.blob();
+    
+    // Convert blob to base64 data URL for display
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        console.log(`✅ Video generated successfully`);
+        resolve({
+          url: reader.result,
+          prompt,
+          model,
+          seed
+        });
+      };
+      reader.onerror = reject;
+      reader.readAsDataURL(blob);
+    });
+  } catch (error) {
+    console.error('❌ Video generation error:', error);
+    throw error;
+  }
+};

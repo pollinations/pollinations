@@ -345,9 +345,15 @@ export const proxyRoutes = new Hono<Env>()
         describeRoute({
             tags: ["Image Generation"],
             description: [
-                "Generate an image from a text prompt.",
+                "Generate an image or video from a text prompt.",
                 "",
-                "**Authentication (Secret Keys Only):**",
+                "**Image Models:** `flux` (default), `turbo`, `gptimage`, `kontext`, `seedream`, `nanobanana`, `nanobanana-pro`",
+                "",
+                "**Video Models:** `veo`, `seedance`",
+                "- `veo`: Text-to-video only (4-8 seconds)",
+                "- `seedance`: Text-to-video and image-to-video (2-10 seconds)",
+                "",
+                "**Authentication:**",
                 "",
                 "Include your API key either:",
                 "- In the `Authorization` header as a Bearer token: `Authorization: Bearer YOUR_API_KEY`",
@@ -355,9 +361,22 @@ export const proxyRoutes = new Hono<Env>()
                 "",
                 "API keys can be created from your dashboard at enter.pollinations.ai.",
             ].join("\n"),
+            // Explicitly define path parameter for OpenAPI (wildcard doesn't auto-generate)
+            parameters: [
+                {
+                    name: "prompt",
+                    in: "path",
+                    required: true,
+                    description:
+                        "Text description of the image or video to generate (URL-encoded)",
+                    schema: { type: "string" },
+                    example: "a%20beautiful%20sunset%20over%20mountains",
+                },
+            ],
             responses: {
                 200: {
-                    description: "Success - Returns the generated image",
+                    description:
+                        "Success - Returns the generated image or video",
                     content: {
                         "image/jpeg": {
                             schema: {
@@ -366,6 +385,12 @@ export const proxyRoutes = new Hono<Env>()
                             },
                         },
                         "image/png": {
+                            schema: {
+                                type: "string",
+                                format: "binary",
+                            },
+                        },
+                        "video/mp4": {
                             schema: {
                                 type: "string",
                                 format: "binary",

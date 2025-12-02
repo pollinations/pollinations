@@ -1,0 +1,74 @@
+name: Celebrate APPS PR Merged
+
+on:
+  pull_request:
+    types: [closed]
+
+jobs:
+  celebrate-merge:
+    # Only run when PR is merged (not just closed)
+    if: github.event.pull_request.merged == true
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+      pull-requests: read
+
+    steps:
+      - name: Post celebration comment on linked issues
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const prBody = context.payload.pull_request.body || '';
+            const prTitle = context.payload.pull_request.title || '';
+            
+            // Find issue numbers from "Closes #N" or "Fixes #N" patterns
+            const closePattern = /(?:closes?|fixes?|resolves?)\s+#(\d+)/gi;
+            const issueNumbers = new Set();
+            
+            const allMatches = [...prBody.matchAll(closePattern), ...prTitle.matchAll(closePattern)];
+            for (const match of allMatches) {
+              issueNumbers.add(parseInt(match[1]));
+            }
+            
+            if (issueNumbers.size === 0) {
+              console.log('No linked issues found in PR');
+              return;
+            }
+            
+            for (const issueNumber of issueNumbers) {
+              try {
+                // Check if the issue is an App Submission (by title)
+                const { data: issue } = await github.rest.issues.get({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: issueNumber
+                });
+                
+                const isAppSubmission = issue.title.startsWith('[App Submission]:');
+                
+                if (isAppSubmission) {
+                  // Set app:approved label (for dashboard display)
+                  await github.rest.issues.addLabels({
+                    owner: context.repo.owner,
+                    repo: context.repo.repo,
+                    issue_number: issueNumber,
+                    labels: ['app:approved']
+                  });
+                  
+                  // Post celebration comment
+                  await github.rest.issues.createComment({
+                    owner: context.repo.owner,
+                    repo: context.repo.repo,
+                    issue_number: issueNumber,
+                    body: `## 🎉 App Approved!\n\nYour app has been added to the [pollinations.ai showcase](https://pollinations.ai)!\n\nThank you for your contribution to the community! 🌸`
+                  });
+                  
+                  console.log(`Set app:approved label and posted comment on issue #${issueNumber}`);
+                } else {
+                  console.log(`Issue #${issueNumber} is not an App Submission, skipping`);
+                }
+              } catch (error) {
+                console.log(`Error processing issue #${issueNumber}: ${error.message}`);
+              }
+            }

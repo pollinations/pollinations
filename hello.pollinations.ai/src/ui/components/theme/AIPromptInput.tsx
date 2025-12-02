@@ -1,12 +1,8 @@
 import { useState, useEffect, useRef } from "react";
 import { useTheme } from "../../contexts/ThemeContext";
 import { generateTheme } from "../../../theme/guidelines/helpers/designer";
-import {
-    generateCopy,
-    type ThemeCopy,
-} from "../../../theme/guidelines/helpers/copywriter";
+import { generateCopy } from "../../../theme/guidelines/helpers/copywriter";
 import { ALL_COPY } from "../../../theme/copy/index";
-import type { ThemeDictionary } from "../../../theme/style/theme-processor";
 import { dictionaryToTheme } from "../../../theme/style/theme-processor";
 import { generateBackground } from "../../../theme/guidelines/helpers/animator";
 import { SparklesIcon, SendIcon, DownloadIcon } from "lucide-react";
@@ -26,17 +22,14 @@ export function AIPromptInput({ isOpen }: AIPromptInputProps) {
     const [activePrompt, setActivePrompt] = useState<string | null>(null);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<Error | null>(null);
-    const [generatedTheme, setGeneratedTheme] =
-        useState<ThemeDictionary | null>(null);
-    const [generatedCopy, setGeneratedCopy] = useState<{
-        full: ThemeCopy;
-        flat: Record<string, string>;
-    } | null>(null);
-    const [generatedBackground, setGeneratedBackground] = useState<
-        string | null
-    >(null);
     const inputRef = useRef<HTMLInputElement>(null);
-    const { setTheme } = useTheme();
+    const {
+        setTheme,
+        themeDefinition,
+        themePrompt,
+        presetCopy,
+        backgroundHtml,
+    } = useTheme();
 
     // Generate theme, copy, and background when activePrompt changes
     useEffect(() => {
@@ -79,13 +72,9 @@ export function AIPromptInput({ isOpen }: AIPromptInputProps) {
             .then((result) => {
                 if (!result || controller.signal.aborted) return;
 
-                const [theme, copyResult, backgroundHtml] = result;
-                setGeneratedTheme(theme);
-                setGeneratedCopy(copyResult);
-                setGeneratedBackground(backgroundHtml);
-
-                // Apply ALL at the same time
-                setTheme(theme, activePrompt, copyResult.full, backgroundHtml);
+                const [theme, copyResult, bgHtml] = result;
+                // Apply theme to context
+                setTheme(theme, activePrompt, copyResult.full, bgHtml);
                 setActivePrompt(null);
 
                 console.log("✅ [PRESET READY]");
@@ -108,27 +97,19 @@ export function AIPromptInput({ isOpen }: AIPromptInputProps) {
         }
     }, [isOpen]);
 
-    // Apply theme when generated (keep in state for download)
-
     const handleSubmit = (e?: React.FormEvent) => {
         e?.preventDefault();
         if (prompt.trim() && !loading) {
             setActivePrompt(prompt);
-            // Clear previous generation
-            setGeneratedTheme(null);
-            setGeneratedCopy(null);
-            setGeneratedBackground(null);
         }
     };
 
     const handleDownload = () => {
-        if (!generatedTheme || !generatedCopy || !prompt) return;
+        // Use current theme from context (reflects any changes from the left panel)
+        const themeInSlotFormat = dictionaryToTheme(themeDefinition);
 
-        // Convert ThemeDictionary to LLMThemeResponse format
-        const themeInSlotFormat = dictionaryToTheme(generatedTheme);
-
-        // Generate preset file content
-        const presetName = prompt
+        // Generate preset file name from current theme prompt or "custom"
+        const presetName = (themePrompt || "custom")
             .toLowerCase()
             .replace(/[^a-z0-9]+/g, "-")
             .replace(/^-|-$/g, "");
@@ -136,6 +117,22 @@ export function AIPromptInput({ isOpen }: AIPromptInputProps) {
             .split("-")
             .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
             .join("");
+
+        // Flatten presetCopy for export (extract flat values from nested structure)
+        const flatCopy: Record<string, string> = {};
+        const extractFlat = (obj: Record<string, unknown>, prefix = "") => {
+            for (const [key, value] of Object.entries(obj)) {
+                if (typeof value === "string") {
+                    flatCopy[prefix ? `${prefix}.${key}` : key] = value;
+                } else if (typeof value === "object" && value !== null) {
+                    extractFlat(
+                        value as Record<string, unknown>,
+                        prefix ? `${prefix}.${key}` : key
+                    );
+                }
+            }
+        };
+        extractFlat(presetCopy as unknown as Record<string, unknown>);
 
         const fileContent = `import { LLMThemeResponse, processTheme } from "../style/theme-processor";
 import type { ThemeCopy } from "../buildPrompts";
@@ -148,17 +145,13 @@ export const ${capitalizedName}Theme: LLMThemeResponse = ${JSON.stringify(
 
 export const ${capitalizedName}CssVariables = processTheme(${capitalizedName}Theme).cssVariables;
 
-// Copy generated with prompt: "${prompt}"
-export const ${capitalizedName}Copy = ${JSON.stringify(
-            generatedCopy.flat,
-            null,
-            2
-        )};
+// Copy from: "${themePrompt || "custom"}"
+export const ${capitalizedName}Copy = ${JSON.stringify(flatCopy, null, 2)};
 
 // Background HTML (raw template literal)
 export const ${capitalizedName}BackgroundHtml = ${
-            generatedBackground
-                ? `\`${generatedBackground.replace(/`/g, "\\`")}\``
+            backgroundHtml
+                ? `\`${backgroundHtml.replace(/`/g, "\\`")}\``
                 : "null"
         };
 `;
@@ -175,7 +168,7 @@ export const ${capitalizedName}BackgroundHtml = ${
         URL.revokeObjectURL(url);
 
         console.log(
-            `✅ Downloaded ${presetName}.ts - Add to /src/content/presets/`
+            `✅ Downloaded ${presetName}.ts with current settings - Add to /src/theme/presets/`
         );
     };
 
@@ -192,17 +185,16 @@ export const ${capitalizedName}BackgroundHtml = ${
                 onSubmit={handleSubmit}
                 className="w-full max-w-4xl mx-auto flex items-center h-full px-4 md:px-8 gap-4"
             >
-                {generatedTheme && generatedCopy && (
-                    <Button
-                        type="button"
-                        onClick={handleDownload}
-                        variant="icon"
-                        size={null}
-                        className="w-6 h-6 md:w-8 md:h-8 text-text-body-main flex-shrink-0"
-                    >
-                        <DownloadIcon className="w-4 h-4 md:w-5 md:h-5" />
-                    </Button>
-                )}
+                <Button
+                    type="button"
+                    onClick={handleDownload}
+                    variant="icon"
+                    size={null}
+                    className="w-6 h-6 md:w-8 md:h-8 text-text-body-main flex-shrink-0"
+                    title="Download current theme"
+                >
+                    <DownloadIcon className="w-4 h-4 md:w-5 md:h-5" />
+                </Button>
 
                 <Button
                     type="submit"
@@ -222,7 +214,7 @@ export const ${capitalizedName}BackgroundHtml = ${
                     <style>
                         {`
                             .theme-prompt-input::placeholder {
-                                color: var(--text-tertiary) !important;
+                                color: rgb(var(--text-tertiary)) !important;
                                 opacity: 1 !important;
                             }
                             
@@ -232,8 +224,8 @@ export const ${capitalizedName}BackgroundHtml = ${
                             .theme-prompt-input:-webkit-autofill:focus,
                             .theme-prompt-input:-webkit-autofill:active {
                                 -webkit-box-shadow: 0 0 0 1000px transparent inset !important;
-                                -webkit-text-fill-color: var(--text-secondary) !important;
-                                caret-color: var(--text-brand) !important;
+                                -webkit-text-fill-color: rgb(var(--input-text)) !important;
+                                caret-color: rgb(var(--text-brand)) !important;
                             }
                         `}
                     </style>
@@ -247,8 +239,8 @@ export const ${capitalizedName}BackgroundHtml = ${
                         placeholder="Describe a theme (e.g. 'Cyberpunk Neon')..."
                         className="theme-prompt-input w-full h-full bg-transparent outline-none text-base md:text-lg font-medium rounded-input"
                         style={{
-                            color: "var(--text-secondary)",
-                            caretColor: "var(--text-brand)",
+                            color: "rgb(var(--input-text))",
+                            caretColor: "rgb(var(--text-brand))",
                         }}
                         disabled={loading}
                         autoComplete="off"

@@ -93,7 +93,7 @@ export default function CommunityPage() {
                                         className="bg-input-background p-3 border-l-2 border-border-highlight"
                                     >
                                         {item.date && (
-                                            <span className="inline-block bg-button-primary-bg text-text-highlight px-2 py-0.5 font-mono text-xs font-black mb-2">
+                                            <span className="inline-block bg-button-primary-bg text-text-on-color px-2 py-0.5 font-mono text-xs font-black mb-2">
                                                 {item.date}
                                             </span>
                                         )}

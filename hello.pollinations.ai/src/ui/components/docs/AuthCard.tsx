@@ -94,10 +94,10 @@ export function AuthCard() {
                             {DOCS_PAGE.getYourKeyLabel.text}
                         </p>
                         <div className="flex items-center gap-2">
-                            <p className="font-mono text-sm font-black text-text-highlight">
+                            <p className="font-mono text-sm font-black text-text-on-color/70">
                                 enter.pollinations.ai
                             </p>
-                            <ExternalLinkIcon className="w-4 h-4 text-text-highlight" />
+                            <ExternalLinkIcon className="w-4 h-4 text-text-on-color/70" />
                         </div>
                     </a>
                 </div>
@@ -114,17 +114,17 @@ export function AuthCard() {
                             {DOCS_PAGE.serverSideDescription.text}
                         </p>
                         <div className="font-mono text-xs bg-button-primary-bg text-text-on-color p-4 border-r-4 border-b-4 border-border-main">
-                            <div className="text-text-highlight">
+                            <div className="text-text-on-color/50">
                                 {"// Example with fetch"}
                             </div>
                             <div className="mt-2">{"fetch(url, {"}</div>
                             <div className="pl-4">{"  headers: {"}</div>
                             <div className="pl-8">
-                                <span className="text-text-brand">
+                                <span className="text-text-on-color/80">
                                     {'"Authorization"'}
                                 </span>
                                 :{" "}
-                                <span className="text-text-highlight">
+                                <span className="text-text-on-color">
                                     {'"Bearer sk_..."'}
                                 </span>
                             </div>
@@ -139,17 +139,17 @@ export function AuthCard() {
                             {DOCS_PAGE.clientSideDescription.text}
                         </p>
                         <div className="font-mono text-xs bg-button-primary-bg text-text-on-color p-4 border-r-4 border-b-4 border-border-main">
-                            <div className="text-text-highlight">
+                            <div className="text-text-on-color/50">
                                 {"// Add to URL"}
                             </div>
                             <div className="mt-2">
                                 {"https://enter.pollinations.ai/..."}
                             </div>
                             <div className="pl-4">
-                                <span className="text-text-brand">
+                                <span className="text-text-on-color/80">
                                     {"?key="}
                                 </span>
-                                <span className="text-text-highlight">
+                                <span className="text-text-on-color">
                                     {"pk_..."}
                                 </span>
                             </div>

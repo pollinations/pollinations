@@ -12,11 +12,10 @@ on:
 
 jobs:
   review-submission:
-    # Run on issues with app: labels OR manual dispatch
+    # Run on App Submission issues (by title prefix) OR manual dispatch
     if: |
       github.event_name == 'workflow_dispatch' ||
-      contains(github.event.issue.labels.*.name, 'app:review') ||
-      contains(github.event.issue.labels.*.name, 'app:info-needed')
+      startsWith(github.event.issue.title, '[App Submission]:')
     runs-on: ubuntu-latest
     permissions:
       contents: write

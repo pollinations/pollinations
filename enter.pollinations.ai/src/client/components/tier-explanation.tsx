@@ -6,9 +6,8 @@ export const TierExplanation: FC = () => {
     return (
         <div className="px-3 py-2 border border-gray-200 rounded-lg">
             <p className="text-sm text-gray-900 leading-relaxed mb-3">
-                📈 <strong>Grow Your Tier:</strong> For developers growing
-                inside the ecosystem. Earn daily sponsorship grants as you
-                progress through tiers.
+                📈 <strong>Grow Your Tier:</strong> For developers building with
+                Pollinations. Level up to earn more daily pollen.
             </p>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
                 {/* Spore */}
@@ -20,9 +19,9 @@ export const TierExplanation: FC = () => {
                     <p className="text-xs font-mono text-gray-600 mt-1">
                         1 pollen/day
                     </p>
-                    <ul className="text-[11px] text-gray-500 mt-1 space-y-0.5">
-                        <li>• Login with GitHub</li>
-                    </ul>
+                    <p className="text-[11px] text-gray-400 italic mt-1">
+                        Just germinated
+                    </p>
                 </div>
 
                 {/* Seed */}
@@ -34,9 +33,9 @@ export const TierExplanation: FC = () => {
                     <p className="text-xs font-mono text-gray-600 mt-1">
                         3 pollen/day
                     </p>
-                    <ul className="text-[11px] text-gray-500 mt-1 space-y-0.5">
-                        <li>• Have dev activity on GitHub</li>
-                    </ul>
+                    <p className="text-[11px] text-gray-500 mt-1">
+                        • Active on GitHub
+                    </p>
                 </div>
 
                 {/* Flower */}
@@ -50,10 +49,18 @@ export const TierExplanation: FC = () => {
                     <p className="text-xs font-mono text-gray-600 mt-1">
                         10 pollen/day
                     </p>
-                    <ul className="text-[11px] text-gray-500 mt-1 space-y-0.5">
-                        <li>• Submit a working app</li>
-                        <li>• Pass review → featured</li>
-                    </ul>
+                    <p className="text-[11px] text-gray-500 mt-1">
+                        •{" "}
+                        <a
+                            href="https://github.com/pollinations/pollinations/issues/new?template=project-submission.yml"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-green-600 hover:underline"
+                        >
+                            Featured app
+                        </a>{" "}
+                        or merged PR
+                    </p>
                 </div>
 
                 {/* Nectar */}
@@ -68,7 +75,7 @@ export const TierExplanation: FC = () => {
                         20 pollen/day
                     </p>
                     <p className="text-[11px] text-gray-400 italic mt-1">
-                        Coming soon
+                        Pollinating the ecosystem – coming soon
                     </p>
                 </div>
             </div>

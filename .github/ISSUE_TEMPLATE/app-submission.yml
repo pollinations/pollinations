@@ -7,7 +7,7 @@ body:
     attributes:
       value: |
         <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 24px;">
-          <img src="https://raw.githubusercontent.com/pollinations/pollinations/main/assets/logo-text.svg" alt="pollinations.ai Logo" width="100%" style="display: inline-block;">
+          <img src="https://raw.githubusercontent.com/pollinations/pollinations/main/shared/assets/logo-text.svg" alt="pollinations.ai Logo" width="100%" style="display: inline-block;">
           <h1 style="margin: 0; font-size: 24px; display: inline-block;">App Submission</h1>
         </div>
         <div style="font-size: 1.25em; font-style: italic; margin-bottom: 12px;">

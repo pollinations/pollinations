@@ -1,5 +1,5 @@
 name: App Submission
-description: Submit your app to be featured on Pollinations
+description: Submit your app to be featured on pollinations.ai
 title: "[App Submission]: "
 labels: ["app:review"]
 body:
@@ -7,7 +7,7 @@ body:
     attributes:
       value: |
         <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 24px;">
-          <img src="https://raw.githubusercontent.com/pollinations/pollinations/main/assets/logo-text.svg" alt="Pollinations Logo" width="100%" style="display: inline-block;">
+          <img src="https://raw.githubusercontent.com/pollinations/pollinations/main/assets/logo-text.svg" alt="pollinations.ai Logo" width="100%" style="display: inline-block;">
           <h1 style="margin: 0; font-size: 24px; display: inline-block;">App Submission</h1>
         </div>
         <div style="font-size: 1.25em; font-style: italic; margin-bottom: 12px;">
@@ -27,8 +27,8 @@ body:
     id: project-description
     attributes:
       label: Project Description
-      description: Please provide a brief description of your project and how it uses Pollinations
-      placeholder: "Describe what your project does and how it integrates with Pollinations..."
+      description: Please provide a brief description of your project and how it uses pollinations.ai
+      placeholder: "Describe what your project does and how it integrates with pollinations.ai..."
     validations:
       required: true
 

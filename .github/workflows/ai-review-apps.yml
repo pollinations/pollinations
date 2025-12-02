@@ -88,7 +88,7 @@ jobs:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
           use_bedrock: false
           direct_prompt: |
-            Review this project submission and either create a PR or request more info.
+            Review this app submission and either create a PR or request more info.
 
             ISSUE #${{ steps.issue.outputs.number }}
             Author: @${{ steps.issue.outputs.author }} (ID: ${{ steps.issue.outputs.author_id }})
@@ -102,5 +102,5 @@ jobs:
             3. If VALID: Create branch auto/app-${{ steps.issue.outputs.number }}-<slug>, add entry to pollinations.ai/src/config/projects/<category>.js, run generator, commit, push, create PR, comment on issue with PR link
             4. If NEEDS INFO: Swap label from app:review to app:info-needed, @mention user explaining what's missing
 
-            See .claude/skills/project-submissions/SKILL.md for full details on entry format, category mapping, and label flow.
+            See .claude/skills/app-submissions/SKILL.md for full details on entry format, category mapping, and label flow.
           claude_args: "--model claude-sonnet-4-20250514 --max-turns 25"

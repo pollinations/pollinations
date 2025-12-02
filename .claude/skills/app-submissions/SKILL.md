@@ -1,11 +1,11 @@
 ---
-name: project-submissions
-description: AI-assisted pipeline for processing GitHub project submissions. Reviews submissions, creates PRs, and manages status via app: labels.
+name: app-submissions
+description: AI-assisted pipeline for processing GitHub app submissions. Reviews submissions, creates PRs, and manages status via app: labels.
 ---
 
-# Project Submissions Skill
+# App Submissions Skill
 
-AI-assisted pipeline for processing project submissions labeled `app:review`.
+AI-assisted pipeline for processing app submissions labeled `app:review`.
 
 ---
 

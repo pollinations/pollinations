@@ -1,5 +1,5 @@
-name: Project Submission
-description: Submit your project to be featured on Pollinations
+name: App Submission
+description: Submit your app to be featured on Pollinations
 title: "[App Submission]: "
 labels: ["app:review"]
 body:
@@ -8,10 +8,10 @@ body:
       value: |
         <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 24px;">
           <img src="https://raw.githubusercontent.com/pollinations/pollinations/main/assets/logo-text.svg" alt="Pollinations Logo" width="100%" style="display: inline-block;">
-          <h1 style="margin: 0; font-size: 24px; display: inline-block;">Project Submission</h1>
+          <h1 style="margin: 0; font-size: 24px; display: inline-block;">App Submission</h1>
         </div>
         <div style="font-size: 1.25em; font-style: italic; margin-bottom: 12px;">
-          Thanks for taking the time to submit your project! Please fill out the information below to help us understand and showcase your project.
+          Thanks for taking the time to submit your app! Please fill out the information below to help us understand and showcase your app.
         </div>
 
   - type: input

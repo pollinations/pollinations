@@ -38,27 +38,17 @@ jobs:
             
             for (const issueNumber of issueNumbers) {
               try {
-                // Check if the issue has APPS label
+                // Check if the issue is an App Submission (by title)
                 const { data: issue } = await github.rest.issues.get({
                   owner: context.repo.owner,
                   repo: context.repo.repo,
                   issue_number: issueNumber
                 });
                 
-                const hasAppLabel = issue.labels.some(l => l.name.startsWith('app:'));
+                const isAppSubmission = issue.title.startsWith('[App Submission]:');
                 
-                if (hasAppLabel) {
-                  // Remove other app: labels and add app:approved
-                  const appLabels = issue.labels.filter(l => l.name.startsWith('app:')).map(l => l.name);
-                  for (const label of appLabels) {
-                    await github.rest.issues.removeLabel({
-                      owner: context.repo.owner,
-                      repo: context.repo.repo,
-                      issue_number: issueNumber,
-                      name: label
-                    });
-                  }
-                  
+                if (isAppSubmission) {
+                  // Set app:approved label (for dashboard display)
                   await github.rest.issues.addLabels({
                     owner: context.repo.owner,
                     repo: context.repo.repo,
@@ -76,7 +66,7 @@ jobs:
                   
                   console.log(`Set app:approved label and posted comment on issue #${issueNumber}`);
                 } else {
-                  console.log(`Issue #${issueNumber} does not have APPS label, skipping`);
+                  console.log(`Issue #${issueNumber} is not an App Submission, skipping`);
                 }
               } catch (error) {
                 console.log(`Error processing issue #${issueNumber}: ${error.message}`);

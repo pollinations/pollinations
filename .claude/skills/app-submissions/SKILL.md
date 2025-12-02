@@ -130,7 +130,7 @@ buildProjectEntry(parsed, issueUser, issueUserId) → {
 When reviewing a submission, validate:
 
 1. **URL accessible** — Not 404, loads correctly
-2. **Uses Pollinations** — Evidence of Pollinations API usage
+2. **Uses pollinations.ai** — Evidence of pollinations.ai API usage
 3. **Description quality** — Clear, informative, appropriate length
 4. **Category fit** — Matches the selected category
 5. **No duplicates** — Not already in the project files
@@ -190,7 +190,7 @@ When creating a PR for a valid submission:
 
 I've created PR #XX to add your project to the showcase.
 
-Once merged by a maintainer, your project will be live at [pollinations.ai](https://pollinations.ai)!
+Once merged by a maintainer, your app will be live at [pollinations.ai](https://pollinations.ai)!
 ```
 
 ### Needs More Info

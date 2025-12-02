@@ -3,9 +3,6 @@ name: AI Review Project Submissions
 on:
   issues:
     types: [opened, edited, reopened]
-  pull_request:
-    paths:
-      - '.github/workflows/app-review.yml'  # Trigger on self to bootstrap
   workflow_dispatch:
     inputs:
       issue_number:
@@ -15,10 +12,11 @@ on:
 
 jobs:
   review-submission:
-    # Run on App Submission issues (by title prefix) OR manual dispatch
+    # Run on issues with app: labels OR manual dispatch
     if: |
       github.event_name == 'workflow_dispatch' ||
-      startsWith(github.event.issue.title, '[App Submission]:')
+      contains(github.event.issue.labels.*.name, 'app:review') ||
+      contains(github.event.issue.labels.*.name, 'app:info-needed')
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -84,176 +82,25 @@ jobs:
             core.setOutput('author_id', issue.user.id);
             core.setOutput('body', issue.body || '');
 
-      - name: Parse submission with Pollinations AI
-        id: parse
-        env:
-          ISSUE_BODY: ${{ steps.issue.outputs.body }}
-        run: |
-          # Build JSON payload safely
-          PAYLOAD=$(jq -n \
-            --arg body "$ISSUE_BODY" \
-            '{
-              model: "openai",
-              messages: [
-                {
-                  role: "system",
-                  content: "You parse GitHub issue forms for app submissions. Extract and return ONLY valid JSON with these fields: name, url, description, author, repo (optional), category (one of: chat, creative, games, hackAndBuild, learn, socialBots, vibeCoding), language (optional, e.g. zh-CN for non-English). If info is missing or invalid, return {\"error\": \"reason\"}."
-                },
-                {
-                  role: "user",
-                  content: $body
-                }
-              ],
-              jsonMode: true
-            }')
-          
-          echo "Calling Pollinations API..."
-          echo "Payload: $PAYLOAD"
-          
-          # Call Pollinations API (no auth needed for basic usage)
-          RESPONSE=$(curl -s -X POST "https://text.pollinations.ai/" \
-            -H "Content-Type: application/json" \
-            -d "$PAYLOAD")
-          
-          echo "Response: $RESPONSE"
-          
-          # Extract the JSON content - try both OpenAI format and direct text
-          PROJECT_JSON=$(echo "$RESPONSE" | jq -r '.choices[0].message.content // .text // empty' 2>/dev/null)
-          
-          # If still empty, maybe it's direct JSON
-          if [ -z "$PROJECT_JSON" ]; then
-            PROJECT_JSON="$RESPONSE"
-          fi
-          
-          echo "Parsed JSON: $PROJECT_JSON"
-          
-          # Validate it's actual JSON
-          if ! echo "$PROJECT_JSON" | jq . > /dev/null 2>&1; then
-            echo "error=Response is not valid JSON" >> $GITHUB_OUTPUT
-            exit 1
-          fi
-          
-          # Check for error in parsed result
-          ERROR=$(echo "$PROJECT_JSON" | jq -r '.error // empty')
-          if [ -n "$ERROR" ]; then
-            echo "error=$ERROR" >> $GITHUB_OUTPUT
-            echo "needs_info=true" >> $GITHUB_OUTPUT
-          else
-            echo "project_json<<EOF" >> $GITHUB_OUTPUT
-            echo "$PROJECT_JSON" >> $GITHUB_OUTPUT
-            echo "EOF" >> $GITHUB_OUTPUT
-            echo "name=$(echo "$PROJECT_JSON" | jq -r '.name')" >> $GITHUB_OUTPUT
-            echo "category=$(echo "$PROJECT_JSON" | jq -r '.category')" >> $GITHUB_OUTPUT
-          fi
-
-      - name: Request more info if needed
-        if: steps.parse.outputs.needs_info == 'true'
-        uses: actions/github-script@v7
+      - name: Run Claude to review and process submission
+        uses: anthropics/claude-code-action@v1
         with:
-          script: |
-            await github.rest.issues.createComment({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              issue_number: ${{ steps.issue.outputs.number }},
-              body: `👋 @${{ steps.issue.outputs.author }}, thanks for submitting!\n\nI couldn't fully parse your submission: **${{ steps.parse.outputs.error }}**\n\nPlease update your issue with the missing info.`
-            });
-            
-            // Swap labels
-            try {
-              await github.rest.issues.removeLabel({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                issue_number: ${{ steps.issue.outputs.number }},
-                name: 'app:review'
-              });
-            } catch (e) {}
-            
-            await github.rest.issues.addLabels({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              issue_number: ${{ steps.issue.outputs.number }},
-              labels: ['app:info-needed']
-            });
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          use_bedrock: false
+          direct_prompt: |
+            Review this app submission and either create a PR or request more info.
 
-      - name: Add project and create PR
-        if: steps.parse.outputs.needs_info != 'true'
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          ISSUE_NUMBER: ${{ steps.issue.outputs.number }}
-          ISSUE_AUTHOR: ${{ steps.issue.outputs.author }}
-          ISSUE_AUTHOR_ID: ${{ steps.issue.outputs.author_id }}
-          PROJECT_JSON: ${{ steps.parse.outputs.project_json }}
-          PROJECT_NAME: ${{ steps.parse.outputs.name }}
-          CATEGORY: ${{ steps.parse.outputs.category }}
-        run: |
-          # Determine file path
-          case "$CATEGORY" in
-            chat) FILE="pollinations.ai/src/config/projects/chat.js" ;;
-            creative) FILE="pollinations.ai/src/config/projects/creative.js" ;;
-            games) FILE="pollinations.ai/src/config/projects/games.js" ;;
-            hackAndBuild) FILE="pollinations.ai/src/config/projects/hackAndBuild.js" ;;
-            learn) FILE="pollinations.ai/src/config/projects/learn.js" ;;
-            socialBots) FILE="pollinations.ai/src/config/projects/socialBots.js" ;;
-            vibeCoding) FILE="pollinations.ai/src/config/projects/vibeCoding.js" ;;
-            *) echo "Unknown category: $CATEGORY" && exit 1 ;;
-          esac
-          
-          # Create branch
-          SLUG=$(echo "$PROJECT_NAME" | tr '[:upper:]' '[:lower:]' | tr ' ' '-' | tr -cd 'a-z0-9-')
-          BRANCH="auto/app-${ISSUE_NUMBER}-${SLUG}"
-          git checkout -b "$BRANCH"
-          
-          # Format project entry
-          TODAY=$(date +%Y-%m-%d)
-          ENTRY=$(echo "$PROJECT_JSON" | jq --arg date "$TODAY" '. + {submissionDate: $date, order: 5}')
-          
-          # Add to category file (before final ])
-          node -e "
-            const fs = require('fs');
-            let content = fs.readFileSync('$FILE', 'utf8');
-            const entry = JSON.stringify($ENTRY, null, 2).replace(/^/gm, '  ');
-            // Insert before final ]; ensuring proper comma
-            content = content.replace(/(\}),?(\s*\n];?\s*$)/, '\$1,\n' + entry + '\$2');
-            fs.writeFileSync('$FILE', content);
-          "
-          
-          # Update README
-          node pollinator-agent/project-list-scripts/generate-project-table.js --update-readme || true
-          
-          # Commit and push
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add -A
-          git commit -m "Add $PROJECT_NAME to $CATEGORY
+            ISSUE #${{ steps.issue.outputs.number }}
+            Author: @${{ steps.issue.outputs.author }} (ID: ${{ steps.issue.outputs.author_id }})
 
-          Co-authored-by: $ISSUE_AUTHOR <${ISSUE_AUTHOR_ID}+${ISSUE_AUTHOR}@users.noreply.github.com>
-          Fixes #$ISSUE_NUMBER"
-          # Force push (handles re-runs where branch already exists)
-          git push origin "$BRANCH" --force
-          
-          # Create PR (or update existing)
-          EXISTING_PR=$(gh pr list --head "$BRANCH" --json number -q '.[0].number')
-          if [ -n "$EXISTING_PR" ]; then
-            echo "PR #$EXISTING_PR already exists, updating..."
-          else
-            gh pr create \
-              --title "Add $PROJECT_NAME to $CATEGORY" \
-              --body "Adds **$PROJECT_NAME** to **$CATEGORY** projects.
+            BODY:
+            ${{ steps.issue.outputs.body }}
 
-          Co-authored-by: $ISSUE_AUTHOR <${ISSUE_AUTHOR_ID}+${ISSUE_AUTHOR}@users.noreply.github.com>
-          Fixes #$ISSUE_NUMBER" \
-              --base main \
-              --head "$BRANCH"
-          fi
+            INSTRUCTIONS:
+            1. Parse the issue body to extract: name, url, description, author, repo, category, language
+            2. Validate: URL format valid, description meaningful, category is one of the known categories
+            3. If VALID: Create branch auto/app-${{ steps.issue.outputs.number }}-<slug>, add entry to pollinations.ai/src/config/projects/<category>.js, run generator, commit, push, create PR, comment on issue with PR link
+            4. If NEEDS INFO: Swap label from app:review to app:info-needed, @mention user explaining what's missing
 
-      - name: Comment on issue with PR link
-        if: steps.parse.outputs.needs_info != 'true'
-        uses: actions/github-script@v7
-        with:
-          script: |
-            await github.rest.issues.createComment({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              issue_number: ${{ steps.issue.outputs.number }},
-              body: `🎉 Thanks @${{ steps.issue.outputs.author }}! I've created a PR to add **${{ steps.parse.outputs.name }}** to the **${{ steps.parse.outputs.category }}** category.\n\nA maintainer will review it shortly!`
-            });
+            See .claude/skills/app-submissions/SKILL.md for full details on entry format, category mapping, and label flow.
+          claude_args: "--model claude-sonnet-4-20250514 --max-turns 25"

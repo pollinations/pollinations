@@ -4,6 +4,7 @@ import {
     hasReasoning,
     hasVision,
     hasAudioInput,
+    hasSearch,
     getModelDescription,
 } from "./model-info.ts";
 import { calculatePerPollen } from "./calculations.ts";
@@ -14,14 +15,15 @@ type ModelRowProps = {
 };
 
 export const ModelRow: FC<ModelRowProps> = ({ model }) => {
-    const modelDescription = getModelDescription(model.name, model.type);
+    const modelDescription = getModelDescription(model.name);
     const genPerPollen = calculatePerPollen(model);
     const [showTooltip, setShowTooltip] = useState(false);
 
     // Get model capabilities
-    const showReasoning = hasReasoning(model.name, model.type);
-    const showVision = hasVision(model.name, model.type);
-    const showAudioInput = hasAudioInput(model.name, model.type);
+    const showReasoning = hasReasoning(model.name);
+    const showVision = hasVision(model.name);
+    const showAudioInput = hasAudioInput(model.name);
+    const showSearch = hasSearch(model.name);
 
     // Show info icon if we have a description to display
     const showDescriptionInfo =
@@ -78,6 +80,14 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
                             title="Advanced reasoning capabilities"
                         >
                             🧠
+                        </span>
+                    )}
+                    {showSearch && (
+                        <span
+                            className="text-base"
+                            title="Web search capabilities"
+                        >
+                            🔍
                         </span>
                     )}
                 </div>

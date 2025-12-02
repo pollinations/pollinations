@@ -1,6 +1,5 @@
 // API utilities for Pollinations chat - Enhanced version from vanilla
 const BASE_IMAGE_URL = 'https://enter.pollinations.ai/api/generate/image';
-const BASE_VIDEO_URL = 'https://enter.pollinations.ai/api/generate/video';
 const TEXT_MODELS_ENDPOINT = 'https://enter.pollinations.ai/api/generate/v1/models';
 const IMAGE_MODELS_ENDPOINT = 'https://enter.pollinations.ai/api/generate/image/models';
 const API_TOKEN = 'plln_sk_PENx8AtHMF9BJ00rWOUFz4LFCgimBsW8';
@@ -618,7 +617,7 @@ export const generateVideo = async (prompt, options = {}) => {
 
     // Encode the prompt for URL path
     const encodedPrompt = encodeURIComponent(prompt);
-    const url = `${BASE_VIDEO_URL}/${encodedPrompt}?${params.toString()}`;
+    const url = `${BASE_IMAGE_URL}/${encodedPrompt}?${params.toString()}`;
     
     console.log(`🎬 Generating video with prompt: "${prompt}"`);
     console.log(`📐 Parameters: model: ${model}, seed: ${seed}`);

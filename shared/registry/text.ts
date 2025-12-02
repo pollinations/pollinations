@@ -250,6 +250,7 @@ export const TEXT_SERVICES = {
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
         tools: true,
+        search: true,
         isSpecialized: false,
     },
     "chickytutor": {
@@ -349,10 +350,11 @@ export const TEXT_SERVICES = {
                 completionTextTokens: perMillion(1.0),
             },
         ],
-        description: "Perplexity Sonar - Fast & Affordable",
+        description: "Perplexity Sonar - Fast & Affordable with Web Search",
         inputModalities: ["text"],
         outputModalities: ["text"],
         tools: true,
+        search: true,
         isSpecialized: false,
     },
     "perplexity-reasoning": {
@@ -366,12 +368,14 @@ export const TEXT_SERVICES = {
                 completionTextTokens: perMillion(5.0),
             },
         ],
-        description: "Perplexity Sonar Reasoning - Advanced Reasoning",
+        description:
+            "Perplexity Sonar Reasoning - Advanced Reasoning with Web Search",
         inputModalities: ["text"],
         outputModalities: ["text"],
         tools: true,
         reasoning: true,
-        persona: false,
+        search: true,
+        isSpecialized: false,
     },
     "kimi-k2-thinking": {
         aliases: ["kimi-k2", "kimi-thinking"],

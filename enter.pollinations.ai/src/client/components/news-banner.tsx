@@ -1,6 +1,6 @@
 import { useState, useEffect, type FC } from "react";
 
-const NEWS_ID = "dec-2025-v3";
+const NEWS_ID = "dec-2025-v4";
 
 export const NewsBanner: FC = () => {
     const [dismissed, setDismissed] = useState(true);
@@ -48,6 +48,17 @@ export const NewsBanner: FC = () => {
                     <li className="text-gray-600">
                         🔧 <em>Tier automation</em> —{" "}
                         <span className="text-gray-500">cooking...</span>
+                    </li>
+                    <li className="text-gray-600">
+                        💬 <strong>Join the discussion:</strong>{" "}
+                        <a
+                            href="https://discord.com/channels/885844321461485618/1432378056126894343"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-purple-600 hover:text-purple-800 underline"
+                        >
+                            #pollen-beta channel
+                        </a>
                     </li>
                 </ul>
             </div>

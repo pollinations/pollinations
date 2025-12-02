@@ -87,31 +87,32 @@ jobs:
       - name: Parse submission with Pollinations AI
         id: parse
         env:
-          POLLINATIONS_API_KEY: ${{ secrets.POLLINATIONS_API_KEY }}
+          ISSUE_BODY: ${{ steps.issue.outputs.body }}
         run: |
-          ISSUE_BODY='${{ steps.issue.outputs.body }}'
+          # Build JSON payload safely
+          PAYLOAD=$(jq -n \
+            --arg body "$ISSUE_BODY" \
+            '{
+              model: "openai",
+              messages: [
+                {
+                  role: "system",
+                  content: "You parse GitHub issue forms for app submissions. Extract and return ONLY valid JSON with these fields: name, url, description, author, repo (optional), category (one of: chat, creative, games, hackAndBuild, learn, socialBots, vibeCoding), language (optional, e.g. zh-CN for non-English). If info is missing or invalid, return {\"error\": \"reason\"}."
+                },
+                {
+                  role: "user",
+                  content: $body
+                }
+              ],
+              jsonMode: true
+            }')
           
-          # Call Pollinations API to parse the issue
+          echo "Calling Pollinations API..."
+          
+          # Call Pollinations API (no auth needed for basic usage)
           RESPONSE=$(curl -s -X POST "https://text.pollinations.ai/" \
             -H "Content-Type: application/json" \
-            -H "Authorization: Bearer $POLLINATIONS_API_KEY" \
-            -d @- <<EOF
-          {
-            "model": "openai",
-            "messages": [
-              {
-                "role": "system",
-                "content": "You parse GitHub issue forms for app submissions. Extract and return ONLY valid JSON with these fields: name, url, description, author, repo (optional), category (one of: chat, creative, games, hackAndBuild, learn, socialBots, vibeCoding), language (optional, e.g. 'zh-CN' for non-English). If info is missing or invalid, return {\"error\": \"reason\"}."
-              },
-              {
-                "role": "user", 
-                "content": $(echo "$ISSUE_BODY" | jq -Rs .)
-              }
-            ],
-            "response_format": {"type": "json_object"}
-          }
-          EOF
-          )
+            -d "$PAYLOAD")
           
           # Extract the JSON content
           PROJECT_JSON=$(echo "$RESPONSE" | jq -r '.choices[0].message.content // empty')

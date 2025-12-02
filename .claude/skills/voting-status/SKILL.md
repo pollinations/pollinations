@@ -12,7 +12,7 @@ Generate phrack-style ASCII art diagrams showing community voting results and po
 ## Hard Rules
 
 1. **Post diagram as GitHub comment** (not in issue body)
-2. **Post to both Discord channels** (chat + pollen-beta)
+2. **Post to all 3 Discord channels** (chat, pollen-beta, news-polls)
 3. **Always include voting link** at bottom
 4. **Gen-Z friendly language** ("we been cooking fr fr 🔥")
 
@@ -140,6 +140,56 @@ we been cooking fr fr 🔥 keep the votes coming!
 ads to earn pollen is winning! 🗳️
 
 💳 **Vote here:** https://github.com/pollinations/pollinations/issues/4826
+```
+
+---
+
+## Example: General Announcement (Dec 2025)
+
+```
+`░▒▓ POLLINATIONS // DEC 2025 ▓▒░`
+
+**still in beta — values may shift as we find balance**
+
+## ⚡ pollen rebalance
+
+adjusting daily pollen to sustain compute
+effective from next refill
+
+\`\`\`
+🦠 spore    1/day
+🌱 seed     3/day
+🌸 flower   10/day
+🍯 nectar   20/day
+\`\`\`
+
+## 🌱 🌸 upgrade paths
+
+**🦠 → 🌱** show us you're part of the community
+- ⭐ star [repo](https://github.com/pollinations/pollinations)
+- 🔀 merged PR
+
+**🌱 → 🌸** build something with pollinations
+- 🛠️ push code
+- 📦 project in [showcase](https://pollinations.ai)
+
+register → https://enter.pollinations.ai
+
+## 🎬 new endpoints
+
+premium models now live. all accessible to everyone.
+
+\`\`\`
+text   claude opus 4.5 · kimi k2
+image  nanobanana-pro (4K) · seedream 4
+video  veo 3.1 · seedance
+\`\`\`
+
+---
+
+📖 [docs](https://enter.pollinations.ai/api/docs) · 🐙 [github](https://github.com/pollinations/pollinations) · 🗳️ [vote for models](https://github.com/pollinations/pollinations/issues/5321) · 💬 questions welcome
+
+*we're figuring this out together — free tiers may evolve as we grow* 🌱
 ```
 
 ---

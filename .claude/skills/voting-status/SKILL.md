@@ -77,7 +77,7 @@ mcp1_add_issue_comment(
 )
 ```
 
-### 4. Post to Discord (all 3 channels)
+### 4. Post to Discord (all 3 channels: chat, pollen-beta, news-polls)
 ```
 mcp0_discord_send(channelId: "889573359111774329", message: "<DIAGRAM + LINK>")      // chat
 mcp0_discord_send(channelId: "1432378056126894343", message: "<DIAGRAM + LINK>")     // pollen-beta

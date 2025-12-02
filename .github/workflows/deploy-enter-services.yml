@@ -70,10 +70,10 @@ jobs:
             git pull origin staging
             
             cd text.pollinations.ai
-            npm install
+            pnpm install --frozen-lockfile || pnpm install
             
             cd ../image.pollinations.ai
-            npm install
+            pnpm install --frozen-lockfile || pnpm install
             
             sudo systemctl restart text-pollinations.service image-pollinations.service
             sleep 10

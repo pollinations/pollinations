@@ -77,26 +77,46 @@ describe("POST /generate/v1/chat/completions (authenticated)", async () => {
         { timeout: 30000 },
         async ([serviceId, expectedStatus], { apiKey, mocks }) => {
             await mocks.enable("polar", "tinybird", "vcr");
-            const response = await SELF.fetch(
-                `http://localhost:3000/api/generate/v1/chat/completions`,
-                {
-                    method: "POST",
-                    headers: {
-                        "content-type": "application/json",
-                        "authorization": `Bearer ${apiKey}`,
+            const ctx = createExecutionContext();
+            const response = await worker.fetch(
+                new Request(
+                    `http://localhost:3000/api/generate/v1/chat/completions`,
+                    {
+                        method: "POST",
+                        headers: {
+                            "content-type": "application/json",
+                            "authorization": `Bearer ${apiKey}`,
+                        },
+                        body: JSON.stringify({
+                            model: serviceId,
+                            messages: [
+                                {
+                                    role: "user",
+                                    content: testMessageContent(),
+                                },
+                            ],
+                        }),
                     },
-                    body: JSON.stringify({
-                        model: serviceId,
-                        messages: [
-                            {
-                                role: "user",
-                                content: testMessageContent(),
-                            },
-                        ],
-                    }),
-                },
+                ),
+                env,
+                ctx,
             );
             expect(response.status).toBe(expectedStatus);
+
+            // consume response
+            await response.text();
+            await waitOnExecutionContext(ctx);
+
+            // make sure the recorded events contain usage
+            const events = mocks.tinybird.state.events;
+            expect(events).toHaveLength(1);
+            events.forEach((event) => {
+                expect(event.modelUsed).toBeDefined();
+                expect(event.tokenCountPromptText).toBeGreaterThan(0);
+                expect(event.tokenCountCompletionText).toBeGreaterThan(0);
+                expect(event.totalCost).toBeGreaterThan(0);
+                expect(event.totalPrice).toBeGreaterThanOrEqual(0);
+            });
         },
     );
 });
@@ -133,7 +153,6 @@ describe("POST /generate/v1/chat/completions (streaming)", async () => {
                 ctx,
             );
             expect(response.status).toBe(expectedStatus);
-            ctx.passThroughOnException();
 
             // consume the stream
             await response.text();
@@ -147,6 +166,7 @@ describe("POST /generate/v1/chat/completions (streaming)", async () => {
                 expect(event.tokenCountPromptText).toBeGreaterThan(0);
                 expect(event.tokenCountCompletionText).toBeGreaterThan(0);
                 expect(event.totalCost).toBeGreaterThan(0);
+                expect(event.totalPrice).toBeGreaterThanOrEqual(0);
             });
         },
     );
@@ -158,14 +178,19 @@ describe("GET /text/:prompt", async () => {
         { timeout: 30000 },
         async ([serviceId, expectedStatus], { apiKey, mocks }) => {
             await mocks.enable("polar", "tinybird", "vcr");
-            const response = await SELF.fetch(
-                `http://localhost:3000/api/generate/text/${encodeURIComponent(testMessageContent())}?model=${serviceId}`,
-                {
-                    method: "GET",
-                    headers: {
-                        "authorization": `Bearer ${apiKey}`,
+            const ctx = createExecutionContext();
+            const response = await worker.fetch(
+                new Request(
+                    `http://localhost:3000/api/generate/text/${encodeURIComponent(testMessageContent())}?model=${serviceId}`,
+                    {
+                        method: "GET",
+                        headers: {
+                            "authorization": `Bearer ${apiKey}`,
+                        },
                     },
-                },
+                ),
+                env,
+                ctx,
             );
             expect(response.status).toBe(expectedStatus);
 
@@ -177,6 +202,18 @@ describe("GET /text/:prompt", async () => {
             const text = await response.text();
             expect(text.length).toBeGreaterThan(0);
             expect(() => JSON.parse(text)).toThrow(); // Should not be valid JSON
+            await waitOnExecutionContext(ctx);
+
+            // make sure the recorded events contain usage
+            const events = mocks.tinybird.state.events;
+            expect(events).toHaveLength(1);
+            events.forEach((event) => {
+                expect(event.modelUsed).toBeDefined();
+                expect(event.tokenCountPromptText).toBeGreaterThan(0);
+                expect(event.tokenCountCompletionText).toBeGreaterThan(0);
+                expect(event.totalCost).toBeGreaterThan(0);
+                expect(event.totalPrice).toBeGreaterThanOrEqual(0);
+            });
         },
     );
 });

@@ -10,9 +10,10 @@ const logOps = debug("pollinations:seedance:ops");
 const logError = debug("pollinations:seedance:error");
 
 // Seedance API constants
-// Using Seedance Lite T2V (BytePlus video generation)
+// BytePlus Seedance Lite has separate model IDs for T2V and I2V
 // Model ID includes date suffix as required by BytePlus
-const DEFAULT_MODEL = "seedance-1-0-lite-t2v-250428";
+const T2V_MODEL = "seedance-1-0-lite-t2v-250428"; // Text-to-Video
+const I2V_MODEL = "seedance-1-0-lite-i2v-250428"; // Image-to-Video
 
 interface SeedanceTaskResponse {
     id?: string;
@@ -42,7 +43,12 @@ interface SeedanceTaskResult {
 
 interface SeedanceRequestBody {
     model: string;
-    content: Array<{ type: string; text?: string; image_url?: { url: string }; role?: string }>;
+    content: Array<{
+        type: string;
+        text?: string;
+        image_url?: { url: string };
+        role?: string;
+    }>;
 }
 
 /**
@@ -84,14 +90,19 @@ export const callSeedanceAPI = async (
     const durationSeconds = safeParams.duration || 2; // Default 2 seconds (minimum)
     const aspectRatio = safeParams.aspectRatio || "16:9";
     // Resolution: default to 720p
-    const resolution = "720p"
+    const resolution = "720p";
+
+    // Select model based on whether image is provided
+    // T2V = text-to-video, I2V = image-to-video (uses first frame)
+    const hasImage = safeParams.image && safeParams.image.length > 0;
+    const selectedModel = hasImage ? I2V_MODEL : T2V_MODEL;
 
     logOps("Video params:", {
         durationSeconds,
         aspectRatio,
         resolution,
-        model: DEFAULT_MODEL,
-        hasImage: !!safeParams.image,
+        model: selectedModel,
+        hasImage,
     });
 
     // Build text command with parameters (BytePlus format)
@@ -103,7 +114,7 @@ export const callSeedanceAPI = async (
 
     // Build request body using content array format (required by BytePlus API)
     const requestBody: SeedanceRequestBody = {
-        model: DEFAULT_MODEL,
+        model: selectedModel,
         content: [
             {
                 type: "text",
@@ -112,8 +123,8 @@ export const callSeedanceAPI = async (
         ],
     };
 
-    // Add image for image-to-video generation
-    if (safeParams.image && safeParams.image.length > 0) {
+    // Add image for image-to-video generation (when using I2V model)
+    if (hasImage) {
         const imageUrl = Array.isArray(safeParams.image)
             ? safeParams.image[0]
             : safeParams.image;
@@ -162,7 +173,9 @@ export const callSeedanceAPI = async (
     const logBody = {
         model: requestBody.model,
         content: requestBody.content.map((c: any) =>
-            c.type === "image_url" ? { ...c, image_url: { url: "[base64]" } } : c
+            c.type === "image_url"
+                ? { ...c, image_url: { url: "[base64]" } }
+                : c,
         ),
     };
     logOps("Seedance API request body:", JSON.stringify(logBody, null, 2));
@@ -342,4 +355,3 @@ async function pollSeedanceTask(
 
     throw new HttpError("Video generation timed out after 4 minutes", 504);
 }
-

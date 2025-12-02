@@ -74,11 +74,8 @@ export const ImageParamsSchema = z
             .catch([]),
         transparent: sanitizedBoolean.catch(false),
         guidance_scale: z.coerce.number().optional().catch(undefined),
-        // Video-specific parameters (for veo model)
-        duration: z.preprocess((v) => {
-            const d = parseInt(v as string);
-            return [4, 6, 8].includes(d) ? d : undefined;
-        }, z.union([z.literal(4), z.literal(6), z.literal(8)]).optional()),
+        // Video-specific parameters - pass through to backend, let provider validate
+        duration: z.coerce.number().optional(),
         aspectRatio: z.enum(["16:9", "9:16"]).optional(),
         audio: sanitizedBoolean.catch(false), // generateAudio defaults to false (can enable later)
     })

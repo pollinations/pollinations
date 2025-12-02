@@ -19,6 +19,9 @@ const tabs = [
 import { useFooterVisibility } from "../../hooks/useFooterVisibility";
 import { useHeaderVisibility } from "../../hooks/useHeaderVisibility";
 
+// Only enable theme prompt in development
+const isDev = import.meta.env.DEV;
+
 function Layout() {
     const showFooter = useFooterVisibility();
     const showHeader = useHeaderVisibility();
@@ -27,6 +30,8 @@ function Layout() {
     const { backgroundHtml } = useTheme();
 
     const handleLogoClick = () => {
+        // Disable in production
+        if (!isDev) return;
         setIsPromptOpen(!isPromptOpen);
     };
 

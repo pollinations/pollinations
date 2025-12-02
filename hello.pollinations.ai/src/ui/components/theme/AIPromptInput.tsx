@@ -16,10 +16,8 @@ interface AIPromptInputProps {
  * General AI prompt input interface
  * Handles user text input for AI interactions
  * Currently used for theme generation, but designed to be reusable
+ * Note: Logo click is disabled in production (Layout.tsx), so this never opens in prod
  */
-// Only enable theme generation in development
-const isDev = import.meta.env.DEV;
-
 export function AIPromptInput({ isOpen }: AIPromptInputProps) {
     const [prompt, setPrompt] = useState("");
     const [activePrompt, setActivePrompt] = useState<string | null>(null);
@@ -175,8 +173,6 @@ export const ${capitalizedName}BackgroundHtml = ${
         );
     };
 
-    // Hide completely in production
-    if (!isDev) return null;
     if (!isOpen) return null;
 
     return (
@@ -190,37 +186,34 @@ export const ${capitalizedName}BackgroundHtml = ${
                 onSubmit={handleSubmit}
                 className="w-full max-w-4xl mx-auto flex items-center h-full px-4 md:px-8 gap-4"
             >
-                {/* Theme tools - only in development */}
-                {isDev && (
-                    <>
-                        <Button
-                            type="button"
-                            onClick={handleDownload}
-                            variant="icon"
-                            size={null}
-                            className="w-6 h-6 md:w-8 md:h-8 text-text-body-main flex-shrink-0"
-                            title="Download current theme"
-                        >
-                            <DownloadIcon className="w-4 h-4 md:w-5 md:h-5" />
-                        </Button>
+                <Button
+                    type="button"
+                    onClick={handleDownload}
+                    variant="icon"
+                    size={null}
+                    className="w-6 h-6 md:w-8 md:h-8 text-text-body-main flex-shrink-0"
+                    title="Download current theme"
+                >
+                    <DownloadIcon className="w-4 h-4 md:w-5 md:h-5" />
+                </Button>
 
-                        <Button
-                            type="submit"
-                            disabled={!prompt.trim() || loading}
-                            variant="icon"
-                            size={null}
-                            className="w-6 h-6 md:w-8 md:h-8 text-text-body-main flex-shrink-0"
-                        >
-                            {loading ? (
-                                <SparklesIcon className="w-4 h-4 md:w-5 md:h-5 animate-spin" />
-                            ) : (
-                                <SendIcon className="w-4 h-4 md:w-5 md:h-5" />
-                            )}
-                        </Button>
+                <Button
+                    type="submit"
+                    disabled={!prompt.trim() || loading}
+                    variant="icon"
+                    size={null}
+                    className="w-6 h-6 md:w-8 md:h-8 text-text-body-main flex-shrink-0"
+                >
+                    {loading ? (
+                        <SparklesIcon className="w-4 h-4 md:w-5 md:h-5 animate-spin" />
+                    ) : (
+                        <SendIcon className="w-4 h-4 md:w-5 md:h-5" />
+                    )}
+                </Button>
 
-                        <div className="flex-1 relative h-full flex items-center">
-                            <style>
-                                {`
+                <div className="flex-1 relative h-full flex items-center">
+                    <style>
+                        {`
                                     .theme-prompt-input::placeholder {
                                         color: rgb(var(--text-tertiary)) !important;
                                         opacity: 1 !important;
@@ -236,26 +229,24 @@ export const ${capitalizedName}BackgroundHtml = ${
                                         caret-color: rgb(var(--text-brand)) !important;
                                     }
                                 `}
-                            </style>
-                            <input
-                                ref={inputRef}
-                                id="theme-prompt"
-                                name="theme-prompt"
-                                type="text"
-                                value={prompt}
-                                onChange={(e) => setPrompt(e.target.value)}
-                                placeholder="Describe a theme (e.g. 'Cyberpunk Neon')..."
-                                className="theme-prompt-input w-full h-full bg-transparent outline-none text-base md:text-lg font-medium rounded-input"
-                                style={{
-                                    color: "rgb(var(--input-text))",
-                                    caretColor: "rgb(var(--text-brand))",
-                                }}
-                                disabled={loading}
-                                autoComplete="off"
-                            />
-                        </div>
-                    </>
-                )}
+                    </style>
+                    <input
+                        ref={inputRef}
+                        id="theme-prompt"
+                        name="theme-prompt"
+                        type="text"
+                        value={prompt}
+                        onChange={(e) => setPrompt(e.target.value)}
+                        placeholder="Describe a theme (e.g. 'Cyberpunk Neon')..."
+                        className="theme-prompt-input w-full h-full bg-transparent outline-none text-base md:text-lg font-medium rounded-input"
+                        style={{
+                            color: "rgb(var(--input-text))",
+                            caretColor: "rgb(var(--text-brand))",
+                        }}
+                        disabled={loading}
+                        autoComplete="off"
+                    />
+                </div>
             </form>
             {error && (
                 <div className="absolute top-full left-0 right-0 bg-red-500 text-white text-[10px] px-2 py-1 text-center">

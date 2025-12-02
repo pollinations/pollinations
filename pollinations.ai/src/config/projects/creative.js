@@ -963,4 +963,14 @@ export const creativeProjects = [
         language: "zh-TW",
         order: 1,
     },
+  {
+    "name": "MIDIjourney",
+    "url": "https://github.com/korus-labs/MIDIjourney",
+    "description": "AI-powered Max for Live plugin for Ableton Live that lets you describe music ideas in words and generates MIDI clips. Developed by Pixelynx's KORUS Labs with artistic direction from Richie Hawtin and deadmau5. Uses Pollinations.AI for the language model backend. Key features include seamless Ableton Live integration, text-to-MIDI generation, Circle of Fifths visual guidance, temperature control for creativity, and a history feature for context-aware generation.",
+    "author": "KORUS Labs (Pixelynx)",
+    "repo": "https://github.com/korus-labs/MIDIjourney",
+    "category": "creative",
+    "submissionDate": "2025-12-02",
+    "order": 5
+  }
 ];

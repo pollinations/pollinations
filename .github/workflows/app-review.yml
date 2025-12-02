@@ -210,10 +210,11 @@ jobs:
           # Add to category file (before final ])
           node -e "
             const fs = require('fs');
-            const content = fs.readFileSync('$FILE', 'utf8');
+            let content = fs.readFileSync('$FILE', 'utf8');
             const entry = JSON.stringify($ENTRY, null, 2).replace(/^/gm, '  ');
-            const updated = content.replace(/(\n];?\s*$)/, ',\n' + entry + '\$1');
-            fs.writeFileSync('$FILE', updated);
+            // Insert before final ]; ensuring proper comma
+            content = content.replace(/(\}),?(\s*\n];?\s*$)/, '\$1,\n' + entry + '\$2');
+            fs.writeFileSync('$FILE', content);
           "
           
           # Update README
@@ -230,15 +231,20 @@ jobs:
           # Force push (handles re-runs where branch already exists)
           git push origin "$BRANCH" --force
           
-          # Create PR
-          gh pr create \
-            --title "Add $PROJECT_NAME to $CATEGORY" \
-            --body "Adds **$PROJECT_NAME** to **$CATEGORY** projects.
+          # Create PR (or update existing)
+          EXISTING_PR=$(gh pr list --head "$BRANCH" --json number -q '.[0].number')
+          if [ -n "$EXISTING_PR" ]; then
+            echo "PR #$EXISTING_PR already exists, updating..."
+          else
+            gh pr create \
+              --title "Add $PROJECT_NAME to $CATEGORY" \
+              --body "Adds **$PROJECT_NAME** to **$CATEGORY** projects.
 
           Co-authored-by: $ISSUE_AUTHOR <${ISSUE_AUTHOR_ID}+${ISSUE_AUTHOR}@users.noreply.github.com>
           Fixes #$ISSUE_NUMBER" \
-            --base main \
-            --head "$BRANCH"
+              --base main \
+              --head "$BRANCH"
+          fi
 
       - name: Comment on issue with PR link
         if: steps.parse.outputs.needs_info != 'true'

@@ -1,5 +1,6 @@
 // API utilities for Pollinations chat - Enhanced version from vanilla
 const BASE_IMAGE_URL = 'https://enter.pollinations.ai/api/generate/image';
+const BASE_VIDEO_URL = 'https://enter.pollinations.ai/api/generate/video';
 const TEXT_MODELS_ENDPOINT = 'https://enter.pollinations.ai/api/generate/v1/models';
 const IMAGE_MODELS_ENDPOINT = 'https://enter.pollinations.ai/api/generate/image/models';
 const API_TOKEN = 'plln_sk_PENx8AtHMF9BJ00rWOUFz4LFCgimBsW8';

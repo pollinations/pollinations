@@ -1,7 +1,7 @@
 name: Project Submission
 description: Submit your project to be featured on Pollinations
-title: "[Project Submission]: "
-labels: ["APPS"]
+title: "[App Submission]: "
+labels: ["app:review"]
 body:
   - type: markdown
     attributes:
@@ -65,13 +65,20 @@ body:
       options:
         - Chat Projects 💬
         - Creative Projects 🎨
-        - Games 🎮
+        - Games 🎲
         - Hack & Build 🛠️
         - Learn 📚
         - Social Bots 🤖
-        - Vibe Coding 🌈
+        - Vibe Coding ✨
     validations:
       required: true
+
+  - type: input
+    id: project-language
+    attributes:
+      label: Project Language
+      description: If your project is not in English, specify the language code (e.g., zh-CN, es-ES, pt-BR)
+      placeholder: "e.g., zh-CN for Chinese, es-ES for Spanish"
 
   - type: textarea
     id: additional-info
@@ -79,13 +86,3 @@ body:
       label: Additional Information
       description: Any other details you'd like to share about your project?
       placeholder: "Screenshots, features, future plans..."
-
-  - type: markdown
-    attributes:
-      value: |
-        ### Implementation Instructions
-
-        For the person implementing this issue:
-        - Add the new project to the top of the appropriate file in pollinations.ai/src/config/projects/ based on the selected category
-        - Ensure the project entry includes all necessary fields (name, url, description, author, submissionDate, etc.)
-        - Make sure to maintain proper JSON formatting with commas between entries

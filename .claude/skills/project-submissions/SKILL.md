@@ -1,124 +1,215 @@
 ---
 name: project-submissions
-description: Process GitHub project submissions (APPS label) by adding them to the appropriate category file and closing issues with attribution.
+description: AI-assisted pipeline for processing GitHub project submissions. Reviews submissions, creates PRs, and manages status via app: labels.
 ---
 
 # Project Submissions Skill
 
-Process project submission issues labeled **APPS** in GitHub.
+AI-assisted pipeline for processing project submissions labeled `app:review`.
 
 ---
 
-## Workflow
+## Status Tiers (Single Source of Truth)
 
-### 1. List Open Submissions
-```bash
-gh api 'repos/pollinations/pollinations/issues?labels=APPS&state=open&per_page=50' \
-  --jq '.[] | {number, title, user: .user.login, user_id: .user.id, body}'
+Four labels track submission status:
+
+| Label             | Status           | Description                        |
+| ----------------- | ---------------- | ---------------------------------- |
+| `app:review`      | **Under Review** | New submission, awaiting AI review |
+| `app:info-needed` | **Info Needed**  | Awaiting response from submitter   |
+| `app:approved`    | **Approved**     | PR merged, project in showcase     |
+| `app:denied`      | **Denied**       | Submission rejected                |
+
+**Flow:**
+
+1. User submits → `app:review` (auto-applied by template)
+2. AI reviews:
+    - Valid → creates PR, swaps to `app:approved` on merge
+    - Needs info → swaps to `app:info-needed`, @mentions user
+3. User responds → AI re-reviews (triggered by edit)
+4. Manual deny → swap to `app:denied`, close issue
+
+---
+
+## Issue Template Contract
+
+The issue template (`project-submission.yml`) exposes these fields:
+
+| Field ID              | Type     | Required | Maps To        |
+| --------------------- | -------- | -------- | -------------- |
+| `project-name`        | input    | ✅       | `name`         |
+| `project-url`         | input    | ✅       | `url`          |
+| `project-description` | textarea | ✅       | `description`  |
+| `contact-info`        | input    | ✅       | `author`       |
+| `github-repo`         | input    | ❌       | `repo`         |
+| `project-category`    | dropdown | ✅       | category file  |
+| `project-language`    | input    | ❌       | `language`     |
+| `additional-info`     | textarea | ❌       | (context only) |
+
+---
+
+## Parsing Issue Body
+
+Extract structured data from GitHub issue body. The issue body uses this format:
+
+```
+### Project Name
+
+<value>
+
+### Project Description
+
+<value>
+
+### Project URL
+
+<value>
+...
 ```
 
-### 2. Parse Issue Body
-Extract from each issue:
-- **name**: Project Name field
-- **url**: Project URL field (required)
-- **description**: Project Description (condense to ~50 words)
-- **author**: Contact Information or GitHub username
-- **repo**: GitHub Repository URL (if provided)
-- **category**: Map to file based on Project Category field
-
-### 3. Category Mapping
-
-| Issue Category | File | Description |
-|---------------|------|-------------|
-| Chat Projects 💬 | `chat.js` | Standalone chat UIs / multi-model playgrounds |
-| Creative Projects 🎨 | `creative.js` | Image, video, music, design generation |
-| Games 🎲 | `games.js` | AI-powered games, interactive fiction |
-| Hack & Build 🛠️ | `hackAndBuild.js` | SDKs, extensions, dashboards, MCP servers |
-| Social Bots 🤖 | `socialBots.js` | Discord / Telegram / WhatsApp bots |
-| Learn 📚 | `learn.js` | Tutorials, guides, educational demos |
-| Vibe Coding ✨ | `vibeCoding.js` | No-code / describe-to-code builders |
-
-### 4. Add Project Entry
-
-Add to `pollinations.ai/src/config/projects/<category>.js`:
+**Parse function spec:**
 
 ```javascript
-{
-  name: "Project Name 🎨",
-  url: "https://project-url.com",
-  description: "Condensed description ~50 words max.",
-  author: "@github_username",
-  repo: "https://github.com/user/repo", // if available
-  submissionDate: "YYYY-MM-DD",
-  order: 1
+parseIssueBody(body) → {
+  name: string,           // from "### Project Name"
+  url: string,            // from "### Project URL"
+  description: string,    // from "### Project Description"
+  author: string,         // from "### Contact Information"
+  repo: string | null,    // from "### GitHub Repository URL"
+  category: string,       // from "### Project Category"
+  language: string | null // from "### Project Language"
+}
+```
+
+---
+
+## Category Mapping
+
+| Issue Category       | File              | Key            |
+| -------------------- | ----------------- | -------------- |
+| Chat Projects 💬     | `chat.js`         | `chat`         |
+| Creative Projects 🎨 | `creative.js`     | `creative`     |
+| Games 🎲             | `games.js`        | `games`        |
+| Hack & Build 🛠️      | `hackAndBuild.js` | `hackAndBuild` |
+| Social Bots 🤖       | `socialBots.js`   | `socialBots`   |
+| Learn 📚             | `learn.js`        | `learn`        |
+| Vibe Coding ✨       | `vibeCoding.js`   | `vibeCoding`   |
+
+**Base path:** `pollinations.ai/src/config/projects/`
+
+---
+
+## Building Project Entry
+
+```javascript
+buildProjectEntry(parsed, issueUser, issueUserId) → {
+  name: "Project Name 🎨",        // Add emoji if missing
+  url: "https://...",             // Required
+  description: "...",             // Condensed to ~50 words
+  author: "@github_username",     // From contact-info or issue author
+  repo: "https://github.com/...", // Optional
+  submissionDate: "YYYY-MM-DD",   // Today's date
+  order: 1,                       // Always 1 for new submissions
+  language: "zh-CN"               // Optional, if non-English
 }
 ```
 
 **Rules:**
-- Add emoji to name if not present
-- `submissionDate` = today's date (YYYY-MM-DD format)
-- `order: 1` for new submissions
-- Add `language: "xx-XX"` for non-English projects
-- If no URL provided, use repo URL or skip
 
-### 5. Close Issue with Attribution
+-   Add contextual emoji to name if not present (🎨 creative, 🤖 bot, 🎮 game, etc.)
+-   `submissionDate` = today's date in `YYYY-MM-DD` format
+-   `order: 1` for all new submissions
+-   Add `language` field only if specified and non-English
+-   Condense description to ~50 words max
 
-```bash
-gh issue close NUMBER --repo pollinations/pollinations \
-  --comment "🌸 Added to project showcase!
+---
 
-Thanks @USERNAME for submitting! Your project is now listed in the [$(CATEGORY) category](https://pollinations.ai).
+## AI Review Process
 
-Welcome to the Pollinations community! 🚀"
+When reviewing a submission, validate:
+
+1. **URL accessible** — Not 404, loads correctly
+2. **Uses Pollinations** — Evidence of Pollinations API usage
+3. **Description quality** — Clear, informative, appropriate length
+4. **Category fit** — Matches the selected category
+5. **No duplicates** — Not already in the project files
+
+**AI verdict structure:**
+
+```javascript
+{
+  tier: "valid" | "needs_more_info",
+  reason: "Brief explanation",
+  condensedDescription: "50-word description",
+  normalizedCategory: "creative",
+  suggestedEmoji: "🎨",
+  language: "en" | "zh-CN" | ...,
+  flags: ["no-pollinations-detected", "url-404", ...]
+}
 ```
 
-### 6. Regenerate README
+**Actions based on tier:**
 
-After adding all projects:
-```bash
-node pollinator-agent/project-list-scripts/generate-project-table.js --update-readme
+-   `valid` → Create PR, keep `app:review` until merged
+-   `needs_more_info` → Swap to `app:info-needed`, @mention user asking for clarification
+
+---
+
+## PR Creation
+
+When creating a PR for a valid submission:
+
+1. **Branch name:** `auto/app-<issue-number>-<slug>`
+2. **Update file:** `pollinations.ai/src/config/projects/<category>.js`
+3. **Add entry** at the top of the exports array
+4. **Run generator:** `node pollinator-agent/project-list-scripts/generate-project-table.js --update-readme`
+5. **Commit message:**
+
+    ```
+    Add [ProjectName] to project showcase
+
+    Co-authored-by: <login> <id+login@users.noreply.github.com>
+    Closes #<issueNumber>
+    ```
+
+6. **Open PR** targeting `main`
+
+---
+
+## Comment Templates
+
+### Valid Submission (PR Created)
+
+```markdown
+## 🌸 Submission Review
+
+**Project:** [Name](url)
+**Category:** Creative 🎨
+**Status:** ✅ Valid
+
+I've created PR #XX to add your project to the showcase.
+
+Once merged by a maintainer, your project will be live at [pollinations.ai](https://pollinations.ai)!
+```
+
+### Needs More Info
+
+```markdown
+## 🌸 Submission Review
+
+**Project:** [Name](url)
+**Category:** Creative 🎨
+**Status:** ⚠️ Action Needed
+
+<specific issue>
+
+Please update your submission with the requested information.
 ```
 
 ---
 
-## Commit Format
+## File Paths
 
-```
-Add [Project1], [Project2], ... to project showcase
-
-Co-authored-by: user1 <id1+user1@users.noreply.github.com>
-Co-authored-by: user2 <id2+user2@users.noreply.github.com>
-Closes #issue1, #issue2, ...
-```
-
----
-
-## Batch Processing
-
-Process multiple submissions at once:
-
-1. List all open APPS issues
-2. Group by category
-3. Add all entries to respective files
-4. Single commit with all co-authors
-5. Close all issues with comments
-
----
-
-## Validation Checklist
-
-Before adding:
-- [ ] URL is accessible (not 404)
-- [ ] Project actually uses Pollinations
-- [ ] Description is concise (<100 words)
-- [ ] Category assignment is correct
-- [ ] No duplicate entry exists
-
----
-
-## Quick Reference
-
-**File paths:**
 ```
 pollinations.ai/src/config/projects/
 ├── chat.js
@@ -130,6 +221,32 @@ pollinations.ai/src/config/projects/
 └── vibeCoding.js
 ```
 
-**Date format:** `YYYY-MM-DD` (e.g., `2025-11-30`)
+**Generator script:** `pollinator-agent/project-list-scripts/generate-project-table.js`
 
-**User ID lookup:** Available in GitHub issue API response as `user.id`
+---
+
+## CLI Commands
+
+**List submissions by status:**
+
+```bash
+# Under review
+gh api 'repos/pollinations/pollinations/issues?labels=app:review&state=open&per_page=50' \
+  --jq '.[] | {number, title, user: .user.login}'
+
+# Needs info
+gh api 'repos/pollinations/pollinations/issues?labels=app:info-needed&state=open&per_page=50' \
+  --jq '.[] | {number, title, user: .user.login}'
+```
+
+**Change label:**
+
+```bash
+gh issue edit NUMBER --remove-label "app:review" --add-label "app:info-needed"
+```
+
+**Regenerate README:**
+
+```bash
+node pollinator-agent/project-list-scripts/generate-project-table.js --update-readme
+```

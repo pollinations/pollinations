@@ -108,17 +108,28 @@ jobs:
             }')
           
           echo "Calling Pollinations API..."
+          echo "Payload: $PAYLOAD"
           
           # Call Pollinations API (no auth needed for basic usage)
           RESPONSE=$(curl -s -X POST "https://text.pollinations.ai/" \
             -H "Content-Type: application/json" \
             -d "$PAYLOAD")
           
-          # Extract the JSON content
-          PROJECT_JSON=$(echo "$RESPONSE" | jq -r '.choices[0].message.content // empty')
+          echo "Response: $RESPONSE"
           
+          # Extract the JSON content - try both OpenAI format and direct text
+          PROJECT_JSON=$(echo "$RESPONSE" | jq -r '.choices[0].message.content // .text // empty' 2>/dev/null)
+          
+          # If still empty, maybe it's direct JSON
           if [ -z "$PROJECT_JSON" ]; then
-            echo "error=Failed to parse response" >> $GITHUB_OUTPUT
+            PROJECT_JSON="$RESPONSE"
+          fi
+          
+          echo "Parsed JSON: $PROJECT_JSON"
+          
+          # Validate it's actual JSON
+          if ! echo "$PROJECT_JSON" | jq . > /dev/null 2>&1; then
+            echo "error=Response is not valid JSON" >> $GITHUB_OUTPUT
             exit 1
           fi
           

@@ -227,7 +227,8 @@ jobs:
 
           Co-authored-by: $ISSUE_AUTHOR <${ISSUE_AUTHOR_ID}+${ISSUE_AUTHOR}@users.noreply.github.com>
           Fixes #$ISSUE_NUMBER"
-          git push origin "$BRANCH"
+          # Force push (handles re-runs where branch already exists)
+          git push origin "$BRANCH" --force
           
           # Create PR
           gh pr create \

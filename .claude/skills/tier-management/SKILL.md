@@ -141,6 +141,18 @@ export TIER_EVAL_GIST_ID=your_gist_id  # optional
 
 ---
 
+# Polar Product IDs (Production)
+
+| Tier | Product ID |
+|------|------------|
+| Spore | `01a31c1a-7af7-4958-9b73-c10e2fac5f70` |
+| Seed | `fe32ee28-c7c4-4e7a-87fa-6ffc062e3658` |
+| Flower | `dfb4c4f6-2004-4205-a358-b1f7bb3b310e` |
+| Nectar | `066f91a4-8ed1-4329-b5f7-3f71e992ed28` |
+| Router | `0286ea62-540f-4b19-954f-b8edb9095c43` |
+
+---
+
 # Notes
 
 - DB tier = what user CAN activate

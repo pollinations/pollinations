@@ -24,10 +24,11 @@ Four labels track submission status:
 
 1. User submits → `app:review` (auto-applied by template)
 2. AI reviews:
-    - Valid → creates PR, swaps to `app:approved` on merge
+    - Valid → creates PR (maintainer merges manually)
     - Needs info → swaps to `app:info-needed`, @mentions user
 3. User responds → AI re-reviews (triggered by edit)
-4. Manual deny → swap to `app:denied`, close issue
+4. **Maintainer merges PR** → auto-swaps to `app:approved`
+5. Manual deny → swap to `app:denied`, close issue
 
 ---
 

@@ -1,6 +1,6 @@
 /**
- * Drawing Guidelines for GEN SUPPORTER LOGO Pipeline
- * Pure content - prompt templates and guidelines for logo generation
+ * Drawing Guidelines for pollinations.ai Visual Elements
+ * Pure content - prompt templates and guidelines for icon/visual generation
  *
  * Logic functions are in helpers/drawing-helpers.ts
  */
@@ -9,27 +9,33 @@
 // BASE DRAWING GUIDELINES
 // ==============================================
 
-export const DRAWING_GUIDELINES = `Generate a supporter/sponsor logo that matches the website theme.
+export const DRAWING_GUIDELINES = `Generate a visual element for the pollinations.ai ecosystem.
 
-Design Requirements:
-- Simple, iconic design
-- Works well at small sizes (32x32px to 128x128px)
-- Clear silhouette and recognizable shape
-- Professional and polished appearance
+POLLINATIONS IDENTITY
+This represents the interconnected web of AI and creativity.
+Think: organic networks, biological systems, the beauty of natural communication.
 
-Theme Integration:
-- Matches the overall theme personality and mood
-- Complements the color scheme
-- Reflects the theme's visual style
+Visual Language:
+- Networks & connections: mycelium threads, neural pathways, constellation maps
+- Organic nodes: cells, spores, pollen grains, seeds, dewdrops
+- Growth patterns: branching, spiraling, radiating, blooming
+- Symbiosis: elements in harmonious relationship
+
+Shape Inspiration:
+- Microscopic: cell structures, diatoms, radiolaria, pollen grains
+- Botanical: flower cross-sections, seed pods, leaf venation, root systems
+- Biological: neurons, synapses, organelles, DNA helices
+- Natural phenomena: snowflakes, river deltas, coral formations
 
 Technical Specs:
-- SVG-friendly shapes (geometric, clean lines)
-- Good contrast against backgrounds
-- Scalable without detail loss
-- Works in monochrome if needed
+- Target resolution: 512x512px
+- Clean lines that suggest organic forms
+- SVG-friendly, scalable design
+- Good contrast against various backgrounds
 
-Style Guidelines:
-- Modern and timeless, not trendy
-- Abstract or symbolic, not literal
-- Balanced composition
+Style:
+- Hyper beautiful, not clinical
+- Suggests life, growth, connection
+- Abstract but evocative
+- Balanced asymmetry (like nature)
 - Memorable and distinctive`;

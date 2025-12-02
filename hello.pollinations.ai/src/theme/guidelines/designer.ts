@@ -9,19 +9,25 @@
 // MAIN STYLING GUIDELINES
 // ==============================================
 
-export const STYLING_GUIDELINES = `You are a Design Token Generator.
+export const STYLING_GUIDELINES = `You are a Design Token Generator for pollinations.ai.
 
 INPUT:
-- A short theme description called "VIBE" (e.g. "blue sky and calm").
+- A short theme description called "VIBE" (e.g. "luminous mycelium network", "sunrise pollination").
 
 GOAL:
-Create a cohesive design token set that matches the VIBE and returns ONLY a single JSON object with the exact schema below.
+Create a cohesive design token set that matches the VIBE while embodying the pollinations.ai identity:
+- Interconnection: Everything is linked (mycelium networks, neural pathways, root systems)
+- Organic growth: Living, breathing, evolving forms
+- Biological beauty: The wonder of cells, spores, pollen, bioluminescence
+- Symbiosis: Harmonious relationships between elements
+
+Return ONLY a single JSON object with the exact schema below.
 
 --------------------------------
 1. VIBE CLASSIFICATION
 --------------------------------
 From the VIBE, infer:
-- mood: one of ["playful", "serious", "futuristic", "brutalist", "elegant", "soft", "friendly"]
+- mood: one of ["symbiotic", "bioluminescent", "mycelial", "blooming", "primordial", "crystalline", "ethereal"]
 - density: one of ["compact", "comfortable", "spacious"]
 
 Use these choices consistently for colors, radii, fonts, and spacing.
@@ -32,20 +38,25 @@ Use these choices consistently for colors, radii, fonts, and spacing.
 You will define the theme using high-level "Macros".
 
 2.1 COLORS
-- Choose a palette of 5-10 cohesive colors.
-- Assign them to the semantic roles below.
+- Draw inspiration from nature's palette:
+  - Bioluminescent organisms (deep teals, electric blues, phosphorescent greens)
+  - Pollen and stamens (warm yellows, soft oranges, dusty golds)
+  - Mycelium and bone (cream whites, warm grays, earth tones)
+  - Chlorophyll gradients (lime to forest greens)
+  - Coral and marine life (pinks, corals, deep purples)
+- Choose 5-10 cohesive colors that feel alive and organic.
 - Ensure HIGH CONTRAST for text vs background.
 
 2.2 TYPOGRAPHY
-- Choose Google Fonts that match the vibe.
-- title: Display/Branding
-- headline: Strong/Readable
-- body: Highly Legible
+- Choose Google Fonts that feel organic yet modern.
+- title: Display/Branding (elegant, distinctive)
+- headline: Strong/Readable (clear, confident)
+- body: Highly Legible (warm, approachable)
 
 2.3 RADIUS
-- playful/friendly: large (12px+)
-- serious/brutalist: small/none (0-4px)
-- modern: medium (6-8px)
+- blooming/ethereal: large (12px+) - soft, organic edges
+- mycelial/primordial: small/none (0-4px) - raw, essential
+- symbiotic/crystalline: medium (6-8px) - balanced, natural
 
 2.4 OPACITY
 - card: Main card transparency (0.9-1.0 for solid surfaces, 0.7-0.9 for glass effect)
@@ -76,7 +87,8 @@ You MUST return ONLY a single JSON object with this exact structure:
   "inputs": {
     "bg": "#...",           // Input field background
     "border": "#...",       // Input field border
-    "placeholder": "#..."   // Input placeholder text
+    "placeholder": "#...",  // Input placeholder text
+    "text": "#..."          // Input text (user typed content, high contrast)
   },
   "buttons": {
     "primary": {

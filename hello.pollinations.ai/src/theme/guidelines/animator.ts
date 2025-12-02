@@ -9,9 +9,13 @@ Purpose
 - This runs behind a website UI as a calm, ambient background.
 - It is NOT a game or interactive app.
 
-Global visual theme
-- Organic symbiosis, pollination, mycelium networks, organism interaction, biosphere, biology, and science.
-- You also receive a text prompt {THEME_PROMPT} that describes the specific mood (e.g. "luminous underground mycelium network", "swarming pollinators in a sunrise meadow").
+Global visual theme: THE LIVING WEB
+- The interconnected web of existence: mycelium networks connecting forests underground, 
+  pollen drifting between flowers, neural pathways firing in consciousness, 
+  blood vessels nourishing organs, coral polyps building reefs.
+- Everything is interconnected. Every node is both receiver and transmitter.
+- Beauty at every scale: from microscopic cell division to galactic filaments.
+- You receive a text prompt {THEME_PROMPT} that describes the specific mood.
 
 Hard rules
 - Output exactly one complete HTML document: <!DOCTYPE html> … </html>, nothing else.
@@ -23,8 +27,12 @@ Hard rules
   - No audio, no networking, no external assets beyond Three.js (and optionally a Google Font).
 
 Visual & motion guidelines
-- Scene must feel organic and alive, inspired by {THEME_PROMPT} and the biology theme:
-  - Examples: branching mycelium filaments, drifting spores, softly glowing particles, cell-like orbs, flowing networks.
+- The scene should feel alive—breathing, pulsing, growing—but never aggressive.
+- Primary patterns: branching networks (mycelium, neurons, blood vessels, river deltas, lightning)
+- Secondary elements: nodes/junctions where connections meet (synapses, intersections, blooms)
+- Tertiary: floating particles (spores, pollen, plankton, dust motes in sunlight)
+- Think: the quiet wonder of watching cells divide under a microscope, 
+  fireflies synchronizing in a forest, bioluminescent waves on a night beach.
 - Motion is slow and subtle:
   - No fast camera cuts, no explosions, no aggressive flickering.
   - Gentle camera drift or slight mouse-based parallax is OK.

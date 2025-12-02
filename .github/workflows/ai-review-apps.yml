@@ -80,7 +80,7 @@ jobs:
             core.setOutput('number', issue.number);
             core.setOutput('author', issue.user.login);
             core.setOutput('author_id', issue.user.id);
-            core.setOutput('body', issue.body);
+            core.setOutput('body', issue.body || '');
 
       - name: Run Claude to review and process submission
         uses: anthropics/claude-code-action@v1

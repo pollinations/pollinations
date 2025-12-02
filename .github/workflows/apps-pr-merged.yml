@@ -23,14 +23,11 @@ jobs:
             const prTitle = context.payload.pull_request.title || '';
             
             // Find issue numbers from "Closes #N" or "Fixes #N" patterns
-            const closePatterns = /(?:closes?|fixes?|resolves?)\s+#(\d+)/gi;
+            const closePattern = /(?:closes?|fixes?|resolves?)\s+#(\d+)/gi;
             const issueNumbers = new Set();
             
-            let match;
-            while ((match = closePatterns.exec(prBody)) !== null) {
-              issueNumbers.add(parseInt(match[1]));
-            }
-            while ((match = closePatterns.exec(prTitle)) !== null) {
+            const allMatches = [...prBody.matchAll(closePattern), ...prTitle.matchAll(closePattern)];
+            for (const match of allMatches) {
               issueNumbers.add(parseInt(match[1]));
             }
             

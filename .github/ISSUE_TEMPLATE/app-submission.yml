@@ -1,4 +1,4 @@
-name: pollinations.ai - Feature App
+name: SubmitApp
 description: Get your app featured on the pollinations.ai showcase
 title: "[App Submission]: "
 labels: ["app:review"]
@@ -6,6 +6,8 @@ body:
   - type: markdown
     attributes:
       value: |
+        # pollinations.ai - Feature App
+        
         Thanks for submitting your app! Fill out the form below and we'll review it for the [pollinations.ai showcase](https://pollinations.ai).
 
   - type: input

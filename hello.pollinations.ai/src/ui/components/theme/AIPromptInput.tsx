@@ -188,20 +188,20 @@ export const ${capitalizedName}BackgroundHtml = ${
                 onSubmit={handleSubmit}
                 className="w-full max-w-4xl mx-auto flex items-center h-full px-4 md:px-8 gap-4"
             >
-                <Button
-                    type="button"
-                    onClick={handleDownload}
-                    variant="icon"
-                    size={null}
-                    className="w-6 h-6 md:w-8 md:h-8 text-text-body-main flex-shrink-0"
-                    title="Download current theme"
-                >
-                    <DownloadIcon className="w-4 h-4 md:w-5 md:h-5" />
-                </Button>
-
-                {/* Theme generation UI - only in development */}
+                {/* Theme tools - only in development */}
                 {isDev && (
                     <>
+                        <Button
+                            type="button"
+                            onClick={handleDownload}
+                            variant="icon"
+                            size={null}
+                            className="w-6 h-6 md:w-8 md:h-8 text-text-body-main flex-shrink-0"
+                            title="Download current theme"
+                        >
+                            <DownloadIcon className="w-4 h-4 md:w-5 md:h-5" />
+                        </Button>
+
                         <Button
                             type="submit"
                             disabled={!prompt.trim() || loading}

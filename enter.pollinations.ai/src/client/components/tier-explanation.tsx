@@ -33,8 +33,8 @@ export const TierExplanation: FC = () => {
                     <p className="text-xs font-mono text-gray-600 mt-1">
                         3 pollen/day
                     </p>
-                    <p className="text-[11px] text-gray-500 mt-1">
-                        • Active on GitHub
+                    <p className="text-[11px] text-gray-400 italic mt-1">
+                        Active on GitHub
                     </p>
                 </div>
 
@@ -49,8 +49,7 @@ export const TierExplanation: FC = () => {
                     <p className="text-xs font-mono text-gray-600 mt-1">
                         10 pollen/day
                     </p>
-                    <p className="text-[11px] text-gray-500 mt-1">
-                        •{" "}
+                    <p className="text-[11px] text-gray-400 italic mt-1">
                         <a
                             href="https://github.com/pollinations/pollinations/issues/new?template=project-submission.yml"
                             target="_blank"
@@ -70,12 +69,15 @@ export const TierExplanation: FC = () => {
                         <strong className="text-gray-800 text-sm">
                             Nectar
                         </strong>
+                        <span className="text-[10px] text-gray-400 italic">
+                            soon
+                        </span>
                     </div>
                     <p className="text-xs font-mono text-gray-600 mt-1">
                         20 pollen/day
                     </p>
                     <p className="text-[11px] text-gray-400 italic mt-1">
-                        Pollinating the ecosystem – coming soon
+                        Pollinating the ecosystem
                     </p>
                 </div>
             </div>

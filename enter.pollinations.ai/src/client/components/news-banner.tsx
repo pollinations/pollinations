@@ -46,10 +46,6 @@ export const NewsBanner: FC = () => {
                         <span className="text-gray-700">Seedance</span>
                     </li>
                     <li className="text-gray-600">
-                        🔧 <em>Tier automation</em> —{" "}
-                        <span className="text-gray-500">cooking...</span>
-                    </li>
-                    <li className="text-gray-600">
                         💬 <strong>Join the discussion:</strong>{" "}
                         <a
                             href="https://discord.com/channels/885844321461485618/1432378056126894343"

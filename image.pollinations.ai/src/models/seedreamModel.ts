@@ -56,34 +56,9 @@ export const callSeedreamAPI = async (
             "Generating with Seedream...",
         );
 
-        // Determine size parameter based on dimensions
-        // Seedream 4.5 supports both resolution strings (1K, 2K, 4K) and pixel dimensions
-        let sizeParam: string;
-
-        if (safeParams.width && safeParams.height) {
-            // Use exact pixel dimensions if provided
-            sizeParam = `${safeParams.width}x${safeParams.height}`;
-            logOps("Using exact pixel dimensions:", sizeParam);
-        } else {
-            // Fall back to resolution strings based on total pixels
-            const totalPixels =
-                (safeParams.width || 2048) * (safeParams.height || 2048);
-
-            if (totalPixels <= 1024 * 1024) {
-                sizeParam = "1K";
-            } else if (totalPixels <= 2048 * 2048) {
-                sizeParam = "2K";
-            } else {
-                sizeParam = "4K";
-            }
-            logOps(
-                "Using resolution string:",
-                sizeParam,
-                "for",
-                totalPixels,
-                "total pixels",
-            );
-        }
+        // Seedream 4.5 accepts pixel dimensions like "2048x2048"
+        const sizeParam = `${safeParams.width}x${safeParams.height}`;
+        logOps("Using pixel dimensions:", sizeParam);
 
         // Prepare request body
         const requestBody: any = {

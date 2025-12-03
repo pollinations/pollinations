@@ -11,9 +11,58 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       issues: write
-      pull-requests: read
+      pull-requests: write
+      contents: write
 
     steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Regenerate README after app merge
+        id: regenerate
+        # Only run for auto/app-* branches (app submission PRs)
+        if: startsWith(github.event.pull_request.head.ref, 'auto/app-')
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Regenerate project tables to ensure consistency after union merge
+          node pollinator-agent/project-list-scripts/generate-project-table.js --update-readme || true
+          
+          # Check if there are changes
+          if git diff --quiet; then
+            echo "No README changes needed"
+            echo "changes=false" >> $GITHUB_OUTPUT
+          else
+            echo "README needs update, creating PR..."
+            echo "changes=true" >> $GITHUB_OUTPUT
+            
+            git config user.name "github-actions[bot]"
+            git config user.email "github-actions[bot]@users.noreply.github.com"
+            
+            BRANCH="auto/regenerate-readme-$(date +%s)"
+            git checkout -b "$BRANCH"
+            git add -A
+            git commit -m "docs: regenerate project tables after merge"
+            git push origin "$BRANCH"
+            
+            # Create PR
+            gh pr create \
+              --title "docs: regenerate project tables" \
+              --body "Auto-generated PR to sync README/PROJECTS.md after app submission merge.
+
+          This PR was created automatically because multiple app submissions were merged and the project tables need to be regenerated for consistency." \
+              --base main \
+              --head "$BRANCH"
+          fi
+
       - name: Post celebration comment on linked issues
         uses: actions/github-script@v7
         with:

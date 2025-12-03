@@ -42,11 +42,11 @@ export const IMAGE_CONFIG = {
         defaultSideLength: 768,
     },
 
-    // ByteDance ARK Seedream - high quality image generation
+    // ByteDance ARK Seedream 4.5 - high quality 4K image generation
     seedream: {
         type: "seedream",
         enhance: false,
-        defaultSideLength: 1024,
+        defaultSideLength: 2048, // Seedream 4.5 supports up to 4K
     },
 
     // Gemini 2.5 Flash Image via Vertex AI - image-to-image generation

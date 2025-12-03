@@ -31,7 +31,7 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
     const showDescriptionInfo = hasDescription || isVideoModel;
 
     // Build tooltip content
-    const alphaNotice = "Alpha — API may change";
+    const alphaNotice = "Alpha – API may change";
     const tooltipContent = isVideoModel
         ? hasDescription
             ? `${modelDescription}. ${alphaNotice}`

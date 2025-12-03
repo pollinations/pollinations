@@ -1,26 +1,22 @@
-"""GitHub integration for creating issues."""
+"""GitHub integration for creating issues via GitHub Actions."""
 
-from datetime import datetime
-from github import Github, GithubException
+import aiohttp
 from config import GITHUB_TOKEN, GITHUB_REPO
 
 
 class GitHubManager:
-    """Manages GitHub issue creation."""
+    """Creates GitHub issues by triggering GitHub Actions workflow."""
 
     def __init__(self):
-        self.github = Github(GITHUB_TOKEN) if GITHUB_TOKEN else None
-        self.repo = None
-        if self.github and GITHUB_REPO:
-            try:
-                self.repo = self.github.get_repo(GITHUB_REPO)
-            except GithubException as e:
-                print(f"Failed to connect to GitHub repo: {e}")
+        self.token = GITHUB_TOKEN
+        self.repo = GITHUB_REPO or "pollinations/pollinations"
 
     async def create_issue(self, title: str, description: str, original_message: str,
                            reporter: str, original_author: str = None) -> dict:
         """
-        Create a GitHub issue with enhanced description.
+        Create a GitHub issue by triggering a repository_dispatch event.
+        
+        The GitHub Actions workflow will create the actual issue using GITHUB_TOKEN.
         
         Args:
             title: Issue title (from AI)
@@ -30,42 +26,46 @@ class GitHubManager:
             original_author: Original author if different from reporter
             
         Returns:
-            Dict with issue info or error
+            Dict with success status
         """
-        if not self.repo:
-            return {"success": False, "error": "GitHub not configured"}
+        if not self.token:
+            return {"success": False, "error": "GITHUB_TOKEN not configured"}
 
-        # Build the issue body
-        author_line = f"**Author:** {original_author}" if original_author else f"**Author:** {reporter}"
-        reporter_line = f"**Reported by:** {reporter}" if original_author else ""
+        # Trigger repository_dispatch event
+        url = f"https://api.github.com/repos/{self.repo}/dispatches"
         
-        body = f"""{description}
-
----
-
-### Original Message
-> {original_message}
-
-### Discord Info
-{author_line}
-{reporter_line}
-_Created: {datetime.utcnow().strftime('%Y-%m-%d %H:%M')} UTC_
-"""
+        headers = {
+            "Accept": "application/vnd.github.v3+json",
+            "Authorization": f"Bearer {self.token}",
+            "X-GitHub-Api-Version": "2022-11-28"
+        }
+        
+        payload = {
+            "event_type": "discord-issue",
+            "client_payload": {
+                "title": title,
+                "description": description,
+                "original_message": original_message[:500],  # Limit size
+                "reporter": reporter,
+                "original_author": original_author
+            }
+        }
 
         try:
-            issue = self.repo.create_issue(
-                title=title,
-                body=body.strip(),
-                labels=["discord-report"]
-            )
-
-            return {
-                "success": True,
-                "issue_number": issue.number,
-                "issue_url": issue.html_url
-            }
-            
-        except GithubException as e:
+            async with aiohttp.ClientSession() as session:
+                async with session.post(url, json=payload, headers=headers, timeout=30) as response:
+                    if response.status == 204:
+                        # Success - dispatch accepted (issue will be created by workflow)
+                        return {
+                            "success": True,
+                            "issue_number": "pending",
+                            "issue_url": f"https://github.com/{self.repo}/issues"
+                        }
+                    else:
+                        error_text = await response.text()
+                        return {"success": False, "error": f"GitHub API error: {response.status} - {error_text[:200]}"}
+                        
+        except Exception as e:
             return {"success": False, "error": str(e)}
 
 

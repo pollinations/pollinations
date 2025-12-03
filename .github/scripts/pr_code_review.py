@@ -113,7 +113,9 @@ def github_api_request(endpoint: str, token: str, method: str = "GET", data: dic
 
     if response.status_code not in [200, 201]:
         print(f"GitHub API error: {response.status_code}")
-        print(response.text)
+        # Truncate error output to avoid exposing sensitive info in CI logs
+        error_preview = response.text[:500] + "..." if len(response.text) > 500 else response.text
+        print(f"Error preview: {error_preview}")
         sys.exit(1)
 
     return response.json()
@@ -210,7 +212,8 @@ def parse_diff_to_files(diff_text: str) -> List[FilePatch]:
             current_lines = [line]
             # Parse filename using regex to handle spaces in paths
             # Format: diff --git a/path/to/file b/path/to/file
-            match = re.match(r'diff --git a/(.*) b/(.*)', line)
+            # Use non-greedy (.*?) to correctly handle filenames containing ' b/'
+            match = re.match(r'diff --git a/(.*?) b/(.*)', line)
             if match:
                 current_filename = match.group(2)
             else:
@@ -465,7 +468,9 @@ def call_pollinations_api(system_prompt: str, user_prompt: str, token: str) -> s
 
     if response.status_code != 200:
         print(f"API error: {response.status_code}")
-        print(response.text)
+        # Truncate error output to avoid exposing sensitive info in CI logs
+        error_preview = response.text[:500] + "..." if len(response.text) > 500 else response.text
+        print(f"Error preview: {error_preview}")
         sys.exit(1)
 
     try:
@@ -473,7 +478,9 @@ def call_pollinations_api(system_prompt: str, user_prompt: str, token: str) -> s
         return result['choices'][0]['message']['content']
     except (KeyError, IndexError, json.JSONDecodeError) as e:
         print(f"Error parsing API response: {e}")
-        print(f"Response: {response.text}")
+        # Truncate to avoid exposing sensitive info in CI logs
+        error_preview = response.text[:500] + "..." if len(response.text) > 500 else response.text
+        print(f"Response preview: {error_preview}")
         sys.exit(1)
 
 
@@ -515,13 +522,22 @@ def check_pr_description_for_trigger(repo: str, pr_number: str, token: str) -> b
 
 def check_comments_for_trigger(repo: str, pr_number: str, token: str) -> bool:
     """Check if any PR comment contains Review=True"""
-    endpoint = f"repos/{repo}/issues/{pr_number}/comments"
-    comments = github_api_request(endpoint, token)
+    page = 1
+    per_page = 100
 
-    for comment in comments:
-        body = comment.get('body', '') or ''
-        if check_review_trigger_in_text(body):
-            return True
+    while True:
+        endpoint = f"repos/{repo}/issues/{pr_number}/comments?per_page={per_page}&page={page}"
+        comments = github_api_request(endpoint, token)
+
+        for comment in comments:
+            body = comment.get('body', '') or ''
+            if check_review_trigger_in_text(body):
+                return True
+
+        if len(comments) < per_page:
+            break
+        page += 1
+
     return False
 
 

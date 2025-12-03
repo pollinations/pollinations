@@ -56,7 +56,25 @@ export const ModelTable: FC<ModelTableProps> = ({ models, type }) => {
             <thead>
                 <tr>
                     <th className="text-left pt-0 pb-1 px-2 whitespace-nowrap w-[220px] text-sm font-bold text-pink-500 align-top">
-                        <div>{tableLabel}</div>
+                        <div className="flex items-center gap-2">
+                            {tableLabel}
+                            {type === "video" && (
+                                <>
+                                    <span className="text-[10px] text-purple-600 bg-purple-100 px-1.5 py-0.5 rounded-full font-medium">
+                                        alpha 🧪
+                                    </span>
+                                    <span className="relative inline-flex items-center group/alpha">
+                                        <span className="flex items-center justify-center w-3.5 h-3.5 rounded-full bg-pink-100 border border-pink-300 text-pink-500 hover:bg-pink-200 hover:border-pink-400 transition-colors text-[10px] font-bold cursor-pointer">
+                                            i
+                                        </span>
+                                        <span className="invisible group-hover/alpha:visible absolute left-0 top-full mt-1 px-3 py-2 bg-gradient-to-r from-pink-50 to-purple-50 text-gray-800 text-xs rounded-lg shadow-lg border border-pink-200 whitespace-nowrap z-50 pointer-events-none">
+                                            API endpoints and parameters may
+                                            change
+                                        </span>
+                                    </span>
+                                </>
+                            )}
+                        </div>
                     </th>
                     <th className="text-center text-sm font-bold text-pink-500 pt-0 pb-1 px-2 whitespace-nowrap w-[120px] align-top">
                         <div>Per pollen*</div>

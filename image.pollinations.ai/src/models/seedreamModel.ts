@@ -1,7 +1,7 @@
 import debug from "debug";
-import { fileTypeFromBuffer } from "file-type";
 import { withTimeoutSignal } from "../util.ts";
 import { HttpError } from "../httpError.ts";
+import { downloadImageAsBase64 } from "../utils/imageDownload.ts";
 import type { ImageParams } from "../params.ts";
 import type { ImageGenerationResult } from "../createAndReturnImages.ts";
 import type { ProgressManager } from "../progressBar.ts";
@@ -103,35 +103,18 @@ export const callSeedreamAPI = async (
                         `Downloading reference image ${i + 1}/${imageUrls.length} from: ${imageUrl}`,
                     );
 
-                    // Download the image
-                    const imageResponse = await withTimeoutSignal(
-                        (signal) => fetch(imageUrl, { signal }),
+                    // Download and detect MIME type from magic bytes
+                    const { base64, mimeType } = await withTimeoutSignal(
+                        (signal) => downloadImageAsBase64(imageUrl),
                         30000, // 30 second timeout
                     );
 
-                    if (!imageResponse.ok) {
-                        logError(
-                            `Failed to fetch reference image ${i + 1}: ${imageResponse.status}`,
-                        );
-                        continue; // Skip this image and continue with others
-                    }
-
-                    // Convert to base64
-                    const imageBuffer = await imageResponse.arrayBuffer();
-                    const bufferNode = Buffer.from(imageBuffer);
-                    const base64Data = bufferNode.toString("base64");
-
-                    // Detect MIME type from magic bytes (don't trust content-type header)
-                    // Some CDNs like Telegram return application/octet-stream for images
-                    const fileType = await fileTypeFromBuffer(bufferNode);
-                    const contentType = fileType?.mime || "image/jpeg";
-
                     // Create data URL format: data:image/jpeg;base64,<base64data>
-                    const dataUrl = `data:${contentType};base64,${base64Data}`;
+                    const dataUrl = `data:${mimeType};base64,${base64}`;
                     processedImages.push(dataUrl);
 
                     logOps(
-                        `Successfully processed reference image ${i + 1}: ${contentType}, ${base64Data.length} chars`,
+                        `Successfully processed reference image ${i + 1}: ${mimeType}, ${base64.length} chars`,
                     );
                 } catch (error) {
                     logError(

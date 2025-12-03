@@ -25,9 +25,11 @@ def get_latest_news_entry(news_content: str) -> tuple[str, str]:
 
     Returns: (date, content) tuple
     """
-    # Pattern to match entries
-    # Match ENTRY marker with any date/identifier format
-    pattern = r'<!-- ENTRY:([^\s]+) -->\s*\n### [^\n]+\s*\n(.*?)(?=<!-- ENTRY:|\Z)'
+    # Pattern to match entries - permissive with whitespace for manual edits
+    # Matches: <!-- ENTRY:date --> (with flexible spacing)
+    # Followed by ### header line
+    # Then content until next entry or end
+    pattern = r'<!--\s*ENTRY:\s*([^\s]+)\s*-->\s*\n+###\s+[^\n]+\s*\n(.*?)(?=<!--\s*ENTRY:|\Z)'
 
     matches = re.findall(pattern, news_content, re.DOTALL)
 
@@ -133,7 +135,9 @@ def call_pollinations_api(system_prompt: str, user_prompt: str, token: str) -> s
     )
     if response.status_code != 200:
         print(f"API error: {response.status_code}")
-        print(response.text)
+        # Truncate error output to avoid exposing sensitive info in CI logs
+        error_preview = response.text[:500] + "..." if len(response.text) > 500 else response.text
+        print(f"Error preview: {error_preview}")
         sys.exit(1)
 
     try:
@@ -141,7 +145,9 @@ def call_pollinations_api(system_prompt: str, user_prompt: str, token: str) -> s
         return result['choices'][0]['message']['content']
     except (KeyError, IndexError, json.JSONDecodeError) as e:
         print(f"Error parsing API response: {e}")
-        print(f"Response: {response.text}")
+        # Truncate to avoid exposing sensitive info in CI logs
+        error_preview = response.text[:500] + "..." if len(response.text) > 500 else response.text
+        print(f"Response preview: {error_preview}")
         sys.exit(1)
 
 
@@ -214,7 +220,9 @@ def post_to_discord(webhook_url: str, message: str):
 
         if response.status_code not in [200, 204]:
             print(f"Discord error: {response.status_code}")
-            print(response.text)
+            # Truncate error output to avoid exposing sensitive info in CI logs
+            error_preview = response.text[:500] + "..." if len(response.text) > 500 else response.text
+            print(f"Error preview: {error_preview}")
             sys.exit(1)
 
     print("✅ Digest posted to Discord!")

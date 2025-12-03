@@ -10,10 +10,9 @@ const logOps = debug("pollinations:seedance:ops");
 const logError = debug("pollinations:seedance:error");
 
 // Seedance API constants
-// BytePlus Seedance Lite has separate model IDs for T2V and I2V
+// BytePlus Seedance Pro-Fast uses single model ID for both T2V and I2V
 // Model ID includes date suffix as required by BytePlus
-const T2V_MODEL = "seedance-1-0-lite-t2v-250428"; // Text-to-Video
-const I2V_MODEL = "seedance-1-0-lite-i2v-250428"; // Image-to-Video
+const SEEDANCE_MODEL = "seedance-1-0-pro-fast-251015"; // Pro-Fast: higher quality, same speed as Lite
 
 interface SeedanceTaskResponse {
     id?: string;
@@ -92,10 +91,9 @@ export const callSeedanceAPI = async (
     // Resolution: default to 720p
     const resolution = "720p";
 
-    // Select model based on whether image is provided
-    // T2V = text-to-video, I2V = image-to-video (uses first frame)
+    // Pro-Fast uses same model for both T2V and I2V
     const hasImage = safeParams.image && safeParams.image.length > 0;
-    const selectedModel = hasImage ? I2V_MODEL : T2V_MODEL;
+    const selectedModel = SEEDANCE_MODEL;
 
     logOps("Video params:", {
         durationSeconds,

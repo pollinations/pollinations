@@ -8,6 +8,7 @@ import os
 import sys
 import json
 import random
+import re
 import requests
 from typing import Dict, List, Optional
 from jinja2 import Environment, Template
@@ -16,7 +17,7 @@ from datetime import datetime
 # Configuration
 GITHUB_API_BASE = "https://api.github.com"
 POLLINATIONS_API_BASE = "https://enter.pollinations.ai/api/generate/openai"
-MODEL = "openai-large"
+MODEL = "claude-large"
 DISCORD_CHAR_LIMIT = 2000
 CHUNK_SIZE = 1900  # Leave room for safety
 
@@ -41,7 +42,9 @@ def github_api_request(endpoint: str, token: str) -> Dict:
     
     if response.status_code != 200:
         print(f"❌ GitHub API error: {response.status_code}")
-        print(response.text)
+        # Truncate error output to avoid exposing sensitive info in CI logs
+        error_preview = response.text[:500] + "..." if len(response.text) > 500 else response.text
+        print(f"Error preview: {error_preview}")
         sys.exit(1)
     
     return response.json()
@@ -63,9 +66,22 @@ def get_pr_diff(repo: str, pr_number: str, token: str) -> str:
     return response.text
 
 def get_pr_files(repo: str, pr_number: str, token: str) -> List[Dict]:
-    """Get list of files changed in PR"""
-    endpoint = f"repos/{repo}/pulls/{pr_number}/files"
-    return github_api_request(endpoint, token)
+    """Get list of files changed in PR with pagination"""
+    all_files = []
+    page = 1
+    per_page = 100
+
+    while True:
+        endpoint = f"repos/{repo}/pulls/{pr_number}/files?per_page={per_page}&page={page}"
+        files = github_api_request(endpoint, token)
+        if not files:
+            break
+        all_files.extend(files)
+        if len(files) < per_page:
+            break
+        page += 1
+
+    return all_files
 
 def format_diff_for_review(diff_text: str) -> str:
     """
@@ -92,14 +108,15 @@ def format_diff_for_review(diff_text: str) -> str:
                     formatted_output.extend(old_hunk_lines)
                 new_hunk_lines = []
                 old_hunk_lines = []
-            
-            # Extract filename - handle both a/ and b/ prefixes
-            parts = line.split(' ')
-            if len(parts) >= 4:
-                # Get the file path from either a/ or b/ prefix
-                filename_a = parts[2].replace('a/', '') if parts[2].startswith('a/') else parts[2]
-                filename_b = parts[3].replace('b/', '') if parts[3].startswith('b/') else parts[3]
-                
+
+            # Parse filename using regex to handle spaces in paths
+            # Format: diff --git a/path/to/file b/path/to/file
+            # Use non-greedy (.*?) to correctly handle filenames containing ' b/'
+            match = re.match(r'diff --git a/(.*?) b/(.*)', line)
+            if match:
+                filename_a = match.group(1)
+                filename_b = match.group(2)
+
                 # Determine file status and use appropriate filename
                 if filename_a == '/dev/null':
                     filename = filename_b
@@ -110,7 +127,7 @@ def format_diff_for_review(diff_text: str) -> str:
                 else:
                     filename = filename_b
                     file_status = "MODIFIED"
-                
+
                 current_file = filename
                 status_emoji = {"ADDED": "➕", "DELETED": "🗑️", "MODIFIED": "📝"}
                 formatted_output.append(f"\n## File: '{filename}' {status_emoji.get(file_status, '')}")
@@ -140,7 +157,7 @@ def format_diff_for_review(diff_text: str) -> str:
                     line_number = int(parts[0]) - 1
                 else:
                     line_number = 0
-            except:
+            except (ValueError, IndexError):
                 line_number = 0
             in_hunk = True
         
@@ -366,47 +383,67 @@ Create a concise Discord message (raw text, not YAML/JSON) with:
         diff=diff
     )
 
-def call_pollinations_api(system_prompt: str, user_prompt: str, token: str) -> str:
-    """Call Pollinations AI API with OpenAI-compatible format"""
-    # Generate random seed for varied results
-    seed = random.randint(0, 2147483647)  # int32 max
-    
+def call_pollinations_api(system_prompt: str, user_prompt: str, token: str, max_retries: int = 3) -> str:
+    """Call Pollinations AI API with OpenAI-compatible format and retry logic"""
+    import time
+
     headers = {
         "Authorization": f"Bearer {token}",
         "Content-Type": "application/json"
     }
-    
-    payload = {
-        "model": MODEL,
-        "messages": [
-            {"role": "system", "content": system_prompt},
-            {"role": "user", "content": user_prompt}
-        ],
-        "temperature": 0.2,
-        "seed": seed
-    }
-    
-    print(f"🤖 Calling Pollinations AI API with model: {MODEL}, seed: {seed}")
-    
-    response = requests.post(
-        POLLINATIONS_API_BASE,
-        headers=headers,
-        json=payload,
-        timeout=120
-    )
-    
-    if response.status_code != 200:
-        print(f"❌ Pollinations API error: {response.status_code}")
-        print(response.text)
-        sys.exit(1)
-    
-    try:
-        result = response.json()
-        return result['choices'][0]['message']['content']
-    except (KeyError, IndexError, json.JSONDecodeError) as e:
-        print(f"❌ Error parsing API response: {e}")
-        print(f"Response: {response.text}")
-        sys.exit(1)
+
+    print(f"🤖 Calling Pollinations AI API with model: {MODEL}")
+
+    last_error = None
+    for attempt in range(max_retries):
+        seed = random.randint(0, 2147483647)  # int32 max
+
+        payload = {
+            "model": MODEL,
+            "messages": [
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_prompt}
+            ],
+            "temperature": 0.2,
+            "seed": seed
+        }
+
+        if attempt > 0:
+            print(f"🔄 Retry {attempt}/{max_retries - 1} with new seed: {seed}")
+
+        try:
+            response = requests.post(
+                POLLINATIONS_API_BASE,
+                headers=headers,
+                json=payload,
+                timeout=120
+            )
+
+            if response.status_code == 200:
+                try:
+                    result = response.json()
+                    return result['choices'][0]['message']['content']
+                except (KeyError, IndexError, json.JSONDecodeError) as e:
+                    last_error = f"Error parsing API response: {e}"
+                    error_preview = response.text[:500] + "..." if len(response.text) > 500 else response.text
+                    print(f"❌ {last_error}")
+                    print(f"Response preview: {error_preview}")
+            else:
+                last_error = f"Pollinations API error: {response.status_code}"
+                error_preview = response.text[:500] + "..." if len(response.text) > 500 else response.text
+                print(f"❌ {last_error}")
+                print(f"Error preview: {error_preview}")
+
+        except requests.exceptions.RequestException as e:
+            last_error = f"Request failed: {e}"
+            print(f"❌ {last_error}")
+
+        if attempt < max_retries - 1:
+            print("⏳ Waiting 5 seconds before retry...")
+            time.sleep(5)
+
+    print(f"❌ All {max_retries} attempts failed. Last error: {last_error}")
+    sys.exit(1)
 
 def parse_discord_message(response: str) -> str:
     """Parse Discord message from AI response"""
@@ -552,7 +589,9 @@ def post_to_discord(webhook_url: str, payloads: List[Dict]):
         
         if response.status_code not in [200, 204]:
             print(f"❌ Discord webhook error on message {i+1}: {response.status_code}")
-            print(response.text)
+            # Truncate error output to avoid exposing sensitive info in CI logs
+            error_preview = response.text[:500] + "..." if len(response.text) > 500 else response.text
+            print(f"Error preview: {error_preview}")
             sys.exit(1)
         
         print(f"✅ Successfully posted message {i+1}/{len(payloads)} to Discord!")

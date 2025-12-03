@@ -24,7 +24,7 @@ export const PollenBalance: FC<PollenBalanceProps> = ({
         totalPollen > 0 ? (packPollen / totalPollen) * 100 : 0;
 
     return (
-        <div className="bg-emerald-100 rounded-2xl p-4 sm:p-8 border border-purple-300">
+        <div className="bg-violet-50/30 rounded-2xl p-4 sm:p-8 border border-violet-300">
             <div className="flex flex-row justify-center text-center pb-1">
                 {/* Combined Pollen Gauge */}
                 <div className="flex flex-col items-center gap-4 w-full">
@@ -69,12 +69,17 @@ export const PollenBalance: FC<PollenBalanceProps> = ({
                             )}
                         </div>
                     </div>
-                    {/* Beta message */}
-                    <p className="text-sm text-purple-900 font-medium mt-2">
-                        🎁 During beta, we double your pollen with every
-                        purchase!
-                    </p>
                 </div>
+            </div>
+            {/* Purchase info */}
+            <div className="bg-gradient-to-r from-purple-100 to-pink-100 rounded-xl p-4 border-2 border-purple-300 mt-4">
+                <p className="text-sm font-medium text-purple-900">
+                    🎁 During beta, we double your pollen with every purchase!
+                </p>
+                <p className="text-sm font-medium text-purple-900 mt-2">
+                    ⏳ After a purchase, please wait 1-2 minutes for your
+                    balance to update.
+                </p>
             </div>
         </div>
     );

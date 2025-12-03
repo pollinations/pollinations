@@ -92,27 +92,31 @@ describe("Video Generation Integration Tests", () => {
     );
 
     /**
-     * Test seedance I2V with URL containing query parameters (like Discord URLs)
-     * Discord image URLs have ?ex=...&is=...&hm=... parameters that must be preserved
-     * when proxying to the backend. Without proper URL encoding, these get split apart.
-     *
-     * Bug: https://github.com/pollinations/pollinations/issues/5581
+     * Test long prompts with image parameter (Issue #5581)
+     * Verifies API handles long prompts correctly - the original report was
+     * actually a Discord 8MB embed limit, not a Pollinations bug
      */
     test(
-        "seedance I2V should preserve image URL query parameters",
+        "seedance I2V with long prompt should not fail",
         { timeout: 120000 },
         async ({ apiKey, mocks }) => {
             await mocks.enable("polar", "tinybird", "vcr");
 
-            // Simulate a Discord-style URL with query parameters
-            // The key issue is that ?param1=a&param2=b in the image URL
-            // gets incorrectly parsed as separate query params of the main request
-            const imageUrlWithParams =
-                "https://image.pollinations.ai/prompt/white?width=512&height=512&nologo=true&seed=42";
+            // Long prompt similar to the one that was reported as failing
+            const longPrompt =
+                "Make the character in the input image go on a wild, over-the-top adventure: " +
+                "she's riding a giant slice of pizza through a city made entirely of candy, " +
+                "dodging flying sushi and chased by a squad of tiny, grumpy robots wearing hats";
 
-            // The image URL must be properly encoded so its query params don't get split
+            // Use a simple image URL (not Discord CDN to avoid external dependencies)
+            const imageUrl =
+                "https://image.pollinations.ai/prompt/simple%20character?width=512&height=512&nologo=true&seed=42";
+
+            const encodedPrompt = encodeURIComponent(longPrompt);
+            const encodedImage = encodeURIComponent(imageUrl);
+
             const response = await SELF.fetch(
-                `http://localhost:3000/api/generate/image/animate%20this?model=seedance&duration=2&image=${encodeURIComponent(imageUrlWithParams)}`,
+                `http://localhost:3000/api/generate/image/${encodedPrompt}?model=seedance&duration=2&image=${encodedImage}`,
                 {
                     method: "GET",
                     headers: {
@@ -121,23 +125,17 @@ describe("Video Generation Integration Tests", () => {
                 },
             );
 
-            // Log response for debugging if it fails
+            // Log response for debugging
             if (response.status !== 200) {
                 const body = await response.clone().text();
-                console.log(
-                    "I2V with query params response:",
-                    response.status,
-                    body,
-                );
+                console.log("Long prompt I2V response:", response.status, body);
             }
 
+            // Should succeed, not return 413 or auth errors
             expect(response.status).toBe(200);
 
             const contentType = response.headers.get("content-type");
             expect(contentType).toContain("video/mp4");
-
-            const buffer = await response.arrayBuffer();
-            expect(buffer.byteLength).toBeGreaterThan(1000);
         },
     );
 

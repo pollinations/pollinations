@@ -94,14 +94,14 @@ async def on_message(message: discord.Message):
 
         if result["success"]:
             embed = discord.Embed(
-                title="✅ Issue Submitted",
+                title="✅ Issue Created",
                 description=f"**{enhanced['title']}**",
                 color=discord.Color.green(),
                 url=result["issue_url"]
             )
             embed.add_field(
-                name="Status",
-                value="Issue is being created via GitHub Actions",
+                name="Issue #",
+                value=f"#{result['issue_number']}",
                 inline=True
             )
             embed.add_field(
@@ -115,7 +115,7 @@ async def on_message(message: discord.Message):
                     value=original_author,
                     inline=True
                 )
-            embed.set_footer(text="Check the issues page in a few seconds")
+            embed.set_footer(text="Click the title to view the issue")
             await message.reply(embed=embed)
         else:
             await message.reply(

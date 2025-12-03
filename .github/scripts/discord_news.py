@@ -112,43 +112,62 @@ Create a polished, witty weekly digest that celebrates these wins and makes them
     return system_prompt, user_prompt
 
 
-def call_pollinations_api(system_prompt: str, user_prompt: str, token: str) -> str:
-    seed = random.randint(0, 2147483647)
+def call_pollinations_api(system_prompt: str, user_prompt: str, token: str, max_retries: int = 3) -> str:
     headers = {
         "Authorization": f"Bearer {token}",
         "Content-Type": "application/json"
     }
-    payload = {
-        "model": MODEL,
-        "messages": [
-            {"role": "system", "content": system_prompt},
-            {"role": "user", "content": user_prompt}
-        ],
-        "temperature": 0.7,
-        "seed": seed
-    }
-    response = requests.post(
-        POLLINATIONS_API_BASE,
-        headers=headers,
-        json=payload,
-        timeout=120
-    )
-    if response.status_code != 200:
-        print(f"API error: {response.status_code}")
-        # Truncate error output to avoid exposing sensitive info in CI logs
-        error_preview = response.text[:500] + "..." if len(response.text) > 500 else response.text
-        print(f"Error preview: {error_preview}")
-        sys.exit(1)
 
-    try:
-        result = response.json()
-        return result['choices'][0]['message']['content']
-    except (KeyError, IndexError, json.JSONDecodeError) as e:
-        print(f"Error parsing API response: {e}")
-        # Truncate to avoid exposing sensitive info in CI logs
-        error_preview = response.text[:500] + "..." if len(response.text) > 500 else response.text
-        print(f"Response preview: {error_preview}")
-        sys.exit(1)
+    last_error = None
+    for attempt in range(max_retries):
+        seed = random.randint(0, 2147483647)
+
+        payload = {
+            "model": MODEL,
+            "messages": [
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_prompt}
+            ],
+            "temperature": 0.7,
+            "seed": seed
+        }
+
+        if attempt > 0:
+            print(f"Retry {attempt}/{max_retries - 1} with new seed: {seed}")
+
+        try:
+            response = requests.post(
+                POLLINATIONS_API_BASE,
+                headers=headers,
+                json=payload,
+                timeout=120
+            )
+
+            if response.status_code == 200:
+                try:
+                    result = response.json()
+                    return result['choices'][0]['message']['content']
+                except (KeyError, IndexError, json.JSONDecodeError) as e:
+                    last_error = f"Error parsing API response: {e}"
+                    error_preview = response.text[:500] + "..." if len(response.text) > 500 else response.text
+                    print(f"{last_error}")
+                    print(f"Response preview: {error_preview}")
+            else:
+                last_error = f"API error: {response.status_code}"
+                error_preview = response.text[:500] + "..." if len(response.text) > 500 else response.text
+                print(f"{last_error}")
+                print(f"Error preview: {error_preview}")
+
+        except requests.exceptions.RequestException as e:
+            last_error = f"Request failed: {e}"
+            print(last_error)
+
+        if attempt < max_retries - 1:
+            print("Waiting 5 seconds before retry...")
+            time.sleep(5)
+
+    print(f"All {max_retries} attempts failed. Last error: {last_error}")
+    sys.exit(1)
 
 
 def parse_message(response: str) -> str:

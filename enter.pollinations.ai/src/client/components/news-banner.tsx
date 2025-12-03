@@ -41,9 +41,9 @@ export const NewsBanner: FC = () => {
                         🚀 <strong>Fresh models dropped:</strong>{" "}
                         <span className="text-gray-700">Claude Opus 4.5</span> ·{" "}
                         <span className="text-gray-700">Kimi K2</span> ·{" "}
-                        <span className="text-gray-700">Seedream 4.5</span> ·{" "}
+                        <span className="text-gray-700">Seedream 4</span> ·{" "}
                         <span className="text-gray-700">VEO 3.1</span> ·{" "}
-                        <span className="text-gray-700">Seedance Pro-Fast</span>
+                        <span className="text-gray-700">Seedance</span>
                     </li>
                     <li className="text-gray-600">
                         💬 <strong>Join the discussion:</strong>{" "}

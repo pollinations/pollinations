@@ -1,7 +1,6 @@
 import debug from "debug";
 import sleep from "await-sleep";
 import { HttpError } from "../httpError.ts";
-import { downloadImageAsBase64 } from "../utils/imageDownload.ts";
 import type { ImageParams } from "../params.ts";
 import type { ProgressManager } from "../progressBar.ts";
 import type { VideoGenerationResult } from "../createAndReturnVideos.ts";
@@ -11,9 +10,10 @@ const logOps = debug("pollinations:seedance:ops");
 const logError = debug("pollinations:seedance:error");
 
 // Seedance API constants
-// BytePlus Seedance Pro-Fast uses single model ID for both T2V and I2V
+// BytePlus Seedance Lite has separate model IDs for T2V and I2V
 // Model ID includes date suffix as required by BytePlus
-const SEEDANCE_MODEL = "seedance-1-0-pro-fast-251015"; // Pro-Fast: higher quality, same speed as Lite
+const T2V_MODEL = "seedance-1-0-lite-t2v-250428"; // Text-to-Video
+const I2V_MODEL = "seedance-1-0-lite-i2v-250428"; // Image-to-Video
 
 interface SeedanceTaskResponse {
     id?: string;
@@ -92,9 +92,10 @@ export const callSeedanceAPI = async (
     // Resolution: default to 720p
     const resolution = "720p";
 
-    // Pro-Fast uses same model for both T2V and I2V
+    // Select model based on whether image is provided
+    // T2V = text-to-video, I2V = image-to-video (uses first frame)
     const hasImage = safeParams.image && safeParams.image.length > 0;
-    const selectedModel = SEEDANCE_MODEL;
+    const selectedModel = hasImage ? I2V_MODEL : T2V_MODEL;
 
     logOps("Video params:", {
         durationSeconds,
@@ -138,9 +139,19 @@ export const callSeedanceAPI = async (
 
         // Download and convert image to base64
         try {
-            // Download and detect MIME type from magic bytes
-            const { base64, mimeType } = await downloadImageAsBase64(imageUrl);
-            const dataUrl = `data:${mimeType};base64,${base64}`;
+            const imageResponse = await fetch(imageUrl);
+
+            if (!imageResponse.ok) {
+                throw new Error(
+                    `Failed to fetch image: ${imageResponse.status}`,
+                );
+            }
+
+            const imageBuffer = await imageResponse.arrayBuffer();
+            const base64Data = Buffer.from(imageBuffer).toString("base64");
+            const contentType =
+                imageResponse.headers.get("content-type") || "image/jpeg";
+            const dataUrl = `data:${contentType};base64,${base64Data}`;
 
             // Add image to content array
             requestBody.content.push({

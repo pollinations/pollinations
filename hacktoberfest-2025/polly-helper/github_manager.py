@@ -36,7 +36,7 @@ class GitHubManager:
         
         headers = {
             "Accept": "application/vnd.github.v3+json",
-            "Authorization": f"token {self.token}",
+            "Authorization": f"Bearer {self.token}",
             "X-GitHub-Api-Version": "2022-11-28"
         }
         

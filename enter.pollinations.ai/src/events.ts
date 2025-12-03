@@ -12,8 +12,8 @@ import { z } from "zod";
 import { Logger } from "@logtape/logtape";
 
 const BUFFER_BATCH_SIZE = 1;
-const INGEST_MIN_BATCH_SIZE = 100;
-const INGEST_MAX_BATCH_SIZE = 500;
+const DEFAULT_MIN_BATCH_SIZE = 100;
+const DEFAULT_MAX_BATCH_SIZE = 500;
 const MAX_DELIVERY_ATTEMPTS = 5;
 
 const tbIngestResponseSchema = z.object({
@@ -44,13 +44,18 @@ export async function processEvents(
         polarServer: "sandbox" | "production";
         tinybirdIngestUrl: string;
         tinybirdAccessToken: string;
+        minBatchSize?: number;
+        maxBatchSize?: number;
     },
 ) {
     for await (const { processingId, events } of pendingEventBatches(
         db,
-        INGEST_MIN_BATCH_SIZE,
-        INGEST_MAX_BATCH_SIZE,
+        config.minBatchSize ?? DEFAULT_MIN_BATCH_SIZE,
+        config.maxBatchSize ?? DEFAULT_MAX_BATCH_SIZE,
     )) {
+        log.trace("Processing event batch with {count} events", {
+            count: events.length,
+        });
         if (events.length === 0) return;
         const polarDelivery = await sendPolarEvents(
             events,

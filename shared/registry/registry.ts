@@ -74,6 +74,7 @@ export type ServiceDefinition<TModelId extends string = ModelId> = {
     outputModalities?: string[];
     tools?: boolean;
     reasoning?: boolean;
+    search?: boolean;
     contextWindow?: number;
     voices?: string[];
     isSpecialized?: boolean;
@@ -327,6 +328,7 @@ export interface ModelInfo {
     output_modalities?: readonly string[];
     tools?: boolean;
     reasoning?: boolean;
+    search?: boolean;
     context_window?: number;
     voices?: readonly string[];
     isSpecialized?: boolean;
@@ -363,6 +365,7 @@ export function getModelInfo(serviceId: ServiceId): ModelInfo {
         output_modalities: service.outputModalities,
         tools: service.tools,
         reasoning: service.reasoning,
+        search: service.search,
         context_window: service.contextWindow,
         voices: service.voices,
         isSpecialized: service.isSpecialized,

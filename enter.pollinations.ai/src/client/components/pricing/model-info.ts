@@ -23,6 +23,11 @@ export const hasReasoning = (modelName: string): boolean => {
     return service?.reasoning === true;
 };
 
+export const hasSearch = (modelName: string): boolean => {
+    const service = getServiceDefinition(modelName as ServiceId);
+    return service?.search === true;
+};
+
 export const hasVision = (modelName: string): boolean => {
     const modalities = getModalities(modelName);
     return modalities.input.includes("image");

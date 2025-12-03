@@ -355,24 +355,38 @@ export const sendMessage = async (messages, onChunk, onComplete, onError, modelI
 
     const formattedMessages = formatMessagesForAPI(messages, selectedModelId);
 
+    // Build request body - only include thinking parameters for Claude models
+    // Note: Some Bedrock models don't support both temperature and top_p together,
+    // so we only include top_p when it differs from the default value of 1
+    const requestBody = {
+      model: selectedModelId,
+      messages: formattedMessages,
+      max_tokens: maxTokens,
+      temperature: finalTemperature,
+      tools,
+      tool_choice: chartRequested ? { type: 'function', function: { name: 'create_chart' } } : 'auto',
+      stream: true
+    };
+
+    // Only include top_p if it differs from the default value of 1
+    // This avoids conflicts with Bedrock models that don't support both temperature and top_p
+    if (topP !== 1) {
+      requestBody.top_p = topP;
+    }
+
+    // Only add thinking parameters for Claude models
+    if (isClaude) {
+      requestBody.thinking = { type: 'enabled' };
+      requestBody.reasoning_effort = 'high';
+    }
+
     const response = await fetch('https://enter.pollinations.ai/api/generate/v1/chat/completions', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${API_TOKEN}`
       },
-      body: JSON.stringify({
-        model: selectedModelId,
-        messages: formattedMessages,
-        max_tokens: maxTokens,
-        temperature: finalTemperature,
-        top_p: topP,
-        tools,
-        tool_choice: chartRequested ? { type: 'function', function: { name: 'create_chart' } } : 'auto',
-        stream: true,
-        thinking: { type: 'enabled' },
-        reasoning_effort: 'high'
-      }),
+      body: JSON.stringify(requestBody),
       signal: abortController.signal
     });
 
@@ -618,7 +632,7 @@ export const generateVideo = async (prompt, options = {}) => {
 
     // Encode the prompt for URL path
     const encodedPrompt = encodeURIComponent(prompt);
-    const url = `${BASE_VIDEO_URL}/${encodedPrompt}?${params.toString()}`;
+    const url = `${BASE_IMAGE_URL}/${encodedPrompt}?${params.toString()}`;
     
     console.log(`🎬 Generating video with prompt: "${prompt}"`);
     console.log(`📐 Parameters: model: ${model}, seed: ${seed}`);

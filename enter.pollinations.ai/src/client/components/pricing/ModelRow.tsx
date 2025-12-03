@@ -4,6 +4,7 @@ import {
     hasReasoning,
     hasVision,
     hasAudioInput,
+    hasSearch,
     getModelDescription,
 } from "./model-info.ts";
 import { calculatePerPollen } from "./calculations.ts";
@@ -14,18 +15,28 @@ type ModelRowProps = {
 };
 
 export const ModelRow: FC<ModelRowProps> = ({ model }) => {
-    const modelDescription = getModelDescription(model.name, model.type);
+    const modelDescription = getModelDescription(model.name);
     const genPerPollen = calculatePerPollen(model);
     const [showTooltip, setShowTooltip] = useState(false);
 
     // Get model capabilities
-    const showReasoning = hasReasoning(model.name, model.type);
-    const showVision = hasVision(model.name, model.type);
-    const showAudioInput = hasAudioInput(model.name, model.type);
+    const showReasoning = hasReasoning(model.name);
+    const showVision = hasVision(model.name);
+    const showAudioInput = hasAudioInput(model.name);
+    const showSearch = hasSearch(model.name);
 
-    // Show info icon if we have a description to display
-    const showDescriptionInfo =
-        modelDescription && modelDescription !== model.name;
+    // Show info icon if we have a description to display, or if it's a video model (for alpha notice)
+    const isVideoModel = model.type === "video";
+    const hasDescription = modelDescription && modelDescription !== model.name;
+    const showDescriptionInfo = hasDescription || isVideoModel;
+
+    // Build tooltip content
+    const alphaNotice = "Alpha – API may change";
+    const tooltipContent = isVideoModel
+        ? hasDescription
+            ? `${modelDescription}. ${alphaNotice}`
+            : alphaNotice
+        : modelDescription;
 
     return (
         <tr className="border-b border-gray-200">
@@ -51,7 +62,7 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
                             <span
                                 className={`${showTooltip ? "visible" : "invisible"} group-hover/info:visible absolute left-0 top-full mt-1 px-3 py-2 bg-gradient-to-r from-pink-50 to-purple-50 text-gray-800 text-xs rounded-lg shadow-lg border border-pink-200 whitespace-nowrap z-50 pointer-events-none`}
                             >
-                                {modelDescription}
+                                {tooltipContent}
                             </span>
                         </button>
                     )}
@@ -78,6 +89,14 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
                             title="Advanced reasoning capabilities"
                         >
                             🧠
+                        </span>
+                    )}
+                    {showSearch && (
+                        <span
+                            className="text-base"
+                            title="Web search capabilities"
+                        >
+                            🔍
                         </span>
                     )}
                 </div>

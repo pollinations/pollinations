@@ -180,11 +180,13 @@ export const track = (eventType: EventType) =>
 
                 // process events immediately in development/testing
                 if (["test", "development"].includes(c.env.ENVIRONMENT)) {
+                    log.trace("Processing events immediately");
                     await processEvents(db, c.var.log, {
                         polarAccessToken: c.env.POLAR_ACCESS_TOKEN,
                         polarServer: c.env.POLAR_SERVER,
                         tinybirdIngestUrl: c.env.TINYBIRD_INGEST_URL,
                         tinybirdAccessToken: c.env.TINYBIRD_ACCESS_TOKEN,
+                        minBatchSize: 0, // process all events immediately
                     });
                 }
             })(),

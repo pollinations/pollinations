@@ -93,7 +93,9 @@ export const event = sqliteTable("event", {
     tokenPriceCompletionImage: real("token_price_completion_image").notNull(),
     tokenPriceCompletionVideoSeconds: real(
         "token_price_completion_video_seconds",
-    ).notNull(),
+    )
+        .notNull()
+        .default(0),
 
     // Usage
     tokenCountPromptText: integer("token_count_prompt_text").notNull(),
@@ -112,7 +114,9 @@ export const event = sqliteTable("event", {
     ).notNull(),
     tokenCountCompletionVideoSeconds: integer(
         "token_count_completion_video_seconds",
-    ).notNull(),
+    )
+        .notNull()
+        .default(0),
 
     // Totals
     totalCost: real("total_cost").notNull(),

@@ -599,5 +599,15 @@ export const chatProjects = [
     "language": "en",
     "submissionDate": "2025-12-03",
     "order": 5
+  },
+  {
+    "name": "HelpChatGPT",
+    "url": "https://helpchatgpt.ru",
+    "description": "HelpChatGPT is a free web platform that provides access to ChatGPT-like models and hundreds of specialized AI assistants, grouped by topic categories. It supports multimodal responses and image generation via the Pollinations.ai API.",
+    "author": "viaea",
+    "category": "chat",
+    "language": "ru-RU",
+    "submissionDate": "2025-12-03",
+    "order": 5
   }
 ];

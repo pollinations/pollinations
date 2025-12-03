@@ -17,7 +17,7 @@ export async function generateBackground(
         themePrompt,
     );
 
-    console.log("🎨 [BACKGROUND PROMPT]:", fullPrompt);
+    console.log("🎬 [ANIMATOR] → Generating WebGL background...");
     const html = await generateText(fullPrompt, 42, MODEL, signal);
 
     // Clean up markdown code blocks if present
@@ -25,6 +25,6 @@ export async function generateBackground(
     cleanHtml = cleanHtml.replace(/^```html?\n?/i, "");
     cleanHtml = cleanHtml.replace(/\n?```$/, "");
 
-    console.log("🎨 [BACKGROUND GENERATED]");
+    console.log("🎬 [ANIMATOR] ← Background HTML received");
     return cleanHtml;
 }

@@ -7,7 +7,7 @@
  * - CSS variables available: var(--color-primary), var(--color-background), etc.
  */
 import type { Config } from "tailwindcss";
-import { BioluminescentMyceliumNetworkAtDawnVeryBrightColorsYellowOrangeVioletGreenRoseUnpredicatableSoftAndEvolvingNoFastFlashingAndALotOfElementsFlyingAndBondingAroundPhysicsAtSightCssVariables as DefaultCssVariables } from "./src/theme/presets/bioluminescent-mycelium-network-at-dawn-very-bright-colors-yellow-orange-violet-green-rose-unpredicatable-soft-and-evolving-no-fast-flashing-and-a-lot-of-elements-flying-and-bonding-around-physics-at-sight";
+import { AVastDeepOceanSceneFilledWithDriftingBioluminescentLifeSoftDarknessWithVolumetricBlueHazeDiverseGlowingOrganismsOfDifferentColorsTurquoiseVioletAmberSoftPinkSizesTinySpecksToLargeFloatingFormsAndShapesJellCssVariables as DefaultCssVariables } from "./src/theme/presets/default";
 import plugin from "tailwindcss/plugin";
 
 // Font family names

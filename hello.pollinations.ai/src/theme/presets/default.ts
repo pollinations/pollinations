@@ -1,104 +1,104 @@
 import { LLMThemeResponse, processTheme } from "../style/theme-processor";
 
-export const BioluminescentMyceliumNetworkAtDawnVeryBrightColorsYellowOrangeVioletGreenRoseUnpredicatableSoftAndEvolvingNoFastFlashingAndALotOfElementsFlyingAndBondingAroundPhysicsAtSightTheme: LLMThemeResponse =
+export const AVastDeepOceanSceneFilledWithDriftingBioluminescentLifeSoftDarknessWithVolumetricBlueHazeDiverseGlowingOrganismsOfDifferentColorsTurquoiseVioletAmberSoftPinkSizesTinySpecksToLargeFloatingFormsAndShapesJellTheme: LLMThemeResponse =
     {
         "slots": {
             "slot_0": {
-                "hex": "#fffce6",
+                "hex": "#ecf9fa",
                 "ids": ["text.primary"],
             },
             "slot_1": {
-                "hex": "#e0d4ff",
+                "hex": "#9dbec9",
                 "ids": ["text.secondary"],
             },
             "slot_2": {
-                "hex": "#4a3b69",
-                "ids": ["input.border"],
-            },
-            "slot_3": {
-                "hex": "#6b5c8a",
+                "hex": "#456880",
                 "ids": ["input.placeholder"],
             },
-            "slot_4": {
+            "slot_3": {
                 "hex": "#ffffff",
-                "ids": ["input.text"],
+                "ids": ["input.text", "logo.main"],
+            },
+            "slot_4": {
+                "hex": "#1c0e33",
+                "ids": ["button.secondary.bg"],
             },
             "slot_5": {
-                "hex": "#ff4d9e",
-                "ids": ["button.primary.border"],
-            },
-            "slot_6": {
-                "hex": "#5e4b7d",
-                "ids": ["button.secondary.border"],
-            },
-            "slot_7": {
-                "hex": "#ff5e00",
-                "ids": ["indicator.image"],
-            },
-            "slot_8": {
-                "hex": "#d900ff",
-                "ids": ["indicator.text", "background.element2"],
-            },
-            "slot_9": {
-                "hex": "#00ff9d",
+                "hex": "#8e4dff",
                 "ids": [
-                    "indicator.audio",
-                    "logo.accent",
-                    "background.element1",
+                    "button.secondary.border",
+                    "indicator.image",
+                    "background.element2",
                 ],
             },
+            "slot_6": {
+                "hex": "#0e2433",
+                "ids": ["button.disabled.bg"],
+            },
+            "slot_7": {
+                "hex": "#ffb74d",
+                "ids": ["indicator.text", "background.particle"],
+            },
+            "slot_8": {
+                "hex": "#ff4081",
+                "ids": ["indicator.audio", "logo.accent"],
+            },
+            "slot_9": {
+                "hex": "#1e3d52",
+                "ids": ["border.main"],
+            },
             "slot_10": {
-                "hex": "#9ea6c4",
+                "hex": "#5d7d8a",
                 "ids": ["text.tertiary"],
             },
             "slot_11": {
-                "hex": "#422a66",
-                "ids": ["border.main"],
-            },
-            "slot_12": {
-                "hex": "#7b2cbf",
+                "hex": "#2d5773",
                 "ids": ["border.strong"],
             },
-            "slot_13": {
-                "hex": "#2d1f45",
+            "slot_12": {
+                "hex": "#0f283d",
                 "ids": ["border.subtle"],
             },
+            "slot_13": {
+                "hex": "#0a1b29",
+                "ids": ["border.faint"],
+            },
             "slot_14": {
-                "hex": "#7d7a99",
+                "hex": "#43616e",
                 "ids": ["text.caption"],
             },
             "slot_15": {
-                "hex": "#ffdd00",
-                "ids": ["background.particle"],
-            },
-            "slot_16": {
-                "hex": "#0f0518",
+                "hex": "#01080f",
                 "ids": ["text.inverse", "surface.page", "background.base"],
             },
-            "slot_17": {
-                "hex": "#ff007f",
-                "ids": ["text.brand", "button.primary.bg", "border.brand"],
-            },
-            "slot_18": {
-                "hex": "#ffe600",
+            "slot_16": {
+                "hex": "#00f2ea",
                 "ids": [
+                    "text.brand",
                     "text.highlight",
+                    "button.primary.bg",
+                    "button.primary.border",
                     "button.focus.ring",
+                    "border.brand",
                     "border.highlight",
-                    "logo.main",
+                    "background.element1",
                 ],
             },
+            "slot_17": {
+                "hex": "#05131f",
+                "ids": ["surface.card"],
+            },
+            "slot_18": {
+                "hex": "#030e18",
+                "ids": ["surface.base"],
+            },
             "slot_19": {
-                "hex": "#1f1130",
-                "ids": ["surface.card", "button.disabled.bg", "border.faint"],
+                "hex": "#0a2033",
+                "ids": ["input.bg"],
             },
             "slot_20": {
-                "hex": "#2a1a40",
-                "ids": ["surface.base", "button.secondary.bg"],
-            },
-            "slot_21": {
-                "hex": "#150822",
-                "ids": ["input.bg"],
+                "hex": "#1a3f5c",
+                "ids": ["input.border"],
             },
         },
         "borderRadius": {
@@ -106,44 +106,44 @@ export const BioluminescentMyceliumNetworkAtDawnVeryBrightColorsYellowOrangeViol
             "radius.card": "20px",
         },
         "fonts": {
-            "font.title": "Syne",
+            "font.title": "Rajdhani",
             "font.headline": "Space Grotesk",
-            "font.body": "Mulish",
+            "font.body": "Outfit",
         },
         "opacity": {
-            "opacity.card": "0.85",
-            "opacity.overlay": "0.9",
-            "opacity.glass": "0.65",
+            "opacity.card": "0.65",
+            "opacity.overlay": "0.85",
+            "opacity.glass": "0.6",
         },
     };
 
-export const BioluminescentMyceliumNetworkAtDawnVeryBrightColorsYellowOrangeVioletGreenRoseUnpredicatableSoftAndEvolvingNoFastFlashingAndALotOfElementsFlyingAndBondingAroundPhysicsAtSightCssVariables =
+export const AVastDeepOceanSceneFilledWithDriftingBioluminescentLifeSoftDarknessWithVolumetricBlueHazeDiverseGlowingOrganismsOfDifferentColorsTurquoiseVioletAmberSoftPinkSizesTinySpecksToLargeFloatingFormsAndShapesJellCssVariables =
     processTheme(
-        BioluminescentMyceliumNetworkAtDawnVeryBrightColorsYellowOrangeVioletGreenRoseUnpredicatableSoftAndEvolvingNoFastFlashingAndALotOfElementsFlyingAndBondingAroundPhysicsAtSightTheme,
+        AVastDeepOceanSceneFilledWithDriftingBioluminescentLifeSoftDarknessWithVolumetricBlueHazeDiverseGlowingOrganismsOfDifferentColorsTurquoiseVioletAmberSoftPinkSizesTinySpecksToLargeFloatingFormsAndShapesJellTheme,
     ).cssVariables;
 
-// Copy from: "bioluminescent-mycelium-network-at-dawn-very-bright-colors-yellow-orange-violet-green-rose-unpredicatable-soft-and-evolving, no fast flashing and a lot of elements flying and bonding around, physics at sight"
-export const BioluminescentMyceliumNetworkAtDawnVeryBrightColorsYellowOrangeVioletGreenRoseUnpredicatableSoftAndEvolvingNoFastFlashingAndALotOfElementsFlyingAndBondingAroundPhysicsAtSightCopy =
+// Copy from: "a-vast-deep-ocean-scene-filled-with-drifting-bioluminescent-life-soft-darkness-with-volumetric-blue-haze-diverse-glowing-organisms-of-different-colors-turquoise-violet-amber-soft-pink-sizes-tiny-specks-to-large-floating-forms-and-shapes-jell"
+export const AVastDeepOceanSceneFilledWithDriftingBioluminescentLifeSoftDarknessWithVolumetricBlueHazeDiverseGlowingOrganismsOfDifferentColorsTurquoiseVioletAmberSoftPinkSizesTinySpecksToLargeFloatingFormsAndShapesJellCopy =
     {
         "APPS_PAGE.title.text": "Ecosystem",
         "APPS_PAGE.subtitle.text":
-            "Vibrant tools and experiments, weaving organic connections.",
+            "Drifting apps and experiments, glowing in the deep.",
         "COMMUNITY_PAGE.title.text": "Contribute",
         "COMMUNITY_PAGE.subtitle.text":
-            "A glowing network where creators bond, weave, and evolve together in vibrant light.",
+            "A submerged sanctuary where creators and developers pulse with bioluminescent light together.",
         "COMMUNITY_PAGE.newsTitle.text": "What's New",
         "COMMUNITY_PAGE.newsFilePath": "/NEWS.md",
         "COMMUNITY_PAGE.discordTitle.text": "Discord",
         "COMMUNITY_PAGE.discordSubtitle.text":
-            "Connect your filaments to our bright network.",
+            "Drift into our glowing currents for deep support.",
         "COMMUNITY_PAGE.githubTitle.text": "GitHub",
         "COMMUNITY_PAGE.githubSubtitle.text":
-            "Fuse code into our open, evolving lattice.",
+            "Build glowing forms in open source waters.",
         "COMMUNITY_PAGE.joinDiscordButton.text": "Join Discord",
         "COMMUNITY_PAGE.contributeButton.text": "Contribute",
         "COMMUNITY_PAGE.supportersTitle.text": "Supporters",
         "COMMUNITY_PAGE.supportersSubtitle.text":
-            "Our gratitude to supporters for feeding this glowing ecosystem.",
+            "Thanks to supporters who illuminate our vast, dark depths.",
         "COMMUNITY_PAGE.supportersList.0.name": "Perplexity AI",
         "COMMUNITY_PAGE.supportersList.0.url": "https://www.perplexity.ai/",
         "COMMUNITY_PAGE.supportersList.0.description":
@@ -243,8 +243,7 @@ export const BioluminescentMyceliumNetworkAtDawnVeryBrightColorsYellowOrangeViol
             "Server-side (Recommended): Use secret key in Authorization header",
         "DOCS_PAGE.clientSideDescription.text":
             "Client-side (Public): Use publishable key in query parameter",
-        "HELLO_PAGE.heroTitle.text":
-            "A bioluminescent network for creative growth.",
+        "HELLO_PAGE.heroTitle.text": "A deep ocean for creative developers.",
         "HELLO_PAGE.heroIntro.text":
             "Soft, simple tools for people who want to build with heart — whether you're exploring ideas, crafting worlds, or shipping serious apps.",
         "HELLO_PAGE.heroTagline.text":
@@ -394,323 +393,285 @@ export const BioluminescentMyceliumNetworkAtDawnVeryBrightColorsYellowOrangeViol
     };
 
 // Background HTML (raw template literal)
-export const BioluminescentMyceliumNetworkAtDawnVeryBrightColorsYellowOrangeVioletGreenRoseUnpredicatableSoftAndEvolvingNoFastFlashingAndALotOfElementsFlyingAndBondingAroundPhysicsAtSightBackgroundHtml = `<!DOCTYPE html>
+export const AVastDeepOceanSceneFilledWithDriftingBioluminescentLifeSoftDarknessWithVolumetricBlueHazeDiverseGlowingOrganismsOfDifferentColorsTurquoiseVioletAmberSoftPinkSizesTinySpecksToLargeFloatingFormsAndShapesJellBackgroundHtml = `<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>The Living Web</title>
+    <title>The Living Web: Deep Ocean</title>
     <style>
-        body {
+        body, html {
             margin: 0;
-            overflow: hidden;
-            background-color: {{BACKGROUND_BASE}}; /* Fallback */
-            font-family: 'Courier New', Courier, monospace;
-            user-select: none;
-        }
-        #canvas-container {
-            position: fixed;
-            top: 0;
-            left: 0;
+            padding: 0;
             width: 100%;
             height: 100%;
-            z-index: -1;
+            overflow: hidden;
+            background-color: {{BACKGROUND_BASE}};
+        }
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
         }
         #overlay {
             position: absolute;
-            bottom: 10px;
+            bottom: 20px;
             right: 20px;
-            color: {{BACKGROUND_ELEMENT1}};
-            opacity: 0.4;
+            font-family: sans-serif;
             font-size: 10px;
+            color: {{BACKGROUND_PARTICLE}};
+            opacity: 0.5;
             pointer-events: none;
+            user-select: none;
+            letter-spacing: 1px;
         }
     </style>
 </head>
 <body>
-    <div id="canvas-container"></div>
     <div id="overlay">pollinations.ai background</div>
-
     <script type="module">
         import * as THREE from 'https://esm.sh/three';
 
-        // -------------------------------------------------------------------------
-        // CONSTANTS & CONFIG
-        // -------------------------------------------------------------------------
+        // --- CONFIGURATION & COLORS ---
         const COLORS = {
             background: '{{BACKGROUND_BASE}}',
-            filaments: '{{BACKGROUND_ELEMENT1}}',
-            nodes: '{{BACKGROUND_ELEMENT2}}',
-            particles: '{{BACKGROUND_PARTICLE}}'
+            primary: '{{BACKGROUND_ELEMENT1}}', // Main organism bodies/filaments
+            secondary: '{{BACKGROUND_ELEMENT2}}', // Cores/Nodes
+            particles: '{{BACKGROUND_PARTICLE}}' // Dust/Spores
         };
 
-        const NODE_COUNT = 120;
-        const CONNECTION_DISTANCE = 150;
-        const PARTICLE_COUNT = 400;
+        // --- STATE ---
+        let scene, camera, renderer;
+        let time = 0;
+        let width, height;
+        let organisms = [];
+        let particles;
+        let mouseX = 0, mouseY = 0;
         
-        // Respect reduced motion
+        // Reduced motion preference
         const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-        // -------------------------------------------------------------------------
-        // STATE
-        // -------------------------------------------------------------------------
-        let scene, camera, renderer;
-        let nodePositions = []; // Store base positions
-        let nodeVelocities = []; // Store drift parameters
-        let nodesGeometry, nodesMaterial, nodesSystem;
-        let linesGeometry, linesMaterial, linesMesh;
-        let particlesGeometry, particlesMaterial, particleSystem;
-        
-        const mouse = new THREE.Vector2(0, 0);
-        const targetMouse = new THREE.Vector2(0, 0);
-        const windowHalf = new THREE.Vector2(window.innerWidth / 2, window.innerHeight / 2);
-
-        // -------------------------------------------------------------------------
-        // INITIALIZATION
-        // -------------------------------------------------------------------------
+        // --- INITIALIZATION ---
         function init() {
-            const container = document.getElementById('canvas-container');
+            const container = document.body;
+            width = window.innerWidth;
+            height = window.innerHeight;
 
-            // Scene
+            // Scene setup
             scene = new THREE.Scene();
             scene.background = new THREE.Color(COLORS.background);
-            
-            // Fog for depth perception without complex shaders
-            const bgCol = new THREE.Color(COLORS.background);
-            scene.fog = new THREE.FogExp2(bgCol, 0.0015);
+            // Volumetric haze effect
+            scene.fog = new THREE.FogExp2(COLORS.background, 0.035);
 
             // Camera
-            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 1, 2000);
-            camera.position.z = 600;
+            camera = new THREE.PerspectiveCamera(60, width / height, 0.1, 100);
+            camera.position.z = 20;
 
             // Renderer
             renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2)); // Clamp pixel ratio for performance
-            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setSize(width, height);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2)); // Performance clamp
             container.appendChild(renderer.domElement);
 
-            createOrganicElements();
+            // Create Elements
             createParticles();
+            createOrganisms();
 
-            // Events
-            window.addEventListener('resize', onWindowResize);
-            document.addEventListener('mousemove', onMouseMove);
+            // Event Listeners
+            window.addEventListener('resize', onWindowResize, false);
+            document.addEventListener('mousemove', onMouseMove, false);
 
             // Start Loop
-            renderer.setAnimationLoop(animate);
+            requestAnimationFrame(animate);
         }
 
-        // -------------------------------------------------------------------------
-        // SCENE CREATION
-        // -------------------------------------------------------------------------
-        function generateSprite() {
-            // Create a soft circle texture programmatically to avoid external assets
-            const canvas = document.createElement('canvas');
-            canvas.width = 32;
-            canvas.height = 32;
-            const context = canvas.getContext('2d');
-            const gradient = context.createRadialGradient(16, 16, 0, 16, 16, 16);
-            gradient.addColorStop(0, 'rgba(255,255,255,1)');
-            gradient.addColorStop(0.4, 'rgba(255,255,255,0.5)');
-            gradient.addColorStop(1, 'rgba(0,0,0,0)');
-            context.fillStyle = gradient;
-            context.fillRect(0, 0, 32, 32);
-            const texture = new THREE.CanvasTexture(canvas);
-            return texture;
-        }
+        // --- GEOMETRY & OBJECTS ---
 
-        function createOrganicElements() {
-            // 1. NODES (The "Cells" or "Nuclei")
-            nodesGeometry = new THREE.BufferGeometry();
-            const positions = [];
-            
-            // Initialize nodes in a loose cloud
-            for (let i = 0; i < NODE_COUNT; i++) {
-                const x = (Math.random() * 1000) - 500;
-                const y = (Math.random() * 1000) - 500;
-                const z = (Math.random() * 1000) - 500;
+        // 1. Background Marine Snow / Particles
+        function createParticles() {
+            const particleCount = 400;
+            const geometry = new THREE.BufferGeometry();
+            const positions = new Float32Array(particleCount * 3);
+            const randoms = new Float32Array(particleCount); // For offset animation
 
-                positions.push(x, y, z);
-
-                // Store logic data separated from geometry for safety
-                nodePositions.push(new THREE.Vector3(x, y, z)); // Origin
-                nodeVelocities.push({
-                    phase: Math.random() * Math.PI * 2,
-                    speed: 0.2 + Math.random() * 0.5,
-                    amplitude: 20 + Math.random() * 50,
-                    axis: new THREE.Vector3(Math.random()-0.5, Math.random()-0.5, Math.random()-0.5).normalize()
-                });
+            for (let i = 0; i < particleCount; i++) {
+                positions[i * 3] = (Math.random() - 0.5) * 60; // x
+                positions[i * 3 + 1] = (Math.random() - 0.5) * 60; // y
+                positions[i * 3 + 2] = (Math.random() - 0.5) * 40; // z
+                randoms[i] = Math.random();
             }
 
-            nodesGeometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+            geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+            geometry.setAttribute('aRandom', new THREE.BufferAttribute(randoms, 1));
 
-            const spriteMap = generateSprite();
-
-            nodesMaterial = new THREE.PointsMaterial({
-                color: COLORS.nodes,
-                size: 6,
-                map: spriteMap,
+            const material = new THREE.PointsMaterial({
+                color: COLORS.particles,
+                size: 0.15,
                 transparent: true,
-                opacity: 0.8,
-                blending: THREE.AdditiveBlending,
+                opacity: 0.6,
                 depthWrite: false,
                 sizeAttenuation: true
             });
 
-            nodesSystem = new THREE.Points(nodesGeometry, nodesMaterial);
-            scene.add(nodesSystem);
-
-            // 2. FILAMENTS (The "Connections")
-            // We allocate a max number of line segments. 
-            // Max connections = NODE_COUNT * (NODE_COUNT - 1) / 2, but we can limit it for performance.
-            // We'll use a dynamic buffer.
-            
-            linesGeometry = new THREE.BufferGeometry();
-            // Allocate buffer for max potential connections (conservatively)
-            // We will update 'drawRange' dynamically.
-            const maxConnections = NODE_COUNT * 15; 
-            const linePositions = new Float32Array(maxConnections * 2 * 3); // 2 verts per line, 3 coords per vert
-            
-            linesGeometry.setAttribute('position', new THREE.BufferAttribute(linePositions, 3));
-            linesGeometry.setDrawRange(0, 0);
-
-            linesMaterial = new THREE.LineBasicMaterial({
-                color: COLORS.filaments,
-                transparent: true,
-                opacity: 0.3,
-                blending: THREE.AdditiveBlending,
-                depthWrite: false,
-                linewidth: 1 // Note: width only works to 1 on most WebGL drivers
-            });
-
-            linesMesh = new THREE.LineSegments(linesGeometry, linesMaterial);
-            scene.add(linesMesh);
+            particles = new THREE.Points(geometry, material);
+            scene.add(particles);
         }
 
-        function createParticles() {
-            // Floating dust/spores
-            particlesGeometry = new THREE.BufferGeometry();
-            const pPositions = [];
-            const pSizes = [];
-
-            for (let i = 0; i < PARTICLE_COUNT; i++) {
-                const x = (Math.random() * 1600) - 800;
-                const y = (Math.random() * 1600) - 800;
-                const z = (Math.random() * 1600) - 800;
-                pPositions.push(x, y, z);
-                pSizes.push(Math.random() * 2);
+        // 2. Floating Organisms (Jelly-like nodes)
+        function createOrganisms() {
+            const organismCount = 18;
+            
+            // Shared Geometry for performance
+            // The "Bell" (Primary)
+            const bellGeometry = new THREE.IcosahedronGeometry(1, 1);
+            // The "Core" (Secondary)
+            const coreGeometry = new THREE.SphereGeometry(0.4, 8, 8);
+            // The "Tentacles" (Lines)
+            const tentacleGeometry = new THREE.BufferGeometry();
+            const tentaclePoints = [];
+            const tentacleSegments = 6;
+            for(let i=0; i<tentacleSegments; i++) {
+                tentaclePoints.push(new THREE.Vector3(0, -i * 0.5, 0));
             }
+            tentacleGeometry.setFromPoints(tentaclePoints);
 
-            particlesGeometry.setAttribute('position', new THREE.Float32BufferAttribute(pPositions, 3));
-            particlesGeometry.setAttribute('size', new THREE.Float32BufferAttribute(pSizes, 1));
+            // Materials
+            const bellMaterial = new THREE.MeshBasicMaterial({
+                color: COLORS.primary,
+                transparent: true,
+                opacity: 0.15,
+                depthWrite: false,
+                wireframe: true
+            });
 
-            particlesMaterial = new THREE.PointsMaterial({
-                color: COLORS.particles,
-                size: 3,
+            const coreMaterial = new THREE.MeshBasicMaterial({
+                color: COLORS.secondary,
                 transparent: true,
                 opacity: 0.6,
-                blending: THREE.AdditiveBlending,
-                depthWrite: false,
-                sizeAttenuation: true,
-                map: generateSprite()
+                depthWrite: false
             });
 
-            particleSystem = new THREE.Points(particlesGeometry, particlesMaterial);
-            scene.add(particleSystem);
+            const tentacleMaterial = new THREE.LineBasicMaterial({
+                color: COLORS.primary,
+                transparent: true,
+                opacity: 0.3,
+                depthWrite: false
+            });
+
+            for (let i = 0; i < organismCount; i++) {
+                const group = new THREE.Group();
+                
+                // Random Position
+                const x = (Math.random() - 0.5) * 35;
+                const y = (Math.random() - 0.5) * 25;
+                const z = (Math.random() - 0.5) * 15;
+                group.position.set(x, y, z);
+
+                // Store origin for floating animation
+                group.userData = {
+                    origin: new THREE.Vector3(x, y, z),
+                    phase: Math.random() * Math.PI * 2,
+                    speed: 0.0005 + Math.random() * 0.001,
+                    scaleBase: 0.5 + Math.random() * 0.8
+                };
+
+                // Add Body Parts
+                const bell = new THREE.Mesh(bellGeometry, bellMaterial);
+                const core = new THREE.Mesh(coreGeometry, coreMaterial);
+                
+                // Add a few tentacles
+                for(let t=0; t<3; t++) {
+                    const tentacle = new THREE.Line(tentacleGeometry, tentacleMaterial);
+                    tentacle.position.x = (Math.random() - 0.5) * 0.5;
+                    tentacle.position.z = (Math.random() - 0.5) * 0.5;
+                    tentacle.rotation.y = Math.random() * Math.PI;
+                    tentacle.scale.setScalar(0.5 + Math.random() * 0.5);
+                    group.add(tentacle);
+                }
+
+                group.add(bell);
+                group.add(core);
+                
+                scene.add(group);
+                organisms.push(group);
+            }
         }
 
-        // -------------------------------------------------------------------------
-        // ANIMATION
-        // -------------------------------------------------------------------------
-        function onWindowResize() {
-            windowHalf.set(window.innerWidth / 2, window.innerHeight / 2);
-            camera.aspect = window.innerWidth / window.innerHeight;
-            camera.updateProjectionMatrix();
-            renderer.setSize(window.innerWidth, window.innerHeight);
-        }
+        // --- ANIMATION ---
+        function animate() {
+            requestAnimationFrame(animate);
 
-        function onMouseMove(event) {
-            if (prefersReducedMotion) return;
-            // Normalize mouse -1 to 1
-            targetMouse.x = (event.clientX - windowHalf.x) * 0.05;
-            targetMouse.y = (event.clientY - windowHalf.y) * 0.05;
-        }
+            // Safety check for time
+            let now = performance.now();
+            if (!time) time = now;
+            const delta = now - time;
+            time = now;
 
-        function animate(timestamp) {
-            if (!timestamp) timestamp = performance.now();
-            const time = timestamp * 0.001; // seconds
+            // If reduced motion, render once or very slowly
+            const speedFactor = prefersReducedMotion ? 0.1 : 1.0;
+            const slowTime = now * 0.001 * speedFactor;
 
-            // Camera drift (Smooth lerp)
+            // 1. Animate Particles (Drift Upwards/Flow)
+            if (particles) {
+                const positions = particles.geometry.attributes.position.array;
+                for (let i = 0; i < positions.length; i += 3) {
+                    // Upward drift
+                    positions[i + 1] += 0.01 * speedFactor; 
+                    
+                    // Reset if out of view
+                    if (positions[i + 1] > 30) {
+                        positions[i + 1] = -30;
+                    }
+                }
+                particles.geometry.attributes.position.needsUpdate = true;
+                // Subtle rotation of the whole field
+                particles.rotation.y = Math.sin(slowTime * 0.1) * 0.1;
+            }
+
+            // 2. Animate Organisms
+            organisms.forEach((group) => {
+                const data = group.userData;
+
+                // Bobbing motion (vertical)
+                const floatY = Math.sin(slowTime + data.phase) * 1.5;
+                group.position.y = data.origin.y + floatY;
+
+                // Gentle drift (horizontal)
+                const driftX = Math.cos(slowTime * 0.5 + data.phase) * 0.5;
+                group.position.x = data.origin.x + driftX;
+
+                // Pulsing scale (breathing)
+                const breath = 1 + Math.sin(slowTime * 2 + data.phase) * 0.1;
+                group.scale.setScalar(data.scaleBase * breath);
+
+                // Slow rotation
+                group.rotation.z = Math.sin(slowTime * 0.2 + data.phase) * 0.1;
+                group.rotation.y += 0.002 * speedFactor;
+            });
+
+            // 3. Camera Parallax (Subtle)
             if (!prefersReducedMotion) {
-                mouse.x += (targetMouse.x - mouse.x) * 0.05;
-                mouse.y += (targetMouse.y - mouse.y) * 0.05;
-                camera.position.x += (mouse.x - camera.position.x) * 0.05;
-                camera.position.y += (-mouse.y - camera.position.y) * 0.05;
+                camera.position.x += (mouseX * 0.5 - camera.position.x) * 0.05;
+                camera.position.y += (-mouseY * 0.5 - camera.position.y) * 0.05;
                 camera.lookAt(scene.position);
             }
 
-            // 1. Animate Nodes (Organic floating)
-            const positions = nodesGeometry.attributes.position.array;
-            
-            for (let i = 0; i < NODE_COUNT; i++) {
-                const i3 = i * 3;
-                
-                if (!prefersReducedMotion) {
-                    const origin = nodePositions[i];
-                    const params = nodeVelocities[i];
-                    
-                    // Sine wave oscillation based on time + random phase
-                    // Using Vector origin prevents drift errors
-                    const offset = Math.sin(time * params.speed + params.phase) * params.amplitude;
-                    
-                    positions[i3] = origin.x + params.axis.x * offset;
-                    positions[i3 + 1] = origin.y + params.axis.y * offset;
-                    positions[i3 + 2] = origin.z + params.axis.z * offset;
-                }
-            }
-            nodesGeometry.attributes.position.needsUpdate = true;
-
-            // 2. Update Connections (The "Living Network")
-            // Rebuild line geometry every frame based on current node proximity
-            let vertexIndex = 0;
-            const linePos = linesGeometry.attributes.position.array;
-            
-            // Optimization: Avoid Sqrt for distance check
-            const distSqThreshold = CONNECTION_DISTANCE * CONNECTION_DISTANCE;
-
-            for (let i = 0; i < NODE_COUNT; i++) {
-                for (let j = i + 1; j < NODE_COUNT; j++) {
-                    const dx = positions[i * 3] - positions[j * 3];
-                    const dy = positions[i * 3 + 1] - positions[j * 3 + 1];
-                    const dz = positions[i * 3 + 2] - positions[j * 3 + 2];
-
-                    const distSq = dx*dx + dy*dy + dz*dz;
-
-                    if (distSq < distSqThreshold) {
-                        // Limit buffer overflow
-                        if (vertexIndex >= linePos.length) break;
-
-                        // Add line segment
-                        linePos[vertexIndex++] = positions[i * 3];
-                        linePos[vertexIndex++] = positions[i * 3 + 1];
-                        linePos[vertexIndex++] = positions[i * 3 + 2];
-
-                        linePos[vertexIndex++] = positions[j * 3];
-                        linePos[vertexIndex++] = positions[j * 3 + 1];
-                        linePos[vertexIndex++] = positions[j * 3 + 2];
-                    }
-                }
-            }
-            linesGeometry.setDrawRange(0, vertexIndex / 3);
-            linesGeometry.attributes.position.needsUpdate = true;
-
-            // 3. Animate Background Particles (Slow Global Rotation)
-            if (!prefersReducedMotion) {
-                particleSystem.rotation.y = time * 0.05;
-                particleSystem.rotation.z = time * 0.02;
-            }
-
             renderer.render(scene, camera);
+        }
+
+        // --- HANDLERS ---
+        function onWindowResize() {
+            width = window.innerWidth;
+            height = window.innerHeight;
+            camera.aspect = width / height;
+            camera.updateProjectionMatrix();
+            renderer.setSize(width, height);
+        }
+
+        function onMouseMove(event) {
+            // Normalize mouse position from -1 to 1
+            mouseX = (event.clientX / width) * 2 - 1;
+            mouseY = (event.clientY / height) * 2 - 1;
         }
 
         // Start

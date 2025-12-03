@@ -537,8 +537,33 @@ def check_pr_description_for_trigger(repo: str, pr_number: str, token: str) -> b
     return check_review_trigger_in_text(body)
 
 
-def check_comments_for_trigger(repo: str, pr_number: str, token: str) -> bool:
-    """Check if any PR comment contains Review=True"""
+def get_last_review_comment_time(repo: str, pr_number: str, token: str) -> Optional[str]:
+    """Get the timestamp of the last bot review comment, if any"""
+    page = 1
+    per_page = 100
+    last_review_time = None
+
+    while True:
+        endpoint = f"repos/{repo}/issues/{pr_number}/comments?per_page={per_page}&page={page}"
+        comments = github_api_request(endpoint, token)
+
+        for comment in comments:
+            body = comment.get('body', '') or ''
+            # Check if this is a review comment from our bot (contains typical review markers)
+            if '## PR Review' in body or 'LGTM' in body or '🐛' in body or 'Bugs' in body:
+                created_at = comment.get('created_at')
+                if created_at and (not last_review_time or created_at > last_review_time):
+                    last_review_time = created_at
+
+        if len(comments) < per_page:
+            break
+        page += 1
+
+    return last_review_time
+
+
+def check_comments_for_new_trigger(repo: str, pr_number: str, token: str, after_time: Optional[str] = None) -> bool:
+    """Check if any PR comment contains Review=True, optionally only after a certain time"""
     page = 1
     per_page = 100
 
@@ -549,7 +574,13 @@ def check_comments_for_trigger(repo: str, pr_number: str, token: str) -> bool:
         for comment in comments:
             body = comment.get('body', '') or ''
             if check_review_trigger_in_text(body):
-                return True
+                # If we have a time filter, only count triggers after that time
+                if after_time:
+                    created_at = comment.get('created_at', '')
+                    if created_at > after_time:
+                        return True
+                else:
+                    return True
 
         if len(comments) < per_page:
             break
@@ -558,8 +589,8 @@ def check_comments_for_trigger(repo: str, pr_number: str, token: str) -> bool:
     return False
 
 
-def check_commits_for_trigger(repo: str, pr_number: str, token: str) -> bool:
-    """Check if any commit message in the PR contains Review=True"""
+def check_commits_for_new_trigger(repo: str, pr_number: str, token: str, after_time: Optional[str] = None) -> bool:
+    """Check if any commit message contains Review=True, optionally only after a certain time"""
     page = 1
     per_page = 100
 
@@ -570,7 +601,13 @@ def check_commits_for_trigger(repo: str, pr_number: str, token: str) -> bool:
         for commit in commits:
             message = commit.get('commit', {}).get('message', '') or ''
             if check_review_trigger_in_text(message):
-                return True
+                # If we have a time filter, only count triggers after that time
+                if after_time:
+                    commit_date = commit.get('commit', {}).get('committer', {}).get('date', '')
+                    if commit_date > after_time:
+                        return True
+                else:
+                    return True
 
         if len(commits) < per_page:
             break
@@ -579,18 +616,32 @@ def check_commits_for_trigger(repo: str, pr_number: str, token: str) -> bool:
     return False
 
 
-def has_review_trigger(repo: str, pr_number: str, token: str) -> Tuple[bool, str]:
-    """Check all sources for Review=True trigger."""
-    if check_pr_description_for_trigger(repo, pr_number, token):
-        return True, "PR description"
+def has_new_review_trigger(repo: str, pr_number: str, token: str) -> Tuple[bool, str]:
+    """
+    Check for NEW Review=True triggers (after last review).
+    PR description trigger only counts on PR open, not on subsequent commits.
+    """
+    # Get the time of our last review
+    last_review_time = get_last_review_comment_time(repo, pr_number, token)
 
-    if check_comments_for_trigger(repo, pr_number, token):
-        return True, "PR comment"
-
-    if check_commits_for_trigger(repo, pr_number, token):
-        return True, "commit message"
-
-    return False, ""
+    if last_review_time:
+        print(f"Last review was at: {last_review_time}")
+        # Only check for NEW triggers after our last review
+        if check_comments_for_new_trigger(repo, pr_number, token, after_time=last_review_time):
+            return True, "new PR comment"
+        if check_commits_for_new_trigger(repo, pr_number, token, after_time=last_review_time):
+            return True, "new commit message"
+        return False, ""
+    else:
+        # No previous review - check all sources including description
+        print("No previous review found, checking all trigger sources")
+        if check_pr_description_for_trigger(repo, pr_number, token):
+            return True, "PR description"
+        if check_comments_for_new_trigger(repo, pr_number, token):
+            return True, "PR comment"
+        if check_commits_for_new_trigger(repo, pr_number, token):
+            return True, "commit message"
+        return False, ""
 
 
 def should_run_review(repo: str, pr_number: str, token: str) -> Tuple[bool, str]:
@@ -598,27 +649,37 @@ def should_run_review(repo: str, pr_number: str, token: str) -> Tuple[bool, str]
     event_action = os.getenv('EVENT_ACTION', '')
     is_manual = os.getenv('IS_MANUAL', 'false').lower() == 'true'
 
+    # Manual dispatch always runs
     if is_manual:
         return True, "Manual workflow dispatch"
 
-    trigger_found, trigger_source = has_review_trigger(repo, pr_number, token)
-    if trigger_found:
-        return True, f"Found '{REVIEW_TRIGGER}' in {trigger_source}"
-
+    # PR just opened - auto review if enabled
     if event_action == 'opened':
         if AUTO_REVIEW:
             return True, "AUTO_REVIEW is enabled, PR was just opened"
         else:
+            # Check for trigger in description on open
+            if check_pr_description_for_trigger(repo, pr_number, token):
+                return True, f"Found '{REVIEW_TRIGGER}' in PR description"
             return False, f"AUTO_REVIEW is disabled, add '{REVIEW_TRIGGER}' to trigger review"
 
+    # New commits pushed - only review if NEW trigger found (after last review)
     if event_action == 'synchronize':
         if REVIEW_ON_SYNC:
             return True, "REVIEW_ON_SYNC is enabled"
-        else:
-            return False, f"REVIEW_ON_SYNC is disabled, add '{REVIEW_TRIGGER}' to trigger review"
 
-    if AUTO_REVIEW:
-        return True, f"AUTO_REVIEW is enabled, running for event: {event_action or 'unknown'}"
+        # Check for NEW triggers only (comment or commit after last review)
+        trigger_found, trigger_source = has_new_review_trigger(repo, pr_number, token)
+        if trigger_found:
+            return True, f"Found '{REVIEW_TRIGGER}' in {trigger_source}"
+
+        return False, f"No new '{REVIEW_TRIGGER}' found since last review"
+
+    # Unknown event - check for new triggers
+    trigger_found, trigger_source = has_new_review_trigger(repo, pr_number, token)
+    if trigger_found:
+        return True, f"Found '{REVIEW_TRIGGER}' in {trigger_source}"
+
     return False, f"No trigger found for event: {event_action or 'unknown'}"
 
 

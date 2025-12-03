@@ -100,8 +100,8 @@ async def on_message(message: discord.Message):
                 url=result["issue_url"]
             )
             embed.add_field(
-                name="Issue #",
-                value=f"#{result['issue_number']}",
+                name="Issue",
+                value=f"[View on GitHub]({result['issue_url']})",
                 inline=True
             )
             embed.add_field(
@@ -115,13 +115,54 @@ async def on_message(message: discord.Message):
                     value=original_author,
                     inline=True
                 )
-            embed.set_footer(text="Click the title to view the issue")
+            embed.set_footer(text="Thank you for your report!")
             await message.reply(embed=embed)
         else:
-            await message.reply(
-                f"⚠️ Couldn't create issue: {result.get('error', 'Unknown error')}\n"
-                f"Report manually: https://github.com/pollinations/pollinations/issues"
+            # Enhanced error handling with similar embed design
+            error_msg = result.get('error', 'Unknown error')
+            
+            # Parse common error types for user-friendly messages
+            if "403" in error_msg:
+                friendly_error = "Permission denied - bot token may lack required access"
+            elif "404" in error_msg:
+                friendly_error = "Repository not found - check GITHUB_REPO setting"
+            elif "401" in error_msg:
+                friendly_error = "Authentication failed - check bot token"
+            elif "not configured" in error_msg.lower():
+                friendly_error = error_msg
+            elif "timeout" in error_msg.lower():
+                friendly_error = "Request timed out - GitHub may be slow"
+            else:
+                friendly_error = "Failed to create issue"
+            
+            embed = discord.Embed(
+                title="❌ Issue Creation Failed",
+                description=f"**{enhanced['title']}**",
+                color=discord.Color.red()
             )
+            embed.add_field(
+                name="Error",
+                value=friendly_error,
+                inline=False
+            )
+            embed.add_field(
+                name="Reporter",
+                value=reporter,
+                inline=True
+            )
+            if original_author:
+                embed.add_field(
+                    name="Original Author",
+                    value=original_author,
+                    inline=True
+                )
+            embed.add_field(
+                name="Manual Report",
+                value=f"[Create issue manually](https://github.com/{github_manager.repo}/issues/new)",
+                inline=False
+            )
+            embed.set_footer(text="Please try again or report manually")
+            await message.reply(embed=embed)
 
 
 def main():

@@ -29,7 +29,7 @@ class PollinationsClient:
 
         headers = {"Content-Type": "application/json"}
         payload = {
-            "model": "openai",
+            "model": "claude-large",
             "messages": messages
         }
 

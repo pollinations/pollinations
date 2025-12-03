@@ -9,8 +9,9 @@ load_dotenv()
 DISCORD_TOKEN = os.getenv("DISCORD_TOKEN")
 
 # GitHub Configuration
-GITHUB_TOKEN = os.getenv("GITHUB_TOKEN")
-GITHUB_REPO = os.getenv("GITHUB_REPO", "pollinations/pollinations")
+# Use POLLY_GITHUB_TOKEN to avoid conflict with Codespace's built-in GITHUB_TOKEN
+GITHUB_TOKEN = os.getenv("POLLY_GITHUB_TOKEN")
+GITHUB_REPO = os.getenv("GITHUB_REPO")
 
 # Pollinations API Configuration
 POLLINATIONS_API_KEY = os.getenv("POLLINATIONS_API_KEY", "")

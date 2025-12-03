@@ -1,5 +1,6 @@
 import debug from "debug";
 import sleep from "await-sleep";
+import { fileTypeFromBuffer } from "file-type";
 import { HttpError } from "../httpError.ts";
 import type { ImageParams } from "../params.ts";
 import type { ProgressManager } from "../progressBar.ts";
@@ -146,9 +147,13 @@ export const callSeedanceAPI = async (
             }
 
             const imageBuffer = await imageResponse.arrayBuffer();
-            const base64Data = Buffer.from(imageBuffer).toString("base64");
-            const contentType =
-                imageResponse.headers.get("content-type") || "image/jpeg";
+            const bufferNode = Buffer.from(imageBuffer);
+            const base64Data = bufferNode.toString("base64");
+
+            // Detect MIME type from magic bytes (don't trust content-type header)
+            // Some CDNs like Telegram return application/octet-stream for images
+            const fileType = await fileTypeFromBuffer(bufferNode);
+            const contentType = fileType?.mime || "image/jpeg";
             const dataUrl = `data:${contentType};base64,${base64Data}`;
 
             // Add image to content array

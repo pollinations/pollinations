@@ -1,4 +1,5 @@
 import debug from "debug";
+import { fileTypeFromBuffer } from "file-type";
 import { withTimeoutSignal } from "../util.ts";
 import { HttpError } from "../httpError.ts";
 import type { ImageParams } from "../params.ts";
@@ -117,13 +118,13 @@ export const callSeedreamAPI = async (
 
                     // Convert to base64
                     const imageBuffer = await imageResponse.arrayBuffer();
-                    const base64Data =
-                        Buffer.from(imageBuffer).toString("base64");
+                    const bufferNode = Buffer.from(imageBuffer);
+                    const base64Data = bufferNode.toString("base64");
 
-                    // Determine MIME type from response headers
-                    const contentType =
-                        imageResponse.headers.get("content-type") ||
-                        "image/jpeg";
+                    // Detect MIME type from magic bytes (don't trust content-type header)
+                    // Some CDNs like Telegram return application/octet-stream for images
+                    const fileType = await fileTypeFromBuffer(bufferNode);
+                    const contentType = fileType?.mime || "image/jpeg";
 
                     // Create data URL format: data:image/jpeg;base64,<base64data>
                     const dataUrl = `data:${contentType};base64,${base64Data}`;

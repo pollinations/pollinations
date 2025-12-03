@@ -1,9 +1,9 @@
 import { useState, useEffect, type FC } from "react";
 
-const NEWS_ID = "dec-2025-pollen-rebalance";
+const NEWS_ID = "dec-2025-v4";
 
 export const NewsBanner: FC = () => {
-    const [dismissed, setDismissed] = useState(true); // Start hidden to avoid flash
+    const [dismissed, setDismissed] = useState(true);
 
     useEffect(() => {
         const isDismissed = localStorage.getItem(`news-dismissed-${NEWS_ID}`);
@@ -18,7 +18,7 @@ export const NewsBanner: FC = () => {
     if (dismissed) return null;
 
     return (
-        <div className="relative bg-gradient-to-r from-purple-50 to-amber-50 border border-purple-200/50 rounded-lg p-4 text-sm">
+        <div className="relative bg-violet-50/60 border border-violet-200 rounded-lg p-4 text-sm">
             <button
                 type="button"
                 onClick={handleDismiss}
@@ -28,27 +28,35 @@ export const NewsBanner: FC = () => {
                 ×
             </button>
 
-            <div className="flex flex-col gap-3 pr-6">
-                <div className="flex items-center gap-2">
-                    <span className="text-xs font-mono bg-purple-100 text-purple-700 px-2 py-0.5 rounded">
-                        dec 2025
-                    </span>
-                    <span className="text-gray-500 text-xs">
-                        pollen rebalance
-                    </span>
-                </div>
-
-                <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs font-mono text-gray-600">
-                    <span>🦠 spore 1/day</span>
-                    <span>🌱 seed 3/day</span>
-                    <span>🌸 flower 10/day</span>
-                    <span>🍯 nectar 20/day</span>
-                </div>
-
-                <div className="text-xs text-gray-500">
-                    <span className="text-purple-600">new:</span> claude opus
-                    4.5 · kimi k2 · seedream 4 · veo 3.1 · seedance
-                </div>
+            <div className="flex flex-col gap-2 pr-6">
+                <span className="text-xs text-gray-500">
+                    Dec 2025 — What's new
+                </span>
+                <ul className="text-xs space-y-1.5">
+                    <li className="text-gray-600">
+                        🎉 <strong>Tier values updated</strong>{" "}
+                        <span className="text-gray-400 italic">dec 1</span>
+                    </li>
+                    <li className="text-gray-600">
+                        🚀 <strong>Fresh models dropped:</strong>{" "}
+                        <span className="text-gray-700">Claude Opus 4.5</span> ·{" "}
+                        <span className="text-gray-700">Kimi K2</span> ·{" "}
+                        <span className="text-gray-700">Seedream 4.5</span> ·{" "}
+                        <span className="text-gray-700">VEO 3.1</span> ·{" "}
+                        <span className="text-gray-700">Seedance Pro-Fast</span>
+                    </li>
+                    <li className="text-gray-600">
+                        💬 <strong>Join the discussion:</strong>{" "}
+                        <a
+                            href="https://discord.com/channels/885844321461485618/1432378056126894343"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-purple-600 hover:text-purple-800 underline"
+                        >
+                            #pollen-beta channel
+                        </a>
+                    </li>
+                </ul>
             </div>
         </div>
     );

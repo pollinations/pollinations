@@ -90,13 +90,13 @@ export const IMAGE_SERVICES = {
         modelId: "seedream",
         provider: "bytedance-ark",
         cost: [
-            // ByteDance ARK Seedream 4.0
+            // ByteDance ARK Seedream 4.5 - $0.04 per image
             {
                 date: COST_START_DATE,
-                completionImageTokens: 0.03, // $0.03 per image (3 cents)
+                completionImageTokens: 0.04, // $0.04 per image (4 cents)
             },
         ],
-        description: "Seedream 4.0 - ByteDance ARK",
+        description: "Seedream 4.5 - ByteDance ARK (4K, Multi-Image)",
         inputModalities: ["text", "image"],
         outputModalities: ["image"],
     },
@@ -139,14 +139,15 @@ export const IMAGE_SERVICES = {
         modelId: "seedance",
         provider: "bytedance-ark",
         cost: [
-            // Seedance - ~$0.14 per 5-sec 720p video
+            // Seedance Pro-Fast - $1/M tokens
             // Token formula: (height × width × FPS × duration) / 1024
+            // 720p 5s = ~103K tokens = ~$0.10
             {
                 date: COST_START_DATE,
-                completionVideoSeconds: 0.028, // ~$0.14 per 5 seconds
+                completionVideoSeconds: 0.02, // ~$0.10 per 5 seconds at 720p
             },
         ],
-        description: "Seedance - BytePlus video generation (preview)",
+        description: "Seedance Pro-Fast - BytePlus video generation",
         inputModalities: ["text", "image"],
         outputModalities: ["video"],
     },

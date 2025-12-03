@@ -1,20 +1,21 @@
-"""GitHub integration for creating issues directly via GitHub API."""
+"""GitHub integration for creating issues via GitHub Actions."""
 
 import aiohttp
 from config import GITHUB_TOKEN, GITHUB_REPO
 
 
 class GitHubManager:
-    """Creates GitHub issues directly using the GitHub Issues API."""
+    """Creates GitHub issues by triggering a GitHub Actions workflow."""
 
     def __init__(self):
         self.token = GITHUB_TOKEN
-        self.repo = GITHUB_REPO or "pollinations/pollinations"
+        self.repo = GITHUB_REPO
 
     async def create_issue(self, title: str, description: str, original_message: str,
                            reporter: str, original_author: str = None) -> dict:
         """
-        Create a GitHub issue directly via the GitHub Issues API.
+        Create a GitHub issue by triggering a repository_dispatch event.
+        The workflow in the target repo will create the issue using GITHUB_TOKEN.
         
         Args:
             title: Issue title (from AI)
@@ -24,10 +25,12 @@ class GitHubManager:
             original_author: Original author if different from reporter
             
         Returns:
-            Dict with success status and issue URL
+            Dict with success status
         """
         if not self.token:
             return {"success": False, "error": "GITHUB_TOKEN not configured"}
+        if not self.repo:
+            return {"success": False, "error": "GITHUB_REPO not configured"}
 
         # Build the issue body
         body = f"{description}\n\n---\n"
@@ -36,30 +39,32 @@ class GitHubManager:
             body += f"**Original author:** {original_author}\n"
         body += f"\n<details>\n<summary>Original Discord Message</summary>\n\n{original_message[:1000]}\n</details>"
 
-        # Create issue directly via GitHub Issues API
-        url = f"https://api.github.com/repos/{self.repo}/issues"
+        # Trigger repository_dispatch event
+        url = f"https://api.github.com/repos/{self.repo}/dispatches"
         
         headers = {
+            "Authorization": f"Bearer {self.token}",
             "Accept": "application/vnd.github.v3+json",
-            "Authorization": f"token {self.token}",
             "X-GitHub-Api-Version": "2022-11-28"
         }
         
         payload = {
-            "title": title,
-            "body": body,
-            "labels": ["discord-report"]
+            "event_type": "discord-issue",
+            "client_payload": {
+                "title": title,
+                "body": body,
+                "labels": "discord-report"
+            }
         }
 
         try:
             async with aiohttp.ClientSession() as session:
                 async with session.post(url, json=payload, headers=headers, timeout=30) as response:
-                    if response.status == 201:
-                        data = await response.json()
+                    if response.status == 204:
                         return {
                             "success": True,
-                            "issue_number": data["number"],
-                            "issue_url": data["html_url"]
+                            "issue_number": "pending",
+                            "issue_url": f"https://github.com/{self.repo}/issues"
                         }
                     else:
                         error_text = await response.text()

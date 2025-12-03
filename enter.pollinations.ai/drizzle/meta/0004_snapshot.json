@@ -1,8 +1,8 @@
 {
   "version": "6",
   "dialect": "sqlite",
-  "id": "6576122d-9443-43f4-80c7-617ae5933281",
-  "prevId": "bfa15d31-0cf9-4604-80cb-ef24377ad106",
+  "id": "405f1a45-59fe-4177-8d6f-4465339e386b",
+  "prevId": "6576122d-9443-43f4-80c7-617ae5933281",
   "tables": {
     "account": {
       "name": "account",
@@ -867,6 +867,13 @@
           "notNull": true,
           "autoincrement": false
         },
+        "token_price_completion_video_seconds": {
+          "name": "token_price_completion_video_seconds",
+          "type": "real",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
         "token_count_prompt_text": {
           "name": "token_count_prompt_text",
           "type": "integer",
@@ -918,6 +925,13 @@
         },
         "token_count_completion_image": {
           "name": "token_count_completion_image",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "token_count_completion_video_seconds": {
+          "name": "token_count_completion_video_seconds",
           "type": "integer",
           "primaryKey": false,
           "notNull": true,
@@ -1065,20 +1079,6 @@
         },
         "error_message": {
           "name": "error_message",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "error_stack": {
-          "name": "error_stack",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "error_details": {
-          "name": "error_details",
           "type": "text",
           "primaryKey": false,
           "notNull": false,

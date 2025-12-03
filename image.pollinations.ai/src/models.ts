@@ -43,9 +43,16 @@ export const IMAGE_CONFIG = {
         defaultSideLength: 768,
     },
 
-    // ByteDance ARK Seedream 4.5 - high quality 4K image generation
+    // ByteDance ARK Seedream 4.0 - better quality (default)
     seedream: {
         type: "seedream",
+        enhance: false,
+        defaultSideLength: 1024, // Seedream 4.0 standard resolution
+    },
+
+    // ByteDance ARK Seedream 4.5 Pro - high quality 4K image generation
+    "seedream-pro": {
+        type: "seedream-pro",
         enhance: false,
         defaultSideLength: 2048, // Seedream 4.5 supports up to 4K
         minPixels: 3686400, // Seedream 4.5 requires at least 1920x1920 pixels

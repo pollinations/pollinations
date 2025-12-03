@@ -85,7 +85,7 @@ export const portkeyConfig: PortkeyConfigMap = {
             process.env.AZURE_OPENAI_AUDIO_ENDPOINT,
             "gpt-4o-mini-audio-preview-2024-12-17",
         ),
-        "max-completion-tokens": 2048,
+        "max-completion-tokens": 512,
     }),
     "openai/o4-mini": () =>
         createAzureModelConfig(

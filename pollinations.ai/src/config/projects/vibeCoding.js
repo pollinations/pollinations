@@ -155,5 +155,15 @@ export const vibeCodingProjects = [
     repo: "https://github.com/pollinations/pollinations/tree/main/websim.pollinations.ai",
     submissionDate: "2025-08-03",
     order: 0.5
+  },
+  {
+    "name": "Aqua Application Programming Interface",
+    "url": "https://aquadevs.com/",
+    "description": "This is an learning project for me to learn how to track users, backend check, and more about building an api.\\nWe have a landing page and documentation soon.",
+    "author": "kiskreforev",
+    "category": "vibeCoding",
+    "language": "EN",
+    "submissionDate": "2025-12-03",
+    "order": 5
   }
 ];

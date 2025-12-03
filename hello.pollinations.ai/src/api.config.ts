@@ -11,7 +11,8 @@ export const API_KEY = envKey || PUBLISHABLE_KEY;
 export const IS_BACKEND_MODE = !!envKey;
 
 // Delay between sequential API calls in frontend mode (ms)
-export const FRONTEND_CALL_DELAY = 3000;
+// Rate limit for publishable keys is ~72s per request, so we wait 75s to be safe
+export const FRONTEND_CALL_DELAY = 75000;
 
 // Log which key is being used (only first 15 chars for security)
 const keyPreview = API_KEY.substring(0, 15) + "...";

@@ -1,6 +1,6 @@
 import * as React from "react";
 import { cva } from "class-variance-authority";
-import { cn } from "../../../utils"; 
+import { cn } from "../../../utils";
 
 const buttonVariants = cva(
     "inline-flex items-center justify-center transition-all focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50 rounded-button",
@@ -18,7 +18,7 @@ const buttonVariants = cva(
                 // Copy button (small, lime bg, rose border) - used for Copy URL actions
                 copy: "px-4 py-2 font-headline uppercase text-xs font-black text-text-body-main bg-button-secondary-bg border-2 border-border-brand hover:shadow-shadow-brand-md transition-all",
                 // Model selector (tiny, 4-state logic) - PlayPage model buttons
-                model: "relative px-2 py-1.5 font-mono text-sm font-medium text-text-body-main border-2 border-transparent transition-all data-[active=true]:data-[type=image]:bg-indicator-image data-[active=true]:data-[type=image]:shadow-shadow-dark-sm data-[active=true]:data-[type=text]:bg-indicator-text data-[active=true]:data-[type=text]:shadow-shadow-dark-sm data-[active=true]:data-[type=audio]:bg-indicator-audio data-[active=true]:data-[type=audio]:shadow-shadow-dark-sm data-[active=false]:bg-input-background data-[active=false]:data-[type=image]:hover:bg-input-background data-[active=false]:data-[type=text]:hover:bg-input-background data-[active=false]:data-[type=audio]:hover:bg-input-background",
+                model: "relative px-2 py-1.5 font-mono text-sm font-medium text-text-body-main border-2 border-transparent transition-all data-[active=true]:text-text-on-color data-[active=true]:data-[type=image]:bg-indicator-image data-[active=true]:data-[type=image]:shadow-shadow-dark-sm data-[active=true]:data-[type=text]:bg-indicator-text data-[active=true]:data-[type=text]:shadow-shadow-dark-sm data-[active=true]:data-[type=audio]:bg-indicator-audio data-[active=true]:data-[type=audio]:shadow-shadow-dark-sm data-[active=false]:bg-input-background data-[active=false]:data-[type=image]:hover:bg-input-background data-[active=false]:data-[type=text]:hover:bg-input-background data-[active=false]:data-[type=audio]:hover:bg-input-background",
                 // Generate button (full-width, dynamic color) - PlayPage generate button
                 generate:
                     "w-full px-6 py-4 font-headline uppercase text-lg font-black text-text-body-main border-r-4 border-b-4 border-border-strong transition-all data-[type=image]:bg-indicator-image data-[type=image]:shadow-shadow-dark-md data-[type=image]:hover:translate-x-[2px] data-[type=image]:hover:translate-y-[2px] data-[type=image]:hover:shadow-shadow-dark-sm data-[type=text]:bg-indicator-text data-[type=text]:shadow-shadow-dark-md data-[type=text]:hover:translate-x-[2px] data-[type=text]:hover:translate-y-[2px] data-[type=text]:hover:shadow-shadow-dark-sm data-[type=audio]:bg-indicator-audio data-[type=audio]:shadow-shadow-dark-md data-[type=audio]:hover:translate-x-[2px] data-[type=audio]:hover:translate-y-[2px] data-[type=audio]:hover:shadow-shadow-dark-sm disabled:opacity-50 disabled:cursor-not-allowed enabled:cursor-pointer",

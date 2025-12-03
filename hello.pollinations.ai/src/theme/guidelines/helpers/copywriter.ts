@@ -54,22 +54,10 @@ export async function generateCopy(
     // 3. Transform (ETL Step 2 - API Call)
     const fullPrompt = assembleCopyPrompt(themeVibe, jobs, targetLanguage);
 
-    console.log(
-        `📄 [COPY] Generating ${jobs.length} items (Mobile: ${isMobile})...`,
-    );
-    console.log("📤 [COPY] Request Prompt:");
-    console.log(fullPrompt);
+    console.log(`📝 [COPYWRITER] → Rewriting ${jobs.length} text items...`);
 
     try {
-        const response = await generateText(
-            fullPrompt,
-            42,
-            MODEL,
-            signal,
-        );
-
-        console.log("📥 [COPY] Response:");
-        console.log(response);
+        const response = await generateText(fullPrompt, 42, MODEL, signal);
 
         // 4. Load (ETL Step 3 - Re-hydration)
         let newTexts: Record<string, string> = {};
@@ -115,9 +103,7 @@ export async function generateCopy(
             }
         });
 
-        console.log(
-            `✅ [COPY] Successfully updated ${updatedCount} text nodes`,
-        );
+        console.log(`📝 [COPYWRITER] ← ${updatedCount} items rewritten`);
 
         return {
             full: contentToTransform,

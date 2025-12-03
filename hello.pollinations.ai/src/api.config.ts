@@ -6,11 +6,18 @@ const PUBLISHABLE_KEY = "plln_pk_JYeNIYDfEi0dwDT7kPAXujYWyYT2TaKm";
 const envKey = import.meta.env.VITE_POLLINATIONS_API_KEY;
 export const API_KEY = envKey || PUBLISHABLE_KEY;
 
+// Backend mode = secret key present (parallel API calls allowed)
+// Frontend mode = publishable key (sequential calls with delays)
+export const IS_BACKEND_MODE = !!envKey;
+
+// Delay between sequential API calls in frontend mode (ms)
+export const FRONTEND_CALL_DELAY = 3000;
+
 // Log which key is being used (only first 15 chars for security)
 const keyPreview = API_KEY.substring(0, 15) + "...";
-const keySource = envKey
-    ? "environment (secret key)"
-    : "fallback (publishable key)";
+const keySource = IS_BACKEND_MODE
+    ? "environment (secret key) → parallel mode"
+    : "fallback (publishable key) → sequential mode";
 console.log(`🔑 API Key loaded from ${keySource}: ${keyPreview}`);
 
 export const API = {

@@ -5,8 +5,12 @@ import { generateCopy } from "../../../theme/guidelines/helpers/copywriter";
 import { ALL_COPY } from "../../../theme/copy/index";
 import { dictionaryToTheme } from "../../../theme/style/theme-processor";
 import { generateBackground } from "../../../theme/guidelines/helpers/animator";
+import { IS_BACKEND_MODE, FRONTEND_CALL_DELAY } from "../../../api.config";
 import { SparklesIcon, SendIcon, DownloadIcon } from "lucide-react";
 import { Button } from "../ui/button";
+
+// Helper for sequential delays
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 interface AIPromptInputProps {
     isOpen: boolean;
@@ -43,50 +47,88 @@ export function AIPromptInput({ isOpen }: AIPromptInputProps) {
         // Check for mobile
         const isMobile = window.matchMedia("(max-width: 768px)").matches;
 
-        // Start copy immediately (takes longest)
-        const copyPromise = generateCopy(
-            activePrompt,
-            isMobile,
-            ALL_COPY,
-            "en",
-            controller.signal
-        );
+        const runGeneration = async () => {
+            try {
+                if (IS_BACKEND_MODE) {
+                    // BACKEND MODE: Parallel execution (secret key, no rate limits)
+                    console.log(
+                        "🚀 [PARALLEL MODE] Running all generators simultaneously"
+                    );
 
-        // Generate theme first, then background in parallel with copy
-        generateTheme(activePrompt, controller.signal)
-            .then((theme) => {
-                if (controller.signal.aborted) return;
+                    const [theme, copyResult, bgHtml] = await Promise.all([
+                        generateTheme(activePrompt, controller.signal),
+                        generateCopy(
+                            activePrompt,
+                            isMobile,
+                            ALL_COPY,
+                            "en",
+                            controller.signal
+                        ),
+                        generateBackground(activePrompt, controller.signal),
+                    ]);
 
-                // Generate background (now uses semantic tokens, no color extraction needed)
-                const backgroundPromise = generateBackground(
-                    activePrompt,
-                    controller.signal
-                );
+                    if (controller.signal.aborted) return;
+                    setTheme(theme, activePrompt, copyResult.full, bgHtml);
+                } else {
+                    // FRONTEND MODE: Sequential execution with delays (publishable key, rate limited)
+                    console.log(
+                        "🐢 [SEQUENTIAL MODE] Running generators one at a time with delays"
+                    );
 
-                // Wait for copy and background to complete
-                return Promise.all([
-                    Promise.resolve(theme),
-                    copyPromise,
-                    backgroundPromise,
-                ]);
-            })
-            .then((result) => {
-                if (!result || controller.signal.aborted) return;
+                    // 1. Designer (Theme)
+                    console.log("🎨 [1/3] Generating theme...");
+                    const theme = await generateTheme(
+                        activePrompt,
+                        controller.signal
+                    );
+                    if (controller.signal.aborted) return;
 
-                const [theme, copyResult, bgHtml] = result;
-                // Apply theme to context
-                setTheme(theme, activePrompt, copyResult.full, bgHtml);
+                    // Wait before next call
+                    await sleep(FRONTEND_CALL_DELAY);
+                    if (controller.signal.aborted) return;
+
+                    // 2. Copywriter
+                    console.log("📝 [2/3] Generating copy...");
+                    const copyResult = await generateCopy(
+                        activePrompt,
+                        isMobile,
+                        ALL_COPY,
+                        "en",
+                        controller.signal
+                    );
+                    if (controller.signal.aborted) return;
+
+                    // Wait before next call
+                    await sleep(FRONTEND_CALL_DELAY);
+                    if (controller.signal.aborted) return;
+
+                    // 3. Animator (Background)
+                    console.log("🎬 [3/3] Generating background...");
+                    const bgHtml = await generateBackground(
+                        activePrompt,
+                        controller.signal
+                    );
+                    if (controller.signal.aborted) return;
+
+                    setTheme(theme, activePrompt, copyResult.full, bgHtml);
+                }
+
                 setActivePrompt(null);
-
                 console.log("✅ [PRESET READY]");
                 setLoading(false);
-            })
-            .catch((err) => {
-                if (err.name !== "AbortError" && !controller.signal.aborted) {
+            } catch (err) {
+                if (
+                    err instanceof Error &&
+                    err.name !== "AbortError" &&
+                    !controller.signal.aborted
+                ) {
                     setError(err);
                     setLoading(false);
                 }
-            });
+            }
+        };
+
+        runGeneration();
 
         return () => controller.abort();
     }, [activePrompt, setTheme]);

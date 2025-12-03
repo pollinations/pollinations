@@ -147,9 +147,9 @@ ${userPrompt}
 
 Generate the theme JSON now:`;
 
-    console.log("🎨 [THEME PROMPT]:", fullPrompt);
+    console.log("🎨 [DESIGNER] → Requesting theme tokens...");
     const text = await generateText(fullPrompt, 42, MODEL, signal);
-    console.log("🎨 [THEME RESPONSE]:", text);
+    console.log("🎨 [DESIGNER] ← Theme tokens received");
     return parseThemeResponse(text);
 }
 
@@ -162,9 +162,9 @@ export async function generateFullTheme(
     signal?: AbortSignal,
 ): Promise<FullThemeStyle> {
     const fullPrompt = assembleStylePrompt(themeDescription);
-    console.log("🎨 [THEME PROMPT]:", fullPrompt);
+    console.log("🎨 [DESIGNER] → Requesting full theme...");
     const text = await generateText(fullPrompt, 42, MODEL, signal);
-    console.log("🎨 [THEME RESPONSE]:", text);
+    console.log("🎨 [DESIGNER] ← Full theme received");
     return parseFullThemeResponse(text);
 }
 

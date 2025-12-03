@@ -11,9 +11,12 @@ const logOps = debug("pollinations:seedance:ops");
 const logError = debug("pollinations:seedance:error");
 
 // Seedance API constants
-// BytePlus Seedance Pro-Fast uses single model ID for both T2V and I2V
-// Model ID includes date suffix as required by BytePlus
-const SEEDANCE_MODEL = "seedance-1-0-pro-fast-251015"; // Pro-Fast: higher quality, same speed as Lite
+// Model IDs include date suffix as required by BytePlus
+// Lite uses separate models for T2V and I2V
+const SEEDANCE_LITE_T2V = "seedance-1-0-lite-t2v-250428";
+const SEEDANCE_LITE_I2V = "seedance-1-0-lite-i2v-250428";
+// Pro-Fast uses single model for both T2V and I2V
+const SEEDANCE_PRO_FAST = "seedance-1-0-pro-fast-251015";
 
 interface SeedanceTaskResponse {
     id?: string;
@@ -92,9 +95,9 @@ export const callSeedanceAPI = async (
     // Resolution: default to 720p
     const resolution = "720p";
 
-    // Pro-Fast uses same model for both T2V and I2V
+    // Lite uses separate models for T2V and I2V
     const hasImage = safeParams.image && safeParams.image.length > 0;
-    const selectedModel = SEEDANCE_MODEL;
+    const selectedModel = hasImage ? SEEDANCE_LITE_I2V : SEEDANCE_LITE_T2V;
 
     logOps("Video params:", {
         durationSeconds,
@@ -161,10 +164,11 @@ export const callSeedanceAPI = async (
     // Log request body (hide base64 data)
     const logBody = {
         model: requestBody.model,
-        content: requestBody.content.map((c: any) =>
-            c.type === "image_url"
-                ? { ...c, image_url: { url: "[base64]" } }
-                : c,
+        content: requestBody.content.map(
+            (c: { type: string; image_url?: { url: string } }) =>
+                c.type === "image_url"
+                    ? { ...c, image_url: { url: "[base64]" } }
+                    : c,
         ),
     };
     logOps("Seedance API request body:", JSON.stringify(logBody, null, 2));
@@ -229,7 +233,187 @@ export const callSeedanceAPI = async (
         mimeType: "video/mp4",
         durationSeconds: durationSeconds,
         trackingData: {
-            actualModel: "seedance",
+            actualModel: "seedance", // Lite
+            usage: {
+                completionVideoSeconds: durationSeconds,
+            },
+        },
+    };
+};
+
+/**
+ * Generates a video using BytePlus Seedance Pro-Fast API
+ * Pro-Fast has better prompt adherence but lower quality than Lite
+ * @param {string} prompt - The prompt for video generation
+ * @param {ImageParams} safeParams - The parameters for video generation
+ * @param {ProgressManager} progress - Progress manager for updates
+ * @param {string} requestId - Request ID for progress tracking
+ * @returns {Promise<VideoGenerationResult>}
+ */
+export const callSeedanceProAPI = async (
+    prompt: string,
+    safeParams: ImageParams,
+    progress: ProgressManager,
+    requestId: string,
+): Promise<VideoGenerationResult> => {
+    // Use the same API key as Seedream (both are BytePlus ARK)
+    const apiKey = process.env.SEEDREAM_API_KEY;
+    if (!apiKey) {
+        throw new HttpError(
+            "SEEDREAM_API_KEY environment variable is required for Seedance Pro",
+            500,
+        );
+    }
+
+    logOps("Calling Seedance Pro API with prompt:", prompt);
+
+    // Update progress
+    progress.updateBar(
+        requestId,
+        35,
+        "Processing",
+        "Starting video generation with Seedance Pro...",
+    );
+
+    // Determine video parameters
+    const durationSeconds = safeParams.duration || 2;
+    const aspectRatio = safeParams.aspectRatio || "16:9";
+    const resolution = "720p";
+
+    // Pro-Fast uses single model for both T2V and I2V
+    const hasImage = safeParams.image && safeParams.image.length > 0;
+    const selectedModel = SEEDANCE_PRO_FAST;
+
+    logOps("Video params:", {
+        durationSeconds,
+        aspectRatio,
+        resolution,
+        model: selectedModel,
+        hasImage,
+    });
+
+    // Build text command with parameters (BytePlus format)
+    let textCommand = `${prompt} --resolution ${resolution} --duration ${durationSeconds} --watermark false`;
+    if (safeParams.seed !== undefined && safeParams.seed !== -1) {
+        textCommand += ` --seed ${safeParams.seed}`;
+    }
+
+    // Build request body using content array format (required by BytePlus API)
+    const requestBody: SeedanceRequestBody = {
+        model: selectedModel,
+        content: [
+            {
+                type: "text",
+                text: textCommand,
+            },
+        ],
+    };
+
+    // Add image for image-to-video generation
+    if (hasImage) {
+        const imageUrl = Array.isArray(safeParams.image)
+            ? safeParams.image[0]
+            : safeParams.image;
+
+        logOps("Adding first frame image for I2V:", imageUrl);
+        progress.updateBar(
+            requestId,
+            40,
+            "Processing",
+            "Processing reference image...",
+        );
+
+        try {
+            const { base64, mimeType } = await downloadImageAsBase64(imageUrl);
+            const dataUrl = `data:${mimeType};base64,${base64}`;
+
+            requestBody.content.push({
+                type: "image_url",
+                image_url: { url: dataUrl },
+                role: "first_frame",
+            });
+            logOps("Image processed successfully");
+        } catch (error) {
+            logError("Error processing reference image:", error.message);
+            throw new HttpError(
+                `Failed to process reference image: ${error.message}`,
+                400,
+            );
+        }
+    }
+
+    // Log request body (hide base64 data)
+    const logBody = {
+        model: requestBody.model,
+        content: requestBody.content.map(
+            (c: { type: string; image_url?: { url: string } }) =>
+                c.type === "image_url"
+                    ? { ...c, image_url: { url: "[base64]" } }
+                    : c,
+        ),
+    };
+    logOps("Seedance Pro API request body:", JSON.stringify(logBody, null, 2));
+
+    // Step 1: Create video generation task
+    progress.updateBar(
+        requestId,
+        45,
+        "Processing",
+        "Initiating video generation...",
+    );
+
+    const generateEndpoint =
+        "https://ark.ap-southeast.bytepluses.com/api/v3/contents/generations/tasks";
+    logOps("Generate endpoint:", generateEndpoint);
+
+    const generateResponse = await fetch(generateEndpoint, {
+        method: "POST",
+        headers: {
+            "Authorization": `Bearer ${apiKey}`,
+            "Content-Type": "application/json",
+        },
+        body: JSON.stringify(requestBody),
+    });
+
+    if (!generateResponse.ok) {
+        const errorText = await generateResponse.text();
+        logError(
+            "Seedance Pro API generate request failed:",
+            generateResponse.status,
+            errorText,
+        );
+        throw new HttpError(
+            `Seedance Pro API request failed: ${errorText}`,
+            generateResponse.status,
+        );
+    }
+
+    const generateData: SeedanceTaskResponse = await generateResponse.json();
+    logOps("Generate response:", JSON.stringify(generateData, null, 2));
+
+    const taskId = generateData.id || generateData.task_id;
+    if (!taskId) {
+        throw new HttpError("Seedance Pro API did not return task ID", 500);
+    }
+
+    // Step 2: Poll for completion
+    progress.updateBar(
+        requestId,
+        50,
+        "Processing",
+        "Generating video (this takes 40-90 seconds)...",
+    );
+
+    const result = await pollSeedanceTask(taskId, apiKey, progress, requestId);
+
+    progress.updateBar(requestId, 95, "Success", "Video generation completed");
+
+    return {
+        buffer: result.buffer,
+        mimeType: "video/mp4",
+        durationSeconds: durationSeconds,
+        trackingData: {
+            actualModel: "seedance-pro",
             usage: {
                 completionVideoSeconds: durationSeconds,
             },

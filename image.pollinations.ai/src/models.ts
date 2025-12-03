@@ -10,6 +10,7 @@ interface ImageModelConfig {
     type: string;
     enhance: boolean;
     defaultSideLength?: number; // Optional - defaults to 1024 if not specified
+    minPixels?: number; // Minimum total pixels required (width * height)
     // Video-specific options
     isVideo?: boolean;
     defaultDuration?: number; // Default duration in seconds for video models
@@ -47,6 +48,7 @@ export const IMAGE_CONFIG = {
         type: "seedream",
         enhance: false,
         defaultSideLength: 2048, // Seedream 4.5 supports up to 4K
+        minPixels: 3686400, // Seedream 4.5 requires at least 1920x1920 pixels
     },
 
     // Gemini 2.5 Flash Image via Vertex AI - image-to-image generation
@@ -105,3 +107,47 @@ export const MODELS = Object.fromEntries(
         },
     ]),
 ) as Record<ImageServiceId, ImageModelConfig>;
+
+/**
+ * Scale up dimensions to meet minimum pixel requirements while preserving aspect ratio
+ * @param width - Original width
+ * @param height - Original height
+ * @param minPixels - Minimum total pixels required
+ * @returns Scaled dimensions that meet the minimum requirement
+ */
+export function scaleToMinPixels(
+    width: number,
+    height: number,
+    minPixels: number,
+): { width: number; height: number } {
+    const currentPixels = width * height;
+    if (currentPixels >= minPixels) {
+        return { width, height };
+    }
+
+    // Calculate scale factor to reach minimum pixels
+    const scaleFactor = Math.sqrt(minPixels / currentPixels);
+    return {
+        width: Math.ceil(width * scaleFactor),
+        height: Math.ceil(height * scaleFactor),
+    };
+}
+
+/**
+ * Get scaled dimensions for a model if it has minimum pixel requirements
+ * @param modelName - Name of the model
+ * @param width - Requested width
+ * @param height - Requested height
+ * @returns Scaled dimensions or original if no minimum requirement
+ */
+export function getScaledDimensions(
+    modelName: string,
+    width: number,
+    height: number,
+): { width: number; height: number } {
+    const config = MODELS[modelName as ImageServiceId];
+    if (!config?.minPixels) {
+        return { width, height };
+    }
+    return scaleToMinPixels(width, height, config.minPixels);
+}

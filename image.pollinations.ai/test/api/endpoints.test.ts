@@ -1,6 +1,12 @@
 import { describe, it, expect, beforeAll } from "vitest";
 
 const BASE_URL = process.env.TEST_BASE_URL || "http://localhost:16384";
+const ENTER_TOKEN = process.env.ENTER_TOKEN;
+
+// Helper to add auth headers to requests
+function authHeaders(): HeadersInit {
+    return ENTER_TOKEN ? { "x-enter-token": ENTER_TOKEN } : {};
+}
 
 function checkCorsHeaders(response: Response) {
     expect(response.headers.get("access-control-allow-origin")).toBe("*");
@@ -18,7 +24,9 @@ beforeAll(() => {
 
 describe("/models endpoint", () => {
     it("should return available models as JSON array", async () => {
-        const response = await fetch(`${BASE_URL}/models`);
+        const response = await fetch(`${BASE_URL}/models`, {
+            headers: authHeaders(),
+        });
 
         expect(response.status).toBe(200);
         expect(response.headers.get("content-type")).toContain(
@@ -39,6 +47,7 @@ describe("/models endpoint", () => {
     it("should handle OPTIONS requests", async () => {
         const response = await fetch(`${BASE_URL}/models`, {
             method: "OPTIONS",
+            headers: authHeaders(),
         });
 
         expect([200, 204]).toContain(response.status);
@@ -50,6 +59,7 @@ describe("/prompt endpoint", () => {
     it("should generate image for simple prompt without parameters", async () => {
         const response = await fetch(
             `${BASE_URL}/prompt/a%20beautiful%20sunset`,
+            { headers: authHeaders() },
         );
 
         try {
@@ -66,7 +76,9 @@ describe("/prompt endpoint", () => {
     }, 30000);
 
     it("should generate image for all valid models", async () => {
-        const modelsResponse = await fetch(`${BASE_URL}/models`);
+        const modelsResponse = await fetch(`${BASE_URL}/models`, {
+            headers: authHeaders(),
+        });
         expect(modelsResponse.status).toBe(200);
         const models = await modelsResponse.json();
         expect(models.length).toBeGreaterThan(0);
@@ -79,6 +91,7 @@ describe("/prompt endpoint", () => {
                     `${BASE_URL}/prompt/cat%20playing?model=${model}`,
                     {
                         headers: {
+                            ...authHeaders(),
                             Referer: testReferrer || "",
                         },
                     },
@@ -101,6 +114,7 @@ describe("/prompt endpoint", () => {
     it("should accept width and height parameters", async () => {
         const response = await fetch(
             `${BASE_URL}/prompt/abstract%20art?width=512&height=512`,
+            { headers: authHeaders() },
         );
 
         try {
@@ -119,9 +133,15 @@ describe("/prompt endpoint", () => {
         const prompt = "landscape";
 
         const [response1, response2, response3] = await Promise.all([
-            fetch(`${BASE_URL}/prompt/${prompt}?seed=${seed}`),
-            fetch(`${BASE_URL}/prompt/${prompt}?seed=${seed}`),
-            fetch(`${BASE_URL}/prompt/${prompt}?seed=${alternate_seed}`),
+            fetch(`${BASE_URL}/prompt/${prompt}?seed=${seed}`, {
+                headers: authHeaders(),
+            }),
+            fetch(`${BASE_URL}/prompt/${prompt}?seed=${seed}`, {
+                headers: authHeaders(),
+            }),
+            fetch(`${BASE_URL}/prompt/${prompt}?seed=${alternate_seed}`, {
+                headers: authHeaders(),
+            }),
         ]);
 
         expect(response1.status).toBe(200);
@@ -145,6 +165,7 @@ describe("/prompt endpoint", () => {
     it("should handle boolean parameters", async () => {
         const response = await fetch(
             `${BASE_URL}/prompt/test%20image?enhance=true&nologo=true&safe=true`,
+            { headers: authHeaders() },
         );
 
         expect(response.status).toBe(200);
@@ -152,14 +173,18 @@ describe("/prompt endpoint", () => {
     }, 30000);
 
     it("should return random image for an empty prompt", async () => {
-        const response = await fetch(`${BASE_URL}/prompt/`);
+        const response = await fetch(`${BASE_URL}/prompt/`, {
+            headers: authHeaders(),
+        });
         expect(response.status).toBe(200);
     });
 });
 
 describe("/feed endpoint", () => {
     it("should return SSE stream", async () => {
-        const response = await fetch(`${BASE_URL}/feed`);
+        const response = await fetch(`${BASE_URL}/feed`, {
+            headers: authHeaders(),
+        });
 
         expect(response.status).toBe(200);
         expect(response.headers.get("content-type")).toContain(
@@ -171,11 +196,14 @@ describe("/feed endpoint", () => {
     });
 
     it("should stream events when images are generated", async () => {
-        const feedResponse = await fetch(`${BASE_URL}/feed`);
+        const feedResponse = await fetch(`${BASE_URL}/feed`, {
+            headers: authHeaders(),
+        });
         expect(feedResponse.status).toBe(200);
 
         const imageResponse = await fetch(
             `${BASE_URL}/prompt/test%20feed%20event`,
+            { headers: authHeaders() },
         );
         expect(imageResponse.status).toBe(200);
 
@@ -185,7 +213,9 @@ describe("/feed endpoint", () => {
 
 describe("/register endpoint", () => {
     it("should handle GET requests to /register", async () => {
-        const response = await fetch(`${BASE_URL}/register`);
+        const response = await fetch(`${BASE_URL}/register`, {
+            headers: authHeaders(),
+        });
 
         expect([200, 404, 405]).toContain(response.status);
         checkCorsHeaders(response);
@@ -202,6 +232,7 @@ describe("/register endpoint", () => {
     it("should handle OPTIONS requests to /register", async () => {
         const response = await fetch(`${BASE_URL}/register`, {
             method: "OPTIONS",
+            headers: authHeaders(),
         });
 
         expect([200, 204]).toContain(response.status);
@@ -211,30 +242,32 @@ describe("/register endpoint", () => {
 
 describe("Tracking headers (PR #4183)", () => {
     it("should include x-model-used header", async () => {
-        const response = await fetch(
-            `${BASE_URL}/prompt/test?model=flux`,
-        );
+        const response = await fetch(`${BASE_URL}/prompt/test?model=flux`, {
+            headers: authHeaders(),
+        });
 
         expect(response.status).toBe(200);
-        
+
         const modelUsed = response.headers.get("x-model-used");
         expect(modelUsed).toBeTruthy();
         expect(modelUsed).toBe("flux");
     }, 30000);
 
     it("should include x-completion-image-tokens header", async () => {
-        const response = await fetch(
-            `${BASE_URL}/prompt/test?model=flux`,
-        );
+        const response = await fetch(`${BASE_URL}/prompt/test?model=flux`, {
+            headers: authHeaders(),
+        });
 
         expect(response.status).toBe(200);
-        
-        const completionTokens = response.headers.get("x-completion-image-tokens");
+
+        const completionTokens = response.headers.get(
+            "x-completion-image-tokens",
+        );
         expect(completionTokens).toBeTruthy();
-        
+
         const tokenCount = parseInt(completionTokens || "0", 10);
         expect(tokenCount).toBeGreaterThan(0);
-        
+
         // Flux should use unit-based pricing (1 token)
         expect(tokenCount).toBe(1);
     }, 30000);
@@ -244,7 +277,9 @@ describe("Tracking headers (PR #4183)", () => {
 
 describe("Error handling", () => {
     it("should return 404 for non-existent endpoints", async () => {
-        const response = await fetch(`${BASE_URL}/nonexistent`);
+        const response = await fetch(`${BASE_URL}/nonexistent`, {
+            headers: authHeaders(),
+        });
 
         expect(response.status).toBe(404);
         expect(response.headers.get("content-type")).toContain(
@@ -259,6 +294,7 @@ describe("Error handling", () => {
     it("should handle invalid model parameter gracefully", async () => {
         const response = await fetch(
             `${BASE_URL}/prompt/test?model=nonexistent`,
+            { headers: authHeaders() },
         );
 
         expect([200, 400, 404]).toContain(response.status);

@@ -2,6 +2,7 @@ import debug from "debug";
 import { withTimeoutSignal } from "../util.ts";
 import { HttpError } from "../httpError.ts";
 import { downloadImageAsBase64 } from "../utils/imageDownload.ts";
+import { getScaledDimensions } from "../models.ts";
 import type { ImageParams } from "../params.ts";
 import type { ImageGenerationResult } from "../createAndReturnImages.ts";
 import type { ProgressManager } from "../progressBar.ts";
@@ -57,8 +58,21 @@ export const callSeedreamAPI = async (
             "Generating with Seedream...",
         );
 
-        // Seedream 4.5 accepts pixel dimensions like "2048x2048"
-        const sizeParam = `${safeParams.width}x${safeParams.height}`;
+        // Scale up dimensions if needed to meet Seedream's minimum pixel requirement
+        const scaled = getScaledDimensions(
+            "seedream",
+            safeParams.width,
+            safeParams.height,
+        );
+        if (
+            scaled.width !== safeParams.width ||
+            scaled.height !== safeParams.height
+        ) {
+            logOps(
+                `Scaling up from ${safeParams.width}x${safeParams.height} to ${scaled.width}x${scaled.height} to meet minimum pixel requirement`,
+            );
+        }
+        const sizeParam = `${scaled.width}x${scaled.height}`;
         logOps("Using pixel dimensions:", sizeParam);
 
         // Try Seedream 4.5 first, fallback to 4.0 if rate limited

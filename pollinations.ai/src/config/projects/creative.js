@@ -963,4 +963,15 @@ export const creativeProjects = [
         language: "zh-TW",
         order: 1,
     },
+  {
+    "name": "Thelas.ia",
+    "url": "https://thelasia.netlify.app/",
+    "description": "Thelas.ia is a Social Media Content Creation Tool that generates corporative, educational and commercial posts for companies and influencers. Our AI generates content autonomosly, and after approval, it posts directly to Instagram via instagram api.",
+    "author": "studiostein",
+    "repo": null,
+    "category": "creative",
+    "language": "pt-BR",
+    "submissionDate": "2025-12-03",
+    "order": 5
+  }
 ];

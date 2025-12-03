@@ -9,7 +9,7 @@ class GitHubManager:
 
     def __init__(self):
         self.token = GITHUB_TOKEN
-        self.repo = GITHUB_REPO or "pollinations/pollinations"
+        self.repo = GITHUB_REPO or "vaibhavcoding69/pollinations"
 
     async def create_issue(self, title: str, description: str, original_message: str,
                            reporter: str, original_author: str = None) -> dict:

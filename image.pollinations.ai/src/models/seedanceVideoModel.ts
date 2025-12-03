@@ -1,6 +1,7 @@
 import debug from "debug";
 import sleep from "await-sleep";
 import { HttpError } from "../httpError.ts";
+import { downloadImageAsBase64 } from "../utils/imageDownload.ts";
 import type { ImageParams } from "../params.ts";
 import type { ProgressManager } from "../progressBar.ts";
 import type { VideoGenerationResult } from "../createAndReturnVideos.ts";
@@ -137,19 +138,9 @@ export const callSeedanceAPI = async (
 
         // Download and convert image to base64
         try {
-            const imageResponse = await fetch(imageUrl);
-
-            if (!imageResponse.ok) {
-                throw new Error(
-                    `Failed to fetch image: ${imageResponse.status}`,
-                );
-            }
-
-            const imageBuffer = await imageResponse.arrayBuffer();
-            const base64Data = Buffer.from(imageBuffer).toString("base64");
-            const contentType =
-                imageResponse.headers.get("content-type") || "image/jpeg";
-            const dataUrl = `data:${contentType};base64,${base64Data}`;
+            // Download and detect MIME type from magic bytes
+            const { base64, mimeType } = await downloadImageAsBase64(imageUrl);
+            const dataUrl = `data:${mimeType};base64,${base64}`;
 
             // Add image to content array
             requestBody.content.push({

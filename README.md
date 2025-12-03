@@ -515,6 +515,7 @@ Pollinations.AI is used in various projects, including:
 | [LiteAI](https://liteai.chat/) | A free, fast, and anonymous AI chat and image generation platform with no login... | LiteAI Team |
 | 🤖 [UR Imagine & Chat AI](https://urimagine.netlify.app/) | A versatile AI platform offering both image generation and chat... | @ur_imagine |
 | 🆕 [Synapse](https://chat.aegis-plus.my.id) ([⭐ 0](https://github.com/Aegis-plus/Synapse)) | An AI-powered chat application built with Vite and React, enabling multi-model... | Aegis-plus |
+| 🆕 [Debootai](https://deboott.puter.site/) | Next-gen AI chat playground with file/image uploads, real-time web search,... | Chess-Base |
 
 ### Social Bots 🤖
 

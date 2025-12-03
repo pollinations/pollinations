@@ -13,7 +13,7 @@ GITHUB_API_BASE = "https://api.github.com"
 POLLINATIONS_API_BASE = "https://enter.pollinations.ai/api/generate/openai"
 MODEL = "claude-large"
 CHUNK_SIZE = 50
-NEWS_FILE_PATH = "NEWS.md"
+NEWS_FOLDER = "NEWS"
 
 
 def get_env(key: str, required: bool = True) -> str:
@@ -220,73 +220,42 @@ def parse_response(response: str) -> str:
     return message.strip()
 
 
-def get_existing_news(github_token: str, owner: str, repo: str) -> str:
-    """Fetch existing NEWS.md content from repo"""
+def check_news_file_exists(github_token: str, owner: str, repo: str, file_path: str) -> bool:
+    """Check if a news file already exists in the repo"""
     headers = {
         "Accept": "application/vnd.github+json",
         "Authorization": f"Bearer {github_token}"
     }
 
     response = requests.get(
-        f"{GITHUB_API_BASE}/repos/{owner}/{repo}/contents/{NEWS_FILE_PATH}",
+        f"{GITHUB_API_BASE}/repos/{owner}/{repo}/contents/{file_path}",
         headers=headers
     )
 
-    if response.status_code == 200:
-        content = response.json().get('content', '')
-        return base64.b64decode(content).decode('utf-8')
-    elif response.status_code == 404:
-        # File doesn't exist yet, return template
-        return "# Product & Platform Updates\n"
-    else:
-        print(f"Error fetching NEWS.md: {response.status_code}")
-        return "# Product & Platform Updates\n"
+    return response.status_code == 200
 
 
-def prepend_news_entry(existing_content: str, new_entry: str, entry_date: str) -> str:
-    """Prepend new entry to NEWS.md after the header"""
+def create_news_file_content(news_entry: str, entry_date: str) -> str:
+    """Create content for individual news file"""
+    return f"""# Weekly Update - {entry_date}
 
-    # Create the new entry block
-    new_block = f"""
-<!-- ENTRY:{entry_date} -->
-### {entry_date}
-
-{new_entry}
+{news_entry}
 """
-
-    # Find where to insert (after the main header)
-    header = "# Product & Platform Updates"
-
-    if header in existing_content:
-        # Insert after header
-        header_end = existing_content.find(header) + len(header)
-        # Skip any whitespace after header
-        while header_end < len(existing_content) and existing_content[header_end] in '\n\r':
-            header_end += 1
-
-        updated_content = existing_content[:header_end] + new_block + "\n" + existing_content[header_end:]
-    else:
-        # No header found, create new file
-        updated_content = header + "\n" + new_block + "\n" + existing_content
-
-    return updated_content
 
 
 def create_pr_with_news(news_content: str, github_token: str, owner: str, repo: str, pr_count: int):
-    """Create a PR with the updated NEWS.md"""
+    """Create a PR with a new weekly news file in NEWS/ folder"""
 
     entry_date = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    news_file_path = f"{NEWS_FOLDER}/{entry_date}.md"
 
-    # Get existing NEWS.md
-    existing_news = get_existing_news(github_token, owner, repo)
-
-    # Check if entry for this date already exists
-    if f"<!-- ENTRY:{entry_date} -->" in existing_news:
-        print(f"Entry for {entry_date} already exists. Skipping.")
+    # Check if file for this date already exists
+    if check_news_file_exists(github_token, owner, repo, news_file_path):
+        print(f"News file for {entry_date} already exists. Skipping.")
         return
 
-    # Prepend new entry
-    updated_news = prepend_news_entry(existing_news, news_content, entry_date)
+    # Create content for the new file
+    file_content = create_news_file_content(news_content, entry_date)
 
     headers = {
         "Accept": "application/vnd.github+json",
@@ -326,18 +295,9 @@ def create_pr_with_news(news_content: str, github_token: str, owner: str, repo: 
 
     print(f"Created branch: {branch_name}")
 
-    # Get current file SHA from the branch we're updating (not main)
-    file_api_path = f"{GITHUB_API_BASE}/repos/{owner}/{repo}/contents/{NEWS_FILE_PATH}"
-    file_response = requests.get(f"{file_api_path}?ref={branch_name}", headers=headers)
-    if file_response.status_code == 200:
-        file_sha = file_response.json().get('sha')
-    else:
-        # File doesn't exist on branch yet, try main
-        file_response = requests.get(f"{file_api_path}?ref={default_branch}", headers=headers)
-        file_sha = file_response.json().get('sha') if file_response.status_code == 200 else None
-
-    # Update file
-    content_encoded = base64.b64encode(updated_news.encode()).decode()
+    # Create the new file (no SHA needed for new file)
+    file_api_path = f"{GITHUB_API_BASE}/repos/{owner}/{repo}/contents/{news_file_path}"
+    content_encoded = base64.b64encode(file_content.encode()).decode()
 
     update_payload = {
         "message": f"docs: weekly news update - {entry_date}",
@@ -345,22 +305,19 @@ def create_pr_with_news(news_content: str, github_token: str, owner: str, repo: 
         "branch": branch_name
     }
 
-    if file_sha:
-        update_payload["sha"] = file_sha
-
     update_response = requests.put(file_api_path, headers=headers, json=update_payload)
 
     if update_response.status_code not in [200, 201]:
-        print(f"Error updating file: {update_response.text}")
+        print(f"Error creating file: {update_response.text}")
         sys.exit(1)
 
-    print(f"Updated NEWS.md on branch {branch_name}")
+    print(f"Created {news_file_path} on branch {branch_name}")
 
     # Create PR
     pr_title = f"📰 Weekly News Update - {entry_date}"
     pr_body = f"""## Weekly News Update
 
-This PR adds the weekly news entry for {entry_date} to NEWS.md.
+This PR adds the weekly news file `{news_file_path}`.
 
 **PRs included:** {pr_count}
 

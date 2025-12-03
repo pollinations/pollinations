@@ -963,4 +963,14 @@ export const creativeProjects = [
         language: "zh-TW",
         order: 1,
     },
+  {
+    "name": "SAGE",
+    "url": "https://starlightguardians.com",
+    "description": "SAGE (Storyboard Animation Generation Environment) is an open-source multimedia AI orchestration and automation platform. It merges creative generation, development assistance, and intelligent orchestration under one cohesive system — fully runnable in Termux on Android.\\n\\nAI Content Generation\\nStable Diffusion XL with txt2img/img2img pipelines\\nSupports ControlNet, LCM (Latent Conditioning Mixing) for multi-image consistency and VRAM efficiency\\nMulti-image conditioning including multi-source img2img\\nDesign axes that auto-inject creative parameters into prompts for consistent visual worlds\\nStyle profiles with UI sliders for project-level visual coherence\\nExtended templates and reliable prompt mixing for controlled outputs\\nIntegration with Pollinations.ai, Groq, Colab, and Kaggle",
+    "author": "sebastianpw",
+    "repo": "sebastianpw/sage",
+    "category": "creative",
+    "submissionDate": "2025-12-03",
+    "order": 5
+  }
 ];

@@ -50,7 +50,15 @@ export const TierExplanation: FC = () => {
                         10 pollen/day
                     </p>
                     <div className="text-xs text-gray-500 mt-1.5 border-t border-gray-200 pt-1.5">
-                        <p>→ Featured App</p>
+                        <p>
+                            →{" "}
+                            <a
+                                href="https://github.com/pollinations/pollinations/issues/new?template=app-submission.yml"
+                                className="text-blue-600 hover:underline"
+                            >
+                                Featured App
+                            </a>
+                        </p>
                         <p className="text-gray-400">or</p>
                         <p>→ Merged PR</p>
                     </div>

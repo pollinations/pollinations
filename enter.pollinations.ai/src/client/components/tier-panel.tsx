@@ -32,11 +32,13 @@ const TierContainer: FC<{ children: React.ReactNode }> = ({ children }) => (
 );
 
 const BetaNotice = () => (
-    <p className="text-xs text-purple-700 bg-gradient-to-r from-purple-50/80 to-indigo-50/80 border border-purple-200/50 rounded-lg px-3 py-2 mt-3">
-        ✨ <strong>We're in beta!</strong> We're learning what works best for
-        our community and may adjust pollen values and tier rules as we go.
-        Thanks for being part of the journey!
-    </p>
+    <div className="bg-gradient-to-r from-purple-100 to-pink-100 rounded-xl p-4 border-2 border-purple-300 mt-3">
+        <p className="text-sm font-medium text-purple-900">
+            ✨ <strong>We're in beta!</strong> We're learning what works best
+            for our community and may adjust pollen values and tier rules as we
+            go. Thanks for being part of the journey!
+        </p>
+    </div>
 );
 
 function formatCountdown(targetUTC: string): string {

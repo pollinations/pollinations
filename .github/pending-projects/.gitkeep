@@ -1,0 +1,4 @@
+# This folder holds pending project submissions as JSON files.
+# When a PR adding a file here is merged, the app-merged workflow
+# processes these files, adds them to the appropriate category JS files,
+# and creates an auto-merged PR to sync everything.

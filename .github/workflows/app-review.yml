@@ -204,7 +204,7 @@ jobs:
             echo "No GitHub repo provided"
           fi
 
-      - name: Add project and create PR
+      - name: Add project to queue and create PR
         if: steps.parse.outputs.needs_info != 'true'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -216,15 +216,15 @@ jobs:
           CATEGORY: ${{ steps.parse.outputs.category }}
           STARS: ${{ steps.stars.outputs.stars }}
         run: |
-          # Determine file path and category emoji
+          # Category emoji for PR body
           case "$CATEGORY" in
-            chat) FILE="pollinations.ai/src/config/projects/chat.js"; EMOJI="💬" ;;
-            creative) FILE="pollinations.ai/src/config/projects/creative.js"; EMOJI="🎨" ;;
-            games) FILE="pollinations.ai/src/config/projects/games.js"; EMOJI="🎲" ;;
-            hackAndBuild) FILE="pollinations.ai/src/config/projects/hackAndBuild.js"; EMOJI="🛠️" ;;
-            learn) FILE="pollinations.ai/src/config/projects/learn.js"; EMOJI="📚" ;;
-            socialBots) FILE="pollinations.ai/src/config/projects/socialBots.js"; EMOJI="🤖" ;;
-            vibeCoding) FILE="pollinations.ai/src/config/projects/vibeCoding.js"; EMOJI="✨" ;;
+            chat) EMOJI="💬" ;;
+            creative) EMOJI="🎨" ;;
+            games) EMOJI="🎲" ;;
+            hackAndBuild) EMOJI="🛠️" ;;
+            learn) EMOJI="📚" ;;
+            socialBots) EMOJI="🤖" ;;
+            vibeCoding) EMOJI="✨" ;;
             *) echo "Unknown category: $CATEGORY" && exit 1 ;;
           esac
           
@@ -233,36 +233,26 @@ jobs:
           BRANCH="auto/app-${ISSUE_NUMBER}-${SLUG}"
           git checkout -b "$BRANCH"
           
-          # Format project entry with stars if available
+          # Format project entry with category included (for queue processing)
           TODAY=$(date +%Y-%m-%d)
           if [ -n "$STARS" ]; then
-            ENTRY=$(echo "$PROJECT_JSON" | jq --arg date "$TODAY" --argjson stars "$STARS" '. + {submissionDate: $date, order: 5, stars: $stars}')
+            ENTRY=$(echo "$PROJECT_JSON" | jq --arg date "$TODAY" --arg cat "$CATEGORY" --argjson stars "$STARS" '. + {category: $cat, submissionDate: $date, order: 5, stars: $stars}')
           else
-            ENTRY=$(echo "$PROJECT_JSON" | jq --arg date "$TODAY" '. + {submissionDate: $date, order: 5}')
+            ENTRY=$(echo "$PROJECT_JSON" | jq --arg date "$TODAY" --arg cat "$CATEGORY" '. + {category: $cat, submissionDate: $date, order: 5}')
           fi
           
-          # Add to category file (before final ])
-          node -e "
-            const fs = require('fs');
-            let content = fs.readFileSync('$FILE', 'utf8');
-            const entry = JSON.stringify($ENTRY, null, 2).replace(/^/gm, '  ');
-            // Insert before final ]; ensuring proper comma
-            content = content.replace(/(\}),?(\s*\n];?\s*$)/, '\$1,\n' + entry + '\$2');
-            fs.writeFileSync('$FILE', content);
-          "
-          
-          # Update README
-          node pollinator-agent/project-list-scripts/generate-project-table.js --update-readme || true
+          # Write to queue folder (unique file per submission = no conflicts)
+          QUEUE_FILE=".github/pending-projects/${ISSUE_NUMBER}-${SLUG}.json"
+          echo "$ENTRY" | jq '.' > "$QUEUE_FILE"
           
           # Commit and push
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add -A
-          git commit -m "Add $PROJECT_NAME to $CATEGORY
+          git commit -m "Add $PROJECT_NAME to queue
 
           Co-authored-by: $ISSUE_AUTHOR <${ISSUE_AUTHOR_ID}+${ISSUE_AUTHOR}@users.noreply.github.com>
           Fixes #$ISSUE_NUMBER"
-          # Force push (handles re-runs where branch already exists)
           git push origin "$BRANCH" --force
           
           # Extract fields for PR body

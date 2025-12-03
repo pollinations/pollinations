@@ -1,11 +1,11 @@
-name: Celebrate APPS PR Merged
+name: Process App Submissions
 
 on:
   pull_request:
     types: [closed]
 
 jobs:
-  celebrate-merge:
+  process-and-celebrate:
     # Only run when PR is merged (not just closed)
     if: github.event.pull_request.merged == true
     runs-on: ubuntu-latest
@@ -26,42 +26,50 @@ jobs:
         with:
           node-version: "20"
 
-      - name: Regenerate README after app merge
-        id: regenerate
+      - name: Process pending projects
+        id: process
         # Only run for auto/app-* branches (app submission PRs)
         if: startsWith(github.event.pull_request.head.ref, 'auto/app-')
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          # Regenerate project tables to ensure consistency after union merge
+          # Check if there are pending projects
+          PENDING_COUNT=$(find .github/pending-projects -name "*.json" 2>/dev/null | wc -l)
+          
+          if [ "$PENDING_COUNT" -eq 0 ]; then
+            echo "No pending projects to process"
+            echo "has_pending=false" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+          
+          echo "Processing $PENDING_COUNT pending project(s)..."
+          echo "has_pending=true" >> $GITHUB_OUTPUT
+          
+          # Process queue
+          node .github/scripts/process-queue.js
+          
+          # Update README
           node pollinator-agent/project-list-scripts/generate-project-table.js --update-readme || true
           
-          # Check if there are changes
-          if git diff --quiet; then
-            echo "No README changes needed"
-            echo "changes=false" >> $GITHUB_OUTPUT
-          else
-            echo "README needs update, creating PR..."
-            echo "changes=true" >> $GITHUB_OUTPUT
-            
-            git config user.name "github-actions[bot]"
-            git config user.email "github-actions[bot]@users.noreply.github.com"
-            
-            BRANCH="auto/regenerate-readme-$(date +%s)"
-            git checkout -b "$BRANCH"
-            git add -A
-            git commit -m "docs: regenerate project tables after merge"
-            git push origin "$BRANCH"
-            
-            # Create PR
-            gh pr create \
-              --title "docs: regenerate project tables" \
-              --body "Auto-generated PR to sync README/PROJECTS.md after app submission merge.
+          # Create sync PR
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          
+          BRANCH="auto/sync-projects-$(date +%s)"
+          git checkout -b "$BRANCH"
+          git add -A
+          git commit -m "chore: sync projects from queue"
+          git push origin "$BRANCH"
+          
+          # Create PR with automerge label
+          gh pr create \
+            --title "chore: sync projects from queue" \
+            --body "Auto-generated PR to sync pending projects to category files.
 
-          This PR was created automatically because multiple app submissions were merged and the project tables need to be regenerated for consistency." \
-              --base main \
-              --head "$BRANCH"
-          fi
+          This PR will be auto-merged." \
+            --base main \
+            --head "$BRANCH" \
+            --label "automerge"
 
       - name: Post celebration comment on linked issues
         uses: actions/github-script@v7

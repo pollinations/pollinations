@@ -589,4 +589,15 @@ export const chatProjects = [
         submissionDate: "2025-12-02",
         order: 1,
     },
+  {
+    "name": "MindFlow",
+    "url": "https://note.aegis-plus.my.id/",
+    "description": "# MindFlow\\n\\n> **Capture thoughts, find clarity.** An AI-powered second brain that structures your mess.\\n\\nMindFlow is a modern note-taking application designed to help you organize chaotic thoughts into structured, actionable insights. Powered by AI, it transforms raw, unstructured text into clean, organized notes while providing intelligent search and retrieval capabilities.\\n",
+    "author": "Aegis-plus",
+    "repo": "https://github.com/Aegis-plus/Mindflow",
+    "category": "chat",
+    "language": "en",
+    "submissionDate": "2025-12-03",
+    "order": 5
+  }
 ];

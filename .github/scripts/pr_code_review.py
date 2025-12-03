@@ -33,15 +33,33 @@ REVIEW_ON_SYNC = False
 # The trigger phrase to force a review (case-insensitive)
 REVIEW_TRIGGER = "Review=True"
 
-# Files to skip during review
+# Files to skip during review (pre-compiled for performance and safety)
 SKIP_FILE_PATTERNS = [
-    r'package-lock\.json$', r'yarn\.lock$', r'pnpm-lock\.yaml$',
-    r'\.min\.js$', r'\.min\.css$', r'\.map$',
-    r'\.svg$', r'\.png$', r'\.jpg$', r'\.jpeg$', r'\.gif$', r'\.ico$',
-    r'\.woff$', r'\.woff2$', r'\.ttf$', r'\.eot$',
-    r'\.pyc$', r'__pycache__', r'\.egg-info',
-    r'node_modules/', r'vendor/', r'dist/', r'build/',
-    r'\.generated\.', r'\.auto\.', r'migrations/',
+    re.compile(r'package-lock\.json$'),
+    re.compile(r'yarn\.lock$'),
+    re.compile(r'pnpm-lock\.yaml$'),
+    re.compile(r'\.min\.js$'),
+    re.compile(r'\.min\.css$'),
+    re.compile(r'\.map$'),
+    re.compile(r'\.svg$'),
+    re.compile(r'\.png$'),
+    re.compile(r'\.jpg$'),
+    re.compile(r'\.jpeg$'),
+    re.compile(r'\.gif$'),
+    re.compile(r'\.ico$'),
+    re.compile(r'\.woff2?$'),
+    re.compile(r'\.ttf$'),
+    re.compile(r'\.eot$'),
+    re.compile(r'\.pyc$'),
+    re.compile(r'__pycache__'),
+    re.compile(r'\.egg-info'),
+    re.compile(r'node_modules/'),
+    re.compile(r'vendor/'),
+    re.compile(r'dist/'),
+    re.compile(r'build/'),
+    re.compile(r'\.generated\.'),
+    re.compile(r'\.auto\.'),
+    re.compile(r'migrations/'),
 ]
 
 # High priority files (security-sensitive)
@@ -138,9 +156,9 @@ def get_pr_files(repo: str, pr_number: str, token: str) -> List[Dict]:
 
 
 def should_skip_file(filename: str) -> bool:
-    """Check if file should be skipped based on patterns"""
+    """Check if file should be skipped based on pre-compiled patterns"""
     for pattern in SKIP_FILE_PATTERNS:
-        if re.search(pattern, filename):
+        if pattern.search(filename):
             return True
     return False
 
@@ -190,9 +208,11 @@ def parse_diff_to_files(diff_text: str) -> List[FilePatch]:
 
             # Start new file
             current_lines = [line]
-            parts = line.split(' ')
-            if len(parts) >= 4:
-                current_filename = parts[3].replace('b/', '') if parts[3].startswith('b/') else parts[3]
+            # Parse filename using regex to handle spaces in paths
+            # Format: diff --git a/path/to/file b/path/to/file
+            match = re.match(r'diff --git a/(.*) b/(.*)', line)
+            if match:
+                current_filename = match.group(2)
             else:
                 current_filename = 'unknown'
         else:
@@ -323,12 +343,17 @@ def generate_diff_chunks(file_patches: List[FilePatch], max_tokens_per_chunk: in
     for fp in sorted_patches:
         patch_tokens = fp.tokens
 
-        # If single file exceeds limit, we need to truncate it
+        # If single file exceeds limit, truncate by lines to preserve diff syntax
         if patch_tokens > effective_max:
-            print(f"Warning: {fp.filename} ({patch_tokens} tokens) exceeds chunk limit, truncating...")
-            # Truncate to fit
-            max_chars = effective_max * CHARS_PER_TOKEN
-            truncated_patch = fp.patch[:max_chars // 2] + f"\n\n... [truncated {fp.filename}] ...\n\n" + fp.patch[-max_chars // 2:]
+            print(f"Warning: {fp.filename} ({patch_tokens} tokens) exceeds chunk limit, truncating by lines...")
+            lines = fp.patch.split('\n')
+            max_lines = len(lines) * effective_max // patch_tokens  # Proportional line limit
+            half_lines = max_lines // 2
+
+            # Keep first half and last half of lines to preserve structure
+            truncated_lines = lines[:half_lines] + [f"\n... [truncated {len(lines) - max_lines} lines from {fp.filename}] ...\n"] + lines[-half_lines:]
+            truncated_patch = '\n'.join(truncated_lines)
+
             fp = FilePatch(
                 filename=fp.filename,
                 patch=truncated_patch,
@@ -502,13 +527,22 @@ def check_comments_for_trigger(repo: str, pr_number: str, token: str) -> bool:
 
 def check_commits_for_trigger(repo: str, pr_number: str, token: str) -> bool:
     """Check if any commit message in the PR contains Review=True"""
-    endpoint = f"repos/{repo}/pulls/{pr_number}/commits"
-    commits = github_api_request(endpoint, token)
+    page = 1
+    per_page = 100
 
-    for commit in commits:
-        message = commit.get('commit', {}).get('message', '') or ''
-        if check_review_trigger_in_text(message):
-            return True
+    while True:
+        endpoint = f"repos/{repo}/pulls/{pr_number}/commits?per_page={per_page}&page={page}"
+        commits = github_api_request(endpoint, token)
+
+        for commit in commits:
+            message = commit.get('commit', {}).get('message', '') or ''
+            if check_review_trigger_in_text(message):
+                return True
+
+        if len(commits) < per_page:
+            break
+        page += 1
+
     return False
 
 

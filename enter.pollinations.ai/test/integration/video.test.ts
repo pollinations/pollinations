@@ -92,6 +92,56 @@ describe("Video Generation Integration Tests", () => {
     );
 
     /**
+     * Test seedance I2V with URL containing query parameters (like Discord URLs)
+     * Discord image URLs have ?ex=...&is=...&hm=... parameters that must be preserved
+     * when proxying to the backend. Without proper URL encoding, these get split apart.
+     *
+     * Bug: https://github.com/pollinations/pollinations/issues/5581
+     */
+    test(
+        "seedance I2V should preserve image URL query parameters",
+        { timeout: 120000 },
+        async ({ apiKey, mocks }) => {
+            await mocks.enable("polar", "tinybird", "vcr");
+
+            // Simulate a Discord-style URL with query parameters
+            // The key issue is that ?param1=a&param2=b in the image URL
+            // gets incorrectly parsed as separate query params of the main request
+            const imageUrlWithParams =
+                "https://image.pollinations.ai/prompt/white?width=512&height=512&nologo=true&seed=42";
+
+            // The image URL must be properly encoded so its query params don't get split
+            const response = await SELF.fetch(
+                `http://localhost:3000/api/generate/image/animate%20this?model=seedance&duration=2&image=${encodeURIComponent(imageUrlWithParams)}`,
+                {
+                    method: "GET",
+                    headers: {
+                        authorization: `Bearer ${apiKey}`,
+                    },
+                },
+            );
+
+            // Log response for debugging if it fails
+            if (response.status !== 200) {
+                const body = await response.clone().text();
+                console.log(
+                    "I2V with query params response:",
+                    response.status,
+                    body,
+                );
+            }
+
+            expect(response.status).toBe(200);
+
+            const contentType = response.headers.get("content-type");
+            expect(contentType).toContain("video/mp4");
+
+            const buffer = await response.arrayBuffer();
+            expect(buffer.byteLength).toBeGreaterThan(1000);
+        },
+    );
+
+    /**
      * Test video parameters are passed through correctly
      * Verifies duration and aspectRatio params don't cause validation errors
      */

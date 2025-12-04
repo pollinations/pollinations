@@ -964,6 +964,18 @@ export const creativeProjects = [
         order: 1,
     },
     {
+        "name": "Thelas.ia",
+        "url": "https://thelasia.netlify.app/",
+        "description":
+            "Thelas.ia is a Social Media Content Creation Tool that generates corporative, educational and commercial posts for companies and influencers. Our AI generates content autonomosly, and after approval, it posts directly to Instagram via instagram api.",
+        "author": "studiostein",
+        "repo": null,
+        "category": "creative",
+        "language": "pt-BR",
+        "submissionDate": "2025-12-03",
+        "order": 5,
+    },
+    {
         "name": "SAGE",
         "url": "https://starlightguardians.com",
         "description":
@@ -986,23 +998,25 @@ export const creativeProjects = [
         "submissionDate": "2025-12-04",
         "order": 5,
     },
-  {
-    "name": "Gemini ai telegram-bot",
-    "url": "https://t.me/index_bot",
-    "description": "Gemini ai telegram-bot: a Telegram bot offering chat (text, voice, images) along with AI image and audio generation, processing, and enhancement (colorizing, retouching) from prompts; currently in beta.",
-    "author": "mosavy",
-    "category": "creative",
-    "language": "en-US",
-    "submissionDate": "2025-12-04",
-    "order": 5
-  },
-  {
-    "name": "LineSketch AI",
-    "url": "https://linesketch-muse.lovable.app/",
-    "description": "LineSketch AI is a minimalist web app that turns ideas into clean black-and-white line art in seconds. Users type a short prompt, pick a line-art style and aspect ratio (Landscape 16:9 or Portrait 9:16), and the app queries the Pollinations image API to generate and return a crisp illustration. The backend builds a structured prompt that includes black-and-white line art, minimal outlines, high contrast, and combines it with the user’s idea and a chosen style preset (Minimal Line Art, Single-Stroke Outline, Fine Technical Sketch, Vintage Ink Drawing). The frontend uses Node.js, Express and vanilla HTML/CSS/JS, delivering a production-ready tool and a polished landing page with live preview, download button, About, and FAQ. The project is free to use and demonstrates the Pollinations image infrastructure.",
-    "author": "ArslanDevelop",
-    "category": "creative",
-    "submissionDate": "2025-12-04",
-    "order": 5
-  }
+    {
+        "name": "Gemini ai telegram-bot",
+        "url": "https://t.me/index_bot",
+        "description":
+            "Gemini ai telegram-bot: a Telegram bot offering chat (text, voice, images) along with AI image and audio generation, processing, and enhancement (colorizing, retouching) from prompts; currently in beta.",
+        "author": "mosavy",
+        "category": "creative",
+        "language": "en-US",
+        "submissionDate": "2025-12-04",
+        "order": 5,
+    },
+    {
+        "name": "LineSketch AI",
+        "url": "https://linesketch-muse.lovable.app/",
+        "description":
+            "LineSketch AI is a minimalist web app that turns ideas into clean black-and-white line art in seconds. Users type a short prompt, pick a line-art style and aspect ratio (Landscape 16:9 or Portrait 9:16), and the app queries the Pollinations image API to generate and return a crisp illustration. The backend builds a structured prompt that includes black-and-white line art, minimal outlines, high contrast, and combines it with the user's idea and a chosen style preset (Minimal Line Art, Single-Stroke Outline, Fine Technical Sketch, Vintage Ink Drawing). The frontend uses Node.js, Express and vanilla HTML/CSS/JS, delivering a production-ready tool and a polished landing page with live preview, download button, About, and FAQ. The project is free to use and demonstrates the Pollinations image infrastructure.",
+        "author": "ArslanDevelop",
+        "category": "creative",
+        "submissionDate": "2025-12-04",
+        "order": 5,
+    },
 ];

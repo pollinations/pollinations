@@ -156,10 +156,9 @@ export const IMAGE_SERVICES = {
         cost: [
             // Seedance Lite - $1.8/M tokens
             // Token formula: (height × width × FPS × duration) / 1024
-            // 720p 5s = ~103K tokens = ~$0.19
             {
                 date: COST_START_DATE,
-                completionVideoSeconds: 0.037, // ~$0.19 per 5 seconds at 720p
+                completionVideoTokens: perMillion(1.8), // $1.8 per 1M tokens
             },
         ],
         description:
@@ -174,10 +173,9 @@ export const IMAGE_SERVICES = {
         cost: [
             // Seedance Pro-Fast - $1/M tokens
             // Token formula: (height × width × FPS × duration) / 1024
-            // 720p 5s = ~103K tokens = ~$0.10
             {
                 date: COST_START_DATE,
-                completionVideoSeconds: 0.02, // ~$0.10 per 5 seconds at 720p
+                completionVideoTokens: perMillion(1.0), // $1.0 per 1M tokens
             },
         ],
         description:

@@ -25,7 +25,8 @@ export type UsageType =
     | "completionReasoningTokens"
     | "completionAudioTokens"
     | "completionImageTokens"
-    | "completionVideoSeconds";
+    | "completionVideoSeconds"
+    | "completionVideoTokens";
 
 export type TokenUsage = {
     unit: "TOKENS";

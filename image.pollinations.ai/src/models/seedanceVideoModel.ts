@@ -235,7 +235,8 @@ export const callSeedanceAPI = async (
         trackingData: {
             actualModel: "seedance", // Lite
             usage: {
-                completionVideoSeconds: durationSeconds,
+                completionVideoTokens: result.usage.completion_tokens,
+                totalTokenCount: result.usage.total_tokens,
             },
         },
     };
@@ -415,7 +416,8 @@ export const callSeedanceProAPI = async (
         trackingData: {
             actualModel: "seedance-pro",
             usage: {
-                completionVideoSeconds: durationSeconds,
+                completionVideoTokens: result.usage.completion_tokens,
+                totalTokenCount: result.usage.total_tokens,
             },
         },
     };
@@ -427,14 +429,17 @@ export const callSeedanceProAPI = async (
  * @param {string} apiKey - BytePlus API key
  * @param {ProgressManager} progress - Progress manager
  * @param {string} requestId - Request ID
- * @returns {Promise<{buffer: Buffer}>} - The video buffer
+ * @returns {Promise<{buffer: Buffer, usage: {completion_tokens: number, total_tokens: number}}>} - The video buffer and usage
  */
 async function pollSeedanceTask(
     taskId: string,
     apiKey: string,
     progress: ProgressManager,
     requestId: string,
-): Promise<{ buffer: Buffer }> {
+): Promise<{
+    buffer: Buffer;
+    usage: { completion_tokens: number; total_tokens: number };
+}> {
     const pollUrl = `https://ark.ap-southeast.bytepluses.com/api/v3/contents/generations/tasks/${taskId}`;
     logOps("Poll URL:", pollUrl);
 
@@ -510,7 +515,14 @@ async function pollSeedanceTask(
                 "MB",
             );
 
-            return { buffer };
+            // Extract usage from API response
+            const usage = {
+                completion_tokens: pollData.usage?.completion_tokens || 0,
+                total_tokens: pollData.usage?.total_tokens || 0,
+            };
+            logOps("API usage:", usage);
+
+            return { buffer, usage };
         }
 
         if (status === "failed" || status === "error") {

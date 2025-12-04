@@ -179,7 +179,9 @@ export const track = (eventType: EventType) =>
                 await storeEvents(db, c.var.log, [event]);
 
                 // process events immediately in development/testing
-                if (["test", "development"].includes(c.env.ENVIRONMENT)) {
+                if (
+                    ["test", "development", "local"].includes(c.env.ENVIRONMENT)
+                ) {
                     log.trace("Processing events immediately");
                     await processEvents(db, c.var.log, {
                         polarAccessToken: c.env.POLAR_ACCESS_TOKEN,

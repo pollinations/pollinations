@@ -34,7 +34,7 @@ Four labels track submission status:
 
 ## Issue Template Contract
 
-The issue template (`project-submission.yml`) exposes these fields:
+The issue template (`app-submission.yml`) exposes these fields:
 
 | Field ID              | Type     | Required | Maps To        |
 | --------------------- | -------- | -------- | -------------- |

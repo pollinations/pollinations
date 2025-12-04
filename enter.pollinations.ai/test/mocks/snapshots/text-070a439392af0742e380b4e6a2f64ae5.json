@@ -25,7 +25,7 @@
       "cache-control": "no-cache",
       "connection": "keep-alive",
       "content-type": "text/event-stream; charset=utf-8",
-      "date": "Sat, 29 Nov 2025 21:04:09 GMT",
+      "date": "Thu, 04 Dec 2025 13:41:53 GMT",
       "transfer-encoding": "chunked",
       "x-powered-by": "Express"
     },
@@ -33,11 +33,7 @@
       "type": "stream",
       "data": [
         {
-          "data": "data: {\"id\":\"vertex-ai-1764",
-          "delay": 7
-        },
-        {
-          "data": "450249637\",\"object\":\"chat.completion.chunk\",\"created\":1764450249,\"model\":\"gemini-3-pro-preview\",\"provider\":\"vertex-ai\",\"choices\":[{\"delta\":{\"role\":\"assistant\",\"content\":\"Yes.\",\"content_blocks\":[{\"index\":0,\"delta\":{\"text\":\"Yes.\"}}]},\"index\":0,\"finish_reason\":\"STOP\"}],\"usage\":{\"prompt_tokens\":259,\"completion_tokens\":2,\"total_tokens\":985,\"completion_tokens_details\":{\"reasoning_tokens\":724,\"audio_tokens\":0},\"prompt_tokens_details\":{\"audio_tokens\":0}}}\n\n",
+          "data": "data: {\"id\":\"vertex-ai-1764855712998\",\"object\":\"chat.completion.chunk\",\"created\":1764855713,\"model\":\"gemini-3-pro-preview\",\"provider\":\"vertex-ai\",\"choices\":[{\"delta\":{\"role\":\"assistant\",\"content\":\"Yes. I'm rolling the dice on this one.\",\"content_blocks\":[{\"index\":0,\"delta\":{\"text\":\"Yes. I'm rolling the dice on this one.\"}}]},\"index\":0,\"finish_reason\":\"STOP\"}],\"usage\":{\"prompt_tokens\":259,\"completion_tokens\":1001,\"total_tokens\":1260,\"completion_tokens_details\":{\"reasoning_tokens\":989,\"audio_tokens\":0},\"prompt_tokens_details\":{\"audio_tokens\":0}}}\n\n",
           "delay": 0
         }
       ]

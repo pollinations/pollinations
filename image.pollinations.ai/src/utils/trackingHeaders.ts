@@ -10,6 +10,7 @@ import {
     buildUsageHeaders,
     createImageTokenUsage,
     createVideoSecondsUsage,
+    createVideoTokenUsage,
 } from "../../../shared/registry/usage-headers.js";
 
 const log = debug("pollinations:tracking-headers");
@@ -20,8 +21,9 @@ type ValidServiceName = keyof typeof IMAGE_SERVICES;
 export interface TrackingUsageData {
     // Unified usage format for all image models
     completionImageTokens?: number;
-    // Video models use seconds instead of tokens
+    // Video models - Veo uses seconds, Seedance uses tokens
     completionVideoSeconds?: number;
+    completionVideoTokens?: number;
     promptTokenCount?: number;
     totalTokenCount?: number;
 }
@@ -58,13 +60,19 @@ export function buildTrackingHeaders(
     const modelUsed = trackingData?.actualModel || model;
 
     // Determine usage type based on what's provided
-    // Video models use completionVideoSeconds, image models use completionImageTokens
+    // Video models: Veo uses completionVideoSeconds, Seedance uses completionVideoTokens
+    // Image models use completionImageTokens
+    const videoTokens = trackingData?.usage?.completionVideoTokens;
     const videoSeconds = trackingData?.usage?.completionVideoSeconds;
     const imageTokens = trackingData?.usage?.completionImageTokens;
 
     let usage: TokenUsage;
-    if (videoSeconds && videoSeconds > 0) {
-        // Video model - use video seconds
+    if (videoTokens && videoTokens > 0) {
+        // Seedance video model - use video tokens (from API response)
+        log(`Using video tokens: ${videoTokens}`);
+        usage = createVideoTokenUsage(videoTokens);
+    } else if (videoSeconds && videoSeconds > 0) {
+        // Veo video model - use video seconds
         log(`Using video seconds: ${videoSeconds}`);
         usage = createVideoSecondsUsage(videoSeconds);
     } else {

@@ -28,11 +28,15 @@ jobs:
             ];
 
             let label = null;
+            const title = context.payload.issue.title || "";
 
-            if (INTERNAL_USERS.includes(author)) {
+            // Skip App Submission issues (handled by app-review workflow)
+            if (title.startsWith("[App Submission]:")) {
+              console.log("App Submission issue, skipping INBOX label");
+            } else if (INTERNAL_USERS.includes(author)) {
               console.log(`Internal user ${author}, skipping label`);
             } else {
-              label = "COMMUNITY";
+              label = "INBOX";
             }
 
             if (label && !current.includes(label)) {

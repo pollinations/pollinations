@@ -13,6 +13,7 @@ export const USAGE_TYPE_HEADERS: Record<UsageType, string> = {
     completionAudioTokens: "x-usage-completion-audio-tokens",
     completionImageTokens: "x-usage-completion-image-tokens",
     completionVideoSeconds: "x-usage-completion-video-seconds",
+    completionVideoTokens: "x-usage-completion-video-tokens",
 };
 
 /**
@@ -128,7 +129,7 @@ export function createImageTokenUsage(
 }
 
 /**
- * Helper for video services: create TokenUsage with video seconds
+ * Helper for video services: create TokenUsage with video seconds (Veo)
  */
 export function createVideoSecondsUsage(
     completionVideoSeconds: number,
@@ -136,5 +137,17 @@ export function createVideoSecondsUsage(
     return {
         unit: "TOKENS",
         completionVideoSeconds,
+    };
+}
+
+/**
+ * Helper for video services: create TokenUsage with video tokens (Seedance)
+ */
+export function createVideoTokenUsage(
+    completionVideoTokens: number,
+): TokenUsage {
+    return {
+        unit: "TOKENS",
+        completionVideoTokens,
     };
 }

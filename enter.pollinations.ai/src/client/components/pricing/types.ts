@@ -15,6 +15,7 @@ export type ModelPrice = {
     perImagePrice?: string;
     // Video pricing
     perSecondPrice?: string;
+    perTokenPrice?: string; // For token-based video models like seedance
 };
 
 export type Modalities = {

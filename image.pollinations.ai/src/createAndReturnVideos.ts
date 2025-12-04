@@ -10,7 +10,10 @@ import {
     callVeoAPI,
     type VideoGenerationResult,
 } from "./models/veoVideoModel.ts";
-import { callSeedanceAPI } from "./models/seedanceVideoModel.ts";
+import {
+    callSeedanceAPI,
+    callSeedanceProAPI,
+} from "./models/seedanceVideoModel.ts";
 export type { VideoGenerationResult };
 import { incrementModelCounter } from "./modelCounter.ts";
 
@@ -55,8 +58,16 @@ export async function createAndReturnVideo(
             // Google Veo 3.1 Fast
             result = await callVeoAPI(prompt, safeParams, progress, requestId);
         } else if (safeParams.model === "seedance") {
-            // BytePlus Seedance Lite
+            // BytePlus Seedance Lite (better quality)
             result = await callSeedanceAPI(
+                prompt,
+                safeParams,
+                progress,
+                requestId,
+            );
+        } else if (safeParams.model === "seedance-pro") {
+            // BytePlus Seedance Pro-Fast (better prompt adherence)
+            result = await callSeedanceProAPI(
                 prompt,
                 safeParams,
                 progress,
@@ -86,5 +97,5 @@ export async function createAndReturnVideo(
  * @returns {boolean}
  */
 export function isVideoModel(model: string): boolean {
-    return model === "veo" || model === "seedance";
+    return model === "veo" || model === "seedance" || model === "seedance-pro";
 }

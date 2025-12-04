@@ -337,3 +337,6 @@ gateway/
 # Debug sessions
 **/debugsession_*/
 debugsession_*/
+
+# Testing tokens
+.testingtokens

@@ -963,4 +963,46 @@ export const creativeProjects = [
         language: "zh-TW",
         order: 1,
     },
+    {
+        "name": "SAGE",
+        "url": "https://starlightguardians.com",
+        "description":
+            "SAGE (Storyboard Animation Generation Environment) is an open-source multimedia AI orchestration and automation platform. It merges creative generation, development assistance, and intelligent orchestration under one cohesive system — fully runnable in Termux on Android.\\n\\nAI Content Generation\\nStable Diffusion XL with txt2img/img2img pipelines\\nSupports ControlNet, LCM (Latent Conditioning Mixing) for multi-image consistency and VRAM efficiency\\nMulti-image conditioning including multi-source img2img\\nDesign axes that auto-inject creative parameters into prompts for consistent visual worlds\\nStyle profiles with UI sliders for project-level visual coherence\\nExtended templates and reliable prompt mixing for controlled outputs\\nIntegration with Pollinations.ai, Groq, Colab, and Kaggle",
+        "author": "sebastianpw",
+        "repo": "sebastianpw/sage",
+        "category": "creative",
+        "submissionDate": "2025-12-03",
+        "order": 5,
+    },
+    {
+        "name": "ViralFlow AI",
+        "url": "https://fabioarieira.com/viralflow",
+        "description":
+            "An automated generator of viral videos that uses the pollinations.ai API to create real-time customized visuals, paired with Gemini 2.5 for scriptwriting, multi-voice TTS, visual effects, and real-time rendering. Production-ready and designed to turn simple themes into cinematic, engaging videos. Pollinations is highlighted as a core visual partner, with an automated workflow for React/Electron locally or on the web. Open to collaboration and partnerships.",
+        "author": "FabioArieiraBaia",
+        "repo": "https://github.com/FabioArieiraBaia/ViralFlow",
+        "category": "creative",
+        "language": "pt-BR",
+        "submissionDate": "2025-12-04",
+        "order": 5,
+    },
+  {
+    "name": "Gemini ai telegram-bot",
+    "url": "https://t.me/index_bot",
+    "description": "Gemini ai telegram-bot: a Telegram bot offering chat (text, voice, images) along with AI image and audio generation, processing, and enhancement (colorizing, retouching) from prompts; currently in beta.",
+    "author": "mosavy",
+    "category": "creative",
+    "language": "en-US",
+    "submissionDate": "2025-12-04",
+    "order": 5
+  },
+  {
+    "name": "LineSketch AI",
+    "url": "https://linesketch-muse.lovable.app/",
+    "description": "LineSketch AI is a minimalist web app that turns ideas into clean black-and-white line art in seconds. Users type a short prompt, pick a line-art style and aspect ratio (Landscape 16:9 or Portrait 9:16), and the app queries the Pollinations image API to generate and return a crisp illustration. The backend builds a structured prompt that includes black-and-white line art, minimal outlines, high contrast, and combines it with the user’s idea and a chosen style preset (Minimal Line Art, Single-Stroke Outline, Fine Technical Sketch, Vintage Ink Drawing). The frontend uses Node.js, Express and vanilla HTML/CSS/JS, delivering a production-ready tool and a polished landing page with live preview, download button, About, and FAQ. The project is free to use and demonstrates the Pollinations image infrastructure.",
+    "author": "ArslanDevelop",
+    "category": "creative",
+    "submissionDate": "2025-12-04",
+    "order": 5
+  }
 ];

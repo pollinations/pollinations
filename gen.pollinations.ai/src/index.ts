@@ -25,10 +25,7 @@ export default {
 
         // Redirect root and /docs to API docs
         if (path === "/" || path === "/docs") {
-            return Response.redirect(
-                "https://gen.pollinations.ai/api/docs",
-                302,
-            );
+            return Response.redirect(`${url.origin}/api/docs`, 302);
         }
 
         // Convenience: /models → /api/generate/text/models (most common use case)

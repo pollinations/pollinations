@@ -144,13 +144,30 @@ export const calculatePerPollen = (model: ModelPrice): string => {
     // ========================================================================
     // VIDEO MODELS
     // ========================================================================
-    if (model.type === "video" && model.perSecondPrice) {
-        const costPerSecond = parseFloat(model.perSecondPrice);
-        if (costPerSecond === 0) return "—";
+    if (model.type === "video") {
+        // Token-based video pricing (e.g., seedance)
+        if (model.perToken && model.perTokenPrice) {
+            const tokenPrice = parseFloat(model.perTokenPrice);
+            if (tokenPrice === 0) return "—";
 
-        // Show seconds per pollen
-        const secondsPerPollen = 1 / costPerSecond;
-        return `${secondsPerPollen.toFixed(1)} sec`;
+            // Seedance token formula: (height × width × FPS × duration) / 1024
+            // For 720p 2s video: (720 × 1280 × 24 × 2) / 1024 ≈ 43,200 tokens
+            const SEEDANCE_TOKENS_2S_720P = 43200;
+            const costPerVideo =
+                (tokenPrice * SEEDANCE_TOKENS_2S_720P) / 1_000_000;
+            const videosPerPollen = 1 / costPerVideo;
+            return formatLargeNumber(videosPerPollen);
+        }
+
+        // Second-based video pricing (e.g., veo)
+        if (model.perSecondPrice) {
+            const costPerSecond = parseFloat(model.perSecondPrice);
+            if (costPerSecond === 0) return "—";
+
+            // Show seconds per pollen
+            const secondsPerPollen = 1 / costPerSecond;
+            return `${secondsPerPollen.toFixed(1)} sec`;
+        }
     }
 
     // ========================================================================

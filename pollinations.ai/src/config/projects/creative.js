@@ -963,14 +963,27 @@ export const creativeProjects = [
         language: "zh-TW",
         order: 1,
     },
-  {
-    "name": "SAGE",
-    "url": "https://starlightguardians.com",
-    "description": "SAGE (Storyboard Animation Generation Environment) is an open-source multimedia AI orchestration and automation platform. It merges creative generation, development assistance, and intelligent orchestration under one cohesive system — fully runnable in Termux on Android.\\n\\nAI Content Generation\\nStable Diffusion XL with txt2img/img2img pipelines\\nSupports ControlNet, LCM (Latent Conditioning Mixing) for multi-image consistency and VRAM efficiency\\nMulti-image conditioning including multi-source img2img\\nDesign axes that auto-inject creative parameters into prompts for consistent visual worlds\\nStyle profiles with UI sliders for project-level visual coherence\\nExtended templates and reliable prompt mixing for controlled outputs\\nIntegration with Pollinations.ai, Groq, Colab, and Kaggle",
-    "author": "sebastianpw",
-    "repo": "sebastianpw/sage",
-    "category": "creative",
-    "submissionDate": "2025-12-03",
-    "order": 5
-  }
+    {
+        "name": "SAGE",
+        "url": "https://starlightguardians.com",
+        "description":
+            "SAGE (Storyboard Animation Generation Environment) is an open-source multimedia AI orchestration and automation platform. It merges creative generation, development assistance, and intelligent orchestration under one cohesive system — fully runnable in Termux on Android.\\n\\nAI Content Generation\\nStable Diffusion XL with txt2img/img2img pipelines\\nSupports ControlNet, LCM (Latent Conditioning Mixing) for multi-image consistency and VRAM efficiency\\nMulti-image conditioning including multi-source img2img\\nDesign axes that auto-inject creative parameters into prompts for consistent visual worlds\\nStyle profiles with UI sliders for project-level visual coherence\\nExtended templates and reliable prompt mixing for controlled outputs\\nIntegration with Pollinations.ai, Groq, Colab, and Kaggle",
+        "author": "sebastianpw",
+        "repo": "sebastianpw/sage",
+        "category": "creative",
+        "submissionDate": "2025-12-03",
+        "order": 5,
+    },
+    {
+        "name": "ViralFlow AI",
+        "url": "https://fabioarieira.com/viralflow",
+        "description":
+            "An automated generator of viral videos that uses the pollinations.ai API to create real-time customized visuals, paired with Gemini 2.5 for scriptwriting, multi-voice TTS, visual effects, and real-time rendering. Production-ready and designed to turn simple themes into cinematic, engaging videos. Pollinations is highlighted as a core visual partner, with an automated workflow for React/Electron locally or on the web. Open to collaboration and partnerships.",
+        "author": "FabioArieiraBaia",
+        "repo": "https://github.com/FabioArieiraBaia/ViralFlow",
+        "category": "creative",
+        "language": "pt-BR",
+        "submissionDate": "2025-12-04",
+        "order": 5,
+    },
 ];

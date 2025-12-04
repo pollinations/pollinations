@@ -375,7 +375,8 @@ Pollinations.AI is used in various projects, including:
 | [PollinVerse 🚀](https://pollinverse.netlify.app) ([⭐ 0](No response)) | A rapid AI development and prototyping platform powered by Pollinations.AI.... | VearyTry |
 | [Pollinations.ai Model Comparison](https://endemicmedia.github.io/FLARE/llm-comparison-tool/) ([⭐ 0](https://github.com/EndemicMedia)) | An interactive tool designed to compare outputs from various large language... | [Link](https://github.com/dseeker) |
 | 🇨🇳 [IMyself AI 🇨🇳](https://openai.lmyself.top/) | 我们提供高质量的AI生成服务，包括图像生成、文本生成、音频生成和语音转文本服务， 让您轻松创建各种创意内容。 (We provide high-quality... | Shadownc |
-| 🆕 [SAGE](https://starlightguardians.com) ([⭐ 0](sebastianpw/sage)) | SAGE (Storyboard Animation Generation Environment) is an open-source multimedia... | sebastianpw |
+| 🆕 [SAGE](https://starlightguardians.com) ([⭐ 0](sebastianpw/sage)) | SAGE (Storyboard Animation Generation Environment) is an open-source multimedia... | sebastianpw |
+| 🆕 🇧🇷 [ViralFlow AI](https://fabioarieira.com/viralflow) ([⭐ 0](https://github.com/FabioArieiraBaia/ViralFlow)) | An automated generator of viral videos that uses the pollinations.ai API to... | FabioArieiraBaia |
 
 ### Games 🎲
 
@@ -405,6 +406,7 @@ Pollinations.AI is used in various projects, including:
 | [roastmyselfie.app](https://roastmyselfie.app) | AI Personality Analyzer - Get roasted and psychoanalyzed.. just from one... | @andres_11 |
 | [Watch TV with neko (Roblox)](https://www.roblox.com/games/15087497266/UPD-Watch-TV-with-neko-AI) | Roblox game where you can talk with AI catgirls 🐾 or just have fun, talking... | [Link](https://www.roblox.com/users/3857849039/profile/) |
 | Infinite Tales ([⭐ 29](https://github.com/JayJayBinks/infinite-tales-rpg)) | Interactive storytelling platform powered by AI that creates endless narrative... | @infinite_tales |
+| 🆕 Godville Heroic Moment ([⭐ 0](https://github.com/migueland94/Godville-Heroic-Moment)) | Firefox-only browser extension that adds a Heroic Moment block to your Godville... | migueland94 |
 
 ### Hack-&-Build 🛠️
 
@@ -516,6 +518,7 @@ Pollinations.AI is used in various projects, including:
 | [LiteAI](https://liteai.chat/) | A free, fast, and anonymous AI chat and image generation platform with no login... | LiteAI Team |
 | 🤖 [UR Imagine & Chat AI](https://urimagine.netlify.app/) | A versatile AI platform offering both image generation and chat... | @ur_imagine |
 | 🆕 [Synapse](https://chat.aegis-plus.my.id) ([⭐ 0](https://github.com/Aegis-plus/Synapse)) | An AI-powered chat application built with Vite and React, enabling multi-model... | Aegis-plus |
+| 🆕 [Debootai](https://deboott.puter.site/) | Next-gen AI chat playground with file/image uploads, real-time web search,... | Chess-Base |
 
 ### Social Bots 🤖
 

@@ -31,7 +31,8 @@ export default defineWorkersConfig(async ({ mode }) => {
                     miniflare: {
                         bindings: {
                             TEST_MIGRATIONS: migrations,
-                            TEST_VCR_MODE: env.TEST_VCR_MODE,
+                            TEST_VCR_MODE:
+                                env.TEST_VCR_MODE || "replay-or-record",
                         },
                     },
                 },

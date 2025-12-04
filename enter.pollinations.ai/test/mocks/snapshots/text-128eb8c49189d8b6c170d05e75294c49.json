@@ -15,20 +15,20 @@
       "access-control-allow-origin": "*",
       "cache-control": "public, max-age=31536000, immutable",
       "connection": "keep-alive",
-      "content-length": "3",
+      "content-length": "105",
       "content-type": "text/plain; charset=utf-8",
-      "date": "Sat, 29 Nov 2025 21:04:46 GMT",
-      "etag": "W/\"3-+zYPnAmsjF7bLxi+XeToDqTEMNA\"",
+      "date": "Thu, 04 Dec 2025 13:41:54 GMT",
+      "etag": "W/\"69-VOVbVEFlQgUSIeSmIkoPz7dLuaU\"",
       "keep-alive": "timeout=5",
       "x-model-used": "gemini-2.5-flash-lite",
       "x-powered-by": "Express",
-      "x-usage-completion-text-tokens": "1",
+      "x-usage-completion-text-tokens": "24",
       "x-usage-prompt-text-tokens": "6",
-      "x-usage-total-tokens": "7"
+      "x-usage-total-tokens": "30"
     },
     "body": {
       "type": "text",
-      "data": "yes"
+      "data": "I need more information to answer \"yes\" or \"no.\" Please provide the question you would like me to answer."
     }
   }
 }

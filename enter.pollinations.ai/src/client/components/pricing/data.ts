@@ -62,24 +62,49 @@ export const getModelPrices = (): ModelPrice[] => {
         const outputType = serviceConfig.outputModalities?.[0] || "image";
 
         if (outputType === "video") {
-            prices.push({
-                name: serviceName,
-                type: "video",
-                perToken: false,
-                perSecondPrice: formatPrice(
-                    latestCost.completionVideoSeconds,
-                    (v: number) => `${v.toFixed(3)}/sec`,
-                ),
-            });
-        } else if (latestCost.promptTextTokens || latestCost.promptImageTokens) {
+            // Check if it's token-based (seedance) or second-based (veo)
+            if (latestCost.completionVideoTokens) {
+                prices.push({
+                    name: serviceName,
+                    type: "video",
+                    perToken: true,
+                    perTokenPrice: formatPrice(
+                        latestCost.completionVideoTokens,
+                        formatPricePer1M,
+                    ),
+                });
+            } else {
+                prices.push({
+                    name: serviceName,
+                    type: "video",
+                    perToken: false,
+                    perSecondPrice: formatPrice(
+                        latestCost.completionVideoSeconds,
+                        (v: number) => `${v.toFixed(3)}/sec`,
+                    ),
+                });
+            }
+        } else if (
+            latestCost.promptTextTokens ||
+            latestCost.promptImageTokens
+        ) {
             // Token-based image pricing (e.g., gptimage, nanobanana)
             prices.push({
                 name: serviceName,
                 type: "image",
                 perToken: true,
-                promptTextPrice: formatPrice(latestCost.promptTextTokens, formatPricePer1M),
-                promptImagePrice: formatPrice(latestCost.promptImageTokens, formatPricePer1M),
-                completionImagePrice: formatPrice(latestCost.completionImageTokens, formatPricePer1M),
+                promptTextPrice: formatPrice(
+                    latestCost.promptTextTokens,
+                    formatPricePer1M,
+                ),
+                promptImagePrice: formatPrice(
+                    latestCost.promptImageTokens,
+                    formatPricePer1M,
+                ),
+                completionImagePrice: formatPrice(
+                    latestCost.completionImageTokens,
+                    formatPricePer1M,
+                ),
             });
         } else {
             // Per-image pricing (e.g., flux, turbo, kontext, seedream)
@@ -87,7 +112,10 @@ export const getModelPrices = (): ModelPrice[] => {
                 name: serviceName,
                 type: "image",
                 perToken: false,
-                perImagePrice: formatPrice(latestCost.completionImageTokens, formatPricePerImage),
+                perImagePrice: formatPrice(
+                    latestCost.completionImageTokens,
+                    formatPricePerImage,
+                ),
             });
         }
     }

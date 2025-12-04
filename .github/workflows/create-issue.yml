@@ -1,0 +1,48 @@
+name: Create Issue from Discord
+
+on:
+  repository_dispatch:
+    types: [discord-issue]
+
+jobs:
+  create-issue:
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+
+    steps:
+      - name: Create Issue
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const payload = context.payload.client_payload;
+
+            // Validate required fields
+            if (!payload.title || !payload.body) {
+              core.setFailed('Missing required fields: title or body');
+              return;
+            }
+
+            // Parse labels (can be string or array)
+            let labels = [];
+            if (payload.labels) {
+              labels = typeof payload.labels === 'string'
+                ? payload.labels.split(',').map(l => l.trim())
+                : payload.labels;
+            }
+
+            try {
+              const issue = await github.rest.issues.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                title: payload.title,
+                body: payload.body,
+                labels: labels
+              });
+
+              console.log(`Created issue #${issue.data.number}: ${issue.data.html_url}`);
+              core.setOutput('issue_number', issue.data.number);
+              core.setOutput('issue_url', issue.data.html_url);
+            } catch (error) {
+              core.setFailed(`Failed to create issue: ${error.message}`);
+            }

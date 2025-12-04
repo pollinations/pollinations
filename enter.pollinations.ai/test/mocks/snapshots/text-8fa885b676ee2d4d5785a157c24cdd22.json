@@ -22,34 +22,34 @@
     "headers": {
       "access-control-allow-origin": "*",
       "connection": "keep-alive",
-      "content-length": "717",
+      "content-length": "511",
       "content-type": "application/json; charset=utf-8",
-      "date": "Sat, 29 Nov 2025 21:02:16 GMT",
-      "etag": "W/\"2cd-tcAQOFLqmAXC3vG9Pw7YmaqJgjA\"",
+      "date": "Thu, 04 Dec 2025 13:41:26 GMT",
+      "etag": "W/\"1ff-JTv8QI2mlXUdOScpgE54Y07URaU\"",
       "keep-alive": "timeout=5",
       "x-model-used": "gemini-2.5-flash-lite",
       "x-powered-by": "Express",
-      "x-usage-completion-text-tokens": "24",
+      "x-usage-completion-text-tokens": "1",
       "x-usage-prompt-text-tokens": "6",
-      "x-usage-total-tokens": "30"
+      "x-usage-total-tokens": "7"
     },
     "body": {
       "type": "json",
       "data": {
-        "id": "pllns_247c9ebd3bf8f6cee8ed3c6a99b6ca1f",
+        "id": "pllns_efaf41ec53651997cbce2b11a064acd8",
         "object": "chat.completion",
-        "created": 1764450136,
+        "created": 1764855686,
         "model": "gemini-2.5-flash-lite",
         "provider": "vertex-ai",
         "choices": [
           {
             "message": {
               "role": "assistant",
-              "content": "I need more context to answer \"yes\" or \"no\". Please provide the question you would like me to answer.",
+              "content": "yes",
               "content_blocks": [
                 {
                   "type": "text",
-                  "text": "I need more context to answer \"yes\" or \"no\". Please provide the question you would like me to answer."
+                  "text": "yes"
                 }
               ]
             },
@@ -60,8 +60,8 @@
         ],
         "usage": {
           "prompt_tokens": 6,
-          "completion_tokens": 24,
-          "total_tokens": 30,
+          "completion_tokens": 1,
+          "total_tokens": 7,
           "completion_tokens_details": {
             "reasoning_tokens": 0,
             "audio_tokens": 0

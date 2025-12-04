@@ -22,34 +22,35 @@
     "headers": {
       "access-control-allow-origin": "*",
       "connection": "keep-alive",
-      "content-length": "548",
+      "content-length": "497",
       "content-type": "application/json; charset=utf-8",
-      "date": "Sat, 29 Nov 2025 21:02:53 GMT",
-      "etag": "W/\"224-X2H8a5jsAqepPRmi2jAhUnfvbFA\"",
+      "date": "Thu, 04 Dec 2025 13:41:36 GMT",
+      "etag": "W/\"1f1-DnLVkz4xMis7WAKaGdpYzKQspQU\"",
       "keep-alive": "timeout=5",
       "x-model-used": "gemini-3-pro-preview",
       "x-powered-by": "Express",
-      "x-usage-completion-reasoning-tokens": "770",
+      "x-usage-completion-reasoning-tokens": "723",
+      "x-usage-completion-text-tokens": "2",
       "x-usage-prompt-text-tokens": "259",
-      "x-usage-total-tokens": "1029"
+      "x-usage-total-tokens": "984"
     },
     "body": {
       "type": "json",
       "data": {
-        "id": "pllns_c07b71e01d19cb5de0a3ef4552a38f6b",
+        "id": "pllns_a9e3723712c83589f482a052ce57cd37",
         "object": "chat.completion",
-        "created": 1764450173,
+        "created": 1764855696,
         "model": "gemini-3-pro-preview",
         "provider": "vertex-ai",
         "choices": [
           {
             "message": {
               "role": "assistant",
-              "content": "Yes. Why not live dangerously?",
+              "content": "Yes.",
               "content_blocks": [
                 {
                   "type": "text",
-                  "text": "Yes. Why not live dangerously?"
+                  "text": "Yes."
                 }
               ]
             },
@@ -59,10 +60,10 @@
         ],
         "usage": {
           "prompt_tokens": 259,
-          "completion_tokens": 7,
-          "total_tokens": 1036,
+          "completion_tokens": 725,
+          "total_tokens": 984,
           "completion_tokens_details": {
-            "reasoning_tokens": 770,
+            "reasoning_tokens": 723,
             "audio_tokens": 0
           },
           "prompt_tokens_details": {

@@ -109,6 +109,11 @@ pattern = "enter.pollinations.ai"
 zone_name = "pollinations.ai"
 custom_domain = true
 
+[[env.production.routes]]
+pattern = "gen.pollinations.ai"
+zone_name = "pollinations.ai"
+custom_domain = true
+
 [[env.production.d1_databases]]
 remote = true
 binding = "DB"

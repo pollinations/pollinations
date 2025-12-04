@@ -3,6 +3,23 @@ import { Scalar } from "@scalar/hono-api-reference";
 import { openAPIRouteHandler } from "hono-openapi";
 import type { Env } from "@/env.ts";
 
+// Transform OpenAPI paths to remove /generate/ prefix for cleaner gen.pollinations.ai URLs
+function transformOpenAPISchema(
+    schema: Record<string, unknown>,
+): Record<string, unknown> {
+    const paths = schema.paths as Record<string, unknown> | undefined;
+    if (!paths) return schema;
+
+    const newPaths: Record<string, unknown> = {};
+    for (const [path, value] of Object.entries(paths)) {
+        // Strip /generate prefix: /generate/v1/models → /v1/models
+        const cleanPath = path.replace(/^\/generate/, "");
+        newPaths[cleanPath] = value;
+    }
+
+    return { ...schema, paths: newPaths };
+}
+
 export const createDocsRoutes = (apiRouter: Hono<Env>) => {
     return new Hono<Env>()
         .get("/", (c, next) =>
@@ -32,9 +49,9 @@ export const createDocsRoutes = (apiRouter: Hono<Env>) => {
                 },
             })(c, next),
         )
-        .get(
-            "/open-api/generate-schema",
-            openAPIRouteHandler(apiRouter, {
+        .get("/open-api/generate-schema", async (c, next) => {
+            // Generate schema using hono-openapi, then transform paths to remove /generate prefix
+            const handler = openAPIRouteHandler(apiRouter, {
                 documentation: {
                     servers: [{ url: "https://gen.pollinations.ai" }],
                     info: {
@@ -110,7 +127,31 @@ export const createDocsRoutes = (apiRouter: Hono<Env>) => {
                             bearerAuth: [],
                         },
                     ],
+                    // Single tag for all generation endpoints
+                    tags: [
+                        {
+                            name: "gen.pollinations.ai",
+                            description:
+                                "Generate text, images, and videos using AI models",
+                        },
+                    ],
+                    // Use x-tagGroups to prevent Scalar from grouping under "Authentication"
+                    "x-tagGroups": [
+                        {
+                            name: "API",
+                            tags: ["gen.pollinations.ai"],
+                        },
+                    ],
                 },
-            }),
-        );
+            });
+
+            // Call the handler to get the response
+            const response = await handler(c, next);
+            if (!response) return;
+
+            // Parse the schema, transform paths, and return
+            const schema = (await response.json()) as Record<string, unknown>;
+            const transformed = transformOpenAPISchema(schema);
+            return c.json(transformed);
+        });
 };

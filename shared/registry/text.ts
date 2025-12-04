@@ -98,27 +98,6 @@ export const TEXT_SERVICES = {
         tools: true,
         isSpecialized: false,
     },
-    "mistral-fast": {
-        aliases: [
-            "llama-3.1-8b-instruct",
-            "llama-3.1-8b",
-            "meta-llama-3.1-8b-instruct",
-        ],
-        modelId: "us.meta.llama3-1-8b-instruct-v1:0",
-        provider: "aws-bedrock",
-        cost: [
-            {
-                date: COST_START_DATE,
-                promptTextTokens: perMillion(0.22),
-                completionTextTokens: perMillion(0.22),
-            },
-        ],
-        description: "Meta Llama 3.1 8B - Fast & Lightweight",
-        inputModalities: ["text"],
-        outputModalities: ["text"],
-        tools: true,
-        isSpecialized: false,
-    },
     "openai-audio": {
         aliases: [
             "gpt-4o-mini-audio-preview",

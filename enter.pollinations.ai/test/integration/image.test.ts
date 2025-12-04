@@ -14,7 +14,7 @@ function expectCacheHeaders(response: Response, expectedHeaders: CacheHeaders) {
     expect(xCacheType).toBe(expectedHeaders.cacheType);
 }
 
-describe("Image Cache Integration Tests", () => {
+describe("Image Integration Tests", () => {
     test(
         "identical image requests produce exact cache hit",
         { timeout: 30000 },
@@ -142,6 +142,31 @@ describe("Image Cache Integration Tests", () => {
                 cache: "MISS",
                 cacheType: null,
             });
+        },
+    );
+
+    test(
+        "prompts with newlines are routed correctly (not 404)",
+        { timeout: 30000 },
+        async ({ apiKey, mocks }) => {
+            await mocks.enable("polar", "tinybird");
+
+            // Test prompt with URL-encoded newlines (%0A)
+            // This was previously returning 404 because .+ regex doesn't match newlines
+            const promptWithNewlines = "line1%0Aline2%0Aline3";
+            const response = await SELF.fetch(
+                `http://localhost:3000/api/generate/image/${promptWithNewlines}?model=flux&width=256&height=256&seed=42`,
+                {
+                    method: "GET",
+                    headers: {
+                        "authorization": `Bearer ${apiKey}`,
+                    },
+                },
+            );
+
+            // Should return 200, not 404
+            expect(response.status).toBe(200);
+            await response.arrayBuffer();
         },
     );
 });

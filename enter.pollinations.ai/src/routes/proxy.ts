@@ -339,9 +339,10 @@ export const proxyRoutes = new Hono<Env>()
         },
     )
     .get(
-        // Use :prompt{.+} regex to capture everything including slashes (for long prompts)
+        // Use :prompt{[\\s\\S]+} regex to capture everything including slashes AND newlines
+        // .+ doesn't match newlines, but [\s\S]+ matches any character including \n
         // This creates a named param for OpenAPI docs while matching any characters
-        "/image/:prompt{.+}",
+        "/image/:prompt{[\\s\\S]+}",
         track("generate.image"),
         imageCache,
         describeRoute({
@@ -407,7 +408,7 @@ export const proxyRoutes = new Hono<Env>()
             await c.var.auth.requireAuthorization();
             await checkBalance(c.var);
 
-            // Get prompt from validated param (using :prompt{.+} regex pattern)
+            // Get prompt from validated param (using :prompt{[\\s\\S]+} regex pattern)
             const promptParam = c.req.param("prompt") || "";
 
             log.debug("[PROXY] Extracted prompt param: {prompt}", {

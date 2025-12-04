@@ -321,6 +321,7 @@ export interface ModelInfo {
         audio_input_price?: number;
         audio_output_price?: number;
         video_second_price?: number;
+        video_token_price?: number;
         currency: "USD";
     };
     // User-facing metadata
@@ -358,6 +359,7 @@ export function getModelInfo(serviceId: ServiceId): ModelInfo {
             audio_input_price: priceDefinition.promptAudioTokens,
             audio_output_price: priceDefinition.completionAudioTokens,
             video_second_price: priceDefinition.completionVideoSeconds,
+            video_token_price: priceDefinition.completionVideoTokens,
             currency: "USD",
         },
         // User-facing metadata from service definition

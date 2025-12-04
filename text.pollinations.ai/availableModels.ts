@@ -137,7 +137,7 @@ const models: ModelDefinition[] = [
     {
         name: "openai-audio",
         description: "OpenAI GPT-4o Mini Audio Preview",
-        maxInputChars: 5000,
+        maxInputChars: 2500,
         voices: [
             "alloy",
             "echo",

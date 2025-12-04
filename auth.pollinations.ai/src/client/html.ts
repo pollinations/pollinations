@@ -50,6 +50,9 @@ export const generateHTML = () => `<!DOCTYPE html>
                 <p style="margin: 8px 0 0 0; color: #666; font-size: 0.9em;">
                     Please move your workflows to <b>enter.pollinations.ai</b>
                 </p>
+                <p style="margin: 8px 0 0 0; color: #555; font-size: 0.9em;">
+                    <b>🎵 Audio:</b> The <code style="background:#fff3cd; padding:2px 6px; border-radius:4px;">openai-audio</code> model has been limited and usage will move to <a href="https://enter.pollinations.ai" target="_blank" style="color: #d97706; font-weight: bold;">enter.pollinations.ai</a> by <b>Dec. 8</b>.
+                </p>
             </div>
 
             <div style="margin-top: 16px; font-size: 1.05em; color: #7a3cff;">

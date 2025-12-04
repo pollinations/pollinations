@@ -21,8 +21,11 @@ export function checkLimits(messages, options) {
     if (modelConfig.maxInputChars) {
         const totalChars = countMessageCharacters(messages);
         if (totalChars > modelConfig.maxInputChars) {
+            const enterNote = options.model === "openai-audio" 
+                ? " For full audio capabilities, use https://enter.pollinations.ai"
+                : "";
             throw new Error(
-                `Input text exceeds maximum length of ${modelConfig.maxInputChars} characters for model ${options.model} (current: ${totalChars})`,
+                `Input text exceeds maximum length of ${modelConfig.maxInputChars} characters for model ${options.model} (current: ${totalChars}).${enterNote}`,
             );
         }
     }

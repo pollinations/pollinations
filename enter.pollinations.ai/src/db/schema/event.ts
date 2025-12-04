@@ -93,7 +93,12 @@ export const event = sqliteTable("event", {
     tokenPriceCompletionImage: real("token_price_completion_image").notNull(),
     tokenPriceCompletionVideoSeconds: real(
         "token_price_completion_video_seconds",
-    ).notNull(),
+    )
+        .notNull()
+        .default(0),
+    tokenPriceCompletionVideoTokens: real("token_price_completion_video_tokens")
+        .notNull()
+        .default(0),
 
     // Usage
     tokenCountPromptText: integer("token_count_prompt_text").notNull(),
@@ -112,7 +117,14 @@ export const event = sqliteTable("event", {
     ).notNull(),
     tokenCountCompletionVideoSeconds: integer(
         "token_count_completion_video_seconds",
-    ).notNull(),
+    )
+        .notNull()
+        .default(0),
+    tokenCountCompletionVideoTokens: integer(
+        "token_count_completion_video_tokens",
+    )
+        .notNull()
+        .default(0),
 
     // Totals
     totalCost: real("total_cost").notNull(),
@@ -180,6 +192,7 @@ export type GenerationEventPriceParams = {
     tokenPriceCompletionAudio: number;
     tokenPriceCompletionImage: number;
     tokenPriceCompletionVideoSeconds: number;
+    tokenPriceCompletionVideoTokens: number;
 };
 
 export type GenerationEventUsageParams = {
@@ -192,6 +205,7 @@ export type GenerationEventUsageParams = {
     tokenCountCompletionAudio: number;
     tokenCountCompletionImage: number;
     tokenCountCompletionVideoSeconds: number;
+    tokenCountCompletionVideoTokens: number;
 };
 
 export function priceToEventParams(
@@ -218,6 +232,8 @@ export function priceToEventParams(
             priceDefinition?.completionImageTokens || 0,
         tokenPriceCompletionVideoSeconds:
             priceDefinition?.completionVideoSeconds || 0,
+        tokenPriceCompletionVideoTokens:
+            priceDefinition?.completionVideoTokens || 0,
     };
 }
 
@@ -234,6 +250,7 @@ export function usageToEventParams(
         tokenCountCompletionAudio: usage?.completionAudioTokens || 0,
         tokenCountCompletionImage: usage?.completionImageTokens || 0,
         tokenCountCompletionVideoSeconds: usage?.completionVideoSeconds || 0,
+        tokenCountCompletionVideoTokens: usage?.completionVideoTokens || 0,
     };
 }
 

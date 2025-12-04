@@ -8,6 +8,7 @@ import { withTimeoutSignal } from "./util.ts";
 import { HttpError } from "./httpError.ts";
 import { generateImageWithVertexAI } from "./vertexAIClient.ts";
 import { writeExifMetadata } from "./writeExifMetadata.js";
+import { downloadImageAsBase64 } from "./utils/imageDownload.ts";
 import type { ImageParams } from "./params.js";
 import type {
     ImageGenerationResult,
@@ -143,43 +144,17 @@ export async function callVertexAIGemini(
                         `Fetching reference image ${i + 1}/${processedParams.image.length}: ${imageUrl}`,
                     );
 
-                    const imageResponse = await fetch(imageUrl, {
-                        headers: { "User-Agent": "Pollinations/1.0" },
-                    });
-
-                    if (!imageResponse.ok) {
-                        errorLog(
-                            `Failed to fetch reference image ${i + 1}: ${imageResponse.status} ${imageResponse.statusText}`,
-                        );
-                        continue; // Skip this image but continue with others
-                    }
-
-                    const imageBuffer = await imageResponse.arrayBuffer();
-                    const base64Data =
-                        Buffer.from(imageBuffer).toString("base64");
-
-                    // Determine MIME type from response headers or URL
-                    let mimeType =
-                        imageResponse.headers.get("content-type") ||
-                        "image/jpeg";
-                    if (!mimeType.startsWith("image/")) {
-                        // Fallback based on URL extension
-                        const urlLower = imageUrl.toLowerCase();
-                        if (urlLower.includes(".png")) mimeType = "image/png";
-                        else if (urlLower.includes(".webp"))
-                            mimeType = "image/webp";
-                        else if (urlLower.includes(".gif"))
-                            mimeType = "image/gif";
-                        else mimeType = "image/jpeg"; // Default fallback
-                    }
+                    // Download and detect MIME type from magic bytes
+                    const { base64, mimeType } =
+                        await downloadImageAsBase64(imageUrl);
 
                     processedImages.push({
-                        base64: base64Data,
+                        base64: base64,
                         mimeType: mimeType,
                     });
 
                     log(
-                        `Successfully processed reference image ${i + 1}: ${mimeType}, ${base64Data.length} chars`,
+                        `Successfully processed reference image ${i + 1}: ${mimeType}, ${base64.length} chars`,
                     );
                 } catch (error) {
                     errorLog(

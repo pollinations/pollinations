@@ -589,4 +589,37 @@ export const chatProjects = [
         submissionDate: "2025-12-02",
         order: 1,
     },
+    {
+        "name": "Synapse",
+        "url": "https://chat.aegis-plus.my.id",
+        "description":
+            "An AI-powered chat application built with Vite and React, enabling multi-model interactions via the Pollinations API. Features real-time streaming responses, image attachments, multiple chat sessions, customizable system prompts, themes, responsive design, and Markdown rendering.",
+        "author": "Aegis-plus",
+        "repo": "https://github.com/Aegis-plus/Synapse",
+        "category": "chat",
+        "language": "en",
+        "submissionDate": "2025-12-03",
+        "order": 5,
+    },
+    {
+        "name": "HelpChatGPT",
+        "url": "https://helpchatgpt.ru",
+        "description":
+            "HelpChatGPT is a free web platform that provides access to ChatGPT-like models and hundreds of specialized AI assistants, grouped by topic categories. It supports multimodal responses and image generation via the Pollinations.ai API.",
+        "author": "viaea",
+        "category": "chat",
+        "language": "ru-RU",
+        "submissionDate": "2025-12-03",
+        "order": 5,
+    },
+    {
+        "name": "Debootai",
+        "url": "https://deboott.puter.site/",
+        "description":
+            "Next-gen AI chat playground with file/image uploads, real-time web search, Puter.js login, persistent chat history, and upcoming image generation.",
+        "author": "Chess-Base",
+        "category": "chat",
+        "submissionDate": "2025-12-03",
+        "order": 5,
+    },
 ];

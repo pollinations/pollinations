@@ -1,8 +1,8 @@
 {
   "version": "6",
   "dialect": "sqlite",
-  "id": "405f1a45-59fe-4177-8d6f-4465339e386b",
-  "prevId": "6576122d-9443-43f4-80c7-617ae5933281",
+  "id": "a2a1fafd-8d4f-455d-8e4a-7c9300c7f42f",
+  "prevId": "405f1a45-59fe-4177-8d6f-4465339e386b",
   "tables": {
     "account": {
       "name": "account",
@@ -872,7 +872,16 @@
           "type": "real",
           "primaryKey": false,
           "notNull": true,
-          "autoincrement": false
+          "autoincrement": false,
+          "default": 0
+        },
+        "token_price_completion_video_tokens": {
+          "name": "token_price_completion_video_tokens",
+          "type": "real",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": 0
         },
         "token_count_prompt_text": {
           "name": "token_count_prompt_text",
@@ -935,7 +944,16 @@
           "type": "integer",
           "primaryKey": false,
           "notNull": true,
-          "autoincrement": false
+          "autoincrement": false,
+          "default": 0
+        },
+        "token_count_completion_video_tokens": {
+          "name": "token_count_completion_video_tokens",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": 0
         },
         "total_cost": {
           "name": "total_cost",

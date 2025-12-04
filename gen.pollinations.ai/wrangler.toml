@@ -1,0 +1,36 @@
+name = "pollinations-gen"
+main = "src/index.ts"
+compatibility_date = "2025-01-01"
+compatibility_flags = ["nodejs_compat"]
+
+# Service binding to enter worker (zero latency - same V8 isolate)
+services = [
+    { binding = "ENTER", service = "pollinations-enter" }
+]
+
+[dev]
+port = 8788
+
+# Production routes
+[env.production]
+
+[[env.production.routes]]
+pattern = "gen.pollinations.ai"
+zone_name = "pollinations.ai"
+custom_domain = true
+
+[[env.production.services]]
+binding = "ENTER"
+service = "pollinations-enter"
+
+# Staging routes
+[env.staging]
+
+[[env.staging.routes]]
+pattern = "staging.gen.pollinations.ai"
+zone_name = "pollinations.ai"
+custom_domain = true
+
+[[env.staging.services]]
+binding = "ENTER"
+service = "pollinations-enter"

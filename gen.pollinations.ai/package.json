@@ -1,0 +1,13 @@
+{
+    "name": "pollinations-gen",
+    "version": "1.0.0",
+    "type": "module",
+    "description": "Simplified API gateway for Pollinations.AI",
+    "scripts": {
+        "dev": "wrangler dev",
+        "deploy:staging": "wrangler deploy --env staging",
+        "deploy:production": "wrangler deploy --env production",
+        "typecheck": "tsc --noEmit"
+    },
+    "devDependencies": {}
+}

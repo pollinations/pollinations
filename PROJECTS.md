@@ -149,6 +149,7 @@ Pollinations.AI is used in various projects, including:
 | 🆕 🇧🇷 [ViralFlow AI](https://fabioarieira.com/viralflow) ([⭐ 0](https://github.com/FabioArieiraBaia/ViralFlow)) | An automated generator of viral videos that uses the pollinations.ai API to... | FabioArieiraBaia |
 | 🆕 🤖 [Gemini ai telegram-bot](https://t.me/index_bot) | Gemini ai telegram-bot: a Telegram bot offering chat (text, voice, images)... | mosavy |
 | 🆕 [LineSketch AI](https://linesketch-muse.lovable.app/) | LineSketch AI is a minimalist web app that turns ideas into clean... | ArslanDevelop |
+| 🆕 [Ecoverse AI](https://ecoverse.cc) ([⭐ 0](https://github.com/achyuth0/Ecoverse-doc)) | Ecoverse is an AI-powered waste-recognition platform that helps users instantly... | achyuth0 |
 
 ### Games 🎲
 

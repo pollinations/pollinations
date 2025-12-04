@@ -1019,4 +1019,15 @@ export const creativeProjects = [
         "submissionDate": "2025-12-04",
         "order": 5,
     },
+  {
+    "name": "Ecoverse AI",
+    "url": "https://ecoverse.cc",
+    "description": "Ecoverse is an AI-powered waste-recognition platform that helps users instantly identify and classify waste using multi-model intelligence. It uses Pollinations’ models to analyze images, generate explanations, and deliver fast, accurate waste-segregation guidance. Users simply upload a photo, and Ecoverse tells them exactly how to dispose of it — clean, accessible, and scalable at ecoverse.cc.",
+    "author": "achyuth0",
+    "repo": "https://github.com/achyuth0/Ecoverse-doc",
+    "category": "creative",
+    "language": "en",
+    "submissionDate": "2025-12-04",
+    "order": 5
+  }
 ];

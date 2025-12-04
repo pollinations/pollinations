@@ -242,7 +242,7 @@ export function createBedrockLambdaModelConfig(additionalConfig = {}) {
         "custom-host":
             "https://s4gu3klsuhlqkol3x3qq6bv6em0cwqnu.lambda-url.us-east-1.on.aws/api/v1",
         authKey: process.env.AWS_BEARER_TOKEN_BEDROCK,
-        defaultOptions: { max_tokens: 16384 },
+        defaultOptions: { max_tokens: 8192 },
         ...additionalConfig,
     };
 }
@@ -261,7 +261,7 @@ export function createBedrockNativeConfig(additionalConfig = {}) {
         "aws-access-key-id": process.env.AWS_ACCESS_KEY_ID,
         "aws-secret-access-key": process.env.AWS_SECRET_ACCESS_KEY,
         "aws-region": process.env.AWS_REGION || "us-east-1",
-        defaultOptions: { max_tokens: 16384 },
+        defaultOptions: { max_tokens: 8192 },
         ...additionalConfig,
     };
 }

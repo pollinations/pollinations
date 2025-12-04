@@ -57,11 +57,6 @@ const models: ModelDefinition[] = [
         transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
     },
     {
-        name: "mistral-fast",
-        config: portkeyConfig["us.meta.llama3-1-8b-instruct-v1:0"],
-        transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
-    },
-    {
         name: "deepseek",
         config: portkeyConfig["myceli-deepseek-v3.1"],
         transform: createSystemPromptTransform(BASE_PROMPTS.conversational),

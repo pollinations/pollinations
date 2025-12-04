@@ -408,7 +408,7 @@ export const proxyRoutes = new Hono<Env>()
             await c.var.auth.requireAuthorization();
             await checkBalance(c.var);
 
-            // Get prompt from validated param (using :prompt{.+} regex pattern)
+            // Get prompt from validated param (using :prompt{[\\s\\S]+} regex pattern)
             const promptParam = c.req.param("prompt") || "";
 
             log.debug("[PROXY] Extracted prompt param: {prompt}", {

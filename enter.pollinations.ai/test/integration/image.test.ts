@@ -14,7 +14,7 @@ function expectCacheHeaders(response: Response, expectedHeaders: CacheHeaders) {
     expect(xCacheType).toBe(expectedHeaders.cacheType);
 }
 
-describe("Image Cache Integration Tests", () => {
+describe("Image Integration Tests", () => {
     test(
         "identical image requests produce exact cache hit",
         { timeout: 30000 },

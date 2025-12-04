@@ -375,6 +375,7 @@ Pollinations.AI is used in various projects, including:
 | [PollinVerse 🚀](https://pollinverse.netlify.app) ([⭐ 0](No response)) | A rapid AI development and prototyping platform powered by Pollinations.AI.... | VearyTry |
 | [Pollinations.ai Model Comparison](https://endemicmedia.github.io/FLARE/llm-comparison-tool/) ([⭐ 0](https://github.com/EndemicMedia)) | An interactive tool designed to compare outputs from various large language... | [Link](https://github.com/dseeker) |
 | 🇨🇳 [IMyself AI 🇨🇳](https://openai.lmyself.top/) | 我们提供高质量的AI生成服务，包括图像生成、文本生成、音频生成和语音转文本服务， 让您轻松创建各种创意内容。 (We provide high-quality... | Shadownc |
+| 🆕 🇧🇷 [Thelas.ia](https://thelasia.netlify.app/) | Thelas.ia is a Social Media Content Creation Tool that generates corporative,... | studiostein |
 | 🆕 [SAGE](https://starlightguardians.com) ([⭐ 0](sebastianpw/sage)) | SAGE (Storyboard Animation Generation Environment) is an open-source multimedia... | sebastianpw |
 | 🆕 🇧🇷 [ViralFlow AI](https://fabioarieira.com/viralflow) ([⭐ 0](https://github.com/FabioArieiraBaia/ViralFlow)) | An automated generator of viral videos that uses the pollinations.ai API to... | FabioArieiraBaia |
 | 🆕 🤖 [Gemini ai telegram-bot](https://t.me/index_bot) | Gemini ai telegram-bot: a Telegram bot offering chat (text, voice, images)... | mosavy |
@@ -519,7 +520,9 @@ Pollinations.AI is used in various projects, including:
 | [Pollinations Chat](https://websim.ai/@AdrianoDev1/pollinations-ai-assistant/4) | Pollinations' integrated AI for text and images, totally free and unlimited. | @adrianoprogramer |
 | [LiteAI](https://liteai.chat/) | A free, fast, and anonymous AI chat and image generation platform with no login... | LiteAI Team |
 | 🤖 [UR Imagine & Chat AI](https://urimagine.netlify.app/) | A versatile AI platform offering both image generation and chat... | @ur_imagine |
+| 🆕 [MindFlow](https://note.aegis-plus.my.id/) ([⭐ 0](https://github.com/Aegis-plus/Mindflow)) | # MindFlow\n\n> **Capture thoughts, find clarity.** An AI-powered second brain... | Aegis-plus |
 | 🆕 [Synapse](https://chat.aegis-plus.my.id) ([⭐ 0](https://github.com/Aegis-plus/Synapse)) | An AI-powered chat application built with Vite and React, enabling multi-model... | Aegis-plus |
+| 🆕 [HelpChatGPT](https://helpchatgpt.ru) | HelpChatGPT is a free web platform that provides access to ChatGPT-like models... | viaea |
 | 🆕 [Debootai](https://deboott.puter.site/) | Next-gen AI chat playground with file/image uploads, real-time web search,... | Chess-Base |
 
 ### Social Bots 🤖
@@ -538,6 +541,7 @@ Pollinations.AI is used in various projects, including:
 | 🤖 [ioswbot 🤖](https://t.me/ioswbot) | Free, unlimited Telegram bot with ChatGPT 5, Gemini 2.5 Flash Lite Search, GPT... | @swtomas |
 | 🤖 [Telegram AI Chars 🤖](https://t.me/MFRG_Shapes) | Plataforma en PHP para la creación de personajes (bots) con personalidad,... | @MarcosFRG |
 | 🤖 [Swapna Shastra Dream Decoder 💤✨](https://t.me/Swapnashastra_dream_bot) | AI-powered Telegram bot that interprets dreams using ancient Indian Swapna... | @ShashankNagaraj |
+| 🆕 [TeleChars AI](https://extras.marcosfrg.x10.mx) | Ya había enviado este proyecto antes, pero ahora lo hago por... | marcosfrgames08 |
 
 ### Learn 📚
 

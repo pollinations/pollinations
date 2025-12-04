@@ -32,11 +32,11 @@ jobs:
 
             // Skip App Submission issues (handled by app-review workflow)
             if (title.startsWith("[App Submission]:")) {
-              console.log("App Submission issue, skipping INBOX label");
+              console.log("App Submission issue, skipping inbox:github label");
             } else if (INTERNAL_USERS.includes(author)) {
               console.log(`Internal user ${author}, skipping label`);
             } else {
-              label = "INBOX";
+              label = "inbox:github";
             }
 
             if (label && !current.includes(label)) {

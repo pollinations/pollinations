@@ -20,6 +20,7 @@ import {
     buildUsageHeaders,
     openaiUsageToTokenUsage,
 } from "../shared/registry/usage-headers.js";
+import { getServiceDefinition } from "../shared/registry/registry.js";
 
 // Load environment variables including .env.local overrides
 // Load .env.local first (higher priority), then .env as fallback
@@ -601,11 +602,14 @@ async function processRequest(req, res, requestData) {
 
 // Helper function to check if a model is an audio model and add necessary parameters
 function prepareRequestParameters(requestParams) {
-    const modelConfig = availableModels.find(
-        (m) =>
-            m.name === requestParams.model || m.model === requestParams.model,
-    );
-    const isAudioModel = modelConfig && modelConfig.audio === true;
+    // Use registry to check if model supports audio output
+    let isAudioModel = false;
+    try {
+        const serviceDef = getServiceDefinition(requestParams.model);
+        isAudioModel = serviceDef?.outputModalities?.includes("audio") ?? false;
+    } catch {
+        // Model not in registry, fall back to false
+    }
 
     log("Is audio model:", isAudioModel);
 

@@ -24,8 +24,8 @@
       "keep-alive": "timeout=5",
       "transfer-encoding": "chunked",
       "x-model-used": "seedance",
-      "x-usage-completion-video-seconds": "5",
-      "x-usage-total-tokens": "5"
+      "x-usage-completion-video-tokens": "108000",
+      "x-usage-total-tokens": "108000"
     },
     "body": {
       "type": "stream",

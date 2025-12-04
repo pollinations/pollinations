@@ -378,6 +378,7 @@ Pollinations.AI is used in various projects, including:
 | 🆕 [SAGE](https://starlightguardians.com) ([⭐ 0](sebastianpw/sage)) | SAGE (Storyboard Animation Generation Environment) is an open-source multimedia... | sebastianpw |
 | 🆕 🇧🇷 [ViralFlow AI](https://fabioarieira.com/viralflow) ([⭐ 0](https://github.com/FabioArieiraBaia/ViralFlow)) | An automated generator of viral videos that uses the pollinations.ai API to... | FabioArieiraBaia |
 | 🆕 🤖 [Gemini ai telegram-bot](https://t.me/index_bot) | Gemini ai telegram-bot: a Telegram bot offering chat (text, voice, images)... | mosavy |
+| 🆕 🇧🇷 [ViralFlow](https://fabioarieira.com/viralflow) | Solicito revisão do título Flower para a aplicação ViralFlow. A aplicação foi... | Fabio Arieira |
 
 ### Games 🎲
 

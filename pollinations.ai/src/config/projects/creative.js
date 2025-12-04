@@ -995,5 +995,16 @@ export const creativeProjects = [
     "language": "en-US",
     "submissionDate": "2025-12-04",
     "order": 5
+  },
+  {
+    "name": "ViralFlow",
+    "url": "https://fabioarieira.com/viralflow",
+    "description": "Solicito revisão do título Flower para a aplicação ViralFlow. A aplicação foi aprovada/listada, mas não ocorreu a progressão esperada para o título Flower. Peço checagem de possíveis requisitos ou erros.",
+    "author": "Fabio Arieira",
+    "repo": null,
+    "category": "creative",
+    "language": "pt-BR",
+    "submissionDate": "2025-12-04",
+    "order": 5
   }
 ];

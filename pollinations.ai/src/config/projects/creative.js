@@ -963,4 +963,15 @@ export const creativeProjects = [
         language: "zh-TW",
         order: 1,
     },
+  {
+    "name": "ViralFlow AI",
+    "url": "https://fabioarieira.com/viralflow",
+    "description": "An automated generator of viral videos that uses the pollinations.ai API to create real-time customized visuals, paired with Gemini 2.5 for scriptwriting, multi-voice TTS, visual effects, and real-time rendering. Production-ready and designed to turn simple themes into cinematic, engaging videos. Pollinations is highlighted as a core visual partner, with an automated workflow for React/Electron locally or on the web. Open to collaboration and partnerships.",
+    "author": "FabioArieiraBaia",
+    "repo": "https://github.com/FabioArieiraBaia/ViralFlow",
+    "category": "creative",
+    "language": "pt-BR",
+    "submissionDate": "2025-12-04",
+    "order": 5
+  }
 ];

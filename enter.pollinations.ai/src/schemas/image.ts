@@ -5,26 +5,72 @@ const QUALITIES = ["low", "medium", "high", "hd"] as const;
 const MAX_SEED_VALUE = 1844674407370955;
 
 export const GenerateImageRequestQueryParamsSchema = z.object({
-    model: z.literal(Object.keys(IMAGE_SERVICES)).optional().default("flux"),
-    width: z.coerce.number().int().nonnegative().optional().default(1024),
-    height: z.coerce.number().int().nonnegative().optional().default(1024),
+    // Image model params
+    model: z
+        .literal(Object.keys(IMAGE_SERVICES))
+        .optional()
+        .default("flux")
+        .meta({
+            description:
+                "AI model. Image: flux, turbo, gptimage, kontext, seedream, seedream-pro, nanobanana. Video: veo, seedance, seedance-pro",
+        }),
+    width: z.coerce
+        .number()
+        .int()
+        .nonnegative()
+        .optional()
+        .default(1024)
+        .meta({ description: "Image width in pixels" }),
+    height: z.coerce
+        .number()
+        .int()
+        .nonnegative()
+        .optional()
+        .default(1024)
+        .meta({ description: "Image height in pixels" }),
     seed: z.coerce
         .number()
         .int()
         .min(0)
         .max(MAX_SEED_VALUE)
         .optional()
-        .default(42),
-    enhance: z.coerce.boolean().optional().default(false),
+        .default(42)
+        .meta({ description: "Random seed for reproducible results" }),
+    enhance: z.coerce
+        .boolean()
+        .optional()
+        .default(false)
+        .meta({ description: "Let AI improve your prompt for better results" }),
     negative_prompt: z.coerce
         .string()
         .optional()
-        .default("worst quality, blurry"),
-    private: z.coerce.boolean().optional().default(false),
-    nologo: z.coerce.boolean().optional().default(false),
-    nofeed: z.coerce.boolean().optional().default(false),
-    safe: z.coerce.boolean().optional().default(false),
-    quality: z.literal(QUALITIES).optional().default("medium"),
+        .default("worst quality, blurry")
+        .meta({ description: "What to avoid in the generated image" }),
+    private: z.coerce
+        .boolean()
+        .optional()
+        .default(false)
+        .meta({ description: "Hide image from public feeds" }),
+    nologo: z.coerce
+        .boolean()
+        .optional()
+        .default(false)
+        .meta({ description: "Remove Pollinations watermark" }),
+    nofeed: z.coerce
+        .boolean()
+        .optional()
+        .default(false)
+        .meta({ description: "Don't add to public feed" }),
+    safe: z.coerce
+        .boolean()
+        .optional()
+        .default(false)
+        .meta({ description: "Enable safety content filters" }),
+    quality: z
+        .literal(QUALITIES)
+        .optional()
+        .default("medium")
+        .meta({ description: "Image quality level" }),
     image: z
         .string()
         .transform((value: string) => {
@@ -34,9 +80,35 @@ export const GenerateImageRequestQueryParamsSchema = z.object({
             return value.includes("|") ? value.split("|") : value.split(",");
         })
         .optional()
-        .default([]),
-    transparent: z.coerce.boolean().optional().default(false),
-    guidance_scale: z.coerce.number().optional(),
+        .default([])
+        .meta({
+            description:
+                "Reference image URL(s) for image-to-image or video. Comma/pipe separated for multiple",
+        }),
+    transparent: z.coerce
+        .boolean()
+        .optional()
+        .default(false)
+        .meta({ description: "Generate with transparent background" }),
+    guidance_scale: z.coerce
+        .number()
+        .optional()
+        .meta({ description: "How closely to follow the prompt (1-20)" }),
+
+    // Video-specific params (for veo/seedance models)
+    duration: z.coerce.number().int().optional().meta({
+        description:
+            "Video duration in seconds. veo: 4, 6, or 8. seedance: 2-10",
+    }),
+    aspectRatio: z
+        .string()
+        .optional()
+        .meta({ description: "Video aspect ratio: 16:9 or 9:16" }),
+    audio: z.coerce
+        .boolean()
+        .optional()
+        .default(false)
+        .meta({ description: "Enable audio generation for video (veo only)" }),
 });
 
 export type GenerateImageRequestQueryParams = z.infer<

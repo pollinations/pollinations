@@ -1,0 +1,49 @@
+{
+  "request": {
+    "url": "http://ec2-3-80-56-235.compute-1.amazonaws.com:16385/Reply%3A%20yes%20or%20no%3F?model=chickytutor",
+    "method": "GET",
+    "body": {
+      "type": "empty",
+      "data": null
+    },
+    "params": {}
+  },
+  "response": {
+    "status": 400,
+    "statusText": "Bad Request",
+    "headers": {
+      "access-control-allow-origin": "*",
+      "connection": "keep-alive",
+      "content-length": "470",
+      "content-type": "application/json; charset=utf-8",
+      "date": "Sat, 29 Nov 2025 21:04:46 GMT",
+      "etag": "W/\"1d6-xAz59pnQ3hnoYB4HbrdpjDQjvUU\"",
+      "keep-alive": "timeout=5",
+      "x-powered-by": "Express"
+    },
+    "body": {
+      "type": "json",
+      "data": {
+        "error": "Bad Request",
+        "message": "400 Bad Request",
+        "requestId": "0vl4p",
+        "requestParameters": {
+          "messages": [
+            {
+              "role": "user",
+              "content": "Reply: yes or no?"
+            }
+          ],
+          "jsonMode": false,
+          "model": "chickytutor",
+          "referrer": null,
+          "isPrivate": false,
+          "voice": "alloy"
+        },
+        "details": {
+          "detail": "An error occurred (ValidationException) when calling the Converse operation: The maximum tokens you requested exceeds the model limit of 8192. Try again with a maximum tokens value that is lower than 8192."
+        }
+      }
+    }
+  }
+}

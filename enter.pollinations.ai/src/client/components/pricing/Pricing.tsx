@@ -7,6 +7,7 @@ export const Pricing: FC = () => {
     const allModels = getModelPrices();
 
     const imageModels = allModels.filter((m) => m.type === "image");
+    const videoModels = allModels.filter((m) => m.type === "video");
     const textModels = allModels.filter((m) => m.type === "text");
 
     return (
@@ -37,6 +38,7 @@ export const Pricing: FC = () => {
                 </div>
 
                 <ModelTable models={imageModels} type="image" />
+                <ModelTable models={videoModels} type="video" />
                 <ModelTable models={textModels} type="text" />
 
                 <div className="text-xs text-gray-500 italic pt-4 border-t border-gray-300">

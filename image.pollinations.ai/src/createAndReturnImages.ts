@@ -30,7 +30,10 @@ import type { ImageParams } from "./params.ts";
 import type { ProgressManager } from "./progressBar.ts";
 
 // Import model handlers
-import { callSeedreamAPI } from "./models/seedreamModel.ts";
+import {
+    callSeedreamAPI,
+    callSeedreamProAPI,
+} from "./models/seedreamModel.ts";
 import { callAzureFluxKontext } from "./models/azureFluxKontextModel.js";
 import { incrementModelCounter } from "./modelCounter.ts";
 
@@ -993,9 +996,8 @@ const generateImage = async (
     }
 
     if (safeParams.model === "seedream") {
-        // All requests assumed to come from enter.pollinations.ai
+        // Seedream 4.0 - better quality (default)
         try {
-            // Use ByteDance ARK Seedream API for high-quality image generation
             return await callSeedreamAPI(
                 prompt,
                 safeParams,
@@ -1003,7 +1005,23 @@ const generateImage = async (
                 requestId,
             );
         } catch (error) {
-            logError("Seedream generation failed:", error.message);
+            logError("Seedream 4.0 generation failed:", error.message);
+            progress.updateBar(requestId, 100, "Error", error.message);
+            throw error;
+        }
+    }
+
+    if (safeParams.model === "seedream-pro") {
+        // Seedream 4.5 Pro - 4K, multi-image
+        try {
+            return await callSeedreamProAPI(
+                prompt,
+                safeParams,
+                progress,
+                requestId,
+            );
+        } catch (error) {
+            logError("Seedream 4.5 Pro generation failed:", error.message);
             progress.updateBar(requestId, 100, "Error", error.message);
             throw error;
         }

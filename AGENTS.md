@@ -82,6 +82,14 @@ When handling project submission issues (labeled as **APPS** in GitHub):
    Closes #[Issue]
    ```
 
+## Discord Configuration
+
+**Pollinations Discord Server:**
+- **Guild ID**: `885844321461485618`
+- **Server**: https://discord.gg/pollinations
+
+Use this guild ID when interacting with Discord MCP tools for announcements, community management, etc.
+
 ## Repository Structure
 
 Key directories and their purposes:
@@ -159,7 +167,7 @@ Body: messages*, model (set to "openai-audio"), voice (optional)
 ### Testing & Operations Documentation
 
 - **[Model Testing Cheatsheet](enter.pollinations.ai/AGENTS.md)** - Comprehensive guide for testing all image and text models via enter.pollinations.ai API
-- **[Enter Services SSH Guide](pollinator-agent/enter-services-ssh.md)** - Quick reference for managing text and image services on AWS EC2
+- **[Enter Services Deployment](.claude/skills/enter-services/SKILL.md)** - Deploy and manage text/image services on AWS EC2
 
 ## Development Guidelines
 

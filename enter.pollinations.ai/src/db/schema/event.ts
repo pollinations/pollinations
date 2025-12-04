@@ -91,6 +91,14 @@ export const event = sqliteTable("event", {
     ).notNull(),
     tokenPriceCompletionAudio: real("token_price_completion_audio").notNull(),
     tokenPriceCompletionImage: real("token_price_completion_image").notNull(),
+    tokenPriceCompletionVideoSeconds: real(
+        "token_price_completion_video_seconds",
+    )
+        .notNull()
+        .default(0),
+    tokenPriceCompletionVideoTokens: real("token_price_completion_video_tokens")
+        .notNull()
+        .default(0),
 
     // Usage
     tokenCountPromptText: integer("token_count_prompt_text").notNull(),
@@ -107,6 +115,16 @@ export const event = sqliteTable("event", {
     tokenCountCompletionImage: integer(
         "token_count_completion_image",
     ).notNull(),
+    tokenCountCompletionVideoSeconds: integer(
+        "token_count_completion_video_seconds",
+    )
+        .notNull()
+        .default(0),
+    tokenCountCompletionVideoTokens: integer(
+        "token_count_completion_video_tokens",
+    )
+        .notNull()
+        .default(0),
 
     // Totals
     totalCost: real("total_cost").notNull(),
@@ -155,12 +173,10 @@ export const event = sqliteTable("event", {
     cacheSemanticThreshold: real("cache_semantic_threshold"),
     cacheKey: text("cache_key"),
 
-    // Error
+    // Error (stack/details removed to reduce D1 memory usage)
     errorResponseCode: text("error_response_code"),
     errorSource: text("error_source"),
     errorMessage: text("error_message"),
-    errorStack: text("error_stack"),
-    errorDetails: text("error_details"),
 });
 
 export type InsertGenerationEvent = typeof event.$inferInsert;
@@ -175,6 +191,8 @@ export type GenerationEventPriceParams = {
     tokenPriceCompletionReasoning: number;
     tokenPriceCompletionAudio: number;
     tokenPriceCompletionImage: number;
+    tokenPriceCompletionVideoSeconds: number;
+    tokenPriceCompletionVideoTokens: number;
 };
 
 export type GenerationEventUsageParams = {
@@ -186,6 +204,8 @@ export type GenerationEventUsageParams = {
     tokenCountCompletionReasoning: number;
     tokenCountCompletionAudio: number;
     tokenCountCompletionImage: number;
+    tokenCountCompletionVideoSeconds: number;
+    tokenCountCompletionVideoTokens: number;
 };
 
 export function priceToEventParams(
@@ -210,6 +230,10 @@ export function priceToEventParams(
             priceDefinition?.completionAudioTokens || 0,
         tokenPriceCompletionImage:
             priceDefinition?.completionImageTokens || 0,
+        tokenPriceCompletionVideoSeconds:
+            priceDefinition?.completionVideoSeconds || 0,
+        tokenPriceCompletionVideoTokens:
+            priceDefinition?.completionVideoTokens || 0,
     };
 }
 
@@ -225,6 +249,8 @@ export function usageToEventParams(
         tokenCountCompletionReasoning: usage?.completionReasoningTokens || 0,
         tokenCountCompletionAudio: usage?.completionAudioTokens || 0,
         tokenCountCompletionImage: usage?.completionImageTokens || 0,
+        tokenCountCompletionVideoSeconds: usage?.completionVideoSeconds || 0,
+        tokenCountCompletionVideoTokens: usage?.completionVideoTokens || 0,
     };
 }
 

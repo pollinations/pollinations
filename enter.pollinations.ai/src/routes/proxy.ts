@@ -27,35 +27,13 @@ import { GenerateImageRequestQueryParamsSchema } from "@/schemas/image.ts";
 import { z } from "zod";
 import { HTTPException } from "hono/http-exception";
 import { DEFAULT_TEXT_MODEL } from "@shared/registry/text.ts";
+import { resolveServiceId } from "@shared/registry/registry.ts";
 import {
-    getTextModelsInfo,
+    ModelInfoSchema,
     getImageModelsInfo,
-    resolveServiceId,
-} from "../../../shared/registry/registry.js";
+    getTextModelsInfo,
+} from "@shared/registry/model-info.ts";
 import { createFactory } from "hono/factory";
-
-// Shared schema for model info responses
-const ModelInfoSchema = z.object({
-    name: z.string(),
-    aliases: z.array(z.string()),
-    pricing: z.object({
-        input_token_price: z.number().optional(),
-        output_token_price: z.number().optional(),
-        cached_token_price: z.number().optional(),
-        image_price: z.number().optional(),
-        audio_input_price: z.number().optional(),
-        audio_output_price: z.number().optional(),
-        currency: z.literal("USD"),
-    }),
-    description: z.string().optional(),
-    input_modalities: z.array(z.string()).optional(),
-    output_modalities: z.array(z.string()).optional(),
-    tools: z.boolean().optional(),
-    reasoning: z.boolean().optional(),
-    context_window: z.number().optional(),
-    voices: z.array(z.string()).optional(),
-    isSpecialized: z.boolean().optional(),
-});
 
 const factory = createFactory<Env>();
 
@@ -115,8 +93,10 @@ const chatCompletionHandlers = factory.createHandlers(
         let contentFilterHeaders = {};
         if (!c.var.track.streamRequested) {
             const responseJson = await response.clone().json();
-            const parsedResponse =
-                CreateChatCompletionResponseSchema.parse(responseJson);
+            const parsedResponse = CreateChatCompletionResponseSchema.parse(
+                responseJson,
+                { reportInput: true },
+            );
             contentFilterHeaders =
                 contentFilterResultsToHeaders(parsedResponse);
         }
@@ -359,15 +339,24 @@ export const proxyRoutes = new Hono<Env>()
         },
     )
     .get(
-        "/image/*",
+        // Use :prompt{[\\s\\S]+} regex to capture everything including slashes AND newlines
+        // .+ doesn't match newlines, but [\s\S]+ matches any character including \n
+        // This creates a named param for OpenAPI docs while matching any characters
+        "/image/:prompt{[\\s\\S]+}",
         track("generate.image"),
         imageCache,
         describeRoute({
             tags: ["Image Generation"],
             description: [
-                "Generate an image from a text prompt.",
+                "Generate an image or video from a text prompt.",
                 "",
-                "**Authentication (Secret Keys Only):**",
+                "**Image Models:** `flux` (default), `turbo`, `gptimage`, `kontext`, `seedream`, `nanobanana`, `nanobanana-pro`",
+                "",
+                "**Video Models:** `veo`, `seedance`",
+                "- `veo`: Text-to-video only (4-8 seconds)",
+                "- `seedance`: Text-to-video and image-to-video (2-10 seconds)",
+                "",
+                "**Authentication:**",
                 "",
                 "Include your API key either:",
                 "- In the `Authorization` header as a Bearer token: `Authorization: Bearer YOUR_API_KEY`",
@@ -377,7 +366,8 @@ export const proxyRoutes = new Hono<Env>()
             ].join("\n"),
             responses: {
                 200: {
-                    description: "Success - Returns the generated image",
+                    description:
+                        "Success - Returns the generated image or video",
                     content: {
                         "image/jpeg": {
                             schema: {
@@ -391,27 +381,39 @@ export const proxyRoutes = new Hono<Env>()
                                 format: "binary",
                             },
                         },
+                        "video/mp4": {
+                            schema: {
+                                type: "string",
+                                format: "binary",
+                            },
+                        },
                     },
                 },
                 ...errorResponses(400, 401, 500),
             },
         }),
+        validator(
+            "param",
+            z.object({
+                prompt: z.string().min(1).meta({
+                    description:
+                        "Text description of the image or video to generate",
+                    example: "a beautiful sunset over mountains",
+                }),
+            }),
+        ),
         validator("query", GenerateImageRequestQueryParamsSchema),
         async (c) => {
             const log = c.get("log");
             await c.var.auth.requireAuthorization();
             await checkBalance(c.var);
 
-            // Extract prompt from wildcard path (everything after /image/)
-            // Keep it encoded to preserve special characters when proxying
-            const fullPath = c.req.path; // e.g., "/api/generate/image/my%20prompt%20here"
-            const promptParam = fullPath.split("/image/")[1] || "";
+            // Get prompt from validated param (using :prompt{[\\s\\S]+} regex pattern)
+            const promptParam = c.req.param("prompt") || "";
 
             log.debug("[PROXY] Extracted prompt param: {prompt}", {
-                prompt: decodeURIComponent(promptParam), // Decode only for logging
-                type: typeof promptParam,
+                prompt: promptParam,
                 length: promptParam.length,
-                fullPath: fullPath,
             });
 
             const targetUrl = proxyUrl(c, `${c.env.IMAGE_SERVICE_URL}/prompt`);

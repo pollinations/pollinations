@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useChat } from './hooks/useChat';
-import { sendMessage, stopGeneration, initializeModels, generateImage } from './utils/api';
+import { sendMessage, stopGeneration, initializeModels, generateImage, generateVideo } from './utils/api';
 import { getSelectedModel, saveSelectedModel, getTheme, saveTheme } from './utils/storage';
 import Sidebar from './components/Sidebar';
 import ChatHeader from './components/ChatHeader';
@@ -8,7 +8,8 @@ import MessageArea from './components/MessageArea';
 import ChatInput from './components/ChatInput';
 import KeyboardShortcutsModal from './components/KeyboardShortcutsModal';
 import ConfirmModal from './components/ConfirmModal';
-import './App.css';
+import SettingsPanel from './components/SettingsPanel';
+import TutorialModal from './components/TutorialModal';
 
 function App() {
   const {
@@ -29,10 +30,12 @@ function App() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [selectedModel, setSelectedModel] = useState('openai');
   const [selectedImageModel, setSelectedImageModel] = useState('flux');
+  const [selectedVideoModel, setSelectedVideoModel] = useState('veo');
   const [theme, setTheme] = useState('light');
   const [isShortcutsModalOpen, setIsShortcutsModalOpen] = useState(false);
   const [models, setModels] = useState({});
   const [imageModels, setImageModels] = useState({});
+  const [videoModels, setVideoModels] = useState({});
   const [modelsLoaded, setModelsLoaded] = useState(false);
   const [confirmModal, setConfirmModal] = useState({
     isOpen: false,
@@ -42,6 +45,27 @@ function App() {
     isDangerous: false
   });
   const [mode, setMode] = useState('chat');
+  const [sessionSettings, setSessionSettings] = useState({
+    systemPrompt: 'You are a helpful AI assistant who speaks concisely and helpfully.',
+    maxTokens: 2000,
+    temperature: 0.7,
+    topP: 1
+  });
+  const [isSettingsPanelOpen, setIsSettingsPanelOpen] = useState(false);
+  const [isTutorialOpen, setIsTutorialOpen] = useState(false);
+
+  // Show tutorial on first visit
+  useEffect(() => {
+    const hasSeenTutorial = localStorage.getItem('hasSeenTutorial');
+    if (!hasSeenTutorial) {
+      setIsTutorialOpen(true);
+    }
+  }, []);
+
+  const handleCloseTutorial = useCallback(() => {
+    setIsTutorialOpen(false);
+    localStorage.setItem('hasSeenTutorial', 'true');
+  }, []);
 
   // Debug mode changes
   useEffect(() => {
@@ -50,9 +74,10 @@ function App() {
   // Initialize models on mount
   useEffect(() => {
     const init = async () => {
-      const { textModels, imageModels } = await initializeModels();
+      const { textModels, imageModels, videoModels } = await initializeModels();
       setModels(textModels);
       setImageModels(imageModels);
+      setVideoModels(videoModels);
       setModelsLoaded(true);
     };
     init();
@@ -61,9 +86,11 @@ function App() {
   useEffect(() => {
     const savedModel = getSelectedModel();
     const savedImageModel = localStorage.getItem('selectedImageModel') || 'flux';
+    const savedVideoModel = localStorage.getItem('selectedVideoModel') || 'veo';
     const savedTheme = getTheme();
     setSelectedModel(savedModel);
     setSelectedImageModel(savedImageModel);
+    setSelectedVideoModel(savedVideoModel);
     setTheme(savedTheme);
     
     // Apply theme to document
@@ -117,6 +144,11 @@ function App() {
   const handleImageModelChange = useCallback((model) => {
     setSelectedImageModel(model);
     localStorage.setItem('selectedImageModel', model);
+  }, []);
+
+  const handleVideoModelChange = useCallback((model) => {
+    setSelectedVideoModel(model);
+    localStorage.setItem('selectedVideoModel', model);
   }, []);
 
   const handleThemeToggle = useCallback(() => {
@@ -173,6 +205,13 @@ function App() {
     });
   };
 
+  const handleSessionSettingsChange = useCallback((field, value) => {
+    setSessionSettings(prev => ({
+      ...prev,
+      [field]: value
+    }));
+  }, []);
+
   const handleSendMessage = useCallback(async ({ text = '', attachment = null } = {}) => {
     const trimmedContent = typeof text === 'string' ? text.trim() : '';
 
@@ -227,16 +266,15 @@ function App() {
 
     // Create assistant message placeholder
     const assistantMessageId = Date.now().toString(36) + Math.random().toString(36).substr(2);
-    addMessage('assistant', '', assistantMessageId);
+    addMessage('assistant', '', assistantMessageId, { isStreaming: true });
     
-    // Immediately set it to streaming state
-    updateMessage(assistantMessageId, {
-      isStreaming: true
-    });
-    
+    const runtimeMessages = sessionSettings.systemPrompt?.trim()
+      ? [{ role: 'system', content: sessionSettings.systemPrompt.trim() }, ...updatedChat.messages]
+      : updatedChat.messages;
+
     try {
       await sendMessage(
-        updatedChat.messages,
+        runtimeMessages,
         // onChunk
         (chunk, fullContent, fullReasoning) => {
           // Update the message content in real-time for streaming
@@ -274,7 +312,12 @@ function App() {
           setIsGenerating(false);
         },
         // modelId - pass the selected model
-        selectedModel
+        selectedModel,
+        {
+          maxTokens: sessionSettings.maxTokens,
+          temperature: sessionSettings.temperature,
+          topP: sessionSettings.topP
+        }
       );
     } catch (error) {
       console.error('Message generation error:', error);
@@ -293,7 +336,7 @@ function App() {
       }
       setIsGenerating(false);
     }
-  }, [isGenerating, addMessage, updateMessage, selectedModel]);
+  }, [isGenerating, addMessage, updateMessage, selectedModel, sessionSettings]);
 
   const handleStopGeneration = useCallback(() => {
     stopGeneration();
@@ -322,7 +365,6 @@ function App() {
     addMessage('assistant', 'Generating image...', assistantMessageId);
 
     try {
-      console.log('🎨 Starting image generation with prompt:', prompt);
       
       // Generate the image with selected model
       const imageData = await generateImage(prompt, {
@@ -341,7 +383,6 @@ function App() {
         isStreaming: false
       });
 
-      console.log('✅ Image generation complete');
       setIsGenerating(false);
     } catch (error) {
       console.error('Image generation error:', error);
@@ -355,6 +396,56 @@ function App() {
       if (window?.showToast) window.showToast("Image generation failed", "error");
     }
   }, [isGenerating, selectedImageModel, addMessage, updateMessage]);
+
+  const handleGenerateVideo = useCallback(async (prompt) => {
+    if (!prompt.trim() || isGenerating) return;
+
+    // Add user message with the prompt
+    const updatedChat = addMessage('user', `/video ${prompt}`);
+    
+    // Set generating state
+    setIsGenerating(true);
+
+    if (!updatedChat) {
+      console.error("Could not find active chat to generate video.");
+      setIsGenerating(false);
+      // Show toast notification for error
+      if (window?.showToast) window.showToast("Could not find active chat to generate video.", "error");
+      return;
+    }
+
+    // Create assistant message placeholder for the video
+    const assistantMessageId = Date.now().toString(36) + Math.random().toString(36).substr(2);
+    addMessage('assistant', 'Generating video... This may take a minute.', assistantMessageId);
+
+    try {
+      // Generate the video with selected model
+      const videoData = await generateVideo(prompt, {
+        model: selectedVideoModel
+      });
+
+      // Update the message with the generated video
+      updateMessage(assistantMessageId, {
+        content: '',
+        videoUrl: videoData.url,
+        videoPrompt: videoData.prompt,
+        videoModel: videoData.model,
+        isStreaming: false
+      });
+
+      setIsGenerating(false);
+    } catch (error) {
+      console.error('Video generation error:', error);
+      updateMessage(assistantMessageId, {
+        content: 'An error occurred while generating video',
+        isStreaming: false,
+        isError: true
+      });
+      setIsGenerating(false);
+      // Show toast notification for error
+      if (window?.showToast) window.showToast("Video generation failed", "error");
+    }
+  }, [isGenerating, selectedVideoModel, addMessage, updateMessage]);
 
   const handleRegenerateMessage = async () => {
     const activeChat = getActiveChat();
@@ -377,24 +468,22 @@ function App() {
     // Remove all messages after the last user message
     removeMessagesAfter(lastUserMessage.timestamp);
 
-    // Log to check if messages are correctly removed
-    console.log('Messages after removal:', getActiveChat().messages);
-
     // Wait a bit for state to update
     setTimeout(() => {
       // Regenerate the response by re-processing the messages
-      setIsGenerating(true);
-      console.log('State after timeout, isGenerating:', isGenerating);
-
       const updatedChat = getActiveChat();
-      console.log('Updated chat messages before API call:', updatedChat.messages);
       // Create assistant message
       const assistantMessageId = Date.now().toString(36) + Math.random().toString(36).substr(2);
-      console.log('Generated assistantMessageId:', assistantMessageId);
-      addMessage('assistant', '', assistantMessageId);
+      addMessage('assistant', '', assistantMessageId, { isStreaming: true });
       
+      setIsGenerating(true);
+      
+      const runtimeMessages = sessionSettings.systemPrompt?.trim()
+        ? [{ role: 'system', content: sessionSettings.systemPrompt.trim() }, ...updatedChat.messages]
+        : updatedChat.messages;
+
       sendMessage(
-        updatedChat.messages,
+        runtimeMessages,
         (chunk, fullContent) => {
           updateMessage(assistantMessageId, {
             content: fullContent,
@@ -425,7 +514,12 @@ function App() {
           }
           setIsGenerating(false);
         },
-        selectedModel
+        selectedModel,
+        {
+          maxTokens: sessionSettings.maxTokens,
+          temperature: sessionSettings.temperature,
+          topP: sessionSettings.topP
+        }
       );
     }, 100);
   };
@@ -443,6 +537,7 @@ function App() {
         onNewChat={addChat}
         onDeleteChat={deleteChat}
         onThemeToggle={handleThemeToggle}
+        onOpenSettings={() => setIsSettingsPanelOpen(true)}
       />
       
       <div className={`chat-container ${isChatEmpty ? 'chat-container-empty' : ''}`}>
@@ -457,22 +552,33 @@ function App() {
           isGenerating={isGenerating}
           onStop={handleStopGeneration}
           onGenerateImage={handleGenerateImage}
+          onGenerateVideo={handleGenerateVideo}
           setIsUserTyping={() => {}}
           onModeChange={setMode}
           selectedModel={selectedModel}
           selectedImageModel={selectedImageModel}
+          selectedVideoModel={selectedVideoModel}
           mode={mode}
           models={models}
           imageModels={imageModels}
+          videoModels={videoModels}
           modelsLoaded={modelsLoaded}
           onModelChange={handleModelChange}
           onImageModelChange={handleImageModelChange}
+          onVideoModelChange={handleVideoModelChange}
         />
       </div>
 
       <KeyboardShortcutsModal
         isOpen={isShortcutsModalOpen}
         onClose={() => setIsShortcutsModalOpen(false)}
+      />
+
+      <SettingsPanel
+        isOpen={isSettingsPanelOpen}
+        settings={sessionSettings}
+        onChange={handleSessionSettingsChange}
+        onClose={() => setIsSettingsPanelOpen(false)}
       />
 
       <ConfirmModal
@@ -484,6 +590,11 @@ function App() {
         confirmText="Delete"
         cancelText="Cancel"
         isDangerous={confirmModal.isDangerous}
+      />
+
+      <TutorialModal
+        isOpen={isTutorialOpen}
+        onClose={handleCloseTutorial}
       />
     </div>
   );

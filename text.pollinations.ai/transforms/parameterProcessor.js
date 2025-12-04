@@ -41,6 +41,19 @@ export function processParameters(messages, options) {
         updatedOptions.stream_options = { include_usage: true };
     }
 
+    // Convert max_tokens → max_completion_tokens for Azure OpenAI models
+    // Newer Azure models (gpt-4o, gpt-5, o1, o3, etc.) require max_completion_tokens
+    if (
+        updatedOptions.max_tokens !== undefined &&
+        config.provider === "azure-openai"
+    ) {
+        log(
+            `Converting max_tokens (${updatedOptions.max_tokens}) to max_completion_tokens for Azure model`,
+        );
+        updatedOptions.max_completion_tokens = updatedOptions.max_tokens;
+        delete updatedOptions.max_tokens;
+    }
+
     // Apply parameter filtering if defined
     if (modelConfig.allowedParameters) {
         const allowedParams = modelConfig.allowedParameters;

@@ -1,0 +1,114 @@
+{
+  "request": {
+    "url": "http://ec2-3-80-56-235.compute-1.amazonaws.com:16385/openai",
+    "method": "POST",
+    "body": {
+      "type": "json",
+      "data": {
+        "model": "deepseek",
+        "messages": [
+          {
+            "role": "user",
+            "content": "Reply: yes or no?"
+          }
+        ]
+      }
+    },
+    "params": {}
+  },
+  "response": {
+    "status": 200,
+    "statusText": "OK",
+    "headers": {
+      "access-control-allow-origin": "*",
+      "connection": "keep-alive",
+      "content-length": "929",
+      "content-type": "application/json; charset=utf-8",
+      "date": "Sat, 29 Nov 2025 21:01:51 GMT",
+      "etag": "W/\"3a1-fI7t6Z7FjcA4SFeDN+EBLkPsaOE\"",
+      "keep-alive": "timeout=5",
+      "x-model-used": "DeepSeek-V3.1",
+      "x-powered-by": "Express",
+      "x-usage-completion-text-tokens": "3",
+      "x-usage-prompt-text-tokens": "259",
+      "x-usage-total-tokens": "262"
+    },
+    "body": {
+      "type": "json",
+      "data": {
+        "id": "pllns_a2a4277abb07faa102009d396d08e396",
+        "model": "DeepSeek-V3.1",
+        "choices": [
+          {
+            "index": 0,
+            "message": {
+              "role": "assistant",
+              "content": "No."
+            },
+            "finish_reason": "stop",
+            "content_filter_results": {
+              "violence": {
+                "filtered": false,
+                "severity": "safe"
+              },
+              "sexual": {
+                "filtered": false,
+                "severity": "safe"
+              },
+              "hate": {
+                "filtered": false,
+                "severity": "safe"
+              },
+              "self_harm": {
+                "filtered": false,
+                "severity": "safe"
+              },
+              "protected_material_code": {
+                "filtered": false,
+                "detected": false
+              },
+              "protected_material_text": {
+                "filtered": false,
+                "detected": false
+              }
+            }
+          }
+        ],
+        "usage": {
+          "prompt_tokens": 259,
+          "completion_tokens": 3,
+          "total_tokens": 262
+        },
+        "created": 1764450111,
+        "object": "chat.completion",
+        "prompt_filter_results": [
+          {
+            "prompt_index": 0,
+            "content_filter_results": {
+              "violence": {
+                "filtered": false,
+                "severity": "safe"
+              },
+              "sexual": {
+                "filtered": false,
+                "severity": "safe"
+              },
+              "hate": {
+                "filtered": false,
+                "severity": "safe"
+              },
+              "self_harm": {
+                "filtered": false,
+                "severity": "safe"
+              },
+              "jailbreak": {
+                "filtered": false,
+                "detected": false
+              }
+            }
+          }
+        ]
+      }
+    }
+  }
+}

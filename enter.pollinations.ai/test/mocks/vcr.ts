@@ -138,7 +138,12 @@ export function createMockVcr(originalFetch: typeof fetch): MockAPI<{}> {
                 return response;
             }
 
-            expect.fail("Encountered missing snapshot in record-only mode");
+            expect.fail(
+                [
+                    "Encountered missing snapshot in replay-only mode.",
+                    "Run without TEST_VCR_MODE=replay-only to capture.",
+                ].join("\n"),
+            );
         })
         .onError((error) => {
             throw error;

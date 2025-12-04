@@ -986,4 +986,14 @@ export const creativeProjects = [
         "submissionDate": "2025-12-04",
         "order": 5,
     },
+  {
+    "name": "Gemini ai telegram-bot",
+    "url": "https://t.me/index_bot",
+    "description": "Gemini ai telegram-bot: a Telegram bot offering chat (text, voice, images) along with AI image and audio generation, processing, and enhancement (colorizing, retouching) from prompts; currently in beta.",
+    "author": "mosavy",
+    "category": "creative",
+    "language": "en-US",
+    "submissionDate": "2025-12-04",
+    "order": 5
+  }
 ];

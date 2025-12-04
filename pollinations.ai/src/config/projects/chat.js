@@ -599,5 +599,14 @@ export const chatProjects = [
     "language": "en",
     "submissionDate": "2025-12-03",
     "order": 5
+  },
+  {
+    "name": "Debootai",
+    "url": "https://deboott.puter.site/",
+    "description": "Next-gen AI chat playground with file/image uploads, real-time web search, Puter.js login, persistent chat history, and upcoming image generation.",
+    "author": "Chess-Base",
+    "category": "chat",
+    "submissionDate": "2025-12-03",
+    "order": 5
   }
 ];

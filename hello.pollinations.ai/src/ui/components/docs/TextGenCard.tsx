@@ -91,10 +91,10 @@ export function TextGenCard() {
                                     key={prompt}
                                     type="button"
                                     onClick={() => setSelectedPrompt(prompt)}
-                                    className={`px-3 py-1.5 font-mono text-xs border-2 transition-all cursor-pointer text-text-body-main ${
+                                    className={`px-3 py-1.5 font-mono text-xs border-2 transition-all cursor-pointer ${
                                         selectedPrompt === prompt
-                                            ? "bg-indicator-text border-border-brand font-black shadow-shadow-brand-sm"
-                                            : "bg-input-background border-border-main hover:border-border-brand"
+                                            ? "bg-indicator-text border-border-brand font-black shadow-shadow-brand-sm text-text-inverse"
+                                            : "bg-input-background border-border-main hover:border-border-brand text-text-body-main"
                                     }`}
                                 >
                                     {prompt}
@@ -119,10 +119,10 @@ export function TextGenCard() {
                                     key={value}
                                     type="button"
                                     onClick={() => toggleModel(value)}
-                                    className={`px-3 py-1.5 font-mono text-xs border-2 transition-all cursor-pointer text-text-body-main ${
+                                    className={`px-3 py-1.5 font-mono text-xs border-2 transition-all cursor-pointer ${
                                         selectedModel === value
-                                            ? "bg-indicator-text border-border-brand font-black shadow-shadow-brand-sm"
-                                            : "bg-input-background border-border-main hover:border-border-brand"
+                                            ? "bg-indicator-text border-border-brand font-black shadow-shadow-brand-sm text-text-inverse"
+                                            : "bg-input-background border-border-main hover:border-border-brand text-text-body-main"
                                     }`}
                                 >
                                     {label}
@@ -140,10 +140,10 @@ export function TextGenCard() {
                         <button
                             type="button"
                             onClick={() => setJsonMode(!jsonMode)}
-                            className={`px-3 py-1.5 font-mono text-xs border-2 transition-all cursor-pointer text-text-body-main ${
+                            className={`px-3 py-1.5 font-mono text-xs border-2 transition-all cursor-pointer ${
                                 jsonMode
-                                    ? "bg-indicator-text border-border-brand font-black shadow-shadow-brand-sm"
-                                    : "bg-input-background border-border-main hover:border-border-brand"
+                                    ? "bg-indicator-text border-border-brand font-black shadow-shadow-brand-sm text-text-inverse"
+                                    : "bg-input-background border-border-main hover:border-border-brand text-text-body-main"
                             }`}
                         >
                             json=true
@@ -170,14 +170,14 @@ export function TextGenCard() {
                 <span className="text-text-caption">
                     https://enter.pollinations.ai/api/generate/text/
                 </span>
-                <span className="bg-indicator-text px-1 font-black text-text-body-main">
+                <span className="bg-indicator-text px-1 font-black text-text-inverse">
                     {selectedPrompt}
                 </span>
                 {(selectedModel || jsonMode) && (
                     <>
                         <span className="text-text-caption">?</span>
                         {selectedModel && (
-                            <span className="bg-indicator-text px-1 font-black text-text-body-main">
+                            <span className="bg-indicator-text px-1 font-black text-text-inverse">
                                 model={selectedModel}
                             </span>
                         )}
@@ -185,7 +185,7 @@ export function TextGenCard() {
                             <span className="text-text-caption">&</span>
                         )}
                         {jsonMode && (
-                            <span className="bg-indicator-text px-1 font-black text-text-body-main">
+                            <span className="bg-indicator-text px-1 font-black text-text-inverse">
                                 json=true
                             </span>
                         )}

@@ -74,10 +74,10 @@ export function ModelDiscoveryCard() {
                                                 key as keyof typeof modelEndpoints
                                             )
                                         }
-                                        className={`px-3 py-1.5 font-mono text-xs border-2 transition-all cursor-pointer text-text-body-main ${
+                                        className={`px-3 py-1.5 font-mono text-xs border-2 transition-all cursor-pointer ${
                                             selectedModel === key
-                                                ? "bg-indicator-text border-border-brand font-black shadow-shadow-brand-sm"
-                                                : "bg-input-background border-border-main hover:border-border-brand"
+                                                ? "bg-indicator-text border-border-brand font-black shadow-shadow-brand-sm text-text-inverse"
+                                                : "bg-input-background border-border-main hover:border-border-brand text-text-body-main"
                                         }`}
                                     >
                                         {label}
@@ -92,7 +92,7 @@ export function ModelDiscoveryCard() {
                         <span className="text-text-caption">
                             https://enter.pollinations.ai/api/generate
                         </span>
-                        <span className="bg-indicator-text px-1 font-black text-text-body-main">
+                        <span className="bg-indicator-text px-1 font-black text-text-inverse">
                             {selectedModel && `/${selectedModel}`}
                         </span>
                     </div>

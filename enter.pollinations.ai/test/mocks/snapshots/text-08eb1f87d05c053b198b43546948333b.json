@@ -15,20 +15,21 @@
       "access-control-allow-origin": "*",
       "cache-control": "public, max-age=31536000, immutable",
       "connection": "keep-alive",
-      "content-length": "91",
+      "content-length": "4",
       "content-type": "text/plain; charset=utf-8",
-      "date": "Sat, 29 Nov 2025 21:05:19 GMT",
-      "etag": "W/\"5b-CY6iVanWyH+naOKZxuNCtFUxmno\"",
+      "date": "Thu, 04 Dec 2025 13:42:05 GMT",
+      "etag": "W/\"4-xTxWLatLM7PkLzvE2OVxlDmpwVU\"",
       "keep-alive": "timeout=5",
       "x-model-used": "gemini-3-pro-preview",
       "x-powered-by": "Express",
-      "x-usage-completion-reasoning-tokens": "638",
+      "x-usage-completion-reasoning-tokens": "853",
+      "x-usage-completion-text-tokens": "2",
       "x-usage-prompt-text-tokens": "259",
-      "x-usage-total-tokens": "897"
+      "x-usage-total-tokens": "1114"
     },
     "body": {
       "type": "text",
-      "data": "Yes. \n\nI'm feeling optimistic, so let's go with yes. Now, what exactly did I just agree to?"
+      "data": "Yes."
     }
   }
 }

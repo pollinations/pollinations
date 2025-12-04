@@ -163,6 +163,13 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
                                 subEmojis={["🎬"]}
                                 perSecond
                             />
+                        ) : model.perTokenPrice ? (
+                            <PriceBadge
+                                prices={[model.perTokenPrice]}
+                                emoji="🎬"
+                                subEmojis={["🎬"]}
+                                perToken
+                            />
                         ) : model.perImagePrice ? (
                             <PriceBadge
                                 prices={[model.perImagePrice]}

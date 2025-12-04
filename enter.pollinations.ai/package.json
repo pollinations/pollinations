@@ -11,7 +11,7 @@
         "test": "npm run decrypt-vars:dev && vitest run",
         "gen:migrations": "drizzle-kit generate",
         "gen:auth-schema": "npx @better-auth/cli@latest generate --config betterAuth.config.ts --output src/db/schema/better-auth.ts",
-        "gen:types:runtime": "wrangler types --include-env=false worker-runtime.d.ts'",
+        "gen:types:runtime": "wrangler types --include-env=false worker-runtime.d.ts",
         "gen:types:bindings": "sops exec-file --output-type dotenv --no-fifo secrets/dev.vars.json 'wrangler types --env-file {} --include-runtime=false --env-interface CloudflareBindings worker-bindings.d.ts'",
         "gen:types": "npm run gen:types:runtime && npm run gen:types:bindings",
         "migrate:staging": "wrangler d1 migrations apply DB --remote --env staging",

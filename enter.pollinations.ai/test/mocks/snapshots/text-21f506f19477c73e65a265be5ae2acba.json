@@ -25,7 +25,7 @@
       "cache-control": "no-cache",
       "connection": "keep-alive",
       "content-type": "text/event-stream; charset=utf-8",
-      "date": "Sat, 29 Nov 2025 21:03:30 GMT",
+      "date": "Thu, 04 Dec 2025 19:28:04 GMT",
       "transfer-encoding": "chunked",
       "x-powered-by": "Express"
     },
@@ -33,11 +33,27 @@
       "type": "stream",
       "data": [
         {
-          "data": "data: {\"error\":{\"message\":\"4",
-          "delay": 86
+          "data": "data: {\"id\":\"chatcmpl-2a732",
+          "delay": 1063
         },
         {
-          "data": "00: An error occurred (ValidationException) when calling the ConverseStream operation: The maximum tokens you requested exceeds the model limit of 8192. Try again with a maximum tokens value that is lower than 8192.\"}}\n\n",
+          "data": "ea0\",\"created\":1764876485,\"model\":\"us.anthropic.claude-3-5-haiku-20241022-v1:0\",\"system_fingerprint\":\"fp\",\"choices\":[{\"index\":0,\"finish_reason\":null,\"logprobs\":null,\"delta\":{\"role\":\"assistant\",\"content\":\"\"}}],\"object\":\"chat.completion.chunk\",\"usage\":null}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"id\":\"chatcmpl-2a7",
+          "delay": 0
+        },
+        {
+          "data": "32ea0\",\"created\":1764876485,\"model\":\"us.anthropic.claude-3-5-haiku-20241022-v1:0\",\"system_fingerprint\":\"fp\",\"choices\":[{\"index\":0,\"finish_reason\":null,\"logprobs\":null,\"delta\":{\"content\":\"Yes!\"}}],\"object\":\"chat.completion.chunk\",\"usage\":null}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"id\":\"chatcmpl-2a732",
+          "delay": 56
+        },
+        {
+          "data": "ea0\",\"created\":1764876485,\"model\":\"us.anthropic.claude-3-5-haiku-20241022-v1:0\",\"system_fingerprint\":\"fp\",\"choices\":[{\"index\":0,\"finish_reason\":\"stop\",\"logprobs\":null,\"delta\":{}}],\"object\":\"chat.completion.chunk\",\"usage\":null}\n\ndata: {\"id\":\"chatcmpl-2a732ea0\",\"created\":1764876485,\"model\":\"us.anthropic.claude-3-5-haiku-20241022-v1:0\",\"system_fingerprint\":\"fp\",\"choices\":[],\"object\":\"chat.completion.chunk\",\"usage\":{\"prompt_tokens\":3697,\"completion_tokens\":5,\"total_tokens\":3702}}\n\ndata: [DONE]\n\n",
           "delay": 0
         }
       ]

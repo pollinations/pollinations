@@ -9,41 +9,26 @@
     "params": {}
   },
   "response": {
-    "status": 400,
-    "statusText": "Bad Request",
+    "status": 200,
+    "statusText": "OK",
     "headers": {
       "access-control-allow-origin": "*",
+      "cache-control": "public, max-age=31536000, immutable",
       "connection": "keep-alive",
-      "content-length": "470",
-      "content-type": "application/json; charset=utf-8",
-      "date": "Sat, 29 Nov 2025 21:04:46 GMT",
-      "etag": "W/\"1d6-xAz59pnQ3hnoYB4HbrdpjDQjvUU\"",
+      "content-length": "4",
+      "content-type": "text/plain; charset=utf-8",
+      "date": "Thu, 04 Dec 2025 19:23:36 GMT",
+      "etag": "W/\"4-xTxWLatLM7PkLzvE2OVxlDmpwVU\"",
       "keep-alive": "timeout=5",
-      "x-powered-by": "Express"
+      "x-model-used": "us.anthropic.claude-3-5-haiku-20241022-v1:0",
+      "x-powered-by": "Express",
+      "x-usage-completion-text-tokens": "5",
+      "x-usage-prompt-text-tokens": "3697",
+      "x-usage-total-tokens": "3702"
     },
     "body": {
-      "type": "json",
-      "data": {
-        "error": "Bad Request",
-        "message": "400 Bad Request",
-        "requestId": "0vl4p",
-        "requestParameters": {
-          "messages": [
-            {
-              "role": "user",
-              "content": "Reply: yes or no?"
-            }
-          ],
-          "jsonMode": false,
-          "model": "chickytutor",
-          "referrer": null,
-          "isPrivate": false,
-          "voice": "alloy"
-        },
-        "details": {
-          "detail": "An error occurred (ValidationException) when calling the Converse operation: The maximum tokens you requested exceeds the model limit of 8192. Try again with a maximum tokens value that is lower than 8192."
-        }
-      }
+      "type": "text",
+      "data": "Yes."
     }
   }
 }

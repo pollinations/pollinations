@@ -1019,4 +1019,15 @@ export const creativeProjects = [
         "submissionDate": "2025-12-04",
         "order": 5,
     },
+  {
+    "name": "Flux AI",
+    "url": "https://koy.xx.kg/",
+    "description": "Cloudflare Workers' intelligent adaptive AI image generation platform",
+    "author": "kinai9661",
+    "repo": "kinai9661/Flux-AI-Pro",
+    "category": "creative",
+    "language": "zh-TW",
+    "submissionDate": "2025-12-04",
+    "order": 5
+  }
 ];

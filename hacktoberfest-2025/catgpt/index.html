@@ -63,6 +63,22 @@
                 ></textarea>
             </div>
 
+            <div class="input-group api-key-group">
+                <label for="apiKeyInput">Optional: Pollinations API Key</label>
+                <div class="api-key-container">
+                    <input 
+                        type="password" 
+                        id="apiKeyInput" 
+                        placeholder="Enter your API key for higher rate limits"
+                        class="api-key-input"
+                    />
+                    <button type="button" id="toggleApiKey" class="toggle-api-key-btn" aria-label="Toggle API key visibility">
+                        Show
+                    </button>
+                </div>
+                <p class="api-key-note">Get an API key at <a href="https://pollinations.ai" target="_blank" rel="noopener">pollinations.ai</a> for priority access</p>
+            </div>
+
             <div class="input-group">
                 <label for="imageUpload">Optional: Upload your own reference image</label>
                 

@@ -471,9 +471,12 @@ def create_pr_with_news(news_content: str, newslist_content: str, github_token: 
 
     print(f"Created branch: {branch_name}")
 
-    # 1. Create the NEWS file (new file, no SHA needed)
+    # 1. Create/update the NEWS file
     news_api_path = f"{GITHUB_API_BASE}/repos/{owner}/{repo}/contents/{news_file_path}"
     news_encoded = base64.b64encode(news_file_content.encode()).decode()
+
+    # Check if file already exists on branch (from previous failed run)
+    news_sha = get_file_sha(github_token, owner, repo, news_file_path, branch_name)
 
     news_payload = {
         "message": f"docs: add weekly news entry - {entry_date}",
@@ -481,13 +484,16 @@ def create_pr_with_news(news_content: str, newslist_content: str, github_token: 
         "branch": branch_name
     }
 
+    if news_sha:
+        news_payload["sha"] = news_sha
+
     news_response = requests.put(news_api_path, headers=headers, json=news_payload)
 
     if news_response.status_code not in [200, 201]:
         print(f"Error creating NEWS file: {news_response.text}")
         sys.exit(1)
 
-    print(f"✅ Created {news_file_path} on branch {branch_name}")
+    print(f"✅ {'Updated' if news_sha else 'Created'} {news_file_path} on branch {branch_name}")
 
     # 2. Update newsList.js (existing file, needs SHA)
     newslist_sha = get_file_sha(github_token, owner, repo, NEWSLIST_PATH, branch_name)

@@ -24,6 +24,7 @@ import {
     UpstreamError,
 } from "@/error.ts";
 import { GenerateImageRequestQueryParamsSchema } from "@/schemas/image.ts";
+import { GenerateTextRequestQueryParamsSchema } from "@/schemas/text.ts";
 import { z } from "zod";
 import { HTTPException } from "hono/http-exception";
 import { DEFAULT_TEXT_MODEL } from "@shared/registry/text.ts";
@@ -299,22 +300,17 @@ export const proxyRoutes = new Hono<Env>()
                     },
                 },
             },
-            parameters: [
-                {
-                    in: "path",
-                    name: "prompt",
-                    schema: { type: "string" },
-                    required: true,
-                    description: "Text prompt for generation",
-                },
-                {
-                    in: "query",
-                    name: "model",
-                    schema: { type: "string", default: "openai" },
-                    description: "Model to use for text generation",
-                },
-            ],
         }),
+        validator(
+            "param",
+            z.object({
+                prompt: z.string().min(1).meta({
+                    description: "Text prompt for generation",
+                    example: "Write a haiku about coding",
+                }),
+            }),
+        ),
+        validator("query", GenerateTextRequestQueryParamsSchema),
         track("generate.text"),
         async (c) => {
             const log = c.get("log");

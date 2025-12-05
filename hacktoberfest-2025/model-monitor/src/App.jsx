@@ -695,7 +695,9 @@ function App() {
                                         colSpan={11}
                                         className="p-8 text-center text-gray-400"
                                     >
-                                        Loading models...
+                                        {lastUpdated
+                                            ? "No models found"
+                                            : "Loading models..."}
                                     </td>
                                 </tr>
                             ) : (

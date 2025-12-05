@@ -499,7 +499,7 @@ def create_pr_with_news(news_content: str, newslist_content: str, github_token: 
     newslist_sha = get_file_sha(github_token, owner, repo, NEWSLIST_PATH, branch_name)
     if not newslist_sha:
         # Try getting from main if not on branch yet
-        newslist_sha = get_file_sha(github_token, owner, repo, NEWSLIST_PATH, default_branch)
+        newslist_sha = get_file_sha(github_token, owner, repo, NEWSLIST_PATH, "main")
 
     newslist_api_path = f"{GITHUB_API_BASE}/repos/{owner}/{repo}/contents/{NEWSLIST_PATH}"
     newslist_encoded = base64.b64encode(newslist_content.encode()).decode()
@@ -507,9 +507,12 @@ def create_pr_with_news(news_content: str, newslist_content: str, github_token: 
     newslist_payload = {
         "message": f"docs: update website news highlights - {entry_date}",
         "content": newslist_encoded,
-        "branch": branch_name,
-        "sha": newslist_sha
+        "branch": branch_name
     }
+
+    # Only include SHA if file exists (required for updates, invalid for new files)
+    if newslist_sha:
+        newslist_payload["sha"] = newslist_sha
 
     newslist_response = requests.put(newslist_api_path, headers=headers, json=newslist_payload)
 

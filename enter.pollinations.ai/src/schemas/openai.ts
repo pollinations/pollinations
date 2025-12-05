@@ -2,6 +2,7 @@
 
 import { z } from "zod";
 import { DEFAULT_TEXT_MODEL } from "../../../shared/registry/text.ts";
+import { IMAGE_SERVICES } from "@shared/registry/image.ts";
 
 const FunctionParametersSchema = z.record(z.string(), z.any());
 
@@ -540,3 +541,57 @@ const ModelDescriptionSchema = z
 export const GetModelsResponseSchema = z.array(ModelDescriptionSchema).meta({
     description: "Array of model descriptions for each available model.",
 });
+
+// OpenAI Images API Schemas
+const IMAGE_MODEL_IDS = Object.keys(IMAGE_SERVICES) as [string, ...string[]];
+const OPENAI_QUALITIES = ["standard", "hd", "low", "medium", "high"] as const;
+
+export const CreateImageRequestSchema = z
+    .object({
+        // OpenAI standard params
+        prompt: z.string().min(1).max(32000).meta({
+            description: "A text description of the desired image(s)",
+        }),
+        model: z
+            .enum(IMAGE_MODEL_IDS)
+            .optional()
+            .default("flux")
+            .meta({
+                description: `The model to use for image generation. Available: ${IMAGE_MODEL_IDS.join(", ")}`,
+            }),
+        size: z.string().optional().default("1024x1024").meta({
+            description:
+                "The size of the generated image. Format: WIDTHxHEIGHT (e.g., 1024x1024, 512x512)",
+        }),
+        quality: z.enum(OPENAI_QUALITIES).optional().default("medium").meta({
+            description:
+                "The quality of the image. OpenAI uses 'standard'/'hd', Pollinations also supports 'low'/'medium'/'high'",
+        }),
+        response_format: z
+            .enum(["url", "b64_json"])
+            .optional()
+            .default("url")
+            .meta({
+                description:
+                    "The format in which the generated image is returned. url returns a URL to fetch the cached image.",
+            }),
+        user: z.string().optional().meta({
+            description: "A unique identifier representing your end-user",
+        }),
+    })
+    .passthrough(); // Allow Pollinations-specific extensions (seed, nologo, enhance, safe, etc.)
+
+export type CreateImageRequest = z.infer<typeof CreateImageRequestSchema>;
+
+const ImageDataSchema = z.object({
+    url: z.string().optional(),
+    b64_json: z.string().optional(),
+    revised_prompt: z.string().optional(),
+});
+
+export const CreateImageResponseSchema = z.object({
+    created: z.number().int(),
+    data: z.array(ImageDataSchema),
+});
+
+export type CreateImageResponse = z.infer<typeof CreateImageResponseSchema>;

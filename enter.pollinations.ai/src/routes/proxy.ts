@@ -15,6 +15,9 @@ import {
     CreateChatCompletionRequestSchema,
     type CreateChatCompletionResponse,
     GetModelsResponseSchema,
+    CreateImageRequestSchema,
+    CreateImageResponseSchema,
+    type CreateImageRequest,
 } from "@/schemas/openai.ts";
 import {
     createErrorResponseSchema,
@@ -138,8 +141,9 @@ export const proxyRoutes = new Hono<Env>()
     .get(
         "/v1/models",
         describeRoute({
-            tags: ["Text Generation"],
-            description: "Get available text models (OpenAI-compatible).",
+            tags: ["Models"],
+            description:
+                "Get all available models (OpenAI-compatible). Returns both text and image models.",
             responses: {
                 200: {
                     description: "Success",
@@ -153,8 +157,27 @@ export const proxyRoutes = new Hono<Env>()
             },
         }),
         async (c) => {
-            return await proxy(`${c.env.TEXT_SERVICE_URL}/openai/models`, {
-                headers: proxyHeaders(c),
+            // Fetch text models from text service
+            const textResponse = await fetch(
+                `${c.env.TEXT_SERVICE_URL}/openai/models`,
+                { headers: proxyHeaders(c) },
+            );
+            const textData = (await textResponse.json()) as {
+                data: Array<{ id: string; object: string; owned_by: string }>;
+            };
+
+            // Get image models from registry and convert to OpenAI format
+            const imageModels = getImageModelsInfo().map((model) => ({
+                id: model.name,
+                object: "model" as const,
+                created: Math.floor(Date.now() / 1000),
+                owned_by: "pollinations",
+            }));
+
+            // Combine both lists
+            return c.json({
+                object: "list",
+                data: [...(textData.data || []), ...imageModels],
             });
         },
     )
@@ -449,6 +472,163 @@ export const proxyRoutes = new Hono<Env>()
             }
 
             return response;
+        },
+    )
+    .post(
+        "/v1/images/generations",
+        describeRoute({
+            tags: ["Image Generation"],
+            description: [
+                "OpenAI-compatible image generation endpoint.",
+                "",
+                "Generate images from text prompts using Pollinations models.",
+                "The response returns a URL to the generated (and cached) image.",
+                "",
+                "**Authentication:**",
+                "",
+                "Include your API key in the `Authorization` header as a Bearer token:",
+                "",
+                "`Authorization: Bearer YOUR_API_KEY`",
+            ].join("\n"),
+            responses: {
+                200: {
+                    description: "Success",
+                    content: {
+                        "application/json": {
+                            schema: resolver(CreateImageResponseSchema),
+                        },
+                    },
+                },
+                ...errorResponses(400, 401, 500),
+            },
+        }),
+        track("generate.image"),
+        validator("json", CreateImageRequestSchema),
+        async (c) => {
+            const log = c.get("log");
+            await c.var.auth.requireAuthorization();
+            await checkBalance(c.var);
+
+            const body = (await c.req.json()) as CreateImageRequest &
+                Record<string, unknown>;
+
+            // Parse size string (e.g., "1024x1024") into width and height
+            const [width, height] = (body.size || "1024x1024")
+                .split("x")
+                .map((s) => parseInt(s, 10));
+
+            // Map OpenAI quality values to Pollinations quality
+            const qualityMap: Record<string, string> = {
+                standard: "medium",
+                hd: "high",
+            };
+            const quality =
+                qualityMap[body.quality || ""] || body.quality || "medium";
+
+            // Build query params for the image service
+            // Start with required params
+            const params = new URLSearchParams({
+                model: body.model || "flux",
+                width: String(width || 1024),
+                height: String(height || 1024),
+                quality,
+                nofeed: "true", // Don't add OpenAI-compat requests to feed
+            });
+
+            // Add seed if provided, otherwise generate random for cache consistency
+            const seed =
+                (body.seed as number) ?? Math.floor(Math.random() * 1000000);
+            params.set("seed", String(seed));
+
+            // Forward any Pollinations-specific passthrough params
+            const passthroughParams = [
+                "nologo",
+                "enhance",
+                "safe",
+                "private",
+                "transparent",
+                "negative_prompt",
+                "guidance_scale",
+                "image",
+            ] as const;
+            for (const param of passthroughParams) {
+                if (body[param] !== undefined) {
+                    params.set(param, String(body[param]));
+                }
+            }
+
+            // Get the user's API key from the request
+            const authHeader = c.req.header("authorization");
+            const apiKeyFromHeader = authHeader?.match(/^Bearer (.+)$/)?.[1];
+            const apiKey = apiKeyFromHeader || c.req.query("key");
+
+            // Build URLs using current request's origin (works in dev and prod)
+            const origin = new URL(c.req.url).origin;
+            const imagePath = `/api/generate/image/${encodeURIComponent(body.prompt)}`;
+
+            // Public URL (without auth key - will be returned to user)
+            const publicUrl = new URL(imagePath, origin);
+            publicUrl.search = params.toString();
+
+            // Internal URL with auth key for pre-generation
+            const internalUrl = new URL(publicUrl.toString());
+            if (apiKey) {
+                internalUrl.searchParams.set("key", apiKey);
+            }
+
+            log.debug(
+                "[PROXY] OpenAI images/generations - pre-generating: {url}",
+                {
+                    url: internalUrl.toString().replace(apiKey || "", "***"),
+                },
+            );
+
+            // Pre-generate the image by calling our own GET /image/:prompt endpoint
+            const response = await fetch(internalUrl.toString());
+            if (!response.ok) {
+                const errorText = await response.text();
+                log.warn(
+                    "[PROXY] Image pre-generation failed: {status} {error}",
+                    {
+                        status: response.status,
+                        error: errorText,
+                    },
+                );
+                throw new HTTPException(response.status as 400 | 500, {
+                    message: errorText || "Image generation failed",
+                });
+            }
+
+            // Handle response based on requested format
+            const responseFormat = body.response_format || "url";
+            if (responseFormat === "b64_json") {
+                // Return base64-encoded image data
+                const imageBuffer = await response.arrayBuffer();
+                const base64 = btoa(
+                    String.fromCharCode(...new Uint8Array(imageBuffer)),
+                );
+                return c.json({
+                    created: Math.floor(Date.now() / 1000),
+                    data: [
+                        {
+                            b64_json: base64,
+                            revised_prompt: body.prompt,
+                        },
+                    ],
+                });
+            }
+
+            // Default: return URL (image is now cached, no auth needed)
+            await response.arrayBuffer(); // Consume body
+            return c.json({
+                created: Math.floor(Date.now() / 1000),
+                data: [
+                    {
+                        url: publicUrl.toString(),
+                        revised_prompt: body.prompt,
+                    },
+                ],
+            });
         },
     );
 

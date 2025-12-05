@@ -4,11 +4,11 @@
 
 ### Inbox Labels (Triage)
 
-| Label           | Purpose                          | Applied by                           |
-| --------------- | -------------------------------- | ------------------------------------ |
-| `inbox:github`  | External issue needs triage      | `inbox-github-labeler.yml`           |
-| `inbox:discord` | Issue created from Discord       | `create-issue.yml` (via Discord bot) |
-| `inbox:news`    | PR related to weekly news update | `weekly_digest.yml`                  |
+| Label           | Purpose                          | Applied by                                   |
+| --------------- | -------------------------------- | -------------------------------------------- |
+| `inbox:github`  | External issue needs triage      | `github-issue-labeler.yml`                   |
+| `inbox:discord` | Issue created from Discord       | `discord-create-issue.yml` (via Discord bot) |
+| `inbox:news`    | PR related to weekly news update | `news-weekly-generate.yml`                   |
 
 ### App Submission Labels
 
@@ -23,8 +23,8 @@
 
 ### Triage
 
--   **inbox-github-labeler.yml** - Adds `inbox:github` to external issues. Skips if `inbox:discord` or `app:*` labels exist.
--   **create-issue.yml** - Creates GitHub issues from Discord bot via `repository_dispatch`.
+-   **github-issue-labeler.yml** - Adds `inbox:github` to external issues. Skips if `inbox:discord` or `app:*` labels exist.
+-   **discord-create-issue.yml** - Creates GitHub issues from Discord bot via `repository_dispatch`.
 
 ### App Submissions
 
@@ -33,9 +33,9 @@
 
 ### News & Discord
 
--   **weekly_digest.yml** - Runs Monday 00:00 UTC. Scans merged PRs, generates `NEWS.md` update PR with `inbox:news` label.
--   **discord_post.yml** - Triggered when `NEWS.md` is pushed. Posts weekly digest to Discord.
--   **pr-review-discord.yml** - Posts every merged PR to Discord immediately.
+-   **news-weekly-generate.yml** - Runs Monday 00:00 UTC. Scans merged PRs, generates `NEWS.md` update PR with `inbox:news` label.
+-   **discord-weekly-news.yml** - Triggered when `NEWS.md` is pushed. Posts weekly digest to Discord.
+-   **discord-pr-merged.yml** - Posts every merged PR to Discord immediately.
 
 ### Maintenance
 
@@ -50,7 +50,7 @@
 Issue opened on GitHub          Issue from Discord bot
         │                               │
         ▼                               ▼
-inbox-github-labeler.yml        create-issue.yml
+github-issue-labeler.yml        discord-create-issue.yml
         │                               │
         ▼                               ▼
   inbox:github                    inbox:discord
@@ -62,13 +62,13 @@ inbox-github-labeler.yml        create-issue.yml
 Monday 00:00 UTC
         │
         ▼
-weekly_digest.yml (scans PRs)
+news-weekly-generate.yml (scans PRs)
         │
         ▼
 Creates PR with NEWS.md + inbox:news label
         │
         ▼ (PR merged)
-discord_post.yml
+discord-weekly-news.yml
         │
         ▼
 Posts digest to Discord

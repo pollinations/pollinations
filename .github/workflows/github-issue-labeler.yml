@@ -1,4 +1,4 @@
-name: Inbox GitHub Labeler
+name: GitHub Issue Labeler
 on:
   issues:
     types: [opened, transferred]

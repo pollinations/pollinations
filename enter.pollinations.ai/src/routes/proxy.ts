@@ -289,6 +289,31 @@ export const proxyRoutes = new Hono<Env>()
                 "",
                 "API keys can be created from your dashboard at enter.pollinations.ai.",
             ].join("\n"),
+            responses: {
+                200: {
+                    description: "Generated text response",
+                    content: {
+                        "text/plain": {
+                            schema: { type: "string" },
+                        },
+                    },
+                },
+            },
+            parameters: [
+                {
+                    in: "path",
+                    name: "prompt",
+                    schema: { type: "string" },
+                    required: true,
+                    description: "Text prompt for generation",
+                },
+                {
+                    in: "query",
+                    name: "model",
+                    schema: { type: "string", default: "openai" },
+                    description: "Model to use for text generation",
+                },
+            ],
         }),
         track("generate.text"),
         async (c) => {

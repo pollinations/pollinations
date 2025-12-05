@@ -1,4 +1,4 @@
-name: New Issue Labeler
+name: GitHub Issue Labeler
 on:
   issues:
     types: [opened, transferred]
@@ -28,11 +28,16 @@ jobs:
             ];
 
             let label = null;
-            const title = context.payload.issue.title || "";
 
-            // Skip App Submission issues (handled by app-review workflow)
-            if (title.startsWith("[App Submission]:")) {
-              console.log("App Submission issue, skipping inbox:github label");
+            // Check for app:* labels (handled by app-review workflow)
+            const hasAppLabel = current.some(l => l.startsWith('app:'));
+            // Check for inbox:discord (already triaged via Discord)
+            const hasDiscordInbox = current.includes('inbox:discord');
+
+            if (hasAppLabel) {
+              console.log("App submission issue (has app:* label), skipping inbox:github");
+            } else if (hasDiscordInbox) {
+              console.log("Already has inbox:discord, skipping inbox:github");
             } else if (INTERNAL_USERS.includes(author)) {
               console.log(`Internal user ${author}, skipping label`);
             } else {

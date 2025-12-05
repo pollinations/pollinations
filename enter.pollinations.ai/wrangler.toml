@@ -30,6 +30,11 @@ binding = "IMAGE_BUCKET"
 bucket_name = "pollinations-images"
 remote = true
 
+[[r2_buckets]]
+binding = "TEXT_BUCKET"
+bucket_name = "pollinations-text"
+remote = true
+
 [[durable_objects.bindings]]
 name = "POLLEN_RATE_LIMITER"
 class_name = "PollenRateLimiter"
@@ -79,6 +84,11 @@ binding = "IMAGE_BUCKET"
 bucket_name = "pollinations-images"
 remote = true
 
+[[env.local.r2_buckets]]
+binding = "TEXT_BUCKET"
+bucket_name = "pollinations-text"
+remote = true
+
 [env.local.vars]
 ENVIRONMENT = "local"
 LOG_LEVEL = "trace"
@@ -122,6 +132,10 @@ id = "eb4ea5149a5a413db53902bf2b8c1d95"
 [[env.production.r2_buckets]]
 binding = "IMAGE_BUCKET"
 bucket_name = "pollinations-images"
+
+[[env.production.r2_buckets]]
+binding = "TEXT_BUCKET"
+bucket_name = "pollinations-text"
 
 # Edge rate limiter: ~10 req/s per IP (100 req per 10s)
 [[env.production.ratelimits]]
@@ -180,6 +194,10 @@ id = "eb4ea5149a5a413db53902bf2b8c1d95"
 binding = "IMAGE_BUCKET"
 bucket_name = "pollinations-images"
 
+[[env.staging.r2_buckets]]
+binding = "TEXT_BUCKET"
+bucket_name = "pollinations-text"
+
 [[env.staging.ratelimits]]
 name = "EDGE_RATE_LIMITER"
 namespace_id = "1001"
@@ -230,6 +248,10 @@ id = "aa0d0aceb6bd45de93032270c7adf4ab"
 [[env.test.r2_buckets]]
 binding = "IMAGE_BUCKET"
 bucket_name = "pollinations-images"
+
+[[env.test.r2_buckets]]
+binding = "TEXT_BUCKET"
+bucket_name = "pollinations-text"
 
 [[env.test.ratelimits]]
 name = "EDGE_RATE_LIMITER"

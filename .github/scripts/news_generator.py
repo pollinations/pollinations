@@ -35,6 +35,8 @@ def get_date_range() -> tuple[datetime, datetime]:
 def get_merged_prs(owner: str, repo: str, start_date: datetime, token: str) -> List[Dict]:
     """Fetch merged PRs using GraphQL - handles any number of PRs efficiently"""
 
+    # Note: GitHub GraphQL PullRequestOrder only supports CREATED_AT and UPDATED_AT
+    # We use UPDATED_AT DESC since merging updates the PR, then filter by mergedAt
     query = """
     query($owner: String!, $repo: String!, $cursor: String) {
       repository(owner: $owner, name: $repo) {
@@ -42,7 +44,7 @@ def get_merged_prs(owner: str, repo: str, start_date: datetime, token: str) -> L
           states: MERGED
           first: 100
           after: $cursor
-          orderBy: {field: MERGED_AT, direction: DESC}
+          orderBy: {field: UPDATED_AT, direction: DESC}
           baseRefName: "main"
         ) {
           pageInfo {
@@ -55,6 +57,7 @@ def get_merged_prs(owner: str, repo: str, start_date: datetime, token: str) -> L
             body
             url
             mergedAt
+            updatedAt
             author {
               login
             }
@@ -104,23 +107,33 @@ def get_merged_prs(owner: str, repo: str, start_date: datetime, token: str) -> L
 
         print(f"  Page {page}: fetched {len(nodes)} PRs")
 
+        # Track if all PRs on this page are too old (by updatedAt)
+        oldest_update_on_page = None
+
         for pr in nodes:
-            # Parse mergedAt timestamp
+            # Parse timestamps
             merged_at = datetime.fromisoformat(pr["mergedAt"].replace("Z", "+00:00"))
+            updated_at = datetime.fromisoformat(pr["updatedAt"].replace("Z", "+00:00"))
 
-            # Stop if we've gone past our date range
-            if merged_at < start_date:
-                print(f"  Reached PRs older than {start_date.strftime('%Y-%m-%d')}, stopping")
-                return all_prs
+            if oldest_update_on_page is None or updated_at < oldest_update_on_page:
+                oldest_update_on_page = updated_at
 
-            all_prs.append({
-                "number": pr["number"],
-                "title": pr["title"],
-                "body": pr["body"] or "",
-                "author": pr["author"]["login"] if pr["author"] else "ghost",
-                "merged_at": pr["mergedAt"],
-                "html_url": pr["url"]
-            })
+            # Only include PRs merged within our date range
+            if merged_at >= start_date:
+                all_prs.append({
+                    "number": pr["number"],
+                    "title": pr["title"],
+                    "body": pr["body"] or "",
+                    "author": pr["author"]["login"] if pr["author"] else "ghost",
+                    "merged_at": pr["mergedAt"],
+                    "html_url": pr["url"]
+                })
+
+        # Stop pagination if the oldest updatedAt on this page is before our start_date
+        # This means all subsequent pages will also be too old
+        if oldest_update_on_page and oldest_update_on_page < start_date:
+            print(f"  Reached PRs last updated before {start_date.strftime('%Y-%m-%d')}, stopping")
+            break
 
         # Check if there are more pages
         if not page_info["hasNextPage"]:

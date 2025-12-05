@@ -17,12 +17,30 @@ export const GenerateTextRequestQueryParamsSchema = z.object({
     system: z
         .string()
         .optional()
-        .meta({ description: "System prompt to set context for the model" }),
+        .meta({
+            description: "System prompt to set context/behavior for the model",
+        }),
     json: z.coerce
         .boolean()
         .optional()
         .default(false)
         .meta({ description: "Return response in JSON format" }),
+    temperature: z.coerce
+        .number()
+        .optional()
+        .meta({
+            description: "Controls creativity (0.0=strict, 2.0=creative)",
+        }),
+    stream: z.coerce
+        .boolean()
+        .optional()
+        .default(false)
+        .meta({ description: "Stream response in real-time chunks" }),
+    private: z.coerce
+        .boolean()
+        .optional()
+        .default(false)
+        .meta({ description: "Hide from public feeds" }),
 });
 
 export type GenerateTextRequestQueryParams = z.infer<

@@ -1,4 +1,4 @@
-export const newsList = `- **2025-12-10** – **Amazon Nova Micro** New ultra-affordable text model ($0.035/M input). Use \`model: 'amazon-nova-micro'\` for high-volume applications.
+export const newsList = `- **2025-12-05** – **Amazon Nova Micro** New ultra-affordable text model ($0.035/M input). Use \`model: 'amazon-nova-micro'\` for high-volume applications.
 - **2025-12-05** – **Model Versioning** Access specific model versions: \`seedream\` (v4.0) / \`seedream-pro\` (v4.5) and \`seedance\` (Lite) / \`seedance-pro\` (Pro-Fast).
 - **2025-12-03** – **Model Upgrades!** Seedream upgraded to 4.5 (4K, 14 reference images) and Seedance upgraded to Pro-Fast (higher quality video). Use with \`?model=seedream\` or \`?model=seedance\`.
 - **2025-08-24** – **Sequa AI Integration** now available! [Sequa.AI](https://sequa.ai) is a contextual knowledge engine that provides AI assistants with deep, real-time understanding of codebases and documentation. Configure MCP for Pollinations: \`https://mcp.sequa.ai/v1/pollinations/contribute\` | [Learn more](https://sequa.ai).

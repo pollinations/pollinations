@@ -15,6 +15,7 @@ POLLINATIONS_API_BASE = "https://enter.pollinations.ai/api/generate/openai"
 MODEL = "gemini-large"
 CHUNK_SIZE = 50
 NEWS_FOLDER = "NEWS"
+NEWSLIST_PATH = "pollinations.ai/src/config/newsList.js"
 
 
 def get_env(key: str, required: bool = True) -> str:
@@ -299,8 +300,127 @@ def create_news_file_content(news_entry: str, entry_date: str) -> str:
 """
 
 
-def create_pr_with_news(news_content: str, github_token: str, owner: str, repo: str, pr_count: int):
-    """Create a PR with a new weekly news file in NEWS/ folder"""
+def get_current_newslist(github_token: str, owner: str, repo: str) -> str:
+    """Fetch current newsList.js content from the repo"""
+    headers = {
+        "Accept": "application/vnd.github+json",
+        "Authorization": f"Bearer {github_token}"
+    }
+
+    response = requests.get(
+        f"{GITHUB_API_BASE}/repos/{owner}/{repo}/contents/{NEWSLIST_PATH}",
+        headers=headers
+    )
+
+    if response.status_code == 200:
+        content = response.json().get("content", "")
+        return base64.b64decode(content).decode("utf-8")
+    else:
+        print(f"Warning: Could not fetch current newsList.js: {response.status_code}")
+        return ""
+
+
+def create_newslist_prompt(news_content: str, current_newslist: str) -> tuple:
+    """Create prompt to generate updated newsList.js with only major updates"""
+    today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+
+    system_prompt = """You are updating the newsList.js file for the Pollinations website.
+
+This file displays ONLY major, user-facing updates that website visitors care about. This is NOT a complete changelog - it's a curated highlights list.
+
+INCLUDE only:
+- New models or model upgrades (e.g., "Seedream upgraded to 4.5")
+- New features users can use (e.g., "New Auth Dashboard")
+- New integrations (e.g., "Sequa AI Integration")
+- New API endpoints or capabilities
+- New tools (e.g., "MCP Server now supports audio")
+
+EXCLUDE:
+- Bug fixes
+- Internal refactors
+- Dependency updates
+- CI/CD changes
+- Documentation-only changes
+- Performance improvements (unless dramatic)
+- Code cleanup
+
+OUTPUT FORMAT - You must output ONLY valid JavaScript that exports a newsList constant:
+```javascript
+export const newsList = `- **YYYY-MM-DD** – **Feature Name** Brief description. Use \`backticks\` for code/endpoints. [Link text](url) if relevant.
+- **YYYY-MM-DD** – **Another Feature** Description here.`;
+```
+
+RULES:
+1. Each entry starts with date in **YYYY-MM-DD** format
+2. Feature name in **bold** after the date
+3. Use en-dash (–) as separator, not hyphen
+4. Use \`backticks\` for code, endpoints, parameters
+5. Keep entries concise (1-2 lines max)
+6. Most recent entries at the TOP
+7. Keep ~15-20 most relevant entries total (drop old minor ones if needed)
+8. Output ONLY the JavaScript code, no explanations"""
+
+    user_prompt = f"""Here is this week's NEWS changelog (contains ALL changes):
+
+{news_content}
+
+Here is the CURRENT newsList.js content:
+
+{current_newslist}
+
+Generate the updated newsList.js file. Add any NEW major user-facing features from this week's changelog at the TOP. Keep existing important entries. Remove outdated or minor entries if the list gets too long (aim for ~15-20 entries).
+
+Output ONLY the valid JavaScript export statement."""
+
+    return system_prompt, user_prompt
+
+
+def generate_newslist_content(news_content: str, current_newslist: str, pollinations_token: str) -> str:
+    """Generate updated newsList.js content using AI"""
+    print("Generating newsList.js content...")
+
+    system_prompt, user_prompt = create_newslist_prompt(news_content, current_newslist)
+    ai_response = call_pollinations_api(system_prompt, user_prompt, pollinations_token)
+
+    content = parse_response(ai_response)
+
+    # Ensure it starts with export const newsList
+    if not content.strip().startswith("export const newsList"):
+        # Try to extract just the export statement
+        if "export const newsList" in content:
+            start = content.index("export const newsList")
+            content = content[start:]
+
+    # Ensure it ends with semicolon
+    content = content.strip()
+    if not content.endswith(";"):
+        content += ";"
+
+    # Add newline at end of file
+    content += "\n"
+
+    return content
+
+
+def get_file_sha(github_token: str, owner: str, repo: str, file_path: str, branch: str = "main") -> str:
+    """Get the SHA of an existing file (needed for updates)"""
+    headers = {
+        "Accept": "application/vnd.github+json",
+        "Authorization": f"Bearer {github_token}"
+    }
+
+    response = requests.get(
+        f"{GITHUB_API_BASE}/repos/{owner}/{repo}/contents/{file_path}?ref={branch}",
+        headers=headers
+    )
+
+    if response.status_code == 200:
+        return response.json().get("sha", "")
+    return ""
+
+
+def create_pr_with_news(news_content: str, newslist_content: str, github_token: str, owner: str, repo: str, pr_count: int):
+    """Create a PR with weekly news file and updated newsList.js"""
 
     entry_date = datetime.now(timezone.utc).strftime("%Y-%m-%d")
     news_file_path = f"{NEWS_FOLDER}/{entry_date}.md"
@@ -310,8 +430,8 @@ def create_pr_with_news(news_content: str, github_token: str, owner: str, repo: 
         print(f"News file for {entry_date} already exists. Skipping.")
         return
 
-    # Create content for the new file
-    file_content = create_news_file_content(news_content, entry_date)
+    # Create content for the news file
+    news_file_content = create_news_file_content(news_content, entry_date)
 
     headers = {
         "Accept": "application/vnd.github+json",
@@ -351,33 +471,59 @@ def create_pr_with_news(news_content: str, github_token: str, owner: str, repo: 
 
     print(f"Created branch: {branch_name}")
 
-    # Create the new file (no SHA needed for new file)
-    file_api_path = f"{GITHUB_API_BASE}/repos/{owner}/{repo}/contents/{news_file_path}"
-    content_encoded = base64.b64encode(file_content.encode()).decode()
+    # 1. Create the NEWS file (new file, no SHA needed)
+    news_api_path = f"{GITHUB_API_BASE}/repos/{owner}/{repo}/contents/{news_file_path}"
+    news_encoded = base64.b64encode(news_file_content.encode()).decode()
 
-    update_payload = {
-        "message": f"docs: weekly news update - {entry_date}",
-        "content": content_encoded,
+    news_payload = {
+        "message": f"docs: add weekly news entry - {entry_date}",
+        "content": news_encoded,
         "branch": branch_name
     }
 
-    update_response = requests.put(file_api_path, headers=headers, json=update_payload)
+    news_response = requests.put(news_api_path, headers=headers, json=news_payload)
 
-    if update_response.status_code not in [200, 201]:
-        print(f"Error creating file: {update_response.text}")
+    if news_response.status_code not in [200, 201]:
+        print(f"Error creating NEWS file: {news_response.text}")
         sys.exit(1)
 
-    print(f"Created {news_file_path} on branch {branch_name}")
+    print(f"✅ Created {news_file_path} on branch {branch_name}")
+
+    # 2. Update newsList.js (existing file, needs SHA)
+    newslist_sha = get_file_sha(github_token, owner, repo, NEWSLIST_PATH, branch_name)
+    if not newslist_sha:
+        # Try getting from main if not on branch yet
+        newslist_sha = get_file_sha(github_token, owner, repo, NEWSLIST_PATH, default_branch)
+
+    newslist_api_path = f"{GITHUB_API_BASE}/repos/{owner}/{repo}/contents/{NEWSLIST_PATH}"
+    newslist_encoded = base64.b64encode(newslist_content.encode()).decode()
+
+    newslist_payload = {
+        "message": f"docs: update website news highlights - {entry_date}",
+        "content": newslist_encoded,
+        "branch": branch_name,
+        "sha": newslist_sha
+    }
+
+    newslist_response = requests.put(newslist_api_path, headers=headers, json=newslist_payload)
+
+    if newslist_response.status_code not in [200, 201]:
+        print(f"Error updating newsList.js: {newslist_response.text}")
+        sys.exit(1)
+
+    print(f"✅ Updated {NEWSLIST_PATH} on branch {branch_name}")
 
     # Create PR
     pr_title = f"📰 Weekly News Update - {entry_date}"
     pr_body = f"""## Weekly News Update
 
-This PR adds the weekly news file `{news_file_path}`.
+This PR includes:
+- New weekly changelog: `{news_file_path}`
+- Updated website highlights: `{NEWSLIST_PATH}`
 
 **PRs included:** {pr_count}
 
-### New Entry Preview
+### Full Changelog Preview
 
 {news_content}
 
@@ -424,7 +570,6 @@ This PR adds the weekly news file `{news_file_path}`.
 
 def main():
     github_token = get_env('GITHUB_TOKEN')
-
     pollinations_token = get_env('POLLINATIONS_TOKEN')
     repo_full_name = get_env('GITHUB_REPOSITORY')
     owner_name, repo_name = repo_full_name.split('/')
@@ -438,6 +583,7 @@ def main():
         print("No merged PRs found for this period. Skipping news update.")
         return
 
+    # Step 1: Generate full NEWS changelog
     print(f"Processing {len(merged_prs)} PRs for NEWS.md (including ALL)...")
 
     if len(merged_prs) <= CHUNK_SIZE:
@@ -464,11 +610,25 @@ def main():
         news_content = parse_response(ai_response)
 
     if not news_content.strip():
-        print("Empty response from AI. This shouldn't happen.")
+        print("Empty NEWS response from AI. This shouldn't happen.")
         sys.exit(1)
 
-    # Create PR with news update
-    create_pr_with_news(news_content, github_token, owner_name, repo_name, len(merged_prs))
+    print("✅ NEWS content generated")
+
+    # Step 2: Generate newsList.js with curated highlights
+    print("Fetching current newsList.js...")
+    current_newslist = get_current_newslist(github_token, owner_name, repo_name)
+
+    newslist_content = generate_newslist_content(news_content, current_newslist, pollinations_token)
+
+    if not newslist_content.strip():
+        print("Empty newsList.js response from AI. This shouldn't happen.")
+        sys.exit(1)
+
+    print("✅ newsList.js content generated")
+
+    # Step 3: Create PR with both files
+    create_pr_with_news(news_content, newslist_content, github_token, owner_name, repo_name, len(merged_prs))
     print("✅ News generation completed!")
 
 

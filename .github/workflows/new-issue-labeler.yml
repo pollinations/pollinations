@@ -35,6 +35,8 @@ jobs:
               console.log("App Submission issue, skipping inbox:github label");
             } else if (INTERNAL_USERS.includes(author)) {
               console.log(`Internal user ${author}, skipping label`);
+            } else if (author.endsWith("[bot]") || current.includes("inbox:discord") || current.includes("inbox:news")) {
+              console.log(`Skipping inbox:github - author: ${author}, has inbox:discord: ${current.includes("inbox:discord")}, has inbox:news: ${current.includes("inbox:news")}`);
             } else {
               label = "inbox:github";
             }

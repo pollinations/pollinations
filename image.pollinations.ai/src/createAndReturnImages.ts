@@ -30,10 +30,7 @@ import type { ImageParams } from "./params.ts";
 import type { ProgressManager } from "./progressBar.ts";
 
 // Import model handlers
-import {
-    callSeedreamAPI,
-    callSeedreamProAPI,
-} from "./models/seedreamModel.ts";
+import { callSeedreamAPI, callSeedreamProAPI } from "./models/seedreamModel.ts";
 import { callAzureFluxKontext } from "./models/azureFluxKontextModel.js";
 import { incrementModelCounter } from "./modelCounter.ts";
 
@@ -525,18 +522,18 @@ const callAzureGPTImageWithEndpoint = async (
         );
     }
 
-    // Check if we need to use the edits endpoint instead of generations
+    // Check if we have input images for edit mode
     const isEditMode = safeParams.image && safeParams.image.length > 0;
 
-    // Use gpt-image-1 (full version) if input images are provided, otherwise use gpt-image-1-mini
+    // gpt-image-1-mini supports both generation and editing
+    // Edit API uses /images/edits endpoint with multipart/form-data
     if (isEditMode) {
-        // Replace model name with full version for edit mode
-        endpoint = endpoint.replace("gpt-image-1-mini", "gpt-image-1");
-        // Replace 'generations' with 'edits' in the endpoint URL
         endpoint = endpoint.replace("/images/generations", "/images/edits");
-        logCloudflare(`Using Azure gpt-image-1 (full) in edit mode`);
+        logCloudflare(`Using Azure gpt-image-1-mini in edit mode (img2img)`);
     } else {
-        logCloudflare(`Using Azure gpt-image-1-mini in generation mode`);
+        logCloudflare(
+            `Using Azure gpt-image-1-mini in generation mode (text2img)`,
+        );
     }
 
     // Map safeParams to Azure API parameters
@@ -894,7 +891,10 @@ const generateImage = async (
     }
 
     // Nano Banana / Nano Banana Pro - Gemini Image generation using Vertex AI
-    if (safeParams.model === "nanobanana" || safeParams.model === "nanobanana-pro") {
+    if (
+        safeParams.model === "nanobanana" ||
+        safeParams.model === "nanobanana-pro"
+    ) {
         // Detailed logging of authentication info for Nano Banana access
         logError(
             "Nano Banana authentication check:",
@@ -946,7 +946,10 @@ const generateImage = async (
                 throw error;
             }
 
-            const modelDisplayName = safeParams.model === "nanobanana-pro" ? "Nano Banana Pro" : "Nano Banana";
+            const modelDisplayName =
+                safeParams.model === "nanobanana-pro"
+                    ? "Nano Banana Pro"
+                    : "Nano Banana";
             progress.updateBar(
                 requestId,
                 35,

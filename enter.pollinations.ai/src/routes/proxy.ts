@@ -24,6 +24,7 @@ import {
     UpstreamError,
 } from "@/error.ts";
 import { GenerateImageRequestQueryParamsSchema } from "@/schemas/image.ts";
+import { GenerateTextRequestQueryParamsSchema } from "@/schemas/text.ts";
 import { z } from "zod";
 import { HTTPException } from "hono/http-exception";
 import { DEFAULT_TEXT_MODEL } from "@shared/registry/text.ts";
@@ -138,7 +139,7 @@ export const proxyRoutes = new Hono<Env>()
     .get(
         "/v1/models",
         describeRoute({
-            tags: ["Text Generation"],
+            tags: ["gen.pollinations.ai"],
             description: "Get available text models (OpenAI-compatible).",
             responses: {
                 200: {
@@ -161,7 +162,7 @@ export const proxyRoutes = new Hono<Env>()
     .get(
         "/image/models",
         describeRoute({
-            tags: ["Image Generation"],
+            tags: ["gen.pollinations.ai"],
             description:
                 "Get a list of available image generation models with pricing, capabilities, and metadata. Use this endpoint to discover which models are available and their costs before making generation requests. Response includes `aliases` (alternative names you can use), pricing per image, and supported modalities.",
             responses: {
@@ -196,7 +197,7 @@ export const proxyRoutes = new Hono<Env>()
     .get(
         "/text/models",
         describeRoute({
-            tags: ["Text Generation"],
+            tags: ["gen.pollinations.ai"],
             description:
                 "Get a list of available text generation models with pricing, capabilities, and metadata. Use this endpoint to discover which models are available and their costs before making generation requests. Response includes `aliases` (alternative names you can use), token pricing, supported modalities (text, image, audio), and capabilities (tools, reasoning).",
             responses: {
@@ -235,7 +236,7 @@ export const proxyRoutes = new Hono<Env>()
     .post(
         "/v1/chat/completions",
         describeRoute({
-            tags: ["Text Generation"],
+            tags: ["gen.pollinations.ai"],
             description: [
                 "OpenAI-compatible chat completions endpoint.",
                 "",
@@ -277,7 +278,7 @@ export const proxyRoutes = new Hono<Env>()
     .get(
         "/text/:prompt",
         describeRoute({
-            tags: ["Text Generation"],
+            tags: ["gen.pollinations.ai"],
             description: [
                 "Generates text from text prompts.",
                 "",
@@ -289,7 +290,27 @@ export const proxyRoutes = new Hono<Env>()
                 "",
                 "API keys can be created from your dashboard at enter.pollinations.ai.",
             ].join("\n"),
+            responses: {
+                200: {
+                    description: "Generated text response",
+                    content: {
+                        "text/plain": {
+                            schema: { type: "string" },
+                        },
+                    },
+                },
+            },
         }),
+        validator(
+            "param",
+            z.object({
+                prompt: z.string().min(1).meta({
+                    description: "Text prompt for generation",
+                    example: "Write a haiku about coding",
+                }),
+            }),
+        ),
+        validator("query", GenerateTextRequestQueryParamsSchema),
         track("generate.text"),
         async (c) => {
             const log = c.get("log");
@@ -346,7 +367,7 @@ export const proxyRoutes = new Hono<Env>()
         track("generate.image"),
         imageCache,
         describeRoute({
-            tags: ["Image Generation"],
+            tags: ["gen.pollinations.ai"],
             description: [
                 "Generate an image or video from a text prompt.",
                 "",

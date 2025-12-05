@@ -21,7 +21,7 @@ custom_domain = true
 
 [[env.production.services]]
 binding = "ENTER"
-service = "pollinations-enter"
+service = "pollinations-enter-production"
 
 # Staging routes
 [env.staging]
@@ -33,4 +33,4 @@ custom_domain = true
 
 [[env.staging.services]]
 binding = "ENTER"
-service = "pollinations-enter"
+service = "pollinations-enter-staging"

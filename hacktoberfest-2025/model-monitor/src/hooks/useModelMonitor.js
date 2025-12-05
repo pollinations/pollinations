@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 
 // Tinybird config
+// Note: This is a READ-ONLY public token, safe to expose in client code
 const TINYBIRD_HOST = "https://api.europe-west2.gcp.tinybird.co";
 const TINYBIRD_TOKEN =
     "p.eyJ1IjogImFjYTYzZjc5LThjNTYtNDhlNC05NWJjLWEyYmFjMTY0NmJkMyIsICJpZCI6ICIwODVjOWEwOS04MGI4LTQzZWUtYjUxMS1lZjhiNTA3YjQ5NjIiLCAiaG9zdCI6ICJnY3AtZXVyb3BlLXdlc3QyIn0.jilYql9mjeuHPR-WMfzQXXjxNPyMjtG9VFOsmDCz_X4";
@@ -139,13 +140,6 @@ export function useModelMonitor() {
     const gatewayStats = healthStats.filter((s) => s.model === "undefined");
     const modelStats = healthStats.filter((s) => s.model !== "undefined");
 
-    // Check if this is new data (different fetch time)
-    const isNewData =
-        lastUpdated && lastFetchRef.current !== lastUpdated?.getTime();
-    if (isNewData) {
-        lastFetchRef.current = lastUpdated.getTime();
-    }
-
     // Get history and compute trends for a model
     const getModelTrend = useCallback((modelKey, stats) => {
         if (!stats) return { trend: null, sparkline: [] };
@@ -162,8 +156,14 @@ export function useModelMonitor() {
         return { trend, sparkline: history.sparkline };
     }, []);
 
-    // Update history only when new data arrives
-    if (isNewData && healthStats.length > 0) {
+    // Update history when new data arrives (moved to useEffect to avoid side effects in render)
+    useEffect(() => {
+        if (!lastUpdated || healthStats.length === 0) return;
+
+        // Check if this is new data
+        if (lastFetchRef.current === lastUpdated.getTime()) return;
+        lastFetchRef.current = lastUpdated.getTime();
+
         const modelStatsForHistory = healthStats.filter(
             (s) => s.model !== "undefined",
         );
@@ -189,7 +189,7 @@ export function useModelMonitor() {
             // Save updated history
             historyRef.current[modelKey] = { samples, sparkline };
         });
-    }
+    }, [healthStats, lastUpdated]);
 
     // Merge models with health stats, trends, and sparklines
     const mergedModels = models.map((model) => {

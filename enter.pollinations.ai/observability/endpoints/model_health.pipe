@@ -35,21 +35,7 @@ SQL >
         round(quantileIf(0.5)(response_time, response_status >= 200 AND response_status < 300), 0) as latency_p50_ms,
         round(quantileIf(0.95)(response_time, response_status >= 200 AND response_status < 300), 0) as latency_p95_ms,
         round(avg(response_time), 0) as avg_latency_ms,
-        max(start_time) as last_request_at,
-        -- Health status: off (unavailable) / turbulent (degraded) / on (healthy)
-        multiIf(
-            -- OFF: pct_5xx >= 20%, P95 > 20s, pct_504 >= 5%, or no 2xx at all
-            (countIf(response_status >= 500) * 100.0 / count()) >= 20, 'off',
-            round(quantileIf(0.95)(response_time, response_status >= 200 AND response_status < 300), 0) > 20000, 'off',
-            (countIf(response_status = 504) * 100.0 / count()) >= 5, 'off',
-            countIf(response_status >= 200 AND response_status < 300) = 0 AND count() > 0, 'off',
-            -- TURBULENT: pct_5xx 5-20%, pct_429 >= 15%, P95 > 10s
-            (countIf(response_status >= 500) * 100.0 / count()) >= 5, 'turbulent',
-            (countIf(response_status = 429) * 100.0 / count()) >= 15, 'turbulent',
-            round(quantileIf(0.95)(response_time, response_status >= 200 AND response_status < 300), 0) > 10000, 'turbulent',
-            -- ON: healthy
-            'on'
-        ) as health_status
+        max(start_time) as last_request_at
     FROM generation_event
     WHERE start_time >= now() - interval 5 minute
     GROUP BY resolved_model_requested, event_type

@@ -314,6 +314,7 @@ Pollinations.AI is used in various projects, including:
 | 🤖 [Telegram AI Chars 🤖](https://t.me/MFRG_Shapes) | Plataforma en PHP para la creación de personajes (bots) con personalidad,... | @MarcosFRG |
 | 🤖 [Swapna Shastra Dream Decoder 💤✨](https://t.me/Swapnashastra_dream_bot) | AI-powered Telegram bot that interprets dreams using ancient Indian Swapna... | @ShashankNagaraj |
 | 🆕 [TeleChars AI](https://extras.marcosfrg.x10.mx) | Ya había enviado este proyecto antes, pero ahora lo hago por... | marcosfrgames08 |
+| 🆕 🤖 [TeleChars AI](https://extras.marcosfrg.x10.mx) | TeleChars AI is a platform for AI-powered Telegram character creation. It... | marcosfrgames08 |
 
 ### Learn 📚
 

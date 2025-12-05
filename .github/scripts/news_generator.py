@@ -232,8 +232,7 @@ def call_pollinations_api(system_prompt: str, user_prompt: str, token: str, max_
             response = requests.post(
                 POLLINATIONS_API_BASE,
                 headers=headers,
-                json=payload,
-                timeout=120
+                json=payload
             )
 
             if response.status_code == 200:

@@ -1,4 +1,4 @@
-name: GitHub Project Adder
+name: GitHub Issue to Project
 
 on:
   issues:

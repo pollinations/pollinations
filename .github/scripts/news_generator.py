@@ -10,6 +10,7 @@ from typing import Dict, List
 from datetime import datetime, timedelta, timezone
 
 GITHUB_API_BASE = "https://api.github.com"
+GITHUB_GRAPHQL_API = "https://api.github.com/graphql"
 POLLINATIONS_API_BASE = "https://enter.pollinations.ai/api/generate/openai"
 MODEL = "gemini-large"
 CHUNK_SIZE = 50
@@ -32,59 +33,102 @@ def get_date_range() -> tuple[datetime, datetime]:
 
 
 def get_merged_prs(owner: str, repo: str, start_date: datetime, token: str) -> List[Dict]:
-    end_date = datetime.now(timezone.utc)
-    end_str = end_date.strftime("%Y-%m-%dT%H:%M:%SZ")
-    start_str = start_date.strftime("%Y-%m-%dT%H:%M:%SZ")
+    """Fetch merged PRs using GraphQL - handles any number of PRs efficiently"""
 
-    base_url = "https://api.github.com/search/issues"
+    query = """
+    query($owner: String!, $repo: String!, $cursor: String) {
+      repository(owner: $owner, name: $repo) {
+        pullRequests(
+          states: MERGED
+          first: 100
+          after: $cursor
+          orderBy: {field: MERGED_AT, direction: DESC}
+          baseRefName: "main"
+        ) {
+          pageInfo {
+            hasNextPage
+            endCursor
+          }
+          nodes {
+            number
+            title
+            body
+            url
+            mergedAt
+            author {
+              login
+            }
+          }
+        }
+      }
+    }
+    """
+
     headers = {
-        "Accept": "application/vnd.github+json",
-        "Authorization": f"Bearer {token}"
+        "Authorization": f"Bearer {token}",
+        "Content-Type": "application/json"
     }
 
     all_prs = []
-    print(f"Fetching merged PRs from {start_str} to {end_str}...")
+    cursor = None
+    page = 1
 
-    target_branches = ['main']
-    pr_numbers_seen = set()
+    print(f"Fetching merged PRs since {start_date.strftime('%Y-%m-%d')} using GraphQL...")
 
-    for branch in target_branches:
-        query = f"repo:{owner}/{repo} is:pull-request is:merged merged:{start_str}..{end_str} base:{branch}"
-        params = {"q": query, "per_page": 100, "page": 1}
+    while True:
+        variables = {
+            "owner": owner,
+            "repo": repo,
+            "cursor": cursor
+        }
 
-        while True:
-            response = requests.get(base_url, headers=headers, params=params)
-            if response.status_code != 200:
-                print(f"Error searching base:{branch}: {response.status_code} -> {response.text}")
-                break
+        response = requests.post(
+            GITHUB_GRAPHQL_API,
+            headers=headers,
+            json={"query": query, "variables": variables}
+        )
 
-            data = response.json()
-            items = data.get("items", [])
+        if response.status_code != 200:
+            print(f"GraphQL error: {response.status_code} -> {response.text[:500]}")
+            sys.exit(1)
 
-            for item in items:
-                pr_number = item['number']
-                if pr_number in pr_numbers_seen:
-                    continue
-                pr_numbers_seen.add(pr_number)
+        data = response.json()
 
-                pr_url = item['pull_request']['url']
-                pr_response = requests.get(pr_url, headers=headers)
-                if pr_response.status_code == 200:
-                    pr_data = pr_response.json()
-                    all_prs.append({
-                        'number': pr_data['number'],
-                        'title': pr_data['title'],
-                        'body': pr_data['body'],
-                        'author': pr_data['user']['login'],
-                        'merged_at': pr_data['merged_at'],
-                        'html_url': pr_data['html_url']
-                    })
-                time.sleep(0.1)
+        if "errors" in data:
+            print(f"GraphQL query errors: {data['errors']}")
+            sys.exit(1)
 
-            if "next" not in response.links:
-                break
+        pr_data = data["data"]["repository"]["pullRequests"]
+        nodes = pr_data["nodes"]
+        page_info = pr_data["pageInfo"]
 
-            params["page"] += 1
+        print(f"  Page {page}: fetched {len(nodes)} PRs")
+
+        for pr in nodes:
+            # Parse mergedAt timestamp
+            merged_at = datetime.fromisoformat(pr["mergedAt"].replace("Z", "+00:00"))
+
+            # Stop if we've gone past our date range
+            if merged_at < start_date:
+                print(f"  Reached PRs older than {start_date.strftime('%Y-%m-%d')}, stopping")
+                return all_prs
+
+            all_prs.append({
+                "number": pr["number"],
+                "title": pr["title"],
+                "body": pr["body"] or "",
+                "author": pr["author"]["login"] if pr["author"] else "ghost",
+                "merged_at": pr["mergedAt"],
+                "html_url": pr["url"]
+            })
+
+        # Check if there are more pages
+        if not page_info["hasNextPage"]:
+            print(f"  No more pages")
+            break
+
+        cursor = page_info["endCursor"]
+        page += 1
 
     return all_prs
 

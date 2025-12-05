@@ -1,19 +1,76 @@
-name: Celebrate APPS PR Merged
+name: Process App Submissions
 
 on:
   pull_request:
     types: [closed]
 
 jobs:
-  celebrate-merge:
+  process-and-celebrate:
     # Only run when PR is merged (not just closed)
     if: github.event.pull_request.merged == true
     runs-on: ubuntu-latest
     permissions:
       issues: write
-      pull-requests: read
+      pull-requests: write
+      contents: write
 
     steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Process pending projects
+        id: process
+        # Only run for auto/app-* branches (app submission PRs)
+        if: startsWith(github.event.pull_request.head.ref, 'auto/app-')
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Check if there are pending projects
+          PENDING_COUNT=$(find .github/pending-projects -name "*.json" 2>/dev/null | wc -l)
+          
+          if [ "$PENDING_COUNT" -eq 0 ]; then
+            echo "No pending projects to process"
+            echo "has_pending=false" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+          
+          echo "Processing $PENDING_COUNT pending project(s)..."
+          echo "has_pending=true" >> $GITHUB_OUTPUT
+          
+          # Process queue
+          node .github/scripts/process-queue.js
+          
+          # Update README
+          node pollinator-agent/project-list-scripts/generate-project-table.js --update-readme || true
+          
+          # Create sync PR
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          
+          BRANCH="auto/sync-projects-$(date +%s)"
+          git checkout -b "$BRANCH"
+          git add -A
+          git commit -m "chore: sync projects from queue"
+          git push origin "$BRANCH"
+          
+          # Create PR with automerge label
+          gh pr create \
+            --title "chore: sync projects from queue" \
+            --body "Auto-generated PR to sync pending projects to category files.
+
+          This PR will be auto-merged." \
+            --base main \
+            --head "$BRANCH" \
+            --label "automerge"
+
       - name: Post celebration comment on linked issues
         uses: actions/github-script@v7
         with:

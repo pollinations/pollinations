@@ -447,9 +447,6 @@ def call_pollinations_api(system_prompt: str, user_prompt: str, token: str, max_
 
 def parse_discord_message(response: str) -> str:
     """Parse Discord message from AI response"""
-    print(f"DEBUG: Raw AI response length: {len(response)}")
-    print(f"DEBUG: First 200 chars: {response[:200]}")
-    
     # Clean up the response - remove any markdown code blocks if present
     message = response.strip()
     
@@ -463,9 +460,7 @@ def parse_discord_message(response: str) -> str:
         if lines and lines[-1].strip() == '```':
             lines = lines[:-1]
         message = '\n'.join(lines)
-    
-    print(f"DEBUG: Cleaned message length: {len(message)}")
-    
+
     return message
 
 def format_timestamp(merged_at: str) -> str:

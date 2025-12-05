@@ -5,7 +5,7 @@ on:
     branches:
       - main
     paths:
-      - 'NEWS.md'
+      - 'NEWS/*.md'
   workflow_dispatch:  # Manual trigger for testing
 
 jobs:

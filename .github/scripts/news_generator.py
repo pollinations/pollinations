@@ -396,6 +396,17 @@ This PR adds the weekly news entry for {entry_date} to NEWS.md.
     pr_data = pr_response.json()
     print(f"✅ Created PR #{pr_data['number']}: {pr_data['html_url']}")
 
+    # Add inbox:news label to the PR
+    label_response = requests.post(
+        f"{GITHUB_API_BASE}/repos/{owner}/{repo}/issues/{pr_data['number']}/labels",
+        headers=headers,
+        json={"labels": ["inbox:news"]}
+    )
+    if label_response.status_code in [200, 201]:
+        print("Added inbox:news label")
+    else:
+        print(f"Warning: Could not add label: {label_response.text}")
+
 
 def main():
     github_token = os.getenv('POLLI_PAT') or os.getenv('GITHUB_TOKEN')

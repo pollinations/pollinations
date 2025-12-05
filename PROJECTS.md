@@ -296,6 +296,7 @@ Pollinations.AI is used in various projects, including:
 | 🆕 [HelpChatGPT](https://helpchatgpt.ru) | HelpChatGPT is a free web platform that provides access to ChatGPT-like models... | viaea |
 | 🆕 [Debootai](https://deboott.puter.site/) | Next-gen AI chat playground with file/image uploads, real-time web search,... | Chess-Base |
 | 🆕 [SimplifyMind AI (ELI5)](https://simplify-eloquent-ai.lovable.app/) | A modern one-page web app that turns any complex question into a simple,... | CompaDeveloper |
+| 🆕 [Pouring orange molten material into a container.](https://pollinations.ai) | Pouring orange molten material into a container. | unknown |
 
 ### Social Bots 🤖
 

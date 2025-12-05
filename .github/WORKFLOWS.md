@@ -39,7 +39,7 @@
 
 ### Project Management
 
--   **project-add-issue.yml** - Adds all new issues to Project #20.
+-   **github-project-adder.yml** - Adds all new issues to Project #20.
 -   **close-discarded-issues.yml** - Auto-closes issues marked "Discarded" in project.
 
 ### Maintenance

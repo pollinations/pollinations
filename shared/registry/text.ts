@@ -394,4 +394,21 @@ export const TEXT_SERVICES = {
         reasoning: true,
         isSpecialized: false,
     },
+    "nova-micro": {
+        aliases: ["amazon-nova-micro", "nova"],
+        modelId: "amazon.nova-micro-v1:0",
+        provider: "aws-bedrock",
+        cost: [
+            {
+                date: COST_START_DATE,
+                promptTextTokens: perMillion(0.035),
+                completionTextTokens: perMillion(0.14),
+            },
+        ],
+        description: "Amazon Nova Micro - Ultra Fast & Ultra Cheap",
+        inputModalities: ["text"],
+        outputModalities: ["text"],
+        tools: true,
+        isSpecialized: false,
+    },
 } as const satisfies Record<string, ServiceDefinition<string>>;

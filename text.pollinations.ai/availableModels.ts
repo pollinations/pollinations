@@ -133,6 +133,11 @@ const models: ModelDefinition[] = [
         config: portkeyConfig["gemini-3-pro-preview"],
         transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
     },
+    {
+        name: "nova-micro",
+        config: portkeyConfig["amazon.nova-micro-v1:0"],
+        transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
+    },
 ];
 
 // Export models - metadata is in registry (single source of truth)

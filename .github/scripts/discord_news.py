@@ -21,7 +21,7 @@ def get_env(key: str, required: bool = True) -> str:
 
 
 def get_latest_news_file() -> tuple[str, str]:
-    """Find and read the latest news file from NEWS/ folder
+    """Find and read the latest news file from NEWS/ folder based on today's date and regex.
 
     Returns: (date, content) tuple
     """
@@ -29,19 +29,48 @@ def get_latest_news_file() -> tuple[str, str]:
         print(f"Error: {NEWS_FOLDER}/ folder not found")
         return None, None
 
-    # Get all .md files in NEWS folder
-    news_files = [f for f in os.listdir(NEWS_FOLDER) if f.endswith('.md')]
+    # Get all files in NEWS folder
+    all_files = os.listdir(NEWS_FOLDER)
 
-    if not news_files:
-        print(f"No news files found in {NEWS_FOLDER}/")
+    # Date pattern: YYYY-MM-DD.md
+    date_pattern = re.compile(r'^(\d{4}-\d{2}-\d{2})\.md$')
+
+    today = datetime.now(timezone.utc).date()
+
+    # Find files matching the date pattern and parse dates
+    dated_files = []
+    for f in all_files:
+        match = date_pattern.match(f)
+        if match:
+            try:
+                file_date = datetime.strptime(match.group(1), '%Y-%m-%d').date()
+                dated_files.append((file_date, f))
+            except ValueError:
+                continue
+
+    if not dated_files:
+        print(f"No dated news files found in {NEWS_FOLDER}/")
         return None, None
 
-    # Sort by filename (date format YYYY-MM-DD.md) descending to get latest
-    news_files.sort(reverse=True)
-    latest_file = news_files[0]
+    # Sort by date descending
+    dated_files.sort(key=lambda x: x[0], reverse=True)
 
-    # Extract date from filename (e.g., "2025-12-03.md" -> "2025-12-03")
-    entry_date = latest_file.replace('.md', '')
+    # First, try to find today's file
+    selected_file = None
+    for file_date, filename in dated_files:
+        if file_date == today:
+            print(f"Found today's NEWS file: {filename}")
+            selected_file = (file_date, filename)
+            break
+
+    # If no file for today, get the most recent one
+    if not selected_file:
+        file_date, filename = dated_files[0]
+        print(f"No NEWS file for today ({today}), using most recent: {filename} ({file_date})")
+        selected_file = (file_date, filename)
+
+    entry_date = selected_file[0].strftime('%Y-%m-%d')
+    latest_file = selected_file[1]
 
     # Read the file content
     file_path = os.path.join(NEWS_FOLDER, latest_file)

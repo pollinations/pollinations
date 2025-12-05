@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 // Note: This is a READ-ONLY public token, safe to expose in client code
 const TINYBIRD_HOST = "https://api.europe-west2.gcp.tinybird.co";
 const TINYBIRD_TOKEN =
-    "p.eyJ1IjogImFjYTYzZjc5LThjNTYtNDhlNC05NWJjLWEyYmFjMTY0NmJkMyIsICJpZCI6ICIwODVjOWEwOS04MGI4LTQzZWUtYjUxMS1lZjhiNTA3YjQ5NjIiLCAiaG9zdCI6ICJnY3AtZXVyb3BlLXdlc3QyIn0.jilYql9mjeuHPR-WMfzQXXjxNPyMjtG9VFOsmDCz_X4";
+    "p.eyJ1IjogImFjYTYzZjc5LThjNTYtNDhlNC05NWJjLWEyYmFjMTY0NmJkMyIsICJpZCI6ICJmZTRjODM1Ni1iOTYwLTQ0ZTYtODE1Mi1kY2UwYjc0YzExNjQiLCAiaG9zdCI6ICJnY3AtZXVyb3BlLXdlc3QyIn0.Wc49vYoVYI_xd4JSsH_Fe8mJk7Oc9hx0IIldwc1a44g";
 
 // Model list endpoints
 const MODEL_ENDPOINTS = {

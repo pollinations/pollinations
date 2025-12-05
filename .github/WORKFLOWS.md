@@ -37,9 +37,13 @@
 -   **discord-weekly-news.yml** - Triggered when `NEWS.md` is pushed. Posts weekly digest to Discord.
 -   **discord-pr-merged.yml** - Posts every merged PR to Discord immediately.
 
+### Project Management
+
+-   **project-add-issue.yml** - Adds all new issues to Project #20.
+-   **close-discarded-issues.yml** - Auto-closes issues marked "Discarded" in project.
+
 ### Maintenance
 
--   **close-discarded-issues.yml** - Auto-closes stale issues.
 -   **update-github-stars.yml** - Updates star counts for projects.
 
 ## Flow Diagrams

@@ -1,5 +1,15 @@
 # GitHub Workflows
 
+## Authentication
+
+Most workflows use **Polly Bot** (GitHub App) for authentication instead of personal access tokens. This provides:
+
+-   Better security (scoped permissions)
+-   Actions appear as bot, not a user
+-   No PAT expiration issues
+
+Secrets required: `POLLY_BOT_APP_ID`, `POLLY_BOT_PRIVATE_KEY`
+
 ## Label System
 
 ### Inbox Labels (Triage)
@@ -33,8 +43,9 @@
 
 ### News & Discord
 
--   **news-weekly-generate.yml** - Runs Monday 00:00 UTC. Scans merged PRs, generates `NEWS.md` update PR with `inbox:news` label.
--   **discord-weekly-news.yml** - Triggered when `NEWS.md` is pushed. Posts weekly digest to Discord.
+-   **news-weekly-generate.yml** - Runs Monday 00:00 UTC. Scans merged PRs, generates `NEWS/{date}.md` PR with `inbox:news` label.
+-   **discord-weekly-news.yml** - Triggered when `NEWS/*.md` is pushed. Posts weekly digest to Discord.
+-   **update-newslist.yml** - When NEWS PR merges, updates `pollinations.ai/src/config/newsList.js` for the website.
 -   **discord-pr-merged.yml** - Posts every merged PR to Discord immediately.
 
 ### Project Management
@@ -60,20 +71,46 @@ github-issue-labeler.yml        discord-create-issue.yml
   inbox:github                    inbox:discord
 ```
 
-### Weekly News
+### Weekly News Pipeline
 
 ```
-Monday 00:00 UTC
+┌─────────────────────────────────────────────────────────────────┐
+│  Monday 00:00 UTC (cron)                                        │
+│         │                                                       │
+│         ▼                                                       │
+│  news-weekly-generate.yml                                       │
+│         │                                                       │
+│         ▼                                                       │
+│  Scans all merged PRs (GraphQL)                                 │
+│         │                                                       │
+│         ▼                                                       │
+│  Creates PR: NEWS/{date}.md + inbox:news label                  │
+│         │                                                       │
+└─────────┼───────────────────────────────────────────────────────┘
+          │
+          ▼ (PR reviewed & merged)
+┌─────────────────────────────────────────────────────────────────┐
+│  TWO workflows trigger in parallel:                             │
+│                                                                 │
+│  ┌─────────────────────────┐  ┌─────────────────────────────┐   │
+│  │ discord-weekly-news.yml │  │ update-newslist.yml         │   │
+│  │ (push to NEWS/*.md)     │  │ (PR merged with NEWS/*.md)  │   │
+│  │         │               │  │         │                   │   │
+│  │         ▼               │  │         ▼                   │   │
+│  │ Posts digest to Discord │  │ Creates PR to update        │   │
+│  │                         │  │ newsList.js for website     │   │
+│  └─────────────────────────┘  └─────────────────────────────┘   │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+### Live PR Notifications
+
+```
+Any PR merged to main
         │
         ▼
-news-weekly-generate.yml (scans PRs)
+discord-pr-merged.yml
         │
         ▼
-Creates PR with NEWS.md + inbox:news label
-        │
-        ▼ (PR merged)
-discord-weekly-news.yml
-        │
-        ▼
-Posts digest to Discord
+Posts to Discord immediately
 ```

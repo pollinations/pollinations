@@ -97,7 +97,7 @@ function createTextGenerationEvent({
         modelRequested,
         resolvedModelRequested,
         modelUsed,
-        modelProviderUsed: undefined,
+        modelProviderUsed: "azure-openai",
         isBilledUsage: true,
 
         ...priceToEventParams(priceDefinition),

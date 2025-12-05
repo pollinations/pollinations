@@ -1029,5 +1029,16 @@ export const creativeProjects = [
     "language": "en",
     "submissionDate": "2025-12-04",
     "order": 5
+  },
+  {
+    "name": "Cinepoca",
+    "url": "https://cinepoca.com.br",
+    "description": "Cinepoca serves as a fully AI-driven hub for movie enthusiasts. Our project relies on Pollinations.ai for end-to-end content generation, including blog posts and custom imagery. We have also integrated the Pollinations API into a pipeline that creates 100% automated Instagram/Facebook Reels. While AI drives the creation, all content undergoes human review to prevent hallucinations and ensure high editorial standards.",
+    "author": "victorchiq",
+    "repo": null,
+    "category": "creative",
+    "language": "pt-BR",
+    "submissionDate": "2025-12-04",
+    "order": 5
   }
 ];

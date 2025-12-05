@@ -444,6 +444,17 @@ Generated automatically by GitHub Actions
     else:
         print(f"Warning: Could not add label: {label_response.status_code}")
 
+    # Add inbox:news label to the PR
+    label_response = requests.post(
+        f"{GITHUB_API_BASE}/repos/{owner}/{repo}/issues/{pr_data['number']}/labels",
+        headers=headers,
+        json={"labels": ["inbox:news"]}
+    )
+    if label_response.status_code in [200, 201]:
+        print("Added inbox:news label")
+    else:
+        print(f"Warning: Could not add label: {label_response.text}")
+
 
 def main():
     github_token = get_env('GITHUB_TOKEN')

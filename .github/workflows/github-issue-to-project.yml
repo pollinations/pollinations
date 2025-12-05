@@ -1,0 +1,14 @@
+name: GitHub Issue to Project
+
+on:
+  issues:
+    types: [opened, transferred]
+
+jobs:
+  add-to-project:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/add-to-project@v1.0.2
+        with:
+          project-url: https://github.com/orgs/pollinations/projects/20
+          github-token: ${{ secrets.POLLI_PAT }}

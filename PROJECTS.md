@@ -151,6 +151,7 @@ Pollinations.AI is used in various projects, including:
 | 🆕 [LineSketch AI](https://linesketch-muse.lovable.app/) | LineSketch AI is a minimalist web app that turns ideas into clean... | ArslanDevelop |
 | 🆕 [Ecoverse AI](https://ecoverse.cc) ([⭐ 0](https://github.com/achyuth0/Ecoverse-doc)) | Ecoverse is an AI-powered waste-recognition platform that helps users instantly... | achyuth0 |
 | 🆕 🇧🇷 [Cinepoca](https://cinepoca.com.br) | Cinepoca serves as a fully AI-driven hub for movie enthusiasts. Our project... | victorchiq |
+| 🆕 [Flowgen](https://flowgen.puter.site/) | A high-performance, web-based AI image generation studio built on the Puter.js... | alinaaa20708-ops |
 
 ### Games 🎲
 

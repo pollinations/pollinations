@@ -1,4 +1,4 @@
-name: Post to Discord
+name: Discord Weekly News
 
 on:
   push:

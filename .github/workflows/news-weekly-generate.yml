@@ -11,6 +11,7 @@ jobs:
     permissions:
       contents: write
       pull-requests: write
+      issues: write  # Required for adding labels via REST API
 
     steps:
       - name: Checkout code

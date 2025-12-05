@@ -84,8 +84,8 @@ export function prepareMetadata(
     hasRequestBody: boolean = false,
 ): Record<string, string> {
     const metadata: Record<string, string> = {
-        // Original URL information
-        originalUrl: url.toString().substring(0, 2048),
+        // Original URL information (truncated to leave room for other metadata)
+        originalUrl: url.toString().substring(0, 512),
         cachedAt: new Date().toISOString(),
         isStreaming: isStreaming.toString(),
         responseSize: contentSize.toString(),

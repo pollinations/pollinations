@@ -81,8 +81,20 @@ export const textCache = createMiddleware<TextCacheEnv>(async (c, next) => {
     if (c.req.method === "POST" || c.req.method === "PUT") {
         try {
             bodyText = await c.req.raw.clone().text();
+            if (!bodyText) {
+                // Empty body for POST/PUT - skip cache to avoid key collision
+                log.debug(
+                    "[TEXT-CACHE] Empty body for POST/PUT, skipping cache",
+                );
+                return next();
+            }
         } catch {
-            log.debug("[TEXT-CACHE] Could not read request body");
+            // Body read failed - skip cache to avoid key collision
+            // All POST /v1/chat/completions would share same key without body
+            log.warn(
+                "[TEXT-CACHE] Could not read request body, skipping cache",
+            );
+            return next();
         }
     }
 
@@ -115,11 +127,6 @@ export const textCache = createMiddleware<TextCacheEnv>(async (c, next) => {
         log.debug("[TEXT-CACHE] Not caching non-OK response: {status}", {
             status: c.res?.status,
         });
-        return;
-    }
-
-    // Don't cache if already a cache hit (shouldn't happen, but safety check)
-    if (c.res.headers.get("x-cache") === "HIT") {
         return;
     }
 

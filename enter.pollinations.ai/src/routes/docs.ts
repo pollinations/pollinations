@@ -3,7 +3,9 @@ import { Scalar } from "@scalar/hono-api-reference";
 import { openAPIRouteHandler } from "hono-openapi";
 import type { Env } from "@/env.ts";
 
-// Transform OpenAPI paths to remove /generate/ prefix for cleaner gen.pollinations.ai URLs
+// Transform OpenAPI schema for gen.pollinations.ai:
+// 1. Remove /generate/ prefix from paths
+// 2. Add x-tagGroups for Scalar sidebar organization
 function transformOpenAPISchema(
     schema: Record<string, unknown>,
 ): Record<string, unknown> {
@@ -17,7 +19,12 @@ function transformOpenAPISchema(
         newPaths[cleanPath] = value;
     }
 
-    return { ...schema, paths: newPaths };
+    return {
+        ...schema,
+        paths: newPaths,
+        // Scalar extension: group tags to prevent "Authentication" grouping
+        "x-tagGroups": [{ name: "API", tags: ["gen.pollinations.ai"] }],
+    };
 }
 
 export const createDocsRoutes = (apiRouter: Hono<Env>) => {
@@ -64,7 +71,7 @@ export const createDocsRoutes = (apiRouter: Hono<Env>) => {
                             "",
                             "## Quick Start",
                             "",
-                            "Get your API key at https://gen.pollinations.ai",
+                            "Get your API key at https://enter.pollinations.ai",
                             "",
                             "### Image Generation",
                             "```bash",
@@ -118,7 +125,7 @@ export const createDocsRoutes = (apiRouter: Hono<Env>) => {
                                 scheme: "bearer",
                                 bearerFormat: "API Key",
                                 description:
-                                    "API key from gen.pollinations.ai dashboard",
+                                    "API key from enter.pollinations.ai dashboard",
                             },
                         },
                     },
@@ -133,13 +140,6 @@ export const createDocsRoutes = (apiRouter: Hono<Env>) => {
                             name: "gen.pollinations.ai",
                             description:
                                 "Generate text, images, and videos using AI models",
-                        },
-                    ],
-                    // Use x-tagGroups to prevent Scalar from grouping under "Authentication"
-                    "x-tagGroups": [
-                        {
-                            name: "API",
-                            tags: ["gen.pollinations.ai"],
                         },
                     ],
                 },

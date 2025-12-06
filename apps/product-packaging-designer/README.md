@@ -158,7 +158,7 @@ product-packaging-designer/
 
 ## License
 
-This project is part of the Pollinations Hacktoberfest 2025 collection. See the main repository for license details.
+This app is part of the Pollinations Hacktoberfest 2025 collection. See the main repository for license details.
 
 ## Credits
 

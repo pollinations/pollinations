@@ -6,7 +6,7 @@
 
 ## 🌟 **Project Overview**
 
-Transform your RPG experience with cutting-edge AI technology! This project combines advanced language models with real-time image generation to create an infinite, personalized fantasy adventure. Every story is unique, every scene is visualized, and every choice matters.
+Transform your RPG experience with cutting-edge AI technology! This app combines advanced language models with real-time image generation to create an infinite, personalized fantasy adventure. Every story is unique, every scene is visualized, and every choice matters.
 
 ### 🎯 **Why This Project?**
 
@@ -444,7 +444,7 @@ Hot reload is enabled for rapid development iteration.
 
 ## 📝 **Contributing to the Project**
 
-This project is part of **Hacktoberfest 2025**. Contributions welcome!
+This app is part of **Hacktoberfest 2025**. Contributions welcome!
 
 ### **How to Contribute**
 1. Fork the repository
@@ -492,7 +492,7 @@ This project is part of **Hacktoberfest 2025**. Contributions welcome!
 
 ## 📄 **License & Legal**
 
-This project is part of the Pollinations ecosystem. Check the main repository for license details.
+This app is part of the Pollinations ecosystem. Check the main repository for license details.
 
 ### **Third-Party Libraries**
 - React, TypeScript, Vite (MIT License)

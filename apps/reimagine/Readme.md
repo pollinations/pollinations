@@ -124,7 +124,7 @@ https://image.pollinations.ai/prompt/[encoded-prompt]/?model=[model]&image=[imag
 
 ## 📄 License
 
-This project is licensed under the MIT License - see the LICENSE file for details.
+This app is licensed under the MIT License - see the LICENSE file for details.
 
 ---
 

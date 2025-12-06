@@ -128,6 +128,17 @@ export const socialBotsProjects = [
     "language": "es",
     "submissionDate": "2025-12-04",
     "order": 5
+  },
+  {
+    "name": "TeleChars AI",
+    "url": "https://extras.marcosfrg.x10.mx",
+    "description": "**Ya había enviado este proyecto antes, pero ahora lo hago por enter.pollinations.ai**\n\nMi proyecto es una plataforma de creación de personajes con IA para Telegram, en la cual puedes:\n* Darle una personalidad única a tus personaje\n* Ajustar sus parámetros de generación\n* Añadirle conocimiento y ejemplos de conversación ilimitados\n* Poner tu propia API Key de Pollinations para tener acceso a más motores IA y contexto\n\n### Los telecharbots tienen/pueden:\n* STM y LTM para seguir la conversación sin olvidar cosas importantes, para más naturalidad\n* Ver imágenes y oír audios\n\n**Próximamente:**\n* Habrán más idiomas\n* Se le podrán añadir comandos que le manden una solicitud a un script en tu propio servidor y mandar la respuesta a Telegram\n\n### Project URL\n\nhttps://extras.marcosfrg.x10.mx\n\n### GitHub Repository URL\n\n_No response_\n\n### Discord Username\n\n@marcosfrgames08\n\n### Project Category\n\nSocial Bots 🤖\n\n### Project Languages\n\nes, en\n\n### Additional Information\n\nSi hay algún bug me dicen 👀\nEstoy más activo en [Telegram](https://t.me/MarcosFRGames)",
+    "author": "marcosfrgames08",
+    "repo": null,
+    "category": "socialBots",
+    "language": "es",
+    "submissionDate": "2025-12-06",
+    "order": 5
   }
 
 

@@ -237,16 +237,16 @@ Pollinations.AI is used in various projects, including:
 
 | Project | Description | Creator |
 |---------|-------------|--------|
-| CatGPT Meme Generator 🐱 ([⭐ 5](https://github.com/pollinations/pollinations/tree/main/hacktoberfest-2025/example-catgpt)) | Transform your questions into sassy cat wisdom! AI-powered meme generator that... | @voodoohop |
-| Elevator Challenge 🚀 ([⭐ 4](https://github.com/pollinations/pollinations/tree/main/hacktoberfest-2025/example-elevator-challenge)) | React + Vite game inspired by Hitchhiker's Guide to the Galaxy. An interactive... | @voodoohop |
-| AI Dungeon Master 🐉 ([⭐ 3](https://github.com/pollinations/pollinations/tree/main/hacktoberfest-2025/ai-dungeon-master)) | Interactive text-based RPG with AI-powered storytelling. Uses Pollinations text... | @codevector-2003 |
-| [🎭 Opposite Prompt Generator](https://opposite-prompt-generator.pollinations.ai) ([⭐ 0](https://github.com/pollinations/pollinations/tree/main/hacktoberfest-2025/opposite-prompt-generator)) | Transform any image prompt into its semantic opposite — flipping key attributes... | @Ank17_Developer |
-| Virtual Makeup Try-On 💄 ([⭐ 0](https://github.com/pollinations/pollinations/tree/main/hacktoberfest-2025/virtual-makeup)) | AI-powered virtual makeup application tool. Uses Pollinations image generation... | @anmolsah |
-| Product Packaging Designer 📦 ([⭐ 0](https://github.com/pollinations/pollinations/tree/main/hacktoberfest-2025/product-packaging-designer)) | Design custom product packaging with AI assistance. Uses Pollinations image... | @prateekverma145 |
-| Map to Isometric Converter 🗺️ ([⭐ 0](https://github.com/pollinations/pollinations/tree/main/hacktoberfest-2025/map-to-isometric)) | Convert 2D maps and images into beautiful isometric 3D representations using... | @AdityaTel89 |
-| Micro Pollinations AI 🔬 ([⭐ 0](https://github.com/pollinations/pollinations/tree/main/hacktoberfest-2025/micro.pollinations.ai)) | Lightweight, minimal Pollinations AI interface. A tiny but powerful frontend... | @Jay-1409 |
-| Food Calorie Annotator 🍕 ([⭐ 0](https://github.com/pollinations/pollinations/tree/main/hacktoberfest-2025/food-calorie-annotator)) | AI-powered food image analyzer that estimates calories and nutritional... | @pollinations |
-| Roblox NPC Creator 🎮 ([⭐ 0](https://github.com/pollinations/pollinations/tree/main/hacktoberfest-2025/roblox-npc-creator)) | Create custom Roblox NPC characters with AI-generated descriptions and... | @pollinations |
+| CatGPT Meme Generator 🐱 ([⭐ 5](https://github.com/pollinations/pollinations/tree/main/apps/example-catgpt)) | Transform your questions into sassy cat wisdom! AI-powered meme generator that... | @voodoohop |
+| Elevator Challenge 🚀 ([⭐ 4](https://github.com/pollinations/pollinations/tree/main/apps/example-elevator-challenge)) | React + Vite game inspired by Hitchhiker's Guide to the Galaxy. An interactive... | @voodoohop |
+| AI Dungeon Master 🐉 ([⭐ 3](https://github.com/pollinations/pollinations/tree/main/apps/ai-dungeon-master)) | Interactive text-based RPG with AI-powered storytelling. Uses Pollinations text... | @codevector-2003 |
+| [🎭 Opposite Prompt Generator](https://opposite-prompt-generator.pollinations.ai) ([⭐ 0](https://github.com/pollinations/pollinations/tree/main/apps/opposite-prompt-generator)) | Transform any image prompt into its semantic opposite — flipping key attributes... | @Ank17_Developer |
+| Virtual Makeup Try-On 💄 ([⭐ 0](https://github.com/pollinations/pollinations/tree/main/apps/virtual-makeup)) | AI-powered virtual makeup application tool. Uses Pollinations image generation... | @anmolsah |
+| Product Packaging Designer 📦 ([⭐ 0](https://github.com/pollinations/pollinations/tree/main/apps/product-packaging-designer)) | Design custom product packaging with AI assistance. Uses Pollinations image... | @prateekverma145 |
+| Map to Isometric Converter 🗺️ ([⭐ 0](https://github.com/pollinations/pollinations/tree/main/apps/map-to-isometric)) | Convert 2D maps and images into beautiful isometric 3D representations using... | @AdityaTel89 |
+| Micro Pollinations AI 🔬 ([⭐ 0](https://github.com/pollinations/pollinations/tree/main/apps/micro.pollinations.ai)) | Lightweight, minimal Pollinations AI interface. A tiny but powerful frontend... | @Jay-1409 |
+| Food Calorie Annotator 🍕 ([⭐ 0](https://github.com/pollinations/pollinations/tree/main/apps/food-calorie-annotator)) | AI-powered food image analyzer that estimates calories and nutritional... | @pollinations |
+| Roblox NPC Creator 🎮 ([⭐ 0](https://github.com/pollinations/pollinations/tree/main/apps/roblox-npc-creator)) | Create custom Roblox NPC characters with AI-generated descriptions and... | @pollinations |
 
 ### Vibe Coding ✨
 

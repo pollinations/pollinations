@@ -190,7 +190,7 @@ interface StoryEntry {
 ```bash
 # Clone the repository
 git clone https://github.com/pollinations/pollinations.git
-cd pollinations/hacktoberfest-2025/ai-dungeon-master
+cd pollinations/apps/ai-dungeon-master
 
 # Install dependencies
 npm install
@@ -509,7 +509,7 @@ This project is part of the Pollinations ecosystem. Check the main repository fo
 1. **Clone & Install**:
    ```bash
    git clone https://github.com/pollinations/pollinations.git
-   cd "pollinations/hacktoberfest-2025/ai-dungeon-master"
+   cd "pollinations/apps/ai-dungeon-master"
    npm install
    npm run dev
    ```

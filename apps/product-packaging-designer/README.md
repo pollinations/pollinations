@@ -54,7 +54,7 @@ This React app uses Pollinations AI to generate realistic product packaging mock
 1. **Clone the repository:**
 ```bash
 git clone https://github.com/pollinations/pollinations.git
-cd pollinations/hacktoberfest-2025/product-packaging-designer
+cd pollinations/apps/product-packaging-designer
 ```
 
 2. **Install dependencies:**

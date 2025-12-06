@@ -11,7 +11,7 @@ Brief explanation (2-3 sentences). What problem does it solve?
 ## Quick Start
 
 ```bash
-cd hacktoberfest-2025/your-app-name
+cd apps/your-app-name
 npm install
 npm run dev
 ```

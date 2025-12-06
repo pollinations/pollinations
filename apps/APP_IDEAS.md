@@ -13,6 +13,7 @@ A community-curated list of app ideas. **Add your ideas via PR - we'll turn them
 1. **Fork this repo**
 2. **Add your ideas** to the appropriate categories below (add as many as you want!)
 3. **For each idea, include these details:**
+
     ```markdown
     ### [Your App Name]
 
@@ -27,6 +28,7 @@ A community-curated list of app ideas. **Add your ideas via PR - we'll turn them
         **Difficulty:** beginner/intermediate/advanced
         **Bonus points:** Optional advanced features
     ```
+
 4. **Submit PR** with title: `Add app idea: [App Name]`
 5. **We'll create an issue** from your idea for others to build!
 
@@ -128,7 +130,7 @@ _Add your creative app ideas here! 👆_
 ### Meeting Notes Visualizer
 
 **What it does:** Convert meeting notes into visual diagrams and flowcharts automatically  
-**User story:** "As a project manager, I want to visualize meeting discussions so that my team can better understand action items and workflows"  
+**User story:** "As a team lead, I want to visualize meeting discussions so that my team can better understand action items and workflows"  
 **APIs needed:** Both (text for parsing + image for diagrams)  
 **Key features:**
 
@@ -271,7 +273,7 @@ _Add your game ideas here! 👆_
 ### Code Architecture Diagram Generator
 
 **What it does:** Upload code and get automated architecture diagrams showing structure and dependencies  
-**User story:** "As a software architect, I want to visualize codebases quickly so that I can understand project structure"  
+**User story:** "As a software architect, I want to visualize codebases quickly so that I can understand code structure"  
 **APIs needed:** Both (text for code analysis + image for diagrams)  
 **Key features:**
 
@@ -474,8 +476,8 @@ _Add your game integration ideas here! 👆_
 1. Fork the repo
 2. Add your idea to the appropriate category above
 3. Use the detailed format (see examples)
-4. Submit PR with title: `[Hacktoberfest] Add project idea: [App Name]`
-5. We'll turn it into a Hacktoberfest issue!
+4. Submit PR with title: `Add app idea: [App Name]`
+5. We'll turn it into an issue!
 
 ### Or Comment on Issue
 

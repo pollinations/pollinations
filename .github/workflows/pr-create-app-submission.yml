@@ -43,7 +43,7 @@ jobs:
         with:
           script: |
             const labels = [
-              { name: 'app:review', color: '0e8a16', description: 'Project submission under review' },
+              { name: 'app:review', color: '0e8a16', description: 'App submission under review' },
               { name: 'app:info-needed', color: 'fbca04', description: 'Awaiting response from submitter' },
               { name: 'app:approved', color: '1d76db', description: 'Approved and merged' },
               { name: 'app:denied', color: 'd93f0b', description: 'Submission rejected' }
@@ -175,7 +175,7 @@ jobs:
               labels: ['app:info-needed']
             });
 
-      - name: Add project and create PR
+      - name: Add app and create PR
         if: steps.parse.outputs.needs_info != 'true'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -203,7 +203,7 @@ jobs:
           BRANCH="auto/app-${ISSUE_NUMBER}-${SLUG}"
           git checkout -b "$BRANCH"
           
-          # Format project entry
+          # Format app entry
           TODAY=$(date +%Y-%m-%d)
           ENTRY=$(echo "$PROJECT_JSON" | jq --arg date "$TODAY" '. + {submissionDate: $date, order: 5}')
           
@@ -238,7 +238,7 @@ jobs:
           else
             gh pr create \
               --title "Add $PROJECT_NAME to $CATEGORY" \
-              --body "Adds **$PROJECT_NAME** to **$CATEGORY** projects.
+              --body "Adds **$PROJECT_NAME** to **$CATEGORY** apps.
 
           Co-authored-by: $ISSUE_AUTHOR <${ISSUE_AUTHOR_ID}+${ISSUE_AUTHOR}@users.noreply.github.com>
           Fixes #$ISSUE_NUMBER" \

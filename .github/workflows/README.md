@@ -71,7 +71,7 @@ Secrets required: `POLLY_BOT_APP_ID`, `POLLY_BOT_PRIVATE_KEY`
 
 ### Project Management
 
--   **new-issue-add-to-project.yml** - Adds all new issues to Project #20.
+-   **issue-add-to-project.yml** - Adds all new issues to Project #20.
 -   **close-discarded-issues.yml** - Auto-closes issues marked "Discarded" in project.
 
 ### Maintenance

@@ -18,7 +18,7 @@ Secrets required: `POLLY_BOT_APP_ID`, `POLLY_BOT_PRIVATE_KEY`
 | --------------- | -------------------------------- | -------------------------------------------- |
 | `inbox:github`  | External issue needs triage      | `github-issue-labeler.yml`                   |
 | `inbox:discord` | Issue created from Discord       | `discord-create-issue.yml` (via Discord bot) |
-| `inbox:news`    | PR related to weekly news update | `news-weekly-generate.yml`                   |
+| `inbox:news`    | PR related to weekly news update | `github-weekly-pr-to-news.yml`               |
 
 ### App Submission Labels
 
@@ -43,9 +43,9 @@ Secrets required: `POLLY_BOT_APP_ID`, `POLLY_BOT_PRIVATE_KEY`
 
 ### News & Discord
 
--   **news-weekly-generate.yml** - Runs Monday 00:00 UTC. Scans merged PRs, generates `NEWS/{date}.md` PR with `inbox:news` label.
+-   **github-weekly-pr-to-news.yml** - Runs Monday 00:00 UTC. Scans merged PRs, generates `NEWS/{date}.md` PR with `inbox:news` label.
+-   **website-weekly-news.yml** - When NEWS PR merges, updates `pollinations.ai/src/config/newsList.js` for the website.
 -   **discord-weekly-news.yml** - Triggered when `NEWS/*.md` is pushed. Posts weekly digest to Discord.
--   **update-newslist.yml** - When NEWS PR merges, updates `pollinations.ai/src/config/newsList.js` for the website.
 -   **discord-pr-merged.yml** - Posts every merged PR to Discord immediately.
 
 ### Project Management
@@ -78,7 +78,7 @@ github-issue-labeler.yml        discord-create-issue.yml
 │  Monday 00:00 UTC (cron)                                        │
 │         │                                                       │
 │         ▼                                                       │
-│  news-weekly-generate.yml                                       │
+│  github-weekly-pr-to-news.yml                                   │
 │         │                                                       │
 │         ▼                                                       │
 │  Scans all merged PRs (GraphQL)                                 │
@@ -93,7 +93,7 @@ github-issue-labeler.yml        discord-create-issue.yml
 │  TWO workflows trigger in parallel:                             │
 │                                                                 │
 │  ┌─────────────────────────┐  ┌─────────────────────────────┐   │
-│  │ discord-weekly-news.yml │  │ update-newslist.yml         │   │
+│  │ discord-weekly-news.yml │  │ website-weekly-news.yml     │   │
 │  │ (push to NEWS/*.md)     │  │ (PR merged with NEWS/*.md)  │   │
 │  │         │               │  │         │                   │   │
 │  │         ▼               │  │         ▼                   │   │

@@ -39,7 +39,7 @@ function RouteComponent() {
                             as="button"
                             onClick={handleSignIn}
                             disabled={loading}
-                            className="bg-amber-200 text-amber-900 hover:brightness-105"
+                            className="bg-amber-200 text-amber-900 hover:brightness-105 whitespace-nowrap"
                         >
                             {loading ? "Signing in..." : "Sign in with Github"}
                         </Button>
@@ -47,7 +47,7 @@ function RouteComponent() {
                             href="https://github.com/pollinations/pollinations/issues/5543"
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="absolute -bottom-4 right-0 text-xs text-gray-500 hover:text-gray-700 underline"
+                            className="absolute left-1/2 -translate-x-1/2 -bottom-5 text-xs text-gray-500 hover:text-gray-700 underline whitespace-nowrap"
                         >
                             more options?
                         </a>
@@ -55,9 +55,9 @@ function RouteComponent() {
                     <Button
                         as="a"
                         href="/api/docs"
-                        className="bg-gray-900 text-white hover:!brightness-90"
+                        className="bg-gray-900 text-white hover:!brightness-90 whitespace-nowrap"
                     >
-                        API Reference
+                        API Ref.
                     </Button>
                 </Header>
                 <FAQ />

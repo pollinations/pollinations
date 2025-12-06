@@ -6,7 +6,7 @@
 ## Deployment Options
 
 ### 1. GitHub Pages (Recommended)
-The project is configured for automatic deployment to GitHub Pages:
+The app is configured for automatic deployment to GitHub Pages:
 
 #### Setup Steps:
 1. **Fork the Repository**
@@ -90,7 +90,7 @@ VITE_IMAGE_API_URL=https://image.pollinations.ai
 ```
 
 ### Build Optimization
-The project is pre-configured for optimal performance:
+The app is pre-configured for optimal performance:
 - Code splitting
 - Asset optimization
 - Tree shaking

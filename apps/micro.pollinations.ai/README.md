@@ -34,7 +34,7 @@ npm --version
 ### 1. Installation
 
 ```bash
-# Clone and navigate to the project
+# Clone and navigate to the app
 cd micro.pollinations.ai
 
 # Install dependencies

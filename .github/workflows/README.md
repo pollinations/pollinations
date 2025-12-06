@@ -54,7 +54,7 @@ Secrets required: `POLLY_BOT_APP_ID`, `POLLY_BOT_PRIVATE_KEY`
 
 ### AI Agents
 
--   **issue-pr-review-claude.yml** - Claude Opus agent triggered by `@claude` in issues/PRs. Performs code reviews and answers questions.
+-   **issue-pr-review-changes.yml** - Claude Opus agent triggered by `@claude` in issues/PRs. Performs code reviews and answers questions.
 
 ### Triage
 

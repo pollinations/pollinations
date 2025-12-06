@@ -27,16 +27,16 @@ jobs:
         with:
           node-version: "18"
           cache: "npm"
-          cache-dependency-path: "hacktoberfest-2025/ai-dungeon-master/package-lock.json"
+          cache-dependency-path: "apps/ai-dungeon-master/package-lock.json"
 
       - name: Install dependencies
         run: |
-          cd hacktoberfest-2025/ai-dungeon-master
+          cd apps/ai-dungeon-master
           npm ci
 
       - name: Build project
         run: |
-          cd hacktoberfest-2025/ai-dungeon-master
+          cd apps/ai-dungeon-master
           npm run build
 
       - name: Setup Pages
@@ -45,7 +45,7 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: "hacktoberfest-2025/ai-dungeon-master/dist"
+          path: "apps/ai-dungeon-master/dist"
 
   deploy:
     environment:

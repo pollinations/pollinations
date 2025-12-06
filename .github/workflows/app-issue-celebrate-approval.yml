@@ -1,4 +1,4 @@
-name: Celebrate APPS PR Merged
+name: App Issue Celebrate Approval
 
 on:
   pull_request:

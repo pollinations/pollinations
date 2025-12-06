@@ -1,4 +1,4 @@
-name: Create Issue from Discord
+name: Issue Create from Discord
 
 on:
   repository_dispatch:

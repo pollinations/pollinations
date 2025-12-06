@@ -1,0 +1,107 @@
+name: PR Update Project Status
+
+on:
+  pull_request:
+    types: [opened, reopened, ready_for_review, converted_to_draft, closed]
+
+jobs:
+  update-project-status:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Add to Project
+        uses: actions/add-to-project@v1.0.2
+        id: add-project
+        with:
+          project-url: https://github.com/orgs/pollinations/projects/20
+          github-token: ${{ secrets.POLLI_PAT }}
+
+      - name: Update Status Field
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.POLLI_PAT }}
+          script: |
+            const PROJECT_ID = '${{ steps.add-project.outputs.itemId }}';
+            const PR = context.payload.pull_request;
+            
+            // Determine desired status
+            let statusName = 'In Review'; // Default for open, non-draft PRs
+            
+            if (PR.merged) {
+              statusName = 'Done';
+            } else if (PR.state === 'closed') {
+              statusName = 'Discarded';
+            } else if (PR.draft) {
+              statusName = 'In Progress';
+            }
+            
+            console.log(`PR #${PR.number} state: ${PR.state}, merged: ${PR.merged}, draft: ${PR.draft} -> Target Status: "${statusName}"`);
+
+            // GraphQL to find the Project Node ID and Status Field details
+            const projectQuery = `
+              query($org: String!, $number: Int!) {
+                organization(login: $org) {
+                  projectV2(number: $number) {
+                    id
+                    fields(first: 20) {
+                      nodes {
+                        ... on ProjectV2SingleSelectField {
+                          id
+                          name
+                          options {
+                            id
+                            name
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            `;
+
+            const projectData = await github.graphql(projectQuery, {
+              org: 'pollinations',
+              number: 20
+            });
+
+            const project = projectData.organization.projectV2;
+            const statusField = project.fields.nodes.find(f => f.name === 'Status');
+            
+            if (!statusField) {
+              console.log('Status field not found in project');
+              return;
+            }
+
+            const statusOption = statusField.options.find(o => o.name === statusName);
+            
+            if (!statusOption) {
+              console.log(`Status option "${statusName}" not found in Status field. Available options: ${statusField.options.map(o => o.name).join(', ')}`);
+              return;
+            }
+
+            // Update the field
+            const updateQuery = `
+              mutation($projectId: ID!, $itemId: ID!, $fieldId: ID!, $value: String!) {
+                updateProjectV2ItemFieldValue(
+                  input: {
+                    projectId: $projectId
+                    itemId: $itemId
+                    fieldId: $fieldId
+                    value: { singleSelectOptionId: $value }
+                  }
+                ) {
+                  projectV2Item {
+                    id
+                  }
+                }
+              }
+            `;
+
+            await github.graphql(updateQuery, {
+              projectId: project.id,
+              itemId: PROJECT_ID,
+              fieldId: statusField.id,
+              value: statusOption.id
+            });
+            
+            console.log(`Successfully updated item ${PROJECT_ID} status to "${statusName}"`);

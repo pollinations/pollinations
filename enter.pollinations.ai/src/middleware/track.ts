@@ -162,7 +162,7 @@ export const track = (eventType: EventType) =>
 
                 const event = createTrackingEvent({
                     requestId: c.get("requestId"),
-                    requestPath: `${baseRoutePath(c)}${routePath(c)}`,
+                    requestPath: `${routePath(c)}`,
                     startTime,
                     endTime,
                     environment: c.env.ENVIRONMENT,
@@ -376,6 +376,7 @@ function createTrackingEvent({
         modelRequested: requestTracking.modelRequested,
         resolvedModelRequested: requestTracking.resolvedModelRequested,
         modelUsed: responseTracking.modelUsed,
+        modelProviderUsed: requestTracking.modelProvider,
 
         isBilledUsage: responseTracking.isBilledUsage,
 

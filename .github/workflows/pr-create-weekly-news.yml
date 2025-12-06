@@ -1,4 +1,4 @@
-name: News Weekly Generate
+name: PR Create Weekly News
 
 on:
   schedule:
@@ -38,4 +38,4 @@ jobs:
           GITHUB_TOKEN: ${{ steps.polly-bot.outputs.token }}
           POLLINATIONS_TOKEN: ${{ secrets.POLLINATIONS_TOKEN }}
           GITHUB_REPOSITORY: ${{ github.repository }}
-        run: python .github/scripts/news_generator.py
+        run: python .github/scripts/pr_create_weekly_news.py

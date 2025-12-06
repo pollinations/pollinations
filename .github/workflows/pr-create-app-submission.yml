@@ -1,11 +1,11 @@
-name: AI Review Project Submissions
+name: PR Create App Submission
 
 on:
   issues:
     types: [opened, edited, reopened]
   pull_request:
     paths:
-      - '.github/workflows/app-review.yml'  # Trigger on self to bootstrap
+      - '.github/workflows/pr-create-app-submission.yml'  # Trigger on self to bootstrap
   workflow_dispatch:
     inputs:
       issue_number:

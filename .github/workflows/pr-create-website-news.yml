@@ -1,20 +1,18 @@
-name: PR Code Review
+name: PR Create Website News
 
 on:
   pull_request:
-    types: [opened, synchronize]
-  workflow_dispatch:
-    inputs:
-      pr_number:
-        description: 'PR number to review'
-        required: true
-        type: number
+    types: [closed]
+    paths:
+      - 'NEWS/*.md'
 
 jobs:
-  code-review:
+  update-newslist:
+    # Only run if PR was merged (not just closed) and targeted main
+    if: github.event.pull_request.merged == true && github.event.pull_request.base.ref == 'main'
     runs-on: ubuntu-latest
     permissions:
-      contents: read
+      contents: write
       pull-requests: write
 
     steps:
@@ -28,7 +26,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0
+          ref: main  # Checkout main to get the merged NEWS file
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -39,12 +37,9 @@ jobs:
         run: |
           pip install requests
 
-      - name: Review PR Code
+      - name: Update newsList.js and Create PR
         env:
           GITHUB_TOKEN: ${{ steps.polly-bot.outputs.token }}
           POLLINATIONS_TOKEN: ${{ secrets.POLLINATIONS_TOKEN }}
-          PR_NUMBER: ${{ github.event.pull_request.number || github.event.inputs.pr_number }}
-          REPO_FULL_NAME: ${{ github.repository }}
-          EVENT_ACTION: ${{ github.event.action }}
-          IS_MANUAL: ${{ github.event_name == 'workflow_dispatch' }}
-        run: python .github/scripts/pr_code_review.py
+          GITHUB_REPOSITORY: ${{ github.repository }}
+        run: python .github/scripts/pr_create_website_news.py

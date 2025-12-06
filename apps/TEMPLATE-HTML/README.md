@@ -2,7 +2,7 @@
 
 > One sentence about what this does
 
-**💡 Tip:** Before building, [propose your app idea](https://github.com/pollinations/pollinations/issues/new) with `[Hacktoberfest App]` in the title to get early feedback!
+**💡 Tip:** Before building, [propose your app idea](https://github.com/pollinations/pollinations/issues/new) using the "SubmitApp" template to get early feedback!
 
 ## What It Does
 
@@ -17,9 +17,9 @@ Or visit the live demo: [link here]
 
 ## Features
 
-- Feature 1
-- Feature 2
-- Feature 3
+-   Feature 1
+-   Feature 2
+-   Feature 3
 
 ## How It Works
 
@@ -27,7 +27,7 @@ Uses Pollinations API to [explain what you're doing with it].
 
 ```javascript
 // Example API call from your code
-fetch('https://image.pollinations.ai/prompt/cool-cat')
+fetch("https://image.pollinations.ai/prompt/cool-cat");
 ```
 
 ## Screenshots
@@ -36,4 +36,4 @@ fetch('https://image.pollinations.ai/prompt/cool-cat')
 
 ---
 
-Made for Hacktoberfest 2025 🎃
+Made with Pollinations AI 🐝

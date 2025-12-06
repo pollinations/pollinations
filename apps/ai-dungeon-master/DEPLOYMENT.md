@@ -1,18 +1,18 @@
 # AI Dungeon Master - Deployment Guide
 
 ## Live Demo
-**Play Now:** [AI Dungeon Master Live Demo](https://codevector-2003.github.io/pollinations/hacktoberfest-2025/ai-dungeon-master/)
+**Play Now:** [AI Dungeon Master Live Demo](https://codevector-2003.github.io/pollinations/apps/ai-dungeon-master/)
 
 ## Deployment Options
 
 ### 1. GitHub Pages (Recommended)
-The project is configured for automatic deployment to GitHub Pages:
+The app is configured for automatic deployment to GitHub Pages:
 
 #### Setup Steps:
 1. **Fork the Repository**
    ```bash
    git clone https://github.com/codevector-2003/pollinations.git
-   cd pollinations/hacktoberfest-2025/ai-dungeon-master
+   cd pollinations/apps/ai-dungeon-master
    ```
 
 2. **Enable GitHub Pages**
@@ -39,7 +39,7 @@ The project is configured for automatic deployment to GitHub Pages:
 #### Quick Start
 ```bash
 # Navigate to project directory
-cd hacktoberfest-2025/ai-dungeon-master
+cd apps/ai-dungeon-master
 
 # Install dependencies
 npm install
@@ -90,7 +90,7 @@ VITE_IMAGE_API_URL=https://image.pollinations.ai
 ```
 
 ### Build Optimization
-The project is pre-configured for optimal performance:
+The app is pre-configured for optimal performance:
 - Code splitting
 - Asset optimization
 - Tree shaking

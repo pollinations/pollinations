@@ -6,7 +6,7 @@ Transform your questions into sassy cat wisdom! A collaboration between [Pollina
 
 CatGPT is an AI-powered meme generator that creates personalized cat comics in response to your questions. Just like the original CatGPT comic, our feline friend responds with lazy, sarcastic wisdom while treating humans as mere servants.
 
-This project emerged from a collaboration with Tanika Godbole, with the idea coming from Dr. Julia Degen. We're using OpenAI's GPT-Image-1 model through Pollinations.AI to democratize access to AI-generated cat wisdom!
+This app emerged from a collaboration with Tanika Godbole, with the idea coming from Dr. Julia Degen. We're using OpenAI's GPT-Image-1 model through Pollinations.AI to democratize access to AI-generated cat wisdom!
 
 ### 🎨 Original Inspiration
 
@@ -63,7 +63,7 @@ Here are some AI-generated CatGPT memes created with our generator:
 
 ## 🔧 API Migration (Nov 2025)
 
-This project has been migrated from the legacy `image.pollinations.ai` to the new `enter.pollinations.ai` API:
+This app has been migrated from the legacy `image.pollinations.ai` to the new `enter.pollinations.ai` API:
 
 - **Old**: `https://image.pollinations.ai/prompt/...?model=nanobanana`
 - **New**: `https://enter.pollinations.ai/api/generate/image/...?model=nanobanana`
@@ -76,7 +76,7 @@ This project has been migrated from the legacy `image.pollinations.ai` to the ne
 
 ## 💡 The Story
 
-This project started from a LinkedIn post announcing the collaboration between Thomas Haferlach (Pollinations.AI) and Tanika Godbole. The goal is to create a fun, viral meme generator while ensuring fair attribution and revenue sharing with the original creator - something often overlooked in the AI space.
+This app started from a LinkedIn post announcing the collaboration between Thomas Haferlach (Pollinations.AI) and Tanika Godbole. The goal is to create a fun, viral meme generator while ensuring fair attribution and revenue sharing with the original creator - something often overlooked in the AI space.
 
 ## 🐾 Support
 
@@ -96,7 +96,7 @@ Keep your cats happy with premium pet food from our sponsor [PuraPep](https://ww
 # Clone the repository
 git clone https://github.com/pollinations/catgpt.git
 
-# Navigate to the project
+# Navigate to the app
 cd catgpt
 
 # Open in your browser
@@ -127,7 +127,7 @@ The site should be available within a few minutes!
 
 ## 📝 License
 
-This project is a collaboration between Pollinations.AI and Tanika Godbole. The CatGPT character and concept are the intellectual property of Tanika Godbole. AI-generated variations are created with permission and include revenue sharing with the original creator.
+This app is a collaboration between Pollinations.AI and Tanika Godbole. The CatGPT character and concept are the intellectual property of Tanika Godbole. AI-generated variations are created with permission and include revenue sharing with the original creator.
 
 ## 🌈 Fun Facts
 

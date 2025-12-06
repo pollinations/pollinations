@@ -8,7 +8,7 @@ Upload a map view from Google Maps, OpenStreetMap, or any mapping service, and t
 
 ## Quick Start
 
-cd hacktoberfest-2025/map-to-isometric
+cd apps/map-to-isometric
 npm install
 npm run dev
 

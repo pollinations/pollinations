@@ -52,6 +52,10 @@ Secrets required: `POLLY_BOT_APP_ID`, `POLLY_BOT_PRIVATE_KEY`
 
 ## Workflows
 
+### AI Agents
+
+-   **issue-pr-agent-claude.yml** - Claude Opus agent triggered by `@claude` in issues/PRs. Performs code reviews and answers questions.
+
 ### Triage
 
 -   **issue-label-external.yml** - Adds `inbox:github` to external issues. Skips if `inbox:discord` or `app:*` labels exist.
@@ -74,6 +78,10 @@ Secrets required: `POLLY_BOT_APP_ID`, `POLLY_BOT_PRIVATE_KEY`
 
 -   **issue-add-to-project.yml** - Adds all new issues to Project #20.
 -   **issue-close-discarded.yml** - Auto-closes issues marked "Discarded" in project.
+
+### CI & Testing
+
+-   **backend-run-tests.yml** - Runs backend tests for `text` and `image` services when files change.
 
 ### Maintenance
 

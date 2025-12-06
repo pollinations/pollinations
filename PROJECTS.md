@@ -2,7 +2,7 @@
 
 Pollinations.AI is used in various projects, including:
 
-### Hacktoberfest 2025 🎃
+### Featured Apps 📱
 
 | Project | Description | Creator |
 |---------|-------------|--------|

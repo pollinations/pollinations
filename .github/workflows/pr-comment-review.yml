@@ -1,18 +1,20 @@
-name: Update newsList.js
+name: PR Comment Review
 
 on:
   pull_request:
-    types: [closed]
-    paths:
-      - 'NEWS/*.md'
+    types: [opened, synchronize]
+  workflow_dispatch:
+    inputs:
+      pr_number:
+        description: 'PR number to review'
+        required: true
+        type: number
 
 jobs:
-  update-newslist:
-    # Only run if PR was merged (not just closed) and targeted main
-    if: github.event.pull_request.merged == true && github.event.pull_request.base.ref == 'main'
+  code-review:
     runs-on: ubuntu-latest
     permissions:
-      contents: write
+      contents: read
       pull-requests: write
 
     steps:
@@ -26,7 +28,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
-          ref: main  # Checkout main to get the merged NEWS file
+          fetch-depth: 0
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -37,9 +39,12 @@ jobs:
         run: |
           pip install requests
 
-      - name: Update newsList.js and Create PR
+      - name: Review PR Code
         env:
           GITHUB_TOKEN: ${{ steps.polly-bot.outputs.token }}
           POLLINATIONS_TOKEN: ${{ secrets.POLLINATIONS_TOKEN }}
-          GITHUB_REPOSITORY: ${{ github.repository }}
-        run: python .github/scripts/newslist_updater.py
+          PR_NUMBER: ${{ github.event.pull_request.number || github.event.inputs.pr_number }}
+          REPO_FULL_NAME: ${{ github.repository }}
+          EVENT_ACTION: ${{ github.event.action }}
+          IS_MANUAL: ${{ github.event_name == 'workflow_dispatch' }}
+        run: python .github/scripts/pr_comment_review.py

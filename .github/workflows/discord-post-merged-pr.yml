@@ -1,4 +1,4 @@
-name: Discord PR Merged
+name: Discord Post Merged PR
 
 on:
   pull_request_target:
@@ -48,4 +48,4 @@ jobs:
           PR_AUTHOR: ${{ github.event.pull_request.user.login }}
           PR_BRANCH: ${{ github.event.pull_request.head.ref }}
           PR_BASE_BRANCH: ${{ github.event.pull_request.base.ref }}
-        run: python .github/scripts/pr_review_discord.py
+        run: python .github/scripts/discord_post_merged_pr.py

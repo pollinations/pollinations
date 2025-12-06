@@ -16,8 +16,8 @@
  *    - Outputs the star count in various formats (plain, formatted, markdown)
  *
  * Usage:
- *   - Update project list: node update-project-stars.js
- *   - Get stars for repo: node update-project-stars.js owner/repo
+ *   - Update project list: node app_list_update_stars.js
+ *   - Get stars for repo: node app_list_update_stars.js owner/repo
  *
  */
 
@@ -185,7 +185,7 @@ async function fetchAndDisplayStars(ownerRepo) {
         if (!owner || !repo) {
             console.error('Invalid repository format. Please use "owner/repo"');
             console.error(
-                "Example: node update-project-stars.js pollinations/pollinations",
+                "Example: node app_list_update_stars.js pollinations/pollinations",
             );
             process.exit(1);
         }

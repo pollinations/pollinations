@@ -6,7 +6,7 @@ import {
 } from "@tanstack/react-router";
 import { hc } from "hono/client";
 import { useState } from "react";
-import type { PolarRoutes } from "../../routes/polar.ts";
+import { productSlugToUrlParam, type PolarRoutes } from "../../routes/polar.ts";
 import type { TiersRoutes } from "../../routes/tiers.ts";
 import {
     ApiKeyList,
@@ -153,7 +153,7 @@ function RouteComponent() {
 
     const handleBuyPollen = (slug: string) => {
         // Navigate directly to checkout endpoint - server will handle redirect
-        window.location.href = `/api/polar/checkout/${encodeURIComponent(slug)}?redirect=true`;
+        window.location.href = `/api/polar/checkout/${productSlugToUrlParam(slug)}?redirect=true`;
     };
     return (
         <div className="flex flex-col gap-6">

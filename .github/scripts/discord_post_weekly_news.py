@@ -9,7 +9,7 @@ from datetime import datetime, timedelta, timezone
 
 POLLINATIONS_API_BASE = "https://enter.pollinations.ai/api/generate/openai"
 MODEL = "gemini-large"
-NEWS_FILE_PATH = "NEWS.md"
+NEWS_FOLDER = "NEWS"
 
 
 def get_env(key: str, required: bool = True) -> str:
@@ -20,26 +20,69 @@ def get_env(key: str, required: bool = True) -> str:
     return value
 
 
-def get_latest_news_entry(news_content: str) -> tuple[str, str]:
-    """Extract the latest entry from NEWS.md
+def get_latest_news_file() -> tuple[str, str]:
+    """Find and read the latest news file from NEWS/ folder based on today's date and regex.
 
     Returns: (date, content) tuple
     """
-    # Pattern to match entries - permissive with whitespace for manual edits
-    # Matches: <!-- ENTRY:date --> (with flexible spacing)
-    # Followed by ### header line
-    # Then content until next entry or end
-    pattern = r'<!--\s*ENTRY:\s*([^\s]+)\s*-->\s*\n+###\s+[^\n]+\s*\n(.*?)(?=<!--\s*ENTRY:|\Z)'
-
-    matches = re.findall(pattern, news_content, re.DOTALL)
-
-    if not matches:
-        print("No entries found in NEWS.md")
+    if not os.path.exists(NEWS_FOLDER):
+        print(f"Error: {NEWS_FOLDER}/ folder not found")
         return None, None
 
-    # First match is the latest (newest at top)
-    date, content = matches[0]
-    return date, content.strip()
+    # Get all files in NEWS folder
+    all_files = os.listdir(NEWS_FOLDER)
+
+    # Date pattern: YYYY-MM-DD.md
+    date_pattern = re.compile(r'^(\d{4}-\d{2}-\d{2})\.md$')
+
+    today = datetime.now(timezone.utc).date()
+
+    # Find files matching the date pattern and parse dates
+    dated_files = []
+    for f in all_files:
+        match = date_pattern.match(f)
+        if match:
+            try:
+                file_date = datetime.strptime(match.group(1), '%Y-%m-%d').date()
+                dated_files.append((file_date, f))
+            except ValueError:
+                continue
+
+    if not dated_files:
+        print(f"No dated news files found in {NEWS_FOLDER}/")
+        return None, None
+
+    # Sort by date descending
+    dated_files.sort(key=lambda x: x[0], reverse=True)
+
+    # First, try to find today's file
+    selected_file = None
+    for file_date, filename in dated_files:
+        if file_date == today:
+            print(f"Found today's NEWS file: {filename}")
+            selected_file = (file_date, filename)
+            break
+
+    # If no file for today, get the most recent one
+    if not selected_file:
+        file_date, filename = dated_files[0]
+        print(f"No NEWS file for today ({today}), using most recent: {filename} ({file_date})")
+        selected_file = (file_date, filename)
+
+    entry_date = selected_file[0].strftime('%Y-%m-%d')
+    latest_file = selected_file[1]
+
+    # Read the file content
+    file_path = os.path.join(NEWS_FOLDER, latest_file)
+    with open(file_path, 'r', encoding='utf-8') as f:
+        content = f.read()
+
+    # Remove the header line "# Weekly Update - YYYY-MM-DD" to get just the entries
+    lines = content.split('\n')
+    if lines and lines[0].startswith('# Weekly Update'):
+        content = '\n'.join(lines[1:]).strip()
+
+    return entry_date, content
 
 
 def create_discord_prompt(news_entry: str, entry_date: str) -> tuple:
@@ -251,16 +294,8 @@ def main():
     pollinations_token = get_env('POLLINATIONS_TOKEN')
     discord_webhook = os.getenv('DISCORD_WEBHOOK_DIGEST') or get_env('DISCORD_WEBHOOK_URL')
 
-    # Read NEWS.md from local filesystem (checked out by workflow)
-    if not os.path.exists(NEWS_FILE_PATH):
-        print(f"Error: {NEWS_FILE_PATH} not found")
-        sys.exit(1)
-
-    with open(NEWS_FILE_PATH, 'r', encoding='utf-8') as f:
-        news_content = f.read()
-
-    # Get latest entry
-    entry_date, latest_entry = get_latest_news_entry(news_content)
+    # Get the latest news file from NEWS/ folder
+    entry_date, latest_entry = get_latest_news_file()
 
     if not latest_entry:
         print("No news entries found. Skipping Discord post.")

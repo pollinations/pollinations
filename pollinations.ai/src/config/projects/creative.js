@@ -1040,5 +1040,14 @@ export const creativeProjects = [
     "language": "pt-BR",
     "submissionDate": "2025-12-04",
     "order": 5
+  },
+  {
+    "name": "Flowgen",
+    "url": "https://flowgen.puter.site/",
+    "description": "A high-performance, web-based AI image generation studio built on the Puter.js ecosystem. It features a sleek, dark UI with advanced controls for prompt engineering and model management, safety filters, a transparency mode, local history storage via Puter's file system, and Img2Img support for guiding generations.",
+    "author": "alinaaa20708-ops",
+    "category": "creative",
+    "submissionDate": "2025-12-05",
+    "order": 5
   }
 ];

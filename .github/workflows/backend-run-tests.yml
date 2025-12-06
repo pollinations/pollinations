@@ -5,7 +5,7 @@ on:
     paths:
       - 'text.pollinations.ai/**'
       - 'image.pollinations.ai/**'
-      - '.github/workflows/backend-tests.yml'
+      - '.github/workflows/backend-run-tests.yml'
 
 jobs:
   determine-tests:

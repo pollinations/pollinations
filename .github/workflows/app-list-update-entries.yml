@@ -1,4 +1,4 @@
-name: Update Project Documentation
+name: App List Update Entries
 
 on:
   pull_request:

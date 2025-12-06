@@ -10,10 +10,11 @@ from typing import Dict, List
 from datetime import datetime, timedelta, timezone
 
 GITHUB_API_BASE = "https://api.github.com"
+GITHUB_GRAPHQL_API = "https://api.github.com/graphql"
 POLLINATIONS_API_BASE = "https://enter.pollinations.ai/api/generate/openai"
-MODEL = "claude-large"
+MODEL = "gemini-large"
 CHUNK_SIZE = 50
-NEWS_FILE_PATH = "NEWS.md"
+NEWS_FOLDER = "NEWS"
 
 
 def get_env(key: str, required: bool = True) -> str:
@@ -32,59 +33,115 @@ def get_date_range() -> tuple[datetime, datetime]:
 
 
 def get_merged_prs(owner: str, repo: str, start_date: datetime, token: str) -> List[Dict]:
-    end_date = datetime.now(timezone.utc)
-    end_str = end_date.strftime("%Y-%m-%dT%H:%M:%SZ")
-    start_str = start_date.strftime("%Y-%m-%dT%H:%M:%SZ")
+    """Fetch merged PRs using GraphQL - handles any number of PRs efficiently"""
 
-    base_url = "https://api.github.com/search/issues"
+    # Note: GitHub GraphQL PullRequestOrder only supports CREATED_AT and UPDATED_AT
+    # We use UPDATED_AT DESC since merging updates the PR, then filter by mergedAt
+    query = """
+    query($owner: String!, $repo: String!, $cursor: String) {
+      repository(owner: $owner, name: $repo) {
+        pullRequests(
+          states: MERGED
+          first: 100
+          after: $cursor
+          orderBy: {field: UPDATED_AT, direction: DESC}
+          baseRefName: "main"
+        ) {
+          pageInfo {
+            hasNextPage
+            endCursor
+          }
+          nodes {
+            number
+            title
+            body
+            url
+            mergedAt
+            updatedAt
+            author {
+              login
+            }
+          }
+        }
+      }
+    }
+    """
+
     headers = {
-        "Accept": "application/vnd.github+json",
-        "Authorization": f"Bearer {token}"
+        "Authorization": f"Bearer {token}",
+        "Content-Type": "application/json"
     }
 
     all_prs = []
-    print(f"Fetching merged PRs from {start_str} to {end_str}...")
+    cursor = None
+    page = 1
 
-    target_branches = ['main']
-    pr_numbers_seen = set()
+    print(f"Fetching merged PRs since {start_date.strftime('%Y-%m-%d')} using GraphQL...")
 
-    for branch in target_branches:
-        query = f"repo:{owner}/{repo} is:pull-request is:merged merged:{start_str}..{end_str} base:{branch}"
-        params = {"q": query, "per_page": 100, "page": 1}
+    while True:
+        variables = {
+            "owner": owner,
+            "repo": repo,
+            "cursor": cursor
+        }
 
-        while True:
-            response = requests.get(base_url, headers=headers, params=params)
-            if response.status_code != 200:
-                print(f"Error searching base:{branch}: {response.status_code} -> {response.text}")
-                break
+        response = requests.post(
+            GITHUB_GRAPHQL_API,
+            headers=headers,
+            json={"query": query, "variables": variables}
+        )
 
-            data = response.json()
-            items = data.get("items", [])
+        if response.status_code != 200:
+            print(f"GraphQL error: {response.status_code} -> {response.text[:500]}")
+            sys.exit(1)
 
-            for item in items:
-                pr_number = item['number']
-                if pr_number in pr_numbers_seen:
-                    continue
-                pr_numbers_seen.add(pr_number)
+        data = response.json()
 
-                pr_url = item['pull_request']['url']
-                pr_response = requests.get(pr_url, headers=headers)
-                if pr_response.status_code == 200:
-                    pr_data = pr_response.json()
-                    all_prs.append({
-                        'number': pr_data['number'],
-                        'title': pr_data['title'],
-                        'body': pr_data['body'],
-                        'author': pr_data['user']['login'],
-                        'merged_at': pr_data['merged_at'],
-                        'html_url': pr_data['html_url']
-                    })
-                time.sleep(0.1)
+        if "errors" in data:
+            print(f"GraphQL query errors: {data['errors']}")
+            sys.exit(1)
 
-            if "next" not in response.links:
-                break
+        pr_data = data["data"]["repository"]["pullRequests"]
+        nodes = pr_data["nodes"]
+        page_info = pr_data["pageInfo"]
 
-            params["page"] += 1
+        print(f"  Page {page}: fetched {len(nodes)} PRs")
+
+        # Track if all PRs on this page are too old (by updatedAt)
+        oldest_update_on_page = None
+
+        for pr in nodes:
+            # Parse timestamps
+            merged_at = datetime.fromisoformat(pr["mergedAt"].replace("Z", "+00:00"))
+            updated_at = datetime.fromisoformat(pr["updatedAt"].replace("Z", "+00:00"))
+
+            if oldest_update_on_page is None or updated_at < oldest_update_on_page:
+                oldest_update_on_page = updated_at
+
+            # Only include PRs merged within our date range
+            if merged_at >= start_date:
+                all_prs.append({
+                    "number": pr["number"],
+                    "title": pr["title"],
+                    "body": pr["body"] or "",
+                    "author": pr["author"]["login"] if pr["author"] else "ghost",
+                    "merged_at": pr["mergedAt"],
+                    "html_url": pr["url"]
+                })
+
+        # Stop pagination if the oldest updatedAt on this page is before our start_date
+        # This means all subsequent pages will also be too old
+        if oldest_update_on_page and oldest_update_on_page < start_date:
+            print(f"  Reached PRs last updated before {start_date.strftime('%Y-%m-%d')}, stopping")
+            break
+
+        # Check if there are more pages
+        if not page_info["hasNextPage"]:
+            print(f"  No more pages")
+            break
+
+        cursor = page_info["endCursor"]
+        page += 1
 
     return all_prs
 
@@ -175,8 +232,7 @@ def call_pollinations_api(system_prompt: str, user_prompt: str, token: str, max_
             response = requests.post(
                 POLLINATIONS_API_BASE,
                 headers=headers,
-                json=payload,
-                timeout=120
+                json=payload
             )
 
             if response.status_code == 200:
@@ -220,73 +276,59 @@ def parse_response(response: str) -> str:
     return message.strip()
 
 
-def get_existing_news(github_token: str, owner: str, repo: str) -> str:
-    """Fetch existing NEWS.md content from repo"""
+def check_news_file_exists(github_token: str, owner: str, repo: str, file_path: str) -> bool:
+    """Check if a news file already exists in the repo"""
     headers = {
         "Accept": "application/vnd.github+json",
         "Authorization": f"Bearer {github_token}"
     }
 
     response = requests.get(
-        f"{GITHUB_API_BASE}/repos/{owner}/{repo}/contents/{NEWS_FILE_PATH}",
+        f"{GITHUB_API_BASE}/repos/{owner}/{repo}/contents/{file_path}",
+        headers=headers
+    )
+
+    return response.status_code == 200
+
+
+def create_news_file_content(news_entry: str, entry_date: str) -> str:
+    """Create content for individual news file"""
+    return f"""# Weekly Update - {entry_date}
+
+{news_entry}
+"""
+
+
+def get_file_sha(github_token: str, owner: str, repo: str, file_path: str, branch: str = "main") -> str:
+    """Get the SHA of an existing file (needed for updates)"""
+    headers = {
+        "Accept": "application/vnd.github+json",
+        "Authorization": f"Bearer {github_token}"
+    }
+
+    response = requests.get(
+        f"{GITHUB_API_BASE}/repos/{owner}/{repo}/contents/{file_path}?ref={branch}",
         headers=headers
     )
 
     if response.status_code == 200:
-        content = response.json().get('content', '')
-        return base64.b64decode(content).decode('utf-8')
-    elif response.status_code == 404:
-        # File doesn't exist yet, return template
-        return "# Product & Platform Updates\n"
-    else:
-        print(f"Error fetching NEWS.md: {response.status_code}")
-        return "# Product & Platform Updates\n"
-
-
-def prepend_news_entry(existing_content: str, new_entry: str, entry_date: str) -> str:
-    """Prepend new entry to NEWS.md after the header"""
-
-    # Create the new entry block
-    new_block = f"""
-<!-- ENTRY:{entry_date} -->
-### {entry_date}
-
-{new_entry}
-"""
-
-    # Find where to insert (after the main header)
-    header = "# Product & Platform Updates"
-
-    if header in existing_content:
-        # Insert after header
-        header_end = existing_content.find(header) + len(header)
-        # Skip any whitespace after header
-        while header_end < len(existing_content) and existing_content[header_end] in '\n\r':
-            header_end += 1
-
-        updated_content = existing_content[:header_end] + new_block + "\n" + existing_content[header_end:]
-    else:
-        # No header found, create new file
-        updated_content = header + "\n" + new_block + "\n" + existing_content
-
-    return updated_content
+        return response.json().get("sha", "")
+    return ""
 
 
 def create_pr_with_news(news_content: str, github_token: str, owner: str, repo: str, pr_count: int):
-    """Create a PR with the updated NEWS.md"""
+    """Create a PR with weekly news file only (newsList.js is updated separately)"""
 
     entry_date = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    news_file_path = f"{NEWS_FOLDER}/{entry_date}.md"
 
-    # Get existing NEWS.md
-    existing_news = get_existing_news(github_token, owner, repo)
-
-    # Check if entry for this date already exists
-    if f"<!-- ENTRY:{entry_date} -->" in existing_news:
-        print(f"Entry for {entry_date} already exists. Skipping.")
+    # Check if file for this date already exists
+    if check_news_file_exists(github_token, owner, repo, news_file_path):
+        print(f"News file for {entry_date} already exists. Skipping.")
         return
 
-    # Prepend new entry
-    updated_news = prepend_news_entry(existing_news, news_content, entry_date)
+    # Create content for the news file
+    news_file_content = create_news_file_content(news_content, entry_date)
 
     headers = {
         "Accept": "application/vnd.github+json",
@@ -326,52 +368,46 @@ def create_pr_with_news(news_content: str, github_token: str, owner: str, repo: 
 
     print(f"Created branch: {branch_name}")
 
-    # Get current file SHA from the branch we're updating (not main)
-    file_api_path = f"{GITHUB_API_BASE}/repos/{owner}/{repo}/contents/{NEWS_FILE_PATH}"
-    file_response = requests.get(f"{file_api_path}?ref={branch_name}", headers=headers)
-    if file_response.status_code == 200:
-        file_sha = file_response.json().get('sha')
-    else:
-        # File doesn't exist on branch yet, try main
-        file_response = requests.get(f"{file_api_path}?ref={default_branch}", headers=headers)
-        file_sha = file_response.json().get('sha') if file_response.status_code == 200 else None
+    # Create/update the NEWS file
+    news_api_path = f"{GITHUB_API_BASE}/repos/{owner}/{repo}/contents/{news_file_path}"
+    news_encoded = base64.b64encode(news_file_content.encode()).decode()
 
-    # Update file
-    content_encoded = base64.b64encode(updated_news.encode()).decode()
+    # Check if file already exists on branch (from previous failed run)
+    news_sha = get_file_sha(github_token, owner, repo, news_file_path, branch_name)
 
-    update_payload = {
-        "message": f"docs: weekly news update - {entry_date}",
-        "content": content_encoded,
+    news_payload = {
+        "message": f"docs: add weekly news entry - {entry_date}",
+        "content": news_encoded,
         "branch": branch_name
     }
 
-    if file_sha:
-        update_payload["sha"] = file_sha
+    if news_sha:
+        news_payload["sha"] = news_sha
 
-    update_response = requests.put(file_api_path, headers=headers, json=update_payload)
+    news_response = requests.put(news_api_path, headers=headers, json=news_payload)
 
-    if update_response.status_code not in [200, 201]:
-        print(f"Error updating file: {update_response.text}")
+    if news_response.status_code not in [200, 201]:
+        print(f"Error creating NEWS file: {news_response.text}")
         sys.exit(1)
 
-    print(f"Updated NEWS.md on branch {branch_name}")
+    print(f"{'Updated' if news_sha else 'Created'} {news_file_path} on branch {branch_name}")
 
     # Create PR
-    pr_title = f"📰 Weekly News Update - {entry_date}"
+    pr_title = f"Weekly News Update - {entry_date}"
     pr_body = f"""## Weekly News Update
 
-This PR adds the weekly news entry for {entry_date} to NEWS.md.
+This PR adds a new weekly changelog: `{news_file_path}`
 
 **PRs included:** {pr_count}
 
-### New Entry Preview
+### Full Changelog Preview
 
 {news_content}
 
 ---
-**Note:** When this PR is merged, it will automatically trigger the Discord notification workflow.
+**Note:** When this PR is merged, a separate workflow will automatically update `newsList.js` and create its own PR.
 
-🤖 Generated automatically by GitHub Actions
+Generated automatically by GitHub Actions
 """
 
     pr_response = requests.post(
@@ -394,15 +430,34 @@ This PR adds the weekly news entry for {entry_date} to NEWS.md.
         sys.exit(1)
 
     pr_data = pr_response.json()
-    print(f"✅ Created PR #{pr_data['number']}: {pr_data['html_url']}")
+    pr_number = pr_data['number']
+    print(f"Created PR #{pr_number}: {pr_data['html_url']}")
+
+    # Add inbox:news label to the PR
+    label_response = requests.post(
+        f"{GITHUB_API_BASE}/repos/{owner}/{repo}/issues/{pr_number}/labels",
+        headers=headers,
+        json={"labels": ["inbox:news"]}
+    )
+    if label_response.status_code in [200, 201]:
+        print(f"Added 'inbox:news' label to PR #{pr_number}")
+    else:
+        print(f"Warning: Could not add label: {label_response.status_code}")
+
+    # Add inbox:news label to the PR
+    label_response = requests.post(
+        f"{GITHUB_API_BASE}/repos/{owner}/{repo}/issues/{pr_data['number']}/labels",
+        headers=headers,
+        json={"labels": ["inbox:news"]}
+    )
+    if label_response.status_code in [200, 201]:
+        print("Added inbox:news label")
+    else:
+        print(f"Warning: Could not add label: {label_response.text}")
 
 
 def main():
-    github_token = os.getenv('POLLI_PAT') or os.getenv('GITHUB_TOKEN')
-    if not github_token:
-        print("Error: POLLI_PAT or GITHUB_TOKEN is required")
-        sys.exit(1)
-
+    github_token = get_env('GITHUB_TOKEN')
     pollinations_token = get_env('POLLINATIONS_TOKEN')
     repo_full_name = get_env('GITHUB_REPOSITORY')
     owner_name, repo_name = repo_full_name.split('/')
@@ -416,6 +471,7 @@ def main():
         print("No merged PRs found for this period. Skipping news update.")
         return
 
+    # Step 1: Generate full NEWS changelog
     print(f"Processing {len(merged_prs)} PRs for NEWS.md (including ALL)...")
 
     if len(merged_prs) <= CHUNK_SIZE:
@@ -442,12 +498,14 @@ def main():
         news_content = parse_response(ai_response)
 
     if not news_content.strip():
-        print("Empty response from AI. This shouldn't happen.")
+        print("Empty NEWS response from AI. This shouldn't happen.")
         sys.exit(1)
 
-    # Create PR with news update
+    print("NEWS content generated")
+
+    # Create PR with NEWS file only (newsList.js is updated by separate workflow)
     create_pr_with_news(news_content, github_token, owner_name, repo_name, len(merged_prs))
-    print("✅ News generation completed!")
+    print("News generation completed!")
 
 
 if __name__ == "__main__":

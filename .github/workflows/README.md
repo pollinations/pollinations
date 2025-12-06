@@ -78,6 +78,7 @@ Secrets required: `POLLY_BOT_APP_ID`, `POLLY_BOT_PRIVATE_KEY`
 
 -   **issue-add-to-project.yml** - Adds all new issues to Project #20.
 -   **issue-close-discarded.yml** - Auto-closes issues marked "Discarded" in project.
+-   **pr-update-project-status.yml** - Updates PR status in project (In Progress/In Review/Done/Discarded).
 
 ### CI & Testing
 

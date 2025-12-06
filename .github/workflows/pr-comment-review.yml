@@ -1,4 +1,4 @@
-name: PR Code Review
+name: PR Comment Review
 
 on:
   pull_request:
@@ -47,4 +47,4 @@ jobs:
           REPO_FULL_NAME: ${{ github.repository }}
           EVENT_ACTION: ${{ github.event.action }}
           IS_MANUAL: ${{ github.event_name == 'workflow_dispatch' }}
-        run: python .github/scripts/pr_code_review.py
+        run: python .github/scripts/pr_comment_review.py

@@ -1,4 +1,4 @@
-name: GitHub Issue Labeler
+name: Issue Label External
 on:
   issues:
     types: [opened, transferred]

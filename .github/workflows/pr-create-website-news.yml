@@ -1,4 +1,4 @@
-name: Website Weekly News
+name: PR Create Website News
 
 on:
   pull_request:
@@ -42,4 +42,4 @@ jobs:
           GITHUB_TOKEN: ${{ steps.polly-bot.outputs.token }}
           POLLINATIONS_TOKEN: ${{ secrets.POLLINATIONS_TOKEN }}
           GITHUB_REPOSITORY: ${{ github.repository }}
-        run: python .github/scripts/website_weekly_news.py
+        run: python .github/scripts/pr_create_website_news.py

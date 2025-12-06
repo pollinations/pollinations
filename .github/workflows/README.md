@@ -1,5 +1,26 @@
 # GitHub Workflows
 
+## Naming Convention
+
+**Pattern: `ENTITY-ACTION-WHAT`**
+
+| Part       | Description              | Examples                                                  |
+| ---------- | ------------------------ | --------------------------------------------------------- |
+| **Entity** | What is being acted upon | `issue`, `pr`, `discord`, `website`, `app`                |
+| **Action** | The verb/operation       | `create`, `post`, `generate`, `update`, `review`, `label` |
+| **What**   | The target/result        | `weekly-news`, `merged-pr`, `external`, `code`            |
+
+**Examples:**
+
+-   `discord-post-merged-pr` → Discord / post / merged PR
+-   `issue-label-external` → Issue / label / external
+-   `pr-create-weekly-news` → PR / create / weekly news
+-   `app-sync-stars` → App / sync / stars
+
+**Entity = Effect** (what is affected/created, not what triggers it).
+
+---
+
 ## Authentication
 
 Most workflows use **Polly Bot** (GitHub App) for authentication instead of personal access tokens. This provides:
@@ -14,48 +35,49 @@ Secrets required: `POLLY_BOT_APP_ID`, `POLLY_BOT_PRIVATE_KEY`
 
 ### Inbox Labels (Triage)
 
-| Label           | Purpose                          | Applied by                                   |
-| --------------- | -------------------------------- | -------------------------------------------- |
-| `inbox:github`  | External issue needs triage      | `github-issue-labeler.yml`                   |
-| `inbox:discord` | Issue created from Discord       | `discord-create-issue.yml` (via Discord bot) |
-| `inbox:news`    | PR related to weekly news update | `github-weekly-pr-to-news.yml`               |
+| Label           | Purpose                          | Applied by                                        |
+| --------------- | -------------------------------- | ------------------------------------------------- |
+| `inbox:github`  | External issue needs triage      | `issue-label-external.yml`                        |
+| `inbox:discord` | Issue created from Discord       | `issue-create-from-discord.yml` (via Discord bot) |
+| `inbox:news`    | PR related to weekly news update | `pr-create-weekly-news.yml`                       |
 
 ### App Submission Labels
 
-| Label             | Purpose                       | Applied by       |
-| ----------------- | ----------------------------- | ---------------- |
-| `app:review`      | App submission pending review | Issue template   |
-| `app:info-needed` | Awaiting submitter response   | `app-review.yml` |
-| `app:approved`    | App merged to showcase        | `app-merged.yml` |
-| `app:denied`      | Submission rejected           | Manual           |
+| Label             | Purpose                       | Applied by                         |
+| ----------------- | ----------------------------- | ---------------------------------- |
+| `app:review`      | App submission pending review | Issue template                     |
+| `app:info-needed` | Awaiting submitter response   | `pr-create-app-submission.yml`     |
+| `app:approved`    | App merged to showcase        | `app-issue-celebrate-approval.yml` |
+| `app:denied`      | Submission rejected           | Manual                             |
 
 ## Workflows
 
 ### Triage
 
--   **github-issue-labeler.yml** - Adds `inbox:github` to external issues. Skips if `inbox:discord` or `app:*` labels exist.
--   **discord-create-issue.yml** - Creates GitHub issues from Discord bot via `repository_dispatch`.
+-   **issue-label-external.yml** - Adds `inbox:github` to external issues. Skips if `inbox:discord` or `app:*` labels exist.
+-   **issue-create-from-discord.yml** - Creates GitHub issues from Discord bot via `repository_dispatch`.
 
 ### App Submissions
 
--   **app-review.yml** - AI-powered review of app submissions. Parses issue, creates PR to add project.
--   **app-merged.yml** - Post-merge cleanup and notifications.
+-   **pr-create-app-submission.yml** - AI-powered review of app submissions. Parses issue, creates PR to add project.
+-   **app-issue-celebrate-approval.yml** - Post-merge: adds `app:approved` label and celebration comment.
 
 ### News & Discord
 
--   **github-weekly-pr-to-news.yml** - Runs Monday 00:00 UTC. Scans merged PRs, generates `NEWS/{date}.md` PR with `inbox:news` label.
--   **website-weekly-news.yml** - When NEWS PR merges, updates `pollinations.ai/src/config/newsList.js` for the website.
--   **discord-weekly-news.yml** - Triggered when `NEWS/*.md` is pushed. Posts weekly digest to Discord.
--   **discord-pr-merged.yml** - Posts every merged PR to Discord immediately.
+-   **pr-create-weekly-news.yml** - Runs Monday 00:00 UTC. Scans merged PRs, creates `NEWS/{date}.md` PR with `inbox:news` label.
+-   **pr-create-website-news.yml** - When NEWS PR merges, creates PR to update `newsList.js` for website.
+-   **discord-post-weekly-news.yml** - Triggered when `NEWS/*.md` is pushed. Posts weekly digest to Discord.
+-   **discord-post-merged-pr.yml** - Posts every merged PR to Discord immediately.
 
 ### Project Management
 
--   **github-issue-to-project.yml** - Adds all new issues to Project #20.
+-   **new-issue-add-to-project.yml** - Adds all new issues to Project #20.
 -   **close-discarded-issues.yml** - Auto-closes issues marked "Discarded" in project.
 
 ### Maintenance
 
--   **update-github-stars.yml** - Updates star counts for projects.
+-   **app-list-update-entries.yml** - Regenerates PROJECTS.md and README.md when projectList.js changes.
+-   **app-list-update-stars.yml** - Updates star counts from GitHub for app showcase projects (weekly).
 
 ## Flow Diagrams
 
@@ -65,7 +87,7 @@ Secrets required: `POLLY_BOT_APP_ID`, `POLLY_BOT_PRIVATE_KEY`
 Issue opened on GitHub          Issue from Discord bot
         │                               │
         ▼                               ▼
-github-issue-labeler.yml        discord-create-issue.yml
+issue-label-external.yml        issue-create-from-discord.yml
         │                               │
         ▼                               ▼
   inbox:github                    inbox:discord
@@ -78,7 +100,7 @@ github-issue-labeler.yml        discord-create-issue.yml
 │  Monday 00:00 UTC (cron)                                        │
 │         │                                                       │
 │         ▼                                                       │
-│  github-weekly-pr-to-news.yml                                   │
+│  pr-create-weekly-news.yml                                      │
 │         │                                                       │
 │         ▼                                                       │
 │  Scans all merged PRs (GraphQL)                                 │
@@ -93,7 +115,7 @@ github-issue-labeler.yml        discord-create-issue.yml
 │  TWO workflows trigger in parallel:                             │
 │                                                                 │
 │  ┌─────────────────────────┐  ┌─────────────────────────────┐   │
-│  │ discord-weekly-news.yml │  │ website-weekly-news.yml     │   │
+│  │ discord-post-weekly-news │  │ pr-create-website-news      │   │
 │  │ (push to NEWS/*.md)     │  │ (PR merged with NEWS/*.md)  │   │
 │  │         │               │  │         │                   │   │
 │  │         ▼               │  │         ▼                   │   │
@@ -109,7 +131,7 @@ github-issue-labeler.yml        discord-create-issue.yml
 Any PR merged to main
         │
         ▼
-discord-pr-merged.yml
+discord-post-merged-pr.yml
         │
         ▼
 Posts to Discord immediately

@@ -26,13 +26,13 @@ RUN pip install --no-cache-dir -r requirements.txt
 RUN pip install --no-cache-dir wheel ninja && \
     pip install --no-cache-dir https://github.com/Dao-AILab/flash-attention/releases/download/v2.7.4.post1/flash_attn-2.7.4.post1+cu12torch2.6cxx11abiFALSE-cp312-cp312-linux_x86_64.whl 2>/dev/null || true
 
-COPY api/ ./api/
+COPY server.py .
 COPY install/install_models.py .
 RUN mkdir -p /app/model_cache
 
-EXPOSE 9000
+EXPOSE 10002
 
-COPY entrypoint.sh /app/entrypoint.sh
-RUN chmod +x /app/entrypoint.sh
+ENV PORT=10002
+ENV SERVICE_TYPE=zimage
 
-CMD ["/app/entrypoint.sh"]
+CMD ["python", "server.py"]

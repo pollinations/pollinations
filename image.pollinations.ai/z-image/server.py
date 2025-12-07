@@ -31,8 +31,9 @@ logger = logging.getLogger(__name__)
 MODEL_ID = "Tongyi-MAI/Z-Image-Turbo"
 MODEL_CACHE = "model_cache"
 UPSCALER_MODEL_x4 = "model_cache/RealESRGAN_x4plus.pth"
+UPSCALER_MODEL_x2 = "model_cache/RealESRGAN_x2plus.pth"
 MAX_PIXELS = 512 * 512  # Generate at 512x512 max, then upscale
-UPSCALE_FACTOR = 4
+UPSCALE_FACTOR = 2  # Changed from 4 to 2
 
 
 class ImageRequest(BaseModel):
@@ -46,6 +47,7 @@ class ImageRequest(BaseModel):
 # Global model references
 pipe = None
 upsampler = None
+upsampler_x4 = None  # Keep x4 available if needed
 
 
 def get_public_ip():
@@ -106,13 +108,13 @@ async def lifespan(app: FastAPI):
         ).to("cuda")
         logger.info("Z-Image-Turbo pipeline loaded successfully")
         
-        # Load upscaler
-        logger.info("Loading RealESRGAN x4 upscaler...")
-        model_x4 = RRDBNet(num_in_ch=3, num_out_ch=3, num_feat=64, num_block=23, num_grow_ch=32, scale=4)
+        # Load upscaler (2x)
+        logger.info("Loading RealESRGAN x2 upscaler...")
+        model_x2 = RRDBNet(num_in_ch=3, num_out_ch=3, num_feat=64, num_block=23, num_grow_ch=32, scale=2)
         upsampler = RealESRGANer(
-            scale=4,
-            model_path=UPSCALER_MODEL_x4,
-            model=model_x4,
+            scale=2,
+            model_path=UPSCALER_MODEL_x2,
+            model=model_x2,
             tile=512,
             tile_pad=10,
             pre_pad=0,

@@ -24,3 +24,4 @@ numpy
 tqdm
 requests
 huggingface-hub
+python-dotenv

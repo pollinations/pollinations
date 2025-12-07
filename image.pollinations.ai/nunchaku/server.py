@@ -3,6 +3,8 @@ import sys
 import time
 import uuid
 from typing import List, Dict, Any
+from dotenv import load_dotenv
+load_dotenv()  # Load .env file
 from fastapi import FastAPI, HTTPException, Request, Header, Depends
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel

@@ -1,0 +1,44 @@
+TOKEN model_health_read READ
+
+DESCRIPTION >
+Model health statistics for the last 5 minutes, grouped by model and event type.
+Returns request counts, granular error codes, and response times for monitoring dashboards.
+
+NODE model_health_stats
+SQL >
+    %
+    SELECT
+        resolved_model_requested as model,
+        event_type,
+        -- Most common provider and model used
+        topK(1)(model_provider_used)[1] as provider,
+        topK(1)(model_used)[1] as model_used,
+        count() as total_requests,
+        countIf(response_status >= 200 AND response_status < 300) as status_2xx,
+        countIf(response_status >= 300 AND response_status < 400) as errors_3xx,
+        -- 4xx error breakdown
+        countIf(response_status = 400) as errors_400,
+        countIf(response_status = 401) as errors_401,
+        countIf(response_status = 403) as errors_403,
+        countIf(response_status = 429) as errors_429,
+        countIf(response_status >= 400 AND response_status < 500 AND response_status NOT IN (400, 401, 403, 429)) as errors_4xx_other,
+        -- 5xx error breakdown
+        countIf(response_status = 500) as errors_500,
+        countIf(response_status = 502) as errors_502,
+        countIf(response_status = 503) as errors_503,
+        countIf(response_status = 504) as errors_504,
+        countIf(response_status >= 500 AND response_status NOT IN (500, 502, 503, 504)) as errors_5xx_other,
+        countIf(response_status >= 400) as total_errors,
+        -- Last error timestamp
+        maxIf(start_time, response_status >= 400) as last_error_at,
+        -- Latency percentiles (only for successful requests)
+        round(quantileIf(0.5)(response_time, response_status >= 200 AND response_status < 300), 0) as latency_p50_ms,
+        round(quantileIf(0.95)(response_time, response_status >= 200 AND response_status < 300), 0) as latency_p95_ms,
+        round(avg(response_time), 0) as avg_latency_ms,
+        max(start_time) as last_request_at
+    FROM generation_event
+    WHERE start_time >= now() - interval 5 minute
+    GROUP BY resolved_model_requested, event_type
+    ORDER BY total_requests DESC
+
+TYPE endpoint

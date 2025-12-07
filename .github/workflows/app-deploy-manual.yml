@@ -4,9 +4,9 @@ on:
   push:
     branches: [main]
     paths:
-      - 'apps/*/**'
-      - '!apps/scripts/**'
-      - '!apps/*.md'
+      - 'garden/*/**'
+      - '!garden/scripts/**'
+      - '!garden/*.md'
   workflow_dispatch:
     inputs:
       app_name:
@@ -42,7 +42,7 @@ jobs:
           fi
           
           # Auto trigger - detect changed files
-          CHANGED_FILES=$(git diff --name-only HEAD^ HEAD | grep '^apps/' || true)
+          CHANGED_FILES=$(git diff --name-only HEAD^ HEAD | grep '^garden/' || true)
           
           if [ -z "$CHANGED_FILES" ]; then
             echo "No apps changed"
@@ -50,11 +50,11 @@ jobs:
             exit 0
           fi
           
-          # Extract app names (first directory after apps/)
+          # Extract app names (first directory after garden/)
           APPS=$(echo "$CHANGED_FILES" | \
-            grep -v '^apps/scripts/' | \
-            grep -v '^apps/.*\.md$' | \
-            sed 's|^apps/\([^/]*\)/.*|\1|' | \
+            grep -v '^garden/scripts/' | \
+            grep -v '^garden/.*\.md$' | \
+            sed 's|^garden/\([^/]*\)/.*|\1|' | \
             sort -u | \
             tr '\n' ',' | \
             sed 's/,$//')
@@ -72,7 +72,7 @@ jobs:
           IFS=',' read -ra APPS <<< "${{ steps.detect.outputs.apps }}"
           for app in "${APPS[@]}"; do
             echo "🚀 Deploying $app..."
-            node apps/scripts/deploy-app.js "$app"
+            node garden/scripts/deploy-app.js "$app"
           done
 
       - name: Upload app files
@@ -89,8 +89,8 @@ jobs:
             echo "📦 Uploading files for $app..."
             
             # Check if app has package.json (needs build)
-            if [ -f "apps/$app/package.json" ]; then
-              cd "apps/$app"
+            if [ -f "garden/$app/package.json" ]; then
+              cd "garden/$app"
               npm install
               npm run build || echo "No build script, using source files"
               cd ../..
@@ -98,11 +98,11 @@ jobs:
             
             # Deploy via wrangler pages
             PROJECT_NAME="pollinations-$app"
-            SOURCE_DIR="apps/$app"
+            SOURCE_DIR="garden/$app"
             
             # Get output dir from apps.json
             OUTPUT_DIR=$(node -e "
-              const config = require('./apps/apps.json');
+              const config = require('./garden/apps.json');
               console.log(config['$app']?.outputDir || '.');
             ")
             

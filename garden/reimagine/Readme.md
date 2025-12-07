@@ -128,4 +128,4 @@ This app is licensed under the MIT License - see the LICENSE file for details.
 
 ---
 
-Made with ❤️ for [Pollinations Hacktoberfest 2025](https://github.com/pollinations/pollinations/tree/master/apps)
+Made with ❤️ | Part of the [Pollinations Garden](https://github.com/pollinations/pollinations/tree/main/garden) 🌱 (Originally created for Hacktoberfest 2025)

@@ -465,7 +465,7 @@ Pollinations.AI is used in various projects, including:
 
 | Project | Description | Creator |
 |---------|-------------|--------|
-| [G4F Chat UI](http://g4f.dev/chat/pollinations) ([⭐ 93](http://g4f.dev/chat/pollinations)) | G4F Chat UI for Pollinations with Image & Video Generation capability | @hlohaus |
+| [G4F Chat UI](http://g4f.dev/chat/pollinations) ([⭐ 93](https://github.com/gpt4free/g4f.dev)) | G4F Chat UI for Pollinations with Image & Video Generation capability | @hlohaus |
 | [LobeChat](https://lobechat.com) ([⭐ 21.0k](https://github.com/lobehub/lobe-chat)) | An open-source, extensible chat UI framework supporting multiple models and... | @lobehub |
 | [SillyTavern](https://docs.sillytavern.app/) ([⭐ 14.7k](https://github.com/SillyTavern/SillyTavern)) | An LLM frontend for power users. Pollinations permits it to generate text and... | - |
 | 🖥️ [LLMS](https://yassineabou.github.io/LLMs-Wasm/) ([⭐ 88](https://github.com/yassineAbou/LLMS)) | LLMS is a Kotlin Multiplatform application that brings the power of AI to... | @yassineAbou |

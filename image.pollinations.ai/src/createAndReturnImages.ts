@@ -121,12 +121,8 @@ export const callComfyUI = async (
             safeParams,
         );
 
-        // Scale steps from 4 down to 1, dropping more gradually
-        // 4 steps up to 20 concurrent, then gradually down to 1 at 50+ concurrent
-        const steps = Math.max(
-            1,
-            Math.round(4 - Math.max(0, concurrentRequests - 20) / 10),
-        );
+        // Always use max steps (4) - all requests go through enter.pollinations.ai
+        const steps = 4;
         logOps("calculated_steps", steps);
 
         prompt = sanitizeString(prompt);
@@ -168,6 +164,9 @@ export const callComfyUI = async (
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
+                    ...(process.env.ENTER_TOKEN && {
+                        "x-enter-token": process.env.ENTER_TOKEN,
+                    }),
                 },
                 body: JSON.stringify(body),
             });

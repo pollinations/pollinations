@@ -337,3 +337,6 @@ gateway/
 # Debug sessions
 **/debugsession_*/
 debugsession_*/
+
+# Claude skills mutable data (sensitive/local)
+.claude/skills/*/data/

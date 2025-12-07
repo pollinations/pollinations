@@ -8,17 +8,25 @@ jobs:
   update-project-status:
     runs-on: ubuntu-latest
     steps:
+      - name: Generate Polly Bot Token
+        id: polly-bot
+        uses: actions/create-github-app-token@v1
+        with:
+          app-id: ${{ secrets.POLLY_BOT_APP_ID }}
+          private-key: ${{ secrets.POLLY_BOT_PRIVATE_KEY }}
+          owner: pollinations
+
       - name: Add to Project
         uses: actions/add-to-project@v1.0.2
         id: add-project
         with:
           project-url: https://github.com/orgs/pollinations/projects/20
-          github-token: ${{ secrets.POLLI_PAT }}
+          github-token: ${{ steps.polly-bot.outputs.token }}
 
       - name: Update Status Field
         uses: actions/github-script@v7
         with:
-          github-token: ${{ secrets.POLLI_PAT }}
+          github-token: ${{ steps.polly-bot.outputs.token }}
           script: |
             const PROJECT_ID = '${{ steps.add-project.outputs.itemId }}';
             const PR = context.payload.pull_request;

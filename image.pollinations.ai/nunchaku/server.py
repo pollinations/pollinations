@@ -3,7 +3,7 @@ import sys
 import time
 import uuid
 from typing import List, Dict, Any
-from fastapi import FastAPI, HTTPException, Request
+from fastapi import FastAPI, HTTPException, Request, Header, Depends
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 import torch
@@ -175,8 +175,19 @@ def find_nearest_valid_dimensions(width: float, height: float) -> tuple[int, int
 
 app = FastAPI(title="FLUX Image Generation API", lifespan=lifespan)
 
+# Auth verification
+def verify_enter_token(x_enter_token: str = Header(None, alias="x-enter-token")):
+    expected_token = os.getenv("ENTER_TOKEN")
+    if not expected_token:
+        logger.warning("ENTER_TOKEN not configured - allowing request")
+        return True
+    if x_enter_token != expected_token:
+        logger.warning(f"Invalid or missing ENTER_TOKEN")
+        raise HTTPException(status_code=403, detail="Unauthorized")
+    return True
+
 @app.post("/generate")
-async def generate(request: ImageRequest):
+async def generate(request: ImageRequest, _auth: bool = Depends(verify_enter_token)):
     print(f"Request: {request}")
     if pipe is None:
         raise HTTPException(status_code=503, detail="Model not loaded")

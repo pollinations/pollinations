@@ -227,7 +227,7 @@ export default {
             // Log request information
             log("request", `🚀 ${request.method} ${url.pathname}`);
 
-            // Check Turnstile verification for Hacktoberfest apps
+            // Check Turnstile verification for Pollinations Garden apps
             const turnstileResponse = await checkTurnstile(request, env);
             if (turnstileResponse) {
                 return turnstileResponse; // Return 403 if verification failed

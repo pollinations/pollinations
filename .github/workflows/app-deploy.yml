@@ -3,7 +3,7 @@ name: Deploy Apps
 on:
   push:
     paths:
-      - 'apps/**'
+      - 'garden/**'
     branches: [master, main, fix/chat-vite-base-path]
   workflow_dispatch:
 
@@ -25,7 +25,7 @@ jobs:
         with:
           dir_names: true
           dir_names_max_depth: 2
-          files: apps/**
+          files: garden/**
           json: true
 
       # TODO: Remove debug logging once deployment system is stable in production
@@ -39,10 +39,10 @@ jobs:
           echo "$ALL_CHANGED" | jq '.' || echo "❌ jq parsing failed"
           echo ""
           echo "🔍 Extracting app names:"
-          echo "$ALL_CHANGED" | jq -r '.[]' | sed 's|^apps/||' | cut -d'/' -f1 | sort -u || echo "❌ Extraction failed"
+          echo "$ALL_CHANGED" | jq -r '.[]' | sed 's|^garden/||' | cut -d'/' -f1 | sort -u || echo "❌ Extraction failed"
           echo ""
           echo "🔍 Alternative: Using fromjson"
-          echo "$ALL_CHANGED" | jq -r 'fromjson | .[]' | sed 's|^apps/||' | cut -d'/' -f1 | sort -u || echo "❌ fromjson failed"
+          echo "$ALL_CHANGED" | jq -r 'fromjson | .[]' | sed 's|^garden/||' | cut -d'/' -f1 | sort -u || echo "❌ fromjson failed"
         env:
           ALL_CHANGED: ${{ steps.changed.outputs.all_changed_files }}
 
@@ -62,7 +62,7 @@ jobs:
           
           # The output has escaped quotes (\"), remove the backslashes
           echo "$CHANGED_FILES_JSON" | sed 's/\\"/"/g' | jq -r '.[]' | \
-            sed 's|^apps/||' | cut -d'/' -f1 | sort -u | while read app; do
+            sed 's|^garden/||' | cut -d'/' -f1 | sort -u | while read app; do
             
             echo "🔍 Processing app: '$app'"
             
@@ -81,7 +81,7 @@ jobs:
               continue
             fi
             
-            if [ ! -d "apps/$app" ]; then
+            if [ ! -d "garden/$app" ]; then
               echo "  ⏭️  Skipping: directory doesn't exist"
               continue
             fi
@@ -89,22 +89,22 @@ jobs:
             echo "🚀 Deploying $app..."
             
             # Step 1: Setup infrastructure (project, domain, DNS)
-            cd apps
+            cd garden
             node scripts/deploy-app.js "$app" || echo "⚠️  Infrastructure setup completed with warnings"
             cd ..
             
             # Step 2: Build if needed
-            if [ -f "apps/$app/package.json" ]; then
-              cd "apps/$app"
+            if [ -f "garden/$app/package.json" ]; then
+              cd "garden/$app"
               npm install && npm run build 2>/dev/null || true
               cd ../..
-              DIR=$([ -d "apps/$app/dist" ] && echo "dist" || echo ".")
+              DIR=$([ -d "garden/$app/dist" ] && echo "dist" || echo ".")
             else
               DIR="."
             fi
             
             # Step 3: Deploy to production
-            wrangler pages deploy "apps/$app/$DIR" \
+            wrangler pages deploy "garden/$app/$DIR" \
               --project-name="pollinations-$app" \
               --branch=main \
               --commit-dirty=true

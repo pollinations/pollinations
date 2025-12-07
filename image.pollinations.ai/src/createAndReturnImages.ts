@@ -168,6 +168,9 @@ export const callComfyUI = async (
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
+                    ...(process.env.ENTER_TOKEN && {
+                        "x-enter-token": process.env.ENTER_TOKEN,
+                    }),
                 },
                 body: JSON.stringify(body),
             });

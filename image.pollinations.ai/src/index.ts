@@ -37,7 +37,7 @@ import { sleep } from "./util.ts";
 
 // Queue configuration for image service
 const QUEUE_CONFIG = {
-    interval: 30000, // 30 seconds between requests per IP (no auth)
+    interval: 60000, // 60 seconds between requests per IP (no auth)
     cap: 1, // Max 1 concurrent request per IP
 };
 
@@ -491,9 +491,10 @@ const checkCacheAndGenerate = async (
                         logAuth("GPTImage model - 150 second interval, cap=1 (forced)");
                     }
                 } else if (hasValidToken) {
-                    // Token authentication for other models - 7s minimum interval with tier-based caps
-                    queueConfig = { interval: 7000 }; // cap will be set by ipQueue based on tier
-                    logAuth("Token authenticated - using 7s minimum interval with tier-based concurrency");
+                    // Token authentication for other models - 30s interval, cap=1
+                    // For higher concurrency, use enter.pollinations.ai
+                    queueConfig = { interval: 30000, cap: 1, forceCap: true };
+                    logAuth("Token authenticated - 30s interval, cap=1. For higher concurrency use enter.pollinations.ai");
                 } else {
                     // Use default queue config for other models with no token
                     queueConfig = QUEUE_CONFIG;

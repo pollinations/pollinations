@@ -169,11 +169,18 @@ export const callComfyUI = async (
                 safeParams.model === "turbo"
                     ? fetchFromTurboServer
                     : fetchFromLeastBusyFluxServer;
+            
+            // Build headers with optional ENTER_TOKEN for backend authentication
+            const headers: Record<string, string> = {
+                "Content-Type": "application/json",
+            };
+            if (process.env.ENTER_TOKEN) {
+                headers["x-enter-token"] = process.env.ENTER_TOKEN;
+            }
+            
             response = await fetchFunction({
                 method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                },
+                headers,
                 body: JSON.stringify(body),
             });
         } catch (error) {
@@ -817,116 +824,20 @@ const generateImage = async (
 ): Promise<ImageGenerationResult> => {
     // Model selection strategy using a more functional approach
     
-    // GPT Image model - gpt-image-1-mini
+    // GPT Image model - gpt-image-1-mini (disabled - only available via enter.pollinations.ai)
     if (safeParams.model === "gptimage") {
-        // Detailed logging of authentication info for GPT image access
-        logError(
-            "GPT Image authentication check:",
-            userInfo
-                ? `authenticated=${userInfo.authenticated}, tokenAuth=${userInfo.tokenAuth}, referrerAuth=${userInfo.referrerAuth}, reason=${userInfo.reason}, userId=${userInfo.userId || "none"}, tier=${userInfo.tier || "none"}`
-                : "No userInfo provided",
+        const errorText =
+            "GPT Image (gpt-image-1-mini) is only available via enter.pollinations.ai. Please use https://enter.pollinations.ai for access.";
+        logError(errorText);
+        progress.updateBar(
+            requestId,
+            35,
+            "Auth",
+            "GPT Image only on enter.pollinations.ai",
         );
-
-        // Record request and check violation ratio
-        const username = userInfo?.username;
-        recordGptImageRequest(username);
-        
-        const violationCheck = checkViolationRatio(username);
-        if (violationCheck.blocked) {
-            progress.updateBar(requestId, 35, "Auth", "User blocked");
-            const error: any = new Error(violationCheck.reason);
-            error.status = 403;
-            throw error;
-        }
-
-        // Restrict GPT Image model to users with seed tier or higher
-        // NOTE: Skip tier check for enter.pollinations.ai requests
-        if (!fromEnter && !hasSufficientTier(userInfo.tier, "seed")) {
-            const errorText =
-                "Access to gptimage (gpt-image-1-mini) is currently limited to users in the seed tier or higher. Please authenticate at https://auth.pollinations.ai for tier upgrade information.";
-            logError(errorText);
-            progress.updateBar(
-                requestId,
-                35,
-                "Auth",
-                "GPT Image requires seed tier",
-            );
-            const error: any = new Error(errorText);
-            error.status = 403;
-            throw error;
-        } else {
-            // For gptimage model, always throw errors instead of falling back
-            progress.updateBar(
-                requestId,
-                30,
-                "Processing",
-                "Checking prompt safety...",
-            );
-
-            try {
-                // Check prompt safety with Azure Content Safety
-                const promptSafetyResult = await analyzeTextSafety(prompt);
-
-                // Log the prompt with safety analysis results
-                await logGptImagePrompt(
-                    prompt,
-                    safeParams,
-                    userInfo,
-                    promptSafetyResult,
-                );
-
-                if (!promptSafetyResult.safe) {
-                    const errorMessage = `Prompt contains unsafe content: ${promptSafetyResult.formattedViolations}`;
-                    logError(
-                        "Azure Content Safety rejected prompt:",
-                        errorMessage,
-                    );
-                    progress.updateBar(
-                        requestId,
-                        100,
-                        "Error",
-                        "Prompt contains unsafe content",
-                    );
-
-                    // Log the error with safety analysis results
-                    const error = new Error(errorMessage);
-                    await logGptImageError(
-                        prompt,
-                        safeParams,
-                        userInfo,
-                        error,
-                        promptSafetyResult,
-                    );
-                    
-                    // Track violation in user stats
-                    userStatsTracker.recordViolation(userInfo?.username);
-                    
-                    throw error;
-                }
-
-                progress.updateBar(
-                    requestId,
-                    35,
-                    "Processing",
-                    "Trying Azure GPT Image (gpt-image-1-mini)...",
-                );
-                return await callAzureGPTImage(prompt, safeParams, userInfo);
-            } catch (error) {
-                // Log the error but don't fall back - propagate it to the caller
-                logError(
-                    "Azure GPT Image generation or safety check failed:",
-                    error.message,
-                );
-
-                await logGptImageError(prompt, safeParams, userInfo, error);
-                
-                // Track violation in user stats for generation failures
-                userStatsTracker.recordViolation(userInfo?.username);
-
-                progress.updateBar(requestId, 100, "Error", error.message);
-                throw error;
-            }
-        }
+        const error: any = new Error(errorText);
+        error.status = 403;
+        throw error;
     }
 
     // Nano Banana - Gemini Image generation using Vertex AI

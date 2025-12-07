@@ -79,6 +79,9 @@ export const sendToFeedListeners = (
 
     if (options.saveAsLastState) {
         lastStates.push(data);
+        if (lastStates.length > 50) {
+            lastStates.shift();
+        }
     }
     feedListeners.forEach((listener) =>
         sendToListener(listener.res, data, listener.isAuthenticated),

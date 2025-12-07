@@ -107,7 +107,28 @@ export const socialBotsProjects = [
     "author": "@ShashankNagaraj",
     "submissionDate": "2025-10-21",
     "order": 4
-}
+},
+  {
+    "name": "TeleChars AI",
+    "url": "https://extras.marcosfrg.x10.mx",
+    "description": "Ya había enviado este proyecto antes, pero ahora lo hago por enter.pollinations.ai\n\nMi proyecto es una plataforma de creación de personajes con IA para Telegram, la cual te permite:\n* Darle una personalidad única a tus personaje\n* Ajustar sus parámetros de generación\n* Añadirle conocimiento y ejemplos de conversación ilimitados\n* Tienen STM y LTM para seguir la conversación sin olvidar cosas importantes, para más naturalidad\n\n**Próximamente:**\n* Habrán más idiomas\n* Se le podrán añadir comandos que le manden una solicitud a un script en tu propio servidor y mandar la respuesta a Telegram",
+    "author": "marcosfrgames08",
+    "repo": null,
+    "category": "socialBots",
+    "language": "es",
+    "submissionDate": "2025-12-04",
+    "order": 5
+  },
+  {
+    "name": "TeleChars AI",
+    "url": "https://extras.marcosfrg.x10.mx",
+    "description": "TeleChars AI is a platform for AI-powered Telegram character creation. It allows giving unique personalities to characters, adjusting generation parameters, and adding unlimited knowledge and conversation examples. Characters use STM and LTM to maintain context for more natural conversations. TeleChars bots can view stickers, generate images, and play audio. Upcoming features include more languages and commands to trigger scripts on your own server and send the response back to Telegram.",
+    "author": "marcosfrgames08",
+    "category": "socialBots",
+    "language": "es",
+    "submissionDate": "2025-12-04",
+    "order": 5
+  }
 
 
 ];

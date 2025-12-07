@@ -1,7 +1,7 @@
 # Tiers Ops Guide (Cloudflare D1 only)
 
 - Scope: staging and production databases on Cloudflare. No local.
-- Tier values: `seed` | `flower` | `nectar`
+- Tier values: `spore` | `seed` | `flower` | `nectar`
 
 ## Environments (simplified)
 
@@ -43,7 +43,7 @@ export CLOUDFLARE_ACCOUNT_ID="your-account-id-here"
 | (Auth, production) Set user tier | `npx wrangler d1 execute DB --remote --command "UPDATE user_tiers SET tier='TIER', updated_at=CURRENT_TIMESTAMP WHERE user_id='GITHUB_ID';"` |
 
 Notes:
-- Valid `TIER` values: `'seed'`, `'flower'`, `'nectar'`. Use lowercase.
+- Valid `TIER` values: `'spore'`, `'seed'`, `'flower'`, `'nectar'`. Use lowercase.
 - Enter stores tier in table `user` (column `tier`) keyed by `github_username`.
 - Auth stores tier in table `user_tiers` (columns `user_id`, `tier`), with usernames in `users` (join on `users.id = user_tiers.user_id`).
 

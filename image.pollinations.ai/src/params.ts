@@ -74,6 +74,10 @@ export const ImageParamsSchema = z
             .catch([]),
         transparent: sanitizedBoolean.catch(false),
         guidance_scale: z.coerce.number().optional().catch(undefined),
+        // Video-specific parameters - pass through to backend, let provider validate
+        duration: z.coerce.number().optional(),
+        aspectRatio: z.enum(["16:9", "9:16"]).optional(),
+        audio: sanitizedBoolean.catch(false), // generateAudio defaults to false (can enable later)
     })
     .transform((data) => {
         // adjust width and height to fit the selected model

@@ -48,16 +48,13 @@ export const ModelTable: FC<ModelTableProps> = ({ models, type }) => {
     const personaModels =
         type === "text" ? sortedModels.filter((m) => isPersona(m.name)) : [];
 
-    const tableLabel =
-        type === "text" ? "Text" : type === "image" ? "Image" : "Video";
-
     return (
         <table className="table-fixed w-full min-w-[700px]">
             <thead>
                 <tr>
                     <th className="text-left pt-0 pb-1 px-2 whitespace-nowrap w-[220px] text-sm font-bold text-pink-500 align-top">
                         <div className="flex items-center gap-2">
-                            {tableLabel}
+                            Model
                             {type === "video" && (
                                 <>
                                     <span className="text-[10px] text-purple-600 bg-purple-100 px-1.5 py-0.5 rounded-full font-medium">

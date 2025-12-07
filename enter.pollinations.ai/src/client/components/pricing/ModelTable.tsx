@@ -77,7 +77,7 @@ export const ModelTable: FC<ModelTableProps> = ({ models, type }) => {
                         </div>
                     </th>
                     <th className="text-center text-sm font-bold text-pink-500 pt-0 pb-1 px-2 whitespace-nowrap w-[120px] align-top">
-                        <div>Per pollen*</div>
+                        <div>1 pollen ≈</div>
                         <div className="text-xs font-normal text-pink-400 opacity-70 italic">
                             {type === "text"
                                 ? "responses"

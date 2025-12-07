@@ -234,12 +234,12 @@ export const chatProjects = [
         order: 1,
     },
     {
-        name: "gpt4free",
-        url: "https://github.com/xtekky/gpt4free",
+        name: "G4F Chat UI",
+        url: "http://g4f.dev/chat/pollinations",
         description:
-            "The official gpt4free repository - various collection of powerful language models.",
-        author: "xtekky",
-        repo: "https://github.com/xtekky/gpt4free",
+            "The official G4F Chat UI for Pollinations with Image & Video Generation capability.",
+        author: "@hlohaus",
+        repo: "https://github.com/gpt4free/g4f.dev",
         stars: 65121,
         order: 1,
     },

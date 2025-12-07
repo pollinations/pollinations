@@ -9,10 +9,18 @@ jobs:
   close-discarded:
     runs-on: ubuntu-latest
     steps:
+      - name: Generate Polly Bot Token
+        id: polly-bot
+        uses: actions/create-github-app-token@v1
+        with:
+          app-id: ${{ secrets.POLLY_BOT_APP_ID }}
+          private-key: ${{ secrets.POLLY_BOT_PRIVATE_KEY }}
+          owner: pollinations
+
       - name: Close issues in "Discarded" column
         uses: actions/github-script@v7
         with:
-          github-token: ${{ secrets.POLLI_PAT }}
+          github-token: ${{ steps.polly-bot.outputs.token }}
           script: |
             const ORG = 'pollinations';
             const PROJECT_NUMBER = 20;

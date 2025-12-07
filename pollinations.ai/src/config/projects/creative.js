@@ -1019,35 +1019,50 @@ export const creativeProjects = [
         "submissionDate": "2025-12-04",
         "order": 5,
     },
-  {
-    "name": "Ecoverse AI",
-    "url": "https://ecoverse.cc",
-    "description": "Ecoverse is an AI-powered waste-recognition platform that helps users instantly identify and classify waste using multi-model intelligence. It uses Pollinations’ models to analyze images, generate explanations, and deliver fast, accurate waste-segregation guidance. Users simply upload a photo, and Ecoverse tells them exactly how to dispose of it — clean, accessible, and scalable at ecoverse.cc.",
-    "author": "achyuth0",
-    "repo": "https://github.com/achyuth0/Ecoverse-doc",
-    "category": "creative",
-    "language": "en",
-    "submissionDate": "2025-12-04",
-    "order": 5
-  },
-  {
-    "name": "Cinepoca",
-    "url": "https://cinepoca.com.br",
-    "description": "Cinepoca serves as a fully AI-driven hub for movie enthusiasts. Our project relies on Pollinations.ai for end-to-end content generation, including blog posts and custom imagery. We have also integrated the Pollinations API into a pipeline that creates 100% automated Instagram/Facebook Reels. While AI drives the creation, all content undergoes human review to prevent hallucinations and ensure high editorial standards.",
-    "author": "victorchiq",
-    "repo": null,
-    "category": "creative",
-    "language": "pt-BR",
-    "submissionDate": "2025-12-04",
-    "order": 5
-  },
-  {
-    "name": "Flowgen",
-    "url": "https://flowgen.puter.site/",
-    "description": "A high-performance, web-based AI image generation studio built on the Puter.js ecosystem. It features a sleek, dark UI with advanced controls for prompt engineering and model management, safety filters, a transparency mode, local history storage via Puter's file system, and Img2Img support for guiding generations.",
-    "author": "alinaaa20708-ops",
-    "category": "creative",
-    "submissionDate": "2025-12-05",
-    "order": 5
-  }
+    {
+        "name": "Ecoverse AI",
+        "url": "https://ecoverse.cc",
+        "description":
+            "Ecoverse is an AI-powered waste-recognition platform that helps users instantly identify and classify waste using multi-model intelligence. It uses Pollinations’ models to analyze images, generate explanations, and deliver fast, accurate waste-segregation guidance. Users simply upload a photo, and Ecoverse tells them exactly how to dispose of it — clean, accessible, and scalable at ecoverse.cc.",
+        "author": "achyuth0",
+        "repo": "https://github.com/achyuth0/Ecoverse-doc",
+        "category": "creative",
+        "language": "en",
+        "submissionDate": "2025-12-04",
+        "order": 5,
+    },
+    {
+        "name": "Cinepoca",
+        "url": "https://cinepoca.com.br",
+        "description":
+            "Cinepoca serves as a fully AI-driven hub for movie enthusiasts. Our project relies on Pollinations.ai for end-to-end content generation, including blog posts and custom imagery. We have also integrated the Pollinations API into a pipeline that creates 100% automated Instagram/Facebook Reels. While AI drives the creation, all content undergoes human review to prevent hallucinations and ensure high editorial standards.",
+        "author": "victorchiq",
+        "repo": null,
+        "category": "creative",
+        "language": "pt-BR",
+        "submissionDate": "2025-12-04",
+        "order": 5,
+    },
+    {
+        "name": "Flowgen",
+        "url": "https://flowgen.puter.site/",
+        "description":
+            "A high-performance, web-based AI image generation studio built on the Puter.js ecosystem. It features a sleek, dark UI with advanced controls for prompt engineering and model management, safety filters, a transparency mode, local history storage via Puter's file system, and Img2Img support for guiding generations.",
+        "author": "alinaaa20708-ops",
+        "category": "creative",
+        "submissionDate": "2025-12-05",
+        "order": 5,
+    },
+    {
+        "name": "Flux AI 🇹🇼",
+        "url": "https://koy.xx.kg/",
+        "description":
+            "Cloudflare Workers' intelligent adaptive AI image generation platform",
+        "author": "kinai9661",
+        "repo": "https://github.com/kinai9661/Flux-AI-Pro",
+        "category": "creative",
+        "language": "zh-TW",
+        "submissionDate": "2025-12-04",
+        "order": 5,
+    },
 ];

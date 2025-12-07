@@ -359,8 +359,8 @@ Pollinations.AI is used in various projects, including:
 | [Image Generation Playground](https://umint-image.hf.space) ([⭐ 0](https://huggingface.co/spaces/umint/image/tree/main)) | Transform your ideas into a visual masterpiece. Part of the UltimaX... | @hadadarjt |
 | 🆕 [Prompt Vision 🎨](https://promptvision.jagrut.me) ([⭐ 0](https://github.com/jagrut-bhole/promptvision)) | Create and share AI-generated images with the community. Features intelligent... | @jagrut-bhole |
 | 🆕 [Pollinations Gallery 🖼️](https://leofy18.github.io/gallery/) ([⭐ 0](https://github.com/leofy18/gallery)) | Curated gallery of AI-generated artwork powered by Pollinations. Explore,... | @leofy18 |
-| 🆕 [AI Stickers Generator 🎨](https://ai-stickers-generator.vercel.app/) | Turn text prompts into unique AI-generated stickers instantly. Perfect for... | @KristijanPill |
-| 🆕 [StickerHub 🎨](https://stickerhub.pages.dev/) | AI-powered sticker generation platform. Create and download custom stickers... | @StickerHub |
+| [AI Stickers Generator 🎨](https://ai-stickers-generator.vercel.app/) | Turn text prompts into unique AI-generated stickers instantly. Perfect for... | @KristijanPill |
+| [StickerHub 🎨](https://stickerhub.pages.dev/) | AI-powered sticker generation platform. Create and download custom stickers... | @StickerHub |
 | [GPTAI.host 🛠️](https://gptai.host/) | Completely free AI toolkit offering unlimited text, image, and audio... | @carlseo |
 | 🤖 [LINE Blessing Images Bot 🇹🇼](https://line.me/R/ti/p/@blessing-ai) | Create and share personalized AI blessing images directly in LINE. Choose from... | @nickyeh611 |
 | [Pollinator Android App](https://github.com/g-aggarwal/Pollinator) | An open-source Android app for text-to-image generation. | @gaurav_87680 |
@@ -383,6 +383,7 @@ Pollinations.AI is used in various projects, including:
 | 🆕 [Ecoverse AI](https://ecoverse.cc) ([⭐ 0](https://github.com/achyuth0/Ecoverse-doc)) | Ecoverse is an AI-powered waste-recognition platform that helps users instantly... | achyuth0 |
 | 🆕 🇧🇷 [Cinepoca](https://cinepoca.com.br) | Cinepoca serves as a fully AI-driven hub for movie enthusiasts. Our project... | victorchiq |
 | 🆕 [Flowgen](https://flowgen.puter.site/) | A high-performance, web-based AI image generation studio built on the Puter.js... | alinaaa20708-ops |
+| 🆕 [Flux AI 🇹🇼](https://koy.xx.kg/) ([⭐ 0](https://github.com/kinai9661/Flux-AI-Pro)) | Cloudflare Workers' intelligent adaptive AI image generation platform | kinai9661 |
 
 ### Games 🎲
 

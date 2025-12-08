@@ -1,5 +1,5 @@
-import { createFileRoute, redirect } from "@tanstack/react-router";
-import { useState } from "react";
+import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
+import { useState, useEffect } from "react";
 import { FAQ } from "../components/faq.tsx";
 import { Button } from "../components/button.tsx";
 import { Header } from "../components/header.tsx";
@@ -9,8 +9,23 @@ import { Pricing } from "../components/pricing/index.ts";
 export const Route = createFileRoute("/sign-in")({
     component: RouteComponent,
     beforeLoad: ({ context }) => {
+        // Check for pending redirect URL from authorize flow
+        const pendingRedirectUrl = typeof window !== "undefined" 
+            ? localStorage.getItem("pending_redirect_url") 
+            : null;
+        
         // redirect if already signed in
-        if (context.user) throw redirect({ to: "/" });
+        if (context.user) {
+            if (pendingRedirectUrl) {
+                // Clear the stored URL and redirect to authorize
+                localStorage.removeItem("pending_redirect_url");
+                throw redirect({ 
+                    to: "/authorize", 
+                    search: { redirect_url: pendingRedirectUrl } 
+                });
+            }
+            throw redirect({ to: "/" });
+        }
     },
 });
 

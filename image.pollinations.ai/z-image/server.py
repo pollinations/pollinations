@@ -1,14 +1,9 @@
-"""
-Z-Image-Turbo Server - Simplified single-process FastAPI server
-with heartbeat registration and RealESRGAN upscaling.
-"""
 import os
 import sys
 import io
 import base64
 import logging
 import asyncio
-from typing import List
 from contextlib import asynccontextmanager
 
 import torch
@@ -16,45 +11,41 @@ import aiohttp
 import requests
 import numpy as np
 from PIL import Image
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Header, Depends
 from fastapi.responses import JSONResponse
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from diffusers import ZImagePipeline
 from basicsr.archs.rrdbnet_arch import RRDBNet
 from realesrgan import RealESRGANer
 
-# Configure logging
+
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# Configuration
+
 MODEL_ID = "Tongyi-MAI/Z-Image-Turbo"
 MODEL_CACHE = "model_cache"
-UPSCALER_MODEL_x4 = "model_cache/RealESRGAN_x4plus.pth"
 UPSCALER_MODEL_x2 = "model_cache/RealESRGAN_x2plus.pth"
-MAX_PIXELS = 512 * 512  # Generate at 512x512 max, then upscale
-UPSCALE_FACTOR = 2  # Changed from 4 to 2
+MAX_PIXELS = 768 * 768 
+UPSCALE_FACTOR = 2  
 
 
 class ImageRequest(BaseModel):
-    prompts: List[str] = ["a photo of an astronaut riding a horse on mars"]
-    width: int = 1024
-    height: int = 1024
-    steps: int = 9
+    prompts: list[str] = Field(default=["a photo of an astronaut riding a horse on mars"], min_length=1)
+    width: int = Field(default=1024, le=4096)
+    height: int = Field(default=1024, le=4096)
+    steps: int = Field(default=9, le=50)
     seed: int | None = None
 
-
-# Global model references
 pipe = None
 upsampler = None
-upsampler_x4 = None  # Keep x4 available if needed
 
 
 def get_public_ip():
     try:
         response = requests.get('https://api.ipify.org', timeout=5)
         return response.text
-    except:
+    except Exception:
         return None
 
 
@@ -99,7 +90,6 @@ async def lifespan(app: FastAPI):
     heartbeat_task = None
     
     try:
-        # Load Z-Image model
         logger.info(f"Loading Z-Image-Turbo pipeline from {MODEL_ID}...")
         pipe = ZImagePipeline.from_pretrained(
             MODEL_ID,
@@ -107,8 +97,6 @@ async def lifespan(app: FastAPI):
             cache_dir=MODEL_CACHE,
         ).to("cuda")
         logger.info("Z-Image-Turbo pipeline loaded successfully")
-        
-        # Load upscaler (2x)
         logger.info("Loading RealESRGAN x2 upscaler...")
         model_x2 = RRDBNet(num_in_ch=3, num_out_ch=3, num_feat=64, num_block=23, num_grow_ch=32, scale=2)
         upsampler = RealESRGANer(
@@ -123,7 +111,6 @@ async def lifespan(app: FastAPI):
         )
         logger.info("Upscaler loaded successfully")
         
-        # Start heartbeat
         await send_heartbeat()
         logger.info("Initial heartbeat sent")
         heartbeat_task = asyncio.create_task(periodic_heartbeat())
@@ -134,7 +121,6 @@ async def lifespan(app: FastAPI):
         if heartbeat_task:
             heartbeat_task.cancel()
         raise
-
     try:
         yield
     finally:
@@ -146,8 +132,7 @@ async def lifespan(app: FastAPI):
                 pass
 
 
-def find_nearest_valid_dimensions(width: float, height: float) -> tuple[int, int]:
-    """Scale down to fit MAX_PIXELS, round to multiple of 16."""
+def find_nearest_valid_dimensions(width: int, height: int) -> tuple[int, int]:
     start_w = round(width)
     start_h = round(height)
     
@@ -171,18 +156,30 @@ def find_nearest_valid_dimensions(width: float, height: float) -> tuple[int, int
 app = FastAPI(title="Z-Image-Turbo API", lifespan=lifespan)
 
 
+# Auth verification
+def verify_enter_token(x_enter_token: str = Header(None, alias="x-enter-token")):
+    expected_token = os.getenv("ENTER_TOKEN")
+    if not expected_token:
+        logger.warning("ENTER_TOKEN not configured - allowing request")
+        return True
+    if x_enter_token != expected_token:
+        logger.warning("Invalid or missing ENTER_TOKEN")
+        raise HTTPException(status_code=403, detail="Unauthorized")
+    return True
+
+
 @app.post("/generate")
-async def generate(request: ImageRequest):
+def generate(request: ImageRequest, _auth: bool = Depends(verify_enter_token)):
     logger.info(f"Request: {request}")
     if pipe is None:
         raise HTTPException(status_code=503, detail="Model not loaded")
     
-    seed = request.seed if request.seed is not None else int.from_bytes(os.urandom(2), "big")
+    seed = request.seed if request.seed is not None else int.from_bytes(os.urandom(8), "big")
     logger.info(f"Using seed: {seed}")
     
     generator = torch.Generator("cuda").manual_seed(seed)
     
-    # Calculate generation dimensions (will be upscaled 4x)
+    # Calculate generation dimensions (will be upscaled 2x)
     target_w, target_h = request.width, request.height
     gen_w, gen_h = find_nearest_valid_dimensions(target_w // UPSCALE_FACTOR, target_h // UPSCALE_FACTOR)
     logger.info(f"Generating at {gen_w}x{gen_h}, will upscale to ~{gen_w*UPSCALE_FACTOR}x{gen_h*UPSCALE_FACTOR}")
@@ -221,8 +218,6 @@ async def generate(request: ImageRequest):
             "prompt": request.prompts[0]
         }]
         
-        # Send heartbeat after successful generation
-        await send_heartbeat()
         return JSONResponse(content=response_content)
     
     except torch.cuda.OutOfMemoryError as e:

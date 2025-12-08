@@ -21,7 +21,6 @@ import { TierPanel } from "../components/tier-panel.tsx";
 import { FAQ } from "../components/faq.tsx";
 import { Header } from "../components/header.tsx";
 import { Pricing } from "../components/pricing/index.ts";
-import { NewsBanner } from "../components/news-banner.tsx";
 
 export const Route = createFileRoute("/")({
     component: RouteComponent,
@@ -157,7 +156,6 @@ function RouteComponent() {
     };
     return (
         <div className="flex flex-col gap-6">
-            <NewsBanner />
             <div className="flex flex-col gap-20">
                 <Header>
                     <User

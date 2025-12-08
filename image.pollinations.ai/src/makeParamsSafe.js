@@ -2,7 +2,7 @@ import { MODELS } from "./models.ts";
 
 /**
  * Sanitizes and adjusts parameters for image generation.
- * @param {{ width: number|null, height: number|null, seed: number|string, model: string, enhance: boolean|string, nologo: boolean|string, negative_prompt: string, nofeed: boolean|string, safe: boolean|string, quality: string, image: string|null, transparent: boolean|string, duration: number|string, aspectRatio: string, audio: boolean|string }} params
+ * @param {{ width: number|null, height: number|null, seed: number|string, model: string, enhance: boolean|string, negative_prompt: string, nofeed: boolean|string, safe: boolean|string, quality: string, image: string|null, transparent: boolean|string, duration: number|string, aspectRatio: string, audio: boolean|string }} params
  * @returns {Object} - The sanitized parameters.
  */
 export const makeParamsSafe = ({
@@ -11,7 +11,6 @@ export const makeParamsSafe = ({
     seed,
     model, // No default - gateway must provide valid model
     enhance,
-    nologo = false,
     negative_prompt = "worst quality, blurry",
     nofeed = false,
     safe = false,
@@ -35,7 +34,6 @@ export const makeParamsSafe = ({
     };
 
     enhance = sanitizeBoolean(enhance);
-    nologo = sanitizeBoolean(nologo);
     nofeed = sanitizeBoolean(nofeed) || sanitizeBoolean(isPrivate);
     safe = sanitizeBoolean(safe);
     transparent = sanitizeBoolean(transparent);
@@ -102,7 +100,6 @@ export const makeParamsSafe = ({
         seed,
         model,
         enhance,
-        nologo,
         negative_prompt,
         nofeed,
         safe,

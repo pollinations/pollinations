@@ -113,7 +113,7 @@ The endpoint:
 ## Security Considerations
 
 - The session-key endpoint only works with session cookies, not API keys
-- Only publishable keys (pk_) are returned, not secret keys (sk_)
+- Only publishable keys (plln_pk) are returned, not secret keys (plln_sk)
 - The plaintext key is stored in metadata for retrieval
 - Redirect URL is validated as a proper URL before use
 - Session ID is obtained from the authentication system, not user input

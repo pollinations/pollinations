@@ -1,0 +1,194 @@
+{
+  "request": {
+    "url": "http://ec2-3-80-56-235.compute-1.amazonaws.com:16385/openai",
+    "method": "POST",
+    "body": {
+      "type": "json",
+      "data": {
+        "model": "nova-micro",
+        "messages": [
+          {
+            "role": "user",
+            "content": "Reply: yes or no?"
+          }
+        ],
+        "stream": true
+      }
+    },
+    "params": {}
+  },
+  "response": {
+    "status": 200,
+    "statusText": "OK",
+    "headers": {
+      "access-control-allow-origin": "*",
+      "cache-control": "no-cache",
+      "connection": "keep-alive",
+      "content-type": "text/event-stream; charset=utf-8",
+      "date": "Mon, 08 Dec 2025 16:01:52 GMT",
+      "transfer-encoding": "chunked",
+      "x-powered-by": "Express"
+    },
+    "body": {
+      "type": "stream",
+      "data": [
+        {
+          "data": "data: {\"id\":\"chatcmpl-e21e1",
+          "delay": 197
+        },
+        {
+          "data": "b5a\",\"created\":1765209712,\"model\":\"amazon.nova-micro-v1:0\",\"system_fingerprint\":\"fp\",\"choices\":[{\"index\":0,\"finish_reason\":null,\"logprobs\":null,\"delta\":{\"role\":\"assistant\",\"content\":\"\"}}],\"object\":\"chat.completion.chunk\",\"usage\":null}\n\ndata: {\"id\":\"chatcmpl-e21e1b5a\",\"created\":1765209712,\"model\":\"amazon.nova-micro-v1:0\",\"system_fingerprint\":\"fp\",\"choices\":[{\"index\":0,\"finish_reason\":null,\"logprobs\":null,\"delta\":{\"content\":\"It\"}}],\"object\":\"chat.completion.chunk\",\"usage\":null}\n\ndata: {\"id\":\"chatcmpl-e21e1b5a\",\"created\":1765209712,\"model\":\"amazon.nova-micro-v1:0\",\"system_fingerprint\":\"fp\",\"choices\":[{\"index\":0,\"finish_reason\":null,\"logprobs\":null,\"delta\":{\"content\":\" depends\"}}],\"object\":\"chat.completion.chunk\",\"usage\":null}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"id\":\"chatcmpl-e21e1",
+          "delay": 133
+        },
+        {
+          "data": "b5a\",\"created\":1765209712,\"model\":\"amazon.nova-micro-v1:0\",\"system_fingerprint\":\"fp\",\"choices\":[{\"index\":0,\"finish_reason\":null,\"logprobs\":null,\"delta\":{\"content\":\" on what\"}}],\"object\":\"chat.completion.chunk\",\"usage\":null}\n\ndata: {\"id\":\"chatcmpl-e21e1b5a\",\"created\":1765209712,\"model\":\"amazon.nova-micro-v1:0\",\"system_fingerprint\":\"fp\",\"choices\":[{\"index\":0,\"finish_reason\":null,\"logprobs\":null,\"delta\":{\"content\":\" you'\"}}],\"object\":\"chat.completion.chunk\",\"usage\":null}\n\ndata: {\"id\":\"chatcmpl-e21e1b5a\",\"created\":1765209712,\"model\":\"amazon.nova-micro-v1:0\",\"system_fingerprint\":\"fp\",\"choices\":[{\"index\":0,\"finish_reason\":null,\"logprobs\":null,\"delta\":{\"content\":\"re asking.\"}}],\"object\":\"chat.completion.chunk\",\"usage\":null}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"id\":\"chatcmpl-e21",
+          "delay": 0
+        },
+        {
+          "data": "e1b5a\",\"created\":1765209712,\"model\":\"amazon.nova-micro-v1:0\",\"system_fingerprint\":\"fp\",\"choices\":[{\"index\":0,\"finish_reason\":null,\"logprobs\":null,\"delta\":{\"content\":\" If\"}}],\"object\":\"chat.completion.chunk\",\"usage\":null}\n\ndata: {\"id\":\"chatcmpl-e21e1b5a\",\"created\":1765209712,\"model\":\"amazon.nova-micro-v1:0\",\"system_fingerprint\":\"fp\",\"choices\":[{\"index\":0,\"finish_reason\":null,\"logprobs\":null,\"delta\":{\"content\":\" you\"}}],\"object\":\"chat.completion.chunk\",\"usage\":null}\n\n",
+          "delay": 1
+        },
+        {
+          "data": "data: {\"id\":\"chatcmpl-e21",
+          "delay": 0
+        },
+        {
+          "data": "e1b5a\",\"created\":1765209712,\"model\":\"amazon.nova-micro-v1:0\",\"system_fingerprint\":\"fp\",\"choices\":[{\"index\":0,\"finish_reason\":null,\"logprobs\":null,\"delta\":{\"content\":\"'re looking\"}}],\"object\":\"chat.completion.chunk\",\"usage\":null}\n\ndata: {\"id\":\"chatcmpl-e21e1b5a\",\"created\":1765209712,\"model\":\"amazon.nova-micro-v1:0\",\"system_fingerprint\":\"fp\",\"choices\":[{\"index\":0,\"finish_reason\":null,\"logprobs\":null,\"delta\":{\"content\":\" for a straightforward\"}}],\"object\":\"chat.completion.chunk\",\"usage\":null}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"id\":\"chatcmpl-e21e",
+          "delay": 0
+        },
+        {
+          "data": "1b5a\",\"created\":1765209712,\"model\":\"amazon.nova-micro-v1:0\",\"system_fingerprint\":\"fp\",\"choices\":[{\"index\":0,\"finish_reason\":null,\"logprobs\":null,\"delta\":{\"content\":\" answer\"}}],\"object\":\"chat.completion.chunk\",\"usage\":null}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"id\":\"chatcmpl-e21e1",
+          "delay": 13
+        },
+        {
+          "data": "b5a\",\"created\":1765209712,\"model\":\"amazon.nova-micro-v1:0\",\"system_fingerprint\":\"fp\",\"choices\":[{\"index\":0,\"finish_reason\":null,\"logprobs\":null,\"delta\":{\"content\":\" to\"}}],\"object\":\"chat.completion.chunk\",\"usage\":null}\n\ndata: {\"id\":\"chatcmpl-e21e1b5a\",\"created\":1765209712,\"model\":\"amazon.nova-micro-v1:0\",\"system_fingerprint\":\"fp\",\"choices\":[{\"index\":0,\"finish_reason\":null,\"logprobs\":null,\"delta\":{\"content\":\" a\"}}],\"object\":\"chat.completion.chunk\",\"usage\":null}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"id\":\"chatcmpl-e21e1",
+          "delay": 13
+        },
+        {
+          "data": "b5a\",\"created\":1765209712,\"model\":\"amazon.nova-micro-v1:0\",\"system_fingerprint\":\"fp\",\"choices\":[{\"index\":0,\"finish_reason\":null,\"logprobs\":null,\"delta\":{\"content\":\" clear\"}}],\"object\":\"chat.completion.chunk\",\"usage\":null}\n\ndata: {\"id\":\"chatcmpl-e21e1b5a\",\"created\":1765209712,\"model\":\"amazon.nova-micro-v1:0\",\"system_fingerprint\":\"fp\",\"choices\":[{\"index\":0,\"finish_reason\":null,\"logprobs\":null,\"delta\":{\"content\":\" question\"}}],\"object\":\"chat.completion.chunk\",\"usage\":null}\n\ndata: {\"id\":\"chatcmpl-e21e1b5a\",\"created\":1765209712,\"model\":\"amazon.nova-micro-v1:0\",\"system_fingerprint\":\"fp\",\"choices\":[{\"index\":0,\"finish_reason\":null,\"logprobs\":null,\"delta\":{\"content\":\", I\"}}],\"object\":\"chat.completion.chunk\",\"usage\":null}\n\ndata: {\"id\":\"chatcmpl-e21e1b5a\",\"created\":1765209712,\"model\":\"amazon.nova-micro-v1:0\",\"system_fingerprint\":\"fp\",\"choices\":[{\"index\":0,\"finish_reason\":null,\"logprobs\":null,\"delta\":{\"content\":\" can\"}}],\"object\":\"chat.completion.chunk\",\"usage\":null}\n\ndata: {\"id\":\"chatcmpl-e21e1b5a\",\"created\":1765209712,\"model\":\"amazon.nova-micro-v1:0\",\"system_fingerprint\":\"fp\",\"choices\":[{\"index\":0,\"finish_reason\":null,\"logprobs\":null,\"delta\":{\"content\":\" give you a\"}}],\"object\":\"chat.completion.chunk\",\"usage\":null}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"id\":\"chatcmpl-e21e1b",
+          "delay": 6
+        },
+        {
+          "data": "5a\",\"created\":1765209712,\"model\":\"amazon.nova-micro-v1:0\",\"system_fingerprint\":\"fp\",\"choices\":[{\"index\":0,\"finish_reason\":null,\"logprobs\":null,\"delta\":{\"content\":\" yes or no\"}}],\"object\":\"chat.completion.chunk\",\"usage\":null}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"id\":\"chatcmpl-e21e1b",
+          "delay": 2
+        },
+        {
+          "data": "5a\",\"created\":1765209712,\"model\":\"amazon.nova-micro-v1:0\",\"system_fingerprint\":\"fp\",\"choices\":[{\"index\":0,\"finish_reason\":null,\"logprobs\":null,\"delta\":{\"content\":\".\"}}],\"object\":\"chat.completion.chunk\",\"usage\":null}\n\n",
+          "delay": 1
+        },
+        {
+          "data": "data: {\"id\":\"chatcmpl-e21e1",
+          "delay": 1
+        },
+        {
+          "data": "b5a\",\"created\":1765209712,\"model\":\"amazon.nova-micro-v1:0\",\"system_fingerprint\":\"fp\",\"choices\":[{\"index\":0,\"finish_reason\":null,\"logprobs\":null,\"delta\":{\"content\":\" But\"}}],\"object\":\"chat.completion.chunk\",\"usage\":null}\n\ndata: {\"id\":\"chatcmpl-e21e1b5a\",\"created\":1765209712,\"model\":\"amazon.nova-micro-v1:0\",\"system_fingerprint\":\"fp\",\"choices\":[{\"index\":0,\"finish_reason\":null,\"logprobs\":null,\"delta\":{\"content\":\" if\"}}],\"object\":\"chat.completion.chunk\",\"usage\":null}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"id\":\"chatcmpl-e21e1",
+          "delay": 1
+        },
+        {
+          "data": "b5a\",\"created\":1765209712,\"model\":\"amazon.nova-micro-v1:0\",\"system_fingerprint\":\"fp\",\"choices\":[{\"index\":0,\"finish_reason\":null,\"logprobs\":null,\"delta\":{\"content\":\" there's more\"}}],\"object\":\"chat.completion.chunk\",\"usage\":null}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"id\":\"chatcmpl-e21e1",
+          "delay": 91
+        },
+        {
+          "data": "b5a\",\"created\":1765209712,\"model\":\"amazon.nova-micro-v1:0\",\"system_fingerprint\":\"fp\",\"choices\":[{\"index\":0,\"finish_reason\":null,\"logprobs\":null,\"delta\":{\"content\":\" context or nuance\"}}],\"object\":\"chat.completion.chunk\",\"usage\":null}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"id\":\"chatcmpl-e21e",
+          "delay": 0
+        },
+        {
+          "data": "1b5a\",\"created\":1765209712,\"model\":\"amazon.nova-micro-v1:0\",\"system_fingerprint\":\"fp\",\"choices\":[{\"index\":0,\"finish_reason\":null,\"logprobs\":null,\"delta\":{\"content\":\" to\"}}],\"object\":\"chat.completion.chunk\",\"usage\":null}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"id\":\"chatcmpl-e21",
+          "delay": 0
+        },
+        {
+          "data": "e1b5a\",\"created\":1765209712,\"model\":\"amazon.nova-micro-v1:0\",\"system_fingerprint\":\"fp\",\"choices\":[{\"index\":0,\"finish_reason\":null,\"logprobs\":null,\"delta\":{\"content\":\" what\"}}],\"object\":\"chat.completion.chunk\",\"usage\":null}\n\ndata: {\"id\":\"chatcmpl-e21e1b5a\",\"created\":1765209712,\"model\":\"amazon.nova-micro-v1:0\",\"system_fingerprint\":\"fp\",\"choices\":[{\"index\":0,\"finish_reason\":null,\"logprobs\":null,\"delta\":{\"content\":\" you're asking\"}}],\"object\":\"chat.completion.chunk\",\"usage\":null}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"id\":\"chatcmpl-e21e",
+          "delay": 0
+        },
+        {
+          "data": "1b5a\",\"created\":1765209712,\"model\":\"amazon.nova-micro-v1:0\",\"system_fingerprint\":\"fp\",\"choices\":[{\"index\":0,\"finish_reason\":null,\"logprobs\":null,\"delta\":{\"content\":\", a\"}}],\"object\":\"chat.completion.chunk\",\"usage\":null}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"id\":\"chatcmpl-e21",
+          "delay": 1
+        },
+        {
+          "data": "e1b5a\",\"created\":1765209712,\"model\":\"amazon.nova-micro-v1:0\",\"system_fingerprint\":\"fp\",\"choices\":[{\"index\":0,\"finish_reason\":null,\"logprobs\":null,\"delta\":{\"content\":\" simple\"}}],\"object\":\"chat.completion.chunk\",\"usage\":null}\n\ndata: {\"id\":\"chatcmpl-e21e1b5a\",\"created\":1765209712,\"model\":\"amazon.nova-micro-v1:0\",\"system_fingerprint\":\"fp\",\"choices\":[{\"index\":0,\"finish_reason\":null,\"logprobs\":null,\"delta\":{\"content\":\" yes\"}}],\"object\":\"chat.completion.chunk\",\"usage\":null}\n\ndata: {\"id\":\"chatcmpl-e21e1b5a\",\"created\":1765209712,\"model\":\"amazon.nova-micro-v1:0\",\"system_fingerprint\":\"fp\",\"choices\":[{\"index\":0,\"finish_reason\":null,\"logprobs\":null,\"delta\":{\"content\":\" or no might\"}}],\"object\":\"chat.completion.chunk\",\"usage\":null}\n\ndata: {\"id\":\"chatcmpl-e21e1b5a\",\"created\":1765209712,\"model\":\"amazon.nova-micro-v1:0\",\"system_fingerprint\":\"fp\",\"choices\":[{\"index\":0,\"finish_reason\":null,\"logprobs\":null,\"delta\":{\"content\":\" not be as helpful\"}}],\"object\":\"chat.completion.chunk\",\"usage\":null}\n\ndata: {\"id\":\"chatcmpl-e21e1b5a\",\"created\":1765209712,\"model\":\"amazon.nova-micro-v1:0\",\"system_fingerprint\":\"fp\",\"choices\":[{\"index\":0,\"finish_reason\":null,\"logprobs\":null,\"delta\":{\"content\":\". What\"}}],\"object\":\"chat.completi",
+          "delay": 0
+        },
+        {
+          "data": "on.chunk\",\"usage\":null}\n\n",
+          "delay": 12
+        },
+        {
+          "data": "data: {\"id\":\"chatcmpl-e21e",
+          "delay": 0
+        },
+        {
+          "data": "1b5a\",\"created\":1765209712,\"model\":\"amazon.nova-micro-v1:0\",\"system_fingerprint\":\"fp\",\"choices\":[{\"index\":0,\"finish_reason\":null,\"logprobs\":null,\"delta\":{\"content\":\"'s on\"}}],\"object\":\"chat.completion.chunk\",\"usage\":null}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"id\":\"chatcmpl-e21e1b",
+          "delay": 1
+        },
+        {
+          "data": "5a\",\"created\":1765209712,\"model\":\"amazon.nova-micro-v1:0\",\"system_fingerprint\":\"fp\",\"choices\":[{\"index\":0,\"finish_reason\":null,\"logprobs\":null,\"delta\":{\"content\":\" your\"}}],\"object\":\"chat.completion.chunk\",\"usage\":null}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"id\":\"chatcmpl-e21",
+          "delay": 0
+        },
+        {
+          "data": "e1b5a\",\"created\":1765209712,\"model\":\"amazon.nova-micro-v1:0\",\"system_fingerprint\":\"fp\",\"choices\":[{\"index\":0,\"finish_reason\":null,\"logprobs\":null,\"delta\":{\"content\":\" mind?\"}}],\"object\":\"chat.completion.chunk\",\"usage\":null}\n\ndata: {\"id\":\"chatcmpl-e21e1b5a\",\"created\":1765209712,\"model\":\"amazon.nova-micro-v1:0\",\"system_fingerprint\":\"fp\",\"choices\":[{\"index\":0,\"finish_reason\":\"stop\",\"logprobs\":null,\"delta\":{}}],\"object\":\"chat.completion.chunk\",\"usage\":null}\n\ndata: {\"id\":\"chatcmpl-e21e1b5a\",\"created\":1765209712,\"model\":\"amazon.nova-micro-v1:0\",\"system_fingerprint\":\"fp\",\"choices\":[],\"object\":\"chat.completion.chunk\",\"usage\":{\"prompt_tokens\":256,\"completion_tokens\":66,\"total_tokens\":322}}\n\ndata: [DONE]\n\n",
+          "delay": 0
+        }
+      ]
+    }
+  }
+}

@@ -86,7 +86,7 @@ function RouteComponent() {
                 const url = new URL(storedRedirectUrl);
                 setRedirectHostname(url.hostname);
             } catch (e) {
-                console.error('Invalid redirect URL:', e);
+                console.error('Invalid redirect URL:', storedRedirectUrl);
             }
         }
     }, []);

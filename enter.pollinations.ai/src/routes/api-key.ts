@@ -14,35 +14,6 @@ const querySchema = z.object({
 });
 
 export const apiKeyRoutes = new Hono<Env>()
-    .post(
-        "/store-redirect-secret",
-        describeRoute({
-            tags: ["Auth"],
-            description: "Store a secret-to-session mapping for secure redirect flow",
-            hide: true,
-        }),
-        async (c) => {
-            // This endpoint requires session authentication
-            const sessionHeader = c.req.header('cookie');
-            if (!sessionHeader?.includes('better-auth.session_token')) {
-                throw new HTTPException(401, { message: 'Unauthorized' });
-            }
-
-            const body = await c.req.json();
-            const { secret, sessionId } = body as { secret: string; sessionId: string };
-
-            if (!secret || !sessionId) {
-                throw new HTTPException(400, { message: 'Missing secret or sessionId' });
-            }
-
-            // Store in KV with 5 minute expiration
-            await c.env.KV.put(`redirect_secret:${secret}`, sessionId, {
-                expirationTtl: 300, // 5 minutes
-            });
-
-            return c.json({ success: true });
-        }
-    )
     .get(
         "/",
         describeRoute({
@@ -88,30 +59,40 @@ export const apiKeyRoutes = new Hono<Env>()
                 const { createAuth } = await import("../auth.ts");
                 const auth = createAuth(c.env);
                 
-                const createResult = await auth.api.createApiKey({
-                    body: {
-                        userId: userId,
-                        name: "Redirect API Key",
-                        prefix: SECRET_KEY_PREFIX,
-                        metadata: {
-                            description: "Created via redirect flow",
-                            keyType: "secret",
-                        },
-                    },
-                });
+                // Create API key by directly calling the database since we have the userId
+                     // Generate key using same logic as auth.ts
+                     const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+                     const randomBytes = crypto.getRandomValues(new Uint8Array(32));
+                     const keyValue = Array.from(randomBytes, (byte) => chars[byte % chars.length]).join("");
+                     const fullKey = `${SECRET_KEY_PREFIX}_${keyValue}`;
+                     const now = new Date();
 
-                if (!createResult || !createResult.data) {
+                     const apiKeyRecord = await db.insert(schema.apikey).values({
+                    id: crypto.randomUUID(),
+                    userId: userId,
+                          key: fullKey,
+                          prefix: SECRET_KEY_PREFIX,
+                    name: "Redirect API Key",
+                          metadata: JSON.stringify({
+                        description: "Created via redirect flow",
+                        keyType: "secret",
+                          }),
+                          createdAt: now,
+                          updatedAt: now,
+                          enabled: true,
+                          rateLimitEnabled: true,
+                }).returning().get();
+
+                if (!apiKeyRecord) {
                     throw new HTTPException(500, {
                         message: "Failed to create API key",
                     });
                 }
 
-                const newKey = createResult.data;
-
                 return c.json({
-                    key: newKey.key,
-                    keyId: newKey.id,
-                    name: newKey.name || "Redirect API Key",
+                    key: apiKeyRecord.key,
+                    keyId: apiKeyRecord.id,
+                    name: apiKeyRecord.name || "Redirect API Key",
                     type: "secret",
                 });
             } catch (e) {

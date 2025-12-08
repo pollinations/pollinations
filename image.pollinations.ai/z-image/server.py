@@ -7,8 +7,6 @@ import asyncio
 import threading
 import warnings
 from contextlib import asynccontextmanager
-
-# Suppress progress bars and warnings before importing heavy libs
 os.environ["HF_HUB_DISABLE_PROGRESS_BARS"] = "1"
 os.environ["TQDM_DISABLE"] = "1"
 warnings.filterwarnings("ignore")
@@ -24,17 +22,12 @@ from pydantic import BaseModel, Field
 from diffusers import ZImagePipeline
 from basicsr.archs.rrdbnet_arch import RRDBNet
 from realesrgan import RealESRGANer
-
-
-# Configure logging - suppress noisy libraries
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
     datefmt="%H:%M:%S"
 )
 logger = logging.getLogger(__name__)
-
-# Suppress noisy loggers
 for noisy in ["httpx", "httpcore", "urllib3", "diffusers", "transformers", "huggingface_hub"]:
     logging.getLogger(noisy).setLevel(logging.WARNING)
 
@@ -50,7 +43,7 @@ class ImageRequest(BaseModel):
     prompts: list[str] = Field(default=["a photo of an astronaut riding a horse on mars"], min_length=1)
     width: int = Field(default=1024, le=4096)
     height: int = Field(default=1024, le=4096)
-    steps: int = Field(default=9, le=50)  # ignored, always uses 9
+    steps: int = Field(default=9, le=50)  
     seed: int | None = None
 
 pipe = None

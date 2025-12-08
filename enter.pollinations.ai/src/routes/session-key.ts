@@ -39,14 +39,21 @@ export const sessionKeyRoutes = new Hono<Env>()
                     (key) => key.prefix === PUBLISHABLE_KEY_PREFIX && key.enabled
                 );
 
-                if (publishableKey && publishableKey.metadata?.plaintextKey) {
-                    // Return existing publishable key
-                    return c.json({
-                        key: publishableKey.metadata.plaintextKey as string,
-                        keyId: publishableKey.id,
-                        name: publishableKey.name || "Session Key",
-                        type: "publishable",
-                    });
+                if (publishableKey) {
+                    // If we have a publishable key but no plaintext in metadata, update it
+                    if (!publishableKey.metadata?.plaintextKey) {
+                        // This shouldn't happen normally, but handle the edge case
+                        // by creating a new key since we can't retrieve the old one
+                        // Note: In a future improvement, we could delete the old key first
+                    } else {
+                        // Return existing publishable key
+                        return c.json({
+                            key: publishableKey.metadata.plaintextKey as string,
+                            keyId: publishableKey.id,
+                            name: publishableKey.name || "Session Key",
+                            type: "publishable",
+                        });
+                    }
                 }
 
                 // No publishable key found, create one

@@ -104,8 +104,11 @@ function RouteComponent() {
         const sessionId = sessionResult.data.session.id;
         
         // Add session_id to redirect_url
+        // Note: Session ID is passed as URL parameter for simplicity
+        // In production, consider using POST or a more secure transfer method
         try {
             const url = new URL(redirectUrl);
+            // TODO: Add domain allowlist validation to prevent open redirects
             url.searchParams.set('session_id', sessionId);
             
             // Clear the stored redirect URL
@@ -218,6 +221,8 @@ function RouteComponent() {
                             onClick={handleReturnToApp}
                             className="bg-green-200 text-green-900 hover:brightness-105 flex items-center gap-2"
                         >
+                            {/* Note: Using Google's favicon service for simplicity. 
+                                For production, consider hosting internally or using fallback icon */}
                             <img 
                                 src={`https://www.google.com/s2/favicons?domain=${redirectHostname}&sz=32`}
                                 alt={`${redirectHostname} favicon`}

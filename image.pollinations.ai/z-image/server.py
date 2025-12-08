@@ -16,7 +16,7 @@ import aiohttp
 import requests
 import numpy as np
 from PIL import Image
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Header, Depends
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 from diffusers import ZImagePipeline
@@ -36,7 +36,7 @@ UPSCALE_FACTOR = 2  # Changed from 4 to 2
 
 
 class ImageRequest(BaseModel):
-    prompts: List[str] = ["a photo of an astronaut riding a horse on mars"]
+    prompts: List[str] = Field(default=["a photo of an astronaut riding a horse on mars"], min_length=1)
     width: int = Field(default=1024, le=4096)
     height: int = Field(default=1024, le=4096)
     steps: int = Field(default=9, le=50)
@@ -144,7 +144,7 @@ async def lifespan(app: FastAPI):
                 pass
 
 
-def find_nearest_valid_dimensions(width: float, height: float) -> tuple[int, int]:
+def find_nearest_valid_dimensions(width: int, height: int) -> tuple[int, int]:
     """Scale down to fit MAX_PIXELS, round to multiple of 16."""
     start_w = round(width)
     start_h = round(height)
@@ -169,8 +169,20 @@ def find_nearest_valid_dimensions(width: float, height: float) -> tuple[int, int
 app = FastAPI(title="Z-Image-Turbo API", lifespan=lifespan)
 
 
+# Auth verification
+def verify_enter_token(x_enter_token: str = Header(None, alias="x-enter-token")):
+    expected_token = os.getenv("ENTER_TOKEN")
+    if not expected_token:
+        logger.warning("ENTER_TOKEN not configured - allowing request")
+        return True
+    if x_enter_token != expected_token:
+        logger.warning("Invalid or missing ENTER_TOKEN")
+        raise HTTPException(status_code=403, detail="Unauthorized")
+    return True
+
+
 @app.post("/generate")
-def generate(request: ImageRequest):
+def generate(request: ImageRequest, _auth: bool = Depends(verify_enter_token)):
     logger.info(f"Request: {request}")
     if pipe is None:
         raise HTTPException(status_code=503, detail="Model not loaded")

@@ -65,8 +65,8 @@ def update_readme_news_section(readme_content: str, new_entries: list[str]) -> s
         return None
 
     # Pattern to find the Latest News section
-    # It starts with "## 🆕 Latest News" and ends before "---" or next "##" section
-    pattern = r'(## 🆕 Latest News\s*\n)(.*?)(---|\n## )'
+    # It starts with "## 🆕 Latest News" and ends before "---", next "##" section, or EOF
+    pattern = r'(## 🆕 Latest News\s*\n)(.*?)(---|\n## |$)'
 
     def replacement(match):
         header = match.group(1)

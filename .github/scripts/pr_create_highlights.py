@@ -248,10 +248,13 @@ def parse_response(response: str) -> str:
 
 def merge_highlights(new_highlights: str, existing_highlights: str) -> str:
     """Prepend new highlights to existing ones"""
-    if not existing_highlights.strip():
-        return new_highlights.strip() + "\n"
+    new_clean = new_highlights.strip()
+    existing_clean = existing_highlights.strip()
 
-    return new_highlights.strip() + "\n" + existing_highlights.strip() + "\n"
+    if not existing_clean:
+        return new_clean + "\n"
+
+    return new_clean + "\n" + existing_clean + "\n"
 
 
 def get_file_sha(github_token: str, owner: str, repo: str, file_path: str, branch: str = "main") -> str:

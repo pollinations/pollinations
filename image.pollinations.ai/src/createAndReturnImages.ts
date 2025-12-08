@@ -7,6 +7,7 @@ import { fileTypeFromBuffer } from "file-type";
 import sharp from "sharp";
 import {
     fetchFromLeastBusyFluxServer,
+    fetchFromLeastBusyServer,
     getNextTurboServerUrl,
 } from "./availableServers.ts";
 import { sanitizeString } from "./translateIfNecessary.ts";
@@ -152,10 +153,14 @@ export const callComfyUI = async (
 
         // Single attempt - no retry logic
         try {
+            // Route to appropriate server pool based on model
             const fetchFunction =
                 safeParams.model === "turbo"
                     ? fetchFromTurboServer
-                    : fetchFromLeastBusyFluxServer;
+                    : safeParams.model === "zimage"
+                      ? (opts: RequestInit) =>
+                            fetchFromLeastBusyServer("zimage", opts)
+                      : fetchFromLeastBusyFluxServer;
             response = await fetchFunction({
                 method: "POST",
                 headers: {

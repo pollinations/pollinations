@@ -1,7 +1,3 @@
-"""
-Z-Image-Turbo Server - Simplified single-process FastAPI server
-with heartbeat registration and RealESRGAN upscaling.
-"""
 import os
 import sys
 import io
@@ -23,16 +19,16 @@ from diffusers import ZImagePipeline
 from basicsr.archs.rrdbnet_arch import RRDBNet
 from realesrgan import RealESRGANer
 
-# Configure logging
+
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# Configuration
+
 MODEL_ID = "Tongyi-MAI/Z-Image-Turbo"
 MODEL_CACHE = "model_cache"
 UPSCALER_MODEL_x2 = "model_cache/RealESRGAN_x2plus.pth"
-MAX_PIXELS = 768 * 768  # Generate at 768x768 max, then upscale to 1536x1536
-UPSCALE_FACTOR = 2  # Changed from 4 to 2
+MAX_PIXELS = 768 * 768 
+UPSCALE_FACTOR = 2  
 
 
 class ImageRequest(BaseModel):
@@ -42,8 +38,6 @@ class ImageRequest(BaseModel):
     steps: int = Field(default=9, le=50)
     seed: int | None = None
 
-
-# Global model references
 pipe = None
 upsampler = None
 
@@ -97,7 +91,6 @@ async def lifespan(app: FastAPI):
     heartbeat_task = None
     
     try:
-        # Load Z-Image model
         logger.info(f"Loading Z-Image-Turbo pipeline from {MODEL_ID}...")
         pipe = ZImagePipeline.from_pretrained(
             MODEL_ID,
@@ -105,8 +98,6 @@ async def lifespan(app: FastAPI):
             cache_dir=MODEL_CACHE,
         ).to("cuda")
         logger.info("Z-Image-Turbo pipeline loaded successfully")
-        
-        # Load upscaler (2x)
         logger.info("Loading RealESRGAN x2 upscaler...")
         model_x2 = RRDBNet(num_in_ch=3, num_out_ch=3, num_feat=64, num_block=23, num_grow_ch=32, scale=2)
         upsampler = RealESRGANer(
@@ -121,7 +112,6 @@ async def lifespan(app: FastAPI):
         )
         logger.info("Upscaler loaded successfully")
         
-        # Start heartbeat
         await send_heartbeat()
         logger.info("Initial heartbeat sent")
         heartbeat_task = asyncio.create_task(periodic_heartbeat())
@@ -132,7 +122,6 @@ async def lifespan(app: FastAPI):
         if heartbeat_task:
             heartbeat_task.cancel()
         raise
-
     try:
         yield
     finally:
@@ -145,7 +134,6 @@ async def lifespan(app: FastAPI):
 
 
 def find_nearest_valid_dimensions(width: int, height: int) -> tuple[int, int]:
-    """Scale down to fit MAX_PIXELS, round to multiple of 16."""
     start_w = round(width)
     start_h = round(height)
     

@@ -50,5 +50,11 @@
     "outputDir": "dist",
     "description": "Pollinations AI chat interface (React + Vite)",
     "notes": "From PR #5144 - uses base: '/' for Cloudflare Pages"
+  },
+  "model-monitor": {
+    "subdomain": "model-monitor",
+    "buildCommand": "npm run build",
+    "outputDir": "dist",
+    "description": "Real-time model health monitoring dashboard (React + Vite + Tinybird)"
   }
 }

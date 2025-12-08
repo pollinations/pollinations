@@ -145,7 +145,7 @@ export const IMAGE_SERVICES = {
                 completionImageTokens: 0.0002, // ~$0.0002 per image (GPU cost estimate)
             },
         ],
-        description: "Z-Image-Turbo - Fast 6B parameter image generation",
+        description: "Z-Image-Turbo - Fast 6B parameter image generation (alpha)",
         inputModalities: ["text"],
         outputModalities: ["image"],
     },

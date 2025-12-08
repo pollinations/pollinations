@@ -9,10 +9,6 @@ import {
     fetchFromLeastBusyFluxServer,
     getNextTurboServerUrl,
 } from "./availableServers.ts";
-import {
-    addPollinationsLogoWithImagemagick,
-    getLogoPath,
-} from "./imageOperations.ts";
 import { sanitizeString } from "./translateIfNecessary.ts";
 import {
     analyzeImageSafety,
@@ -1099,10 +1095,8 @@ const prepareMetadata = (
 };
 
 /**
- * Processes the image buffer with logo, format conversion, and metadata
+ * Processes the image buffer with format conversion and metadata
  * @param {Buffer} buffer - The raw image buffer
- * @param {Object} maturityFlags - Object containing isMature and isChild flags
- * @param {Object} safeParams - Parameters for image generation
  * @param {Object} metadataObj - Metadata to embed in the image
  * @param {Object} maturity - Additional maturity information
  * @param {Object} progress - Progress tracking object
@@ -1111,47 +1105,14 @@ const prepareMetadata = (
  */
 const processImageBuffer = async (
     buffer: Buffer,
-    maturityFlags: ContentSafetyFlags,
-    safeParams: ImageParams,
     metadataObj: object,
     maturity: object,
     progress: ProgressManager,
     requestId: string,
 ): Promise<Buffer> => {
-    const { isMature, isChild } = maturityFlags;
-
-    // Add logo
-    progress.updateBar(requestId, 80, "Processing", "Adding logo...");
-    const logoPath = getLogoPath(safeParams, isChild, isMature);
-    let processedBuffer = !logoPath
-        ? buffer
-        : await addPollinationsLogoWithImagemagick(
-              buffer,
-              logoPath,
-              safeParams,
-          );
-
-    // Convert format to JPEG (gptimage PNG support temporarily disabled)
+    // Convert format to JPEG
     progress.updateBar(requestId, 85, "Processing", "Converting to JPEG...");
-    processedBuffer = await convertToJpeg(processedBuffer);
-
-    // GPT Image PNG format support (temporarily disabled - uncomment to reactivate)
-    // if (safeParams.model !== "gptimage") {
-    //     progress.updateBar(
-    //         requestId,
-    //         85,
-    //         "Processing",
-    //         "Converting to JPEG...",
-    //     );
-    //     processedBuffer = await convertToJpeg(processedBuffer);
-    // } else {
-    //     progress.updateBar(
-    //         requestId,
-    //         85,
-    //         "Processing",
-    //         "Keeping PNG format for gptimage...",
-    //     );
-    // }
+    const processedBuffer = await convertToJpeg(buffer);
 
     // Add metadata
     progress.updateBar(requestId, 90, "Processing", "Writing metadata...");
@@ -1159,7 +1120,7 @@ const processImageBuffer = async (
 };
 
 /**
- * Creates and returns images with optional logo and metadata, checking for NSFW content.
+ * Creates and returns images with metadata, checking for NSFW content.
  * @param {string} prompt - The prompt for image generation.
  * @param {Object} safeParams - Parameters for image generation.
  * @param {number} concurrentRequests - Number of concurrent requests.
@@ -1221,8 +1182,6 @@ export async function createAndReturnImageCached(
         // Process the image buffer
         const processedBuffer = await processImageBuffer(
             result.buffer,
-            maturityFlags,
-            safeParams,
             metadataObj,
             maturity,
             progress,

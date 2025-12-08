@@ -5,7 +5,7 @@ import {
     Link,
 } from "@tanstack/react-router";
 import { hc } from "hono/client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import type { PolarRoutes } from "../../routes/polar.ts";
 import type { TiersRoutes } from "../../routes/tiers.ts";
 import {
@@ -22,6 +22,7 @@ import { FAQ } from "../components/faq.tsx";
 import { Header } from "../components/header.tsx";
 import { Pricing } from "../components/pricing/index.ts";
 import { NewsBanner } from "../components/news-banner.tsx";
+import { REDIRECT_URL_STORAGE_KEY, PUBLISHABLE_KEY_PREFIX, SECRET_KEY_PREFIX } from "../constants.ts";
 
 export const Route = createFileRoute("/")({
     component: RouteComponent,
@@ -73,6 +74,69 @@ function RouteComponent() {
     const [isSigningOut, setIsSigningOut] = useState(false);
     const [isActivating, setIsActivating] = useState(false);
     const [activationError, setActivationError] = useState<string | null>(null);
+    const [redirectUrl, setRedirectUrl] = useState<string | null>(null);
+    const [redirectHostname, setRedirectHostname] = useState<string | null>(null);
+
+    // Get redirect_url from localStorage
+    useEffect(() => {
+        const storedRedirectUrl = localStorage.getItem(REDIRECT_URL_STORAGE_KEY);
+        if (storedRedirectUrl) {
+            setRedirectUrl(storedRedirectUrl);
+            try {
+                const url = new URL(storedRedirectUrl);
+                setRedirectHostname(url.hostname);
+            } catch (e) {
+                console.error('Invalid redirect URL:', storedRedirectUrl);
+            }
+        }
+    }, []);
+
+    const handleReturnToApp = async () => {
+        if (!redirectUrl) return;
+        
+        // Get session from auth
+        const sessionResult = await auth.getSession();
+        if (!sessionResult.data?.session) {
+            console.error('No session available');
+            return;
+        }
+        
+        const sessionId = sessionResult.data.session.id;
+        
+        // Generate a custom secret key for this redirect
+        // This secret will be used by the app to retrieve the API key
+        const secretBytes = new Uint8Array(32);
+        crypto.getRandomValues(secretBytes);
+        const secret = Array.from(secretBytes, byte => byte.toString(16).padStart(2, '0')).join('');
+        
+        // Store the secret-to-session mapping in the backend
+        try {
+            await fetch('/api/auth/store-redirect-secret', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
+                body: JSON.stringify({ secret, sessionId }),
+            });
+        } catch (e) {
+            console.error('Failed to store redirect secret:', e);
+            return;
+        }
+        
+        // Add secret to redirect_url instead of session_id
+        try {
+            const url = new URL(redirectUrl);
+            // TODO: Add domain allowlist validation to prevent open redirects
+            url.searchParams.set('secret', secret);
+            
+            // Clear the stored redirect URL
+            localStorage.removeItem(REDIRECT_URL_STORAGE_KEY);
+            
+            // Redirect to the app
+            window.location.href = url.toString();
+        } catch (e) {
+            console.error('Error constructing redirect URL:', e);
+        }
+    };
 
     const handleSignOut = async () => {
         if (isSigningOut) return; // Prevent double-clicks
@@ -91,7 +155,7 @@ function RouteComponent() {
         const keyType = formState.keyType || "secret";
         const result = await auth.apiKey.create({
             name: formState.name,
-            prefix: keyType === "publishable" ? "plln_pk" : "plln_sk",
+            prefix: keyType === "publishable" ? PUBLISHABLE_KEY_PREFIX : SECRET_KEY_PREFIX,
             metadata: { description: formState.description, keyType },
         });
         if (result.error) {
@@ -168,6 +232,25 @@ function RouteComponent() {
                             window.location.href = "/api/polar/customer/portal";
                         }}
                     />
+                    {redirectUrl && redirectHostname && (
+                        <Button
+                            as="button"
+                            onClick={handleReturnToApp}
+                            className="bg-green-200 text-green-900 hover:brightness-105 flex items-center gap-2"
+                        >
+                            {/* Note: Using Google's favicon service for simplicity. 
+                                For production, consider hosting internally or using fallback icon */}
+                            <img 
+                                src={`https://www.google.com/s2/favicons?domain=${redirectHostname}&sz=32`}
+                                alt={`${redirectHostname} favicon`}
+                                className="w-4 h-4"
+                                onError={(e) => {
+                                    (e.target as HTMLImageElement).style.display = 'none';
+                                }}
+                            />
+                            Return to {redirectHostname}
+                        </Button>
+                    )}
                     <Button
                         as="a"
                         href="/api/docs"

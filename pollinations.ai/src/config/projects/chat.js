@@ -634,15 +634,16 @@ export const chatProjects = [
         "submissionDate": "2025-12-03",
         "order": 5,
     },
-  {
-    "name": "SimplifyMind AI (ELI5)",
-    "url": "https://simplify-eloquent-ai.lovable.app/",
-    "description": "A modern one-page web app that turns any complex question into a simple, child-friendly ELI5 explanation. Uses Pollinations' LLM API (p5 model) via a Node.js backend to generate short, metaphor-based explanations, with a premium SaaS-style landing page and live chat features.",
-    "author": "CompaDeveloper",
-    "repo": null,
-    "category": "chat",
-    "language": "en",
-    "submissionDate": "2025-12-04",
-    "order": 5
-  }
+    {
+        "name": "SimplifyMind AI (ELI5)",
+        "url": "https://simplify-eloquent-ai.lovable.app/",
+        "description":
+            "A modern one-page web app that turns any complex question into a simple, child-friendly ELI5 explanation. Uses Pollinations' LLM API (p5 model) via a Node.js backend to generate short, metaphor-based explanations, with a premium SaaS-style landing page and live chat features.",
+        "author": "CompaDeveloper",
+        "repo": null,
+        "category": "chat",
+        "language": "en",
+        "submissionDate": "2025-12-04",
+        "order": 5,
+    },
 ];

@@ -28,7 +28,7 @@ export const Route = createFileRoute("/authorize")({
         if (result.error) throw new Error("Authentication failed.");
         if (!result.data?.user) {
             // Store redirect URL and send to sign-in
-            if (search.redirect_url) {
+            if (search.redirect_url && typeof window !== "undefined") {
                 localStorage.setItem("pending_redirect_url", search.redirect_url);
             }
             throw redirect({ to: "/sign-in" });
@@ -93,9 +93,10 @@ function AuthorizeComponent() {
 
             const data: TemporaryKeyResponse = await response.json();
 
-            // Redirect back to the app with the key
+            // Redirect back to the app with the key in URL fragment (not query param)
+            // Using fragment prevents key from leaking to server logs/Referer headers
             const url = new URL(redirect_url);
-            url.searchParams.set("api_key", data.key);
+            url.hash = `api_key=${data.key}`;
             window.location.href = url.toString();
         } catch (e) {
             setError(e instanceof Error ? e.message : "Authorization failed");

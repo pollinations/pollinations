@@ -1,15 +1,44 @@
 import requests
+import io
+from PIL import Image
+import base64
+import os 
+from dotenv import load_dotenv
+from urllib.parse import quote
+load_dotenv()
 
-url = "http://localhost:10002/generate"
-payload = {
-    "prompts": ["a cat wearing sunglasses"],
+
+url = f"https://gen.pollinations.ai/image/{quote("image of taylor swift")}"
+params = {
+    "model": "zimage",
     "width": 1024,
     "height": 1024,
-    "steps": 9
-}
-headers = {
-    "Content-Type": "application/json"
+    "seed": 42,
+    "enhance": "false",
+    "negative_prompt": "worst quality, blurry",
+    "private": "false",
+    "nologo": "false",
+    "nofeed": "false",
+    "safe": "false",
+    "quality": "medium",
+    "image": "",
+    "transparent": "false",
+    "guidance_scale": 1,
+    "aspectRatio": "9:16",  
+    "audio": "false"
 }
 
-response = requests.post(url, json=payload, headers=headers)
-print(response.text)
+header = {
+    "Authorization": f"Bearer {os.getenv('TOKEN')}"
+}
+response = requests.get(url, params=params, headers=header)
+print("Status Code:", response.status_code)
+
+if response.status_code == 200:
+    img = Image.open(io.BytesIO(response.content))
+    img.save("output.jpg", "JPEG")
+    print("Width:", img.width)
+    print("Height:", img.height)
+    print("Image saved as output.jpg")
+else:
+    print("Response:", response.text)

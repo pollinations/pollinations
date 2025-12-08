@@ -1,9 +1,12 @@
-import type { FC } from "react";
+import { type FC, useState } from "react";
 import { getModelPrices } from "./data.ts";
 import { ModelTable } from "./ModelTable.tsx";
 import { Button } from "../button.tsx";
 
+type Modality = "text" | "image" | "video";
+
 export const Pricing: FC = () => {
+    const [selectedModality, setSelectedModality] = useState<Modality>("image");
     const allModels = getModelPrices();
 
     const imageModels = allModels.filter((m) => m.type === "image");
@@ -27,9 +30,38 @@ export const Pricing: FC = () => {
                 </Button>
             </div>
             <div className="bg-amber-50/30 rounded-2xl p-8 border border-amber-300 space-y-8 overflow-x-auto md:overflow-x-visible">
-                <ModelTable models={imageModels} type="image" />
-                <ModelTable models={videoModels} type="video" />
-                <ModelTable models={textModels} type="text" />
+                <div className="flex flex-wrap gap-2">
+                    {(
+                        [
+                            ["image", "🖼️", "image"],
+                            ["video", "🎬", "video"],
+                            ["text", "💬🔊", "text & audio"],
+                        ] as const
+                    ).map(([mod, emoji, label]) => (
+                        <button
+                            key={mod}
+                            type="button"
+                            onClick={() => setSelectedModality(mod)}
+                            className={`px-4 py-2 rounded-lg text-base font-semibold transition-colors ${
+                                selectedModality === mod
+                                    ? "bg-amber-100 text-amber-800 border border-amber-200"
+                                    : "text-gray-500 hover:text-gray-700"
+                            }`}
+                        >
+                            {emoji} {label}
+                        </button>
+                    ))}
+                </div>
+
+                {selectedModality === "image" && (
+                    <ModelTable models={imageModels} type="image" />
+                )}
+                {selectedModality === "video" && (
+                    <ModelTable models={videoModels} type="video" />
+                )}
+                {selectedModality === "text" && (
+                    <ModelTable models={textModels} type="text" />
+                )}
 
                 <div className="text-xs text-gray-500 pt-4 border-t border-gray-300 space-y-2">
                     <div className="flex flex-wrap gap-x-4 items-center">

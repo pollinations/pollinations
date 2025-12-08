@@ -14,7 +14,7 @@ fi
 
 # Set environment variables
 export PORT=10002
-export PUBLIC_IP=98.91.185.88
+export PUBLIC_IP=${PUBLIC_IP:-$(curl -s https://api.ipify.org)}
 export SERVICE_TYPE=zimage
 
 # Run the server

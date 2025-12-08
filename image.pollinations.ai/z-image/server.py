@@ -4,7 +4,6 @@ import io
 import base64
 import logging
 import asyncio
-from typing import List
 from contextlib import asynccontextmanager
 
 import torch
@@ -32,7 +31,7 @@ UPSCALE_FACTOR = 2
 
 
 class ImageRequest(BaseModel):
-    prompts: List[str] = Field(default=["a photo of an astronaut riding a horse on mars"], min_length=1)
+    prompt: str = Field(default="a photo of an astronaut riding a horse on mars")
     width: int = Field(default=1024, le=4096)
     height: int = Field(default=1024, le=4096)
     steps: int = Field(default=9, le=50)
@@ -175,7 +174,7 @@ def generate(request: ImageRequest, _auth: bool = Depends(verify_enter_token)):
     if pipe is None:
         raise HTTPException(status_code=503, detail="Model not loaded")
     
-    seed = request.seed if request.seed is not None else int.from_bytes(os.urandom(4), "big")
+    seed = request.seed if request.seed is not None else int.from_bytes(os.urandom(8), "big")
     logger.info(f"Using seed: {seed}")
     
     generator = torch.Generator("cuda").manual_seed(seed)
@@ -189,7 +188,7 @@ def generate(request: ImageRequest, _auth: bool = Depends(verify_enter_token)):
         # Generate image
         with torch.inference_mode():
             output = pipe(
-                prompt=request.prompts[0],
+                prompt=request.prompt,
                 generator=generator,
                 width=gen_w,
                 height=gen_h,

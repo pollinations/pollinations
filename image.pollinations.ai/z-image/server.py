@@ -31,7 +31,7 @@ UPSCALE_FACTOR = 2
 
 
 class ImageRequest(BaseModel):
-    prompt: str = Field(default="a photo of an astronaut riding a horse on mars")
+    prompts: list[str] = Field(default=["a photo of an astronaut riding a horse on mars"], min_length=1)
     width: int = Field(default=1024, le=4096)
     height: int = Field(default=1024, le=4096)
     steps: int = Field(default=9, le=50)
@@ -188,7 +188,7 @@ def generate(request: ImageRequest, _auth: bool = Depends(verify_enter_token)):
         # Generate image
         with torch.inference_mode():
             output = pipe(
-                prompt=request.prompt,
+                prompt=request.prompts[0],
                 generator=generator,
                 width=gen_w,
                 height=gen_h,

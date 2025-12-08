@@ -1,34 +1,18 @@
-import { useState, useEffect, type FC } from "react";
+import type { FC } from "react";
 
-const NEWS_ID = "dec-2025-v4";
+// Set to true when there's a special announcement to show
+const SHOW_BANNER = false;
 
+/**
+ * News/announcement banner - hidden by default.
+ * To show: set SHOW_BANNER = true and update the content below.
+ */
 export const NewsBanner: FC = () => {
-    const [dismissed, setDismissed] = useState(true);
-
-    useEffect(() => {
-        const isDismissed = localStorage.getItem(`news-dismissed-${NEWS_ID}`);
-        setDismissed(isDismissed === "true");
-    }, []);
-
-    const handleDismiss = () => {
-        localStorage.setItem(`news-dismissed-${NEWS_ID}`, "true");
-        setDismissed(true);
-    };
-
-    if (dismissed) return null;
+    if (!SHOW_BANNER) return null;
 
     return (
-        <div className="relative bg-violet-50/60 border border-violet-200 rounded-lg p-4 text-sm">
-            <button
-                type="button"
-                onClick={handleDismiss}
-                className="absolute top-2 right-2 text-gray-400 hover:text-gray-600 text-lg leading-none"
-                aria-label="Dismiss"
-            >
-                ×
-            </button>
-
-            <div className="flex flex-col gap-2 pr-6">
+        <div className="bg-violet-50/60 border border-violet-200 rounded-lg p-4 text-sm">
+            <div className="flex flex-col gap-2">
                 <span className="text-xs text-gray-500">
                     Dec 2025 — What's new
                 </span>
@@ -38,23 +22,8 @@ export const NewsBanner: FC = () => {
                         <span className="text-gray-400 italic">dec 1</span>
                     </li>
                     <li className="text-gray-600">
-                        🚀 <strong>Fresh models dropped:</strong>{" "}
-                        <span className="text-gray-700">Claude Opus 4.5</span> ·{" "}
-                        <span className="text-gray-700">Kimi K2</span> ·{" "}
-                        <span className="text-gray-700">Seedream 4.5</span> ·{" "}
-                        <span className="text-gray-700">VEO 3.1</span> ·{" "}
-                        <span className="text-gray-700">Seedance Pro-Fast</span>
-                    </li>
-                    <li className="text-gray-600">
-                        💬 <strong>Join the discussion:</strong>{" "}
-                        <a
-                            href="https://discord.com/channels/885844321461485618/1432378056126894343"
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-purple-600 hover:text-purple-800 underline"
-                        >
-                            #pollen-beta channel
-                        </a>
+                        🚀 <strong>Fresh models dropped:</strong> Claude Opus
+                        4.5, Kimi K2, Seedream 4.5, VEO 3.1, Seedance Pro-Fast
                     </li>
                 </ul>
             </div>

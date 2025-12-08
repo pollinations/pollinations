@@ -3,8 +3,7 @@ import { HTTPException } from "hono/http-exception";
 import { auth } from "../middleware/auth.ts";
 import { describeRoute } from "hono-openapi";
 import type { Env } from "../env.ts";
-
-const PUBLISHABLE_KEY_PREFIX = "plln_pk";
+import { PUBLISHABLE_KEY_PREFIX } from "../constants.ts";
 
 export const sessionKeyRoutes = new Hono<Env>()
     .use("*", auth({ allowApiKey: false, allowSessionCookie: true }))

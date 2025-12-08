@@ -237,6 +237,7 @@ Pollinations.AI is used in various projects, including:
 | [EvilChat 🔥🤖](https://altkriz.github.io/evilchat/) ([⭐ 2](https://github.com/altkriz/evilchat)) | An uncensored AI chat interface with dark, sleek design, smooth animations,... | @altkriz |
 | 🤖 🇮🇩 [Rizqi O Chatbot 🇮🇩](https://chatbot.rizqioliveira.my.id) ([⭐ 1](https://github.com/ray23-bit/Projectenam)) | Rizqi O Chatbot adalah proyek berbasis Pollinations yang menggabungkan tiga... | @ray23-bit |
 | [ Comeback AI](https://comeback-ai.pinkpixel.dev) ([⭐ 1](https://github.com/pinkpixel-dev/comeback-ai)) | AI-powered clapback machine that transforms mean comments into witty comebacks... | @sizzlebop |
+| 🆕 [Pookie AI 💕](https://pookieai.web.app/) ([⭐ 0](https://github.com/shantoislamdev/pookie-ai)) | AI-powered conversational platform for creating customizable virtual characters... | @shantoislamdev |
 | [Nuvole AI 🍎](https://routinehub.co/shortcut/18431/) | Apple Shortcut for iOS/iPadOS with 9 AI models from Pollinations. Features... | @_.mikl._ |
 | [WorksparkAI [BETA] 💼](https://worksparkai-983563815856.europe-west1.run.app) | Modern ChatGPT alternative with document processing, PDF reading, image... | @obezbolen67 |
 | [iTouch 💭](https://jordanpeteroliver.github.io/itouch/) ([⭐ 0](https://github.com/jordanpeteroliver/itouch)) | Chat where images and texts integrate. A poetic journey to where inspiration... | @jordanpeteroliver |

@@ -22,8 +22,7 @@ import { FAQ } from "../components/faq.tsx";
 import { Header } from "../components/header.tsx";
 import { Pricing } from "../components/pricing/index.ts";
 import { NewsBanner } from "../components/news-banner.tsx";
-
-const REDIRECT_URL_STORAGE_KEY = "pollinations_redirect_url";
+import { REDIRECT_URL_STORAGE_KEY, PUBLISHABLE_KEY_PREFIX, SECRET_KEY_PREFIX } from "../constants.ts";
 
 export const Route = createFileRoute("/")({
     component: RouteComponent,
@@ -136,7 +135,7 @@ function RouteComponent() {
         const keyType = formState.keyType || "secret";
         const result = await auth.apiKey.create({
             name: formState.name,
-            prefix: keyType === "publishable" ? "plln_pk" : "plln_sk",
+            prefix: keyType === "publishable" ? PUBLISHABLE_KEY_PREFIX : SECRET_KEY_PREFIX,
             metadata: { description: formState.description, keyType },
         });
         if (result.error) {

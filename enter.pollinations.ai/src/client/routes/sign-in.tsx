@@ -6,8 +6,7 @@ import { Header } from "../components/header.tsx";
 import { NewsBanner } from "../components/news-banner.tsx";
 import { Pricing } from "../components/pricing/index.ts";
 import { z } from "zod";
-
-const REDIRECT_URL_STORAGE_KEY = "pollinations_redirect_url";
+import { REDIRECT_URL_STORAGE_KEY } from "../constants.ts";
 
 const searchSchema = z.object({
     redirect_url: z.string().optional(),

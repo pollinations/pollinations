@@ -18,7 +18,7 @@ import numpy as np
 from PIL import Image
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import JSONResponse
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from diffusers import ZImagePipeline
 from basicsr.archs.rrdbnet_arch import RRDBNet
 from realesrgan import RealESRGANer
@@ -30,7 +30,6 @@ logger = logging.getLogger(__name__)
 # Configuration
 MODEL_ID = "Tongyi-MAI/Z-Image-Turbo"
 MODEL_CACHE = "model_cache"
-UPSCALER_MODEL_x4 = "model_cache/RealESRGAN_x4plus.pth"
 UPSCALER_MODEL_x2 = "model_cache/RealESRGAN_x2plus.pth"
 MAX_PIXELS = 512 * 512  # Generate at 512x512 max, then upscale
 UPSCALE_FACTOR = 2  # Changed from 4 to 2
@@ -38,23 +37,22 @@ UPSCALE_FACTOR = 2  # Changed from 4 to 2
 
 class ImageRequest(BaseModel):
     prompts: List[str] = ["a photo of an astronaut riding a horse on mars"]
-    width: int = 1024
-    height: int = 1024
-    steps: int = 9
+    width: int = Field(default=1024, le=4096)
+    height: int = Field(default=1024, le=4096)
+    steps: int = Field(default=9, le=50)
     seed: int | None = None
 
 
 # Global model references
 pipe = None
 upsampler = None
-upsampler_x4 = None  # Keep x4 available if needed
 
 
 def get_public_ip():
     try:
         response = requests.get('https://api.ipify.org', timeout=5)
         return response.text
-    except:
+    except Exception:
         return None
 
 
@@ -172,17 +170,17 @@ app = FastAPI(title="Z-Image-Turbo API", lifespan=lifespan)
 
 
 @app.post("/generate")
-async def generate(request: ImageRequest):
+def generate(request: ImageRequest):
     logger.info(f"Request: {request}")
     if pipe is None:
         raise HTTPException(status_code=503, detail="Model not loaded")
     
-    seed = request.seed if request.seed is not None else int.from_bytes(os.urandom(2), "big")
+    seed = request.seed if request.seed is not None else int.from_bytes(os.urandom(4), "big")
     logger.info(f"Using seed: {seed}")
     
     generator = torch.Generator("cuda").manual_seed(seed)
     
-    # Calculate generation dimensions (will be upscaled 4x)
+    # Calculate generation dimensions (will be upscaled 2x)
     target_w, target_h = request.width, request.height
     gen_w, gen_h = find_nearest_valid_dimensions(target_w // UPSCALE_FACTOR, target_h // UPSCALE_FACTOR)
     logger.info(f"Generating at {gen_w}x{gen_h}, will upscale to ~{gen_w*UPSCALE_FACTOR}x{gen_h*UPSCALE_FACTOR}")
@@ -221,8 +219,6 @@ async def generate(request: ImageRequest):
             "prompt": request.prompts[0]
         }]
         
-        # Send heartbeat after successful generation
-        await send_heartbeat()
         return JSONResponse(content=response_content)
     
     except torch.cuda.OutOfMemoryError as e:

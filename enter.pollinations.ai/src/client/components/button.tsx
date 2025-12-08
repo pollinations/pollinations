@@ -6,7 +6,8 @@ const colors = {
     green: {
         light: "bg-green-200 text-green-900",
         strong: "bg-green-950 text-green-100",
-        outline: "border border-green-950 text-green-950 hover:bg-green-950 hover:text-green-100 transition-colors",
+        outline:
+            "border border-green-950 text-green-950 hover:bg-green-950 hover:text-green-100 transition-colors",
     },
     pink: {
         light: "bg-fuchsia-200 text-fuchsia-900",
@@ -28,6 +29,11 @@ const colors = {
         strong: "bg-red-900 text-red-50",
         outline: "border-2 border-red-900 text-red-900",
     },
+    amber: {
+        light: "bg-amber-200 text-amber-900 border border-amber-300",
+        strong: "bg-amber-500 text-white",
+        outline: "border-2 border-amber-500 text-amber-900",
+    },
 } as const;
 
 const sizes = {
@@ -48,14 +54,23 @@ const shapes = {
     rect: "rounded-none",
 };
 
-const buttonClasses = ({ color, weight, size, shape, className, disabled }: BaseButtonProps & { disabled?: boolean }) =>
+const buttonClasses = ({
+    color,
+    weight,
+    size,
+    shape,
+    className,
+    disabled,
+}: BaseButtonProps & { disabled?: boolean }) =>
     cn(
         "rounded-full self-center placeholder-green-950 font-medium box-border",
         disabled
             ? "opacity-50 cursor-not-allowed"
             : "hover:filter hover:brightness-105 cursor-pointer",
         colors[color || "green"][weight || "strong"],
-        weight === "outline" ? outlineSizes[size || "medium"] : sizes[size || "medium"],
+        weight === "outline"
+            ? outlineSizes[size || "medium"]
+            : sizes[size || "medium"],
         shapes[shape || "pill"],
         className,
     );
@@ -102,7 +117,14 @@ export function Button<T extends React.ElementType>({
 
     return (
         <Component
-            className={buttonClasses({ color, weight, size, shape, className, disabled })}
+            className={buttonClasses({
+                color,
+                weight,
+                size,
+                shape,
+                className,
+                disabled,
+            })}
             disabled={disabled}
             {...buttonProps}
         >

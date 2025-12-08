@@ -4,6 +4,7 @@ import io
 import base64
 import logging
 import asyncio
+import threading
 from contextlib import asynccontextmanager
 
 import torch
@@ -39,6 +40,7 @@ class ImageRequest(BaseModel):
 
 pipe = None
 upsampler = None
+generate_lock = threading.Lock()
 
 
 def get_public_ip():
@@ -179,20 +181,22 @@ def generate(request: ImageRequest, _auth: bool = Depends(verify_enter_token)):
     logger.info(f"Generating at {gen_w}x{gen_h}, will upscale 2x to ~{gen_w*UPSCALE_FACTOR}x{gen_h*UPSCALE_FACTOR}")
     
     try:
-        with torch.inference_mode():
-            output = pipe(
-                prompt=request.prompts[0],
-                generator=generator,
-                width=gen_w,
-                height=gen_h,
-                num_inference_steps=9,
-                guidance_scale=0.0,
-            )
+        with generate_lock:
+            with torch.inference_mode():
+                output = pipe(
+                    prompt=request.prompts[0],
+                    generator=generator,
+                    width=gen_w,
+                    height=gen_h,
+                    num_inference_steps=9,
+                    guidance_scale=0.0,
+                )
+            
+            image = output.images[0]
+            image_np = np.array(image)
+            upscaled_np, _ = upsampler.enhance(image_np, outscale=UPSCALE_FACTOR)
+            upscaled_image = Image.fromarray(upscaled_np)
         
-        image = output.images[0]
-        image_np = np.array(image)
-        upscaled_np, _ = upsampler.enhance(image_np, outscale=UPSCALE_FACTOR)
-        upscaled_image = Image.fromarray(upscaled_np)
         img_byte_arr = io.BytesIO()
         upscaled_image.save(img_byte_arr, format='JPEG', quality=95)
         img_base64 = base64.b64encode(img_byte_arr.getvalue()).decode('utf-8')

@@ -14,8 +14,7 @@ type Server = {
     errors: number;
 };
 
-type ServerMap = typeof SERVERS;
-type ServerType = keyof ServerMap;
+type ServerType = string;
 
 type ServerInfo = {
     type: ServerType;
@@ -27,11 +26,11 @@ type ServerInfo = {
     requestsPerSecond: string;
 };
 
-// Server storage by type
-const SERVERS = {
-    flux: [] as Server[],
-    translate: [] as Server[],
-    turbo: [] as Server[],
+// Server storage by type - dynamic, allows any type to register
+const SERVERS: Record<string, Server[]> = {
+    flux: [],
+    translate: [],
+    turbo: [],
 };
 
 const SERVER_TIMEOUT = 45000; // 45 seconds
@@ -110,12 +109,10 @@ export const countFluxJobs = () => countJobs("flux");
  * @param {string} type - The type of service (default: 'flux')
  */
 export const registerServer = (url: string, type: ServerType = "flux") => {
-    // Only allow predefined types, fall back to 'flux' for unknown types
+    // Allow any type to register - create the array if it doesn't exist
     if (!Object.hasOwn(SERVERS, type)) {
-        logServer(
-            `Warning: Unknown server type "${type}", defaulting to "flux"`,
-        );
-        type = "flux";
+        logServer(`Creating new server type: "${type}"`);
+        SERVERS[type] = [];
     }
 
     const servers = SERVERS[type];

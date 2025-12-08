@@ -5,7 +5,13 @@ import base64
 import logging
 import asyncio
 import threading
+import warnings
 from contextlib import asynccontextmanager
+
+# Suppress progress bars and warnings before importing heavy libs
+os.environ["HF_HUB_DISABLE_PROGRESS_BARS"] = "1"
+os.environ["TQDM_DISABLE"] = "1"
+warnings.filterwarnings("ignore")
 
 import torch
 import aiohttp
@@ -20,8 +26,17 @@ from basicsr.archs.rrdbnet_arch import RRDBNet
 from realesrgan import RealESRGANer
 
 
-logging.basicConfig(level=logging.INFO)
+# Configure logging - suppress noisy libraries
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+    datefmt="%H:%M:%S"
+)
 logger = logging.getLogger(__name__)
+
+# Suppress noisy loggers
+for noisy in ["httpx", "httpcore", "urllib3", "diffusers", "transformers", "huggingface_hub"]:
+    logging.getLogger(noisy).setLevel(logging.WARNING)
 
 
 MODEL_ID = "Tongyi-MAI/Z-Image-Turbo"

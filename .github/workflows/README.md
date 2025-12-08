@@ -95,7 +95,7 @@ Secrets required: `POLLY_BOT_APP_ID`, `POLLY_BOT_PRIVATE_KEY`
 ### Issue Triage
 
 ```mermaid
-%%{init: {'theme': 'neutral'}}%%
+%%{init: {'theme': 'dark'}}%%
 flowchart TD
     A[Issue opened on GitHub] --> B[issue-label-external.yml]
     B --> C[inbox:github]
@@ -107,7 +107,7 @@ flowchart TD
 ### Weekly News Pipeline
 
 ```mermaid
-%%{init: {'theme': 'neutral'}}%%
+%%{init: {'theme': 'dark'}}%%
 flowchart TD
     subgraph CRON["Monday 00:00 UTC"]
         A[pr-create-weekly-news.yml] --> B[Scans merged PRs via GraphQL]
@@ -132,7 +132,7 @@ flowchart TD
 ### Live PR Notifications
 
 ```mermaid
-%%{init: {'theme': 'neutral'}}%%
+%%{init: {'theme': 'dark'}}%%
 flowchart TD
     A[Any PR merged to main] --> B[discord-post-merged-pr.yml]
     B --> C[Posts to Discord immediately]

@@ -128,6 +128,16 @@ export const socialBotsProjects = [
     "language": "es",
     "submissionDate": "2025-12-04",
     "order": 5
+  },
+  {
+    "name": "TeleChars AI",
+    "url": "https://extras.marcosfrg.x10.mx",
+    "description": "Mi proyecto es una plataforma de creación de personajes con IA para Telegram, en la cual puedes: Darle una personalidad única a tus personaje; Ajustar sus parámetros de generación; Añadirle conocimiento y ejemplos de conversación ilimitados; Poner tu propia API Key para tener acceso a más motores IA, ya sea de Pollinations o de otras APIs, y un límite de tokens por mensaje (max_tokens) mayor. Los telecharbots tienen/pueden: STM y LTM para seguir la conversación sin olvidar cosas importantes, para más naturalidad; Ver imágenes y oír audios. Próximamente: Habrá más idiomas; Se le podrán añadir comandos que le manden una solicitud a un script en tu propio servidor y mandar la respuesta a Telegram.",
+    "author": "marcosfrgames08",
+    "category": "socialBots",
+    "language": "es",
+    "submissionDate": "2025-12-08",
+    "order": 5
   }
 
 

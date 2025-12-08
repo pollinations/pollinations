@@ -5,7 +5,7 @@ import {
     Link,
 } from "@tanstack/react-router";
 import { hc } from "hono/client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import type { PolarRoutes } from "../../routes/polar.ts";
 import type { TiersRoutes } from "../../routes/tiers.ts";
 import {
@@ -73,6 +73,49 @@ function RouteComponent() {
     const [isSigningOut, setIsSigningOut] = useState(false);
     const [isActivating, setIsActivating] = useState(false);
     const [activationError, setActivationError] = useState<string | null>(null);
+    const [redirectUrl, setRedirectUrl] = useState<string | null>(null);
+    const [redirectHostname, setRedirectHostname] = useState<string | null>(null);
+
+    // Get redirect_url from localStorage
+    useEffect(() => {
+        const storedRedirectUrl = localStorage.getItem('pollinations_redirect_url');
+        if (storedRedirectUrl) {
+            setRedirectUrl(storedRedirectUrl);
+            try {
+                const url = new URL(storedRedirectUrl);
+                setRedirectHostname(url.hostname);
+            } catch (e) {
+                console.error('Invalid redirect URL:', e);
+            }
+        }
+    }, []);
+
+    const handleReturnToApp = async () => {
+        if (!redirectUrl) return;
+        
+        // Get session from auth
+        const sessionResult = await auth.getSession();
+        if (!sessionResult.data?.session) {
+            console.error('No session available');
+            return;
+        }
+        
+        const sessionId = sessionResult.data.session.id;
+        
+        // Add session_id to redirect_url
+        try {
+            const url = new URL(redirectUrl);
+            url.searchParams.set('session_id', sessionId);
+            
+            // Clear the stored redirect URL
+            localStorage.removeItem('pollinations_redirect_url');
+            
+            // Redirect to the app
+            window.location.href = url.toString();
+        } catch (e) {
+            console.error('Error constructing redirect URL:', e);
+        }
+    };
 
     const handleSignOut = async () => {
         if (isSigningOut) return; // Prevent double-clicks
@@ -168,6 +211,23 @@ function RouteComponent() {
                             window.location.href = "/api/polar/customer/portal";
                         }}
                     />
+                    {redirectUrl && redirectHostname && (
+                        <Button
+                            as="button"
+                            onClick={handleReturnToApp}
+                            className="bg-green-200 text-green-900 hover:brightness-105 flex items-center gap-2"
+                        >
+                            <img 
+                                src={`https://www.google.com/s2/favicons?domain=${redirectHostname}&sz=32`}
+                                alt={`${redirectHostname} favicon`}
+                                className="w-4 h-4"
+                                onError={(e) => {
+                                    (e.target as HTMLImageElement).style.display = 'none';
+                                }}
+                            />
+                            Return to {redirectHostname}
+                        </Button>
+                    )}
                     <Button
                         as="a"
                         href="/api/docs"

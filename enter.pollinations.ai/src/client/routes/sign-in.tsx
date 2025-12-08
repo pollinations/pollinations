@@ -1,13 +1,19 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { FAQ } from "../components/faq.tsx";
 import { Button } from "../components/button.tsx";
 import { Header } from "../components/header.tsx";
 import { NewsBanner } from "../components/news-banner.tsx";
 import { Pricing } from "../components/pricing/index.ts";
+import { z } from "zod";
+
+const searchSchema = z.object({
+    redirect_url: z.string().optional(),
+});
 
 export const Route = createFileRoute("/sign-in")({
     component: RouteComponent,
+    validateSearch: searchSchema,
     beforeLoad: ({ context }) => {
         // redirect if already signed in
         if (context.user) throw redirect({ to: "/" });
@@ -16,7 +22,15 @@ export const Route = createFileRoute("/sign-in")({
 
 function RouteComponent() {
     const { auth } = Route.useRouteContext();
+    const search = Route.useSearch();
     const [loading, setLoading] = useState(false);
+
+    // Store redirect_url in localStorage when present
+    useEffect(() => {
+        if (search.redirect_url) {
+            localStorage.setItem('pollinations_redirect_url', search.redirect_url);
+        }
+    }, [search.redirect_url]);
 
     const handleSignIn = async () => {
         setLoading(true);

@@ -1,6 +1,8 @@
 import { test, expect } from "../fixtures.ts";
 import { SELF } from "cloudflare:test";
 
+const TEST_PUBLISHABLE_KEY = "plln_pk_test123456789";
+
 test("GET /api/auth/session-key - should create and return a publishable API key from session", async ({
     sessionToken,
 }) => {
@@ -35,7 +37,7 @@ test("GET /api/auth/session-key - should return existing publishable key if one 
         name: "existing-session-key",
         prefix: "plln_pk",
         metadata: {
-            plaintextKey: "plln_pk_test123456789",
+            plaintextKey: TEST_PUBLISHABLE_KEY,
             keyType: "publishable",
         },
         fetchOptions: {
@@ -64,7 +66,7 @@ test("GET /api/auth/session-key - should return existing publishable key if one 
     expect(data).toHaveProperty("key");
     expect(data.type).toBe("publishable");
     // Should return the existing key with plaintextKey from metadata
-    expect(data.key).toBe("plln_pk_test123456789");
+    expect(data.key).toBe(TEST_PUBLISHABLE_KEY);
 });
 
 test("GET /api/auth/session-key - should return 401 for unauthenticated requests", async () => {

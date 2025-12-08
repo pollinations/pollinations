@@ -7,6 +7,8 @@ import { NewsBanner } from "../components/news-banner.tsx";
 import { Pricing } from "../components/pricing/index.ts";
 import { z } from "zod";
 
+const REDIRECT_URL_STORAGE_KEY = "pollinations_redirect_url";
+
 const searchSchema = z.object({
     redirect_url: z.string().optional(),
 });
@@ -28,7 +30,7 @@ function RouteComponent() {
     // Store redirect_url in localStorage when present
     useEffect(() => {
         if (search.redirect_url) {
-            localStorage.setItem('pollinations_redirect_url', search.redirect_url);
+            localStorage.setItem(REDIRECT_URL_STORAGE_KEY, search.redirect_url);
         }
     }, [search.redirect_url]);
 

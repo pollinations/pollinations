@@ -4,6 +4,8 @@ import { auth } from "../middleware/auth.ts";
 import { describeRoute } from "hono-openapi";
 import type { Env } from "../env.ts";
 
+const PUBLISHABLE_KEY_PREFIX = "plln_pk";
+
 export const sessionKeyRoutes = new Hono<Env>()
     .use("*", auth({ allowApiKey: false, allowSessionCookie: true }))
     .get(
@@ -14,6 +16,7 @@ export const sessionKeyRoutes = new Hono<Env>()
                 "Get a temporary API key from the current session.",
                 "This endpoint is used by gen.pollinations.ai to authenticate users via their session.",
                 "Returns the user's first publishable API key, or creates one if none exists.",
+                "Note: The plaintext key is stored in metadata for retrieval. For production use, consider more secure storage.",
             ].join(" "),
         }),
         async (c) => {
@@ -32,9 +35,9 @@ export const sessionKeyRoutes = new Hono<Env>()
                     });
                 }
 
-                // Find a publishable key (pk_ prefix)
+                // Find a publishable key (plln_pk prefix)
                 const publishableKey = apiKeysResult.data.find(
-                    (key) => key.prefix === "plln_pk" && key.enabled
+                    (key) => key.prefix === PUBLISHABLE_KEY_PREFIX && key.enabled
                 );
 
                 if (publishableKey && publishableKey.metadata?.plaintextKey) {
@@ -51,7 +54,7 @@ export const sessionKeyRoutes = new Hono<Env>()
                 const createResult = await authClient.api.createApiKey({
                     body: {
                         name: "Auto-generated Session Key",
-                        prefix: "plln_pk",
+                        prefix: PUBLISHABLE_KEY_PREFIX,
                         metadata: {
                             description: "Automatically created from session",
                             keyType: "publishable",
@@ -69,6 +72,7 @@ export const sessionKeyRoutes = new Hono<Env>()
                 const newKey = createResult.data;
 
                 // Store plaintext key in metadata for future retrieval
+                // Note: For production use, consider encrypting this value or using a more secure storage mechanism
                 await authClient.api.updateApiKey({
                     body: {
                         keyId: newKey.id,

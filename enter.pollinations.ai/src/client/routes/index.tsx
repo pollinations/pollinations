@@ -23,6 +23,8 @@ import { Header } from "../components/header.tsx";
 import { Pricing } from "../components/pricing/index.ts";
 import { NewsBanner } from "../components/news-banner.tsx";
 
+const REDIRECT_URL_STORAGE_KEY = "pollinations_redirect_url";
+
 export const Route = createFileRoute("/")({
     component: RouteComponent,
     beforeLoad: async ({ context }) => {
@@ -78,7 +80,7 @@ function RouteComponent() {
 
     // Get redirect_url from localStorage
     useEffect(() => {
-        const storedRedirectUrl = localStorage.getItem('pollinations_redirect_url');
+        const storedRedirectUrl = localStorage.getItem(REDIRECT_URL_STORAGE_KEY);
         if (storedRedirectUrl) {
             setRedirectUrl(storedRedirectUrl);
             try {
@@ -108,7 +110,7 @@ function RouteComponent() {
             url.searchParams.set('session_id', sessionId);
             
             // Clear the stored redirect URL
-            localStorage.removeItem('pollinations_redirect_url');
+            localStorage.removeItem(REDIRECT_URL_STORAGE_KEY);
             
             // Redirect to the app
             window.location.href = url.toString();

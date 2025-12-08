@@ -26,38 +26,42 @@ export const generateHTML = () => `<!DOCTYPE html>
             <span class="auth-title">🐝 Auth 🌸</span>
         </h1>
         
-        <!-- Registration Closed Notice -->
-        <div id="intro-text">
-            <!-- Registration Closed Box -->
-            <div style="margin-top: 16px; padding: 20px; background: linear-gradient(135deg, #fff5f5 0%, #ffe8f5 100%); border: 2px dashed #ff9999; border-radius: 12px;">
-                <h3 style="margin: 0 0 12px 0; color: #d63384; font-size: 1.3em;">
-                    ✨ Registration Closed ✨
-                </h3>
-                <p style="margin: 0 0 16px 0; color: #444; font-size: 1.05em;">
-                    This login is for <b>existing users only</b>.<br>
-                    New accounts should head over to:
-                </p>
-                <a href="https://enter.pollinations.ai" target="_blank" style="display: inline-block; background: #1a1a1a; color: white; padding: 10px 24px; border-radius: 24px; text-decoration: none; font-weight: bold;">
-                    🚀 enter.pollinations.ai
-                </a>
+        <!-- Unified Shutdown Notice -->
+        <div id="intro-text" style="margin-top: 20px; padding: 28px; background: linear-gradient(135deg, #fef2f2 0%, #fff1f2 100%); border: 3px solid #ef4444; border-radius: 16px; box-shadow: 0 4px 20px rgba(239, 68, 68, 0.15);">
+            
+            <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 16px;">
+                <span style="font-size: 2rem;">🌿</span>
+                <h2 style="margin: 0; color: #dc2626; font-size: 1.5em; font-weight: 700;">
+                    Service Closing — December 15, 2025
+                </h2>
             </div>
-
-            <!-- Deprecation Notice -->
-            <div style="margin-top: 20px; padding: 12px 16px; background: #fffbe6; border-radius: 8px; border-left: 4px solid #ffb300;">
-                <p style="margin: 0; color: #333; font-size: 0.95em;">
-                    <b>⚠️ Deprecation Notice:</b> This service will be deprecated in a few weeks.
-                </p>
-                <p style="margin: 8px 0 0 0; color: #666; font-size: 0.9em;">
-                    Please move your workflows to <b>enter.pollinations.ai</b>
-                </p>
-                <p style="margin: 8px 0 0 0; color: #555; font-size: 0.9em;">
-                    <b>🎵 Audio:</b> The <code style="background:#fff3cd; padding:2px 6px; border-radius:4px;">openai-audio</code> model has been limited and usage will move to <a href="https://enter.pollinations.ai" target="_blank" style="color: #d97706; font-weight: bold;">enter.pollinations.ai</a> by <b>Dec. 8</b>.
-                </p>
-            </div>
-
-            <div style="margin-top: 16px; font-size: 1.05em; color: #7a3cff;">
-                <i>Gen-AI API for everyone <span style="font-size:1.2em;">🌟</span></i>
-            </div>
+            
+            <p style="margin: 0 0 16px 0; color: #1f2937; font-size: 1.05em; line-height: 1.6;">
+                <strong>auth.pollinations.ai</strong> will shut down permanently on December 15 at 00:00 UTC.
+            </p>
+            
+            <p style="margin: 0 0 12px 0; color: #374151; font-size: 1em; line-height: 1.6;">
+                This legacy service has been <strong>replaced by our new developer platform</strong> featuring:
+            </p>
+            
+            <ul style="margin: 0 0 16px 0; padding-left: 24px; color: #374151; font-size: 1em; line-height: 1.8;">
+                <li>New models & improved reliability</li>
+                <li>Updated dashboard & API keys</li>
+                <li>Pollen wallet & sponsorship tiers</li>
+            </ul>
+            
+            <p style="margin: 0 0 20px 0; color: #4b5563; font-size: 0.95em; line-height: 1.6;">
+                Tokens from this service will stop working, and data will not be migrated.<br>
+                <strong>Continue building at enter.pollinations.ai.</strong>
+            </p>
+            
+            <a href="https://enter.pollinations.ai" target="_blank" style="display: inline-block; background: linear-gradient(135deg, #10b981, #059669); color: white; padding: 14px 36px; border-radius: 30px; text-decoration: none; font-weight: bold; font-size: 1.1em; box-shadow: 0 6px 20px rgba(16, 185, 129, 0.35);">
+                → Go to Developer Console
+            </a>
+            
+            <p style="margin: 20px 0 0 0; color: #6b7280; font-size: 0.9em; font-style: italic;">
+                Login below only to view old tokens and domains.
+            </p>
         </div>
 
         <!-- 🔐 Authentication -->

@@ -34,7 +34,7 @@ class ImageRequest(BaseModel):
     prompts: list[str] = Field(default=["a photo of an astronaut riding a horse on mars"], min_length=1)
     width: int = Field(default=1024, le=4096)
     height: int = Field(default=1024, le=4096)
-    steps: int = Field(default=9, le=50)
+    steps: int = Field(default=9, le=50)  # ignored, always uses 9
     seed: int | None = None
 
 pipe = None
@@ -141,12 +141,8 @@ def find_nearest_valid_dimensions(width: int, height: int) -> tuple[int, int]:
         scale = (MAX_PIXELS / current_pixels) ** 0.5
         start_w = round(start_w * scale)
         start_h = round(start_h * scale)
-    
-    # Round to nearest multiple of 16
     nearest_w = round(start_w / 16) * 16
     nearest_h = round(start_h / 16) * 16
-    
-    # Ensure minimum size
     nearest_w = max(nearest_w, 256)
     nearest_h = max(nearest_h, 256)
     
@@ -156,7 +152,7 @@ def find_nearest_valid_dimensions(width: int, height: int) -> tuple[int, int]:
 app = FastAPI(title="Z-Image-Turbo API", lifespan=lifespan)
 
 
-# Auth verification
+
 def verify_enter_token(x_enter_token: str = Header(None, alias="x-enter-token")):
     expected_token = os.getenv("ENTER_TOKEN")
     if not expected_token:
@@ -178,32 +174,25 @@ def generate(request: ImageRequest, _auth: bool = Depends(verify_enter_token)):
     logger.info(f"Using seed: {seed}")
     
     generator = torch.Generator("cuda").manual_seed(seed)
-    
-    # Calculate generation dimensions (will be upscaled 2x)
     target_w, target_h = request.width, request.height
-    gen_w, gen_h = find_nearest_valid_dimensions(target_w // UPSCALE_FACTOR, target_h // UPSCALE_FACTOR)
-    logger.info(f"Generating at {gen_w}x{gen_h}, will upscale to ~{gen_w*UPSCALE_FACTOR}x{gen_h*UPSCALE_FACTOR}")
+    gen_w, gen_h = find_nearest_valid_dimensions(target_w, target_h) 
+    logger.info(f"Generating at {gen_w}x{gen_h}, will upscale 2x to ~{gen_w*UPSCALE_FACTOR}x{gen_h*UPSCALE_FACTOR}")
     
     try:
-        # Generate image
         with torch.inference_mode():
             output = pipe(
                 prompt=request.prompts[0],
                 generator=generator,
                 width=gen_w,
                 height=gen_h,
-                num_inference_steps=request.steps,
+                num_inference_steps=9,
                 guidance_scale=0.0,
             )
         
         image = output.images[0]
-        
-        # Upscale with RealESRGAN
         image_np = np.array(image)
         upscaled_np, _ = upsampler.enhance(image_np, outscale=UPSCALE_FACTOR)
         upscaled_image = Image.fromarray(upscaled_np)
-        
-        # Convert to base64
         img_byte_arr = io.BytesIO()
         upscaled_image.save(img_byte_arr, format='JPEG', quality=95)
         img_base64 = base64.b64encode(img_byte_arr.getvalue()).decode('utf-8')

@@ -4,16 +4,19 @@ import { z } from "zod";
 const QUALITIES = ["low", "medium", "high", "hd"] as const;
 const MAX_SEED_VALUE = 1844674407370955;
 
+// Use dynamic validation to avoid build-time evaluation freezing the model list
+const imageModelSchema = z.string().refine(
+    (val) => val in IMAGE_SERVICES,
+    (val) => ({
+        message: `Invalid model: ${val}. Available: ${Object.keys(IMAGE_SERVICES).join(", ")}`,
+    }),
+);
+
 export const GenerateImageRequestQueryParamsSchema = z.object({
     // Image model params
-    model: z
-        .literal(Object.keys(IMAGE_SERVICES))
-        .optional()
-        .default("flux")
-        .meta({
-            description:
-                "AI model. Image: flux, turbo, gptimage, kontext, seedream, seedream-pro, nanobanana. Video: veo, seedance, seedance-pro",
-        }),
+    model: imageModelSchema.optional().default("flux").meta({
+        description: "AI model. See /models endpoint for available models.",
+    }),
     width: z.coerce
         .number()
         .int()

@@ -149,17 +149,6 @@ export const hackAndBuildProjects = [
         stars: 43,
     },
     {
-        name: "Herramientas IA",
-        url: "https://github.com/cusanotech/90-herramientas-de-inteligencia-artificial",
-        description:
-            "Tools designed with Pollinations.AI and the DescartesJS editor, including tools from other Pollinations.AI community members.",
-        author: "@juanrivera126",
-        repo: "https://github.com/cusanotech/90-herramientas-de-inteligencia-artificial",
-        submissionDate: "2025-03-10",
-        order: 3,
-        stars: 26,
-    },
-    {
         name: "🌱 Strain Navigator",
         url: "https://www.strainnavigator.com/",
         description:
@@ -232,15 +221,6 @@ export const hackAndBuildProjects = [
         order: 1,
     },
     {
-        name: "Herramientas IA",
-        url: "https://herramientas.ia",
-        description:
-            "Tools designed with Pollinations.AI and the DescartesJS editor, including tools from other Pollinations.AI community members.",
-        author: "@herramientas",
-        submissionDate: "2025-05-05",
-        order: 1,
-    },
-    {
         name: "Pollinations AI Free API",
         url: "https://pollinations-ai-free-api.vercel.app/",
         description:
@@ -301,16 +281,6 @@ export const hackAndBuildProjects = [
         repo: "https://github.com/aandrew-me/tgpt",
         stars: 2854,
         submissionDate: "2025-05-15",
-        order: 1,
-    },
-    {
-        name: "DominiSigns",
-        url: "https://www.template.net/ai-sign-generator",
-        description:
-            "A WordPress block plugin that lets users create AI-generated images through the block editor. Integrates with Pollinations API to generate images from text prompts directly within WordPress.",
-        author: "@dominicva",
-        repo: "https://github.com/dominicva/dominisigns",
-        submissionDate: "2025-05-22",
         order: 1,
     },
     {

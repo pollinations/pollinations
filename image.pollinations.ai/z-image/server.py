@@ -31,7 +31,7 @@ logger = logging.getLogger(__name__)
 MODEL_ID = "Tongyi-MAI/Z-Image-Turbo"
 MODEL_CACHE = "model_cache"
 UPSCALER_MODEL_x2 = "model_cache/RealESRGAN_x2plus.pth"
-MAX_PIXELS = 512 * 512  # Generate at 512x512 max, then upscale
+MAX_PIXELS = 768 * 768  # Generate at 768x768 max, then upscale to 1536x1536
 UPSCALE_FACTOR = 2  # Changed from 4 to 2
 
 

@@ -1,8 +1,8 @@
-# Redirect URL and Session-Based API Key Feature
+# Redirect URL and Secret-Based API Key Feature
 
 ## Overview
 
-This implementation adds support for external applications to redirect users to enter.pollinations.ai for authentication, and then return them to the originating application with their session credentials.
+This implementation adds support for external applications to redirect users to enter.pollinations.ai for authentication, and then return them to the originating application with a secure secret to obtain API credentials.
 
 ## Features
 
@@ -18,41 +18,42 @@ When the user signs in:
 1. The `redirect_url` is stored in localStorage
 2. After successful authentication, a "Return to {hostname}" button appears on the dashboard
 3. The button includes the favicon of the destination site
-4. When clicked, the user is redirected back to the original URL with a `session_id` parameter
+4. When clicked, a secure secret is generated and the user is redirected back to the original URL with the secret
 
-### 2. Session ID in Redirect
+### 2. Secret in Redirect
 
 When the user clicks "Return to app", they are redirected to:
 
 ```
-https://example.com/callback?session_id={session_id}
+https://example.com/callback?secret={64-char-hex-secret}
 ```
 
-The receiving application can use this `session_id` to obtain an API key.
+The receiving application can use this one-time `secret` to obtain an API key.
 
-### 3. Session-Based API Key Endpoint
+### 3. Secret-Based API Key Endpoint
 
-A new endpoint `/api/auth/session-key` allows applications to exchange a session for a temporary API key:
+A new endpoint `/api/auth/api-key` allows applications to exchange a secret for an API key:
 
-**Endpoint:** `GET /api/auth/session-key`
+**Endpoint:** `GET /api/auth/api-key?secret={secret}`
 
-**Authentication:** Requires valid session cookie (`better-auth.session_token`)
+**Authentication:** Requires the secret parameter obtained from the redirect
 
 **Response:**
 ```json
 {
-  "key": "plln_pk_xxxxxxxxxxxxxxxx",
+  "key": "plln_sk_xxxxxxxxxxxxxxxx",
   "keyId": "key-id",
-  "name": "Auto-generated Session Key",
-  "type": "publishable"
+  "name": "Redirect API Key",
+  "type": "secret"
 }
 ```
 
 The endpoint:
-- Returns an existing publishable API key if one exists
-- Creates a new publishable key if none exists
-- Stores the plaintext key in metadata for future retrieval
-- Only works with session-based authentication (not API key auth)
+- Validates the secret parameter (64-character hex string)
+- Looks up the session from the secret-to-session mapping in KV storage
+- Creates a new secret API key (plln_sk_) for the user
+- Deletes the secret after use (single-use only)
+- Expires unused secrets after 5 minutes
 
 ## Usage Flow
 
@@ -68,22 +69,20 @@ The endpoint:
    ```javascript
    // On your auth-callback page
    const params = new URLSearchParams(window.location.search);
-   const sessionId = params.get('session_id');
+   const secret = params.get('secret');
    
-   if (sessionId) {
-     // User authenticated, fetch API key using session
-     // Note: You'll need to handle the session cookie transfer
+   if (secret) {
+     // User authenticated, fetch API key using the secret
+     const response = await fetch(`https://enter.pollinations.ai/api/auth/api-key?secret=${secret}`);
+     const { key } = await response.json();
+     
+     // Store the key securely
+     localStorage.setItem('api_key', key);
    }
    ```
 
-3. **Get API key from session:**
+3. **Use the API key:**
    ```javascript
-   // This requires the session cookie to be present
-   const response = await fetch('https://enter.pollinations.ai/api/auth/session-key', {
-     credentials: 'include'
-   });
-   const { key } = await response.json();
-   
    // Use the key for gen.pollinations.ai
    const image = await fetch('https://gen.pollinations.ai/image/a%20cat?key=' + key);
    ```
@@ -98,42 +97,46 @@ The endpoint:
 
 2. **src/client/routes/index.tsx**
    - Reads redirect URL from localStorage
+   - Generates a secure 64-character hex secret
+   - Stores the secret-to-session mapping via `/api/auth/api-key/store-redirect-secret`
+   - Redirects back with the secret parameter
    - Displays "Return to {hostname}" button with favicon
-   - Adds `session_id` to redirect URL when returning to app
    - Clears localStorage after redirect
 
-3. **src/routes/session-key.ts** (new)
-   - New API endpoint for session-to-API-key conversion
-   - Returns or creates publishable API key
-   - Requires session-based authentication
+3. **src/routes/api-key.ts** (new, renamed from session-key.ts)
+   - POST `/api/auth/api-key/store-redirect-secret` - Stores secret-to-session mapping in KV
+   - GET `/api/auth/api-key?secret={secret}` - Creates and returns secret API key
+   - Validates secret format (64-character hex)
+   - Single-use secrets with 5-minute expiration
 
 4. **src/index.ts**
-   - Registers the new `/api/auth/session-key` route
+   - Registers the new `/api/auth/api-key` route
 
 ## Security Considerations
 
-- The session-key endpoint only works with session cookies, not API keys
-- Only publishable keys (plln_pk) are returned, not secret keys (plln_sk)
-- The plaintext key is stored in metadata for retrieval
+- Secret is a 64-character cryptographically random hex string
+- Secrets are single-use and deleted after retrieval
+- Secrets expire after 5 minutes if unused
+- Secret keys (plln_sk) are returned, providing full API access
 - Redirect URL is validated as a proper URL before use
-- Session ID is obtained from the authentication system, not user input
+- Secret-to-session mapping stored in KV with TTL
 
 ## Testing
 
-Integration tests have been added in `test/integration/session-key.test.ts`:
+Integration tests have been added in `test/integration/api-key.test.ts`:
 
-- Test creating a new API key from session
-- Test returning existing API key
-- Test authentication requirement (401 for unauthenticated requests)
+- Test creating a new API key with valid secret
+- Test rejecting invalid secrets (401)
+- Test authentication requirement for storing secrets (401)
 
 Run tests with:
 ```bash
-npm test -- session-key.test.ts
+npm test -- api-key.test.ts
 ```
 
 ## Future Improvements
 
-1. Add expiration time to auto-generated API keys
+1. Add domain allowlist for redirect URL validation
 2. Support for custom redirect parameters
-3. Better handling of cross-origin session cookies
-4. Rate limiting on the session-key endpoint
+3. Rate limiting on the api-key endpoints
+4. Webhook for external app to receive key (instead of URL parameter)

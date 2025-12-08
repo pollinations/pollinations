@@ -103,13 +103,30 @@ function RouteComponent() {
         
         const sessionId = sessionResult.data.session.id;
         
-        // Add session_id to redirect_url
-        // Note: Session ID is passed as URL parameter for simplicity
-        // In production, consider using POST or a more secure transfer method
+        // Generate a custom secret key for this redirect
+        // This secret will be used by the app to retrieve the API key
+        const secretBytes = new Uint8Array(32);
+        crypto.getRandomValues(secretBytes);
+        const secret = Array.from(secretBytes, byte => byte.toString(16).padStart(2, '0')).join('');
+        
+        // Store the secret-to-session mapping in the backend
+        try {
+            await fetch('/api/auth/store-redirect-secret', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
+                body: JSON.stringify({ secret, sessionId }),
+            });
+        } catch (e) {
+            console.error('Failed to store redirect secret:', e);
+            return;
+        }
+        
+        // Add secret to redirect_url instead of session_id
         try {
             const url = new URL(redirectUrl);
             // TODO: Add domain allowlist validation to prevent open redirects
-            url.searchParams.set('session_id', sessionId);
+            url.searchParams.set('secret', secret);
             
             // Clear the stored redirect URL
             localStorage.removeItem(REDIRECT_URL_STORAGE_KEY);

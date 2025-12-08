@@ -7,7 +7,7 @@ import { processEvents } from "./events.ts";
 import { polarRoutes } from "./routes/polar.ts";
 import { proxyRoutes } from "./routes/proxy.ts";
 import { tiersRoutes } from "./routes/tiers.ts";
-import { sessionKeyRoutes } from "./routes/session-key.ts";
+import { apiKeyRoutes } from "./routes/api-key.ts";
 import { createDocsRoutes } from "./routes/docs.ts";
 import { requestId } from "hono/request-id";
 import { logger } from "./middleware/logger.ts";
@@ -21,7 +21,7 @@ const authRoutes = new Hono<Env>().on(["GET", "POST"], "*", async (c) => {
 
 export const api = new Hono<Env>()
     .route("/auth", authRoutes)
-    .route("/auth/session-key", sessionKeyRoutes)
+    .route("/auth/api-key", apiKeyRoutes)
     .route("/polar", polarRoutes)
     .route("/tiers", tiersRoutes)
     .route("/generate", proxyRoutes);

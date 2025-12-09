@@ -689,7 +689,7 @@ async function handleValidateToken(
             headers: {
                 ...corsHeaders,
                 "Content-Type": "application/json",
-                "Cache-Control": "public, max-age=60", // 60 second TTL
+                "Cache-Control": "public, max-age=300", // 5 minute TTL (was 60 seconds)
             },
         });
 
@@ -937,6 +937,7 @@ export async function handleValidateReferrer(
                     headers: {
                         ...corsHeaders,
                         "Content-Type": "application/json",
+                        "Cache-Control": "public, max-age=300", // 5 minute cache
                     },
                 },
             );
@@ -951,6 +952,7 @@ export async function handleValidateReferrer(
                     headers: {
                         ...corsHeaders,
                         "Content-Type": "application/json",
+                        "Cache-Control": "public, max-age=300", // 5 minute cache
                     },
                 },
             );

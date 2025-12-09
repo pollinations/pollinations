@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import './GenerationOptionsModal.css';
 
 const GenerationOptionsModal = ({ isOpen, onClose, mode, onGenerate }) => {
@@ -28,10 +28,18 @@ const GenerationOptionsModal = ({ isOpen, onClose, mode, onGenerate }) => {
   });
 
   const handleImageOptionChange = (key, value) => {
+    // Prevent setting NaN values
+    if (typeof value === 'number' && isNaN(value)) {
+      return;
+    }
     setImageOptions(prev => ({ ...prev, [key]: value }));
   };
 
   const handleVideoOptionChange = (key, value) => {
+    // Prevent setting NaN values
+    if (typeof value === 'number' && isNaN(value)) {
+      return;
+    }
     setVideoOptions(prev => ({ ...prev, [key]: value }));
   };
 

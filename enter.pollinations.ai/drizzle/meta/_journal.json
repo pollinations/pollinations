@@ -43,6 +43,13 @@
       "when": 1764841024405,
       "tag": "0005_swift_scalphunter",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "6",
+      "when": 1765310596696,
+      "tag": "0006_wealthy_queen_noir",
+      "breakpoints": true
     }
   ]
 }

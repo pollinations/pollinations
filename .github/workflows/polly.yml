@@ -1,139 +1,95 @@
-# Claude Code with Claude Code Router (Pollinations AI)
-# Routes Claude Code requests through Pollinations AI API
-# Uses custom GitHub App (Polly Bot) for authentication
+# Polly Bot - AI assistant via Pollinations AI
+# Trigger: polly | Whitelist: voodoohop, ElliotEtag, eulervoid, Circuit-Overtime, Itachi-1824
 
-name: Claude Code (Polly)
+name: Polly
 
 on:
-  workflow_dispatch:  # Manual trigger for testing from any branch
-    inputs:
-      test_prompt:
-        description: 'Test prompt for Polly'
-        required: false
-        default: 'Say hello and confirm you are working!'
   issue_comment:
     types: [created]
   pull_request_review_comment:
     types: [created]
+  issues:
+    types: [opened, assigned]
   pull_request_review:
     types: [submitted]
-  issues:
-    types: [opened, edited, labeled, assigned]
-  pull_request:
-    types: [opened, synchronize, ready_for_review, reopened]
 
 jobs:
-  claude:
-    # Trigger on @polly mentions or manual dispatch
+  unauthorized:
     if: |
-      github.event_name == 'workflow_dispatch' ||
-      (github.event_name == 'issue_comment' && contains(github.event.comment.body, '@polly')) ||
-      (github.event_name == 'pull_request_review_comment' && contains(github.event.comment.body, '@polly')) ||
-      (github.event_name == 'pull_request_review' && contains(github.event.review.body, '@polly')) ||
-      (github.event_name == 'issues' && (
-        contains(github.event.issue.body, '@polly') ||
-        contains(github.event.issue.labels.*.name, 'polly')
-      )) ||
-      (github.event_name == 'pull_request' && (
-        contains(github.event.pull_request.body, '@polly') ||
-        contains(github.event.pull_request.labels.*.name, 'polly')
-      ))
+      !contains(fromJSON('["voodoohop", "ElliotEtag", "eulervoid", "Circuit-Overtime", "Itachi-1824"]'), github.actor) &&
+      (
+        (github.event_name == 'issue_comment' && contains(github.event.comment.body, 'polly')) ||
+        (github.event_name == 'pull_request_review_comment' && contains(github.event.comment.body, 'polly')) ||
+        (github.event_name == 'pull_request_review' && contains(github.event.review.body, 'polly')) ||
+        (github.event_name == 'issues' && (contains(github.event.issue.body, 'polly') || contains(github.event.issue.title, 'polly')))
+      )
     runs-on: ubuntu-latest
+    permissions:
+      issues: write
+      pull-requests: write
+    steps:
+      - uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue?.number || context.payload.pull_request?.number,
+              body: `Sorry @${context.actor}, only whitelisted users can use Polly.`
+            });
 
+  polly:
+    if: |
+      contains(fromJSON('["voodoohop", "ElliotEtag", "eulervoid", "Circuit-Overtime", "Itachi-1824"]'), github.actor) &&
+      (
+        (github.event_name == 'issue_comment' && contains(github.event.comment.body, 'polly')) ||
+        (github.event_name == 'pull_request_review_comment' && contains(github.event.comment.body, 'polly')) ||
+        (github.event_name == 'pull_request_review' && contains(github.event.review.body, 'polly')) ||
+        (github.event_name == 'issues' && (contains(github.event.issue.body, 'polly') || contains(github.event.issue.title, 'polly')))
+      )
+    runs-on: ubuntu-latest
     permissions:
       contents: write
       pull-requests: write
       issues: write
       id-token: write
-
-    # Set env vars at job level so they're available to all steps
+      actions: read
     env:
       POLLINATIONS_TOKEN: ${{ secrets.POLLINATIONS_TOKEN }}
-
     steps:
-      - name: Generate GitHub App Token
-        id: app-token
-        uses: actions/create-github-app-token@v1
+      - name: Setup Router Config
+        run: |
+          mkdir -p $HOME/.claude-code-router
+          cat << 'EOF' > $HOME/.claude-code-router/config.json
+          {"LOG":false,"NON_INTERACTIVE_MODE":true,"API_TIMEOUT_MS":600000,"Providers":[{"name":"pollinations","api_base_url":"https://gen.pollinations.ai/v1/chat/completions","api_key":"${POLLINATIONS_TOKEN}","models":["claude-large","claude-small","kimi-k2-thinking","perplexity-reasoning","gpt-4o","gpt-4o-mini"]}],"Router":{"default":"pollinations,claude-large","background":"pollinations,claude-small","think":"pollinations,kimi-k2-thinking","longContext":"pollinations,claude-large","longContextThreshold":60000,"webSearch":"pollinations,perplexity-reasoning"}}
+          EOF
+
+      - uses: actions/create-github-app-token@v1
+        id: token
         with:
           app-id: ${{ secrets.POLLY_BOT_APP_ID }}
           private-key: ${{ secrets.POLLY_BOT_PRIVATE_KEY }}
 
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
         with:
-          fetch-depth: 1
-          token: ${{ steps.app-token.outputs.token }}
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha || (github.event.issue.pull_request && format('refs/pull/{0}/head', github.event.issue.number)) || github.sha }}
+          repository: ${{ github.repository }}
+          token: ${{ steps.token.outputs.token }}
 
-      - name: Setup Bun
-        uses: oven-sh/setup-bun@v2
-        with:
-          bun-version: latest
+      - uses: oven-sh/setup-bun@v2
 
-      - name: Setup Claude Code Router
-        run: |
-          mkdir -p $HOME/.claude-code-router
-
-          # Write config with actual token value (not env var reference)
-          cat << EOF > $HOME/.claude-code-router/config.json
-          {
-            "LOG": true,
-            "LOG_LEVEL": "info",
-            "NON_INTERACTIVE_MODE": true,
-            "API_TIMEOUT_MS": 600000,
-            "Providers": [
-              {
-                "name": "pollinations",
-                "api_base_url": "https://gen.pollinations.ai/v1/chat/completions",
-                "api_key": "${POLLINATIONS_TOKEN}",
-                "models": ["claude-large", "claude-small", "kimi-k2-thinking", "perplexity-reasoning", "gpt-4o", "gpt-4o-mini"]
-              }
-            ],
-            "Router": {
-              "default": "pollinations,claude-large",
-              "background": "pollinations,claude-small",
-              "think": "pollinations,kimi-k2-thinking",
-              "longContext": "pollinations,claude-large",
-              "longContextThreshold": 60000,
-              "webSearch": "pollinations,perplexity-reasoning"
-            }
-          }
-          EOF
-
-          echo "Config created:"
-          cat $HOME/.claude-code-router/config.json
-        shell: bash
-
-      - name: Start Claude Code Router
+      - name: Start Router
         run: |
           bunx @musistudio/claude-code-router start &
-          CCR_PID=$!
+          until curl -s http://localhost:3456 >/dev/null; do sleep 0.5; done
 
-          echo "Waiting for Claude Code Router to start..."
-          for i in {1..30}; do
-            if curl -s http://localhost:3456 > /dev/null 2>&1; then
-              echo "Claude Code Router is ready!"
-              break
-            fi
-            echo "Waiting... ($i/30)"
-            sleep 1
-          done
-
-          # Verify router is responding
-          echo "Testing router endpoint..."
-          curl -v http://localhost:3456/health 2>&1 || echo "Health endpoint not available (expected)"
-
-          # Show config being used
-          echo "Router config:"
-          cat $HOME/.claude-code-router/config.json
-        shell: bash
-
-      - name: Run Claude Code Action
-        id: claude
-        uses: anthropics/claude-code-action@v1
+      - uses: anthropics/claude-code-action@v1
         env:
           ANTHROPIC_BASE_URL: http://localhost:3456
         with:
           anthropic_api_key: "ccr-pollinations"
-          github_token: ${{ steps.app-token.outputs.token }}
-          trigger_phrase: "@polly"
-          label_trigger: "polly"
+          github_token: ${{ steps.token.outputs.token }}
+          trigger_phrase: "polly"
+          additional_permissions: |
+            actions: read

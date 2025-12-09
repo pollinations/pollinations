@@ -55,7 +55,7 @@ jobs:
       id-token: write
       actions: read
     env:
-      POLLINATIONS_TOKEN: ${{ secrets.POLLINATIONS_TOKEN }}
+      CLAUDE_CODE_TOKEN: ${{ secrets.CLAUDE_CODE_TOKEN }}
     steps:
       - name: Setup Router Config
         run: |

@@ -5,6 +5,7 @@ on:
     types: [closed]
     paths:
       - 'NEWS/*.md'
+  workflow_dispatch: 
 
 jobs:
   create-highlights:

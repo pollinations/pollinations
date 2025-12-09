@@ -61,7 +61,7 @@ jobs:
         run: |
           mkdir -p $HOME/.claude-code-router
           cat << 'EOF' > $HOME/.claude-code-router/config.json
-          {"LOG":false,"NON_INTERACTIVE_MODE":true,"API_TIMEOUT_MS":600000,"Providers":[{"name":"pollinations","api_base_url":"https://gen.pollinations.ai/v1/chat/completions","api_key":"${POLLINATIONS_TOKEN}","models":["claude-large","claude-small","kimi-k2-thinking","perplexity-reasoning","gpt-4o","gpt-4o-mini"]}],"Router":{"default":"pollinations,claude-large","background":"pollinations,claude-small","think":"pollinations,kimi-k2-thinking","longContext":"pollinations,claude-large","longContextThreshold":60000,"webSearch":"pollinations,perplexity-reasoning"}}
+          {"LOG":false,"NON_INTERACTIVE_MODE":true,"API_TIMEOUT_MS":600000,"Providers":[{"name":"pollinations","api_base_url":"https://gen.pollinations.ai/v1/chat/completions","api_key":"${POLLINATIONS_TOKEN}","models":["claude-large","claude","kimi-k2-thinking","perplexity-reasoning","openai-large","openai"]}],"Router":{"default":"pollinations,claude-large","background":"pollinations,claude","think":"pollinations,kimi-k2-thinking","longContext":"pollinations,claude-large","longContextThreshold":60000,"webSearch":"pollinations,perplexity-reasoning"}}
           EOF
 
       - uses: actions/create-github-app-token@v1

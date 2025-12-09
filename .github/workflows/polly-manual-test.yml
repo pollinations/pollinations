@@ -1,0 +1,17 @@
+name: Polly Manual Test
+on:
+  workflow_dispatch:
+    inputs:
+      test_prompt:
+        description: 'Test prompt for Polly'
+        required: false
+        default: 'Hello Polly test'
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Run a simple test trigger
+        run: |
+          echo "Manual Polly test triggered with test_prompt='${{ github.event.inputs.test_prompt }}'"

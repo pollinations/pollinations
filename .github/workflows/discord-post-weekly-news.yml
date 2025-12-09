@@ -1,11 +1,11 @@
-name: Post to Discord
+name: Discord Post Weekly News
 
 on:
   push:
     branches:
       - main
     paths:
-      - 'NEWS.md'
+      - 'NEWS/*.md'
   workflow_dispatch:  # Manual trigger for testing
 
 jobs:
@@ -32,4 +32,4 @@ jobs:
           POLLINATIONS_TOKEN: ${{ secrets.POLLINATIONS_TOKEN }}
           DISCORD_WEBHOOK_DIGEST: ${{ secrets.DISCORD_WEBHOOK_DIGEST }}
           DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
-        run: python .github/scripts/discord_news.py
+        run: python .github/scripts/discord_post_weekly_news.py

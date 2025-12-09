@@ -7,12 +7,9 @@ import { fileTypeFromBuffer } from "file-type";
 import sharp from "sharp";
 import {
     fetchFromLeastBusyFluxServer,
+    fetchFromLeastBusyServer,
     getNextTurboServerUrl,
 } from "./availableServers.ts";
-import {
-    addPollinationsLogoWithImagemagick,
-    getLogoPath,
-} from "./imageOperations.ts";
 import { sanitizeString } from "./translateIfNecessary.ts";
 import {
     analyzeImageSafety,
@@ -30,10 +27,7 @@ import type { ImageParams } from "./params.ts";
 import type { ProgressManager } from "./progressBar.ts";
 
 // Import model handlers
-import {
-    callSeedreamAPI,
-    callSeedreamProAPI,
-} from "./models/seedreamModel.ts";
+import { callSeedreamAPI, callSeedreamProAPI } from "./models/seedreamModel.ts";
 import { callAzureFluxKontext } from "./models/azureFluxKontextModel.js";
 import { incrementModelCounter } from "./modelCounter.ts";
 
@@ -124,12 +118,8 @@ export const callComfyUI = async (
             safeParams,
         );
 
-        // Scale steps from 4 down to 1, dropping more gradually
-        // 4 steps up to 20 concurrent, then gradually down to 1 at 50+ concurrent
-        const steps = Math.max(
-            1,
-            Math.round(4 - Math.max(0, concurrentRequests - 20) / 10),
-        );
+        // Always use max steps (4) - all requests go through enter.pollinations.ai
+        const steps = 4;
         logOps("calculated_steps", steps);
 
         prompt = sanitizeString(prompt);
@@ -163,14 +153,21 @@ export const callComfyUI = async (
 
         // Single attempt - no retry logic
         try {
+            // Route to appropriate server pool based on model
             const fetchFunction =
                 safeParams.model === "turbo"
                     ? fetchFromTurboServer
-                    : fetchFromLeastBusyFluxServer;
+                    : safeParams.model === "zimage"
+                      ? (opts: RequestInit) =>
+                            fetchFromLeastBusyServer("zimage", opts)
+                      : fetchFromLeastBusyFluxServer;
             response = await fetchFunction({
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
+                    ...(process.env.ENTER_TOKEN && {
+                        "x-enter-token": process.env.ENTER_TOKEN,
+                    }),
                 },
                 body: JSON.stringify(body),
             });
@@ -525,18 +522,18 @@ const callAzureGPTImageWithEndpoint = async (
         );
     }
 
-    // Check if we need to use the edits endpoint instead of generations
+    // Check if we have input images for edit mode
     const isEditMode = safeParams.image && safeParams.image.length > 0;
 
-    // Use gpt-image-1 (full version) if input images are provided, otherwise use gpt-image-1-mini
+    // gpt-image-1-mini supports both generation and editing
+    // Edit API uses /images/edits endpoint with multipart/form-data
     if (isEditMode) {
-        // Replace model name with full version for edit mode
-        endpoint = endpoint.replace("gpt-image-1-mini", "gpt-image-1");
-        // Replace 'generations' with 'edits' in the endpoint URL
         endpoint = endpoint.replace("/images/generations", "/images/edits");
-        logCloudflare(`Using Azure gpt-image-1 (full) in edit mode`);
+        logCloudflare(`Using Azure gpt-image-1-mini in edit mode (img2img)`);
     } else {
-        logCloudflare(`Using Azure gpt-image-1-mini in generation mode`);
+        logCloudflare(
+            `Using Azure gpt-image-1-mini in generation mode (text2img)`,
+        );
     }
 
     // Map safeParams to Azure API parameters
@@ -894,7 +891,10 @@ const generateImage = async (
     }
 
     // Nano Banana / Nano Banana Pro - Gemini Image generation using Vertex AI
-    if (safeParams.model === "nanobanana" || safeParams.model === "nanobanana-pro") {
+    if (
+        safeParams.model === "nanobanana" ||
+        safeParams.model === "nanobanana-pro"
+    ) {
         // Detailed logging of authentication info for Nano Banana access
         logError(
             "Nano Banana authentication check:",
@@ -946,7 +946,10 @@ const generateImage = async (
                 throw error;
             }
 
-            const modelDisplayName = safeParams.model === "nanobanana-pro" ? "Nano Banana Pro" : "Nano Banana";
+            const modelDisplayName =
+                safeParams.model === "nanobanana-pro"
+                    ? "Nano Banana Pro"
+                    : "Nano Banana";
             progress.updateBar(
                 requestId,
                 35,
@@ -1097,10 +1100,8 @@ const prepareMetadata = (
 };
 
 /**
- * Processes the image buffer with logo, format conversion, and metadata
+ * Processes the image buffer with format conversion and metadata
  * @param {Buffer} buffer - The raw image buffer
- * @param {Object} maturityFlags - Object containing isMature and isChild flags
- * @param {Object} safeParams - Parameters for image generation
  * @param {Object} metadataObj - Metadata to embed in the image
  * @param {Object} maturity - Additional maturity information
  * @param {Object} progress - Progress tracking object
@@ -1109,47 +1110,14 @@ const prepareMetadata = (
  */
 const processImageBuffer = async (
     buffer: Buffer,
-    maturityFlags: ContentSafetyFlags,
-    safeParams: ImageParams,
     metadataObj: object,
     maturity: object,
     progress: ProgressManager,
     requestId: string,
 ): Promise<Buffer> => {
-    const { isMature, isChild } = maturityFlags;
-
-    // Add logo
-    progress.updateBar(requestId, 80, "Processing", "Adding logo...");
-    const logoPath = getLogoPath(safeParams, isChild, isMature);
-    let processedBuffer = !logoPath
-        ? buffer
-        : await addPollinationsLogoWithImagemagick(
-              buffer,
-              logoPath,
-              safeParams,
-          );
-
-    // Convert format to JPEG (gptimage PNG support temporarily disabled)
+    // Convert format to JPEG
     progress.updateBar(requestId, 85, "Processing", "Converting to JPEG...");
-    processedBuffer = await convertToJpeg(processedBuffer);
-
-    // GPT Image PNG format support (temporarily disabled - uncomment to reactivate)
-    // if (safeParams.model !== "gptimage") {
-    //     progress.updateBar(
-    //         requestId,
-    //         85,
-    //         "Processing",
-    //         "Converting to JPEG...",
-    //     );
-    //     processedBuffer = await convertToJpeg(processedBuffer);
-    // } else {
-    //     progress.updateBar(
-    //         requestId,
-    //         85,
-    //         "Processing",
-    //         "Keeping PNG format for gptimage...",
-    //     );
-    // }
+    const processedBuffer = await convertToJpeg(buffer);
 
     // Add metadata
     progress.updateBar(requestId, 90, "Processing", "Writing metadata...");
@@ -1157,7 +1125,7 @@ const processImageBuffer = async (
 };
 
 /**
- * Creates and returns images with optional logo and metadata, checking for NSFW content.
+ * Creates and returns images with metadata, checking for NSFW content.
  * @param {string} prompt - The prompt for image generation.
  * @param {Object} safeParams - Parameters for image generation.
  * @param {number} concurrentRequests - Number of concurrent requests.
@@ -1219,8 +1187,6 @@ export async function createAndReturnImageCached(
         // Process the image buffer
         const processedBuffer = await processImageBuffer(
             result.buffer,
-            maturityFlags,
-            safeParams,
             metadataObj,
             maturity,
             progress,

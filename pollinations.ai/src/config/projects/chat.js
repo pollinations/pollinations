@@ -5,6 +5,16 @@
 
 export const chatProjects = [
     {
+        name: "Pookie AI 💕",
+        url: "https://pookieai.web.app/",
+        description:
+            "AI-powered conversational platform for creating customizable virtual characters with distinct personalities and backstories. Design anime characters, fictional entities, or custom companions for deep, context-aware roleplay dialogues.",
+        author: "@shantoislamdev",
+        repo: "https://github.com/shantoislamdev/pookie-ai",
+        submissionDate: "2025-12-08",
+        order: 1,
+    },
+    {
         name: "Nuvole AI 🍎",
         url: "https://routinehub.co/shortcut/18431/",
         description:
@@ -234,12 +244,12 @@ export const chatProjects = [
         order: 1,
     },
     {
-        name: "gpt4free",
-        url: "https://github.com/xtekky/gpt4free",
+        name: "G4F Chat UI",
+        url: "http://g4f.dev/chat/pollinations",
         description:
-            "The official gpt4free repository - various collection of powerful language models.",
-        author: "xtekky",
-        repo: "https://github.com/xtekky/gpt4free",
+            "The official G4F Chat UI for Pollinations with Image & Video Generation capability.",
+        author: "@hlohaus",
+        repo: "https://github.com/gpt4free/g4f.dev",
         stars: 65121,
         order: 1,
     },
@@ -634,15 +644,16 @@ export const chatProjects = [
         "submissionDate": "2025-12-03",
         "order": 5,
     },
-  {
-    "name": "SimplifyMind AI (ELI5)",
-    "url": "https://simplify-eloquent-ai.lovable.app/",
-    "description": "A modern one-page web app that turns any complex question into a simple, child-friendly ELI5 explanation. Uses Pollinations' LLM API (p5 model) via a Node.js backend to generate short, metaphor-based explanations, with a premium SaaS-style landing page and live chat features.",
-    "author": "CompaDeveloper",
-    "repo": null,
-    "category": "chat",
-    "language": "en",
-    "submissionDate": "2025-12-04",
-    "order": 5
-  }
+    {
+        "name": "SimplifyMind AI (ELI5)",
+        "url": "https://simplify-eloquent-ai.lovable.app/",
+        "description":
+            "A modern one-page web app that turns any complex question into a simple, child-friendly ELI5 explanation. Uses Pollinations' LLM API (p5 model) via a Node.js backend to generate short, metaphor-based explanations, with a premium SaaS-style landing page and live chat features.",
+        "author": "CompaDeveloper",
+        "repo": null,
+        "category": "chat",
+        "language": "en",
+        "submissionDate": "2025-12-04",
+        "order": 5,
+    },
 ];

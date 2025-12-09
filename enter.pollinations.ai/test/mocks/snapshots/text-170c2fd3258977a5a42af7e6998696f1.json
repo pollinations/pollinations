@@ -1,0 +1,34 @@
+{
+  "request": {
+    "url": "http://ec2-3-80-56-235.compute-1.amazonaws.com:16385/Reply%3A%20yes%20or%20no%3F?model=nova-micro",
+    "method": "GET",
+    "body": {
+      "type": "empty",
+      "data": null
+    },
+    "params": {}
+  },
+  "response": {
+    "status": 200,
+    "statusText": "OK",
+    "headers": {
+      "access-control-allow-origin": "*",
+      "cache-control": "public, max-age=31536000, immutable",
+      "connection": "keep-alive",
+      "content-length": "246",
+      "content-type": "text/plain; charset=utf-8",
+      "date": "Mon, 08 Dec 2025 16:01:54 GMT",
+      "etag": "W/\"f6-BApaI2J+s/ABeYANwSxU0AbHZUk\"",
+      "keep-alive": "timeout=5",
+      "x-model-used": "amazon.nova-micro-v1:0",
+      "x-powered-by": "Express",
+      "x-usage-completion-text-tokens": "63",
+      "x-usage-prompt-text-tokens": "256",
+      "x-usage-total-tokens": "319"
+    },
+    "body": {
+      "type": "text",
+      "data": "It depends on what you're asking. If you're looking for a straightforward answer to a clear question, I can give you a yes or no. But if you're hoping for a deeper conversation or some context, I'm here to help with that too. What's on your mind?"
+    }
+  }
+}

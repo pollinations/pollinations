@@ -6,6 +6,7 @@ import { polar } from "../middleware/polar.ts";
 import { validator } from "../middleware/validator.ts";
 import type { Env } from "../env.ts";
 import { describeRoute } from "hono-openapi";
+import { Polar } from "@polar-sh/sdk";
 
 export const productSlugs = [
     "v1:product:pack:5x2",
@@ -13,11 +14,11 @@ export const productSlugs = [
     "v1:product:pack:20x2",
     "v1:product:pack:50x2",
 ] as const;
-const productSlugSchema = z.enum(productSlugs);
-type ProductSlug = z.infer<typeof productSlugSchema>;
+type ProductSlug = z.infer<typeof productParamSchema>;
+const productParamSchema = z.enum(productSlugs.map(productSlugToUrlParam));
 
 const checkoutParamsSchema = z.object({
-    slug: productSlugSchema,
+    slug: productParamSchema,
 });
 
 const redirectQuerySchema = z.object({
@@ -28,6 +29,29 @@ const redirectQuerySchema = z.object({
 });
 
 type ProductMap = { [key in ProductSlug]: string };
+
+export function productSlugToUrlParam(slug: string): string {
+    return slug.split(":").join("-");
+}
+
+export function productUrlParamToSlug(slug: string): string {
+    return slug.split("-").join(":");
+}
+
+async function getProductsBySlugs(polar: Polar) {
+    const result = await polar.products.list({
+        limit: 100,
+        metadata: {
+            slug: [...productSlugs],
+        },
+    });
+
+    const productMap = Object.fromEntries(
+        result.result.items.map((product) => [product.metadata.slug, product]),
+    );
+
+    return productMap;
+}
 
 export const polarRoutes = new Hono<Env>()
     .use("*", auth({ allowApiKey: false, allowSessionCookie: true }))
@@ -102,19 +126,15 @@ export const polarRoutes = new Hono<Env>()
         validator("query", redirectQuerySchema),
         async (c) => {
             const user = c.var.auth.requireUser();
-            const { slug } = c.req.valid("param");
+            const { slug: slugParam } = c.req.valid("param");
+            const slug = productUrlParamToSlug(slugParam);
             const { redirect } = c.req.valid("query");
-            const products: ProductMap = {
-                "v1:product:pack:5x2": c.env.POLAR_PRODUCT_PACK_5X2,
-                "v1:product:pack:10x2": c.env.POLAR_PRODUCT_PACK_10X2,
-                "v1:product:pack:20x2": c.env.POLAR_PRODUCT_PACK_20X2,
-                "v1:product:pack:50x2": c.env.POLAR_PRODUCT_PACK_50X2,
-            };
             try {
                 const polar = c.var.polar.client;
+                const packProducts = await getProductsBySlugs(polar);
                 const response = await polar.checkouts.create({
                     externalCustomerId: user.id,
-                    products: [products[slug]],
+                    products: [packProducts[slug].id],
                     successUrl: c.env.POLAR_SUCCESS_URL,
                 });
                 if (redirect) return c.redirect(response.url);

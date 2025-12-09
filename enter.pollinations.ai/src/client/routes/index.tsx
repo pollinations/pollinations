@@ -6,7 +6,7 @@ import {
 } from "@tanstack/react-router";
 import { hc } from "hono/client";
 import { useState } from "react";
-import type { PolarRoutes } from "../../routes/polar.ts";
+import { productSlugToUrlParam, type PolarRoutes } from "../../routes/polar.ts";
 import type { TiersRoutes } from "../../routes/tiers.ts";
 import {
     ApiKeyList,
@@ -21,7 +21,6 @@ import { TierPanel } from "../components/tier-panel.tsx";
 import { FAQ } from "../components/faq.tsx";
 import { Header } from "../components/header.tsx";
 import { Pricing } from "../components/pricing/index.ts";
-import { NewsBanner } from "../components/news-banner.tsx";
 
 export const Route = createFileRoute("/")({
     component: RouteComponent,
@@ -153,11 +152,10 @@ function RouteComponent() {
 
     const handleBuyPollen = (slug: string) => {
         // Navigate directly to checkout endpoint - server will handle redirect
-        window.location.href = `/api/polar/checkout/${encodeURIComponent(slug)}?redirect=true`;
+        window.location.href = `/api/polar/checkout/${productSlugToUrlParam(slug)}?redirect=true`;
     };
     return (
         <div className="flex flex-col gap-6">
-            <NewsBanner />
             <div className="flex flex-col gap-20">
                 <Header>
                     <User

@@ -133,6 +133,8 @@ def get_merged_prs_for_range(owner: str, repo: str, start_date: datetime, end_da
             cursor = page_info["endCursor"]
             page += 1
 
+    # Sort by merged_at descending to ensure strict chronological order across branches
+    all_prs.sort(key=lambda x: x['merged_at'], reverse=True)
     return all_prs
 
 

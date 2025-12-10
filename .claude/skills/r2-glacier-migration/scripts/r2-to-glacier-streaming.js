@@ -42,7 +42,7 @@ const { values: args } = parseArgs({
         "prefix": { type: "string", default: "" },
         "start-after": { type: "string" },
         "max-batches": { type: "string" },
-        "concurrency": { type: "string", default: "20" },
+        "concurrency": { type: "string", default: "300" },
         help: { type: "boolean", short: "h" },
     },
 });

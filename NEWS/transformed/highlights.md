@@ -1,0 +1,67 @@
+- **🎥 Video Generation** - Create videos from text or images using new `veo` and `seedance` models.
+- **✨ Model Upgrades** - Seedream updated to v4.5 (2K resolution) and Seedance to Pro-Fast.
+- **🚀 Amazon Nova Micro** - Added `nova-micro` to text models for fast, efficient responses.
+- **🔍 Web Search** - Real-time web search capabilities now active for Perplexity and Gemini models.
+- **🎨 Flux Quality Boost** - Flux generation now defaults to maximum steps for higher quality output.
+- **🍌 Nano Banana Pro** - New `nanobanana-pro` model featuring 4K resolution support and built-in "Thinking" process.
+- **🧠 Claude Opus 4.5** - Access the powerful new `claude-xlarge` model for complex reasoning tasks.
+- **📱 PolliPalmTop** - New Android app featuring AI chat, web search, and image generation.
+- **⚙️ Advanced API Control** - Added pass-through support for `logprobs`, `logit_bias`, and `stream_options` parameters.
+- **✨ New Models** - Access Moonshot AI's reasoning model `kimi-k2-thinking` and Google's multimodal `gemini-3-pro`.
+- **🎙️ Multimodal Audio** - Added support for `input_audio` and audio configuration parameters for OpenAI models.
+- **🚀 GPT-5 Nano** - The `openai-fast` endpoint now uses the cutting-edge `gpt-5-nano-2025-08-07` model.
+- **🗳️ Model Voting** - Help decide our roadmap by voting for the next models directly in the pricing section.
+- **🧠 Reasoning Tokens** - Enabled "thinking" process visibility for OpenAI o1/o3, DeepSeek R1, and Claude models.
+- **⚡ New Model: Grok 4** - Added `grok` (Grok 4 Fast) for high-speed generation via the text API.
+- **🤖 New Model: Claude Sonnet 4.5** - Added `claude-large` supporting the latest vision and tool calling capabilities.
+- **🛡️ Zero Tracking** - Removed all external analytics and tracking scripts for a completely private user experience.
+- **🧠 New Models** - Added `perplexity-fast`, `perplexity-reasoning`, and `naughty` (Mistral Nemo) to the text API.
+- **🔌 OpenAI Compatibility** - New `/v1/chat/completions` endpoints allow drop-in replacement for OpenAI SDKs.
+- **🌊 Text Streaming** - Real-time streaming is now supported for text generation endpoints.
+- **🎵 Instant Audio** - Get raw MP3s directly via simple GET requests using the `openai-audio` model.
+- **🖼️ Unlocked Dimensions** - Image generation now supports arbitrary aspect ratios and resolutions (e.g. 1536x1024) without auto-scaling.
+- **🌐 CORS Enabled** - Public API endpoints now support `origin: '*'`, enabling direct calls from browser-based apps.
+- **🧠 Next-Gen LLMs** - Access GPT-5 Nano (`openai`), GPT-4.1 (`openai-large`), and Gemini 2.5 Flash (`nanobanana`).
+- **📱 ReImagine App** - Transform images on the go with the new React Native mobile application.
+- **⚡ Instant Text API** - Generate text directly via URL using the new `/api/generate/text/:prompt` endpoint.
+- **🔄 Opposite Prompt Generator** - Create the semantic opposite of any image prompt with this new creative web tool.
+- **⚡ New Model: Claude 4.5 Haiku** - Access the latest fast & smart model via `model='claude-4.5-haiku'`.
+- **🌐 Browser CORS Support** - Call the API directly from frontend web apps without needing a backend proxy.
+- **🚀 Free App Hosting** - Hacktoberfest contributions now auto-deploy to live `*.pollinations.ai` subdomains.
+- **📚 Documentation Overhaul** - Completely rewritten API docs with clearer structure and copy-paste examples.
+- **⚡ Queue Priority** - Registered users now enjoy higher priority with 5 concurrent generation slots (vs 1 for anonymous).
+- **🤖 DeepSeek V3.1** - Updated `deepseek` model now includes reasoning capabilities (consolidated from `deepseek-reasoning`).
+- **🎨 New `kontext` Model** - Try the new Flux-based model for high-quality text-to-image and image-to-image generation.
+- **🔓 GPT-Image Access** - The `gptimage` model is now available for all users (Seed tier).
+- **🛠️ New AI Tools** - Launching Virtual Makeup Studio, Packaging Designer, and Map-to-3D visualization apps.
+- **🎃 Hacktoberfest 2025** - Added 30+ project ideas and templates—start contributing today
+- **🤖 New Model** - `gpt-5-mini` is now available for text generation.
+- **📚 Interactive Docs** - New Scalar API documentation and a programmatic `/api/generate/image/models` endpoint.
+- **🚀 Project Showcase** - Added over 15 new community apps including J.A.R.V.I.S. and Interactive GeoMap.
+- **🎃 Hacktoberfest 2025** - Official participation with new Contributing Guidelines and workflows.
+- **🤖 GPT-5 & DeepSeek V3.1** - Access GPT-5 Mini/Nano and the new `deepseek-v3.1` model via the text API.
+- **🎨 4K Image Models** - Try `seedream` (ByteDance 4K) and `nanobanana` (Gemini) for high-res generation.
+- **🖼️ Reference Images** - Upload reference images in the editor to guide generation style and composition.
+- **🔎 Live Search Grounding** - The `gemini-search` model now automatically connects to Google Search for real-time info.
+- **⚡ Performance Boost** - Significant latency reduction for high-demand tiers via optimized queue concurrency.
+- **🛠️ New Community Tools** - Check out **DirPixel** (batch image editor) and **Strapick Chat** in the projects gallery.
+- **🔌 OpenAI Proxy** - Use Pollinations models via OpenAI-compatible endpoints for text, image, and audio.
+- **💻 VS Code Extension** - Generate AI images directly inside your code editor with the new Prompt2Image extension.
+- **📦 unpkg.ai** - Generate executable JavaScript modules on-demand using LLMs.
+- **🎨 StoryWeaver AI** - Turn text prompts into comic book-style panels with this new collaborative tool.
+- **🐝 Pollen MVP** - We've launched the foundation for **Pollen**, our new authentication and rewards system.
+- **🎨 New Community App** - Check out **CapyIMG**, a free browser-based image generator now featured in our Creative Projects.
+- **🤖 GPT-5 Nano** - Access OpenAI's newest model generation via the text API for next-level performance.
+- **🛠️ AI Agent Portal** - Build complex projects with a new multi-agent environment added to the Hack & Build showcase.
+- **🎨 New Community Apps** - Check out CVRON AI (Turkish support) and new React-based image generators in our project list.
+- **🤖 Major Model Update** - Added support for `GPT-5 Nano`, `Claude 3.5 Haiku`, `OpenAI o3`, and `Gemini 2.5 Flash Lite`.
+- **📊 Usage Analytics** - New endpoint to track hourly token usage, costs, and request counts for your API keys.
+- **🤖 New Model: Roblox RP** - Try the new `roblox-rp` text model, designed to provide variety by cycling through high-quality AWS Bedrock models.
+- **📊 EasyGen AI Integration** - Generate Mermaid diagrams and flowcharts directly in chat via the new EasyGen integration.
+- **🚀 Pollix AI Added** - Check out Pollix AI, the latest addition to our community project showcase.
+- **🏝️ Island AI** - New multimodal chat interface featuring web search and questioning modes.
+- **🔍 "What is this?"** - AI-powered object identifier tool added to the creative showcase.
+- **🎨 New Image Tools** - Added **Visiora**, **Aimpress**, and **Imagine Draw AI** to the community projects list.
+- **🤖 Botzy AI** - New multilingual chatbot integration supporting Urdu and English.
+- **🎨 High-Res Hybrid Model** - Integrated BPAIGen + Kontext for superior 1216px image generation. Existing `kontext` requests are automatically upgraded.
+

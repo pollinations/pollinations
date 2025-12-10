@@ -1,0 +1,5 @@
+- **🎥 Video Generation** - Create videos from text or images using Veo and Seedance models, now available in Chat and API.
+- **🚀 New Text Models** - Added Amazon Nova Micro, Claude Opus 4.5, and Kimi k2 to the text generation API.
+- **🎨 Visual Model Upgrades** - Seedream updated to v4.5 (2K resolution) and Seedance upgraded to Pro-Fast.
+- **🔍 Web Search** - Perplexity and Gemini models now support live web search for real-time information.
+- **✨ Flux Quality Boost** - Flux image generation now defaults to maximum quality settings for sharper results.

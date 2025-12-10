@@ -1,5 +1,11 @@
 import { PriceDefinition, TokenUsage } from "@shared/registry/registry.ts";
-import { integer, real, sqliteTable, text } from "drizzle-orm/sqlite-core";
+import {
+    index,
+    integer,
+    real,
+    sqliteTable,
+    text,
+} from "drizzle-orm/sqlite-core";
 import type { ContentFilterResult } from "@/schemas/openai";
 
 const eventTypeValues = ["generate.text", "generate.image"] as const;
@@ -11,173 +17,195 @@ export type EventStatus = (typeof eventStatusValues)[number];
 const apiKeyTypeValues = ["secret", "publishable"] as const;
 export type ApiKeyType = (typeof apiKeyTypeValues)[number];
 
-export const event = sqliteTable("event", {
-    id: text("id").primaryKey(),
+export const event = sqliteTable(
+    "event",
+    {
+        id: text("id").primaryKey(),
 
-    // Event Processing (internal)
-    eventProcessingId: text("event_processing_id"),
-    eventStatus: text("event_status", { enum: eventStatusValues })
-        .$type<EventStatus>()
-        .default("pending")
-        .notNull(),
-    polarDeliveryAttempts: integer("polar_delivery_attempts")
-        .default(0)
-        .notNull(),
-    polarDeliveredAt: integer("polar_delivered_at", {
-        mode: "timestamp",
-    }),
-    tinybirdDeliveryAttempts: integer("tinybird_delivery_attempts")
-        .default(0)
-        .notNull(),
-    tinybirdDeliveredAt: integer("tinybird_delivered_at", {
-        mode: "timestamp",
-    }),
-    createdAt: integer("created_at", { mode: "timestamp" })
-        .$defaultFn(() => new Date())
-        .notNull(),
-    updatedAt: integer("updated_at", { mode: "timestamp" })
-        .$onUpdateFn(() => new Date())
-        .notNull(),
+        // Event Processing (internal)
+        eventProcessingId: text("event_processing_id"),
+        eventStatus: text("event_status", { enum: eventStatusValues })
+            .$type<EventStatus>()
+            .default("pending")
+            .notNull(),
+        polarDeliveryAttempts: integer("polar_delivery_attempts")
+            .default(0)
+            .notNull(),
+        polarDeliveredAt: integer("polar_delivered_at", {
+            mode: "timestamp",
+        }),
+        tinybirdDeliveryAttempts: integer("tinybird_delivery_attempts")
+            .default(0)
+            .notNull(),
+        tinybirdDeliveredAt: integer("tinybird_delivered_at", {
+            mode: "timestamp",
+        }),
+        createdAt: integer("created_at", { mode: "timestamp" })
+            .$defaultFn(() => new Date())
+            .notNull(),
+        updatedAt: integer("updated_at", { mode: "timestamp" })
+            .$onUpdateFn(() => new Date())
+            .notNull(),
 
-    // Request
-    requestId: text("request_id").notNull(),
-    requestPath: text("request_path"),
-    startTime: integer("start_time", { mode: "timestamp_ms" }).notNull(),
-    endTime: integer("end_time", { mode: "timestamp_ms" }).notNull(),
-    responseTime: real("response_time"),
-    responseStatus: integer("response_status"),
-    environment: text("environment"),
-    eventType: text("event_type").$type<EventType>().notNull(),
+        // Request
+        requestId: text("request_id").notNull(),
+        requestPath: text("request_path"),
+        startTime: integer("start_time", { mode: "timestamp_ms" }).notNull(),
+        endTime: integer("end_time", { mode: "timestamp_ms" }).notNull(),
+        responseTime: real("response_time"),
+        responseStatus: integer("response_status"),
+        environment: text("environment"),
+        eventType: text("event_type").$type<EventType>().notNull(),
 
-    // User
-    userId: text("user_id"),
-    userTier: text("user_tier"),
-    userGithubId: text("user_github_id"),
-    userGithubUsername: text("user_github_username"),
+        // User
+        userId: text("user_id"),
+        userTier: text("user_tier"),
+        userGithubId: text("user_github_id"),
+        userGithubUsername: text("user_github_username"),
 
-    // API Key
-    apiKeyId: text("api_key_id"),
-    apiKeyName: text("api_key_name"),
-    apiKeyType: text("api_key_type", {
-        enum: apiKeyTypeValues,
-    }).$type<ApiKeyType>(),
+        // API Key
+        apiKeyId: text("api_key_id"),
+        apiKeyName: text("api_key_name"),
+        apiKeyType: text("api_key_type", {
+            enum: apiKeyTypeValues,
+        }).$type<ApiKeyType>(),
 
-    // Meter
-    selectedMeterId: text("selected_meter_id"),
-    selectedMeterSlug: text("selected_meter_slug"),
-    balances: text("balances", { mode: "json" }).$type<
-        Record<string, number>
-    >(),
+        // Meter
+        selectedMeterId: text("selected_meter_id"),
+        selectedMeterSlug: text("selected_meter_slug"),
+        balances: text("balances", { mode: "json" }).$type<
+            Record<string, number>
+        >(),
 
-    // Referrer
-    referrerUrl: text("referrer_url"),
-    referrerDomain: text("referrer_domain"),
+        // Referrer
+        referrerUrl: text("referrer_url"),
+        referrerDomain: text("referrer_domain"),
 
-    // Model
-    modelRequested: text("model_requested"),
-    resolvedModelRequested: text("resolved_model_requested"),
-    modelUsed: text("model_used"),
-    modelProviderUsed: text("model_provider_used"),
-    isBilledUsage: integer("is_billed_usage", { mode: "boolean" }).notNull(),
+        // Model
+        modelRequested: text("model_requested"),
+        resolvedModelRequested: text("resolved_model_requested"),
+        modelUsed: text("model_used"),
+        modelProviderUsed: text("model_provider_used"),
+        isBilledUsage: integer("is_billed_usage", {
+            mode: "boolean",
+        }).notNull(),
 
-    // Pricing
-    tokenPricePromptText: real("token_price_prompt_text").notNull(),
-    tokenPricePromptCached: real("token_price_prompt_cached").notNull(),
-    tokenPricePromptAudio: real("token_price_prompt_audio").notNull(),
-    tokenPricePromptImage: real("token_price_prompt_image").notNull(),
-    tokenPriceCompletionText: real("token_price_completion_text").notNull(),
-    tokenPriceCompletionReasoning: real(
-        "token_price_completion_reasoning",
-    ).notNull(),
-    tokenPriceCompletionAudio: real("token_price_completion_audio").notNull(),
-    tokenPriceCompletionImage: real("token_price_completion_image").notNull(),
-    tokenPriceCompletionVideoSeconds: real(
-        "token_price_completion_video_seconds",
-    )
-        .notNull()
-        .default(0),
-    tokenPriceCompletionVideoTokens: real("token_price_completion_video_tokens")
-        .notNull()
-        .default(0),
+        // Pricing
+        tokenPricePromptText: real("token_price_prompt_text").notNull(),
+        tokenPricePromptCached: real("token_price_prompt_cached").notNull(),
+        tokenPricePromptAudio: real("token_price_prompt_audio").notNull(),
+        tokenPricePromptImage: real("token_price_prompt_image").notNull(),
+        tokenPriceCompletionText: real("token_price_completion_text").notNull(),
+        tokenPriceCompletionReasoning: real(
+            "token_price_completion_reasoning",
+        ).notNull(),
+        tokenPriceCompletionAudio: real(
+            "token_price_completion_audio",
+        ).notNull(),
+        tokenPriceCompletionImage: real(
+            "token_price_completion_image",
+        ).notNull(),
+        tokenPriceCompletionVideoSeconds: real(
+            "token_price_completion_video_seconds",
+        )
+            .notNull()
+            .default(0),
+        tokenPriceCompletionVideoTokens: real(
+            "token_price_completion_video_tokens",
+        )
+            .notNull()
+            .default(0),
 
-    // Usage
-    tokenCountPromptText: integer("token_count_prompt_text").notNull(),
-    tokenCountPromptAudio: integer("token_count_prompt_audio").notNull(),
-    tokenCountPromptCached: integer("token_count_prompt_cached").notNull(),
-    tokenCountPromptImage: integer("token_count_prompt_image").notNull(),
-    tokenCountCompletionText: integer("token_count_completion_text").notNull(),
-    tokenCountCompletionReasoning: integer(
-        "token_count_completion_reasoning",
-    ).notNull(),
-    tokenCountCompletionAudio: integer(
-        "token_count_completion_audio",
-    ).notNull(),
-    tokenCountCompletionImage: integer(
-        "token_count_completion_image",
-    ).notNull(),
-    tokenCountCompletionVideoSeconds: integer(
-        "token_count_completion_video_seconds",
-    )
-        .notNull()
-        .default(0),
-    tokenCountCompletionVideoTokens: integer(
-        "token_count_completion_video_tokens",
-    )
-        .notNull()
-        .default(0),
+        // Usage
+        tokenCountPromptText: integer("token_count_prompt_text").notNull(),
+        tokenCountPromptAudio: integer("token_count_prompt_audio").notNull(),
+        tokenCountPromptCached: integer("token_count_prompt_cached").notNull(),
+        tokenCountPromptImage: integer("token_count_prompt_image").notNull(),
+        tokenCountCompletionText: integer(
+            "token_count_completion_text",
+        ).notNull(),
+        tokenCountCompletionReasoning: integer(
+            "token_count_completion_reasoning",
+        ).notNull(),
+        tokenCountCompletionAudio: integer(
+            "token_count_completion_audio",
+        ).notNull(),
+        tokenCountCompletionImage: integer(
+            "token_count_completion_image",
+        ).notNull(),
+        tokenCountCompletionVideoSeconds: integer(
+            "token_count_completion_video_seconds",
+        )
+            .notNull()
+            .default(0),
+        tokenCountCompletionVideoTokens: integer(
+            "token_count_completion_video_tokens",
+        )
+            .notNull()
+            .default(0),
 
-    // Totals
-    totalCost: real("total_cost").notNull(),
-    totalPrice: real("total_price").notNull(),
+        // Totals
+        totalCost: real("total_cost").notNull(),
+        totalPrice: real("total_price").notNull(),
 
-    // Prompt Moderation
-    moderationPromptHateSeverity: text("moderation_prompt_hate_severity"),
-    moderationPromptSelfHarmSeverity: text(
-        "moderation_prompt_self_harm_severity",
-    ),
-    moderationPromptSexualSeverity: text("moderation_prompt_sexual_severity"),
-    moderationPromptViolenceSeverity: text(
-        "moderation_prompt_violence_severity",
-    ),
-    moderationPromptJailbreakDetected: integer(
-        "moderation_prompt_jailbreak_detected",
-        { mode: "boolean" },
-    ),
+        // Prompt Moderation
+        moderationPromptHateSeverity: text("moderation_prompt_hate_severity"),
+        moderationPromptSelfHarmSeverity: text(
+            "moderation_prompt_self_harm_severity",
+        ),
+        moderationPromptSexualSeverity: text(
+            "moderation_prompt_sexual_severity",
+        ),
+        moderationPromptViolenceSeverity: text(
+            "moderation_prompt_violence_severity",
+        ),
+        moderationPromptJailbreakDetected: integer(
+            "moderation_prompt_jailbreak_detected",
+            { mode: "boolean" },
+        ),
 
-    // Completion Moderation
-    moderationCompletionHateSeverity: text(
-        "moderation_completion_hate_severity",
-    ),
-    moderationCompletionSelfHarmSeverity: text(
-        "moderation_completion_self_harm_severity",
-    ),
-    moderationCompletionSexualSeverity: text(
-        "moderation_completion_sexual_severity",
-    ),
-    moderationCompletionViolenceSeverity: text(
-        "moderation_completion_violence_severity",
-    ),
-    moderationCompletionProtectedMaterialCodeDetected: integer(
-        "moderation_completion_protected_material_code_detected",
-        { mode: "boolean" },
-    ),
-    moderationCompletionProtectedMaterialTextDetected: integer(
-        "moderation_completion_protected_material_text_detected",
-        { mode: "boolean" },
-    ),
+        // Completion Moderation
+        moderationCompletionHateSeverity: text(
+            "moderation_completion_hate_severity",
+        ),
+        moderationCompletionSelfHarmSeverity: text(
+            "moderation_completion_self_harm_severity",
+        ),
+        moderationCompletionSexualSeverity: text(
+            "moderation_completion_sexual_severity",
+        ),
+        moderationCompletionViolenceSeverity: text(
+            "moderation_completion_violence_severity",
+        ),
+        moderationCompletionProtectedMaterialCodeDetected: integer(
+            "moderation_completion_protected_material_code_detected",
+            { mode: "boolean" },
+        ),
+        moderationCompletionProtectedMaterialTextDetected: integer(
+            "moderation_completion_protected_material_text_detected",
+            { mode: "boolean" },
+        ),
 
-    // Cache
-    cacheHit: integer("cache_hit", { mode: "boolean" }),
-    cacheType: text("cache_type"),
-    cacheSemanticSimilarity: real("cache_semantic_similarity"),
-    cacheSemanticThreshold: real("cache_semantic_threshold"),
-    cacheKey: text("cache_key"),
+        // Cache
+        cacheHit: integer("cache_hit", { mode: "boolean" }),
+        cacheType: text("cache_type"),
+        cacheSemanticSimilarity: real("cache_semantic_similarity"),
+        cacheSemanticThreshold: real("cache_semantic_threshold"),
+        cacheKey: text("cache_key"),
 
-    // Error (stack/details removed to reduce D1 memory usage)
-    errorResponseCode: text("error_response_code"),
-    errorSource: text("error_source"),
-    errorMessage: text("error_message"),
-});
+        // Error (stack/details removed to reduce D1 memory usage)
+        errorResponseCode: text("error_response_code"),
+        errorSource: text("error_source"),
+        errorMessage: text("error_message"),
+    },
+    (table) => [
+        index("idx_event_processing_status").on(
+            table.eventProcessingId,
+            table.eventStatus,
+        ),
+        index("idx_event_created_at").on(table.createdAt),
+    ],
+);
 
 export type InsertGenerationEvent = typeof event.$inferInsert;
 export type SelectGenerationEvent = typeof event.$inferSelect;

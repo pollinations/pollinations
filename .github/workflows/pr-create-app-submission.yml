@@ -2,7 +2,7 @@ name: PR Create App Submission
 
 on:
   issues:
-    types: [opened, edited, reopened]
+    types: [opened, edited, reopened, labeled]
   pull_request:
     paths:
       - '.github/workflows/pr-create-app-submission.yml'  # Trigger on self to bootstrap
@@ -16,9 +16,11 @@ on:
 jobs:
   review-submission:
     # Run on App Submission issues (by app:review label) OR manual dispatch
+    # For 'labeled' events, only trigger when app:review is the label being added
     if: |
       github.event_name == 'workflow_dispatch' ||
-      contains(github.event.issue.labels.*.name, 'app:review')
+      (github.event.action == 'labeled' && github.event.label.name == 'app:review') ||
+      (github.event.action != 'labeled' && contains(github.event.issue.labels.*.name, 'app:review'))
     runs-on: ubuntu-latest
     permissions:
       contents: write

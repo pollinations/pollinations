@@ -5,6 +5,16 @@
 
 export const chatProjects = [
     {
+        name: "Pookie AI 💕",
+        url: "https://pookieai.web.app/",
+        description:
+            "AI-powered conversational platform for creating customizable virtual characters with distinct personalities and backstories. Design anime characters, fictional entities, or custom companions for deep, context-aware roleplay dialogues.",
+        author: "@shantoislamdev",
+        repo: "https://github.com/shantoislamdev/pookie-ai",
+        submissionDate: "2025-12-08",
+        order: 1,
+    },
+    {
         name: "Nuvole AI 🍎",
         url: "https://routinehub.co/shortcut/18431/",
         description:

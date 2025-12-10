@@ -429,15 +429,6 @@ export const creativeProjects = [
         order: 1,
     },
     {
-        name: "Dreamator-AI 🎨",
-        url: "https://dreamator-ai.vercel.app/",
-        description:
-            "Transform your imagination into reality using Pollinations API. A creative image generation platform with a personal gallery of generated masterpieces.",
-        author: "@its3li",
-        submissionDate: "2025-06-27",
-        order: 1,
-    },
-    {
         name: "Celebrity AI Image Generator",
         url: "https://www.aicelebrity.design/",
         description:
@@ -815,17 +806,6 @@ export const creativeProjects = [
             "Uses Flux (through pollinations) and potrace to create B&W Vector files",
         author: "@pointsguy118",
         submissionDate: "2025-04-15",
-        order: 1,
-    },
-    {
-        name: "Imagen",
-        url: "https://altkriz.github.io/imagen/",
-        description:
-            'A beautiful web interface for generating images using Pollinations.ai API with only the "flux" and "turbo" models.',
-        author: "@altkriz",
-        repo: "https://github.com/altkriz/imagen",
-        stars: 3,
-        submissionDate: "2025-04-13",
         order: 1,
     },
     {

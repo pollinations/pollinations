@@ -1,0 +1,46 @@
+name: Create Highlights PR
+
+on:
+  pull_request:
+    types: [closed]
+    paths:
+      - 'NEWS/*.md'
+  workflow_dispatch: 
+
+jobs:
+  create-highlights:
+    # Run if: manual trigger OR (PR merged to main)
+    if: github.event_name == 'workflow_dispatch' || (github.event.pull_request.merged == true && github.event.pull_request.base.ref == 'main')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+
+    steps:
+      - name: Generate Polly Bot Token
+        id: polly-bot
+        uses: actions/create-github-app-token@v1
+        with:
+          app-id: ${{ secrets.POLLY_BOT_APP_ID }}
+          private-key: ${{ secrets.POLLY_BOT_PRIVATE_KEY }}
+
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          ref: main  # Checkout main to get the merged NEWS file
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          pip install requests
+
+      - name: Create Highlights and PR
+        env:
+          GITHUB_TOKEN: ${{ steps.polly-bot.outputs.token }}
+          POLLINATIONS_TOKEN: ${{ secrets.POLLINATIONS_TOKEN }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+        run: python .github/scripts/pr_create_highlights.py

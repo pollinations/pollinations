@@ -7,7 +7,7 @@ import base64
 import requests
 
 GITHUB_API_BASE = "https://api.github.com"
-POLLINATIONS_API_BASE = "https://enter.pollinations.ai/api/generate/openai"
+POLLINATIONS_API_BASE = "https://gen.pollinations.ai/v1/chat/completions"
 MODEL = "gemini-large"
 NEWS_FOLDER = "NEWS"
 
@@ -92,17 +92,18 @@ This is a HIGHLIGHT REEL - not a changelog. Only the exciting stuff that makes u
 
 ## OUTPUT FORMAT
 ```
-- **emoji Title** - Punchy description of what users can DO now.
-- **emoji Another Feature** - Brief and exciting. Use `backticks` for code.
+- **YYYY-MM-DD** – **🚀 Feature Name** Punchy description of what users can DO now.
+- **YYYY-MM-DD** – **✨ Another Feature** Brief and exciting. Use `backticks` for code.
 ```
 
 Rules:
-1. Format: `- **emoji Title** - Description`
-2. Emojis: use appropriate ones like these or similar
-3. Focus on USER BENEFIT
-4. NO dates, NO PR numbers, NO authors
-5. 1-2 lines max per entry
-6. Output ONLY the markdown bullets
+1. Format: `- **YYYY-MM-DD** – **emoji Title** Description`
+2. Use the DATE provided in the changelog header (the week's end date)
+3. Emojis: 🚀 ✨ 🎨 🎵 🤖 🔗 📱 💡 🌟 🎯
+4. Focus on USER BENEFIT
+5. NO PR numbers, NO authors
+6. 1-2 lines max per entry
+7. Output ONLY the markdown bullets
 
 ## CRITICAL
 - Output exactly `SKIP` if nothing qualifies
@@ -110,7 +111,10 @@ Rules:
 - Typical weeks: 3-4 highlights. Slow weeks: 0-2. Big release weeks: up to 10
 - Trust your instincts on what users would find exciting"""
 
-    user_prompt = f"""Review this Pollinations.AI changelog for the week of {week_date} and extract ONLY highlights worthy of the website and README.
+    user_prompt = f"""Review this Pollinations.AI changelog and extract ONLY highlights worthy of the website and README.
+
+**DATE FOR THIS CHANGELOG: {week_date}**
+Use this date for all highlights from this changelog.
 
 Typical week: 3-4 highlights. Some weeks: 0. Be very selective.
 

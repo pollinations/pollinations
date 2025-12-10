@@ -339,6 +339,48 @@ test(
 );
 
 test(
+    "POST /v1/chat/completions should accept image URL for Claude/Bedrock models (Issue #5862)",
+    { timeout: 60000 },
+    async ({ apiKey, mocks }) => {
+        await mocks.enable("polar", "tinybird", "vcr");
+        const response = await SELF.fetch(
+            `http://localhost:3000/api/generate/v1/chat/completions`,
+            {
+                method: "POST",
+                headers: {
+                    "content-type": "application/json",
+                    "authorization": `Bearer ${apiKey}`,
+                },
+                body: JSON.stringify({
+                    model: "claude",
+                    messages: [
+                        {
+                            role: "user",
+                            content: [
+                                {
+                                    type: "text",
+                                    text: "Describe this image in one word.",
+                                },
+                                {
+                                    type: "image_url",
+                                    image_url: {
+                                        url: "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a7/Camponotus_flavomarginatus_ant.jpg/320px-Camponotus_flavomarginatus_ant.jpg",
+                                    },
+                                },
+                            ],
+                        },
+                    ],
+                    max_tokens: 50,
+                }),
+            },
+        );
+        expect(response.status).toBe(200);
+        const data = await response.json();
+        expect((data as any).choices[0].message.content).toBeTruthy();
+    },
+);
+
+test(
     "POST /v1/chat/completions should include usage",
     { timeout: 30000 },
     async ({ apiKey, mocks }) => {

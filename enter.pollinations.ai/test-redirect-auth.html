@@ -92,7 +92,7 @@
 
     <script>
         // Configuration - change this for local vs production
-        const ENTER_URL = 'http://localhost:5173'; // Local dev
+        const ENTER_URL = 'http://localhost:3000'; // Local dev
         // const ENTER_URL = 'https://enter.pollinations.ai'; // Production
         
         const CALLBACK_URL = window.location.href.split('?')[0].split('#')[0];
@@ -152,8 +152,8 @@
             resultDiv.innerHTML = '<p class="info">Generating image...</p>';
 
             try {
-                // Use the API key to generate an image
-                const imageUrl = `${ENTER_URL}/api/generate/image/${encodeURIComponent(prompt)}?key=${apiKey}&width=512&height=512`;
+                // Use the API key to generate an image via local dev server
+                const imageUrl = `http://localhost:3000/api/generate/image/${encodeURIComponent(prompt)}?key=${apiKey}&model=flux&width=512&height=512`;
                 
                 const response = await fetch(imageUrl);
                 

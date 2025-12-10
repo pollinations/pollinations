@@ -1,5 +1,6 @@
 DESCRIPTION >
     Get usage history for a specific user. Returns request history with model, cost, and token counts.
+    Use 'before' param with ISO timestamp for cursor pagination (e.g. before=2024-12-10T00:00:00).
 
 NODE user_usage_node
 SQL >
@@ -14,8 +15,10 @@ SQL >
         responseTime
     FROM generation_event
     WHERE userId = {{String(user_id, '')}}
+    {% if defined(before) %}
+    AND startTime < {{DateTime(before)}}
+    {% end %}
     ORDER BY startTime DESC
     LIMIT {{Int32(limit, 100)}}
-    OFFSET {{Int32(offset, 0)}}
 
 TYPE endpoint

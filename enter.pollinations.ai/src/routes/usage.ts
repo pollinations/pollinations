@@ -8,7 +8,7 @@ import type { Env } from "../env.ts";
 // Query params schema
 const usageQuerySchema = z.object({
     format: z.enum(["json", "csv"]).optional().default("json"),
-    limit: z.coerce.number().min(1).max(1000).optional().default(100),
+    limit: z.coerce.number().min(1).max(50000).optional().default(100),
 });
 
 export const usageRoutes = new Hono<Env>()

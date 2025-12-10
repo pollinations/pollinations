@@ -27,14 +27,14 @@ def get_merged_prs_for_range(owner: str, repo: str, start_date: datetime, end_da
     """Fetch merged PRs for a specific date range using GraphQL"""
 
     query = """
-    query($owner: String!, $repo: String!, $cursor: String) {
+    query($owner: String!, $repo: String!, $cursor: String, $baseRef: String!) {
       repository(owner: $owner, name: $repo) {
         pullRequests(
           states: MERGED
           first: 100
           after: $cursor
           orderBy: {field: UPDATED_AT, direction: DESC}
-          baseRefName: "main"
+          baseRefName: $baseRef
         ) {
           pageInfo {
             hasNextPage
@@ -62,71 +62,76 @@ def get_merged_prs_for_range(owner: str, repo: str, start_date: datetime, end_da
     }
 
     all_prs = []
-    cursor = None
-    page = 1
 
     print(f"Fetching merged PRs from {start_date.strftime('%Y-%m-%d')} to {end_date.strftime('%Y-%m-%d')}...")
 
-    while True:
-        variables = {
-            "owner": owner,
-            "repo": repo,
-            "cursor": cursor
-        }
+    # Check both main and master branches (repo used master until ~3 weeks ago)
+    for base_ref in ["main", "master"]:
+        cursor = None
+        page = 1
+        print(f"  Checking '{base_ref}' branch...")
 
-        response = requests.post(
-            GITHUB_GRAPHQL_API,
-            headers=headers,
-            json={"query": query, "variables": variables}
-        )
+        while True:
+            variables = {
+                "owner": owner,
+                "repo": repo,
+                "cursor": cursor,
+                "baseRef": base_ref
+            }
 
-        if response.status_code != 200:
-            print(f"GraphQL error: {response.status_code} -> {response.text[:500]}")
-            sys.exit(1)
+            response = requests.post(
+                GITHUB_GRAPHQL_API,
+                headers=headers,
+                json={"query": query, "variables": variables}
+            )
 
-        data = response.json()
+            if response.status_code != 200:
+                print(f"GraphQL error: {response.status_code} -> {response.text[:500]}")
+                sys.exit(1)
 
-        if "errors" in data:
-            print(f"GraphQL query errors: {data['errors']}")
-            sys.exit(1)
+            data = response.json()
 
-        pr_data = data["data"]["repository"]["pullRequests"]
-        nodes = pr_data["nodes"]
-        page_info = pr_data["pageInfo"]
+            if "errors" in data:
+                print(f"GraphQL query errors: {data['errors']}")
+                sys.exit(1)
 
-        print(f"  Page {page}: fetched {len(nodes)} PRs")
+            pr_data = data["data"]["repository"]["pullRequests"]
+            nodes = pr_data["nodes"]
+            page_info = pr_data["pageInfo"]
 
-        oldest_update_on_page = None
+            print(f"    Page {page}: fetched {len(nodes)} PRs")
 
-        for pr in nodes:
-            merged_at = datetime.fromisoformat(pr["mergedAt"].replace("Z", "+00:00"))
-            updated_at = datetime.fromisoformat(pr["updatedAt"].replace("Z", "+00:00"))
+            oldest_update_on_page = None
 
-            if oldest_update_on_page is None or updated_at < oldest_update_on_page:
-                oldest_update_on_page = updated_at
+            for pr in nodes:
+                merged_at = datetime.fromisoformat(pr["mergedAt"].replace("Z", "+00:00"))
+                updated_at = datetime.fromisoformat(pr["updatedAt"].replace("Z", "+00:00"))
 
-            # Only include PRs merged within our date range
-            if start_date <= merged_at <= end_date:
-                all_prs.append({
-                    "number": pr["number"],
-                    "title": pr["title"],
-                    "body": pr["body"] or "",
-                    "author": pr["author"]["login"] if pr["author"] else "ghost",
-                    "merged_at": pr["mergedAt"],
-                    "html_url": pr["url"]
-                })
+                if oldest_update_on_page is None or updated_at < oldest_update_on_page:
+                    oldest_update_on_page = updated_at
 
-        # Stop if we've gone past our date range
-        if oldest_update_on_page and oldest_update_on_page < start_date:
-            print(f"  Reached PRs before {start_date.strftime('%Y-%m-%d')}, stopping")
-            break
+                # Only include PRs merged within our date range
+                if start_date <= merged_at <= end_date:
+                    all_prs.append({
+                        "number": pr["number"],
+                        "title": pr["title"],
+                        "body": pr["body"] or "",
+                        "author": pr["author"]["login"] if pr["author"] else "ghost",
+                        "merged_at": pr["mergedAt"],
+                        "html_url": pr["url"]
+                    })
 
-        if not page_info["hasNextPage"]:
-            print(f"  No more pages")
-            break
+            # Stop if we've gone past our date range
+            if oldest_update_on_page and oldest_update_on_page < start_date:
+                print(f"    Reached PRs before {start_date.strftime('%Y-%m-%d')}, stopping")
+                break
 
-        cursor = page_info["endCursor"]
-        page += 1
+            if not page_info["hasNextPage"]:
+                print(f"    No more pages")
+                break
+
+            cursor = page_info["endCursor"]
+            page += 1
 
     return all_prs
 

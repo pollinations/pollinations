@@ -1,4 +1,4 @@
-# Polly Bot - AI assistant via Pollinations AI (polly-bot-pollinations-ai)
+# Pollinations AI - AI assistant via Pollinations AI
 # Trigger: polly | Whitelist: voodoohop, ElliotEtag, eulervoid, Circuit-Overtime, Itachi-1824
 
 name: Polly
@@ -75,6 +75,8 @@ jobs:
       - name: Setup Bun
         if: steps.whitelist.outputs.authorized == 'true'
         uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
 
       - name: Setup
         if: steps.whitelist.outputs.authorized == 'true'
@@ -95,9 +97,9 @@ jobs:
           BOT_USER_ID=$(gh api "/users/${{ steps.token.outputs.app-slug }}[bot]" --jq .id)
           echo "user-id=$BOT_USER_ID" >> "$GITHUB_OUTPUT"
           mkdir -p $HOME/.claude-code-router
-          echo '{"LOG":false,"NON_INTERACTIVE_MODE":true,"API_TIMEOUT_MS":600000,"Providers":[{"name":"pollinations","api_base_url":"https://gen.pollinations.ai/v1/chat/completions","api_key":"${CLAUDE_CODE_TOKEN}","models":["claude-large","claude","perplexity-reasoning"]}],"Router":{"default":"pollinations,claude-large","background":"pollinations,claude","think":"pollinations,claude-large","longContext":"pollinations,claude-large","longContextThreshold":60000,"webSearch":"pollinations,perplexity-reasoning"}}' > $HOME/.claude-code-router/config.json
+          echo '{"LOG":false,"NON_INTERACTIVE_MODE":true,"API_TIMEOUT_MS":600000,"Providers":[{"name":"pollinations","api_base_url":"https://gen.pollinations.ai/v1/chat/completions","api_key":"${CLAUDE_CODE_TOKEN}","models":["claude-large","claude","kimi-k2-thinking","perplexity-reasoning","openai-large","openai"]}],"Router":{"default":"pollinations,claude-large","background":"pollinations,claude","think":"pollinations,kimi-k2-thinking","longContext":"pollinations,claude-large","longContextThreshold":60000,"webSearch":"pollinations,perplexity-reasoning"}}' > $HOME/.claude-code-router/config.json
 
-          # Start router
+          # Start router with Bun
           bunx @musistudio/claude-code-router start &
           until curl -s http://localhost:3456 >/dev/null; do sleep 0.5; done
         env:

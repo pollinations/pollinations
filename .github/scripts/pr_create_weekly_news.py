@@ -11,7 +11,7 @@ from datetime import datetime, timedelta, timezone
 
 GITHUB_API_BASE = "https://api.github.com"
 GITHUB_GRAPHQL_API = "https://api.github.com/graphql"
-POLLINATIONS_API_BASE = "https://enter.pollinations.ai/api/generate/openai"
+POLLINATIONS_API_BASE = "https://gen.pollinations.ai/v1/chat/completions"
 MODEL = "gemini-large"
 CHUNK_SIZE = 50
 NEWS_FOLDER = "NEWS"

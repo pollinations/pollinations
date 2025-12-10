@@ -16,5 +16,6 @@ SQL >
     WHERE userId = {{String(user_id, '')}}
     ORDER BY startTime DESC
     LIMIT {{Int32(limit, 100)}}
+    OFFSET {{Int32(offset, 0)}}
 
 TYPE endpoint

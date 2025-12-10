@@ -229,14 +229,13 @@ function RouteComponent() {
                             >
                                 💳 Vote on payment methods
                             </Button>
-                            <Button
-                                as="a"
-                                href="/api/usage?format=csv&limit=50000"
-                                className="!bg-gray-100 !text-gray-700"
-                                weight="light"
+                            <a
+                                href="/api/usage?format=csv&limit=10000"
+                                download="pollinations-usage.csv"
+                                className="inline-flex items-center justify-center gap-2 px-3 py-2 rounded-md text-sm font-medium bg-gray-100 text-gray-700 hover:brightness-95 transition-all"
                             >
                                 📊 Download Usage CSV
-                            </Button>
+                            </a>
                         </div>
                     </div>
                     <PollenBalance

@@ -8,7 +8,8 @@ import type { Env } from "../env.ts";
 // Query params schema
 const usageQuerySchema = z.object({
     format: z.enum(["json", "csv"]).optional().default("json"),
-    limit: z.coerce.number().min(1).max(50000).optional().default(100),
+    limit: z.coerce.number().min(1).max(10000).optional().default(100),
+    page: z.coerce.number().min(1).optional().default(1),
 });
 
 export const usageRoutes = new Hono<Env>()
@@ -29,14 +30,16 @@ export const usageRoutes = new Hono<Env>()
             });
 
             const user = c.var.auth.requireUser();
-            const { format, limit } = c.req.valid("query");
+            const { format, limit, page } = c.req.valid("query");
+            const offset = (page - 1) * limit;
 
             log.debug(
-                "[USAGE] Fetching usage for user: {userId}, format: {format}, limit: {limit}",
+                "[USAGE] Fetching usage for user: {userId}, format: {format}, limit: {limit}, page: {page}",
                 {
                     userId: user.id,
                     format,
                     limit,
+                    page,
                 },
             );
 
@@ -48,6 +51,7 @@ export const usageRoutes = new Hono<Env>()
             );
             tinybirdUrl.searchParams.set("user_id", user.id);
             tinybirdUrl.searchParams.set("limit", limit.toString());
+            tinybirdUrl.searchParams.set("offset", offset.toString());
 
             log.debug("[USAGE] Querying Tinybird: {url}", {
                 url: tinybirdUrl.toString(),

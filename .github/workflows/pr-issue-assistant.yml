@@ -1,0 +1,130 @@
+# Polly Bot - AI assistant via Pollinations AI (polly-bot-pollinations-ai)
+# Trigger: polly | Whitelist: voodoohop, ElliotEtag, eulervoid, Circuit-Overtime, Itachi-1824
+
+name: Polly
+
+on:
+  issue_comment:
+    types: [created]
+  pull_request_review_comment:
+    types: [created]
+  issues:
+    types: [opened, assigned]
+  pull_request_review:
+    types: [submitted]
+
+jobs:
+  polly:
+    if: |
+      (github.event_name == 'issue_comment' && contains(github.event.comment.body, 'polly')) ||
+      (github.event_name == 'pull_request_review_comment' && contains(github.event.comment.body, 'polly')) ||
+      (github.event_name == 'pull_request_review' && contains(github.event.review.body, 'polly')) ||
+      (github.event_name == 'issues' && (contains(github.event.issue.body, 'polly') || contains(github.event.issue.title, 'polly')))
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+      issues: write
+      id-token: write
+      actions: read
+    env:
+      CLAUDE_CODE_TOKEN: ${{ secrets.CLAUDE_CODE_TOKEN }}
+    steps:
+      - uses: actions/create-github-app-token@v1
+        id: token
+        with:
+          app-id: ${{ secrets.POLLY_BOT_APP_ID }}
+          private-key: ${{ secrets.POLLY_BOT_PRIVATE_KEY }}
+
+      - name: Check Whitelist
+        id: whitelist
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ steps.token.outputs.token }}
+          script: |
+            // Strict case check: ensure lowercase 'polly' exists
+            let body = '';
+            if (context.eventName === 'issue_comment' || context.eventName === 'pull_request_review_comment') {
+              body = context.payload.comment?.body || '';
+            } else if (context.eventName === 'issues') {
+              body = (context.payload.issue?.body || '') + (context.payload.issue?.title || '');
+            } else if (context.eventName === 'pull_request_review') {
+              body = context.payload.review?.body || '';
+            }
+
+            if (!body.includes('polly')) {
+              console.log('Strict check failed: "polly" must be lowercase.');
+              core.setOutput('authorized', 'false');
+              return; 
+            }
+
+            const whitelist = ['voodoohop', 'ElliotEtag', 'eulervoid', 'Circuit-Overtime', 'Itachi-1824'];
+            const actor = context.actor;
+            if (!whitelist.includes(actor)) {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue?.number || context.payload.pull_request?.number,
+                body: `Sorry @${actor}, only whitelisted users can use Polly.`
+              });
+              core.setOutput('authorized', 'false');
+            } else {
+              core.setOutput('authorized', 'true');
+            }
+
+      - name: Setup Bun
+        if: steps.whitelist.outputs.authorized == 'true'
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Setup
+        if: steps.whitelist.outputs.authorized == 'true'
+        id: setup
+        run: |
+          # Add eyes reaction
+          if [ "${{ github.event_name }}" = "issue_comment" ]; then
+            gh api repos/${{ github.repository }}/issues/comments/${{ github.event.comment.id }}/reactions -f content=eyes || true
+          elif [ "${{ github.event_name }}" = "pull_request_review_comment" ]; then
+            gh api repos/${{ github.repository }}/pulls/comments/${{ github.event.comment.id }}/reactions -f content=eyes || true
+          elif [ "${{ github.event_name }}" = "issues" ]; then
+            gh api repos/${{ github.repository }}/issues/${{ github.event.issue.number }}/reactions -f content=eyes || true
+          elif [ "${{ github.event_name }}" = "pull_request_review" ]; then
+            gh api repos/${{ github.repository }}/issues/${{ github.event.pull_request.number }}/reactions -f content=eyes || true
+          fi
+
+          # Get bot user ID and setup router config
+          BOT_USER_ID=$(gh api "/users/${{ steps.token.outputs.app-slug }}[bot]" --jq .id)
+          echo "user-id=$BOT_USER_ID" >> "$GITHUB_OUTPUT"
+          mkdir -p $HOME/.claude-code-router
+          echo '{"LOG":false,"NON_INTERACTIVE_MODE":true,"API_TIMEOUT_MS":600000,"Providers":[{"name":"pollinations","api_base_url":"https://gen.pollinations.ai/v1/chat/completions","api_key":"${CLAUDE_CODE_TOKEN}","models":["claude-large","claude","kimi-k2-thinking","perplexity-reasoning","openai-large","openai"]}],"Router":{"default":"pollinations,claude-large","background":"pollinations,claude","think":"pollinations,kimi-k2-thinking","longContext":"pollinations,claude-large","longContextThreshold":60000,"webSearch":"pollinations,perplexity-reasoning"}}' > $HOME/.claude-code-router/config.json
+
+          # Start router with Bun
+          bunx @musistudio/claude-code-router start &
+          until curl -s http://localhost:3456 >/dev/null; do sleep 0.5; done
+        env:
+          GH_TOKEN: ${{ steps.token.outputs.token }}
+
+      - uses: actions/checkout@v4
+        if: steps.whitelist.outputs.authorized == 'true'
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha || (github.event.issue.pull_request && format('refs/pull/{0}/head', github.event.issue.number)) || github.sha }}
+          repository: ${{ github.repository }}
+          token: ${{ steps.token.outputs.token }}
+
+
+      - uses: anthropics/claude-code-action@v1
+        if: steps.whitelist.outputs.authorized == 'true'
+        env:
+          ANTHROPIC_BASE_URL: http://localhost:3456
+          GIT_AUTHOR_NAME: "${{ steps.token.outputs.app-slug }}[bot]"
+          GIT_AUTHOR_EMAIL: "${{ steps.setup.outputs.user-id }}+${{ steps.token.outputs.app-slug }}[bot]@users.noreply.github.com"
+          GIT_COMMITTER_NAME: "${{ steps.token.outputs.app-slug }}[bot]"
+          GIT_COMMITTER_EMAIL: "${{ steps.setup.outputs.user-id }}+${{ steps.token.outputs.app-slug }}[bot]@users.noreply.github.com"
+        with:
+          anthropic_api_key: "ccr-pollinations"
+          github_token: ${{ steps.token.outputs.token }}
+          trigger_phrase: "polly"
+          additional_permissions: |
+            actions: read

@@ -2,7 +2,7 @@ name: PR Create App Submission
 
 on:
   issues:
-    types: [opened, edited, reopened, labeled]
+    types: [opened, edited, reopened]
   pull_request:
     paths:
       - '.github/workflows/pr-create-app-submission.yml'  # Trigger on self to bootstrap
@@ -16,11 +16,9 @@ on:
 jobs:
   review-submission:
     # Run on App Submission issues (by app:review label) OR manual dispatch
-    # For 'labeled' events, only trigger when app:review is the label being added
     if: |
       github.event_name == 'workflow_dispatch' ||
-      (github.event.action == 'labeled' && github.event.label.name == 'app:review') ||
-      (github.event.action != 'labeled' && contains(github.event.issue.labels.*.name, 'app:review'))
+      contains(github.event.issue.labels.*.name, 'app:review')
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -29,11 +27,18 @@ jobs:
       id-token: write
 
     steps:
+      - name: Generate Pollinations AI Token
+        id: pollinations-ai
+        uses: actions/create-github-app-token@v1
+        with:
+          app-id: ${{ secrets.POLLY_BOT_APP_ID }}
+          private-key: ${{ secrets.POLLY_BOT_PRIVATE_KEY }}
+
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ steps.pollinations-ai.outputs.token }}
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -180,7 +185,7 @@ jobs:
       - name: Add project and create PR
         if: steps.parse.outputs.needs_info != 'true'
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ steps.pollinations-ai.outputs.token }}
           ISSUE_NUMBER: ${{ steps.issue.outputs.number }}
           ISSUE_AUTHOR: ${{ steps.issue.outputs.author }}
           ISSUE_AUTHOR_ID: ${{ steps.issue.outputs.author_id }}
@@ -223,8 +228,8 @@ jobs:
           node pollinator-agent/project-list-scripts/generate-project-table.js --update-readme || true
           
           # Commit and push
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git config user.name "pollinations-ai[bot]"
+          git config user.email "pollinations-ai[bot]@users.noreply.github.com"
           git add -A
           git commit -m "Add $PROJECT_NAME to $CATEGORY
 

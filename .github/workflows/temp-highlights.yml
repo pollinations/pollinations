@@ -128,8 +128,8 @@ jobs:
       pull-requests: write
 
     steps:
-      - name: Generate Polly Bot Token
-        id: polly-bot
+      - name: Generate Pollinations AI Token
+        id: pollinations-ai
         uses: actions/create-github-app-token@v1
         with:
           app-id: ${{ secrets.POLLY_BOT_APP_ID }}
@@ -172,15 +172,15 @@ jobs:
 
       - name: Create PR with highlights.md
         env:
-          GITHUB_TOKEN: ${{ steps.polly-bot.outputs.token }}
+          GITHUB_TOKEN: ${{ steps.pollinations-ai.outputs.token }}
         run: |
           if [ ! -f "NEWS/transformed/highlights.md" ]; then
             echo "No highlights.md created"
             exit 0
           fi
 
-          git config user.name "polly-bot[bot]"
-          git config user.email "polly-bot[bot]@users.noreply.github.com"
+          git config user.name "pollinations-ai[bot]"
+          git config user.email "pollinations-ai[bot]@users.noreply.github.com"
 
           BRANCH_NAME="backfill-highlights-july-dec-2025"
           git checkout -b "$BRANCH_NAME"

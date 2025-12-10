@@ -120,4 +120,14 @@ export const socialBotsProjects = [
         "submissionDate": "2025-10-21",
         "order": 4,
     },
+  {
+    "name": "Lily – AI Discord Companion",
+    "url": "https://discord.com/oauth2/authorize?client_id=1448084290616164513&permissions=8&integration_type=0&scope=bot+applications.commands",
+    "description": "Lily is a next-generation conversational AI bot for Discord designed to feel like a real person. She naturally learns user facts, tracks relationships over time, understands emotional tone, and decides when to speak using an AI-powered social decision engine. Lily delivers adaptive, emotionally aware, lifelike conversation.",
+    "author": "CloudCompile",
+    "category": "socialBots",
+    "language": "en",
+    "submissionDate": "2025-12-10",
+    "order": 5
+  }
 ];

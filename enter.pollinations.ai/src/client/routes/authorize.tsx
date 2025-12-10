@@ -5,18 +5,6 @@ import { Button } from "../components/button.tsx";
 // 6 hours in seconds
 const DEFAULT_EXPIRY_SECONDS = 6 * 60 * 60;
 
-type TemporaryKeyResponse = {
-    key: string;
-    keyId: string;
-    name: string;
-    expiresAt: string;
-    expiresIn: number;
-};
-
-type ErrorResponse = {
-    message?: string;
-};
-
 export const Route = createFileRoute("/authorize")({
     component: AuthorizeComponent,
     validateSearch: (search: Record<string, unknown>) => ({
@@ -29,7 +17,10 @@ export const Route = createFileRoute("/authorize")({
         if (!result.data?.user) {
             // Store redirect URL and send to sign-in
             if (search.redirect_url && typeof window !== "undefined") {
-                localStorage.setItem("pending_redirect_url", search.redirect_url);
+                localStorage.setItem(
+                    "pending_redirect_url",
+                    search.redirect_url,
+                );
             }
             throw redirect({ to: "/sign-in" });
         }
@@ -38,10 +29,10 @@ export const Route = createFileRoute("/authorize")({
 });
 
 function AuthorizeComponent() {
-    const { user } = Route.useRouteContext();
+    const { user, auth } = Route.useRouteContext();
     const { redirect_url } = Route.useSearch();
     const navigate = useNavigate();
-    
+
     const [isAuthorizing, setIsAuthorizing] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [redirectHostname, setRedirectHostname] = useState<string>("");
@@ -53,14 +44,9 @@ function AuthorizeComponent() {
             setError("No redirect URL provided");
             return;
         }
-        
+
         try {
             const url = new URL(redirect_url);
-            // Only allow http/https
-            if (url.protocol !== "http:" && url.protocol !== "https:") {
-                setError("Invalid redirect URL protocol");
-                return;
-            }
             setRedirectHostname(url.hostname);
             setIsValidUrl(true);
         } catch {
@@ -70,28 +56,29 @@ function AuthorizeComponent() {
 
     const handleAuthorize = async () => {
         if (!isValidUrl || isAuthorizing) return;
-        
+
         setIsAuthorizing(true);
         setError(null);
 
         try {
-            // Create a temporary API key with 6h expiry
-            const response = await fetch("/api/auth/temporary-key", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                credentials: "include",
-                body: JSON.stringify({
-                    name: `Temporary key for ${redirectHostname}`,
-                    expiresIn: DEFAULT_EXPIRY_SECONDS,
-                }),
+            // Create a temporary API key with 6h expiry using better-auth's built-in endpoint
+            const result = await auth.apiKey.create({
+                name: `Temporary key for ${redirectHostname}`,
+                expiresIn: DEFAULT_EXPIRY_SECONDS,
+                prefix: "sk",
+                metadata: {
+                    keyType: "temporary",
+                    createdVia: "redirect-auth",
+                },
             });
 
-            if (!response.ok) {
-                const data: ErrorResponse = await response.json();
-                throw new Error(data.message || "Failed to create temporary key");
+            if (result.error || !result.data?.key) {
+                throw new Error(
+                    result.error?.message || "Failed to create temporary key",
+                );
             }
 
-            const data: TemporaryKeyResponse = await response.json();
+            const data = result.data;
 
             // Redirect back to the app with the key in URL fragment (not query param)
             // Using fragment prevents key from leaking to server logs/Referer headers
@@ -110,9 +97,9 @@ function AuthorizeComponent() {
     };
 
     const expiryTime = new Date(Date.now() + DEFAULT_EXPIRY_SECONDS * 1000);
-    const expiryString = expiryTime.toLocaleTimeString([], { 
-        hour: "2-digit", 
-        minute: "2-digit" 
+    const expiryString = expiryTime.toLocaleTimeString([], {
+        hour: "2-digit",
+        minute: "2-digit",
     });
 
     return (
@@ -125,7 +112,7 @@ function AuthorizeComponent() {
                     className="h-10 mx-auto invert"
                 />
             </div>
-            
+
             <div className="bg-white rounded-2xl p-8 border-2 border-gray-200 shadow-lg">
                 <h1 className="text-2xl font-bold mb-6 text-center">
                     Authorize Application
@@ -139,21 +126,12 @@ function AuthorizeComponent() {
                     <>
                         {/* App info */}
                         <div className="bg-gray-50 rounded-xl p-4 mb-6">
-                            <div className="flex items-center gap-3 mb-3">
-                                <img 
-                                    src={`https://www.google.com/s2/favicons?domain=${redirectHostname}&sz=32`}
-                                    alt=""
-                                    className="w-8 h-8 rounded"
-                                />
-                                <div>
-                                    <p className="font-semibold text-gray-900">
-                                        {redirectHostname}
-                                    </p>
-                                    <p className="text-xs text-gray-500">
-                                        wants access to your Pollinations account
-                                    </p>
-                                </div>
-                            </div>
+                            <p className="font-semibold text-gray-900">
+                                {redirectHostname}
+                            </p>
+                            <p className="text-xs text-gray-500">
+                                wants access to your Pollinations account
+                            </p>
                         </div>
 
                         {/* What this allows */}
@@ -163,12 +141,21 @@ function AuthorizeComponent() {
                             </h3>
                             <ul className="space-y-2 text-sm text-gray-600">
                                 <li className="flex items-start gap-2">
-                                    <span className="text-green-500 mt-0.5">✓</span>
-                                    <span>Generate images and text using your account</span>
+                                    <span className="text-green-500 mt-0.5">
+                                        ✓
+                                    </span>
+                                    <span>
+                                        Generate images and text using your
+                                        account
+                                    </span>
                                 </li>
                                 <li className="flex items-start gap-2">
-                                    <span className="text-green-500 mt-0.5">✓</span>
-                                    <span>Use your pollen balance for API requests</span>
+                                    <span className="text-green-500 mt-0.5">
+                                        ✓
+                                    </span>
+                                    <span>
+                                        Use your pollen balance for API requests
+                                    </span>
                                 </li>
                             </ul>
                         </div>
@@ -176,7 +163,8 @@ function AuthorizeComponent() {
                         {/* Expiry notice */}
                         <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 mb-6">
                             <p className="text-amber-800 text-sm">
-                                ⏱️ <strong>Temporary access:</strong> This key expires in 6 hours (at {expiryString})
+                                ⏱️ <strong>Temporary access:</strong> This key
+                                expires in 6 hours (at {expiryString})
                             </p>
                         </div>
 
@@ -192,7 +180,10 @@ function AuthorizeComponent() {
 
                         {/* User info */}
                         <div className="text-center text-sm text-gray-500 mb-6">
-                            Signed in as <strong>{user?.githubUsername || user?.email}</strong>
+                            Signed in as{" "}
+                            <strong>
+                                {user?.githubUsername || user?.email}
+                            </strong>
                         </div>
                     </>
                 )}

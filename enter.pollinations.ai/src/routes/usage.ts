@@ -40,15 +40,12 @@ export const usageRoutes = new Hono<Env>()
                 },
             );
 
-            // Build Tinybird API URL
-            // The ingest URL is like: https://api.europe-west2.gcp.tinybird.co/v0/events?name=generation_event
-            // We need to query the pipe instead: https://api.europe-west2.gcp.tinybird.co/v0/pipes/user_usage.json
-            const tinybirdBaseUrl = c.env.TINYBIRD_INGEST_URL.replace(
-                /\/v0\/events\?name=.*/,
+            // Build Tinybird API URL from ingest URL origin
+            const tinybirdOrigin = new URL(c.env.TINYBIRD_INGEST_URL).origin;
+            const tinybirdUrl = new URL(
                 "/v0/pipes/user_usage.json",
+                tinybirdOrigin,
             );
-
-            const tinybirdUrl = new URL(tinybirdBaseUrl);
             tinybirdUrl.searchParams.set("user_id", user.id);
             tinybirdUrl.searchParams.set("limit", limit.toString());
 
@@ -69,13 +66,7 @@ export const usageRoutes = new Hono<Env>()
                         status: response.status,
                         error: errorText,
                     });
-                    return c.json(
-                        {
-                            error: "Failed to fetch usage data",
-                            details: errorText,
-                        },
-                        500,
-                    );
+                    return c.json({ error: "Failed to fetch usage data" }, 500);
                 }
 
                 const data = (await response.json()) as {
@@ -107,11 +98,23 @@ export const usageRoutes = new Hono<Env>()
 
                 // Return CSV if requested
                 if (format === "csv") {
+                    const escapeCSV = (val: string | number | null) => {
+                        if (val === null || val === undefined) return "";
+                        const str = String(val);
+                        if (
+                            str.includes(",") ||
+                            str.includes('"') ||
+                            str.includes("\n")
+                        ) {
+                            return `"${str.replace(/"/g, '""')}"`;
+                        }
+                        return str;
+                    };
                     const header =
                         "timestamp,model,eventType,totalPrice,promptTokens,completionTokens,responseTime";
                     const rows = usage.map(
                         (row) =>
-                            `${row.timestamp},${row.model || ""},${row.eventType},${row.totalPrice},${row.promptTokens},${row.completionTokens},${row.responseTime || ""}`,
+                            `${escapeCSV(row.timestamp)},${escapeCSV(row.model)},${escapeCSV(row.eventType)},${row.totalPrice},${row.promptTokens},${row.completionTokens},${row.responseTime || ""}`,
                     );
                     const csv = [header, ...rows].join("\n");
 

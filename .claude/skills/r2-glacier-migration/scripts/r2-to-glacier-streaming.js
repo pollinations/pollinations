@@ -65,7 +65,7 @@ Options:
   --prefix            Only keys starting with prefix
   --start-after       Start after this key (manual resume)
   --max-batches       Stop after N batches (for testing)
-  --concurrency       Parallel downloads per batch (default: 20)
+  --concurrency       Parallel downloads per batch (default: 300)
   -h, --help          Show help
 
 Examples:

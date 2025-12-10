@@ -12,7 +12,7 @@ GITHUB_API_BASE = "https://api.github.com"
 POLLINATIONS_API_BASE = "https://enter.pollinations.ai/api/generate/openai"
 MODEL = "gemini-large"
 NEWS_FOLDER = "NEWS"
-NEWSLIST_PATH = "pollinations.ai/src/config/newsList.js"
+HIGHLIGHTS_PATH = "NEWS/transformed/highlights.md"
 
 
 def get_env(key: str, required: bool = True) -> str:
@@ -33,7 +33,6 @@ def get_latest_news_file(github_token: str, owner: str, repo: str) -> tuple[str,
         "Authorization": f"Bearer {github_token}"
     }
 
-    # Get list of files in NEWS folder
     response = requests.get(
         f"{GITHUB_API_BASE}/repos/{owner}/{repo}/contents/{NEWS_FOLDER}",
         headers=headers
@@ -47,10 +46,8 @@ def get_latest_news_file(github_token: str, owner: str, repo: str) -> tuple[str,
 
     # Date pattern: YYYY-MM-DD.md
     date_pattern = re.compile(r'^(\d{4}-\d{2}-\d{2})\.md$')
-
     today = datetime.now(timezone.utc).date()
 
-    # Find files matching the date pattern and parse dates
     dated_files = []
     for f in files:
         if f['type'] != 'file':
@@ -94,15 +91,15 @@ def get_latest_news_file(github_token: str, owner: str, repo: str) -> tuple[str,
     return path, content
 
 
-def get_current_newslist(github_token: str, owner: str, repo: str) -> str:
-    """Fetch current newsList.js content from the repo"""
+def get_current_highlights(github_token: str, owner: str, repo: str) -> str:
+    """Fetch current highlights.md content from the repo (if exists)"""
     headers = {
         "Accept": "application/vnd.github+json",
         "Authorization": f"Bearer {github_token}"
     }
 
     response = requests.get(
-        f"{GITHUB_API_BASE}/repos/{owner}/{repo}/contents/{NEWSLIST_PATH}",
+        f"{GITHUB_API_BASE}/repos/{owner}/{repo}/contents/{HIGHLIGHTS_PATH}",
         headers=headers
     )
 
@@ -110,60 +107,86 @@ def get_current_newslist(github_token: str, owner: str, repo: str) -> str:
         content = response.json().get("content", "")
         return base64.b64decode(content).decode("utf-8")
     else:
-        print(f"Warning: Could not fetch current newsList.js: {response.status_code}")
+        print(f"No existing highlights.md found (status: {response.status_code}), will create new")
         return ""
 
 
-def create_newslist_prompt(news_content: str, current_newslist: str) -> tuple:
-    """Create prompt to generate updated newsList.js with only major updates"""
+def create_highlights_prompt(news_content: str) -> tuple:
+    """Create prompt to extract only the most significant highlights"""
 
-    system_prompt = """You are updating the newsList.js file for the Pollinations website.
+    system_prompt = """You are a strict curator for Pollinations.AI highlights.
 
-This file displays ONLY major, user-facing updates that website visitors care about. This is NOT a complete changelog - it's a curated highlights list.
+## CONTEXT - What is Pollinations.AI?
+Pollinations.AI is a free, open-source AI platform providing:
+- **Image Generation** - Create images via simple URLs or API calls
+- **Text/Chat API** - Access LLMs like GPT, Claude, Gemini, Llama, Mistral
+- **Audio Generation** - Text-to-speech and music generation
+- **Discord Bot** - AI features directly in Discord servers
+- **Web Apps** - Various AI-powered tools and creative demos
 
-INCLUDE only:
-- New models or model upgrades (e.g., "Seedream upgraded to 4.5")
-- New features users can use (e.g., "New Auth Dashboard")
-- New integrations (e.g., "Sequa AI Integration")
-- New API endpoints or capabilities
-- New tools (e.g., "MCP Server now supports audio")
+Our users are creators, developers, and hobbyists who love FREE, easy-to-use AI tools.
 
-EXCLUDE:
-- Bug fixes
-- Internal refactors
-- Dependency updates
-- CI/CD changes
-- Documentation-only changes
-- Performance improvements (unless dramatic)
-- Code cleanup
+## WHERE THIS OUTPUT GOES
+The highlights you extract will be displayed **DIRECTLY** (copy-pasted as-is) on:
+1. **Pollinations.AI website** - News/updates section
+2. **GitHub README.md** - Latest news section
 
-OUTPUT FORMAT - You must output ONLY valid JavaScript that exports a newsList constant:
-```javascript
-export const newsList = `- **YYYY-MM-DD** – **Feature Name** Brief description. Use \`backticks\` for code/endpoints. [Link text](url) if relevant.
-- **YYYY-MM-DD** – **Another Feature** Description here.`;
+**IMPORTANT:** These highlights are REPLACED every week with new ones. Old highlights get pushed down and eventually removed. So each week's highlights should stand on their own and showcase that week's best stuff.
+
+This is a HIGHLIGHT REEL - not a changelog. Only the exciting stuff that makes users go "wow, I want to try this!"
+
+## SELECTION CRITERIA
+**Typically 3-4 highlights per week. Sometimes 0. Max ~10 for huge release weeks.**
+
+### INCLUDE (things that TRULY affect users):
+- 🚀 **New AI models** - New LLMs, image models, audio models users can now access
+- ⚡ **Speed/Performance boosts** - Faster generation, reduced latency (only if significant/noticeable)
+- ✨ **New features** - New capabilities users can try RIGHT NOW
+- 🔗 **New integrations** - Discord bot features, new platform connections, new APIs
+- 📱 **New endpoints/tools** - New API endpoints, new web apps, new parameters
+- 🎨 **New creative options** - New styles, formats, output options
+- 🎉 **Big announcements** - Partnerships, milestones, major releases
+
+### EXCLUDE (skip ALL of these - users don't care):
+- Bug fixes (even critical ones - users don't celebrate fixes)
+- Internal performance improvements users won't notice
+- Refactors, cleanups, code quality improvements
+- CI/CD, workflows, GitHub Actions, deployment changes
+- Documentation updates, README changes, tests
+- Error handling, logging, monitoring improvements
+- Internal/developer-facing changes
+- Dependency updates, security patches
+- Minor UI tweaks, small polish items
+- Any maintenance or housekeeping work
+
+## OUTPUT FORMAT
+```
+- **🚀 Feature Name** - Punchy description of what users can DO now.
+- **✨ Another Feature** - Brief and exciting. Use `backticks` for code.
 ```
 
-RULES:
-1. Each entry starts with date in **YYYY-MM-DD** format
-2. Feature name in **bold** after the date
-3. Use en-dash (–) as separator, not hyphen
-4. Use \`backticks\` for code, endpoints, parameters
-5. Keep entries concise (1-2 lines max)
-6. Most recent entries at the TOP
-7. Keep ~15-20 most relevant entries total (drop old minor ones if needed)
-8. Output ONLY the JavaScript code, no explanations"""
+Rules:
+1. Format: `- **emoji Title** - Description`
+2. Emojis: 🚀 ✨ 🎨 🎵 🤖 🔗 📱 💡 🌟 🎯
+3. Focus on USER BENEFIT
+4. NO dates, NO PR numbers, NO authors
+5. 1-2 lines max per entry
+6. Output ONLY the markdown bullets
 
-    user_prompt = f"""Here is this week's NEWS changelog (contains ALL changes):
+## CRITICAL
+- Output exactly `SKIP` if nothing qualifies
+- Use your judgment - if something feels exciting and user-facing, include it
+- Typical weeks: 3-4 highlights. Slow weeks: 0-2. Big release weeks: up to 10
+- Trust your instincts on what users would find exciting"""
 
+    user_prompt = f"""Review this Pollinations.AI changelog and extract ONLY highlights worthy of the website and README.
+
+Typical week: 3-4 highlights. Some weeks: 0. Be very selective.
+
+CHANGELOG:
 {news_content}
 
-Here is the CURRENT newsList.js content:
-
-{current_newslist}
-
-Generate the updated newsList.js file. Add any NEW major user-facing features from this week's changelog at the TOP. Keep existing important entries. Remove outdated or minor entries if the list gets too long (aim for ~15-20 entries).
-
-Output ONLY the valid JavaScript export statement."""
+Output markdown bullets only, or SKIP if nothing qualifies."""
 
     return system_prompt, user_prompt
 
@@ -195,7 +218,8 @@ def call_pollinations_api(system_prompt: str, user_prompt: str, token: str, max_
             response = requests.post(
                 POLLINATIONS_API_BASE,
                 headers=headers,
-                json=payload
+                json=payload,
+                timeout=120
             )
 
             if response.status_code == 200:
@@ -226,6 +250,7 @@ def call_pollinations_api(system_prompt: str, user_prompt: str, token: str, max_
 
 
 def parse_response(response: str) -> str:
+    """Clean up AI response, removing code blocks if present"""
     message = response.strip()
 
     if message.startswith('```'):
@@ -239,31 +264,15 @@ def parse_response(response: str) -> str:
     return message.strip()
 
 
-def generate_newslist_content(news_content: str, current_newslist: str, pollinations_token: str) -> str:
-    """Generate updated newsList.js content using AI"""
-    print("Generating newsList.js content...")
+def merge_highlights(new_highlights: str, existing_highlights: str) -> str:
+    """Prepend new highlights to existing ones"""
+    new_clean = new_highlights.strip()
+    existing_clean = existing_highlights.strip()
 
-    system_prompt, user_prompt = create_newslist_prompt(news_content, current_newslist)
-    ai_response = call_pollinations_api(system_prompt, user_prompt, pollinations_token)
+    if not existing_clean:
+        return new_clean + "\n"
 
-    content = parse_response(ai_response)
-
-    # Ensure it starts with export const newsList
-    if not content.strip().startswith("export const newsList"):
-        # Try to extract just the export statement
-        if "export const newsList" in content:
-            start = content.index("export const newsList")
-            content = content[start:]
-
-    # Ensure it ends with semicolon
-    content = content.strip()
-    if not content.endswith(";"):
-        content += ";"
-
-    # Add newline at end of file
-    content += "\n"
-
-    return content
+    return new_clean + "\n" + existing_clean + "\n"
 
 
 def get_file_sha(github_token: str, owner: str, repo: str, file_path: str, branch: str = "main") -> str:
@@ -283,8 +292,8 @@ def get_file_sha(github_token: str, owner: str, repo: str, file_path: str, branc
     return ""
 
 
-def create_newslist_pr(newslist_content: str, github_token: str, owner: str, repo: str, news_file_path: str):
-    """Create a PR with updated newsList.js"""
+def create_highlights_pr(highlights_content: str, new_highlights: str, github_token: str, owner: str, repo: str, news_file_path: str):
+    """Create a PR with updated highlights.md"""
 
     entry_date = datetime.now(timezone.utc).strftime("%Y-%m-%d")
 
@@ -306,7 +315,7 @@ def create_newslist_pr(newslist_content: str, github_token: str, owner: str, rep
     base_sha = ref_response.json()['object']['sha']
 
     # Create new branch
-    branch_name = f"newslist-update-{entry_date}"
+    branch_name = f"highlights-update-{entry_date}"
     create_branch_response = requests.post(
         f"{GITHUB_API_BASE}/repos/{owner}/{repo}/git/refs",
         headers=headers,
@@ -325,40 +334,44 @@ def create_newslist_pr(newslist_content: str, github_token: str, owner: str, rep
 
     print(f"Created branch: {branch_name}")
 
-    # Update newsList.js
-    newslist_sha = get_file_sha(github_token, owner, repo, NEWSLIST_PATH, branch_name)
-    if not newslist_sha:
-        newslist_sha = get_file_sha(github_token, owner, repo, NEWSLIST_PATH, "main")
+    # Update highlights.md
+    highlights_sha = get_file_sha(github_token, owner, repo, HIGHLIGHTS_PATH, branch_name)
+    if not highlights_sha:
+        highlights_sha = get_file_sha(github_token, owner, repo, HIGHLIGHTS_PATH, "main")
 
-    newslist_api_path = f"{GITHUB_API_BASE}/repos/{owner}/{repo}/contents/{NEWSLIST_PATH}"
-    newslist_encoded = base64.b64encode(newslist_content.encode()).decode()
+    highlights_api_path = f"{GITHUB_API_BASE}/repos/{owner}/{repo}/contents/{HIGHLIGHTS_PATH}"
+    highlights_encoded = base64.b64encode(highlights_content.encode()).decode()
 
-    newslist_payload = {
-        "message": f"docs: update website news highlights - {entry_date}",
-        "content": newslist_encoded,
+    highlights_payload = {
+        "message": f"docs: update highlights - {entry_date}",
+        "content": highlights_encoded,
         "branch": branch_name
     }
 
-    if newslist_sha:
-        newslist_payload["sha"] = newslist_sha
+    if highlights_sha:
+        highlights_payload["sha"] = highlights_sha
 
-    newslist_response = requests.put(newslist_api_path, headers=headers, json=newslist_payload)
+    highlights_response = requests.put(highlights_api_path, headers=headers, json=highlights_payload)
 
-    if newslist_response.status_code not in [200, 201]:
-        print(f"Error updating newsList.js: {newslist_response.text}")
+    if highlights_response.status_code not in [200, 201]:
+        print(f"Error updating highlights.md: {highlights_response.text}")
         sys.exit(1)
 
-    print(f"Updated {NEWSLIST_PATH} on branch {branch_name}")
+    print(f"Updated {HIGHLIGHTS_PATH} on branch {branch_name}")
+
+    # Count new highlights for PR title
+    new_count = len([line for line in new_highlights.split('\n') if line.strip().startswith('- **')])
 
     # Create PR
-    pr_title = f"Update Website News Highlights - {entry_date}"
-    pr_body = f"""## Website News Highlights Update
+    pr_title = f"✨ Highlights Update - {entry_date} ({new_count} new)"
+    pr_body = f"""## New Highlights
 
-This PR updates `{NEWSLIST_PATH}` with curated highlights from the latest NEWS entry.
+{new_highlights}
+
+---
 
 **Source:** `{news_file_path}`
 
----
 Generated automatically by GitHub Actions after NEWS PR merge.
 """
 
@@ -391,7 +404,7 @@ def main():
     repo_full_name = get_env('GITHUB_REPOSITORY')
     owner_name, repo_name = repo_full_name.split('/')
 
-    # Find the latest NEWS file based on today's date
+    # Find the latest NEWS file
     print("Looking for latest NEWS file...")
     news_file_path, news_content = get_latest_news_file(github_token, owner_name, repo_name)
 
@@ -401,22 +414,34 @@ def main():
 
     print(f"Using NEWS file: {news_file_path}")
 
-    # Fetch current newsList.js
-    print("Fetching current newsList.js...")
-    current_newslist = get_current_newslist(github_token, owner_name, repo_name)
+    # Generate highlights using AI
+    print("Generating highlights...")
+    system_prompt, user_prompt = create_highlights_prompt(news_content)
+    ai_response = call_pollinations_api(system_prompt, user_prompt, pollinations_token)
+    new_highlights = parse_response(ai_response)
 
-    # Generate updated newsList.js content
-    newslist_content = generate_newslist_content(news_content, current_newslist, pollinations_token)
+    # Check if AI returned SKIP
+    if new_highlights.upper().strip() == "SKIP":
+        print("AI returned SKIP - no highlights worthy of website/README this week.")
+        print("Workflow complete, no PR created.")
+        return
 
-    if not newslist_content.strip():
-        print("Empty newsList.js response from AI. Exiting.")
-        sys.exit(1)
+    if not new_highlights.strip():
+        print("Empty highlights response from AI. Exiting.")
+        return
 
-    print("newsList.js content generated")
+    print(f"Generated highlights:\n{new_highlights}")
 
-    # Create PR with updated newsList.js
-    create_newslist_pr(newslist_content, github_token, owner_name, repo_name, news_file_path)
-    print("newsList.js update completed!")
+    # Fetch existing highlights
+    print("Fetching existing highlights.md...")
+    existing_highlights = get_current_highlights(github_token, owner_name, repo_name)
+
+    # Merge new highlights with existing
+    merged_highlights = merge_highlights(new_highlights, existing_highlights)
+
+    # Create PR with updated highlights
+    create_highlights_pr(merged_highlights, new_highlights, github_token, owner_name, repo_name, news_file_path)
+    print("Highlights update completed!")
 
 
 if __name__ == "__main__":

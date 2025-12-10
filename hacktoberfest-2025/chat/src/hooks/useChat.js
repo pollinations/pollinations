@@ -14,7 +14,8 @@ export const useChat = () => {
 
     if (storedChats.length > 0) {
       setChats(storedChats);
-      setActiveChatId(storedActiveChatId || storedChats[0].id);
+      const hasStoredActiveChat = storedChats.some(chat => chat.id === storedActiveChatId);
+      setActiveChatId(hasStoredActiveChat ? storedActiveChatId : storedChats[0].id);
     } else {
       // Create initial chat
       const initialChat = createNewChat('New Chat');

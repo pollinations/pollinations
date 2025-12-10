@@ -1,9 +1,8 @@
 // API utilities for Pollinations chat - Enhanced version from vanilla
-const BASE_IMAGE_URL = 'https://enter.pollinations.ai/api/generate/image';
-const BASE_VIDEO_URL = 'https://enter.pollinations.ai/api/generate/video';
-const TEXT_MODELS_ENDPOINT = 'https://enter.pollinations.ai/api/generate/v1/models';
-const IMAGE_MODELS_ENDPOINT = 'https://enter.pollinations.ai/api/generate/image/models';
-const API_TOKEN = 'plln_sk_PENx8AtHMF9BJ00rWOUFz4LFCgimBsW8';
+const BASE_IMAGE_URL = 'https://gen.pollinations.ai/image';
+const TEXT_MODELS_ENDPOINT = 'https://gen.pollinations.ai/v1/models';
+const IMAGE_MODELS_ENDPOINT = 'https://gen.pollinations.ai/image/models';
+const API_TOKEN = import.meta.env.VITE_POLLINATIONS_API_KEY || 'plln_sk_JpHLuB3plq6EIXD08hgEn3EAzKJglpD0';
 
 let textModels = [];
 let imageModels = [];
@@ -380,7 +379,7 @@ export const sendMessage = async (messages, onChunk, onComplete, onError, modelI
       requestBody.reasoning_effort = 'high';
     }
 
-    const response = await fetch('https://enter.pollinations.ai/api/generate/v1/chat/completions', {
+    const response = await fetch('https://gen.pollinations.ai/v1/chat/completions', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

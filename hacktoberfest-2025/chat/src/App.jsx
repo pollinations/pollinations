@@ -10,6 +10,7 @@ import KeyboardShortcutsModal from './components/KeyboardShortcutsModal';
 import ConfirmModal from './components/ConfirmModal';
 import SettingsPanel from './components/SettingsPanel';
 import TutorialModal from './components/TutorialModal';
+import GenerationOptionsModal from './components/GenerationOptionsModal';
 
 function App() {
   const {
@@ -53,6 +54,26 @@ function App() {
   });
   const [isSettingsPanelOpen, setIsSettingsPanelOpen] = useState(false);
   const [isTutorialOpen, setIsTutorialOpen] = useState(false);
+  const [isGenerationOptionsOpen, setIsGenerationOptionsOpen] = useState(false);
+  const [generationOptionsMode, setGenerationOptionsMode] = useState('imagine');
+  const [imageGenerationOptions, setImageGenerationOptions] = useState({
+    width: 1024,
+    height: 1024,
+    seed: 42,
+    enhance: false,
+    nologo: false,
+    nofeed: false,
+    safe: false,
+    quality: 'medium'
+  });
+  const [videoGenerationOptions, setVideoGenerationOptions] = useState({
+    seed: 42,
+    nologo: false,
+    nofeed: false,
+    duration: 4,
+    aspectRatio: '16:9',
+    audio: false
+  });
 
   // Show tutorial on first visit
   useEffect(() => {
@@ -212,6 +233,19 @@ function App() {
     }));
   }, []);
 
+  const handleOpenGenerationOptions = useCallback((mode) => {
+    setGenerationOptionsMode(mode);
+    setIsGenerationOptionsOpen(true);
+  }, []);
+
+  const handleGenerationOptionsApply = useCallback((options) => {
+    if (generationOptionsMode === 'imagine') {
+      setImageGenerationOptions(options);
+    } else if (generationOptionsMode === 'video') {
+      setVideoGenerationOptions(options);
+    }
+  }, [generationOptionsMode]);
+
   const handleSendMessage = useCallback(async ({ text = '', attachment = null } = {}) => {
     const trimmedContent = typeof text === 'string' ? text.trim() : '';
 
@@ -366,12 +400,10 @@ function App() {
 
     try {
       
-      // Generate the image with selected model
+      // Generate the image with selected model and options
       const imageData = await generateImage(prompt, {
         model: selectedImageModel,
-        width: 1024,
-        height: 1024,
-        enhance: true
+        ...imageGenerationOptions
       });
 
       // Update the message with the generated image
@@ -395,7 +427,7 @@ function App() {
       // Show toast notification for error
       if (window?.showToast) window.showToast("Image generation failed", "error");
     }
-  }, [isGenerating, selectedImageModel, addMessage, updateMessage]);
+  }, [isGenerating, selectedImageModel, imageGenerationOptions, addMessage, updateMessage]);
 
   const handleGenerateVideo = useCallback(async (prompt) => {
     if (!prompt.trim() || isGenerating) return;
@@ -419,9 +451,10 @@ function App() {
     addMessage('assistant', 'Generating video... This may take a minute.', assistantMessageId);
 
     try {
-      // Generate the video with selected model
+      // Generate the video with selected model and options
       const videoData = await generateVideo(prompt, {
-        model: selectedVideoModel
+        model: selectedVideoModel,
+        ...videoGenerationOptions
       });
 
       // Update the message with the generated video
@@ -445,7 +478,7 @@ function App() {
       // Show toast notification for error
       if (window?.showToast) window.showToast("Video generation failed", "error");
     }
-  }, [isGenerating, selectedVideoModel, addMessage, updateMessage]);
+  }, [isGenerating, selectedVideoModel, videoGenerationOptions, addMessage, updateMessage]);
 
   const handleRegenerateMessage = async () => {
     const activeChat = getActiveChat();
@@ -566,6 +599,7 @@ function App() {
           onModelChange={handleModelChange}
           onImageModelChange={handleImageModelChange}
           onVideoModelChange={handleVideoModelChange}
+          onOpenGenerationOptions={handleOpenGenerationOptions}
         />
       </div>
 
@@ -595,6 +629,13 @@ function App() {
       <TutorialModal
         isOpen={isTutorialOpen}
         onClose={handleCloseTutorial}
+      />
+
+      <GenerationOptionsModal
+        isOpen={isGenerationOptionsOpen}
+        onClose={() => setIsGenerationOptionsOpen(false)}
+        mode={generationOptionsMode}
+        onGenerate={handleGenerationOptionsApply}
       />
     </div>
   );

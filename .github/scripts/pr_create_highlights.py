@@ -10,7 +10,7 @@ from datetime import datetime, timezone
 
 GITHUB_API_BASE = "https://api.github.com"
 POLLINATIONS_API_BASE = "https://gen.pollinations.ai/v1/chat/completions"
-MODEL = "openai-large"
+MODEL = "gemini-large"
 NEWS_FOLDER = "NEWS"
 HIGHLIGHTS_PATH = "NEWS/transformed/highlights.md"
 

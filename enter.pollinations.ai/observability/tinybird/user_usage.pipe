@@ -1,0 +1,20 @@
+DESCRIPTION >
+    Get usage history for a specific user. Returns request history with model, cost, and token counts.
+
+NODE user_usage_node
+SQL >
+    %
+    SELECT
+        startTime,
+        modelUsed,
+        eventType,
+        totalPrice,
+        tokenCountPromptText,
+        tokenCountCompletionText,
+        responseTime
+    FROM generation_event
+    WHERE userId = {{String(user_id, '')}}
+    ORDER BY startTime DESC
+    LIMIT {{Int32(limit, 100)}}
+
+TYPE endpoint

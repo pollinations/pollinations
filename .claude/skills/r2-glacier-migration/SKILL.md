@@ -55,8 +55,8 @@ ssh ninon "screen -dmS r2-text bash -c '~/r2-glacier/run-text-transfer.sh; exec 
 
 | Location | Path | Purpose |
 |----------|------|---------|
-| Local | `scripts/r2-to-glacier-streaming.js` | Main transfer script |
-| Local | `scripts/package.json` | Dependencies |
+| Skill | [scripts/r2-to-glacier-streaming.js](scripts/r2-to-glacier-streaming.js) | Main transfer script |
+| Skill | [scripts/package.json](scripts/package.json) | Dependencies |
 | ninon | `~/r2-glacier/` | Deployed script + deps |
 | ninon | `~/r2-glacier/run-text-transfer.sh` | Wrapper with credentials |
 | ninon | `~/r2-glacier/transfer-text.log` | Transfer log |

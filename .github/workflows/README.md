@@ -54,6 +54,7 @@ Secrets required: `POLLY_BOT_APP_ID`, `POLLY_BOT_PRIVATE_KEY`
 
 ### AI Agents
 
+-   **pr-issue-assistant.yml** - AI assistant (Polly) via Pollinations AI, triggered by `polly` in issues/PRs. Whitelisted users only.
 -   **issue-pr-review-changes.yml** - Claude Opus agent triggered by `@claude` in issues/PRs. Performs code reviews and answers questions.
 
 ### Triage
@@ -136,4 +137,17 @@ flowchart TD
 flowchart TD
     A[Any PR merged to main] --> B[discord-post-merged-pr.yml]
     B --> C[Posts to Discord immediately]
+```
+
+### AI Assistant (Polly)
+
+```mermaid
+%%{init: {'theme': 'dark'}}%%
+flowchart TD
+    A[User mentions 'polly' in issue/PR/comment] --> B{User whitelisted?}
+    B -->|No| C[Posts unauthorized message]
+    B -->|Yes| D[pr-issue-assistant.yml]
+    D --> E[Starts Pollinations AI router]
+    E --> F[Claude Code Action responds]
+    F --> G[AI assists with code/questions]
 ```

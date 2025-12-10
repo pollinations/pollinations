@@ -1,4 +1,4 @@
-import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState, useEffect } from "react";
 import { Button } from "../components/button.tsx";
 
@@ -10,30 +10,20 @@ export const Route = createFileRoute("/authorize")({
     validateSearch: (search: Record<string, unknown>) => ({
         redirect_url: (search.redirect_url as string) || "",
     }),
-    beforeLoad: async ({ context, search }) => {
-        // Must be logged in
-        const result = await context.auth.getSession();
-        if (result.error) throw new Error("Authentication failed.");
-        if (!result.data?.user) {
-            // Store redirect URL and send to sign-in
-            if (search.redirect_url && typeof window !== "undefined") {
-                localStorage.setItem(
-                    "pending_redirect_url",
-                    search.redirect_url,
-                );
-            }
-            throw redirect({ to: "/sign-in" });
-        }
-        return { user: result.data.user };
-    },
+    // No beforeLoad redirect - handle auth state in component for better UX
 });
 
 function AuthorizeComponent() {
-    const { user, auth } = Route.useRouteContext();
+    const { auth } = Route.useRouteContext();
     const { redirect_url } = Route.useSearch();
     const navigate = useNavigate();
 
+    // Fetch session directly - don't rely on route context
+    const { data: session, isPending } = auth.useSession();
+    const user = session?.user;
+
     const [isAuthorizing, setIsAuthorizing] = useState(false);
+    const [isSigningIn, setIsSigningIn] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [redirectHostname, setRedirectHostname] = useState<string>("");
     const [isValidUrl, setIsValidUrl] = useState(false);
@@ -53,6 +43,21 @@ function AuthorizeComponent() {
             setError("Invalid redirect URL format");
         }
     }, [redirect_url]);
+
+    const handleSignIn = async () => {
+        setIsSigningIn(true);
+        // Pass current URL as callback so we return here after GitHub OAuth
+        const callbackURL = window.location.href;
+        const { error } = await auth.signIn.social({
+            provider: "github",
+            callbackURL,
+        });
+        if (error) {
+            setIsSigningIn(false);
+            setError("Sign in failed. Please try again.");
+        }
+        // On success, GitHub OAuth will redirect back to this page with user signed in
+    };
 
     const handleAuthorize = async () => {
         if (!isValidUrl || isAuthorizing) return;
@@ -101,6 +106,24 @@ function AuthorizeComponent() {
         hour: "2-digit",
         minute: "2-digit",
     });
+
+    // Show loading while checking session
+    if (isPending) {
+        return (
+            <div className="flex flex-col gap-6 max-w-lg mx-auto pt-8">
+                <div className="text-center">
+                    <img
+                        src="/logo_text_black.svg"
+                        alt="pollinations.ai"
+                        className="h-10 mx-auto invert"
+                    />
+                </div>
+                <div className="bg-white rounded-2xl p-8 border-2 border-gray-200 shadow-lg text-center">
+                    <p className="text-gray-500">Loading...</p>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="flex flex-col gap-6 max-w-lg mx-auto pt-8">
@@ -177,37 +200,57 @@ function AuthorizeComponent() {
                                 {redirect_url}
                             </p>
                         </div>
+                    </>
+                )}
 
-                        {/* User info */}
+                {/* Conditional: Sign in or Authorize */}
+                {!user ? (
+                    <>
+                        <div className="text-center text-sm text-gray-500 mb-4">
+                            Sign in to authorize this application
+                        </div>
+                        <Button
+                            as="button"
+                            onClick={handleSignIn}
+                            disabled={isSigningIn || !!error}
+                            className="w-full bg-gray-900 text-white hover:!brightness-90"
+                        >
+                            {isSigningIn
+                                ? "Signing in..."
+                                : "Sign in with GitHub"}
+                        </Button>
+                    </>
+                ) : (
+                    <>
                         <div className="text-center text-sm text-gray-500 mb-6">
                             Signed in as{" "}
                             <strong>
                                 {user?.githubUsername || user?.email}
                             </strong>
                         </div>
+                        <div className="flex gap-3">
+                            <Button
+                                as="button"
+                                onClick={handleCancel}
+                                weight="outline"
+                                className="flex-1"
+                            >
+                                Cancel
+                            </Button>
+                            <Button
+                                as="button"
+                                onClick={handleAuthorize}
+                                disabled={
+                                    !isValidUrl || isAuthorizing || !!error
+                                }
+                                color="green"
+                                className="flex-1"
+                            >
+                                {isAuthorizing ? "Authorizing..." : "Authorize"}
+                            </Button>
+                        </div>
                     </>
                 )}
-
-                {/* Actions */}
-                <div className="flex gap-3">
-                    <Button
-                        as="button"
-                        onClick={handleCancel}
-                        weight="outline"
-                        className="flex-1"
-                    >
-                        Cancel
-                    </Button>
-                    <Button
-                        as="button"
-                        onClick={handleAuthorize}
-                        disabled={!isValidUrl || isAuthorizing || !!error}
-                        color="green"
-                        className="flex-1"
-                    >
-                        {isAuthorizing ? "Authorizing..." : "Authorize"}
-                    </Button>
-                </div>
             </div>
         </div>
     );

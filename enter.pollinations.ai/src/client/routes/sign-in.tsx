@@ -1,5 +1,5 @@
-import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
-import { useState, useEffect } from "react";
+import { createFileRoute, redirect } from "@tanstack/react-router";
+import { useState } from "react";
 import { FAQ } from "../components/faq.tsx";
 import { Button } from "../components/button.tsx";
 import { Header } from "../components/header.tsx";

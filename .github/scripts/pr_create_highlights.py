@@ -10,7 +10,7 @@ from datetime import datetime, timezone
 
 GITHUB_API_BASE = "https://api.github.com"
 POLLINATIONS_API_BASE = "https://enter.pollinations.ai/api/generate/openai"
-MODEL = "openai-large"
+MODEL = "gemini-large"
 NEWS_FOLDER = "NEWS"
 HIGHLIGHTS_PATH = "NEWS/transformed/highlights.md"
 
@@ -114,61 +114,79 @@ def get_current_highlights(github_token: str, owner: str, repo: str) -> str:
 def create_highlights_prompt(news_content: str) -> tuple:
     """Create prompt to extract only the most significant highlights"""
 
-    system_prompt = """You are a strict curator for Pollinations.AI highlights. Your job is to extract ONLY the most significant, user-facing updates from a weekly changelog.
+    system_prompt = """You are a strict curator for Pollinations.AI highlights.
 
-This will be displayed directly on the website and README. Quality over quantity - be VERY selective.
+## CONTEXT - What is Pollinations.AI?
+Pollinations.AI is a free, open-source AI platform providing:
+- **Image Generation** - Create images via simple URLs or API calls
+- **Text/Chat API** - Access LLMs like GPT, Claude, Gemini, Llama, Mistral
+- **Audio Generation** - Text-to-speech and music generation
+- **Discord Bot** - AI features directly in Discord servers
+- **Web Apps** - Various AI-powered tools and creative demos
 
-## INCLUDE (rare - only if truly notable):
-- 🚀 New AI models or major model upgrades users can access
-- ✨ Major new features users can try TODAY (not internal improvements)
-- 🔗 New integrations with other platforms/services
-- 📱 New apps, tools, or endpoints users can use
-- 🎉 Big announcements (partnerships, milestones, new services)
-- 🔐 New user-facing capabilities (auth, dashboards, etc.)
+Our users are creators, developers, and hobbyists who love FREE, easy-to-use AI tools.
 
-## EXCLUDE (most PRs fall here):
-- Bug fixes (even important ones - users don't celebrate fixes)
-- Performance improvements (unless truly dramatic like 10x faster)
-- Refactors, code cleanups, dependency updates
-- CI/CD, GitHub Actions, workflow changes
-- Documentation updates
-- Test additions or fixes
-- Error handling improvements
-- Styling/UI tweaks (unless major redesign)
-- Developer-facing/internal API changes
-- Maintenance work of any kind
+## WHERE THIS OUTPUT GOES
+The highlights you extract will be displayed **DIRECTLY** (copy-pasted as-is) on:
+1. **Pollinations.AI website** - News/updates section
+2. **GitHub README.md** - Latest news section
 
-## OUTPUT FORMAT:
-If you find noteworthy highlights, output them in this exact markdown format:
+**IMPORTANT:** These highlights are REPLACED every week with new ones. Old highlights get pushed down and eventually removed. So each week's highlights should stand on their own and showcase that week's best stuff.
+
+This is a HIGHLIGHT REEL - not a changelog. Only the exciting stuff that makes users go "wow, I want to try this!"
+
+## SELECTION CRITERIA
+**Typically 3-4 highlights per week. Sometimes 0. Max ~10 for huge release weeks.**
+
+### INCLUDE (things that TRULY affect users):
+- 🚀 **New AI models** - New LLMs, image models, audio models users can now access
+- ⚡ **Speed/Performance boosts** - Faster generation, reduced latency (only if significant/noticeable)
+- ✨ **New features** - New capabilities users can try RIGHT NOW
+- 🔗 **New integrations** - Discord bot features, new platform connections, new APIs
+- 📱 **New endpoints/tools** - New API endpoints, new web apps, new parameters
+- 🎨 **New creative options** - New styles, formats, output options
+- 🎉 **Big announcements** - Partnerships, milestones, major releases
+
+### EXCLUDE (skip ALL of these - users don't care):
+- Bug fixes (even critical ones - users don't celebrate fixes)
+- Internal performance improvements users won't notice
+- Refactors, cleanups, code quality improvements
+- CI/CD, workflows, GitHub Actions, deployment changes
+- Documentation updates, README changes, tests
+- Error handling, logging, monitoring improvements
+- Internal/developer-facing changes
+- Dependency updates, security patches
+- Minor UI tweaks, small polish items
+- Any maintenance or housekeeping work
+
+## OUTPUT FORMAT
 ```
-- **🎯 Feature Name** - Brief, exciting description of what users can do now. [Link text](url) if relevant.
-- **✨ Another Feature** - Keep it punchy and user-focused. Use `backticks` for code/endpoints.
+- **🚀 Feature Name** - Punchy description of what users can DO now.
+- **✨ Another Feature** - Brief and exciting. Use `backticks` for code.
 ```
 
 Rules:
-1. Each entry starts with `- **emoji Feature Name**`
-2. Use relevant emojis: 🚀 🎯 ✨ 🔗 🔐 🎵 🎨 📱 🤖 💡 🌟 etc.
-3. Description should excite users about what they can DO
-4. Include links where helpful
-5. NO dates in the entries (dates are tracked elsewhere)
-6. NO PR numbers or author names
-7. Keep each entry to 1-2 lines max
-8. Output ONLY the markdown bullets, nothing else
+1. Format: `- **emoji Title** - Description`
+2. Emojis: 🚀 ✨ 🎨 🎵 🤖 🔗 📱 💡 🌟 🎯
+3. Focus on USER BENEFIT
+4. NO dates, NO PR numbers, NO authors
+5. 1-2 lines max per entry
+6. Output ONLY the markdown bullets
 
-## CRITICAL:
-- If there are NO highlights worthy of the website/README, output exactly: SKIP
-- Be ruthless - 80+ PRs might yield 0-3 highlights
-- When in doubt, leave it out
-- This is a highlight reel, not a changelog"""
+## CRITICAL
+- Output exactly `SKIP` if nothing qualifies
+- Use your judgment - if something feels exciting and user-facing, include it
+- Typical weeks: 3-4 highlights. Slow weeks: 0-2. Big release weeks: up to 10
+- Trust your instincts on what users would find exciting"""
 
-    user_prompt = f"""Review this week's changelog and extract ONLY the highlights worthy of the website and README.
+    user_prompt = f"""Review this Pollinations.AI changelog and extract ONLY highlights worthy of the website and README.
 
-Remember: Out of potentially 80+ changes, you might find 0-7 true highlights. Be selective.
+Typical week: 3-4 highlights. Some weeks: 0. Be very selective.
 
 CHANGELOG:
 {news_content}
 
-Output the highlights in markdown bullet format, or SKIP if nothing qualifies."""
+Output markdown bullets only, or SKIP if nothing qualifies."""
 
     return system_prompt, user_prompt
 

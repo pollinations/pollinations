@@ -9,8 +9,8 @@ on:
 
 jobs:
   update-readme:
-    # Only run if PR was merged (not just closed) and targeted main
-    if: github.event.pull_request.merged == true && github.event.pull_request.base.ref == 'main'
+    # Run if: manual trigger OR (PR merged to main)
+    if: github.event_name == 'workflow_dispatch' || (github.event.pull_request.merged == true && github.event.pull_request.base.ref == 'main')
     runs-on: ubuntu-latest
     permissions:
       contents: write

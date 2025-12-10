@@ -42,10 +42,40 @@ def get_news_file_content(github_token: str, owner: str, repo: str, file_date: s
         return None
 
 
-def create_highlights_prompt(news_content: str, week_date: str) -> tuple:
+def get_links_file(github_token: str, owner: str, repo: str) -> str:
+    """Fetch NEWS/LINKS.md containing reference links for highlights"""
+    headers = {
+        "Accept": "application/vnd.github+json",
+        "Authorization": f"Bearer {github_token}"
+    }
+
+    response = requests.get(
+        f"{GITHUB_API_BASE}/repos/{owner}/{repo}/contents/{NEWS_FOLDER}/LINKS.md",
+        headers=headers
+    )
+
+    if response.status_code == 200:
+        content = response.json().get("content", "")
+        return base64.b64decode(content).decode("utf-8")
+    else:
+        print(f"No LINKS.md found (status: {response.status_code}), continuing without links reference")
+        return ""
+
+
+def create_highlights_prompt(news_content: str, week_date: str, links_content: str = "") -> tuple:
     """Create prompt to extract highlights from a single week's NEWS"""
 
-    system_prompt = """You are a strict curator for Pollinations.AI highlights.
+    links_section = ""
+    if links_content:
+        links_section = f"""
+## REFERENCE LINKS
+Use these links when relevant to add helpful references in your highlights.
+Add links naturally in the description using markdown format: [text](url)
+
+{links_content}
+"""
+
+    system_prompt = f"""You are a strict curator for Pollinations.AI highlights.
 
 ## CONTEXT - What is Pollinations.AI?
 Pollinations.AI is a free, open-source AI platform providing:
@@ -92,19 +122,20 @@ This is a HIGHLIGHT REEL - not a changelog. Only the exciting stuff that makes u
 
 ## OUTPUT FORMAT
 ```
-- **YYYY-MM-DD** – **🚀 Feature Name** Punchy description of what users can DO now.
-- **YYYY-MM-DD** – **✨ Another Feature** Brief and exciting. Use `backticks` for code.
+- **YYYY-MM-DD** – **🚀 Feature Name** Punchy description of what users can DO now. [Relevant Link](url) if applicable.
+- **YYYY-MM-DD** – **✨ Another Feature** Brief and exciting. Use `backticks` for code. Check the [API Docs](url).
 ```
 
 Rules:
-1. Format: `- **YYYY-MM-DD** – **emoji Title** Description`
+1. Format: `- **YYYY-MM-DD** – **emoji Title** Description with [links](url) when relevant`
 2. Use the DATE provided in the changelog header (the week's end date)
 3. Emojis: 🚀 ✨ 🎨 🎵 🤖 🔗 📱 💡 🌟 🎯
 4. Focus on USER BENEFIT
 5. NO PR numbers, NO authors
 6. 1-2 lines max per entry
 7. Output ONLY the markdown bullets
-
+8. Add relevant links from REFERENCE LINKS section when they add value (don't force links)
+{links_section}
 ## CRITICAL
 - Output exactly `SKIP` if nothing qualifies
 - Use your judgment - if something feels exciting and user-facing, include it
@@ -221,8 +252,12 @@ def main():
 
     print(f"Fetched NEWS file, processing...")
 
+    # Fetch links reference file
+    print("Fetching LINKS.md for reference links...")
+    links_content = get_links_file(github_token, owner_name, repo_name)
+
     # Generate highlights using AI
-    system_prompt, user_prompt = create_highlights_prompt(news_content, file_date)
+    system_prompt, user_prompt = create_highlights_prompt(news_content, file_date, links_content)
     ai_response = call_pollinations_api(system_prompt, user_prompt, pollinations_token)
 
     if not ai_response:

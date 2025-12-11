@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Redirect Auth Test App</title>
+    <style>
+        * { box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 600px;
+            margin: 40px auto;
+            padding: 20px;
+            background: #1a1a2e;
+            color: #eee;
+        }
+        h1 { color: #ff6b9d; }
+        .card {
+            background: #16213e;
+            border-radius: 12px;
+            padding: 24px;
+            margin: 20px 0;
+            border: 1px solid #0f3460;
+        }
+        button {
+            background: linear-gradient(135deg, #ff6b9d, #c44569);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            width: 100%;
+        }
+        button:hover { opacity: 0.9; }
+        button:disabled { opacity: 0.5; cursor: not-allowed; }
+        .api-key {
+            background: #0f3460;
+            padding: 12px;
+            border-radius: 8px;
+            font-family: monospace;
+            word-break: break-all;
+            margin: 12px 0;
+        }
+        .success { color: #4ade80; }
+        .error { color: #f87171; }
+        .info { color: #60a5fa; font-size: 14px; }
+        pre {
+            background: #0f3460;
+            padding: 12px;
+            border-radius: 8px;
+            overflow-x: auto;
+            font-size: 13px;
+        }
+        input {
+            width: 100%;
+            padding: 10px;
+            border-radius: 6px;
+            border: 1px solid #0f3460;
+            background: #0f3460;
+            color: #eee;
+            margin: 8px 0;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔐 Redirect Auth Test</h1>
+    
+    <div class="card">
+        <h3>Step 1: Get API Key</h3>
+        <p class="info">Click to redirect to enter.pollinations.ai for authorization</p>
+        <button id="authBtn" onclick="startAuth()">Authorize with Pollinations</button>
+    </div>
+
+    <div class="card" id="keyCard" style="display: none;">
+        <h3 class="success">✅ API Key Received!</h3>
+        <div class="api-key" id="apiKeyDisplay"></div>
+        <p class="info" id="expiryInfo"></p>
+    </div>
+
+    <div class="card" id="testCard" style="display: none;">
+        <h3>Step 2: Test the API Key</h3>
+        <input type="text" id="prompt" placeholder="Enter a prompt..." value="a cute robot waving hello">
+        <button onclick="testImageGen()">Generate Image</button>
+        <div id="result" style="margin-top: 16px;"></div>
+    </div>
+
+    <div class="card" id="errorCard" style="display: none;">
+        <h3 class="error">❌ Error</h3>
+        <p id="errorMsg"></p>
+    </div>
+
+    <script>
+        // Configuration - change this for local vs production
+        const ENTER_URL = 'http://localhost:3000'; // Local dev
+        // const ENTER_URL = 'https://enter.pollinations.ai'; // Production
+        
+        const CALLBACK_URL = window.location.href.split('?')[0].split('#')[0];
+        
+        let apiKey = null;
+
+        // Check for API key in URL fragment on page load
+        // Key is passed in fragment (#api_key=...) to prevent leaking to server logs
+        window.onload = function() {
+            const hash = window.location.hash.substring(1); // Remove #
+            const hashParams = new URLSearchParams(hash);
+            const key = hashParams.get('api_key');
+            
+            // Also check query params for backwards compatibility
+            const queryParams = new URLSearchParams(window.location.search);
+            const queryKey = queryParams.get('api_key');
+            const error = queryParams.get('error');
+            
+            const foundKey = key || queryKey;
+            
+            if (foundKey) {
+                apiKey = foundKey;
+                showApiKey(foundKey);
+                // Clean URL
+                window.history.replaceState({}, '', CALLBACK_URL);
+            } else if (error) {
+                showError(error);
+            }
+        };
+
+        function startAuth() {
+            const authUrl = `${ENTER_URL}/authorize?redirect_url=${encodeURIComponent(CALLBACK_URL)}`;
+            window.location.href = authUrl;
+        }
+
+        function showApiKey(key) {
+            document.getElementById('keyCard').style.display = 'block';
+            document.getElementById('testCard').style.display = 'block';
+            document.getElementById('apiKeyDisplay').textContent = key;
+            document.getElementById('expiryInfo').textContent = 'This key expires in 6 hours';
+            document.getElementById('authBtn').textContent = 'Re-authorize';
+        }
+
+        function showError(msg) {
+            document.getElementById('errorCard').style.display = 'block';
+            document.getElementById('errorMsg').textContent = msg;
+        }
+
+        async function testImageGen() {
+            if (!apiKey) {
+                showError('No API key available');
+                return;
+            }
+
+            const prompt = document.getElementById('prompt').value;
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = '<p class="info">Generating image...</p>';
+
+            try {
+                // Use the API key to generate an image via local dev server
+                const imageUrl = `http://localhost:3000/api/generate/image/${encodeURIComponent(prompt)}?key=${apiKey}&model=flux&width=512&height=512`;
+                
+                const response = await fetch(imageUrl);
+                
+                if (!response.ok) {
+                    const text = await response.text();
+                    throw new Error(`HTTP ${response.status}: ${text}`);
+                }
+
+                const blob = await response.blob();
+                const url = URL.createObjectURL(blob);
+                
+                resultDiv.innerHTML = `
+                    <img src="${url}" style="max-width: 100%; border-radius: 8px; margin-top: 12px;">
+                    <p class="success" style="margin-top: 8px;">✅ Image generated successfully!</p>
+                `;
+            } catch (e) {
+                resultDiv.innerHTML = `<p class="error">Error: ${e.message}</p>`;
+            }
+        }
+    </script>
+</body>
+</html>

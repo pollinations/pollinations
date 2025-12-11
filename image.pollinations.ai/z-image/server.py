@@ -86,8 +86,8 @@ MODEL_CACHE = "model_cache"
 UPSCALER_MODEL_x2 = "model_cache/RealESRGAN_x2plus.pth"
 FACE_ENHANCER_MODEL = "model_cache/GFPGANv1.4.pth"
 UPSCALE_FACTOR = 2
-MAX_W, MAX_H = 768, 768
-MAX_PIXELS = MAX_W * MAX_H
+MIN_GEN_PIXELS = 768 * 768  # Minimum generation resolution (don't halve below this)
+MAX_FINAL_SIZE = 2048  # Maximum final image dimension
 
 generate_lock = threading.Lock()
 
@@ -102,23 +102,45 @@ def calc_time(start, end, msg):
     elapsed = end - start
     print(f"{msg} time: {elapsed:.2f} seconds")
 
-def calculate_generation_dimensions(requested_width: int, requested_height: int) -> tuple[int, int, int, int]:
-    gen_w = requested_width // UPSCALE_FACTOR
-    gen_h = requested_height // UPSCALE_FACTOR
-    if gen_w > MAX_W or gen_h > MAX_H:
-        scale = min(MAX_W / gen_w, MAX_H / gen_h)
-        gen_w = int(gen_w * scale)
-        gen_h = int(gen_h * scale)
+def calculate_generation_dimensions(requested_width: int, requested_height: int) -> tuple[int, int, int, int, bool]:
+    """Calculate generation dimensions and whether to upscale.
+    
+    Returns: (gen_w, gen_h, final_w, final_h, should_upscale)
+    - Cap final size to MAX_FINAL_SIZE (preserving aspect ratio)
+    - If halved resolution >= MIN_GEN_PIXELS: generate at half, upscale 2x
+    - Otherwise: generate at requested resolution, no upscaling
+    """
+    # Cap final dimensions to MAX_FINAL_SIZE, preserving aspect ratio
+    final_w, final_h = requested_width, requested_height
+    if final_w > MAX_FINAL_SIZE or final_h > MAX_FINAL_SIZE:
+        scale = min(MAX_FINAL_SIZE / final_w, MAX_FINAL_SIZE / final_h)
+        final_w = int(final_w * scale)
+        final_h = int(final_h * scale)
+    
+    halved_w = final_w // UPSCALE_FACTOR
+    halved_h = final_h // UPSCALE_FACTOR
+    halved_pixels = halved_w * halved_h
+    
+    if halved_pixels >= MIN_GEN_PIXELS:
+        # Large request: generate at half resolution, then upscale
+        gen_w, gen_h = halved_w, halved_h
+        should_upscale = True
+    else:
+        # Small request: generate at full resolution, no upscaling
+        gen_w, gen_h = final_w, final_h
+        should_upscale = False
+    
+    # Align to 16px multiples (required by model)
     if gen_w % 16 != 0:
         gen_w = math.ceil(gen_w / 16) * 16
     if gen_h % 16 != 0:
         gen_h = math.ceil(gen_h / 16) * 16
     
+    # Minimum generation size
     gen_w = max(gen_w, 256)
     gen_h = max(gen_h, 256)
     
-    # Return requested dimensions as final target
-    return gen_w, gen_h, requested_width, requested_height
+    return gen_w, gen_h, final_w, final_h, should_upscale
 
 def detect_faces_mediapipe(image_np, face_detector):
     """Detect faces using pre-initialized MediaPipe detector."""
@@ -293,8 +315,8 @@ def generate(request: ImageRequest, _auth: bool = Depends(verify_enter_token)):
     seed = request.seed if request.seed is not None else int.from_bytes(os.urandom(8), "big")
     logger.info(f"Using seed: {seed}")
     generator = torch.Generator("cuda").manual_seed(seed)
-    gen_w, gen_h, final_w, final_h = calculate_generation_dimensions(request.width, request.height)
-    logger.info(f"Requested: {request.width}x{request.height} -> Generation: {gen_w}x{gen_h} -> Final: {final_w}x{final_h}")
+    gen_w, gen_h, final_w, final_h, should_upscale = calculate_generation_dimensions(request.width, request.height)
+    logger.info(f"Requested: {request.width}x{request.height} -> Generation: {gen_w}x{gen_h} -> Final: {final_w}x{final_h} (upscale: {should_upscale})")
     
     try:
         # Lock entire pipeline: generation + upscaling (to prevent concurrent GPU ops)
@@ -312,39 +334,44 @@ def generate(request: ImageRequest, _auth: bool = Depends(verify_enter_token)):
             image = output.images[0]
             image_np = np.array(image)
             
-            # Detect faces
-            faces = detect_faces_mediapipe(image_np, face_detector)
-            
-            if len(faces) > 0:
-                logger.info(f"Detected {len(faces)} face(s). Using face-aware upscaling...")
-                base_upscaled = upscale_background(image_np, upsampler)
+            if should_upscale:
+                # Detect faces for face-aware upscaling
+                faces = detect_faces_mediapipe(image_np, face_detector)
                 
-                for idx, (x, y, w, h) in enumerate(faces):
-                    padding = int(max(w, h) * 0.3)
-                    x1 = max(0, x - padding)
-                    y1 = max(0, y - padding)
-                    x2 = min(image_np.shape[1], x + w + padding)
-                    y2 = min(image_np.shape[0], y + h + padding)
+                if len(faces) > 0:
+                    logger.info(f"Detected {len(faces)} face(s). Using face-aware upscaling...")
+                    base_upscaled = upscale_background(image_np, upsampler)
                     
-                    face_region = image_np[y1:y2, x1:x2]
-                    if face_region.shape[0] < 10 or face_region.shape[1] < 10:
-                        logger.info(f"Skipping face {idx + 1} (too small)")
-                        continue
+                    for idx, (x, y, w, h) in enumerate(faces):
+                        padding = int(max(w, h) * 0.3)
+                        x1 = max(0, x - padding)
+                        y1 = max(0, y - padding)
+                        x2 = min(image_np.shape[1], x + w + padding)
+                        y2 = min(image_np.shape[0], y + h + padding)
+                        
+                        face_region = image_np[y1:y2, x1:x2]
+                        if face_region.shape[0] < 10 or face_region.shape[1] < 10:
+                            logger.info(f"Skipping face {idx + 1} (too small)")
+                            continue
+                        
+                        face_upscaled = upscale_face_region(face_region, face_enhancer)
+                        
+                        # Blend with feathering instead of hard paste
+                        x1_up = x1 * UPSCALE_FACTOR
+                        y1_up = y1 * UPSCALE_FACTOR
+                        x2_up = (x2) * UPSCALE_FACTOR
+                        y2_up = (y2) * UPSCALE_FACTOR
+                        
+                        blend_face_region(base_upscaled, face_upscaled, y1_up, x1_up, y2_up, x2_up, feather_width=20)
                     
-                    face_upscaled = upscale_face_region(face_region, face_enhancer)
-                    
-                    # Blend with feathering instead of hard paste
-                    x1_up = x1 * UPSCALE_FACTOR
-                    y1_up = y1 * UPSCALE_FACTOR
-                    x2_up = (x2) * UPSCALE_FACTOR
-                    y2_up = (y2) * UPSCALE_FACTOR
-                    
-                    blend_face_region(base_upscaled, face_upscaled, y1_up, x1_up, y2_up, x2_up, feather_width=20)
-                
-                result = base_upscaled
+                    result = base_upscaled
+                else:
+                    logger.info("No faces detected. Using standard RealESRGAN upscaling...")
+                    result = upscale_background(image_np, upsampler)
             else:
-                logger.info("No faces detected. Using standard RealESRGAN upscaling...")
-                result = upscale_background(image_np, upsampler)
+                # No upscaling needed - use generated image directly
+                logger.info("Small resolution - skipping upscaling")
+                result = image_np
             
             # Crop to final dimensions
             h_current, w_current = result.shape[:2]

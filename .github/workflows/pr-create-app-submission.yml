@@ -104,7 +104,7 @@ jobs:
               messages: [
                 {
                   role: "system",
-                  content: "You parse GitHub issue forms for app submissions. Extract and return ONLY valid JSON with these fields: name, url, description, author, repo (optional), category (one of: chat, creative, games, hackAndBuild, learn, socialBots, vibeCoding), language (optional, e.g. zh-CN for non-English). If info is missing or invalid, return {\"error\": \"reason\"}."
+                  content: "You review app submissions for pollinations.ai showcase. Return JSON only.\n\nFIELDS:\n- name: Add contextual emoji if missing (🎨 creative, 🤖 bot, 🎮 game, 💬 chat, 📚 learn, ✨ vibe, 🛠️ tools)\n- url: Project URL (required)\n- description: CONDENSE to 30-50 words. Make it clear, remove marketing fluff.\n- author: @username from submission\n- repo: GitHub URL (optional)\n- category: chat|creative|games|hackAndBuild|learn|socialBots|vibeCoding\n- language: only if non-English (zh-CN, es, etc)\n\nRESPONSES:\n- Valid: return the fields above\n- Missing info: {\"error\": \"what is missing\"}\n- Reject (spam/no pollinations usage/broken): {\"reject\": \"brief reason\"}"
                 },
                 {
                   role: "user",
@@ -140,17 +140,24 @@ jobs:
             exit 1
           fi
           
-          # Check for error in parsed result
-          ERROR=$(echo "$PROJECT_JSON" | jq -r '.error // empty')
-          if [ -n "$ERROR" ]; then
-            echo "error=$ERROR" >> $GITHUB_OUTPUT
-            echo "needs_info=true" >> $GITHUB_OUTPUT
+          # Check for rejection first
+          REJECT=$(echo "$PROJECT_JSON" | jq -r '.reject // empty')
+          if [ -n "$REJECT" ]; then
+            echo "reject_reason=$REJECT" >> $GITHUB_OUTPUT
+            echo "rejected=true" >> $GITHUB_OUTPUT
           else
-            echo "project_json<<EOF" >> $GITHUB_OUTPUT
-            echo "$PROJECT_JSON" >> $GITHUB_OUTPUT
-            echo "EOF" >> $GITHUB_OUTPUT
-            echo "name=$(echo "$PROJECT_JSON" | jq -r '.name')" >> $GITHUB_OUTPUT
-            echo "category=$(echo "$PROJECT_JSON" | jq -r '.category')" >> $GITHUB_OUTPUT
+            # Check for error (needs more info)
+            ERROR=$(echo "$PROJECT_JSON" | jq -r '.error // empty')
+            if [ -n "$ERROR" ]; then
+              echo "error=$ERROR" >> $GITHUB_OUTPUT
+              echo "needs_info=true" >> $GITHUB_OUTPUT
+            else
+              echo "project_json<<EOF" >> $GITHUB_OUTPUT
+              echo "$PROJECT_JSON" >> $GITHUB_OUTPUT
+              echo "EOF" >> $GITHUB_OUTPUT
+              echo "name=$(echo "$PROJECT_JSON" | jq -r '.name')" >> $GITHUB_OUTPUT
+              echo "category=$(echo "$PROJECT_JSON" | jq -r '.category')" >> $GITHUB_OUTPUT
+            fi
           fi
 
       - name: Request more info if needed
@@ -182,8 +189,44 @@ jobs:
               labels: ['app:info-needed']
             });
 
+      - name: Reject submission
+        if: steps.parse.outputs.rejected == 'true'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: ${{ steps.issue.outputs.number }},
+              body: `👋 @${{ steps.issue.outputs.author }}, thanks for your interest in pollinations.ai!\n\nUnfortunately, this submission was not approved: **${{ steps.parse.outputs.reject_reason }}**\n\nIf you believe this was a mistake, please update your submission with more details about how your project uses the pollinations.ai API.`
+            });
+            
+            // Swap to denied label and close
+            try {
+              await github.rest.issues.removeLabel({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: ${{ steps.issue.outputs.number }},
+                name: 'app:review'
+              });
+            } catch (e) {}
+            
+            await github.rest.issues.addLabels({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: ${{ steps.issue.outputs.number }},
+              labels: ['app:denied']
+            });
+            
+            await github.rest.issues.update({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: ${{ steps.issue.outputs.number }},
+              state: 'closed'
+            });
+
       - name: Add project and create PR
-        if: steps.parse.outputs.needs_info != 'true'
+        if: steps.parse.outputs.needs_info != 'true' && steps.parse.outputs.rejected != 'true'
         env:
           GH_TOKEN: ${{ steps.pollinations-ai.outputs.token }}
           ISSUE_NUMBER: ${{ steps.issue.outputs.number }}
@@ -238,6 +281,31 @@ jobs:
           # Force push (handles re-runs where branch already exists)
           git push origin "$BRANCH" --force
           
+          # Extract fields for PR body
+          PROJECT_URL=$(echo "$PROJECT_JSON" | jq -r '.url // "N/A"')
+          PROJECT_DESC=$(echo "$PROJECT_JSON" | jq -r '.description // "N/A"')
+          PROJECT_REPO=$(echo "$PROJECT_JSON" | jq -r '.repo // empty')
+          PROJECT_LANG=$(echo "$PROJECT_JSON" | jq -r '.language // empty')
+          
+          # Build PR body (no leading spaces for proper markdown)
+          PR_BODY="## 🌸 App Submission Summary
+
+| Field | Value |
+|-------|-------|
+| **Name** | $PROJECT_NAME |
+| **Category** | $CATEGORY |
+| **URL** | $PROJECT_URL |
+| **Repo** | ${PROJECT_REPO:-N/A} |
+| **Language** | ${PROJECT_LANG:-English} |
+| **Submitter** | @$ISSUE_AUTHOR |
+
+### Description
+$PROJECT_DESC
+
+---
+Co-authored-by: $ISSUE_AUTHOR <${ISSUE_AUTHOR_ID}+${ISSUE_AUTHOR}@users.noreply.github.com>
+Fixes #$ISSUE_NUMBER"
+          
           # Create PR (or update existing)
           EXISTING_PR=$(gh pr list --head "$BRANCH" --json number -q '.[0].number')
           if [ -n "$EXISTING_PR" ]; then
@@ -245,16 +313,13 @@ jobs:
           else
             gh pr create \
               --title "Add $PROJECT_NAME to $CATEGORY" \
-              --body "Adds **$PROJECT_NAME** to **$CATEGORY** projects.
-
-          Co-authored-by: $ISSUE_AUTHOR <${ISSUE_AUTHOR_ID}+${ISSUE_AUTHOR}@users.noreply.github.com>
-          Fixes #$ISSUE_NUMBER" \
+              --body "$PR_BODY" \
               --base main \
               --head "$BRANCH"
           fi
 
       - name: Comment on issue with PR link
-        if: steps.parse.outputs.needs_info != 'true'
+        if: steps.parse.outputs.needs_info != 'true' && steps.parse.outputs.rejected != 'true'
         uses: actions/github-script@v7
         with:
           script: |

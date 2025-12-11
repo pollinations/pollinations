@@ -1,13 +1,14 @@
-name: PR Create Website News
+name: Create Highlights PR
 
 on:
   pull_request:
     types: [closed]
     paths:
       - 'NEWS/*.md'
+  workflow_dispatch: 
 
 jobs:
-  update-newslist:
+  create-highlights:
     # Only run if PR was merged (not just closed) and targeted main
     if: github.event.pull_request.merged == true && github.event.pull_request.base.ref == 'main'
     runs-on: ubuntu-latest
@@ -16,8 +17,8 @@ jobs:
       pull-requests: write
 
     steps:
-      - name: Generate Polly Bot Token
-        id: polly-bot
+      - name: Generate Pollinations AI Token
+        id: pollinations-ai
         uses: actions/create-github-app-token@v1
         with:
           app-id: ${{ secrets.POLLY_BOT_APP_ID }}
@@ -37,9 +38,9 @@ jobs:
         run: |
           pip install requests
 
-      - name: Update newsList.js and Create PR
+      - name: Create Highlights and PR
         env:
-          GITHUB_TOKEN: ${{ steps.polly-bot.outputs.token }}
+          GITHUB_TOKEN: ${{ steps.pollinations-ai.outputs.token }}
           POLLINATIONS_TOKEN: ${{ secrets.POLLINATIONS_TOKEN }}
           GITHUB_REPOSITORY: ${{ github.repository }}
-        run: python .github/scripts/pr_create_website_news.py
+        run: python .github/scripts/pr_create_highlights.py

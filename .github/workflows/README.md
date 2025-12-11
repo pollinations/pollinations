@@ -54,6 +54,7 @@ Secrets required: `POLLY_BOT_APP_ID`, `POLLY_BOT_PRIVATE_KEY`
 
 ### AI Agents
 
+-   **pr-issue-assistant.yml** - AI assistant (Polly) via Pollinations AI, triggered by `polly` in issues/PRs. Whitelisted users only.
 -   **issue-pr-review-changes.yml** - Claude Opus agent triggered by `@claude` in issues/PRs. Performs code reviews and answers questions.
 
 ### Triage
@@ -70,7 +71,8 @@ Secrets required: `POLLY_BOT_APP_ID`, `POLLY_BOT_PRIVATE_KEY`
 ### News & Discord
 
 -   **pr-create-weekly-news.yml** - Runs Monday 00:00 UTC. Scans merged PRs, creates `NEWS/{date}.md` PR with `inbox:news` label.
--   **pr-create-website-news.yml** - When NEWS PR merges, creates PR to update `newsList.js` for website.
+-   **pr-create-highlights.yml** - When NEWS PR merges, AI extracts top highlights → creates PR for `NEWS/transformed/highlights.md`.
+-   **pr-update-readme.yml** - When highlights PR merges, takes top 10 entries → creates PR to update README's "Latest News" section.
 -   **discord-post-weekly-news.yml** - Triggered when `NEWS/*.md` is pushed. Posts weekly digest to Discord.
 -   **discord-post-merged-pr.yml** - Posts every merged PR to Discord immediately.
 
@@ -93,56 +95,59 @@ Secrets required: `POLLY_BOT_APP_ID`, `POLLY_BOT_PRIVATE_KEY`
 
 ### Issue Triage
 
-```
-Issue opened on GitHub          Issue from Discord bot
-        │                               │
-        ▼                               ▼
-issue-label-external.yml        issue-create-from-discord.yml
-        │                               │
-        ▼                               ▼
-  inbox:github                    inbox:discord
+```mermaid
+%%{init: {'theme': 'dark'}}%%
+flowchart TD
+    A[Issue opened on GitHub] --> B[issue-label-external.yml]
+    B --> C[inbox:github]
+
+    D[Issue from Discord bot] --> E[issue-create-from-discord.yml]
+    E --> F[inbox:discord]
 ```
 
 ### Weekly News Pipeline
 
-```
-┌─────────────────────────────────────────────────────────────────┐
-│  Monday 00:00 UTC (cron)                                        │
-│         │                                                       │
-│         ▼                                                       │
-│  pr-create-weekly-news.yml                                      │
-│         │                                                       │
-│         ▼                                                       │
-│  Scans all merged PRs (GraphQL)                                 │
-│         │                                                       │
-│         ▼                                                       │
-│  Creates PR: NEWS/{date}.md + inbox:news label                  │
-│         │                                                       │
-└─────────┼───────────────────────────────────────────────────────┘
-          │
-          ▼ (PR reviewed & merged)
-┌─────────────────────────────────────────────────────────────────┐
-│  TWO workflows trigger in parallel:                             │
-│                                                                 │
-│  ┌─────────────────────────┐  ┌─────────────────────────────┐   │
-│  │ discord-post-weekly-news │  │ pr-create-website-news      │   │
-│  │ (push to NEWS/*.md)     │  │ (PR merged with NEWS/*.md)  │   │
-│  │         │               │  │         │                   │   │
-│  │         ▼               │  │         ▼                   │   │
-│  │ Posts digest to Discord │  │ Creates PR to update        │   │
-│  │                         │  │ newsList.js for website     │   │
-│  └─────────────────────────┘  └─────────────────────────────┘   │
-└─────────────────────────────────────────────────────────────────┘
+```mermaid
+%%{init: {'theme': 'dark'}}%%
+flowchart TD
+    subgraph CRON["Monday 00:00 UTC"]
+        A[pr-create-weekly-news.yml] --> B[Scans merged PRs via GraphQL]
+        B --> C[Creates PR: NEWS/date.md]
+    end
+
+    C -->|PR reviewed & merged| D[TWO workflows trigger]
+
+    D --> E[discord-post-weekly-news]
+    D --> F[pr-create-highlights]
+
+    E --> G[Posts digest to Discord]
+
+    F --> H[AI extracts top highlights]
+    H --> I[Creates PR: highlights.md]
+
+    I -->|PR reviewed & merged| J[pr-update-readme]
+    J --> K[Takes top 10 highlights]
+    K --> L[Creates PR: update README.md]
 ```
 
 ### Live PR Notifications
 
+```mermaid
+%%{init: {'theme': 'dark'}}%%
+flowchart TD
+    A[Any PR merged to main] --> B[discord-post-merged-pr.yml]
+    B --> C[Posts to Discord immediately]
 ```
-Any PR merged to main
-        │
-        ▼
-discord-post-merged-pr.yml
-        │
-        ▼
-Posts to Discord immediately
+
+### AI Assistant (Polly)
+
+```mermaid
+%%{init: {'theme': 'dark'}}%%
+flowchart TD
+    A[User mentions 'polly' in issue/PR/comment] --> B{User whitelisted?}
+    B -->|No| C[Posts unauthorized message]
+    B -->|Yes| D[pr-issue-assistant.yml]
+    D --> E[Starts Pollinations AI router]
+    E --> F[Claude Code Action responds]
+    F --> G[AI assists with code/questions]
 ```

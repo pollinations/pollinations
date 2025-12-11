@@ -7,7 +7,7 @@ import re
 import requests
 from datetime import datetime, timedelta, timezone
 
-POLLINATIONS_API_BASE = "https://enter.pollinations.ai/api/generate/openai"
+POLLINATIONS_API_BASE = "https://gen.pollinations.ai/v1/chat/completions"
 MODEL = "gemini-large"
 NEWS_FOLDER = "NEWS"
 

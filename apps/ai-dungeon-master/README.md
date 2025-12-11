@@ -395,7 +395,7 @@ Hot reload is enabled for rapid development iteration.
 - ✅ **Combat System**: D20-based dice rolling mechanics
 - ✅ **Inventory Management**: Add/remove items with visual interface
 
-### **Pollinations Garden 🌱 - Advanced Difficulty** (Hacktoberfest 2025)
+### **Hacktoberfest 2025 - Advanced Difficulty**
 - ✅ **Complex AI Integration**: Multiple API endpoints with error handling
 - ✅ **Real-time Content Generation**: Dynamic text and image creation
 - ✅ **Advanced State Management**: Complex game state with persistence
@@ -444,7 +444,7 @@ Hot reload is enabled for rapid development iteration.
 
 ## 📝 **Contributing to the Project**
 
-This app is part of the **Pollinations Garden** 🌱 (originally created for Hacktoberfest 2025). Contributions welcome!
+This app is part of **Hacktoberfest 2025**. Contributions welcome!
 
 ### **How to Contribute**
 1. Fork the repository
@@ -522,7 +522,7 @@ This app is part of the Pollinations ecosystem. Check the main repository for li
 
 **🎭 Embark on your AI-powered fantasy adventure! Every story is unique, every choice matters, and every scene comes alive with AI-generated visuals. ⚔️✨**
 
-*Part of the Pollinations Garden 🌱 | Originally created for Hacktoberfest 2025 - Showcasing the future of AI-powered interactive storytelling*
+*Developed for Hacktoberfest 2025 - Showcasing the future of AI-powered interactive storytelling*
 
 ---
 

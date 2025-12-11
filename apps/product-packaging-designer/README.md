@@ -158,7 +158,7 @@ product-packaging-designer/
 
 ## License
 
-This app is part of the Pollinations Garden 🌱 (originally created for Hacktoberfest 2025). See the main repository for license details.
+This app is part of the Pollinations Hacktoberfest 2025 collection. See the main repository for license details.
 
 ## Credits
 
@@ -171,4 +171,4 @@ This app is part of the Pollinations Garden 🌱 (originally created for Hacktob
 
 **Made with 💜 by [Pollinations.AI](https://pollinations.ai)**
 
-*Part of the Pollinations Garden 🌱 | Originally created for Hacktoberfest 2025*
+*Part of Hacktoberfest 2025 - Building the future of AI-powered creativity!*

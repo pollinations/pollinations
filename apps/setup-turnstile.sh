@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-# Setup Turnstile widget for Pollinations Garden
+# Setup Turnstile widget for Hacktoberfest
 # Usage: ./setup-turnstile.sh
 
 echo "🔐 Setting up Turnstile widget..."
@@ -34,7 +34,7 @@ RESPONSE=$(curl -s "https://api.cloudflare.com/client/v4/accounts/$ACCOUNT_ID/ch
   --header "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
   --header "Content-Type: application/json" \
   --data '{
-    "name": "Pollinations Garden",
+    "name": "Hacktoberfest Apps",
     "mode": "invisible",
     "domains": ["localhost"]
   }')

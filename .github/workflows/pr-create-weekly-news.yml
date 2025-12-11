@@ -14,8 +14,8 @@ jobs:
       issues: write  # Required for adding labels via REST API
 
     steps:
-      - name: Generate Polly Bot Token
-        id: polly-bot
+      - name: Generate Pollinations AI Token
+        id: pollinations-ai
         uses: actions/create-github-app-token@v1
         with:
           app-id: ${{ secrets.POLLY_BOT_APP_ID }}
@@ -35,7 +35,7 @@ jobs:
 
       - name: Generate NEWS.md and Create PR
         env:
-          GITHUB_TOKEN: ${{ steps.polly-bot.outputs.token }}
+          GITHUB_TOKEN: ${{ steps.pollinations-ai.outputs.token }}
           POLLINATIONS_TOKEN: ${{ secrets.POLLINATIONS_TOKEN }}
           GITHUB_REPOSITORY: ${{ github.repository }}
         run: python .github/scripts/pr_create_weekly_news.py

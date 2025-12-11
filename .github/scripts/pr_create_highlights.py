@@ -9,7 +9,7 @@ import requests
 from datetime import datetime, timezone
 
 GITHUB_API_BASE = "https://api.github.com"
-POLLINATIONS_API_BASE = "https://enter.pollinations.ai/api/generate/openai"
+POLLINATIONS_API_BASE = "https://gen.pollinations.ai/v1/chat/completions"
 MODEL = "gemini-large"
 NEWS_FOLDER = "NEWS"
 HIGHLIGHTS_PATH = "NEWS/transformed/highlights.md"
@@ -23,10 +23,10 @@ def get_env(key: str, required: bool = True) -> str:
     return value
 
 
-def get_latest_news_file(github_token: str, owner: str, repo: str) -> tuple[str, str]:
+def get_latest_news_file(github_token: str, owner: str, repo: str) -> tuple[str, str, str]:
     """
     Find the latest NEWS file based on today's date using regex pattern matching.
-    Returns (file_path, content) or (None, None) if not found.
+    Returns (file_path, content, date_str) or (None, None, None) if not found.
     """
     headers = {
         "Accept": "application/vnd.github+json",
@@ -62,7 +62,7 @@ def get_latest_news_file(github_token: str, owner: str, repo: str) -> tuple[str,
 
     if not dated_files:
         print("No dated NEWS files found")
-        return None, None
+        return None, None, None
 
     # Sort by date descending and find the most recent one <= today
     dated_files.sort(key=lambda x: x[0], reverse=True)
@@ -85,10 +85,11 @@ def get_latest_news_file(github_token: str, owner: str, repo: str) -> tuple[str,
 
     if content_response.status_code != 200:
         print(f"Error fetching file content: {content_response.status_code}")
-        return None, None
+        return None, None, None
 
     content = base64.b64decode(content_response.json()['content']).decode('utf-8')
-    return path, content
+    date_str = file_date.strftime('%Y-%m-%d')
+    return path, content, date_str
 
 
 def get_current_highlights(github_token: str, owner: str, repo: str) -> str:
@@ -111,10 +112,40 @@ def get_current_highlights(github_token: str, owner: str, repo: str) -> str:
         return ""
 
 
-def create_highlights_prompt(news_content: str) -> tuple:
+def get_links_file(github_token: str, owner: str, repo: str) -> str:
+    """Fetch NEWS/LINKS.md containing reference links for highlights"""
+    headers = {
+        "Accept": "application/vnd.github+json",
+        "Authorization": f"Bearer {github_token}"
+    }
+
+    response = requests.get(
+        f"{GITHUB_API_BASE}/repos/{owner}/{repo}/contents/{NEWS_FOLDER}/LINKS.md",
+        headers=headers
+    )
+
+    if response.status_code == 200:
+        content = response.json().get("content", "")
+        return base64.b64decode(content).decode("utf-8")
+    else:
+        print(f"No LINKS.md found (status: {response.status_code}), continuing without links reference")
+        return ""
+
+
+def create_highlights_prompt(news_content: str, news_date: str, links_content: str = "") -> tuple:
     """Create prompt to extract only the most significant highlights"""
 
-    system_prompt = """You are a strict curator for Pollinations.AI highlights.
+    links_section = ""
+    if links_content:
+        links_section = f"""
+## REFERENCE LINKS
+Use these links when relevant to add helpful references in your highlights.
+Add links naturally in the description using markdown format: [text](url)
+
+{links_content}
+"""
+
+    system_prompt = f"""You are a strict curator for Pollinations.AI highlights.
 
 ## CONTEXT - What is Pollinations.AI?
 Pollinations.AI is a free, open-source AI platform providing:
@@ -161,18 +192,20 @@ This is a HIGHLIGHT REEL - not a changelog. Only the exciting stuff that makes u
 
 ## OUTPUT FORMAT
 ```
-- **🚀 Feature Name** - Punchy description of what users can DO now.
-- **✨ Another Feature** - Brief and exciting. Use `backticks` for code.
+- **YYYY-MM-DD** – **🚀 Feature Name** Punchy description of what users can DO now. [Relevant Link](url) if applicable.
+- **YYYY-MM-DD** – **✨ Another Feature** Brief and exciting. Use `backticks` for code. Check the [API Docs](url).
 ```
 
 Rules:
-1. Format: `- **emoji Title** - Description`
-2. Emojis: 🚀 ✨ 🎨 🎵 🤖 🔗 📱 💡 🌟 🎯
-3. Focus on USER BENEFIT
-4. NO dates, NO PR numbers, NO authors
-5. 1-2 lines max per entry
-6. Output ONLY the markdown bullets
-
+1. Format: `- **YYYY-MM-DD** – **emoji Title** Description with [links](url) when relevant`
+2. Use the DATE provided in the changelog header (the week's end date)
+3. Emojis: 🚀 ✨ 🎨 🎵 🤖 🔗 📱 💡 🌟 🎯
+4. Focus on USER BENEFIT
+5. NO PR numbers, NO authors
+6. 1-2 lines max per entry
+7. Output ONLY the markdown bullets
+8. Add relevant links from REFERENCE LINKS section when they add value (don't force links)
+{links_section}
 ## CRITICAL
 - Output exactly `SKIP` if nothing qualifies
 - Use your judgment - if something feels exciting and user-facing, include it
@@ -180,6 +213,9 @@ Rules:
 - Trust your instincts on what users would find exciting"""
 
     user_prompt = f"""Review this Pollinations.AI changelog and extract ONLY highlights worthy of the website and README.
+
+**DATE FOR THIS CHANGELOG: {news_date}**
+Use this date for all highlights from this changelog.
 
 Typical week: 3-4 highlights. Some weeks: 0. Be very selective.
 
@@ -406,17 +442,21 @@ def main():
 
     # Find the latest NEWS file
     print("Looking for latest NEWS file...")
-    news_file_path, news_content = get_latest_news_file(github_token, owner_name, repo_name)
+    news_file_path, news_content, news_date = get_latest_news_file(github_token, owner_name, repo_name)
 
     if not news_file_path or not news_content:
         print("Could not find a valid NEWS file. Exiting.")
         sys.exit(1)
 
-    print(f"Using NEWS file: {news_file_path}")
+    print(f"Using NEWS file: {news_file_path} (date: {news_date})")
+
+    # Fetch links reference file
+    print("Fetching LINKS.md for reference links...")
+    links_content = get_links_file(github_token, owner_name, repo_name)
 
     # Generate highlights using AI
     print("Generating highlights...")
-    system_prompt, user_prompt = create_highlights_prompt(news_content)
+    system_prompt, user_prompt = create_highlights_prompt(news_content, news_date, links_content)
     ai_response = call_pollinations_api(system_prompt, user_prompt, pollinations_token)
     new_highlights = parse_response(ai_response)
 

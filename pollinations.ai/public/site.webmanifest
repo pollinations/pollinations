@@ -1,7 +1,7 @@
 {
     "name": "pollinations.ai",
     "short_name": "pollinations",
-    "description": "Free 🐝 Open Source 🌸 Gen AI 🤖 API",
+    "description": "Generative AI APIs for developers. Integrate AI models via one simple API. Built for app creators, with sponsorship programs available.",
     "icons": [
         {
             "src": "/icon-192.png",

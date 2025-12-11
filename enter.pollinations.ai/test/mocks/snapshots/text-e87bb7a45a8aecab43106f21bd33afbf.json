@@ -1,0 +1,591 @@
+{
+  "request": {
+    "url": "http://ec2-3-80-56-235.compute-1.amazonaws.com:16385/openai",
+    "method": "POST",
+    "body": {
+      "type": "json",
+      "data": {
+        "model": "kimi-k2-thinking",
+        "messages": [
+          {
+            "role": "user",
+            "content": "Is Berlin the capital of Germany? Reply yes or no."
+          }
+        ],
+        "stream": true,
+        "seed": 42
+      }
+    },
+    "params": {}
+  },
+  "response": {
+    "status": 200,
+    "statusText": "OK",
+    "headers": {
+      "access-control-allow-origin": "*",
+      "cache-control": "no-cache",
+      "connection": "keep-alive",
+      "content-type": "text/event-stream; charset=utf-8",
+      "date": "Thu, 11 Dec 2025 16:46:35 GMT",
+      "transfer-encoding": "chunked",
+      "x-powered-by": "Express"
+    },
+    "body": {
+      "type": "stream",
+      "data": [
+        {
+          "data": "data: {\"choices\":[{\"delta\":{\"content\":\"\",\"reasoning_content\":null,\"role\":\"assistant\",\"tool_calls\":null},\"finish_reason\":null,\"index\":0,\"logprobs\":null,\"matched_stop\":null}],\"created\":1765471595,\"id\":\"a_U6afeyCLLulOoPg87O8Qw\",\"model\":\"moonshotai/kimi-k2-thinking-maas\",\"object\":\"chat.completion.chunk\",\"usage\":{\"extra_properties\":{\"google\":{\"traffic_type\":\"ON_DEMAND\"}}}}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"choices\":[{\"delta\":{\"content\":null,\"reasoning_content\":\" \",\"role\":null,\"tool_calls\":null},\"finish_reason\":null,\"index\":0,\"logprobs\":null,\"matched_stop\":null}],\"created\":1765471595,\"id\":\"a_U6afeyCLLulOoPg87O8Qw\",\"model\":\"moonshotai/kimi-k2-thinking-maas\",\"object\":\"chat.completion.chunk\",\"usage\":{\"extra_properties\":{\"google\":{\"traffic_type\":\"ON_DEMAND\"}}}}\n\ndata: {\"choices\":[{\"delta\":{\"content\":null,\"reasoning_content\":\" The\",\"role\":null,\"tool_calls\":null},\"finish_reason\":null,\"index\":0,\"logprobs\":null,\"matched_stop\":null}],\"created\":1765471595,\"id\":\"a_U6afeyCLLulOoPg87O8Qw\",\"model\":\"moonshotai/kimi-k2-thinking-maas\",\"object\":\"chat.completion.chunk\",\"usage\":{\"extra_properties\":{\"google\":{\"traffic_type\":\"ON_DEMAND\"}}}}\n\ndata: {\"choices\":[{\"delta\":{\"content\":null,\"reasoning_content\":\" user's\",\"role\":null,\"tool_calls\":null},\"finish_reason\":null,\"index\":0,\"logprobs\":null,\"matched_stop\":null}],\"created\":1765471595,\"id\":\"a_U6afeyCLLulOoPg87O8Qw\",\"model\":\"moonshotai/kimi-k2-thinking-maas\",\"object\":\"chat.completion.chunk\",\"usage\":{\"extra_properties\":{\"google\":{\"traffic_type\":\"ON_DEMAND\"}}}}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"choices\":[{\"delta\":",
+          "delay": 0
+        },
+        {
+          "data": "{\"content\":null,\"reasoning_content\":\" question\",\"role\":null,\"tool_calls\":null},\"finish_reason\":null,\"index\":0,\"logprobs\":null,\"matched_stop\":null}],\"created\":1765471595,\"id\":\"a_U6afeyCLLulOoPg87O8Qw\",\"model\":\"moonshotai/kimi-k2-thinking-maas\",\"object\":\"chat.completion.chunk\",\"usage\":{\"extra_properties\":{\"google\":{\"traffic_type\":\"ON_DEMAND\"}}}}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"choices\":[{\"delta",
+          "delay": 1
+        },
+        {
+          "data": "\":{\"content\":null,\"reasoning_content\":\" is\",\"role\":null,\"tool_calls\":null},\"finish_reason\":null,\"index\":0,\"logprobs\":null,\"matched_stop\":null}],\"created\":1765471595,\"id\":\"a_U6afeyCLLulOoPg87O8Qw\",\"model\":\"moonshotai/kimi-k2-thinking-maas\",\"object\":\"chat.completion.chunk\",\"usage\":{\"extra_properties\":{\"google\":{\"traffic_type\":\"ON_DEMAND\"}}}}\n\ndata: {\"choices\":[{\"delta\":{\"content\":null,\"reasoning_content\":\" a\",\"role\":null,\"tool_calls\":null},\"finish_reason\":null,\"index\":0,\"logprobs\":null,\"matched_stop\":null}],\"created\":1765471595,\"id\":\"a_U6afeyCLLulOoPg87O8Qw\",\"model\":\"moonshotai/kimi-k2-thinking-maas\",\"object\":\"chat.completion.chunk\",\"usage\":{\"extra_properties\":{\"google\":{\"traffic_type\":\"ON_DEMAND\"}}}}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"choices\":[{\"delta",
+          "delay": 0
+        },
+        {
+          "data": "\":{\"content\":null,\"reasoning_content\":\" simple\",\"role\":null,\"tool_calls\":null},\"finish_reason\":null,\"index\":0,\"logprobs\":null,\"matched_stop\":null}],\"created\":1765471595,\"id\":\"a_U6afeyCLLulOoPg87O8Qw\",\"model\":\"moonshotai/kimi-k2-thinking-maas\",\"object\":\"chat.completion.chunk\",\"usage\":{\"extra_properties\":{\"google\":{\"traffic_type\":\"ON_DEMAND\"}}}}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"choices\":[{\"delta",
+          "delay": 0
+        },
+        {
+          "data": "\":{\"content\":null,\"reasoning_content\":\" factual\",\"role\":null,\"tool_calls\":null},\"finish_reason\":null,\"index\":0,\"logprobs\":null,\"matched_stop\":null}],\"created\":1765471595,\"id\":\"a_U6afeyCLLulOoPg87O8Qw\",\"model\":\"moonshotai/kimi-k2-thinking-maas\",\"object\":\"chat.completion.chunk\",\"usage\":{\"extra_properties\":{\"google\":{\"traffic_type\":\"ON_DEMAND\"}}}}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"choices\":[{\"delta",
+          "delay": 0
+        },
+        {
+          "data": "\":{\"content\":null,\"reasoning_content\":\" query\",\"role\":null,\"tool_calls\":null},\"finish_reason\":null,\"index\":0,\"logprobs\":null,\"matched_stop\":null}],\"created\":1765471595,\"id\":\"a_U6afeyCLLulOoPg87O8Qw\",\"model\":\"moonshotai/kimi-k2-thinking-maas\",\"object\":\"chat.completion.chunk\",\"usage\":{\"extra_properties\":{\"google\":{\"traffic_type\":\"ON_DEMAND\"}}}}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"choices\":[{\"delta\":",
+          "delay": 2
+        },
+        {
+          "data": "{\"content\":null,\"reasoning_content\":\":\",\"role\":null,\"tool_calls\":null},\"finish_reason\":null,\"index\":0,\"logprobs\":null,\"matched_stop\":null}],\"created\":1765471595,\"id\":\"a_U6afeyCLLulOoPg87O8Qw\",\"model\":\"moonshotai/kimi-k2-thinking-maas\",\"object\":\"chat.completion.chunk\",\"usage\":{\"extra_properties\":{\"google\":{\"traffic_type\":\"ON_DEMAND\"}}}}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"choices\":[{\"delta\":",
+          "delay": 11
+        },
+        {
+          "data": "{\"content\":null,\"reasoning_content\":\" \\\"\",\"role\":null,\"tool_calls\":null},\"finish_reason\":null,\"index\":0,\"logprobs\":null,\"matched_stop\":null}],\"created\":1765471595,\"id\":\"a_U6afeyCLLulOoPg87O8Qw\",\"model\":\"moonshotai/kimi-k2-thinking-maas\",\"object\":\"chat.completion.chunk\",\"usage\":{\"extra_properties\":{\"google\":{\"traffic_type\":\"ON_DEMAND\"}}}}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"choices\":[{\"delta\":",
+          "delay": 115
+        },
+        {
+          "data": "{\"content\":null,\"reasoning_content\":\"Is\",\"role\":null,\"tool_calls\":null},\"finish_reason\":null,\"index\":0,\"logprobs\":null,\"matched_stop\":null}],\"created\":1765471595,\"id\":\"a_U6afeyCLLulOoPg87O8Qw\",\"model\":\"moonshotai/kimi-k2-thinking-maas\",\"object\":\"chat.completion.chunk\",\"usage\":{\"extra_properties\":{\"google\":{\"traffic_type\":\"ON_DEMAND\"}}}}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"choices\":[{\"delta",
+          "delay": 0
+        },
+        {
+          "data": "\":{\"content\":null,\"reasoning_content\":\" Berlin\",\"role\":null,\"tool_calls\":null},\"finish_reason\":null,\"index\":0,\"logprobs\":null,\"matched_stop\":null}],\"created\":1765471595,\"id\":\"a_U6afeyCLLulOoPg87O8Qw\",\"model\":\"moonshotai/kimi-k2-thinking-maas\",\"object\":\"chat.completion.chunk\",\"usage\":{\"extra_properties\":{\"google\":{\"traffic_type\":\"ON_DEMAND\"}}}}\n\n",
+          "delay": 1
+        },
+        {
+          "data": "data: {\"choices\":[{\"delta",
+          "delay": 0
+        },
+        {
+          "data": "\":{\"content\":null,\"reasoning_content\":\" the\",\"role\":null,\"tool_calls\":null},\"finish_reason\":null,\"index\":0,\"logprobs\":null,\"matched_stop\":null}],\"created\":1765471595,\"id\":\"a_U6afeyCLLulOoPg87O8Qw\",\"model\":\"moonshotai/kimi-k2-thinking-maas\",\"object\":\"chat.completion.chunk\",\"usage\":{\"extra_properties\":{\"google\":{\"traffic_type\":\"ON_DEMAND\"}}}}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"choices\":[{\"delta",
+          "delay": 0
+        },
+        {
+          "data": "\":{\"content\":null,\"reasoning_content\":\" capital\",\"role\":null,\"tool_calls\":null},\"finish_reason\":null,\"index\":0,\"logprobs\":null,\"matched_stop\":null}],\"created\":1765471595,\"id\":\"a_U6afeyCLLulOoPg87O8Qw\",\"model\":\"moonshotai/kimi-k2-thinking-maas\",\"object\":\"chat.completion.chunk\",\"usage\":{\"extra_properties\":{\"google\":{\"traffic_type\":\"ON_DEMAND\"}}}}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"choices\":[{\"delta",
+          "delay": 0
+        },
+        {
+          "data": "\":{\"content\":null,\"reasoning_content\":\" of\",\"role\":null,\"tool_calls\":null},\"finish_reason\":null,\"index\":0,\"logprobs\":null,\"matched_stop\":null}],\"created\":1765471595,\"id\":\"a_U6afeyCLLulOoPg87O8Qw\",\"model\":\"moonshotai/kimi-k2-thinking-maas\",\"object\":\"chat.completion.chunk\",\"usage\":{\"extra_properties\":{\"google\":{\"traffic_type\":\"ON_DEMAND\"}}}}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"choices\":[{\"delta",
+          "delay": 0
+        },
+        {
+          "data": "\":{\"content\":null,\"reasoning_content\":\" Germany\",\"role\":null,\"tool_calls\":null},\"finish_reason\":null,\"index\":0,\"logprobs\":null,\"matched_stop\":null}],\"created\":1765471595,\"id\":\"a_U6afeyCLLulOoPg87O8Qw\",\"model\":\"moonshotai/kimi-k2-thinking-maas\",\"object\":\"chat.completion.chunk\",\"usage\":{\"extra_properties\":{\"google\":{\"traffic_type\":\"ON_DEMAND\"}}}}\n\n",
+          "delay": 1
+        },
+        {
+          "data": "data: {\"choices\":[{\"delta",
+          "delay": 0
+        },
+        {
+          "data": "\":{\"content\":null,\"reasoning_content\":\"?\",\"role\":null,\"tool_calls\":null},\"finish_reason\":null,\"index\":0,\"logprobs\":null,\"matched_stop\":null}],\"created\":1765471595,\"id\":\"a_U6afeyCLLulOoPg87O8Qw\",\"model\":\"moonshotai/kimi-k2-thinking-maas\",\"object\":\"chat.completion.chunk\",\"usage\":{\"extra_properties\":{\"google\":{\"traffic_type\":\"ON_DEMAND\"}}}}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"choices\":[{\"delta",
+          "delay": 0
+        },
+        {
+          "data": "\":{\"content\":null,\"reasoning_content\":\" Reply\",\"role\":null,\"tool_calls\":null},\"finish_reason\":null,\"index\":0,\"logprobs\":null,\"matched_stop\":null}],\"created\":1765471595,\"id\":\"a_U6afeyCLLulOoPg87O8Qw\",\"model\":\"moonshotai/kimi-k2-thinking-maas\",\"object\":\"chat.completion.chunk\",\"usage\":{\"extra_properties\":{\"google\":{\"traffic_type\":\"ON_DEMAND\"}}}}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"choices\":[{\"delta",
+          "delay": 0
+        },
+        {
+          "data": "\":{\"content\":null,\"reasoning_content\":\" yes\",\"role\":null,\"tool_calls\":null},\"finish_reason\":null,\"index\":0,\"logprobs\":null,\"matched_stop\":null}],\"created\":1765471595,\"id\":\"a_U6afeyCLLulOoPg87O8Qw\",\"model\":\"moonshotai/kimi-k2-thinking-maas\",\"object\":\"chat.completion.chunk\",\"usage\":{\"extra_properties\":{\"google\":{\"traffic_type\":\"ON_DEMAND\"}}}}\n\ndata: {\"choices\":[{\"delta\":{\"content\":null,\"reasoning_content\":\" or\",\"role\":null,\"tool_calls\":null},\"finish_reason\":null,\"index\":0,\"logprobs\":null,\"matched_stop\":null}],\"created\":1765471595,\"id\":\"a_U6afeyCLLulOoPg87O8Qw\",\"model\":\"moonshotai/kimi-k2-thinking-maas\",\"object\":\"chat.completion.chunk\",\"usage\":{\"extra_properties\":{\"google\":{\"traffic_type\":\"ON_DEMAND\"}}}}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"choices\":[{\"delta",
+          "delay": 0
+        },
+        {
+          "data": "\":{\"content\":null,\"reasoning_content\":\" no\",\"role\":null,\"tool_calls\":null},\"finish_reason\":null,\"index\":0,\"logprobs\":null,\"matched_stop\":null}],\"created\":1765471595,\"id\":\"a_U6afeyCLLulOoPg87O8Qw\",\"model\":\"moonshotai/kimi-k2-thinking-maas\",\"object\":\"chat.completion.chunk\",\"usage\":{\"extra_properties\":{\"google\":{\"traffic_type\":\"ON_DEMAND\"}}}}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"choices\":[{\"delta",
+          "delay": 0
+        },
+        {
+          "data": "\":{\"content\":null,\"reasoning_content\":\".\\\"\",\"role\":null,\"tool_calls\":null},\"finish_reason\":null,\"index\":0,\"logprobs\":null,\"matched_stop\":null}],\"created\":1765471595,\"id\":\"a_U6afeyCLLulOoPg87O8Qw\",\"model\":\"moonshotai/kimi-k2-thinking-maas\",\"object\":\"chat.completion.chunk\",\"usage\":{\"extra_properties\":{\"google\":{\"traffic_type\":\"ON_DEMAND\"}}}}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"choices\":[{\"delta",
+          "delay": 0
+        },
+        {
+          "data": "\":{\"content\":null,\"reasoning_content\":\" The\",\"role\":null,\"tool_calls\":null},\"finish_reason\":null,\"index\":0,\"logprobs\":null,\"matched_stop\":null}],\"created\":1765471595,\"id\":\"a_U6afeyCLLulOoPg87O8Qw\",\"model\":\"moonshotai/kimi-k2-thinking-maas\",\"object\":\"chat.completion.chunk\",\"usage\":{\"extra_properties\":{\"google\":{\"traffic_type\":\"ON_DEMAND\"}}}}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"choices\":[{\"delta",
+          "delay": 0
+        },
+        {
+          "data": "\":{\"content\":null,\"reasoning_content\":\" instruction\",\"role\":null,\"tool_calls\":null},\"finish_reason\":null,\"index\":0,\"logprobs\":null,\"matched_stop\":null}],\"created\":1765471595,\"id\":\"a_U6afeyCLLulOoPg87O8Qw\",\"model\":\"moonshotai/kimi-k2-thinking-maas\",\"object\":\"chat.completion.chunk\",\"usage\":{\"extra_properties\":{\"google\":{\"traffic_type\":\"ON_DEMAND\"}}}}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"choices\":[{\"delta",
+          "delay": 0
+        },
+        {
+          "data": "\":{\"content\":null,\"reasoning_content\":\" is\",\"role\":null,\"tool_calls\":null},\"finish_reason\":null,\"index\":0,\"logprobs\":null,\"matched_stop\":null}],\"created\":1765471595,\"id\":\"a_U6afeyCLLulOoPg87O8Qw\",\"model\":\"moonshotai/kimi-k2-thinking-maas\",\"object\":\"chat.completion.chunk\",\"usage\":{\"extra_properties\":{\"google\":{\"traffic_type\":\"ON_DEMAND\"}}}}\n\n",
+          "delay": 1
+        },
+        {
+          "data": "data: {\"choices\":[{\"delta\":",
+          "delay": 5
+        },
+        {
+          "data": "{\"content\":null,\"reasoning_content\":\" to\",\"role\":null,\"tool_calls\":null},\"finish_reason\":null,\"index\":0,\"logprobs\":null,\"matched_stop\":null}],\"created\":1765471595,\"id\":\"a_U6afeyCLLulOoPg87O8Qw\",\"model\":\"moonshotai/kimi-k2-thinking-maas\",\"object\":\"chat.completion.chunk\",\"usage\":{\"extra_properties\":{\"google\":{\"traffic_type\":\"ON_DEMAND\"}}}}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"choices\":[{\"delta\":",
+          "delay": 14
+        },
+        {
+          "data": "{\"content\":null,\"reasoning_content\":\" reply\",\"role\":null,\"tool_calls\":null},\"finish_reason\":null,\"index\":0,\"logprobs\":null,\"matched_stop\":null}],\"created\":1765471595,\"id\":\"a_U6afeyCLLulOoPg87O8Qw\",\"model\":\"moonshotai/kimi-k2-thinking-maas\",\"object\":\"chat.completion.chunk\",\"usage\":{\"extra_properties\":{\"google\":{\"traffic_type\":\"ON_DEMAND\"}}}}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"choices\":[{\"delta\":",
+          "delay": 3
+        },
+        {
+          "data": "{\"content\":null,\"reasoning_content\":\" with\",\"role\":null,\"tool_calls\":null},\"finish_reason\":null,\"index\":0,\"logprobs\":null,\"matched_stop\":null}],\"created\":1765471595,\"id\":\"a_U6afeyCLLulOoPg87O8Qw\",\"model\":\"moonshotai/kimi-k2-thinking-maas\",\"object\":\"chat.completion.chunk\",\"usage\":{\"extra_properties\":{\"google\":{\"traffic_type\":\"ON_DEMAND\"}}}}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"choices\":[{\"delta\":",
+          "delay": 6
+        },
+        {
+          "data": "{\"content\":null,\"reasoning_content\":\" only\",\"role\":null,\"tool_calls\":null},\"finish_reason\":null,\"index\":0,\"logprobs\":null,\"matched_stop\":null}],\"created\":1765471595,\"id\":\"a_U6afeyCLLulOoPg87O8Qw\",\"model\":\"moonshotai/kimi-k2-thinking-maas\",\"object\":\"chat.completion.chunk\",\"usage\":{\"extra_properties\":{\"google\":{\"traffic_type\":\"ON_DEMAND\"}}}}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"choices\":[{\"delta\":",
+          "delay": 9
+        },
+        {
+          "data": "{\"content\":null,\"reasoning_content\":\" \\\"\",\"role\":null,\"tool_calls\":null},\"finish_reason\":null,\"index\":0,\"logprobs\":null,\"matched_stop\":null}],\"created\":1765471595,\"id\":\"a_U6afeyCLLulOoPg87O8Qw\",\"model\":\"moonshotai/kimi-k2-thinking-maas\",\"object\":\"chat.completion.chunk\",\"usage\":{\"extra_properties\":{\"google\":{\"traffic_type\":\"ON_DEMAND\"}}}}\n\n",
+          "delay": 1
+        },
+        {
+          "data": "data: {\"choices\":[{\"delta\":",
+          "delay": 10
+        },
+        {
+          "data": "{\"content\":null,\"reasoning_content\":\"yes\",\"role\":null,\"tool_calls\":null},\"finish_reason\":null,\"index\":0,\"logprobs\":null,\"matched_stop\":null}],\"created\":1765471595,\"id\":\"a_U6afeyCLLulOoPg87O8Qw\",\"model\":\"moonshotai/kimi-k2-thinking-maas\",\"object\":\"chat.completion.chunk\",\"usage\":{\"extra_properties\":{\"google\":{\"traffic_type\":\"ON_DEMAND\"}}}}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"choices\":[{\"delta\":",
+          "delay": 9
+        },
+        {
+          "data": "{\"content\":null,\"reasoning_content\":\"\\\"\",\"role\":null,\"tool_calls\":null},\"finish_reason\":null,\"index\":0,\"logprobs\":null,\"matched_stop\":null}],\"created\":1765471595,\"id\":\"a_U6afeyCLLulOoPg87O8Qw\",\"model\":\"moonshotai/kimi-k2-thinking-maas\",\"object\":\"chat.completion.chunk\",\"usage\":{\"extra_properties\":{\"google\":{\"traffic_type\":\"ON_DEMAND\"}}}}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"choices\":[{\"delta\":",
+          "delay": 16
+        },
+        {
+          "data": "{\"content\":null,\"reasoning_content\":\" or\",\"role\":null,\"tool_calls\":null},\"finish_reason\":null,\"index\":0,\"logprobs\":null,\"matched_stop\":null}],\"created\":1765471595,\"id\":\"a_U6afeyCLLulOoPg87O8Qw\",\"model\":\"moonshotai/kimi-k2-thinking-maas\",\"object\":\"chat.completion.chunk\",\"usage\":{\"extra_properties\":{\"google\":{\"traffic_type\":\"ON_DEMAND\"}}}}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"choices\":[{\"delta\":",
+          "delay": 10
+        },
+        {
+          "data": "{\"content\":null,\"reasoning_content\":\" \\\"\",\"role\":null,\"tool_calls\":null},\"finish_reason\":null,\"index\":0,\"logprobs\":null,\"matched_stop\":null}],\"created\":1765471595,\"id\":\"a_U6afeyCLLulOoPg87O8Qw\",\"model\":\"moonshotai/kimi-k2-thinking-maas\",\"object\":\"chat.completion.chunk\",\"usage\":{\"extra_properties\":{\"google\":{\"traffic_type\":\"ON_DEMAND\"}}}}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"choices\":[{\"delta",
+          "delay": 0
+        },
+        {
+          "data": "\":{\"content\":null,\"reasoning_content\":\"no\",\"role\":null,\"tool_calls\":null},\"finish_reason\":null,\"index\":0,\"logprobs\":null,\"matched_stop\":null}],\"created\":1765471595,\"id\":\"a_U6afeyCLLulOoPg87O8Qw\",\"model\":\"moonshotai/kimi-k2-thinking-maas\",\"object\":\"chat.completion.chunk\",\"usage\":{\"extra_properties\":{\"google\":{\"traffic_type\":\"ON_DEMAND\"}}}}\n\ndata: {\"choices\":[{\"delta\":{\"content\":null,\"reasoning_content\":\"\\\".\",\"role\":null,\"tool_calls\":null},\"finish_reason\":null,\"index\":0,\"logprobs\":null,\"matched_stop\":null}],\"created\":1765471595,\"id\":\"a_U6afeyCLLulOoPg87O8Qw\",\"model\":\"moonshotai/kimi-k2-thinking-maas\",\"object\":\"chat.completion.chunk\",\"usage\":{\"extra_properties\":{\"google\":{\"traffic_type\":\"ON_DEMAND\"}}}}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"choices\":[{\"delta\":",
+          "delay": 14
+        },
+        {
+          "data": "{\"content\":null,\"reasoning_content\":\" This\",\"role\":null,\"tool_calls\":null},\"finish_reason\":null,\"index\":0,\"logprobs\":null,\"matched_stop\":null}],\"created\":1765471595,\"id\":\"a_U6afeyCLLulOoPg87O8Qw\",\"model\":\"moonshotai/kimi-k2-thinking-maas\",\"object\":\"chat.completion.chunk\",\"usage\":{\"extra_properties\":{\"google\":{\"traffic_type\":\"ON_DEMAND\"}}}}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"choices\":[{\"delta\":",
+          "delay": 19
+        },
+        {
+          "data": "{\"content\":null,\"reasoning_content\":\" is\",\"role\":null,\"tool_calls\":null},\"finish_reason\":null,\"index\":0,\"logprobs\":null,\"matched_stop\":null}],\"created\":1765471595,\"id\":\"a_U6afeyCLLulOoPg87O8Qw\",\"model\":\"moonshotai/kimi-k2-thinking-maas\",\"object\":\"chat.completion.chunk\",\"usage\":{\"extra_properties\":{\"google\":{\"traffic_type\":\"ON_DEMAND\"}}}}\n\ndata: {\"choices\":[{\"delta\":{\"content\":null,\"reasoning_content\":\" a\",\"role\":null,\"tool_calls\":null},\"finish_reason\":null,\"index\":0,\"logprobs\":null,\"matched_stop\":null}],\"created\":1765471595,\"id\":\"a_U6afeyCLLulOoPg87O8Qw\",\"model\":\"moonshotai/kimi-k2-thinking-maas\",\"object\":\"chat.completion.chunk\",\"usage\":{\"extra_properties\":{\"google\":{\"traffic_type\":\"ON_DEMAND\"}}}}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"choices\":[{\"delta\":",
+          "delay": 7
+        },
+        {
+          "data": "{\"content\":null,\"reasoning_content\":\" straightforward\",\"role\":null,\"tool_calls\":null},\"finish_reason\":null,\"index\":0,\"logprobs\":null,\"matched_stop\":null}],\"created\":1765471595,\"id\":\"a_U6afeyCLLulOoPg87O8Qw\",\"model\":\"moonshotai/kimi-k2-thinking-maas\",\"object\":\"chat.completion.chunk\",\"usage\":{\"extra_properties\":{\"google\":{\"traffic_type\":\"ON_DEMAND\"}}}}\n\ndata: {\"choices\":[{\"delta\":{\"content\":null,\"reasoning_content\":\" factual\",\"role\":null,\"tool_calls\":null},\"finish_reason\":null,\"index\":0,\"logprobs\":null,\"matched_stop\":null}],\"created\":1765471595,\"id\":\"a_U6afeyCLLulOoPg87O8Qw\",\"model\":\"moonshotai/kimi-k2-thinking-maas\",\"object\":\"chat.completion.chunk\",\"usage\":{\"extra_properties\":{\"google\":{\"traffic_type\":\"ON_DEMAND\"}}}}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"choices\":[{\"delta\":",
+          "delay": 22
+        },
+        {
+          "data": "{\"content\":null,\"reasoning_content\":\" question\",\"role\":null,\"tool_calls\":null},\"finish_reason\":null,\"index\":0,\"logprobs\":null,\"matched_stop\":null}],\"created\":1765471595,\"id\":\"a_U6afeyCLLulOoPg87O8Qw\",\"model\":\"moonshotai/kimi-k2-thinking-maas\",\"object\":\"chat.completion.chunk\",\"usage\":{\"extra_properties\":{\"google\":{\"traffic_type\":\"ON_DEMAND\"}}}}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"choices\":[{\"delta\":",
+          "delay": 3
+        },
+        {
+          "data": "{\"content\":null,\"reasoning_content\":\".\",\"role\":null,\"tool_calls\":null},\"finish_reason\":null,\"index\":0,\"logprobs\":null,\"matched_stop\":null}],\"created\":1765471595,\"id\":\"a_U6afeyCLLulOoPg87O8Qw\",\"model\":\"moonshotai/kimi-k2-thinking-maas\",\"object\":\"chat.completion.chunk\",\"usage\":{\"extra_properties\":{\"google\":{\"traffic_type\":\"ON_DEMAND\"}}}}\n\ndata: {\"choices\":[{\"delta\":{\"content\":null,\"reasoning_content\":\" Berlin\",\"role\":null,\"tool_calls\":null},\"finish_reason\":null,\"index\":0,\"logprobs\":null,\"matched_stop\":null}],\"created\":1765471595,\"id\":\"a_U6afeyCLLulOoPg87O8Qw\",\"model\":\"moonshotai/kimi-k2-thinking-maas\",\"object\":\"chat.completion.chunk\",\"usage\":{\"extra_properties\":{\"google\":{\"traffic_type\":\"ON_DEMAND\"}}}}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"choices\":[{\"delta\":",
+          "delay": 14
+        },
+        {
+          "data": "{\"content\":null,\"reasoning_content\":\" is\",\"role\":null,\"tool_calls\":null},\"finish_reason\":null,\"index\":0,\"logprobs\":null,\"matched_stop\":null}],\"created\":1765471595,\"id\":\"a_U6afeyCLLulOoPg87O8Qw\",\"model\":\"moonshotai/kimi-k2-thinking-maas\",\"object\":\"chat.completion.chunk\",\"usage\":{\"extra_properties\":{\"google\":{\"traffic_type\":\"ON_DEMAND\"}}}}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"choices\":[{\"delta\":",
+          "delay": 11
+        },
+        {
+          "data": "{\"content\":null,\"reasoning_content\":\" indeed\",\"role\":null,\"tool_calls\":null},\"finish_reason\":null,\"index\":0,\"logprobs\":null,\"matched_stop\":null}],\"created\":1765471595,\"id\":\"a_U6afeyCLLulOoPg87O8Qw\",\"model\":\"moonshotai/kimi-k2-thinking-maas\",\"object\":\"chat.completion.chunk\",\"usage\":{\"extra_properties\":{\"google\":{\"traffic_type\":\"ON_DEMAND\"}}}}\n\ndata: {\"choices\":[{\"delta\":{\"content\":null,\"reasoning_content\":\" the\",\"role\":null,\"tool_calls\":null},\"finish_reason\":null,\"index\":0,\"logprobs\":null,\"matched_stop\":null}],\"created\":1765471595,\"id\":\"a_U6afeyCLLulOoPg87O8Qw\",\"model\":\"moonshotai/kimi-k2-thinking-maas\",\"object\":\"chat.completion.chunk\",\"usage\":{\"extra_properties\":{\"google\":{\"traffic_type\":\"ON_DEMAND\"}}}}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"choices\":[{\"delta\":",
+          "delay": 18
+        },
+        {
+          "data": "{\"content\":null,\"reasoning_content\":\" capital\",\"role\":null,\"tool_calls\":null},\"finish_reason\":null,\"index\":0,\"logprobs\":null,\"matched_stop\":null}],\"created\":1765471595,\"id\":\"a_U6afeyCLLulOoPg87O8Qw\",\"model\":\"moonshotai/kimi-k2-thinking-maas\",\"object\":\"chat.completion.chunk\",\"usage\":{\"extra_properties\":{\"google\":{\"traffic_type\":\"ON_DEMAND\"}}}}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"choices\":[{\"delta",
+          "delay": 0
+        },
+        {
+          "data": "\":{\"content\":null,\"reasoning_content\":\" of\",\"role\":null,\"tool_calls\":null},\"finish_reason\":null,\"index\":0,\"logprobs\":null,\"matched_stop\":null}],\"created\":1765471595,\"id\":\"a_U6afeyCLLulOoPg87O8Qw\",\"model\":\"moonshotai/kimi-k2-thinking-maas\",\"object\":\"chat.completion.chunk\",\"usage\":{\"extra_properties\":{\"google\":{\"traffic_type\":\"ON_DEMAND\"}}}}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"choices\":[{\"delta\":",
+          "delay": 13
+        },
+        {
+          "data": "{\"content\":null,\"reasoning_content\":\" Germany\",\"role\":null,\"tool_calls\":null},\"finish_reason\":null,\"index\":0,\"logprobs\":null,\"matched_stop\":null}],\"created\":1765471595,\"id\":\"a_U6afeyCLLulOoPg87O8Qw\",\"model\":\"moonshotai/kimi-k2-thinking-maas\",\"object\":\"chat.completion.chunk\",\"usage\":{\"extra_properties\":{\"google\":{\"traffic_type\":\"ON_DEMAND\"}}}}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"choices\":[{\"delta\":",
+          "delay": 9
+        },
+        {
+          "data": "{\"content\":null,\"reasoning_content\":\".\",\"role\":null,\"tool_calls\":null},\"finish_reason\":null,\"index\":0,\"logprobs\":null,\"matched_stop\":null}],\"created\":1765471595,\"id\":\"a_U6afeyCLLulOoPg87O8Qw\",\"model\":\"moonshotai/kimi-k2-thinking-maas\",\"object\":\"chat.completion.chunk\",\"usage\":{\"extra_properties\":{\"google\":{\"traffic_type\":\"ON_DEMAND\"}}}}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"choices\":[{\"delta",
+          "delay": 0
+        },
+        {
+          "data": "\":{\"content\":null,\"reasoning_content\":\" So\",\"role\":null,\"tool_calls\":null},\"finish_reason\":null,\"index\":0,\"logprobs\":null,\"matched_stop\":null}],\"created\":1765471595,\"id\":\"a_U6afeyCLLulOoPg87O8Qw\",\"model\":\"moonshotai/kimi-k2-thinking-maas\",\"object\":\"chat.completion.chunk\",\"usage\":{\"extra_properties\":{\"google\":{\"traffic_type\":\"ON_DEMAND\"}}}}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"choices\":[{\"delta\":",
+          "delay": 14
+        },
+        {
+          "data": "{\"content\":null,\"reasoning_content\":\" the\",\"role\":null,\"tool_calls\":null},\"finish_reason\":null,\"index\":0,\"logprobs\":null,\"matched_stop\":null}],\"created\":1765471595,\"id\":\"a_U6afeyCLLulOoPg87O8Qw\",\"model\":\"moonshotai/kimi-k2-thinking-maas\",\"object\":\"chat.completion.chunk\",\"usage\":{\"extra_properties\":{\"google\":{\"traffic_type\":\"ON_DEMAND\"}}}}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"choices\":[{\"delta\":",
+          "delay": 30
+        },
+        {
+          "data": "{\"content\":null,\"reasoning_content\":\" correct\",\"role\":null,\"tool_calls\":null},\"finish_reason\":null,\"index\":0,\"logprobs\":null,\"matched_stop\":null}],\"created\":1765471595,\"id\":\"a_U6afeyCLLulOoPg87O8Qw\",\"model\":\"moonshotai/kimi-k2-thinking-maas\",\"object\":\"chat.completion.chunk\",\"usage\":{\"extra_properties\":{\"google\":{\"traffic_type\":\"ON_DEMAND\"}}}}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"choices\":[{\"delta\":",
+          "delay": 28
+        },
+        {
+          "data": "{\"content\":null,\"reasoning_content\":\" answer\",\"role\":null,\"tool_calls\":null},\"finish_reason\":null,\"index\":0,\"logprobs\":null,\"matched_stop\":null}],\"created\":1765471595,\"id\":\"a_U6afeyCLLulOoPg87O8Qw\",\"model\":\"moonshotai/kimi-k2-thinking-maas\",\"object\":\"chat.completion.chunk\",\"usage\":{\"extra_properties\":{\"google\":{\"traffic_type\":\"ON_DEMAND\"}}}}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"choices\":[{\"delta\":",
+          "delay": 4
+        },
+        {
+          "data": "{\"content\":null,\"reasoning_content\":\" is\",\"role\":null,\"tool_calls\":null},\"finish_reason\":null,\"index\":0,\"logprobs\":null,\"matched_stop\":null}],\"created\":1765471595,\"id\":\"a_U6afeyCLLulOoPg87O8Qw\",\"model\":\"moonshotai/kimi-k2-thinking-maas\",\"object\":\"chat.completion.chunk\",\"usage\":{\"extra_properties\":{\"google\":{\"traffic_type\":\"ON_DEMAND\"}}}}\n\ndata: {\"choices\":[{\"delta\":{\"content\":null,\"reasoning_content\":\" \\\"\",\"role\":null,\"tool_calls\":null},\"finish_reason\":null,\"index\":0,\"logprobs\":null,\"matched_stop\":null}],\"created\":1765471595,\"id\":\"a_U6afeyCLLulOoPg87O8Qw\",\"model\":\"moonshotai/kimi-k2-thinking-maas\",\"object\":\"chat.completion.chunk\",\"usage\":{\"extra_properties\":{\"google\":{\"traffic_type\":\"ON_DEMAND\"}}}}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"choices\":[{\"delta",
+          "delay": 0
+        },
+        {
+          "data": "\":{\"content\":null,\"reasoning_content\":\"yes\",\"role\":null,\"tool_calls\":null},\"finish_reason\":null,\"index\":0,\"logprobs\":null,\"matched_stop\":null}],\"created\":1765471595,\"id\":\"a_U6afeyCLLulOoPg87O8Qw\",\"model\":\"moonshotai/kimi-k2-thinking-maas\",\"object\":\"chat.completion.chunk\",\"usage\":{\"extra_properties\":{\"google\":{\"traffic_type\":\"ON_DEMAND\"}}}}\n\ndata: {\"choices\":[{\"delta\":{\"content\":null,\"reasoning_content\":\"\\\".\",\"role\":null,\"tool_calls\":null},\"finish_reason\":null,\"index\":0,\"logprobs\":null,\"matched_stop\":null}],\"created\":1765471595,\"id\":\"a_U6afeyCLLulOoPg87O8Qw\",\"model\":\"moonshotai/kimi-k2-thinking-maas\",\"object\":\"chat.completion.chunk\",\"usage\":{\"extra_properties\":{\"google\":{\"traffic_type\":\"ON_DEMAND\"}}}}\n\ndata: {\"choices\":[{\"delta\":{\"content\":null,\"reasoning_content\":\" I\",\"role\":null,\"tool_calls\":null},\"finish_reason\":null,\"index\":0,\"logprobs\":null,\"matched_stop\":null}],\"created\":1765471595,\"id\":\"a_U6afeyCLLulOoPg87O8Qw\",\"model\":\"moonshotai/kimi-k2-thinking-maas\",\"object\":\"chat.completion.chunk\",\"usage\":{\"extra_properties\":{\"google\":{\"traffic_type\":\"ON_DEMAND\"}}}}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"choices\":[{\"delta\":",
+          "delay": 1
+        },
+        {
+          "data": "{\"content\":null,\"reasoning_content\":\" must\",\"role\":null,\"tool_calls\":null},\"finish_reason\":null,\"index\":0,\"logprobs\":null,\"matched_stop\":null}],\"created\":1765471595,\"id\":\"a_U6afeyCLLulOoPg87O8Qw\",\"model\":\"moonshotai/kimi-k2-thinking-maas\",\"object\":\"chat.completion.chunk\",\"usage\":{\"extra_properties\":{\"google\":{\"traffic_type\":\"ON_DEMAND\"}}}}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"choices\":[{\"delta\":",
+          "delay": 17
+        },
+        {
+          "data": "{\"content\":null,\"reasoning_content\":\" not\",\"role\":null,\"tool_calls\":null},\"finish_reason\":null,\"index\":0,\"logprobs\":null,\"matched_stop\":null}],\"created\":1765471595,\"id\":\"a_U6afeyCLLulOoPg87O8Qw\",\"model\":\"moonshotai/kimi-k2-thinking-maas\",\"object\":\"chat.completion.chunk\",\"usage\":{\"extra_properties\":{\"google\":{\"traffic_type\":\"ON_DEMAND\"}}}}\n\ndata: {\"choices\":[{\"delta\":{\"content\":null,\"reasoning_content\":\" add\",\"role\":null,\"tool_calls\":null},\"finish_reason\":null,\"index\":0,\"logprobs\":null,\"matched_stop\":null}],\"created\":1765471595,\"id\":\"a_U6afeyCLLulOoPg87O8Qw\",\"model\":\"moonshotai/kimi-k2-thinking-maas\",\"object\":\"chat.completion.chunk\",\"usage\":{\"extra_properties\":{\"google\":{\"traffic_type\":\"ON_DEMAND\"}}}}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"choices\":[{\"delta",
+          "delay": 0
+        },
+        {
+          "data": "\":{\"content\":null,\"reasoning_content\":\" any\",\"role\":null,\"tool_calls\":null},\"finish_reason\":null,\"index\":0,\"logprobs\":null,\"matched_stop\":null}],\"created\":1765471595,\"id\":\"a_U6afeyCLLulOoPg87O8Qw\",\"model\":\"moonshotai/kimi-k2-thinking-maas\",\"object\":\"chat.completion.chunk\",\"usage\":{\"extra_properties\":{\"google\":{\"traffic_type\":\"ON_DEMAND\"}}}}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"choices\":[{\"delta\":",
+          "delay": 5
+        },
+        {
+          "data": "{\"content\":null,\"reasoning_content\":\" extra\",\"role\":null,\"tool_calls\":null},\"finish_reason\":null,\"index\":0,\"logprobs\":null,\"matched_stop\":null}],\"created\":1765471595,\"id\":\"a_U6afeyCLLulOoPg87O8Qw\",\"model\":\"moonshotai/kimi-k2-thinking-maas\",\"object\":\"chat.completion.chunk\",\"usage\":{\"extra_properties\":{\"google\":{\"traffic_type\":\"ON_DEMAND\"}}}}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"choices\":[{\"delta\":",
+          "delay": 373
+        },
+        {
+          "data": "{\"content\":null,\"reasoning_content\":\" text\",\"role\":null,\"tool_calls\":null},\"finish_reason\":null,\"index\":0,\"logprobs\":null,\"matched_stop\":null}],\"created\":1765471595,\"id\":\"a_U6afeyCLLulOoPg87O8Qw\",\"model\":\"moonshotai/kimi-k2-thinking-maas\",\"object\":\"chat.completion.chunk\",\"usage\":{\"extra_properties\":{\"google\":{\"traffic_type\":\"ON_DEMAND\"}}}}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"choices\":[{\"delta",
+          "delay": 0
+        },
+        {
+          "data": "\":{\"content\":null,\"reasoning_content\":\",\",\"role\":null,\"tool_calls\":null},\"finish_reason\":null,\"index\":0,\"logprobs\":null,\"matched_stop\":null}],\"created\":1765471595,\"id\":\"a_U6afeyCLLulOoPg87O8Qw\",\"model\":\"moonshotai/kimi-k2-thinking-maas\",\"object\":\"chat.completion.chunk\",\"usage\":{\"extra_properties\":{\"google\":{\"traffic_type\":\"ON_DEMAND\"}}}}\n\ndata: {\"choices\":[{\"delta\":{\"content\":null,\"reasoning_content\":\" explanations\",\"role\":null,\"tool_calls\":null},\"finish_reason\":null,\"index\":0,\"logprobs\":null,\"matched_stop\":null}],\"created\":1765471595,\"id\":\"a_U6afeyCLLulOoPg87O8Qw\",\"model\":\"moonshotai/kimi-k2-thinking-maas\",\"object\":\"chat.completion.chunk\",\"usage\":{\"extra_properties\":{\"google\":{\"traffic_type\":\"ON_DEMAND\"}}}}\n\ndata: {\"choices\":[{\"delta\":{\"content\":null,\"reasoning_content\":\",\",\"role\":null,\"tool_calls\":null},\"finish_reason\":null,\"index\":0,\"logprobs\":null,\"matched_stop\":null}],\"created\":1765471595,\"id\":\"a_U6afeyCLLulOoPg87O8Qw\",\"model\":\"moonshotai/kimi-k2-thinking-maas\",\"object\":\"chat.completion.chunk\",\"usage\":{\"extra_properties\":{\"google\":{\"traffic_type\":\"ON_DEMAND\"}}}}\n\ndata: {\"choices\":[{\"delta\":{\"content\":null,\"reasoning_content\":\" or\",\"role\":null,\"tool_calls\":null},\"finish_reason\":null,\"index\":0,\"logprobs\":null,\"matched_stop\":null}],\"created\":1765471595,\"id\":\"a_U6afeyCLLulOoPg87O8Qw\",\"model\":\"moonshotai/kimi-k2-thinking-maas\",\"object\":\"chat.completion.chunk\",\"usage\":{\"extra_properties\":{\"google\":{\"traffic_type\":\"ON_DEMAND\"}}}}\n\ndata: {\"choices\":[{\"delta\":{\"content\":null,\"reasoning_content\":\" moral\",\"role\":null,\"tool_calls\":null},\"finish_reason\":null,\"index\":0,\"logprobs\":null,\"matched_stop\":null}],\"created\":1765471595,\"id\":\"a_U6afeyCLLulOoPg87O8Qw\",\"model\":\"moonshotai/kimi-k2-thinking-maas\",\"object\":\"chat.completion.chunk\",\"usage\":{\"extra_properties\":{\"google\":{\"traffic_type\":\"ON_DEMAND\"}}}}\n\ndata: {\"choices\":[{\"delta\":{\"content\":null,\"reasoning_content\":\"izing\",\"role\":null,\"tool_calls\":null},\"finish_reason\":null,\"index\":0,\"logprobs\":null,\"matched_stop\":null}],\"created\":1765471595,\"id\":\"a_U6afeyCLLulOoPg87O8Qw\",\"model\":\"moonshotai/kimi-k2-thinking-maas\",\"object\":\"chat.completion.chunk\",\"usage\":{\"extra_properties\":{\"google\":{\"traffic_type\":\"ON_DEMAND\"}}}}\n\ndata: {\"choices\":[{\"delta\":{\"content\":null,\"reasoning_content\":\" language\",\"role\":null,\"tool_calls\":null},\"finish_reason\":null,\"index\":0,\"logprobs\":null,\"matched_stop\":null}],\"created\":1765471595,\"id\":\"a_U6afeyCLLulOoPg87O8Qw\",\"model\":\"moonshotai/kimi-k2-thinking-maas\",\"object\":\"chat.completion.chunk\",\"usage\":{\"extra_properties\":{\"google\":{\"traffic_type\":\"ON_DEMAND\"}}}}\n\n",
+          "delay": 1
+        },
+        {
+          "data": "data: {\"choices\":[{\"delta",
+          "delay": 0
+        },
+        {
+          "data": "\":{\"content\":null,\"reasoning_content\":\".\",\"role\":null,\"tool_calls\":null},\"finish_reason\":null,\"index\":0,\"logprobs\":null,\"matched_stop\":null}],\"created\":1765471595,\"id\":\"a_U6afeyCLLulOoPg87O8Qw\",\"model\":\"moonshotai/kimi-k2-thinking-maas\",\"object\":\"chat.completion.chunk\",\"usage\":{\"extra_properties\":{\"google\":{\"traffic_type\":\"ON_DEMAND\"}}}}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"choices\":[{\"delta",
+          "delay": 0
+        },
+        {
+          "data": "\":{\"content\":null,\"reasoning_content\":\" Just\",\"role\":null,\"tool_calls\":null},\"finish_reason\":null,\"index\":0,\"logprobs\":null,\"matched_stop\":null}],\"created\":1765471595,\"id\":\"a_U6afeyCLLulOoPg87O8Qw\",\"model\":\"moonshotai/kimi-k2-thinking-maas\",\"object\":\"chat.completion.chunk\",\"usage\":{\"extra_properties\":{\"google\":{\"traffic_type\":\"ON_DEMAND\"}}}}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"choices\":[{\"delta",
+          "delay": 0
+        },
+        {
+          "data": "\":{\"content\":null,\"reasoning_content\":\" the\",\"role\":null,\"tool_calls\":null},\"finish_reason\":null,\"index\":0,\"logprobs\":null,\"matched_stop\":null}],\"created\":1765471595,\"id\":\"a_U6afeyCLLulOoPg87O8Qw\",\"model\":\"moonshotai/kimi-k2-thinking-maas\",\"object\":\"chat.completion.chunk\",\"usage\":{\"extra_properties\":{\"google\":{\"traffic_type\":\"ON_DEMAND\"}}}}\n\ndata: {\"choices\":[{\"delta\":{\"content\":null,\"reasoning_content\":\" single\",\"role\":null,\"tool_calls\":null},\"finish_reason\":null,\"index\":0,\"logprobs\":null,\"matched_stop\":null}],\"created\":1765471595,\"id\":\"a_U6afeyCLLulOoPg87O8Qw\",\"model\":\"moonshotai/kimi-k2-thinking-maas\",\"object\":\"chat.completion.chunk\",\"usage\":{\"extra_properties\":{\"google\":{\"traffic_type\":\"ON_DEMAND\"}}}}\n\ndata: {\"choices\":[{\"delta\":{\"content\":null,\"reasoning_content\":\" word\",\"role\":null,\"tool_calls\":null},\"finish_reason\":null,\"index\":0,\"logprobs\":null,\"matched_stop\":null}],\"created\":1765471595,\"id\":\"a_U6afeyCLLulOoPg87O8Qw\",\"model\":\"moonshotai/kimi-k2-thinking-maas\",\"object\":\"chat.completion.chunk\",\"usage\":{\"extra_properties\":{\"google\":{\"traffic_type\":\"ON_DEMAND\"}}}}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"choices\":[{\"delta",
+          "delay": 0
+        },
+        {
+          "data": "\":{\"content\":null,\"reasoning_content\":\" \\\"\",\"role\":null,\"tool_calls\":null},\"finish_reason\":null,\"index\":0,\"logprobs\":null,\"matched_stop\":null}],\"created\":1765471595,\"id\":\"a_U6afeyCLLulOoPg87O8Qw\",\"model\":\"moonshotai/kimi-k2-thinking-maas\",\"object\":\"chat.completion.chunk\",\"usage\":{\"extra_properties\":{\"google\":{\"traffic_type\":\"ON_DEMAND\"}}}}\n\ndata: {\"choices\":[{\"delta\":{\"content\":null,\"reasoning_content\":\"yes\",\"role\":null,\"tool_calls\":null},\"finish_reason\":null,\"index\":0,\"logprobs\":null,\"matched_stop\":null}],\"created\":1765471595,\"id\":\"a_U6afeyCLLulOoPg87O8Qw\",\"model\":\"moonshotai/kimi-k2-thinking-maas\",\"object\":\"chat.completion.chunk\",\"usage\":{\"extra_properties\":{\"google\":{\"traffic_type\":\"ON_DEMAND\"}}}}\n\ndata: {\"choices\":[{\"delta\":{\"content\":null,\"reasoning_content\":\"\\\"\",\"role\":null,\"tool_calls\":null},\"finish_reason\":null,\"index\":0,\"logprobs\":null,\"matched_stop\":null}],\"created\":1765471595,\"id\":\"a_U6afeyCLLulOoPg87O8Qw\",\"model\":\"moonshotai/kimi-k2-thinking-maas\",\"object\":\"chat.completion.chunk\",\"usage\":{\"extra_properties\":{\"google\":{\"traffic_type\":\"ON_DEMAND\"}}}}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"choices\":[{\"delta",
+          "delay": 0
+        },
+        {
+          "data": "\":{\"content\":null,\"reasoning_content\":\" or\",\"role\":null,\"tool_calls\":null},\"finish_reason\":null,\"index\":0,\"logprobs\":null,\"matched_stop\":null}],\"created\":1765471595,\"id\":\"a_U6afeyCLLulOoPg87O8Qw\",\"model\":\"moonshotai/kimi-k2-thinking-maas\",\"object\":\"chat.completion.chunk\",\"usage\":{\"extra_properties\":{\"google\":{\"traffic_type\":\"ON_DEMAND\"}}}}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"choices\":[{\"delta",
+          "delay": 0
+        },
+        {
+          "data": "\":{\"content\":null,\"reasoning_content\":\" \\\"\",\"role\":null,\"tool_calls\":null},\"finish_reason\":null,\"index\":0,\"logprobs\":null,\"matched_stop\":null}],\"created\":1765471595,\"id\":\"a_U6afeyCLLulOoPg87O8Qw\",\"model\":\"moonshotai/kimi-k2-thinking-maas\",\"object\":\"chat.completion.chunk\",\"usage\":{\"extra_properties\":{\"google\":{\"traffic_type\":\"ON_DEMAND\"}}}}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"choices\":[{\"delta",
+          "delay": 0
+        },
+        {
+          "data": "\":{\"content\":null,\"reasoning_content\":\"no\",\"role\":null,\"tool_calls\":null},\"finish_reason\":null,\"index\":0,\"logprobs\":null,\"matched_stop\":null}],\"created\":1765471595,\"id\":\"a_U6afeyCLLulOoPg87O8Qw\",\"model\":\"moonshotai/kimi-k2-thinking-maas\",\"object\":\"chat.completion.chunk\",\"usage\":{\"extra_properties\":{\"google\":{\"traffic_type\":\"ON_DEMAND\"}}}}\n\ndata: {\"choices\":[{\"delta\":{\"content\":null,\"reasoning_content\":\"\\\".\",\"role\":null,\"tool_calls\":null},\"finish_reason\":null,\"index\":0,\"logprobs\":null,\"matched_stop\":null}],\"created\":1765471595,\"id\":\"a_U6afeyCLLulOoPg87O8Qw\",\"model\":\"moonshotai/kimi-k2-thinking-maas\",\"object\":\"chat.completion.chunk\",\"usage\":{\"extra_properties\":{\"google\":{\"traffic_type\":\"ON_DEMAND\"}}}}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"choices\":[{\"delta",
+          "delay": 1
+        },
+        {
+          "data": "\":{\"content\":null,\"reasoning_content\":\" The\",\"role\":null,\"tool_calls\":null},\"finish_reason\":null,\"index\":0,\"logprobs\":null,\"matched_stop\":null}],\"created\":1765471595,\"id\":\"a_U6afeyCLLulOoPg87O8Qw\",\"model\":\"moonshotai/kimi-k2-thinking-maas\",\"object\":\"chat.completion.chunk\",\"usage\":{\"extra_properties\":{\"google\":{\"traffic_type\":\"ON_DEMAND\"}}}}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"choices\":[{\"delta",
+          "delay": 0
+        },
+        {
+          "data": "\":{\"content\":null,\"reasoning_content\":\" user\",\"role\":null,\"tool_calls\":null},\"finish_reason\":null,\"index\":0,\"logprobs\":null,\"matched_stop\":null}],\"created\":1765471595,\"id\":\"a_U6afeyCLLulOoPg87O8Qw\",\"model\":\"moonshotai/kimi-k2-thinking-maas\",\"object\":\"chat.completion.chunk\",\"usage\":{\"extra_properties\":{\"google\":{\"traffic_type\":\"ON_DEMAND\"}}}}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"choices\":[{\"delta",
+          "delay": 0
+        },
+        {
+          "data": "\":{\"content\":null,\"reasoning_content\":\" explicitly\",\"role\":null,\"tool_calls\":null},\"finish_reason\":null,\"index\":0,\"logprobs\":null,\"matched_stop\":null}],\"created\":1765471595,\"id\":\"a_U6afeyCLLulOoPg87O8Qw\",\"model\":\"moonshotai/kimi-k2-thinking-maas\",\"object\":\"chat.completion.chunk\",\"usage\":{\"extra_properties\":{\"google\":{\"traffic_type\":\"ON_DEMAND\"}}}}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"choices\":[{\"delta",
+          "delay": 0
+        },
+        {
+          "data": "\":{\"content\":null,\"reasoning_content\":\" wants\",\"role\":null,\"tool_calls\":null},\"finish_reason\":null,\"index\":0,\"logprobs\":null,\"matched_stop\":null}],\"created\":1765471595,\"id\":\"a_U6afeyCLLulOoPg87O8Qw\",\"model\":\"moonshotai/kimi-k2-thinking-maas\",\"object\":\"chat.completion.chunk\",\"usage\":{\"extra_properties\":{\"google\":{\"traffic_type\":\"ON_DEMAND\"}}}}\n\ndata: {\"choices\":[{\"delta\":{\"content\":null,\"reasoning_content\":\" a\",\"role\":null,\"tool_calls\":null},\"finish_reason\":null,\"index\":0,\"logprobs\":null,\"matched_stop\":null}],\"created\":1765471595,\"id\":\"a_U6afeyCLLulOoPg87O8Qw\",\"model\":\"moonshotai/kimi-k2-thinking-maas\",\"object\":\"chat.completion.chunk\",\"usage\":{\"extra_properties\":{\"google\":{\"traffic_type\":\"ON_DEMAND\"}}}}\n\ndata: {\"choices\":[{\"delta\":{\"content\":null,\"reasoning_content\":\" yes\",\"role\":null,\"tool_calls\":null},\"finish_reason\":null,\"index\":0,\"logprobs\":null,\"matched_stop\":null}],\"created\":1765471595,\"id\":\"a_U6afeyCLLulOoPg87O8Qw\",\"model\":\"moonshotai/kimi-k2-thinking-maas\",\"object\":\"chat.completion.chunk\",\"usage\":{\"extra_properties\":{\"google\":{\"traffic_type\":\"ON_DEMAND\"}}}}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"choices\":[{\"delt",
+          "delay": 0
+        },
+        {
+          "data": "a\":{\"content\":null,\"reasoning_content\":\"/no\",\"role\":null,\"tool_calls\":null},\"finish_reason\":null,\"index\":0,\"logprobs\":null,\"matched_stop\":null}],\"created\":1765471596,\"id\":\"a_U6afeyCLLulOoPg87O8Qw\",\"model\":\"moonshotai/kimi-k2-thinking-maas\",\"object\":\"chat.completion.chunk\",\"usage\":{\"extra_properties\":{\"google\":{\"traffic_type\":\"ON_DEMAND\"}}}}\n\ndata: {\"choices\":[{\"delta\":{\"content\":null,\"reasoning_content\":\" answer\",\"role\":null,\"tool_calls\":null},\"finish_reason\":null,\"index\":0,\"logprobs\":null,\"matched_stop\":null}],\"created\":1765471596,\"id\":\"a_U6afeyCLLulOoPg87O8Qw\",\"model\":\"moonshotai/kimi-k2-thinking-maas\",\"object\":\"chat.completion.chunk\",\"usage\":{\"extra_properties\":{\"google\":{\"traffic_type\":\"ON_DEMAND\"}}}}\n\ndata: {\"choices\":[{\"delta\":{\"content\":null,\"reasoning_content\":\".\",\"role\":null,\"tool_calls\":null},\"finish_reason\":null,\"index\":0,\"logprobs\":null,\"matched_stop\":null}],\"created\":1765471596,\"id\":\"a_U6afeyCLLulOoPg87O8Qw\",\"model\":\"moonshotai/kimi-k2-thinking-maas\",\"object\":\"chat.completion.chunk\",\"usage\":{\"extra_properties\":{\"google\":{\"traffic_type\":\"ON_DEMAND\"}}}}\n\ndata: {\"choices\":[{\"delta\":{\"content\":null,\"reasoning_content\":\" I\",\"role\":null,\"tool_calls\":null},\"finish_reason\":null,\"index\":0,\"logprobs\":null,\"matched_stop\":null}],\"created\":1765471596,\"id\":\"a_U6afeyCLLulOoPg87O8Qw\",\"model\":\"moonshotai/kimi-k2-thinking-maas\",\"object\":\"chat.completion.chunk\",\"usage\":{\"extra_properties\":{\"google\":{\"traffic_type\":\"ON_DEMAND\"}}}}\n\ndata: {\"choices\":[{\"delta\":{\"content\":null,\"reasoning_content\":\" should\",\"role\":null,\"tool_calls\":null},\"finish_reason\":null,\"index\":0,\"logprobs\":null,\"matched_stop\":null}],\"created\":1765471596,\"id\":\"a_U6afeyCLLulOoPg87O8Qw\",\"model\":\"moonshotai/kimi-k2-thinking-maas\",\"object\":\"chat.completion.chunk\",\"usage\":{\"extra_properties\":{\"google\":{\"traffic_type\":\"ON_DEMAND\"}}}}\n\ndata: {\"choices\":[{\"delta\":{\"content\":null,\"reasoning_content\":\" comply\",\"role\":null,\"tool_calls\":null},\"finish_reason\":null,\"index\":0,\"logprobs\":null,\"matched_stop\":null}],\"created\":1765471596,\"id\":\"a_U6afeyCLLulOoPg87O8Qw\",\"model\":\"moonshotai/kimi-k2-thinking-maas\",\"object\":\"chat.completion.chunk\",\"usage\":{\"extra_properties\":{\"google\":{\"traffic_type\":\"ON_DEMAND\"}}}}\n\ndata: {\"choices\":[{\"delta\":{\"content\":null,\"reasoning_content\":\" directly\",\"role\":null,\"tool_calls\":null},\"finish_reason\":null,\"index\":0,\"logprobs\":null,\"matched_stop\":null}],\"created\":1765471596,\"id\":\"a_U6afeyCLLulOoPg87O8Qw\",\"model\":\"moonshotai/kimi-k2-thinking-maas\",\"object\":\"chat.completion.chunk\",\"usage\":{\"extra_properties\":{\"google\":{\"traffic_type\":\"ON_DEMAND\"}}}}\n\ndata: {\"choices\":[{\"delta\":{\"content\":null,\"reasoning_content\":\".\",\"role\":null,\"tool_calls\":null},\"finish_reason\":null,\"index\":0,\"logprobs\":null,\"matched_stop\":null}],\"created\":1765471596,\"id\":\"a_U6afeyCLLulOoPg87O8Qw\",\"model\":\"moonshotai/kimi-k2-thinking-maas\",\"object\":\"chat.completion.chunk\",\"usage\":{\"extra_properties\":{\"google\":{\"traffic_type\":\"ON_DEMAND\"}}}}\n\ndata: {\"choices\":[{\"delta\":{\"content\":\" Yes\",\"reasoning_content\":null,\"role\":null,\"tool_calls\":null},\"finish_reason\":null,\"index\":0,\"logprobs\":null,\"matched_stop\":null}],\"created\":1765471596,\"id\":\"a_U6afeyCLLulOoPg87O8Qw\",\"model\":\"moonshotai/kimi-k2-thinking-maas\",\"object\":\"chat.completion.chunk\",\"usage\":{\"extra_properties\":{\"google\":{\"traffic_type\":\"ON_DEMAND\"}}}}\n\ndata: {\"choices\":[{\"delta\":{\"content\":\".\",\"reasoning_content\":null,\"role\":null,\"tool_calls\":null},\"finish_reason\":null,\"index\":0,\"logprobs\":null,\"matched_stop\":null}],\"created\":1765471596,\"id\":\"a_U6afeyCLLulOoPg87O8Qw\",\"model\":\"moonshotai/kimi-k2-thinking-maas\",\"object\":\"chat.completion.chunk\",\"usage\":{\"extra_properties\":{\"google\":{\"traffic_type\":\"ON_DEMAND\"}}}}\n\ndata: {\"choices\":[{\"delta\":{\"content\":null,\"reasoning_content\":null,\"role\":null,\"tool_calls\":null},\"finish_reason\":\"stop\",\"index\":0,\"logprobs\":null,\"matched_stop\":163586}],\"created\":1765471596,\"id\":\"a_U6afeyCLLulOoPg87O8Qw\",\"model\":\"moonshotai/kimi-k2-thinking-maas\",\"object\":\"chat.completion.chunk\",\"usage\":{\"extra_properties\":{\"google\":{\"traffic_type\":\"ON_DEMAND\"}}}}\n\ndata: {\"choices\":[],\"created\":1765471596,\"id\":\"a_U6afeyCL",
+          "delay": 0
+        },
+        {
+          "data": "LulOoPg87O8Qw\",\"model\":\"moonshotai/kimi-k2-thinking-maas\",\"object\":\"chat.completion.chunk\",\"usage\":{\"co",
+          "delay": 0
+        },
+        {
+          "data": "mpletion_tokens\":104,\"extr",
+          "delay": 0
+        },
+        {
+          "data": "a_properties\":{\"google\":{\"traffic_type\":\"ON_DEMAND\"}},\"prompt_tokens\":262,\"prompt_tokens_details\":null,\"reasoning_tokens\":0,\"total_tokens\":366}}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: [DONE]\n\n",
+          "delay": 1
+        }
+      ]
+    }
+  }
+}

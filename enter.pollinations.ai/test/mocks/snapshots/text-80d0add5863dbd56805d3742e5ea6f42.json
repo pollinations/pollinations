@@ -1,0 +1,34 @@
+{
+  "request": {
+    "url": "http://ec2-3-80-56-235.compute-1.amazonaws.com:16385/Is%20Berlin%20the%20capital%20of%20Germany%3F%20Reply%20yes%20or%20no.?model=perplexity-fast&seed=42",
+    "method": "GET",
+    "body": {
+      "type": "empty",
+      "data": null
+    },
+    "params": {}
+  },
+  "response": {
+    "status": 200,
+    "statusText": "OK",
+    "headers": {
+      "access-control-allow-origin": "*",
+      "cache-control": "public, max-age=31536000, immutable",
+      "connection": "keep-alive",
+      "content-length": "366",
+      "content-type": "text/plain; charset=utf-8",
+      "date": "Thu, 11 Dec 2025 16:47:06 GMT",
+      "etag": "W/\"16e-d9VM+6fAEFKV2bWPWbeg1K0u3vI\"",
+      "keep-alive": "timeout=5",
+      "x-model-used": "sonar",
+      "x-powered-by": "Express",
+      "x-usage-completion-text-tokens": "84",
+      "x-usage-prompt-text-tokens": "259",
+      "x-usage-total-tokens": "343"
+    },
+    "body": {
+      "type": "text",
+      "data": "Yes, Berlin is the capital of Germany. It is the largest city in the country by area and population and serves as the seat of the German federal government, including the Chancellor's office and the Bundestag (parliament)[1][2][3][4]. Berlin became the capital again after German reunification in 1990, officially replacing Bonn as the seat of government by 1999[2]."
+    }
+  }
+}

@@ -54,6 +54,8 @@ async function getSnapshotHash(request: Request): Promise<string> {
         const body = JSON.parse(text || "{}");
         hash.update(`${body.model}` || "");
         hash.update(`${body.stream}` || "");
+        hash.update(`${body.tool_choice}` || "");
+        hash.update(`${JSON.stringify(body.messages)}`);
     } catch (e) {
         log.warn(`Failed to parse request body: ${e}`);
     }

@@ -3,7 +3,10 @@ import sys
 import io
 import base64
 import logging
+import asyncio
 import torch
+import aiohttp
+import requests
 import numpy as np
 from PIL import Image
 from diffusers import ZImagePipeline
@@ -19,6 +22,50 @@ import threading
 import warnings
 from contextlib import asynccontextmanager
 import math
+
+
+def get_public_ip():
+    try:
+        response = requests.get('https://api.ipify.org', timeout=5)
+        return response.text
+    except Exception:
+        return None
+
+
+async def send_heartbeat():
+    public_ip = os.getenv("PUBLIC_IP")
+    if not public_ip:
+        public_ip = await asyncio.get_event_loop().run_in_executor(None, get_public_ip)
+    if public_ip:
+        try:
+            port = int(os.getenv("PUBLIC_PORT", os.getenv("PORT", "10002")))
+            url = f"http://{public_ip}:{port}"
+            service_type = os.getenv("SERVICE_TYPE", "zimage")
+            async with aiohttp.ClientSession() as session:
+                async with session.post(
+                    'https://image.pollinations.ai/register',
+                    json={'url': url, 'type': service_type}
+                ) as response:
+                    if response.status == 200:
+                        logger.info(f"Heartbeat sent successfully. URL: {url}, type: {service_type}")
+                    else:
+                        logger.error(f"Failed to send heartbeat. Status: {response.status}")
+        except Exception as e:
+            logger.error(f"Error sending heartbeat: {e}")
+
+
+async def periodic_heartbeat():
+    while True:
+        try:
+            await send_heartbeat()
+            await asyncio.sleep(30)
+        except asyncio.CancelledError:
+            logger.info("Heartbeat task cancelled")
+            raise
+        except Exception as e:
+            logger.error(f"Error in periodic heartbeat: {e}")
+            await asyncio.sleep(5)
+
 
 os.environ["HF_HUB_DISABLE_PROGRESS_BARS"] = "1"
 os.environ["TQDM_DISABLE"] = "1"
@@ -137,7 +184,23 @@ face_enhancer = GFPGANer(
 load_model_time_end = time.time()
 calc_time(load_model_time, load_model_time_end, "Time to load model")
 
-app = FastAPI(title="Z-Image-Turbo API")
+heartbeat_task = None
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    global heartbeat_task
+    heartbeat_task = asyncio.create_task(periodic_heartbeat())
+    yield
+    if heartbeat_task:
+        heartbeat_task.cancel()
+        try:
+            await heartbeat_task
+        except asyncio.CancelledError:
+            pass
+
+
+app = FastAPI(title="Z-Image-Turbo API", lifespan=lifespan)
 
 def verify_enter_token(x_enter_token: str = Header(None, alias="x-enter-token")):
     expected_token = os.getenv("ENTER_TOKEN")

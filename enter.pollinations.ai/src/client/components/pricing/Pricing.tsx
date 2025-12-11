@@ -55,12 +55,12 @@ export const Pricing: FC = () => {
                     </div>
                 </div>
 
-                <div className="bg-gradient-to-r from-purple-100 to-pink-100 rounded-xl p-4 border-2 border-purple-300 text-center">
-                    <p className="text-sm font-medium text-purple-900">
+                <div className="bg-gradient-to-r from-amber-100 to-orange-100 rounded-xl p-4 border border-amber-300 text-center">
+                    <p className="text-sm font-medium text-amber-900">
                         🎁 <span className="font-bold">Beta bonus:</span> 2x
                         pollen on every purchase!
                     </p>
-                    <p className="text-xs text-purple-700 mt-1">
+                    <p className="text-xs text-amber-700 mt-1">
                         Prices may adjust as we fine-tune during beta.
                     </p>
                 </div>

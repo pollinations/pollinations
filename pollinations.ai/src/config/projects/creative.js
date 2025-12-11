@@ -1045,4 +1045,13 @@ export const creativeProjects = [
         "submissionDate": "2025-12-04",
         "order": 5,
     },
+  {
+    "name": "Robatika — AI Chat Platform",
+    "url": "https://app.robatika.com",
+    "description": "Robatika is a rapidly growing AI chat platform that provides users with seamless access to advanced OpenAI models and a fully integrated creative suite powered by Pollinations.\\nOur current users rely heavily on Pollinations for image, text, and audio generation inside the chat experience.\\n\\nWe are actively expanding our capabilities and plan to deeply integrate Pollinations as a core creative engine for both free users and future developer tools. The system is designed to be lightweight, fast, and highly scalable. All user sessions run locally in-browser, and we do not store any user data.",
+    "author": "Robatika",
+    "category": "creative",
+    "submissionDate": "2025-12-10",
+    "order": 5
+  }
 ];

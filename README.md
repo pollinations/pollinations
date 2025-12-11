@@ -16,10 +16,10 @@ We opened 67 issues and closed 38, created 25 PRs with 22 merged (30 total contr
 
 ## 🆕 Latest News
 
-- **🧠 Sequa AI Integration** - [Sequa.AI](https://sequa.ai) contextual knowledge engine now available! Provides AI assistants with deep, real-time understanding of codebases and documentation. Configure MCP for Pollinations: `https://mcp.sequa.ai/v1/pollinations/contribute` | [Learn more](https://sequa.ai).
-- **🔐 Auth Dashboard** - New and live! Visit [auth.pollinations.ai](https://auth.pollinations.ai) to manage your API tokens and referrer domains. [Learn more](APIDOCS.md#authentication-).
-- **💲 Support Us** - You can now support us with our new **Tip Us** button. Optionally connect your Discord account to **Ko-Fi** to get premium Discord roles!
-- **🎵 Audio Generation** - New text-to-speech and speech-to-text capabilities are now available! Try the `openai-audio` model - see our [API documentation](APIDOCS.md#audio-generation-api) for details.
+- **2025-12-07** – **🎥 Video Generation** Text-to-video and Image-to-video are here! Try the new `veo` and `seedance` models in [Chat](https://text.pollinations.ai) or via API.
+- **2025-12-07** – **🚀 Major Model Update** Added support for **Claude Opus 4.5**, **Kimi k2**, **Amazon Nova Micro**, and updated **Seedream 4.5**.
+- **2025-12-07** – **🔍 Web Search Enabled** Real-time web search is now enabled for `perplexity` and `gemini-search` models for up-to-date answers.
+- **2025-12-07** – **🎨 Flux Quality Boost** Flux image generation now defaults to maximum quality steps for sharper, more detailed results.
 ---
 
 [![Pollinations.AI Logo](https://pollinations.ai/p/3D_wireframe_blueprint_of_the_conceptual_isometric_world_of_Pollinations_AI_a_surreal_hyperrealistic_digital_garden_Elements_emerge_partially_from_all_sides?width=3000&height=1000&seed=-1)](https://pollinations.ai/p/3D_wireframe_blueprint_of_the_conceptual_isometric_world_of_Pollinations_AI_a_surreal_hyperrealistic_digital_garden_Elements_emerge_partially_from_all_sides?width=3000&height=1000&seed=-1)

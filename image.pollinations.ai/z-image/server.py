@@ -22,6 +22,7 @@ import threading
 import warnings
 from contextlib import asynccontextmanager
 import math
+from scipy import ndimage
 
 
 def get_public_ip():
@@ -85,7 +86,7 @@ MODEL_CACHE = "model_cache"
 UPSCALER_MODEL_x2 = "model_cache/RealESRGAN_x2plus.pth"
 FACE_ENHANCER_MODEL = "model_cache/GFPGANv1.4.pth"
 UPSCALE_FACTOR = 2
-MAX_W, MAX_H = 4096, 4096
+MAX_W, MAX_H = 768, 768
 MAX_PIXELS = MAX_W * MAX_H
 
 generate_lock = threading.Lock()
@@ -100,6 +101,7 @@ class ImageRequest(BaseModel):
 def calc_time(start, end, msg):
     elapsed = end - start
     print(f"{msg} time: {elapsed:.2f} seconds")
+
 def calculate_generation_dimensions(requested_width: int, requested_height: int) -> tuple[int, int, int, int]:
     gen_w = requested_width // UPSCALE_FACTOR
     gen_h = requested_height // UPSCALE_FACTOR
@@ -118,12 +120,8 @@ def calculate_generation_dimensions(requested_width: int, requested_height: int)
     # Return requested dimensions as final target
     return gen_w, gen_h, requested_width, requested_height
 
-def detect_faces_mediapipe(image_np):
-    mp_face_detection = mp.solutions.face_detection
-    face_detector = mp_face_detection.FaceDetection(
-        model_selection=1,
-        min_detection_confidence=0.5
-    )
+def detect_faces_mediapipe(image_np, face_detector):
+    """Detect faces using pre-initialized MediaPipe detector."""
     results = face_detector.process(image_np)
     if not results.detections:
         return []
@@ -139,7 +137,9 @@ def detect_faces_mediapipe(image_np):
         y = max(0, y)
         w_box = min(w_box, w - x)
         h_box = min(h_box, h - y)
-        faces.append((x, y, w_box, h_box))
+        # Skip invalid face regions
+        if w_box > 0 and h_box > 0:
+            faces.append((x, y, w_box, h_box))
     return faces
 
 def upscale_face_region(face_img_np, face_enhancer):
@@ -155,49 +155,121 @@ def upscale_background(image_np, upsampler, outscale=UPSCALE_FACTOR):
     upscaled_np, _ = upsampler.enhance(image_np, outscale=outscale)
     return upscaled_np
 
-# Model loading
-load_model_time = time.time()
-pipe = ZImagePipeline.from_pretrained(
-    MODEL_ID,
-    torch_dtype=torch.bfloat16,
-    cache_dir=MODEL_CACHE,
-).to("cuda")
-model_x2 = RRDBNet(num_in_ch=3, num_out_ch=3, num_feat=64, num_block=23, num_grow_ch=32, scale=2)
-upsampler = RealESRGANer(
-    scale=2,
-    model_path=UPSCALER_MODEL_x2,
-    model=model_x2,
-    tile=768,
-    tile_pad=0,
-    pre_pad=0,
-    half=False,
-    device="cuda"
-)
-face_enhancer = GFPGANer(
-    model_path=FACE_ENHANCER_MODEL,
-    upscale=2,
-    arch='clean',
-    channel_multiplier=2,
-    bg_upsampler=upsampler,
-    device="cuda"
-)
-load_model_time_end = time.time()
-calc_time(load_model_time, load_model_time_end, "Time to load model")
+def blend_face_region(base_image, face_image, y1, x1, y2, x2, feather_width=20):
+    """Blend face region into base image with feathering to avoid hard edges."""
+    # Ensure bounds are valid
+    y1, x1 = max(0, y1), max(0, x1)
+    y2 = min(base_image.shape[0], y2)
+    x2 = min(base_image.shape[1], x2)
+    
+    h_target = y2 - y1
+    w_target = x2 - x1
+    
+    if h_target <= 0 or w_target <= 0:
+        return
+    
+    # Resize face image to match target region
+    face_resized = face_image[:h_target, :w_target]
+    if face_resized.shape[:2] != (h_target, w_target):
+        face_pil = Image.fromarray(face_resized)
+        face_pil = face_pil.resize((w_target, h_target), Image.Resampling.LANCZOS)
+        face_resized = np.array(face_pil)
+    
+    # Create feathering mask (Gaussian blur on edges)
+    mask = np.ones((h_target, w_target), dtype=np.float32)
+    feather_width = min(feather_width, h_target // 4, w_target // 4)
+    
+    if feather_width > 0:
+        # Create gradient edges
+        for i in range(feather_width):
+            alpha = i / feather_width
+            mask[i, :] *= alpha
+            mask[-(i+1), :] *= alpha
+            mask[:, i] *= alpha
+            mask[:, -(i+1)] *= alpha
+    
+    # Apply alpha blending
+    mask = mask[:, :, np.newaxis]
+    base_image[y1:y2, x1:x2] = (
+        face_resized * mask + 
+        base_image[y1:y2, x1:x2] * (1 - mask)
+    ).astype(np.uint8)
 
+# Global model instances (initialized in lifespan)
+pipe = None
+upsampler = None
+face_enhancer = None
+face_detector = None
 heartbeat_task = None
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    global heartbeat_task
+    """Handle startup and shutdown of the application."""
+    global pipe, upsampler, face_enhancer, face_detector, heartbeat_task
+    
+    logger.info("Starting up...")
+    
+    # Load models
+    load_model_time = time.time()
+    try:
+        pipe = ZImagePipeline.from_pretrained(
+            MODEL_ID,
+            torch_dtype=torch.bfloat16,
+            cache_dir=MODEL_CACHE,
+        ).to("cuda")
+        
+        model_x2 = RRDBNet(num_in_ch=3, num_out_ch=3, num_feat=64, num_block=23, num_grow_ch=32, scale=2)
+        upsampler = RealESRGANer(
+            scale=2,
+            model_path=UPSCALER_MODEL_x2,
+            model=model_x2,
+            tile=768,
+            tile_pad=0,
+            pre_pad=0,
+            half=False,
+            device="cuda"
+        )
+        
+        face_enhancer = GFPGANer(
+            model_path=FACE_ENHANCER_MODEL,
+            upscale=2,
+            arch='clean',
+            channel_multiplier=2,
+            bg_upsampler=upsampler,
+            device="cuda"
+        )
+        
+        # Initialize MediaPipe face detector once
+        mp_face_detection = mp.solutions.face_detection
+        face_detector = mp_face_detection.FaceDetection(
+            model_selection=1,
+            min_detection_confidence=0.5
+        )
+        
+        load_model_time_end = time.time()
+        calc_time(load_model_time, load_model_time_end, "Time to load models")
+        logger.info("Models loaded successfully")
+    except Exception as e:
+        logger.error(f"Failed to load models: {e}")
+        raise
+    
+    # Start heartbeat task
     heartbeat_task = asyncio.create_task(periodic_heartbeat())
+    
     yield
+    
+    # Cleanup
     if heartbeat_task:
         heartbeat_task.cancel()
         try:
             await heartbeat_task
         except asyncio.CancelledError:
             pass
+    
+    logger.info("Shutting down...")
+    if face_detector:
+        face_detector.close()
 
 
 app = FastAPI(title="Z-Image-Turbo API", lifespan=lifespan)
@@ -217,12 +289,15 @@ def generate(request: ImageRequest, _auth: bool = Depends(verify_enter_token)):
     logger.info(f"Request: {request}")
     if pipe is None:
         raise HTTPException(status_code=503, detail="Model not loaded")
+    
     seed = request.seed if request.seed is not None else int.from_bytes(os.urandom(8), "big")
     logger.info(f"Using seed: {seed}")
     generator = torch.Generator("cuda").manual_seed(seed)
     gen_w, gen_h, final_w, final_h = calculate_generation_dimensions(request.width, request.height)
     logger.info(f"Requested: {request.width}x{request.height} -> Generation: {gen_w}x{gen_h} -> Final: {final_w}x{final_h}")
+    
     try:
+        # Lock entire pipeline: generation + upscaling (to prevent concurrent GPU ops)
         with generate_lock:
             with torch.inference_mode():
                 output = pipe(
@@ -233,44 +308,58 @@ def generate(request: ImageRequest, _auth: bool = Depends(verify_enter_token)):
                     num_inference_steps=request.steps,
                     guidance_scale=0.0,
                 )
+            
             image = output.images[0]
             image_np = np.array(image)
-            faces = detect_faces_mediapipe(image_np)
+            
+            # Detect faces
+            faces = detect_faces_mediapipe(image_np, face_detector)
+            
             if len(faces) > 0:
                 logger.info(f"Detected {len(faces)} face(s). Using face-aware upscaling...")
                 base_upscaled = upscale_background(image_np, upsampler)
+                
                 for idx, (x, y, w, h) in enumerate(faces):
                     padding = int(max(w, h) * 0.3)
                     x1 = max(0, x - padding)
                     y1 = max(0, y - padding)
                     x2 = min(image_np.shape[1], x + w + padding)
                     y2 = min(image_np.shape[0], y + h + padding)
+                    
                     face_region = image_np[y1:y2, x1:x2]
                     if face_region.shape[0] < 10 or face_region.shape[1] < 10:
                         logger.info(f"Skipping face {idx + 1} (too small)")
                         continue
+                    
                     face_upscaled = upscale_face_region(face_region, face_enhancer)
+                    
+                    # Blend with feathering instead of hard paste
                     x1_up = x1 * UPSCALE_FACTOR
                     y1_up = y1 * UPSCALE_FACTOR
-                    h_face, w_face = face_upscaled.shape[:2]
-                    y2_up = min(y1_up + h_face, base_upscaled.shape[0])
-                    x2_up = min(x1_up + w_face, base_upscaled.shape[1])
-                    h_face = y2_up - y1_up
-                    w_face = x2_up - x1_up
-                    base_upscaled[y1_up:y2_up, x1_up:x2_up] = face_upscaled[:h_face, :w_face]
+                    x2_up = (x2) * UPSCALE_FACTOR
+                    y2_up = (y2) * UPSCALE_FACTOR
+                    
+                    blend_face_region(base_upscaled, face_upscaled, y1_up, x1_up, y2_up, x2_up, feather_width=20)
+                
                 result = base_upscaled
             else:
                 logger.info("No faces detected. Using standard RealESRGAN upscaling...")
                 result = upscale_background(image_np, upsampler)
+            
+            # Crop to final dimensions
             h_current, w_current = result.shape[:2]
             if h_current > final_h or w_current > final_w:
                 y_start = (h_current - final_h) // 2
                 x_start = (w_current - final_w) // 2
                 result = result[y_start:y_start + final_h, x_start:x_start + final_w]
+            
             upscaled_image = Image.fromarray(result)
+        
+        # Encode image (outside lock for faster response)
         img_byte_arr = io.BytesIO()
         upscaled_image.save(img_byte_arr, format='JPEG', quality=95)
         img_base64 = base64.b64encode(img_byte_arr.getvalue()).decode('utf-8')
+        
         response_content = [{
             "image": img_base64,
             "has_nsfw_concept": False,
@@ -281,6 +370,7 @@ def generate(request: ImageRequest, _auth: bool = Depends(verify_enter_token)):
             "prompt": request.prompts[0]
         }]
         return JSONResponse(content=response_content)
+    
     except torch.cuda.OutOfMemoryError as e:
         logger.error(f"CUDA OOM Error: {e} - Exiting to trigger restart")
         sys.exit(1)

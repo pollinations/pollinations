@@ -96,7 +96,7 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                 </div>
                 {apiKeys.length ? (
                     <div className="bg-blue-50/30 rounded-2xl p-8 border border-blue-300 overflow-x-auto">
-                        <div className="grid grid-cols-[100px_200px_1fr_70px_80px_40px] gap-x-4 gap-y-4 min-w-[730px]">
+                        <div className="grid grid-cols-[100px_200px_1fr_100px_40px] gap-x-4 gap-y-4 min-w-[530px]">
                             <span className="font-bold text-pink-400 text-sm">
                                 Type
                             </span>
@@ -107,13 +107,20 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                                 Key
                             </span>
                             <span className="font-bold text-pink-400 text-sm">
-                                Created
-                            </span>
-                            <span className="font-bold text-pink-400 text-sm">
-                                Expires
+                                Created / Expires
                             </span>
                             <span></span>
                             {[...apiKeys]
+                                .filter((apiKey) => {
+                                    // Hide expired keys
+                                    if (
+                                        apiKey.expiresAt &&
+                                        new Date(apiKey.expiresAt) < new Date()
+                                    ) {
+                                        return false;
+                                    }
+                                    return true;
+                                })
                                 .sort(
                                     (a, b) =>
                                         new Date(b.createdAt).getTime() -
@@ -168,34 +175,30 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                                                 )}
                                             </Cell>
                                             <Cell>
-                                                <span className="text-xs text-gray-600 whitespace-nowrap">
-                                                    {formatDistanceToNowStrict(
-                                                        apiKey.createdAt,
-                                                        { addSuffix: false },
-                                                    )}
-                                                </span>
-                                            </Cell>
-                                            <Cell>
-                                                {apiKey.expiresAt ? (
-                                                    <span
-                                                        className={cn(
-                                                            "text-xs whitespace-nowrap",
-                                                            new Date(apiKey.expiresAt) < new Date()
-                                                                ? "text-red-600"
-                                                                : "text-amber-600",
+                                                <div className="flex flex-col">
+                                                    <span className="text-xs text-gray-600 whitespace-nowrap">
+                                                        {formatDistanceToNowStrict(
+                                                            apiKey.createdAt,
+                                                            { addSuffix: true },
                                                         )}
-                                                        title={new Date(apiKey.expiresAt).toLocaleString()}
-                                                    >
-                                                        {new Date(apiKey.expiresAt) < new Date()
-                                                            ? "Expired"
-                                                            : formatDistanceToNowStrict(
-                                                                  apiKey.expiresAt,
-                                                                  { addSuffix: false },
-                                                              )}
                                                     </span>
-                                                ) : (
-                                                    <span className="text-xs text-gray-400">—</span>
-                                                )}
+                                                    {apiKey.expiresAt && (
+                                                        <span
+                                                            className="text-xs text-amber-600 whitespace-nowrap"
+                                                            title={new Date(
+                                                                apiKey.expiresAt,
+                                                            ).toLocaleString()}
+                                                        >
+                                                            expires{" "}
+                                                            {formatDistanceToNowStrict(
+                                                                apiKey.expiresAt,
+                                                                {
+                                                                    addSuffix: true,
+                                                                },
+                                                            )}
+                                                        </span>
+                                                    )}
+                                                </div>
                                             </Cell>
                                             <Cell>
                                                 <button

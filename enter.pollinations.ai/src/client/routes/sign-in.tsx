@@ -10,7 +10,9 @@ export const Route = createFileRoute("/sign-in")({
     component: RouteComponent,
     beforeLoad: ({ context }) => {
         // redirect if already signed in
-        if (context.user) throw redirect({ to: "/" });
+        if (context.user) {
+            throw redirect({ to: "/" });
+        }
     },
 });
 

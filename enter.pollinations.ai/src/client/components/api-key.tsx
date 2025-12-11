@@ -18,6 +18,7 @@ type ApiKey = {
     name?: string | null;
     start?: string | null;
     createdAt: Date;
+    expiresAt?: Date | null;
     permissions: { [key: string]: string[] } | null;
     metadata: Record<string, string> | null;
 };
@@ -95,7 +96,7 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                 </div>
                 {apiKeys.length ? (
                     <div className="bg-blue-50/30 rounded-2xl p-8 border border-blue-300 overflow-x-auto">
-                        <div className="grid grid-cols-[100px_200px_1fr_70px_40px] gap-x-4 gap-y-4 min-w-[630px]">
+                        <div className="grid grid-cols-[100px_200px_1fr_70px_80px_40px] gap-x-4 gap-y-4 min-w-[730px]">
                             <span className="font-bold text-pink-400 text-sm">
                                 Type
                             </span>
@@ -107,6 +108,9 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                             </span>
                             <span className="font-bold text-pink-400 text-sm">
                                 Created
+                            </span>
+                            <span className="font-bold text-pink-400 text-sm">
+                                Expires
                             </span>
                             <span></span>
                             {[...apiKeys]
@@ -170,6 +174,28 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                                                         { addSuffix: false },
                                                     )}
                                                 </span>
+                                            </Cell>
+                                            <Cell>
+                                                {apiKey.expiresAt ? (
+                                                    <span
+                                                        className={cn(
+                                                            "text-xs whitespace-nowrap",
+                                                            new Date(apiKey.expiresAt) < new Date()
+                                                                ? "text-red-600"
+                                                                : "text-amber-600",
+                                                        )}
+                                                        title={new Date(apiKey.expiresAt).toLocaleString()}
+                                                    >
+                                                        {new Date(apiKey.expiresAt) < new Date()
+                                                            ? "Expired"
+                                                            : formatDistanceToNowStrict(
+                                                                  apiKey.expiresAt,
+                                                                  { addSuffix: false },
+                                                              )}
+                                                    </span>
+                                                ) : (
+                                                    <span className="text-xs text-gray-400">—</span>
+                                                )}
                                             </Cell>
                                             <Cell>
                                                 <button

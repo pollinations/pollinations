@@ -98,6 +98,7 @@ body.light .chat-input-wrapper-modern {
 
 .chatbar-model-row {
   display: flex;
+  justify-content: center;
   justify-content: flex-start;
   align-items: center;
   margin-bottom: 0.25rem;
@@ -256,6 +257,34 @@ body.dark .canvas-mode-tag {
 }
 
 .canvas-mode-icon {
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+}
+
+/* Video Mode Tag */
+.video-mode-tag {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.3rem 0.65rem;
+  background: linear-gradient(135deg, rgba(239, 68, 68, 0.15), rgba(249, 115, 22, 0.15));
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  border-radius: 10px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #ef4444;
+  animation: fadeInSlide 0.3s ease-out;
+  flex-shrink: 0;
+}
+
+body.dark .video-mode-tag {
+  background: linear-gradient(135deg, rgba(239, 68, 68, 0.2), rgba(249, 115, 22, 0.2));
+  border-color: rgba(239, 68, 68, 0.4);
+  color: #f87171;
+}
+
+.video-mode-icon {
   width: 14px;
   height: 14px;
   flex-shrink: 0;
@@ -529,7 +558,7 @@ body.light .send-btn-modern:hover:not(:disabled) {
 }
 
 .model-chip-name {
-  max-width: 150px;
+  max-width: 400px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -799,4 +828,33 @@ body.light .model-option-compact.active {
   .model-options-container {
     max-height: calc(70vh - 120px);
   }
+}
+
+/* Generation Options Button */
+.generation-options-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all var(--transition-fast);
+  background: transparent;
+  color: var(--text-secondary);
+  border: 1px solid transparent;
+  cursor: pointer;
+  flex-shrink: 0;
+  margin-left: 0.5rem;
+}
+
+.generation-options-btn:hover {
+  background: var(--sidebar-item-hover);
+  border-color: var(--border-color);
+  color: var(--text-primary);
+  transform: rotate(45deg);
+}
+
+.generation-options-btn svg {
+  width: 18px;
+  height: 18px;
 }

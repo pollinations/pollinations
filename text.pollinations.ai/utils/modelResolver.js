@@ -43,10 +43,17 @@ export function resolveModelConfig(messages, options) {
         config.provider,
     );
 
+    // Merge defaultOptions from config (e.g., max_tokens for Bedrock)
+    // User-provided options take precedence over defaults
+    // Filter out undefined values from options so they don't overwrite defaults
+    const definedOptions = Object.fromEntries(
+        Object.entries(options).filter(([_, v]) => v !== undefined)
+    );
     const result = {
         messages,
         options: {
-            ...options,
+            ...(config.defaultOptions || {}),
+            ...definedOptions,
             model: usedModel,
             modelConfig: config,
             modelDef,

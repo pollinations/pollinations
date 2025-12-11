@@ -61,11 +61,13 @@ Understanding these documents will ensure you can accurately represent Pollinati
 
 When adding Pollinations.AI to repositories, emphasize these key features:
 
-- Free access to text, image, and audio generation APIs
-- No signup or API key required, making it accessible for educational settings
+- Community-built platform with 500+ projects already using our APIs
+- Open source — code, decisions, and roadmap all public
+- Privacy-respecting — no accounts needed to get started
 - Simple URL-based endpoints for easy integration
 - OpenAI-compatible interfaces
 - React hooks for easy integration
+- Daily Pollen grants keep AI accessible for everyone
 - HTTPS and CORS support
 
 ## Step-by-Step Integration Process
@@ -138,11 +140,12 @@ When adding Pollinations.AI to repositories, emphasize these key features:
    ```
 
 2. **Key points to understand:**
-   - Pollinations.AI is an open-source gen AI startup providing free text, image, and audio generation APIs
-   - No signups or API keys required, with a focus on privacy (zero data storage)
+   - Pollinations.AI is an open-source gen AI platform powering 500+ community projects
+   - We build in the open — code, decisions, roadmap all public
    - Offers React hooks for easy integration
    - Used by various open-source LLMs, bots, and communities
    - Includes MCP (Model Context Protocol) server for AI assistants
+   - Daily Pollen grants keep AI accessible thanks to our supporters
 
 3. **Make sure you can clearly articulate what makes Pollinations.AI valuable** for the specific repository you're targeting
 
@@ -163,7 +166,7 @@ When adding Pollinations.AI to repositories, emphasize these key features:
 
 4. **Use consistent description format** that highlights key features:
    ```
-   [Pollinations.AI](https://pollinations.ai) - Free, no-signup APIs for text, image, and audio generation with no API keys required
+   [Pollinations.AI](https://pollinations.ai) - Community-built, open-source APIs for text, image, and audio generation. Privacy-respecting with 500+ projects.
    ```
 
 5. For table formats, follow the exact column structure:
@@ -190,7 +193,7 @@ When adding Pollinations.AI to repositories, emphasize these key features:
    - Clear title: "Add Pollinations.AI API"
    - Detailed description including:
      - What Pollinations.AI is
-     - Key features (free, no signup, etc.)
+     - Key features
      - Link to API documentation
      - Confirmation of HTTPS/CORS support
      - Any other information required by contribution guidelines
@@ -282,7 +285,7 @@ By following these guidelines, we ensure our contributions are valuable, easy to
 - [ ] Added Pollinations.AI in correct section
 - [ ] Maintained alphabetical order (if required)
 - [ ] Used consistent formatting with existing entries
-- [ ] Highlighted key features (free, no signup, etc.)
+- [ ] Highlighted key features (community-built, open source, privacy-respecting)
 - [ ] Included link to Pollinations.AI website
 - [ ] Created descriptive PR with all required information
 - [ ] Added entry to [PR tracking file](./pr-tracking.md)
@@ -293,6 +296,6 @@ By following these guidelines, we ensure our contributions are valuable, easy to
 2. Respect the existing format and structure
 3. Be concise but highlight key differentiators
 4. Focus on educational value for educational repositories
-5. Emphasize the free, no-signup nature as this is a major advantage
+5. Emphasize the community-built, open-source, privacy-respecting nature as key differentiators
 6. Track all PRs systematically
 7. Be patient with the PR review process

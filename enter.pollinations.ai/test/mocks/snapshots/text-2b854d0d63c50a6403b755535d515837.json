@@ -1,0 +1,77 @@
+{
+  "request": {
+    "url": "http://ec2-3-80-56-235.compute-1.amazonaws.com:16385/openai",
+    "method": "POST",
+    "body": {
+      "type": "json",
+      "data": {
+        "model": "gemini-large",
+        "messages": [
+          {
+            "role": "user",
+            "content": "Reply: yes or no?"
+          }
+        ]
+      }
+    },
+    "params": {}
+  },
+  "response": {
+    "status": 200,
+    "statusText": "OK",
+    "headers": {
+      "access-control-allow-origin": "*",
+      "connection": "keep-alive",
+      "content-length": "497",
+      "content-type": "application/json; charset=utf-8",
+      "date": "Thu, 04 Dec 2025 13:41:36 GMT",
+      "etag": "W/\"1f1-DnLVkz4xMis7WAKaGdpYzKQspQU\"",
+      "keep-alive": "timeout=5",
+      "x-model-used": "gemini-3-pro-preview",
+      "x-powered-by": "Express",
+      "x-usage-completion-reasoning-tokens": "723",
+      "x-usage-completion-text-tokens": "2",
+      "x-usage-prompt-text-tokens": "259",
+      "x-usage-total-tokens": "984"
+    },
+    "body": {
+      "type": "json",
+      "data": {
+        "id": "pllns_a9e3723712c83589f482a052ce57cd37",
+        "object": "chat.completion",
+        "created": 1764855696,
+        "model": "gemini-3-pro-preview",
+        "provider": "vertex-ai",
+        "choices": [
+          {
+            "message": {
+              "role": "assistant",
+              "content": "Yes.",
+              "content_blocks": [
+                {
+                  "type": "text",
+                  "text": "Yes."
+                }
+              ]
+            },
+            "index": 0,
+            "finish_reason": "STOP"
+          }
+        ],
+        "usage": {
+          "prompt_tokens": 259,
+          "completion_tokens": 725,
+          "total_tokens": 984,
+          "completion_tokens_details": {
+            "reasoning_tokens": 723,
+            "audio_tokens": 0
+          },
+          "prompt_tokens_details": {
+            "cached_tokens": 0,
+            "audio_tokens": 0
+          }
+        }
+      }
+    }
+  }
+}

@@ -3,11 +3,11 @@
     "version": "1.0.0",
     "scripts": {
         "start": "tsx startServer.js",
-        "dev": "DEBUG=pollinations:* tsx --watch startServer.js",
+        "dev": "clear && DEBUG=pollinations:* tsx startServer.js",
         "type-check": "tsc --noEmit",
         "validate-configs": "tsx configs/validateConfigKeys.ts",
         "test": "echo \"Error: no test specified\" && exit 1",
-        "dev": "clear && DEBUG=pollinations:* tsx startServer.js"
+        "deploy:portkey": "bash scripts/deploy-portkey.sh"
     },
     "keywords": [],
     "author": "",

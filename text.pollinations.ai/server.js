@@ -12,7 +12,7 @@ import { generateTextPortkey } from "./generateTextPortkey.js";
 import { setupFeedEndpoint, sendToFeedListeners } from "./feed.js";
 import { processRequestForAds } from "./ads/initRequestFilter.js";
 import { createStreamingAdWrapper } from "./ads/streamingAdWrapper.js";
-import { getRequestData, prepareModelsForOutput } from "./requestUtils.js";
+import { getRequestData } from "./requestUtils.js";
 
 // Import shared utilities
 import { getIp } from "../shared/extractFromRequest.js";
@@ -20,6 +20,7 @@ import {
     buildUsageHeaders,
     openaiUsageToTokenUsage,
 } from "../shared/registry/usage-headers.js";
+import { getServiceDefinition } from "../shared/registry/registry.js";
 
 // Load environment variables including .env.local overrides
 // Load .env.local first (higher priority), then .env as fallback
@@ -100,7 +101,7 @@ app.use((req, res, next) => {
 
     if (!expectedToken) {
         // If ENTER_TOKEN is not configured, allow all requests (backward compatibility)
-        authLog("⚠️  ENTER_TOKEN not configured - allowing request");
+        authLog("!  ENTER_TOKEN not configured - allowing request");
         return next();
     }
 
@@ -139,10 +140,16 @@ const QUEUE_CONFIG = {
 
 // Using getIp from shared auth-utils.js
 
-// GET /models request handler
+// Deprecated /models endpoint - moved to gateway
 app.get("/models", (req, res) => {
-    // Use prepareModelsForOutput to remove pricing information and apply sorting
-    res.json(prepareModelsForOutput(availableModels));
+    res.status(410).json({
+        error: "Endpoint moved",
+        message:
+            "The /models endpoint has been moved to the API gateway. Please use: https://enter.pollinations.ai/api/generate/text/models",
+        deprecated_endpoint: `${req.protocol}://${req.get("host")}/models`,
+        new_endpoint: "https://enter.pollinations.ai/api/generate/text/models",
+        documentation: "https://enter.pollinations.ai/api/docs",
+    });
 });
 
 setupFeedEndpoint(app);
@@ -334,19 +341,26 @@ export async function sendErrorResponse(
     requestData,
     statusCode = 500,
 ) {
-    // Use error.status if available, otherwise use the provided statusCode
     const responseStatus = error.status || statusCode;
+    const errorTypes = {
+        400: "Bad Request",
+        401: "Unauthorized",
+        403: "Forbidden",
+        404: "Not Found",
+        429: "Too Many Requests",
+    };
+    const errorType = errorTypes[responseStatus] || "Internal Server Error";
 
-    // Create a simplified error response
     const errorResponse = {
-        error: error.message || "An error occurred",
-        status: responseStatus,
+        error: errorType,
+        message: error.message || "An error occurred",
+        requestId: Math.random().toString(36).substring(7),
+        requestParameters: requestData || {},
     };
 
-    // Include detailed error information if available, without wrapping
-    if (error.details) {
-        errorResponse.details = error.details;
-    }
+    // Include upstream error details if available
+    const errorDetails = error.details || error.response?.data;
+    if (errorDetails) errorResponse.details = errorDetails;
 
     // Extract client information (for logs only)
     const clientInfo = {
@@ -588,11 +602,14 @@ async function processRequest(req, res, requestData) {
 
 // Helper function to check if a model is an audio model and add necessary parameters
 function prepareRequestParameters(requestParams) {
-    const modelConfig = availableModels.find(
-        (m) =>
-            m.name === requestParams.model || m.model === requestParams.model,
-    );
-    const isAudioModel = modelConfig && modelConfig.audio === true;
+    // Use registry to check if model supports audio output
+    let isAudioModel = false;
+    try {
+        const serviceDef = getServiceDefinition(requestParams.model);
+        isAudioModel = serviceDef?.outputModalities?.includes("audio") ?? false;
+    } catch {
+        // Model not in registry, fall back to false
+    }
 
     log("Is audio model:", isAudioModel);
 
@@ -655,20 +672,16 @@ app.post("/", async (req, res) => {
 });
 
 app.get("/openai/models", (req, res) => {
-    const models = availableModels
-        .filter((model) => !model.hidden)
-        .map((model) => {
-            // Get provider from cost data using the model's config
-            const config =
-                typeof model.config === "function"
-                    ? model.config()
-                    : model.config;
-            return {
-                id: model.name,
-                object: "model",
-                created: Date.now(),
-            };
-        });
+    const models = availableModels.map((model) => {
+        // Get provider from cost data using the model's config
+        const config =
+            typeof model.config === "function" ? model.config() : model.config;
+        return {
+            id: model.name,
+            object: "model",
+            created: Date.now(),
+        };
+    });
     res.json({
         object: "list",
         data: models,
@@ -867,6 +880,7 @@ async function generateTextBasedOnModel(messages, options) {
         throw new Error("Model parameter is required");
     }
     const model = options.model;
+
     log("Using model:", model, "with options:", JSON.stringify(options));
 
     try {
@@ -932,18 +946,15 @@ async function generateTextBasedOnModel(messages, options) {
 
         // For streaming errors, return a special error response that can be streamed
         if (options.stream) {
-            // Create a detailed error response
-            let errorDetails = null;
-
-            if (error.response?.data) {
+            // Get error details from error.details or parse error.response.data
+            let errorDetails = error.details || null;
+            if (!errorDetails && error.response?.data) {
                 try {
-                    // Try to parse the data as JSON
                     errorDetails =
                         typeof error.response.data === "string"
                             ? JSON.parse(error.response.data)
                             : error.response.data;
-                } catch (e) {
-                    // If parsing fails, use the raw data
+                } catch {
                     errorDetails = error.response.data;
                 }
             }
@@ -954,7 +965,7 @@ async function generateTextBasedOnModel(messages, options) {
                     message:
                         error.message ||
                         "An error occurred during text generation",
-                    status: error.code || 500,
+                    status: error.status || error.code || 500,
                     details: errorDetails,
                 },
             };

@@ -48,6 +48,29 @@ export function getRequestData(req) {
     // Preserve the original response_format object if it exists
     const response_format = data.response_format || undefined;
 
+    // Extract max_tokens for controlling response length
+    const max_tokens = data.max_tokens || undefined;
+    const max_completion_tokens = data.max_completion_tokens || undefined;
+
+    // Extract stop sequences
+    const stop = data.stop || undefined;
+
+    // Extract stream_options for streaming configuration
+    const stream_options = data.stream_options || undefined;
+
+    // Extract logprobs for log probabilities
+    const logprobs = data.logprobs || undefined;
+    const top_logprobs = data.top_logprobs || undefined;
+
+    // Extract logit_bias for token bias
+    const logit_bias = data.logit_bias || undefined;
+
+    // Extract n for number of completions
+    const n = data.n || undefined;
+
+    // Extract user identifier
+    const user = data.user || undefined;
+
     const messages = data.messages || [
         { role: "user", content: req.params[0] },
     ];
@@ -75,28 +98,14 @@ export function getRequestData(req) {
         reasoning_effort: validated.reasoning_effort,
         thinking_budget: validated.thinking_budget,
         response_format,
+        max_tokens,
+        max_completion_tokens,
+        stop,
+        stream_options,
+        logprobs,
+        top_logprobs,
+        logit_bias,
+        n,
+        user,
     };
 }
-
-/**
- * Prepares model data for output by applying sorting and filtering.
- * Always sorts with community models (community: false first, then community: true).
- * Filters out hidden models from public listings.
- * @param {Array} models - Array of model objects
- * @returns {Array} - Sanitized model array properly sorted, excluding hidden models
- */
-export function prepareModelsForOutput(models) {
-    // Filter out hidden models (no need to remove pricing since it's no longer in model objects)
-    const prepared = models.filter((m) => !m.hidden);
-
-    // Sort models with non-community first, then community models
-    return [
-        ...prepared
-            .filter((m) => m.community === false)
-            .sort((a, b) => a.name.localeCompare(b.name)),
-        ...prepared
-            .filter((m) => m.community === true)
-            .sort((a, b) => a.name.localeCompare(b.name)),
-    ];
-}
-

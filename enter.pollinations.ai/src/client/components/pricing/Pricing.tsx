@@ -7,6 +7,7 @@ export const Pricing: FC = () => {
     const allModels = getModelPrices();
 
     const imageModels = allModels.filter((m) => m.type === "image");
+    const videoModels = allModels.filter((m) => m.type === "video");
     const textModels = allModels.filter((m) => m.type === "text");
 
     return (
@@ -18,8 +19,7 @@ export const Pricing: FC = () => {
                     href="https://github.com/pollinations/pollinations/issues/5321"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="!bg-blue-200 !text-blue-900"
-                    color="blue"
+                    color="amber"
                     weight="light"
                     size="small"
                 >
@@ -27,25 +27,42 @@ export const Pricing: FC = () => {
                 </Button>
             </div>
             <div className="bg-amber-50/30 rounded-2xl p-8 border border-amber-300 space-y-8 overflow-x-auto md:overflow-x-visible">
-                <div className="bg-gradient-to-r from-purple-100 to-pink-100 rounded-xl p-4 border-2 border-purple-300">
-                    <p className="text-sm font-medium text-purple-900">
-                        ✨ <span className="font-bold">Beta vibes!</span> Our
-                        pricing is still cooking and might change as we make
-                        things even better for you 💜 Feel free to explore and
-                        see what fits your creative flow~ 🌸
-                    </p>
-                </div>
-
                 <ModelTable models={imageModels} type="image" />
+                <ModelTable models={videoModels} type="video" />
                 <ModelTable models={textModels} type="text" />
 
-                <div className="text-xs text-gray-500 italic pt-4 border-t border-gray-300">
-                    * "Per pollen" estimates are based on typical usage
-                    patterns. Text calculations use workload profiles that
-                    automatically adjust for model capabilities (standard chat,
-                    reasoning, vision, audio). Image calculations use standard
-                    generation parameters. Actual costs may vary based on your
-                    specific prompts, output length, and features used.
+                <div className="text-xs text-gray-500 pt-4 border-t border-gray-300 space-y-2">
+                    <div className="flex flex-wrap gap-x-4 items-center">
+                        <span className="font-medium text-gray-900">
+                            Model capabilities:
+                        </span>
+                        <span className="text-gray-600">👁️ vision</span>
+                        <span className="text-gray-600">👂 audio input</span>
+                        <span className="text-gray-600">🧠 reasoning</span>
+                        <span className="text-gray-600">🔍 search</span>
+                    </div>
+                    <div className="flex flex-wrap gap-x-4">
+                        <span className="flex items-center gap-1 font-medium text-gray-600">
+                            <span className="flex items-center justify-center w-3.5 h-3.5 rounded-full bg-pink-100 border border-pink-300 text-pink-500 text-[10px] font-bold">
+                                i
+                            </span>
+                            1 pollen ≈
+                        </span>
+                        <span>
+                            estimates for typical usage, actual costs vary with
+                            prompt length and output size
+                        </span>
+                    </div>
+                </div>
+
+                <div className="bg-gradient-to-r from-purple-100 to-pink-100 rounded-xl p-4 border-2 border-purple-300 text-center">
+                    <p className="text-sm font-medium text-purple-900">
+                        🎁 <span className="font-bold">Beta bonus:</span> 2x
+                        pollen on every purchase!
+                    </p>
+                    <p className="text-xs text-purple-700 mt-1">
+                        Prices may adjust as we fine-tune during beta.
+                    </p>
                 </div>
             </div>
         </div>

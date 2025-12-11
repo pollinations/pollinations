@@ -242,22 +242,26 @@ export function createBedrockLambdaModelConfig(additionalConfig = {}) {
         "custom-host":
             "https://s4gu3klsuhlqkol3x3qq6bv6em0cwqnu.lambda-url.us-east-1.on.aws/api/v1",
         authKey: process.env.AWS_BEARER_TOKEN_BEDROCK,
+        defaultOptions: { max_tokens: 8192 },
         ...additionalConfig,
     };
 }
 
 /**
- * Creates AWS Bedrock Fargate model configuration
- * Uses the new Fargate deployment endpoint with ALB
+ * Creates native AWS Bedrock model configuration via Portkey
+ * This uses Portkey's native Bedrock provider which properly handles:
+ * - Array content in messages (e.g., [{type: "text", text: "..."}])
+ * - cache_control for Anthropic prompt caching
  * @param {Object} additionalConfig - Additional configuration to merge with base config
- * @returns {Object} - AWS Bedrock Fargate model configuration
+ * @returns {Object} - Native Bedrock model configuration
  */
-export function createBedrockFargateModelConfig(additionalConfig = {}) {
+export function createBedrockNativeConfig(additionalConfig = {}) {
     return {
-        provider: "openai",
-        "custom-host":
-            "http://bedroc-Proxy-He0yOirTrdQe-378478291.us-east-1.elb.amazonaws.com/api/v1",
-        authKey: process.env.AWS_BEARER_TOKEN_BEDROCK_FARGATE,
+        provider: "bedrock",
+        "aws-access-key-id": process.env.AWS_ACCESS_KEY_ID,
+        "aws-secret-access-key": process.env.AWS_SECRET_ACCESS_KEY,
+        "aws-region": process.env.AWS_REGION || "us-east-1",
+        defaultOptions: { max_tokens: 8192 },
         ...additionalConfig,
     };
 }

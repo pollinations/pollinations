@@ -3,10 +3,10 @@
     "entity": {
         "type": "organisation",
         "role": "owner",
-        "name": "Pollinations.AI",
+        "name": "pollinations.ai",
         "email": "thomash@pollinations.ai",
         "phone": "",
-        "description": "Pollinations.AI is the most easy-to-use, free image generation API available. No signups or API keys required. Embed like any normal image. Our platform serves over 50,000 active users and generates more than 8 million images per month. We integrate with various open-source LLMs, bots, and communities, offering a free and open-source API that users can also self-host.",
+        "description": "pollinations.ai is the most easy-to-use image generation API available. Simple pollen-based credits with daily grants for developers. Embed like any normal image. Our platform serves over 50,000 active users and generates more than 8 million images per month. We integrate with various open-source LLMs, bots, and communities, offering an open-source API that users can also self-host.",
         "webpageUrl": {
             "url": "https://pollinations.ai"
         }
@@ -14,8 +14,8 @@
     "projects": [
         {
             "guid": "pollinations-ai",
-            "name": "Pollinations.AI",
-            "description": "An open-source platform for generative AI, focusing on image generation. Our platform serves over 50,000 active users and generates more than 8 million images per month. We integrate with various open-source LLMs, bots, and communities, offering a free and open-source API that users can also self-host.",
+            "name": "pollinations.ai",
+            "description": "An open-source platform for generative AI, focusing on image generation. Our platform serves over 50,000 active users and generates more than 8 million images per month. We integrate with various open-source LLMs, bots, and communities, offering an open-source API with daily pollen grants that users can also self-host.",
             "webpageUrl": {
                 "url": "https://pollinations.ai"
             },
@@ -53,7 +53,7 @@
                 "guid": "infrastructure-support",
                 "status": "active",
                 "name": "Infrastructure Support",
-                "description": "Help cover our server and GPU infrastructure costs to keep Pollinations.AI free and accessible. Our monthly GPU costs are approximately $3000.",
+                "description": "Help cover our server and GPU infrastructure costs to keep pollinations.ai accessible with daily pollen grants for developers. Our monthly GPU costs are approximately $3000.",
                 "amount": 3000,
                 "currency": "USD",
                 "frequency": "monthly",
@@ -63,7 +63,7 @@
                 "guid": "developer-fund",
                 "status": "active",
                 "name": "Developer Fund",
-                "description": "Support our team in continuing to develop and improve Pollinations.AI. Our monthly developer costs are approximately $4000.",
+                "description": "Support our team in continuing to develop and improve pollinations.ai. Our monthly developer costs are approximately $4000.",
                 "amount": 4000,
                 "currency": "USD",
                 "frequency": "monthly",
@@ -73,7 +73,7 @@
                 "guid": "open-source-contribution",
                 "status": "active",
                 "name": "Open Source Contribution",
-                "description": "Contribute any amount to support our open-source development efforts and help maintain our free, self-hostable API.",
+                "description": "Contribute any amount to support our open-source development efforts and help maintain our pollen-based, self-hostable API.",
                 "amount": 0,
                 "currency": "USD",
                 "frequency": "one-time",

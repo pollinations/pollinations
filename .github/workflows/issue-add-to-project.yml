@@ -1,0 +1,22 @@
+name: Issue Add to Project
+
+on:
+  issues:
+    types: [opened, transferred]
+
+jobs:
+  add-to-project:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Generate Pollinations AI Token
+        id: pollinations-ai
+        uses: actions/create-github-app-token@v1
+        with:
+          app-id: ${{ secrets.POLLY_BOT_APP_ID }}
+          private-key: ${{ secrets.POLLY_BOT_PRIVATE_KEY }}
+          owner: pollinations
+
+      - uses: actions/add-to-project@v1.0.2
+        with:
+          project-url: https://github.com/orgs/pollinations/projects/20
+          github-token: ${{ steps.pollinations-ai.outputs.token }}

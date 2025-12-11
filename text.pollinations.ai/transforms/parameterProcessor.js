@@ -1,5 +1,4 @@
 import debug from "debug";
-import { validateTextGenerationParams } from "../utils/parameterValidators.js";
 
 const log = debug("pollinations:transforms:parameters");
 
@@ -36,10 +35,23 @@ export function processParameters(messages, options) {
         }
     });
 
-    // Add stream_options for Azure OpenAI models
-    if (updatedOptions.stream && config.provider === "azure-openai") {
-        log("Adding stream_options for Azure OpenAI model");
+    // Add stream_options for all streaming requests to get usage data
+    if (updatedOptions.stream) {
+        log("Adding stream_options to include usage data in stream");
         updatedOptions.stream_options = { include_usage: true };
+    }
+
+    // Convert max_tokens → max_completion_tokens for Azure OpenAI models
+    // Newer Azure models (gpt-4o, gpt-5, o1, o3, etc.) require max_completion_tokens
+    if (
+        updatedOptions.max_tokens !== undefined &&
+        config.provider === "azure-openai"
+    ) {
+        log(
+            `Converting max_tokens (${updatedOptions.max_tokens}) to max_completion_tokens for Azure model`,
+        );
+        updatedOptions.max_completion_tokens = updatedOptions.max_tokens;
+        delete updatedOptions.max_tokens;
     }
 
     // Apply parameter filtering if defined
@@ -58,7 +70,7 @@ export function processParameters(messages, options) {
             }
         }
 
-        // Preserve internal properties
+        // Preserve internal properties and stream_options
         if (updatedOptions.additionalHeaders) {
             filteredOptions.additionalHeaders =
                 updatedOptions.additionalHeaders;
@@ -71,6 +83,9 @@ export function processParameters(messages, options) {
         }
         if (updatedOptions.requestedModel) {
             filteredOptions.requestedModel = updatedOptions.requestedModel;
+        }
+        if (updatedOptions.stream_options) {
+            filteredOptions.stream_options = updatedOptions.stream_options;
         }
 
         return { messages, options: filteredOptions };

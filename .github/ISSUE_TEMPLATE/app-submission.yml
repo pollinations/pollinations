@@ -1,0 +1,82 @@
+name: SubmitApp
+description: Get your app featured on pollinations.ai
+title: ""
+labels: ["app:review"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        # pollinations.ai - Feature App
+        
+        Thanks for submitting your app! Fill out the form below and we'll review it for the [pollinations.ai showcase](https://pollinations.ai).
+
+  - type: input
+    id: project-name
+    attributes:
+      label: Project Name
+      description: What is the name of your project?
+      placeholder: "e.g., AI Art Gallery"
+    validations:
+      required: true
+
+  - type: textarea
+    id: project-description
+    attributes:
+      label: Project Description
+      description: Please provide a brief description of your project and how it uses pollinations.ai
+      placeholder: "Describe what your project does and how it integrates with pollinations.ai..."
+    validations:
+      required: true
+
+  - type: input
+    id: project-url
+    attributes:
+      label: Project URL
+      description: Link to your project (if public)
+      placeholder: "https://example.com"
+    validations:
+      required: true
+
+  - type: input
+    id: github-repo
+    attributes:
+      label: GitHub Repository URL
+      description: Provide a link to your project's GitHub repository (if available)
+      placeholder: "https://github.com/your-repo"
+
+  - type: input
+    id: discord-contact
+    attributes:
+      label: Discord Username
+      description: Your Discord username so we can reach you (optional)
+      placeholder: "e.g., username or username#1234"
+
+  - type: dropdown
+    id: project-category
+    attributes:
+      label: Project Category
+      description: Select the category under which your project should be posted
+      options:
+        - Chat Projects 💬
+        - Creative Projects 🎨
+        - Games 🎲
+        - Hack & Build 🛠️
+        - Learn 📚
+        - Social Bots 🤖
+        - Vibe Coding ✨
+    validations:
+      required: true
+
+  - type: input
+    id: project-language
+    attributes:
+      label: Project Language
+      description: If your project is not in English, specify the language code (e.g., zh-CN, es-ES, pt-BR)
+      placeholder: "e.g., zh-CN for Chinese, es-ES for Spanish"
+
+  - type: textarea
+    id: additional-info
+    attributes:
+      label: Additional Information
+      description: Any other details you'd like to share about your project?
+      placeholder: "Screenshots, features, future plans..."

@@ -1,4 +1,5 @@
 import { processEvents, storeEvents } from "@/events.ts";
+import { HTTPException } from "hono/http-exception";
 import {
     resolveServiceId,
     getActivePriceDefinition,
@@ -50,10 +51,10 @@ import {
     getErrorCode,
     UpstreamError,
 } from "@/error.ts";
-import { ValidationError } from "@/middleware/validator.ts";
 import type { LoggerVariables } from "./logger.ts";
 import type { ErrorVariables } from "@/env.ts";
 import type { FrontendKeyRateLimitVariables } from "./rate-limit-durable.ts";
+import { getLogger } from "@logtape/logtape";
 
 export type ModelUsage = {
     model: ModelId;
@@ -123,7 +124,7 @@ export const track = (eventType: EventType) =>
 
         c.executionCtx.waitUntil(
             (async () => {
-                const response = responseOverride || c.res;
+                const response = responseOverride || c.res.clone();
                 const responseTracking = await trackResponse(
                     eventType,
                     requestTracking,
@@ -161,7 +162,7 @@ export const track = (eventType: EventType) =>
 
                 const event = createTrackingEvent({
                     requestId: c.get("requestId"),
-                    requestPath: `${baseRoutePath(c)}${routePath(c)}`,
+                    requestPath: `${routePath(c)}`,
                     startTime,
                     endTime,
                     environment: c.env.ENVIRONMENT,
@@ -178,13 +179,16 @@ export const track = (eventType: EventType) =>
                 await storeEvents(db, c.var.log, [event]);
 
                 // process events immediately in development/testing
-                // Don't await to prevent test hangs on external API failures
-                if (["test", "development"].includes(c.env.ENVIRONMENT)) {
+                if (
+                    ["test", "development", "local"].includes(c.env.ENVIRONMENT)
+                ) {
+                    log.trace("Processing events immediately");
                     await processEvents(db, c.var.log, {
                         polarAccessToken: c.env.POLAR_ACCESS_TOKEN,
                         polarServer: c.env.POLAR_SERVER,
                         tinybirdIngestUrl: c.env.TINYBIRD_INGEST_URL,
                         tinybirdAccessToken: c.env.TINYBIRD_ACCESS_TOKEN,
+                        minBatchSize: 0, // process all events immediately
                     });
                 }
             })(),
@@ -196,10 +200,17 @@ async function trackRequest(
     request: HonoRequest,
 ): Promise<RequestTrackingData> {
     const modelRequested = await extractModelRequested(request);
-    const resolvedModelRequested = resolveServiceId(
-        modelRequested,
-        eventType,
-    ) as ServiceId;
+
+    let resolvedModelRequested: ServiceId | undefined;
+    try {
+        resolvedModelRequested = resolveServiceId(modelRequested, eventType);
+    } catch (error) {
+        throw new HTTPException(400, {
+            message:
+                error instanceof Error ? error.message : "Invalid model name",
+        });
+    }
+
     const modelProvider = getServiceDefinition(resolvedModelRequested).provider;
     const modelPriceDefinition = getActivePriceDefinition(
         resolvedModelRequested,
@@ -227,6 +238,7 @@ async function trackResponse(
     requestTracking: RequestTrackingData,
     response: Response,
 ): Promise<ResponseTrackingData> {
+    const log = getLogger(["hono", "track", "response"]);
     const { resolvedModelRequested } = requestTracking;
     const cacheInfo = extractCacheHeaders(response);
     if (!response.ok || cacheInfo.cacheHit) {
@@ -243,6 +255,16 @@ async function trackResponse(
             requestTracking,
             response,
         );
+    if (!modelUsage) {
+        log.error("Failed to extract model usage");
+        return {
+            responseOk: response.ok,
+            responseStatus: response.status,
+            cacheData: cacheInfo,
+            isBilledUsage: false,
+            contentFilterResults,
+        };
+    }
     const cost = calculateCost(modelUsage.model as ModelId, modelUsage.usage);
     const price = calculatePrice(
         resolvedModelRequested as ServiceId,
@@ -267,10 +289,10 @@ async function* extractResponseStream(
     if (!response.body) return;
 
     const textDecoder = new TextDecoderStream();
-    const parser = new EventSourceParserStream();
+    const sseParser = new EventSourceParserStream();
     const eventStream = response.body
         .pipeThrough(textDecoder)
-        .pipeThrough(parser);
+        .pipeThrough(sseParser);
 
     for await (const event of asyncIteratorStream(eventStream)) {
         if (event.data === "[DONE]") return;
@@ -353,11 +375,10 @@ function createTrackingEvent({
 
         modelRequested: requestTracking.modelRequested,
         resolvedModelRequested: requestTracking.resolvedModelRequested,
-        freeModelRequested: false,
         modelUsed: responseTracking.modelUsed,
+        modelProviderUsed: requestTracking.modelProvider,
 
-        isBilledUsage:
-            responseTracking.responseOk && !responseTracking.cacheData.cacheHit,
+        isBilledUsage: responseTracking.isBilledUsage,
 
         ...balanceTracking,
 
@@ -433,9 +454,10 @@ function extractUsageAndContentFilterResultsHeaders(response: Response): {
 async function extractUsageAndContentFilterResultsStream(
     events: AsyncIterable<unknown>,
 ): Promise<{
-    modelUsage: ModelUsage;
+    modelUsage: ModelUsage | null;
     contentFilterResults: GenerationEventContentFilterParams;
 }> {
+    const log = getLogger(["hono", "track", "stream"]);
     const EventSchema = z.object({
         model: z.string(),
         usage: CompletionUsageSchema.nullish(),
@@ -481,15 +503,24 @@ async function extractUsageAndContentFilterResultsStream(
 
         if (parseResult.data?.usage) {
             if (usage) {
-                throw new Error("Multiple usage objects found in event stream");
+                log.warn("Multiple usage objects found in event stream");
             }
             usage = parseResult.data?.usage;
             model = parseResult.data?.model;
         }
     }
 
-    if (!usage) {
-        throw new Error("No usage object found in event stream");
+    const contentFilterResults = contentFilterResultsToEventParams({
+        promptFilterResults,
+        completionFilterResults,
+    });
+
+    if (!model || !usage) {
+        log.error("No usage object found in event stream");
+        return {
+            modelUsage: null,
+            contentFilterResults,
+        };
     }
 
     return {
@@ -497,10 +528,7 @@ async function extractUsageAndContentFilterResultsStream(
             model: model as ModelId,
             usage: openaiUsageToTokenUsage(usage),
         },
-        contentFilterResults: contentFilterResultsToEventParams({
-            promptFilterResults,
-            completionFilterResults,
-        }),
+        contentFilterResults,
     };
 }
 
@@ -509,7 +537,7 @@ async function extractUsageAndContentFilterResults(
     requestTracking: RequestTrackingData,
     response: Response,
 ): Promise<{
-    modelUsage: ModelUsage;
+    modelUsage: ModelUsage | null;
     contentFilterResults: GenerationEventContentFilterParams;
 }> {
     if (
@@ -517,7 +545,7 @@ async function extractUsageAndContentFilterResults(
         requestTracking.streamRequested &&
         response.body instanceof ReadableStream
     ) {
-        const eventStream = extractResponseStream(response.clone());
+        const eventStream = extractResponseStream(response);
         return await extractUsageAndContentFilterResultsStream(eventStream);
     }
     return extractUsageAndContentFilterResultsHeaders(response);
@@ -622,28 +650,20 @@ type ErrorData = {
     errorResponseCode?: string;
     errorSource?: string;
     errorMessage?: string;
-    errorStack?: string;
-    errorDetails?: string;
+    // errorStack and errorDetails removed to reduce D1 memory usage
 };
 
 function collectErrorData(response: Response, error?: Error): ErrorData {
     if (response.ok && !error) return {};
-    let status, source, details;
-    if (error instanceof ValidationError) {
-        details = JSON.stringify(z.flattenError(error.zodError));
-    } else if (error instanceof UpstreamError) {
+    let source: string | undefined;
+    if (error instanceof UpstreamError) {
         source = error.requestUrl?.hostname;
-        details = JSON.stringify({
-            requestUrl: error.requestUrl,
-            requestBody: error.requestBody,
-        });
     }
+    // Note: errorStack and errorDetails removed to reduce D1 memory usage
+    // Stack traces and details are still logged but not stored in the database
     return {
-        errorResponseCode: getErrorCode(status || response.status),
+        errorResponseCode: getErrorCode(response.status),
         errorSource: source,
-        errorMessage:
-            error?.message || getDefaultErrorMessage(status || response.status),
-        errorStack: error?.stack,
-        errorDetails: details,
+        errorMessage: error?.message || getDefaultErrorMessage(response.status),
     };
 }

@@ -8,15 +8,20 @@ const ChatInput = ({
   onStop,
   setIsUserTyping = () => {},
   onGenerateImage,
+  onGenerateVideo,
   onModeChange,
   selectedModel,
   selectedImageModel,
+  selectedVideoModel,
   mode = 'chat',
   models = {},
   imageModels = {},
+  videoModels = {},
   modelsLoaded = false,
   onModelChange,
-  onImageModelChange
+  onImageModelChange,
+  onVideoModelChange,
+  onOpenGenerationOptions
 }) => {
   const [inputValue, setInputValue] = useState('');
   const [isAttachMenuOpen, setIsAttachMenuOpen] = useState(false);
@@ -33,8 +38,23 @@ const ChatInput = ({
 
   const isImagineMode = inputValue.includes('/imagine');
   const isCanvasMode = inputValue.includes('/code');
-  const activeModelId = mode === 'imagine' ? selectedImageModel : selectedModel;
-  const activeModelsMap = mode === 'imagine' ? imageModels : models;
+  const isVideoMode = inputValue.includes('/video');
+  
+  // Determine active model based on mode
+  const getActiveModelId = () => {
+    if (mode === 'imagine') return selectedImageModel;
+    if (mode === 'video') return selectedVideoModel;
+    return selectedModel;
+  };
+  
+  const getActiveModelsMap = () => {
+    if (mode === 'imagine') return imageModels;
+    if (mode === 'video') return videoModels;
+    return models;
+  };
+  
+  const activeModelId = getActiveModelId();
+  const activeModelsMap = getActiveModelsMap();
   const modelLabel = activeModelsMap?.[activeModelId]?.name || activeModelId || 'Select model';
 
   const handleModelBadgeClick = () => {
@@ -45,6 +65,8 @@ const ChatInput = ({
   const handleModelSelect = (modelId) => {
     if (mode === 'imagine') {
       onImageModelChange?.(modelId);
+    } else if (mode === 'video') {
+      onVideoModelChange?.(modelId);
     } else {
       onModelChange?.(modelId);
     }
@@ -93,6 +115,23 @@ const ChatInput = ({
         const prompt = inputValue.trim().substring(9);
         if (prompt && onGenerateImage) {
           onGenerateImage(prompt);
+          setInputValue('');
+          setSelectedAttachment(null);
+          setIsUserTyping(false);
+          // Reset to chat mode after sending
+          if (onModeChange) {
+            onModeChange('chat');
+          }
+          // Refocus input after sending
+          setTimeout(() => inputRef.current?.focus(), 0);
+          return;
+        }
+      }
+
+      if (inputValue.trim().startsWith('/video ')) {
+        const prompt = inputValue.trim().substring(7);
+        if (prompt && onGenerateVideo) {
+          onGenerateVideo(prompt);
           setInputValue('');
           setSelectedAttachment(null);
           setIsUserTyping(false);
@@ -270,6 +309,15 @@ const ChatInput = ({
     inputRef.current?.focus();
   };
 
+  const handleVideoGen = () => {
+    setInputValue('/video ');
+    setIsAttachMenuOpen(false);
+    if (onModeChange) {
+      onModeChange('video');
+    }
+    inputRef.current?.focus();
+  };
+
   const handleCanvas = () => {
     setInputValue('/code ');
     setIsAttachMenuOpen(false);
@@ -343,7 +391,7 @@ const ChatInput = ({
                   title={modelsLoaded ? modelLabel : 'Loading models...'}
                 >
                   <span className="model-chip-icon" aria-hidden="true">
-                    {mode === 'imagine' ? '🖼️' : '🌀'}
+                    {mode === 'imagine' ? '🖼️' : mode === 'video' ? '🎬' : '🌀'}
                   </span>
                   <span className="model-chip-name">{modelLabel}</span>
                   <svg className="model-chip-caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -398,9 +446,22 @@ const ChatInput = ({
                   </div>
                 )}
               </div>
+              {(mode === 'imagine' || mode === 'video') && onOpenGenerationOptions && (
+                <button
+                  type="button"
+                  className="generation-options-btn"
+                  onClick={() => onOpenGenerationOptions(mode)}
+                  title="Generation options"
+                >
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <circle cx="12" cy="12" r="3"/>
+                    <path d="M12 1v6m0 6v6M4.22 4.22l4.24 4.24m5.08 5.08l4.24 4.24M1 12h6m6 0h6M4.22 19.78l4.24-4.24m5.08-5.08l4.24-4.24"/>
+                  </svg>
+                </button>
+              )}
             </div>
 
-            {(isImagineMode || isCanvasMode) && (
+            {(isImagineMode || isCanvasMode || isVideoMode) && (
               <div className="chatbar-tags">
                 {isImagineMode && (
                   <div className="image-mode-tag">
@@ -410,6 +471,15 @@ const ChatInput = ({
                       <path d="M21 15l-5-5L5 21"/>
                     </svg>
                     <span>Image</span>
+                  </div>
+                )}
+                {isVideoMode && (
+                  <div className="video-mode-tag">
+                    <svg className="video-mode-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <rect x="2" y="4" width="20" height="16" rx="2"/>
+                      <polygon points="10,9 16,12 10,15"/>
+                    </svg>
+                    <span>Video</span>
                   </div>
                 )}
                 {isCanvasMode && (
@@ -429,14 +499,18 @@ const ChatInput = ({
               value={
                 isImagineMode
                   ? inputValue.replace('/imagine ', '').replace('/imagine', '')
-                  : isCanvasMode
-                    ? inputValue.replace('/code ', '').replace('/code', '')
-                    : inputValue
+                  : isVideoMode
+                    ? inputValue.replace('/video ', '').replace('/video', '')
+                    : isCanvasMode
+                      ? inputValue.replace('/code ', '').replace('/code', '')
+                      : inputValue
               }
               onChange={(event) => {
                 const value = event.target.value;
                 if (isImagineMode) {
                   setInputValue('/imagine ' + value);
+                } else if (isVideoMode) {
+                  setInputValue('/video ' + value);
                 } else if (isCanvasMode) {
                   setInputValue('/code ' + value);
                 } else {
@@ -446,6 +520,8 @@ const ChatInput = ({
                 if (onModeChange) {
                   if (isImagineMode) {
                     onModeChange('imagine');
+                  } else if (isVideoMode) {
+                    onModeChange('video');
                   } else if (isCanvasMode) {
                     onModeChange('code');
                   } else {
@@ -490,6 +566,13 @@ const ChatInput = ({
                         <path d="M21 15l-5-5L5 21" />
                       </svg>
                       <span>Image Generation</span>
+                    </button>
+                    <button className="attach-menu-item" onClick={handleVideoGen}>
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <rect x="2" y="4" width="20" height="16" rx="2" />
+                        <polygon points="10,9 16,12 10,15" />
+                      </svg>
+                      <span>Video Generation</span>
                     </button>
                     <button className="attach-menu-item" onClick={handleCanvas}>
                       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">

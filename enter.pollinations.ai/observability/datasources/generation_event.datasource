@@ -41,7 +41,6 @@ SCHEMA >
 -- Model
 `model_requested`           LowCardinality(String) `json:$.modelRequested` DEFAULT 'undefined',
 `resolved_model_requested`  LowCardinality(String) `json:$.resolvedModelRequested` DEFAULT 'undefined',
-`free_model_requested`      Nullable(Bool)         `json:$.freeModelRequested`,
 `model_used`                LowCardinality(String) `json:$.modelUsed` DEFAULT 'undefined',
 `model_provider_used`       LowCardinality(String) `json:$.modelProviderUsed` DEFAULT 'undefined',
 `is_billed_usage`           Bool                   `json:$.isBilledUsage`,
@@ -106,8 +105,8 @@ ENGINE_PRIMARY_KEY "start_time, environment, user_id"
 
 FORWARD_QUERY >
   SELECT 
-    '' as event_id,
-    '' as event_processing_id,
+    event_id,
+    event_processing_id,
     request_id,
     request_path,
     start_time,
@@ -130,7 +129,6 @@ FORWARD_QUERY >
     referrer_domain,
     model_requested,
     resolved_model_requested,
-    free_model_requested,
     model_used,
     model_provider_used,
     is_billed_usage,

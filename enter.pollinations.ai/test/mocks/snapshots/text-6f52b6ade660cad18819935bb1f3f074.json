@@ -1,0 +1,46 @@
+{
+  "request": {
+    "url": "http://ec2-3-80-56-235.compute-1.amazonaws.com:16385/openai",
+    "method": "POST",
+    "body": {
+      "type": "json",
+      "data": {
+        "model": "qwen-coder",
+        "messages": [
+          {
+            "role": "user",
+            "content": "Reply: yes or no?"
+          }
+        ],
+        "stream": true
+      }
+    },
+    "params": {}
+  },
+  "response": {
+    "status": 200,
+    "statusText": "OK",
+    "headers": {
+      "access-control-allow-origin": "*",
+      "cache-control": "no-cache",
+      "connection": "keep-alive",
+      "content-type": "text/event-stream; charset=utf-8",
+      "date": "Sat, 29 Nov 2025 21:03:01 GMT",
+      "transfer-encoding": "chunked",
+      "x-powered-by": "Express"
+    },
+    "body": {
+      "type": "stream",
+      "data": [
+        {
+          "data": "data: {\"id\":\"chatcmpl-028e1",
+          "delay": 23
+        },
+        {
+          "data": "4a2-679f-4ebe-a04d-53bfa0ba2e05\",\"object\":\"chat.completion.chunk\",\"created\":1764450181,\"model\":\"qwen3-coder-30b-a3b-instruct\",\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"\"},\"logprobs\":null,\"finish_reason\":null}],\"usage\":null,\"prompt_token_ids\":null}\n\ndata: {\"id\":\"chatcmpl-028e14a2-679f-4ebe-a04d-53bfa0ba2e05\",\"object\":\"chat.completion.chunk\",\"created\":1764450181,\"model\":\"qwen3-coder-30b-a3b-instruct\",\"choices\":[{\"index\":0,\"delta\":{\"content\":\"Yes\"},\"logprobs\":null,\"finish_reason\":null,\"token_ids\":null}],\"usage\":null}\n\ndata: {\"id\":\"chatcmpl-028e14a2-679f-4ebe-a04d-53bfa0ba2e05\",\"object\":\"chat.completion.chunk\",\"created\":1764450181,\"model\":\"qwen3-coder-30b-a3b-instruct\",\"choices\":[{\"index\":0,\"delta\":{\"content\":\"\"},\"logprobs\":null,\"finish_reason\":\"stop\",\"stop_reason\":null,\"token_ids\":null}],\"usage\":null}\n\ndata: {\"id\":\"chatcmpl-028e14a2-679f-4ebe-a04d-53bfa0ba2e05\",\"object\":\"chat.completion.chunk\",\"created\":1764450181,\"model\":\"qwen3-coder-30b-a3b-instruct\",\"choices\":[],\"usage\":{\"prompt_tokens\":74,\"total_tokens\":76,\"completion_tokens\":2}}\n\ndata: [DONE]\n\n",
+          "delay": 0
+        }
+      ]
+    }
+  }
+}

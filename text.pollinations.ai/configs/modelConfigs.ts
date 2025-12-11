@@ -12,7 +12,7 @@ import {
     createElixpoSearchModelConfig,
     createIntelligenceModelConfig,
     createBedrockLambdaModelConfig,
-    createBedrockFargateModelConfig,
+    createBedrockNativeConfig,
     createDeepSeekModelConfig,
     createDeepSeekReasoningConfig,
     createMyceliDeepSeekV31Config,
@@ -116,11 +116,12 @@ export const portkeyConfig: PortkeyConfigMap = {
         }),
     "amazon.nova-micro-v1:0": () =>
         createBedrockLambdaModelConfig({
-            model: "awsbedrock/amazon.nova-micro-v1:0",
+            model: "amazon.nova-micro-v1:0",
         }),
     "us.meta.llama3-1-8b-instruct-v1:0": () =>
         createBedrockLambdaModelConfig({
             model: "us.meta.llama3-1-8b-instruct-v1:0",
+            "max-tokens": 4096, // Llama 3.1 8B has 8192 limit
         }),
     "us.anthropic.claude-3-5-haiku-20241022-v1:0": () =>
         createBedrockLambdaModelConfig({
@@ -131,20 +132,24 @@ export const portkeyConfig: PortkeyConfigMap = {
             model: "global.anthropic.claude-haiku-4-5-20251001-v1:0",
         }),
     "us.anthropic.claude-sonnet-4-5-20250929-v1:0": () =>
-        createBedrockFargateModelConfig({
+        createBedrockNativeConfig({
             model: "us.anthropic.claude-sonnet-4-5-20250929-v1:0",
         }),
     "us.anthropic.claude-sonnet-4-20250514-v1:0": () =>
-        createBedrockFargateModelConfig({
+        createBedrockNativeConfig({
             model: "us.anthropic.claude-sonnet-4-20250514-v1:0",
         }),
     "us.anthropic.claude-opus-4-20250514-v1:0": () =>
-        createBedrockFargateModelConfig({
+        createBedrockNativeConfig({
             model: "us.anthropic.claude-opus-4-20250514-v1:0",
         }),
     "us.anthropic.claude-haiku-4-5-20251001-v1:0": () =>
-        createBedrockFargateModelConfig({
+        createBedrockNativeConfig({
             model: "us.anthropic.claude-haiku-4-5-20251001-v1:0",
+        }),
+    "global.anthropic.claude-opus-4-5-20251101-v1:0": () =>
+        createBedrockNativeConfig({
+            model: "global.anthropic.claude-opus-4-5-20251101-v1:0",
         }),
 
     // Google Vertex AI configurations
@@ -155,6 +160,21 @@ export const portkeyConfig: PortkeyConfigMap = {
         "vertex-region": "us-central1",
         "vertex-model-id": "gemini-2.5-flash-lite",
         "strict-openai-compliance": "false",
+    }),
+    "gemini-3-pro-preview": () => ({
+        provider: "vertex-ai",
+        authKey: googleCloudAuth.getAccessToken,
+        "vertex-project-id": process.env.GCLOUD_PROJECT_ID,
+        "vertex-region": "global",
+        "vertex-model-id": "gemini-3-pro-preview",
+        "strict-openai-compliance": "false",
+    }),
+    "kimi-k2-thinking-maas": () => ({
+        provider: "openai",
+        authKey: googleCloudAuth.getAccessToken,
+        "custom-host": `https://aiplatform.googleapis.com/v1/projects/${process.env.GCLOUD_PROJECT_ID}/locations/global/endpoints/openapi`,
+        "strict-openai-compliance": "false",
+        model: "moonshotai/kimi-k2-thinking-maas",
     }),
     // Note: gemini-search service uses same config as gemini, just adds Google Search transform
     "deepseek-ai/deepseek-v3.1-maas": () => ({

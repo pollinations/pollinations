@@ -33,8 +33,22 @@
     {
       "idx": 4,
       "version": "6",
-      "when": 1763269379980,
-      "tag": "0004_optimal_gorgon",
+      "when": 1764690998786,
+      "tag": "0004_gray_molecule_man",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "6",
+      "when": 1764841024405,
+      "tag": "0005_swift_scalphunter",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "6",
+      "when": 1765310596696,
+      "tag": "0006_wealthy_queen_noir",
       "breakpoints": true
     }
   ]

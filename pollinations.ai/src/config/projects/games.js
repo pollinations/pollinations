@@ -211,5 +211,15 @@ export const gamesProjects = [
     author: "@lenankamp",
     submissionDate: "2025-10-11",
     order: 1
+  },
+  {
+    "name": "Godville Heroic Moment",
+    "url": "https://github.com/migueland94/Godville-Heroic-Moment",
+    "description": "Firefox-only browser extension that adds a Heroic Moment block to your Godville hero page. It dynamically generates a unique image (via Pollinations.ai) and a witty AI-crafted quote based on your hero's diary, updating hourly when Godville is the active tab.",
+    "author": "migueland94",
+    "repo": "https://github.com/migueland94/Godville-Heroic-Moment",
+    "category": "games",
+    "submissionDate": "2025-12-04",
+    "order": 5
   }
 ];

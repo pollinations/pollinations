@@ -9,6 +9,9 @@
     "dev:image": "npm run dev --prefix image.pollinations.ai"
   },
   "devDependencies": {
-    "concurrently": "^9.1.0"
+    "concurrently": "^9.2.1"
+  },
+  "dependencies": {
+    "lefthook": "^2.0.4"
   }
 }

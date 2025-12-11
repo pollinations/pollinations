@@ -56,7 +56,7 @@ function extractApiKey(c: Context<AuthEnv>): string | null {
 export const auth = (options: AuthOptions) =>
     createMiddleware<AuthEnv>(async (c, next) => {
         const log = c.get("log");
-        const client = createAuth(c.env) as Auth;
+        const client = createAuth(c.env);
 
         const authenticateSession = async (): Promise<AuthResult | null> => {
             if (!options.allowSessionCookie) return null;

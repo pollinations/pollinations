@@ -4,26 +4,35 @@ import {
     readD1Migrations,
 } from "@cloudflare/vitest-pool-workers/config";
 import viteConfig from "./vite.config";
+import { loadEnv } from "vite";
 
-export default defineWorkersConfig(async () => {
+export default defineWorkersConfig(async ({ mode }) => {
     const migrationsPath = path.join(__dirname, "drizzle");
     const migrations = await readD1Migrations(migrationsPath);
+    const env = loadEnv(mode, process.cwd(), "");
 
     return {
         ...viteConfig,
         test: {
-            setupFiles: ["./test/apply-migrations.ts"],
-            reporters: ['default'], // Use default reporter (less verbose than 'verbose')
+            globalSetup: ["./test/setup/snapshot-server.ts"],
+            setupFiles: [
+                "./test/setup/apply-migrations.ts",
+                "./test/setup/rejection-handler.ts",
+            ],
+            reporters: ["default"],
+            teardownTimeout: 5000,
             poolOptions: {
                 workers: {
                     singleWorker: true,
                     wrangler: {
                         configPath: "./wrangler.toml",
-                        environment: "test",
+                        environment: env.TEST_ENV || "test",
                     },
                     miniflare: {
                         bindings: {
                             TEST_MIGRATIONS: migrations,
+                            TEST_VCR_MODE:
+                                env.TEST_VCR_MODE || "replay-or-record",
                         },
                     },
                 },

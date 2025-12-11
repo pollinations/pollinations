@@ -1,7 +1,6 @@
 import type { Hono } from "hono";
 import { vi } from "vitest";
 import { getLogger } from "@logtape/logtape";
-import { inspect } from "node:util";
 
 const originalFetch = globalThis.fetch;
 const activeRequests = new Set<Promise<any>>();
@@ -22,11 +21,10 @@ export function createHonoMockHandler(handler: Hono): MockHandler {
     return async (request: Request) => {
         const url = new URL(request.url);
         // trim trailing slashes
-        const pathname = url.pathname.endsWith("/")
+        url.pathname = url.pathname.endsWith("/")
             ? url.pathname.slice(0, -1)
             : url.pathname;
-        const mockUrl = new URL(pathname + url.search, "http://localhost");
-        const mockRequest = new Request(mockUrl, {
+        const mockRequest = new Request(url, {
             method: request.method,
             headers: request.headers,
             body: request.body,
@@ -43,7 +41,7 @@ export function createFetchMock<TMocks extends MockMap>(
     mocks: TMocks,
     options?: FetchMockOptions,
 ) {
-    const log = getLogger(["test", "mock"]);
+    const log = getLogger(["test", "mock", "fetch"]);
     const opts = options ?? {};
     let handlers: MockHandlerMap = {};
 
@@ -62,7 +60,7 @@ export function createFetchMock<TMocks extends MockMap>(
                     request = new Request(url, init);
                 }
                 if (opts.logRequests) {
-                    log.debug(`[FETCH] ${request.method} ${request.url}`);
+                    log.debug(`${request.method} ${request.url}`);
                 }
 
                 const handler = handlers[url.host];
@@ -78,8 +76,8 @@ export function createFetchMock<TMocks extends MockMap>(
             },
         );
 
-    const enable = (...names: (keyof TMocks)[]) => {
-        handlers = {};
+    const enable = async (...names: (keyof TMocks)[]) => {
+        await clear();
         for (const name of names) {
             const mock = mocks[name];
             handlers = {
@@ -89,7 +87,9 @@ export function createFetchMock<TMocks extends MockMap>(
         }
     };
 
-    const clear = () => {
+    const clear = async () => {
+        await Promise.allSettled(Array.from(activeRequests));
+        activeRequests.clear();
         handlers = {};
     };
 

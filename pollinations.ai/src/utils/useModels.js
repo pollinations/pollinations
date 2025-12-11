@@ -23,8 +23,8 @@ export const useModels = (modelType = "text") => {
 
                 const response = await fetch(endpoint, {
                     headers: {
-                        "Authorization": `Bearer ${PLAYGROUND_API_KEY}`
-                    }
+                        "Authorization": `Bearer ${PLAYGROUND_API_KEY}`,
+                    },
                 });
 
                 if (!response.ok) {
@@ -35,19 +35,24 @@ export const useModels = (modelType = "text") => {
 
                 if (modelType === "text") {
                     // Process text models - API returns array of model objects
-                    const processedModels = (Array.isArray(data) ? data : []).map((model) => ({
-                        id: model.name,
-                        name: model.description ? `${model.name} - ${model.description}` : model.name,
-                        details: model,
-                    })).sort((a, b) => a.name.localeCompare(b.name));
+                    const processedModels = (Array.isArray(data) ? data : [])
+                        .map((model) => ({
+                            id: model.name,
+                            name: model.description
+                                ? `${model.name} - ${model.description}`
+                                : model.name,
+                            details: model,
+                        }))
+                        .sort((a, b) => a.name.localeCompare(b.name));
 
                     setModels(processedModels);
                 } else {
-                    // Process image models
+                    // Process image models - API returns array of model objects
                     if (Array.isArray(data)) {
-                        const imageModels = data.map((modelId) => ({
-                            id: modelId,
-                            name: modelId,
+                        const imageModels = data.map((model) => ({
+                            id: model.name,
+                            name: model.description || model.name,
+                            details: model,
                         }));
                         setModels(imageModels);
                     } else {

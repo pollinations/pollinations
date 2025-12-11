@@ -5,7 +5,13 @@
 
 import debug from "debug";
 import type { IMAGE_SERVICES } from "../../../shared/registry/image.ts";
-import { buildUsageHeaders, createImageTokenUsage } from "../../../shared/registry/usage-headers.js";
+import type { TokenUsage } from "../../../shared/registry/registry.ts";
+import {
+    buildUsageHeaders,
+    createImageTokenUsage,
+    createVideoSecondsUsage,
+    createVideoTokenUsage,
+} from "../../../shared/registry/usage-headers.js";
 
 const log = debug("pollinations:tracking-headers");
 
@@ -15,6 +21,9 @@ type ValidServiceName = keyof typeof IMAGE_SERVICES;
 export interface TrackingUsageData {
     // Unified usage format for all image models
     completionImageTokens?: number;
+    // Video models - Veo uses seconds, Seedance uses tokens
+    completionVideoSeconds?: number;
+    completionVideoTokens?: number;
     promptTokenCount?: number;
     totalTokenCount?: number;
 }
@@ -40,32 +49,52 @@ export interface TrackingData {
  */
 export function buildTrackingHeaders(
     model: ValidServiceName,
-    trackingData?: TrackingData
+    trackingData?: TrackingData,
 ): Record<string, string> {
-    // Determine token count (works for both unit-based and token-based pricing)
-    // Unit-based models return 1, token-based models return actual count
-    const completionTokens = trackingData?.usage?.completionImageTokens || 1;
     log(`=== TRACKING HEADERS FOR ${model} ===`);
-    log(`Raw trackingData.usage:`, JSON.stringify(trackingData?.usage, null, 2));
-    log(`Extracted completionImageTokens: ${completionTokens}`);
-    log(`===================================`);
-    
-    // Use shared utility to build headers
+    log(
+        `Raw trackingData.usage:`,
+        JSON.stringify(trackingData?.usage, null, 2),
+    );
+
     const modelUsed = trackingData?.actualModel || model;
-    const usage = createImageTokenUsage(completionTokens);
+
+    // Determine usage type based on what's provided
+    // Video models: Veo uses completionVideoSeconds, Seedance uses completionVideoTokens
+    // Image models use completionImageTokens
+    const videoTokens = trackingData?.usage?.completionVideoTokens;
+    const videoSeconds = trackingData?.usage?.completionVideoSeconds;
+    const imageTokens = trackingData?.usage?.completionImageTokens;
+
+    let usage: TokenUsage;
+    if (videoTokens && videoTokens > 0) {
+        // Seedance video model - use video tokens (from API response)
+        log(`Using video tokens: ${videoTokens}`);
+        usage = createVideoTokenUsage(videoTokens);
+    } else if (videoSeconds && videoSeconds > 0) {
+        // Veo video model - use video seconds
+        log(`Using video seconds: ${videoSeconds}`);
+        usage = createVideoSecondsUsage(videoSeconds);
+    } else {
+        // Image model - use image tokens (default to 1 for unit-based)
+        const tokens = imageTokens || 1;
+        log(`Using image tokens: ${tokens}`);
+        usage = createImageTokenUsage(tokens);
+    }
+
     const headers = buildUsageHeaders(modelUsed, usage);
 
-    log('Built tracking headers:', Object.keys(headers));
+    log("Built tracking headers:", headers);
+    log(`===================================`);
     return headers;
 }
 
 /**
  * Extract token count for billing purposes
- * @param model - The model name (must be a valid service from registry)
  * @param usage - Usage data from the model
  * @returns Token count for billing
  */
-export function extractTokenCount(model: ValidServiceName, usage?: TrackingUsageData): number {
+export function extractTokenCount(usage?: TrackingUsageData): number {
     return usage?.completionImageTokens || 1;
 }
 
@@ -79,9 +108,9 @@ export function formatModerationData(moderation?: ContentSafetyFlags): {
     severity?: string;
 } {
     if (!moderation) return {};
-    
+
     return {
-        categories: moderation.categories?.join(','),
-        severity: moderation.severity
+        categories: moderation.categories?.join(","),
+        severity: moderation.severity,
     };
 }

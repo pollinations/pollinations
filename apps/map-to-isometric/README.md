@@ -52,4 +52,4 @@ Uses the Pollinations Image API with reference image transformation to convert f
 
 Based on Case [#33](https://github.com/pollinations/pollinations/issues/33) from [Awesome-Nano-Banana-images](https://github.com/PicoTrex/Awesome-Nano-Banana-images)
 
-Part of the Pollinations Garden 🌱 | Originally created for Hacktoberfest 2025 🎃
+Made for Hacktoberfest 2025 🎃

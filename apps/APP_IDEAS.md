@@ -491,7 +491,7 @@ Go to [Issue #4393](https://github.com/pollinations/pollinations/issues/4393) an
 
 ## 📚 Resources
 
--   [Garden README](./README.md)
+-   [Hacktoberfest README](./README.md)
 -   [API Documentation](../APIDOCS.md)
 -   [HTML Template](./TEMPLATE-HTML/)
 -   [React Template](./TEMPLATE-REACT/)

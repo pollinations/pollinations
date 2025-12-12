@@ -1,0 +1,142 @@
+{
+  "request": {
+    "url": "http://ec2-3-80-56-235.compute-1.amazonaws.com:16385/openai",
+    "method": "POST",
+    "body": {
+      "type": "json",
+      "data": {
+        "model": "gemini-search",
+        "messages": [
+          {
+            "role": "user",
+            "content": "What is 5 + 3? You must use the calculator tool to compute this."
+          }
+        ],
+        "tools": [
+          {
+            "type": "function",
+            "function": {
+              "name": "calculator",
+              "description": "Perform basic arithmetic operations",
+              "parameters": {
+                "type": "object",
+                "properties": {
+                  "operation": {
+                    "type": "string",
+                    "enum": [
+                      "add",
+                      "subtract",
+                      "multiply",
+                      "divide"
+                    ],
+                    "description": "The arithmetic operation to perform"
+                  },
+                  "a": {
+                    "type": "number",
+                    "description": "First operand"
+                  },
+                  "b": {
+                    "type": "number",
+                    "description": "Second operand"
+                  }
+                },
+                "required": [
+                  "operation",
+                  "a",
+                  "b"
+                ]
+              }
+            }
+          }
+        ],
+        "tool_choice": "required",
+        "seed": 42
+      }
+    },
+    "params": {}
+  },
+  "response": {
+    "status": 400,
+    "statusText": "Bad Request",
+    "headers": {
+      "access-control-allow-origin": "*",
+      "connection": "keep-alive",
+      "content-length": "959",
+      "content-type": "application/json; charset=utf-8",
+      "date": "Thu, 11 Dec 2025 16:48:58 GMT",
+      "etag": "W/\"3bf-D+hzA2au8xkn24ks769w2qbdWiA\"",
+      "keep-alive": "timeout=5",
+      "x-powered-by": "Express"
+    },
+    "body": {
+      "type": "json",
+      "data": {
+        "error": "Bad Request",
+        "message": "400 Bad Request",
+        "requestId": "c2ib6u",
+        "requestParameters": {
+          "messages": [
+            {
+              "role": "user",
+              "content": "What is 5 + 3? You must use the calculator tool to compute this."
+            }
+          ],
+          "jsonMode": false,
+          "seed": 42,
+          "model": "gemini-search",
+          "referrer": null,
+          "isPrivate": true,
+          "voice": "alloy",
+          "tools": [
+            {
+              "type": "function",
+              "function": {
+                "name": "calculator",
+                "description": "Perform basic arithmetic operations",
+                "parameters": {
+                  "type": "object",
+                  "properties": {
+                    "operation": {
+                      "type": "string",
+                      "enum": [
+                        "add",
+                        "subtract",
+                        "multiply",
+                        "divide"
+                      ],
+                      "description": "The arithmetic operation to perform"
+                    },
+                    "a": {
+                      "type": "number",
+                      "description": "First operand"
+                    },
+                    "b": {
+                      "type": "number",
+                      "description": "Second operand"
+                    }
+                  },
+                  "required": [
+                    "operation",
+                    "a",
+                    "b"
+                  ]
+                }
+              }
+            }
+          ],
+          "tool_choice": "required",
+          "private": true
+        },
+        "details": {
+          "error": {
+            "message": "vertex-ai error: Multiple tools are supported only when they are all search tools.",
+            "type": "INVALID_ARGUMENT",
+            "param": null,
+            "code": "400"
+          },
+          "provider": "vertex-ai"
+        }
+      }
+    }
+  }
+}

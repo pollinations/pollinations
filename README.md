@@ -16,10 +16,16 @@ We opened 67 issues and closed 38, created 25 PRs with 22 merged (30 total contr
 
 ## 🆕 Latest News
 
-- **2025-12-07** – **🎥 Video Generation** Text-to-video and Image-to-video are here! Try the new `veo` and `seedance` models in [Chat](https://text.pollinations.ai) or via API.
-- **2025-12-07** – **🚀 Major Model Update** Added support for **Claude Opus 4.5**, **Kimi k2**, **Amazon Nova Micro**, and updated **Seedream 4.5**.
-- **2025-12-07** – **🔍 Web Search Enabled** Real-time web search is now enabled for `perplexity` and `gemini-search` models for up-to-date answers.
-- **2025-12-07** – **🎨 Flux Quality Boost** Flux image generation now defaults to maximum quality steps for sharper, more detailed results.
+- **2025-12-07** – **🎥 Video Generation** Create videos from text or images using the new `veo` and `seedance` models. [API Docs](https://enter.pollinations.ai/api/docs)
+- **2025-12-07** – **🎨 High-Res Upgrades** `seedream` updated to v4.5 (2K resolution) and `seedance` upgraded to Pro-Fast for superior quality.
+- **2025-12-07** – **📊 Richer Chat** The [Chat UI](https://chat.pollinations.ai) now renders data charts and supports video generation directly.
+- **2025-12-07** – **🤖 New Models** Added Amazon `nova-micro` and enabled web search for `gemini-search` and `perplexity` models.
+- **2025-11-29** – **🎨 Nano Banana Pro** New `nanobanana-pro` model (powered by Gemini 3 Pro) featuring 4K resolution support and built-in reasoning capabilities.
+- **2025-11-29** – **🤖 Claude Opus 4.5** Access the powerful new Claude Opus 4.5 model via the text API using the model ID `claude-xlarge`. Check the [API Docs](https://enter.pollinations.ai/api/docs).
+- **2025-11-29** – **🛠️ Advanced API Control** Added pass-through support for advanced parameters like `logprobs`, `logit_bias`, and `stream_options` for fine-grained generation control.
+- **2025-11-29** – **📱 PolliPalmTop App** A new Android app featuring AI chat, web search, and image generation has been added to the community showcase.
+- **2025-11-22** – **🚀 Massive Model Update** Added support for `Kimi K2 Thinking`, `Gemini Large`, `DeepSeek V3.1`, `Grok 4 Fast`, and `GPT-5 Nano`. Try them in the [Text API](https://enter.pollinations.ai).
+- **2025-11-22** – **🎤 Multimodal Audio API** Full support for OpenAI's Audio API features, including `input_audio` and mixed text/audio generation modalities.
 ---
 
 [![Pollinations.AI Logo](https://pollinations.ai/p/3D_wireframe_blueprint_of_the_conceptual_isometric_world_of_Pollinations_AI_a_surreal_hyperrealistic_digital_garden_Elements_emerge_partially_from_all_sides?width=3000&height=1000&seed=-1)](https://pollinations.ai/p/3D_wireframe_blueprint_of_the_conceptual_isometric_world_of_Pollinations_AI_a_surreal_hyperrealistic_digital_garden_Elements_emerge_partially_from_all_sides?width=3000&height=1000&seed=-1)

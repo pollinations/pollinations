@@ -267,27 +267,27 @@ def verify_enter_token(x_enter_token: str = Header(None, alias="x-enter-token"))
     return True
 
 def check_nsfw(image_array, safety_checker_adj: float = 0.0):
-        if isinstance(image_array, np.ndarray):
-            if image_array.max() <= 1.0:
-                image_array = (image_array * 255).astype("uint8")
-            else:
-                image_array = image_array.astype("uint8")
-            x_image = Image.fromarray(image_array)
-            x_image = [x_image]
-        elif isinstance(image_array, list) and not isinstance(image_array[0], Image.Image):
-            x_image = numpy_to_pil(image_array)
+    if isinstance(image_array, np.ndarray):
+        if image_array.max() <= 1.0:
+            image_array = (image_array * 255).astype("uint8")
         else:
-            x_image = image_array if isinstance(image_array, list) else [image_array]
-        safety_checker_input = SAFETY_EXTRACTOR(x_image, return_tensors="pt").to("cuda")
-        has_nsfw_concept, concepts = SAFETY_MODEL(
-            images=x_image,
-            clip_input=safety_checker_input.pixel_values
-        )
-        has_nsfw_bool = bool(has_nsfw_concept[0])
-        return (
-            has_nsfw_bool,
-            replace_numpy_with_python(replace_sets_with_lists(concepts[0] if isinstance(concepts, list) else concepts))
-        )
+            image_array = image_array.astype("uint8")
+        x_image = Image.fromarray(image_array)
+        x_image = [x_image]
+    elif isinstance(image_array, list) and not isinstance(image_array[0], Image.Image):
+        x_image = numpy_to_pil(image_array)
+    else:
+        x_image = image_array if isinstance(image_array, list) else [image_array]
+    safety_checker_input = SAFETY_EXTRACTOR(x_image, return_tensors="pt").to("cuda")
+    has_nsfw_concept, concepts = SAFETY_MODEL(
+        images=x_image,
+        clip_input=safety_checker_input.pixel_values
+    )
+    has_nsfw_bool = bool(has_nsfw_concept[0])
+    return (
+        has_nsfw_bool,
+        replace_numpy_with_python(replace_sets_with_lists(concepts[0] if isinstance(concepts, list) else concepts))
+    )
 
 @app.post("/generate")
 def generate(request: ImageRequest, _auth: bool = Depends(verify_enter_token)):

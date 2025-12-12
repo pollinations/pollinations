@@ -150,6 +150,7 @@ Pollinations.AI is used in various projects, including:
 | 🆕 [Flowgen](https://flowgen.puter.site/) | A high-performance, web-based AI image generation studio built on the Puter.js... | alinaaa20708-ops |
 | 🆕 [Flux AI 🇹🇼](https://koy.xx.kg/) ([⭐ 0](https://github.com/kinai9661/Flux-AI-Pro)) | Cloudflare Workers' intelligent adaptive AI image generation platform | kinai9661 |
 | 🆕 🤖 [Robatika — AI Chat Platform](https://app.robatika.com) | Robatika is a rapidly growing AI chat platform that provides users with... | Robatika |
+| 🆕 [🛠️ NextGenTools](https://image-gen-adobe.nextgentools.online/) | AI-powered workflow for stock photography. Generate images, vectorize them, and... | @roni123332 |
 
 ### Games 🎲
 

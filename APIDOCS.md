@@ -186,6 +186,13 @@ curl "$BASE/v1/chat/completions" \
 - Paid models (e.g., `gptimage`) spend pollen from your account; keep an eye on your balance in the dashboard.
 - Add small delays when batch-generating images to avoid backend overload.
 
+### Helpful extras from the previous guide
+- **Consistency:** Set `seed` for repeatable images and `temperature` for text creativity control.
+- **Streaming:** Use `"stream": true` on chat completions for long responses.
+- **Safety:** Add `safe=true` to image calls for stricter NSFW filtering.
+- **Audio voices:** Supported voices include `alloy`, `echo`, `fable`, `onyx`, `nova`, `shimmer`.
+- **Reasoning effort:** `minimal`, `low`, `medium` (default), `high` let you trade speed vs. depth on compatible models.
+
 ## Support & Resources
 - Dashboard & keys: https://enter.pollinations.ai
 - API docs: https://gen.pollinations.ai/api/docs

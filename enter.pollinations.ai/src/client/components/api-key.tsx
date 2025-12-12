@@ -216,19 +216,19 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                                     );
                                 })}
                         </div>
+                        {apiKeys.some(
+                            (k) => k.metadata?.["keyType"] === "publishable",
+                        ) && (
+                            <div className="bg-gradient-to-r from-blue-100 to-indigo-100 rounded-xl p-4 border border-blue-300 mt-4">
+                                <p className="text-sm font-medium text-blue-900">
+                                    🌐 <strong>Publishable keys:</strong> Beta -
+                                    actively improving stability. For production
+                                    apps, we recommend secret keys.
+                                </p>
+                            </div>
+                        )}
                     </div>
                 ) : null}
-                {apiKeys.some(
-                    (k) => k.metadata?.["keyType"] === "publishable",
-                ) && (
-                    <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-lg text-xs text-blue-900">
-                        <span className="font-semibold">
-                            🌐 Publishable keys:
-                        </span>{" "}
-                        Beta - actively improving stability. For production
-                        apps, we recommend secret keys.
-                    </div>
-                )}
             </div>
             <Dialog.Root
                 open={!!deleteId}

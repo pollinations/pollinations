@@ -5,7 +5,8 @@ from config import MAX_FILE_SIZE, UPLOAD_FOLDER, MAX_IMAGE_DIMENSION
 import os
 from concurrent.futures import ThreadPoolExecutor
 import io
-import time 
+import time
+import uuid 
 
 
 executor = ThreadPoolExecutor(max_workers=10)
@@ -135,7 +136,7 @@ def validate_and_prepare_image(image_data: bytes):
         if width > MAX_IMAGE_DIMENSION or height > MAX_IMAGE_DIMENSION:
             raise Exception(f"Image dimensions too large: {width}x{height} (max: {MAX_IMAGE_DIMENSION})")
         
-        temp_file = os.path.join(UPLOAD_FOLDER, f"temp_{int(time.time() * 1000)}.jpg")
+        temp_file = os.path.join(UPLOAD_FOLDER, f"temp_{uuid.uuid4().hex}.jpg")
         img.save(temp_file, format="JPEG", quality=95)
         
         return temp_file, width, height, img.format

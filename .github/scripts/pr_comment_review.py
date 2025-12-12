@@ -17,7 +17,7 @@ from dataclasses import dataclass
 # Configuration
 GITHUB_API_BASE = "https://api.github.com"
 POLLINATIONS_API_BASE = "https://gen.pollinations.ai/v1/chat/completions"
-MODEL = "gemini-large"
+MODEL = "claude-large"
 
 # Token limits for gemini-large (1M context window!)
 MAX_INPUT_TOKENS = 900000  # Leave buffer from 1M limit

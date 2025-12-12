@@ -46,6 +46,7 @@ export async function processEvents(
         tinybirdAccessToken: string;
         minBatchSize?: number;
         maxBatchSize?: number;
+        retryDelay?: number;
     },
 ) {
     for await (const { processingId, events } of pendingEventBatches(
@@ -85,6 +86,19 @@ export async function processEvents(
                 polarDelivery,
                 tinybirdDelivery,
             });
+            if (config.retryDelay) {
+                // Wait a bit to prevent rate limiting
+                log.trace(
+                    "Waiting {retryDelay}ms before retrying: {processingId}",
+                    {
+                        retryDelay: config.retryDelay,
+                        processingId,
+                    },
+                );
+                await new Promise((resolve) =>
+                    setTimeout(resolve, config.retryDelay),
+                );
+            }
         }
     }
     // Clear successfully sent events
@@ -130,22 +144,23 @@ async function preparePendingEvents(
         return { processingId, events: [] };
     }
 
-    // Update events to processing status
-    await db
-        .update(event)
-        .set({
-            eventStatus: "processing",
-            eventProcessingId: processingId,
-            updatedAt: new Date(),
-        })
-        .where(eq(event.eventStatus, "pending"))
-        .limit(maxBatchSize);
-
-    // Fetch updated events (D1 has column limits on .returning())
-    const events = await db
-        .select()
-        .from(event)
-        .where(eq(event.eventProcessingId, processingId));
+    const [_, events] = await db.batch([
+        // Update events to processing status
+        db
+            .update(event)
+            .set({
+                eventStatus: "processing",
+                eventProcessingId: processingId,
+                updatedAt: new Date(),
+            })
+            .where(eq(event.eventStatus, "pending"))
+            .limit(maxBatchSize),
+        // Fetch updated events (D1 has column limits on .returning())
+        db
+            .select()
+            .from(event)
+            .where(eq(event.eventProcessingId, processingId)),
+    ]);
 
     return { processingId, events };
 }
@@ -174,43 +189,48 @@ async function rollbackProcessingEvents(
         tinybirdDelivery: DeliveryStatus;
     },
 ): Promise<void> {
-    // Mark events that exceed MAX_DELIVERY_ATTEMPTS as error
-    await db
-        .update(event)
-        .set({ eventStatus: "error" })
-        .where(
-            and(
-                eq(event.eventProcessingId, processingId),
-                or(
-                    gte(event.polarDeliveryAttempts, MAX_DELIVERY_ATTEMPTS),
-                    gte(event.tinybirdDeliveryAttempts, MAX_DELIVERY_ATTEMPTS),
+    await db.batch([
+        // Mark events that exceed MAX_DELIVERY_ATTEMPTS as error
+        db
+            .update(event)
+            .set({ eventStatus: "error" })
+            .where(
+                and(
+                    eq(event.eventProcessingId, processingId),
+                    or(
+                        gte(event.polarDeliveryAttempts, MAX_DELIVERY_ATTEMPTS),
+                        gte(
+                            event.tinybirdDeliveryAttempts,
+                            MAX_DELIVERY_ATTEMPTS,
+                        ),
+                    ),
                 ),
             ),
-        );
-    // Mark remaining events as pending
-    await db
-        .update(event)
-        .set({
-            eventStatus: "pending",
-            ...(status.polarDelivery === "succeeded" && {
-                polarDeliveredAt: new Date(),
-            }),
-            ...(status.polarDelivery !== "skipped" && {
-                polarDeliveryAttempts: sql`${event.polarDeliveryAttempts} + 1`,
-            }),
-            ...(status.tinybirdDelivery === "succeeded" && {
-                tinybirdDeliveredAt: new Date(),
-            }),
-            ...(status.tinybirdDelivery !== "skipped" && {
-                tinybirdDeliveryAttempts: sql`${event.tinybirdDeliveryAttempts} + 1`,
-            }),
-        })
-        .where(
-            and(
-                eq(event.eventProcessingId, processingId),
-                eq(event.eventStatus, "processing"),
+        // Mark remaining events as pending
+        db
+            .update(event)
+            .set({
+                eventStatus: "pending",
+                ...(status.polarDelivery === "succeeded" && {
+                    polarDeliveredAt: new Date(),
+                }),
+                ...(status.polarDelivery !== "skipped" && {
+                    polarDeliveryAttempts: sql`${event.polarDeliveryAttempts} + 1`,
+                }),
+                ...(status.tinybirdDelivery === "succeeded" && {
+                    tinybirdDeliveredAt: new Date(),
+                }),
+                ...(status.tinybirdDelivery !== "skipped" && {
+                    tinybirdDeliveryAttempts: sql`${event.tinybirdDeliveryAttempts} + 1`,
+                }),
+            })
+            .where(
+                and(
+                    eq(event.eventProcessingId, processingId),
+                    eq(event.eventStatus, "processing"),
+                ),
             ),
-        );
+    ]);
 }
 
 async function confirmProcessingEvents(

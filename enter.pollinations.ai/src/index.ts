@@ -82,6 +82,7 @@ export default {
             polarServer: env.POLAR_SERVER,
             tinybirdIngestUrl: env.TINYBIRD_INGEST_URL,
             tinybirdAccessToken: env.TINYBIRD_ACCESS_TOKEN,
+            retryDelay: 1000,
         });
     },
 } satisfies ExportedHandler<CloudflareBindings>;

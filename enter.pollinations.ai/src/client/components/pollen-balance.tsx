@@ -81,20 +81,6 @@ export const PollenBalance: FC<PollenBalanceProps> = ({
                     balance to update.
                 </p>
             </div>
-            {/* Temporary payment warning */}
-            <div className="bg-gradient-to-r from-amber-100 to-orange-100 rounded-xl p-4 border border-amber-400 mt-4">
-                <p className="text-sm font-bold text-amber-900">
-                    ⚠️ Payments temporarily disabled
-                </p>
-                <p className="text-sm text-amber-800 mt-1">
-                    We're fixing a bug where credits aren't applied immediately.
-                    Expected fix: today.
-                </p>
-                <p className="text-sm text-amber-800 mt-1">
-                    If you paid but didn't receive your balance, please contact
-                    us — we'll reimburse or compensate you.
-                </p>
-            </div>
         </div>
     );
 };

@@ -72,13 +72,27 @@ export const PollenBalance: FC<PollenBalanceProps> = ({
                 </div>
             </div>
             {/* Purchase info */}
-            <div className="bg-gradient-to-r from-purple-100 to-pink-100 rounded-xl p-4 border-2 border-purple-300 mt-4">
-                <p className="text-sm font-medium text-purple-900">
+            <div className="bg-gradient-to-r from-violet-100 to-purple-100 rounded-xl p-4 border border-violet-300 mt-4">
+                <p className="text-sm font-medium text-violet-900">
                     🎁 During beta, we double your pollen with every purchase!
                 </p>
-                <p className="text-sm font-medium text-purple-900 mt-2">
+                <p className="text-sm font-medium text-violet-900 mt-2">
                     ⏳ After a purchase, please wait 1-2 minutes for your
                     balance to update.
+                </p>
+            </div>
+            {/* Temporary payment warning */}
+            <div className="bg-gradient-to-r from-amber-100 to-orange-100 rounded-xl p-4 border border-amber-400 mt-4">
+                <p className="text-sm font-bold text-amber-900">
+                    ⚠️ Payments temporarily disabled
+                </p>
+                <p className="text-sm text-amber-800 mt-1">
+                    We're fixing a bug where credits aren't applied immediately.
+                    Expected fix: today.
+                </p>
+                <p className="text-sm text-amber-800 mt-1">
+                    If you paid but didn't receive your balance, please contact
+                    us — we'll reimburse or compensate you.
                 </p>
             </div>
         </div>

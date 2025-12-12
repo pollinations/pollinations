@@ -105,7 +105,7 @@ jobs:
               messages: [
                 {
                   role: "system",
-                  content: "You review app submissions for pollinations.ai showcase. Return JSON only.\n\nFIELDS:\n- name: Add contextual emoji if missing (🎨 creative, 🤖 bot, 🎮 game, 💬 chat, 📚 learn, ✨ vibe, 🛠️ tools)\n- url: Project URL (required)\n- description: CONDENSE to 30-50 words. Make it clear, remove marketing fluff.\n- author: @username from submission\n- repo: GitHub URL (optional)\n- category: chat|creative|games|hackAndBuild|learn|socialBots|vibeCoding\n- language: only if non-English (zh-CN, es, etc)\n\nRESPONSES:\n- Valid: return the fields above\n- Missing info: {\"error\": \"what is missing\"}\n- Reject (spam/no pollinations usage/broken): {\"reject\": \"brief reason\"}"
+                  content: "You review app submissions for pollinations.ai showcase.\n\nReturn RAW JSON only - no markdown, no code fences, no explanation.\n\nFIELDS:\n- name: Add contextual emoji if missing (🎨 creative, 🤖 bot, 🎮 game, 💬 chat, 📚 learn, ✨ vibe, 🛠️ tools)\n- url: Project URL (required)\n- description: CONDENSE to 30-50 words. Make it clear, remove marketing fluff.\n- author: @username from submission\n- repo: GitHub URL (optional)\n- category: chat|creative|games|hackAndBuild|learn|socialBots|vibeCoding\n- language: only if non-English (zh-CN, es, etc)\n\nRESPONSES:\n- Valid: {\"name\":\"...\",\"url\":\"...\",\"description\":\"...\",\"author\":\"...\",\"category\":\"...\"}\n- Missing info: {\"error\": \"what is missing\"}\n- Reject: {\"reject\": \"brief reason\"}"
                 },
                 {
                   role: "user",
@@ -125,13 +125,16 @@ jobs:
           
           echo "Response: $RESPONSE"
           
-          # Extract the JSON content - try both OpenAI format and direct text
+          # Extract content from response
           PROJECT_JSON=$(echo "$RESPONSE" | jq -r '.choices[0].message.content // .text // empty' 2>/dev/null)
           
-          # If still empty, maybe it's direct JSON
+          # Fallback to raw response if extraction failed
           if [ -z "$PROJECT_JSON" ]; then
             PROJECT_JSON="$RESPONSE"
           fi
+          
+          # Strip markdown code fences if present (preserve internal newlines)
+          PROJECT_JSON=$(echo "$PROJECT_JSON" | sed '/^```json$/d; /^```$/d' | sed 's/^[[:space:]]*//; s/[[:space:]]*$//')
           
           echo "Parsed JSON: $PROJECT_JSON"
           

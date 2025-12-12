@@ -269,6 +269,7 @@ Pollinations.AI is used in various projects, including:
 | [JustBuildThings](https://justbuildthings.com) | A natural language programming interface that lets users create web... | @buildmaster |
 | [Websim](https://websim.ai/c/bXsmNE96e3op5rtUS) | A web simulation tool that integrates Pollinations.ai. | @voodoohop |
 | 🆕 [Aqua Application Programming Interface](https://aquadevs.com/) | This is an learning project for me to learn how to track users, backend check,... | kiskreforev |
+| 🆕 [Polli YT search](http://replit.com/@nojeheg897/VideoFind5) ([⭐ 0](https://github.com/Fanimazahuia/VideoFind5)) | Essentially, I am building a search engine in YT that can source tens of... | Fanimazahuia |
 
 ### Creative 🎨
 

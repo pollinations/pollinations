@@ -164,4 +164,14 @@ export const vibeCodingProjects = [
         "submissionDate": "2025-12-03",
         "order": 5,
     },
+  {
+    "name": "Polli YT search",
+    "url": "http://replit.com/@nojeheg897/VideoFind5",
+    "description": "Essentially, I am building a search engine in YT that can source tens of thousands of videos to find a match. With Polli.ai the agent can look at thumbnails, analyze whole videos visually and with transcriptions and look at various video metrics to find the wanted video. This wont only use titles to look for relevant videos, it will look at various matrics, making it a powerful search engine. In its core I use pollinations for deep video analysis. Even though this project is not yet build and a bit buggy and shitty still, the vision is there lol. Its mostly build using Replit, but I plan to continue working on it in Kilo Code, with the help of Pollinations Gemini 3 and Opus 4.5 perhaps.\n\nIn the future I plan for this engine to be a part of a workflow for autonomously creating videos, using this engine for finding relevant videos, cutting them and using those clips in creating the desired video. Like if you want to build a video about Elon Musk, this engine would be able to fetch videos about him doing different stuff in the different parts of the video. For example, if the video is talking about space x, the workflow can fetch, cut and put videos from YT about space x in that section.\n\nHaving said that, this whole project highly depends on the use of AI from Pollinations, from the engine itself that needs to analyze thousands of videos to me building it in Kilo Code, which will envolve me using the latest coding models available. So I am looking to upgrade in tier for me to be able to execute this project and potentially make the engine free for users who can put their own Polli api key. I have been seed tier for the longest time, maybe like half a year at this point and I am looking to upgrade to nectar if possible. I know I am asking for a lot, but I would really appreciate it!",
+    "author": "Fanimazahuia",
+    "repo": "https://github.com/Fanimazahuia/VideoFind5",
+    "category": "vibeCoding",
+    "submissionDate": "2025-12-10",
+    "order": 5
+  }
 ];

@@ -33,7 +33,7 @@ interface ModelDefinition {
 const models: ModelDefinition[] = [
     {
         name: "openai",
-        config: portkeyConfig["gpt-5-nano-2025-08-07"],
+        config: portkeyConfig["gpt-5-mini-2025-08-07"],
         transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
     },
     {
@@ -43,7 +43,7 @@ const models: ModelDefinition[] = [
     },
     {
         name: "openai-large",
-        config: portkeyConfig["gpt-4.1-2025-04-14"],
+        config: portkeyConfig["gpt-5.2"],
         transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
     },
     {
@@ -87,11 +87,8 @@ const models: ModelDefinition[] = [
     },
     {
         name: "openai-reasoning",
-        config: portkeyConfig["openai/o4-mini"],
-        transform: pipe(
-            createSystemPromptTransform(BASE_PROMPTS.conversational),
-            removeSystemMessages,
-        ),
+        config: portkeyConfig["gpt-5.2"],
+        transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
     },
     {
         name: "gemini",

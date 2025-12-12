@@ -101,7 +101,7 @@ jobs:
           PAYLOAD=$(jq -n \
             --arg body "$ISSUE_BODY" \
             '{
-              model: "openai",
+              model: "claude-large",
               messages: [
                 {
                   role: "system",

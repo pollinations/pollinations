@@ -2,7 +2,7 @@ name: PR Create App Submission
 
 on:
   issues:
-    types: [opened, edited, reopened]
+    types: [opened, edited, reopened, labeled]
   pull_request:
     paths:
       - '.github/workflows/pr-create-app-submission.yml'  # Trigger on self to bootstrap

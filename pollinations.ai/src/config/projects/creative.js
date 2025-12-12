@@ -1053,5 +1053,14 @@ export const creativeProjects = [
     "category": "creative",
     "submissionDate": "2025-12-10",
     "order": 5
+  },
+  {
+    "name": "🛠️ NextGenTools",
+    "url": "https://image-gen-adobe.nextgentools.online/",
+    "description": "AI-powered workflow for stock photography. Generate images, vectorize them, and inject metadata for Adobe Stock submissions. Streamlines the process from creation to marketplace-ready assets.",
+    "author": "@roni123332",
+    "category": "creative",
+    "submissionDate": "2025-12-12",
+    "order": 5
   }
 ];

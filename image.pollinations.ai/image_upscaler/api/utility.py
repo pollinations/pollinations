@@ -67,7 +67,7 @@ def validate_upscaling_request(image_width: int, image_height: int, target_resol
     }
 
 def calculate_upscale_strategy(image_width: int, image_height: int, target_max_dimension: int) -> dict:
-    max_dimension = max(target_max_dimension, MAX_8K_DIMENSION)
+    max_dimension = target_max_dimension
     max_current_dimension = max(image_width, image_height)
     if max_current_dimension >= max_dimension:
         logger.info(f"Image already at or exceeds target dimension {max_current_dimension}px >= {max_dimension}px")
@@ -79,23 +79,32 @@ def calculate_upscale_strategy(image_width: int, image_height: int, target_max_d
             'total_scale': 1.0,
             'reason': 'Image already meets or exceeds target resolution'
         }
+    
     strategy = []
     current_width = image_width
     current_height = image_height
     total_scale = 1.0
-    for pass_num in range(2):
-        next_width = current_width * 2
-        next_height = current_height * 2
-        next_max_dimension = max(next_width, next_height)
-        if next_max_dimension <= max_dimension:
-            strategy.append(2)
-            current_width = next_width
-            current_height = next_height
-            total_scale *= 2
-            logger.info(f"Pass {pass_num + 1}: Can apply 2x upscaling -> {current_width}x{current_height}")
+    
+    # Try to build optimal scaling strategy using 2x and 4x passes
+    # Supports up to 8x total scaling (e.g., 2x + 4x, or 2x + 2x + 2x)
+    for pass_num in range(3):
+        # Try 4x first if we're far from target, then 2x
+        for scale_factor in [4, 2]:
+            next_width = current_width * scale_factor
+            next_height = current_height * scale_factor
+            next_max_dimension = max(next_width, next_height)
+            if next_max_dimension <= max_dimension:
+                strategy.append(scale_factor)
+                current_width = next_width
+                current_height = next_height
+                total_scale *= scale_factor
+                logger.info(f"Pass {pass_num + 1}: Applied {scale_factor}x upscaling -> {current_width}x{current_height}")
+                break
         else:
-            logger.info(f"Pass {pass_num + 1}: Cannot apply 2x (would be {next_width}x{next_height}, exceeds {max_dimension}px)")
+            # If neither 4x nor 2x works, we're done
+            logger.info(f"Pass {pass_num + 1}: No scaling factor fits within target dimension")
             break
+    
     if len(strategy) == 0:
         max_scale_width = max_dimension / image_width
         max_scale_height = max_dimension / image_height

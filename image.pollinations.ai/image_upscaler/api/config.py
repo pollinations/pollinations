@@ -4,7 +4,7 @@ MODEL_PATH_x2 = "model_cache/RealESRGAN_x2plus.pth"
 FACE_ENHANCER_MODEL = "model_cache/GFPGANv1.4.pth"
 NUM_SERVERS = 2
 MAX_FILE_SIZE = 7 * 1024 * 1024  
-MAX_IMAGE_DIMENSION = 2048 
+MAX_IMAGE_DIMENSION = 4096 
 UPLOAD_FOLDER = "uploads"
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'webp', 'bmp'}
 CLEANUP_INTERVAL = 300  
@@ -31,9 +31,9 @@ UPSCALING_THRESHOLDS = {
         'description': '4K: Max 2x upscaling'
     },
     '8k': {
-        'max_input_dimension': 2048,   
-        'max_scale_factor': 4.0,
-        'description': '8K: Max 4x upscaling'
+        'max_input_dimension': 4096,   
+        'max_scale_factor': 8.0,
+        'description': '8K: Max 8x upscaling (1024x8, 2048x4, 4096x2)'
     }
 }
 

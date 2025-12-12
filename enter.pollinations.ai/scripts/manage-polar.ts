@@ -2,8 +2,7 @@ import { Polar } from "@polar-sh/sdk";
 import { command, number, run, string, boolean } from "@drizzle-team/brocli";
 import { inspect } from "node:util";
 import { applyColor, applyStyle } from "../src/util.ts";
-import { email } from "zod/v4-mini";
-import { Subscription } from "@polar-sh/sdk/models/components/subscription.js";
+import { type Subscription } from "@polar-sh/sdk/models/components/subscription.js";
 
 const VERSION = "v1";
 
@@ -527,6 +526,8 @@ const customerListEvents = command({
         const customer = getCustomerReponse.result.items[0];
         if (!customer) {
             throw new Error("Customer not found");
+        } else {
+            console.log(`Found customer id: ${customer.id}`);
         }
         const response = await polar.events.list({
             limit: 100,

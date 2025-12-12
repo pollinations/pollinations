@@ -95,6 +95,7 @@ jobs:
         id: parse
         env:
           ISSUE_BODY: ${{ steps.issue.outputs.body }}
+          POLLINATIONS_TOKEN: ${{ secrets.POLLINATIONS_TOKEN }}
         run: |
           # Build JSON payload safely
           PAYLOAD=$(jq -n \
@@ -115,10 +116,10 @@ jobs:
             }')
           
           echo "Calling Pollinations API..."
-          echo "Payload: $PAYLOAD"
           
-          # Call Pollinations API (no auth needed for basic usage)
-          RESPONSE=$(curl -s -X POST "https://text.pollinations.ai/" \
+          # Call gen.pollinations.ai with auth token
+          RESPONSE=$(curl -s -X POST "https://gen.pollinations.ai/v1/chat/completions" \
+            -H "Authorization: Bearer $POLLINATIONS_TOKEN" \
             -H "Content-Type: application/json" \
             -d "$PAYLOAD")
           

@@ -48,6 +48,14 @@ export const portkeyConfig: PortkeyConfigMap = {
         ),
         "max-completion-tokens": 1024,
     }),
+    "gpt-5.2": () => ({
+        ...createAzureModelConfig(
+            process.env.AZURE_MYCELI_GPT52_API_KEY,
+            process.env.AZURE_MYCELI_GPT52_ENDPOINT,
+            "gpt-5.2",
+        ),
+        "max-completion-tokens": 16384,
+    }),
     "gpt-5-nano-2025-08-07": () => ({
         ...createAzureModelConfig(
             process.env.AZURE_OPENAI_NANO_5_API_KEY,

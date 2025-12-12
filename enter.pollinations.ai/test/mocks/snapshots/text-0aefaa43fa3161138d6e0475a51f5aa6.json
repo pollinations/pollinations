@@ -1,0 +1,64 @@
+{
+  "request": {
+    "url": "http://ec2-3-80-56-235.compute-1.amazonaws.com:16385/openai",
+    "method": "POST",
+    "body": {
+      "type": "json",
+      "data": {
+        "model": "nova-micro",
+        "messages": [
+          {
+            "role": "user",
+            "content": "Is Berlin the capital of Germany? Reply yes or no."
+          }
+        ],
+        "seed": 42
+      }
+    },
+    "params": {}
+  },
+  "response": {
+    "status": 200,
+    "statusText": "OK",
+    "headers": {
+      "access-control-allow-origin": "*",
+      "connection": "keep-alive",
+      "content-length": "588",
+      "content-type": "application/json; charset=utf-8",
+      "date": "Thu, 11 Dec 2025 16:46:05 GMT",
+      "etag": "W/\"24c-rL+6FPP/H266PrcLE9hLZeTtugw\"",
+      "keep-alive": "timeout=5",
+      "x-model-used": "amazon.nova-micro-v1:0",
+      "x-powered-by": "Express",
+      "x-usage-completion-text-tokens": "57",
+      "x-usage-prompt-text-tokens": "262",
+      "x-usage-total-tokens": "319"
+    },
+    "body": {
+      "type": "json",
+      "data": {
+        "id": "pllns_76668764b166b8a74850aa08b077b24f",
+        "created": 1765471565,
+        "model": "amazon.nova-micro-v1:0",
+        "system_fingerprint": "fp",
+        "choices": [
+          {
+            "index": 0,
+            "finish_reason": "stop",
+            "logprobs": null,
+            "message": {
+              "role": "assistant",
+              "content": "Absolutely, Berlin is the capital of Germany. So, yes, it is! This vibrant city is much more than just a political center; it's a hub of culture, history, and dynamic energy. Got any other questions or need some tips about exploring this fascinating city?"
+            }
+          }
+        ],
+        "object": "chat.completion",
+        "usage": {
+          "prompt_tokens": 262,
+          "completion_tokens": 57,
+          "total_tokens": 319
+        }
+      }
+    }
+  }
+}

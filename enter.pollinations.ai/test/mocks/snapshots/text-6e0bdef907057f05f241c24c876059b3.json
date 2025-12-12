@@ -1,0 +1,76 @@
+{
+  "request": {
+    "url": "http://ec2-3-80-56-235.compute-1.amazonaws.com:16385/openai",
+    "method": "POST",
+    "body": {
+      "type": "json",
+      "data": {
+        "model": "kimi-k2-thinking",
+        "messages": [
+          {
+            "role": "user",
+            "content": "Is Berlin the capital of Germany? Reply yes or no."
+          }
+        ],
+        "seed": 42
+      }
+    },
+    "params": {}
+  },
+  "response": {
+    "status": 200,
+    "statusText": "OK",
+    "headers": {
+      "access-control-allow-origin": "*",
+      "connection": "keep-alive",
+      "content-length": "2153",
+      "content-type": "application/json; charset=utf-8",
+      "date": "Thu, 11 Dec 2025 16:45:57 GMT",
+      "etag": "W/\"869-UVSip11Yu12oN4EzRpkRtoQ743w\"",
+      "keep-alive": "timeout=5",
+      "x-model-used": "moonshotai/kimi-k2-thinking-maas",
+      "x-powered-by": "Express",
+      "x-usage-completion-text-tokens": "344",
+      "x-usage-prompt-text-tokens": "262",
+      "x-usage-total-tokens": "606"
+    },
+    "body": {
+      "type": "json",
+      "data": {
+        "choices": [
+          {
+            "finish_reason": "stop",
+            "index": 0,
+            "logprobs": null,
+            "matched_stop": 163586,
+            "message": {
+              "content": "yes",
+              "reasoning_content": "The user is asking a simple factual question: \"Is Berlin the capital of Germany? Reply yes or no.\"\n\nThe instruction is to reply with just \"yes\" or \"no\". This is a straightforward geography/politics fact. Berlin is indeed the capital of Germany. So the answer is \"yes\".\n\nI need to be careful about the system prompt. It says I'm an expert conversationalist, companionable, confident, can switch tonal types, etc. But the user specifically says \"Reply yes or no.\" This is a constraint on the format. The system prompt says \"Always avoid templated language\" and \"You never lecture people\", but in this case, the user is explicitly asking for a minimal answer. I should respect that constraint.\n\nThe user wants a simple \"yes\" or \"no\". I should not add any fluff or explanation. Just \"yes\".\n\nLet me double-check: Berlin is the capital of Germany. Yes, that's correct. The German government (Bundestag, Bundesrat, Chancellor's office, President's office) is located in Berlin. It's been the capital since reunification in 1990 (and historically before that). So the answer is definitively \"yes\".\n\nThe user wants just \"yes\" or \"no\". I will comply. I should not add any extra text or apologies or explanations. Just the single word.\n\nThe system prompt says \"You never use phrases that imply moral superiority...\" but I don't need any of those. It also says \"Sometimes people just want you to listen, and your answers should encourage that.\" But this is not a listening situation - it's a direct factual query with explicit format requirements.\n\nSo the correct response is simply: yes ",
+              "role": "assistant",
+              "tool_calls": null
+            }
+          }
+        ],
+        "created": 1765471557,
+        "id": "pllns_c9af7c844344c1dd9c23a620ed9e2ce0",
+        "metadata": {
+          "weight_version": "default"
+        },
+        "model": "moonshotai/kimi-k2-thinking-maas",
+        "object": "chat.completion",
+        "usage": {
+          "completion_tokens": 344,
+          "extra_properties": {
+            "google": {
+              "traffic_type": "ON_DEMAND"
+            }
+          },
+          "prompt_tokens": 262,
+          "prompt_tokens_details": null,
+          "reasoning_tokens": 0,
+          "total_tokens": 606
+        }
+      }
+    }
+  }
+}

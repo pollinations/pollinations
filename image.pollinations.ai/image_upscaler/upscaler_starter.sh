@@ -1,6 +1,6 @@
 echo "Starting ESRGAN model servers..."
-cd ~/upscale.pollinations
+cd ~/pollinations/image.pollinations.ai/image_upscaler/
 echo "Starting Quart application with background cleanup..."
-python api/app.py
+python api/server.py
 
 wait

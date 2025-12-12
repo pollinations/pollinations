@@ -21,6 +21,8 @@ app = Quart(__name__)
 cors(app, allow_origin="*")
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
+heartbeat_task = None
+
 def get_public_ip():
     try:
         response = requests.get('https://api.ipify.org', timeout=5)
@@ -34,8 +36,9 @@ async def send_heartbeat():
     if not public_ip:
         public_ip = await asyncio.get_event_loop().run_in_executor(None, get_public_ip)
     if public_ip:
+        logger.info(f"Public IP: {public_ip}")
         try:
-            port = int(os.getenv("PUBLIC_PORT", os.getenv("PORT", "10002")))
+            port = int(os.getenv("PUBLIC_PORT", os.getenv("PORT", "10005")))
             url = f"http://{public_ip}:{port}"
             service_type = os.getenv("SERVICE_TYPE", "zimage")
             async with aiohttp.ClientSession() as session:
@@ -49,6 +52,8 @@ async def send_heartbeat():
                         logger.error(f"Failed to send heartbeat. Status: {response.status}")
         except Exception as e:
             logger.error(f"Error sending heartbeat: {e}")
+    else:
+        logger.warning("Public IP not found, skipping heartbeat")
 
 
 async def periodic_heartbeat():
@@ -153,6 +158,34 @@ async def upscale_endpoint():
         logger.error(f"Unexpected error in upscale endpoint: {e}")
         return jsonify({"error": f"Internal server error: {str(e)}"}), 500
 
+async def periodic_heartbeat():
+    while True:
+        try:
+            await send_heartbeat()
+            await asyncio.sleep(30)
+        except asyncio.CancelledError:
+            logger.info("Heartbeat task cancelled")
+            raise
+        except Exception as e:
+            logger.error(f"Error in periodic heartbeat: {e}")
+            await asyncio.sleep(5)
+
+@app.before_serving
+async def startup():
+    global heartbeat_task
+    logger.info("Application startup: creating heartbeat task")
+    heartbeat_task = asyncio.create_task(periodic_heartbeat())
+
+@app.after_serving
+async def shutdown():
+    global heartbeat_task
+    logger.info("Application shutdown: cancelling heartbeat task")
+    if heartbeat_task:
+        heartbeat_task.cancel()
+        try:
+            await heartbeat_task
+        except asyncio.CancelledError:
+            pass
 
 @app.route('/health', methods=['GET'])
 async def health_check():
@@ -160,7 +193,8 @@ async def health_check():
         "status": "healthy",
         "timestamp": time.time(),
         "max_image_size_mb": MAX_BASE64_SIZE / 1024 / 1024,
-        "supported_resolutions": ["2k", "4k", "8k"]
+        "supported_resolutions": ["2k", "4k", "8k"],
+        "heartbeat_active": heartbeat_task is not None and not heartbeat_task.done()
     })
 
 

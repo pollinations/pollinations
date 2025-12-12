@@ -287,35 +287,42 @@ jobs:
           PROJECT_REPO=$(echo "$PROJECT_JSON" | jq -r '.repo // empty')
           PROJECT_LANG=$(echo "$PROJECT_JSON" | jq -r '.language // empty')
           
-          # Build PR body (no leading spaces for proper markdown)
-          PR_BODY="## 🌸 App Submission Summary
+          # Build PR body via GITHUB_ENV (available in next step)
+          echo "PR_BODY<<EOF" >> $GITHUB_ENV
+          echo "## 🌸 App Submission Summary" >> $GITHUB_ENV
+          echo "" >> $GITHUB_ENV
+          echo "- Name: $PROJECT_NAME" >> $GITHUB_ENV
+          echo "- Category: $CATEGORY" >> $GITHUB_ENV
+          echo "- URL: $PROJECT_URL" >> $GITHUB_ENV
+          echo "- Repo: ${PROJECT_REPO:-N/A}" >> $GITHUB_ENV
+          echo "- Language: ${PROJECT_LANG:-English}" >> $GITHUB_ENV
+          echo "- Submitter: @$ISSUE_AUTHOR" >> $GITHUB_ENV
+          echo "" >> $GITHUB_ENV
+          echo "### Description" >> $GITHUB_ENV
+          echo "$PROJECT_DESC" >> $GITHUB_ENV
+          echo "" >> $GITHUB_ENV
+          echo "---" >> $GITHUB_ENV
+          echo "Co-authored-by: $ISSUE_AUTHOR <${ISSUE_AUTHOR_ID}+${ISSUE_AUTHOR}@users.noreply.github.com>" >> $GITHUB_ENV
+          echo "Fixes #$ISSUE_NUMBER" >> $GITHUB_ENV
+          echo "EOF" >> $GITHUB_ENV
+          echo "PROJECT_NAME_ENV=$PROJECT_NAME" >> $GITHUB_ENV
+          echo "CATEGORY_ENV=$CATEGORY" >> $GITHUB_ENV
+          echo "BRANCH_ENV=$BRANCH" >> $GITHUB_ENV
 
-| Field | Value |
-|-------|-------|
-| **Name** | $PROJECT_NAME |
-| **Category** | $CATEGORY |
-| **URL** | $PROJECT_URL |
-| **Repo** | ${PROJECT_REPO:-N/A} |
-| **Language** | ${PROJECT_LANG:-English} |
-| **Submitter** | @$ISSUE_AUTHOR |
-
-### Description
-$PROJECT_DESC
-
----
-Co-authored-by: $ISSUE_AUTHOR <${ISSUE_AUTHOR_ID}+${ISSUE_AUTHOR}@users.noreply.github.com>
-Fixes #$ISSUE_NUMBER"
-          
-          # Create PR (or update existing)
-          EXISTING_PR=$(gh pr list --head "$BRANCH" --json number -q '.[0].number')
+      - name: Create PR
+        if: steps.parse.outputs.needs_info != 'true' && steps.parse.outputs.rejected != 'true'
+        env:
+          GH_TOKEN: ${{ steps.pollinations-ai.outputs.token }}
+        run: |
+          EXISTING_PR=$(gh pr list --head "${{ env.BRANCH_ENV }}" --json number -q '.[0].number')
           if [ -n "$EXISTING_PR" ]; then
-            echo "PR #$EXISTING_PR already exists, updating..."
+            echo "PR #$EXISTING_PR already exists"
           else
             gh pr create \
-              --title "Add $PROJECT_NAME to $CATEGORY" \
-              --body "$PR_BODY" \
+              --title "Add ${{ env.PROJECT_NAME_ENV }} to ${{ env.CATEGORY_ENV }}" \
+              --body "${{ env.PR_BODY }}" \
               --base main \
-              --head "$BRANCH"
+              --head "${{ env.BRANCH_ENV }}"
           fi
 
       - name: Comment on issue with PR link

@@ -1,4 +1,5 @@
 from quart import Quart, request, jsonify
+from quart_cors import cors
 import asyncio
 import base64
 import os
@@ -8,13 +9,59 @@ from upscale import upscale_image_pipeline
 from quart_cors import cors
 from config import UPLOAD_FOLDER, MAX_BASE64_SIZE
 from utility import validate_and_prepare_image, executor
+import warnings
+import requests
+import aiohttp
 
-
+os.environ["HF_HUB_DISABLE_PROGRESS_BARS"] = "1"
+os.environ["TQDM_DISABLE"] = "1"
+warnings.filterwarnings("ignore")
 
 app = Quart(__name__)
 cors(app, allow_origin="*")
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
+def get_public_ip():
+    try:
+        response = requests.get('https://api.ipify.org', timeout=5)
+        return response.text
+    except Exception:
+        return None
+    
+
+async def send_heartbeat():
+    public_ip = os.getenv("PUBLIC_IP")
+    if not public_ip:
+        public_ip = await asyncio.get_event_loop().run_in_executor(None, get_public_ip)
+    if public_ip:
+        try:
+            port = int(os.getenv("PUBLIC_PORT", os.getenv("PORT", "10002")))
+            url = f"http://{public_ip}:{port}"
+            service_type = os.getenv("SERVICE_TYPE", "zimage")
+            async with aiohttp.ClientSession() as session:
+                async with session.post(
+                    'https://image.pollinations.ai/register',
+                    json={'url': url, 'type': service_type}
+                ) as response:
+                    if response.status == 200:
+                        logger.info(f"Heartbeat sent successfully. URL: {url}, type: {service_type}")
+                    else:
+                        logger.error(f"Failed to send heartbeat. Status: {response.status}")
+        except Exception as e:
+            logger.error(f"Error sending heartbeat: {e}")
+
+
+async def periodic_heartbeat():
+    while True:
+        try:
+            await send_heartbeat()
+            await asyncio.sleep(30)
+        except asyncio.CancelledError:
+            logger.info("Heartbeat task cancelled")
+            raise
+        except Exception as e:
+            logger.error(f"Error in periodic heartbeat: {e}")
+            await asyncio.sleep(5)
 
 async def process_upscale(image_path: str, target_resolution: str, enhance_faces: bool = True):
     loop = asyncio.get_event_loop()
@@ -119,4 +166,4 @@ async def health_check():
 
 if __name__ == '__main__':
     logger.info("Starting Quart application...")
-    app.run(host='0.0.0.0', port=8000, debug=False, workers=4)
+    app.run(host='0.0.0.0', port=10005, debug=False, workers=4)

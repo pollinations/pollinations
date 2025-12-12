@@ -10,13 +10,13 @@ ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'webp', 'bmp'}
 CLEANUP_INTERVAL = 300  
 FILE_MAX_AGE = 300  
 
-MAX_8K_DIMENSION = 7680  
+MAX_8K_DIMENSION = 8192  
 MAX_4K_DIMENSION = 3840  
 MAX_2K_DIMENSION = 2048  
 RESOLUTION_TARGETS = {
     '2k': 2048,
     '4k': 3840,
-    '8k': 7680
+    '8k': 8192
 }
 
 UPSCALING_THRESHOLDS = {
@@ -26,9 +26,9 @@ UPSCALING_THRESHOLDS = {
         'description': 'No upscaling for 2K target'
     },
     '4k': {
-        'max_input_dimension': 2048,  
+        'max_input_dimension': 3840,  
         'max_scale_factor': 2.0,
-        'description': '4K: Max 2x upscaling'
+        'description': '4K: Max 2x upscaling (up to 3840px input)'
     },
     '8k': {
         'max_input_dimension': 4096,   

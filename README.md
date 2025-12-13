@@ -417,6 +417,7 @@ Pollinations.AI is used in various projects, including:
 | 🆕 [🎮 Nikke-DB Story/Roleplaying Generator](https://nikke-db.pages.dev/) ([⭐ 0](https://github.com/Nikke-db/nikke-db-vue)) | Interactive story and roleplay generator for Goddess of Victory: NIKKE.... | @rhystic1 |
 | 🆕 [🎮 Nikke-DB Story/Roleplaying Generator](https://nikke-db.pages.dev/) ([⭐ 0](https://github.com/Nikke-db/nikke-db-vue)) | Interactive story and roleplay generator for Goddess of Victory: NIKKE.... | @rhystic1 |
 | 🆕 🎮 ii's Stupid Menu ([⭐ 0](https://github.com/iiDk-the-actual/iis.Stupid.Menu)) | A mod menu for Gorilla Tag featuring 1600+ mods and an AI Assistant powered by... | @iiDk-the-actual |
+| 🆕 [🎮 DnD Character Sheet Helper](https://rkdn.app/dnd) ([⭐ 0](https://github.com/arcadiancomp/dnd)) | A fun tool for creating D&D character sheets with AI-generated character... | @ArcadianComp |
 
 ### Hack-&-Build 🛠️
 

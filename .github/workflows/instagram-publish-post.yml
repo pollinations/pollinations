@@ -40,17 +40,26 @@ jobs:
 
       - name: Determine post file path
         id: post-file
+        env:
+          PR_FILES: ${{ toJson(github.event.pull_request.changed_files) }}
         run: |
           if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
             echo "path=${{ github.event.inputs.post_file }}" >> $GITHUB_OUTPUT
           else
-            # Find the JSON file that was changed in the PR
-            # Get the most recent .json file in the instagram/posts folder
-            POST_FILE=$(ls -t NEWS/transformed/instagram/posts/*.json 2>/dev/null | head -1)
+            # Get the specific file changed in this PR using GitHub API
+            PR_NUMBER="${{ github.event.pull_request.number }}"
+            REPO="${{ github.repository }}"
+
+            # Fetch files changed in this specific PR
+            POST_FILE=$(curl -s -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+              "https://api.github.com/repos/${REPO}/pulls/${PR_NUMBER}/files" | \
+              jq -r '.[] | select(.filename | startswith("NEWS/transformed/instagram/posts/") and endswith(".json")) | .filename' | head -1)
+
             if [ -z "$POST_FILE" ]; then
-              echo "No post file found"
+              echo "No instagram post file found in PR #${PR_NUMBER}"
               exit 1
             fi
+            echo "Found post file from PR: $POST_FILE"
             echo "path=$POST_FILE" >> $GITHUB_OUTPUT
           fi
 

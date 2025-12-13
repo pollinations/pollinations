@@ -153,7 +153,8 @@ Pollinations.AI is used in various projects, including:
 | 🆕 [🛠️ NextGenTools](https://image-gen-adobe.nextgentools.online/) | AI-powered workflow for stock photography. Generate images, vectorize them, and... | @roni123332 |
 | 🆕 [📚 AI Story Illustrator](https://soft-cucurucho-6758e7.netlify.app/) | Interactive storybook creator where you write scenes and get AI-generated... | @KAmaL-senpai |
 | 🆕 🎨 ChimeraStudio ([⭐ 0](https://github.com/migueland94/ChimeraStudio)) | Lightweight browser-based sandbox for testing Pollinations API capabilities.... | @migueland94 |
-
+| 🆕 🤖 [🎨 imgs_ai_bot](https://t.me/imgs_ai_bot) | A multifunctional Telegram bot for generating images using artificial... | @lwakis |
+  
 ### Games 🎲
 
 | Project | Description | Creator |
@@ -186,6 +187,7 @@ Pollinations.AI is used in various projects, including:
 | 🆕 [🎮 Nikke-DB Story/Roleplaying Generator](https://nikke-db.pages.dev/) ([⭐ 0](https://github.com/Nikke-db/nikke-db-vue)) | Interactive story and roleplay generator for Goddess of Victory: NIKKE.... | @rhystic1 |
 | 🆕 [🎮 Nikke-DB Story/Roleplaying Generator](https://nikke-db.pages.dev/) ([⭐ 0](https://github.com/Nikke-db/nikke-db-vue)) | Interactive story and roleplay generator for Goddess of Victory: NIKKE.... | @rhystic1 |
 | 🆕 🎮 ii's Stupid Menu ([⭐ 0](https://github.com/iiDk-the-actual/iis.Stupid.Menu)) | A mod menu for Gorilla Tag featuring 1600+ mods and an AI Assistant powered by... | @iiDk-the-actual |
+| 🆕 [🎮 DnD Character Sheet Helper](https://rkdn.app/dnd) ([⭐ 0](https://github.com/arcadiancomp/dnd)) | A fun tool for creating D&D character sheets with AI-generated character... | @ArcadianComp |
 
 ### Hack-&-Build 🛠️
 
@@ -300,6 +302,7 @@ Pollinations.AI is used in various projects, including:
 | 🆕 [HelpChatGPT](https://helpchatgpt.ru) | HelpChatGPT is a free web platform that provides access to ChatGPT-like models... | viaea |
 | 🆕 [Debootai](https://deboott.puter.site/) | Next-gen AI chat playground with file/image uploads, real-time web search,... | Chess-Base |
 | 🆕 [SimplifyMind AI (ELI5)](https://simplify-eloquent-ai.lovable.app/) | A modern one-page web app that turns any complex question into a simple,... | CompaDeveloper |
+| 🆕 [🍎 AI Food Guide and Track Calories](https://nutri.selfhost.io.vn/) ([⭐ 0](https://github.com/newnol/nutritrack)) | AI-powered nutrition assistant that helps identify foods and track daily... | @newnol |
 
 ### Social Bots 🤖
 

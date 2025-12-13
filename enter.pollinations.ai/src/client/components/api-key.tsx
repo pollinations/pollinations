@@ -560,7 +560,7 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
             <Dialog.Positioner className="fixed inset-0 flex items-center justify-center p-4">
                 <Dialog.Content
                     className={
-                        "bg-green-100 border-green-950 border-4 rounded-lg shadow-lg max-w-lg w-full p-6"
+                        "bg-green-100 border-green-950 border-4 rounded-lg shadow-lg max-w-lg w-full p-6 max-h-[85vh] overflow-y-auto"
                     }
                 >
                     <Dialog.Title className="text-lg font-semibold mb-6">

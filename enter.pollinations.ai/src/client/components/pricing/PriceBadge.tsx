@@ -1,5 +1,23 @@
 import type { FC } from "react";
 
+// Tooltip text for pricing emojis
+const getEmojiTooltip = (emoji: string): string => {
+    switch (emoji) {
+        case "💬":
+            return "Input Cost";
+        case "💾":
+            return "Cached Input Cost";
+        case "🔊":
+            return "Audio Cost";
+        case "🖼️":
+            return "Image Cost";
+        case "🎬":
+            return "Video Cost";
+        default:
+            return "";
+    }
+};
+
 export const PriceBadge: FC<{
     prices: (string | undefined)[];
     emoji: string;
@@ -20,20 +38,35 @@ export const PriceBadge: FC<{
             ? " /M"
             : "";
 
+    const mainTooltip = getEmojiTooltip(emoji);
+
     return (
-        <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-xs whitespace-nowrap bg-gray-100 text-gray-700">
-            <span>{emoji}</span>
+        <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-xs whitespace-nowrap bg-gray-100 text-gray-700 group relative">
+            <span title={mainTooltip} className="cursor-help">
+                {emoji}
+            </span>
             <span className="inline-flex items-center gap-1">
-                {validPrices.map((price, j) => (
-                    <span key={j} className="inline-flex items-center gap-1">
-                        {j > 0 && <span className="text-gray-400">|</span>}
-                        {j > 0 && subEmojis[j] && <span>{subEmojis[j]}</span>}
-                        <span>
-                            {price}
-                            {suffix}
+                {validPrices.map((price, j) => {
+                    const subEmoji = subEmojis[j];
+                    const subTooltip = subEmoji ? getEmojiTooltip(subEmoji) : "";
+                    return (
+                        <span key={j} className="inline-flex items-center gap-1">
+                            {j > 0 && <span className="text-gray-400">|</span>}
+                            {j > 0 && subEmojis[j] && (
+                                <span
+                                    title={subTooltip}
+                                    className="cursor-help"
+                                >
+                                    {subEmojis[j]}
+                                </span>
+                            )}
+                            <span>
+                                {price}
+                                {suffix}
+                            </span>
                         </span>
-                    </span>
-                ))}
+                    );
+                })}
             </span>
         </span>
     );

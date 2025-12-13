@@ -41,6 +41,26 @@ export const Pricing: FC = () => {
                         <span className="text-gray-600">🧠 reasoning</span>
                         <span className="text-gray-600">🔍 search</span>
                     </div>
+                    <div className="flex flex-wrap gap-x-4 items-center">
+                        <span className="font-medium text-gray-900">
+                            Pricing icons:
+                        </span>
+                        <span className="text-gray-600" title="Input Cost">
+                            💬 input cost
+                        </span>
+                        <span className="text-gray-600" title="Cached Input Cost">
+                            💾 cached input cost
+                        </span>
+                        <span className="text-gray-600" title="Audio Cost">
+                            🔊 audio cost
+                        </span>
+                        <span className="text-gray-600" title="Image Cost">
+                            🖼️ image cost
+                        </span>
+                        <span className="text-gray-600" title="Video Cost">
+                            🎬 video cost
+                        </span>
+                    </div>
                     <div className="flex flex-wrap gap-x-4">
                         <span className="flex items-center gap-1 font-medium text-gray-600">
                             <span className="flex items-center justify-center w-3.5 h-3.5 rounded-full bg-pink-100 border border-pink-300 text-pink-500 text-[10px] font-bold">

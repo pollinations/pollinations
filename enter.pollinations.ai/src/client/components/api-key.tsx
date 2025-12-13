@@ -9,7 +9,6 @@ import { Fragment } from "react";
 import {
     uniqueNamesGenerator,
     adjectives,
-    colors,
     animals,
 } from "unique-names-generator";
 import { ModelPermissions } from "./model-permissions.tsx";
@@ -475,12 +474,12 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
     onSubmit,
     onComplete,
 }) => {
-    // Generate a fun default name
+    // Generate a short fun default name (2 words for brevity)
     const generateFunName = () => {
         return uniqueNamesGenerator({
-            dictionaries: [adjectives, colors, animals],
+            dictionaries: [adjectives, animals],
             separator: "-",
-            length: 3,
+            length: 2,
             style: "lowerCase",
         });
     };

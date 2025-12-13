@@ -1109,5 +1109,14 @@ export const creativeProjects = [
     "category": "creative",
     "submissionDate": "2025-12-13",
     "order": 5
+  },
+  {
+    "name": "🎨 Imagly AI",
+    "url": "https://imaglyai.web.app/",
+    "description": "Free AI image generator that creates realistic photos, digital artwork, fantasy illustrations, and social media visuals from text prompts. Offers multiple artistic styles with no technical skills required.",
+    "author": "@imaglyai",
+    "category": "creative",
+    "submissionDate": "2025-12-13",
+    "order": 5
   }
 ];

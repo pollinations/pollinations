@@ -250,5 +250,15 @@ export const gamesProjects = [
     repo: "https://github.com/iiDk-the-actual/iis.Stupid.Menu",
     submissionDate: "2025-12-13",
     order: 5
+  },
+  {
+    "name": "🎮 DnD Character Sheet Helper",
+    "url": "https://rkdn.app/dnd",
+    "description": "A fun tool for creating D&D character sheets with AI-generated character visualizations. Helps players build and visualize their characters using Flux and other image models through Pollinations.ai.",
+    "author": "@ArcadianComp",
+    "repo": "https://github.com/arcadiancomp/dnd",
+    "category": "games",
+    "submissionDate": "2025-12-13",
+    "order": 5
   }
 ];

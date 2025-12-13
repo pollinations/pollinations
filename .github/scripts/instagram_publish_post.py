@@ -135,7 +135,6 @@ def create_carousel_container(
 
 
 def check_container_status(
-    ig_user_id: str,
     access_token: str,
     container_id: str
 ) -> str:
@@ -151,7 +150,7 @@ def check_container_status(
         response = requests.get(url, params=params, timeout=30)
         result = response.json()
         return result.get("status_code", "UNKNOWN")
-    except:
+    except Exception:
         return "UNKNOWN"
 
 
@@ -167,7 +166,7 @@ def wait_for_container_ready(
 
     start_time = time.time()
     while time.time() - start_time < max_wait:
-        status = check_container_status(ig_user_id, access_token, container_id)
+        status = check_container_status(access_token, container_id)
 
         if status == "FINISHED":
             print("  Container is ready!")
@@ -238,7 +237,7 @@ def get_media_permalink(
         response = requests.get(url, params=params, timeout=30)
         result = response.json()
         return result.get("permalink")
-    except:
+    except Exception:
         return None
 
 

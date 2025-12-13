@@ -108,7 +108,8 @@ def get_merged_prs(owner: str, repo: str, start_date: datetime, token: str) -> L
         response = requests.post(
             GITHUB_GRAPHQL_API,
             headers=headers,
-            json={"query": query, "variables": variables}
+            json={"query": query, "variables": variables},
+            timeout=60
         )
 
         if response.status_code != 200:
@@ -143,7 +144,7 @@ def get_merged_prs(owner: str, repo: str, start_date: datetime, token: str) -> L
                     "number": pr["number"],
                     "title": pr["title"],
                     "body": pr["body"] or "",
-                    "author": pr["author"]["login"] if pr["author"] else "ghost",
+                    "author": pr["author"]["login"] if pr.get("author") and pr["author"].get("login") else "ghost",
                     "merged_at": pr["mergedAt"],
                     "html_url": pr["url"],
                     "labels": labels

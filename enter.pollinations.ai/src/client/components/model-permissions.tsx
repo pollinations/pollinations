@@ -39,33 +39,35 @@ export const ModelPermissions: FC<ModelPermissionsProps> = ({
     compact = false,
 }) => {
     const [isExpanded, setIsExpanded] = useState(false);
-    const allModels = [...textModels, ...imageModels];
     const isAllSelected = value.length === 0;
 
     const toggleAllModels = () => {
         if (disabled) return;
-        if (isAllSelected) {
-            // Switching from "all" to "specific" - start with all models selected
-            onChange(allModels.map((m) => m.id));
-        } else {
-            // Switching back to "all"
-            onChange([]);
-        }
+        // Toggle between "all" (empty array) and "specific" (non-empty)
+        // When switching to specific, start with empty selection - user adds what they want
+        onChange(isAllSelected ? ["_restricted"] : []);
     };
 
     const toggleModel = (modelId: string) => {
         if (disabled || isAllSelected) return;
 
-        if (value.includes(modelId)) {
-            // Don't allow deselecting the last model
-            if (value.length === 1) return;
-            onChange(value.filter((id) => id !== modelId));
+        // Filter out the placeholder marker
+        const currentModels = value.filter((id) => id !== "_restricted");
+
+        if (currentModels.includes(modelId)) {
+            // Deselecting - if this leaves us empty, keep the marker
+            const newModels = currentModels.filter((id) => id !== modelId);
+            onChange(newModels.length === 0 ? ["_restricted"] : newModels);
         } else {
-            onChange([...value, modelId]);
+            // Selecting - add to list (remove marker if present)
+            onChange([...currentModels, modelId]);
         }
     };
 
-    const isModelSelected = (modelId: string) => value.includes(modelId);
+    const isModelSelected = (modelId: string) =>
+        value.filter((id) => id !== "_restricted").includes(modelId);
+
+    const selectedCount = value.filter((id) => id !== "_restricted").length;
 
     return (
         <div className={cn("space-y-2", compact && "text-sm")}>
@@ -100,7 +102,7 @@ export const ModelPermissions: FC<ModelPermissionsProps> = ({
                             : "bg-amber-100 text-amber-700",
                     )}
                 >
-                    {isAllSelected ? "All models" : `${value.length} selected`}
+                    {isAllSelected ? "All models" : `${selectedCount} selected`}
                 </span>
             </button>
 

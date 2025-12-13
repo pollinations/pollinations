@@ -111,7 +111,10 @@ function RouteComponent() {
         }
 
         // Set model permissions if specified (requires server-side API)
-        const allowedModels = formState.allowedModels ?? [];
+        // Filter out the "_restricted" marker used by UI to indicate restricted mode with no models yet
+        const allowedModels = (formState.allowedModels ?? []).filter(
+            (m) => m !== "_restricted",
+        );
         if (result.data && allowedModels.length > 0) {
             await fetch("/api/api-keys/permissions", {
                 method: "POST",

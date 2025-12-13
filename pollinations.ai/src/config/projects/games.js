@@ -231,5 +231,15 @@ export const gamesProjects = [
     "category": "games",
     "submissionDate": "2025-12-13",
     "order": 5
+  },
+  {
+    "name": "🎮 Nikke-DB Story/Roleplaying Generator",
+    "url": "https://nikke-db.pages.dev/",
+    "description": "Interactive story and roleplay generator for Goddess of Victory: NIKKE. Features Live2D character animations with context-aware expressions, lip-sync, multiple LLM providers including Pollinations, built-in character lore database, and session management.",
+    "author": "@rhystic1",
+    "repo": "https://github.com/Nikke-db/nikke-db-vue",
+    "category": "games",
+    "submissionDate": "2025-12-13",
+    "order": 5
   }
 ];

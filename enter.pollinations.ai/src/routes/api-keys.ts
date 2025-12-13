@@ -5,6 +5,9 @@ import { validator } from "../middleware/validator.ts";
 import type { Env } from "../env.ts";
 import { z } from "zod";
 import { createAuth } from "../auth.ts";
+import { drizzle } from "drizzle-orm/d1";
+import * as schema from "../db/schema/better-auth.ts";
+import { eq } from "drizzle-orm";
 
 const UpdatePermissionsSchema = z.object({
     keyId: z.string(),
@@ -37,12 +40,12 @@ export const apiKeysRoutes = new Hono<Env>()
             const user = c.var.auth.requireUser();
             const { keyId, permissions } = c.req.valid("json");
 
-            const authInstance = createAuth(c.env);
-
-            // Verify ownership: fetch the key and check it belongs to this user
-            // better-auth's userId param in updateApiKey is for CHANGING owner, not verifying
-            const existingKey = await authInstance.api.getApiKey({
-                query: { id: keyId },
+            // Verify ownership: check the key belongs to this user
+            // Direct DB lookup is simpler than better-auth's getApiKey which requires headers
+            const db = drizzle(c.env.DB, { schema });
+            const existingKey = await db.query.apikey.findFirst({
+                where: eq(schema.apikey.id, keyId),
+                columns: { userId: true },
             });
             if (!existingKey || existingKey.userId !== user.id) {
                 throw new HTTPException(403, {
@@ -50,7 +53,8 @@ export const apiKeysRoutes = new Hono<Env>()
                 });
             }
 
-            // Update permissions (don't pass userId - we verified ownership above)
+            // Update permissions via better-auth server API
+            const authInstance = createAuth(c.env);
             await authInstance.api.updateApiKey({
                 body: {
                     keyId,

@@ -156,8 +156,8 @@ export const test = base.extend<Fixtures>({
     /**
      * Creates an API key restricted to only ["openai-fast", "flux"] models.
      * Creates the key via client API, then updates permissions directly in DB.
-     * Note: In production, we use auth.api.updateApiKey via the /api/api-keys/permissions endpoint.
-     * For tests, direct DB access is simpler and avoids auth context issues.
+     * Note: In production, the /api/api-keys/permissions endpoint is used.
+     * For tests, direct DB access avoids better-auth's session requirements in updateApiKey.
      */
     restrictedApiKey: async ({ auth, sessionToken }, use) => {
         // Step 1: Create API key via client API
@@ -174,8 +174,8 @@ export const test = base.extend<Fixtures>({
         const apiKeyValue = createApiKeyResponse.data.key;
         const apiKeyId = createApiKeyResponse.data.id;
 
-        // Step 2: Update permissions directly in the database
-        // In production, the /api/api-keys/permissions endpoint uses auth.api.updateApiKey
+        // Step 2: Update permissions directly in DB
+        // better-auth's updateApiKey requires session context even on server
         const db = drizzle(env.DB, { schema });
         await db
             .update(schema.apikey)

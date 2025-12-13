@@ -1062,5 +1062,15 @@ export const creativeProjects = [
     "category": "creative",
     "submissionDate": "2025-12-12",
     "order": 5
+  },
+  {
+    "name": "📚 AI Story Illustrator",
+    "url": "https://soft-cucurucho-6758e7.netlify.app/",
+    "description": "Interactive storybook creator where you write scenes and get AI-generated illustrations for each one. Features sequential reveal animations, responsive layout, and automatic empty scene handling. Great for learning async JavaScript and API integration.",
+    "author": "@KAmaL-senpai",
+    "repo": "",
+    "category": "creative",
+    "submissionDate": "2025-12-13",
+    "order": 5
   }
 ];

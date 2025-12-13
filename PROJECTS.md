@@ -184,6 +184,7 @@ Pollinations.AI is used in various projects, including:
 | 🆕 Godville Heroic Moment ([⭐ 0](https://github.com/migueland94/Godville-Heroic-Moment)) | Firefox-only browser extension that adds a Heroic Moment block to your Godville... | migueland94 |
 | 🆕 [🎮 Nikke-DB Story/Roleplaying Generator](https://nikke-db.pages.dev/) ([⭐ 0](https://github.com/Nikke-db/nikke-db-vue)) | Interactive story and roleplay generator for Goddess of Victory: NIKKE.... | @rhystic1 |
 | 🆕 [🎮 Nikke-DB Story/Roleplaying Generator](https://nikke-db.pages.dev/) ([⭐ 0](https://github.com/Nikke-db/nikke-db-vue)) | Interactive story and roleplay generator for Goddess of Victory: NIKKE.... | @rhystic1 |
+| 🆕 🎮 ii's Stupid Menu ([⭐ 0](https://github.com/iiDk-the-actual/iis.Stupid.Menu)) | A mod menu for Gorilla Tag featuring 1600+ mods and an AI Assistant powered by... | @iiDk-the-actual |
 
 ### Hack-&-Build 🛠️
 
@@ -298,6 +299,7 @@ Pollinations.AI is used in various projects, including:
 | 🆕 [HelpChatGPT](https://helpchatgpt.ru) | HelpChatGPT is a free web platform that provides access to ChatGPT-like models... | viaea |
 | 🆕 [Debootai](https://deboott.puter.site/) | Next-gen AI chat playground with file/image uploads, real-time web search,... | Chess-Base |
 | 🆕 [SimplifyMind AI (ELI5)](https://simplify-eloquent-ai.lovable.app/) | A modern one-page web app that turns any complex question into a simple,... | CompaDeveloper |
+| 🆕 [🍎 AI Food Guide and Track Calories](https://nutri.selfhost.io.vn/) ([⭐ 0](https://github.com/newnol/nutritrack)) | AI-powered nutrition assistant that helps identify foods and track daily... | @newnol |
 
 ### Social Bots 🤖
 

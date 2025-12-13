@@ -656,4 +656,14 @@ export const chatProjects = [
         "submissionDate": "2025-12-04",
         "order": 5,
     },
+  {
+    "name": "🍎 AI Food Guide and Track Calories",
+    "url": "https://nutri.selfhost.io.vn/",
+    "description": "AI-powered nutrition assistant that helps identify foods and track daily calorie intake. Get nutritional information and maintain dietary awareness through conversational AI guidance.",
+    "author": "@newnol",
+    "repo": "https://github.com/newnol/nutritrack",
+    "category": "chat",
+    "submissionDate": "2025-12-13",
+    "order": 5
+  }
 ];

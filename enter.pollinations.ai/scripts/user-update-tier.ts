@@ -188,20 +188,26 @@ const updateTierCommand = command({
         console.log(`   Email: ${user.email}`);
         console.log(`   Current tier: ${user.tier || "none"}`);
 
-        // Check tier hierarchy
-        if (user.tier) {
-            const currentRank = getTierRank(user.tier as TierName);
-            const targetRank = getTierRank(targetTier);
+        // Check tier hierarchy - only compare if current tier is valid
+        const currentTier = user.tier;
+        const isValidTier = (t: string | null): t is TierName =>
+            t !== null && TIER_HIERARCHY.includes(t as TierName);
 
-            if (currentRank >= 0 && targetRank > currentRank) {
-                console.log(`\n⬆️  Upgrading: ${user.tier} → ${targetTier}`);
-            } else if (currentRank >= 0 && targetRank < currentRank) {
-                console.log(`\n⬇️  Downgrading: ${user.tier} → ${targetTier}`);
-            } else if (user.tier === targetTier) {
+        if (isValidTier(currentTier)) {
+            if (currentTier === targetTier) {
                 console.log(
                     `\n✅ Already on ${targetTier} tier - no changes needed`,
                 );
                 return;
+            }
+
+            const currentRank = getTierRank(currentTier);
+            const targetRank = getTierRank(targetTier);
+
+            if (targetRank > currentRank) {
+                console.log(`\n⬆️  Upgrading: ${currentTier} → ${targetTier}`);
+            } else {
+                console.log(`\n⬇️  Downgrading: ${currentTier} → ${targetTier}`);
             }
         }
 

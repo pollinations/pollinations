@@ -566,6 +566,7 @@ Pollinations.AI is used in various projects, including:
 | [Pollinations.AI AI/Teens talk](https://www.youtube.com/live/5Rvdfr2qYGA?si=i5NLOKI49fGxNAEK&t=1034) | Session 2: ai/teens worldwide conference exploring the forces shaping AI today,... | @thomash_pollinat... |
 | [MalaysiaPrompt 🇲🇾](https://malaysiaprompt.rf.gd/) | A resource for discovering and sharing creative prompts, supporting the... | - |
 | [Artistic Styles Book](https://proyectodescartes.org/iCartesiLibri/materiales_didacticos/Libro_Estilos/index.html) | An interactive book showcasing 90+ artistic styles. | Juan Gmo. Rivera |
+| 🆕 [📚 Word Master](https://equal-grouse-feasible.ngrok-free.app/) ([⭐ 0](https://github.com/rudotcom/WordMaster)) | Django app for mastering foreign vocabulary with AI-powered features. Create... | @rudotcom |
 | [Proyecto Descartes](https://proyectodescartes.org/revista/Numeros/Revista_8_2024/index.html) | Educational initiative integrating Pollinations AI into STEM. | Juan Gmo. Rivera |
 
 

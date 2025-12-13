@@ -383,6 +383,7 @@ Pollinations.AI is used in various projects, including:
 | 🆕 🤖 [Robatika — AI Chat Platform](https://app.robatika.com) | Robatika is a rapidly growing AI chat platform that provides users with... | Robatika |
 | 🆕 [🛠️ NextGenTools](https://image-gen-adobe.nextgentools.online/) | AI-powered workflow for stock photography. Generate images, vectorize them, and... | @roni123332 |
 | 🆕 [📚 AI Story Illustrator](https://soft-cucurucho-6758e7.netlify.app/) | Interactive storybook creator where you write scenes and get AI-generated... | @KAmaL-senpai |
+| 🆕 🤖 [🎨 imgs_ai_bot](https://t.me/imgs_ai_bot) | A multifunctional Telegram bot for generating images using artificial... | @lwakis |
 
 ### Games 🎲
 
@@ -416,6 +417,7 @@ Pollinations.AI is used in various projects, including:
 | 🆕 [🎮 Nikke-DB Story/Roleplaying Generator](https://nikke-db.pages.dev/) ([⭐ 0](https://github.com/Nikke-db/nikke-db-vue)) | Interactive story and roleplay generator for Goddess of Victory: NIKKE.... | @rhystic1 |
 | 🆕 [🎮 Nikke-DB Story/Roleplaying Generator](https://nikke-db.pages.dev/) ([⭐ 0](https://github.com/Nikke-db/nikke-db-vue)) | Interactive story and roleplay generator for Goddess of Victory: NIKKE.... | @rhystic1 |
 | 🆕 🎮 ii's Stupid Menu ([⭐ 0](https://github.com/iiDk-the-actual/iis.Stupid.Menu)) | A mod menu for Gorilla Tag featuring 1600+ mods and an AI Assistant powered by... | @iiDk-the-actual |
+| 🆕 [🎮 DnD Character Sheet Helper](https://rkdn.app/dnd) ([⭐ 0](https://github.com/arcadiancomp/dnd)) | A fun tool for creating D&D character sheets with AI-generated character... | @Arca
 
 ### Hack-&-Build 🛠️
 

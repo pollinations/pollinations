@@ -87,7 +87,7 @@ if [ -n "$EMAIL" ]; then
     fi
     
     if [ -n "$POLAR_ACCESS_TOKEN" ]; then
-        npx tsx scripts/manage-polar.ts user update-tier --email "$EMAIL" --tier "$TARGET_TIER" 2>/dev/null || warn "Polar update skipped (user may not have subscription)"
+        npx tsx scripts/manage-polar.ts user update-tier --email "$EMAIL" --tier "$TARGET_TIER" --apply 2>/dev/null || warn "Polar update skipped (user may not have subscription)"
     else
         warn "Could not get POLAR_ACCESS_TOKEN - skipping Polar update"
     fi

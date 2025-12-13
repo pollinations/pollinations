@@ -260,5 +260,15 @@ export const gamesProjects = [
     "category": "games",
     "submissionDate": "2025-12-13",
     "order": 5
+  },
+  {
+    "name": "🎮 Kinexus",
+    "url": "https://tin2tin.github.io/Kinexus/",
+    "description": "Zero-code tool for creating choice-based cinematic narrative games and interactive fiction. Features Pollinations integration for AI-powered scene descriptions, image prompt generation, and batch image generation for scenes.",
+    "author": "@tin2tin",
+    "repo": "https://github.com/tin2tin/Kinexus",
+    "category": "games",
+    "submissionDate": "2025-12-13",
+    "order": 5
   }
 ];

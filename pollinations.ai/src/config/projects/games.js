@@ -241,5 +241,14 @@ export const gamesProjects = [
     "category": "games",
     "submissionDate": "2025-12-13",
     "order": 5
+  },
+  {
+    name: "🎮 ii's Stupid Menu",
+    url: "https://github.com/iiDk-the-actual/iis.Stupid.Menu",
+    description: "A mod menu for Gorilla Tag featuring 1600+ mods and an AI Assistant powered by Pollinations for helping users navigate the extensive feature set.",
+    author: "@iiDk-the-actual",
+    repo: "https://github.com/iiDk-the-actual/iis.Stupid.Menu",
+    submissionDate: "2025-12-13",
+    order: 5
   }
 ];

@@ -6,6 +6,7 @@ import {
 } from "./transforms/createSystemPromptTransform.js";
 import { pipe } from "./transforms/pipe.js";
 import { createGoogleSearchTransform } from "./transforms/createGoogleSearchTransform.js";
+import { createGeminiToolsTransform } from "./transforms/createGeminiToolsTransform.js";
 
 // Import persona prompts
 import midijourneyPrompt from "./personas/midijourney.js";
@@ -86,14 +87,12 @@ const models: ModelDefinition[] = [
         transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
     },
     {
-        name: "openai-reasoning",
-        config: portkeyConfig["gpt-5.2"],
-        transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
-    },
-    {
         name: "gemini",
         config: portkeyConfig["gemini-2.5-flash-lite"],
-        transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
+        transform: pipe(
+            createSystemPromptTransform(BASE_PROMPTS.conversational),
+            createGeminiToolsTransform(),
+        ),
     },
     {
         name: "gemini-search",

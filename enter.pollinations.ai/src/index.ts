@@ -76,12 +76,14 @@ export default {
     fetch: app.fetch,
     scheduled: async (_controller, env, _ctx) => {
         const db = drizzle(env.DB);
-        const log = getLogger(["hono"]);
+        const log = getLogger(["hono", "scheduled"]);
         await processEvents(db, log, {
             polarAccessToken: env.POLAR_ACCESS_TOKEN,
             polarServer: env.POLAR_SERVER,
             tinybirdIngestUrl: env.TINYBIRD_INGEST_URL,
             tinybirdAccessToken: env.TINYBIRD_ACCESS_TOKEN,
+            minRetryDelay: 100,
+            maxRetryDelay: 10000,
         });
     },
 } satisfies ExportedHandler<CloudflareBindings>;

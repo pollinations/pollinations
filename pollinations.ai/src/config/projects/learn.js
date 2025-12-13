@@ -125,5 +125,15 @@ export const learnProjects = [
         submissionDate: "2025-09-17",
         language: "pt-BR",
         order: 1
-    }
+    },
+  {
+    "name": "📚 Word Master",
+    "url": "https://equal-grouse-feasible.ngrok-free.app/",
+    "description": "Django app for mastering foreign vocabulary with AI-powered features. Create bilingual dictionaries with translations, example sentences, IPA pronunciation, text-to-speech audio, and flashcard learning. Supports multiple interface languages.",
+    "author": "@rudotcom",
+    "repo": "https://github.com/rudotcom/WordMaster",
+    "category": "learn",
+    "submissionDate": "2025-12-13",
+    "order": 5
+  }
 ];

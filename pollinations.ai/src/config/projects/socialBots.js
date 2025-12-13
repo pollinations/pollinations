@@ -129,5 +129,15 @@ export const socialBotsProjects = [
     "language": "en",
     "submissionDate": "2025-12-10",
     "order": 5
+  },
+  {
+    "name": "🎨 Aqua AI Generator",
+    "url": "https://top.gg/bot/1026133323023654932",
+    "description": "Free Discord AI image generator bot supporting up to 8 models, including 4 from Pollinations. Users can set aspect ratios, load reference images, remix AI art, and manage prompts. Features tiering, usage controls, and configurable settings (ratios, references, negatives, resolution).",
+    "author": "@shaqkao1206",
+    "repo": "",
+    "category": "socialBots",
+    "submissionDate": "2025-12-12",
+    "order": 5
   }
 ];

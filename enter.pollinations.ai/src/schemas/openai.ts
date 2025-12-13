@@ -24,10 +24,29 @@ const ChatCompletionFunctionCallOptionSchema = z.object({
     name: z.string(),
 });
 
-const ChatCompletionToolSchema = z.object({
+// Standard OpenAI function tool
+const FunctionToolSchema = z.object({
     type: z.literal("function"),
     function: FunctionObjectSchema,
 });
+
+// Gemini-specific built-in tools (no additional config needed)
+// See: https://ai.google.dev/gemini-api/docs/tools
+const GeminiBuiltInToolSchema = z.object({
+    type: z.enum([
+        "code_execution", // Run Python code in sandbox
+        "google_search", // Real-time web search grounding
+        "google_maps", // Location/maps grounding
+        "url_context", // Read/ground on specific URLs
+        "computer_use", // Browser automation (Preview)
+        "file_search", // Search uploaded files
+    ]),
+});
+
+const ChatCompletionToolSchema = z.union([
+    FunctionToolSchema,
+    GeminiBuiltInToolSchema,
+]);
 
 const ChatCompletionNamedToolChoiceSchema = z.object({
     type: z.literal("function"),

@@ -351,6 +351,11 @@ async function sendPolarEvents(
             status: "skipped",
             ...deliveryStats,
         };
+    
+    // Add small delay before delivery to prevent rate limiting
+    // This helps mitigate high error rates on event delivery
+    await new Promise((resolve) => setTimeout(resolve, 100));
+    
     let ingested = 0;
     try {
         const response = await polar.events.ingest({
@@ -407,6 +412,11 @@ async function sendTinybirdEvents(
             status: "skipped",
             ...deliveryStats,
         };
+    
+    // Add small delay before delivery to prevent rate limiting
+    // This helps mitigate high error rates on event delivery
+    await new Promise((resolve) => setTimeout(resolve, 100));
+    
     let ingested = 0;
     try {
         const response = await fetch(tinybirdIngestUrl, {

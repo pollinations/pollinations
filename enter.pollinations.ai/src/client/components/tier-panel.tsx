@@ -64,11 +64,19 @@ const NoTierScreen: FC<{ has_polar_error?: boolean }> = ({
             ) : (
                 <div className="px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg">
                     <p className="text-sm text-gray-900 leading-relaxed">
-                        ⭕ <strong>No Active Subscription:</strong> You don't
-                        have an active tier subscription yet.
+                        ⭕ <strong>No Active Tier:</strong> You don't have an
+                        active tier subscription yet.
                         <br />
-                        Click the <strong>Activate Tier</strong> button above to
-                        get started.
+                        Tiers are automatically granted when your{" "}
+                        <a
+                            href="https://github.com/pollinations/pollinations/issues/new?template=app-submission.yml"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-purple-600 hover:text-purple-800 underline"
+                        >
+                            app submission
+                        </a>{" "}
+                        is approved. 🌸
                     </p>
                 </div>
             )}

@@ -46,12 +46,15 @@ const chatCompletionHandlers = factory.createHandlers(
         const log = c.get("log");
         await c.var.auth.requireAuthorization();
 
+        const requestBody = await c.req.json();
+        const model = requestBody.model || DEFAULT_TEXT_MODEL;
+
+        c.var.auth.requireModelAccess(model);
         await checkBalance(c.var);
 
         const textServiceUrl =
             c.env.TEXT_SERVICE_URL || "https://text.pollinations.ai";
         const targetUrl = proxyUrl(c, `${textServiceUrl}/openai`);
-        const requestBody = await c.req.json();
 
         // Resolve model alias to service ID before proxying
         if (requestBody.model) {
@@ -315,13 +318,15 @@ export const proxyRoutes = new Hono<Env>()
         async (c) => {
             const log = c.get("log");
             await c.var.auth.requireAuthorization();
+
+            // Build URL with prompt in path and model as query param
+            const model = c.req.query("model") || DEFAULT_TEXT_MODEL;
+
+            c.var.auth.requireModelAccess(model);
             await checkBalance(c.var);
 
             const textServiceUrl =
                 c.env.TEXT_SERVICE_URL || "https://text.pollinations.ai";
-
-            // Build URL with prompt in path and model as query param
-            const model = c.req.query("model") || DEFAULT_TEXT_MODEL;
             const prompt = c.req.param("prompt");
             const targetUrl = proxyUrl(
                 c,
@@ -427,6 +432,10 @@ export const proxyRoutes = new Hono<Env>()
         async (c) => {
             const log = c.get("log");
             await c.var.auth.requireAuthorization();
+
+            const model = c.req.query("model") || "flux";
+
+            c.var.auth.requireModelAccess(model);
             await checkBalance(c.var);
 
             // Get prompt from validated param (using :prompt{[\\s\\S]+} regex pattern)

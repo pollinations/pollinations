@@ -16,6 +16,8 @@ export type AuthVariables = {
         apiKey?: ApiKey;
         requireAuthorization: (options?: { message?: string }) => Promise<void>;
         requireUser: () => User;
+        /** Throws 403 if the API key doesn't have access to the specified model. */
+        requireModelAccess: (model: string) => void;
     };
 };
 
@@ -135,6 +137,19 @@ export const auth = (options: AuthOptions) =>
             return user;
         };
 
+        const requireModelAccess = (model: string): void => {
+            // No API key (session auth) = allow all models
+            if (!apiKey) return;
+            // No permissions or no models restriction = allow all (backward compatible)
+            if (!apiKey.permissions?.models) return;
+            // Check if model is in the allowlist
+            if (!apiKey.permissions.models.includes(model)) {
+                throw new HTTPException(403, {
+                    message: `Model '${model}' is not allowed for this API key`,
+                });
+            }
+        };
+
         c.set("auth", {
             client,
             user,
@@ -142,6 +157,7 @@ export const auth = (options: AuthOptions) =>
             apiKey,
             requireAuthorization,
             requireUser,
+            requireModelAccess,
         });
 
         await next();

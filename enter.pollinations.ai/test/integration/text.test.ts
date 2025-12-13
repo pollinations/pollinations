@@ -603,3 +603,7 @@ describe("POST /generate/v1/chat/completions (tool calls)", async () => {
         },
     );
 });
+
+// TODO: Add model gating tests once we figure out how to create API keys with permissions via client API
+// The server API supports `permissions` parameter but the client library may not expose it in types
+// See: https://www.better-auth.com/docs/plugins/api-key#creating-api-keys-with-permissions

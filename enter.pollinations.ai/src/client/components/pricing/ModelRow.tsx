@@ -28,15 +28,38 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
     // Show info icon if we have a description to display, or if it's a video model (for alpha notice)
     const isVideoModel = model.type === "video";
     const hasDescription = modelDescription && modelDescription !== model.name;
-    const showDescriptionInfo = hasDescription || isVideoModel;
+
+    // Determine pricing type for image models
+    const isImageModel = model.type === "image";
+    const hasFlatPricing = isImageModel && model.perImagePrice;
+    const hasTokenPricing =
+        isImageModel &&
+        !model.perImagePrice &&
+        (model.promptTextPrice || model.completionTextPrice);
+
+    // Build pricing note for image models
+    const pricingNote = hasFlatPricing
+        ? "Flat rate per image (any resolution)"
+        : hasTokenPricing
+          ? "Token-based pricing (varies with prompt)"
+          : "";
+
+    const showDescriptionInfo =
+        hasDescription || isVideoModel || (isImageModel && pricingNote);
 
     // Build tooltip content
     const alphaNotice = "Alpha – API may change";
-    const tooltipContent = isVideoModel
+    const baseContent = isVideoModel
         ? hasDescription
             ? `${modelDescription}. ${alphaNotice}`
             : alphaNotice
         : modelDescription;
+
+    // Combine description with pricing note
+    const tooltipContent =
+        baseContent && pricingNote
+            ? `${baseContent}. ${pricingNote}`
+            : baseContent || pricingNote;
 
     return (
         <tr className="border-b border-gray-200">

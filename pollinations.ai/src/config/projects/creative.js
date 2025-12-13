@@ -1091,5 +1091,14 @@ export const creativeProjects = [
     "category": "creative",
     "submissionDate": "2025-12-13",
     "order": 5
+  },
+  {
+    "name": "✨ Storycraft Pro",
+    "url": "https://storycraftpro11-orpin.vercel.app/",
+    "description": "Create illustrated stories with consistent characters, narrated audio, and AI-generated artwork. Generate complete visual narratives without design skills.",
+    "author": "@souravk11318",
+    "category": "creative",
+    "submissionDate": "2025-12-13",
+    "order": 5
   }
 ];

@@ -50,7 +50,19 @@ export const Pricing: FC = () => {
                         </span>
                         <span>
                             estimates for typical usage, actual costs vary with
-                            prompt length and output size
+                            prompt length and output
+                        </span>
+                    </div>
+                    <div className="flex flex-wrap gap-x-4 text-gray-500">
+                        <span>
+                            <strong>/image</strong> = flat rate per image (any
+                            resolution)
+                        </span>
+                        <span>
+                            <strong>/M</strong> = cost per million tokens
+                        </span>
+                        <span>
+                            <strong>/sec</strong> = cost per second of video
                         </span>
                     </div>
                 </div>

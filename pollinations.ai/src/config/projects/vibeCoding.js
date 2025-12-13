@@ -173,5 +173,14 @@ export const vibeCodingProjects = [
     "category": "vibeCoding",
     "submissionDate": "2025-12-13",
     "order": 5
+  },
+  {
+    "name": "✨ Pollinations.AI Codex",
+    "url": "https://marketplace.visualstudio.com/items?itemName=pollinations-ai-codex.pollinations-like-ai",
+    "description": "VS Code extension with AI-powered coding assistant. Features intelligent chat interface, code actions (explain, refactor, find bugs, add docs, generate tests), multi-model support, and full command palette integration.",
+    "author": "@Murdered_again",
+    "category": "vibeCoding",
+    "submissionDate": "2025-12-13",
+    "order": 5
   }
 ];

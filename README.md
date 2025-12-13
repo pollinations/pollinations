@@ -270,6 +270,7 @@ Pollinations.AI is used in various projects, including:
 | [Websim](https://websim.ai/c/bXsmNE96e3op5rtUS) | A web simulation tool that integrates Pollinations.ai. | @voodoohop |
 | 🆕 [Aqua Application Programming Interface](https://aquadevs.com/) | This is an learning project for me to learn how to track users, backend check,... | kiskreforev |
 | 🆕 [🔍 Polli YT Search](https://replit.com/@nojeheg897/VideoFind5) ([⭐ 0](https://github.com/Fanimazahuia/VideoFind5)) | YouTube search engine that goes beyond titles—uses Pollinations to analyze... | @Alfa |
+| 🆕 [✨ Pollinations.AI Codex](https://marketplace.visualstudio.com/items?itemName=pollinations-ai-codex.pollinations-like-ai) | VS Code extension with AI-powered coding assistant. Features intelligent chat... | @Murdered_again |
 
 ### Creative 🎨
 

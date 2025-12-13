@@ -110,6 +110,20 @@ function RouteComponent() {
             });
         }
 
+        // Set model permissions if specified (requires server-side API)
+        const allowedModels = formState.allowedModels ?? [];
+        if (result.data && allowedModels.length > 0) {
+            await fetch("/api/api-keys/permissions", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                credentials: "include",
+                body: JSON.stringify({
+                    keyId: result.data.id,
+                    permissions: { models: allowedModels },
+                }),
+            });
+        }
+
         router.invalidate();
         return result.data as CreateApiKeyResponse;
     };

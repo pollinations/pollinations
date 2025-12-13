@@ -6,14 +6,15 @@ import { createMockPolar } from "./mocks/polar.ts";
 import { createMockGithub } from "./mocks/github.ts";
 import { createMockTinybird } from "./mocks/tinybird.ts";
 import { teardownFetchMock, createFetchMock } from "./mocks/fetch.ts";
-import { getLogger, Logger } from "@logtape/logtape";
+import type { Logger } from "@logtape/logtape";
+import { getLogger } from "@logtape/logtape";
 import { ensureConfigured } from "@/logger.ts";
 import { createMockVcr } from "./mocks/vcr.ts";
 import { drizzle } from "drizzle-orm/d1";
 import * as schema from "@/db/schema/better-auth.ts";
 import { eq } from "drizzle-orm";
 
-const createAuth = () =>
+const createAuthClientInstance = () =>
     createAuthClient({
         baseURL: "http://localhost:3000",
         basePath: "/api/auth",
@@ -35,7 +36,7 @@ type Mocks = ReturnType<typeof createMocks>;
 type Fixtures = {
     log: Logger;
     mocks: ReturnType<typeof createFetchMock<Mocks>>;
-    auth: ReturnType<typeof createAuth>;
+    auth: ReturnType<typeof createAuthClientInstance>;
     sessionToken: string;
     apiKey: string;
     pubApiKey: string;
@@ -48,17 +49,17 @@ type SignupData = {
 };
 
 export const test = base.extend<Fixtures>({
-    log: async ({}, use) => {
+    log: async ({/* empty */}, use) => {
         await ensureConfigured("trace");
         await use(getLogger(["test"]));
     },
-    mocks: async ({}, use) => {
+    mocks: async ({/* empty */}, use) => {
         const mocks = createFetchMock(createMocks(), { logRequests: true });
         await use(mocks);
         await teardownFetchMock();
     },
-    auth: async ({}, use) => {
-        const auth = createAuth();
+    auth: async ({/* empty */}, use) => {
+        const auth = createAuthClientInstance();
         await use(auth);
     },
     sessionToken: async ({ mocks }, use) => {
@@ -154,8 +155,9 @@ export const test = base.extend<Fixtures>({
     },
     /**
      * Creates an API key restricted to only ["openai-fast", "flux"] models.
-     * Creates the key via client API, then updates permissions directly in DB
-     * since the client API doesn't expose the `permissions` parameter.
+     * Creates the key via client API, then updates permissions directly in DB.
+     * Note: In production, we use auth.api.updateApiKey via the /api/api-keys/permissions endpoint.
+     * For tests, direct DB access is simpler and avoids auth context issues.
      */
     restrictedApiKey: async ({ auth, sessionToken }, use) => {
         // Step 1: Create API key via client API
@@ -173,7 +175,7 @@ export const test = base.extend<Fixtures>({
         const apiKeyId = createApiKeyResponse.data.id;
 
         // Step 2: Update permissions directly in the database
-        // The client API doesn't expose permissions, but the DB schema supports it
+        // In production, the /api/api-keys/permissions endpoint uses auth.api.updateApiKey
         const db = drizzle(env.DB, { schema });
         await db
             .update(schema.apikey)

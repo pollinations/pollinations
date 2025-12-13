@@ -387,6 +387,7 @@ Pollinations.AI is used in various projects, including:
 | 🆕 🎨 ChimeraStudio ([⭐ 0](https://github.com/migueland94/ChimeraStudio)) | Lightweight browser-based sandbox for testing Pollinations API capabilities.... | @migueland94 |
 | 🆕 🤖 [🎨 imgs_ai_bot](https://t.me/imgs_ai_bot) | A multifunctional Telegram bot for generating images using artificial... | @lwakis |
 | 🆕 [✨ Storycraft Pro](https://storycraftpro11-orpin.vercel.app/) | Create illustrated stories with consistent characters, narrated audio, and... | @souravk11318 |
+| 🆕 [🎨 Sugen](https://sugen.puter.site/) | Browser-based AI art studio using Puter.js and Pollinations.ai. Features... | @red444ytchess-jpg |
 
 ### Games 🎲
 

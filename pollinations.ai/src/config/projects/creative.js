@@ -1100,5 +1100,14 @@ export const creativeProjects = [
     "category": "creative",
     "submissionDate": "2025-12-13",
     "order": 5
+  },
+  {
+    "name": "🎨 Sugen",
+    "url": "https://sugen.puter.site/",
+    "description": "Browser-based AI art studio using Puter.js and Pollinations.ai. Features unlimited generation with Flux/Seedream/Kontext models, live global feed, img2img support, and pro controls including guidance scale and negative prompts.",
+    "author": "@red444ytchess-jpg",
+    "category": "creative",
+    "submissionDate": "2025-12-13",
+    "order": 5
   }
 ];

@@ -20,7 +20,7 @@ const AVAILABLE_MODELS = {
 } as const;
 
 type ModelPermissionsProps = {
-    /** Selected model IDs */
+    /** Selected model IDs. Empty array = all models allowed */
     value: string[];
     /** Called when selection changes */
     onChange: (models: string[]) => void;
@@ -32,7 +32,8 @@ type ModelPermissionsProps = {
 
 /**
  * Model permissions selector - allows restricting API key to specific models.
- * Designed to be reusable in different contexts (key creation, OAuth consent, etc.)
+ * Empty array = all models allowed (default)
+ * Non-empty array = only those models allowed
  */
 export const ModelPermissions: FC<ModelPermissionsProps> = ({
     value,
@@ -42,37 +43,32 @@ export const ModelPermissions: FC<ModelPermissionsProps> = ({
 }) => {
     const [isExpanded, setIsExpanded] = useState(false);
     const allModels = [...AVAILABLE_MODELS.text, ...AVAILABLE_MODELS.image];
-    const isAllSelected = value.length === 0; // Empty = all models allowed
+    const isAllSelected = value.length === 0;
+
+    const toggleAllModels = () => {
+        if (disabled) return;
+        if (isAllSelected) {
+            // Switching from "all" to "specific" - start with all models selected
+            onChange(allModels.map((m) => m.id));
+        } else {
+            // Switching back to "all"
+            onChange([]);
+        }
+    };
 
     const toggleModel = (modelId: string) => {
-        if (disabled) return;
+        if (disabled || isAllSelected) return;
 
-        if (isAllSelected) {
-            // Switching from "all" to specific: select all except this one
-            onChange(
-                allModels.filter((m) => m.id !== modelId).map((m) => m.id),
-            );
-        } else if (value.includes(modelId)) {
-            // Deselecting a model
-            const newValue = value.filter((id) => id !== modelId);
-            // If all would be selected, switch to "all" mode
-            if (newValue.length === allModels.length - 1) {
-                onChange([]);
-            } else {
-                onChange(newValue);
-            }
+        if (value.includes(modelId)) {
+            // Don't allow deselecting the last model
+            if (value.length === 1) return;
+            onChange(value.filter((id) => id !== modelId));
         } else {
-            // Selecting a model
             onChange([...value, modelId]);
         }
     };
 
-    const selectAll = () => {
-        if (!disabled) onChange([]);
-    };
-
-    const isModelSelected = (modelId: string) =>
-        isAllSelected || value.includes(modelId);
+    const isModelSelected = (modelId: string) => value.includes(modelId);
 
     return (
         <div className={cn("space-y-2", compact && "text-sm")}>
@@ -114,7 +110,7 @@ export const ModelPermissions: FC<ModelPermissionsProps> = ({
             {/* Expanded state - model selection */}
             {isExpanded && (
                 <div className="pl-4 space-y-3 animate-in slide-in-from-top-2 duration-200">
-                    {/* Quick toggle for all */}
+                    {/* Toggle between all/specific models */}
                     <label
                         className={cn(
                             "flex items-center gap-2 cursor-pointer",
@@ -124,7 +120,7 @@ export const ModelPermissions: FC<ModelPermissionsProps> = ({
                         <input
                             type="checkbox"
                             checked={isAllSelected}
-                            onChange={selectAll}
+                            onChange={toggleAllModels}
                             disabled={disabled}
                             className="w-4 h-4 rounded text-green-600"
                         />
@@ -133,6 +129,7 @@ export const ModelPermissions: FC<ModelPermissionsProps> = ({
                         </span>
                     </label>
 
+                    {/* Show model chips when restricting to specific models */}
                     {!isAllSelected && (
                         <>
                             {/* Text models */}

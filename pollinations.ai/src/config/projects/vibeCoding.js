@@ -164,4 +164,23 @@ export const vibeCodingProjects = [
         "submissionDate": "2025-12-03",
         "order": 5,
     },
+  {
+    "name": "🔍 Polli YT Search",
+    "url": "https://replit.com/@nojeheg897/VideoFind5",
+    "description": "YouTube search engine that goes beyond titles—uses Pollinations to analyze thumbnails, video content, and transcriptions across thousands of videos. Early stage project with vision for autonomous video creation workflows.",
+    "author": "@Alfa",
+    "repo": "https://github.com/Fanimazahuia/VideoFind5",
+    "category": "vibeCoding",
+    "submissionDate": "2025-12-13",
+    "order": 5
+  },
+  {
+    "name": "✨ Pollinations.AI Codex",
+    "url": "https://marketplace.visualstudio.com/items?itemName=pollinations-ai-codex.pollinations-like-ai",
+    "description": "VS Code extension with AI-powered coding assistant. Features intelligent chat interface, code actions (explain, refactor, find bugs, add docs, generate tests), multi-model support, and full command palette integration.",
+    "author": "@Murdered_again",
+    "category": "vibeCoding",
+    "submissionDate": "2025-12-13",
+    "order": 5
+  }
 ];

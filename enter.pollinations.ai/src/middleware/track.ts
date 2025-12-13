@@ -189,6 +189,8 @@ export const track = (eventType: EventType) =>
                         tinybirdIngestUrl: c.env.TINYBIRD_INGEST_URL,
                         tinybirdAccessToken: c.env.TINYBIRD_ACCESS_TOKEN,
                         minBatchSize: 0, // process all events immediately
+                        minRetryDelay: 0, // don't wait between retries
+                        maxRetryDelay: 0, // don't wait between retries
                     });
                 }
             })(),

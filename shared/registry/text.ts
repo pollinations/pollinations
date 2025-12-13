@@ -43,15 +43,15 @@ export const TEXT_SERVICES = {
         isSpecialized: false,
     },
     "openai-large": {
-        aliases: ["gpt-5.2"],
+        aliases: ["gpt-5.2", "openai-reasoning", "gpt-5.2-reasoning"],
         modelId: "gpt-5.2",
         provider: "azure-openai",
         cost: [
             {
                 date: COST_START_DATE,
-                promptTextTokens: perMillion(0.5),
-                promptCachedTokens: perMillion(0.125),
-                completionTextTokens: perMillion(2.0),
+                promptTextTokens: perMillion(1.75),
+                promptCachedTokens: perMillion(0.175),
+                completionTextTokens: perMillion(14.0),
             },
         ],
         description: "OpenAI GPT-5.2 - Most Powerful & Intelligent",
@@ -134,25 +134,6 @@ export const TEXT_SERVICES = {
         inputModalities: ["text", "image", "audio"],
         outputModalities: ["audio", "text"],
         tools: true,
-        isSpecialized: false,
-    },
-    "openai-reasoning": {
-        aliases: ["gpt-5.2-reasoning"],
-        modelId: "gpt-5.2",
-        provider: "azure-openai",
-        cost: [
-            {
-                date: COST_START_DATE,
-                promptTextTokens: perMillion(0.5),
-                promptCachedTokens: perMillion(0.125),
-                completionTextTokens: perMillion(2.0),
-            },
-        ],
-        description: "OpenAI GPT-5.2 - Hybrid Reasoning Model",
-        inputModalities: ["text", "image"],
-        outputModalities: ["text"],
-        tools: true,
-        reasoning: true,
         isSpecialized: false,
     },
     "gemini": {

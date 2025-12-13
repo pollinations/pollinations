@@ -367,19 +367,55 @@ CURRENT INSTAGRAM TRENDS:
     "alt_text": "Accessibility description"
 }}
 
-=== PROMPT STYLE for nanobanana-pro ===
-- Abstract, artistic, visually striking
-- NO TEXT OR WORDS in the image
-- Rich colors, dynamic compositions, surreal elements
-- Style keywords: "abstract digital art", "surrealist", "vibrant", "ethereal", "cosmic", "neural"
-- If linked: reference visual elements from previous image
-- Good themes: Creation, transformation, digital cosmos, flowing data, AI imagination
+=== PROMPT STYLE for nanobanana-pro (Imagen 3) ===
 
-Make it ART. Make it stop the scroll."""
+**CRITICAL: Prompts must VISUALLY REPRESENT the actual update/feature, not generic AI art.**
+
+**Pollinations Brand Visual Language:**
+- 🐝 Bees, honeycomb patterns, pollination - our core identity
+- 🌸 Digital flowers, blooming tech, organic-meets-digital
+- 🌿 Garden aesthetics - growing, nurturing, open ecosystem
+- 🎨 Surreal hyperrealistic digital garden style
+- Colors: Warm golds, nature greens, soft purples, sunrise oranges
+
+**Imagen 3 Prompting Best Practices:**
+1. BE SPECIFIC - Describe exactly what you want to see, not abstract concepts
+2. CONCRETE ELEMENTS - Include tangible objects that represent the feature
+3. COMPOSITION - Specify camera angle, lighting, arrangement
+4. STYLE ANCHOR - "digital garden aesthetic, surreal hyperrealistic, Pollinations style"
+
+**Update-Specific Visual Mapping (IMPORTANT!):**
+- Instagram/Social automation → Bee carrying a phone/screen through garden
+- New model integration → Flower blooming with glowing core, new growth
+- Performance/Speed → Fast-flying bee with motion blur, streamlined garden paths
+- New apps/ecosystem → Multiple flowers in garden, bees visiting different blooms
+- Payment/Support → Golden pollen/nectar flowing, sustaining the garden
+- Bug fixes → Bee tending to a flower, healing/repairing imagery
+- API changes → Garden pathways, bridges, connections between flowers
+- Security updates → Protected garden, bee guardians, secure hive
+
+**Example Good Prompts:**
+- "A glowing mechanical bee hovering over a blooming digital flower, carrying a tiny Instagram icon, surreal hyperrealistic digital garden, warm golden hour lighting, macro photography style, Pollinations aesthetic"
+- "Isometric view of a vibrant digital garden with a new flower just opening, revealing neural network patterns inside its petals, bees approaching curiously, soft bokeh background, dreamy and hopeful mood"
+
+**Avoid:**
+- Generic "neural network" / "data streams" / "cyberpunk" imagery
+- Abstract concepts without concrete visual anchors
+- Pure technology imagery without organic/garden elements
+- Text or UI elements in the image
+
+Make it BRAND-CONSISTENT, FEATURE-RELEVANT, and SCROLL-STOPPING."""
 
     if prs:
         user_prompt = f"""Create an Instagram post for Pollinations.AI for {today}.
 FOCUS ON THESE UPDATES: {[pr['title'] for pr in prs[:5]]}
+
+IMPORTANT - Your image prompts MUST:
+1. Use the Pollinations visual language (bees, digital garden, flowers, organic-tech fusion)
+2. Visually represent the SPECIFIC updates - not generic AI art
+3. Include concrete visual elements from the update-specific mapping
+4. End each prompt with "surreal hyperrealistic digital garden, Pollinations aesthetic"
+
 Decide: linked visual story OR standalone images? How many (1-10)?
 Make the updates feel exciting and visual. Output valid JSON only."""
     else:
@@ -389,6 +425,12 @@ NO UPDATES TODAY - Create engaging BRAND CONTENT:
 - AI art demonstration
 - Platform feature highlight
 - Something that makes people want to try free AI image generation
+
+IMPORTANT - Your image prompts MUST use the Pollinations brand:
+1. Feature bees, digital flowers, garden aesthetics
+2. Include "surreal hyperrealistic digital garden, Pollinations aesthetic" in each prompt
+3. Show the organic-meets-digital identity of the platform
+
 Decide: linked visual story OR standalone images? How many (1-10)?
 Output valid JSON only."""
 

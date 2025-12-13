@@ -1072,5 +1072,14 @@ export const creativeProjects = [
     "category": "creative",
     "submissionDate": "2025-12-13",
     "order": 5
+  },
+  {
+    "name": "📚 AI Story Illustrator",
+    "url": "https://soft-cucurucho-6758e7.netlify.app/",
+    "description": "Interactive storytelling app that generates AI illustrations for your narratives. Write scene-by-scene and watch your story come alive with auto-generated images using Pollinations' text-to-image API. Features sequential reveals and a clean storybook layout.",
+    "author": "@KAmaL-senpai",
+    "category": "creative",
+    "submissionDate": "2025-12-13",
+    "order": 5
   }
 ];

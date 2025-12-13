@@ -164,4 +164,14 @@ export const vibeCodingProjects = [
         "submissionDate": "2025-12-03",
         "order": 5,
     },
+  {
+    "name": "🔍 Polli YT Search",
+    "url": "https://replit.com/@nojeheg897/VideoFind5",
+    "description": "YouTube search engine that goes beyond titles—uses Pollinations to analyze thumbnails, video content, and transcriptions across thousands of videos. Early stage project with vision for autonomous video creation workflows.",
+    "author": "@Alfa",
+    "repo": "https://github.com/Fanimazahuia/VideoFind5",
+    "category": "vibeCoding",
+    "submissionDate": "2025-12-13",
+    "order": 5
+  }
 ];

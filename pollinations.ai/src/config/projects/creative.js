@@ -1127,5 +1127,15 @@ export const creativeProjects = [
     "category": "creative",
     "submissionDate": "2025-12-13",
     "order": 5
+  },
+  {
+    "name": "🕰️ CHRONOS - Time Machine",
+    "url": "https://github.com/yvr98/TimeMachine",
+    "description": "Immersive time-travel experience where users select any location on a 3D globe and year in history. Pollinations generates historically accurate scene visualizations and streams first-person narratives of what travelers see, hear, and feel upon arrival.",
+    "author": "@yvr98",
+    "repo": "https://github.com/yvr98/TimeMachine",
+    "category": "creative",
+    "submissionDate": "2025-12-13",
+    "order": 5
   }
 ];

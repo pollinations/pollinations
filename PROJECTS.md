@@ -161,6 +161,7 @@ Pollinations.AI is used in various projects, including:
 | 🆕 🤖 [🎨 BinaryPH RSS AI](https://binary.ph/posts/) | WordPress plugin that transforms RSS feed items into complete blog posts using... | @amin-IT |
 | 🆕 [🎨 Imagly AI](https://imaglyai.web.app/) | Free AI image generator that creates realistic photos, digital artwork, fantasy... | @imaglyai |
 | 🆕 🕰️ CHRONOS - Time Machine ([⭐ 0](https://github.com/yvr98/TimeMachine)) | Immersive time-travel experience where users select any location on a 3D globe... | @yvr98 |
+| 🆕 [🎬 Viral Flow](https://fabioarieira.com/viralflow) | Browser-based video production platform using Pollinations for visual... | @fabioarieira |
 
 ### Games 🎲
 

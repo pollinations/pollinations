@@ -1137,5 +1137,14 @@ export const creativeProjects = [
     "category": "creative",
     "submissionDate": "2025-12-13",
     "order": 5
+  },
+  {
+    "name": "🎬 Viral Flow",
+    "url": "https://fabioarieira.com/viralflow",
+    "description": "Browser-based video production platform using Pollinations for visual generation. Creates short-form viral content and long-form documentaries with customizable visual styles and editing rhythms. All processing happens locally in-browser for privacy.",
+    "author": "@fabioarieira",
+    "category": "creative",
+    "submissionDate": "2025-12-13",
+    "order": 5
   }
 ];

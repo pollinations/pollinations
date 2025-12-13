@@ -604,6 +604,99 @@ describe("POST /generate/v1/chat/completions (tool calls)", async () => {
     );
 });
 
-// TODO: Add model gating tests once we figure out how to create API keys with permissions via client API
-// The server API supports `permissions` parameter but the client library may not expose it in types
-// See: https://www.better-auth.com/docs/plugins/api-key#creating-api-keys-with-permissions
+// Model gating tests - API keys with permissions.models restriction
+describe("Model gating by API key permissions", async () => {
+    test(
+        "Restricted API key should allow access to permitted model (openai-fast)",
+        { timeout: 30000 },
+        async ({ restrictedApiKey, mocks }) => {
+            await mocks.enable("polar", "tinybird", "vcr");
+            const response = await SELF.fetch(
+                `http://localhost:3000/api/generate/v1/chat/completions`,
+                {
+                    method: "POST",
+                    headers: {
+                        "content-type": "application/json",
+                        "authorization": `Bearer ${restrictedApiKey}`,
+                    },
+                    body: JSON.stringify({
+                        model: "openai-fast",
+                        messages: [
+                            {
+                                role: "user",
+                                content: TEST_MESSAGE_CONTENT,
+                            },
+                        ],
+                        seed: testSeed(),
+                    }),
+                },
+            );
+            expect(response.status).toBe(200);
+            await response.text();
+        },
+    );
+
+    test(
+        "Restricted API key should deny access to non-permitted model (openai)",
+        { timeout: 30000 },
+        async ({ restrictedApiKey, mocks }) => {
+            await mocks.enable("polar", "tinybird", "vcr");
+            const response = await SELF.fetch(
+                `http://localhost:3000/api/generate/v1/chat/completions`,
+                {
+                    method: "POST",
+                    headers: {
+                        "content-type": "application/json",
+                        "authorization": `Bearer ${restrictedApiKey}`,
+                    },
+                    body: JSON.stringify({
+                        model: "openai", // Not in allowed list ["openai-fast", "flux"]
+                        messages: [
+                            {
+                                role: "user",
+                                content: TEST_MESSAGE_CONTENT,
+                            },
+                        ],
+                        seed: testSeed(),
+                    }),
+                },
+            );
+            expect(response.status).toBe(403);
+            const body = await response.json();
+            expect((body as any).error.message).toContain(
+                "Model 'openai' is not allowed for this API key",
+            );
+        },
+    );
+
+    test(
+        "Unrestricted API key should allow access to any model",
+        { timeout: 30000 },
+        async ({ apiKey, mocks }) => {
+            await mocks.enable("polar", "tinybird", "vcr");
+            // Test with a model that would be blocked for restricted keys
+            const response = await SELF.fetch(
+                `http://localhost:3000/api/generate/v1/chat/completions`,
+                {
+                    method: "POST",
+                    headers: {
+                        "content-type": "application/json",
+                        "authorization": `Bearer ${apiKey}`,
+                    },
+                    body: JSON.stringify({
+                        model: "openai",
+                        messages: [
+                            {
+                                role: "user",
+                                content: TEST_MESSAGE_CONTENT,
+                            },
+                        ],
+                        seed: testSeed(),
+                    }),
+                },
+            );
+            expect(response.status).toBe(200);
+            await response.text();
+        },
+    );
+});

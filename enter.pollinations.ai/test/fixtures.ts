@@ -1,7 +1,7 @@
 import { test as base, expect } from "vitest";
 import { createAuthClient } from "better-auth/client";
 import { apiKeyClient, adminClient } from "better-auth/client/plugins";
-import { SELF } from "cloudflare:test";
+import { SELF, env } from "cloudflare:test";
 import { createMockPolar } from "./mocks/polar.ts";
 import { createMockGithub } from "./mocks/github.ts";
 import { createMockTinybird } from "./mocks/tinybird.ts";
@@ -9,6 +9,9 @@ import { teardownFetchMock, createFetchMock } from "./mocks/fetch.ts";
 import { getLogger, Logger } from "@logtape/logtape";
 import { ensureConfigured } from "@/logger.ts";
 import { createMockVcr } from "./mocks/vcr.ts";
+import { drizzle } from "drizzle-orm/d1";
+import * as schema from "@/db/schema/better-auth.ts";
+import { eq } from "drizzle-orm";
 
 const createAuth = () =>
     createAuthClient({
@@ -36,6 +39,8 @@ type Fixtures = {
     sessionToken: string;
     apiKey: string;
     pubApiKey: string;
+    /** API key restricted to only ["openai-fast", "flux"] models */
+    restrictedApiKey: string;
 };
 
 type SignupData = {
@@ -146,5 +151,39 @@ export const test = base.extend<Fixtures>({
         const pubApiKey = createApiKeyResponse.data.key;
         expect(pubApiKey.startsWith("pk_")).toBe(true);
         await use(pubApiKey);
+    },
+    /**
+     * Creates an API key restricted to only ["openai-fast", "flux"] models.
+     * Creates the key via client API, then updates permissions directly in DB
+     * since the client API doesn't expose the `permissions` parameter.
+     */
+    restrictedApiKey: async ({ auth, sessionToken }, use) => {
+        // Step 1: Create API key via client API
+        const createApiKeyResponse = await auth.apiKey.create({
+            name: "restricted-test-key",
+            fetchOptions: {
+                headers: {
+                    "Cookie": `better-auth.session_token=${sessionToken}`,
+                },
+            },
+        });
+        if (!createApiKeyResponse.data)
+            throw new Error("Failed to create restricted API key");
+        const apiKeyValue = createApiKeyResponse.data.key;
+        const apiKeyId = createApiKeyResponse.data.id;
+
+        // Step 2: Update permissions directly in the database
+        // The client API doesn't expose permissions, but the DB schema supports it
+        const db = drizzle(env.DB, { schema });
+        await db
+            .update(schema.apikey)
+            .set({
+                permissions: JSON.stringify({
+                    models: ["openai-fast", "flux"],
+                }),
+            })
+            .where(eq(schema.apikey.id, apiKeyId));
+
+        await use(apiKeyValue);
     },
 });

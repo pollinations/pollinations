@@ -665,5 +665,14 @@ export const chatProjects = [
     "category": "chat",
     "submissionDate": "2025-12-13",
     "order": 5
+  },
+  {
+    "name": "✨ ToneShift AI",
+    "url": "https://toneshift-ai.lovable.app/",
+    "description": "Rewrite any text into different emotional tones while preserving meaning. Choose from Calm, Friendly, Excited, Professional, Empathetic, Confident, Playful, Apologetic, or Direct. Chat-style interface with example prompts, no sign-in required.",
+    "author": "@UstaDeveloper",
+    "category": "chat",
+    "submissionDate": "2025-12-13",
+    "order": 5
   }
 ];

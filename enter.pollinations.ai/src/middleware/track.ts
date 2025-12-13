@@ -455,6 +455,7 @@ function extractUsageAndContentFilterResultsHeaders(response: Response): {
 
 async function extractUsageAndContentFilterResultsStream(
     events: AsyncIterable<unknown>,
+    response?: Response,
 ): Promise<{
     modelUsage: ModelUsage | null;
     contentFilterResults: GenerationEventContentFilterParams;
@@ -517,8 +518,32 @@ async function extractUsageAndContentFilterResultsStream(
         completionFilterResults,
     });
 
+    // Fallback to headers if usage not found in stream
     if (!model || !usage) {
-        log.error("No usage object found in event stream");
+        if (response) {
+            log.warn(
+                "No usage object found in event stream, attempting to extract from headers",
+            );
+            try {
+                const headerUsage = extractUsageHeaders(response);
+                const headerContentFilter =
+                    extractContentFilterHeaders(response);
+                return {
+                    modelUsage: headerUsage,
+                    contentFilterResults: mergeContentFilterResults([
+                        contentFilterResults,
+                        headerContentFilter,
+                    ]),
+                };
+            } catch (error) {
+                log.error(
+                    "Failed to extract usage from headers as fallback",
+                    error,
+                );
+            }
+        } else {
+            log.error("No usage object found in event stream");
+        }
         return {
             modelUsage: null,
             contentFilterResults,
@@ -548,7 +573,10 @@ async function extractUsageAndContentFilterResults(
         response.body instanceof ReadableStream
     ) {
         const eventStream = extractResponseStream(response);
-        return await extractUsageAndContentFilterResultsStream(eventStream);
+        return await extractUsageAndContentFilterResultsStream(
+            eventStream,
+            response,
+        );
     }
     return extractUsageAndContentFilterResultsHeaders(response);
 }

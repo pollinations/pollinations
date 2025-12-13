@@ -111,11 +111,25 @@ Our web interface is user-friendly and doesn't require any technical knowledge. 
 
 ### API
 
-Use our API directly in your browser or applications:
+Use the unified gateway with an API key from [enter.pollinations.ai](https://enter.pollinations.ai):
 
-    https://pollinations.ai/p/conceptual_isometric_world_of_pollinations_ai_surreal_hyperrealistic_digital_garden
+```bash
+export TOKEN="pk_or_sk_from_dashboard"
+curl "https://gen.pollinations.ai/image/hello-world?model=flux&width=1024&height=1024" \
+  -H "Authorization: Bearer $TOKEN" \
+  -o hello.jpg
+```
 
-Replace the description with your own, and you'll get a unique image based on your words!
+For chat/text, call the OpenAI-compatible endpoint:
+
+```bash
+curl "https://gen.pollinations.ai/v1/chat/completions" \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"model":"openai","messages":[{"role":"user","content":"Say hi!"}]}'
+```
+
+See [APIDOCS.md](APIDOCS.md) for full examples, including audio and vision.
 
 ## 🎨 Examples
 
@@ -127,28 +141,48 @@ Here's an example of a generated image:
 
 Python code to download the generated image:
 
-    import requests
+```python
+import requests
+from urllib.parse import quote
 
-    def download_image(prompt):
-        url = f"https://pollinations.ai/p/{prompt}"
-        response = requests.get(url)
-        with open('generated_image.jpg', 'wb') as file:
-            file.write(response.content)
-        print('Image downloaded!')
+BASE = "https://gen.pollinations.ai"
+TOKEN = "pk_or_sk_from_dashboard"
 
-    download_image("conceptual_isometric_world_of_pollinations_ai_surreal_hyperrealistic_digital_garden")
+prompt = "conceptual isometric world of pollinations ai surreal hyperrealistic digital garden"
+url = f"{BASE}/image/{quote(prompt)}"
+resp = requests.get(url, headers={"Authorization": f"Bearer {TOKEN}"})
+with open("generated_image.jpg", "wb") as f:
+    f.write(resp.content)
+print("Image downloaded!")
+```
 
 ### Text Generation
 
-To generate text, use this URL:
+To generate text, call the OpenAI-compatible endpoint:
 
-    https://text.pollinations.ai/What%20is%20artificial%20intelligence?
+```bash
+curl "https://gen.pollinations.ai/v1/chat/completions" \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"model":"openai","messages":[{"role":"user","content":"What is artificial intelligence?"}]}'
+```
 
 ### Audio Generation
 
-To generate audio from text, use this URL:
+Generate speech with the `openai-audio` model:
 
-    https://text.pollinations.ai/Welcome%20to%20Pollinations?model=openai-audio&voice=nova
+```bash
+curl "https://gen.pollinations.ai/v1/chat/completions" \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model":"openai-audio",
+    "messages":[{"role":"user","content":"Welcome to Pollinations!"}],
+    "modalities":["text","audio"],
+    "audio":{"voice":"nova","format":"mp3"}
+  }' \
+  -o welcome.mp3
+```
 
 ## 🛠️ Integration
 

@@ -160,7 +160,6 @@ Pollinations.AI is used in various projects, including:
 | 🆕 🤖 [🎨 BinaryPH RSS AI](https://binary.ph/posts/) | WordPress plugin that transforms RSS feed items into complete blog posts using... | @amin-IT |
 | 🆕 [🎨 Imagly AI](https://imaglyai.web.app/) | Free AI image generator that creates realistic photos, digital artwork, fantasy... | @imaglyai |
 
-
 ### Games 🎲
 
 | Project | Description | Creator |
@@ -312,6 +311,7 @@ Pollinations.AI is used in various projects, including:
 | 🆕 [SimplifyMind AI (ELI5)](https://simplify-eloquent-ai.lovable.app/) | A modern one-page web app that turns any complex question into a simple,... | CompaDeveloper |
 | 🆕 [🍎 AI Food Guide and Track Calories](https://nutri.selfhost.io.vn/) ([⭐ 0](https://github.com/newnol/nutritrack)) | AI-powered nutrition assistant that helps identify foods and track daily... | @newnol |
 | 🆕 [✨ ToneShift AI](https://toneshift-ai.lovable.app/) | Rewrite any text into different emotional tones while preserving meaning.... | @UstaDeveloper |
+| 🆕 [✨ ToneShift AI](https://toneshift-ai.lovable.app/) | Instantly rewrite any text into different emotional tones while preserving... | @UstaDeveloper |
 
 ### Social Bots 🤖
 

@@ -1,7 +1,7 @@
 name: App Issue Celebrate Approval
 
 on:
-  pull_request:
+  pull_request_target:
     types: [closed]
 
 jobs:
@@ -10,21 +10,24 @@ jobs:
     if: github.event.pull_request.merged == true
     runs-on: ubuntu-latest
     permissions:
+      contents: read
       issues: write
       pull-requests: read
 
     steps:
-      - name: Generate Pollinations AI Token
-        id: pollinations-ai
-        uses: actions/create-github-app-token@v1
-        with:
-          app-id: ${{ secrets.POLLY_BOT_APP_ID }}
-          private-key: ${{ secrets.POLLY_BOT_PRIVATE_KEY }}
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-      - name: Post celebration comment on linked issues
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Find linked app submission issues and upgrade tier
+        id: process
         uses: actions/github-script@v7
         with:
-          github-token: ${{ steps.pollinations-ai.outputs.token }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
             const prBody = context.payload.pull_request.body || '';
             const prTitle = context.payload.pull_request.title || '';
@@ -43,6 +46,8 @@ jobs:
               return;
             }
             
+            const appSubmissions = [];
+            
             for (const issueNumber of issueNumbers) {
               try {
                 // Check if the issue is an App Submission (by title)
@@ -55,6 +60,11 @@ jobs:
                 const isAppSubmission = issue.title.startsWith('[App Submission]:');
                 
                 if (isAppSubmission) {
+                  appSubmissions.push({
+                    issueNumber,
+                    author: issue.user.login
+                  });
+                  
                   // Set app:approved label (for dashboard display)
                   await github.rest.issues.addLabels({
                     owner: context.repo.owner,
@@ -63,7 +73,7 @@ jobs:
                     labels: ['app:approved']
                   });
                   
-                  // Post celebration comment
+                  // Post celebration comment (tier upgrade status will be posted separately)
                   await github.rest.issues.createComment({
                     owner: context.repo.owner,
                     repo: context.repo.repo,
@@ -77,5 +87,73 @@ jobs:
                 }
               } catch (error) {
                 console.log(`Error processing issue #${issueNumber}: ${error.message}`);
+              }
+            }
+            
+            // Output app submissions for tier upgrade step
+            core.setOutput('app_submissions', JSON.stringify(appSubmissions));
+
+      - name: Upgrade users to Flower tier
+        id: upgrade
+        if: steps.process.outputs.app_submissions != '[]' && steps.process.outputs.app_submissions != ''
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          POLAR_ACCESS_TOKEN: ${{ secrets.POLAR_ACCESS_TOKEN }}
+          APP_SUBMISSIONS: ${{ steps.process.outputs.app_submissions }}
+        run: |
+          # Install dependencies
+          npm install -g wrangler
+          cd enter.pollinations.ai
+          npm install
+          
+          # Track results for each user
+          RESULTS="[]"
+          
+          # Upgrade each user to flower tier
+          for row in $(echo "$APP_SUBMISSIONS" | jq -c '.[]'); do
+            GITHUB_USERNAME=$(echo "$row" | jq -r '.author')
+            ISSUE_NUMBER=$(echo "$row" | jq -r '.issueNumber')
+            
+            if [ -n "$GITHUB_USERNAME" ]; then
+              echo "🌸 Upgrading $GITHUB_USERNAME to flower tier..."
+              if npx tsx scripts/user-update-tier.ts update-tier \
+                --githubUsername "$GITHUB_USERNAME" \
+                --tier flower \
+                --env production 2>&1; then
+                RESULTS=$(echo "$RESULTS" | jq --arg user "$GITHUB_USERNAME" --arg issue "$ISSUE_NUMBER" '. + [{"user": $user, "issue": $issue, "success": true}]')
+              else
+                RESULTS=$(echo "$RESULTS" | jq --arg user "$GITHUB_USERNAME" --arg issue "$ISSUE_NUMBER" '. + [{"user": $user, "issue": $issue, "success": false}]')
+              fi
+            fi
+          done
+          
+          echo "upgrade_results=$RESULTS" >> $GITHUB_OUTPUT
+
+      - name: Post tier upgrade status
+        if: steps.upgrade.outputs.upgrade_results != '' && steps.upgrade.outputs.upgrade_results != '[]'
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const results = JSON.parse('${{ steps.upgrade.outputs.upgrade_results }}' || '[]');
+            
+            for (const result of results) {
+              if (result.success) {
+                await github.rest.issues.createComment({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: parseInt(result.issue),
+                  body: `### 🌸 Flower Tier Activated!\n\n@${result.user}, you've been upgraded to **Flower tier** which grants you **10 pollen per day**!\n\n⏰ **How it works:** Your pollen balance refills every 24 hours. Unused pollen does not roll over.\n\nCheck your balance at [enter.pollinations.ai](https://enter.pollinations.ai)`
+                });
+                console.log(`Posted tier upgrade confirmation for ${result.user} on issue #${result.issue}`);
+              } else {
+                await github.rest.issues.createComment({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: parseInt(result.issue),
+                  body: `### ⚠️ Action Required: Claim Your Flower Tier\n\n@${result.user}, your app has been approved but we couldn't find your account to upgrade your tier.\n\n**To claim your 🌸 Flower tier (10 pollen/day):**\n1. Sign up at [enter.pollinations.ai](https://enter.pollinations.ai) using GitHub\n2. Reply to this issue once you've signed up\n3. A maintainer will upgrade your tier\n\nThanks for contributing to Pollinations! 🌻`
+                });
+                console.log(`Posted signup reminder for ${result.user} on issue #${result.issue}`);
               }
             }

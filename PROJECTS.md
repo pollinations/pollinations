@@ -315,6 +315,7 @@ Pollinations.AI is used in various projects, including:
 | 🆕 [🍎 AI Food Guide and Track Calories](https://nutri.selfhost.io.vn/) ([⭐ 0](https://github.com/newnol/nutritrack)) | AI-powered nutrition assistant that helps identify foods and track daily... | @newnol |
 | 🆕 [✨ ToneShift AI](https://toneshift-ai.lovable.app/) | Rewrite any text into different emotional tones while preserving meaning.... | @UstaDeveloper |
 | 🆕 [✨ ToneShift AI](https://toneshift-ai.lovable.app/) | Instantly rewrite any text into different emotional tones while preserving... | @UstaDeveloper |
+| 🆕 🤖 [💬 Chat AI](https://t.me/Chat2qai_bot) | Arabic Telegram bot serving as a versatile AI assistant. Answers questions,... | @Alhmam |
 
 ### Social Bots 🤖
 

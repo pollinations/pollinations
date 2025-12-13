@@ -1072,5 +1072,15 @@ export const creativeProjects = [
     "category": "creative",
     "submissionDate": "2025-12-13",
     "order": 5
+  },
+  {
+    "name": "🎨 ChimeraStudio",
+    "url": "https://github.com/migueland94/ChimeraStudio",
+    "description": "Lightweight browser-based sandbox for testing Pollinations API capabilities. Explore AI image generation, computer vision analysis, and editing in one client-side tool. No backend required—keys and settings stay local for privacy.",
+    "author": "@migueland94",
+    "repo": "https://github.com/migueland94/ChimeraStudio",
+    "category": "creative",
+    "submissionDate": "2025-12-13",
+    "order": 5
   }
 ];

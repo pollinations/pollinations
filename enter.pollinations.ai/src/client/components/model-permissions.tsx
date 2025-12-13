@@ -1,23 +1,20 @@
 import { useState, type FC } from "react";
 import { cn } from "@/util.ts";
+import { TEXT_SERVICES } from "../../../../shared/registry/text.ts";
+import { IMAGE_SERVICES } from "../../../../shared/registry/image.ts";
 
-// Available models - could be fetched from API in the future
-const AVAILABLE_MODELS = {
-    text: [
-        { id: "openai", label: "OpenAI GPT-5 Mini" },
-        { id: "openai-fast", label: "OpenAI GPT-5 Nano" },
-        { id: "openai-large", label: "OpenAI GPT-5.2" },
-        { id: "qwen-coder", label: "Qwen Coder" },
-        { id: "mistral", label: "Mistral Small" },
-    ],
-    image: [
-        { id: "flux", label: "Flux" },
-        { id: "turbo", label: "Turbo" },
-        { id: "kontext", label: "Kontext" },
-        { id: "seedream", label: "Seedream" },
-        { id: "gptimage", label: "GPT Image" },
-    ],
-} as const;
+// Build model lists from the shared registry (same source as pricing table)
+const textModels = Object.entries(TEXT_SERVICES).map(([id, config]) => ({
+    id,
+    label: config.description?.split(" - ")[0] || id,
+}));
+
+const imageModels = Object.entries(IMAGE_SERVICES)
+    .filter(([_, config]) => config.outputModalities?.[0] !== "video") // Exclude video models
+    .map(([id, config]) => ({
+        id,
+        label: config.description?.split(" - ")[0] || id,
+    }));
 
 type ModelPermissionsProps = {
     /** Selected model IDs. Empty array = all models allowed */
@@ -42,7 +39,7 @@ export const ModelPermissions: FC<ModelPermissionsProps> = ({
     compact = false,
 }) => {
     const [isExpanded, setIsExpanded] = useState(false);
-    const allModels = [...AVAILABLE_MODELS.text, ...AVAILABLE_MODELS.image];
+    const allModels = [...textModels, ...imageModels];
     const isAllSelected = value.length === 0;
 
     const toggleAllModels = () => {
@@ -138,7 +135,7 @@ export const ModelPermissions: FC<ModelPermissionsProps> = ({
                                     Text Models
                                 </div>
                                 <div className="flex flex-wrap gap-1.5">
-                                    {AVAILABLE_MODELS.text.map((model) => (
+                                    {textModels.map((model) => (
                                         <ModelChip
                                             key={model.id}
                                             label={model.label}
@@ -158,7 +155,7 @@ export const ModelPermissions: FC<ModelPermissionsProps> = ({
                                     Image Models
                                 </div>
                                 <div className="flex flex-wrap gap-1.5">
-                                    {AVAILABLE_MODELS.image.map((model) => (
+                                    {imageModels.map((model) => (
                                         <ModelChip
                                             key={model.id}
                                             label={model.label}

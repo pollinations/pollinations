@@ -62,8 +62,11 @@ function queryD1(env: Environment, sql: string): string {
             stdio: ["pipe", "pipe", "pipe"],
         });
         return result;
-    } catch (error: any) {
-        console.error("D1 query failed:", error.message);
+    } catch (error) {
+        console.error(
+            "D1 query failed:",
+            error instanceof Error ? error.message : String(error),
+        );
         throw error;
     }
 }
@@ -107,6 +110,19 @@ function updateD1Tier(
  * Calls the existing manage-polar.ts script to avoid code duplication.
  * Returns true if successful or skipped (no token), false on error.
  */
+// Email validation: standard email format, no shell metacharacters
+function sanitizeEmail(email: string): string {
+    // Only allow standard email characters
+    const sanitized = email.replace(/[^a-zA-Z0-9.@_+-]/g, "");
+    if (sanitized !== email) {
+        console.warn(`⚠️  Sanitized email: "${email}" → "${sanitized}"`);
+    }
+    if (!sanitized.includes("@") || sanitized.length > 254) {
+        throw new Error(`Invalid email format: "${email}"`);
+    }
+    return sanitized;
+}
+
 function updatePolarSubscription(
     env: Environment,
     email: string,
@@ -117,7 +133,8 @@ function updatePolarSubscription(
         return true; // Not an error, just skipped
     }
 
-    const cmd = `npx tsx scripts/manage-polar.ts user update-tier --email "${email}" --tier ${tier} --env ${env}`;
+    const safeEmail = sanitizeEmail(email);
+    const cmd = `npx tsx scripts/manage-polar.ts user update-tier --email "${safeEmail}" --tier ${tier} --env ${env}`;
     try {
         execSync(cmd, {
             cwd: process.cwd(),

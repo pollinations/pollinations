@@ -136,7 +136,8 @@ jobs:
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
-            const results = JSON.parse('${{ steps.upgrade.outputs.upgrade_results }}' || '[]');
+            // Use fromJSON to safely parse the output (avoids shell injection via quotes)
+            const results = ${{ steps.upgrade.outputs.upgrade_results || '[]' }};
             
             for (const result of results) {
               if (result.success) {

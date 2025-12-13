@@ -9,12 +9,11 @@ const textModels = Object.entries(TEXT_SERVICES).map(([id, config]) => ({
     label: config.description?.split(" - ")[0] || id,
 }));
 
-const imageModels = Object.entries(IMAGE_SERVICES)
-    .filter(([_, config]) => config.outputModalities?.[0] !== "video") // Exclude video models
-    .map(([id, config]) => ({
-        id,
-        label: config.description?.split(" - ")[0] || id,
-    }));
+// Image/video models - all from IMAGE_SERVICES (video uses same endpoint)
+const imageModels = Object.entries(IMAGE_SERVICES).map(([id, config]) => ({
+    id,
+    label: config.description?.split(" - ")[0] || id,
+}));
 
 type ModelPermissionsProps = {
     /** Selected model IDs. Empty array = all models allowed */
@@ -151,10 +150,10 @@ export const ModelPermissions: FC<ModelPermissionsProps> = ({
                                 </div>
                             </div>
 
-                            {/* Image models */}
+                            {/* Image & Video models */}
                             <div>
                                 <div className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">
-                                    Image Models
+                                    Image & Video Models
                                 </div>
                                 <div className="flex flex-wrap gap-1.5">
                                     {imageModels.map((model) => (

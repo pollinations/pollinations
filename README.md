@@ -383,6 +383,7 @@ Pollinations.AI is used in various projects, including:
 | 🆕 🤖 [Robatika — AI Chat Platform](https://app.robatika.com) | Robatika is a rapidly growing AI chat platform that provides users with... | Robatika |
 | 🆕 [🛠️ NextGenTools](https://image-gen-adobe.nextgentools.online/) | AI-powered workflow for stock photography. Generate images, vectorize them, and... | @roni123332 |
 | 🆕 [📚 AI Story Illustrator](https://soft-cucurucho-6758e7.netlify.app/) | Interactive storybook creator where you write scenes and get AI-generated... | @KAmaL-senpai |
+| 🆕 🎨 ChimeraStudio ([⭐ 0](https://github.com/migueland94/ChimeraStudio)) | Lightweight browser-based sandbox for testing Pollinations API capabilities.... | @migueland94 |
 
 ### Games 🎲
 
@@ -415,6 +416,7 @@ Pollinations.AI is used in various projects, including:
 | 🆕 Godville Heroic Moment ([⭐ 0](https://github.com/migueland94/Godville-Heroic-Moment)) | Firefox-only browser extension that adds a Heroic Moment block to your Godville... | migueland94 |
 | 🆕 [🎮 Nikke-DB Story/Roleplaying Generator](https://nikke-db.pages.dev/) ([⭐ 0](https://github.com/Nikke-db/nikke-db-vue)) | Interactive story and roleplay generator for Goddess of Victory: NIKKE.... | @rhystic1 |
 | 🆕 [🎮 Nikke-DB Story/Roleplaying Generator](https://nikke-db.pages.dev/) ([⭐ 0](https://github.com/Nikke-db/nikke-db-vue)) | Interactive story and roleplay generator for Goddess of Victory: NIKKE.... | @rhystic1 |
+| 🆕 🎮 ii's Stupid Menu ([⭐ 0](https://github.com/iiDk-the-actual/iis.Stupid.Menu)) | A mod menu for Gorilla Tag featuring 1600+ mods and an AI Assistant powered by... | @iiDk-the-actual |
 
 ### Hack-&-Build 🛠️
 

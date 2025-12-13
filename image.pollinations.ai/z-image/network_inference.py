@@ -8,7 +8,7 @@ from urllib.parse import quote
 load_dotenv()
 
 
-url = f"https://gen.pollinations.ai/image/{quote("image of taylor swift")}"
+url = f"https://gen.pollinations.ai/image/{quote('joyous clipart of a cute corgi puppy playing with a colorful ball in a sunny park, vibrant colors, cartoon style')}"
 params = {
     "model": "zimage",
     "width": 1024,

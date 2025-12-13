@@ -6,6 +6,8 @@ venv/
 testImages/
 env/
 model_cache/
+gfpgan/
+*.out
 *.safetensors
 *.bin
 *.ckpt

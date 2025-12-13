@@ -158,6 +158,8 @@ Pollinations.AI is used in various projects, including:
 | 🆕 [✨ Storycraft Pro](https://storycraftpro11-orpin.vercel.app/) | Create illustrated stories with consistent characters, narrated audio, and... | @souravk11318 |
 | 🆕 [🎨 Sugen](https://sugen.puter.site/) | Browser-based AI art studio using Puter.js and Pollinations.ai. Features... | @red444ytchess-jpg |
 | 🆕 🤖 [🎨 BinaryPH RSS AI](https://binary.ph/posts/) | WordPress plugin that transforms RSS feed items into complete blog posts using... | @amin-IT |
+| 🆕 [🎨 Imagly AI](https://imaglyai.web.app/) | Free AI image generator that creates realistic photos, digital artwork, fantasy... | @imaglyai |
+
 
 ### Games 🎲
 
@@ -193,6 +195,7 @@ Pollinations.AI is used in various projects, including:
 | 🆕 🎮 ii's Stupid Menu ([⭐ 0](https://github.com/iiDk-the-actual/iis.Stupid.Menu)) | A mod menu for Gorilla Tag featuring 1600+ mods and an AI Assistant powered by... | @iiDk-the-actual |
 | 🆕 [🎮 DnD Character Sheet Helper](https://rkdn.app/dnd) ([⭐ 0](https://github.com/arcadiancomp/dnd)) | A fun tool for creating D&D character sheets with AI-generated character... | @ArcadianComp |
 | 🆕 [🎮 Kinexus](https://tin2tin.github.io/Kinexus/) ([⭐ 0](https://github.com/tin2tin/Kinexus)) | Zero-code tool for creating choice-based cinematic narrative games and... | @tin2tin |
+| 🆕 [🎮 Kinexus](https://tin2tin.github.io/Kinexus/) ([⭐ 0](https://github.com/tin2tin/Kinexus)) | Zero-code tool for creating choice-based narrative games and interactive... | @tin2tin |
 
 ### Hack-&-Build 🛠️
 

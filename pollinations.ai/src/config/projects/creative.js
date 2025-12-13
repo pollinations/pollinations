@@ -1109,5 +1109,14 @@ export const creativeProjects = [
     "category": "creative",
     "submissionDate": "2025-12-13",
     "order": 5
+  },
+  {
+    "name": "🎨 BinaryPH RSS AI",
+    "url": "https://binary.ph/posts/",
+    "description": "WordPress plugin that transforms RSS feed items into complete blog posts using Pollinations.AI for both text generation and featured image creation.",
+    "author": "@amin-IT",
+    "category": "creative",
+    "submissionDate": "2025-12-13",
+    "order": 5
   }
 ];

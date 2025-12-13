@@ -1,0 +1,65 @@
+name: Instagram Publish Post
+
+on:
+  pull_request:
+    types: [closed]
+    paths:
+      - 'NEWS/transformed/instagram/posts/*.json'
+  workflow_dispatch:
+    inputs:
+      post_file:
+        description: 'Path to the post JSON file (e.g., NEWS/transformed/instagram/posts/2025-12-13.json)'
+        required: true
+        type: string
+
+jobs:
+  publish-instagram-post:
+    # Only run if PR was merged (not just closed) and targeted main
+    if: >
+      (github.event_name == 'workflow_dispatch') ||
+      (github.event.pull_request.merged == true && github.event.pull_request.base.ref == 'main')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          ref: main  # Checkout main to get the merged post file
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          pip install requests
+
+      - name: Determine post file path
+        id: post-file
+        run: |
+          if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+            echo "path=${{ github.event.inputs.post_file }}" >> $GITHUB_OUTPUT
+          else
+            # Find the JSON file that was changed in the PR
+            # Get the most recent .json file in the instagram/posts folder
+            POST_FILE=$(ls -t NEWS/transformed/instagram/posts/*.json 2>/dev/null | head -1)
+            if [ -z "$POST_FILE" ]; then
+              echo "No post file found"
+              exit 1
+            fi
+            echo "path=$POST_FILE" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Publish to Instagram
+        env:
+          INSTAGRAM_USER_ID: ${{ secrets.INSTAGRAM_USER_ID }}
+          INSTAGRAM_ACCESS_TOKEN: ${{ secrets.INSTAGRAM_ACCESS_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          POST_FILE_PATH: ${{ steps.post-file.outputs.path }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: python .github/scripts/instagram_publish_post.py

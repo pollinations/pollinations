@@ -152,6 +152,7 @@ Pollinations.AI is used in various projects, including:
 | 🆕 🤖 [Robatika — AI Chat Platform](https://app.robatika.com) | Robatika is a rapidly growing AI chat platform that provides users with... | Robatika |
 | 🆕 [🛠️ NextGenTools](https://image-gen-adobe.nextgentools.online/) | AI-powered workflow for stock photography. Generate images, vectorize them, and... | @roni123332 |
 | 🆕 [📚 AI Story Illustrator](https://soft-cucurucho-6758e7.netlify.app/) | Interactive storybook creator where you write scenes and get AI-generated... | @KAmaL-senpai |
+| 🆕 🤖 [🎨 imgs_ai_bot](https://t.me/imgs_ai_bot) | A multifunctional Telegram bot for generating images using artificial... | @lwakis |
 
 ### Games 🎲
 

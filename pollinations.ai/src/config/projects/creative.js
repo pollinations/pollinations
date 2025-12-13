@@ -1072,5 +1072,14 @@ export const creativeProjects = [
     "category": "creative",
     "submissionDate": "2025-12-13",
     "order": 5
+  },
+  {
+    "name": "🎨 imgs_ai_bot",
+    "url": "https://t.me/imgs_ai_bot",
+    "description": "A multifunctional Telegram bot for generating images using artificial intelligence. Create AI-generated artwork directly within Telegram conversations.",
+    "author": "@lwakis",
+    "category": "creative",
+    "submissionDate": "2025-12-13",
+    "order": 5
   }
 ];

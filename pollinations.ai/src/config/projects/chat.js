@@ -683,5 +683,15 @@ export const chatProjects = [
     "category": "chat",
     "submissionDate": "2025-12-13",
     "order": 5
+  },
+  {
+    "name": "💬 Chat AI",
+    "url": "https://t.me/Chat2qai_bot",
+    "description": "Arabic Telegram bot serving as a versatile AI assistant. Answers questions, helps brainstorm ideas, assists with translation and summarization, and supports image creation and editing.",
+    "author": "@Alhmam",
+    "category": "chat",
+    "language": "ar",
+    "submissionDate": "2025-12-13",
+    "order": 5
   }
 ];

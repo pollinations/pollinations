@@ -1,67 +1,81 @@
 import { Hono } from "hono";
-import { HTTPException } from "hono/http-exception";
 import { auth } from "../middleware/auth.ts";
 import { validator } from "../middleware/validator.ts";
 import type { Env } from "../env.ts";
 import { z } from "zod";
-import { createAuth } from "../auth.ts";
 import { drizzle } from "drizzle-orm/d1";
 import * as schema from "../db/schema/better-auth.ts";
 import { eq } from "drizzle-orm";
 
-const UpdatePermissionsSchema = z.object({
-    keyId: z.string(),
-    permissions: z
-        .object({
-            // Filter out internal markers like "_restricted"
-            models: z
-                .array(z.string())
-                .transform((models) =>
-                    models.filter((m) => !m.startsWith("_")),
-                ),
-        })
-        .nullable(),
+/**
+ * Schema for creating an API key with permissions.
+ * Uses better-auth's server API which supports setting permissions at creation time.
+ */
+const CreateApiKeySchema = z.object({
+    name: z.string().min(1).max(100),
+    description: z.string().max(500).optional(),
+    keyType: z.enum(["secret", "publishable"]).default("secret"),
+    // Filter out internal markers like "_restricted"
+    allowedModels: z
+        .array(z.string())
+        .transform((models) => models.filter((m) => !m.startsWith("_")))
+        .optional(),
 });
 
 /**
  * API key management routes.
- * Provides server-side operations that the client API doesn't support.
+ * Uses better-auth's server API to create keys with permissions in a single call.
  */
 export const apiKeysRoutes = new Hono<Env>()
     .use(auth({ allowSessionCookie: true, allowApiKey: false }))
     /**
-     * Update API key permissions.
-     * Uses better-auth's server API which supports permissions.
+     * Create an API key with optional model permissions.
+     * Uses auth.api.createApiKey() which supports server-only fields like permissions.
      */
-    .post(
-        "/permissions",
-        validator("json", UpdatePermissionsSchema),
-        async (c) => {
-            const user = c.var.auth.requireUser();
-            const { keyId, permissions } = c.req.valid("json");
+    .post("/create", validator("json", CreateApiKeySchema), async (c) => {
+        const user = c.var.auth.requireUser();
+        const authClient = c.var.auth.client;
+        const { name, description, keyType, allowedModels } =
+            c.req.valid("json");
 
-            // Verify ownership: check the key belongs to this user
-            // Direct DB lookup is simpler than better-auth's getApiKey which requires headers
+        const isPublishable = keyType === "publishable";
+        const prefix = isPublishable ? "plln_pk" : "plln_sk";
+
+        // Build permissions object if models are specified
+        const permissions =
+            allowedModels && allowedModels.length > 0
+                ? { models: allowedModels }
+                : undefined;
+
+        // Use better-auth's server API to create key with permissions in one call
+        const apiKey = await authClient.api.createApiKey({
+            body: {
+                name,
+                prefix,
+                userId: user.id,
+                metadata: { description, keyType },
+                permissions,
+            },
+        });
+
+        // For publishable keys, store the plaintext key in metadata for easy retrieval
+        if (isPublishable && apiKey.key) {
             const db = drizzle(c.env.DB, { schema });
-            const existingKey = await db.query.apikey.findFirst({
-                where: eq(schema.apikey.id, keyId),
-                columns: { userId: true },
-            });
-            if (!existingKey || existingKey.userId !== user.id) {
-                throw new HTTPException(403, {
-                    message: "Not authorized to update this API key",
-                });
-            }
+            await db
+                .update(schema.apikey)
+                .set({
+                    metadata: JSON.stringify({
+                        description,
+                        keyType,
+                        plaintextKey: apiKey.key,
+                    }),
+                })
+                .where(eq(schema.apikey.id, apiKey.id));
+        }
 
-            // Update permissions via better-auth server API
-            const authInstance = createAuth(c.env);
-            await authInstance.api.updateApiKey({
-                body: {
-                    keyId,
-                    permissions,
-                },
-            });
-
-            return c.json({ success: true });
-        },
-    );
+        return c.json({
+            id: apiKey.id,
+            key: apiKey.key,
+            name: apiKey.name,
+        });
+    });

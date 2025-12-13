@@ -87,48 +87,35 @@ function RouteComponent() {
     };
 
     const handleCreateApiKey = async (formState: CreateApiKey) => {
-        const keyType = formState.keyType || "secret";
-        const result = await auth.apiKey.create({
-            name: formState.name,
-            prefix: keyType === "publishable" ? "plln_pk" : "plln_sk",
-            metadata: { description: formState.description, keyType },
+        // Use server-side endpoint to create key with permissions in one call
+        // This uses auth.api.createApiKey() which supports server-only fields like permissions
+        const response = await fetch("/api/api-keys/create", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            credentials: "include",
+            body: JSON.stringify({
+                name: formState.name,
+                description: formState.description,
+                keyType: formState.keyType || "secret",
+                // Filter out the "_restricted" marker used by UI to indicate restricted mode
+                allowedModels: (formState.allowedModels ?? []).filter(
+                    (m) => m !== "_restricted",
+                ),
+            }),
         });
-        if (result.error) {
-            // TODO: handle it
-            console.error(result.error);
+
+        if (!response.ok) {
+            const errorData = await response.json();
+            console.error("Failed to create API key:", errorData);
+            throw new Error(
+                (errorData as { message?: string }).message ||
+                    "Failed to create API key",
+            );
         }
 
-        // For publishable keys, store the plaintext key in metadata for easy retrieval
-        if (keyType === "publishable" && result.data) {
-            const apiKey = result.data as CreateApiKeyResponse;
-            await auth.apiKey.update({
-                keyId: apiKey.id,
-                metadata: {
-                    plaintextKey: apiKey.key, // Store plaintext key in metadata
-                    keyType,
-                },
-            });
-        }
-
-        // Set model permissions if specified (requires server-side API)
-        // Filter out the "_restricted" marker used by UI to indicate restricted mode with no models yet
-        const allowedModels = (formState.allowedModels ?? []).filter(
-            (m) => m !== "_restricted",
-        );
-        if (result.data && allowedModels.length > 0) {
-            await fetch("/api/api-keys/permissions", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                credentials: "include",
-                body: JSON.stringify({
-                    keyId: result.data.id,
-                    permissions: { models: allowedModels },
-                }),
-            });
-        }
-
+        const result = await response.json();
         router.invalidate();
-        return result.data as CreateApiKeyResponse;
+        return result as CreateApiKeyResponse;
     };
 
     const handleDeleteApiKey = async (id: string) => {

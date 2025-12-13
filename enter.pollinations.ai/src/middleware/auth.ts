@@ -1,8 +1,8 @@
 import { createMiddleware } from "hono/factory";
 import { createAuth } from "../auth.ts";
-import { LoggerVariables } from "./logger.ts";
+import type { LoggerVariables } from "./logger.ts";
 import { HTTPException } from "hono/http-exception";
-import type { Session, User, Auth } from "@/auth.ts";
+import type { Session, User } from "@/auth.ts";
 import { drizzle } from "drizzle-orm/d1";
 import { eq } from "drizzle-orm";
 import * as schema from "@/db/schema/better-auth.ts";
@@ -90,19 +90,29 @@ export const auth = (options: AuthOptions) =>
             });
             if (!keyResult.valid || !keyResult.key) return null;
             const db = drizzle(c.env.DB, { schema });
+
+            // Use permissions from verifyApiKey (set via createApiKey)
+            // No fallback - permissions must be set at key creation time
+            const permissions = keyResult.key.permissions as
+                | { models?: string[] }
+                | undefined;
+
+            // Fetch user
             const user = await db.query.user.findFirst({
                 where: eq(schema.user.id, keyResult.key.userId),
             });
+
             log.debug("[AUTH] User lookup result: {found}", {
                 found: !!user,
                 userId: user?.id,
             });
+
             return {
                 user: user as User,
                 apiKey: {
                     id: keyResult.key.id,
                     name: keyResult.key.name || undefined,
-                    permissions: keyResult.key.permissions || undefined,
+                    permissions,
                     metadata: keyResult.key.metadata || undefined,
                 },
             };

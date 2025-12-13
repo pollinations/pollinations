@@ -5,8 +5,9 @@ import {
     waitOnExecutionContext,
 } from "cloudflare:test";
 import { test } from "./fixtures.ts";
-import worker from "../src/index.ts";
-import { storeEvents } from "../src/events.ts";
+import worker from "@/index.ts";
+import { processEvents, storeEvents } from "@/events.ts";
+import { exponentialBackoffDelay } from "@/util.ts";
 import {
     event,
     priceToEventParams,
@@ -26,7 +27,7 @@ import {
 } from "@shared/registry/registry.ts";
 import { drizzle } from "drizzle-orm/d1";
 import { eq } from "drizzle-orm";
-import { expect } from "vitest";
+import { expect, vi } from "vitest";
 
 function createTextGenerationEvent({
     modelRequested,
@@ -181,10 +182,15 @@ test("Events get set to error status after MAX_DELIVERY_ATTEMPTS", async ({
     ];
     log.info("Adding {numEvents} events", { numEvents: events.length });
     await storeEvents(db, log, events);
-    const controller = createScheduledController();
-    const ctx = createExecutionContext();
     for (const _ of [Array.from({ length: 10 })]) {
-        await worker.scheduled(controller, env, ctx);
+        await processEvents(db, log, {
+            polarAccessToken: env.POLAR_ACCESS_TOKEN,
+            polarServer: env.POLAR_SERVER,
+            tinybirdIngestUrl: env.TINYBIRD_INGEST_URL,
+            tinybirdAccessToken: env.TINYBIRD_ACCESS_TOKEN,
+            minRetryDelay: 0,
+            maxRetryDelay: 0,
+        });
     }
     expect(mocks.tinybird.state.events).toHaveLength(1000);
     expect(mocks.polar.state.events).toHaveLength(1000);
@@ -339,4 +345,41 @@ test("Expired sent events are cleared after processing", async ({
         (e) => e.eventStatus === "sent",
     );
     expect(remainingSentEvents).toHaveLength(100);
+});
+
+test("Exponential backoff delay", async () => {
+    const backoffConfig = {
+        minDelay: 100,
+        maxDelay: 10000,
+        maxAttempts: 5,
+        jitter: 0,
+    };
+    expect(exponentialBackoffDelay(1, backoffConfig)).toBe(100);
+    expect(exponentialBackoffDelay(3, backoffConfig)).toBeGreaterThan(100);
+    expect(exponentialBackoffDelay(3, backoffConfig)).toBeLessThan(10000);
+    expect(exponentialBackoffDelay(5, backoffConfig)).toBe(10000);
+    const backoffConfigWithJitter = {
+        minDelay: 100,
+        maxDelay: 10000,
+        maxAttempts: 5,
+        jitter: 0.1,
+    };
+    expect(
+        exponentialBackoffDelay(1, backoffConfigWithJitter),
+    ).toBeGreaterThanOrEqual(100 - 100 * 0.1);
+    expect(
+        exponentialBackoffDelay(1, backoffConfigWithJitter),
+    ).toBeLessThanOrEqual(100 + 100 * 0.1);
+    expect(
+        exponentialBackoffDelay(3, backoffConfigWithJitter),
+    ).toBeGreaterThanOrEqual(100 - 100 * 0.1);
+    expect(
+        exponentialBackoffDelay(3, backoffConfigWithJitter),
+    ).toBeLessThanOrEqual(10000 + 10000 * 0.1);
+    expect(
+        exponentialBackoffDelay(5, backoffConfigWithJitter),
+    ).toBeGreaterThanOrEqual(10000 - 10000 * 0.1);
+    expect(
+        exponentialBackoffDelay(5, backoffConfigWithJitter),
+    ).toBeLessThanOrEqual(10000 + 10000 * 0.1);
 });

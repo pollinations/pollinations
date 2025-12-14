@@ -1053,5 +1053,98 @@ export const creativeProjects = [
     "category": "creative",
     "submissionDate": "2025-12-10",
     "order": 5
+  },
+  {
+    "name": "🛠️ NextGenTools",
+    "url": "https://image-gen-adobe.nextgentools.online/",
+    "description": "AI-powered workflow for stock photography. Generate images, vectorize them, and inject metadata for Adobe Stock submissions. Streamlines the process from creation to marketplace-ready assets.",
+    "author": "@roni123332",
+    "category": "creative",
+    "submissionDate": "2025-12-12",
+    "order": 5
+  },
+  {
+    "name": "📚 AI Story Illustrator",
+    "url": "https://soft-cucurucho-6758e7.netlify.app/",
+    "description": "Interactive storybook creator where you write scenes and get AI-generated illustrations for each one. Features sequential reveal animations, responsive layout, and automatic empty scene handling. Great for learning async JavaScript and API integration.",
+    "author": "@KAmaL-senpai",
+    "repo": "",
+    "category": "creative",
+    "submissionDate": "2025-12-13",
+    "order": 5
+  },
+  {
+    "name": "🎨 ChimeraStudio",
+    "url": "https://github.com/migueland94/ChimeraStudio",
+    "description": "Lightweight browser-based sandbox for testing Pollinations API capabilities. Explore AI image generation, computer vision analysis, and editing in one client-side tool. No backend required—keys and settings stay local for privacy.",
+    "author": "@migueland94",
+    "repo": "https://github.com/migueland94/ChimeraStudio",
+    "category": "creative",
+    "submissionDate": "2025-12-13",
+    "order": 5
+  },
+  {
+    "name": "🎨 imgs_ai_bot",
+    "url": "https://t.me/imgs_ai_bot",
+    "description": "A multifunctional Telegram bot for generating images using artificial intelligence. Create AI-generated artwork directly within Telegram conversations.",
+    "author": "@lwakis",
+    "category": "creative",
+    "submissionDate": "2025-12-13",
+    "order": 5
+  },
+  {
+    "name": "✨ Storycraft Pro",
+    "url": "https://storycraftpro11-orpin.vercel.app/",
+    "description": "Create illustrated stories with consistent characters, narrated audio, and AI-generated artwork. Generate complete visual narratives without design skills.",
+    "author": "@souravk11318",
+    "category": "creative",
+    "submissionDate": "2025-12-13",
+    "order": 5
+  },
+  {
+    "name": "🎨 Sugen",
+    "url": "https://sugen.puter.site/",
+    "description": "Browser-based AI art studio using Puter.js and Pollinations.ai. Features unlimited generation with Flux/Seedream/Kontext models, live global feed, img2img support, and pro controls including guidance scale and negative prompts.",
+    "author": "@red444ytchess-jpg",
+    "category": "creative",
+    "submissionDate": "2025-12-13",
+    "order": 5
+  },
+  {
+    "name": "🎨 BinaryPH RSS AI",
+    "url": "https://binary.ph/posts/",
+    "description": "WordPress plugin that transforms RSS feed items into complete blog posts using Pollinations.AI for both text generation and featured image creation.",
+    "author": "@amin-IT",
+    "category": "creative",
+    "submissionDate": "2025-12-13",
+    "order": 5
+  },
+  {
+    "name": "🎨 Imagly AI",
+    "url": "https://imaglyai.web.app/",
+    "description": "Free AI image generator that creates realistic photos, digital artwork, fantasy illustrations, and social media visuals from text prompts. Offers multiple artistic styles with no technical skills required.",
+    "author": "@imaglyai",
+    "category": "creative",
+    "submissionDate": "2025-12-13",
+    "order": 5
+  },
+  {
+    "name": "🕰️ CHRONOS - Time Machine",
+    "url": "https://github.com/yvr98/TimeMachine",
+    "description": "Immersive time-travel experience where users select any location on a 3D globe and year in history. Pollinations generates historically accurate scene visualizations and streams first-person narratives of what travelers see, hear, and feel upon arrival.",
+    "author": "@yvr98",
+    "repo": "https://github.com/yvr98/TimeMachine",
+    "category": "creative",
+    "submissionDate": "2025-12-13",
+    "order": 5
+  },
+  {
+    "name": "🎬 Viral Flow",
+    "url": "https://fabioarieira.com/viralflow",
+    "description": "Browser-based video production platform using Pollinations for visual generation. Creates short-form viral content and long-form documentaries with customizable visual styles and editing rhythms. All processing happens locally in-browser for privacy.",
+    "author": "@fabioarieira",
+    "category": "creative",
+    "submissionDate": "2025-12-13",
+    "order": 5
   }
 ];

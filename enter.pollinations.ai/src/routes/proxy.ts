@@ -39,9 +39,9 @@ const factory = createFactory<Env>();
 
 // Shared handler for OpenAI-compatible chat completions
 const chatCompletionHandlers = factory.createHandlers(
+    validator("json", CreateChatCompletionRequestSchema),
     resolveModel("generate.text"),
     track("generate.text"),
-    validator("json", CreateChatCompletionRequestSchema),
     async (c) => {
         const log = c.get("log");
         await c.var.auth.requireAuthorization();

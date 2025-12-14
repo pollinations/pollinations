@@ -14,6 +14,7 @@ export function TextGenCard() {
     );
     const [selectedModel, setSelectedModel] = useState(""); // Empty = default openai
     const [jsonMode, setJsonMode] = useState(false);
+    const [showKey, setShowKey] = useState(false);
     const [response, setResponse] = useState("");
     const [isLoading, setIsLoading] = useState(false);
 
@@ -28,6 +29,7 @@ export function TextGenCard() {
             selectedPrompt,
         )}`;
         const params = [];
+        if (showKey) params.push("key={key}");
         if (selectedModel) params.push(`model=${selectedModel}`);
         if (jsonMode) params.push("json=true");
         if (params.length > 0) {
@@ -137,17 +139,30 @@ export function TextGenCard() {
                     {/* Optional Parameters */}
                     <div>
                         <Label>{DOCS_PAGE.optionalLabel.text}</Label>
-                        <button
-                            type="button"
-                            onClick={() => setJsonMode(!jsonMode)}
-                            className={`px-3 py-1.5 font-mono text-xs border-2 transition-all cursor-pointer ${
-                                jsonMode
-                                    ? "bg-indicator-text border-border-brand font-black shadow-shadow-brand-sm text-text-inverse"
-                                    : "bg-input-background border-border-main hover:border-border-brand text-text-body-main"
-                            }`}
-                        >
-                            json=true
-                        </button>
+                        <div className="flex flex-wrap gap-2">
+                            <button
+                                type="button"
+                                onClick={() => setShowKey(!showKey)}
+                                className={`px-3 py-1.5 font-mono text-xs border-2 transition-all cursor-pointer ${
+                                    showKey
+                                        ? "bg-indicator-text border-border-brand font-black shadow-shadow-brand-sm text-text-inverse"
+                                        : "bg-input-background border-border-main hover:border-border-brand text-text-body-main"
+                                }`}
+                            >
+                                key={"{key}"}
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => setJsonMode(!jsonMode)}
+                                className={`px-3 py-1.5 font-mono text-xs border-2 transition-all cursor-pointer ${
+                                    jsonMode
+                                        ? "bg-indicator-text border-border-brand font-black shadow-shadow-brand-sm text-text-inverse"
+                                        : "bg-input-background border-border-main hover:border-border-brand text-text-body-main"
+                                }`}
+                            >
+                                json=true
+                            </button>
+                        </div>
                     </div>
                 </div>
 
@@ -173,9 +188,17 @@ export function TextGenCard() {
                 <span className="bg-indicator-text px-1 font-black text-text-inverse">
                     {encodeURIComponent(selectedPrompt)}
                 </span>
-                {(selectedModel || jsonMode) && (
+                {(showKey || selectedModel || jsonMode) && (
                     <>
                         <span className="text-text-caption">?</span>
+                        {showKey && (
+                            <span className="bg-indicator-text px-1 font-black text-text-inverse">
+                                key={"{key}"}
+                            </span>
+                        )}
+                        {showKey && (selectedModel || jsonMode) && (
+                            <span className="text-text-caption">&</span>
+                        )}
                         {selectedModel && (
                             <span className="bg-indicator-text px-1 font-black text-text-inverse">
                                 model={selectedModel}

@@ -143,12 +143,12 @@ export function ImageGenCard() {
                         <Label>{DOCS_PAGE.optionalParametersLabel.text}</Label>
                         <div className="flex flex-wrap gap-2">
                             {[
+                                "key={key}",
                                 "model=nanobanana",
                                 "width=1024",
                                 "height=1024",
                                 "seed=42",
                                 "enhance=true",
-                                "nologo=true",
                             ].map((param) => (
                                 <button
                                     key={param}

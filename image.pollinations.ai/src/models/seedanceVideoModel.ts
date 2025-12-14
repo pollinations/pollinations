@@ -108,6 +108,10 @@ async function generateSeedanceVideo(
     // Video parameters
     const durationSeconds = safeParams.duration || 2;
     const resolution = "720p";
+    // Map aspectRatio to Seedance format: "16:9" -> "16_9", "9:16" -> "9_16"
+    const aspectRatio = safeParams.aspectRatio 
+        ? safeParams.aspectRatio.replace(":", "_") 
+        : "16_9"; // Default to 16:9
 
     // Select model based on whether we have an input image
     const hasImage = safeParams.image && safeParams.image.length > 0;
@@ -116,12 +120,14 @@ async function generateSeedanceVideo(
     logOps("Video params:", {
         durationSeconds,
         resolution,
+        aspectRatio,
         model: selectedModel,
         hasImage,
     });
 
     // Build text command with parameters (BytePlus format)
-    let textCommand = `${prompt} --resolution ${resolution} --duration ${durationSeconds} --watermark false`;
+    // Include aspectratio parameter for proper video dimensions
+    let textCommand = `${prompt} --resolution ${resolution} --duration ${durationSeconds} --aspectratio ${aspectRatio} --watermark false`;
     if (safeParams.seed !== undefined && safeParams.seed !== -1) {
         textCommand += ` --seed ${safeParams.seed}`;
     }

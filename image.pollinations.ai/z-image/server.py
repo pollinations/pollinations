@@ -89,8 +89,8 @@ UPSCALER_MODEL_x2 = "model_cache/RealESRGAN_x2plus.pth"
 FACE_ENHANCER_MODEL = "model_cache/GFPGANv1.4.pth"
 SAFETY_NSFW_MODEL = "CompVis/stable-diffusion-safety-checker"
 UPSCALE_FACTOR = 2
-MIN_GEN_PIXELS = 768 * 768  # Minimum generation resolution (don't halve below this)
-MAX_FINAL_SIZE = 2048  # Maximum final image dimension
+MIN_GEN_PIXELS = 512 * 512  # Upscale when generating at 512x512 or larger (final size >= 1024x1024)
+MAX_FINAL_SIZE = 2048
 
 generate_lock = threading.Lock()
 
@@ -252,6 +252,7 @@ async def lifespan(app: FastAPI):
             MODEL_ID,
             torch_dtype=torch.bfloat16,
             cache_dir=MODEL_CACHE,
+            low_cpu_mem_usage=False,  # Faster loading
         ).to("cuda")
         
         model_x2 = RRDBNet(num_in_ch=3, num_out_ch=3, num_feat=64, num_block=23, num_grow_ch=32, scale=2)

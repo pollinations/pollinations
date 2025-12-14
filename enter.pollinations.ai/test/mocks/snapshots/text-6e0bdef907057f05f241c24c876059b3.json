@@ -23,16 +23,16 @@
     "headers": {
       "access-control-allow-origin": "*",
       "connection": "keep-alive",
-      "content-length": "2153",
+      "content-length": "2117",
       "content-type": "application/json; charset=utf-8",
-      "date": "Thu, 11 Dec 2025 16:45:57 GMT",
-      "etag": "W/\"869-UVSip11Yu12oN4EzRpkRtoQ743w\"",
+      "date": "Sun, 14 Dec 2025 11:15:55 GMT",
+      "etag": "W/\"845-Lr0Fq9MQaRIlaYU4YIlru4fCbmk\"",
       "keep-alive": "timeout=5",
       "x-model-used": "moonshotai/kimi-k2-thinking-maas",
       "x-powered-by": "Express",
-      "x-usage-completion-text-tokens": "344",
+      "x-usage-completion-text-tokens": "343",
       "x-usage-prompt-text-tokens": "262",
-      "x-usage-total-tokens": "606"
+      "x-usage-total-tokens": "605"
     },
     "body": {
       "type": "json",
@@ -44,22 +44,22 @@
             "logprobs": null,
             "matched_stop": 163586,
             "message": {
-              "content": "yes",
-              "reasoning_content": "The user is asking a simple factual question: \"Is Berlin the capital of Germany? Reply yes or no.\"\n\nThe instruction is to reply with just \"yes\" or \"no\". This is a straightforward geography/politics fact. Berlin is indeed the capital of Germany. So the answer is \"yes\".\n\nI need to be careful about the system prompt. It says I'm an expert conversationalist, companionable, confident, can switch tonal types, etc. But the user specifically says \"Reply yes or no.\" This is a constraint on the format. The system prompt says \"Always avoid templated language\" and \"You never lecture people\", but in this case, the user is explicitly asking for a minimal answer. I should respect that constraint.\n\nThe user wants a simple \"yes\" or \"no\". I should not add any fluff or explanation. Just \"yes\".\n\nLet me double-check: Berlin is the capital of Germany. Yes, that's correct. The German government (Bundestag, Bundesrat, Chancellor's office, President's office) is located in Berlin. It's been the capital since reunification in 1990 (and historically before that). So the answer is definitively \"yes\".\n\nThe user wants just \"yes\" or \"no\". I will comply. I should not add any extra text or apologies or explanations. Just the single word.\n\nThe system prompt says \"You never use phrases that imply moral superiority...\" but I don't need any of those. It also says \"Sometimes people just want you to listen, and your answers should encourage that.\" But this is not a listening situation - it's a direct factual query with explicit format requirements.\n\nSo the correct response is simply: yes ",
+              "content": "Yes.",
+              "reasoning_content": "The user asks: \"Is Berlin the capital of Germany? Reply yes or no.\"\n\nThis is a straightforward factual question. The answer is yes. The user wants a simple yes or no response. They are not asking for additional information, context, or explanation. They explicitly say \"Reply yes or no.\"\n\nI need to follow the instructions:\n- I should not be overly helpful. The user wants a simple answer.\n- I should not lecture or use templated/moralizing language.\n- I should not add fluff.\n\nThe core instruction is to reply \"yes or no\". So the most appropriate response is just \"Yes.\"\n\nI should not add anything else. No \"Yes, it is.\" No \"Yes, Berlin is the capital of Germany.\" Just \"Yes.\"\n\nThe prompt is very direct. My response should be equally direct.\n\nLet me double-check the facts. Berlin is indeed the capital of Germany. This is correct. Bonn was the capital of West Germany, but since reunification in 1990, Berlin has been the capital of the unified Federal Republic of Germany.\n\nThe user wants a binary answer. I will provide exactly that.\n\nFinal check on the persona instructions:\n- Companionable and confident: A simple \"Yes\" is confident.\n- Switch tonal types: Not needed here, it's a factual query.\n- Understand user intent: The intent is clear - get a simple yes/no answer.\n- Don't be overly helpful: Adding more info would be overly helpful.\n- Avoid templated language: \"Yes\" is not templated.\n- Never lecture: Not applicable here.\n- No moral superiority phrases: Not applicable.\n\nThe simplest, most direct answer is best. \"Yes\". ",
               "role": "assistant",
               "tool_calls": null
             }
           }
         ],
-        "created": 1765471557,
-        "id": "pllns_c9af7c844344c1dd9c23a620ed9e2ce0",
+        "created": 1765710955,
+        "id": "pllns_6391c0fbc72df0bd8e2b8bc3fd962c9b",
         "metadata": {
           "weight_version": "default"
         },
         "model": "moonshotai/kimi-k2-thinking-maas",
         "object": "chat.completion",
         "usage": {
-          "completion_tokens": 344,
+          "completion_tokens": 343,
           "extra_properties": {
             "google": {
               "traffic_type": "ON_DEMAND"
@@ -68,7 +68,7 @@
           "prompt_tokens": 262,
           "prompt_tokens_details": null,
           "reasoning_tokens": 0,
-          "total_tokens": 606
+          "total_tokens": 605
         }
       }
     }

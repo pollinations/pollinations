@@ -160,6 +160,11 @@ export const auth = (options: AuthOptions) =>
 
             // Check if resolved model is in the allowlist
             if (!apiKey.permissions.models.includes(model.resolved)) {
+                log.debug("[AUTH] Model access denied: {model} not in allowlist", {
+                    model: model.raw,
+                    resolved: model.resolved,
+                    allowed: apiKey.permissions.models,
+                });
                 throw new HTTPException(403, {
                     message: `Model '${model.raw}' is not allowed for this API key`,
                 });

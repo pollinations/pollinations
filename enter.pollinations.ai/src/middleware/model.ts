@@ -1,4 +1,5 @@
 import { createMiddleware } from "hono/factory";
+import { HTTPException } from "hono/http-exception";
 import type { EventType } from "@shared/registry/types.ts";
 import { resolveServiceId, type ServiceId } from "@shared/registry/registry.ts";
 import { DEFAULT_TEXT_MODEL } from "@shared/registry/text.ts";
@@ -41,13 +42,17 @@ export function resolveModel(eventType: EventType) {
         const model = rawModel || defaultModel;
 
         // Resolve alias to canonical service ID
-        // If resolution fails, let it through - downstream will handle the error
+        // If resolution fails, throw a 400 error with the original error message
         let resolved: ServiceId;
         try {
             resolved = resolveServiceId(model);
-        } catch {
-            // Unknown model - store as-is, let downstream handle
-            resolved = model as ServiceId;
+        } catch (error) {
+            throw new HTTPException(400, {
+                message:
+                    error instanceof Error
+                        ? error.message
+                        : `Invalid model: ${model}`,
+            });
         }
 
         c.set("model", {

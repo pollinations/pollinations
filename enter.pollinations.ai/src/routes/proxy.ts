@@ -352,7 +352,6 @@ export const proxyRoutes = new Hono<Env>()
         // .+ doesn't match newlines, but [\s\S]+ matches any character including \n
         // This creates a named param for OpenAPI docs while matching any characters
         "/image/:prompt{[\\s\\S]+}",
-        track("generate.image"),
         imageCache,
         describeRoute({
             tags: ["gen.pollinations.ai"],
@@ -413,6 +412,7 @@ export const proxyRoutes = new Hono<Env>()
         ),
         validator("query", GenerateImageRequestQueryParamsSchema),
         resolveModel("generate.image"),
+        track("generate.image"),
         async (c) => {
             const log = c.get("log");
             await c.var.auth.requireAuthorization();

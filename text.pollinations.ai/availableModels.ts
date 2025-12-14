@@ -6,10 +6,7 @@ import {
 } from "./transforms/createSystemPromptTransform.js";
 import { pipe } from "./transforms/pipe.js";
 import { createGoogleSearchTransform } from "./transforms/createGoogleSearchTransform.js";
-import {
-    createGeminiToolsTransform,
-    GEMINI_TOOLS,
-} from "./transforms/createGeminiToolsTransform.js";
+import { createGeminiToolsTransform } from "./transforms/createGeminiToolsTransform.js";
 
 // Import persona prompts
 import midijourneyPrompt from "./personas/midijourney.js";
@@ -132,10 +129,7 @@ const models: ModelDefinition[] = [
         config: portkeyConfig["gemini-3-pro-preview"],
         transform: pipe(
             createSystemPromptTransform(BASE_PROMPTS.conversational),
-            createGeminiToolsTransform([
-                GEMINI_TOOLS.google_search,
-                GEMINI_TOOLS.url_context,
-            ]),
+            createGeminiToolsTransform(["google_search", "url_context"]),
         ),
     },
     {

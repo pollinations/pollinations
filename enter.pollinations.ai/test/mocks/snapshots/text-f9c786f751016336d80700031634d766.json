@@ -68,7 +68,8 @@
             }
           }
         ],
-        "seed": 42
+        "seed": 42,
+        "max_tokens": 4096
       }
     },
     "params": {}
@@ -79,16 +80,16 @@
     "headers": {
       "access-control-allow-origin": "*",
       "connection": "keep-alive",
-      "content-length": "574",
+      "content-length": "1198",
       "content-type": "application/json; charset=utf-8",
-      "date": "Thu, 11 Dec 2025 16:49:26 GMT",
-      "etag": "W/\"23e-iK/9vWOhvCxv/uvFMYpMLTx3yIg\"",
+      "date": "Sun, 14 Dec 2025 11:19:30 GMT",
+      "etag": "W/\"4ae-NFfSMwrZq1G3ZfAGzOZc7vd7SU0\"",
       "keep-alive": "timeout=5",
       "x-model-used": "moonshotai/kimi-k2-thinking-maas",
       "x-powered-by": "Express",
-      "x-usage-completion-text-tokens": "16",
+      "x-usage-completion-text-tokens": "155",
       "x-usage-prompt-text-tokens": "406",
-      "x-usage-total-tokens": "422"
+      "x-usage-total-tokens": "561"
     },
     "body": {
       "type": "json",
@@ -100,22 +101,22 @@
             "logprobs": null,
             "matched_stop": 163586,
             "message": {
-              "content": null,
-              "reasoning_content": "The calculator confirms it: 5 + 3 equals 8.",
+              "content": "5 + 3 = 8",
+              "reasoning_content": "The user wants to know what 5 + 3 equals, and they specifically instructed me to use the calculator tool to compute it.\n\nI've called the calculator function with:\n- operation: \"add\"\n- a: 5\n- b: 3\n\nThe result returned is 8.\n\nNow I need to give them the answer. The tone here is straightforward and direct - the user asked a simple math question with a specific instruction to use the tool. No need for anything fancy or overly verbose. Just give them the answer they requested.\n\nThe user didn't ask for anything more - no chit-chat, no emotional support. This is a clear, specific request. The best response is simply to state the result clearly. ",
               "role": "assistant",
               "tool_calls": null
             }
           }
         ],
-        "created": 1765471766,
-        "id": "pllns_96be4e05b5b7920dd994cd8ee5827953",
+        "created": 1765711170,
+        "id": "pllns_daf8d1fdcfa7434d051eadfcdf8e1ae9",
         "metadata": {
           "weight_version": "default"
         },
         "model": "moonshotai/kimi-k2-thinking-maas",
         "object": "chat.completion",
         "usage": {
-          "completion_tokens": 16,
+          "completion_tokens": 155,
           "extra_properties": {
             "google": {
               "traffic_type": "ON_DEMAND"
@@ -124,7 +125,7 @@
           "prompt_tokens": 406,
           "prompt_tokens_details": null,
           "reasoning_tokens": 0,
-          "total_tokens": 422
+          "total_tokens": 561
         }
       }
     }

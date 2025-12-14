@@ -1,4 +1,7 @@
-import { getTextServices } from "@shared/registry/registry.ts";
+import {
+    getTextServices,
+    getServiceDefinition,
+} from "@shared/registry/registry.ts";
 import {
     createExecutionContext,
     env,
@@ -431,7 +434,13 @@ test(
 );
 
 const toolCallTestCases = (): [ServiceId, number][] => {
-    return servicesToTest.map((serviceId) => [serviceId, 200]);
+    // Only test models that have tools: true in the registry
+    return servicesToTest
+        .filter((serviceId) => {
+            const service = getServiceDefinition(serviceId);
+            return service?.tools === true;
+        })
+        .map((serviceId) => [serviceId, 200]);
 };
 
 const calculatorTool = {
@@ -570,6 +579,7 @@ describe("POST /generate/v1/chat/completions (tool calls)", async () => {
                             ],
                             tools: [calculatorTool],
                             seed: testSeed(),
+                            max_tokens: 4096, // Required for kimi-k2-thinking to return content properly
                         }),
                     },
                 ),

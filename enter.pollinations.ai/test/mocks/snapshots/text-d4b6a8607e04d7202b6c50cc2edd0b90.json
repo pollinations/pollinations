@@ -61,16 +61,16 @@
     "headers": {
       "access-control-allow-origin": "*",
       "connection": "keep-alive",
-      "content-length": "796",
+      "content-length": "888",
       "content-type": "application/json; charset=utf-8",
-      "date": "Thu, 11 Dec 2025 16:49:26 GMT",
-      "etag": "W/\"31c-FpvuZZ42kRiBpwtnGe10oG6pb8U\"",
+      "date": "Sun, 14 Dec 2025 11:19:29 GMT",
+      "etag": "W/\"378-nuk3vRhX1031GVtroVYeHpyUX2g\"",
       "keep-alive": "timeout=5",
       "x-model-used": "moonshotai/kimi-k2-thinking-maas",
       "x-powered-by": "Express",
-      "x-usage-completion-text-tokens": "54",
+      "x-usage-completion-text-tokens": "65",
       "x-usage-prompt-text-tokens": "354",
-      "x-usage-total-tokens": "408"
+      "x-usage-total-tokens": "419"
     },
     "body": {
       "type": "json",
@@ -83,7 +83,7 @@
             "matched_stop": null,
             "message": {
               "content": null,
-              "reasoning_content": "The user is asking me to calculate 5 + 3, and specifically wants me to use the calculator tool. Let me do that. ",
+              "reasoning_content": "The user is asking me to calculate 5 + 3 and explicitly states I must use the calculator tool. This is a straightforward arithmetic operation. Let me call the calculator tool with the addition operation. ",
               "role": "assistant",
               "tool_calls": [
                 {
@@ -99,15 +99,15 @@
             }
           }
         ],
-        "created": 1765471766,
-        "id": "pllns_d2b8b9b83a19ac63b8579e243e78d2a7",
+        "created": 1765711169,
+        "id": "pllns_65aa6c8a5c30bcc712ae6b8385dc0d43",
         "metadata": {
           "weight_version": "default"
         },
         "model": "moonshotai/kimi-k2-thinking-maas",
         "object": "chat.completion",
         "usage": {
-          "completion_tokens": 54,
+          "completion_tokens": 65,
           "extra_properties": {
             "google": {
               "traffic_type": "ON_DEMAND"
@@ -116,7 +116,7 @@
           "prompt_tokens": 354,
           "prompt_tokens_details": null,
           "reasoning_tokens": 0,
-          "total_tokens": 408
+          "total_tokens": 419
         }
       }
     }

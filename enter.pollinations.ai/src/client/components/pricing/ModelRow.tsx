@@ -69,44 +69,45 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
                         </button>
                     )}
                     {showVision && (
-                        <span
-                            className="text-base"
-                            title={
-                                model.type === "image"
-                                    ? "Vision - supports image input (image-to-image)"
-                                    : "Vision - supports image input"
-                            }
-                        >
-                            👁️
+                        <span className="relative group/cap">
+                            <span className="text-base cursor-help">👁️</span>
+                            <span className="invisible group-hover/cap:visible absolute left-1/2 -translate-x-1/2 top-full mt-1 px-2 py-1 bg-gradient-to-r from-pink-50 to-purple-50 text-gray-800 text-xs rounded-lg shadow-lg border border-pink-200 whitespace-nowrap z-50 pointer-events-none">
+                                {model.type === "image"
+                                    ? "Vision (image-to-image)"
+                                    : "Vision input"}
+                            </span>
                         </span>
                     )}
                     {showAudioInput && (
-                        <span className="text-base" title="Audio input support">
-                            👂
+                        <span className="relative group/cap">
+                            <span className="text-base cursor-help">👂</span>
+                            <span className="invisible group-hover/cap:visible absolute left-1/2 -translate-x-1/2 top-full mt-1 px-2 py-1 bg-gradient-to-r from-pink-50 to-purple-50 text-gray-800 text-xs rounded-lg shadow-lg border border-pink-200 whitespace-nowrap z-50 pointer-events-none">
+                                Audio input
+                            </span>
                         </span>
                     )}
                     {showReasoning && (
-                        <span
-                            className="text-base"
-                            title="Advanced reasoning capabilities"
-                        >
-                            🧠
+                        <span className="relative group/cap">
+                            <span className="text-base cursor-help">🧠</span>
+                            <span className="invisible group-hover/cap:visible absolute left-1/2 -translate-x-1/2 top-full mt-1 px-2 py-1 bg-gradient-to-r from-pink-50 to-purple-50 text-gray-800 text-xs rounded-lg shadow-lg border border-pink-200 whitespace-nowrap z-50 pointer-events-none">
+                                Reasoning
+                            </span>
                         </span>
                     )}
                     {showSearch && (
-                        <span
-                            className="text-base"
-                            title="Web search capabilities"
-                        >
-                            🔍
+                        <span className="relative group/cap">
+                            <span className="text-base cursor-help">🔍</span>
+                            <span className="invisible group-hover/cap:visible absolute left-1/2 -translate-x-1/2 top-full mt-1 px-2 py-1 bg-gradient-to-r from-pink-50 to-purple-50 text-gray-800 text-xs rounded-lg shadow-lg border border-pink-200 whitespace-nowrap z-50 pointer-events-none">
+                                Web search
+                            </span>
                         </span>
                     )}
                     {showCodeExecution && (
-                        <span
-                            className="text-base"
-                            title="Code execution capabilities"
-                        >
-                            💻
+                        <span className="relative group/cap">
+                            <span className="text-base cursor-help">💻</span>
+                            <span className="invisible group-hover/cap:visible absolute left-1/2 -translate-x-1/2 top-full mt-1 px-2 py-1 bg-gradient-to-r from-pink-50 to-purple-50 text-gray-800 text-xs rounded-lg shadow-lg border border-pink-200 whitespace-nowrap z-50 pointer-events-none">
+                                Code execution
+                            </span>
                         </span>
                     )}
                 </div>

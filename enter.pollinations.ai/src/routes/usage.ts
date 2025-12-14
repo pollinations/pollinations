@@ -86,19 +86,19 @@ export const usageRoutes = new Hono<Env>()
                         timestamp: string;
                         type: string;
                         model: string | null;
-                        status: number;
-                        cached: boolean;
-                        apiKey: string | null;
-                        inputText: number;
-                        inputCached: number;
-                        inputAudio: number;
-                        inputImage: number;
-                        outputText: number;
-                        outputReasoning: number;
-                        outputAudio: number;
-                        outputImage: number;
-                        cost: number;
-                        responseTime: number | null;
+                        api_key: string | null;
+                        api_key_type: string | null;
+                        meter_source: string | null;
+                        input_text_tokens: number;
+                        input_cached_tokens: number;
+                        input_audio_tokens: number;
+                        input_image_tokens: number;
+                        output_text_tokens: number;
+                        output_reasoning_tokens: number;
+                        output_audio_tokens: number;
+                        output_image_tokens: number;
+                        cost_usd: number;
+                        response_time_ms: number | null;
                     }>;
                 };
 
@@ -124,10 +124,10 @@ export const usageRoutes = new Hono<Env>()
                         return str;
                     };
                     const header =
-                        "timestamp,type,model,status,cached,apiKey,inputText,inputCached,inputAudio,inputImage,outputText,outputReasoning,outputAudio,outputImage,cost,responseTime";
+                        "timestamp,type,model,api_key,api_key_type,meter_source,input_text_tokens,input_cached_tokens,input_audio_tokens,input_image_tokens,output_text_tokens,output_reasoning_tokens,output_audio_tokens,output_image_tokens,cost_usd,response_time_ms";
                     const rows = usage.map(
                         (row) =>
-                            `${escapeCSV(row.timestamp)},${escapeCSV(row.type)},${escapeCSV(row.model)},${row.status},${row.cached},${escapeCSV(row.apiKey)},${row.inputText},${row.inputCached},${row.inputAudio},${row.inputImage},${row.outputText},${row.outputReasoning},${row.outputAudio},${row.outputImage},${row.cost},${row.responseTime || ""}`,
+                            `${escapeCSV(row.timestamp)},${escapeCSV(row.type)},${escapeCSV(row.model)},${escapeCSV(row.api_key)},${escapeCSV(row.api_key_type)},${escapeCSV(row.meter_source)},${row.input_text_tokens},${row.input_cached_tokens},${row.input_audio_tokens},${row.input_image_tokens},${row.output_text_tokens},${row.output_reasoning_tokens},${row.output_audio_tokens},${row.output_image_tokens},${row.cost_usd},${row.response_time_ms || ""}`,
                     );
                     const csv = [header, ...rows].join("\n");
 

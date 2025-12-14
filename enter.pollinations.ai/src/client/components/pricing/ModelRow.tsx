@@ -10,6 +10,7 @@ import {
 } from "./model-info.ts";
 import { calculatePerPollen } from "./calculations.ts";
 import { PriceBadge } from "./PriceBadge.tsx";
+import { Tooltip } from "./Tooltip.tsx";
 
 type ModelRowProps = {
     model: ModelPrice;
@@ -69,46 +70,35 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
                         </button>
                     )}
                     {showVision && (
-                        <span className="relative group/cap">
-                            <span className="text-base cursor-help">👁️</span>
-                            <span className="invisible group-hover/cap:visible absolute left-1/2 -translate-x-1/2 top-full mt-1 px-2 py-1 bg-gradient-to-r from-pink-50 to-purple-50 text-gray-800 text-xs rounded-lg shadow-lg border border-pink-200 whitespace-nowrap z-50 pointer-events-none">
-                                {model.type === "image"
+                        <Tooltip
+                            text={
+                                model.type === "image"
                                     ? "Vision (image-to-image)"
-                                    : "Vision input"}
-                            </span>
-                        </span>
+                                    : "Vision input"
+                            }
+                        >
+                            <span className="text-base">👁️</span>
+                        </Tooltip>
                     )}
                     {showAudioInput && (
-                        <span className="relative group/cap">
-                            <span className="text-base cursor-help">👂</span>
-                            <span className="invisible group-hover/cap:visible absolute left-1/2 -translate-x-1/2 top-full mt-1 px-2 py-1 bg-gradient-to-r from-pink-50 to-purple-50 text-gray-800 text-xs rounded-lg shadow-lg border border-pink-200 whitespace-nowrap z-50 pointer-events-none">
-                                Audio input
-                            </span>
-                        </span>
+                        <Tooltip text="Audio input">
+                            <span className="text-base">👂</span>
+                        </Tooltip>
                     )}
                     {showReasoning && (
-                        <span className="relative group/cap">
-                            <span className="text-base cursor-help">🧠</span>
-                            <span className="invisible group-hover/cap:visible absolute left-1/2 -translate-x-1/2 top-full mt-1 px-2 py-1 bg-gradient-to-r from-pink-50 to-purple-50 text-gray-800 text-xs rounded-lg shadow-lg border border-pink-200 whitespace-nowrap z-50 pointer-events-none">
-                                Reasoning
-                            </span>
-                        </span>
+                        <Tooltip text="Reasoning">
+                            <span className="text-base">🧠</span>
+                        </Tooltip>
                     )}
                     {showSearch && (
-                        <span className="relative group/cap">
-                            <span className="text-base cursor-help">🔍</span>
-                            <span className="invisible group-hover/cap:visible absolute left-1/2 -translate-x-1/2 top-full mt-1 px-2 py-1 bg-gradient-to-r from-pink-50 to-purple-50 text-gray-800 text-xs rounded-lg shadow-lg border border-pink-200 whitespace-nowrap z-50 pointer-events-none">
-                                Web search
-                            </span>
-                        </span>
+                        <Tooltip text="Web search">
+                            <span className="text-base">🔍</span>
+                        </Tooltip>
                     )}
                     {showCodeExecution && (
-                        <span className="relative group/cap">
-                            <span className="text-base cursor-help">💻</span>
-                            <span className="invisible group-hover/cap:visible absolute left-1/2 -translate-x-1/2 top-full mt-1 px-2 py-1 bg-gradient-to-r from-pink-50 to-purple-50 text-gray-800 text-xs rounded-lg shadow-lg border border-pink-200 whitespace-nowrap z-50 pointer-events-none">
-                                Code execution
-                            </span>
-                        </span>
+                        <Tooltip text="Code execution">
+                            <span className="text-base">💻</span>
+                        </Tooltip>
                     )}
                 </div>
             </td>

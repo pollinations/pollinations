@@ -54,6 +54,16 @@ export function processParameters(messages, options) {
         delete updatedOptions.max_tokens;
     }
 
+    // Force temperature=1 for o1/reasoning models to prevent 400 errors
+    // Azure OpenAI o1 models only support temperature=1 (default value)
+    const isO1Model = requestedModel && /^o1(-mini|-preview)?$/i.test(requestedModel);
+    if (isO1Model && updatedOptions.temperature !== undefined && updatedOptions.temperature !== 1) {
+        log(
+            `Forcing temperature=1 for o1 model ${requestedModel} (requested: ${updatedOptions.temperature})`,
+        );
+        updatedOptions.temperature = 1;
+    }
+
     // Apply parameter filtering if defined
     if (modelConfig.allowedParameters) {
         const allowedParams = modelConfig.allowedParameters;

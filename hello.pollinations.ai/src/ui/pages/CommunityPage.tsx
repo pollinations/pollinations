@@ -107,7 +107,7 @@ export default function CommunityPage() {
                 <Divider />
 
                 {/* News Section */}
-                <NewsSection title={pageCopy.newsTitle.text} />
+                <NewsSection title={pageCopy.newsTitle.text} limit={5} />
 
                 <Divider />
 

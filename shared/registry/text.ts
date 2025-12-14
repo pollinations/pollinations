@@ -378,7 +378,6 @@ export const TEXT_SERVICES = {
         tools: true,
         reasoning: true,
         search: true,
-        codeExecution: true,
         isSpecialized: false,
     },
     "nova-micro": {

@@ -5,6 +5,7 @@ import {
     hasVision,
     hasAudioInput,
     hasSearch,
+    hasCodeExecution,
     getModelDescription,
 } from "./model-info.ts";
 import { calculatePerPollen } from "./calculations.ts";
@@ -24,6 +25,7 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
     const showVision = hasVision(model.name);
     const showAudioInput = hasAudioInput(model.name);
     const showSearch = hasSearch(model.name);
+    const showCodeExecution = hasCodeExecution(model.name);
 
     // Show info icon if we have a description to display, or if it's a video model (for alpha notice)
     const isVideoModel = model.type === "video";
@@ -97,6 +99,14 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
                             title="Web search capabilities"
                         >
                             🔍
+                        </span>
+                    )}
+                    {showCodeExecution && (
+                        <span
+                            className="text-base"
+                            title="Code execution capabilities"
+                        >
+                            💻
                         </span>
                     )}
                 </div>

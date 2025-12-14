@@ -44,7 +44,7 @@ const models: ModelDefinition[] = [
     },
     {
         name: "openai-large",
-        config: portkeyConfig["gpt-5.2"],
+        config: portkeyConfig["gpt-5.2-2025-12-11"],
         transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
     },
     {

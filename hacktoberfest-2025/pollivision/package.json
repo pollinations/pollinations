@@ -1,0 +1,52 @@
+{
+  "name": "pollivision",
+  "version": "1.0.0",
+  "description": "🎬 PolliVision - AI Video Generator powered by Pollinations.ai | Professional video creation with chat interface",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview",
+    "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0"
+  },
+  "keywords": [
+    "pollinations",
+    "ai",
+    "video-generator",
+    "text-to-video",
+    "generative-ai",
+    "react",
+    "typescript"
+  ],
+  "author": {
+    "name": "Fábio Arieira",
+    "url": "https://fabioarieira.com"
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/FabioArieiraBaia/PolliVision"
+  },
+  "homepage": "https://fabioarieira.com/pollivision",
+  "dependencies": {
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-router-dom": "^6.28.0",
+    "lucide-react": "^0.468.0",
+    "framer-motion": "^11.15.0",
+    "zustand": "^5.0.2"
+  },
+  "devDependencies": {
+    "@types/react": "^18.3.14",
+    "@types/react-dom": "^18.3.2",
+    "@vitejs/plugin-react": "^4.3.4",
+    "autoprefixer": "^10.4.20",
+    "postcss": "^8.4.49",
+    "tailwindcss": "^3.4.16",
+    "typescript": "^5.7.2",
+    "vite": "^6.0.3"
+  }
+}
+
+
+

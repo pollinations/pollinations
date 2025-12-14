@@ -1,0 +1,221 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: 'Inter', system-ui, sans-serif;
+  background: linear-gradient(135deg, #0a0a0f 0%, #12121a 50%, #0a0a0f 100%);
+  min-height: 100vh;
+  color: #ffffff;
+  overflow-x: hidden;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #1a1a24;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, #fbbf24, #f59e0b);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, #fcd34d, #fbbf24);
+}
+
+/* Gradient Text */
+.gradient-text {
+  background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 50%, #fcd34d 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Glass Effect */
+.glass {
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Glow Effect */
+.glow-pollen {
+  box-shadow: 0 0 30px rgba(251, 191, 36, 0.3),
+              0 0 60px rgba(251, 191, 36, 0.1);
+}
+
+.glow-pollen-strong {
+  box-shadow: 0 0 40px rgba(251, 191, 36, 0.5),
+              0 0 80px rgba(251, 191, 36, 0.2);
+}
+
+/* Animated Background */
+.animated-bg {
+  background: linear-gradient(-45deg, #0a0a0f, #1a1a24, #12121a, #22222e);
+  background-size: 400% 400%;
+  animation: gradientBG 15s ease infinite;
+}
+
+@keyframes gradientBG {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+/* Typing Animation */
+@keyframes typing {
+  from { width: 0; }
+  to { width: 100%; }
+}
+
+@keyframes blink {
+  50% { border-color: transparent; }
+}
+
+.typing-cursor::after {
+  content: '|';
+  animation: blink 1s step-end infinite;
+  color: #fbbf24;
+}
+
+/* Message Bubble Animation */
+@keyframes messageSlide {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.message-animate {
+  animation: messageSlide 0.3s ease-out forwards;
+}
+
+/* Video Card Hover */
+.video-card {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.video-card:hover {
+  transform: translateY(-8px) scale(1.02);
+  box-shadow: 0 20px 40px rgba(251, 191, 36, 0.2);
+}
+
+/* Button Shine Effect */
+.btn-shine {
+  position: relative;
+  overflow: hidden;
+}
+
+.btn-shine::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.2),
+    transparent
+  );
+  transition: left 0.5s;
+}
+
+.btn-shine:hover::before {
+  left: 100%;
+}
+
+/* Pollen Particle Effect */
+.pollen-particles {
+  position: fixed;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.pollen-particle {
+  position: absolute;
+  width: 6px;
+  height: 6px;
+  background: radial-gradient(circle, #fbbf24, transparent);
+  border-radius: 50%;
+  animation: floatParticle 8s ease-in-out infinite;
+}
+
+@keyframes floatParticle {
+  0%, 100% {
+    transform: translateY(0) rotate(0deg);
+    opacity: 0;
+  }
+  10% {
+    opacity: 1;
+  }
+  90% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(-100vh) rotate(720deg);
+    opacity: 0;
+  }
+}
+
+/* Loading Dots */
+.loading-dots span {
+  animation: loadingDot 1.4s ease-in-out infinite both;
+}
+
+.loading-dots span:nth-child(1) { animation-delay: -0.32s; }
+.loading-dots span:nth-child(2) { animation-delay: -0.16s; }
+.loading-dots span:nth-child(3) { animation-delay: 0s; }
+
+@keyframes loadingDot {
+  0%, 80%, 100% {
+    transform: scale(0);
+  }
+  40% {
+    transform: scale(1);
+  }
+}
+
+/* Video Progress Bar */
+.progress-bar {
+  background: linear-gradient(90deg, #fbbf24, #f59e0b);
+  transition: width 0.3s ease;
+}
+
+/* Input Focus Ring */
+input:focus, textarea:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(251, 191, 36, 0.3);
+}
+
+/* Selection Color */
+::selection {
+  background: rgba(251, 191, 36, 0.3);
+  color: #ffffff;
+}
+
+
+

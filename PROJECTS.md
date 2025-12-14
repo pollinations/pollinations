@@ -164,6 +164,7 @@ Pollinations.AI is used in various projects, including:
 | 🆕 [🎬 Viral Flow](https://fabioarieira.com/viralflow) | Browser-based video production platform using Pollinations for visual... | @fabioarieira |
 | 🆕 [🎬 PolliVision](https://fabioarieira.com/pollivision) ([⭐ 0](https://github.com/FabioArieiraBaia/PolliVision)) | Chat-based AI video generator using Pollinations APIs. Type a scene description... | @FabioArieiraBaia |
 | 🆕 [🎄 Northpolelibrary](https://northpolelibrary.eu) | Create personalized Christmas stories for children in minutes. Enter a child's... | @bendmachine |
+| 🆕 [🎄 North Pole Library](https://northpolelibrary.eu) ([⭐ 0](https://github.com/bzddbz)) | Create personalized Christmas stories for children in minutes. Enter a child's... | @bendmachine |
 
 ### Games 🎲
 

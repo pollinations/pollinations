@@ -36,7 +36,6 @@ export async function generateCopy(
     isMobile: boolean,
     pageCopyObjects: ThemeCopy,
     targetLanguage = "en",
-    signal?: AbortSignal,
 ): Promise<{ full: ThemeCopy; flat: Record<string, string> }> {
     // Deep clone to safely modify
     const contentToTransform = JSON.parse(JSON.stringify(pageCopyObjects));
@@ -57,7 +56,7 @@ export async function generateCopy(
     console.log(`📝 [COPYWRITER] → Rewriting ${jobs.length} text items...`);
 
     try {
-        const response = await generateText(fullPrompt, 42, MODEL, signal);
+        const response = await generateText(fullPrompt, 42, MODEL);
 
         // 4. Load (ETL Step 3 - Re-hydration)
         let newTexts: Record<string, string> = {};

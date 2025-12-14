@@ -52,18 +52,12 @@ export function AIPromptInput({ isOpen }: AIPromptInputProps) {
                 if (IS_BACKEND_MODE) {
                     // BACKEND MODE: Parallel execution (secret key, no rate limits)
                     console.log(
-                        "🚀 [PARALLEL MODE] Running all generators simultaneously"
+                        "🚀 [PARALLEL MODE] Running all generators simultaneously",
                     );
 
                     const [theme, copyResult, bgHtml] = await Promise.all([
                         generateTheme(activePrompt, controller.signal),
-                        generateCopy(
-                            activePrompt,
-                            isMobile,
-                            ALL_COPY,
-                            "en",
-                            controller.signal
-                        ),
+                        generateCopy(activePrompt, isMobile, ALL_COPY),
                         generateBackground(activePrompt, controller.signal),
                     ]);
 
@@ -72,14 +66,14 @@ export function AIPromptInput({ isOpen }: AIPromptInputProps) {
                 } else {
                     // FRONTEND MODE: Sequential execution with delays (publishable key, rate limited)
                     console.log(
-                        "🐢 [SEQUENTIAL MODE] Running generators one at a time with delays"
+                        "🐢 [SEQUENTIAL MODE] Running generators one at a time with delays",
                     );
 
                     // 1. Designer (Theme)
                     console.log("🎨 [1/3] Generating theme...");
                     const theme = await generateTheme(
                         activePrompt,
-                        controller.signal
+                        controller.signal,
                     );
                     if (controller.signal.aborted) return;
 
@@ -93,8 +87,6 @@ export function AIPromptInput({ isOpen }: AIPromptInputProps) {
                         activePrompt,
                         isMobile,
                         ALL_COPY,
-                        "en",
-                        controller.signal
                     );
                     if (controller.signal.aborted) return;
 
@@ -106,7 +98,7 @@ export function AIPromptInput({ isOpen }: AIPromptInputProps) {
                     console.log("🎬 [3/3] Generating background...");
                     const bgHtml = await generateBackground(
                         activePrompt,
-                        controller.signal
+                        controller.signal,
                     );
                     if (controller.signal.aborted) return;
 
@@ -170,7 +162,7 @@ export function AIPromptInput({ isOpen }: AIPromptInputProps) {
                 } else if (typeof value === "object" && value !== null) {
                     extractFlat(
                         value as Record<string, unknown>,
-                        prefix ? `${prefix}.${key}` : key
+                        prefix ? `${prefix}.${key}` : key,
                     );
                 }
             }
@@ -183,7 +175,7 @@ import type { ThemeCopy } from "../buildPrompts";
 export const ${capitalizedName}Theme: LLMThemeResponse = ${JSON.stringify(
             themeInSlotFormat,
             null,
-            2
+            2,
         )};
 
 export const ${capitalizedName}CssVariables = processTheme(${capitalizedName}Theme).cssVariables;
@@ -211,7 +203,7 @@ export const ${capitalizedName}BackgroundHtml = ${
         URL.revokeObjectURL(url);
 
         console.log(
-            `✅ Downloaded ${presetName}.ts with current settings - Add to /src/theme/presets/`
+            `✅ Downloaded ${presetName}.ts with current settings - Add to /src/theme/presets/`,
         );
     };
 

@@ -6,7 +6,7 @@ import {
 } from "./transforms/createSystemPromptTransform.js";
 import { pipe } from "./transforms/pipe.js";
 import { createGoogleSearchTransform } from "./transforms/createGoogleSearchTransform.js";
-import { createGeminiToolsTransform } from "./transforms/createGeminiToolsTransform.js";
+import { createGeminiToolsTransform } from "./transforms/createGeminiToolsTransform.ts";
 
 // Import persona prompts
 import midijourneyPrompt from "./personas/midijourney.js";

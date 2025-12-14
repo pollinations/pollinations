@@ -10,7 +10,7 @@ import { API_KEY } from "../../../api.config";
  */
 export function ImageGenCard() {
     const [selectedPrompt, setSelectedPrompt] = useState(
-        DOCS_PAGE.imagePrompts[0]
+        DOCS_PAGE.imagePrompts[0],
     );
     const [params, setParams] = useState<Set<string>>(new Set());
     const [imageUrl, setImageUrl] = useState("");
@@ -28,7 +28,7 @@ export function ImageGenCard() {
 
     const buildUrl = () => {
         let url = `https://enter.pollinations.ai/api/generate/image/${encodeURIComponent(
-            selectedPrompt
+            selectedPrompt,
         )}`;
         const urlParams = new URLSearchParams();
         if (params.size > 0) {
@@ -51,7 +51,7 @@ export function ImageGenCard() {
     useEffect(() => {
         const buildImageUrl = () => {
             let url = `https://enter.pollinations.ai/api/generate/image/${encodeURIComponent(
-                selectedPrompt
+                selectedPrompt,
             )}`;
             const urlParams = new URLSearchParams();
             if (params.size > 0) {
@@ -82,7 +82,7 @@ export function ImageGenCard() {
                 });
                 if (!response.ok) {
                     throw new Error(
-                        `HTTP ${response.status}: ${response.statusText}`
+                        `HTTP ${response.status}: ${response.statusText}`,
                     );
                 }
                 const blob = await response.blob();
@@ -189,7 +189,7 @@ export function ImageGenCard() {
                     https://enter.pollinations.ai/api/generate/image/
                 </span>
                 <span className="bg-indicator-text px-1 font-black text-text-inverse">
-                    {selectedPrompt}
+                    {encodeURIComponent(selectedPrompt)}
                 </span>
                 {params.size > 0 && (
                     <>

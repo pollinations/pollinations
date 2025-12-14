@@ -10,7 +10,7 @@ import { API_KEY } from "../../../api.config";
  */
 export function TextGenCard() {
     const [selectedPrompt, setSelectedPrompt] = useState(
-        DOCS_PAGE.textPrompts[0]
+        DOCS_PAGE.textPrompts[0],
     );
     const [selectedModel, setSelectedModel] = useState(""); // Empty = default openai
     const [jsonMode, setJsonMode] = useState(false);
@@ -25,7 +25,7 @@ export function TextGenCard() {
     const buildUrl = () => {
         // For display only - show what the equivalent GET URL would look like
         let url = `https://enter.pollinations.ai/api/generate/text/${encodeURIComponent(
-            selectedPrompt
+            selectedPrompt,
         )}`;
         const params = [];
         if (selectedModel) params.push(`model=${selectedModel}`);
@@ -39,7 +39,7 @@ export function TextGenCard() {
     useEffect(() => {
         const buildTextUrl = () => {
             let url = `https://enter.pollinations.ai/api/generate/text/${encodeURIComponent(
-                selectedPrompt
+                selectedPrompt,
             )}`;
             const params = [];
             if (selectedModel) params.push(`model=${selectedModel}`);
@@ -171,7 +171,7 @@ export function TextGenCard() {
                     https://enter.pollinations.ai/api/generate/text/
                 </span>
                 <span className="bg-indicator-text px-1 font-black text-text-inverse">
-                    {selectedPrompt}
+                    {encodeURIComponent(selectedPrompt)}
                 </span>
                 {(selectedModel || jsonMode) && (
                     <>

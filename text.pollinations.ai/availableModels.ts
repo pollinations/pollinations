@@ -127,7 +127,10 @@ const models: ModelDefinition[] = [
     {
         name: "gemini-large",
         config: portkeyConfig["gemini-3-pro-preview"],
-        transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
+        transform: pipe(
+            createSystemPromptTransform(BASE_PROMPTS.conversational),
+            createGeminiToolsTransform(),
+        ),
     },
     {
         name: "nova-micro",

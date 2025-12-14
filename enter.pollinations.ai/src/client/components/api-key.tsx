@@ -243,8 +243,8 @@ export type CreateApiKey = {
     name: string;
     description?: string;
     keyType?: "publishable" | "secret";
-    /** Model IDs this key can access. Empty array = all models allowed */
-    allowedModels?: string[];
+    /** Model IDs this key can access. null = all models allowed */
+    allowedModels?: string[] | null;
 };
 
 export type CreateApiKeyResponse = ApiKey & {
@@ -261,7 +261,7 @@ const CreateKeyForm: FC<{
     formData: CreateApiKey;
     onInputChange: (
         field: keyof CreateApiKey,
-        value: string | string[] | undefined,
+        value: string | string[] | null | undefined,
     ) => void;
     onSubmit: (e: React.FormEvent) => void;
     onCancel: () => void;
@@ -429,7 +429,7 @@ const CreateKeyForm: FC<{
             {/* Model permissions - collapsible advanced option */}
             {!createdKey && (
                 <ModelPermissions
-                    value={formData.allowedModels ?? []}
+                    value={formData.allowedModels ?? null}
                     onChange={(models) =>
                         onInputChange("allowedModels", models)
                     }
@@ -488,7 +488,7 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
         name: generateFunName(),
         description: `Created on ${new Date().toLocaleDateString("en-US", { day: "2-digit", month: "2-digit", year: "2-digit" })}`,
         keyType: "secret", // Default to secret key
-        allowedModels: [], // Empty = all models allowed
+        allowedModels: null, // null = all models allowed
     });
     const [createdKey, setCreatedKey] = useState<CreateApiKeyResponse | null>(
         null,
@@ -498,7 +498,7 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
 
     const handleInputChange = (
         field: keyof CreateApiKey,
-        value: string | string[] | undefined,
+        value: string | string[] | null | undefined,
     ) => {
         const updatedData = { ...formData, [field]: value };
 
@@ -540,7 +540,7 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
             name: "backend-" + generateFunName(),
             description: "",
             keyType: "secret",
-            allowedModels: [],
+            allowedModels: null,
         });
     };
 

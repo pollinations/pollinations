@@ -16,10 +16,10 @@ const imageModels = Object.entries(IMAGE_SERVICES).map(([id, config]) => ({
 }));
 
 type ModelPermissionsProps = {
-    /** Selected model IDs. Empty array = all models allowed */
-    value: string[];
+    /** Selected model IDs. null = all models allowed, [] = restricted but none selected */
+    value: string[] | null;
     /** Called when selection changes */
-    onChange: (models: string[]) => void;
+    onChange: (models: string[] | null) => void;
     /** Whether the component is disabled */
     disabled?: boolean;
     /** Compact mode for embedding in other forms */
@@ -28,8 +28,9 @@ type ModelPermissionsProps = {
 
 /**
  * Model permissions selector - allows restricting API key to specific models.
- * Empty array = all models allowed (default)
- * Non-empty array = only those models allowed
+ * null = all models allowed (default, unrestricted)
+ * [] = restricted mode with no models selected yet
+ * ["model1", "model2"] = restricted to specific models
  */
 export const ModelPermissions: FC<ModelPermissionsProps> = ({
     value,
@@ -38,35 +39,33 @@ export const ModelPermissions: FC<ModelPermissionsProps> = ({
     compact = false,
 }) => {
     const [isExpanded, setIsExpanded] = useState(false);
-    const isAllSelected = value.length === 0;
+    // null means unrestricted (all models allowed)
+    const isUnrestricted = value === null;
 
-    const toggleAllModels = () => {
+    const toggleRestrictionMode = () => {
         if (disabled) return;
-        // Toggle between "all" (empty array) and "specific" (non-empty)
-        // When switching to specific, start with empty selection - user adds what they want
-        onChange(isAllSelected ? ["_restricted"] : []);
+        // Toggle between unrestricted (null) and restricted (empty array)
+        onChange(isUnrestricted ? [] : null);
     };
 
     const toggleModel = (modelId: string) => {
-        if (disabled || isAllSelected) return;
+        if (disabled || isUnrestricted) return;
 
-        // Filter out the placeholder marker
-        const currentModels = value.filter((id) => id !== "_restricted");
+        const currentModels = value ?? [];
 
         if (currentModels.includes(modelId)) {
-            // Deselecting - if this leaves us empty, keep the marker
-            const newModels = currentModels.filter((id) => id !== modelId);
-            onChange(newModels.length === 0 ? ["_restricted"] : newModels);
+            // Deselecting
+            onChange(currentModels.filter((id) => id !== modelId));
         } else {
-            // Selecting - add to list (remove marker if present)
+            // Selecting
             onChange([...currentModels, modelId]);
         }
     };
 
     const isModelSelected = (modelId: string) =>
-        value.filter((id) => id !== "_restricted").includes(modelId);
+        (value ?? []).includes(modelId);
 
-    const selectedCount = value.filter((id) => id !== "_restricted").length;
+    const selectedCount = (value ?? []).length;
 
     return (
         <div className={cn("space-y-2", compact && "text-sm")}>
@@ -96,12 +95,16 @@ export const ModelPermissions: FC<ModelPermissionsProps> = ({
                 <span
                     className={cn(
                         "text-xs px-2 py-0.5 rounded-full",
-                        isAllSelected
+                        isUnrestricted
                             ? "bg-green-100 text-green-700"
-                            : "bg-amber-100 text-amber-700",
+                            : selectedCount === 0
+                              ? "bg-red-100 text-red-700"
+                              : "bg-amber-100 text-amber-700",
                     )}
                 >
-                    {isAllSelected ? "All models" : `${selectedCount} selected`}
+                    {isUnrestricted
+                        ? "All models"
+                        : `${selectedCount} selected`}
                 </span>
             </button>
 
@@ -117,8 +120,8 @@ export const ModelPermissions: FC<ModelPermissionsProps> = ({
                     >
                         <input
                             type="checkbox"
-                            checked={isAllSelected}
-                            onChange={toggleAllModels}
+                            checked={isUnrestricted}
+                            onChange={toggleRestrictionMode}
                             disabled={disabled}
                             className="w-4 h-4 rounded text-green-600"
                         />
@@ -128,7 +131,7 @@ export const ModelPermissions: FC<ModelPermissionsProps> = ({
                     </label>
 
                     {/* Show model chips when restricting to specific models */}
-                    {!isAllSelected && (
+                    {!isUnrestricted && (
                         <>
                             {/* Text models */}
                             <div>
@@ -173,9 +176,11 @@ export const ModelPermissions: FC<ModelPermissionsProps> = ({
                     )}
 
                     <p className="text-xs text-gray-500 italic">
-                        {isAllSelected
+                        {isUnrestricted
                             ? "This key can access any model."
-                            : "This key can only access selected models."}
+                            : selectedCount === 0
+                              ? "Select at least one model."
+                              : "This key can only access selected models."}
                     </p>
                 </div>
             )}

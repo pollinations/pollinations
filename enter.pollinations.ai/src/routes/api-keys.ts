@@ -15,11 +15,8 @@ const CreateApiKeySchema = z.object({
     name: z.string().min(1).max(100),
     description: z.string().max(500).optional(),
     keyType: z.enum(["secret", "publishable"]).default("secret"),
-    // Filter out internal markers like "_restricted"
-    allowedModels: z
-        .array(z.string())
-        .transform((models) => models.filter((m) => !m.startsWith("_")))
-        .optional(),
+    // null = unrestricted (all models), [] or [...models] = restricted
+    allowedModels: z.array(z.string()).nullable().optional(),
 });
 
 /**

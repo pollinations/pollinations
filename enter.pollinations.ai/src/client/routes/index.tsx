@@ -97,10 +97,8 @@ function RouteComponent() {
                 name: formState.name,
                 description: formState.description,
                 keyType: formState.keyType || "secret",
-                // Filter out the "_restricted" marker used by UI to indicate restricted mode
-                allowedModels: (formState.allowedModels ?? []).filter(
-                    (m) => m !== "_restricted",
-                ),
+                // null = unrestricted, [] or [...models] = restricted
+                allowedModels: formState.allowedModels,
             }),
         });
 

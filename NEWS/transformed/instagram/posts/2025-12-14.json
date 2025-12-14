@@ -1,0 +1,77 @@
+{
+  "date": "2025-12-14",
+  "generated_at": "2025-12-14T16:11:42.497348+00:00",
+  "post_type": "carousel",
+  "content_type": "update",
+  "linked_images": true,
+  "strategy_reasoning": "The updates feature a significant visual improvement (facial upscaler + aspect ratio) alongside structural backend fixes. A linked visual story is perfect for demonstrating 'enhancement' and 'evolution'—taking a raw concept, structuring it (workflows/tests), and refining it into crystal clarity (upscaler).",
+  "story_arc": "The Journey to Clarity: From raw potential to structured precision to high-definition reality.",
+  "images": [
+    {
+      "url": "https://gen.pollinations.ai/image/Abstract%20digital%20nebula%2C%20soft%20blurry%20focus%2C%20swirling%20data%20particles%20in%20muted%20indigo%20and%20violet%2C%20undefined%20shapes%2C%20raw%20potential%20energy%2C%20ethereal%20mist%2C%20dreamlike%20atmosphere%2C%208k%20resolution%2C%20cinematic%20lighting%20--no%20text?model=nanobanana-pro&width=2048&height=2048&quality=hd&nologo=true&private=true&nofeed=true&seed=130123379",
+      "prompt": "Abstract digital nebula, soft blurry focus, swirling data particles in muted indigo and violet, undefined shapes, raw potential energy, ethereal mist, dreamlike atmosphere, 8k resolution, cinematic lighting --no text",
+      "description": "A hazy, potential-filled abstract void representing raw input before processing."
+    },
+    {
+      "url": "https://gen.pollinations.ai/image/Glowing%20neon%20wireframe%20grids%20emerging%20from%20the%20indigo%20nebula%2C%20geometric%20circuit%20lines%20connecting%20seamlessly%2C%20structure%20forming%20from%20chaos%2C%20cybernetic%20blueprints%2C%20tech%20aesthetic%2C%20cyan%20and%20magenta%20highlights%2C%20sharp%20lines%2C%20organizing%20data%20--no%20text?model=nanobanana-pro&width=2048&height=2048&quality=hd&nologo=true&private=true&nofeed=true&seed=786568879&image=https://gen.pollinations.ai/image/Abstract%20digital%20nebula%2C%20soft%20blurry%20focus%2C%20swirling%20data%20particles%20in%20muted%20indigo%20and%20violet%2C%20undefined%20shapes%2C%20raw%20potential%20energy%2C%20ethereal%20mist%2C%20dreamlike%20atmosphere%2C%208k%20resolution%2C%20cinematic%20lighting%20--no%20text?model=nanobanana-pro&width=2048&height=2048&quality=hd&nologo=true&private=true&nofeed=true&seed=130123379",
+      "prompt": "Glowing neon wireframe grids emerging from the indigo nebula, geometric circuit lines connecting seamlessly, structure forming from chaos, cybernetic blueprints, tech aesthetic, cyan and magenta highlights, sharp lines, organizing data --no text",
+      "description": "The mist organizes into a structured grid, visualizing the new workflow fixes and integration tests."
+    },
+    {
+      "url": "https://gen.pollinations.ai/image/A%20central%20abstract%20focal%20point%20emerges%2C%20hyper-detailed%20crystalline%20structure%20resembling%20a%20face%20made%20of%20light%2C%20extreme%20clarity%2C%20sharp%20focus%2C%20golden%20ratio%20composition%2C%20radiant%20energy%2C%20vibrant%20teal%20and%20gold%2C%20representing%20the%20facial%20upscaler%20--no%20text?model=nanobanana-pro&width=2048&height=2048&quality=hd&nologo=true&private=true&nofeed=true&seed=1080933804&image=https://gen.pollinations.ai/image/Glowing%20neon%20wireframe%20grids%20emerging%20from%20the%20indigo%20nebula%2C%20geometric%20circuit%20lines%20connecting%20seamlessly%2C%20structure%20forming%20from%20chaos%2C%20cybernetic%20blueprints%2C%20tech%20aesthetic%2C%20cyan%20and%20magenta%20highlights%2C%20sharp%20lines%2C%20organizing%20data%20--no%20text?model=nanobanana-pro&width=2048&height=2048&quality=hd&nologo=true&private=true&nofeed=true&seed=786568879&image=https://gen.pollinations.ai/image/Abstract%20digital%20nebula%2C%20soft%20blurry%20focus%2C%20swirling%20data%20particles%20in%20muted%20indigo%20and%20violet%2C%20undefined%20shapes%2C%20raw%20potential%20energy%2C%20ethereal%20mist%2C%20dreamlike%20atmosphere%2C%208k%20resolution%2C%20cinematic%20lighting%20--no%20text?model=nanobanana-pro&width=2048&height=2048&quality=hd&nologo=true&private=true&nofeed=true&seed=130123379",
+      "prompt": "A central abstract focal point emerges, hyper-detailed crystalline structure resembling a face made of light, extreme clarity, sharp focus, golden ratio composition, radiant energy, vibrant teal and gold, representing the facial upscaler --no text",
+      "description": "The structure solidifies into a sharp, recognizable, high-quality form, representing the upscaler update."
+    },
+    {
+      "url": "https://gen.pollinations.ai/image/Expansive%20wide-angle%20digital%20horizon%2C%20crystal%20clear%20futuristic%20landscape%2C%20perfect%20composition%2C%20vibrant%20spectrum%20of%20colors%2C%20harmonious%20blend%20of%20complex%20geometry%20and%20fluid%20art%2C%20high%20definition%2C%20masterpiece%2C%20representing%20correct%20aspect%20ratio%20and%20final%20polish%20--no%20text?model=nanobanana-pro&width=2048&height=2048&quality=hd&nologo=true&private=true&nofeed=true&seed=1464760892&image=https://gen.pollinations.ai/image/A%20central%20abstract%20focal%20point%20emerges%2C%20hyper-detailed%20crystalline%20structure%20resembling%20a%20face%20made%20of%20light%2C%20extreme%20clarity%2C%20sharp%20focus%2C%20golden%20ratio%20composition%2C%20radiant%20energy%2C%20vibrant%20teal%20and%20gold%2C%20representing%20the%20facial%20upscaler%20--no%20text?model=nanobanana-pro&width=2048&height=2048&quality=hd&nologo=true&private=true&nofeed=true&seed=1080933804&image=https://gen.pollinations.ai/image/Glowing%20neon%20wireframe%20grids%20emerging%20from%20the%20indigo%20nebula%2C%20geometric%20circuit%20lines%20connecting%20seamlessly%2C%20structure%20forming%20from%20chaos%2C%20cybernetic%20blueprints%2C%20tech%20aesthetic%2C%20cyan%20and%20magenta%20highlights%2C%20sharp%20lines%2C%20organizing%20data%20--no%20text?model=nanobanana-pro&width=2048&height=2048&quality=hd&nologo=true&private=true&nofeed=true&seed=786568879&image=https://gen.pollinations.ai/image/Abstract%20digital%20nebula%2C%20soft%20blurry%20focus%2C%20swirling%20data%20particles%20in%20muted%20indigo%20and%20violet%2C%20undefined%20shapes%2C%20raw%20potential%20energy%2C%20ethereal%20mist%2C%20dreamlike%20atmosphere%2C%208k%20resolution%2C%20cinematic%20lighting%20--no%20text?model=nanobanana-pro&width=2048&height=2048&quality=hd&nologo=true&private=true&nofeed=true&seed=130123379",
+      "prompt": "Expansive wide-angle digital horizon, crystal clear futuristic landscape, perfect composition, vibrant spectrum of colors, harmonious blend of complex geometry and fluid art, high definition, masterpiece, representing correct aspect ratio and final polish --no text",
+      "description": "The final result: a perfectly framed, wide, and vibrant masterpiece showing off the platform's capabilities."
+    }
+  ],
+  "caption": "Clarity just got an upgrade. ✨👁️\n\nWe've polished the lens. Today's updates bring a significant boost to user image aspect ratios and a smarter facial upscaler. Your generations are about to look sharper, better framed, and more detailed than ever.\n\nUnder the hood, we're tightening the bolts too:\n🔹 Smoother PR workflows for contributors\n🔹 Enhanced integration tests for reliability\n🔹 Synced model IDs for better performance\n\nFrom the backend structure to the final pixel, we're building a better canvas for your imagination. \n\nSwipe to see the evolution of clarity. ➡️\n\nCreate freely at pollinations.ai (Link in Bio)\n\n#pollinations #aiart #generativeai #opensource #techupdate #digitalart #facialupscaling #futuretech #creativecoding",
+  "hashtags": [
+    "#pollinations",
+    "#aiart",
+    "#generativeai",
+    "#opensource",
+    "#techupdate",
+    "#digitalart",
+    "#facialupscaling",
+    "#futuretech",
+    "#creativecoding"
+  ],
+  "alt_text": "A visual journey of AI art evolution. 1. A blurry abstract nebula. 2. Neon grids forming structure. 3. A sharp, crystalline abstract face emerging. 4. A wide, vibrant, perfectly composed digital landscape.",
+  "pr_references": [
+    "#5899",
+    "#6006",
+    "#6003",
+    "#5989",
+    "#5996",
+    "#5992",
+    "#5976",
+    "#5974",
+    "#5965",
+    "#5966",
+    "#5973",
+    "#5972",
+    "#5970",
+    "#5968",
+    "#5969",
+    "#5967",
+    "#5964",
+    "#5963",
+    "#5962",
+    "#5961",
+    "#5960",
+    "#5956",
+    "#5955",
+    "#5957",
+    "#5958",
+    "#5954",
+    "#5953",
+    "#5952",
+    "#5949",
+    "#5950",
+    "#5947"
+  ]
+}

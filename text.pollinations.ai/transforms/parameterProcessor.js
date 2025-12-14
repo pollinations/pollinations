@@ -55,19 +55,12 @@ export function processParameters(messages, options) {
     }
 
     // Force temperature=1 for reasoning models (o1, o3, o4) and GPT-5 series
-    // These Azure OpenAI models only support temperature=1 (default value)
+    // These Azure OpenAI models only support temperature=1
     const isReasoningOrGpt5Model =
         requestedModel &&
         (/^o[134](-mini|-preview)?$/i.test(requestedModel) ||
             /^gpt-5/i.test(requestedModel));
-    if (
-        isReasoningOrGpt5Model &&
-        updatedOptions.temperature !== undefined &&
-        updatedOptions.temperature !== 1
-    ) {
-        log(
-            `Forcing temperature=1 for ${requestedModel} (requested: ${updatedOptions.temperature})`,
-        );
+    if (isReasoningOrGpt5Model) {
         updatedOptions.temperature = 1;
     }
 

@@ -6,6 +6,7 @@ import { PageCard } from "../components/ui/page-card";
 import { PageContainer } from "../components/ui/page-container";
 import { SubCard } from "../components/ui/sub-card";
 import { useTheme } from "../contexts/ThemeContext";
+import { NewsSection } from "../components/NewsSection";
 
 function HelloPage() {
     const { presetCopy } = useTheme();
@@ -64,25 +65,18 @@ function HelloPage() {
 
                 <Divider />
 
-                {/* Pollen */}
+                {/* What's New - Compact news feed (moved up) */}
+                <NewsSection limit={3} compact title="What's New" />
+
+                <Divider />
+
+                {/* Pollen - Combined section */}
                 <div className="mb-12">
                     <Heading variant="section">
                         {pageCopy.pollenTitle.text}
                     </Heading>
-                    <Body spacing="none">
-                        {pageCopy.pollenDescription.text}
-                    </Body>
-                </div>
-
-                <Divider />
-
-                {/* How to Get Pollen */}
-                <div className="mb-12">
-                    <Heading variant="section" spacing="comfortable">
-                        {pageCopy.getPollenTitle.text}
-                    </Heading>
                     <Body spacing="comfortable">
-                        {pageCopy.getPollenIntro.text}
+                        {pageCopy.pollenDescription.text}
                     </Body>
 
                     {/* Two main paths: Buy and Earn */}
@@ -201,35 +195,6 @@ function HelloPage() {
                             </Button>
                         </div>
                     </div>
-                </div>
-
-                <Divider />
-
-                {/* Why Developers Choose Pollinations */}
-                <div className="mb-12">
-                    <Heading variant="section">
-                        {pageCopy.whyChooseTitle.text}
-                    </Heading>
-                    <Body spacing="comfortable">
-                        {pageCopy.whyChooseIntro.text}
-                    </Body>
-                    <ul className="space-y-3">
-                        <li className="font-body text-sm text-text-body-secondary leading-relaxed pl-4 border-l-2 border-border-brand">
-                            {pageCopy.whyChooseFeature1.text}
-                        </li>
-                        <li className="font-body text-sm text-text-body-secondary leading-relaxed pl-4 border-l-2 border-border-brand">
-                            {pageCopy.whyChooseFeature2.text}
-                        </li>
-                        <li className="font-body text-sm text-text-body-secondary leading-relaxed pl-4 border-l-2 border-border-brand">
-                            {pageCopy.whyChooseFeature3.text}
-                        </li>
-                        <li className="font-body text-sm text-text-body-secondary leading-relaxed pl-4 border-l-2 border-border-brand">
-                            {pageCopy.whyChooseFeature4.text}
-                        </li>
-                        <li className="font-body text-sm text-text-body-secondary leading-relaxed pl-4 border-l-2 border-border-brand">
-                            {pageCopy.whyChooseFeature5.text}
-                        </li>
-                    </ul>
                 </div>
 
                 <Divider />

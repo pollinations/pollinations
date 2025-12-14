@@ -87,6 +87,8 @@ export const createDocsRoutes = (apiRouter: Hono<Env>) => {
                             '  -d \'{"model": "openai", "messages": [{"role": "user", "content": "Hello"}]}\'',
                             "```",
                             "",
+                            "**Note:** `gemini` model has `code_execution`, `google_search`, `url_context` tools enabled by default. Pass your own `tools` array to override.",
+                            "",
                             "### Simple Text Endpoint",
                             "```bash",
                             "curl 'https://gen.pollinations.ai/text/hello?key=YOUR_API_KEY'",

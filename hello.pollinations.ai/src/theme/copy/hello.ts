@@ -13,7 +13,7 @@ export const HELLO_PAGE = {
     },
 
     heroTagline: {
-        text: "100% open source. Radically transparent. Built in public.",
+        text: "Open source. No sign-up required. 500+ projects and counting.",
     },
 
     // What Pollinations Is

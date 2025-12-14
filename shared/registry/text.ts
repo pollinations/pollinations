@@ -152,6 +152,8 @@ export const TEXT_SERVICES = {
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
         tools: true,
+        search: true,
+        codeExecution: true,
         isSpecialized: false,
     },
     "deepseek": {
@@ -212,6 +214,7 @@ export const TEXT_SERVICES = {
         outputModalities: ["text"],
         tools: true,
         search: true,
+        codeExecution: true,
         isSpecialized: false,
     },
     "chickytutor": {
@@ -374,6 +377,7 @@ export const TEXT_SERVICES = {
         outputModalities: ["text"],
         tools: true,
         reasoning: true,
+        search: true,
         isSpecialized: false,
     },
     "nova-micro": {

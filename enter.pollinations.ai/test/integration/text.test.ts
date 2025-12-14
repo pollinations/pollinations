@@ -481,6 +481,37 @@ function executeCalculator(args: {
     return JSON.stringify({ result });
 }
 
+test(
+    "POST /v1/chat/completions should accept custom tools for gemini",
+    { timeout: 60000 },
+    async ({ apiKey, mocks }) => {
+        await mocks.enable("polar", "tinybird", "vcr");
+        const response = await SELF.fetch(
+            `http://localhost:3000/api/generate/v1/chat/completions`,
+            {
+                method: "POST",
+                headers: {
+                    "content-type": "application/json",
+                    "authorization": `Bearer ${apiKey}`,
+                },
+                body: JSON.stringify({
+                    model: "gemini",
+                    messages: [{ role: "user", content: "What is 5 + 3?" }],
+                    tools: [calculatorTool],
+                    tool_choice: "auto",
+                    seed: testSeed(),
+                }),
+            },
+        );
+        expect(response.status).toBe(200);
+        const data = await response.json();
+        expect(
+            (data as any).choices[0].message.tool_calls ||
+                (data as any).choices[0].message.content,
+        ).toBeTruthy();
+    },
+);
+
 describe("POST /generate/v1/chat/completions (tool calls)", async () => {
     test.for(toolCallTestCases())(
         "%s should complete full tool call cycle",

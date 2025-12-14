@@ -40,6 +40,7 @@ export const Pricing: FC = () => {
                         <span className="text-gray-600">👂 audio input</span>
                         <span className="text-gray-600">🧠 reasoning</span>
                         <span className="text-gray-600">🔍 search</span>
+                        <span className="text-gray-600">💻 code execution</span>
                     </div>
                     <div className="flex flex-wrap gap-x-4">
                         <span className="flex items-center gap-1 font-medium text-gray-600">

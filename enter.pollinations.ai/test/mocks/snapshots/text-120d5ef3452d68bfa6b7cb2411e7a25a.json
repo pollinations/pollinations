@@ -1,0 +1,129 @@
+{
+  "request": {
+    "url": "http://ec2-3-80-56-235.compute-1.amazonaws.com:16385/openai",
+    "method": "POST",
+    "body": {
+      "type": "json",
+      "data": {
+        "model": "openai",
+        "messages": [
+          {
+            "role": "user",
+            "content": "Test secret key."
+          }
+        ]
+      }
+    },
+    "params": {}
+  },
+  "response": {
+    "status": 200,
+    "statusText": "OK",
+    "headers": {
+      "access-control-allow-origin": "*",
+      "connection": "keep-alive",
+      "content-length": "3118",
+      "content-type": "application/json; charset=utf-8",
+      "date": "Sat, 13 Dec 2025 20:34:35 GMT",
+      "etag": "W/\"c2e-LwsxdG8a+uAQwrlW6RNU5Ym+aJ0\"",
+      "keep-alive": "timeout=5",
+      "x-model-used": "gpt-5-mini-2025-08-07",
+      "x-powered-by": "Express",
+      "x-usage-completion-reasoning-tokens": "576",
+      "x-usage-completion-text-tokens": "495",
+      "x-usage-prompt-text-tokens": "251",
+      "x-usage-total-tokens": "1322"
+    },
+    "body": {
+      "type": "json",
+      "data": {
+        "choices": [
+          {
+            "content_filter_results": {
+              "hate": {
+                "filtered": false,
+                "severity": "safe"
+              },
+              "protected_material_code": {
+                "filtered": false,
+                "detected": false
+              },
+              "protected_material_text": {
+                "filtered": false,
+                "detected": false
+              },
+              "self_harm": {
+                "filtered": false,
+                "severity": "safe"
+              },
+              "sexual": {
+                "filtered": false,
+                "severity": "safe"
+              },
+              "violence": {
+                "filtered": false,
+                "severity": "safe"
+              }
+            },
+            "finish_reason": "stop",
+            "index": 0,
+            "logprobs": null,
+            "message": {
+              "annotations": [],
+              "content": "Do you mean “check that a secret key exists and works” or “check its strength/format”? Also what kind of key (JWT/HMAC secret, AES key, SSH key, API token) and what language or shell are you using? Don’t paste the actual secret here.\n\nQuick testing recipes you can run locally\n\n1) Just check existence (bash)\n- Exists?  \n  [[ -n \"$SECRET_KEY\" ]] && echo \"present\" || echo \"missing\"\n- Length (bytes):  \n  echo -n \"$SECRET_KEY\" | wc -c\n\n2) Basic strength/format checks\n- If it should be random bytes (hex): check allowed chars and length:  \n  echo \"$SECRET_KEY\" | grep -E -x '[0-9a-fA-F]{64}'\n- Rough entropy check (length is often enough for random keys): length >= 32 bytes for HMAC/AES-256.\n\n3) Test HMAC/JWT signing and verification\n- Node (jsonwebtoken):\n  const jwt = require('jsonwebtoken');\n  const token = jwt.sign({test: true}, process.env.SECRET_KEY);\n  jwt.verify(token, process.env.SECRET_KEY); // throws if bad\n- Python (hmac):\n  import hmac, hashlib\n  mac = hmac.new(KEY, b\"test\", hashlib.sha256).hexdigest()\n  # Verify by recomputing and comparing with hmac.compare_digest\n\n4) Test AES encryption/decryption with OpenSSL (hex key)\n- Encrypt:  \n  openssl enc -aes-256-cbc -K <hexkey> -iv <hexiv> -in plain.txt -out ct.bin\n- Decrypt with same K/IV to confirm the key works.\n\n5) Test token-based API key by attempting a minimal authenticated request\n- curl -H \"Authorization: Bearer $SECRET_KEY\" https://api.example.com/health\n- Use a safe endpoint that only verifies the key and doesn’t perform destructive actions.\n\n6) Check for compromise\n- Don’t paste the secret anywhere public.\n- For passwords/tokens, check against breach databases like HaveIBeenPwned (use their API with k-anonymity for safety).\n\nIf you tell me the key type and environment (Linux/Node/Python/AWS/etc.), I’ll give a short exact command or snippet you can run.",
+              "refusal": null,
+              "role": "assistant"
+            }
+          }
+        ],
+        "created": 1765658063,
+        "id": "pllns_7359cc39acb5a663831be0b042378161",
+        "model": "gpt-5-mini-2025-08-07",
+        "object": "chat.completion",
+        "prompt_filter_results": [
+          {
+            "prompt_index": 0,
+            "content_filter_results": {
+              "hate": {
+                "filtered": false,
+                "severity": "safe"
+              },
+              "jailbreak": {
+                "filtered": false,
+                "detected": false
+              },
+              "self_harm": {
+                "filtered": false,
+                "severity": "safe"
+              },
+              "sexual": {
+                "filtered": false,
+                "severity": "safe"
+              },
+              "violence": {
+                "filtered": false,
+                "severity": "safe"
+              }
+            }
+          }
+        ],
+        "system_fingerprint": null,
+        "usage": {
+          "completion_tokens": 1071,
+          "completion_tokens_details": {
+            "accepted_prediction_tokens": 0,
+            "audio_tokens": 0,
+            "reasoning_tokens": 576,
+            "rejected_prediction_tokens": 0
+          },
+          "prompt_tokens": 251,
+          "prompt_tokens_details": {
+            "audio_tokens": 0,
+            "cached_tokens": 0
+          },
+          "total_tokens": 1322
+        }
+      }
+    }
+  }
+}

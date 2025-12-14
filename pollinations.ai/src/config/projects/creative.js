@@ -1146,5 +1146,15 @@ export const creativeProjects = [
     "category": "creative",
     "submissionDate": "2025-12-13",
     "order": 5
+  },
+  {
+    "name": "🎬 PolliVision",
+    "url": "https://fabioarieira.com/pollivision",
+    "description": "Chat-based AI video generator using Pollinations APIs. Type a scene description to get AI-generated videos with auto-enhanced prompts and thumbnails. Features a modern dark theme interface with glass-morphism effects.",
+    "author": "@FabioArieiraBaia",
+    "repo": "https://github.com/FabioArieiraBaia/PolliVision",
+    "category": "creative",
+    "submissionDate": "2025-12-14",
+    "order": 5
   }
 ];

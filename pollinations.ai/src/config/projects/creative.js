@@ -1156,5 +1156,15 @@ export const creativeProjects = [
     "category": "creative",
     "submissionDate": "2025-12-14",
     "order": 5
+  },
+  {
+    "name": "🎄 Northpolelibrary",
+    "url": "https://northpolelibrary.eu",
+    "description": "Create personalized Christmas stories for children in minutes. Enter a child's name, age, and theme to generate unique stories with AI illustrations and text-to-speech narration. Available in English and Hungarian with printable formats.",
+    "author": "@bendmachine",
+    "category": "creative",
+    "language": "hu",
+    "submissionDate": "2025-12-14",
+    "order": 5
   }
 ];

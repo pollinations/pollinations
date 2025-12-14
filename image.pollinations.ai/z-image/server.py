@@ -263,7 +263,7 @@ async def lifespan(app: FastAPI):
             tile=768,
             tile_pad=0,
             pre_pad=0,
-            half=False,
+            half=True,
             device="cuda"
         )
         

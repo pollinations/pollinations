@@ -23,6 +23,21 @@ import warnings
 from contextlib import asynccontextmanager
 import math
 from scipy import ndimage
+from utility import StableDiffusionSafetyChecker, replace_numpy_with_python, replace_sets_with_lists, numpy_to_pil
+from transformers import AutoFeatureExtractor
+
+os.environ["HF_HUB_DISABLE_PROGRESS_BARS"] = "1"
+os.environ["TQDM_DISABLE"] = "1"
+warnings.filterwarnings("ignore")
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+    datefmt="%H:%M:%S"
+)
+logger = logging.getLogger(__name__)
+for noisy in ["httpx", "httpcore", "urllib3", "diffusers", "transformers", "huggingface_hub"]:
+    logging.getLogger(noisy).setLevel(logging.WARNING)
 
 
 def get_public_ip():
@@ -68,28 +83,17 @@ async def periodic_heartbeat():
             await asyncio.sleep(5)
 
 
-os.environ["HF_HUB_DISABLE_PROGRESS_BARS"] = "1"
-os.environ["TQDM_DISABLE"] = "1"
-warnings.filterwarnings("ignore")
-
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-    datefmt="%H:%M:%S"
-)
-logger = logging.getLogger(__name__)
-for noisy in ["httpx", "httpcore", "urllib3", "diffusers", "transformers", "huggingface_hub"]:
-    logging.getLogger(noisy).setLevel(logging.WARNING)
-
 MODEL_ID = "Tongyi-MAI/Z-Image-Turbo"
 MODEL_CACHE = "model_cache"
 UPSCALER_MODEL_x2 = "model_cache/RealESRGAN_x2plus.pth"
 FACE_ENHANCER_MODEL = "model_cache/GFPGANv1.4.pth"
+SAFETY_NSFW_MODEL = "CompVis/stable-diffusion-safety-checker"
 UPSCALE_FACTOR = 2
-MIN_GEN_PIXELS = 768 * 768  # Minimum generation resolution (don't halve below this)
-MAX_FINAL_SIZE = 2048  # Maximum final image dimension
+MIN_GEN_PIXELS = 512 * 512  # Upscale when generating at 512x512 or larger (final size >= 1024x1024)
+MAX_FINAL_SIZE = 2048
 
 generate_lock = threading.Lock()
+
 
 class ImageRequest(BaseModel):
     prompts: list[str] = Field(default=["a photo of an astronaut riding a horse on mars"], min_length=1)
@@ -98,9 +102,11 @@ class ImageRequest(BaseModel):
     steps: int = Field(default=9, le=50)
     seed: int | None = None
 
+
 def calc_time(start, end, msg):
     elapsed = end - start
     print(f"{msg} time: {elapsed:.2f} seconds")
+
 
 def calculate_generation_dimensions(requested_width: int, requested_height: int) -> tuple[int, int, int, int, bool]:
     """Calculate generation dimensions and whether to upscale.
@@ -142,6 +148,7 @@ def calculate_generation_dimensions(requested_width: int, requested_height: int)
     
     return gen_w, gen_h, final_w, final_h, should_upscale
 
+
 def detect_faces_mediapipe(image_np, face_detector):
     """Detect faces using pre-initialized MediaPipe detector."""
     results = face_detector.process(image_np)
@@ -164,6 +171,7 @@ def detect_faces_mediapipe(image_np, face_detector):
             faces.append((x, y, w_box, h_box))
     return faces
 
+
 def upscale_face_region(face_img_np, face_enhancer):
     _, _, face_restored = face_enhancer.enhance(
         face_img_np,
@@ -173,9 +181,11 @@ def upscale_face_region(face_img_np, face_enhancer):
     )
     return face_restored
 
+
 def upscale_background(image_np, upsampler, outscale=UPSCALE_FACTOR):
     upscaled_np, _ = upsampler.enhance(image_np, outscale=outscale)
     return upscaled_np
+
 
 def blend_face_region(base_image, face_image, y1, x1, y2, x2, feather_width=20):
     """Blend face region into base image with feathering to avoid hard edges."""
@@ -217,18 +227,21 @@ def blend_face_region(base_image, face_image, y1, x1, y2, x2, feather_width=20):
         base_image[y1:y2, x1:x2] * (1 - mask)
     ).astype(np.uint8)
 
+
 # Global model instances (initialized in lifespan)
 pipe = None
 upsampler = None
 face_enhancer = None
 face_detector = None
 heartbeat_task = None
+SAFETY_EXTRACTOR = None
+SAFETY_MODEL = None
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Handle startup and shutdown of the application."""
-    global pipe, upsampler, face_enhancer, face_detector, heartbeat_task
+    global pipe, upsampler, face_enhancer, face_detector, heartbeat_task, SAFETY_EXTRACTOR, SAFETY_MODEL
     
     logger.info("Starting up...")
     
@@ -239,6 +252,7 @@ async def lifespan(app: FastAPI):
             MODEL_ID,
             torch_dtype=torch.bfloat16,
             cache_dir=MODEL_CACHE,
+            low_cpu_mem_usage=False,  # Faster loading
         ).to("cuda")
         
         model_x2 = RRDBNet(num_in_ch=3, num_out_ch=3, num_feat=64, num_block=23, num_grow_ch=32, scale=2)
@@ -249,7 +263,7 @@ async def lifespan(app: FastAPI):
             tile=768,
             tile_pad=0,
             pre_pad=0,
-            half=False,
+            half=True,
             device="cuda"
         )
         
@@ -268,6 +282,16 @@ async def lifespan(app: FastAPI):
             model_selection=1,
             min_detection_confidence=0.5
         )
+        
+        # Initialize NSFW safety checker
+        SAFETY_EXTRACTOR = AutoFeatureExtractor.from_pretrained(
+            SAFETY_NSFW_MODEL,
+            cache_dir="model_cache"
+        )
+        SAFETY_MODEL = StableDiffusionSafetyChecker.from_pretrained(
+            SAFETY_NSFW_MODEL,
+            cache_dir="model_cache"
+        ).to("cuda")
         
         load_model_time_end = time.time()
         calc_time(load_model_time, load_model_time_end, "Time to load models")
@@ -296,6 +320,7 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(title="Z-Image-Turbo API", lifespan=lifespan)
 
+
 def verify_enter_token(x_enter_token: str = Header(None, alias="x-enter-token")):
     expected_token = os.getenv("ENTER_TOKEN")
     if not expected_token:
@@ -306,12 +331,36 @@ def verify_enter_token(x_enter_token: str = Header(None, alias="x-enter-token"))
         raise HTTPException(status_code=403, detail="Unauthorized")
     return True
 
+
+def check_nsfw(image_array, safety_checker_adj: float = 0.0):
+    if isinstance(image_array, np.ndarray):
+        if image_array.max() <= 1.0:
+            image_array = (image_array * 255).astype("uint8")
+        else:
+            image_array = image_array.astype("uint8")
+        x_image = Image.fromarray(image_array)
+        x_image = [x_image]
+    elif isinstance(image_array, list) and not isinstance(image_array[0], Image.Image):
+        x_image = numpy_to_pil(image_array)
+    else:
+        x_image = image_array if isinstance(image_array, list) else [image_array]
+    safety_checker_input = SAFETY_EXTRACTOR(x_image, return_tensors="pt").to("cuda")
+    has_nsfw_concept, concepts = SAFETY_MODEL(
+        images=x_image,
+        clip_input=safety_checker_input.pixel_values
+    )
+    has_nsfw_bool = bool(has_nsfw_concept[0])
+    return (
+        has_nsfw_bool,
+        replace_numpy_with_python(replace_sets_with_lists(concepts[0] if isinstance(concepts, list) else concepts))
+    )
+
+
 @app.post("/generate")
 def generate(request: ImageRequest, _auth: bool = Depends(verify_enter_token)):
     logger.info(f"Request: {request}")
     if pipe is None:
         raise HTTPException(status_code=503, detail="Model not loaded")
-    
     seed = request.seed if request.seed is not None else int.from_bytes(os.urandom(8), "big")
     logger.info(f"Using seed: {seed}")
     generator = torch.Generator("cuda").manual_seed(seed)
@@ -330,9 +379,13 @@ def generate(request: ImageRequest, _auth: bool = Depends(verify_enter_token)):
                     num_inference_steps=request.steps,
                     guidance_scale=0.0,
                 )
-            
             image = output.images[0]
             image_np = np.array(image)
+            
+            # Check for NSFW content
+            has_nsfw, concepts = check_nsfw(image_np, safety_checker_adj=0.0)
+            if has_nsfw:
+                raise HTTPException(status_code=400, detail="NSFW content detected")
             
             if should_upscale:
                 # Detect faces for face-aware upscaling
@@ -386,7 +439,6 @@ def generate(request: ImageRequest, _auth: bool = Depends(verify_enter_token)):
         img_byte_arr = io.BytesIO()
         upscaled_image.save(img_byte_arr, format='JPEG', quality=95)
         img_base64 = base64.b64encode(img_byte_arr.getvalue()).decode('utf-8')
-        
         response_content = [{
             "image": img_base64,
             "has_nsfw_concept": False,
@@ -397,16 +449,17 @@ def generate(request: ImageRequest, _auth: bool = Depends(verify_enter_token)):
             "prompt": request.prompts[0]
         }]
         return JSONResponse(content=response_content)
-    
     except torch.cuda.OutOfMemoryError as e:
         logger.error(f"CUDA OOM Error: {e} - Exiting to trigger restart")
         sys.exit(1)
+
 
 @app.get("/health")
 async def health():
     if pipe is None:
         raise HTTPException(status_code=503, detail="Model not loaded")
     return {"status": "healthy", "model": MODEL_ID}
+
 
 if __name__ == "__main__":
     import uvicorn

@@ -20,51 +20,20 @@ export const PriceBadge: FC<{
             ? " /M"
             : "";
 
-    // Tooltip text for pricing emojis
-    const getTooltip = (emoji: string): string => {
-        switch (emoji) {
-            case "💬":
-                return "Input Cost";
-            case "💾":
-                return "Cached Input Cost";
-            case "🔊":
-                return "Audio Cost";
-            case "🖼️":
-                return "Image Cost";
-            case "🎬":
-                return "Video Cost";
-            default:
-                return "";
-        }
-    };
-
     return (
         <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-xs whitespace-nowrap bg-gray-100 text-gray-700">
-            <span title={getTooltip(emoji)} className="cursor-help">
-                {emoji}
-            </span>
+            <span>{emoji}</span>
             <span className="inline-flex items-center gap-1">
-                {validPrices.map((price, j) => {
-                    const subEmoji = subEmojis[j];
-                    const subTooltip = subEmoji ? getTooltip(subEmoji) : "";
-                    return (
-                        <span key={j} className="inline-flex items-center gap-1">
-                            {j > 0 && <span className="text-gray-400">|</span>}
-                            {j > 0 && subEmojis[j] && (
-                                <span
-                                    title={subTooltip}
-                                    className="cursor-help"
-                                >
-                                    {subEmojis[j]}
-                                </span>
-                            )}
-                            <span>
-                                {price}
-                                {suffix}
-                            </span>
+                {validPrices.map((price, j) => (
+                    <span key={j} className="inline-flex items-center gap-1">
+                        {j > 0 && <span className="text-gray-400">|</span>}
+                        {j > 0 && subEmojis[j] && <span>{subEmojis[j]}</span>}
+                        <span>
+                            {price}
+                            {suffix}
                         </span>
-                    );
-                })}
+                    </span>
+                ))}
             </span>
         </span>
     );

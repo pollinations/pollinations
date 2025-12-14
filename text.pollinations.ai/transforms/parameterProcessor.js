@@ -54,13 +54,13 @@ export function processParameters(messages, options) {
         delete updatedOptions.max_tokens;
     }
 
-    // Force temperature=1 for o1/reasoning models to prevent 400 errors
-    // Azure OpenAI o1 models only support temperature=1 (default value)
-    const isO1Model = requestedModel && /^o1(-mini|-preview)?$/i.test(requestedModel);
-    if (isO1Model && updatedOptions.temperature !== undefined && updatedOptions.temperature !== 1) {
-        log(
-            `Forcing temperature=1 for o1 model ${requestedModel} (requested: ${updatedOptions.temperature})`,
-        );
+    // Force temperature=1 for reasoning models (o1, o3, o4) and GPT-5 series
+    // These Azure OpenAI models only support temperature=1
+    const isReasoningOrGpt5Model =
+        requestedModel &&
+        (/^o[134](-mini|-preview)?$/i.test(requestedModel) ||
+            /^gpt-5/i.test(requestedModel));
+    if (isReasoningOrGpt5Model) {
         updatedOptions.temperature = 1;
     }
 

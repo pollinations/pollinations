@@ -1,4 +1,7 @@
-import { getTextServices } from "@shared/registry/registry.ts";
+import {
+    getTextServices,
+    getServiceDefinition,
+} from "@shared/registry/registry.ts";
 import {
     createExecutionContext,
     env,
@@ -431,7 +434,13 @@ test(
 );
 
 const toolCallTestCases = (): [ServiceId, number][] => {
-    return servicesToTest.map((serviceId) => [serviceId, 200]);
+    // Only test models that have tools: true in the registry
+    return servicesToTest
+        .filter((serviceId) => {
+            const service = getServiceDefinition(serviceId);
+            return service?.tools === true;
+        })
+        .map((serviceId) => [serviceId, 200]);
 };
 
 const calculatorTool = {
@@ -480,37 +489,6 @@ function executeCalculator(args: {
     }
     return JSON.stringify({ result });
 }
-
-test(
-    "POST /v1/chat/completions should accept custom tools for gemini",
-    { timeout: 60000 },
-    async ({ apiKey, mocks }) => {
-        await mocks.enable("polar", "tinybird", "vcr");
-        const response = await SELF.fetch(
-            `http://localhost:3000/api/generate/v1/chat/completions`,
-            {
-                method: "POST",
-                headers: {
-                    "content-type": "application/json",
-                    "authorization": `Bearer ${apiKey}`,
-                },
-                body: JSON.stringify({
-                    model: "gemini",
-                    messages: [{ role: "user", content: "What is 5 + 3?" }],
-                    tools: [calculatorTool],
-                    tool_choice: "auto",
-                    seed: testSeed(),
-                }),
-            },
-        );
-        expect(response.status).toBe(200);
-        const data = await response.json();
-        expect(
-            (data as any).choices[0].message.tool_calls ||
-                (data as any).choices[0].message.content,
-        ).toBeTruthy();
-    },
-);
 
 describe("POST /generate/v1/chat/completions (tool calls)", async () => {
     test.for(toolCallTestCases())(
@@ -601,6 +579,7 @@ describe("POST /generate/v1/chat/completions (tool calls)", async () => {
                             ],
                             tools: [calculatorTool],
                             seed: testSeed(),
+                            max_tokens: 4096, // Required for kimi-k2-thinking to return content properly
                         }),
                     },
                 ),
@@ -634,3 +613,101 @@ describe("POST /generate/v1/chat/completions (tool calls)", async () => {
         },
     );
 });
+
+// Model gating tests - API keys with permissions.models restriction
+// TODO: Enable these tests when model gating feature is merged
+// describe("Model gating by API key permissions", async () => {
+//     test(
+//         "Restricted API key should allow access to permitted model (openai-fast)",
+//         { timeout: 30000 },
+//         async ({ restrictedApiKey, mocks }) => {
+//             await mocks.enable("polar", "tinybird", "vcr");
+//             const response = await SELF.fetch(
+//                 `http://localhost:3000/api/generate/v1/chat/completions`,
+//                 {
+//                     method: "POST",
+//                     headers: {
+//                         "content-type": "application/json",
+//                         "authorization": `Bearer ${restrictedApiKey}`,
+//                     },
+//                     body: JSON.stringify({
+//                         model: "openai-fast",
+//                         messages: [
+//                             {
+//                                 role: "user",
+//                                 content: TEST_MESSAGE_CONTENT,
+//                             },
+//                         ],
+//                         seed: testSeed(),
+//                     }),
+//                 },
+//             );
+//             expect(response.status).toBe(200);
+//             await response.text();
+//         },
+//     );
+
+//     test(
+//         "Restricted API key should deny access to non-permitted model (openai)",
+//         { timeout: 30000 },
+//         async ({ restrictedApiKey, mocks }) => {
+//             await mocks.enable("polar", "tinybird", "vcr");
+//             const response = await SELF.fetch(
+//                 `http://localhost:3000/api/generate/v1/chat/completions`,
+//                 {
+//                     method: "POST",
+//                     headers: {
+//                         "content-type": "application/json",
+//                         "authorization": `Bearer ${restrictedApiKey}`,
+//                     },
+//                     body: JSON.stringify({
+//                         model: "openai", // Not in allowed list ["openai-fast", "flux"]
+//                         messages: [
+//                             {
+//                                 role: "user",
+//                                 content: TEST_MESSAGE_CONTENT,
+//                             },
+//                         ],
+//                         seed: testSeed(),
+//                     }),
+//                 },
+//             );
+//             expect(response.status).toBe(403);
+//             const body = await response.json();
+//             expect((body as any).error.message).toContain(
+//                 "Model 'openai' is not allowed for this API key",
+//             );
+//         },
+//     );
+
+//     test(
+//         "Unrestricted API key should allow access to any model",
+//         { timeout: 30000 },
+//         async ({ apiKey, mocks }) => {
+//             await mocks.enable("polar", "tinybird", "vcr");
+//             // Test with a model that would be blocked for restricted keys
+//             const response = await SELF.fetch(
+//                 `http://localhost:3000/api/generate/v1/chat/completions`,
+//                 {
+//                     method: "POST",
+//                     headers: {
+//                         "content-type": "application/json",
+//                         "authorization": `Bearer ${apiKey}`,
+//                     },
+//                     body: JSON.stringify({
+//                         model: "openai",
+//                         messages: [
+//                             {
+//                                 role: "user",
+//                                 content: TEST_MESSAGE_CONTENT,
+//                             },
+//                         ],
+//                         seed: testSeed(),
+//                     }),
+//                 },
+//             );
+//             expect(response.status).toBe(200);
+//             await response.text();
+//         },
+//     );
+// });

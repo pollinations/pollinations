@@ -1,19 +1,29 @@
 import { addDefaultTools } from "./pipe.js";
 
+/** All available Gemini native tools */
+export const GEMINI_TOOLS = {
+    code_execution: { type: "code_execution" },
+    google_search: { type: "google_search" },
+    url_context: { type: "url_context" },
+};
+
 /**
- * Creates a transform that adds default Gemini tools for enhanced capabilities
+ * Creates a transform that adds Gemini tools for enhanced capabilities
  * Only applies if user hasn't passed their own tools
- * Includes: code_execution, google_search, and url_context
- * These tools enable the model to:
- * - Execute Python code for calculations and data processing
- * - Search the web for real-time information
- * - Read and ground responses on specific URLs
+ * @param {Array} tools - Array of tool objects to add (defaults to all tools)
  * @returns {Function} Transform function that adds Gemini tools as defaults
+ * @example
+ * // All tools (code_execution, google_search, url_context)
+ * createGeminiToolsTransform()
+ * // Only search and url_context (no code_execution)
+ * createGeminiToolsTransform([GEMINI_TOOLS.google_search, GEMINI_TOOLS.url_context])
  */
-export function createGeminiToolsTransform() {
-    return addDefaultTools([
-        { type: "code_execution" },
-        { type: "google_search" },
-        { type: "url_context" },
-    ]);
+export function createGeminiToolsTransform(
+    tools = [
+        GEMINI_TOOLS.code_execution,
+        GEMINI_TOOLS.google_search,
+        GEMINI_TOOLS.url_context,
+    ],
+) {
+    return addDefaultTools(tools);
 }

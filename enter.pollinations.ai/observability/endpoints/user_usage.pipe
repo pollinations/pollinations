@@ -1,0 +1,33 @@
+DESCRIPTION >
+    Get usage history for a specific user. Returns request history with model, cost, and token counts.
+    Use 'before' param with ISO timestamp for cursor pagination (e.g. before=2024-12-10T00:00:00).
+
+NODE user_usage_node
+SQL >
+    %
+    SELECT
+        start_time as timestamp,
+        event_type as type,
+        model_used as model,
+        response_status as status,
+        cache_hit as cached,
+        api_key_name as apiKey,
+        token_count_prompt_text as inputText,
+        token_count_prompt_cached as inputCached,
+        token_count_prompt_audio as inputAudio,
+        token_count_prompt_image as inputImage,
+        token_count_completion_text as outputText,
+        token_count_completion_reasoning as outputReasoning,
+        token_count_completion_audio as outputAudio,
+        token_count_completion_image as outputImage,
+        total_price as cost,
+        response_time as responseTime
+    FROM generation_event
+    WHERE user_id = {{String(user_id, '')}}
+    {% if defined(before) %}
+    AND start_time < {{DateTime(before)}}
+    {% end %}
+    ORDER BY start_time DESC
+    LIMIT {{Int32(limit, 100)}}
+
+TYPE endpoint

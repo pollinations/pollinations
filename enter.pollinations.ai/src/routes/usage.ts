@@ -67,35 +67,43 @@ export const usageRoutes = new Hono<Env>()
 
                 if (!response.ok) {
                     const errorText = await response.text();
-                    log.error("[USAGE] Tinybird error: {status} {error}", {
+                    log.error("[USAGE] Tinybird error using URL {url}: {status} {error}", {
+                        url: tinybirdUrl.toString(),
                         status: response.status,
                         error: errorText,
                     });
-                    return c.json({ error: "Failed to fetch usage data" }, 500);
+                    
+                    // Return 503 if Service Unavailable or similar network issues, else 500
+                    const status = response.status >= 500 ? 503 : 500;
+                    return c.json({ 
+                        error: "Failed to fetch usage data", 
+                        details: response.status === 401 ? "Unauthorized" : "Service Unavailable" 
+                    }, status);
                 }
 
                 const data = (await response.json()) as {
                     data: Array<{
-                        startTime: string;
-                        modelUsed: string | null;
-                        eventType: string;
-                        totalPrice: number;
-                        tokenCountPromptText: number;
-                        tokenCountCompletionText: number;
+                        timestamp: string;
+                        type: string;
+                        model: string | null;
+                        status: number;
+                        cached: boolean;
+                        apiKey: string | null;
+                        inputText: number;
+                        inputCached: number;
+                        inputAudio: number;
+                        inputImage: number;
+                        outputText: number;
+                        outputReasoning: number;
+                        outputAudio: number;
+                        outputImage: number;
+                        cost: number;
                         responseTime: number | null;
                     }>;
                 };
 
-                // Transform to cleaner format
-                const usage = data.data.map((row) => ({
-                    timestamp: row.startTime,
-                    model: row.modelUsed,
-                    eventType: row.eventType,
-                    totalPrice: row.totalPrice,
-                    promptTokens: row.tokenCountPromptText,
-                    completionTokens: row.tokenCountCompletionText,
-                    responseTime: row.responseTime,
-                }));
+                // Pass through directly - Tinybird returns clean format
+                const usage = data.data;
 
                 log.debug("[USAGE] Fetched {count} usage records", {
                     count: usage.length,
@@ -103,7 +111,7 @@ export const usageRoutes = new Hono<Env>()
 
                 // Return CSV if requested
                 if (format === "csv") {
-                    const escapeCSV = (val: string | number | null) => {
+                    const escapeCSV = (val: string | number | boolean | null) => {
                         if (val === null || val === undefined) return "";
                         const str = String(val);
                         if (
@@ -116,10 +124,10 @@ export const usageRoutes = new Hono<Env>()
                         return str;
                     };
                     const header =
-                        "timestamp,model,eventType,totalPrice,promptTokens,completionTokens,responseTime";
+                        "timestamp,type,model,status,cached,apiKey,inputText,inputCached,inputAudio,inputImage,outputText,outputReasoning,outputAudio,outputImage,cost,responseTime";
                     const rows = usage.map(
                         (row) =>
-                            `${escapeCSV(row.timestamp)},${escapeCSV(row.model)},${escapeCSV(row.eventType)},${row.totalPrice},${row.promptTokens},${row.completionTokens},${row.responseTime || ""}`,
+                            `${escapeCSV(row.timestamp)},${escapeCSV(row.type)},${escapeCSV(row.model)},${row.status},${row.cached},${escapeCSV(row.apiKey)},${row.inputText},${row.inputCached},${row.inputAudio},${row.inputImage},${row.outputText},${row.outputReasoning},${row.outputAudio},${row.outputImage},${row.cost},${row.responseTime || ""}`,
                     );
                     const csv = [header, ...rows].join("\n");
 

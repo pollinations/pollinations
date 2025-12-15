@@ -126,41 +126,41 @@ jobs:
           echo "Response: $RESPONSE"
           
           # Extract content from response
-          PROJECT_JSON=$(echo "$RESPONSE" | jq -r '.choices[0].message.content // .text // empty' 2>/dev/null)
+          APP_JSON=$(echo "$RESPONSE" | jq -r '.choices[0].message.content // .text // empty' 2>/dev/null)
           
           # Fallback to raw response if extraction failed
-          if [ -z "$PROJECT_JSON" ]; then
-            PROJECT_JSON="$RESPONSE"
+          if [ -z "$APP_JSON" ]; then
+            APP_JSON="$RESPONSE"
           fi
           
           # Strip markdown code fences if present (preserve internal newlines)
-          PROJECT_JSON=$(echo "$PROJECT_JSON" | sed '/^```json$/d; /^```$/d' | sed 's/^[[:space:]]*//; s/[[:space:]]*$//')
+          APP_JSON=$(echo "$APP_JSON" | sed '/^```json$/d; /^```$/d' | sed 's/^[[:space:]]*//; s/[[:space:]]*$//')
           
-          echo "Parsed JSON: $PROJECT_JSON"
+          echo "Parsed JSON: $APP_JSON"
           
           # Validate it's actual JSON
-          if ! echo "$PROJECT_JSON" | jq . > /dev/null 2>&1; then
+          if ! echo "$APP_JSON" | jq . > /dev/null 2>&1; then
             echo "error=Response is not valid JSON" >> $GITHUB_OUTPUT
             exit 1
           fi
           
           # Check for rejection first
-          REJECT=$(echo "$PROJECT_JSON" | jq -r '.reject // empty')
+          REJECT=$(echo "$APP_JSON" | jq -r '.reject // empty')
           if [ -n "$REJECT" ]; then
             echo "reject_reason=$REJECT" >> $GITHUB_OUTPUT
             echo "rejected=true" >> $GITHUB_OUTPUT
           else
             # Check for error (needs more info)
-            ERROR=$(echo "$PROJECT_JSON" | jq -r '.error // empty')
+            ERROR=$(echo "$APP_JSON" | jq -r '.error // empty')
             if [ -n "$ERROR" ]; then
               echo "error=$ERROR" >> $GITHUB_OUTPUT
               echo "needs_info=true" >> $GITHUB_OUTPUT
             else
-              echo "project_json<<EOF" >> $GITHUB_OUTPUT
-              echo "$PROJECT_JSON" >> $GITHUB_OUTPUT
+              echo "app_json<<EOF" >> $GITHUB_OUTPUT
+              echo "$APP_JSON" >> $GITHUB_OUTPUT
               echo "EOF" >> $GITHUB_OUTPUT
-              echo "name=$(echo "$PROJECT_JSON" | jq -r '.name')" >> $GITHUB_OUTPUT
-              echo "category=$(echo "$PROJECT_JSON" | jq -r '.category')" >> $GITHUB_OUTPUT
+              echo "name=$(echo "$APP_JSON" | jq -r '.name')" >> $GITHUB_OUTPUT
+              echo "category=$(echo "$APP_JSON" | jq -r '.category')" >> $GITHUB_OUTPUT
             fi
           fi
 
@@ -236,8 +236,8 @@ jobs:
           ISSUE_NUMBER: ${{ steps.issue.outputs.number }}
           ISSUE_AUTHOR: ${{ steps.issue.outputs.author }}
           ISSUE_AUTHOR_ID: ${{ steps.issue.outputs.author_id }}
-          PROJECT_JSON: ${{ steps.parse.outputs.project_json }}
-          PROJECT_NAME: ${{ steps.parse.outputs.name }}
+          APP_JSON: ${{ steps.parse.outputs.app_json }}
+          APP_NAME: ${{ steps.parse.outputs.name }}
           CATEGORY: ${{ steps.parse.outputs.category }}
         run: |
           # Determine file path
@@ -253,13 +253,13 @@ jobs:
           esac
           
           # Create branch
-          SLUG=$(echo "$PROJECT_NAME" | tr '[:upper:]' '[:lower:]' | tr ' ' '-' | tr -cd 'a-z0-9-')
+          SLUG=$(echo "$APP_NAME" | tr '[:upper:]' '[:lower:]' | tr ' ' '-' | tr -cd 'a-z0-9-')
           BRANCH="auto/app-${ISSUE_NUMBER}-${SLUG}"
           git checkout -b "$BRANCH"
           
           # Format app entry
           TODAY=$(date +%Y-%m-%d)
-          ENTRY=$(echo "$PROJECT_JSON" | jq --arg date "$TODAY" '. + {submissionDate: $date, order: 5}')
+          ENTRY=$(echo "$APP_JSON" | jq --arg date "$TODAY" '. + {submissionDate: $date, order: 5}')
           
           # Add to category file (before final ])
           node -e "
@@ -278,7 +278,7 @@ jobs:
           git config user.name "pollinations-ai[bot]"
           git config user.email "pollinations-ai[bot]@users.noreply.github.com"
           git add -A
-          git commit -m "Add $PROJECT_NAME to $CATEGORY
+          git commit -m "Add $APP_NAME to $CATEGORY
 
           Co-authored-by: $ISSUE_AUTHOR <${ISSUE_AUTHOR_ID}+${ISSUE_AUTHOR}@users.noreply.github.com>
           Fixes #$ISSUE_NUMBER"
@@ -286,30 +286,30 @@ jobs:
           git push origin "$BRANCH" --force
           
           # Extract fields for PR body
-          PROJECT_URL=$(echo "$PROJECT_JSON" | jq -r '.url // "N/A"')
-          PROJECT_DESC=$(echo "$PROJECT_JSON" | jq -r '.description // "N/A"')
-          PROJECT_REPO=$(echo "$PROJECT_JSON" | jq -r '.repo // empty')
-          PROJECT_LANG=$(echo "$PROJECT_JSON" | jq -r '.language // empty')
+          APP_URL=$(echo "$APP_JSON" | jq -r '.url // "N/A"')
+          APP_DESC=$(echo "$APP_JSON" | jq -r '.description // "N/A"')
+          APP_REPO=$(echo "$APP_JSON" | jq -r '.repo // empty')
+          APP_LANG=$(echo "$APP_JSON" | jq -r '.language // empty')
           
           # Build PR body via GITHUB_ENV (available in next step)
           echo "PR_BODY<<EOF" >> $GITHUB_ENV
           echo "## 🌸 App Submission Summary" >> $GITHUB_ENV
           echo "" >> $GITHUB_ENV
-          echo "- Name: $PROJECT_NAME" >> $GITHUB_ENV
+          echo "- Name: $APP_NAME" >> $GITHUB_ENV
           echo "- Category: $CATEGORY" >> $GITHUB_ENV
-          echo "- URL: $PROJECT_URL" >> $GITHUB_ENV
-          echo "- Repo: ${PROJECT_REPO:-N/A}" >> $GITHUB_ENV
-          echo "- Language: ${PROJECT_LANG:-English}" >> $GITHUB_ENV
+          echo "- URL: $APP_URL" >> $GITHUB_ENV
+          echo "- Repo: ${APP_REPO:-N/A}" >> $GITHUB_ENV
+          echo "- Language: ${APP_LANG:-English}" >> $GITHUB_ENV
           echo "- Submitter: @$ISSUE_AUTHOR" >> $GITHUB_ENV
           echo "" >> $GITHUB_ENV
           echo "### Description" >> $GITHUB_ENV
-          echo "$PROJECT_DESC" >> $GITHUB_ENV
+          echo "$APP_DESC" >> $GITHUB_ENV
           echo "" >> $GITHUB_ENV
           echo "---" >> $GITHUB_ENV
           echo "Co-authored-by: $ISSUE_AUTHOR <${ISSUE_AUTHOR_ID}+${ISSUE_AUTHOR}@users.noreply.github.com>" >> $GITHUB_ENV
           echo "Fixes #$ISSUE_NUMBER" >> $GITHUB_ENV
           echo "EOF" >> $GITHUB_ENV
-          echo "PROJECT_NAME_ENV=$PROJECT_NAME" >> $GITHUB_ENV
+          echo "APP_NAME_ENV=$APP_NAME" >> $GITHUB_ENV
           echo "CATEGORY_ENV=$CATEGORY" >> $GITHUB_ENV
           echo "BRANCH_ENV=$BRANCH" >> $GITHUB_ENV
 
@@ -323,7 +323,7 @@ jobs:
             echo "PR #$EXISTING_PR already exists"
           else
             gh pr create \
-              --title "Add ${{ env.PROJECT_NAME_ENV }} to ${{ env.CATEGORY_ENV }}" \
+              --title "Add ${{ env.APP_NAME_ENV }} to ${{ env.CATEGORY_ENV }}" \
               --body "${{ env.PR_BODY }}" \
               --base main \
               --head "${{ env.BRANCH_ENV }}"

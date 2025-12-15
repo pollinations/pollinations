@@ -56,7 +56,7 @@ export const polar = createMiddleware<PolarEnv>(async (c, next) => {
         },
         {
             log,
-            ttl: 60, // 60 seconds (minimum allowed value)
+            ttl: 300, // 5 minutes - safe with local pending spend tracking
             kv: c.env.KV,
             keyGenerator: (userId) => `polar:customer:state:${userId}`,
         },
@@ -78,7 +78,7 @@ export const polar = createMiddleware<PolarEnv>(async (c, next) => {
         },
         {
             log,
-            ttl: 60, // 60 seconds (minimum allowed value)
+            ttl: 300, // 5 minutes - safe with local pending spend tracking
             kv: c.env.KV,
             keyGenerator: (userId) => `polar:customer:meters:${userId}`,
         },

@@ -70,11 +70,12 @@ function getTierFromProductId(
 }
 
 function shouldShowActivateButton(
-    assigned: TierStatus,
-    active: TierStatus,
+    _assigned: TierStatus,
+    _active: TierStatus,
 ): boolean {
-    // Show button if assigned tier differs from active subscription
-    return assigned !== "none" && assigned !== active;
+    // Subscriptions are now auto-created on signup and auto-reactivated on cancellation
+    // No manual activation button needed
+    return false;
 }
 
 function getNextMidnightUTC(): string {

@@ -62,13 +62,11 @@ const NoTierScreen: FC<{ has_polar_error?: boolean }> = ({
                     the page or try again later.
                 </p>
             ) : (
-                <div className="px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg">
-                    <p className="text-sm text-gray-900 leading-relaxed">
-                        ⭕ <strong>No Active Subscription:</strong> You don't
-                        have an active tier subscription yet.
-                        <br />
-                        Click the <strong>Activate Tier</strong> button above to
-                        get started.
+                <div className="px-3 py-2 bg-yellow-50 border border-yellow-200 rounded-lg">
+                    <p className="text-sm text-yellow-900 leading-relaxed">
+                        ⏳ <strong>Setting Up Your Subscription:</strong> Your
+                        subscription is being activated. Please refresh the page
+                        in a few moments.
                     </p>
                 </div>
             )}

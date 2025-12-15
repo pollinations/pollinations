@@ -1,9 +1,12 @@
 import { Hono } from "hono";
 import { getLogger } from "@logtape/logtape";
-import { Polar } from "@polar-sh/sdk";
+import { drizzle } from "drizzle-orm/d1";
+import { eq } from "drizzle-orm";
 import type { Env } from "../env.ts";
 import { enqueueTierSync, deletePolarIds } from "../polar-cache.ts";
 import type { TierSyncEvent } from "../polar-cache.ts";
+import { user as userTable } from "../db/schema/better-auth.ts";
+import type { TierName } from "../tier-sync.ts";
 
 const log = getLogger(["hono", "webhooks"]);
 
@@ -46,7 +49,7 @@ export const webhooksRoutes = new Hono<Env>().post("/polar", async (c) => {
     switch (payload.type) {
         case "subscription.canceled":
         case "subscription.revoked":
-            await handleSubscriptionCanceled(c.env.KV, payload);
+            await handleSubscriptionCanceled(c.env.KV, c.env.DB, payload);
             break;
 
         case "subscription.updated":
@@ -128,6 +131,7 @@ async function verifyWebhookSignature(
 
 async function handleSubscriptionCanceled(
     kv: KVNamespace,
+    d1: D1Database,
     payload: WebhookPayload,
 ): Promise<void> {
     const externalId = payload.data.customer?.external_id;
@@ -136,10 +140,21 @@ async function handleSubscriptionCanceled(
         return;
     }
 
+    // Look up the user's tier from D1 (source of truth)
+    const db = drizzle(d1);
+    const users = await db
+        .select({ tier: userTable.tier })
+        .from(userTable)
+        .where(eq(userTable.id, externalId))
+        .limit(1);
+
+    const userTier = (users[0]?.tier as TierName) || "spore";
+
     log.info(
-        "Subscription canceled for user {userId}, enqueueing reactivation",
+        "Subscription canceled for user {userId}, enqueueing reactivation to tier {tier}",
         {
             userId: externalId,
+            tier: userTier,
         },
     );
 
@@ -147,7 +162,7 @@ async function handleSubscriptionCanceled(
 
     const event: TierSyncEvent = {
         userId: externalId,
-        targetTier: "spore",
+        targetTier: userTier,
         userUpdatedAt: Date.now(),
         createdAt: Date.now(),
         attempts: 0,

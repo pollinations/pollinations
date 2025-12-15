@@ -18,6 +18,8 @@ export function createAuth(env: Cloudflare.Env) {
         server: env.POLAR_SERVER,
     });
 
+    const defaultTierProductId = env.POLAR_PRODUCT_TIER_SPORE;
+
     const db = drizzle(env.DB);
 
     const PUBLISHABLE_KEY_PREFIX = "pk";
@@ -97,7 +99,12 @@ export function createAuth(env: Cloudflare.Env) {
                 }),
             },
         },
-        plugins: [adminPlugin, apiKeyPlugin, polarPlugin(polar), openAPIPlugin],
+        plugins: [
+            adminPlugin,
+            apiKeyPlugin,
+            polarPlugin(polar, defaultTierProductId),
+            openAPIPlugin,
+        ],
         telemetry: { enabled: false },
     });
 }
@@ -106,7 +113,10 @@ export type Auth = ReturnType<typeof createAuth>;
 export type Session = Auth["$Infer"]["Session"]["session"];
 export type User = Auth["$Infer"]["Session"]["user"];
 
-function polarPlugin(polar: Polar): BetterAuthPlugin {
+function polarPlugin(
+    polar: Polar,
+    defaultTierProductId?: string,
+): BetterAuthPlugin {
     return {
         id: "polar",
         init: () => ({
@@ -115,7 +125,10 @@ function polarPlugin(polar: Polar): BetterAuthPlugin {
                     user: {
                         create: {
                             before: onBeforeUserCreate(polar),
-                            after: onAfterUserCreate(polar),
+                            after: onAfterUserCreate(
+                                polar,
+                                defaultTierProductId,
+                            ),
                         },
                         update: {
                             after: onUserUpdate(polar),
@@ -170,7 +183,7 @@ function onBeforeUserCreate(polar: Polar) {
     };
 }
 
-function onAfterUserCreate(polar: Polar) {
+function onAfterUserCreate(polar: Polar, defaultTierProductId?: string) {
     return async (user: GenericUser, ctx?: GenericEndpointContext) => {
         if (!ctx) return;
         try {
@@ -186,6 +199,34 @@ function onAfterUserCreate(polar: Polar) {
                         externalId: user.id,
                     },
                 });
+            }
+
+            // Auto-create subscription for new user's default tier
+            if (existingCustomer && defaultTierProductId) {
+                try {
+                    // Check if user already has an active subscription
+                    const { result: subs } = await polar.subscriptions.list({
+                        customerId: existingCustomer.id,
+                        active: true,
+                        limit: 1,
+                    });
+
+                    if (subs.items.length === 0) {
+                        // No active subscription, create one for the default tier
+                        await polar.subscriptions.create({
+                            productId: defaultTierProductId,
+                            customerId: existingCustomer.id,
+                        });
+                        ctx.context.logger.info(
+                            `Created default tier subscription for user ${user.id}`,
+                        );
+                    }
+                } catch (subError) {
+                    // Log but don't fail user creation if subscription fails
+                    ctx.context.logger.error(
+                        `Failed to create default subscription: ${subError}`,
+                    );
+                }
             }
         } catch (e: unknown) {
             const messageOrError = e instanceof Error ? e.message : e;

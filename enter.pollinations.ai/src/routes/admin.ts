@@ -12,7 +12,8 @@ const log = getLogger(["hono", "admin"]);
 
 export const adminRoutes = new Hono<Env>()
     .use("*", async (c, next) => {
-        const adminKey = c.env.ADMIN_API_KEY;
+        // Use ENTER_TOKEN for admin authentication (already in GH secrets)
+        const adminKey = c.env.ENTER_TOKEN;
         if (!adminKey) {
             return c.json({ error: "Admin API not configured" }, 500);
         }

@@ -41,6 +41,6 @@ jobs:
               owner: context.repo.owner,
               repo: context.repo.repo,
               issue_number: context.payload.pull_request.number,
-              labels: ["external"]
+              labels: ["pr:external"]
             });
-            console.log(`Applied label: external to PR #${context.payload.pull_request.number} by ${author}`);
+            console.log(`Applied label: pr:external to PR #${context.payload.pull_request.number} by ${author}`);

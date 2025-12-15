@@ -394,7 +394,7 @@ Pollinations.AI is used in various projects, including:
 | 🆕 🕰️ CHRONOS - Time Machine ([⭐ 0](https://github.com/yvr98/TimeMachine)) | Immersive time-travel experience where users select any location on a 3D globe... | @yvr98 |
 | 🆕 [🎬 Viral Flow](https://fabioarieira.com/viralflow) | Browser-based video production platform using Pollinations for visual... | @fabioarieira |
 | 🆕 [🎬 PolliVision](https://fabioarieira.com/pollivision) ([⭐ 0](https://github.com/FabioArieiraBaia/PolliVision)) | Chat-based AI video generator using Pollinations APIs. Type a scene description... | @FabioArieiraBaia |
-| 🆕 [🎄 Northpolelibrary](https://northpolelibrary.eu) | Create personalized Christmas stories for children in minutes. Enter a child's... | @bendmachine |
+| 🆕 [🎄 Northpolelibrary](https://northpolelibrary.eu) | Create personalized Christmas stories for children in minutes. Enter a child's... | @bzddbz |
 
 ### Games 🎲
 

@@ -7,6 +7,9 @@ import { validator } from "../middleware/validator.ts";
 import type { Env } from "../env.ts";
 import { describeRoute } from "hono-openapi";
 import { Polar } from "@polar-sh/sdk";
+import { drizzle } from "drizzle-orm/d1";
+import { event } from "../db/schema/event.ts";
+import { and, eq, gte, sql } from "drizzle-orm";
 
 export const productSlugs = [
     "v1:product:pack:5x2",
@@ -83,6 +86,34 @@ export const polarRoutes = new Hono<Env>()
                 externalCustomerId: user.id,
             });
             return c.json(result);
+        },
+    )
+    .get(
+        "/customer/pending-spend",
+        describeRoute({
+            tags: ["Auth"],
+            description:
+                "Get pending spend from recent events not yet processed by Polar.",
+            hide: ({ c }) => c?.env.ENVIRONMENT !== "development",
+        }),
+        async (c) => {
+            const user = c.var.auth.requireUser();
+            const db = drizzle(c.env.DB);
+            const PENDING_SPEND_WINDOW_MS = 10 * 60 * 1000; // 10 minutes
+            const windowStart = new Date(Date.now() - PENDING_SPEND_WINDOW_MS);
+            const result = await db
+                .select({
+                    total: sql<number>`COALESCE(SUM(${event.totalPrice}), 0)`,
+                })
+                .from(event)
+                .where(
+                    and(
+                        eq(event.userId, user.id),
+                        eq(event.isBilledUsage, true),
+                        gte(event.createdAt, windowStart),
+                    ),
+                );
+            return c.json({ pendingSpend: result[0]?.total || 0 });
         },
     )
     .get(

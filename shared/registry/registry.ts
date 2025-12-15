@@ -139,19 +139,11 @@ const SERVICE_REGISTRY = Object.fromEntries(
 
 /**
  * Resolve a service ID from a name or alias
- * @param serviceId - Service name, alias, or null/undefined for default
- * @param eventType - Event type to determine default service
+ * @param serviceId - Service name or alias
  * @returns Resolved service ID
+ * @throws Error if service ID is not found
  */
-export function resolveServiceId(
-    serviceId: string | null | undefined,
-    eventType: EventType,
-): ServiceId {
-    if (!serviceId) {
-        return eventType === "generate.text"
-            ? DEFAULT_TEXT_MODEL
-            : DEFAULT_IMAGE_MODEL;
-    }
+export function resolveServiceId(serviceId: string): ServiceId {
     // Check if it's a direct service ID
     if (SERVICE_REGISTRY[serviceId]) {
         return serviceId as ServiceId;

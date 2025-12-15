@@ -26,7 +26,7 @@ export const Pricing: FC = () => {
                     🤖 Vote on next models
                 </Button>
             </div>
-            <div className="bg-amber-50/30 rounded-2xl p-8 border border-amber-300 space-y-8 overflow-x-auto md:overflow-x-visible">
+            <div className="bg-amber-50/30 rounded-2xl p-8 border border-amber-300 space-y-8 overflow-x-auto md:overflow-x-visible [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
                 <ModelTable models={imageModels} type="image" />
                 <ModelTable models={videoModels} type="video" />
                 <ModelTable models={textModels} type="text" />

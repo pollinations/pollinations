@@ -116,6 +116,15 @@ export async function getOrLookupPolarIds(
     return await lookupAndCachePolarIds(kv, polar, userId);
 }
 
+/**
+ * Enqueue a tier sync event to the KV outbox.
+ *
+ * NOTE: There is a potential race condition between reading and writing to KV
+ * (KV doesn't support atomic compare-and-set). This is acceptable for tier sync
+ * because: (1) we're not handling financial transactions, (2) the worst case is
+ * a redundant sync that sets the same tier, (3) the cron runs every minute so
+ * any missed update will be caught on the next run.
+ */
 export async function enqueueTierSync(
     kv: KVNamespace,
     event: TierSyncEvent,

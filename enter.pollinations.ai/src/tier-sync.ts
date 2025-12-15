@@ -187,9 +187,11 @@ export async function processPendingTierSyncs(
             await completeTierSync(kv, event.userId);
             processed++;
         } else {
+            // Update userUpdatedAt to now so this retry won't be overridden by stale checks
             const updatedEvent: TierSyncEvent = {
                 ...event,
                 attempts: event.attempts + 1,
+                userUpdatedAt: Date.now(),
             };
             await enqueueTierSync(kv, updatedEvent);
             failed++;

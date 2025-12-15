@@ -582,6 +582,8 @@ def check_comments_for_new_trigger(repo: str, pr_number: str, token: str, after_
                     created_at = comment.get('created_at', '')
                     if created_at > after_time:
                         return True
+                    # Skip this comment if it's older than after_time
+                    continue
                 else:
                     return True
 

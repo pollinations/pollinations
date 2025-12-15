@@ -49,6 +49,28 @@ export const polar = createMiddleware<PolarEnv>(async (c, next) => {
                     externalId: userId,
                 });
             } catch (error) {
+                // Handle case where customer doesn't exist in Polar yet
+                // (e.g., users created before Polar integration or failed sync)
+                const errorStr = String(error);
+                const isNotFound =
+                    errorStr.includes("ResourceNotFound") ||
+                    errorStr.includes("Not found") ||
+                    (error instanceof Error &&
+                        (error.name === "ResourceNotFound" ||
+                            error.message.includes("ResourceNotFound") ||
+                            error.message.includes("Not found")));
+
+                if (isNotFound) {
+                    log.warn(
+                        "[POLAR] Customer not found in Polar for user {userId}, returning empty state",
+                        { userId },
+                    );
+                    return {
+                        activeSubscriptions: [],
+                        grantedBenefits: [],
+                        activeMeters: [],
+                    } as unknown as CustomerState;
+                }
                 throw new Error("Failed to get customer state.", {
                     cause: error,
                 });

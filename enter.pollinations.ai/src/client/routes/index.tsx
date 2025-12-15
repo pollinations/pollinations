@@ -60,11 +60,11 @@ function RouteComponent() {
 
     const balances = {
         pack:
-            customer?.activeMeters.find(
+            customer?.activeMeters?.find(
                 (m) => m.meterId === config.pollenPackMeterId,
             )?.balance || 0,
         tier:
-            customer?.activeMeters.find(
+            customer?.activeMeters?.find(
                 (m) => m.meterId === config.pollenTierMeterId,
             )?.balance || 0,
     };

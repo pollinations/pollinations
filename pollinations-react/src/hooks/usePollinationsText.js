@@ -51,7 +51,7 @@ const usePollinationsText = (prompt, options = {}) => {
 
             headers["Authorization"] = `Bearer ${apiKey}`;
 
-            const response = await fetch("https://enter.pollinations.ai/api/generate/openai", {
+            const response = await fetch("https://gen.pollinations.ai/v1/chat/completions", {
                 method: "POST",
                 headers,
                 body: JSON.stringify({ messages, seed, model, jsonMode }),

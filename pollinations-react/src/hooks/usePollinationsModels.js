@@ -34,7 +34,7 @@ const usePollinationsModels = (type = "text", options = {}) => {
                 };
 
                 const response = await fetch(
-                    "https://enter.pollinations.ai/api/models",
+                    "https://gen.pollinations.ai/text/models",
                     { headers, signal: abortControllerRef.current.signal }
                 );
 

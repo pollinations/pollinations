@@ -62,7 +62,7 @@ const usePollinationsImage = (prompt, options = {}) => {
             };
 
             const response = await fetch(
-                `https://enter.pollinations.ai/api/generate/image/${encodeURIComponent(prompt)}?${params.toString()}`,
+                `https://gen.pollinations.ai/image/${encodeURIComponent(prompt)}?${params.toString()}`,
                 { headers, signal: abortControllerRef.current.signal }
             );
 

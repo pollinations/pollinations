@@ -693,5 +693,14 @@ export const chatProjects = [
     "language": "ar",
     "submissionDate": "2025-12-13",
     "order": 5
+  },
+  {
+    "name": "SaturnAI 🪐",
+    "url": "https://chat.xdativo.cloud",
+    "description": "Web-based AI chat app focused on clean UI and smooth user experience. Features text chat and image generation through Pollinations, optimized for both mobile and desktop with a lightweight, responsive design.",
+    "author": "@xdativo",
+    "category": "chat",
+    "submissionDate": "2025-12-14",
+    "order": 5
   }
 ];

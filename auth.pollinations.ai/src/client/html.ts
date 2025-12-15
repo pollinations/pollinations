@@ -30,14 +30,14 @@ export const generateHTML = () => `<!DOCTYPE html>
         <div id="intro-text" style="margin-top: 20px; padding: 28px; background: linear-gradient(135deg, #fef9e7 0%, #fff8e1 100%); border: 3px solid #f59e0b; border-radius: 16px; box-shadow: 0 4px 20px rgba(245, 158, 11, 0.15);">
             
             <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 16px;">
-                <span style="font-size: 2rem;">🌱</span>
+                <span style="font-size: 2rem;">⚠️</span>
                 <h2 style="margin: 0; color: #d97706; font-size: 1.5em; font-weight: 700;">
-                    New Platform Available!
+                    Please Migrate — Retiring Q1 2025
                 </h2>
             </div>
             
             <p style="margin: 0 0 16px 0; color: #1f2937; font-size: 1.05em; line-height: 1.6;">
-                We've launched a <strong>new developer platform</strong> at <strong>enter.pollinations.ai</strong>!
+                This legacy service is being <strong>retired in Q1 2025</strong>. Please migrate your apps to <strong>enter.pollinations.ai</strong>.
             </p>
             
             <p style="margin: 0 0 12px 0; color: #374151; font-size: 1em; line-height: 1.6;">
@@ -51,16 +51,15 @@ export const generateHTML = () => `<!DOCTYPE html>
             </ul>
             
             <p style="margin: 0 0 20px 0; color: #4b5563; font-size: 0.95em; line-height: 1.6;">
-                <strong>Your existing tokens and the legacy API will continue to work.</strong><br>
-                We recommend migrating to the new platform when convenient.
+                Your existing tokens continue to work for now. We'll announce any changes in advance — but please migrate soon to avoid disruption.
             </p>
             
             <a href="https://enter.pollinations.ai" target="_blank" style="display: inline-block; background: linear-gradient(135deg, #10b981, #059669); color: white; padding: 14px 36px; border-radius: 30px; text-decoration: none; font-weight: bold; font-size: 1.1em; box-shadow: 0 6px 20px rgba(16, 185, 129, 0.35);">
-                → Try the New Platform
+                → Migrate Now
             </a>
             
             <p style="margin: 20px 0 0 0; color: #6b7280; font-size: 0.9em; font-style: italic;">
-                Login below to manage your existing tokens and domains.
+                Login below to view your existing tokens and domains.
             </p>
         </div>
 

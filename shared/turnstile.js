@@ -1,5 +1,5 @@
 /**
- * Turnstile verification for Hacktoberfest apps
+ * Turnstile verification for Pollinations apps
  * Shared between text and image cache workers
  */
 
@@ -57,7 +57,7 @@ export async function verifyTurnstile(token, ip, hostname, env) {
 }
 
 /**
- * Check if request is from Hacktoberfest subdomain and needs verification
+ * Check if request is from app subdomain and needs verification
  */
 export function needsTurnstileVerification(origin, method) {
 	if (!origin) return false;
@@ -68,7 +68,7 @@ export function needsTurnstileVerification(origin, method) {
 	// Allow localhost for testing
 	if (origin.startsWith("http://localhost:")) return true;
 
-	// Check for Hacktoberfest subdomains (but not main pollinations.ai domains)
+	// Check for app subdomains (but not main pollinations.ai domains)
 	if (origin.endsWith(".pollinations.ai")) {
 		// Exclude main API domains
 		const mainDomains = [
@@ -83,7 +83,7 @@ export function needsTurnstileVerification(origin, method) {
 }
 
 /**
- * Middleware to verify Turnstile token for Hacktoberfest requests
+ * Middleware to verify Turnstile token for app requests
  * Returns null if verification passes, or Response object if it fails
  */
 export async function checkTurnstile(request, env) {
@@ -94,7 +94,7 @@ export async function checkTurnstile(request, env) {
 		return null; // No verification needed
 	}
 
-	console.log(`[turnstile] 🔐 Hacktoberfest request from: ${origin}`);
+	console.log(`[turnstile] 🔐 App request from: ${origin}`);
 
 	// Get Turnstile token from header
 	const token = request.headers.get("x-turnstile-token");

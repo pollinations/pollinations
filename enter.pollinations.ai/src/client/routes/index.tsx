@@ -35,14 +35,19 @@ export const Route = createFileRoute("/")({
         const honoTiers = hc<TiersRoutes>("/api/tiers");
 
         // Parallelize independent API calls for faster loading
-        const [customer, tierData, apiKeysResult] = await Promise.all([
-            honoPolar.customer.state
-                .$get()
-                .then((r) => (r.ok ? r.json() : null)),
-            honoTiers.view.$get().then((r) => (r.ok ? r.json() : null)),
-            context.auth.apiKey.list(),
-        ]);
+        const [customer, tierData, apiKeysResult, pendingSpendResult] =
+            await Promise.all([
+                honoPolar.customer.state
+                    .$get()
+                    .then((r) => (r.ok ? r.json() : null)),
+                honoTiers.view.$get().then((r) => (r.ok ? r.json() : null)),
+                context.auth.apiKey.list(),
+                honoPolar.customer["pending-spend"]
+                    .$get()
+                    .then((r) => (r.ok ? r.json() : null)),
+            ]);
         const apiKeys = apiKeysResult.data || [];
+        const pendingSpend = pendingSpendResult?.pendingSpend || 0;
 
         return {
             auth: context.auth,
@@ -50,13 +55,15 @@ export const Route = createFileRoute("/")({
             customer,
             apiKeys,
             tierData,
+            pendingSpend,
         };
     },
 });
 
 function RouteComponent() {
     const router = useRouter();
-    const { auth, user, customer, apiKeys, tierData } = Route.useLoaderData();
+    const { auth, user, customer, apiKeys, tierData, pendingSpend } =
+        Route.useLoaderData();
 
     const balances = {
         pack:
@@ -234,6 +241,7 @@ function RouteComponent() {
                     <PollenBalance
                         balances={balances}
                         dailyPollen={tierData?.daily_pollen}
+                        pendingSpend={pendingSpend}
                     />
                 </div>
                 {tierData && (

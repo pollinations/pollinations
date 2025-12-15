@@ -116,6 +116,10 @@ export const polar = createMiddleware<PolarEnv>(async (c, next) => {
         // Get recent local spend to account for Polar processing delay
         const recentSpend = await getRecentSpend(userId);
 
+        if (recentSpend > 0) {
+            log.debug("Pending spend from D1: {recentSpend}", { recentSpend });
+        }
+
         // Adjust meter balances by subtracting recent spend.
         // Note: We deduct from highest-priority meters first, which may not match
         // actual meter usage. This is intentionally conservative - it may briefly

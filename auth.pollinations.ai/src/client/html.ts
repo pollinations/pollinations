@@ -26,22 +26,22 @@ export const generateHTML = () => `<!DOCTYPE html>
             <span class="auth-title">🐝 Auth 🌸</span>
         </h1>
         
-        <!-- Unified Shutdown Notice -->
-        <div id="intro-text" style="margin-top: 20px; padding: 28px; background: linear-gradient(135deg, #fef2f2 0%, #fff1f2 100%); border: 3px solid #ef4444; border-radius: 16px; box-shadow: 0 4px 20px rgba(239, 68, 68, 0.15);">
+        <!-- Migration Notice -->
+        <div id="intro-text" style="margin-top: 20px; padding: 28px; background: linear-gradient(135deg, #fef9e7 0%, #fff8e1 100%); border: 3px solid #f59e0b; border-radius: 16px; box-shadow: 0 4px 20px rgba(245, 158, 11, 0.15);">
             
             <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 16px;">
-                <span style="font-size: 2rem;">🌿</span>
-                <h2 style="margin: 0; color: #dc2626; font-size: 1.5em; font-weight: 700;">
-                    Service Closing — December 15, 2025
+                <span style="font-size: 2rem;">🌱</span>
+                <h2 style="margin: 0; color: #d97706; font-size: 1.5em; font-weight: 700;">
+                    New Platform Available!
                 </h2>
             </div>
             
             <p style="margin: 0 0 16px 0; color: #1f2937; font-size: 1.05em; line-height: 1.6;">
-                <strong>auth.pollinations.ai</strong> will shut down permanently on December 15 at 00:00 UTC.
+                We've launched a <strong>new developer platform</strong> at <strong>enter.pollinations.ai</strong>!
             </p>
             
             <p style="margin: 0 0 12px 0; color: #374151; font-size: 1em; line-height: 1.6;">
-                This legacy service has been <strong>replaced by our new developer platform</strong> featuring:
+                The new platform offers:
             </p>
             
             <ul style="margin: 0 0 16px 0; padding-left: 24px; color: #374151; font-size: 1em; line-height: 1.8;">
@@ -51,16 +51,16 @@ export const generateHTML = () => `<!DOCTYPE html>
             </ul>
             
             <p style="margin: 0 0 20px 0; color: #4b5563; font-size: 0.95em; line-height: 1.6;">
-                Tokens from this service will stop working, and data will not be migrated.<br>
-                <strong>Continue building at enter.pollinations.ai.</strong>
+                <strong>Your existing tokens and the legacy API will continue to work.</strong><br>
+                We recommend migrating to the new platform when convenient.
             </p>
             
             <a href="https://enter.pollinations.ai" target="_blank" style="display: inline-block; background: linear-gradient(135deg, #10b981, #059669); color: white; padding: 14px 36px; border-radius: 30px; text-decoration: none; font-weight: bold; font-size: 1.1em; box-shadow: 0 6px 20px rgba(16, 185, 129, 0.35);">
-                → Go to Developer Console
+                → Try the New Platform
             </a>
             
             <p style="margin: 20px 0 0 0; color: #6b7280; font-size: 0.9em; font-style: italic;">
-                Login below only to view old tokens and domains.
+                Login below to manage your existing tokens and domains.
             </p>
         </div>
 

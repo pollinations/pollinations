@@ -385,6 +385,7 @@ def generate(request: ImageRequest, _auth: bool = Depends(verify_enter_token)):
             # Check for NSFW content
             has_nsfw, concepts = check_nsfw(image_np, safety_checker_adj=0.0)
             if has_nsfw:
+                logger.warning(f"NSFW detected - bad_concepts: {concepts.get('bad_concepts', [])}, concept_scores: {concepts.get('concept_scores', {})}")
                 raise HTTPException(status_code=400, detail="NSFW content detected")
             
             if should_upscale:

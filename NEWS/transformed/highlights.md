@@ -1,3 +1,7 @@
+- **2025-12-07** – **🎥 Video Generation** Create videos from text or images using **Veo** and **Seedance** models via API or [Chat](https://hello.pollinations.ai).
+- **2025-12-07** – **✨ Seedream 4.5** Upgraded image generation to **Seedream 4.5** supporting stunning 2K resolution.
+- **2025-12-07** – **🔍 Web Search** **Perplexity** and **Gemini** models can now access real-time web search results.
+- **2025-12-07** – **🚀 Amazon Nova Micro** Added `nova-micro` to text services for ultra-low-cost, high-speed inference.
 - **2025-12-07** – **🎥 Video Generation** Create videos from text or images using the new `veo` and `seedance` models. [API Docs](https://enter.pollinations.ai/api/docs)
 - **2025-12-07** – **🎨 High-Res Upgrades** `seedream` updated to v4.5 (2K resolution) and `seedance` upgraded to Pro-Fast for superior quality.
 - **2025-12-07** – **📊 Richer Chat** The [Chat UI](https://chat.pollinations.ai) now renders data charts and supports video generation directly.
@@ -56,4 +60,3 @@
 - **2025-08-09** – **🌟 Community Showcase** Welcomed 8 new projects including [Island AI](https://islandai.app) and [Botzy](https://github.com/pollinations/pollinations/pull/3489) to the ecosystem.
 - **2025-08-02** – **🚀 Hybrid Image Model** Upgraded image generation to use BPAIGen (1216px) as the primary engine with Kontext fallback for higher quality results. [Image API](https://image.pollinations.ai)
 - **2025-08-02** – **📚 OpenAPI Spec** Added official OpenAPI specification for the Image API to help developers build integrations faster. [API Docs](https://enter.pollinations.ai/api/docs)
-

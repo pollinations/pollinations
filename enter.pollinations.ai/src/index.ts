@@ -11,6 +11,7 @@ import { usageRoutes } from "./routes/usage.ts";
 import { createDocsRoutes } from "./routes/docs.ts";
 import { apiKeysRoutes } from "./routes/api-keys.ts";
 import { webhooksRoutes } from "./routes/webhooks.ts";
+import { adminRoutes } from "./routes/admin.ts";
 import { processPendingTierSyncs, getTierProductMap } from "./tier-sync.ts";
 import { Polar } from "@polar-sh/sdk";
 import { requestId } from "hono/request-id";
@@ -30,6 +31,7 @@ export const api = new Hono<Env>()
     .route("/api-keys", apiKeysRoutes)
     .route("/usage", usageRoutes)
     .route("/webhooks", webhooksRoutes)
+    .route("/admin", adminRoutes)
     .route("/generate", proxyRoutes);
 
 const docsRoutes = createDocsRoutes(api);

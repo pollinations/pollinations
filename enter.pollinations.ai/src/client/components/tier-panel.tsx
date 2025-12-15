@@ -66,7 +66,7 @@ const NoTierScreen: FC<{ has_polar_error?: boolean }> = ({
                     <p className="text-sm text-yellow-900 leading-relaxed">
                         ⏳ <strong>Setting Up Your Subscription:</strong> Your
                         subscription is being activated. Please refresh the page
-                        in a few moments.
+                        in 1-2 minutes.
                     </p>
                 </div>
             )}
@@ -126,7 +126,7 @@ const TierScreen: FC<{
                     <p className="text-sm text-yellow-900 leading-relaxed">
                         ⏳ <strong>Reactivating Subscription:</strong> Your
                         subscription is being renewed automatically. Please
-                        refresh the page in a few moments.
+                        refresh the page in 1-2 minutes.
                     </p>
                 </div>
             ) : (

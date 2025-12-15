@@ -6,7 +6,7 @@ import {
 } from "./transforms/createSystemPromptTransform.js";
 import { pipe } from "./transforms/pipe.js";
 import { createGoogleSearchTransform } from "./transforms/createGoogleSearchTransform.js";
-import { createGeminiToolsTransform } from "./transforms/createGeminiToolsTransform.js";
+import { createGeminiToolsTransform } from "./transforms/createGeminiToolsTransform.ts";
 
 // Import persona prompts
 import midijourneyPrompt from "./personas/midijourney.js";
@@ -44,7 +44,7 @@ const models: ModelDefinition[] = [
     },
     {
         name: "openai-large",
-        config: portkeyConfig["gpt-5.2"],
+        config: portkeyConfig["gpt-5.2-2025-12-11"],
         transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
     },
     {
@@ -127,7 +127,10 @@ const models: ModelDefinition[] = [
     {
         name: "gemini-large",
         config: portkeyConfig["gemini-3-pro-preview"],
-        transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
+        transform: pipe(
+            createSystemPromptTransform(BASE_PROMPTS.conversational),
+            createGeminiToolsTransform(["google_search", "url_context"]),
+        ),
     },
     {
         name: "nova-micro",

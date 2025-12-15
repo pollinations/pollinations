@@ -656,4 +656,51 @@ export const chatProjects = [
         "submissionDate": "2025-12-04",
         "order": 5,
     },
+  {
+    "name": "🍎 AI Food Guide and Track Calories",
+    "url": "https://nutri.selfhost.io.vn/",
+    "description": "AI-powered nutrition assistant that helps identify foods and track daily calorie intake. Get nutritional information and maintain dietary awareness through conversational AI guidance.",
+    "author": "@newnol",
+    "repo": "https://github.com/newnol/nutritrack",
+    "category": "chat",
+    "submissionDate": "2025-12-13",
+    "order": 5
+  },
+  {
+    "name": "✨ ToneShift AI",
+    "url": "https://toneshift-ai.lovable.app/",
+    "description": "Rewrite any text into different emotional tones while preserving meaning. Choose from Calm, Friendly, Excited, Professional, Empathetic, Confident, Playful, Apologetic, or Direct. Chat-style interface with example prompts, no sign-in required.",
+    "author": "@UstaDeveloper",
+    "category": "chat",
+    "submissionDate": "2025-12-13",
+    "order": 5
+  },
+  {
+    "name": "✨ ToneShift AI",
+    "url": "https://toneshift-ai.lovable.app/",
+    "description": "Instantly rewrite any text into different emotional tones while preserving meaning. Choose from Calm, Friendly, Excited, Professional, Empathetic, and more. Paste your message, pick a tone, and transform it with one click. Powered by Pollinations LLM.",
+    "author": "@UstaDeveloper",
+    "category": "chat",
+    "submissionDate": "2025-12-13",
+    "order": 5
+  },
+  {
+    "name": "💬 Chat AI",
+    "url": "https://t.me/Chat2qai_bot",
+    "description": "Arabic Telegram bot serving as a versatile AI assistant. Answers questions, helps brainstorm ideas, assists with translation and summarization, and supports image creation and editing.",
+    "author": "@Alhmam",
+    "category": "chat",
+    "language": "ar",
+    "submissionDate": "2025-12-13",
+    "order": 5
+  },
+  {
+    "name": "SaturnAI 🪐",
+    "url": "https://chat.xdativo.cloud",
+    "description": "Web-based AI chat app focused on clean UI and smooth user experience. Features text chat and image generation through Pollinations, optimized for both mobile and desktop with a lightweight, responsive design.",
+    "author": "@xdativo",
+    "category": "chat",
+    "submissionDate": "2025-12-14",
+    "order": 5
+  }
 ];

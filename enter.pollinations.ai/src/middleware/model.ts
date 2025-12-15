@@ -7,8 +7,8 @@ import { DEFAULT_IMAGE_MODEL } from "@shared/registry/image.ts";
 
 export type ModelVariables = {
     model: {
-        /** The raw model string from the request (before resolution) */
-        raw: string;
+        /** The model string from the request (before resolution) */
+        requested: string;
         /** The resolved canonical service ID */
         resolved: ServiceId;
     };
@@ -56,7 +56,7 @@ export function resolveModel(eventType: EventType) {
         }
 
         c.set("model", {
-            raw: model,
+            requested: model,
             resolved,
         });
 

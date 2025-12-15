@@ -55,9 +55,8 @@ export const apiKeysRoutes = new Hono<Env>()
             },
         });
 
-        // Store keySuffix (last 4 chars) for all keys, plus plaintextKey for publishable keys
-        if (apiKey.key) {
-            const keySuffix = apiKey.key.slice(-4);
+        // Store plaintextKey in metadata for publishable keys (so they can be displayed)
+        if (apiKey.key && isPublishable) {
             const db = drizzle(c.env.DB, { schema });
             await db
                 .update(schema.apikey)
@@ -65,8 +64,7 @@ export const apiKeysRoutes = new Hono<Env>()
                     metadata: JSON.stringify({
                         description,
                         keyType,
-                        keySuffix,
-                        ...(isPublishable && { plaintextKey: apiKey.key }),
+                        plaintextKey: apiKey.key,
                     }),
                 })
                 .where(eq(schema.apikey.id, apiKey.id));

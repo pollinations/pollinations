@@ -204,7 +204,7 @@ async function trackRequest(
     request: HonoRequest,
 ): Promise<RequestTrackingData> {
     // Model is already resolved by the resolveModel middleware
-    const modelRequested = modelInfo.raw;
+    const modelRequested = modelInfo.requested;
     const resolvedModelRequested = modelInfo.resolved;
 
     const modelProvider = getServiceDefinition(resolvedModelRequested).provider;

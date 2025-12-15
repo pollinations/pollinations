@@ -215,11 +215,7 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                                                         />
                                                     ) : (
                                                         <span className="font-mono text-xs text-gray-500">
-                                                            {apiKey.metadata?.[
-                                                                "keySuffix"
-                                                            ]
-                                                                ? `...${apiKey.metadata["keySuffix"]}`
-                                                                : `${apiKey.start}...`}
+                                                            {apiKey.start}...
                                                         </span>
                                                     )}
                                                 </Cell>

@@ -145,7 +145,7 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                 {apiKeys.length ? (
                     <div className="bg-blue-50/30 rounded-2xl p-8 border border-blue-300 overflow-hidden">
                         <div className="overflow-x-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
-                            <div className="grid grid-cols-[auto_auto_auto_auto_auto_auto] gap-x-4 gap-y-4 w-max">
+                            <div className="grid grid-cols-[auto_1fr_auto_auto_auto_auto] gap-x-4 gap-y-4 min-w-max">
                                 <span className="font-bold text-pink-400 text-sm">
                                     Type
                                 </span>

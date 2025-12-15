@@ -1,46 +1,46 @@
 # Agent Guidelines for Pollinations.AI
 
-## Project Submission Handling
+## App Submission Handling
 
-When handling project submission issues (labeled as **APPS** in GitHub):
+When handling app submission issues (labeled as **APPS** in GitHub):
 
-1. Add new projects to the appropriate category file in:
+1. Add new apps to the appropriate category file in:
 
     - pollinations.ai/src/config/projects/[category].js (e.g., creative.js, vibeCoding.js, etc.)
     - DO NOT manually edit the README.md file directly
-    - After adding projects, regenerate the lists by running:
+    - After adding apps, regenerate the lists by running:
         ```bash
         node pollinator-agent/project-list-scripts/generate-project-table.js --update-readme
         ```
 
-2. Project Entry Format:
+2. App Entry Format:
 
     ```javascript
     {
-      name: "Project Name",
-      url: "https://project-url.com", // REQUIRED - working project URL
-      description: "Brief description of the project.",
+      name: "App Name",
+      url: "https://app-url.com", // REQUIRED - working app URL
+      description: "Brief description of the app.",
       author: "@discord_username", // if available or alternatively a URL to a social media profile
       repo: "https://github.com/repo-url", // OPTIONAL - GitHub repo if available
       submissionDate: "YYYY-MM-DD", // automatically added for new submissions
-      language: "zh-CN", // for non-English projects, include the language code
-      hidden: true, // optional, set to true for broken projects that shouldn't appear in README.md
+      language: "zh-CN", // for non-English apps, include the language code
+      hidden: true, // optional, set to true for broken apps that shouldn't appear in README.md
       order: 1 // ordering priority based on status (1=highest, 5=lowest)
     }
     ```
 
-3. Project Ordering Rules:
+3. App Ordering Rules:
 
-    - In the README.md file, projects should be ordered within their categories:
+    - In the README.md file, apps should be ordered within their categories:
         - First by the `order` parameter (lower values first: 1, 2, 3, 4, 5)
         - Then by GitHub star count (higher star counts first)
-        - For projects with the same order and no stars, use the submission date if there is one, if not keep the order as it is.
+        - For apps with the same order and no stars, use the submission date if there is one, if not keep the order as it is.
     - In the website rendering, the projectList.js order will be dynamically sorted using the same criteria so the actual order in the projectList.js file should not be changed
 
-4. Hiding Broken Projects:
+4. Hiding Broken Apps:
 
-    - Set `hidden: true` for broken/unmaintained projects
-    - Hidden projects excluded from README.md but remain in projectList.js
+    - Set `hidden: true` for broken/unmaintained apps
+    - Hidden apps excluded from README.md but remain in projectList.js
 
 5. GitHub Star Counts:
 
@@ -59,11 +59,11 @@ When handling project submission issues (labeled as **APPS** in GitHub):
 
 ## Classification Guidelines
 
--   One category per project (no duplicates)
+-   One category per app (no duplicates)
 -   Based on actual functionality, not source JSON category
 -   Prefer less-populated categories for balance
 -   Track uncategorized in `tracking/toProcess.md`
--   Source of truth: `accumulated-projects.json`
+-   Source of truth: `accumulated-apps.json`
 
 **Category Mapping:**
 
@@ -76,7 +76,7 @@ When handling project submission issues (labeled as **APPS** in GitHub):
 
 7. Add UTF-8 icons to titles (🤖 bots, 🎨 creative, etc.)
 
-8. Non-English projects:
+8. Non-English apps:
 
     - Add country flag emoji (🇨🇳, 🇪🇸, etc.)
     - Include `language` field with language code
@@ -85,7 +85,7 @@ When handling project submission issues (labeled as **APPS** in GitHub):
 9. Commit attribution:
 
     ```
-    Add [Project Name] to [category]
+    Add [App Name] to [category]
 
     Co-authored-by: [Username] <[user_id]+[username]@users.noreply.github.com>
     Closes #[Issue]

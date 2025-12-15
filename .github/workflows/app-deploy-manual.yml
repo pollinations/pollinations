@@ -1,12 +1,12 @@
-name: Deploy Hacktoberfest Apps
+name: Deploy Apps (Manual)
 
 on:
   push:
     branches: [main]
     paths:
-      - 'hacktoberfest-2025/*/**'
-      - '!hacktoberfest-2025/scripts/**'
-      - '!hacktoberfest-2025/*.md'
+      - 'apps/*/**'
+      - '!apps/scripts/**'
+      - '!apps/*.md'
   workflow_dispatch:
     inputs:
       app_name:
@@ -42,19 +42,19 @@ jobs:
           fi
           
           # Auto trigger - detect changed files
-          CHANGED_FILES=$(git diff --name-only HEAD^ HEAD | grep '^hacktoberfest-2025/' || true)
+          CHANGED_FILES=$(git diff --name-only HEAD^ HEAD | grep '^apps/' || true)
           
           if [ -z "$CHANGED_FILES" ]; then
-            echo "No hacktoberfest apps changed"
+            echo "No apps changed"
             echo "apps=" >> $GITHUB_OUTPUT
             exit 0
           fi
           
-          # Extract app names (first directory after hacktoberfest-2025/)
+          # Extract app names (first directory after apps/)
           APPS=$(echo "$CHANGED_FILES" | \
-            grep -v '^hacktoberfest-2025/scripts/' | \
-            grep -v '^hacktoberfest-2025/.*\.md$' | \
-            sed 's|^hacktoberfest-2025/\([^/]*\)/.*|\1|' | \
+            grep -v '^apps/scripts/' | \
+            grep -v '^apps/.*\.md$' | \
+            sed 's|^apps/\([^/]*\)/.*|\1|' | \
             sort -u | \
             tr '\n' ',' | \
             sed 's/,$//')
@@ -72,7 +72,7 @@ jobs:
           IFS=',' read -ra APPS <<< "${{ steps.detect.outputs.apps }}"
           for app in "${APPS[@]}"; do
             echo "🚀 Deploying $app..."
-            node hacktoberfest-2025/scripts/deploy-app.js "$app"
+            node apps/scripts/deploy-app.js "$app"
           done
 
       - name: Upload app files
@@ -89,20 +89,20 @@ jobs:
             echo "📦 Uploading files for $app..."
             
             # Check if app has package.json (needs build)
-            if [ -f "hacktoberfest-2025/$app/package.json" ]; then
-              cd "hacktoberfest-2025/$app"
+            if [ -f "apps/$app/package.json" ]; then
+              cd "apps/$app"
               npm install
               npm run build || echo "No build script, using source files"
               cd ../..
             fi
             
             # Deploy via wrangler pages
-            PROJECT_NAME="hacktoberfest-$app"
-            SOURCE_DIR="hacktoberfest-2025/$app"
+            APP_NAME="pollinations-$app"
+            SOURCE_DIR="apps/$app"
             
             # Get output dir from apps.json
             OUTPUT_DIR=$(node -e "
-              const config = require('./hacktoberfest-2025/apps.json');
+              const config = require('./apps/apps.json');
               console.log(config['$app']?.outputDir || '.');
             ")
             
@@ -110,8 +110,8 @@ jobs:
               SOURCE_DIR="$SOURCE_DIR/$OUTPUT_DIR"
             fi
             
-            echo "Deploying from $SOURCE_DIR to $PROJECT_NAME"
-            wrangler pages deploy "$SOURCE_DIR" --project-name="$PROJECT_NAME" --branch=main
+            echo "Deploying from $SOURCE_DIR to $APP_NAME"
+            wrangler pages deploy "$SOURCE_DIR" --project-name="$APP_NAME" --branch=main
           done
 
       - name: Comment on commit
@@ -126,5 +126,5 @@ jobs:
               owner: context.repo.owner,
               repo: context.repo.repo,
               commit_sha: context.sha,
-              body: `🚀 Deployed Hacktoberfest apps:\n\n${urls}\n\n_Note: DNS propagation may take a few minutes_`
+              body: `🚀 Deployed apps:\n\n${urls}\n\n_Note: DNS propagation may take a few minutes_`
             });

@@ -32,12 +32,12 @@ export const generateHTML = () => `<!DOCTYPE html>
             <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 16px;">
                 <span style="font-size: 2rem;">⚠️</span>
                 <h2 style="margin: 0; color: #d97706; font-size: 1.5em; font-weight: 700;">
-                    Please Migrate — Retiring Q1 2025
+                    Please Migrate — Retiring Q1 2026
                 </h2>
             </div>
             
             <p style="margin: 0 0 16px 0; color: #1f2937; font-size: 1.05em; line-height: 1.6;">
-                This legacy service is being <strong>retired in Q1 2025</strong>. Please migrate your apps to <strong>enter.pollinations.ai</strong>.
+                This legacy service is being <strong>retired in Q1 2026</strong>. Please migrate your apps to <strong>enter.pollinations.ai</strong>.
             </p>
             
             <p style="margin: 0 0 12px 0; color: #374151; font-size: 1em; line-height: 1.6;">

@@ -4,7 +4,7 @@ on:
   push:
     paths:
       - 'apps/**'
-    branches: [master, main, fix/chat-vite-base-path]
+    branches: [production]
   workflow_dispatch:
 
 jobs:
@@ -106,7 +106,7 @@ jobs:
             # Step 3: Deploy to production
             wrangler pages deploy "apps/$app/$DIR" \
               --project-name="pollinations-$app" \
-              --branch=main \
+              --branch=production \
               --commit-dirty=true
             
             echo "✅ Deployment complete for $app"

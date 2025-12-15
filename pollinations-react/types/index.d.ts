@@ -51,7 +51,11 @@ declare module "@pollinations/react" {
     export function usePollinationsImage(
         prompt: string,
         options?: ImageOptions,
-    ): string;
+    ): {
+        data: string | null;
+        isLoading: boolean;
+        error: string | null;
+    };
 
     export function usePollinationsChat(
         initialMessages?: Message[],

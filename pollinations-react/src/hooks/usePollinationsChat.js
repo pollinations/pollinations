@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef } from "react";
+import { useState, useCallback, useRef, useEffect } from "react";
 
 /**
  * Custom hook for multi-turn chat with the Pollinations API.
@@ -18,9 +18,22 @@ const usePollinationsChat = (initMessages = [], options = {}) => {
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState(null);
     const initialMessagesRef = useRef(initMessages);
+    const abortControllerRef = useRef(null);
 
     const sendMessage = useCallback(
         async (userMessage) => {
+            if (!userMessage || userMessage.trim() === "") return;
+
+            if (typeof seed !== "number" || seed < 0 || seed > 4294967295) {
+                setError("Seed must be a 32-bit unsigned integer (0-4294967295)");
+                return;
+            }
+
+            if (abortControllerRef.current) {
+                abortControllerRef.current.abort();
+            }
+            abortControllerRef.current = new AbortController();
+
             const updatedMessages = [
                 ...messages,
                 { role: "user", content: userMessage },
@@ -51,6 +64,7 @@ const usePollinationsChat = (initMessages = [], options = {}) => {
                         seed,
                         model,
                     }),
+                    signal: abortControllerRef.current.signal,
                 });
 
                 if (!response.ok) {
@@ -58,13 +72,21 @@ const usePollinationsChat = (initMessages = [], options = {}) => {
                 }
 
                 const data = await response.text();
-                const assistantMessage = jsonMode ? JSON.parse(data) : data;
+                let assistantMessage = data;
+                if (jsonMode) {
+                    try {
+                        assistantMessage = JSON.parse(data);
+                    } catch (parseErr) {
+                        throw new Error(`Failed to parse JSON response: ${parseErr.message}`);
+                    }
+                }
 
                 setMessages((prevMessages) => [
                     ...prevMessages,
                     { role: "assistant", content: assistantMessage },
                 ]);
             } catch (err) {
+                if (err.name === "AbortError") return;
                 console.error("Error fetching chat:", err);
                 setError(err.message);
             } finally {
@@ -73,6 +95,14 @@ const usePollinationsChat = (initMessages = [], options = {}) => {
         },
         [messages, jsonMode, seed, model, apiKey],
     );
+
+    useEffect(() => {
+        return () => {
+            if (abortControllerRef.current) {
+                abortControllerRef.current.abort();
+            }
+        };
+    }, []);
 
     const reset = useCallback(() => {
         setMessages(initialMessagesRef.current);

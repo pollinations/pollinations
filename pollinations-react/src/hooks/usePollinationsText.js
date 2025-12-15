@@ -29,9 +29,13 @@ const usePollinationsText = (prompt, options = {}) => {
     const abortControllerRef = useRef(null);
 
     const fetchText = useCallback(async () => {
-        if (prompt === null) return;
+        if (!prompt || prompt.trim() === "") return;
 
-        // Cancel previous request
+        if (typeof seed !== "number" || seed < 0 || seed > 4294967295) {
+            setError("Seed must be a 32-bit unsigned integer (0-4294967295)");
+            return;
+        }
+
         if (abortControllerRef.current) {
             abortControllerRef.current.abort();
         }
@@ -72,7 +76,14 @@ const usePollinationsText = (prompt, options = {}) => {
             }
 
             const text = await response.text();
-            const result = jsonMode ? JSON.parse(text) : text;
+            let result = text;
+            if (jsonMode) {
+                try {
+                    result = JSON.parse(text);
+                } catch (parseErr) {
+                    throw new Error(`Failed to parse JSON response: ${parseErr.message}`);
+                }
+            }
             setData(result);
         } catch (err) {
             if (err.name === "AbortError") return;

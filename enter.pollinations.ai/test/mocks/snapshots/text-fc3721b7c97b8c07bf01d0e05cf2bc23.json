@@ -1,0 +1,129 @@
+{
+  "request": {
+    "url": "http://ec2-3-80-56-235.compute-1.amazonaws.com:16385/openai",
+    "method": "POST",
+    "body": {
+      "type": "json",
+      "data": {
+        "model": "openai-fast",
+        "messages": [
+          {
+            "role": "user",
+            "content": "Hi"
+          }
+        ]
+      }
+    },
+    "params": {}
+  },
+  "response": {
+    "status": 200,
+    "statusText": "OK",
+    "headers": {
+      "access-control-allow-origin": "*",
+      "connection": "keep-alive",
+      "content-length": "1622",
+      "content-type": "application/json; charset=utf-8",
+      "date": "Sat, 13 Dec 2025 20:34:43 GMT",
+      "etag": "W/\"656-YMA5sBsCRqXBHxLgqk4gLfgexTg\"",
+      "keep-alive": "timeout=5",
+      "x-model-used": "gpt-5-nano-2025-08-07",
+      "x-powered-by": "Express",
+      "x-usage-completion-reasoning-tokens": "448",
+      "x-usage-completion-text-tokens": "108",
+      "x-usage-prompt-text-tokens": "248",
+      "x-usage-total-tokens": "804"
+    },
+    "body": {
+      "type": "json",
+      "data": {
+        "choices": [
+          {
+            "content_filter_results": {
+              "hate": {
+                "filtered": false,
+                "severity": "safe"
+              },
+              "protected_material_code": {
+                "filtered": false,
+                "detected": false
+              },
+              "protected_material_text": {
+                "filtered": false,
+                "detected": false
+              },
+              "self_harm": {
+                "filtered": false,
+                "severity": "safe"
+              },
+              "sexual": {
+                "filtered": false,
+                "severity": "safe"
+              },
+              "violence": {
+                "filtered": false,
+                "severity": "safe"
+              }
+            },
+            "finish_reason": "stop",
+            "index": 0,
+            "logprobs": null,
+            "message": {
+              "annotations": [],
+              "content": "Hey there! Nice to meet you. What would you like to do today—learn something, brainstorm, or just chat? Here are a few options if you’re not sure:\n\n- Quick answers or explanations\n- Help planning a project, study, or trip\n- Brainstorming or writing help\n- A bit of light chat, humor, or storytelling\n- Just venting or talking through something\n\nTell me what’s on your mind, and we’ll take it from there.",
+              "refusal": null,
+              "role": "assistant"
+            }
+          }
+        ],
+        "created": 1765658080,
+        "id": "pllns_3f99aa3bccad7938cd2a2dd3614b05dc",
+        "model": "gpt-5-nano-2025-08-07",
+        "object": "chat.completion",
+        "prompt_filter_results": [
+          {
+            "prompt_index": 0,
+            "content_filter_results": {
+              "hate": {
+                "filtered": false,
+                "severity": "safe"
+              },
+              "jailbreak": {
+                "filtered": false,
+                "detected": false
+              },
+              "self_harm": {
+                "filtered": false,
+                "severity": "safe"
+              },
+              "sexual": {
+                "filtered": false,
+                "severity": "safe"
+              },
+              "violence": {
+                "filtered": false,
+                "severity": "safe"
+              }
+            }
+          }
+        ],
+        "system_fingerprint": null,
+        "usage": {
+          "completion_tokens": 556,
+          "completion_tokens_details": {
+            "accepted_prediction_tokens": 0,
+            "audio_tokens": 0,
+            "reasoning_tokens": 448,
+            "rejected_prediction_tokens": 0
+          },
+          "prompt_tokens": 248,
+          "prompt_tokens_details": {
+            "audio_tokens": 0,
+            "cached_tokens": 0
+          },
+          "total_tokens": 804
+        }
+      }
+    }
+  }
+}

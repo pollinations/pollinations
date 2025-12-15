@@ -393,6 +393,8 @@ Pollinations.AI is used in various projects, including:
 | 🆕 [🎨 Imagly AI](https://imaglyai.web.app/) | Free AI image generator that creates realistic photos, digital artwork, fantasy... | @imaglyai |
 | 🆕 🕰️ CHRONOS - Time Machine ([⭐ 0](https://github.com/yvr98/TimeMachine)) | Immersive time-travel experience where users select any location on a 3D globe... | @yvr98 |
 | 🆕 [🎬 Viral Flow](https://fabioarieira.com/viralflow) | Browser-based video production platform using Pollinations for visual... | @fabioarieira |
+| 🆕 [🎬 PolliVision](https://fabioarieira.com/pollivision) ([⭐ 0](https://github.com/FabioArieiraBaia/PolliVision)) | Chat-based AI video generator using Pollinations APIs. Type a scene description... | @FabioArieiraBaia |
+| 🆕 [🎄 Northpolelibrary](https://northpolelibrary.eu) | Create personalized Christmas stories for children in minutes. Enter a child's... | @bzddbz |
 
 ### Games 🎲
 
@@ -519,7 +521,7 @@ Pollinations.AI is used in various projects, including:
 | [DeepSeek Prompt](https://www.deepseekprompt.top/) | DeepSeek Prompt is a front-end application for managing and optimizing AI... | [lipengliang2...](mailto:lipengliang2012@163.com) |
 | [AI Dream Girl Studio](https://www.tiktok.com/@herinyourhead) | AI Dream Girl Studio is a content creation pipeline built around... | [Link](https://www.tiktok.com/@herinyourhead) |
 | [NeonSpark AI ✨](https://neonspark-ai.web.app/) | NeonSpark AI is a web app that offers AI-powered chat and image generation... | [developer.as...](mailto:developer.asaad@gmail.com) |
-| 🆕 [PolliPalmTop 📱](https://aiworld.institute/server/pollipalmtopv1.apk) | Android app dedicated to Pollinations with AI chat, web search, and image... | @BiG L |
+| [PolliPalmTop 📱](https://aiworld.institute/server/pollipalmtopv1.apk) | Android app dedicated to Pollinations with AI chat, web search, and image... | @BiG L |
 | 🆕 [Xibe-chat-cli 💬](https://pypi.org/project/xibe-chat-cli/) ([⭐ 0](https://github.com/iotserver24/xibe-chat-cli)) | AI chat and image generation directly in your terminal with a rich text UI.... | @R3AP3Redit |
 | [Fikiri Chat AI 💬](https://fikirichat.netlify.app/) | Multi-model AI chat platform with seamless LLM switching via Pollinations API.... | @brianmativo |
 | [PollinationsFreeAI 🆓](https://pollinations-free-ai.vercel.app/) ([⭐ 0](https://github.com/Poli-Chat/PollinationsFreeAI)) | Free AI platform leveraging Pollinations for text and image generation. No... | @Poli-Chat |
@@ -547,6 +549,7 @@ Pollinations.AI is used in various projects, including:
 | 🆕 [✨ ToneShift AI](https://toneshift-ai.lovable.app/) | Rewrite any text into different emotional tones while preserving meaning.... | @UstaDeveloper |
 | 🆕 [✨ ToneShift AI](https://toneshift-ai.lovable.app/) | Instantly rewrite any text into different emotional tones while preserving... | @UstaDeveloper |
 | 🆕 🤖 [💬 Chat AI](https://t.me/Chat2qai_bot) | Arabic Telegram bot serving as a versatile AI assistant. Answers questions,... | @Alhmam |
+| 🆕 🤖 [SaturnAI 🪐](https://chat.xdativo.cloud) | Web-based AI chat app focused on clean UI and smooth user experience. Features... | @xdativo |
 
 ### Social Bots 🤖
 

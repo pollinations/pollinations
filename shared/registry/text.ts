@@ -44,7 +44,7 @@ export const TEXT_SERVICES = {
     },
     "openai-large": {
         aliases: ["gpt-5.2", "openai-reasoning", "gpt-5.2-reasoning"],
-        modelId: "gpt-5.2",
+        modelId: "gpt-5.2-2025-12-11",
         provider: "azure-openai",
         cost: [
             {
@@ -210,7 +210,7 @@ export const TEXT_SERVICES = {
         description: "Google Gemini 2.5 Flash Lite - With Google Search",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
-        tools: true,
+        tools: false,
         search: true,
         isSpecialized: false,
     },
@@ -314,7 +314,7 @@ export const TEXT_SERVICES = {
         description: "Perplexity Sonar - Fast & Affordable with Web Search",
         inputModalities: ["text"],
         outputModalities: ["text"],
-        tools: true,
+        tools: false,
         search: true,
         isSpecialized: false,
     },
@@ -333,7 +333,7 @@ export const TEXT_SERVICES = {
             "Perplexity Sonar Reasoning - Advanced Reasoning with Web Search",
         inputModalities: ["text"],
         outputModalities: ["text"],
-        tools: true,
+        tools: false,
         reasoning: true,
         search: true,
         isSpecialized: false,

@@ -95,30 +95,60 @@ function RouteComponent() {
 
     const handleCreateApiKey = async (formState: CreateApiKey) => {
         const keyType = formState.keyType || "secret";
-        const result = await auth.apiKey.create({
+        const isPublishable = keyType === "publishable";
+        const prefix = isPublishable ? "plln_pk" : "plln_sk";
+
+        // Step 1: Create key via better-auth's native API
+        const createResult = await auth.apiKey.create({
             name: formState.name,
-            prefix: keyType === "publishable" ? "plln_pk" : "plln_sk",
-            metadata: { description: formState.description, keyType },
+            prefix,
+            metadata: {
+                description: formState.description,
+                keyType,
+            },
         });
-        if (result.error) {
-            // TODO: handle it
-            console.error(result.error);
+
+        if (createResult.error || !createResult.data) {
+            console.error("Failed to create API key:", createResult.error);
+            throw new Error(
+                createResult.error?.message || "Failed to create API key",
+            );
         }
 
-        // For publishable keys, store the plaintext key in metadata for easy retrieval
-        if (keyType === "publishable" && result.data) {
-            const apiKey = result.data as CreateApiKeyResponse;
-            await auth.apiKey.update({
-                keyId: apiKey.id,
-                metadata: {
-                    plaintextKey: apiKey.key, // Store plaintext key in metadata
-                    keyType,
+        const apiKey = createResult.data;
+
+        // Step 2: Set permissions if restricted (allowedModels is not null)
+        // null = unrestricted (all models), array = restricted to specific models
+        if (
+            formState.allowedModels !== null &&
+            formState.allowedModels !== undefined
+        ) {
+            const updateResponse = await fetch(
+                `/api/api-keys/${apiKey.id}/update`,
+                {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    credentials: "include",
+                    body: JSON.stringify({
+                        allowedModels: formState.allowedModels,
+                    }),
                 },
-            });
+            );
+
+            if (!updateResponse.ok) {
+                const errorData = await updateResponse.json();
+                console.error("Failed to set API key permissions:", errorData);
+                // Key was created but permissions failed - still return the key
+                // User can update permissions later
+            }
         }
 
         router.invalidate();
-        return result.data as CreateApiKeyResponse;
+        return {
+            id: apiKey.id,
+            key: apiKey.key,
+            name: apiKey.name,
+        } as CreateApiKeyResponse;
     };
 
     const handleDeleteApiKey = async (id: string) => {

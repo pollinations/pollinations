@@ -5,6 +5,7 @@ import { auth, AuthVariables } from "@/middleware/auth.ts";
 import { polar, PolarVariables } from "@/middleware/polar.ts";
 import type { Env } from "../env.ts";
 import { track, type TrackEnv } from "@/middleware/track.ts";
+import { resolveModel } from "@/middleware/model.ts";
 import { frontendKeyRateLimit } from "@/middleware/rate-limit-durable.ts";
 import { imageCache } from "@/middleware/image-cache.ts";
 import { edgeRateLimit } from "@/middleware/rate-limit-edge.ts";
@@ -27,8 +28,6 @@ import { GenerateImageRequestQueryParamsSchema } from "@/schemas/image.ts";
 import { GenerateTextRequestQueryParamsSchema } from "@/schemas/text.ts";
 import { z } from "zod";
 import { HTTPException } from "hono/http-exception";
-import { DEFAULT_TEXT_MODEL } from "@shared/registry/text.ts";
-import { resolveServiceId } from "@shared/registry/registry.ts";
 import {
     ModelInfoSchema,
     getImageModelsInfo,
@@ -40,35 +39,22 @@ const factory = createFactory<Env>();
 
 // Shared handler for OpenAI-compatible chat completions
 const chatCompletionHandlers = factory.createHandlers(
-    track("generate.text"),
     validator("json", CreateChatCompletionRequestSchema),
+    resolveModel("generate.text"),
+    track("generate.text"),
     async (c) => {
         const log = c.get("log");
         await c.var.auth.requireAuthorization();
+        c.var.auth.requireModelAccess();
 
+        // Use resolved model from middleware for the backend request
+        const requestBody = await c.req.json();
+        requestBody.model = c.var.model.resolved;
         await checkBalance(c.var);
 
         const textServiceUrl =
             c.env.TEXT_SERVICE_URL || "https://text.pollinations.ai";
         const targetUrl = proxyUrl(c, `${textServiceUrl}/openai`);
-        const requestBody = await c.req.json();
-
-        // Resolve model alias to service ID before proxying
-        if (requestBody.model) {
-            try {
-                const resolvedServiceId = resolveServiceId(
-                    requestBody.model,
-                    "generate.text",
-                );
-                requestBody.model = resolvedServiceId;
-            } catch (error) {
-                log.warn("[PROXY] Failed to resolve model alias: {model}", {
-                    model: requestBody.model,
-                    error: String(error),
-                });
-                // Let it pass through - backend will handle invalid model error
-            }
-        }
         const response = await proxy(targetUrl, {
             method: c.req.method,
             headers: proxyHeaders(c),
@@ -311,17 +297,19 @@ export const proxyRoutes = new Hono<Env>()
             }),
         ),
         validator("query", GenerateTextRequestQueryParamsSchema),
+        resolveModel("generate.text"),
         track("generate.text"),
         async (c) => {
             const log = c.get("log");
             await c.var.auth.requireAuthorization();
+            c.var.auth.requireModelAccess();
             await checkBalance(c.var);
+
+            // Use resolved model from middleware
+            const model = c.var.model.resolved;
 
             const textServiceUrl =
                 c.env.TEXT_SERVICE_URL || "https://text.pollinations.ai";
-
-            // Build URL with prompt in path and model as query param
-            const model = c.req.query("model") || DEFAULT_TEXT_MODEL;
             const prompt = c.req.param("prompt");
             const targetUrl = proxyUrl(
                 c,
@@ -364,7 +352,6 @@ export const proxyRoutes = new Hono<Env>()
         // .+ doesn't match newlines, but [\s\S]+ matches any character including \n
         // This creates a named param for OpenAPI docs while matching any characters
         "/image/:prompt{[\\s\\S]+}",
-        track("generate.image"),
         imageCache,
         describeRoute({
             tags: ["gen.pollinations.ai"],
@@ -424,9 +411,12 @@ export const proxyRoutes = new Hono<Env>()
             }),
         ),
         validator("query", GenerateImageRequestQueryParamsSchema),
+        resolveModel("generate.image"),
+        track("generate.image"),
         async (c) => {
             const log = c.get("log");
             await c.var.auth.requireAuthorization();
+            c.var.auth.requireModelAccess();
             await checkBalance(c.var);
 
             // Get prompt from validated param (using :prompt{[\\s\\S]+} regex pattern)

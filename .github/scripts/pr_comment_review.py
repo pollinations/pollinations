@@ -575,14 +575,13 @@ def check_comments_for_new_trigger(repo: str, pr_number: str, token: str, after_
 
         for comment in comments:
             body = comment.get('body', '') or ''
-            # Check for bot mention or explicit trigger
-            if f"@{BOT_NAME}" in body or check_review_trigger_in_text(body):
+            # Check for bot mention (case-insensitive) or explicit trigger
+            if f"@{BOT_NAME}".lower() in body.lower() or check_review_trigger_in_text(body):
                 # If we have a time filter, only count triggers after that time
                 if after_time:
                     created_at = comment.get('created_at', '')
                     if created_at > after_time:
                         return True
-                    # Skip this comment if it's older than after_time
                     continue
                 else:
                     return True

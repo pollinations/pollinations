@@ -104,6 +104,20 @@ async function verifyWebhookSignature(
         const timestamp = timestampPart.substring(2);
         const expectedSignature = signaturePart.substring(3);
 
+        // Validate timestamp is within 5 minutes to prevent replay attacks
+        const timestampSeconds = parseInt(timestamp, 10);
+        const now = Math.floor(Date.now() / 1000);
+        const FIVE_MINUTES = 5 * 60;
+        if (
+            isNaN(timestampSeconds) ||
+            Math.abs(now - timestampSeconds) > FIVE_MINUTES
+        ) {
+            log.warn("Webhook timestamp too old or invalid: {timestamp}", {
+                timestamp,
+            });
+            return false;
+        }
+
         const signedPayload = `${timestamp}.${payload}`;
         const encoder = new TextEncoder();
         const key = await crypto.subtle.importKey(
@@ -122,7 +136,17 @@ async function verifyWebhookSignature(
             .map((b) => b.toString(16).padStart(2, "0"))
             .join("");
 
-        return computedSignature === expectedSignature;
+        // Constant-time comparison to prevent timing attacks
+        if (computedSignature.length !== expectedSignature.length) {
+            return false;
+        }
+        let result = 0;
+        for (let i = 0; i < computedSignature.length; i++) {
+            result |=
+                computedSignature.charCodeAt(i) ^
+                expectedSignature.charCodeAt(i);
+        }
+        return result === 0;
     } catch (error) {
         log.error("Webhook signature verification failed: {error}", { error });
         return false;

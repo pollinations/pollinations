@@ -19,9 +19,20 @@ export const adminRoutes = new Hono<Env>()
         }
 
         const authHeader = c.req.header("Authorization");
-        const providedKey = authHeader?.replace("Bearer ", "");
+        if (!authHeader?.startsWith("Bearer ")) {
+            return c.json({ error: "Unauthorized" }, 401);
+        }
+        const providedKey = authHeader.slice(7);
 
-        if (providedKey !== adminKey) {
+        // Constant-time comparison to prevent timing attacks
+        if (providedKey.length !== adminKey.length) {
+            return c.json({ error: "Unauthorized" }, 401);
+        }
+        let result = 0;
+        for (let i = 0; i < providedKey.length; i++) {
+            result |= providedKey.charCodeAt(i) ^ adminKey.charCodeAt(i);
+        }
+        if (result !== 0) {
             return c.json({ error: "Unauthorized" }, 401);
         }
 

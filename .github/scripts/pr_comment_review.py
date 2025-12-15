@@ -25,7 +25,7 @@ MAX_OUTPUT_TOKENS = 65000  # Max output tokens
 CHARS_PER_TOKEN = 4  # Rough estimate
 
 # AUTO_REVIEW: If True, automatically reviews when PR is opened
-AUTO_REVIEW = True
+AUTO_REVIEW = False
 
 # REVIEW_ON_SYNC: If True, reviews on every push/sync (new commits)
 REVIEW_ON_SYNC = False
@@ -67,6 +67,8 @@ HIGH_PRIORITY_PATTERNS = ['auth', 'login', 'password', 'secret', 'token', 'api',
 
 # Code file extensions
 CODE_EXTENSIONS = {'.py', '.js', '.ts', '.jsx', '.tsx', '.go', '.rs', '.java', '.cpp', '.c', '.h', '.hpp', '.rb', '.php', '.swift', '.kt', '.scala', '.cs', '.vue', '.svelte'}
+
+BOT_NAME = "pollinations-ai"  # GitHub bot app name - mention as @pollinations-ai
 
 
 @dataclass
@@ -563,7 +565,7 @@ def get_last_review_comment_time(repo: str, pr_number: str, token: str) -> Optio
 
 
 def check_comments_for_new_trigger(repo: str, pr_number: str, token: str, after_time: Optional[str] = None) -> bool:
-    """Check if any PR comment contains Review=True, optionally only after a certain time"""
+    """Check if any PR comment mentions the bot or contains Review=True, optionally only after a certain time"""
     page = 1
     per_page = 100
 
@@ -573,7 +575,8 @@ def check_comments_for_new_trigger(repo: str, pr_number: str, token: str, after_
 
         for comment in comments:
             body = comment.get('body', '') or ''
-            if check_review_trigger_in_text(body):
+            # Check for bot mention or explicit trigger
+            if f"@{BOT_NAME}" in body or check_review_trigger_in_text(body):
                 # If we have a time filter, only count triggers after that time
                 if after_time:
                     created_at = comment.get('created_at', '')

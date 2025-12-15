@@ -6,6 +6,7 @@ import {
 } from "./transforms/createSystemPromptTransform.js";
 import { pipe } from "./transforms/pipe.js";
 import { createGoogleSearchTransform } from "./transforms/createGoogleSearchTransform.js";
+import { createGeminiToolsTransform } from "./transforms/createGeminiToolsTransform.ts";
 
 // Import persona prompts
 import midijourneyPrompt from "./personas/midijourney.js";
@@ -33,7 +34,7 @@ interface ModelDefinition {
 const models: ModelDefinition[] = [
     {
         name: "openai",
-        config: portkeyConfig["gpt-5-nano-2025-08-07"],
+        config: portkeyConfig["gpt-5-mini-2025-08-07"],
         transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
     },
     {
@@ -43,7 +44,7 @@ const models: ModelDefinition[] = [
     },
     {
         name: "openai-large",
-        config: portkeyConfig["gpt-4.1-2025-04-14"],
+        config: portkeyConfig["gpt-5.2-2025-12-11"],
         transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
     },
     {
@@ -86,17 +87,12 @@ const models: ModelDefinition[] = [
         transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
     },
     {
-        name: "openai-reasoning",
-        config: portkeyConfig["openai/o4-mini"],
-        transform: pipe(
-            createSystemPromptTransform(BASE_PROMPTS.conversational),
-            removeSystemMessages,
-        ),
-    },
-    {
         name: "gemini",
         config: portkeyConfig["gemini-2.5-flash-lite"],
-        transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
+        transform: pipe(
+            createSystemPromptTransform(BASE_PROMPTS.conversational),
+            createGeminiToolsTransform(),
+        ),
     },
     {
         name: "gemini-search",
@@ -131,7 +127,10 @@ const models: ModelDefinition[] = [
     {
         name: "gemini-large",
         config: portkeyConfig["gemini-3-pro-preview"],
-        transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
+        transform: pipe(
+            createSystemPromptTransform(BASE_PROMPTS.conversational),
+            createGeminiToolsTransform(["google_search", "url_context"]),
+        ),
     },
     {
         name: "nova-micro",

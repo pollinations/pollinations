@@ -16,7 +16,7 @@ from datetime import datetime
 
 # Configuration
 GITHUB_API_BASE = "https://api.github.com"
-POLLINATIONS_API_BASE = "https://enter.pollinations.ai/api/generate/openai"
+POLLINATIONS_API_BASE = "https://gen.pollinations.ai/v1/chat/completions"
 MODEL = "gemini-large"
 DISCORD_CHAR_LIMIT = 2000
 CHUNK_SIZE = 1900  # Leave room for safety

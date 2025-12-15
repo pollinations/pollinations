@@ -1,16 +1,20 @@
 import { test as base, expect } from "vitest";
 import { createAuthClient } from "better-auth/client";
 import { apiKeyClient, adminClient } from "better-auth/client/plugins";
-import { SELF } from "cloudflare:test";
+import { SELF, env } from "cloudflare:test";
 import { createMockPolar } from "./mocks/polar.ts";
 import { createMockGithub } from "./mocks/github.ts";
 import { createMockTinybird } from "./mocks/tinybird.ts";
 import { teardownFetchMock, createFetchMock } from "./mocks/fetch.ts";
-import { getLogger, Logger } from "@logtape/logtape";
+import type { Logger } from "@logtape/logtape";
+import { getLogger } from "@logtape/logtape";
 import { ensureConfigured } from "@/logger.ts";
 import { createMockVcr } from "./mocks/vcr.ts";
+import { drizzle } from "drizzle-orm/d1";
+import * as schema from "@/db/schema/better-auth.ts";
+import { eq } from "drizzle-orm";
 
-const createAuth = () =>
+const createAuthClientInstance = () =>
     createAuthClient({
         baseURL: "http://localhost:3000",
         basePath: "/api/auth",
@@ -32,10 +36,13 @@ type Mocks = ReturnType<typeof createMocks>;
 type Fixtures = {
     log: Logger;
     mocks: ReturnType<typeof createFetchMock<Mocks>>;
-    auth: ReturnType<typeof createAuth>;
+    auth: ReturnType<typeof createAuthClientInstance>;
     sessionToken: string;
     apiKey: string;
     pubApiKey: string;
+    // TODO: Enable when model gating feature is merged
+    // /** API key restricted to only ["openai-fast", "flux"] models */
+    // restrictedApiKey: string;
 };
 
 type SignupData = {
@@ -43,17 +50,17 @@ type SignupData = {
 };
 
 export const test = base.extend<Fixtures>({
-    log: async ({}, use) => {
+    log: async ({/* empty */}, use) => {
         await ensureConfigured("trace");
         await use(getLogger(["test"]));
     },
-    mocks: async ({}, use) => {
+    mocks: async ({/* empty */}, use) => {
         const mocks = createFetchMock(createMocks(), { logRequests: true });
         await use(mocks);
         await teardownFetchMock();
     },
-    auth: async ({}, use) => {
-        const auth = createAuth();
+    auth: async ({/* empty */}, use) => {
+        const auth = createAuthClientInstance();
         await use(auth);
     },
     sessionToken: async ({ mocks }, use) => {
@@ -147,4 +154,34 @@ export const test = base.extend<Fixtures>({
         expect(pubApiKey.startsWith("pk_")).toBe(true);
         await use(pubApiKey);
     },
+    // TODO: Enable when model gating feature is merged
+    // /**
+    //  * Creates an API key restricted to only ["openai-fast", "flux"] models.
+    //  * Uses direct DB access for permissions (same as production endpoint).
+    //  */
+    // restrictedApiKey: async ({ auth, sessionToken }, use) => {
+    //     const createApiKeyResponse = await auth.apiKey.create({
+    //         name: "restricted-test-key",
+    //         fetchOptions: {
+    //             headers: {
+    //                 "Cookie": `better-auth.session_token=${sessionToken}`,
+    //             },
+    //         },
+    //     });
+    //     if (!createApiKeyResponse.data)
+    //         throw new Error("Failed to create restricted API key");
+
+    //     // Update permissions directly in DB (better-auth's permissions is server-only)
+    //     const db = drizzle(env.DB, { schema });
+    //     await db
+    //         .update(schema.apikey)
+    //         .set({
+    //             permissions: JSON.stringify({
+    //                 models: ["openai-fast", "flux"],
+    //             }),
+    //         })
+    //         .where(eq(schema.apikey.id, createApiKeyResponse.data.id));
+
+    //     await use(createApiKeyResponse.data.key);
+    // },
 });

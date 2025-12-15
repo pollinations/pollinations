@@ -114,3 +114,36 @@ export function safeRound(amount: number, precision: number = 6): number {
     const factor = Math.pow(10, precision);
     return Math.round(amount * factor) / factor;
 }
+
+export type ExponentialBackoffOptions = {
+    minDelay?: number;
+    maxDelay?: number;
+    maxAttempts?: number;
+    jitter?: number; // 0 to 1 (e.g., 0.25 = ±25%)
+};
+
+export function exponentialBackoffDelay(
+    attempt: number,
+    options: ExponentialBackoffOptions = {},
+): number {
+    const {
+        minDelay = 100,
+        maxDelay = 10000,
+        maxAttempts = 5,
+        jitter = 0.25,
+    } = options;
+
+    if (attempt === 0) return 0;
+
+    const base = Math.pow(maxDelay / minDelay, 1 / (maxAttempts - 1));
+    const delay = minDelay * Math.pow(base, attempt - 1);
+
+    if (jitter > 0) {
+        const jitterRange = delay * jitter;
+        const jitterOffset = jitterRange * (Math.random() * 2 - 1);
+        return delay + jitterOffset;
+    }
+
+    // return clamped delay
+    return Math.max(minDelay, Math.min(maxDelay, delay));
+}

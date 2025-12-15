@@ -1167,5 +1167,16 @@ export const creativeProjects = [
     "language": "hu",
     "submissionDate": "2025-12-14",
     "order": 5
+  },
+  {
+    "name": "📚 IA-Books: AI Ebook Generator",
+    "url": "https://iabooks.com.br",
+    "description": "Professional ebook creation platform with AI. Auto-generates book covers and chapter illustrations via Pollinations Flux, plans chapters, writes content. PWA with offline support, client-side storage for privacy. Supports Portuguese and English.",
+    "author": "@FabioArieiraBaia",
+    "repo": "https://github.com/FabioArieiraBaia/IA-Books",
+    "category": "creative",
+    "language": "pt-BR",
+    "submissionDate": "2025-12-15",
+    "order": 5
   }
 ];

@@ -39,6 +39,7 @@ export function PlayGenerator({
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [uploadedImages, setUploadedImages] = useState<string[]>([]);
+    const [dragActive, setDragActive] = useState<number | null>(null);
 
     // Cleanup blob URLs when result changes
     useEffect(() => {
@@ -68,6 +69,53 @@ export function PlayGenerator({
         (m) => m.id === selectedModel
     );
     const supportsImageInput = currentModelData?.hasImageInput || false;
+
+    // Common function to process image files (both click and drag & drop)
+    const processImageFile = (file: File) => {
+        if (file && file.type.startsWith('image/') && uploadedImages.length < 4) {
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                if (typeof reader.result === 'string') {
+                    setUploadedImages([...uploadedImages, reader.result]);
+                }
+            };
+            reader.readAsDataURL(file);
+        }
+    };
+
+    // Handle drag over event
+    const handleDragOver = (e: React.DragEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+    };
+
+    // Handle drag enter event
+    const handleDragEnter = (e: React.DragEvent, index: number) => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (!uploadedImages[index]) {
+            setDragActive(index);
+        }
+    };
+
+    // Handle drag leave event
+    const handleDragLeave = (e: React.DragEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setDragActive(null);
+    };
+
+    // Handle drop event
+    const handleDrop = (e: React.DragEvent, index: number) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setDragActive(null);
+        
+        if (!uploadedImages[index]) {
+            const file = e.dataTransfer.files[0];
+            processImageFile(file);
+        }
+    };
 
     const handleGenerate = async () => {
         setIsLoading(true);
@@ -195,6 +243,10 @@ export function PlayGenerator({
                                 <div
                                     key={`upload-${index}`}
                                     className="relative aspect-square"
+                                    onDragOver={handleDragOver}
+                                    onDragEnter={(e) => handleDragEnter(e, index)}
+                                    onDragLeave={handleDragLeave}
+                                    onDrop={(e) => handleDrop(e, index)}
                                 >
                                     {hasImage ? (
                                         <>
@@ -224,10 +276,14 @@ export function PlayGenerator({
                                             </Button>
                                         </>
                                     ) : (
-                                        <label className="w-full h-full bg-input-background border-2 border-border-main hover:border-border-highlight hover:bg-input-background transition-colors flex items-center justify-center cursor-pointer rounded-input">
+                                        <label className={`w-full h-full bg-input-background border-2 ${
+                                            dragActive === index
+                                                ? 'border-border-brand bg-surface-elevated'
+                                                : 'border-border-main hover:border-border-highlight'
+                                        } hover:bg-input-background transition-colors flex items-center justify-center cursor-pointer rounded-input`}>
                                             <input
-                                                id="image-upload"
-                                                name="image-upload"
+                                                id={`image-upload-${index}`}
+                                                name={`image-upload-${index}`}
                                                 type="file"
                                                 accept="image/*"
                                                 className="hidden"
@@ -235,25 +291,7 @@ export function PlayGenerator({
                                                     const file =
                                                         e.target.files?.[0];
                                                     if (file) {
-                                                        const reader =
-                                                            new FileReader();
-                                                        reader.onloadend =
-                                                            () => {
-                                                                if (
-                                                                    typeof reader.result ===
-                                                                    "string"
-                                                                ) {
-                                                                    setUploadedImages(
-                                                                        [
-                                                                            ...uploadedImages,
-                                                                            reader.result,
-                                                                        ]
-                                                                    );
-                                                                }
-                                                            };
-                                                        reader.readAsDataURL(
-                                                            file
-                                                        );
+                                                        processImageFile(file);
                                                     }
                                                 }}
                                             />

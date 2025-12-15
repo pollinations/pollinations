@@ -6,7 +6,7 @@ All notable changes to `@pollinations/react` will be documented in this file.
 
 ### Fixed
 
--   Fixed all hooks pointing to legacy API endpoints - now use `enter.pollinations.ai`
+-   Fixed all hooks pointing to legacy API endpoints - now use `gen.pollinations.ai`
 -   `usePollinationsImage` now returns consistent `{ data, isLoading, error }` object instead of string
 -   Added AbortController to `usePollinationsChat` for proper request cancellation
 -   Added input validation: seed (32-bit), model (non-empty string), dimensions (64-2048px)

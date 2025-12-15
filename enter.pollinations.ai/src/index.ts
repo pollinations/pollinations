@@ -10,6 +10,9 @@ import { tiersRoutes } from "./routes/tiers.ts";
 import { usageRoutes } from "./routes/usage.ts";
 import { createDocsRoutes } from "./routes/docs.ts";
 import { apiKeysRoutes } from "./routes/api-keys.ts";
+import { webhooksRoutes } from "./routes/webhooks.ts";
+import { processPendingTierSyncs, getTierProductMap } from "./tier-sync.ts";
+import { Polar } from "@polar-sh/sdk";
 import { requestId } from "hono/request-id";
 import { logger } from "./middleware/logger.ts";
 import { getLogger } from "@logtape/logtape";
@@ -26,6 +29,7 @@ export const api = new Hono<Env>()
     .route("/tiers", tiersRoutes)
     .route("/api-keys", apiKeysRoutes)
     .route("/usage", usageRoutes)
+    .route("/webhooks", webhooksRoutes)
     .route("/generate", proxyRoutes);
 
 const docsRoutes = createDocsRoutes(api);
@@ -81,6 +85,7 @@ export default {
     scheduled: async (_controller, env, _ctx) => {
         const db = drizzle(env.DB);
         const log = getLogger(["hono", "scheduled"]);
+
         await processEvents(db, log, {
             polarAccessToken: env.POLAR_ACCESS_TOKEN,
             polarServer: env.POLAR_SERVER,
@@ -89,5 +94,17 @@ export default {
             minRetryDelay: 100,
             maxRetryDelay: 10000,
         });
+
+        if (env.POLAR_ACCESS_TOKEN) {
+            const polar = new Polar({
+                accessToken: env.POLAR_ACCESS_TOKEN,
+                server:
+                    env.POLAR_SERVER === "production"
+                        ? "production"
+                        : "sandbox",
+            });
+            const productMap = getTierProductMap(env);
+            await processPendingTierSyncs(env.KV, polar, productMap, 10);
+        }
     },
 } satisfies ExportedHandler<CloudflareBindings>;

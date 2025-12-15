@@ -24,7 +24,7 @@ SQL >
         response_time as response_time_ms
     FROM generation_event
     WHERE user_id = {{String(user_id, '')}}
-    AND is_billed_usage = true
+    AND total_price > 0
     AND start_time >= now() - INTERVAL 30 DAY
     {% if defined(before) %}
     AND start_time < {{DateTime(before)}}

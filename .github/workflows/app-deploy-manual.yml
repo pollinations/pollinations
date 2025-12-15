@@ -97,7 +97,7 @@ jobs:
             fi
             
             # Deploy via wrangler pages
-            PROJECT_NAME="pollinations-$app"
+            APP_NAME="pollinations-$app"
             SOURCE_DIR="apps/$app"
             
             # Get output dir from apps.json
@@ -110,8 +110,8 @@ jobs:
               SOURCE_DIR="$SOURCE_DIR/$OUTPUT_DIR"
             fi
             
-            echo "Deploying from $SOURCE_DIR to $PROJECT_NAME"
-            wrangler pages deploy "$SOURCE_DIR" --project-name="$PROJECT_NAME" --branch=main
+            echo "Deploying from $SOURCE_DIR to $APP_NAME"
+            wrangler pages deploy "$SOURCE_DIR" --project-name="$APP_NAME" --branch=main
           done
 
       - name: Comment on commit

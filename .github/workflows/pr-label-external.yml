@@ -1,0 +1,46 @@
+name: PR Label External
+on:
+  pull_request_target:
+    types: [opened]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  label:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Label external PRs
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const author = context.payload.pull_request.user.login;
+            const assoc  = context.payload.pull_request.author_association;
+
+            // allow-list of known org members
+            const INTERNAL_USERS = [
+              "ElliotEtag",
+              "voodoohop",
+              "eulervoid",
+              "ale-rls"
+            ];
+
+            if (INTERNAL_USERS.includes(author)) {
+              console.log(`Internal user ${author}, skipping label`);
+              return;
+            }
+
+            if (author.endsWith("[bot]")) {
+              console.log(`Bot ${author}, skipping label`);
+              return;
+            }
+
+            // External contributor - add label
+            await github.rest.issues.addLabels({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.payload.pull_request.number,
+              labels: ["pr:external"]
+            });
+            console.log(`Applied label: pr:external to PR #${context.payload.pull_request.number} by ${author}`);

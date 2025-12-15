@@ -7,6 +7,9 @@ import { CustomerState } from "@polar-sh/sdk/models/components/customerstate.js"
 import { HTTPException } from "hono/http-exception";
 import { z } from "zod";
 import { CustomerMeter } from "@polar-sh/sdk/models/components/customermeter.js";
+import { drizzle } from "drizzle-orm/d1";
+import { event } from "@/db/schema/event.ts";
+import { and, eq, gte, sql } from "drizzle-orm";
 
 type BalanceCheckResult = {
     selectedMeterId: string;
@@ -53,7 +56,7 @@ export const polar = createMiddleware<PolarEnv>(async (c, next) => {
         },
         {
             log,
-            ttl: 60, // 60 seconds (minimum allowed value)
+            ttl: 300, // 5 minutes - safe with local pending spend tracking
             kv: c.env.KV,
             keyGenerator: (userId) => `polar:customer:state:${userId}`,
         },
@@ -75,23 +78,69 @@ export const polar = createMiddleware<PolarEnv>(async (c, next) => {
         },
         {
             log,
-            ttl: 60, // 60 seconds (minimum allowed value)
+            ttl: 300, // 5 minutes - safe with local pending spend tracking
             kv: c.env.KV,
             keyGenerator: (userId) => `polar:customer:meters:${userId}`,
         },
     );
+
+    // Window for pending spend calculation - should exceed Polar's max processing time
+    const PENDING_SPEND_WINDOW_MS = 10 * 60 * 1000; // 10 minutes
+
+    // Get recent spend from local events to account for Polar processing delay.
+    // Not cached because D1 is fast (~5-10ms) and we need fresh data.
+    // Uses composite index: idx_event_user_billed_created
+    const getRecentSpend = async (userId: string): Promise<number> => {
+        const db = drizzle(c.env.DB);
+        const windowStart = new Date(Date.now() - PENDING_SPEND_WINDOW_MS);
+        const result = await db
+            .select({
+                total: sql<number>`COALESCE(SUM(${event.totalPrice}), 0)`,
+            })
+            .from(event)
+            .where(
+                and(
+                    eq(event.userId, userId),
+                    eq(event.isBilledUsage, true),
+                    gte(event.createdAt, windowStart),
+                ),
+            );
+        return result[0]?.total || 0;
+    };
 
     const requirePositiveBalance = async (userId: string, message?: string) => {
         const customerMeters = await getCustomerMeters(userId);
         const activeMeters = getSimplifiedMatchingMeters(customerMeters);
         const sortedMeters = sortMetersByDescendingPriority(activeMeters);
 
-        for (const meter of sortedMeters) {
+        // Get recent local spend to account for Polar processing delay
+        const recentSpend = await getRecentSpend(userId);
+
+        if (recentSpend > 0) {
+            log.debug("Pending spend from D1: {recentSpend}", { recentSpend });
+        }
+
+        // Adjust meter balances by subtracting recent spend.
+        // Note: We deduct from highest-priority meters first, which may not match
+        // actual meter usage. This is intentionally conservative - it may briefly
+        // over-restrict, but prevents negative balances. Accuracy restores when
+        // Polar syncs and cache refreshes.
+        let remainingSpend = recentSpend;
+        const adjustedMeters = sortedMeters.map((meter) => {
+            const deduction = Math.min(meter.balance, remainingSpend);
+            remainingSpend -= deduction;
+            return {
+                ...meter,
+                balance: meter.balance - deduction,
+            };
+        });
+
+        for (const meter of adjustedMeters) {
             if (meter.balance > 0) {
                 c.var.polar.balanceCheckResult = {
                     selectedMeterId: meter.meterId,
                     selectedMeterSlug: meter.metadata.slug,
-                    meters: sortedMeters,
+                    meters: adjustedMeters,
                 };
                 return;
             }

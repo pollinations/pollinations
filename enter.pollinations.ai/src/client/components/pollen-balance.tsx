@@ -6,11 +6,13 @@ type PollenBalanceProps = {
         pack: number;
     };
     dailyPollen?: number;
+    pendingSpend?: number;
 };
 
 export const PollenBalance: FC<PollenBalanceProps> = ({
     balances,
     dailyPollen = 15,
+    pendingSpend = 0,
 }) => {
     // Use real balances
     const freePollen = balances.tier; // Free pollen from tier
@@ -31,6 +33,11 @@ export const PollenBalance: FC<PollenBalanceProps> = ({
                     {/* Pollen amount above gauge */}
                     <span className="text-4xl sm:text-5xl md:text-6xl font-bold text-green-950 tabular-nums">
                         {totalPollen.toFixed(2)} pollen
+                        {pendingSpend > 0 && (
+                            <span className="text-lg sm:text-xl text-orange-600 font-normal ml-2">
+                                (-{pendingSpend.toFixed(3)} pending)
+                            </span>
+                        )}
                     </span>
                     {/* Gauge with download button */}
                     <div className="flex items-center gap-2 w-full max-w-[540px]">

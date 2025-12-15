@@ -24,6 +24,12 @@ const usePollinationsImage = (prompt, options = {}) => {
             return;
         }
 
+        if (typeof seed !== "number" || seed < 0 || seed > 4294967295) {
+            setError("Seed must be a 32-bit unsigned integer (0-4294967295)");
+            return;
+        }
+
+
         if (!apiKey) {
             setError("API key is required");
             return;

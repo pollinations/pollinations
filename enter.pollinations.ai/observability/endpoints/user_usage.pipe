@@ -2,6 +2,8 @@ DESCRIPTION >
     Get billed usage history for a specific user (last 30 days). Only returns billed requests.
     Use 'before' param with ISO timestamp for cursor pagination (e.g. before=2024-12-10T00:00:00).
 
+TOKEN model_usage READ
+
 NODE user_usage_node
 SQL >
     %

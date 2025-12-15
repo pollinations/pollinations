@@ -84,11 +84,15 @@ export const polar = createMiddleware<PolarEnv>(async (c, next) => {
         },
     );
 
-    // Get recent spend from local events (last 10 minutes)
-    // This accounts for spend that Polar hasn't processed yet
+    // Window for pending spend calculation - should exceed Polar's max processing time
+    const PENDING_SPEND_WINDOW_MS = 10 * 60 * 1000; // 10 minutes
+
+    // Get recent spend from local events to account for Polar processing delay.
+    // Not cached because D1 is fast (~5-10ms) and we need fresh data.
+    // Uses composite index: idx_event_user_billed_created
     const getRecentSpend = async (userId: string): Promise<number> => {
         const db = drizzle(c.env.DB);
-        const tenMinutesAgo = new Date(Date.now() - 10 * 60 * 1000);
+        const windowStart = new Date(Date.now() - PENDING_SPEND_WINDOW_MS);
         const result = await db
             .select({
                 total: sql<number>`COALESCE(SUM(${event.totalPrice}), 0)`,
@@ -98,7 +102,7 @@ export const polar = createMiddleware<PolarEnv>(async (c, next) => {
                 and(
                     eq(event.userId, userId),
                     eq(event.isBilledUsage, true),
-                    gte(event.createdAt, tenMinutesAgo),
+                    gte(event.createdAt, windowStart),
                 ),
             );
         return result[0]?.total || 0;
@@ -112,7 +116,11 @@ export const polar = createMiddleware<PolarEnv>(async (c, next) => {
         // Get recent local spend to account for Polar processing delay
         const recentSpend = await getRecentSpend(userId);
 
-        // Adjust meter balances by subtracting recent spend (distributed by priority)
+        // Adjust meter balances by subtracting recent spend.
+        // Note: We deduct from highest-priority meters first, which may not match
+        // actual meter usage. This is intentionally conservative - it may briefly
+        // over-restrict, but prevents negative balances. Accuracy restores when
+        // Polar syncs and cache refreshes.
         let remainingSpend = recentSpend;
         const adjustedMeters = sortedMeters.map((meter) => {
             const deduction = Math.min(meter.balance, remainingSpend);

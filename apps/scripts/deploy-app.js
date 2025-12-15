@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 /**
- * Minimal POC: Deploy Hacktoberfest app to Cloudflare Pages + custom subdomain
+ * Deploy app to Cloudflare Pages + custom subdomain
  * 
  * Usage: node deploy-app.js <appName>
  */
@@ -17,7 +17,7 @@ function loadCredentials() {
   let accountId = process.env.CLOUDFLARE_ACCOUNT_ID;
   let turnstileId = process.env.TURNSTILE_SITE_ID;
 
-  // Try to load from hacktoberfest .env file if not in environment
+  // Try to load from apps .env file if not in environment
   if (!apiToken || !accountId || !turnstileId) {
     const envPath = path.join(__dirname, '../.env');
     
@@ -71,7 +71,7 @@ async function deployApp(appName) {
   }
 
   const subdomain = appConfig.subdomain || appName;
-  const projectName = `hacktoberfest-${subdomain}`;
+  const projectName = `pollinations-${subdomain}`;
   const customDomain = `${subdomain}.pollinations.ai`;
 
   console.log(`📦 Project: ${projectName}`);

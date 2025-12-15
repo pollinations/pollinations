@@ -9,16 +9,15 @@ import { Fragment } from "react";
 import {
     uniqueNamesGenerator,
     adjectives,
-    colors,
     animals,
 } from "unique-names-generator";
+import { ModelPermissions } from "./model-permissions.tsx";
 
 type ApiKey = {
     id: string;
     name?: string | null;
     start?: string | null;
     createdAt: Date;
-    expiresAt?: Date | null;
     permissions: { [key: string]: string[] } | null;
     metadata: Record<string, string> | null;
 };
@@ -39,6 +38,7 @@ const Cell: FC<React.ComponentProps<"div">> = ({ children, ...props }) => {
 
 const KeyDisplay: FC<{ fullKey: string }> = ({ fullKey }) => {
     const [copied, setCopied] = useState(false);
+    const suffix = fullKey.slice(-4);
 
     const handleCopy = async () => {
         try {
@@ -55,14 +55,62 @@ const KeyDisplay: FC<{ fullKey: string }> = ({ fullKey }) => {
             type="button"
             onClick={handleCopy}
             className={cn(
-                "font-mono text-xs truncate max-w-[150px] text-left cursor-pointer transition-all",
+                "font-mono text-xs text-left cursor-pointer transition-all",
                 copied
                     ? "text-green-600 font-semibold"
                     : "text-blue-600 hover:text-blue-800 hover:underline",
             )}
-            title={copied ? "Copied!" : "Click to copy"}
+            title={copied ? "Copied!" : "Click to copy full key"}
         >
-            {copied ? "✓ Copied!" : fullKey}
+            {copied ? "✓ Copied!" : `...${suffix}`}
+        </button>
+    );
+};
+
+const ModelsBadge: FC<{
+    permissions: { [key: string]: string[] } | null;
+}> = ({ permissions }) => {
+    const [showTooltip, setShowTooltip] = useState(false);
+    const models = permissions?.models ?? null;
+    const isAllModels = models === null;
+    const modelCount = models?.length ?? 0;
+
+    return (
+        <button
+            type="button"
+            className="relative inline-flex items-center group/models"
+            onClick={() => setShowTooltip(!showTooltip)}
+            onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    setShowTooltip(!showTooltip);
+                }
+            }}
+            aria-label="Show allowed models"
+        >
+            <span
+                className={cn(
+                    "text-xs px-2 py-0.5 rounded-full border cursor-pointer transition-colors",
+                    isAllModels
+                        ? "bg-green-100 text-green-700 border-green-300 hover:bg-green-200"
+                        : "bg-amber-100 text-amber-700 border-amber-300 hover:bg-amber-200",
+                )}
+            >
+                {isAllModels ? "All" : modelCount}
+            </span>
+            <span
+                className={`${showTooltip ? "visible" : "invisible"} group-hover/models:visible absolute right-0 top-full mt-1 px-3 py-2 bg-gradient-to-r from-pink-50 to-purple-50 text-gray-800 text-xs rounded-lg shadow-lg border border-pink-200 z-50 pointer-events-none whitespace-normal w-48 max-h-32 overflow-y-auto`}
+            >
+                {isAllModels ? (
+                    "Access to all models"
+                ) : modelCount === 0 ? (
+                    "No models allowed"
+                ) : (
+                    <span className="font-mono text-[10px] leading-relaxed">
+                        {models?.join(", ")}
+                    </span>
+                )}
+            </span>
         </button>
     );
 };
@@ -95,126 +143,117 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                     </div>
                 </div>
                 {apiKeys.length ? (
-                    <div className="bg-blue-50/30 rounded-2xl p-8 border border-blue-300 overflow-x-auto">
-                        <div className="grid grid-cols-[100px_200px_1fr_100px_40px] gap-x-4 gap-y-4 min-w-[530px]">
-                            <span className="font-bold text-pink-400 text-sm">
-                                Type
-                            </span>
-                            <span className="font-bold text-pink-400 text-sm">
-                                Name
-                            </span>
-                            <span className="font-bold text-pink-400 text-sm">
-                                Key
-                            </span>
-                            <span className="font-bold text-pink-400 text-sm">
-                                Created / Expires
-                            </span>
-                            <span></span>
-                            {[...apiKeys]
-                                .filter((apiKey) => {
-                                    // Hide expired keys
-                                    if (
-                                        apiKey.expiresAt &&
-                                        new Date(apiKey.expiresAt) < new Date()
-                                    ) {
-                                        return false;
-                                    }
-                                    return true;
-                                })
-                                .sort(
-                                    (a, b) =>
-                                        new Date(b.createdAt).getTime() -
-                                        new Date(a.createdAt).getTime(),
-                                )
-                                .map((apiKey) => {
-                                    const keyType = apiKey.metadata?.[
-                                        "keyType"
-                                    ] as string | undefined;
-                                    const isPublishable =
-                                        keyType === "publishable";
-                                    const plaintextKey = apiKey.metadata?.[
-                                        "plaintextKey"
-                                    ] as string | undefined;
+                    <div className="bg-blue-50/30 rounded-2xl p-8 border border-blue-300 overflow-hidden">
+                        <div className="overflow-x-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+                            <div className="grid grid-cols-[auto_1fr_auto_auto_auto_auto] gap-x-4 gap-y-4 min-w-max">
+                                <span className="font-bold text-pink-400 text-sm">
+                                    Type
+                                </span>
+                                <span className="font-bold text-pink-400 text-sm">
+                                    Name
+                                </span>
+                                <span className="font-bold text-pink-400 text-sm">
+                                    Key
+                                </span>
+                                <span className="font-bold text-pink-400 text-sm">
+                                    Created
+                                </span>
+                                <span className="font-bold text-pink-400 text-sm">
+                                    Models
+                                </span>
+                                <span></span>
+                                {[...apiKeys]
+                                    .sort(
+                                        (a, b) =>
+                                            new Date(b.createdAt).getTime() -
+                                            new Date(a.createdAt).getTime(),
+                                    )
+                                    .map((apiKey) => {
+                                        const keyType = apiKey.metadata?.[
+                                            "keyType"
+                                        ] as string | undefined;
+                                        const isPublishable =
+                                            keyType === "publishable";
+                                        const plaintextKey = apiKey.metadata?.[
+                                            "plaintextKey"
+                                        ] as string | undefined;
 
-                                    return (
-                                        <Fragment key={apiKey.id}>
-                                            <Cell>
-                                                <span
-                                                    className={cn(
-                                                        "px-2 py-1 rounded text-xs font-medium",
-                                                        isPublishable
-                                                            ? "bg-blue-100 text-blue-700"
-                                                            : "bg-purple-100 text-purple-700",
-                                                    )}
-                                                >
-                                                    {isPublishable
-                                                        ? "🌐 Publishable"
-                                                        : "🔒 Secret"}
-                                                </span>
-                                            </Cell>
-                                            <Cell>
-                                                <span
-                                                    className="text-xs truncate block"
-                                                    title={
-                                                        apiKey.name ?? undefined
-                                                    }
-                                                >
-                                                    {apiKey.name}
-                                                </span>
-                                            </Cell>
-                                            <Cell>
-                                                {isPublishable &&
-                                                plaintextKey ? (
-                                                    <KeyDisplay
-                                                        fullKey={plaintextKey}
-                                                    />
-                                                ) : (
-                                                    <span className="font-mono text-xs text-gray-500">
-                                                        {apiKey.start}...
+                                        return (
+                                            <Fragment key={apiKey.id}>
+                                                <Cell>
+                                                    <span
+                                                        className={cn(
+                                                            "px-2 py-1 rounded text-xs font-medium",
+                                                            isPublishable
+                                                                ? "bg-blue-100 text-blue-700"
+                                                                : "bg-purple-100 text-purple-700",
+                                                        )}
+                                                    >
+                                                        {isPublishable
+                                                            ? "🌐 Publishable"
+                                                            : "🔒 Secret"}
                                                     </span>
-                                                )}
-                                            </Cell>
-                                            <Cell>
-                                                <div className="flex flex-col">
+                                                </Cell>
+                                                <Cell>
+                                                    <span
+                                                        className="text-xs truncate block"
+                                                        title={
+                                                            apiKey.name ??
+                                                            undefined
+                                                        }
+                                                    >
+                                                        {apiKey.name}
+                                                    </span>
+                                                </Cell>
+                                                <Cell>
+                                                    {isPublishable &&
+                                                    plaintextKey ? (
+                                                        <KeyDisplay
+                                                            fullKey={
+                                                                plaintextKey
+                                                            }
+                                                        />
+                                                    ) : (
+                                                        <span className="font-mono text-xs text-gray-500">
+                                                            {apiKey.start}...
+                                                        </span>
+                                                    )}
+                                                </Cell>
+                                                <Cell>
                                                     <span className="text-xs text-gray-600 whitespace-nowrap">
                                                         {formatDistanceToNowStrict(
                                                             apiKey.createdAt,
-                                                            { addSuffix: true },
+                                                            {
+                                                                addSuffix: false,
+                                                            },
                                                         )}
                                                     </span>
-                                                    {apiKey.expiresAt && (
-                                                        <span
-                                                            className="text-xs text-amber-600 whitespace-nowrap"
-                                                            title={new Date(
-                                                                apiKey.expiresAt,
-                                                            ).toLocaleString()}
-                                                        >
-                                                            expires{" "}
-                                                            {formatDistanceToNowStrict(
-                                                                apiKey.expiresAt,
-                                                                {
-                                                                    addSuffix: true,
-                                                                },
-                                                            )}
-                                                        </span>
-                                                    )}
-                                                </div>
-                                            </Cell>
-                                            <Cell>
-                                                <button
-                                                    type="button"
-                                                    className="w-6 h-6 flex items-center justify-center rounded hover:bg-red-100 text-gray-400 hover:text-red-600 transition-colors text-lg cursor-pointer"
-                                                    onClick={() =>
-                                                        setDeleteId(apiKey.id)
-                                                    }
-                                                    title="Delete key"
-                                                >
-                                                    ×
-                                                </button>
-                                            </Cell>
-                                        </Fragment>
-                                    );
-                                })}
+                                                </Cell>
+                                                <Cell>
+                                                    <ModelsBadge
+                                                        permissions={
+                                                            apiKey.permissions
+                                                        }
+                                                    />
+                                                </Cell>
+                                                <Cell>
+                                                    <button
+                                                        type="button"
+                                                        className="w-6 h-6 flex items-center justify-center rounded hover:bg-red-100 text-gray-400 hover:text-red-600 transition-colors text-lg cursor-pointer"
+                                                        onClick={() =>
+                                                            setDeleteId(
+                                                                apiKey.id,
+                                                            )
+                                                        }
+                                                        title="Delete key"
+                                                    >
+                                                        ×
+                                                    </button>
+                                                </Cell>
+                                            </Fragment>
+                                        );
+                                    })}
+                            </div>
                         </div>
                         {apiKeys.some(
                             (k) => k.metadata?.["keyType"] === "publishable",
@@ -272,6 +311,8 @@ export type CreateApiKey = {
     name: string;
     description?: string;
     keyType?: "publishable" | "secret";
+    /** Model IDs this key can access. null = all models allowed */
+    allowedModels?: string[] | null;
 };
 
 export type CreateApiKeyResponse = ApiKey & {
@@ -288,7 +329,7 @@ const CreateKeyForm: FC<{
     formData: CreateApiKey;
     onInputChange: (
         field: keyof CreateApiKey,
-        value: string | string[],
+        value: string | string[] | null | undefined,
     ) => void;
     onSubmit: (e: React.FormEvent) => void;
     onCancel: () => void;
@@ -452,6 +493,17 @@ const CreateKeyForm: FC<{
                     readOnly={!!createdKey}
                 />
             </Field.Root>
+
+            {/* Model permissions - collapsible advanced option */}
+            {!createdKey && (
+                <ModelPermissions
+                    value={formData.allowedModels ?? null}
+                    onChange={(models) =>
+                        onInputChange("allowedModels", models)
+                    }
+                    disabled={isSubmitting}
+                />
+            )}
             <div className="flex gap-2 justify-end pt-4">
                 {!createdKey && (
                     <Button
@@ -464,22 +516,43 @@ const CreateKeyForm: FC<{
                         Cancel
                     </Button>
                 )}
-                <Button
-                    type={createdKey ? "button" : "submit"}
-                    onClick={createdKey ? handleCopyAndClose : undefined}
-                    className="disabled:opacity-50"
-                    disabled={
-                        !createdKey && (!formData.name.trim() || isSubmitting)
-                    }
-                >
-                    {copied
-                        ? "✓ Copied! Closing..."
-                        : createdKey
-                          ? "Copy and Close"
-                          : isSubmitting
-                            ? "Creating..."
-                            : "Create"}
-                </Button>
+                {(() => {
+                    const noModelsSelected =
+                        Array.isArray(formData.allowedModels) &&
+                        formData.allowedModels.length === 0;
+                    const isDisabled =
+                        !createdKey &&
+                        (!formData.name.trim() ||
+                            isSubmitting ||
+                            noModelsSelected);
+
+                    return (
+                        <span
+                            title={
+                                noModelsSelected && !createdKey
+                                    ? "Select at least one model"
+                                    : undefined
+                            }
+                        >
+                            <Button
+                                type={createdKey ? "button" : "submit"}
+                                onClick={
+                                    createdKey ? handleCopyAndClose : undefined
+                                }
+                                className="disabled:opacity-50"
+                                disabled={isDisabled}
+                            >
+                                {copied
+                                    ? "✓ Copied! Closing..."
+                                    : createdKey
+                                      ? "Copy and Close"
+                                      : isSubmitting
+                                        ? "Creating..."
+                                        : "Create"}
+                            </Button>
+                        </span>
+                    );
+                })()}
             </div>
         </form>
     );
@@ -490,12 +563,12 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
     onSubmit,
     onComplete,
 }) => {
-    // Generate a fun default name
+    // Generate a short fun default name (2 words for brevity)
     const generateFunName = () => {
         return uniqueNamesGenerator({
-            dictionaries: [adjectives, colors, animals],
+            dictionaries: [adjectives, animals],
             separator: "-",
-            length: 3,
+            length: 2,
             style: "lowerCase",
         });
     };
@@ -504,6 +577,7 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
         name: generateFunName(),
         description: `Created on ${new Date().toLocaleDateString("en-US", { day: "2-digit", month: "2-digit", year: "2-digit" })}`,
         keyType: "secret", // Default to secret key
+        allowedModels: null, // null = all models allowed
     });
     const [createdKey, setCreatedKey] = useState<CreateApiKeyResponse | null>(
         null,
@@ -513,7 +587,7 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
 
     const handleInputChange = (
         field: keyof CreateApiKey,
-        value: string | string[],
+        value: string | string[] | null | undefined,
     ) => {
         const updatedData = { ...formData, [field]: value };
 
@@ -555,6 +629,7 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
             name: "backend-" + generateFunName(),
             description: "",
             keyType: "secret",
+            allowedModels: null,
         });
     };
 
@@ -573,7 +648,7 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
             <Dialog.Positioner className="fixed inset-0 flex items-center justify-center p-4">
                 <Dialog.Content
                     className={
-                        "bg-green-100 border-green-950 border-4 rounded-lg shadow-lg max-w-lg w-full p-6"
+                        "bg-green-100 border-green-950 border-4 rounded-lg shadow-lg max-w-lg w-full p-6 max-h-[85vh] overflow-y-auto"
                     }
                 >
                     <Dialog.Title className="text-lg font-semibold mb-6">

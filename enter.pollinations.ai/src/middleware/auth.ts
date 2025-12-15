@@ -1,12 +1,13 @@
 import { createMiddleware } from "hono/factory";
 import { createAuth } from "../auth.ts";
-import { LoggerVariables } from "./logger.ts";
+import type { LoggerVariables } from "./logger.ts";
 import { HTTPException } from "hono/http-exception";
-import type { Session, User, Auth } from "@/auth.ts";
+import type { Session, User } from "@/auth.ts";
 import { drizzle } from "drizzle-orm/d1";
 import { eq } from "drizzle-orm";
 import * as schema from "@/db/schema/better-auth.ts";
 import type { Context } from "hono";
+import type { ModelVariables } from "./model.ts";
 
 export type AuthVariables = {
     auth: {
@@ -16,12 +17,14 @@ export type AuthVariables = {
         apiKey?: ApiKey;
         requireAuthorization: (options?: { message?: string }) => Promise<void>;
         requireUser: () => User;
+        /** Throws 403 if the API key doesn't have access to the resolved model from c.var.model. */
+        requireModelAccess: () => void;
     };
 };
 
 export type AuthEnv = {
     Bindings: CloudflareBindings;
-    Variables: LoggerVariables & AuthVariables;
+    Variables: LoggerVariables & AuthVariables & Partial<ModelVariables>;
 };
 
 export type AuthOptions = {
@@ -88,19 +91,29 @@ export const auth = (options: AuthOptions) =>
             });
             if (!keyResult.valid || !keyResult.key) return null;
             const db = drizzle(c.env.DB, { schema });
+
+            // Use permissions from verifyApiKey (set via createApiKey)
+            // No fallback - permissions must be set at key creation time
+            const permissions = keyResult.key.permissions as
+                | { models?: string[] }
+                | undefined;
+
+            // Fetch user
             const user = await db.query.user.findFirst({
                 where: eq(schema.user.id, keyResult.key.userId),
             });
+
             log.debug("[AUTH] User lookup result: {found}", {
                 found: !!user,
                 userId: user?.id,
             });
+
             return {
                 user: user as User,
                 apiKey: {
                     id: keyResult.key.id,
                     name: keyResult.key.name || undefined,
-                    permissions: keyResult.key.permissions || undefined,
+                    permissions,
                     metadata: keyResult.key.metadata || undefined,
                 },
             };
@@ -135,6 +148,32 @@ export const auth = (options: AuthOptions) =>
             return user;
         };
 
+        const requireModelAccess = (): void => {
+            // No API key (session auth) = allow all models
+            if (!apiKey) return;
+            // No permissions or no models restriction = allow all (backward compatible)
+            if (!apiKey.permissions?.models) return;
+
+            // Get resolved model from middleware (must run after resolveModel middleware)
+            const model = c.var.model;
+            if (!model) return; // No model middleware ran, skip check
+
+            // Check if resolved model is in the allowlist
+            if (!apiKey.permissions.models.includes(model.resolved)) {
+                log.debug(
+                    "[AUTH] Model access denied: {model} not in allowlist",
+                    {
+                        model: model.requested,
+                        resolved: model.resolved,
+                        allowed: apiKey.permissions.models,
+                    },
+                );
+                throw new HTTPException(403, {
+                    message: `Model '${model.requested}' is not allowed for this API key`,
+                });
+            }
+        };
+
         c.set("auth", {
             client,
             user,
@@ -142,6 +181,7 @@ export const auth = (options: AuthOptions) =>
             apiKey,
             requireAuthorization,
             requireUser,
+            requireModelAccess,
         });
 
         await next();

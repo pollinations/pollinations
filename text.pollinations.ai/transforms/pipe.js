@@ -15,7 +15,7 @@ export function pipe(...transforms) {
 }
 
 /**
- * Simple transform to add tools
+ * Simple transform to add tools (always appends)
  * @param {Array} tools - Tools to add
  * @returns {Function} Transform function
  */
@@ -23,6 +23,22 @@ export function addTools(tools) {
     return (messages, options) => ({
         messages,
         options: { ...options, tools: [...(options.tools || []), ...tools] },
+    });
+}
+
+/**
+ * Transform to add default tools only if user hasn't passed any
+ * @param {Array} defaultTools - Default tools to use when none provided
+ * @returns {Function} Transform function
+ */
+export function addDefaultTools(defaultTools) {
+    return (messages, options) => ({
+        messages,
+        options: {
+            ...options,
+            // Only add defaults if no tools were passed by user
+            tools: options.tools?.length ? options.tools : defaultTools,
+        },
     });
 }
 

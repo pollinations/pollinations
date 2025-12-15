@@ -1,7 +1,5 @@
 import { processEvents, storeEvents } from "@/events.ts";
-import { HTTPException } from "hono/http-exception";
 import {
-    resolveServiceId,
     getActivePriceDefinition,
     calculateCost,
     calculatePrice,
@@ -12,6 +10,7 @@ import {
     PriceDefinition,
     getServiceDefinition,
 } from "@shared/registry/registry.ts";
+import type { ModelVariables } from "./model.ts";
 import {
     openaiUsageToTokenUsage,
     parseUsageHeaders,
@@ -98,7 +97,8 @@ export type TrackEnv = {
         AuthVariables &
         PolarVariables &
         FrontendKeyRateLimitVariables &
-        TrackVariables;
+        TrackVariables &
+        ModelVariables;
 };
 
 export const track = (eventType: EventType) =>
@@ -106,7 +106,9 @@ export const track = (eventType: EventType) =>
         const log = c.get("log");
         const startTime = new Date();
 
-        const requestTracking = await trackRequest(eventType, c.req);
+        // Get model from resolveModel middleware
+        const modelInfo = c.var.model;
+        const requestTracking = await trackRequest(modelInfo, c.req);
         let responseOverride = null;
 
         c.set("track", {
@@ -189,6 +191,8 @@ export const track = (eventType: EventType) =>
                         tinybirdIngestUrl: c.env.TINYBIRD_INGEST_URL,
                         tinybirdAccessToken: c.env.TINYBIRD_ACCESS_TOKEN,
                         minBatchSize: 0, // process all events immediately
+                        minRetryDelay: 0, // don't wait between retries
+                        maxRetryDelay: 0, // don't wait between retries
                     });
                 }
             })(),
@@ -196,20 +200,12 @@ export const track = (eventType: EventType) =>
     });
 
 async function trackRequest(
-    eventType: EventType,
+    modelInfo: ModelVariables["model"],
     request: HonoRequest,
 ): Promise<RequestTrackingData> {
-    const modelRequested = await extractModelRequested(request);
-
-    let resolvedModelRequested: ServiceId | undefined;
-    try {
-        resolvedModelRequested = resolveServiceId(modelRequested, eventType);
-    } catch (error) {
-        throw new HTTPException(400, {
-            message:
-                error instanceof Error ? error.message : "Invalid model name",
-        });
-    }
+    // Model is already resolved by the resolveModel middleware
+    const modelRequested = modelInfo.requested;
+    const resolvedModelRequested = modelInfo.resolved;
 
     const modelProvider = getServiceDefinition(resolvedModelRequested).provider;
     const modelPriceDefinition = getActivePriceDefinition(
@@ -391,19 +387,6 @@ function createTrackingEvent({
         ...responseTracking.contentFilterResults,
         ...errorTracking,
     };
-}
-
-async function extractModelRequested(
-    request: HonoRequest,
-): Promise<string | null> {
-    if (request.method === "GET") {
-        return request.query("model") || null;
-    }
-    if (request.method === "POST") {
-        const body = await request.json();
-        return body.model || null;
-    }
-    return null;
 }
 
 async function extractStreamRequested(request: HonoRequest): Promise<boolean> {

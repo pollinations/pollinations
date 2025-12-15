@@ -28,6 +28,11 @@ export const hasSearch = (modelName: string): boolean => {
     return service?.search === true;
 };
 
+export const hasCodeExecution = (modelName: string): boolean => {
+    const service = getServiceDefinition(modelName as ServiceId);
+    return service?.codeExecution === true;
+};
+
 export const hasVision = (modelName: string): boolean => {
     const modalities = getModalities(modelName);
     return modalities.input.includes("image");

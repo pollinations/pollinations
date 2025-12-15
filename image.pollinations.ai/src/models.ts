@@ -109,6 +109,13 @@ export const IMAGE_CONFIG = {
         maxDuration: 10,
         defaultResolution: "720p",
     },
+
+    // Z-Image-Turbo - Fast 6B parameter image generation (self-hosted)
+    zimage: {
+        type: "zimage",
+        enhance: false,
+        defaultSideLength: 1024,
+    },
 } as const satisfies ImageModelsConfig;
 
 /**

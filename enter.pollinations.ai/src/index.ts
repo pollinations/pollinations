@@ -7,7 +7,9 @@ import { processEvents } from "./events.ts";
 import { polarRoutes } from "./routes/polar.ts";
 import { proxyRoutes } from "./routes/proxy.ts";
 import { tiersRoutes } from "./routes/tiers.ts";
+import { usageRoutes } from "./routes/usage.ts";
 import { createDocsRoutes } from "./routes/docs.ts";
+import { apiKeysRoutes } from "./routes/api-keys.ts";
 import { requestId } from "hono/request-id";
 import { logger } from "./middleware/logger.ts";
 import { getLogger } from "@logtape/logtape";
@@ -22,6 +24,8 @@ export const api = new Hono<Env>()
     .route("/auth", authRoutes)
     .route("/polar", polarRoutes)
     .route("/tiers", tiersRoutes)
+    .route("/api-keys", apiKeysRoutes)
+    .route("/usage", usageRoutes)
     .route("/generate", proxyRoutes);
 
 const docsRoutes = createDocsRoutes(api);
@@ -76,12 +80,14 @@ export default {
     fetch: app.fetch,
     scheduled: async (_controller, env, _ctx) => {
         const db = drizzle(env.DB);
-        const log = getLogger(["hono"]);
+        const log = getLogger(["hono", "scheduled"]);
         await processEvents(db, log, {
             polarAccessToken: env.POLAR_ACCESS_TOKEN,
             polarServer: env.POLAR_SERVER,
             tinybirdIngestUrl: env.TINYBIRD_INGEST_URL,
             tinybirdAccessToken: env.TINYBIRD_ACCESS_TOKEN,
+            minRetryDelay: 100,
+            maxRetryDelay: 10000,
         });
     },
 } satisfies ExportedHandler<CloudflareBindings>;

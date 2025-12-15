@@ -5,6 +5,16 @@
 
 export const chatProjects = [
     {
+        name: "Pookie AI 💕",
+        url: "https://pookieai.web.app/",
+        description:
+            "AI-powered conversational platform for creating customizable virtual characters with distinct personalities and backstories. Design anime characters, fictional entities, or custom companions for deep, context-aware roleplay dialogues.",
+        author: "@shantoislamdev",
+        repo: "https://github.com/shantoislamdev/pookie-ai",
+        submissionDate: "2025-12-08",
+        order: 1,
+    },
+    {
         name: "Nuvole AI 🍎",
         url: "https://routinehub.co/shortcut/18431/",
         description:
@@ -634,15 +644,63 @@ export const chatProjects = [
         "submissionDate": "2025-12-03",
         "order": 5,
     },
+    {
+        "name": "SimplifyMind AI (ELI5)",
+        "url": "https://simplify-eloquent-ai.lovable.app/",
+        "description":
+            "A modern one-page web app that turns any complex question into a simple, child-friendly ELI5 explanation. Uses Pollinations' LLM API (p5 model) via a Node.js backend to generate short, metaphor-based explanations, with a premium SaaS-style landing page and live chat features.",
+        "author": "CompaDeveloper",
+        "repo": null,
+        "category": "chat",
+        "language": "en",
+        "submissionDate": "2025-12-04",
+        "order": 5,
+    },
   {
-    "name": "SimplifyMind AI (ELI5)",
-    "url": "https://simplify-eloquent-ai.lovable.app/",
-    "description": "A modern one-page web app that turns any complex question into a simple, child-friendly ELI5 explanation. Uses Pollinations' LLM API (p5 model) via a Node.js backend to generate short, metaphor-based explanations, with a premium SaaS-style landing page and live chat features.",
-    "author": "CompaDeveloper",
-    "repo": null,
+    "name": "🍎 AI Food Guide and Track Calories",
+    "url": "https://nutri.selfhost.io.vn/",
+    "description": "AI-powered nutrition assistant that helps identify foods and track daily calorie intake. Get nutritional information and maintain dietary awareness through conversational AI guidance.",
+    "author": "@newnol",
+    "repo": "https://github.com/newnol/nutritrack",
     "category": "chat",
-    "language": "en",
-    "submissionDate": "2025-12-04",
+    "submissionDate": "2025-12-13",
+    "order": 5
+  },
+  {
+    "name": "✨ ToneShift AI",
+    "url": "https://toneshift-ai.lovable.app/",
+    "description": "Rewrite any text into different emotional tones while preserving meaning. Choose from Calm, Friendly, Excited, Professional, Empathetic, Confident, Playful, Apologetic, or Direct. Chat-style interface with example prompts, no sign-in required.",
+    "author": "@UstaDeveloper",
+    "category": "chat",
+    "submissionDate": "2025-12-13",
+    "order": 5
+  },
+  {
+    "name": "✨ ToneShift AI",
+    "url": "https://toneshift-ai.lovable.app/",
+    "description": "Instantly rewrite any text into different emotional tones while preserving meaning. Choose from Calm, Friendly, Excited, Professional, Empathetic, and more. Paste your message, pick a tone, and transform it with one click. Powered by Pollinations LLM.",
+    "author": "@UstaDeveloper",
+    "category": "chat",
+    "submissionDate": "2025-12-13",
+    "order": 5
+  },
+  {
+    "name": "💬 Chat AI",
+    "url": "https://t.me/Chat2qai_bot",
+    "description": "Arabic Telegram bot serving as a versatile AI assistant. Answers questions, helps brainstorm ideas, assists with translation and summarization, and supports image creation and editing.",
+    "author": "@Alhmam",
+    "category": "chat",
+    "language": "ar",
+    "submissionDate": "2025-12-13",
+    "order": 5
+  },
+  {
+    "name": "SaturnAI 🪐",
+    "url": "https://chat.xdativo.cloud",
+    "description": "Web-based AI chat app focused on clean UI and smooth user experience. Features text chat and image generation through Pollinations, optimized for both mobile and desktop with a lightweight, responsive design.",
+    "author": "@xdativo",
+    "category": "chat",
+    "submissionDate": "2025-12-14",
     "order": 5
   }
 ];

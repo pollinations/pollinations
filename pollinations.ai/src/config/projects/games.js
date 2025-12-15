@@ -221,5 +221,64 @@ export const gamesProjects = [
     "category": "games",
     "submissionDate": "2025-12-04",
     "order": 5
+  },
+  {
+    "name": "🎮 Nikke-DB Story/Roleplaying Generator",
+    "url": "https://nikke-db.pages.dev/",
+    "description": "Interactive story and roleplay generator for Goddess of Victory: NIKKE. Features Live2D character animations with lip-sync, context-aware emotional expressions, multiple AI providers including Pollinations, character lore profiles, and session management. Characters react visually to narrative events.",
+    "author": "@rhystic1",
+    "repo": "https://github.com/Nikke-db/nikke-db-vue",
+    "category": "games",
+    "submissionDate": "2025-12-13",
+    "order": 5
+  },
+  {
+    "name": "🎮 Nikke-DB Story/Roleplaying Generator",
+    "url": "https://nikke-db.pages.dev/",
+    "description": "Interactive story and roleplay generator for Goddess of Victory: NIKKE. Features Live2D character animations with context-aware expressions, lip-sync, multiple LLM providers including Pollinations, built-in character lore database, and session management.",
+    "author": "@rhystic1",
+    "repo": "https://github.com/Nikke-db/nikke-db-vue",
+    "category": "games",
+    "submissionDate": "2025-12-13",
+    "order": 5
+  },
+  {
+    name: "🎮 ii's Stupid Menu",
+    url: "https://github.com/iiDk-the-actual/iis.Stupid.Menu",
+    description: "A mod menu for Gorilla Tag featuring 1600+ mods and an AI Assistant powered by Pollinations for helping users navigate the extensive feature set.",
+    author: "@iiDk-the-actual",
+    repo: "https://github.com/iiDk-the-actual/iis.Stupid.Menu",
+    submissionDate: "2025-12-13",
+    order: 5
+  },
+  {
+    "name": "🎮 DnD Character Sheet Helper",
+    "url": "https://rkdn.app/dnd",
+    "description": "A fun tool for creating D&D character sheets with AI-generated character visualizations. Helps players build and visualize their characters using Flux and other image models through Pollinations.ai.",
+    "author": "@ArcadianComp",
+    "repo": "https://github.com/arcadiancomp/dnd",
+    "category": "games",
+    "submissionDate": "2025-12-13",
+    "order": 5
+  },
+  {
+    "name": "🎮 Kinexus",
+    "url": "https://tin2tin.github.io/Kinexus/",
+    "description": "Zero-code tool for creating choice-based cinematic narrative games and interactive fiction. Features Pollinations integration for AI-powered scene descriptions, image prompt generation, and batch image generation for scenes.",
+    "author": "@tin2tin",
+    "repo": "https://github.com/tin2tin/Kinexus",
+    "category": "games",
+    "submissionDate": "2025-12-13",
+    "order": 5
+  },
+  {
+    "name": "🎮 Kinexus",
+    "url": "https://tin2tin.github.io/Kinexus/",
+    "description": "Zero-code tool for creating choice-based narrative games and interactive fiction. Features Pollinations integration for AI-generated scene descriptions and images with batch processing support.",
+    "author": "@tin2tin",
+    "repo": "https://github.com/tin2tin/Kinexus",
+    "category": "games",
+    "submissionDate": "2025-12-13",
+    "order": 5
   }
 ];

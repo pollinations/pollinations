@@ -5,74 +5,72 @@ import type { Env } from "../env.ts";
 import { z } from "zod";
 import { drizzle } from "drizzle-orm/d1";
 import * as schema from "../db/schema/better-auth.ts";
-import { eq } from "drizzle-orm";
+import { eq, and } from "drizzle-orm";
+import { HTTPException } from "hono/http-exception";
 
 /**
- * Schema for creating an API key with permissions.
- * Uses better-auth's server API which supports setting permissions at creation time.
+ * Schema for updating an API key.
+ * Uses better-auth's server API which supports server-only fields like permissions.
  */
-const CreateApiKeySchema = z.object({
-    name: z.string().min(1).max(100),
-    description: z.string().max(500).optional(),
-    keyType: z.enum(["secret", "publishable"]).default("secret"),
+const UpdateApiKeySchema = z.object({
     // null = unrestricted (all models), [] or [...models] = restricted
     allowedModels: z.array(z.string()).nullable().optional(),
+    // Future: add more fields like name, description, enabled as needed
 });
 
 /**
  * API key management routes.
- * Uses better-auth's server API to create keys with permissions in a single call.
+ * Provides update functionality for server-only fields (permissions, etc.)
+ * Key creation uses better-auth's native client API.
  */
 export const apiKeysRoutes = new Hono<Env>()
     .use(auth({ allowSessionCookie: true, allowApiKey: false }))
     /**
-     * Create an API key with optional model permissions.
-     * Uses auth.api.createApiKey() which supports server-only fields like permissions.
+     * Update an API key's permissions.
+     * Uses auth.api.updateApiKey() which supports server-only fields like permissions.
      */
-    .post("/create", validator("json", CreateApiKeySchema), async (c) => {
+    .post("/:id/update", validator("json", UpdateApiKeySchema), async (c) => {
         const user = c.var.auth.requireUser();
         const authClient = c.var.auth.client;
-        const { name, description, keyType, allowedModels } =
-            c.req.valid("json");
+        const { id } = c.req.param();
+        const { allowedModels } = c.req.valid("json");
 
-        const isPublishable = keyType === "publishable";
-        const prefix = isPublishable ? "plln_pk" : "plln_sk";
+        // Verify ownership before updating
+        const db = drizzle(c.env.DB, { schema });
+        const existingKey = await db.query.apikey.findFirst({
+            where: and(
+                eq(schema.apikey.id, id),
+                eq(schema.apikey.userId, user.id),
+            ),
+        });
 
-        // Build permissions object if models are specified
+        if (!existingKey) {
+            throw new HTTPException(404, { message: "API key not found" });
+        }
+
+        // Build permissions object
+        // null = remove restrictions (all models allowed)
+        // [] or [...models] = restricted to specific models
         const permissions =
-            allowedModels && allowedModels.length > 0
-                ? { models: allowedModels }
-                : undefined;
+            allowedModels === null
+                ? null
+                : allowedModels && allowedModels.length > 0
+                  ? { models: allowedModels }
+                  : undefined;
 
-        // Use better-auth's server API to create key with permissions in one call
-        const apiKey = await authClient.api.createApiKey({
+        // Use better-auth's server API to update permissions
+        // userId is required for server-side calls to bypass auth checks
+        const updatedKey = await authClient.api.updateApiKey({
             body: {
-                name,
-                prefix,
+                keyId: id,
                 userId: user.id,
-                metadata: { description, keyType },
                 permissions,
             },
         });
 
-        // Store plaintextKey in metadata for publishable keys (so they can be displayed)
-        if (apiKey.key && isPublishable) {
-            const db = drizzle(c.env.DB, { schema });
-            await db
-                .update(schema.apikey)
-                .set({
-                    metadata: JSON.stringify({
-                        description,
-                        keyType,
-                        plaintextKey: apiKey.key,
-                    }),
-                })
-                .where(eq(schema.apikey.id, apiKey.id));
-        }
-
         return c.json({
-            id: apiKey.id,
-            key: apiKey.key,
-            name: apiKey.name,
+            id: updatedKey.id,
+            name: updatedKey.name,
+            permissions: updatedKey.permissions,
         });
     });

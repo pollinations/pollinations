@@ -1,7 +1,7 @@
 import { test as base, expect } from "vitest";
 import { createAuthClient } from "better-auth/client";
 import { apiKeyClient, adminClient } from "better-auth/client/plugins";
-import { SELF, env } from "cloudflare:test";
+import { SELF } from "cloudflare:test";
 import { createMockPolar } from "./mocks/polar.ts";
 import { createMockGithub } from "./mocks/github.ts";
 import { createMockTinybird } from "./mocks/tinybird.ts";
@@ -10,9 +10,6 @@ import type { Logger } from "@logtape/logtape";
 import { getLogger } from "@logtape/logtape";
 import { ensureConfigured } from "@/logger.ts";
 import { createMockVcr } from "./mocks/vcr.ts";
-import { drizzle } from "drizzle-orm/d1";
-import * as schema from "@/db/schema/better-auth.ts";
-import { eq } from "drizzle-orm";
 
 const createAuthClientInstance = () =>
     createAuthClient({
@@ -155,7 +152,7 @@ export const test = base.extend<Fixtures>({
     },
     /**
      * Creates an API key restricted to only ["openai-fast", "flux"] models.
-     * Uses direct DB access for permissions (same as production endpoint).
+     * Uses the /api/api-keys/:id/update endpoint to set permissions.
      */
     restrictedApiKey: async ({ auth, sessionToken }, use) => {
         const createApiKeyResponse = await auth.apiKey.create({
@@ -169,16 +166,25 @@ export const test = base.extend<Fixtures>({
         if (!createApiKeyResponse.data)
             throw new Error("Failed to create restricted API key");
 
-        // Update permissions directly in DB (better-auth's permissions is server-only)
-        const db = drizzle(env.DB, { schema });
-        await db
-            .update(schema.apikey)
-            .set({
-                permissions: JSON.stringify({
-                    models: ["openai-fast", "flux"],
+        // Update permissions via the API endpoint (same flow as production)
+        const updateResponse = await SELF.fetch(
+            `http://localhost:3000/api/api-keys/${createApiKeyResponse.data.id}/update`,
+            {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Cookie": `better-auth.session_token=${sessionToken}`,
+                },
+                body: JSON.stringify({
+                    allowedModels: ["openai-fast", "flux"],
                 }),
-            })
-            .where(eq(schema.apikey.id, createApiKeyResponse.data.id));
+            },
+        );
+        if (!updateResponse.ok) {
+            throw new Error(
+                `Failed to set API key permissions: ${await updateResponse.text()}`,
+            );
+        }
 
         await use(createApiKeyResponse.data.key);
     },

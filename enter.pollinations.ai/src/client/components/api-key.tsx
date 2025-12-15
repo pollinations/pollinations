@@ -448,22 +448,43 @@ const CreateKeyForm: FC<{
                         Cancel
                     </Button>
                 )}
-                <Button
-                    type={createdKey ? "button" : "submit"}
-                    onClick={createdKey ? handleCopyAndClose : undefined}
-                    className="disabled:opacity-50"
-                    disabled={
-                        !createdKey && (!formData.name.trim() || isSubmitting)
-                    }
-                >
-                    {copied
-                        ? "✓ Copied! Closing..."
-                        : createdKey
-                          ? "Copy and Close"
-                          : isSubmitting
-                            ? "Creating..."
-                            : "Create"}
-                </Button>
+                {(() => {
+                    const noModelsSelected =
+                        Array.isArray(formData.allowedModels) &&
+                        formData.allowedModels.length === 0;
+                    const isDisabled =
+                        !createdKey &&
+                        (!formData.name.trim() ||
+                            isSubmitting ||
+                            noModelsSelected);
+
+                    return (
+                        <span
+                            title={
+                                noModelsSelected && !createdKey
+                                    ? "Select at least one model"
+                                    : undefined
+                            }
+                        >
+                            <Button
+                                type={createdKey ? "button" : "submit"}
+                                onClick={
+                                    createdKey ? handleCopyAndClose : undefined
+                                }
+                                className="disabled:opacity-50"
+                                disabled={isDisabled}
+                            >
+                                {copied
+                                    ? "✓ Copied! Closing..."
+                                    : createdKey
+                                      ? "Copy and Close"
+                                      : isSubmitting
+                                        ? "Creating..."
+                                        : "Create"}
+                            </Button>
+                        </span>
+                    );
+                })()}
             </div>
         </form>
     );

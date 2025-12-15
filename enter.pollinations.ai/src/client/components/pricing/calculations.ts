@@ -164,9 +164,9 @@ export const calculatePerPollen = (model: ModelPrice): string => {
             const costPerSecond = parseFloat(model.perSecondPrice);
             if (costPerSecond === 0) return "—";
 
-            // Show seconds per pollen
+            // Show seconds per pollen (no suffix - column header shows "seconds")
             const secondsPerPollen = 1 / costPerSecond;
-            return `${secondsPerPollen.toFixed(1)} sec`;
+            return secondsPerPollen.toFixed(1);
         }
     }
 

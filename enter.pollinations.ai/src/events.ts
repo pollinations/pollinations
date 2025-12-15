@@ -1,8 +1,13 @@
 import { Polar } from "@polar-sh/sdk";
-import { eq, sql, and, gte, or, lt, count, min } from "drizzle-orm";
+import { eq, sql, and, gte, or, lt, count, min, max } from "drizzle-orm";
 import type { DrizzleD1Database } from "drizzle-orm/d1";
 import { event } from "./db/schema/event.ts";
-import { batches, generateRandomId, removeUnset } from "./util.ts";
+import {
+    batches,
+    exponentialBackoffDelay,
+    generateRandomId,
+    removeUnset,
+} from "./util.ts";
 import {
     InsertGenerationEvent,
     SelectGenerationEvent,
@@ -46,6 +51,8 @@ export async function processEvents(
         tinybirdAccessToken: string;
         minBatchSize?: number;
         maxBatchSize?: number;
+        minRetryDelay?: number;
+        maxRetryDelay?: number;
     },
 ) {
     for await (const { processingId, events } of pendingEventBatches(
@@ -70,8 +77,8 @@ export async function processEvents(
             log,
         );
         if (
-            ["succeeded", "skipped"].includes(polarDelivery) &&
-            ["succeeded", "skipped"].includes(tinybirdDelivery)
+            ["succeeded", "skipped"].includes(polarDelivery.status) &&
+            ["succeeded", "skipped"].includes(tinybirdDelivery.status)
         ) {
             log.trace("Event processing complete: {processingId}", {
                 processingId,
@@ -85,6 +92,25 @@ export async function processEvents(
                 polarDelivery,
                 tinybirdDelivery,
             });
+            if (config.minRetryDelay) {
+                const retryDelay = exponentialBackoffDelay(
+                    Math.max(
+                        polarDelivery.maxDeliveryAttempts,
+                        tinybirdDelivery.maxDeliveryAttempts,
+                    ),
+                    {
+                        minDelay: config.minRetryDelay,
+                        maxDelay: config.maxRetryDelay,
+                        maxAttempts: MAX_DELIVERY_ATTEMPTS,
+                    },
+                );
+                // Wait a bit to prevent rate limiting
+                log.trace(
+                    "Waiting {retryDelay}ms before retrying: {processingId}",
+                    { retryDelay, processingId },
+                );
+                await new Promise((resolve) => setTimeout(resolve, retryDelay));
+            }
         }
     }
     // Clear successfully sent events
@@ -130,22 +156,23 @@ async function preparePendingEvents(
         return { processingId, events: [] };
     }
 
-    // Update events to processing status
-    await db
-        .update(event)
-        .set({
-            eventStatus: "processing",
-            eventProcessingId: processingId,
-            updatedAt: new Date(),
-        })
-        .where(eq(event.eventStatus, "pending"))
-        .limit(maxBatchSize);
-
-    // Fetch updated events (D1 has column limits on .returning())
-    const events = await db
-        .select()
-        .from(event)
-        .where(eq(event.eventProcessingId, processingId));
+    const [_, events] = await db.batch([
+        // Update events to processing status
+        db
+            .update(event)
+            .set({
+                eventStatus: "processing",
+                eventProcessingId: processingId,
+                updatedAt: new Date(),
+            })
+            .where(eq(event.eventStatus, "pending"))
+            .limit(maxBatchSize),
+        // Fetch updated events (D1 has column limits on .returning())
+        db
+            .select()
+            .from(event)
+            .where(eq(event.eventProcessingId, processingId)),
+    ]);
 
     return { processingId, events };
 }
@@ -174,43 +201,48 @@ async function rollbackProcessingEvents(
         tinybirdDelivery: DeliveryStatus;
     },
 ): Promise<void> {
-    // Mark events that exceed MAX_DELIVERY_ATTEMPTS as error
-    await db
-        .update(event)
-        .set({ eventStatus: "error" })
-        .where(
-            and(
-                eq(event.eventProcessingId, processingId),
-                or(
-                    gte(event.polarDeliveryAttempts, MAX_DELIVERY_ATTEMPTS),
-                    gte(event.tinybirdDeliveryAttempts, MAX_DELIVERY_ATTEMPTS),
+    await db.batch([
+        // Mark events that exceed MAX_DELIVERY_ATTEMPTS as error
+        db
+            .update(event)
+            .set({ eventStatus: "error" })
+            .where(
+                and(
+                    eq(event.eventProcessingId, processingId),
+                    or(
+                        gte(event.polarDeliveryAttempts, MAX_DELIVERY_ATTEMPTS),
+                        gte(
+                            event.tinybirdDeliveryAttempts,
+                            MAX_DELIVERY_ATTEMPTS,
+                        ),
+                    ),
                 ),
             ),
-        );
-    // Mark remaining events as pending
-    await db
-        .update(event)
-        .set({
-            eventStatus: "pending",
-            ...(status.polarDelivery === "succeeded" && {
-                polarDeliveredAt: new Date(),
-            }),
-            ...(status.polarDelivery !== "skipped" && {
-                polarDeliveryAttempts: sql`${event.polarDeliveryAttempts} + 1`,
-            }),
-            ...(status.tinybirdDelivery === "succeeded" && {
-                tinybirdDeliveredAt: new Date(),
-            }),
-            ...(status.tinybirdDelivery !== "skipped" && {
-                tinybirdDeliveryAttempts: sql`${event.tinybirdDeliveryAttempts} + 1`,
-            }),
-        })
-        .where(
-            and(
-                eq(event.eventProcessingId, processingId),
-                eq(event.eventStatus, "processing"),
+        // Mark remaining events as pending
+        db
+            .update(event)
+            .set({
+                eventStatus: "pending",
+                ...(status.polarDelivery.status === "succeeded" && {
+                    polarDeliveredAt: new Date(),
+                }),
+                ...(status.polarDelivery.status !== "skipped" && {
+                    polarDeliveryAttempts: sql`${event.polarDeliveryAttempts} + 1`,
+                }),
+                ...(status.tinybirdDelivery.status === "succeeded" && {
+                    tinybirdDeliveredAt: new Date(),
+                }),
+                ...(status.tinybirdDelivery.status !== "skipped" && {
+                    tinybirdDeliveryAttempts: sql`${event.tinybirdDeliveryAttempts} + 1`,
+                }),
+            })
+            .where(
+                and(
+                    eq(event.eventProcessingId, processingId),
+                    eq(event.eventStatus, "processing"),
+                ),
             ),
-        );
+    ]);
 }
 
 async function confirmProcessingEvents(
@@ -235,7 +267,11 @@ async function clearExpiredEvents(db: DrizzleD1Database): Promise<void> {
         );
 }
 
-type DeliveryStatus = "skipped" | "failed" | "succeeded";
+type DeliveryStatus = {
+    status: "skipped" | "failed" | "succeeded";
+    minDeliveryAttempts: number;
+    maxDeliveryAttempts: number;
+};
 
 function createPolarEvent(event: SelectGenerationEvent) {
     if (!event.userId) {
@@ -286,6 +322,7 @@ function createPolarEvent(event: SelectGenerationEvent) {
     });
     return {
         name: event.eventType,
+        externalId: event.id,
         externalCustomerId: event.userId,
         metadata,
     };
@@ -308,7 +345,12 @@ async function sendPolarEvents(
             (event) => event.isBilledUsage && event.polarDeliveredAt == null,
         )
         .map((event) => createPolarEvent(event));
-    if (polarEvents.length === 0) return "skipped";
+    const deliveryStats = polarDeliveryStats(events);
+    if (polarEvents.length === 0)
+        return {
+            status: "skipped",
+            ...deliveryStats,
+        };
     let ingested = 0;
     try {
         const response = await polar.events.ingest({
@@ -326,9 +368,15 @@ async function sendPolarEvents(
             "Number of ingested Polar events did not match: {ingested}/{count}",
             { count: polarEvents.length, ingested },
         );
-        return "failed";
+        return {
+            status: "failed",
+            ...deliveryStats,
+        };
     }
-    return "succeeded";
+    return {
+        status: "succeeded",
+        ...deliveryStats,
+    };
 }
 
 async function sendTinybirdEvents(
@@ -337,6 +385,7 @@ async function sendTinybirdEvents(
     tinybirdAccessToken: string,
     log: Logger,
 ): Promise<DeliveryStatus> {
+    const deliveryStats = tinybirdDeliveryStats(events);
     const tinybirdEvents = events
         .filter((event) => event.tinybirdDeliveredAt == null)
         .map((event) => {
@@ -353,7 +402,11 @@ async function sendTinybirdEvents(
                 ),
             );
         });
-    if (tinybirdEvents.length === 0) return "skipped";
+    if (tinybirdEvents.length === 0)
+        return {
+            status: "skipped",
+            ...deliveryStats,
+        };
     let ingested = 0;
     try {
         const response = await fetch(tinybirdIngestUrl, {
@@ -384,9 +437,15 @@ async function sendTinybirdEvents(
             "Number of ingested Tinybird events did not match: {ingested}/{count}",
             { count: tinybirdEvents.length, ingested },
         );
-        return "failed";
+        return {
+            status: "failed",
+            ...deliveryStats,
+        };
     }
-    return "succeeded";
+    return {
+        status: "succeeded",
+        ...deliveryStats,
+    };
 }
 
 function flattenBalances(balances: Record<string, number> | null) {
@@ -401,4 +460,42 @@ function flattenBalances(balances: Record<string, number> | null) {
 
 function capitalize(str: string) {
     return `${str.charAt(0).toUpperCase()}${str.slice(1)}`;
+}
+
+function polarDeliveryStats(events: SelectGenerationEvent[]): {
+    minDeliveryAttempts: number;
+    maxDeliveryAttempts: number;
+} {
+    return events.reduce(
+        (stats, event) => ({
+            minDeliveryAttempts: Math.min(
+                event.polarDeliveryAttempts,
+                stats.minDeliveryAttempts,
+            ),
+            maxDeliveryAttempts: Math.max(
+                event.polarDeliveryAttempts,
+                stats.maxDeliveryAttempts,
+            ),
+        }),
+        { minDeliveryAttempts: MAX_DELIVERY_ATTEMPTS, maxDeliveryAttempts: 0 },
+    );
+}
+
+function tinybirdDeliveryStats(events: SelectGenerationEvent[]): {
+    minDeliveryAttempts: number;
+    maxDeliveryAttempts: number;
+} {
+    return events.reduce(
+        (stats, event) => ({
+            minDeliveryAttempts: Math.min(
+                event.tinybirdDeliveryAttempts,
+                stats.minDeliveryAttempts,
+            ),
+            maxDeliveryAttempts: Math.max(
+                event.tinybirdDeliveryAttempts,
+                stats.maxDeliveryAttempts,
+            ),
+        }),
+        { minDeliveryAttempts: MAX_DELIVERY_ATTEMPTS, maxDeliveryAttempts: 0 },
+    );
 }

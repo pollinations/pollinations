@@ -54,6 +54,16 @@ export function processParameters(messages, options) {
         delete updatedOptions.max_tokens;
     }
 
+    // Force temperature=1 for reasoning models (o1, o3, o4) and GPT-5 series
+    // These Azure OpenAI models only support temperature=1
+    const isReasoningOrGpt5Model =
+        requestedModel &&
+        (/^o[134](-mini|-preview)?$/i.test(requestedModel) ||
+            /^gpt-5/i.test(requestedModel));
+    if (isReasoningOrGpt5Model) {
+        updatedOptions.temperature = 1;
+    }
+
     // Apply parameter filtering if defined
     if (modelConfig.allowedParameters) {
         const allowedParams = modelConfig.allowedParameters;

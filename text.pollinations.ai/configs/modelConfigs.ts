@@ -20,18 +20,12 @@ import {
     createApiNavyModelConfig,
     createPerplexityModelConfig,
 } from "./providerConfigs.js";
-import type { ModelId } from "../../shared/registry/registry.js";
-
 const log = debug("pollinations:portkey");
 
 dotenv.config();
 
-// Type-safe config object: all keys must be valid model IDs from MODEL_REGISTRY
-type PortkeyConfigMap = {
-    [K in ModelId]: () => any;
-} & {
-    [key: string]: () => any; // Allow additional legacy configs not in MODEL_REGISTRY
-};
+// Config keys can be modelIds or custom names - not all modelIds need entries
+type PortkeyConfigMap = Record<string, () => unknown>;
 
 // Unified flat Portkey configuration for all providers and models - using functions that return fresh configurations
 export const portkeyConfig: PortkeyConfigMap = {
@@ -47,6 +41,14 @@ export const portkeyConfig: PortkeyConfigMap = {
             "gpt-5-mini-2025-08-07",
         ),
         "max-completion-tokens": 1024,
+    }),
+    "gpt-5.2-2025-12-11": () => ({
+        ...createAzureModelConfig(
+            process.env.AZURE_MYCELI_GPT52_API_KEY,
+            process.env.AZURE_MYCELI_GPT52_ENDPOINT,
+            "gpt-5.2-2025-12-11",
+        ),
+        "max-completion-tokens": 16384,
     }),
     "gpt-5-nano-2025-08-07": () => ({
         ...createAzureModelConfig(

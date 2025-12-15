@@ -17,7 +17,7 @@ export const User: FC<UserProps> = ({
     return (
         <Menu.Root>
             <Menu.Trigger asChild>
-                <button className="flex flex-row gap-2 p-1 pr-3 bg-amber-200 rounded-full items-center self-center hover:bg-amber-300 transition-colors cursor-pointer focus:outline-none focus:ring-2 focus:ring-amber-300">
+                <button className="flex flex-row gap-2 p-1 pr-3 bg-amber-200 rounded-full items-center self-center hover:bg-amber-300 transition-colors cursor-pointer focus:outline-none focus:ring-2 focus:ring-amber-300 whitespace-nowrap">
                     <img src={githubAvatarUrl} className="h-8 rounded-full" />
                     <span className="font-medium text-amber-900">
                         {githubUsername}

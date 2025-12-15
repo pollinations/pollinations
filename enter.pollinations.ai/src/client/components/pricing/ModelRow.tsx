@@ -5,10 +5,12 @@ import {
     hasVision,
     hasAudioInput,
     hasSearch,
+    hasCodeExecution,
     getModelDescription,
 } from "./model-info.ts";
 import { calculatePerPollen } from "./calculations.ts";
 import { PriceBadge } from "./PriceBadge.tsx";
+import { Tooltip } from "./Tooltip.tsx";
 
 type ModelRowProps = {
     model: ModelPrice;
@@ -24,19 +26,43 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
     const showVision = hasVision(model.name);
     const showAudioInput = hasAudioInput(model.name);
     const showSearch = hasSearch(model.name);
+    const showCodeExecution = hasCodeExecution(model.name);
 
     // Show info icon if we have a description to display, or if it's a video model (for alpha notice)
     const isVideoModel = model.type === "video";
     const hasDescription = modelDescription && modelDescription !== model.name;
-    const showDescriptionInfo = hasDescription || isVideoModel;
+
+    // Determine pricing type for image models
+    const isImageModel = model.type === "image";
+    const hasFlatPricing = isImageModel && model.perImagePrice;
+    const hasTokenPricing =
+        isImageModel &&
+        !model.perImagePrice &&
+        (model.promptTextPrice || model.completionTextPrice);
+
+    // Build pricing note for image models
+    const pricingNote = hasFlatPricing
+        ? "Flat rate per image (any resolution)"
+        : hasTokenPricing
+          ? "Token-based pricing (varies with prompt)"
+          : "";
+
+    const showDescriptionInfo =
+        hasDescription || isVideoModel || (isImageModel && pricingNote);
 
     // Build tooltip content
     const alphaNotice = "Alpha – API may change";
-    const tooltipContent = isVideoModel
+    const baseContent = isVideoModel
         ? hasDescription
             ? `${modelDescription}. ${alphaNotice}`
             : alphaNotice
         : modelDescription;
+
+    // Combine description with pricing note
+    const tooltipContent =
+        baseContent && pricingNote
+            ? `${baseContent}. ${pricingNote}`
+            : baseContent || pricingNote;
 
     return (
         <tr className="border-b border-gray-200">
@@ -67,37 +93,35 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
                         </button>
                     )}
                     {showVision && (
-                        <span
-                            className="text-base"
-                            title={
+                        <Tooltip
+                            text={
                                 model.type === "image"
-                                    ? "Vision - supports image input (image-to-image)"
-                                    : "Vision - supports image input"
+                                    ? "Vision (image-to-image)"
+                                    : "Vision input"
                             }
                         >
-                            👁️
-                        </span>
+                            <span className="text-base">👁️</span>
+                        </Tooltip>
                     )}
                     {showAudioInput && (
-                        <span className="text-base" title="Audio input support">
-                            👂
-                        </span>
+                        <Tooltip text="Audio input">
+                            <span className="text-base">👂</span>
+                        </Tooltip>
                     )}
                     {showReasoning && (
-                        <span
-                            className="text-base"
-                            title="Advanced reasoning capabilities"
-                        >
-                            🧠
-                        </span>
+                        <Tooltip text="Reasoning">
+                            <span className="text-base">🧠</span>
+                        </Tooltip>
                     )}
                     {showSearch && (
-                        <span
-                            className="text-base"
-                            title="Web search capabilities"
-                        >
-                            🔍
-                        </span>
+                        <Tooltip text="Web search">
+                            <span className="text-base">🔍</span>
+                        </Tooltip>
+                    )}
+                    {showCodeExecution && (
+                        <Tooltip text="Code execution">
+                            <span className="text-base">💻</span>
+                        </Tooltip>
                     )}
                 </div>
             </td>

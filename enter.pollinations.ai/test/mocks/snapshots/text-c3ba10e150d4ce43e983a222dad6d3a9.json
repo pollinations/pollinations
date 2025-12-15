@@ -1,0 +1,104 @@
+{
+  "request": {
+    "url": "http://ec2-3-80-56-235.compute-1.amazonaws.com:16385/openai",
+    "method": "POST",
+    "body": {
+      "type": "json",
+      "data": {
+        "model": "openai-fast",
+        "messages": [],
+        "seed": 42
+      }
+    },
+    "params": {}
+  },
+  "response": {
+    "status": 200,
+    "statusText": "OK",
+    "headers": {
+      "access-control-allow-origin": "*",
+      "connection": "keep-alive",
+      "content-length": "1598",
+      "content-type": "application/json; charset=utf-8",
+      "date": "Thu, 11 Dec 2025 16:47:28 GMT",
+      "etag": "W/\"63e-XQ3Wnd+GbzelCL0RjUt4+8HBtBw\"",
+      "keep-alive": "timeout=5",
+      "x-model-used": "gpt-5-nano-2025-08-07",
+      "x-powered-by": "Express",
+      "x-usage-completion-reasoning-tokens": "320",
+      "x-usage-completion-text-tokens": "150",
+      "x-usage-prompt-text-tokens": "243",
+      "x-usage-total-tokens": "713"
+    },
+    "body": {
+      "type": "json",
+      "data": {
+        "choices": [
+          {
+            "content_filter_results": {
+              "hate": {
+                "filtered": false,
+                "severity": "safe"
+              },
+              "protected_material_code": {
+                "filtered": false,
+                "detected": false
+              },
+              "protected_material_text": {
+                "filtered": false,
+                "detected": false
+              },
+              "self_harm": {
+                "filtered": false,
+                "severity": "safe"
+              },
+              "sexual": {
+                "filtered": false,
+                "severity": "safe"
+              },
+              "violence": {
+                "filtered": false,
+                "severity": "safe"
+              }
+            },
+            "finish_reason": "stop",
+            "index": 0,
+            "logprobs": null,
+            "message": {
+              "annotations": [],
+              "content": "What would you like to work on today? I can help with a lot of things, or just chat.\n\nA few ways I can assist:\n- Problem solving and planning: project timelines, decision matrices, prioritization\n- Writing and editing: emails, reports, essays, code comments, resumes\n- Learning and explanations: math, science, tech concepts, step-by-step guides\n- Creative work: story ideas, prompts, worldbuilding\n- Emotional support or venting: I’m here to listen and reflect back\n\nTell me a bit about what you’re aiming for, any constraints, and your preferred tone (serious, playful, concise, etc.). How would you like to start?",
+              "refusal": null,
+              "role": "assistant"
+            }
+          }
+        ],
+        "created": 1765471643,
+        "id": "pllns_53e9f6bbc051d9b435633848ec63bc09",
+        "model": "gpt-5-nano-2025-08-07",
+        "object": "chat.completion",
+        "prompt_filter_results": [
+          {
+            "prompt_index": 0,
+            "content_filter_results": {}
+          }
+        ],
+        "system_fingerprint": null,
+        "usage": {
+          "completion_tokens": 470,
+          "completion_tokens_details": {
+            "accepted_prediction_tokens": 0,
+            "audio_tokens": 0,
+            "reasoning_tokens": 320,
+            "rejected_prediction_tokens": 0
+          },
+          "prompt_tokens": 243,
+          "prompt_tokens_details": {
+            "audio_tokens": 0,
+            "cached_tokens": 0
+          },
+          "total_tokens": 713
+        }
+      }
+    }
+  }
+}

@@ -2,7 +2,7 @@ name: PR Create App Submission
 
 on:
   issues:
-    types: [opened, edited, reopened]
+    types: [opened, edited, reopened, labeled]
   pull_request:
     paths:
       - '.github/workflows/pr-create-app-submission.yml'  # Trigger on self to bootstrap
@@ -27,11 +27,18 @@ jobs:
       id-token: write
 
     steps:
+      - name: Generate Pollinations AI Token
+        id: pollinations-ai
+        uses: actions/create-github-app-token@v1
+        with:
+          app-id: ${{ secrets.POLLY_BOT_APP_ID }}
+          private-key: ${{ secrets.POLLY_BOT_PRIVATE_KEY }}
+
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ steps.pollinations-ai.outputs.token }}
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -88,16 +95,17 @@ jobs:
         id: parse
         env:
           ISSUE_BODY: ${{ steps.issue.outputs.body }}
+          POLLINATIONS_TOKEN: ${{ secrets.POLLINATIONS_TOKEN }}
         run: |
           # Build JSON payload safely
           PAYLOAD=$(jq -n \
             --arg body "$ISSUE_BODY" \
             '{
-              model: "openai",
+              model: "claude-large",
               messages: [
                 {
                   role: "system",
-                  content: "You parse GitHub issue forms for app submissions. Extract and return ONLY valid JSON with these fields: name, url, description, author, repo (optional), category (one of: chat, creative, games, hackAndBuild, learn, socialBots, vibeCoding), language (optional, e.g. zh-CN for non-English). If info is missing or invalid, return {\"error\": \"reason\"}."
+                  content: "You review app submissions for pollinations.ai showcase.\n\nReturn RAW JSON only - no markdown, no code fences, no explanation.\n\nFIELDS:\n- name: Add contextual emoji if missing (🎨 creative, 🤖 bot, 🎮 game, 💬 chat, 📚 learn, ✨ vibe, 🛠️ tools)\n- url: Project URL (required)\n- description: CONDENSE to 30-50 words. Make it clear, remove marketing fluff.\n- author: @username from submission\n- repo: GitHub URL (optional)\n- category: chat|creative|games|hackAndBuild|learn|socialBots|vibeCoding\n- language: only if non-English (zh-CN, es, etc)\n\nRESPONSES:\n- Valid: {\"name\":\"...\",\"url\":\"...\",\"description\":\"...\",\"author\":\"...\",\"category\":\"...\"}\n- Missing info: {\"error\": \"what is missing\"}\n- Reject: {\"reject\": \"brief reason\"}"
                 },
                 {
                   role: "user",
@@ -108,22 +116,25 @@ jobs:
             }')
           
           echo "Calling Pollinations API..."
-          echo "Payload: $PAYLOAD"
           
-          # Call Pollinations API (no auth needed for basic usage)
-          RESPONSE=$(curl -s -X POST "https://text.pollinations.ai/" \
+          # Call gen.pollinations.ai with auth token
+          RESPONSE=$(curl -s -X POST "https://gen.pollinations.ai/v1/chat/completions" \
+            -H "Authorization: Bearer $POLLINATIONS_TOKEN" \
             -H "Content-Type: application/json" \
             -d "$PAYLOAD")
           
           echo "Response: $RESPONSE"
           
-          # Extract the JSON content - try both OpenAI format and direct text
+          # Extract content from response
           PROJECT_JSON=$(echo "$RESPONSE" | jq -r '.choices[0].message.content // .text // empty' 2>/dev/null)
           
-          # If still empty, maybe it's direct JSON
+          # Fallback to raw response if extraction failed
           if [ -z "$PROJECT_JSON" ]; then
             PROJECT_JSON="$RESPONSE"
           fi
+          
+          # Strip markdown code fences if present (preserve internal newlines)
+          PROJECT_JSON=$(echo "$PROJECT_JSON" | sed '/^```json$/d; /^```$/d' | sed 's/^[[:space:]]*//; s/[[:space:]]*$//')
           
           echo "Parsed JSON: $PROJECT_JSON"
           
@@ -133,17 +144,24 @@ jobs:
             exit 1
           fi
           
-          # Check for error in parsed result
-          ERROR=$(echo "$PROJECT_JSON" | jq -r '.error // empty')
-          if [ -n "$ERROR" ]; then
-            echo "error=$ERROR" >> $GITHUB_OUTPUT
-            echo "needs_info=true" >> $GITHUB_OUTPUT
+          # Check for rejection first
+          REJECT=$(echo "$PROJECT_JSON" | jq -r '.reject // empty')
+          if [ -n "$REJECT" ]; then
+            echo "reject_reason=$REJECT" >> $GITHUB_OUTPUT
+            echo "rejected=true" >> $GITHUB_OUTPUT
           else
-            echo "project_json<<EOF" >> $GITHUB_OUTPUT
-            echo "$PROJECT_JSON" >> $GITHUB_OUTPUT
-            echo "EOF" >> $GITHUB_OUTPUT
-            echo "name=$(echo "$PROJECT_JSON" | jq -r '.name')" >> $GITHUB_OUTPUT
-            echo "category=$(echo "$PROJECT_JSON" | jq -r '.category')" >> $GITHUB_OUTPUT
+            # Check for error (needs more info)
+            ERROR=$(echo "$PROJECT_JSON" | jq -r '.error // empty')
+            if [ -n "$ERROR" ]; then
+              echo "error=$ERROR" >> $GITHUB_OUTPUT
+              echo "needs_info=true" >> $GITHUB_OUTPUT
+            else
+              echo "project_json<<EOF" >> $GITHUB_OUTPUT
+              echo "$PROJECT_JSON" >> $GITHUB_OUTPUT
+              echo "EOF" >> $GITHUB_OUTPUT
+              echo "name=$(echo "$PROJECT_JSON" | jq -r '.name')" >> $GITHUB_OUTPUT
+              echo "category=$(echo "$PROJECT_JSON" | jq -r '.category')" >> $GITHUB_OUTPUT
+            fi
           fi
 
       - name: Request more info if needed
@@ -175,10 +193,46 @@ jobs:
               labels: ['app:info-needed']
             });
 
+      - name: Reject submission
+        if: steps.parse.outputs.rejected == 'true'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: ${{ steps.issue.outputs.number }},
+              body: `👋 @${{ steps.issue.outputs.author }}, thanks for your interest in pollinations.ai!\n\nUnfortunately, this submission was not approved: **${{ steps.parse.outputs.reject_reason }}**\n\nIf you believe this was a mistake, please update your submission with more details about how your app uses the pollinations.ai API.`
+            });
+            
+            // Swap to denied label and close
+            try {
+              await github.rest.issues.removeLabel({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: ${{ steps.issue.outputs.number }},
+                name: 'app:review'
+              });
+            } catch (e) {}
+            
+            await github.rest.issues.addLabels({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: ${{ steps.issue.outputs.number }},
+              labels: ['app:denied']
+            });
+            
+            await github.rest.issues.update({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: ${{ steps.issue.outputs.number }},
+              state: 'closed'
+            });
+
       - name: Add app and create PR
-        if: steps.parse.outputs.needs_info != 'true'
+        if: steps.parse.outputs.needs_info != 'true' && steps.parse.outputs.rejected != 'true'
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ steps.pollinations-ai.outputs.token }}
           ISSUE_NUMBER: ${{ steps.issue.outputs.number }}
           ISSUE_AUTHOR: ${{ steps.issue.outputs.author }}
           ISSUE_AUTHOR_ID: ${{ steps.issue.outputs.author_id }}
@@ -221,8 +275,8 @@ jobs:
           node pollinator-agent/project-list-scripts/generate-project-table.js --update-readme || true
           
           # Commit and push
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git config user.name "pollinations-ai[bot]"
+          git config user.email "pollinations-ai[bot]@users.noreply.github.com"
           git add -A
           git commit -m "Add $PROJECT_NAME to $CATEGORY
 
@@ -231,23 +285,52 @@ jobs:
           # Force push (handles re-runs where branch already exists)
           git push origin "$BRANCH" --force
           
-          # Create PR (or update existing)
-          EXISTING_PR=$(gh pr list --head "$BRANCH" --json number -q '.[0].number')
+          # Extract fields for PR body
+          PROJECT_URL=$(echo "$PROJECT_JSON" | jq -r '.url // "N/A"')
+          PROJECT_DESC=$(echo "$PROJECT_JSON" | jq -r '.description // "N/A"')
+          PROJECT_REPO=$(echo "$PROJECT_JSON" | jq -r '.repo // empty')
+          PROJECT_LANG=$(echo "$PROJECT_JSON" | jq -r '.language // empty')
+          
+          # Build PR body via GITHUB_ENV (available in next step)
+          echo "PR_BODY<<EOF" >> $GITHUB_ENV
+          echo "## 🌸 App Submission Summary" >> $GITHUB_ENV
+          echo "" >> $GITHUB_ENV
+          echo "- Name: $PROJECT_NAME" >> $GITHUB_ENV
+          echo "- Category: $CATEGORY" >> $GITHUB_ENV
+          echo "- URL: $PROJECT_URL" >> $GITHUB_ENV
+          echo "- Repo: ${PROJECT_REPO:-N/A}" >> $GITHUB_ENV
+          echo "- Language: ${PROJECT_LANG:-English}" >> $GITHUB_ENV
+          echo "- Submitter: @$ISSUE_AUTHOR" >> $GITHUB_ENV
+          echo "" >> $GITHUB_ENV
+          echo "### Description" >> $GITHUB_ENV
+          echo "$PROJECT_DESC" >> $GITHUB_ENV
+          echo "" >> $GITHUB_ENV
+          echo "---" >> $GITHUB_ENV
+          echo "Co-authored-by: $ISSUE_AUTHOR <${ISSUE_AUTHOR_ID}+${ISSUE_AUTHOR}@users.noreply.github.com>" >> $GITHUB_ENV
+          echo "Fixes #$ISSUE_NUMBER" >> $GITHUB_ENV
+          echo "EOF" >> $GITHUB_ENV
+          echo "PROJECT_NAME_ENV=$PROJECT_NAME" >> $GITHUB_ENV
+          echo "CATEGORY_ENV=$CATEGORY" >> $GITHUB_ENV
+          echo "BRANCH_ENV=$BRANCH" >> $GITHUB_ENV
+
+      - name: Create PR
+        if: steps.parse.outputs.needs_info != 'true' && steps.parse.outputs.rejected != 'true'
+        env:
+          GH_TOKEN: ${{ steps.pollinations-ai.outputs.token }}
+        run: |
+          EXISTING_PR=$(gh pr list --head "${{ env.BRANCH_ENV }}" --json number -q '.[0].number')
           if [ -n "$EXISTING_PR" ]; then
-            echo "PR #$EXISTING_PR already exists, updating..."
+            echo "PR #$EXISTING_PR already exists"
           else
             gh pr create \
-              --title "Add $PROJECT_NAME to $CATEGORY" \
-              --body "Adds **$PROJECT_NAME** to **$CATEGORY** apps.
-
-          Co-authored-by: $ISSUE_AUTHOR <${ISSUE_AUTHOR_ID}+${ISSUE_AUTHOR}@users.noreply.github.com>
-          Fixes #$ISSUE_NUMBER" \
+              --title "Add ${{ env.PROJECT_NAME_ENV }} to ${{ env.CATEGORY_ENV }}" \
+              --body "${{ env.PR_BODY }}" \
               --base main \
-              --head "$BRANCH"
+              --head "${{ env.BRANCH_ENV }}"
           fi
 
       - name: Comment on issue with PR link
-        if: steps.parse.outputs.needs_info != 'true'
+        if: steps.parse.outputs.needs_info != 'true' && steps.parse.outputs.rejected != 'true'
         uses: actions/github-script@v7
         with:
           script: |

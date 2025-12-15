@@ -12,42 +12,86 @@ export const Pricing: FC = () => {
 
     return (
         <div className="flex flex-col gap-2">
-            <div className="flex flex-col sm:flex-row justify-between gap-3">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
                 <h2 className="font-bold flex-1">Pricing</h2>
                 <Button
                     as="a"
                     href="https://github.com/pollinations/pollinations/issues/5321"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="!bg-blue-200 !text-blue-900"
-                    color="blue"
+                    color="amber"
                     weight="light"
                     size="small"
+                    className="self-start sm:self-center"
                 >
                     🤖 Vote on next models
                 </Button>
             </div>
-            <div className="bg-amber-50/30 rounded-2xl p-8 border border-amber-300 space-y-8 overflow-x-auto md:overflow-x-visible">
-                <div className="bg-gradient-to-r from-purple-100 to-pink-100 rounded-xl p-4 border-2 border-purple-300">
-                    <p className="text-sm font-medium text-purple-900">
-                        ✨ <span className="font-bold">Beta vibes!</span> Our
-                        pricing is still cooking and might change as we make
-                        things even better for you 💜 Feel free to explore and
-                        see what fits your creative flow~ 🌸
-                    </p>
-                </div>
-
+            <div className="bg-amber-50/30 rounded-2xl p-8 border border-amber-300 space-y-8 overflow-x-auto md:overflow-x-visible [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
                 <ModelTable models={imageModels} type="image" />
                 <ModelTable models={videoModels} type="video" />
                 <ModelTable models={textModels} type="text" />
 
-                <div className="text-xs text-gray-500 italic pt-4 border-t border-gray-300">
-                    * "Per pollen" estimates are based on typical usage
-                    patterns. Text calculations use workload profiles that
-                    automatically adjust for model capabilities (standard chat,
-                    reasoning, vision, audio). Image calculations use standard
-                    generation parameters. Actual costs may vary based on your
-                    specific prompts, output length, and features used.
+                <div className="pt-4 space-y-3">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
+                        <div className="bg-white/50 rounded-lg p-3 border border-amber-200">
+                            <div className="font-medium text-gray-900 mb-2">
+                                Model Capabilities
+                            </div>
+                            <div className="space-y-1 text-gray-600">
+                                <div>👁️ vision</div>
+                                <div>👂 audio input</div>
+                                <div>🧠 reasoning</div>
+                                <div>🔍 search</div>
+                            </div>
+                        </div>
+                        <div className="bg-white/50 rounded-lg p-3 border border-amber-200">
+                            <div className="font-medium text-gray-900 mb-2">
+                                Pricing Metrics
+                            </div>
+                            <div className="space-y-1 text-gray-600">
+                                <div>
+                                    <strong>/image</strong> = flat rate per
+                                    image
+                                </div>
+                                <div>
+                                    <strong>/M</strong> = cost per million
+                                    tokens
+                                </div>
+                                <div>
+                                    <strong>/sec</strong> = cost per second of
+                                    video
+                                </div>
+                            </div>
+                        </div>
+                        <div className="bg-white/50 rounded-lg p-3 border border-amber-200">
+                            <div className="font-medium text-gray-900 mb-2">
+                                Token Types
+                            </div>
+                            <div className="space-y-1 text-gray-600">
+                                <div>💬 text input/output</div>
+                                <div>💾 cached input</div>
+                                <div>🔊 audio input/output</div>
+                                <div>🖼️ image</div>
+                                <div>🎬 video</div>
+                            </div>
+                        </div>
+                    </div>
+                    <p className="text-xs text-gray-600">
+                        <span className="font-semibold">* 1 pollen ≈</span>{" "}
+                        estimates for typical usage, actual costs vary with
+                        prompt length and output
+                    </p>
+                </div>
+
+                <div className="bg-gradient-to-r from-amber-100 to-orange-100 rounded-xl p-4 border border-amber-300 text-center">
+                    <p className="text-sm font-medium text-amber-900">
+                        🎁 <span className="font-bold">Beta bonus:</span> 2x
+                        pollen on every purchase!
+                    </p>
+                    <p className="text-xs text-amber-700 mt-1">
+                        Prices may adjust as we fine-tune during beta.
+                    </p>
                 </div>
             </div>
         </div>

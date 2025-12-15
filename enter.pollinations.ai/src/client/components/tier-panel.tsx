@@ -32,8 +32,8 @@ const TierContainer: FC<{ children: React.ReactNode }> = ({ children }) => (
 );
 
 const BetaNotice = () => (
-    <div className="bg-gradient-to-r from-purple-100 to-pink-100 rounded-xl p-4 border-2 border-purple-300 mt-3">
-        <p className="text-sm font-medium text-purple-900">
+    <div className="bg-gradient-to-r from-gray-100 to-slate-100 rounded-xl p-4 border border-gray-300 mt-3">
+        <p className="text-sm font-medium text-gray-900">
             ✨ <strong>We're in beta!</strong> We're learning what works best
             for our community and may adjust pollen values and tier rules as we
             go. Thanks for being part of the journey!

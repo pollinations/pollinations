@@ -1,0 +1,56 @@
+{
+  "date": "2025-12-15",
+  "generated_at": "2025-12-15T16:14:21.625424+00:00",
+  "post_type": "carousel",
+  "content_type": "update",
+  "linked_images": false,
+  "strategy_reasoning": "Using standalone images to distinctively showcase the functional updates (usage tracking/pricing) separately from the creative updates (video aspect ratios). This allows for specific visual metaphors for 'data transparency' vs 'cinematic framing' without forcing a narrative link.",
+  "story_arc": "From administrative clarity to creative freedom",
+  "images": [
+    {
+      "url": "https://gen.pollinations.ai/image/Abstract%203D%20visualization%20of%20golden%20data%20streams%20flowing%20into%20a%20transparent%2C%20organized%20digital%20dashboard%20structure.%20Cyberpunk%20aesthetic%2C%20glowing%20nodes%2C%20intricate%20circuit%20patterns%2C%20high%20contrast%20lighting%2C%20symbolizing%20data%20tracking%20and%20usage%20metrics.%20No%20text.?model=nanobanana-pro&width=2048&height=2048&quality=hd&nologo=true&private=true&nofeed=true&seed=504024999",
+      "prompt": "Abstract 3D visualization of golden data streams flowing into a transparent, organized digital dashboard structure. Cyberpunk aesthetic, glowing nodes, intricate circuit patterns, high contrast lighting, symbolizing data tracking and usage metrics. No text.",
+      "description": "Visualizing the new user usage tracking endpoint and token system"
+    },
+    {
+      "url": "https://gen.pollinations.ai/image/A%20flawless%20crystal%20prism%20floating%20in%20a%20dark%20void%2C%20refracting%20complex%20white%20light%20into%20perfectly%20organized%2C%20distinct%20vertical%20beams%20of%20color.%20Geometric%20harmony%2C%20clean%20glass%20textures%2C%20symbol%20of%20clarity%20and%20transparency%2C%208k%20resolution.%20No%20text.?model=nanobanana-pro&width=2048&height=2048&quality=hd&nologo=true&private=true&nofeed=true&seed=1534512529",
+      "prompt": "A flawless crystal prism floating in a dark void, refracting complex white light into perfectly organized, distinct vertical beams of color. Geometric harmony, clean glass textures, symbol of clarity and transparency, 8k resolution. No text.",
+      "description": "representing the clarified pricing UI and transparency"
+    },
+    {
+      "url": "https://gen.pollinations.ai/image/Cinematic%20ultra-widescreen%20composition%20of%20a%20dancer%20made%20of%20swirling%20neon%20stardust%20and%20light%20particles.%20Dynamic%20motion%2C%20deep%20depth%20of%20field%2C%2021%3A9%20aspect%20ratio%20framing%2C%20vibrant%20purple%20and%20teal%20lighting%2C%20surreal%20performance%20art.%20No%20text.?model=nanobanana-pro&width=2048&height=2048&quality=hd&nologo=true&private=true&nofeed=true&seed=777860631",
+      "prompt": "Cinematic ultra-widescreen composition of a dancer made of swirling neon stardust and light particles. Dynamic motion, deep depth of field, 21:9 aspect ratio framing, vibrant purple and teal lighting, surreal performance art. No text.",
+      "description": "Showcasing the new aspect ratio control for Seedance-pro video generation"
+    },
+    {
+      "url": "https://gen.pollinations.ai/image/A%20futuristic%20neural%20network%20garden%2C%20bioluminescent%20digital%20flowers%20blooming%20with%20fiber%20optic%20roots%20connecting%20to%20a%20central%20glowing%20core.%20Vibrant%2C%20tech%20aesthetic%2C%20intricate%20detail%2C%20symbolizing%20the%20open%20source%20ecosystem.%20No%20text.?model=nanobanana-pro&width=2048&height=2048&quality=hd&nologo=true&private=true&nofeed=true&seed=427471622",
+      "prompt": "A futuristic neural network garden, bioluminescent digital flowers blooming with fiber optic roots connecting to a central glowing core. Vibrant, tech aesthetic, intricate detail, symbolizing the open source ecosystem. No text.",
+      "description": "General brand vibe closing image"
+    }
+  ],
+  "caption": "Transparency 🤝 Creative Control.\n\nWe've pushed some fresh code to give you more insight into your usage and more power over your pixels. 🦾\n\n✨ **New Usage Tracking:** We added a `/api/usage` endpoint so you can see exactly where your tokens are going. Transparency is key.\n\n🎬 **Cinematic Control:** The `seedance-pro` model now supports aspect ratio parameters. Widescreen, portrait, square—frame your AI video exactly how you envisioned it.\n\n💎 **Crystal Clear:** We've updated the pricing UI to make model costs and token usage easier to understand at a glance.\n\nCreate freely. Track easily.\n\n🔗 Link in bio to try the updates.\n\n#pollinations #opensource #generativeai #creativecoding #aiart #techupdate #devlog #aivideo",
+  "hashtags": [
+    "#pollinations",
+    "#aiart",
+    "#opensource",
+    "#generativeai",
+    "#techupdate",
+    "#datavisualization",
+    "#aivideo"
+  ],
+  "alt_text": "A carousel of images: 1. Abstract golden data streams visualizing usage tracking. 2. A crystal prism representing clarity. 3. A cinematic widescreen abstract dancer representing video aspect ratios. 4. A glowing digital flower representing the Pollinations ecosystem.",
+  "pr_references": [
+    "#6033",
+    "#5869",
+    "#5977",
+    "#6026",
+    "#6015",
+    "#6019",
+    "#6013",
+    "#6011",
+    "#5901",
+    "#6009",
+    "#6008",
+    "#5986"
+  ]
+}

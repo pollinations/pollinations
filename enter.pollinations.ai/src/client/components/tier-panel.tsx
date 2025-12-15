@@ -115,19 +115,18 @@ const TierScreen: FC<{
                     {daily_pollen} pollen/day
                 </span>
                 <span
-                    className={`inline-flex items-center px-3 py-1 rounded-full font-semibold text-sm ${isCanceled ? "bg-red-50 border border-red-200 text-red-900" : "bg-blue-100 border border-blue-300 text-blue-800"}`}
+                    className={`inline-flex items-center px-3 py-1 rounded-full font-semibold text-sm ${isCanceled ? "bg-yellow-50 border border-yellow-200 text-yellow-900" : "bg-blue-100 border border-blue-300 text-blue-800"}`}
                 >
                     ⏱️ {countdown}
                 </span>
             </div>
 
             {isCanceled ? (
-                <div className="px-3 py-2 bg-red-50 border border-red-200 rounded-lg">
-                    <p className="text-sm text-red-900 leading-relaxed">
-                        🔔 <strong>Subscription Ending:</strong> Your
-                        subscription is active until <strong>{endsAt}</strong>.
-                        It will not auto-renew. Unused pollen does not carry
-                        over.
+                <div className="px-3 py-2 bg-yellow-50 border border-yellow-200 rounded-lg">
+                    <p className="text-sm text-yellow-900 leading-relaxed">
+                        ⏳ <strong>Reactivating Subscription:</strong> Your
+                        subscription is being renewed automatically. Please
+                        refresh the page in a few moments.
                     </p>
                 </div>
             ) : (

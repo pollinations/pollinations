@@ -31,11 +31,18 @@ const usePollinationsChat = (initMessages = [], options = {}) => {
 
             try {
                 const headers = { "Content-Type": "application/json" };
-                if (apiKey) {
-                    headers["Authorization"] = `Bearer ${apiKey}`;
+                
+                if (!apiKey) {
+                    throw new Error("API key is required");
                 }
 
-                const response = await fetch(`https://text.pollinations.ai/`, {
+                if (!/^(pk_|sk_)/.test(apiKey)) {
+                    console.warn("API key format may be invalid");
+                }
+
+                headers["Authorization"] = `Bearer ${apiKey}`;
+
+                const response = await fetch(`https://enter.pollinations.ai/api/generate/openai`, {
                     method: "POST",
                     headers,
                     body: JSON.stringify({

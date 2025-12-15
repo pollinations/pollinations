@@ -1,19 +1,5 @@
-import { useMemo } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 
-/**
- * Custom hook to generate a Pollinations image URL based on the given prompt and options.
- *
- * @param {string} prompt - The prompt to generate the image.
- * @param {Object} [options] - Optional parameters for image generation.
- * @param {number} [options.width=1024] - The width of the generated image.
- * @param {number} [options.height=1024] - The height of the generated image.
- * @param {string} [options.model='flux'] - The model to use for image generation.
- * @param {number} [options.seed=42] - The seed for random image generation.
- * @param {boolean} [options.nologo=true] - Whether to generate the image without a logo.
- * @param {boolean} [options.enhance=false] - Whether to enhance the generated image.
- * @param {string} [options.apiKey] - Optional API key for authentication.
- * @returns {string} - The URL of the generated image.
- */
 const usePollinationsImage = (prompt, options = {}) => {
     const {
         width = 1024,
@@ -25,22 +11,80 @@ const usePollinationsImage = (prompt, options = {}) => {
         apiKey,
     } = options;
 
-    const imageUrl = useMemo(() => {
-        if (!prompt) return "";
+    const [data, setData] = useState(null);
+    const [isLoading, setIsLoading] = useState(false);
+    const [error, setError] = useState(null);
+    const abortControllerRef = useRef(null);
 
-        const params = new URLSearchParams();
-        params.set("width", width.toString());
-        params.set("height", height.toString());
-        params.set("seed", seed.toString());
-        params.set("model", model);
-        if (nologo) params.set("nologo", "true");
-        if (enhance) params.set("enhance", "true");
-        if (apiKey) params.set("token", apiKey);
+    const fetchImage = useCallback(async () => {
+        if (!prompt) return;
 
-        return `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}?${params.toString()}`;
+        if (width < 64 || width > 2048 || height < 64 || height > 2048) {
+            setError("Width and height must be between 64 and 2048");
+            return;
+        }
+
+        if (!apiKey) {
+            setError("API key is required");
+            return;
+        }
+
+        if (!/^(pk_|sk_)/.test(apiKey)) {
+            console.warn("API key format may be invalid");
+        }
+
+        if (abortControllerRef.current) {
+            abortControllerRef.current.abort();
+        }
+        abortControllerRef.current = new AbortController();
+
+        setIsLoading(true);
+        setError(null);
+
+        try {
+            const params = new URLSearchParams();
+            params.set("width", width.toString());
+            params.set("height", height.toString());
+            params.set("seed", seed.toString());
+            params.set("model", model);
+            if (nologo) params.set("nologo", "true");
+            if (enhance) params.set("enhance", "true");
+
+            const headers = {
+                "Authorization": `Bearer ${apiKey}`,
+                "Content-Type": "application/json",
+            };
+
+            const response = await fetch(
+                `https://enter.pollinations.ai/api/generate/image/${encodeURIComponent(prompt)}?${params.toString()}`,
+                { headers, signal: abortControllerRef.current.signal }
+            );
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            const imageData = await response.text();
+            setData(imageData);
+        } catch (err) {
+            if (err.name === "AbortError") return;
+            console.error("Error in usePollinationsImage:", err);
+            setError(err.message);
+        } finally {
+            setIsLoading(false);
+        }
     }, [prompt, width, height, model, seed, nologo, enhance, apiKey]);
 
-    return imageUrl;
+    useEffect(() => {
+        fetchImage();
+        return () => {
+            if (abortControllerRef.current) {
+                abortControllerRef.current.abort();
+            }
+        };
+    }, [fetchImage]);
+
+    return { data, isLoading, error };
 };
 
 export default usePollinationsImage;

@@ -4,7 +4,8 @@
 
 ## 📢 Hacktoberfest 2025 — Recap
 
-![Hacktoberfest 2025 Banner](https://media.discordapp.net/attachments/1364293694030614640/1433905240586850364/hacktoberfest_x_pollinations.jpg?ex=690b0112&is=6909af92&hm=ba954c4d0f705b6ef3a3b1c4da0baeefd544d952e269a4dcbf16185c6ee4eb2b&=&format=webp&width=1209&height=653)
+<img width="1024" height="553" alt="Hacktoberfest 2025 Banner" src="https://github.com/user-attachments/assets/d6dd03c3-9298-40d3-9be2-5d6730951d9f" />
+
  Hacktoberfest 2025 has concluded. Thanks to everyone who contributed — please continue following our [Code of Conduct](./CODE_OF_CONDUCT.md) and [Contributing Guidelines](./CONTRIBUTING.md).
  
 ### Event highlights

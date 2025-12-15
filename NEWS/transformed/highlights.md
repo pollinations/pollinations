@@ -1,3 +1,7 @@
+- **2025-12-15** – **🚀 GPT-5.2 Arrives** The `openai-large` model is now powered by **GPT-5.2**, bringing next-gen intelligence to the [Text API](https://gen.pollinations.ai).
+- **2025-12-15** – **✨ New Website Experience** A complete rebuild of [hello.pollinations.ai](https://hello.pollinations.ai) featuring AI-powered theming and dynamic 3D backgrounds.
+- **2025-12-15** – **🎨 Enhanced Image Pipeline** Now features **GFPGAN** for face-aware upscaling and removes watermarks from generated images.
+- **2025-12-15** – **🧠 Gemini Tools** **Google Search** and **Code Execution** are now enabled by default for Gemini models in the API.
 - **2025-12-07** – **🎥 Video Generation** Create videos from text or images using **Veo** and **Seedance** models via API or [Chat](https://hello.pollinations.ai).
 - **2025-12-07** – **✨ Seedream 4.5** Upgraded image generation to **Seedream 4.5** supporting stunning 2K resolution.
 - **2025-12-07** – **🔍 Web Search** **Perplexity** and **Gemini** models can now access real-time web search results.

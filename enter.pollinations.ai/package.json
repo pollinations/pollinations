@@ -6,7 +6,7 @@
     "main": "src/index.ts",
     "scripts": {
         "typecheck": "tsc --noEmit",
-        "dev": "npm run decrypt-vars:dev && vite dev",
+        "dev": "vite dev",
         "dev:production": "npm run decrypt-vars:production && CLOUDFLARE_ENV=production vite dev",
         "test": "npm run decrypt-vars:dev && vitest run",
         "gen:migrations": "drizzle-kit generate",

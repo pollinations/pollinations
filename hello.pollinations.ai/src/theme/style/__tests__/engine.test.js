@@ -22,6 +22,7 @@ Module._extensions[".ts"] = (mod, filename) => {
             API: {},
             DEFAULTS: {},
             API_KEY: "",
+            IS_SECRET_KEY: false,
         };
         return;
     }

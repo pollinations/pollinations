@@ -9,11 +9,11 @@ import {
 } from "../../style/theme-processor";
 import { assembleStylePrompt } from "../../buildPrompts";
 import { generateText } from "../../../services/pollinationsAPI";
+import { API_KEY } from "../../../api.config";
 import { STYLING_GUIDELINES } from "../designer";
 import type { MacroConfig } from "../../style/simplified-config.types";
 import { macrosToTheme } from "../../style/simplified-to-theme";
-
-const MODEL = "gemini-large";
+import { THEME_MODELS } from "../../models";
 
 // ==============================================
 // TYPE DEFINITIONS
@@ -147,8 +147,16 @@ ${userPrompt}
 
 Generate the theme JSON now:`;
 
-    console.log("🎨 [DESIGNER] → Requesting theme tokens...");
-    const text = await generateText(fullPrompt, 42, MODEL, signal);
+    console.log(
+        `🎨 [DESIGNER] → Requesting theme tokens... (model: ${THEME_MODELS.designer})`,
+    );
+    const text = await generateText(
+        fullPrompt,
+        API_KEY,
+        42,
+        THEME_MODELS.designer,
+        signal,
+    );
     console.log("🎨 [DESIGNER] ← Theme tokens received");
     return parseThemeResponse(text);
 }
@@ -162,8 +170,16 @@ export async function generateFullTheme(
     signal?: AbortSignal,
 ): Promise<FullThemeStyle> {
     const fullPrompt = assembleStylePrompt(themeDescription);
-    console.log("🎨 [DESIGNER] → Requesting full theme...");
-    const text = await generateText(fullPrompt, 42, MODEL, signal);
+    console.log(
+        `🎨 [DESIGNER] → Requesting full theme... (model: ${THEME_MODELS.designer})`,
+    );
+    const text = await generateText(
+        fullPrompt,
+        API_KEY,
+        42,
+        THEME_MODELS.designer,
+        signal,
+    );
     console.log("🎨 [DESIGNER] ← Full theme received");
     return parseFullThemeResponse(text);
 }

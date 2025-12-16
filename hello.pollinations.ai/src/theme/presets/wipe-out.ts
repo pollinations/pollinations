@@ -59,6 +59,10 @@ export const GayPrideLgbtqTheme: LLMThemeResponse = {
             "hex": "#D500F9",
             "ids": ["indicator.audio"],
         },
+        "slot_25": {
+            "hex": "#00FF7F",
+            "ids": ["indicator.video"],
+        },
         "slot_13": {
             "hex": "#FF00CC",
             "ids": ["border.highlight"],

@@ -17,8 +17,9 @@ export const usageRoutes = new Hono<Env>()
     .get(
         "/",
         describeRoute({
-            tags: ["Usage"],
+            tags: ["Auth"],
             description: "Get your request history and spending data",
+            hide: ({ c }) => c?.env.ENVIRONMENT !== "development",
         }),
         validator("query", usageQuerySchema),
         async (c) => {

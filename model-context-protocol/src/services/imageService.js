@@ -93,7 +93,13 @@ async function generateImage(params) {
 
     try {
         // Fetch the image from the URL
-        const response = await fetch(urlResult.imageUrl);
+        const response = await fetch(urlResult.imageUrl, {
+            headers: {
+                "User-Agent": "PollinationsMCP/1.0",
+                "X-Source": "pollinations-mcp",
+                "X-Client-Version": "1.0.0"
+            }
+        });
 
         if (!response.ok) {
             throw new Error(`Failed to generate image: ${response.statusText}`);
@@ -139,7 +145,13 @@ async function generateImage(params) {
 async function listImageModels(params) {
     try {
         const url = buildUrl(IMAGE_API_BASE_URL, "models");
-        const response = await fetch(url);
+        const response = await fetch(url, {
+            headers: {
+                "User-Agent": "PollinationsMCP/1.0",
+                "X-Source": "pollinations-mcp",
+                "X-Client-Version": "1.0.0"
+            }
+        });
 
         if (!response.ok) {
             throw new Error(`Failed to list models: ${response.statusText}`);

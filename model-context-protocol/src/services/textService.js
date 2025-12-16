@@ -51,7 +51,13 @@ async function generateText(params) {
 
     try {
         // Fetch the text from the URL
-        const response = await fetch(url);
+        const response = await fetch(url, {
+            headers: {
+                "User-Agent": "PollinationsMCP/1.0",
+                "X-Source": "pollinations-mcp", 
+                "X-Client-Version": "1.0.0"
+            }
+        });
 
         if (!response.ok) {
             throw new Error(`Failed to generate text: ${response.statusText}`);
@@ -77,7 +83,13 @@ async function generateText(params) {
 async function listTextModels(params) {
     try {
         const url = buildUrl(TEXT_API_BASE_URL, "models");
-        const response = await fetch(url);
+        const response = await fetch(url, {
+            headers: {
+                "User-Agent": "PollinationsMCP/1.0",
+                "X-Source": "pollinations-mcp",
+                "X-Client-Version": "1.0.0"
+            }
+        });
 
         if (!response.ok) {
             throw new Error(

@@ -7,8 +7,9 @@ This document outlines the new enhanced features added to the Pollinations Model
 1. [Video Generation Support](#video-generation-support)
 2. [Advanced Reasoning Mode](#advanced-reasoning-mode)
 3. [System Status & Health Monitoring](#system-status--health-monitoring)
-4. [Usage Examples](#usage-examples)
-5. [Integration Guide](#integration-guide)
+4. [MCP Fingerprint Headers](#️-mcp-fingerprint-headers-observability)
+5. [Usage Examples](#usage-examples)
+6. [Integration Guide](#integration-guide)
 
 ---
 
@@ -297,6 +298,37 @@ const reasoning = await deepReasoning({
 
 ---
 
+## 🕵️‍♂️ MCP Fingerprint Headers (Observability)
+
+### Overview
+All MCP service requests now include custom fingerprint headers to help with observability and debugging. These headers allow the Pollinations team to distinguish between different types of traffic (web users vs. MCP clients) in their monitoring systems.
+
+### Headers Added
+Every API request from the MCP server now includes:
+```http
+X-Source: pollinations-mcp
+X-Client-Version: 1.0.0
+User-Agent: PollinationsMCP/1.0
+```
+
+### Benefits
+- **Traffic Segmentation**: Easy identification of MCP-generated requests vs. web traffic
+- **Debugging**: Faster issue resolution by filtering logs by client type
+- **Usage Analytics**: Better understanding of MCP adoption and usage patterns
+- **Performance Monitoring**: Track MCP-specific performance metrics
+
+### Implementation
+Headers are automatically added to all service requests:
+- **Text/Reasoning Services**: Added to gen.pollinations.ai API calls
+- **Image Services**: Added to image.pollinations.ai API calls
+- **Video Services**: Added to video.pollinations.ai API calls
+- **Audio Services**: Added to audio.pollinations.ai API calls
+
+### For Developers
+No action required - headers are automatically included in all requests. This helps the Pollinations team provide better support and monitoring for MCP users.
+
+---
+
 ##  Best Practices
 
 1. **Model Selection**: Choose appropriate models based on your use case
@@ -327,6 +359,7 @@ const reasoning = await deepReasoning({
 | **Video Generation** | ❌ | ✅ | ✅ |
 | **Advanced Reasoning** | ❌ | ✅ | ✅ |
 | **System Monitoring** | ❌ | ✅ | ✅ |
+| **MCP Fingerprint Headers** | ❌ | ✅ | ✅ |
 | Model Selection | Limited | Full | Full |
 | Health Checks | ❌ | ✅ | ✅ |
 

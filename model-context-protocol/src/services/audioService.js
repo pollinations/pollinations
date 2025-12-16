@@ -67,7 +67,13 @@ async function respondAudio(params) {
 
     try {
         // Fetch the audio from the URL
-        const response = await fetch(url);
+        const response = await fetch(url, {
+            headers: {
+                "User-Agent": "PollinationsMCP/1.0",
+                "X-Source": "pollinations-mcp",
+                "X-Client-Version": "1.0.0"
+            }
+        });
 
         if (!response.ok) {
             throw new Error(`Failed to generate audio: ${response.statusText}`);
@@ -161,7 +167,13 @@ async function sayText(params) {
 
     try {
         // Fetch the audio from the URL
-        const response = await fetch(url);
+        const response = await fetch(url, {
+            headers: {
+                "User-Agent": "PollinationsMCP/1.0",
+                "X-Source": "pollinations-mcp",
+                "X-Client-Version": "1.0.0"
+            }
+        });
 
         if (!response.ok) {
             throw new Error(
@@ -216,7 +228,13 @@ async function sayText(params) {
 async function listAudioVoices(params) {
     try {
         const url = buildUrl(AUDIO_API_BASE_URL, "models");
-        const response = await fetch(url);
+        const response = await fetch(url, {
+            headers: {
+                "User-Agent": "PollinationsMCP/1.0",
+                "X-Source": "pollinations-mcp",
+                "X-Client-Version": "1.0.0"
+            }
+        });
 
         if (!response.ok) {
             throw new Error(`Failed to list models: ${response.statusText}`);

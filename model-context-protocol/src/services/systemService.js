@@ -49,7 +49,9 @@ async function _checkApiHealth(apiUrl, endpoint = "/models") {
             method: "GET",
             signal: controller.signal,
             headers: {
-                "User-Agent": "Pollinations-MCP-HealthCheck/1.0"
+                "User-Agent": "PollinationsMCP/1.0",
+                "X-Source": "pollinations-mcp",
+                "X-Client-Version": "1.0.0"
             }
         });
 

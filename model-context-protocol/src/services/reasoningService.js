@@ -26,7 +26,9 @@ const TEXT_API_BASE_URL = "https://gen.pollinations.ai/text";
  */
 function getAuthHeaders() {
     const headers = {
-        'User-Agent': 'Pollinations-MCP-Reasoning/1.0'
+        'User-Agent': 'PollinationsMCP/1.0',
+        'X-Source': 'pollinations-mcp',
+        'X-Client-Version': '1.0.0'
     };
     
     // Check for access token from auth service first

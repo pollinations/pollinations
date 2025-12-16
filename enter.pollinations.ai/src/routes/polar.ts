@@ -103,13 +103,18 @@ export const polarRoutes = new Hono<Env>()
             const windowStart = new Date(Date.now() - PENDING_SPEND_WINDOW_MS);
             const result = await db
                 .select({
-                    total: sql<number>`COALESCE(SUM(${event.totalPrice}), 0)`,
+                    total: sql<number>`COALESCE(SUM(
+                        CASE 
+                            WHEN ${event.eventStatus} = 'pending_estimate' THEN ${event.estimatedCost}
+                            WHEN ${event.isBilledUsage} = 1 THEN ${event.totalPrice}
+                            ELSE 0
+                        END
+                    ), 0)`,
                 })
                 .from(event)
                 .where(
                     and(
                         eq(event.userId, user.id),
-                        eq(event.isBilledUsage, true),
                         gte(event.createdAt, windowStart),
                     ),
                 );

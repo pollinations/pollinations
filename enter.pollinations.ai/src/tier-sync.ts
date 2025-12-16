@@ -1,19 +1,10 @@
 import { getLogger } from "@logtape/logtape";
 import type { Polar } from "@polar-sh/sdk";
-import {
-    type PolarIds,
-    type TierSyncEvent,
-    setPolarIds,
-    getOrLookupPolarIds,
-    listPendingTierSyncs,
-    completeTierSync,
-    enqueueTierSync,
-} from "./polar-cache.ts";
 
 const log = getLogger(["hono", "tier-sync"]);
 
 const MAX_ATTEMPTS = 3;
-const RATE_LIMIT_DELAY_MS = 100;
+const RETRY_DELAY_MS = 500;
 
 export type TierName = "spore" | "seed" | "flower" | "nectar" | "router";
 
@@ -45,194 +36,121 @@ export function isValidTier(tier: string): tier is TierName {
     return ["spore", "seed", "flower", "nectar", "router"].includes(tier);
 }
 
+/**
+ * Sync a user's Polar subscription to match their D1 tier.
+ * Calls Polar API directly with retry logic (up to 3 attempts).
+ */
 export async function syncUserTier(
-    kv: KVNamespace,
     polar: Polar,
     userId: string,
     targetTier: TierName,
     productMap: TierProductMap,
-): Promise<{ success: boolean; error?: string }> {
+): Promise<{ success: boolean; error?: string; attempts: number }> {
     const targetProductId = productMap[targetTier];
     if (!targetProductId) {
         return {
             success: false,
             error: `No product ID for tier: ${targetTier}`,
-        };
-    }
-
-    try {
-        const polarIds = await getOrLookupPolarIds(kv, polar, userId);
-
-        if (!polarIds) {
-            return { success: false, error: "User has no Polar customer" };
-        }
-
-        if (polarIds.subscriptionId) {
-            if (polarIds.productId === targetProductId) {
-                log.debug("User {userId} already on target tier {tier}", {
-                    userId,
-                    tier: targetTier,
-                });
-                return { success: true };
-            }
-
-            log.info("Updating subscription for user {userId} to tier {tier}", {
-                userId,
-                tier: targetTier,
-            });
-
-            const updatedSub = await polar.subscriptions.update({
-                id: polarIds.subscriptionId,
-                subscriptionUpdate: {
-                    productId: targetProductId,
-                    prorationBehavior: "prorate",
-                },
-            });
-
-            const updatedIds: PolarIds = {
-                ...polarIds,
-                subscriptionId: updatedSub.id,
-                productId: updatedSub.productId,
-                tier: targetTier,
-                updatedAt: Date.now(),
-            };
-            await setPolarIds(kv, userId, updatedIds);
-
-            return { success: true };
-        }
-
-        log.info("Creating subscription for user {userId} on tier {tier}", {
-            userId,
-            tier: targetTier,
-        });
-
-        const newSub = await polar.subscriptions.create({
-            productId: targetProductId,
-            customerId: polarIds.customerId,
-        });
-
-        const newIds: PolarIds = {
-            ...polarIds,
-            subscriptionId: newSub.id,
-            productId: newSub.productId,
-            tier: targetTier,
-            updatedAt: Date.now(),
-        };
-        await setPolarIds(kv, userId, newIds);
-
-        return { success: true };
-    } catch (error) {
-        const message = error instanceof Error ? error.message : String(error);
-        log.error("Failed to sync tier for user {userId}: {error}", {
-            userId,
-            error: message,
-        });
-        return { success: false, error: message };
-    }
-}
-
-export async function reactivateSubscription(
-    kv: KVNamespace,
-    polar: Polar,
-    userId: string,
-    defaultTier: TierName,
-    productMap: TierProductMap,
-): Promise<{ success: boolean; error?: string }> {
-    log.info("Reactivating subscription for user {userId}", { userId });
-    return await syncUserTier(kv, polar, userId, defaultTier, productMap);
-}
-
-export async function processPendingTierSyncs(
-    kv: KVNamespace,
-    polar: Polar,
-    productMap: TierProductMap,
-    batchSize = 10,
-): Promise<{ processed: number; failed: number }> {
-    const pending = await listPendingTierSyncs(kv, batchSize);
-    let processed = 0;
-    let failed = 0;
-
-    for (const event of pending) {
-        if (event.attempts >= MAX_ATTEMPTS) {
-            log.warn(
-                "Tier sync for user {userId} exceeded max attempts, skipping",
-                {
-                    userId: event.userId,
-                },
-            );
-            await completeTierSync(kv, event.userId);
-            failed++;
-            continue;
-        }
-
-        if (!isValidTier(event.targetTier)) {
-            log.warn("Invalid tier {tier} for user {userId}, skipping", {
-                tier: event.targetTier,
-                userId: event.userId,
-            });
-            await completeTierSync(kv, event.userId);
-            failed++;
-            continue;
-        }
-
-        const result = await syncUserTier(
-            kv,
-            polar,
-            event.userId,
-            event.targetTier,
-            productMap,
-        );
-
-        if (result.success) {
-            await completeTierSync(kv, event.userId);
-            processed++;
-        } else {
-            // Update userUpdatedAt to now so this retry won't be overridden by stale checks
-            const updatedEvent: TierSyncEvent = {
-                ...event,
-                attempts: event.attempts + 1,
-                userUpdatedAt: Date.now(),
-            };
-            await enqueueTierSync(kv, updatedEvent);
-            failed++;
-        }
-
-        await new Promise((resolve) =>
-            setTimeout(resolve, RATE_LIMIT_DELAY_MS),
-        );
-    }
-
-    if (processed > 0 || failed > 0) {
-        log.info(
-            "Tier sync batch complete: {processed} processed, {failed} failed",
-            {
-                processed,
-                failed,
-            },
-        );
-    }
-
-    return { processed, failed };
-}
-
-export function createTierChangeHandler(kv: KVNamespace) {
-    return async (userId: string, newTier: string, userUpdatedAt: Date) => {
-        if (!isValidTier(newTier)) {
-            log.warn("Invalid tier {tier} for user {userId}, not enqueueing", {
-                tier: newTier,
-                userId,
-            });
-            return;
-        }
-
-        const event: TierSyncEvent = {
-            userId,
-            targetTier: newTier,
-            userUpdatedAt: userUpdatedAt.getTime(),
-            createdAt: Date.now(),
             attempts: 0,
         };
+    }
 
-        await enqueueTierSync(kv, event);
-    };
+    let lastError: string | undefined;
+
+    for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+        try {
+            // Look up user's active subscription
+            const subsResponse = await polar.subscriptions.list({
+                externalCustomerId: userId,
+                active: true,
+                limit: 1,
+            });
+
+            const subscription = subsResponse.result.items[0];
+
+            if (subscription) {
+                // User has active subscription - check if already on target tier
+                if (subscription.productId === targetProductId) {
+                    log.debug("User {userId} already on target tier {tier}", {
+                        userId,
+                        tier: targetTier,
+                    });
+                    return { success: true, attempts: attempt };
+                }
+
+                // Update existing subscription
+                log.info(
+                    "Updating subscription for user {userId} to tier {tier}",
+                    {
+                        userId,
+                        tier: targetTier,
+                    },
+                );
+
+                await polar.subscriptions.update({
+                    id: subscription.id,
+                    subscriptionUpdate: {
+                        productId: targetProductId,
+                        prorationBehavior: "prorate",
+                    },
+                });
+
+                return { success: true, attempts: attempt };
+            }
+
+            // No active subscription - create one
+            // First, get the customer ID
+            const customer = await polar.customers.getExternal({
+                externalId: userId,
+            });
+
+            if (!customer) {
+                return {
+                    success: false,
+                    error: "User has no Polar customer",
+                    attempts: attempt,
+                };
+            }
+
+            log.info("Creating subscription for user {userId} on tier {tier}", {
+                userId,
+                tier: targetTier,
+            });
+
+            await polar.subscriptions.create({
+                productId: targetProductId,
+                customerId: customer.id,
+            });
+
+            return { success: true, attempts: attempt };
+        } catch (error) {
+            lastError = error instanceof Error ? error.message : String(error);
+            log.warn(
+                "Tier sync attempt {attempt}/{max} failed for user {userId}: {error}",
+                {
+                    attempt,
+                    max: MAX_ATTEMPTS,
+                    userId,
+                    error: lastError,
+                },
+            );
+
+            if (attempt < MAX_ATTEMPTS) {
+                await new Promise((resolve) =>
+                    setTimeout(resolve, RETRY_DELAY_MS * attempt),
+                );
+            }
+        }
+    }
+
+    log.error(
+        "Tier sync failed after {max} attempts for user {userId}: {error}",
+        {
+            max: MAX_ATTEMPTS,
+            userId,
+            error: lastError,
+        },
+    );
+
+    return { success: false, error: lastError, attempts: MAX_ATTEMPTS };
 }

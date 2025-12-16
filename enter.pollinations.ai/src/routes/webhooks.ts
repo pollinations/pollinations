@@ -2,11 +2,15 @@ import { Hono } from "hono";
 import { getLogger } from "@logtape/logtape";
 import { drizzle } from "drizzle-orm/d1";
 import { eq } from "drizzle-orm";
+import { Polar } from "@polar-sh/sdk";
 import type { Env } from "../env.ts";
-import { enqueueTierSync, deletePolarIds } from "../polar-cache.ts";
-import type { TierSyncEvent } from "../polar-cache.ts";
 import { user as userTable } from "../db/schema/better-auth.ts";
-import type { TierName } from "../tier-sync.ts";
+import {
+    syncUserTier,
+    getTierProductMap,
+    isValidTier,
+    type TierName,
+} from "../tier-sync.ts";
 
 const log = getLogger(["hono", "webhooks"]);
 
@@ -49,15 +53,15 @@ export const webhooksRoutes = new Hono<Env>().post("/polar", async (c) => {
     switch (payload.type) {
         case "subscription.canceled":
         case "subscription.revoked":
-            await handleSubscriptionCanceled(c.env.KV, c.env.DB, payload);
+            await handleSubscriptionCanceled(c.env, payload);
             break;
 
         case "subscription.updated":
-            await handleSubscriptionUpdated(c.env.KV, payload);
+            await handleSubscriptionUpdated(payload);
             break;
 
         case "subscription.created":
-            await handleSubscriptionCreated(c.env.KV, payload);
+            await handleSubscriptionCreated(payload);
             break;
 
         default:
@@ -154,8 +158,7 @@ async function verifyWebhookSignature(
 }
 
 async function handleSubscriptionCanceled(
-    kv: KVNamespace,
-    d1: D1Database,
+    env: Cloudflare.Env,
     payload: WebhookPayload,
 ): Promise<void> {
     const externalId = payload.data.customer?.external_id;
@@ -165,37 +168,72 @@ async function handleSubscriptionCanceled(
     }
 
     // Look up the user's tier from D1 (source of truth)
-    const db = drizzle(d1);
+    const db = drizzle(env.DB);
     const users = await db
         .select({ tier: userTable.tier })
         .from(userTable)
         .where(eq(userTable.id, externalId))
         .limit(1);
 
-    const userTier = (users[0]?.tier as TierName) || "spore";
-
-    log.info(
-        "Subscription canceled for user {userId}, enqueueing reactivation to tier {tier}",
-        {
+    const userTier = users[0]?.tier;
+    if (!userTier || !isValidTier(userTier)) {
+        log.warn("User {userId} has invalid tier {tier}, defaulting to spore", {
             userId: externalId,
             tier: userTier,
+        });
+    }
+
+    const targetTier: TierName = isValidTier(userTier) ? userTier : "spore";
+
+    log.info(
+        "Subscription canceled for user {userId}, reactivating to tier {tier}",
+        {
+            userId: externalId,
+            tier: targetTier,
         },
     );
 
-    await deletePolarIds(kv, externalId);
+    // Initialize Polar and sync immediately
+    if (!env.POLAR_ACCESS_TOKEN) {
+        log.error(
+            "Cannot reactivate subscription: POLAR_ACCESS_TOKEN not configured",
+        );
+        return;
+    }
 
-    const event: TierSyncEvent = {
-        userId: externalId,
-        targetTier: userTier,
-        userUpdatedAt: Date.now(),
-        createdAt: Date.now(),
-        attempts: 0,
-    };
-    await enqueueTierSync(kv, event);
+    const polar = new Polar({
+        accessToken: env.POLAR_ACCESS_TOKEN,
+        server: env.POLAR_SERVER === "production" ? "production" : "sandbox",
+    });
+
+    const productMap = getTierProductMap(env);
+    const result = await syncUserTier(
+        polar,
+        externalId,
+        targetTier,
+        productMap,
+    );
+
+    if (result.success) {
+        log.info(
+            "Reactivated subscription for user {userId} in {attempts} attempt(s)",
+            {
+                userId: externalId,
+                attempts: result.attempts,
+            },
+        );
+    } else {
+        log.error(
+            "Failed to reactivate subscription for user {userId}: {error}",
+            {
+                userId: externalId,
+                error: result.error,
+            },
+        );
+    }
 }
 
 async function handleSubscriptionUpdated(
-    kv: KVNamespace,
     payload: WebhookPayload,
 ): Promise<void> {
     const externalId = payload.data.customer?.external_id;
@@ -203,14 +241,12 @@ async function handleSubscriptionUpdated(
         return;
     }
 
-    await deletePolarIds(kv, externalId);
-    log.debug("Cleared cache for user {userId} after subscription update", {
+    log.debug("Subscription updated for user {userId}", {
         userId: externalId,
     });
 }
 
 async function handleSubscriptionCreated(
-    kv: KVNamespace,
     payload: WebhookPayload,
 ): Promise<void> {
     const externalId = payload.data.customer?.external_id;
@@ -218,8 +254,7 @@ async function handleSubscriptionCreated(
         return;
     }
 
-    await deletePolarIds(kv, externalId);
-    log.debug("Cleared cache for user {userId} after subscription created", {
+    log.debug("Subscription created for user {userId}", {
         userId: externalId,
     });
 }

@@ -12,8 +12,6 @@ import { createDocsRoutes } from "./routes/docs.ts";
 import { apiKeysRoutes } from "./routes/api-keys.ts";
 import { webhooksRoutes } from "./routes/webhooks.ts";
 import { adminRoutes } from "./routes/admin.ts";
-import { processPendingTierSyncs, getTierProductMap } from "./tier-sync.ts";
-import { Polar } from "@polar-sh/sdk";
 import { requestId } from "hono/request-id";
 import { logger } from "./middleware/logger.ts";
 import { getLogger } from "@logtape/logtape";
@@ -96,17 +94,5 @@ export default {
             minRetryDelay: 100,
             maxRetryDelay: 10000,
         });
-
-        if (env.POLAR_ACCESS_TOKEN) {
-            const polar = new Polar({
-                accessToken: env.POLAR_ACCESS_TOKEN,
-                server:
-                    env.POLAR_SERVER === "production"
-                        ? "production"
-                        : "sandbox",
-            });
-            const productMap = getTierProductMap(env);
-            await processPendingTierSyncs(env.KV, polar, productMap, 10);
-        }
     },
 } satisfies ExportedHandler<CloudflareBindings>;

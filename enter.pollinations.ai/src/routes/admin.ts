@@ -2,11 +2,15 @@ import { Hono } from "hono";
 import { getLogger } from "@logtape/logtape";
 import { drizzle } from "drizzle-orm/d1";
 import { eq } from "drizzle-orm";
+import { Polar } from "@polar-sh/sdk";
 import type { Env } from "../env.ts";
-import { enqueueTierSync, deletePolarIds } from "../polar-cache.ts";
-import type { TierSyncEvent } from "../polar-cache.ts";
 import { user as userTable } from "../db/schema/better-auth.ts";
-import { isValidTier, type TierName } from "../tier-sync.ts";
+import {
+    isValidTier,
+    syncUserTier,
+    getTierProductMap,
+    type TierName,
+} from "../tier-sync.ts";
 
 const log = getLogger(["hono", "admin"]);
 
@@ -69,28 +73,58 @@ export const adminRoutes = new Hono<Env>()
             targetTier = userTier;
         }
 
-        // Clear cached Polar IDs to force fresh lookup
-        await deletePolarIds(c.env.KV, body.userId);
+        // Initialize Polar client
+        if (!c.env.POLAR_ACCESS_TOKEN) {
+            return c.json({ error: "Polar not configured" }, 500);
+        }
 
-        // Enqueue the tier sync event
-        const event: TierSyncEvent = {
-            userId: body.userId,
-            targetTier,
-            userUpdatedAt: Date.now(),
-            createdAt: Date.now(),
-            attempts: 0,
-        };
-        await enqueueTierSync(c.env.KV, event);
-
-        log.info("Enqueued tier sync for user {userId} to tier {tier}", {
-            userId: body.userId,
-            tier: targetTier,
+        const polar = new Polar({
+            accessToken: c.env.POLAR_ACCESS_TOKEN,
+            server:
+                c.env.POLAR_SERVER === "production" ? "production" : "sandbox",
         });
 
-        return c.json({
-            success: true,
-            userId: body.userId,
+        const productMap = getTierProductMap(c.env);
+
+        // Sync tier directly with retry logic
+        const result = await syncUserTier(
+            polar,
+            body.userId,
             targetTier,
-            message: "Tier sync enqueued, will be processed within 1 minute",
-        });
+            productMap,
+        );
+
+        if (result.success) {
+            log.info(
+                "Tier sync completed for user {userId} to tier {tier} in {attempts} attempt(s)",
+                {
+                    userId: body.userId,
+                    tier: targetTier,
+                    attempts: result.attempts,
+                },
+            );
+
+            return c.json({
+                success: true,
+                userId: body.userId,
+                targetTier,
+                attempts: result.attempts,
+            });
+        } else {
+            log.error("Tier sync failed for user {userId}: {error}", {
+                userId: body.userId,
+                error: result.error,
+            });
+
+            return c.json(
+                {
+                    success: false,
+                    userId: body.userId,
+                    targetTier,
+                    error: result.error,
+                    attempts: result.attempts,
+                },
+                500,
+            );
+        }
     });

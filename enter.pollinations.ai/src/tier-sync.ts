@@ -1,10 +1,10 @@
 import { getLogger } from "@logtape/logtape";
 import type { Polar } from "@polar-sh/sdk";
+import { exponentialBackoffDelay } from "./util.ts";
 
 const log = getLogger(["hono", "tier-sync"]);
 
 const MAX_ATTEMPTS = 3;
-const RETRY_DELAY_MS = 500;
 
 export type TierName = "spore" | "seed" | "flower" | "nectar" | "router";
 
@@ -136,9 +136,12 @@ export async function syncUserTier(
             );
 
             if (attempt < MAX_ATTEMPTS) {
-                await new Promise((resolve) =>
-                    setTimeout(resolve, RETRY_DELAY_MS * attempt),
-                );
+                const delay = exponentialBackoffDelay(attempt, {
+                    minDelay: 100,
+                    maxDelay: 5000,
+                    maxAttempts: MAX_ATTEMPTS,
+                });
+                await new Promise((resolve) => setTimeout(resolve, delay));
             }
         }
     }

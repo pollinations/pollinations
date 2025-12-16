@@ -69,15 +69,6 @@ function getTierFromProductId(
     return tier || "none";
 }
 
-function shouldShowActivateButton(
-    _assigned: TierStatus,
-    _active: TierStatus,
-): boolean {
-    // Subscriptions are now auto-created on signup and auto-reactivated on cancellation
-    // No manual activation button needed
-    return false;
-}
-
 function getNextMidnightUTC(): string {
     const now = new Date();
     const tomorrow = new Date(now);
@@ -212,11 +203,9 @@ export const tiersRoutes = new Hono<Env>()
                 has_polar_error = true;
             }
 
-            // Determine if activate button should be shown
-            // Don't show button if Polar API failed - can't verify state safely
-            const should_show_activate_button =
-                !has_polar_error &&
-                shouldShowActivateButton(target_tier, active_tier);
+            // Subscriptions are now auto-created on signup and auto-reactivated on cancellation
+            // No manual activation button needed
+            const should_show_activate_button = false;
 
             // If button should show, fetch target tier's product name for the button
             let target_tier_name: string | undefined;

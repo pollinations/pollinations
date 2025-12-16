@@ -1,4 +1,5 @@
 import { Hono } from "hono";
+import { HTTPException } from "hono/http-exception";
 import { getLogger } from "@logtape/logtape";
 import { drizzle } from "drizzle-orm/d1";
 import { eq } from "drizzle-orm";
@@ -74,10 +75,6 @@ export const adminRoutes = new Hono<Env>()
         }
 
         // Initialize Polar client
-        if (!c.env.POLAR_ACCESS_TOKEN) {
-            return c.json({ error: "Polar not configured" }, 500);
-        }
-
         const polar = new Polar({
             accessToken: c.env.POLAR_ACCESS_TOKEN,
             server:
@@ -116,15 +113,8 @@ export const adminRoutes = new Hono<Env>()
                 error: result.error,
             });
 
-            return c.json(
-                {
-                    success: false,
-                    userId: body.userId,
-                    targetTier,
-                    error: result.error,
-                    attempts: result.attempts,
-                },
-                500,
-            );
+            throw new HTTPException(500, {
+                message: result.error || "Tier sync failed",
+            });
         }
     });

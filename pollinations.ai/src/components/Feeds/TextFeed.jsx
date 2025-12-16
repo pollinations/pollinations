@@ -44,15 +44,13 @@ export const TextFeed = memo(({ mode }) => {
     const [sharedModel, setSharedModel] = useState("openai");
 
     // Hooks
+    const { entriesGenerated, incrementCounter, initialEntry } = useTextFeedLoader(setLastEntry);
+
     const {
         entry: slideshowEntry,
         onNewEntry,
         stop,
-        error,
-        connectionStatus,
-    } = useTextSlideshow(mode);
-
-    const { entriesGenerated } = useTextFeedLoader(onNewEntry, setLastEntry);
+    } = useTextSlideshow(mode, incrementCounter);
 
     const { updateText, cancelGeneration, entry, isLoading } = useTextEditor({
         stop,
@@ -60,6 +58,13 @@ export const TextFeed = memo(({ mode }) => {
     });
 
     // Effects
+    useEffect(() => {
+        if (initialEntry) {
+            setLastEntry(initialEntry);
+            onNewEntry(initialEntry);
+        }
+    }, [initialEntry, onNewEntry, setLastEntry]);
+
     useEffect(() => {
         if (!entry?.parameters?.messages || isInputChanged) return;
         const prompt = extractPrompt(entry.parameters.messages);

@@ -62,18 +62,6 @@ const Community = () => {
         window.open("https://github.com/pollinations/pollinations", "_blank");
     };
 
-    const handleAsciiArtClick = (e) => {
-        e.preventDefault();
-        trackEvent({
-            action: "click_ascii",
-            category: "community",
-        });
-        window.open(
-            "https://pollinations.github.io/hive/main/llm-feedback/",
-            "_blank",
-        );
-    };
-
     // Helper function to return the proper icon for each platform
     const getPlatformIcon = (platform) => {
         if (platform === "discord") {

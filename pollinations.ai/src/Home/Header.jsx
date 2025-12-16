@@ -46,6 +46,7 @@ const Header = () => {
               height: isMobile ? "auto" : "auto",
               color: "#110518",
             }}
+            aria-label="Pollinations Logo"
           />
         </NavLink>
         <SocialLinks medium gap="1em" invert location="header" />

@@ -7,7 +7,10 @@ export default throttle(() => {
     const formatMemoryUsage = (data) =>
         `${Math.round((data / 1024 / 1024) * 100) / 100} MB`;
 
-    const memoryData = process?.memoryUsage();
+    // More explicit Node.js environment check
+    const memoryData = (typeof process !== 'undefined' && 
+                       typeof process.memoryUsage === 'function' && 
+                       process.versions?.node) ? process.memoryUsage() : undefined;
     debug(
         "rss",
         `${formatMemoryUsage(memoryData?.rss)} -> total memory allocated for the process execution`,

@@ -1,44 +1,43 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
+import {
+    TEXT_LAST_ENTRY_URL,
+    TEXT_GENERATION_RATE,
+    INITIAL_TEXT_COUNT,
+    TEXT_FEED_LAUNCH_DATE_TIMESTAMP,
+    TEXT_FEED_FETCH_TIMEOUT,
+    TEXT_FEED_MAX_RETRIES,
+} from "../config/appConfig";
 
 /**
  * Simplified hook to track text entries counter and load initial entry
  */
-export function useTextFeedLoader(onNewEntry, setLastEntry) {
+export function useTextFeedLoader(setLastEntry) {
+    const [initialEntry, setInitialEntry] = useState(null);
     // Start with estimated value and increment with each new entry
     const [entriesGenerated, setEntriesGenerated] = useState(
         estimateGeneratedEntries(),
     );
 
-    // Set up listener to increment counter when new entries are received
-    useEffect(() => {
-        // Create wrapper function that increments the counter
-        // Increment by 1 for more realistic text generation pace
-        const incrementCounter = () => {
-            setEntriesGenerated((count) => count + 1);
-        };
 
-        // Listen for SSE data events
-        window.addEventListener("text-entry-received", incrementCounter);
 
-        return () => {
-            window.removeEventListener("text-entry-received", incrementCounter);
-        };
+    const incrementCounter = useCallback(() => {
+        setEntriesGenerated((count) => count + 1);
     }, []);
 
     // Fetch the last entry on mount (initial load only)
     useEffect(() => {
         let isMounted = true;
         let retryCount = 0;
-        const MAX_RETRIES = 3;
+        const MAX_RETRIES = TEXT_FEED_MAX_RETRIES;
 
         const fetchLastEntry = async () => {
             try {
                 // Use AbortController for timeout handling
                 const controller = new AbortController();
-                const timeoutId = setTimeout(() => controller.abort(), 5000);
+                const timeoutId = setTimeout(() => controller.abort(), TEXT_FEED_FETCH_TIMEOUT);
 
                 const response = await fetch(
-                    "https://text.pollinations.ai/last",
+                    TEXT_LAST_ENTRY_URL,
                     {
                         cache: "no-store",
                         headers: { Accept: "application/json" },
@@ -81,7 +80,7 @@ export function useTextFeedLoader(onNewEntry, setLastEntry) {
                                 };
 
                                 setLastEntry(processedData);
-                                onNewEntry(processedData);
+                                setInitialEntry(processedData);
                             } else {
                                 console.log(
                                     "Skipping non-GET last entry:",
@@ -114,7 +113,7 @@ export function useTextFeedLoader(onNewEntry, setLastEntry) {
                                         },
                                     };
                                     setLastEntry(fallbackEntry);
-                                    onNewEntry(fallbackEntry);
+                                    setInitialEntry(fallbackEntry);
                                 }
                             }
                         } catch (parseError) {
@@ -145,9 +144,9 @@ export function useTextFeedLoader(onNewEntry, setLastEntry) {
         return () => {
             isMounted = false;
         };
-    }, [onNewEntry, setLastEntry]);
+    }, [setLastEntry]);
 
-    return { entriesGenerated };
+    return { entriesGenerated, incrementCounter, initialEntry };
 }
 
 /**
@@ -155,12 +154,12 @@ export function useTextFeedLoader(onNewEntry, setLastEntry) {
  * Used as a starting point, will be incremented with each new entry
  */
 function estimateGeneratedEntries() {
-    const launchDate = 1738974161902; // Same as image feed for consistency
+    const launchDate = TEXT_FEED_LAUNCH_DATE_TIMESTAMP; // Same as image feed for consistency
     const now = Date.now();
     const differenceInSeconds = (now - launchDate) / 1000;
     // Reduced text generation rate to be more realistic (text is slower than images)
-    const entriesGeneratedSinceLaunch = Math.round(differenceInSeconds * 30); 
+    const entriesGeneratedSinceLaunch = Math.round(differenceInSeconds * TEXT_GENERATION_RATE); 
     
     // Starting value plus calculated growth
-    return 23554400 + entriesGeneratedSinceLaunch;
+    return INITIAL_TEXT_COUNT + entriesGeneratedSinceLaunch;
 }

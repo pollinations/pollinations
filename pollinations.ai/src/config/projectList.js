@@ -80,7 +80,7 @@ const isNewProject = (project) => {
         const diffTime = Math.abs(now - submissionDate);
         const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
         return diffDays <= 15;
-    } catch (error) {
+    } catch (_error) { // Renamed to _error to indicate it's unused
         // If there's any error parsing the date, default to removing the emoji
         return true;
     }
@@ -134,7 +134,8 @@ const organizeProjects = (sourceProjects) => {
         const categoryProjects = [];
 
         // Find projects with order <= 1, prioritizing by stars and then recency
-        const order1Projects = sourceProjects[category]
+        // const order1Projects = sourceProjects[category] // Unused variable - commented out
+        sourceProjects[category]
             .filter((project) => project.order <= 1 && !project.hidden)
             .sort((a, b) => {
                 // First sort by stars (higher stars first)
@@ -169,7 +170,7 @@ const organizeProjects = (sourceProjects) => {
             };
 
             // Get name for checking
-            const normalizedName = project.name;
+            // const normalizedName = project.name; // Unused variable - commented out
 
             // Add any additional processing if needed
 

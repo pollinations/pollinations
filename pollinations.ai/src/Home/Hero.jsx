@@ -41,15 +41,6 @@ const handleGithubButtonClick = (e) => {
     window.open("https://github.com/pollinations/pollinations", "_blank");
 };
 
-const handleEmailButtonClick = (e) => {
-    e.preventDefault();
-    // Track the click event
-    trackEvent({
-        action: "click_email",
-        category: "hero",
-    });
-};
-
 const Hero = () => {
     const theme = useTheme();
     const isMobile = useMediaQuery(theme.breakpoints.down("md"));

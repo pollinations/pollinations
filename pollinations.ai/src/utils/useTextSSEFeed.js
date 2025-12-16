@@ -1,10 +1,15 @@
 import { useState, useEffect, useCallback } from "react";
 import { useInterval } from "usehooks-ts";
+import {
+    TEXT_SSE_FEED_URL,
+    MAX_SSE_RETRY_TIME,
+    TEXT_SLIDESHOW_DISPLAY_INTERVAL,
+} from "../config/appConfig";
 
 /**
  * Hook to connect to the text SSE feed with throttled display
  */
-export const useTextSlideshow = (mode) => {
+export const useTextSlideshow = (mode, onTextEntryReceived) => {
     const [entry, setEntry] = useState(null);
     const [isStopped, setIsStopped] = useState(false);
     const [error, setError] = useState(null);
@@ -56,11 +61,9 @@ export const useTextSlideshow = (mode) => {
                     ]);
 
                     // Always dispatch custom event for counter increment, regardless of stopped state
-                    window.dispatchEvent(
-                        new CustomEvent("text-entry-received", {
-                            detail: { entry: processedEntry },
-                        }),
-                    );
+                    if (onTextEntryReceived) {
+                        onTextEntryReceived(processedEntry);
+                    }
                 } else {
                     console.log(
                         "Skipping non-GET entry:",
@@ -73,7 +76,7 @@ export const useTextSlideshow = (mode) => {
                 }
             }
         },
-        [processEntry],
+        [processEntry, onTextEntryReceived],
     );
 
     // Set up SSE connection
@@ -81,7 +84,6 @@ export const useTextSlideshow = (mode) => {
         let eventSource = null;
         let retryTimeout = null;
         let retryCount = 0;
-        const MAX_RETRY_TIME = 30000; // 30 seconds
 
         const connectToSSE = () => {
             // Clean up any existing connection
@@ -106,7 +108,7 @@ export const useTextSlideshow = (mode) => {
 
             try {
                 eventSource = new EventSource(
-                    "https://text.pollinations.ai/feed",
+                    TEXT_SSE_FEED_URL,
                     {
                         withCredentials: false,
                     },
@@ -149,7 +151,7 @@ export const useTextSlideshow = (mode) => {
                     if (mode === "text") {
                         const backoffTime = Math.min(
                             1000 * Math.pow(2, retryCount),
-                            MAX_RETRY_TIME,
+                            MAX_SSE_RETRY_TIME,
                         );
                         retryCount++;
                         retryTimeout = setTimeout(connectToSSE, backoffTime);
@@ -168,7 +170,7 @@ export const useTextSlideshow = (mode) => {
                 if (mode === "text") {
                     const backoffTime = Math.min(
                         1000 * Math.pow(2, retryCount),
-                        MAX_RETRY_TIME,
+                        MAX_SSE_RETRY_TIME,
                     );
                     retryCount++;
                     retryTimeout = setTimeout(connectToSSE, backoffTime);
@@ -196,7 +198,6 @@ export const useTextSlideshow = (mode) => {
     }, [mode, onNewEntry]); // Add mode to dependency array
 
     // Process pending entries at a fixed interval
-    const DISPLAY_INTERVAL = 1000; // 1 second between entries
     useInterval(() => {
         if (pendingEntries.length > 0 && !isStopped) {
             // Take the first entry from the queue
@@ -206,7 +207,7 @@ export const useTextSlideshow = (mode) => {
             // Set as current entry
             setEntry(nextEntry);
         }
-    }, DISPLAY_INTERVAL);
+    }, TEXT_SLIDESHOW_DISPLAY_INTERVAL);
 
     return {
         entry,

@@ -53,13 +53,6 @@ export function ModelInfo({ model, referrer, itemType = "text" }) {
         };
     };
 
-    // Get appropriate prompt enhancer link based on item type
-    const getPromptEnhancerLink = () => {
-        return itemType === "image"
-            ? "https://github.com/pollinations/pollinations/blob/main/image.pollinations.ai/src/promptEnhancer.ts"
-            : "https://github.com/pollinations/pollinations/blob/main/text.pollinations.ai/prompts/promptEnhancer.js";
-    };
-
     const modelInfo = getModelInfo();
 
     return (

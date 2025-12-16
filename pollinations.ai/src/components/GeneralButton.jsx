@@ -12,10 +12,8 @@ export const GeneralButton = React.forwardRef(function GeneralButton(
         textColor,
         fontSize,
         height,
-        minHeight,
         style,
         children,
-        isInputChanged,
         borderRadius,
         ...rest
     },

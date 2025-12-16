@@ -139,9 +139,7 @@ const ResizeHandle = styled.div`
  */
 export function PromptDisplay({
     itemType = "text",
-    backgroundColor = Colors.offblack,
     item,
-    isLoading,
     isEditMode,
     onPromptChange,
     onEditModeSwitch,
@@ -408,7 +406,7 @@ export function PromptDisplay({
                                     </Typography>
                                   : <ReactMarkdown
                                         components={{
-                                            p: ({ node, ...props }) => (
+                                            p: ({ ...props }) => (
                                                 <p
                                                     style={{
                                                         margin: 0,

@@ -1,31 +1,5 @@
 import { useEffect, useState, useCallback, useRef } from "react";
 import { useInterval } from "usehooks-ts";
-import debug from "debug";
-import { useMediaQuery } from "@mui/material";
-import debounce from "lodash.debounce";
-
-const log = debug("useImageSlideshow");
-
-const useDebouncedMediaQuery = (query, delay = 200) => {
-    const [matches, setMatches] = useState(false);
-
-    const handler = debounce((event) => {
-        setMatches(event.matches);
-    }, delay);
-
-    useEffect(() => {
-        const media = window.matchMedia(query);
-        media.addEventListener("change", handler);
-        setMatches(media.matches);
-
-        return () => {
-            media.removeEventListener("change", handler);
-            handler.cancel();
-        };
-    }, [query, handler]);
-
-    return matches;
-};
 
 export function useImageSlideshow() {
     const [image, setImage] = useState({});

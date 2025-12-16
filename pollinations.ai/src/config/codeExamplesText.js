@@ -384,7 +384,10 @@ fetch('https://text.pollinations.ai/transcriptions', {
     },
     kontext_image_to_image: {
         category: "Kontext Image-to-Image",
-        code: ({ prompt, width, height, seed, model }) => `
+        code: ({ prompt, width, height, seed, model }) => {
+          // eslint-disable-next-line no-unused-vars
+          const _ = { prompt, width, height, seed, model };
+          return `
 # Kontext Model - Image-to-Image Generation
 
 \`\`\`bash
@@ -398,9 +401,8 @@ fetch('https://image.pollinations.ai/prompt/transform%20this%20image?model=konte
   .then(response => response.blob())
   .then(blob => URL.createObjectURL(blob));
 \`\`\`
-
-**Requirements:** Seed tier or higher
-`,
+`;
+        },
         language: "markdown",
     },
     mcp_server: {

@@ -51,7 +51,6 @@ export function ModelSelector({
     const {
         models,
         loading: modelsLoading,
-        error: modelsError,
     } = useModels(itemType);
 
     // Handle toggle
@@ -205,15 +204,12 @@ export function ModelSelector({
                         color: Colors.offwhite,
                         width: "100%",
                         justifyContent: "flex-start",
-                        height: "60px",
                         border: "none",
                         borderRadius: "0px",
                         height: "56px",
                         margin: "2px",
-                        width: "calc(100% - 4px)",
                         fontFamily: Fonts.parameter,
                         textTransform: "none",
-                        border: "none",
                         boxShadow: "none",
                         overflow: "hidden",
                         textOverflow: "ellipsis",

@@ -1,5 +1,5 @@
 // Netlify function to handle redirects with analytics
-import { incrementUserMetric } from "../../shared/userMetrics.js";
+/* eslint-env node */
 
 // Import redirect mapping and affiliate data from the consolidated affiliates.js file
 import { redirectMapping, affiliatesData } from "../../shared/affiliates.js";
@@ -43,8 +43,8 @@ function sanitizeTargetId(targetId) {
  */
 async function sendAnalytics(eventName, metadata, request) {
     try {
-        const measurementId = process.env.GA_MEASUREMENT_ID;
-        const apiSecret = process.env.GA_API_SECRET;
+        const measurementId = process.env.VITE_GA_MEASUREMENT_ID || process.env.GA_MEASUREMENT_ID;
+        const apiSecret = process.env.VITE_GA_API_SECRET || process.env.GA_API_SECRET;
 
         if (!measurementId || !apiSecret) {
             console.log("Missing analytics credentials:", {
@@ -129,7 +129,7 @@ async function sendAnalytics(eventName, metadata, request) {
     }
 }
 
-export const handler = async function (event, context) {
+export const handler = async function (event) {
     console.log("Redirect function called with event:", {
         path: event.path,
         httpMethod: event.httpMethod,

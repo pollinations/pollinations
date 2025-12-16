@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { SSE_FEED_URL, IMAGE_GENERATION_INCREMENT, LAUNCH_DATE_TIMESTAMP, IMAGE_GENERATION_RATE, INITIAL_IMAGE_COUNT } from "../config/appConfig";
 
 export function useFeedLoader(onNewImage, setLastImage, mode) {
     const [imagesGenerated, setImagesGenerated] = useState(
@@ -10,12 +11,12 @@ export function useFeedLoader(onNewImage, setLastImage, mode) {
 
         const getEventSource = () => {
             const source = new EventSource(
-                "https://image.pollinations.ai/feed",
+                SSE_FEED_URL,
             );
             source.onmessage = (evt) => {
                 const data = JSON.parse(evt.data);
                 // Increment by 5 instead of 1 as per issue #1793
-                setImagesGenerated((no) => no + 5);
+                setImagesGenerated((no) => no + IMAGE_GENERATION_INCREMENT);
 
                 // Dispatch custom event for counter increment
                 window.dispatchEvent(
@@ -26,9 +27,6 @@ export function useFeedLoader(onNewImage, setLastImage, mode) {
 
                 // lastServerLoad = data["concurrentRequests"];
                 if (data["status"] === "end_generating") setLastImage(data);
-
-                const urlParams = new URLSearchParams(window.location.search);
-                const nsfwParam = urlParams.get("nsfw");
 
                 if (data["imageURL"]) {
                     onNewImage(data);
@@ -64,12 +62,12 @@ export function useFeedLoader(onNewImage, setLastImage, mode) {
 }
 
 function estimateGeneratedImages() {
-    const launchDate = 1751974161902;
+    const launchDate = LAUNCH_DATE_TIMESTAMP;
     const now = Date.now();
     const differenceInSeconds = (now - launchDate) / 1000;
     // Multiply rate by 5 as per issue #1793 (from 23.78 to 118.9)
-    const imagesGeneratedSinceLaunch = Math.round(differenceInSeconds * 118.9); // ~500,000 images per hour
+    const imagesGeneratedSinceLaunch = Math.round(differenceInSeconds * IMAGE_GENERATION_RATE); // ~500,000 images per hour
 
-    const imagesGeneratedCalculated = 117772000 + imagesGeneratedSinceLaunch;
+    const imagesGeneratedCalculated = INITIAL_IMAGE_COUNT + imagesGeneratedSinceLaunch;
     return imagesGeneratedCalculated;
 }

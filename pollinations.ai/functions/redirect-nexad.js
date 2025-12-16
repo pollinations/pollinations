@@ -1,5 +1,5 @@
 // Netlify function to handle nex.ad redirects with analytics
-import { incrementUserMetric } from "../../shared/userMetrics.js";
+/* eslint-env node */
 
 /**
  * Extract event ID from the path
@@ -28,8 +28,8 @@ function extractEventId(path) {
  */
 async function sendAnalytics(eventName, metadata, request) {
     try {
-        const measurementId = process.env.GA_MEASUREMENT_ID;
-        const apiSecret = process.env.GA_API_SECRET;
+        const measurementId = process.env.VITE_GA_MEASUREMENT_ID || process.env.GA_MEASUREMENT_ID;
+        const apiSecret = process.env.VITE_GA_API_SECRET || process.env.GA_API_SECRET;
 
         if (!measurementId || !apiSecret) {
             console.log("Missing analytics credentials:", {
@@ -107,7 +107,7 @@ async function sendAnalytics(eventName, metadata, request) {
     }
 }
 
-export const handler = async function (event, context) {
+export const handler = async function (event) {
     console.log("Nex.ad redirect function called with event:", {
         path: event.path,
         httpMethod: event.httpMethod,

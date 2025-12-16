@@ -1,9 +1,3 @@
-export function trackEvent({ action, category, label, value }) {
-    if (typeof window !== "undefined" && window.gtag) {
-        window.gtag("event", action, {
-            category,
-            label,
-            value,
-        });
-    }
-}
+import { analyticsService } from "../services/analyticsService";
+
+export const trackEvent = analyticsService.trackEvent.bind(analyticsService);

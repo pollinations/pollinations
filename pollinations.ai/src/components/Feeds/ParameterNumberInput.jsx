@@ -27,7 +27,6 @@ export function ParameterNumberInput({
     onFocus,
     tooltipText,
     paramName,
-    setIsInputChanged,
     category = "feed",
     styles = {},
 }) {

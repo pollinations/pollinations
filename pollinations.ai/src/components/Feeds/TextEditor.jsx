@@ -1,14 +1,12 @@
 import React, { useCallback, useEffect } from "react";
 import { Box, Typography, useMediaQuery, useTheme } from "@mui/material";
 import { Colors, Fonts } from "../../config/global";
-import styled from "@emotion/styled";
 import { useModels } from "../../utils/useModels";
 import { GeneralButton } from "../GeneralButton";
 import { ModelSelector } from "./ModelSelector";
 import { LLMTextManipulator } from "../LLMTextManipulator";
 import { noLink } from "../../config/llmTransforms";
 import { IMAGE_EDIT_BUTTON_OFF } from "../../config/copywrite";
-import { keyframes } from "@emotion/react";
 
 const LabelStyle = {
     color: Colors.offwhite,
@@ -16,27 +14,12 @@ const LabelStyle = {
     fontFamily: Fonts?.parameter || "inherit",
 };
 
-const blinkAnimation = keyframes`
-  0% {
-    background-color: ${Colors.offblack};
-    color: ${Colors.lime};
-  }
-  50% {
-    background-color: ${Colors.lime}B3;
-    color: ${Colors.offblack}B3;
-  }
-  100% {
-    background-color: ${Colors.offblack}B3;
-    color: ${Colors.lime}B3;
-  }
-`;
-
 /**
  * TextEditor component for customizing and generating text
  * @param {Object} props - Component props
  */
 export const TextEditor = ({
-    entry,
+    // entry, // Unused parameter - commented out
     isLoading,
     setIsInputChanged,
     isInputChanged,
@@ -44,33 +27,23 @@ export const TextEditor = ({
     updateText,
     cancelGeneration,
     promptOnly = false, // Only render the prompt field
-    controlsOnly = false, // Only render the model & button
+    // controlsOnly = false, // Unused parameter - commented out
     // Shared state from parent
     sharedPrompt,
-    setSharedPrompt,
+    // setSharedPrompt, // Unused parameter - commented out
     sharedModel,
     setSharedModel,
 }) => {
     // Use the new hook with 'text' explicitly passed
     const {
-        models,
+        // models, // Unused variable - commented out
         loading: modelsLoading,
-        error: modelsError,
+        // error: modelsError, // Unused variable - commented out
     } = useModels("text");
 
     // Add theme and media query for responsive design
     const theme = useTheme();
     const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
-
-    // Early return for non-edit mode (except for prompt-only mode)
-    if (toggleValue !== "edit" && !promptOnly) {
-        return null;
-    }
-
-    // If prompt-only mode is requested, return null as this is now handled by PromptDisplay
-    if (promptOnly) {
-        return null;
-    }
 
     // Log the current sharedPrompt and sharedModel for debugging
     useEffect(() => {
@@ -98,12 +71,10 @@ export const TextEditor = ({
                 { role: "user", content: sharedPrompt || "" },
             ],
             temperature: 0.7,
-            max_tokens: 1000,
-            type: "chat",
         };
 
         updateText(parameters);
-    }, [sharedModel, sharedPrompt, updateText]);
+    }, [sharedPrompt, sharedModel, updateText]);
 
     // Handle input changes
     const handleInputChange = useCallback(() => {
@@ -111,6 +82,16 @@ export const TextEditor = ({
             setIsInputChanged(true);
         }
     }, [isInputChanged, setIsInputChanged]);
+
+    // Early return for non-edit mode (except for prompt-only mode)
+    if (toggleValue !== "edit" && !promptOnly) {
+        return null;
+    }
+
+    // If prompt-only mode is requested, return null as this is now handled by PromptDisplay
+    if (promptOnly) {
+        return null;
+    }
 
     // Render a responsive layout based on screen size
     return (

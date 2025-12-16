@@ -14,13 +14,12 @@ import { keyframes } from "@emotion/react";
  * @param {string} props.itemType - Type of item ("image" or "text")
  */
 export function ServerLoadInfo({
-    lastItem,
+    // lastItem, // Unused parameter - commented out
     itemsGenerated,
-    currentItem,
-    itemType,
+    // itemType = "image", // Default parameter - commented out (not used in component)
 }) {
     // Simulate load when concurrentRequests is not available
-    const [simulatedLoad, setSimulatedLoad] = useState(2);
+    const [simulatedLoad, setSimulatedLoad] = useState(2); // Recommented - this is used
     // Add state to track if component is ready to display
     const [isReady, setIsReady] = useState(false);
 
@@ -108,12 +107,6 @@ export function ServerLoadInfo({
         itemsGenerated !== undefined && itemsGenerated !== null
             ? itemsGenerated
             : 0;
-    // Calculate safeRequests here to pass to RateDisplay
-    const safeRequests =
-        lastItem?.concurrentRequests !== undefined &&
-        lastItem?.concurrentRequests !== null
-            ? lastItem.concurrentRequests
-            : simulatedLoad;
 
     return (
         <Box
@@ -129,7 +122,7 @@ export function ServerLoadInfo({
             }}
         >
             <CountBadge itemsGenerated={displayCount} />
-            <RateDisplay rate={imagesPerSecond} itemType={itemType} />
+            <RateDisplay rate={imagesPerSecond} />
             {/* <TimingInfo item={lastItem} /> */}
         </Box>
     );
@@ -208,7 +201,7 @@ function TimingInfo({ item }) {
 }
 
 // Updated RateDisplay component to include load bars
-function RateDisplay({ rate, itemType }) {
+function RateDisplay({ rate }) { // Removed unused itemType parameter
     // Multiply rate by 5 as per issue #1793
     const adjustedRate = rate ? (parseFloat(rate) * 5).toFixed(1) : "0.0";
     const displayRate = adjustedRate;

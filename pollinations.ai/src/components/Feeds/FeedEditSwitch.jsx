@@ -1,14 +1,13 @@
 import React from "react";
 import { GeneralButton } from "../GeneralButton";
 import { Colors, Fonts } from "../../config/global";
-import { doNotRephrase, noLink, translate } from "../../config/llmTransforms";
+import { doNotRephrase, noLink } from "../../config/llmTransforms";
 import { Box } from "@mui/material";
 import { LLMTextManipulator } from "../LLMTextManipulator.jsx";
 
 export function FeedEditSwitch({
     toggleValue,
     handleToggleChange,
-    isLoading,
     feedModeText1,
     feedModeText2,
 }) {

@@ -134,7 +134,7 @@ const isColabLinkCell = (cell) =>
 
 // extract the url from link string
 const getColabLinkURL = (cell) =>
-    getColabLink(cell).match(/.*href=\"([^\"]*)\".*/)[1];
+    getColabLink(cell).match(/.*href="([^"]*)".*/)[1];
 
 const getColabLink = (cell) => cell["source"][0];
 

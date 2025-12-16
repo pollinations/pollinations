@@ -95,13 +95,6 @@ const TierScreen: FC<{
 
     // Detect cancellation
     const isCanceled = !!subscription_canceled_at && !!subscription_ends_at;
-    const endsAt = subscription_ends_at
-        ? new Date(subscription_ends_at).toLocaleDateString("en-US", {
-              year: "numeric",
-              month: "long",
-              day: "numeric",
-          })
-        : "";
 
     return (
         <TierContainer>

@@ -1,4 +1,5 @@
 import { Hono } from "hono";
+import { HTTPException } from "hono/http-exception";
 import { getLogger } from "@logtape/logtape";
 import { drizzle } from "drizzle-orm/d1";
 import { eq } from "drizzle-orm";
@@ -19,13 +20,13 @@ export const webhooksRoutes = new Hono<Env>().post("/polar", async (c) => {
 
     if (!webhookSecret) {
         log.warn("POLAR_WEBHOOK_SECRET not configured");
-        return c.json({ error: "Webhook not configured" }, 500);
+        throw new HTTPException(500, { message: "Webhook not configured" });
     }
 
     const signature = c.req.header("webhook-signature");
     if (!signature) {
         log.warn("Missing webhook signature");
-        return c.json({ error: "Missing signature" }, 401);
+        throw new HTTPException(401, { message: "Missing signature" });
     }
 
     const rawBody = await c.req.text();
@@ -37,7 +38,7 @@ export const webhooksRoutes = new Hono<Env>().post("/polar", async (c) => {
     );
     if (!isValid) {
         log.warn("Invalid webhook signature");
-        return c.json({ error: "Invalid signature" }, 401);
+        throw new HTTPException(401, { message: "Invalid signature" });
     }
 
     let payload: WebhookPayload;
@@ -45,7 +46,7 @@ export const webhooksRoutes = new Hono<Env>().post("/polar", async (c) => {
         payload = JSON.parse(rawBody);
     } catch {
         log.warn("Invalid webhook payload");
-        return c.json({ error: "Invalid payload" }, 400);
+        throw new HTTPException(400, { message: "Invalid payload" });
     }
 
     log.info("Received Polar webhook: {type}", { type: payload.type });

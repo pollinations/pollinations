@@ -83,11 +83,15 @@ export const TextDisplay = ({ entry, isLoading, isEditMode }) => {
 
   // Check if this is a FORBIDDEN error (model not allowed for API key)
   const isForbiddenError = entry.errorCode === "FORBIDDEN"
-  // Check if this is a rate limit error
+  // Check if this is a rate limit error (429 or explicit rate limit message)
   const isRateLimitError =
     entry.error?.includes?.("Rate limit") ||
+    entry.error?.includes?.("Too Many Requests") ||
+    entry.error?.includes?.("429") ||
     entry.message?.includes?.("Rate limit") ||
-    (typeof entry.error === "string" && entry.error.includes("Rate limit")) ||
+    entry.message?.includes?.("Too Many Requests") ||
+    (typeof entry.error === "string" &&
+      (entry.error.includes("Rate limit") || entry.error.includes("429"))) ||
     entry.response?.includes?.("Rate limit")
   // Check if this is any error (including internal server errors)
   const isAnyError =

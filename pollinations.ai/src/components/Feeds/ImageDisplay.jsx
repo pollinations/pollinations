@@ -26,11 +26,15 @@ export const ImageDisplay = memo(function ImageDisplay({ image }) {
   if (image?.error) {
     // Check if this is a FORBIDDEN error (model not allowed for API key)
     const isForbiddenError = image.errorCode === "FORBIDDEN"
-    // Check if this is a rate limit error
+    // Check if this is a rate limit error (429 or explicit rate limit message)
     const isRateLimitError =
       image.error?.includes?.("Rate limit") ||
+      image.error?.includes?.("Too Many Requests") ||
+      image.error?.includes?.("429") ||
       image.message?.includes?.("Rate limit") ||
-      (typeof image.error === "string" && image.error.includes("Rate limit"))
+      image.message?.includes?.("Too Many Requests") ||
+      (typeof image.error === "string" &&
+        (image.error.includes("Rate limit") || image.error.includes("429")))
 
     // Determine error type for display
     let errorTitle = "Something Went Wrong"

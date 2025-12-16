@@ -31,39 +31,26 @@ global.IntersectionObserver = class IntersectionObserver {
 };
 
 // Mock EventSource for SSE functionality in tests
-global.EventSource = class EventSource {
+import { vi } from 'vitest';
+
+class MockEventSource {
   constructor(url) {
     this.url = url;
     this.readyState = 0;
+    this.withCredentials = false;
+    this.onopen = null;
     this.onmessage = null;
     this.onerror = null;
-    this.onopen = null;
-    
-    // Simulate connection opening
-    setTimeout(() => {
-      this.readyState = 1;
-      if (this.onopen) this.onopen();
-    }, 0);
+    this.close = vi.fn();
+    this.addEventListener = vi.fn();
+    this.removeEventListener = vi.fn();
+    this.dispatchEvent = vi.fn();
   }
-  
-  close() {
-    this.readyState = 2;
-  }
-  
-  // Helper method for tests to simulate messages
-  simulateMessage(data) {
-    if (this.onmessage) {
-      this.onmessage({ data: JSON.stringify(data) });
-    }
-  }
-  
-  // Helper method for tests to simulate errors
-  simulateError() {
-    if (this.onerror) {
-      this.onerror(new Error('Connection error'));
-    }
-  }
-};
+}
+
+Object.defineProperty(window, 'EventSource', {
+  value: MockEventSource,
+});
 
 // Add any other global test setup here
 // This file runs before each test file

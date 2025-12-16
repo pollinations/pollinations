@@ -10,6 +10,7 @@ This document outlines the new enhanced features added to the Pollinations Model
 4. [MCP Fingerprint Headers](#️-mcp-fingerprint-headers-observability)
 5. [Usage Examples](#usage-examples)
 6. [Integration Guide](#integration-guide)
+7. [One-Click Claude Desktop Installation](#-one-click-claude-desktop-installation)
 
 ---
 
@@ -254,7 +255,66 @@ await startMcpServer();
 
 ---
 
-## 🔐 Authentication Setup
+## � One-Click Claude Desktop Installation
+
+### Overview
+Install Pollinations MCP directly to Claude Desktop with a single command. This feature automatically configures your Claude Desktop installation to use the Pollinations MCP server.
+
+### Installation Command
+```bash
+npx @pollinations/model-context-protocol install-claude-mcp
+```
+
+### What It Does
+- **Auto-detects your operating system** (Windows, macOS, or Linux)
+- **Finds Claude Desktop config location** automatically
+- **Creates or updates** the `claude_desktop_config.json` file
+- **Adds Pollinations MCP** to your available tools
+- **Provides clear feedback** and next steps
+
+### Supported Platforms
+- ✅ **Windows**: `%APPDATA%\Claude\claude_desktop_config.json`
+- ✅ **macOS**: `~/Library/Application Support/Claude/claude_desktop_config.json`
+- ✅ **Linux**: `~/.config/Claude/claude_desktop_config.json`
+
+### Example Installation Output
+```
+🚀 Installing Pollinations MCP to Claude Desktop...
+📁 Config path: /Users/yourname/Library/Application Support/Claude/claude_desktop_config.json
+📋 Found existing Claude Desktop configuration
+✅ Successfully installed Pollinations MCP to Claude Desktop!
+
+🎉 Installation complete!
+📋 Configuration saved to: /Users/yourname/Library/Application Support/Claude/claude_desktop_config.json
+
+🔄 Next steps:
+1. Restart Claude Desktop if it's running
+2. Look for the 🔧 icon in the bottom right
+3. You should see 'pollinations' in your available tools
+
+💡 Having issues? Check:
+- Claude Desktop is properly installed
+- Node.js and npm are available in your PATH
+- The config file is valid JSON
+```
+
+### Manual Configuration (Alternative)
+If you prefer to configure manually, add this to your `claude_desktop_config.json`:
+```json
+{
+  "mcpServers": {
+    "pollinations": {
+      "command": "npx",
+      "args": ["@pollinations/model-context-protocol"],
+      "env": {}
+    }
+  }
+}
+```
+
+---
+
+## �� Authentication Setup
 
 ### GitHub OAuth Authentication
 The reasoning service requires authentication to access the gen.pollinations.ai endpoint. The MCP server includes a complete OAuth flow with PKCE security.
@@ -360,6 +420,7 @@ No action required - headers are automatically included in all requests. This he
 | **Advanced Reasoning** | ❌ | ✅ | ✅ |
 | **System Monitoring** | ❌ | ✅ | ✅ |
 | **MCP Fingerprint Headers** | ❌ | ✅ | ✅ |
+| **One-Click Claude Install** | ❌ | ✅ | ✅ |
 | Model Selection | Limited | Full | Full |
 | Health Checks | ❌ | ✅ | ✅ |
 

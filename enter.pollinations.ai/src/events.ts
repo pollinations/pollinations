@@ -48,7 +48,7 @@ export async function processEvents(
         polarAccessToken: string;
         polarServer: "sandbox" | "production";
         tinybirdIngestUrl: string;
-        tinybirdAccessToken: string;
+        tinybirdIngestToken: string;
         minBatchSize?: number;
         maxBatchSize?: number;
         minRetryDelay?: number;
@@ -73,7 +73,7 @@ export async function processEvents(
         const tinybirdDelivery = await sendTinybirdEvents(
             events,
             config.tinybirdIngestUrl,
-            config.tinybirdAccessToken,
+            config.tinybirdIngestToken,
             log,
         );
         if (

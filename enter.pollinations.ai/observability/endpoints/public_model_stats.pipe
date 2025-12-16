@@ -1,5 +1,5 @@
 DESCRIPTION >
-    Public model usage statistics for the last 24 hours.
+    Public model usage statistics for the last 7 days.
     Returns aggregated stats per model including request counts, average costs, and response times.
 
 TOKEN public_stats_read READ

@@ -109,15 +109,18 @@ export const ModelPermissions: FC<ModelPermissionsProps> = ({
                 <span className="text-sm font-medium">Allow all models</span>
                 <button
                     type="button"
-                    className="relative inline-flex items-center group/info"
+                    className="relative inline-flex items-center"
                     onClick={(e) => {
                         e.preventDefault();
-                        setShowTooltip(!showTooltip);
+                        e.stopPropagation();
+                        setShowTooltip((prev) => !prev);
                     }}
+                    onMouseEnter={() => setShowTooltip(true)}
+                    onMouseLeave={() => setShowTooltip(false)}
                     onKeyDown={(e) => {
                         if (e.key === "Enter" || e.key === " ") {
                             e.preventDefault();
-                            setShowTooltip(!showTooltip);
+                            setShowTooltip((prev) => !prev);
                         }
                     }}
                     aria-label="Show model access information"
@@ -126,7 +129,7 @@ export const ModelPermissions: FC<ModelPermissionsProps> = ({
                         i
                     </span>
                     <span
-                        className={`${showTooltip ? "visible" : "invisible"} group-hover/info:visible absolute left-0 top-full mt-1 px-3 py-2 bg-gradient-to-r from-pink-50 to-purple-50 text-gray-800 text-xs rounded-lg shadow-lg border border-pink-200 whitespace-normal z-50 pointer-events-none w-48`}
+                        className={`${showTooltip ? "visible" : "invisible"} absolute left-0 top-full mt-1 px-3 py-2 bg-gradient-to-r from-pink-50 to-purple-50 text-gray-800 text-xs rounded-lg shadow-lg border border-pink-200 whitespace-normal z-50 pointer-events-none`}
                     >
                         Restrict which models this API key can access. Useful
                         for limiting keys to specific use cases.

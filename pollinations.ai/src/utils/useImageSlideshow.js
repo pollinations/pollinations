@@ -130,15 +130,21 @@ export function useImageEditor({ stop, image }) {
 const loadImage = async (newImage) => {
     try {
         const response = await fetch(newImage.imageURL);
-        
+
         // Check if response is an error
         if (!response.ok) {
             // Try to parse error as JSON
             const contentType = response.headers.get("content-type");
             if (contentType && contentType.includes("application/json")) {
                 const errorData = await response.json();
-                const error = new Error(errorData.error || `HTTP ${response.status}`);
-                error.apiMessage = errorData.message;
+                const error = new Error(
+                    errorData.error?.message ||
+                        errorData.error ||
+                        `HTTP ${response.status}`,
+                );
+                error.apiMessage =
+                    errorData.error?.message || errorData.message;
+                error.errorCode = errorData.error?.code || errorData.code;
                 throw error;
             } else {
                 const errorText = await response.text();
@@ -151,8 +157,9 @@ const loadImage = async (newImage) => {
         if (contentType && contentType.includes("application/json")) {
             const data = await response.json();
             if (data.error) {
-                const error = new Error(data.error);
-                error.apiMessage = data.message;
+                const error = new Error(data.error?.message || data.error);
+                error.apiMessage = data.error?.message || data.message;
+                error.errorCode = data.error?.code || data.code;
                 throw error;
             }
         }
@@ -161,7 +168,7 @@ const loadImage = async (newImage) => {
         // Still preload it to ensure it's ready
         const blob = await response.blob();
         const objectUrl = URL.createObjectURL(blob);
-        
+
         return new Promise((resolve, reject) => {
             const img = new Image();
             img.src = objectUrl;
@@ -184,6 +191,7 @@ const loadImage = async (newImage) => {
             loaded: true,
             error: error.message,
             message: error.apiMessage,
+            errorCode: error.errorCode,
         };
     }
 };

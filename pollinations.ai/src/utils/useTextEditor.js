@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react";
-import { PLAYGROUND_API_KEY, ENTER_BASE_URL } from "./enterApi";
+import { PLAYGROUND_TEXT_API_KEY, ENTER_BASE_URL } from "./enterApi";
 
 /**
  * Hook for text editor functionality
@@ -36,8 +36,11 @@ export const useTextEditor = ({ stop, entry }) => {
                 const body = {
                     model: parameters.model || "openai",
                     messages: parameters.messages || [
-                        { role: "system", content: "You are a helpful assistant." },
-                        { role: "user", content: "" }
+                        {
+                            role: "system",
+                            content: "You are a helpful assistant.",
+                        },
+                        { role: "user", content: "" },
                     ],
                     temperature: parameters.temperature || 0.7,
                     max_tokens: parameters.max_tokens || 1000,
@@ -53,7 +56,7 @@ export const useTextEditor = ({ stop, entry }) => {
                     method: "POST",
                     headers: {
                         "Content-Type": "application/json",
-                        "Authorization": `Bearer ${PLAYGROUND_API_KEY}`,
+                        "Authorization": `Bearer ${PLAYGROUND_TEXT_API_KEY}`,
                     },
                     body: JSON.stringify(body),
                     signal: controller.signal,
@@ -62,10 +65,27 @@ export const useTextEditor = ({ stop, entry }) => {
                 clearTimeout(timeoutId);
 
                 if (!response.ok) {
-                    const errorText = await response.text();
-                    throw new Error(
-                        `HTTP error! status: ${response.status}, message: ${errorText || "No error details"}`,
-                    );
+                    // Try to parse as JSON to get error details
+                    const contentType = response.headers.get("content-type");
+                    if (
+                        contentType &&
+                        contentType.includes("application/json")
+                    ) {
+                        const errorData = await response.json();
+                        const error = new Error(
+                            errorData.error?.message ||
+                                errorData.error ||
+                                `HTTP ${response.status}`,
+                        );
+                        error.errorCode =
+                            errorData.error?.code || errorData.code;
+                        throw error;
+                    } else {
+                        const errorText = await response.text();
+                        throw new Error(
+                            `HTTP error! status: ${response.status}, message: ${errorText || "No error details"}`,
+                        );
+                    }
                 }
 
                 const data = await response.json();
@@ -89,6 +109,8 @@ export const useTextEditor = ({ stop, entry }) => {
                 const errorEntry = {
                     response: `Error: ${error.message}. Please try again.`,
                     referrer: "pollinations.ai",
+                    error: error.message,
+                    errorCode: error.errorCode,
                     parameters: {
                         ...parameters,
                         type: "chat",

@@ -29,22 +29,24 @@ export const Pricing: FC = () => {
                     🤖 Vote on next models
                 </Button>
             </div>
-            <div className="bg-amber-50/30 rounded-2xl p-8 border border-amber-300 space-y-8 overflow-x-auto md:overflow-x-visible [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
-                <ModelTable
-                    models={imageModels}
-                    type="image"
-                    modelStats={modelStats}
-                />
-                <ModelTable
-                    models={videoModels}
-                    type="video"
-                    modelStats={modelStats}
-                />
-                <ModelTable
-                    models={textModels}
-                    type="text"
-                    modelStats={modelStats}
-                />
+            <div className="bg-amber-50/30 rounded-2xl p-8 border border-amber-300 space-y-8 overflow-hidden">
+                <div className="overflow-x-auto md:overflow-x-visible [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] space-y-8">
+                    <ModelTable
+                        models={imageModels}
+                        type="image"
+                        modelStats={modelStats}
+                    />
+                    <ModelTable
+                        models={videoModels}
+                        type="video"
+                        modelStats={modelStats}
+                    />
+                    <ModelTable
+                        models={textModels}
+                        type="text"
+                        modelStats={modelStats}
+                    />
+                </div>
 
                 <div className="pt-4 space-y-3">
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">

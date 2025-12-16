@@ -341,6 +341,7 @@ Pollinations.AI is used in various projects, including:
 | 🤖 [Swapna Shastra Dream Decoder 💤✨](https://t.me/Swapnashastra_dream_bot) | AI-powered Telegram bot that interprets dreams using ancient Indian Swapna... | @ShashankNagaraj |
 | 🆕 🤖 [Lily – AI Discord Companion](https://discord.com/oauth2/authorize?client_id=1448084290616164513&permissions=8&integration_type=0&scope=bot+applications.commands) | Lily is a next-generation conversational AI bot for Discord designed to feel... | CloudCompile |
 | 🆕 🤖 [🎨 Aqua AI Generator](https://top.gg/bot/1026133323023654932) | Free Discord AI image generator bot supporting up to 8 models, including 4 from... | @shaqkao1206 |
+| 🆕 [🤖 NullVector](https://discord.com/oauth2/authorize?client_id=1450613065069494423&permissions=8&integration_type=0&scope=applications.commands+bot) ([⭐ 0](https://github.com/CloudCompile)) | Discord AI assistant with smart model routing. Evaluates each message to select... | @CloudCompile, @A... |
 
 ### Learn 📚
 

@@ -139,5 +139,15 @@ export const socialBotsProjects = [
     "category": "socialBots",
     "submissionDate": "2025-12-12",
     "order": 5
+  },
+  {
+    "name": "🤖 NullVector",
+    "url": "https://discord.com/oauth2/authorize?client_id=1450613065069494423&permissions=8&integration_type=0&scope=applications.commands+bot",
+    "description": "Discord AI assistant with smart model routing. Evaluates each message to select the best AI model for coding, reasoning, or research tasks. Features context-aware memory, transparent reasoning views, and natural conversation flow across DMs and servers.",
+    "author": "@CloudCompile, @AyRon",
+    "repo": "https://github.com/CloudCompile",
+    "category": "socialBots",
+    "submissionDate": "2025-12-16",
+    "order": 5
   }
 ];

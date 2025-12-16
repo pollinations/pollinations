@@ -141,6 +141,11 @@ export const TOKENS: DesignToken[] = [
         description: "Audio generation indicator",
         type: "color",
     },
+    {
+        id: "indicator.video",
+        description: "Video generation indicator",
+        type: "color",
+    },
 
     // BORDERS
     {

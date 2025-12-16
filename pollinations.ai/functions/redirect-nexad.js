@@ -28,8 +28,8 @@ function extractEventId(path) {
  */
 async function sendAnalytics(eventName, metadata, request) {
     try {
-        const measurementId = process.env.VITE_GA_MEASUREMENT_ID || process.env.GA_MEASUREMENT_ID;
-        const apiSecret = process.env.VITE_GA_API_SECRET || process.env.GA_API_SECRET;
+        const measurementId = process.env.GA_MEASUREMENT_ID;
+        const apiSecret = process.env.GA_API_SECRET;
 
         if (!measurementId || !apiSecret) {
             console.log("Missing analytics credentials:", {

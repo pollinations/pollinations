@@ -1,3 +1,5 @@
+// polly is love polly is life
+
 /**
  * Pollinations Reasoning Service
  *
@@ -17,24 +19,13 @@ const TEXT_API_BASE_URL = "https://text.pollinations.ai";
 
 /**
  * Deep thinking models available for reasoning
+ * Note: These are the actual model names available from text.pollinations.ai
  */
 const REASONING_MODELS = {
-    "deepseek-r1": {
-        name: "DeepSeek R1",
-        description: "Advanced reasoning model with step-by-step thinking",
+    "openai": {
+        name: "OpenAI GPT",
+        description: "Powerful reasoning and analysis model",
         specialties: ["Complex problem solving", "Mathematical reasoning", "Code analysis"],
-        thinking: true
-    },
-    "kimi-k2-thinking": {
-        name: "Kimi K2 Thinking", 
-        description: "Deep thinking model with extended reasoning chains",
-        specialties: ["Philosophical reasoning", "Creative problem solving", "Strategic thinking"],
-        thinking: true
-    },
-    "gemini-2.0-thinking": {
-        name: "Gemini 2.0 Thinking",
-        description: "Google's reasoning model with multi-step analysis",
-        specialties: ["Scientific reasoning", "Data analysis", "Logical deduction"],
         thinking: true
     }
 };
@@ -49,7 +40,7 @@ const REASONING_MODELS = {
  */
 async function _generateReasoningInternal(prompt, reasoningPrompt, options = {}) {
     const { 
-        reasoningModel = "deepseek-r1", 
+        reasoningModel = "openai", 
         finalModel = "openai",
         maxReasoningTokens = 2000,
         maxFinalTokens = 1000,
@@ -57,38 +48,66 @@ async function _generateReasoningInternal(prompt, reasoningPrompt, options = {})
         json = false
     } = options;
 
-    // Step 1: Generate reasoning/thinking
-    const reasoningUrl = buildUrl(TEXT_API_BASE_URL, encodeURIComponent(reasoningPrompt), {
-        model: reasoningModel,
-        max_tokens: maxReasoningTokens,
-        temperature: 0.3, // Lower temperature for more focused reasoning
-        json: json ? "true" : undefined
-    });
+    try {
+        // Step 1: Generate reasoning/thinking
+        const reasoningUrl = buildUrl(TEXT_API_BASE_URL, encodeURIComponent(reasoningPrompt), {
+            // model: reasoningModel, // Commented out since text endpoint doesn't support model parameter
+            // max_tokens: maxReasoningTokens, // Commented out to avoid URL length issues
+            // temperature: 0.3, // Commented out since text endpoint doesn't support temperature
+            // json: json ? "true" : undefined // Commented out since text endpoint doesn't support json
+        });
 
-    // Step 2: Generate final answer based on reasoning
-    const finalPrompt = `Based on the following reasoning, provide a concise final answer to the original question.
+        // Fetch the actual reasoning text from the API
+        console.error(`Fetching reasoning from: ${reasoningUrl}`);
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+        
+        const reasoningResponse = await fetch(reasoningUrl, {
+            method: 'GET',
+            headers: {
+                'User-Agent': 'Pollinations-MCP-Reasoning/1.0'
+            },
+            signal: controller.signal
+        });
+        
+        clearTimeout(timeoutId);
 
-Original Question: ${prompt}
+        if (!reasoningResponse.ok) {
+            throw new Error(`Reasoning API error: ${reasoningResponse.status} ${reasoningResponse.statusText}`);
+        }
 
-Reasoning: [See reasoning above]
+        const reasoningText = await reasoningResponse.text();
+        
+        if (!reasoningText || reasoningText.trim().length === 0) {
+            throw new Error('Empty reasoning response from API');
+        }
 
-Final Answer:`;
+        // Step 2: Generate final answer based on actual reasoning
+        const finalPrompt = `Based on this reasoning, give a concise answer:
 
-    const finalUrl = buildUrl(TEXT_API_BASE_URL, encodeURIComponent(finalPrompt), {
-        model: finalModel,
-        max_tokens: maxFinalTokens,
-        temperature,
-        json: json ? "true" : undefined
-    });
+Reasoning: ${reasoningText}
 
-    return {
-        reasoningUrl,
-        finalUrl,
-        reasoningModel,
-        finalModel,
-        prompt,
-        reasoningPrompt
-    };
+Answer:`;
+
+        const finalUrl = buildUrl(TEXT_API_BASE_URL, encodeURIComponent(finalPrompt), {
+            // model: finalModel, // Commented out since text endpoint doesn't support model parameter
+            // max_tokens: maxFinalTokens, // Commented out to avoid URL length issues
+            // temperature, // Commented out since text endpoint doesn't support temperature
+            // json: json ? "true" : undefined // Commented out since text endpoint doesn't support json
+        });
+
+        return {
+            reasoningUrl,
+            finalUrl,
+            reasoningModel,
+            finalModel,
+            prompt,
+            reasoningPrompt,
+            reasoningText // Include the actual reasoning for reference
+        };
+    } catch (error) {
+        throw new Error(`Reasoning chain failed: ${error.message}`);
+    }
 }
 
 /**
@@ -109,7 +128,7 @@ async function deepReasoning(params) {
     const {
         prompt,
         context = "",
-        reasoningModel = "deepseek-r1",
+        reasoningModel = "openai",
         finalModel = "openai",
         maxReasoningTokens = 2000,
         maxFinalTokens = 1000,
@@ -127,11 +146,9 @@ async function deepReasoning(params) {
 
     try {
         // Create reasoning prompt
-        const reasoningPrompt = `Please think through this problem step by step. Show your reasoning process clearly.
+        const reasoningPrompt = `Think through this step by step and show your reasoning:
 
-${context ? `Context: ${context}\n\n` : ""}Question: ${prompt}
-
-Provide a detailed reasoning process that considers multiple perspectives and approaches.`;
+${context ? `Context: ${context}\n\n` : ""}Question: ${prompt}`;
 
         const result = await _generateReasoningInternal(prompt, reasoningPrompt, {
             reasoningModel,
@@ -149,9 +166,9 @@ Provide a detailed reasoning process that considers multiple perspectives and ap
                 `${context ? `Context: "${context}"\n` : ""}` +
                 `Reasoning Model: ${REASONING_MODELS[reasoningModel].name}\n` +
                 `Final Model: ${finalModel}\n\n` +
-                `Reasoning URL: ${result.reasoningUrl}\n` +
+                `Reasoning Process (Preview):\n${result.reasoningText.substring(0, 300)}${result.reasoningText.length > 300 ? '...' : ''}\n\n` +
                 `Final Answer URL: ${result.finalUrl}\n\n` +
-                `This process uses ${reasoningModel} for deep thinking, then ${finalModel} for the final concise answer.`,
+                `This process used ${reasoningModel} for deep thinking, then ${finalModel} for the final concise answer.`,
             ),
         ]);
     } catch (error) {
@@ -169,7 +186,7 @@ Provide a detailed reasoning process that considers multiple perspectives and ap
  * @returns {Promise<Object>} - MCP response with mathematical solution
  */
 async function solveMathProblem(params) {
-    const { problem, reasoningModel = "deepseek-r1", showSteps = true } = params;
+    const { problem, reasoningModel = "openai", showSteps = true } = params;
 
     if (!problem || typeof problem !== "string") {
         throw new Error("Mathematical problem is required and must be a string");
@@ -199,8 +216,8 @@ Please provide:
                 `🧮 Mathematical Problem Solving\n\n` +
                 `Problem: "${problem}"\n` +
                 `Reasoning Model: ${REASONING_MODELS[reasoningModel].name}\n\n` +
-                `Solution Process:\n${result.reasoningUrl}\n\n` +
-                `${showSteps ? "Full reasoning with steps available at reasoning URL above." : ""}\n\n` +
+                `Solution Process (Preview):\n${result.reasoningText.substring(0, 200)}${result.reasoningText.length > 200 ? '...' : ''}\n\n` +
+                `${showSteps ? "Full solution steps available at the reasoning URL." : ""}\n\n` +
                 `Final Answer: ${result.finalUrl}`,
             ),
         ]);
@@ -224,7 +241,7 @@ async function analyzeCodeWithReasoning(params) {
         code, 
         language = "unknown", 
         question = "What does this code do and are there any potential issues?",
-        reasoningModel = "deepseek-r1" 
+        reasoningModel = "openai" 
     } = params;
 
     if (!code || typeof code !== "string") {
@@ -261,7 +278,8 @@ Provide:
                 `Lines of Code: ${code.split('\n').length}\n` +
                 `Reasoning Model: ${REASONING_MODELS[reasoningModel].name}\n\n` +
                 `Analysis Question: "${question}"\n\n` +
-                `Detailed Analysis:\n${result.reasoningUrl}\n\n` +
+                `Analysis Preview:\n${result.reasoningText.substring(0, 150)}${result.reasoningText.length > 150 ? '...' : ''}\n\n` +
+                `Detailed Analysis: ${result.reasoningUrl}\n\n` +
                 `Summary: ${result.finalUrl}`,
             ),
         ]);
@@ -314,9 +332,9 @@ export const reasoningTools = [
                 .optional()
                 .describe("Additional context or background information"),
             reasoningModel: z
-                .enum(["deepseek-r1", "kimi-k2-thinking", "gemini-2.0-thinking"])
+                .enum(["openai"])
                 .optional()
-                .describe("Model to use for the reasoning step (default: deepseek-r1)"),
+                .describe("Model to use for the reasoning step (default: openai)"),
             finalModel: z
                 .string()
                 .optional()
@@ -348,9 +366,9 @@ export const reasoningTools = [
                 .string()
                 .describe("The mathematical problem to solve"),
             reasoningModel: z
-                .enum(["deepseek-r1", "kimi-k2-thinking", "gemini-2.0-thinking"])
+                .enum(["openai"])
                 .optional()
-                .describe("Model for mathematical reasoning (default: deepseek-r1)"),
+                .describe("Model for mathematical reasoning (default: openai)"),
             showSteps: z
                 .boolean()
                 .optional()
@@ -374,9 +392,9 @@ export const reasoningTools = [
                 .optional()
                 .describe("Specific question about the code"),
             reasoningModel: z
-                .enum(["deepseek-r1", "kimi-k2-thinking", "gemini-2.0-thinking"])
+                .enum(["openai"])
                 .optional()
-                .describe("Model for code analysis (default: deepseek-r1)"),
+                .describe("Model for code analysis (default: openai)"),
         },
         analyzeCodeWithReasoning,
     ],

@@ -69,9 +69,10 @@ const fastVideo = await generateSeedanceVideo({
 Perform complex reasoning tasks using deep-thinking models with multi-step analysis chains.
 
 ### Available Models
-- **DeepSeek-R1**: Advanced reasoning model with step-by-step thinking
-- **Kimi K2 Thinking**: Deep thinking model with extended reasoning chains
-- **Gemini 2.0 Thinking**: Google's reasoning model with multi-step analysis
+- **OpenAI GPT**: Powerful reasoning and analysis model (currently supported)
+- **DeepSeek-R1**: Advanced reasoning model with step-by-step thinking (planned)
+- **Kimi K2 Thinking**: Deep thinking model with extended reasoning chains (planned)
+- **Gemini 2.0 Thinking**: Google's reasoning model with multi-step analysis (planned)
 
 ### Tools
 
@@ -81,19 +82,19 @@ Perform deep reasoning analysis on complex questions with step-by-step thinking.
 **Parameters:**
 - `prompt` (string, required): Main question or problem to solve
 - `context` (string, optional): Additional context or background information
-- `reasoningModel` (string, optional): Model for reasoning (default: `deepseek-r1`)
+- `reasoningModel` (string, optional): Model for reasoning (default: `openai`) - currently only OpenAI is supported
 - `finalModel` (string, optional): Model for final answer (default: `openai`)
-- `maxReasoningTokens` (number, optional): Max tokens for reasoning (default: 2000)
-- `maxFinalTokens` (number, optional): Max tokens for final answer (default: 1000)
-- `temperature` (number, optional): Temperature for final generation (default: 0.7)
-- `json` (boolean, optional): Return JSON format (default: false)
+- `maxReasoningTokens` (number, optional): Max tokens for reasoning (default: 2000) - currently not supported due to API limitations
+- `maxFinalTokens` (number, optional): Max tokens for final answer (default: 1000) - currently not supported due to API limitations
+- `temperature` (number, optional): Temperature for final generation (default: 0.7) - currently not supported due to API limitations
+- `json` (boolean, optional): Return JSON format (default: false) - currently not supported due to API limitations
 
 #### `solveMathProblem`
 Solve complex mathematical problems with detailed step-by-step reasoning.
 
 **Parameters:**
 - `problem` (string, required): Mathematical problem to solve
-- `reasoningModel` (string, optional): Model for mathematical reasoning (default: `deepseek-r1`)
+- `reasoningModel` (string, optional): Model for mathematical reasoning (default: `openai`) - currently only OpenAI is supported
 - `showSteps` (boolean, optional): Whether to show solution steps (default: true)
 
 #### `analyzeCodeWithReasoning`
@@ -103,7 +104,7 @@ Analyze code with deep reasoning about functionality, bugs, and improvements.
 - `code` (string, required): Code to analyze
 - `language` (string, optional): Programming language of the code
 - `question` (string, optional): Specific question about the code
-- `reasoningModel` (string, optional): Model for code analysis (default: `deepseek-r1`)
+- `reasoningModel` (string, optional): Model for code analysis (default: `openai`) - currently only OpenAI is supported
 
 #### `listReasoningModels`
 List available reasoning models and their specialties.
@@ -251,7 +252,8 @@ await startMcpServer();
 
 1. **Model Selection**: Choose appropriate models based on your use case
    - Video: Use `veo` for cinematic quality, `seedance` for faster processing
-   - Reasoning: Use `deepseek-r1` for technical problems, `kimi-k2-thinking` for philosophical questions
+   - Reasoning: Use `openai` for general reasoning (currently supported), other models planned for future release
+   - Note: Due to current API limitations, reasoning models only support OpenAI, and advanced parameters like temperature, max_tokens, and JSON format are not yet available
 
 2. **Error Handling**: Always implement proper error handling for API calls
    - Use `getSystemStatus` to check API health before operations

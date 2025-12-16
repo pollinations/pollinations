@@ -4,7 +4,7 @@
  * @returns {string} - The constructed image URL.
  */
 import { modelSupportsImageInput } from "../config/imageModels";
-import { ENTER_BASE_URL, UI_ASSETS_API_KEY } from "./enterApi";
+import { ENTER_BASE_URL, PLAYGROUND_IMAGE_API_KEY } from "./enterApi";
 
 export function getImageURL(newImage) {
     const queryParams = [];
@@ -42,7 +42,7 @@ export function getImageURL(newImage) {
     }
 
     // Add API key
-    queryParams.push(`key=${UI_ASSETS_API_KEY}`);
+    queryParams.push(`key=${PLAYGROUND_IMAGE_API_KEY}`);
 
     const imageURL = `${ENTER_BASE_URL}/generate/image/${encodeURIComponent(newImage.prompt)}?${queryParams.join("&")}`;
     return imageURL;

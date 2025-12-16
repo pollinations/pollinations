@@ -1,6 +1,11 @@
 import { useEffect, useState } from "react";
 
-export function useFeedLoader(onNewImage, setLastImage, mode) {
+export function useFeedLoader(
+    onNewImage,
+    setLastImage,
+    mode,
+    isEditMode = false,
+) {
     const [imagesGenerated, setImagesGenerated] = useState(
         estimateGeneratedImages(),
     );
@@ -47,7 +52,8 @@ export function useFeedLoader(onNewImage, setLastImage, mode) {
             return source;
         };
 
-        if (mode === "image") {
+        // Only connect to feed when in image mode AND not in edit mode
+        if (mode === "image" && !isEditMode) {
             eventSource = getEventSource();
         }
 
@@ -58,7 +64,7 @@ export function useFeedLoader(onNewImage, setLastImage, mode) {
                 eventSource = null; // Clear the reference
             }
         };
-    }, [mode, onNewImage, setLastImage]); // Add mode to dependency array
+    }, [mode, onNewImage, setLastImage, isEditMode]); // Add isEditMode to dependency array
 
     return { imagesGenerated };
 }

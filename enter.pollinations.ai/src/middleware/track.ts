@@ -131,7 +131,12 @@ export const track = (eventType: EventType) =>
         if (userId) {
             try {
                 // Get estimated cost from historical model stats
-                const modelStats = await getModelStats(c.env.KV, log);
+                const modelStatsUrl = `${new URL(c.env.TINYBIRD_INGEST_URL).origin}/v0/pipes/public_model_stats.json?token=${c.env.TINYBIRD_READ_TOKEN}`;
+                const modelStats = await getModelStats(
+                    c.env.KV,
+                    modelStatsUrl,
+                    log,
+                );
                 const estimatedCost = getEstimatedCost(
                     modelStats,
                     requestTracking.resolvedModelRequested,

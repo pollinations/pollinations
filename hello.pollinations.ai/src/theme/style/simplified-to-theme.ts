@@ -66,6 +66,7 @@ export function macrosToTheme(config: MacroConfig): LLMThemeResponse {
     addColor("indicator.image", config.brandSpecial.indicatorImage);
     addColor("indicator.text", config.brandSpecial.indicatorText);
     addColor("indicator.audio", config.brandSpecial.indicatorAudio);
+    addColor("indicator.video", config.brandSpecial.indicatorVideo);
 
     // Borders
     addColor("border.brand", config.brandSpecial.brandMain);

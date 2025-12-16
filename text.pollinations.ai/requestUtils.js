@@ -87,6 +87,7 @@ export function getRequestData(req) {
         top_p: validated.top_p,
         presence_penalty: validated.presence_penalty,
         frequency_penalty: validated.frequency_penalty,
+        repetition_penalty: validated.repetition_penalty,
         referrer,
         stream: validated.stream,
         isPrivate,

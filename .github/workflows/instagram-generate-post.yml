@@ -57,4 +57,5 @@ jobs:
           SOURCE_REPO: ${{ inputs.source_repo || 'pollinations/pollinations' }}
           DAYS_BACK: ${{ inputs.days_back || '1' }}
           FORCE_BRAND_CONTENT: ${{ inputs.force_brand_content || 'false' }}
+          PR_LABELS: pr:news
         run: python .github/scripts/instagram_generate_post.py

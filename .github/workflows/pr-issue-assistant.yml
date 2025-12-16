@@ -126,5 +126,7 @@ jobs:
           anthropic_api_key: "ccr-pollinations"
           github_token: ${{ steps.token.outputs.token }}
           trigger_phrase: "polly"
+          claude_args: |
+            --system-prompt "When reviewing code, be extremely concise. Use bullet points only. No paragraphs or verbose explanations. Format: - **Issue**: brief description - **Fix**: one-line solution. Maximum 3-5 bullets per review."
           additional_permissions: |
             actions: read

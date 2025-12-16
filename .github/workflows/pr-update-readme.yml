@@ -5,12 +5,16 @@ on:
     types: [closed]
     paths:
       - 'NEWS/transformed/highlights.md'
-  workflow_dispatch: 
+  workflow_dispatch:
 
 jobs:
   update-readme:
-    # Only run if PR was merged (not just closed) and targeted main
-    if: github.event.pull_request.merged == true && github.event.pull_request.base.ref == 'main'
+    # Only run if PR was merged (not just closed), targeted main, and has pr:news label
+    if: >
+      (github.event_name == 'workflow_dispatch') ||
+      (github.event.pull_request.merged == true &&
+       github.event.pull_request.base.ref == 'main' &&
+       contains(github.event.pull_request.labels.*.name, 'pr:news'))
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -42,4 +46,5 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ steps.pollinations-ai.outputs.token }}
           GITHUB_REPOSITORY: ${{ github.repository }}
+          PR_LABELS: pr:news
         run: python .github/scripts/pr_update_readme.py

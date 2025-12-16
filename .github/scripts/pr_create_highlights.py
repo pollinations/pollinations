@@ -40,7 +40,7 @@ def get_latest_news_file(github_token: str, owner: str, repo: str) -> tuple[str,
 
     if response.status_code != 200:
         print(f"Error fetching NEWS folder: {response.status_code}")
-        return None, None
+        return None, None, None
 
     files = response.json()
 
@@ -432,6 +432,20 @@ Generated automatically by GitHub Actions after NEWS PR merge.
     pr_data = pr_response.json()
     pr_number = pr_data['number']
     print(f"Created PR #{pr_number}: {pr_data['html_url']}")
+
+    # Add labels from PR_LABELS env var
+    pr_labels = get_env('PR_LABELS', required=False)
+    if pr_labels:
+        labels_list = [label.strip() for label in pr_labels.split(',')]
+        label_response = requests.post(
+            f"{GITHUB_API_BASE}/repos/{owner}/{repo}/issues/{pr_number}/labels",
+            headers=headers,
+            json={"labels": labels_list}
+        )
+        if label_response.status_code in [200, 201]:
+            print(f"Added labels {labels_list} to PR #{pr_number}")
+        else:
+            print(f"Warning: Could not add labels: {label_response.status_code}")
 
 
 def main():

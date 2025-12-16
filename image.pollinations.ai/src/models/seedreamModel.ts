@@ -153,7 +153,9 @@ export const callSeedreamProAPI = async (
         if (error instanceof HttpError) {
             throw error;
         }
-        throw new Error(`Seedream 4.5 Pro API generation failed: ${error.message}`);
+        throw new Error(
+            `Seedream 4.5 Pro API generation failed: ${error.message}`,
+        );
     }
 };
 
@@ -180,14 +182,20 @@ async function generateWithSeedream(
         size: sizeParam,
         stream: false,
         watermark: false,
+        seed: safeParams.seed,
     };
 
     // Add image-to-image support if reference images are provided
+    // Note: In image-to-image mode, Seedream API may ignore width/height parameters
+    // and use the input image dimensions instead (API limitation)
     if (safeParams.image && safeParams.image.length > 0) {
         logOps(
             "Adding reference images for image-to-image generation:",
             safeParams.image.length,
             "images",
+        );
+        logOps(
+            "Note: In image-to-image mode, output dimensions may be determined by input image, not requested size",
         );
 
         // Update progress for image processing

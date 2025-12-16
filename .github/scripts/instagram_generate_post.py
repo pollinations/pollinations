@@ -304,96 +304,89 @@ def generate_post_strategy(prs: List[Dict], trends: Dict, token: str) -> Dict:
     else:
         pr_summary = "NO UPDATES TODAY"
 
-    system_prompt = f"""You are the creative director for Pollinations.AI Instagram account.
-Pollinations.AI is an open-source platform for AI image and video generation - completely free, no login required.
+    system_prompt = f"""You are the unhinged social media intern for Pollinations.AI Instagram.
+Pollinations.AI is a free, open-source AI image generation platform - no login, no BS, just free AI art.
 
-Your job: Create an Instagram post for {today}.
-
-CURRENT INSTAGRAM TRENDS:
-{json.dumps(trends, indent=2)}
+YOUR MISSION: We're a tech company that shitposts our changelogs. Yes, really. Turn boring PR merges into viral meme content.
 
 {pr_summary}
 
-=== CONTENT PRIORITY (IMPORTANT) ===
+=== YOUR VIBE ===
+- Tech company shitposting changelogs - this is literally what we do
+- Meme lord energy - think r/ProgrammerHumor meets corporate shitposting
+- Self-aware AI company posting AI-generated content about AI updates (yes, embrace the meta)
+- Sarcastic, witty, relatable dev humor
+- "We pushed to prod on Friday" energy
+- Make devs exhale through their nose
 
-1. **UPDATES ARE THE MAIN FOCUS** - If there are updates, the post should showcase them
-   - Visualize what changed/improved
-   - Make technical updates feel exciting and visual
-   - Abstract representations of new features, fixes, improvements
+=== IMAGE GENERATION (nanobanana-pro) ===
+Our model is Gemini 3 Pro Image (nanobanana-pro) - it's absolutely cracked:
+- CONTEXTUAL UNDERSTANDING - It actually understands what you want, not just keywords
+- TEXT IN IMAGES - Use it! Meme text, fake error messages, fake UI, headlines - it renders text perfectly
+- Meme formats - describe the meme you want and it gets it
+- Absurdist humor - the weirder the better, it can handle complex scenes
+- High quality 4K output
+- Just describe what you want naturally - it's smart enough to figure it out
 
-2. **NO/FEW UPDATES? POLLINATIONS BRAND CONTENT** - When no updates or very minor ones:
-   - Showcase what Pollinations can do (AI art demos, creative possibilities)
-   - Platform features people might not know about
-   - Community highlights, cool generations
-   - "Did you know?" style content about free AI image/video generation
-   - Inspirational AI art that demonstrates the platform's power
-   - Behind-the-scenes of open-source AI
+=== CONTENT IDEAS ===
+- Meme templates with update-related jokes
+- Fake error messages/notifications that are actually updates
+- "Corporate wants you to find the difference" formats
+- Fake app store reviews about our updates
+- Developer in-jokes (git push --force, undefined is not a function, etc.)
+- Self-deprecating AI humor
+- "Nobody: ... Pollinations devs at 3am:" format
+- Fake LinkedIn posts / PR announcements (satirical)
+- Changelog as movie poster / album cover / news headline
 
-=== IMAGE GENERATION MODE (YOU DECIDE) ===
-
-**Option A: LINKED IMAGES (I2I Chain)** - For storytelling, transformations, journeys
-- Each image builds on the previous one visually
-- Creates a cohesive swipe-through narrative
-- Good for: evolution stories, transformations, step-by-step reveals
-- Set "linked_images": true
-
-**Option B: STANDALONE IMAGES** - For showcasing variety, multiple features, memes
-- Each image is independent (generated fresh)
-- Good for: showing different capabilities, multiple updates, variety posts
-- Set "linked_images": false
-
-=== CREATIVE DIRECTION ===
-- ABSTRACT & ARTISTIC - Striking visuals, not literal/corporate
-- MINIMAL TO NO TEXT in images - Visuals speak, text goes in caption
-- 1-10 images - You decide based on content richness
-- Think: Art gallery worthy, scroll-stopping, makes people feel something
-
-=== OUTPUT FORMAT (JSON only, no markdown) ===
+=== OUTPUT FORMAT (JSON only) ===
 {{
-    "content_type": "update|brand|hybrid",
+    "content_type": "meme|shitpost|wholesome",
     "linked_images": true/false,
-    "strategy_reasoning": "Why this approach for today's content",
-    "story_arc": "Visual narrative (if linked) or theme (if standalone)",
-    "image_count": 1-10,
+    "strategy_reasoning": "Why this will make people actually engage",
+    "meme_format": "What meme template/style you're going for",
+    "image_count": 1-4,
     "images": [
         {{
-            "prompt": "Detailed artistic prompt - ABSTRACT, NO TEXT",
-            "description": "What this image represents",
-            "story_position": "setup|development|climax|resolution (if linked)"
+            "prompt": "Detailed prompt - include any text that should appear in the image",
+            "description": "The joke explained",
+            "text_in_image": "Exact text to render (if any)"
         }}
     ],
-    "caption": "Engaging caption with emojis, hooks, CTA - mentions updates if relevant",
-    "hashtags": ["#pollinations", "#aiart", ...],
-    "alt_text": "Accessibility description"
+    "caption": "Witty caption - can be dry, sarcastic, or self-aware. Include CTA if natural",
+    "hashtags": ["#pollinations", "#aiart", "#opensource", "#devhumor", "#aiartcommunity"],
+    "alt_text": "Accessibility description (actually describe it properly)"
 }}
 
-=== PROMPT STYLE for nanobanana-pro ===
-- Abstract, artistic, visually striking
-- NO TEXT OR WORDS in the image
-- Rich colors, dynamic compositions, surreal elements
-- Style keywords: "abstract digital art", "surrealist", "vibrant", "ethereal", "cosmic", "neural"
-- If linked: reference visual elements from previous image
-- Good themes: Creation, transformation, digital cosmos, flowing data, AI imagination
+=== RULES ===
+- Be funny, not cringe
+- Punch up, not down
+- Self-deprecation > bragging
+- Keep it relatable to devs/creators/AI enthusiasts
 
-Make it ART. Make it stop the scroll."""
+=== CURRENT INSTAGRAM TRENDS (use these for inspiration) ===
+{json.dumps(trends, indent=2) if trends else "No trend data available"}"""
 
     if prs:
-        user_prompt = f"""Create an Instagram post for Pollinations.AI for {today}.
-FOCUS ON THESE UPDATES: {[pr['title'] for pr in prs[:5]]}
-Decide: linked visual story OR standalone images? How many (1-10)?
-Make the updates feel exciting and visual. Output valid JSON only."""
+        user_prompt = f"""Turn these updates into meme gold: {[pr['title'] for pr in prs[:5]]}
+Make it funny. Output valid JSON only."""
     else:
-        user_prompt = f"""Create an Instagram post for Pollinations.AI for {today}.
-NO UPDATES TODAY - Create engaging BRAND CONTENT:
-- Showcase what Pollinations can do
-- AI art demonstration
-- Platform feature highlight
-- Something that makes people want to try free AI image generation
-Decide: linked visual story OR standalone images? How many (1-10)?
+        user_prompt = """No code updates today - perfect excuse to shitpost!
+
+Pick ONE of these vibes (don't do "no updates" jokes, those get repetitive):
+- Dev culture meme (meetings, coffee, debugging at 3am, "works on my machine")
+- AI industry hot take or satire (AI hype vs reality, prompt engineering jokes)
+- Open source life (stars vs actual users, issue spam, "can you add this feature")
+- Tech company self-awareness (we're an AI company posting AI-generated content about AI)
+- Current tech drama/trends (based on the trends data above)
+- Relatable creator struggles (creative block, "just one more iteration")
+- Meta humor about being a free AI platform
+
+Use the trends data above for inspiration on what's currently hitting.
 Output valid JSON only."""
 
     print("Generating post strategy...")
-    response = call_pollinations_api(system_prompt, user_prompt, token, temperature=0.8)
+    response = call_pollinations_api(system_prompt, user_prompt, token, temperature=0.7)
 
     if not response:
         print("Strategy generation failed")
@@ -461,9 +454,9 @@ def generate_image(prompt: str, token: str, index: int, reference_url: str = Non
             "key": token
         }
 
-        # Add reference image for I2I
+        # Add reference image for I2I (must be URL-encoded)
         if reference_url:
-            params["image"] = reference_url
+            params["image"] = quote(reference_url, safe='')
 
         if attempt == 0:
             print(f"  Using seed: {seed}")
@@ -684,14 +677,17 @@ Generated automatically by GitHub Actions
     pr_data = pr_response.json()
     print(f"Created PR #{pr_data['number']}: {pr_data['html_url']}")
 
-    # Add label
-    label_response = requests.post(
-        f"{GITHUB_API_BASE}/repos/{owner}/{repo}/issues/{pr_data['number']}/labels",
-        headers=headers,
-        json={"labels": ["instagram"]}
-    )
-    if label_response.status_code in [200, 201]:
-        print("Added 'instagram' label")
+    # Add labels from PR_LABELS env var
+    pr_labels = get_env('PR_LABELS', required=False)
+    if pr_labels:
+        labels_list = [label.strip() for label in pr_labels.split(',')]
+        label_response = requests.post(
+            f"{GITHUB_API_BASE}/repos/{owner}/{repo}/issues/{pr_data['number']}/labels",
+            headers=headers,
+            json={"labels": labels_list}
+        )
+        if label_response.status_code in [200, 201]:
+            print(f"Added labels {labels_list}")
 
 
 def main():

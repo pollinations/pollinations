@@ -19,3 +19,10 @@ build
 .env
 .env.local
 # Note: .encrypted.env is NOT ignored (encrypted, safe to commit)
+
+# Playwright
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/
+/playwright/.auth/

@@ -4,13 +4,13 @@
 
 export const ENTER_BASE_URL = "https://enter.pollinations.ai/api";
 
-// API Keys
-export const PLAYGROUND_TEXT_API_KEY =
-    "plln_pk_iaFuDztpUn2y1HVEBm5jyR0GLROfoebS"; // For text playground features
-export const PLAYGROUND_IMAGE_API_KEY =
-    "plln_pk_3Ct2QMg0f1UDRxtJUjHnXkPbGJ6sZFvI"; // For image playground features
-export const UI_ASSETS_API_KEY =
-    "plln_pk_DSf8DvxaLKn2LbP9QQAlA5hFpQGXePYiSY1AHZQn2CiKgtO7VBKQ1FNw1xCEpRYK"; // For website UI assets (logos, supporters, etc.)
+// API Key
+export const POLLINATIONS_API_KEY = "plln_pk_tHaEh2Bpl81bAFH81CYzMiTf0W3O4YwX";
+
+// Legacy exports for backwards compatibility
+export const PLAYGROUND_TEXT_API_KEY = POLLINATIONS_API_KEY;
+export const PLAYGROUND_IMAGE_API_KEY = POLLINATIONS_API_KEY;
+export const UI_ASSETS_API_KEY = POLLINATIONS_API_KEY;
 
 function getAuthHeader() {
     return {

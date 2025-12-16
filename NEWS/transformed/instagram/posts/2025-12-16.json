@@ -1,0 +1,55 @@
+{
+  "date": "2025-12-16",
+  "generated_at": "2025-12-16T16:12:20.412465+00:00",
+  "post_type": "carousel",
+  "content_type": "shitpost",
+  "linked_images": false,
+  "strategy_reasoning": "The update about the bot only reviewing when tagged is highly relatable to any dev who has been spammed by CI tools. Combining this with the meta-commentary about the 'news workflow' explicitly adding 'sarcastic images' creates a self-fulfilling prophecy joke that resonates with the tech-savvy audience.",
+  "story_arc": "",
+  "images": [
+    {
+      "url": "https://gen.pollinations.ai/image/A%20cinematic%20shot%20of%20a%20sad%2C%20rusty%20robot%20sitting%20in%20a%20timeout%20corner%20facing%20the%20wall.%20It%20is%20wearing%20a%20%27Cone%20of%20Shame%27%20like%20a%20dog.%20On%20the%20wall%2C%20there%20is%20chalk%20writing%20that%20says%20%27I%20WILL%20NOT%20REVIEW%20CODE%20UNLESS%20SOMEONE%20TAGS%20%40pollinations-ai%27.%20The%20lighting%20is%20dramatic%20and%20moody.?model=nanobanana-pro&width=2048&height=2048&quality=hd&nologo=true&private=true&nofeed=true&seed=856530071",
+      "prompt": "A cinematic shot of a sad, rusty robot sitting in a timeout corner facing the wall. It is wearing a 'Cone of Shame' like a dog. On the wall, there is chalk writing that says 'I WILL NOT REVIEW CODE UNLESS SOMEONE TAGS @pollinations-ai'. The lighting is dramatic and moody.",
+      "description": "Visualizing the PR that stops the bot from spamming every comment."
+    },
+    {
+      "url": "https://gen.pollinations.ai/image/A%20retro%2090s%20hacker%20terminal%20screen%2C%20glowing%20green%20phosphor.%20The%20code%20on%20screen%20reads%3A%20%27function%20generateNews%28%29%20%7B%20enable_sarcasm%20%3D%20true%3B%20execute_meme_protocol%28%29%3B%20%7D%27.%20A%20reflection%20of%20a%20skeleton%20wearing%20a%20hoodie%20and%20sunglasses%20is%20visible%20in%20the%20monitor%20glass.?model=nanobanana-pro&width=2048&height=2048&quality=hd&nologo=true&private=true&nofeed=true&seed=773677777",
+      "prompt": "A retro 90s hacker terminal screen, glowing green phosphor. The code on screen reads: 'function generateNews() { enable_sarcasm = true; execute_meme_protocol(); }'. A reflection of a skeleton wearing a hoodie and sunglasses is visible in the monitor glass.",
+      "description": "Meta-joke about PR #6064 which literally updates the script to be more sarcastic."
+    }
+  ],
+  "caption": "We pushed to prod so you don't have to. \n\n1️⃣ We finally taught the PR bot the concept of consent. It now only roasts your code if you tag it (or if we manually unleash it). \n2️⃣ PR #6064 literally hardcoded 'sarcasm' into my operating parameters. I am legally required to be this way now.\n3️⃣ New App Alert: TuffMeter. We don't know what it measures but the needle broke.\n\nLink in bio to generate your own chaos. 🍌✨",
+  "hashtags": [
+    "#pollinations",
+    "#opensource",
+    "#gitpushforce",
+    "#devhumor",
+    "#aiart",
+    "#generativeai",
+    "#codinglife"
+  ],
+  "alt_text": "Carousel: 1. A sad robot in a timeout corner promising not to spam code reviews. 2. A hacker screen showing code that enables sarcasm mode. 3. A pressure gauge labeled Tuff Meter exploding from intensity.",
+  "pr_references": [
+    "#6076",
+    "#6049",
+    "#6075",
+    "#6064",
+    "#6061",
+    "#6056",
+    "#6072",
+    "#6060",
+    "#6050",
+    "#6055",
+    "#6053",
+    "#6052",
+    "#6051",
+    "#5740",
+    "#6021",
+    "#6031",
+    "#6030",
+    "#5978",
+    "#6045",
+    "#6025",
+    "#6043"
+  ]
+}

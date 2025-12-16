@@ -69,9 +69,6 @@ export function PlayGenerator({
     );
     const supportsImageInput = currentModelData?.hasImageInput || false;
 
-    // Check if current model has video output
-    const isVideoModel = currentModelData?.hasVideoOutput || false;
-
     const handleGenerate = async () => {
         setIsLoading(true);
         setError(null);
@@ -136,9 +133,6 @@ export function PlayGenerator({
                               })),
                           ]
                         : prompt;
-
-                // Use video key for video models, text key otherwise
-                const textApiKey = API_KEY;
 
                 const response = await fetch(
                     "https://enter.pollinations.ai/api/generate/v1/chat/completions",

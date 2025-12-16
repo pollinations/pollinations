@@ -85,7 +85,7 @@ export default {
             polarAccessToken: env.POLAR_ACCESS_TOKEN,
             polarServer: env.POLAR_SERVER,
             tinybirdIngestUrl: env.TINYBIRD_INGEST_URL,
-            tinybirdAccessToken: env.TINYBIRD_ACCESS_TOKEN,
+            tinybirdIngestToken: env.TINYBIRD_INGEST_TOKEN,
             minRetryDelay: 100,
             maxRetryDelay: 10000,
         });

@@ -320,6 +320,7 @@ Pollinations.AI is used in various projects, including:
 | 🆕 [✨ ToneShift AI](https://toneshift-ai.lovable.app/) | Instantly rewrite any text into different emotional tones while preserving... | @UstaDeveloper |
 | 🆕 🤖 [💬 Chat AI](https://t.me/Chat2qai_bot) | Arabic Telegram bot serving as a versatile AI assistant. Answers questions,... | @Alhmam |
 | 🆕 🤖 [SaturnAI 🪐](https://chat.xdativo.cloud) | Web-based AI chat app focused on clean UI and smooth user experience. Features... | @xdativo |
+| 🆕 [💬 Yerty AI](https://yerty.xdativo.cloud) | A calm, friendly AI chat companion focused on everyday thinking, writing, and... | @losingdivine |
 
 ### Social Bots 🤖
 

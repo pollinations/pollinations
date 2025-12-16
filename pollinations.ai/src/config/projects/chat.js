@@ -702,5 +702,14 @@ export const chatProjects = [
     "category": "chat",
     "submissionDate": "2025-12-14",
     "order": 5
+  },
+  {
+    "name": "💬 Yerty AI",
+    "url": "https://yerty.xdativo.cloud",
+    "description": "A calm, friendly AI chat companion focused on everyday thinking, writing, and casual problem-solving. Built with emphasis on UI polish, subtle animations, and smooth conversational flow over raw features.",
+    "author": "@losingdivine",
+    "category": "chat",
+    "submissionDate": "2025-12-16",
+    "order": 5
   }
 ];

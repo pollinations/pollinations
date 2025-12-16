@@ -1,9 +1,5 @@
 import { useState, useEffect } from "react";
-import {
-    PLAYGROUND_TEXT_API_KEY,
-    PLAYGROUND_IMAGE_API_KEY,
-    ENTER_BASE_URL,
-} from "./enterApi";
+import { ENTER_BASE_URL } from "./enterApi";
 
 /**
  * Hook to fetch available models from the Pollinations API
@@ -25,15 +21,7 @@ export const useModels = (modelType = "text") => {
                         ? `${ENTER_BASE_URL}/generate/text/models`
                         : `${ENTER_BASE_URL}/generate/image/models`;
 
-                const apiKey =
-                    modelType === "text"
-                        ? PLAYGROUND_TEXT_API_KEY
-                        : PLAYGROUND_IMAGE_API_KEY;
-                const response = await fetch(endpoint, {
-                    headers: {
-                        "Authorization": `Bearer ${apiKey}`,
-                    },
-                });
+                const response = await fetch(endpoint);
 
                 if (!response.ok) {
                     throw new Error(`HTTP error! status: ${response.status}`);

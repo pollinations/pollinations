@@ -37,13 +37,13 @@ const ResponseContainer = styled(Paper)`
   }
 
   /* Hide scrollbar for IE, Edge and Firefox */
-  msoverflowstyle: none; /* IE and Edge */
-  scrollbarwidth: none; /* Firefox */
+  -ms-overflow-style: none; /* IE and Edge */
+  scrollbar-width: none; /* Firefox */
 
   /* Show scrollbar on hover for Firefox */
   &:hover {
-    scrollbarwidth: thin;
-    scrollbarcolor: ${Colors.lime}60 transparent;
+    scrollbar-width: thin;
+    scrollbar-color: ${Colors.lime}60 transparent;
     border-color: ${Colors.lime};
   }
 `
@@ -90,7 +90,8 @@ export const TextDisplay = ({ entry, isLoading, isEditMode }) => {
     (typeof entry.error === "string" && entry.error.includes("Rate limit")) ||
     entry.response?.includes?.("Rate limit")
   // Check if this is any error (including internal server errors)
-  const isAnyError = entry.error || entry.response?.startsWith?.("Error:")
+  const isAnyError =
+    entry.error || (typeof entry.response === "string" && entry.response.startsWith("Error:"))
 
   // Determine error type for display
   let errorTitle = "Something Went Wrong"

@@ -35,7 +35,7 @@ export type PolarEnv = {
 };
 
 export const polar = createMiddleware<PolarEnv>(async (c, next) => {
-    const log = c.get("log");
+    const log = c.get("log").getChild("polar");
 
     const client = new Polar({
         accessToken: c.env.POLAR_ACCESS_TOKEN,

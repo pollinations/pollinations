@@ -22,7 +22,7 @@ export const usageRoutes = new Hono<Env>()
         }),
         validator("query", usageQuerySchema),
         async (c) => {
-            const log = c.get("log");
+            const log = c.get("log").getChild("usage");
 
             // Require authentication
             await c.var.auth.requireAuthorization({
@@ -33,7 +33,7 @@ export const usageRoutes = new Hono<Env>()
             const { format, limit, before } = c.req.valid("query");
 
             log.debug(
-                "[USAGE] Fetching usage for user: {userId}, format: {format}, limit: {limit}, before: {before}",
+                "Fetching usage: userId={userId} format={format} limit={limit} before={before}",
                 {
                     userId: user.id,
                     format,
@@ -54,7 +54,7 @@ export const usageRoutes = new Hono<Env>()
                 tinybirdUrl.searchParams.set("before", before);
             }
 
-            log.debug("[USAGE] Querying Tinybird: {url}", {
+            log.debug("Querying Tinybird: {url}", {
                 url: tinybirdUrl.toString(),
             });
 
@@ -67,18 +67,27 @@ export const usageRoutes = new Hono<Env>()
 
                 if (!response.ok) {
                     const errorText = await response.text();
-                    log.error("[USAGE] Tinybird error using URL {url}: {status} {error}", {
-                        url: tinybirdUrl.toString(),
-                        status: response.status,
-                        error: errorText,
-                    });
-                    
+                    log.error(
+                        "Tinybird error: url={url} status={status} error={error}",
+                        {
+                            url: tinybirdUrl.toString(),
+                            status: response.status,
+                            error: errorText,
+                        },
+                    );
+
                     // Return 503 if Service Unavailable or similar network issues, else 500
                     const status = response.status >= 500 ? 503 : 500;
-                    return c.json({ 
-                        error: "Failed to fetch usage data", 
-                        details: response.status === 401 ? "Unauthorized" : "Service Unavailable" 
-                    }, status);
+                    return c.json(
+                        {
+                            error: "Failed to fetch usage data",
+                            details:
+                                response.status === 401
+                                    ? "Unauthorized"
+                                    : "Service Unavailable",
+                        },
+                        status,
+                    );
                 }
 
                 const data = (await response.json()) as {
@@ -105,13 +114,15 @@ export const usageRoutes = new Hono<Env>()
                 // Pass through directly - Tinybird returns clean format
                 const usage = data.data;
 
-                log.debug("[USAGE] Fetched {count} usage records", {
+                log.debug("Fetched {count} usage records", {
                     count: usage.length,
                 });
 
                 // Return CSV if requested
                 if (format === "csv") {
-                    const escapeCSV = (val: string | number | boolean | null) => {
+                    const escapeCSV = (
+                        val: string | number | boolean | null,
+                    ) => {
                         if (val === null || val === undefined) return "";
                         const str = String(val);
                         if (
@@ -144,7 +155,7 @@ export const usageRoutes = new Hono<Env>()
                     count: usage.length,
                 });
             } catch (error) {
-                log.error("[USAGE] Error fetching usage: {error}", { error });
+                log.error("Error fetching usage: {error}", { error });
                 return c.json({ error: "Failed to fetch usage data" }, 500);
             }
         },

@@ -4,6 +4,7 @@
 
 import type { ModelPrice } from "./types.ts";
 import { getModalities, hasReasoning, hasVision } from "./model-info.ts";
+import type { ModelStats } from "./useModelStats.ts";
 
 // ============================================================================
 // WORKLOAD PROFILES
@@ -57,41 +58,52 @@ const AUDIO_COST_PER_MIN = {
     output: 0.24, // USD per minute of output audio (TTS)
 };
 
-/** Format large numbers with K/M abbreviations */
+/** Format large numbers with K/M abbreviations, 1 decimal for small numbers */
 function formatLargeNumber(num: number): string {
-    // Less aggressive rounding for smaller numbers
-    let rounded: number;
-    if (num < 50) {
-        // Round to nearest 5 for numbers under 50
-        rounded = Math.round(num / 5) * 5;
-    } else {
-        // Round to nearest 10 for larger numbers
-        rounded = Math.round(num / 10) * 10;
-    }
-
-    if (rounded >= 1_000_000) {
-        const millions = rounded / 1_000_000;
+    if (num >= 1_000_000) {
+        const millions = num / 1_000_000;
         return `${millions.toFixed(millions >= 10 ? 0 : 1)}M`;
     }
 
-    if (rounded >= 1_000) {
-        const thousands = rounded / 1_000;
+    if (num >= 1_000) {
+        const thousands = num / 1_000;
         return `${thousands.toFixed(thousands >= 10 ? 0 : 1)}K`;
     }
 
-    return `${rounded}`;
+    // Show 1 decimal place for numbers under 5, otherwise round
+    if (num < 5) {
+        return num.toFixed(1);
+    }
+
+    return `${Math.round(num)}`;
 }
 
 /**
  * Calculate "Per Pollen" value for a model using workload profiles.
  * Automatically selects profile based on model capabilities.
  *
+ * If realStats is provided and contains data for this model, uses the actual
+ * average cost per request from Tinybird analytics instead of theoretical calculations.
+ *
  * Returns human-readable capacity:
  * - Text models: "500" (responses)
  * - Image models: "50" (images)
  * - Audio models: "25.3 min" (minutes of audio)
  */
-export const calculatePerPollen = (model: ModelPrice): string => {
+export const calculatePerPollen = (
+    model: ModelPrice,
+    realStats?: Map<string, ModelStats>,
+): string => {
+    // If we have real stats for this model, use actual average cost
+    if (realStats) {
+        const stats = realStats.get(model.name);
+        if (stats && stats.avg_cost_usd > 0) {
+            // 1 pollen = $1 USD, so requests per pollen = 1 / avg_cost_usd
+            const requestsPerPollen = 1 / stats.avg_cost_usd;
+            // For video models, this represents generations not seconds
+            return formatLargeNumber(requestsPerPollen);
+        }
+    }
     const modalities = getModalities(model.name);
     const primaryOutput = modalities.output[0];
 

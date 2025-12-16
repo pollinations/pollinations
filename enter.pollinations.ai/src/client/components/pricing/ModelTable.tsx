@@ -3,10 +3,12 @@ import type { ModelPrice } from "./types.ts";
 import { ModelRow } from "./ModelRow.tsx";
 import { isPersona } from "./model-info.ts";
 import { calculatePerPollen } from "./calculations.ts";
+import type { ModelStats } from "./useModelStats.ts";
 
 type ModelTableProps = {
     models: ModelPrice[];
     type: "text" | "image" | "video";
+    modelStats?: Map<string, ModelStats>;
 };
 
 // Helper to convert per pollen string to numeric value for sorting
@@ -27,11 +29,15 @@ const getPerPollenNumeric = (perPollen: string): number => {
     return parseFloat(cleaned) || -1;
 };
 
-export const ModelTable: FC<ModelTableProps> = ({ models, type }) => {
+export const ModelTable: FC<ModelTableProps> = ({
+    models,
+    type,
+    modelStats,
+}) => {
     // Sort by per pollen value (descending - higher counts first)
     const sortedModels = [...models].sort((a, b) => {
-        const aPerPollen = calculatePerPollen(a);
-        const bPerPollen = calculatePerPollen(b);
+        const aPerPollen = calculatePerPollen(a, modelStats);
+        const bPerPollen = calculatePerPollen(b, modelStats);
 
         const aValue = getPerPollenNumeric(aPerPollen);
         const bValue = getPerPollenNumeric(bPerPollen);
@@ -83,7 +89,7 @@ export const ModelTable: FC<ModelTableProps> = ({ models, type }) => {
                                 ? "responses"
                                 : type === "image"
                                   ? "images"
-                                  : "seconds"}
+                                  : "videos"}
                         </div>
                     </th>
                     <th className="text-center text-sm font-bold text-pink-500 pt-0 pb-1 px-2 whitespace-nowrap w-[190px] align-top">
@@ -102,7 +108,11 @@ export const ModelTable: FC<ModelTableProps> = ({ models, type }) => {
             </thead>
             <tbody>
                 {regularModels.map((model) => (
-                    <ModelRow key={model.name} model={model} />
+                    <ModelRow
+                        key={model.name}
+                        model={model}
+                        modelStats={modelStats}
+                    />
                 ))}
                 {personaModels.length > 0 && (
                     <>
@@ -114,7 +124,11 @@ export const ModelTable: FC<ModelTableProps> = ({ models, type }) => {
                             </td>
                         </tr>
                         {personaModels.map((model) => (
-                            <ModelRow key={model.name} model={model} />
+                            <ModelRow
+                                key={model.name}
+                                model={model}
+                                modelStats={modelStats}
+                            />
                         ))}
                     </>
                 )}

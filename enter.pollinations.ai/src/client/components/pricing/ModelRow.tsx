@@ -11,14 +11,16 @@ import {
 import { calculatePerPollen } from "./calculations.ts";
 import { PriceBadge } from "./PriceBadge.tsx";
 import { Tooltip } from "./Tooltip.tsx";
+import type { ModelStats } from "./useModelStats.ts";
 
 type ModelRowProps = {
     model: ModelPrice;
+    modelStats?: Map<string, ModelStats>;
 };
 
-export const ModelRow: FC<ModelRowProps> = ({ model }) => {
+export const ModelRow: FC<ModelRowProps> = ({ model, modelStats }) => {
     const modelDescription = getModelDescription(model.name);
-    const genPerPollen = calculatePerPollen(model);
+    const genPerPollen = calculatePerPollen(model, modelStats);
     const [showTooltip, setShowTooltip] = useState(false);
     const handleMouseEnter = () => setShowTooltip(true);
     const handleMouseLeave = () => setShowTooltip(false);

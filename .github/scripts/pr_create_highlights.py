@@ -40,7 +40,7 @@ def get_latest_news_file(github_token: str, owner: str, repo: str) -> tuple[str,
 
     if response.status_code != 200:
         print(f"Error fetching NEWS folder: {response.status_code}")
-        return None, None
+        return None, None, None
 
     files = response.json()
 

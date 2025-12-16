@@ -276,6 +276,7 @@ export const CreateChatCompletionRequestSchema = z.object({
         .nullable()
         .optional()
         .default(0),
+    repetition_penalty: z.number().min(0).max(2).nullable().optional(),
     logit_bias: z
         .record(z.string(), z.number().int())
         .nullable()

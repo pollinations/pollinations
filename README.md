@@ -404,6 +404,7 @@ Pollinations.AI is used in various projects, including:
 | 🆕 [🎬 PolliVision](https://fabioarieira.com/pollivision) ([⭐ 0](https://github.com/FabioArieiraBaia/PolliVision)) | Chat-based AI video generator using Pollinations APIs. Type a scene description... | @FabioArieiraBaia |
 | 🆕 [🎄 Northpolelibrary](https://northpolelibrary.eu) | Create personalized Christmas stories for children in minutes. Enter a child's... | @bzddbz |
 | 🆕 🇧🇷 [📚 IA-Books: AI Ebook Generator](https://iabooks.com.br) ([⭐ 0](https://github.com/FabioArieiraBaia/IA-Books)) | Professional ebook creation platform with AI. Auto-generates book covers and... | @FabioArieiraBaia |
+| 🆕 [⛽ TuffMeter](https://tuffmeter.netlify.app/) ([⭐ 0](https://github.com/VearyTry)) | Humorous AI tool that analyzes uploaded videos to rate your aura. Based on... | @VearyTry |
 
 ### Games 🎲
 

@@ -1,0 +1,1 @@
+ALTER TABLE `event` ADD `estimated_cost` real;

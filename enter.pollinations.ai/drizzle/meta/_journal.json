@@ -57,6 +57,13 @@
       "when": 1765787222986,
       "tag": "0007_new_shooting_star",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "6",
+      "when": 1765917126949,
+      "tag": "0008_dusty_pestilence",
+      "breakpoints": true
     }
   ]
 }

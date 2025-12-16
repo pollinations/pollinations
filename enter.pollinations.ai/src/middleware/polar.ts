@@ -88,6 +88,7 @@ export const polar = createMiddleware<PolarEnv>(async (c, next) => {
     const PENDING_SPEND_WINDOW_MS = 10 * 60 * 1000; // 10 minutes
 
     // Get recent spend from local events to account for Polar processing delay.
+    // Includes both completed events (totalPrice) and in-flight estimates (estimatedCost).
     // Not cached because D1 is fast (~5-10ms) and we need fresh data.
     // Uses composite index: idx_event_user_billed_created
     const getRecentSpend = async (userId: string): Promise<number> => {
@@ -95,13 +96,19 @@ export const polar = createMiddleware<PolarEnv>(async (c, next) => {
         const windowStart = new Date(Date.now() - PENDING_SPEND_WINDOW_MS);
         const result = await db
             .select({
-                total: sql<number>`COALESCE(SUM(${event.totalPrice}), 0)`,
+                // Sum estimatedCost for pending_estimate events, totalPrice for others
+                total: sql<number>`COALESCE(SUM(
+                    CASE 
+                        WHEN ${event.eventStatus} = 'pending_estimate' THEN ${event.estimatedCost}
+                        WHEN ${event.isBilledUsage} = 1 THEN ${event.totalPrice}
+                        ELSE 0
+                    END
+                ), 0)`,
             })
             .from(event)
             .where(
                 and(
                     eq(event.userId, userId),
-                    eq(event.isBilledUsage, true),
                     gte(event.createdAt, windowStart),
                 ),
             );

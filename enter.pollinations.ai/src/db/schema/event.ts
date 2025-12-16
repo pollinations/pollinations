@@ -11,7 +11,13 @@ import type { ContentFilterResult } from "@/schemas/openai";
 const eventTypeValues = ["generate.text", "generate.image"] as const;
 export type EventType = (typeof eventTypeValues)[number];
 
-const eventStatusValues = ["pending", "processing", "sent", "error"] as const;
+const eventStatusValues = [
+    "pending_estimate",
+    "pending",
+    "processing",
+    "sent",
+    "error",
+] as const;
 export type EventStatus = (typeof eventStatusValues)[number];
 
 const apiKeyTypeValues = ["secret", "publishable"] as const;
@@ -147,6 +153,8 @@ export const event = sqliteTable(
         // Totals
         totalCost: real("total_cost").notNull(),
         totalPrice: real("total_price").notNull(),
+        // Estimated cost for in-flight requests (pending_estimate status)
+        estimatedCost: real("estimated_cost"),
 
         // Prompt Moderation
         moderationPromptHateSeverity: text("moderation_prompt_hate_severity"),

@@ -29,6 +29,9 @@ export function createAuth(env: Cloudflare.Env) {
         enableMetadata: true,
         defaultPrefix: PUBLISHABLE_KEY_PREFIX,
         defaultKeyLength: 16, // Minimum key length for validation (matches custom generator)
+        startingCharactersConfig: {
+            charactersLength: 10, // Store more characters for display (pk_xxxxxxxxxx...)
+        },
         customKeyGenerator: (options: {
             length: number;
             prefix: string | undefined;

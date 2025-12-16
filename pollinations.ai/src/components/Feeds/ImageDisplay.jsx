@@ -19,7 +19,8 @@ export const ImageDisplay = memo(function ImageDisplay({ image }) {
       action: "click_image",
       category: "feed",
     })
-    window.open(image["imageURL"], "_blank")
+    // Use originalURL if available (blob URLs don't work in new tabs)
+    window.open(image["originalURL"] || image["imageURL"], "_blank")
   }
 
   // Show error if image has error property
@@ -159,7 +160,12 @@ export const ImageDisplay = memo(function ImageDisplay({ image }) {
     >
       {image ? (
         isDesktop ? (
-          <Link href={image["imageURL"]} target="_blank" rel="noopener" onClick={handleImageClick}>
+          <Link
+            href={image["originalURL"] || image["imageURL"]}
+            target="_blank"
+            rel="noopener"
+            onClick={handleImageClick}
+          >
             {ImageContent}
           </Link>
         ) : (

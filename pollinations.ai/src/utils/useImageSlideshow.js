@@ -194,22 +194,24 @@ const loadImage = async (newImage, retryCount = 0) => {
         }
 
         // If we got here, it's a valid image
-        // Still preload it to ensure it's ready
+        // Create blob URL to avoid double-fetch when rendering <img>
         const blob = await response.blob();
-        const objectUrl = URL.createObjectURL(blob);
+        const blobUrl = URL.createObjectURL(blob);
 
         return new Promise((resolve, reject) => {
             const img = new Image();
-            img.src = objectUrl;
+            img.src = blobUrl;
             img.onload = () => {
-                URL.revokeObjectURL(objectUrl);
+                // Return the blob URL as imageURL to prevent another network request
                 resolve({
                     ...newImage,
+                    imageURL: blobUrl,
+                    originalURL: newImage.imageURL,
                     loaded: true,
                 });
             };
             img.onerror = (error) => {
-                URL.revokeObjectURL(objectUrl);
+                URL.revokeObjectURL(blobUrl);
                 reject(error);
             };
         });

@@ -53,6 +53,21 @@ export function createImageContent(data, mimeType) {
 }
 
 /**
+ * Creates a video content object for MCP responses
+ *
+ * @param {string} url - Video URL
+ * @param {Object} metadata - Video metadata (prompt, model, dimensions, etc.)
+ * @returns {Object} - Video content object
+ */
+export function createVideoContent(url, metadata = {}) {
+    return {
+        type: "video",
+        url,
+        metadata,
+    };
+}
+
+/**
  * Builds a URL with query parameters
  *
  * @param {string} baseUrl - Base URL

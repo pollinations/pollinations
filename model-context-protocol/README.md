@@ -4,14 +4,31 @@ A Model Context Protocol (MCP) server for the Pollinations APIs that enables AI 
 
 ## Features
 
-- Generate image URLs from text prompts
-- Generate actual images and return them as base64-encoded data
-- Generate text responses from text prompts
-- Generate audio (text-to-speech) from text prompts
-- List available image and text generation models
-- STDIO transport for easy integration with MCP clients
-- Simple and lightweight
-- Compatible with the Model Context Protocol (MCP)
+### 🎨 Content Generation
+- **Image Generation**: Generate image URLs from text prompts with multiple models (Flux, Turbo, Seedream, etc.)
+- **Text Generation**: Generate text responses with various models (OpenAI, Claude, Gemini, DeepSeek, etc.)
+- **Audio Generation**: Generate audio (text-to-speech) with multiple voice options
+- **Video Generation**: Generate videos from text prompts using Veo and Seedance models *(NEW)*
+
+### 🧠 Advanced AI Capabilities
+- **Multi-Modal Support**: Seamlessly work with text, image, audio, and video
+- **Model Selection**: Choose from 20+ models across different modalities
+- **Advanced Reasoning**: Deep thinking with reasoning models like DeepSeek-R1 *(NEW)*
+- **Mathematical Problem Solving**: Step-by-step solutions with reasoning *(NEW)*
+- **Code Analysis**: Deep reasoning about code functionality and improvements *(NEW)*
+
+### 🛠️ System & Monitoring
+- **System Health Monitoring**: Real-time API status and health checks *(NEW)*
+- **Model Management**: List and discover available models across all modalities
+- **Error Handling**: Comprehensive error reporting and diagnostics *(NEW)*
+- **Performance Metrics**: Response time tracking and API health statistics
+
+### 🔧 Integration & Transport
+- **STDIO Transport**: Easy integration with MCP clients and command-line tools
+- **Thin Proxy Design**: Minimal data transformation, direct API communication
+- **Simple & Lightweight**: Minimal dependencies, fast startup
+- **MCP Compatible**: Full Model Context Protocol compliance
+- **Cross-Platform**: Works on Windows, macOS, and Linux
 
 ## System Requirements
 
@@ -71,6 +88,33 @@ After installation, restart Claude Desktop and you can use commands like:
 ```
 Generate an image of a sunset over the ocean using the Pollinations API.
 ```
+
+## 🚀 New Enhanced Features
+
+### 🎥 Video Generation
+Generate videos from text prompts using advanced models:
+```
+Generate a video of a dragon flying over mountains using the veo model.
+Create a cinematic video of a futuristic city with seedance.
+```
+
+### 🧠 Advanced Reasoning
+Perform complex reasoning with deep-thinking models:
+```
+Use deep reasoning to analyze the ethical implications of AI consciousness.
+Solve this math problem step by step: Find the derivative of x³sin(x).
+Analyze this code and suggest improvements: [paste your code].
+```
+
+### 🛠️ System Monitoring
+Check system health and available models:
+```
+Get system status with API health checks.
+List all available video models.
+Check API health with detailed timing information.
+```
+
+See [ENHANCED_FEATURES.md](./ENHANCED_FEATURES.md) for detailed documentation on all new capabilities.
 
 ## Alternative MCP Implementations
 

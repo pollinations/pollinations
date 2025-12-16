@@ -15,6 +15,9 @@ import player from "play-sound";
 import { imageTools } from "./services/imageService.js";
 import { textTools } from "./services/textService.js";
 import { audioTools } from "./services/audioService.js";
+import { videoTools } from "./services/videoService.js";
+import { reasoningTools } from "./services/reasoningService.js";
+import { systemTools } from "./services/systemService.js";
 import { resourceTools } from "./services/resourceService.js";
 import { authTools } from "./services/authService.js";
 
@@ -28,6 +31,16 @@ const toolDefinitions = [
 
     // Audio tools
     ...audioTools,
+
+    // Video tools
+    ...videoTools,
+    
+    // Reasoning tools
+    ...reasoningTools,
+    
+    // System tools
+    ...systemTools,
+    
     ...authTools,
     // Resource tools
     // ...resourceTools

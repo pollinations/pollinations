@@ -23,8 +23,6 @@ export const Pricing: FC = () => {
                     rel="noopener noreferrer"
                     color="amber"
                     weight="light"
-                    size="small"
-                    className="self-start sm:self-center"
                 >
                     🤖 Vote on next models
                 </Button>

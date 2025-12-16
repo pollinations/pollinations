@@ -30,7 +30,7 @@ const colors = {
         outline: "border-2 border-red-900 text-red-900",
     },
     amber: {
-        light: "bg-amber-200 text-amber-900 border border-amber-300",
+        light: "bg-amber-200 text-amber-900",
         strong: "bg-amber-500 text-white",
         outline: "border-2 border-amber-500 text-amber-900",
     },

@@ -36,9 +36,11 @@ const Cell: FC<React.ComponentProps<"div">> = ({ children, ...props }) => {
     );
 };
 
-const KeyDisplay: FC<{ fullKey: string }> = ({ fullKey }) => {
+const KeyDisplay: FC<{ fullKey: string; start: string }> = ({
+    fullKey,
+    start,
+}) => {
     const [copied, setCopied] = useState(false);
-    const suffix = fullKey.slice(-4);
 
     const handleCopy = async () => {
         try {
@@ -62,7 +64,7 @@ const KeyDisplay: FC<{ fullKey: string }> = ({ fullKey }) => {
             )}
             title={copied ? "Copied!" : "Click to copy full key"}
         >
-            {copied ? "✓ Copied!" : `...${suffix}`}
+            {copied ? "✓ Copied!" : `${start}...`}
         </button>
     );
 };
@@ -211,6 +213,10 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                                                         <KeyDisplay
                                                             fullKey={
                                                                 plaintextKey
+                                                            }
+                                                            start={
+                                                                apiKey.start ??
+                                                                undefined
                                                             }
                                                         />
                                                     ) : (

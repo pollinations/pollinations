@@ -96,7 +96,7 @@ function RouteComponent() {
     const handleCreateApiKey = async (formState: CreateApiKey) => {
         const keyType = formState.keyType || "secret";
         const isPublishable = keyType === "publishable";
-        const prefix = isPublishable ? "plln_pk" : "plln_sk";
+        const prefix = isPublishable ? "pk" : "sk";
 
         // Step 1: Create key via better-auth's native API
         const createResult = await auth.apiKey.create({
@@ -116,6 +116,18 @@ function RouteComponent() {
         }
 
         const apiKey = createResult.data;
+
+        // For publishable keys, store the plaintext key in metadata for easy retrieval
+        if (isPublishable) {
+            await auth.apiKey.update({
+                keyId: apiKey.id,
+                metadata: {
+                    description: formState.description,
+                    keyType,
+                    plaintextKey: apiKey.key,
+                },
+            });
+        }
 
         // Step 2: Set permissions if restricted (allowedModels is not null)
         // null = unrestricted (all models), array = restricted to specific models

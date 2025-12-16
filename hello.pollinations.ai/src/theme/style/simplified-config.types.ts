@@ -70,6 +70,7 @@ export interface BrandSpecialMacro {
     indicatorImage: string;
     indicatorText: string;
     indicatorAudio: string;
+    indicatorVideo: string;
 }
 
 export interface TypographyMacro {

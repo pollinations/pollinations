@@ -5,12 +5,8 @@ import { generateCopy } from "../../../theme/guidelines/helpers/copywriter";
 import { ALL_COPY } from "../../../theme/copy/index";
 import { dictionaryToTheme } from "../../../theme/style/theme-processor";
 import { generateBackground } from "../../../theme/guidelines/helpers/animator";
-import { IS_BACKEND_MODE, FRONTEND_CALL_DELAY } from "../../../api.config";
 import { SparklesIcon, SendIcon, DownloadIcon } from "lucide-react";
 import { Button } from "../ui/button";
-
-// Helper for sequential delays
-const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 interface AIPromptInputProps {
     isOpen: boolean;
@@ -49,69 +45,24 @@ export function AIPromptInput({ isOpen }: AIPromptInputProps) {
 
         const runGeneration = async () => {
             try {
-                if (IS_BACKEND_MODE) {
-                    // BACKEND MODE: Parallel execution (secret key, no rate limits)
-                    console.log(
-                        "🚀 [PARALLEL MODE] Running all generators simultaneously"
-                    );
+                console.log(
+                    "🚀 [GENERATING] Running all generators simultaneously"
+                );
 
-                    const [theme, copyResult, bgHtml] = await Promise.all([
-                        generateTheme(activePrompt, controller.signal),
-                        generateCopy(
-                            activePrompt,
-                            isMobile,
-                            ALL_COPY,
-                            "en",
-                            controller.signal
-                        ),
-                        generateBackground(activePrompt, controller.signal),
-                    ]);
-
-                    if (controller.signal.aborted) return;
-                    setTheme(theme, activePrompt, copyResult.full, bgHtml);
-                } else {
-                    // FRONTEND MODE: Sequential execution with delays (publishable key, rate limited)
-                    console.log(
-                        "🐢 [SEQUENTIAL MODE] Running generators one at a time with delays"
-                    );
-
-                    // 1. Designer (Theme)
-                    console.log("🎨 [1/3] Generating theme...");
-                    const theme = await generateTheme(
-                        activePrompt,
-                        controller.signal
-                    );
-                    if (controller.signal.aborted) return;
-
-                    // Wait before next call
-                    await sleep(FRONTEND_CALL_DELAY);
-                    if (controller.signal.aborted) return;
-
-                    // 2. Copywriter
-                    console.log("📝 [2/3] Generating copy...");
-                    const copyResult = await generateCopy(
+                const [theme, copyResult, bgHtml] = await Promise.all([
+                    generateTheme(activePrompt, controller.signal),
+                    generateCopy(
                         activePrompt,
                         isMobile,
                         ALL_COPY,
                         "en",
                         controller.signal
-                    );
-                    if (controller.signal.aborted) return;
+                    ),
+                    generateBackground(activePrompt, controller.signal),
+                ]);
 
-                    // Wait before next call
-                    await sleep(FRONTEND_CALL_DELAY);
-                    if (controller.signal.aborted) return;
-
-                    // 3. Animator (Background)
-                    console.log("🎬 [3/3] Generating background...");
-                    const bgHtml = await generateBackground(
-                        activePrompt,
-                        controller.signal
-                    );
-                    if (controller.signal.aborted) return;
-
-                    setTheme(theme, activePrompt, copyResult.full, bgHtml);
-                }
+                if (controller.signal.aborted) return;
+                setTheme(theme, activePrompt, copyResult.full, bgHtml);
 
                 setActivePrompt(null);
                 console.log("✅ [PRESET READY]");

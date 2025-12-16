@@ -91,6 +91,7 @@ export const validateTextGenerationParams = (data) => {
         top_p: validateFloat(data.top_p),
         presence_penalty: validateFloat(data.presence_penalty),
         frequency_penalty: validateFloat(data.frequency_penalty),
+        repetition_penalty: validateFloat(data.repetition_penalty),
         seed: validateInt(data.seed),
         stream: validateBoolean(data.stream),
         private: validateBoolean(data.private),

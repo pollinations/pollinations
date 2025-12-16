@@ -5,8 +5,8 @@
 
 import { BACKGROUND_GUIDELINES } from "../animator";
 import { generateText } from "../../../services/pollinationsAPI";
-
-const MODEL = "gemini-large";
+import { API_KEY } from "../../../api.config";
+import { THEME_MODELS } from "../../models";
 
 export async function generateBackground(
     themePrompt: string,
@@ -17,8 +17,16 @@ export async function generateBackground(
         themePrompt,
     );
 
-    console.log("🎬 [ANIMATOR] → Generating WebGL background...");
-    const html = await generateText(fullPrompt, 42, MODEL, signal);
+    console.log(
+        `🎬 [ANIMATOR] → Generating WebGL background... (model: ${THEME_MODELS.animator})`,
+    );
+    const html = await generateText(
+        fullPrompt,
+        API_KEY,
+        42,
+        THEME_MODELS.animator,
+        signal,
+    );
 
     // Clean up markdown code blocks if present
     let cleanHtml = html.trim();

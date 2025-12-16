@@ -1,31 +1,36 @@
-// Publishable key (safe to commit) - used in production
-const PUBLISHABLE_KEY = "plln_pk_JYeNIYDfEi0dwDT7kPAXujYWyYT2TaKm";
+// ==============================================
+// API KEYS
+// ==============================================
 
-// Use environment variable if available (local dev with secret key),
-// otherwise fall back to publishable key (production)
-const envKey = import.meta.env.VITE_POLLINATIONS_API_KEY;
-export const API_KEY = envKey || PUBLISHABLE_KEY;
+// Single publishable key for deployed site (playground, logos, theme fallback)
+const HELLO_PUBLISHABLE_KEY = "plln_pk_3Li2tYoZizyJ9j2ELfgpv9vxdTIcB1gF";
 
-// Backend mode = secret key present (parallel API calls allowed)
-// Frontend mode = publishable key (sequential calls with delays)
-export const IS_BACKEND_MODE = !!envKey;
+// API_KEY: Uses secret key from env if available, otherwise publishable key
+// For local dev with secret key, add to .env: VITE_THEME_API_KEY=plln_sk_...
+const envSecretKey = import.meta.env.VITE_THEME_API_KEY;
+export const API_KEY = envSecretKey || HELLO_PUBLISHABLE_KEY;
+export const IS_SECRET_KEY = !!envSecretKey;
 
-// Delay between sequential API calls in frontend mode (ms)
-// Rate limit for publishable keys is ~72s per request, so we wait 75s to be safe
-export const FRONTEND_CALL_DELAY = 75000;
+// ==============================================
+// STARTUP LOGGING
+// ==============================================
 
-// Log which key is being used (only first 15 chars for security)
-const keyPreview = API_KEY.substring(0, 15) + "...";
-const keySource = IS_BACKEND_MODE
-    ? "environment (secret key) → parallel mode"
-    : "fallback (publishable key) → sequential mode";
-console.log(`🔑 API Key loaded from ${keySource}: ${keyPreview}`);
+const keyType = IS_SECRET_KEY ? "🔑 secret" : "📢 publishable";
+console.log(`🔐 [API] Using ${keyType} key: ${API_KEY.substring(0, 12)}...`);
+
+// ==============================================
+// API ENDPOINTS
+// ==============================================
 
 export const API = {
     TEXT_GENERATION:
         "https://enter.pollinations.ai/api/generate/v1/chat/completions",
     IMAGE_GENERATION: "https://enter.pollinations.ai/api/generate/image",
 };
+
+// ==============================================
+// DEFAULTS
+// ==============================================
 
 export const DEFAULTS = {
     IMAGE_MODEL: "flux",

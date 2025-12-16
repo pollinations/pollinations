@@ -5,8 +5,8 @@
 
 import { assembleLogoPrompt } from "../../buildPrompts";
 import { generateImage } from "../../../services/pollinationsAPI";
-
-const MODEL = "nanobanana";
+import { API_KEY } from "../../../api.config";
+import { THEME_MODELS } from "../../models";
 
 // ==============================================
 // TYPE DEFINITIONS
@@ -45,11 +45,12 @@ export async function generateSupporterLogo(
     // Generate the logo image
     const logoUrl = await generateImage(
         prompt,
+        API_KEY,
         {
             width,
             height,
             seed,
-            model: MODEL,
+            model: THEME_MODELS.illustrator,
             nologo: true,
         },
         signal,

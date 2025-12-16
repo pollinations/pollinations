@@ -1167,5 +1167,26 @@ export const creativeProjects = [
     "language": "hu",
     "submissionDate": "2025-12-14",
     "order": 5
+  },
+  {
+    "name": "📚 IA-Books: AI Ebook Generator",
+    "url": "https://iabooks.com.br",
+    "description": "Professional ebook creation platform with AI. Auto-generates book covers and chapter illustrations via Pollinations Flux, plans chapters, writes content. PWA with offline support, client-side storage for privacy. Supports Portuguese and English.",
+    "author": "@FabioArieiraBaia",
+    "repo": "https://github.com/FabioArieiraBaia/IA-Books",
+    "category": "creative",
+    "language": "pt-BR",
+    "submissionDate": "2025-12-15",
+    "order": 5
+  },
+  {
+    "name": "⛽ TuffMeter",
+    "url": "https://tuffmeter.netlify.app/",
+    "description": "Humorous AI tool that analyzes uploaded videos to rate your aura. Based on visual content, the AI decides if your video is Tuff, Peak, or Cringe. Features multilingual support via built-in AI translator.",
+    "author": "@VearyTry",
+    "repo": "https://github.com/VearyTry",
+    "category": "creative",
+    "submissionDate": "2025-12-16",
+    "order": 5
   }
 ];

@@ -433,27 +433,19 @@ Generated automatically by GitHub Actions
     pr_number = pr_data['number']
     print(f"Created PR #{pr_number}: {pr_data['html_url']}")
 
-    # Add inbox:news label to the PR
-    label_response = requests.post(
-        f"{GITHUB_API_BASE}/repos/{owner}/{repo}/issues/{pr_number}/labels",
-        headers=headers,
-        json={"labels": ["inbox:news"]}
-    )
-    if label_response.status_code in [200, 201]:
-        print(f"Added 'inbox:news' label to PR #{pr_number}")
-    else:
-        print(f"Warning: Could not add label: {label_response.status_code}")
-
-    # Add inbox:news label to the PR
-    label_response = requests.post(
-        f"{GITHUB_API_BASE}/repos/{owner}/{repo}/issues/{pr_data['number']}/labels",
-        headers=headers,
-        json={"labels": ["inbox:news"]}
-    )
-    if label_response.status_code in [200, 201]:
-        print("Added inbox:news label")
-    else:
-        print(f"Warning: Could not add label: {label_response.text}")
+    # Add labels from PR_LABELS env var
+    pr_labels = get_env('PR_LABELS', required=False)
+    if pr_labels:
+        labels_list = [label.strip() for label in pr_labels.split(',')]
+        label_response = requests.post(
+            f"{GITHUB_API_BASE}/repos/{owner}/{repo}/issues/{pr_number}/labels",
+            headers=headers,
+            json={"labels": labels_list}
+        )
+        if label_response.status_code in [200, 201]:
+            print(f"Added labels {labels_list} to PR #{pr_number}")
+        else:
+            print(f"Warning: Could not add labels: {label_response.status_code}")
 
 
 def main():

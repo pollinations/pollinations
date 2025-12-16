@@ -24,6 +24,7 @@ export function processParameters(messages, options) {
         "top_p",
         "presence_penalty",
         "frequency_penalty",
+        "repetition_penalty",
     ];
     samplingParams.forEach((param) => {
         if (

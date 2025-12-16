@@ -43,6 +43,10 @@ export const AVastDeepOceanSceneFilledWithDriftingBioluminescentLifeSoftDarkness
                 "hex": "#ff4081",
                 "ids": ["indicator.audio", "logo.accent"],
             },
+            "slot_21": {
+                "hex": "#00e676",
+                "ids": ["indicator.video"],
+            },
             "slot_9": {
                 "hex": "#1e3d52",
                 "ids": ["border.main"],

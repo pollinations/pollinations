@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import Debug from "debug";
-import { PLAYGROUND_API_KEY, ENTER_BASE_URL } from "../utils/enterApi";
+import { ENTER_BASE_URL } from "../utils/enterApi";
 
 const debug = Debug("useFetchModels");
 
@@ -15,11 +15,7 @@ const useFetchModels = () => {
 
     useEffect(() => {
         setLoading(true);
-        fetch(`${ENTER_BASE_URL}/generate/image/models`, {
-            headers: {
-                "Authorization": `Bearer ${PLAYGROUND_API_KEY}`,
-            },
-        })
+        fetch(`${ENTER_BASE_URL}/generate/image/models`)
             .then((res) => {
                 if (!res.ok) {
                     throw new Error(`Failed to fetch models: ${res.status}`);

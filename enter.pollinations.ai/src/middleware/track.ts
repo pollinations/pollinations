@@ -189,7 +189,7 @@ export const track = (eventType: EventType) =>
                         polarAccessToken: c.env.POLAR_ACCESS_TOKEN,
                         polarServer: c.env.POLAR_SERVER,
                         tinybirdIngestUrl: c.env.TINYBIRD_INGEST_URL,
-                        tinybirdAccessToken: c.env.TINYBIRD_ACCESS_TOKEN,
+                        tinybirdIngestToken: c.env.TINYBIRD_INGEST_TOKEN,
                         minBatchSize: 0, // process all events immediately
                         minRetryDelay: 0, // don't wait between retries
                         maxRetryDelay: 0, // don't wait between retries

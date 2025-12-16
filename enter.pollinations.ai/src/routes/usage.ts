@@ -61,24 +61,33 @@ export const usageRoutes = new Hono<Env>()
             try {
                 const response = await fetch(tinybirdUrl.toString(), {
                     headers: {
-                        Authorization: `Bearer ${c.env.TINYBIRD_ACCESS_TOKEN}`,
+                        Authorization: `Bearer ${c.env.TINYBIRD_READ_TOKEN}`,
                     },
                 });
 
                 if (!response.ok) {
                     const errorText = await response.text();
-                    log.error("[USAGE] Tinybird error using URL {url}: {status} {error}", {
-                        url: tinybirdUrl.toString(),
-                        status: response.status,
-                        error: errorText,
-                    });
-                    
+                    log.error(
+                        "[USAGE] Tinybird error using URL {url}: {status} {error}",
+                        {
+                            url: tinybirdUrl.toString(),
+                            status: response.status,
+                            error: errorText,
+                        },
+                    );
+
                     // Return 503 if Service Unavailable or similar network issues, else 500
                     const status = response.status >= 500 ? 503 : 500;
-                    return c.json({ 
-                        error: "Failed to fetch usage data", 
-                        details: response.status === 401 ? "Unauthorized" : "Service Unavailable" 
-                    }, status);
+                    return c.json(
+                        {
+                            error: "Failed to fetch usage data",
+                            details:
+                                response.status === 401
+                                    ? "Unauthorized"
+                                    : "Service Unavailable",
+                        },
+                        status,
+                    );
                 }
 
                 const data = (await response.json()) as {
@@ -111,7 +120,9 @@ export const usageRoutes = new Hono<Env>()
 
                 // Return CSV if requested
                 if (format === "csv") {
-                    const escapeCSV = (val: string | number | boolean | null) => {
+                    const escapeCSV = (
+                        val: string | number | boolean | null,
+                    ) => {
                         if (val === null || val === undefined) return "";
                         const str = String(val);
                         if (

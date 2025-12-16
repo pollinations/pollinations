@@ -365,6 +365,7 @@ export const TEXT_SERVICES = {
             {
                 date: COST_START_DATE,
                 promptTextTokens: perMillion(2.0),
+                promptCachedTokens: perMillion(0.2), // 10% of input price (same ratio as other Gemini models)
                 completionTextTokens: perMillion(12.0),
             },
         ],

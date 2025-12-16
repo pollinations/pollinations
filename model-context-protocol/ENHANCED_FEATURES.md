@@ -1,8 +1,8 @@
-# 🚀 Pollinations MCP Enhanced Features Documentation
+#  Pollinations MCP Enhanced Features Documentation
 
 This document outlines the new enhanced features added to the Pollinations Model Context Protocol (MCP) server.
 
-## 📋 Table of Contents
+##  Table of Contents
 
 1. [Video Generation Support](#video-generation-support)
 2. [Advanced Reasoning Mode](#advanced-reasoning-mode)
@@ -63,7 +63,7 @@ const fastVideo = await generateSeedanceVideo({
 
 ---
 
-## 🧠 Advanced Reasoning Mode
+## Advanced Reasoning Mode
 
 ### Overview
 Perform complex reasoning tasks using deep-thinking models with multi-step analysis chains.
@@ -134,7 +134,7 @@ const codeAnalysis = await analyzeCodeWithReasoning({
 
 ---
 
-## 🛠️ System Status & Health Monitoring
+##  System Status & Health Monitoring
 
 ### Overview
 Monitor system health, check API status, and get comprehensive diagnostics.
@@ -186,7 +186,7 @@ const health = await checkApiHealth({
 
 ---
 
-## 📖 Usage Examples
+##  Usage Examples
 
 ### Complete Workflow Example
 ```javascript
@@ -244,11 +244,11 @@ await startMcpServer();
 
 ### Environment Variables
 - `POLLINATIONS_API_KEY`: Optional API key for enhanced rate limits
-- `POLLINATIONS_BASE_URL`: Custom API base URL (default: https://text.pollinations.ai)
+- `POLLINATIONS_BASE_URL`: Custom API base URL (default: https://gen.pollinations.ai)
 
 ---
 
-## 🎯 Best Practices
+##  Best Practices
 
 1. **Model Selection**: Choose appropriate models based on your use case
    - Video: Use `veo` for cinematic quality, `seedance` for faster processing

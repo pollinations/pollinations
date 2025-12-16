@@ -12,6 +12,36 @@ import crypto from "crypto";
 // Constants
 const AUTH_API_BASE_URL = "https://enter.pollinations.ai";
 
+// Simple in-memory token storage (in production, this should be more secure)
+let currentAccessToken = null;
+let currentRefreshToken = null;
+let tokenExpiry = null;
+
+/**
+ * Get the current access token if available and not expired
+ * 
+ * @returns {string|null} - The current access token or null if not available/expired
+ */
+export function getCurrentAccessToken() {
+    if (!currentAccessToken || (tokenExpiry && Date.now() >= tokenExpiry)) {
+        return null;
+    }
+    return currentAccessToken;
+}
+
+/**
+ * Store tokens securely
+ * 
+ * @param {string} accessToken - The JWT access token
+ * @param {string} refreshToken - The refresh token
+ * @param {number} expiresIn - Token expiry time in seconds
+ */
+function storeTokens(accessToken, refreshToken, expiresIn) {
+    currentAccessToken = accessToken;
+    currentRefreshToken = refreshToken;
+    tokenExpiry = Date.now() + (expiresIn * 1000) - 60000; // Refresh 1 minute before expiry
+}
+
 /**
  * Initiates the GitHub OAuth authentication flow with PKCE
  *
@@ -103,6 +133,9 @@ async function exchangeToken(params) {
 
         // Get the tokens
         const tokenData = await response.json();
+
+        // Store the tokens for later use
+        storeTokens(tokenData.access_token, tokenData.refresh_token, tokenData.expires_in);
 
         // Return the response in MCP format
         return createMCPResponse([

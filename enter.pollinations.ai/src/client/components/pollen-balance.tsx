@@ -34,7 +34,7 @@ export const PollenBalance: FC<PollenBalanceProps> = ({
                     <span className="text-4xl sm:text-5xl md:text-6xl font-bold text-green-950 tabular-nums">
                         {totalPollen.toFixed(2)} pollen
                         {pendingSpend > 0 && (
-                            <span className="text-lg sm:text-xl text-orange-600 font-normal ml-2">
+                            <span className="block sm:inline text-center sm:text-left text-lg sm:text-xl text-orange-600 font-normal sm:ml-2">
                                 (-{pendingSpend.toFixed(3)} pending)
                             </span>
                         )}

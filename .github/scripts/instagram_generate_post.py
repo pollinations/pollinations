@@ -454,9 +454,13 @@ def generate_image(prompt: str, token: str, index: int, reference_url: str = Non
             "key": token
         }
 
-        # Add reference image for I2I (must be URL-encoded)
+        # Add reference image for I2I (must be URL-encoded, but avoid double-encoding)
         if reference_url:
-            params["image"] = quote(reference_url, safe='')
+            # Check if already encoded (contains %) to avoid double-encoding
+            if '%' in reference_url:
+                params["image"] = reference_url
+            else:
+                params["image"] = quote(reference_url, safe='')
 
         if attempt == 0:
             print(f"  Using seed: {seed}")
@@ -688,6 +692,8 @@ Generated automatically by GitHub Actions
         )
         if label_response.status_code in [200, 201]:
             print(f"Added labels {labels_list}")
+        else:
+            print(f"Warning: Could not add labels: {label_response.status_code}")
 
 
 def main():

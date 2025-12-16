@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { generateImage } from "../../services/pollinationsAPI";
-import { DEFAULTS } from "../../api.config";
+import { DEFAULTS, API_KEY } from "../../api.config";
 
 interface ImageGeneratorProps
     extends React.ImgHTMLAttributes<HTMLImageElement> {
@@ -38,6 +38,7 @@ export function ImageGenerator({
 
         generateImage(
             prompt,
+            API_KEY,
             { width, height, seed, model, nologo },
             controller.signal
         )

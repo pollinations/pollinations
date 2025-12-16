@@ -72,6 +72,7 @@ export default {
                 "indicator-image": "rgb(var(--indicator-image))",
                 "indicator-text": "rgb(var(--indicator-text))",
                 "indicator-audio": "rgb(var(--indicator-audio))",
+                "indicator-video": "rgb(var(--indicator-video))",
 
                 // Borders
                 "border-brand": "rgb(var(--border-brand))",

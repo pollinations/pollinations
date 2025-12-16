@@ -33,6 +33,7 @@ export type SemanticTokenId =
     | "indicator.image"
     | "indicator.text"
     | "indicator.audio"
+    | "indicator.video"
 
     // Borders
     | "border.brand"

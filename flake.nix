@@ -142,6 +142,12 @@
               )"
             done
 
+            # decrypt .encrypted.env files (dotenv format)
+            while IFS= read -r file; do
+              echo "Decrypting: $file"
+              eval "$(sops decrypt "$file" | grep -v '^#' | sed 's/^/export /')"
+            done < <(find "$FLAKE_PATH" -name ".encrypted.env" -type f 2>/dev/null)
+
             # switch to zsh if direnv is not enabled
             if [[ ! -f .envrc ]]; then
               export ZDOTDIR=${zsh-config-dir}/config

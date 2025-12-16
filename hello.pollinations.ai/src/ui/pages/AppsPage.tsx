@@ -78,7 +78,7 @@ function ProjectCard({ project }: ProjectCardProps) {
                     <span className="font-headline text-base font-black uppercase text-left block text-text-body-main">
                         {project.name}
                     </span>
-                    <ExternalLinkIcon className="w-4 h-4 absolute top-2 right-2 text-text-body-main" />
+                    <ExternalLinkIcon className="w-4 h-4 absolute top-3 right-3 text-text-body-main" />
                 </Button>
 
                 {project.description && (

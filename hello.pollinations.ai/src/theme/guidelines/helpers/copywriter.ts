@@ -5,9 +5,9 @@
 
 import { assembleCopyPrompt } from "../../buildPrompts";
 import { generateText } from "../../../services/pollinationsAPI";
+import { API_KEY } from "../../../api.config";
 import { ALL_COPY } from "../../copy/index";
-
-const MODEL = "gemini-large";
+import { THEME_MODELS } from "../../models";
 
 // ==============================================
 // TYPE DEFINITIONS
@@ -54,10 +54,18 @@ export async function generateCopy(
     // 3. Transform (ETL Step 2 - API Call)
     const fullPrompt = assembleCopyPrompt(themeVibe, jobs, targetLanguage);
 
-    console.log(`📝 [COPYWRITER] → Rewriting ${jobs.length} text items...`);
+    console.log(
+        `📝 [COPYWRITER] → Rewriting ${jobs.length} text items... (model: ${THEME_MODELS.copywriter})`,
+    );
 
     try {
-        const response = await generateText(fullPrompt, 42, MODEL, signal);
+        const response = await generateText(
+            fullPrompt,
+            API_KEY,
+            42,
+            THEME_MODELS.copywriter,
+            signal,
+        );
 
         // 4. Load (ETL Step 3 - Re-hydration)
         let newTexts: Record<string, string> = {};

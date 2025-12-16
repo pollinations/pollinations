@@ -124,7 +124,8 @@ You MUST return ONLY a single JSON object with this exact structure:
     "logoAccent": "#...",
     "indicatorImage": "#...",
     "indicatorText": "#...",
-    "indicatorAudio": "#..."
+    "indicatorAudio": "#...",
+    "indicatorVideo": "#..."
   },
   "backgrounds": {
     "base": "#...",         // WebGL scene background (usually same as surfaces.base)

@@ -1,4 +1,4 @@
-import { memo, useState } from "react";
+import { memo } from "react";
 import { Button } from "../ui/button";
 import { PLAY_PAGE } from "../../../theme";
 import {

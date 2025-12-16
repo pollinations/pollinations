@@ -68,11 +68,14 @@ const fastVideo = await generateSeedanceVideo({
 ### Overview
 Perform complex reasoning tasks using deep-thinking models with multi-step analysis chains.
 
+### Authentication Required
+**Important**: The reasoning service requires authentication via GitHub OAuth to access the gen.pollinations.ai endpoint. See the [Authentication Setup](#authentication-setup) section below.
+
 ### Available Models
-- **OpenAI GPT**: Powerful reasoning and analysis model (currently supported)
-- **DeepSeek-R1**: Advanced reasoning model with step-by-step thinking (planned)
-- **Kimi K2 Thinking**: Deep thinking model with extended reasoning chains (planned)
-- **Gemini 2.0 Thinking**: Google's reasoning model with multi-step analysis (planned)
+- **DeepSeek**: State-of-the-art reasoning model (default, recommended for logic/math/analysis)
+- **OpenAI**: GPT models for general reasoning tasks
+- **Claude**: Anthropic's Claude models for structured reasoning
+- **Gemini**: Google's Gemini models for multi-modal reasoning
 
 ### Tools
 
@@ -82,19 +85,19 @@ Perform deep reasoning analysis on complex questions with step-by-step thinking.
 **Parameters:**
 - `prompt` (string, required): Main question or problem to solve
 - `context` (string, optional): Additional context or background information
-- `reasoningModel` (string, optional): Model for reasoning (default: `openai`) - currently only OpenAI is supported
-- `finalModel` (string, optional): Model for final answer (default: `openai`)
-- `maxReasoningTokens` (number, optional): Max tokens for reasoning (default: 2000) - currently not supported due to API limitations
-- `maxFinalTokens` (number, optional): Max tokens for final answer (default: 1000) - currently not supported due to API limitations
-- `temperature` (number, optional): Temperature for final generation (default: 0.7) - currently not supported due to API limitations
-- `json` (boolean, optional): Return JSON format (default: false) - currently not supported due to API limitations
+- `reasoningModel` (string, optional): Model for reasoning (default: `deepseek`)
+- `finalModel` (string, optional): Model for final answer (default: `deepseek`)
+- `maxReasoningTokens` (number, optional): Max tokens for reasoning (default: 2000)
+- `maxFinalTokens` (number, optional): Max tokens for final answer (default: 1000)
+- `temperature` (number, optional): Temperature for final generation (default: 0.7)
+- `json` (boolean, optional): Return JSON format (default: false)
 
 #### `solveMathProblem`
 Solve complex mathematical problems with detailed step-by-step reasoning.
 
 **Parameters:**
 - `problem` (string, required): Mathematical problem to solve
-- `reasoningModel` (string, optional): Model for mathematical reasoning (default: `openai`) - currently only OpenAI is supported
+- `reasoningModel` (string, optional): Model for mathematical reasoning (default: `deepseek`)
 - `showSteps` (boolean, optional): Whether to show solution steps (default: true)
 
 #### `analyzeCodeWithReasoning`
@@ -104,7 +107,7 @@ Analyze code with deep reasoning about functionality, bugs, and improvements.
 - `code` (string, required): Code to analyze
 - `language` (string, optional): Programming language of the code
 - `question` (string, optional): Specific question about the code
-- `reasoningModel` (string, optional): Model for code analysis (default: `openai`) - currently only OpenAI is supported
+- `reasoningModel` (string, optional): Model for code analysis (default: `deepseek`)
 
 #### `listReasoningModels`
 List available reasoning models and their specialties.
@@ -115,20 +118,22 @@ List available reasoning models and their specialties.
 const reasoning = await deepReasoning({
     prompt: "What are the ethical implications of AI consciousness?",
     context: "Considering current AI development trends and philosophical theories",
-    reasoningModel: "kimi-k2-thinking"
+    reasoningModel: "deepseek"
 });
 
 // Mathematical problem solving
 const mathSolution = await solveMathProblem({
     problem: "Find the derivative of f(x) = x³sin(x) + 2x²cos(x)",
-    showSteps: true
+    showSteps: true,
+    reasoningModel: "deepseek"
 });
 
 // Code analysis
 const codeAnalysis = await analyzeCodeWithReasoning({
     code: "function fibonacci(n) { return n <= 1 ? n : fibonacci(n-1) + fibonacci(n-2); }",
     language: "javascript",
-    question: "What are the performance implications and how can this be optimized?"
+    question: "What are the performance implications and how can this be optimized?",
+    reasoningModel: "deepseek"
 });
 ```
 
@@ -193,10 +198,10 @@ const health = await checkApiHealth({
 // 1. Check system status
 const status = await getSystemStatus({ checkApis: true });
 
-// 2. Generate content with reasoning
+// 2. Generate content with reasoning (requires authentication)
 const reasoning = await deepReasoning({
     prompt: "Create a story about AI and human collaboration",
-    reasoningModel: "deepseek-r1"
+    reasoningModel: "deepseek"
 });
 
 // 3. Generate supporting image
@@ -245,6 +250,50 @@ await startMcpServer();
 ### Environment Variables
 - `POLLINATIONS_API_KEY`: Optional API key for enhanced rate limits
 - `POLLINATIONS_BASE_URL`: Custom API base URL (default: https://gen.pollinations.ai)
+
+---
+
+## 🔐 Authentication Setup
+
+### GitHub OAuth Authentication
+The reasoning service requires authentication to access the gen.pollinations.ai endpoint. The MCP server includes a complete OAuth flow with PKCE security.
+
+### Authentication Process
+1. **Start Authentication**: Use the `startAuth` tool to initiate the GitHub OAuth flow
+2. **Complete OAuth**: Visit the provided auth URL and authorize with GitHub
+3. **Exchange Token**: Use the `exchangeToken` tool with the authorization code
+4. **Access Granted**: The server will store your access token for authenticated requests
+
+### Authentication Tools
+- `startAuth`: Initiates GitHub OAuth flow with PKCE security
+- `exchangeToken`: Exchanges authorization code for access token
+- `refreshToken`: Refreshes expired access tokens
+- `getDomains`: Gets allowlisted domains for authenticated user
+- `updateDomains`: Updates allowlisted domains
+
+### Example Authentication Flow
+```javascript
+// 1. Start authentication
+const authStart = await startAuth();
+// Visit authStart.authUrl in your browser
+
+// 2. After authorization, exchange the code
+const tokens = await exchangeToken({
+    code: "authorization_code_from_callback",
+    codeVerifier: authStart.codeVerifier
+});
+
+// 3. Now you can use reasoning tools with authentication
+const reasoning = await deepReasoning({
+    prompt: "Analyze the ethical implications of AI consciousness",
+    reasoningModel: "deepseek"
+});
+```
+
+### Security Notes
+- PKCE (Proof Key for Code Exchange) is used for enhanced security
+- Access tokens are stored in-memory (production deployments should use secure storage)
+- Tokens automatically refresh before expiration
 
 ---
 

@@ -87,7 +87,7 @@ async function _generateReasoningInternal(prompt, reasoningPrompt, options = {})
             model: reasoningModel,
             max_tokens: maxReasoningTokens,
             temperature: 0.3,
-            json: json ? "true" : undefined
+            json: undefined // Always use plain text for reasoning step
         });
 
         // Fetch the actual reasoning text from the API

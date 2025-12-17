@@ -115,17 +115,17 @@ const TierScreen: FC<{
             </div>
 
             {isCanceled ? (
-                <div className="px-3 py-2 bg-yellow-50 border border-yellow-200 rounded-lg">
-                    <p className="text-sm text-yellow-900 leading-relaxed">
-                        ⏳ <strong>Reactivating Subscription:</strong> Your
-                        subscription is being renewed automatically. Please
-                        refresh the page in 1-2 minutes.
+                <div className="px-3 py-2 bg-blue-50 border border-blue-200 rounded-lg">
+                    <p className="text-sm text-blue-900 leading-relaxed">
+                        🔄 Cancellation pending – but don't worry, you'll be
+                        automatically resubscribed to keep your {daily_pollen}{" "}
+                        daily pollen.
                     </p>
                 </div>
             ) : (
                 <div className="px-3 py-2 bg-green-50 border border-green-200 rounded-lg">
                     <p className="text-sm text-green-900 leading-relaxed">
-                        ✓ Your subscription is active and will earn you{" "}
+                        ✓ Your subscription is active and earns you{" "}
                         {daily_pollen} pollen daily. Unused pollen does not
                         carry over.
                     </p>

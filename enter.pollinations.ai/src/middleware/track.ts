@@ -53,6 +53,7 @@ import {
 import type { LoggerVariables } from "./logger.ts";
 import type { ErrorVariables } from "@/env.ts";
 import type { FrontendKeyRateLimitVariables } from "./rate-limit-durable.ts";
+import type { PendingSpendVariables } from "@/middleware/pending-spend.ts";
 import { getLogger } from "@logtape/logtape";
 
 export type ModelUsage = {
@@ -98,7 +99,8 @@ export type TrackEnv = {
         PolarVariables &
         FrontendKeyRateLimitVariables &
         TrackVariables &
-        ModelVariables;
+        ModelVariables &
+        PendingSpendVariables;
 };
 
 export const track = (eventType: EventType) =>
@@ -120,7 +122,26 @@ export const track = (eventType: EventType) =>
             },
         });
 
-        await next();
+        try {
+            await next();
+        } catch (error) {
+            // Release pending spend reservation if request fails
+            if (c.var.pendingSpend) {
+                try {
+                    await c.var.pendingSpend.releaseReservation();
+                    log.debug(
+                        "Released pending spend reservation {id} due to request error",
+                        { id: c.var.pendingSpend.reservationId }
+                    );
+                } catch (releaseError) {
+                    log.error(
+                        "Failed to release pending spend reservation {id} after error: {error}",
+                        { id: c.var.pendingSpend.reservationId, error: releaseError }
+                    );
+                }
+            }
+            throw error;
+        }
 
         const endTime = new Date();
 
@@ -190,6 +211,33 @@ export const track = (eventType: EventType) =>
                 );
                 const db = drizzle(c.env.DB);
                 await storeEvents(db, c.var.log, [event]);
+
+                // Handle pending spend reservation confirmation/release
+                if (c.var.pendingSpend) {
+                    const actualCost = responseTracking.price?.totalPrice || 0;
+                    try {
+                        if (actualCost > 0) {
+                            // Confirm the reservation with actual cost
+                            await c.var.pendingSpend.confirmSpend(actualCost);
+                            log.debug(
+                                "Confirmed pending spend reservation {id} with actual cost {cost}",
+                                { id: c.var.pendingSpend.reservationId, cost: actualCost }
+                            );
+                        } else {
+                            // Release reservation if no cost (free request)
+                            await c.var.pendingSpend.releaseReservation();
+                            log.debug(
+                                "Released pending spend reservation {id} (no cost)",
+                                { id: c.var.pendingSpend.reservationId }
+                            );
+                        }
+                    } catch (error) {
+                        log.error(
+                            "Failed to handle pending spend reservation {id}: {error}",
+                            { id: c.var.pendingSpend.reservationId, error }
+                        );
+                    }
+                }
 
                 // process events immediately in development/testing
                 if (

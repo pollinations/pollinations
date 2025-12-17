@@ -6,6 +6,7 @@ import { polar, PolarVariables } from "@/middleware/polar.ts";
 import type { Env } from "../env.ts";
 import { track, type TrackEnv } from "@/middleware/track.ts";
 import { resolveModel } from "@/middleware/model.ts";
+import { pendingSpend, type PendingSpendVariables, type PendingSpendEnv } from "@/middleware/pending-spend.ts";
 import { frontendKeyRateLimit } from "@/middleware/rate-limit-durable.ts";
 import { imageCache } from "@/middleware/image-cache.ts";
 import { edgeRateLimit } from "@/middleware/rate-limit-edge.ts";
@@ -35,12 +36,13 @@ import {
 } from "@shared/registry/model-info.ts";
 import { createFactory } from "hono/factory";
 
-const factory = createFactory<Env>();
+const factory = createFactory<Env & TrackEnv & PendingSpendEnv>();
 
 // Shared handler for OpenAI-compatible chat completions
 const chatCompletionHandlers = factory.createHandlers(
     validator("json", CreateChatCompletionRequestSchema),
     resolveModel("generate.text"),
+    pendingSpend,
     track("generate.text"),
     async (c) => {
         const log = c.get("log").getChild("generate");
@@ -298,6 +300,7 @@ export const proxyRoutes = new Hono<Env>()
         ),
         validator("query", GenerateTextRequestQueryParamsSchema),
         resolveModel("generate.text"),
+        pendingSpend,
         track("generate.text"),
         async (c) => {
             const log = c.get("log").getChild("generate");
@@ -412,6 +415,7 @@ export const proxyRoutes = new Hono<Env>()
         ),
         validator("query", GenerateImageRequestQueryParamsSchema),
         resolveModel("generate.image"),
+        pendingSpend,
         track("generate.image"),
         async (c) => {
             const log = c.get("log").getChild("generate");
@@ -553,8 +557,16 @@ export function contentFilterResultsToHeaders(
     ) as Record<string, string>;
 }
 
-async function checkBalance({ auth, polar }: AuthVariables & PolarVariables) {
+async function checkBalance({ auth, polar, pendingSpend }: AuthVariables & PolarVariables & PendingSpendVariables) {
     if (auth.user?.id) {
+        // If we have a pending spend reservation, we can skip the balance check
+        // because the reservation was already made atomically in the pendingSpend middleware
+        if (pendingSpend) {
+            // The reservation was already successful, so we know the user has sufficient balance
+            return;
+        }
+        
+        // Fallback to traditional balance check if no reservation exists
         await polar.requirePositiveBalance(
             auth.user.id,
             "Insufficient pollen balance to use this model",

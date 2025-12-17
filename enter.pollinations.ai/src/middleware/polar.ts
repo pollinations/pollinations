@@ -11,6 +11,7 @@ import { getPendingSpend } from "@/events.ts";
 import { drizzle } from "drizzle-orm/d1";
 import { event } from "@/db/schema/event.ts";
 import { and, eq, gte, sql } from "drizzle-orm";
+import { PendingSpendReservation } from "@/durable-objects/PendingSpendReservation.ts";
 
 type BalanceCheckResult = {
     selectedMeterId: string;
@@ -90,7 +91,13 @@ export const polar = createMiddleware<PolarEnv>(async (c, next) => {
         const customerMeters = await getCustomerMeters(userId);
         const activeMeters = getSimplifiedMatchingMeters(customerMeters);
         const sortedMeters = sortMetersByDescendingPriority(activeMeters);
-        const pendingSpend = await getPendingSpend(drizzle(c.env.DB), userId);
+        
+        // Get pending spend from Durable Object reservation system
+        const id = c.env.PENDING_SPEND_RESERVATION.idFromName(userId);
+        const stub = c.env.PENDING_SPEND_RESERVATION.get(
+            id,
+        ) as DurableObjectStub<PendingSpendReservation>;
+        const pendingSpend = await stub.getPendingSpend();
 
         const { adjustedMeters } = sortedMeters.reduce(
             (acc, meter) => {
@@ -107,6 +114,8 @@ export const polar = createMiddleware<PolarEnv>(async (c, next) => {
                 adjustedMeters: [] as typeof sortedMeters,
             },
         );
+
+        return adjustedMeters;
     };
 
     const requirePositiveBalance = async (userId: string, message?: string) => {
@@ -114,11 +123,15 @@ export const polar = createMiddleware<PolarEnv>(async (c, next) => {
         const activeMeters = getSimplifiedMatchingMeters(customerMeters);
         const sortedMeters = sortMetersByDescendingPriority(activeMeters);
 
-        // Get recent local spend to account for Polar processing delay
-        const pendingSpend = await getPendingSpend(drizzle(c.env.DB), userId);
+        // Get pending spend from Durable Object reservation system
+        const id = c.env.PENDING_SPEND_RESERVATION.idFromName(userId);
+        const stub = c.env.PENDING_SPEND_RESERVATION.get(
+            id,
+        ) as DurableObjectStub<PendingSpendReservation>;
+        const pendingSpend = await stub.getPendingSpend();
 
         if (pendingSpend > 0) {
-            log.debug("Pending spend from D1: {pendingSpend}", {
+            log.debug("Pending spend from reservations: {pendingSpend}", {
                 pendingSpend,
             });
         }

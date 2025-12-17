@@ -21,8 +21,6 @@ export const Pricing: FC = () => {
                     rel="noopener noreferrer"
                     color="amber"
                     weight="light"
-                    size="small"
-                    className="self-start sm:self-center"
                 >
                     🤖 Vote on next models
                 </Button>
@@ -34,8 +32,8 @@ export const Pricing: FC = () => {
 
                 <div className="pt-4 space-y-3">
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
-                        <div className="bg-white/50 rounded-lg p-3 border border-amber-200">
-                            <div className="font-medium text-gray-900 mb-2">
+                        <div className="bg-white/50 rounded-lg p-4 border border-amber-200">
+                            <div className="text-xs font-semibold text-amber-800 uppercase tracking-wide mb-2">
                                 Model Capabilities
                             </div>
                             <div className="space-y-1 text-gray-600">
@@ -45,8 +43,8 @@ export const Pricing: FC = () => {
                                 <div>🔍 search</div>
                             </div>
                         </div>
-                        <div className="bg-white/50 rounded-lg p-3 border border-amber-200">
-                            <div className="font-medium text-gray-900 mb-2">
+                        <div className="bg-white/50 rounded-lg p-4 border border-amber-200">
+                            <div className="text-xs font-semibold text-amber-800 uppercase tracking-wide mb-2">
                                 Pricing Metrics
                             </div>
                             <div className="space-y-1 text-gray-600">
@@ -64,8 +62,8 @@ export const Pricing: FC = () => {
                                 </div>
                             </div>
                         </div>
-                        <div className="bg-white/50 rounded-lg p-3 border border-amber-200">
-                            <div className="font-medium text-gray-900 mb-2">
+                        <div className="bg-white/50 rounded-lg p-4 border border-amber-200">
+                            <div className="text-xs font-semibold text-amber-800 uppercase tracking-wide mb-2">
                                 Token Types
                             </div>
                             <div className="space-y-1 text-gray-600">
@@ -77,11 +75,12 @@ export const Pricing: FC = () => {
                             </div>
                         </div>
                     </div>
-                    <p className="text-xs text-gray-600">
+                    <div className="bg-amber-100/50 rounded-lg px-3 py-2 text-xs text-amber-800">
                         <span className="font-semibold">* 1 pollen ≈</span>{" "}
-                        estimates for typical usage, actual costs vary with
-                        prompt length and output
-                    </p>
+                        based on average community usage over the last 7 days.
+                        Actual costs vary with modality, prompt length, and
+                        output.
+                    </div>
                 </div>
 
                 <div className="bg-gradient-to-r from-amber-100 to-orange-100 rounded-xl p-4 border border-amber-300 text-center">

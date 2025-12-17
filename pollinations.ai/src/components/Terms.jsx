@@ -238,7 +238,7 @@ const Terms = () => {
                     </a>
                     {" • "}
                     <a
-                        href="https://discord.gg/k9F7SyTgqn"
+                        href="https://discord.gg/pollinations-ai-885844321461485618"
                         target="_blank"
                         rel="noopener noreferrer"
                     >

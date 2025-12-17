@@ -58,7 +58,7 @@ Here's how to get upgraded:
 
 We're automating this process so that **anyone who contributes an open-source project or PR to Pollinations automatically gets Flower tier**. Thanks for being part of the community! ✨
 
-If you have any questions, feel free to ask here or join us on [Discord](https://discord.gg/pollinations).
+If you have any questions, feel free to ask here or join us on [Discord](https://discord.gg/pollinations-ai-885844321461485618).
 ```
 
 ---

@@ -11,7 +11,7 @@ If you’ve spotted a security vulnerability anywhere in our code, APIs, or infr
 1. **Reach Out Privately**  
    Please **don’t** make a public GitHub issue, comment, or post in discussions about vulnerabilities! Instead, reach out to us in one of these ways:
    - Email us at [hello@pollinations.ai](mailto:hello@pollinations.ai)
-   - Or DM a maintainer directly on [Discord](https://discord.gg/hABHnV4CUG).
+   - Or DM a maintainer directly on [Discord](https://discord.gg/pollinations-ai-885844321461485618).
    
 2. **What to Include**  
    The more detail you can provide, the faster we can fix things. Here’s what helps us:

@@ -5,6 +5,7 @@
 
 import type { Logger } from "@logtape/logtape";
 
+// Public read-only token - only allows access to aggregated public statistics
 const TINYBIRD_URL =
     "https://api.europe-west2.gcp.tinybird.co/v0/pipes/public_model_stats.json?token=p.eyJ1IjogImFjYTYzZjc5LThjNTYtNDhlNC05NWJjLWEyYmFjMTY0NmJkMyIsICJpZCI6ICJiYzdkOTY4YS0wZmM1LTRmY2MtYWViNi0zZDQ0MWIwMGFlZjQiLCAiaG9zdCI6ICJnY3AtZXVyb3BlLXdlc3QyIn0.fhyEk0_6wt5a2RnM5tu4n_6nUfFdgN_YBMxg8VPv-Dw";
 
@@ -60,16 +61,11 @@ export async function getModelStats(
 
 /**
  * Get estimated cost for a model based on historical average.
- * Falls back to a default estimate if no stats available.
+ * Returns 0 if no stats available - event will still be inserted and updated with actual cost.
  */
 export function getEstimatedCost(
     modelStats: Map<string, ModelStat>,
     model: string,
-    defaultEstimate = 0.001, // Default to 0.1 cents if no data
 ): number {
-    const stat = modelStats.get(model);
-    if (stat?.avg_cost_usd) {
-        return stat.avg_cost_usd;
-    }
-    return defaultEstimate;
+    return modelStats.get(model)?.avg_cost_usd ?? 0;
 }

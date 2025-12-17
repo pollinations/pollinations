@@ -4,7 +4,7 @@ import { CloseIcon } from "../../assets/CloseIcon";
 import type { Model } from "../../../hooks/useModelList";
 
 import { PLAY_PAGE } from "../../../theme";
-import { API_KEY } from "../../../api.config";
+import { API_BASE, getAuthHeaders } from "../../../api.config";
 
 interface PlayGeneratorProps {
     selectedModel: string;
@@ -85,13 +85,11 @@ export function PlayGenerator({
                 });
 
                 const response = await fetch(
-                    `https://enter.pollinations.ai/api/generate/image/${encodeURIComponent(
+                    `${API_BASE}/generate/image/${encodeURIComponent(
                         prompt
                     )}?${params}`,
                     {
-                        headers: {
-                            Authorization: `Bearer ${API_KEY}`,
-                        },
+                        headers: getAuthHeaders(),
                     }
                 );
 
@@ -135,13 +133,10 @@ export function PlayGenerator({
                         : prompt;
 
                 const response = await fetch(
-                    "https://enter.pollinations.ai/api/generate/v1/chat/completions",
+                    `${API_BASE}/generate/v1/chat/completions`,
                     {
                         method: "POST",
-                        headers: {
-                            "Content-Type": "application/json",
-                            Authorization: `Bearer ${API_KEY}`,
-                        },
+                        headers: getAuthHeaders("application/json"),
                         body: JSON.stringify({
                             model: selectedModel,
                             messages: [

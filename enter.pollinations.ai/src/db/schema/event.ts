@@ -153,8 +153,8 @@ export const event = sqliteTable(
         // Totals
         totalCost: real("total_cost").notNull(),
         totalPrice: real("total_price").notNull(),
-        // Estimated cost for in-flight requests (pending_estimate status)
-        estimatedCost: real("estimated_cost"),
+        // Estimated price for in-flight requests (pending_estimate status)
+        estimatedPrice: real("estimated_price"),
 
         // Prompt Moderation
         moderationPromptHateSeverity: text("moderation_prompt_hate_severity"),

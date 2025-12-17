@@ -105,7 +105,7 @@ export const polarRoutes = new Hono<Env>()
                 .select({
                     total: sql<number>`COALESCE(SUM(
                         CASE 
-                            WHEN ${event.eventStatus} = 'pending_estimate' THEN ${event.estimatedCost}
+                            WHEN ${event.eventStatus} = 'pending_estimate' THEN ${event.estimatedPrice}
                             WHEN ${event.isBilledUsage} = 1 THEN ${event.totalPrice}
                             ELSE 0
                         END

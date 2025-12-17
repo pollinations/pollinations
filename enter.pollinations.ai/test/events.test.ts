@@ -100,7 +100,7 @@ function createTextGenerationEvent({
         modelUsed,
         modelProviderUsed: "azure-openai",
         isBilledUsage: true,
-        estimatedCost: undefined,
+        estimatedPrice: undefined,
 
         ...priceToEventParams(priceDefinition),
         ...usageToEventParams(usage),
@@ -367,7 +367,7 @@ test("pending_estimate events are excluded from Polar and Tinybird delivery", as
             modelRequested: "openai-large",
         });
         e.eventStatus = "pending_estimate";
-        e.estimatedCost = 0.001;
+        e.estimatedPrice = 0.001;
         e.totalPrice = 0;
         e.totalCost = 0;
         return e;

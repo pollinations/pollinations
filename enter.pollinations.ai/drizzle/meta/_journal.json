@@ -64,6 +64,13 @@
       "when": 1765917126949,
       "tag": "0008_dusty_pestilence",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "6",
+      "when": 1765971304206,
+      "tag": "0009_wise_rogue",
+      "breakpoints": true
     }
   ]
 }

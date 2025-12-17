@@ -1,5 +1,5 @@
 import { processEvents, storeEvents, updateEvent } from "@/events.ts";
-import { getModelStats, getEstimatedCost } from "@/utils/model-stats.ts";
+import { getModelStats, getEstimatedPrice } from "@/utils/model-stats.ts";
 import {
     getActivePriceDefinition,
     calculateCost,
@@ -130,9 +130,9 @@ export const track = (eventType: EventType) =>
 
         if (userId) {
             try {
-                // Get estimated cost from historical model stats
+                // Get estimated price from historical model stats
                 const modelStats = await getModelStats(c.env.KV, log);
-                const estimatedCost = getEstimatedCost(
+                const estimatedPrice = getEstimatedPrice(
                     modelStats,
                     requestTracking.resolvedModelRequested,
                 );
@@ -161,8 +161,9 @@ export const track = (eventType: EventType) =>
                         requestTracking.resolvedModelRequested,
                     modelProviderUsed: requestTracking.modelProvider,
                     isBilledUsage: false, // Unknown until request completes
-                    estimatedCost,
-                    // totalCost and totalPrice left undefined - will be set when request completes
+                    estimatedPrice,
+                    totalCost: 0, // Will be set when request completes
+                    totalPrice: 0, // Will be set when request completes
                     ...priceToEventParams(requestTracking.modelPriceDefinition),
                     ...usageToEventParams(undefined),
                     ...requestTracking.referrerData,
@@ -172,7 +173,7 @@ export const track = (eventType: EventType) =>
                 pendingEventInserted = true;
                 log.trace("Inserted pending_estimate event: {eventId}", {
                     eventId,
-                    estimatedCost,
+                    estimatedPrice,
                 });
             } catch (e) {
                 log.error("Failed to insert pending_estimate event: {e}", {
@@ -233,7 +234,7 @@ export const track = (eventType: EventType) =>
                         responseTime: endTime.getTime() - startTime.getTime(),
                         responseStatus: responseTracking.responseStatus,
                         isBilledUsage: responseTracking.isBilledUsage,
-                        estimatedCost: null, // Clear estimate
+                        estimatedPrice: null, // Clear estimate
                         totalCost: responseTracking.cost?.totalCost || 0,
                         totalPrice: responseTracking.price?.totalPrice || 0,
                         modelUsed: responseTracking.modelUsed,

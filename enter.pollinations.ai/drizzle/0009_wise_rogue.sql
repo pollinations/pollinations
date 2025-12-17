@@ -1,0 +1,1 @@
+ALTER TABLE `event` RENAME COLUMN "estimated_cost" TO "estimated_price";

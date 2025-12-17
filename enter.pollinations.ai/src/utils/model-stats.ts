@@ -15,7 +15,7 @@ const CACHE_TTL = 3600; // 1 hour in seconds
 export type ModelStat = {
     model: string;
     request_count: number;
-    avg_cost_usd: number;
+    avg_price_usd: number;
 };
 
 export type ModelStatsResponse = {
@@ -60,12 +60,12 @@ export async function getModelStats(
 }
 
 /**
- * Get estimated cost for a model based on historical average.
- * Returns 0 if no stats available - event will still be inserted and updated with actual cost.
+ * Get estimated price for a model based on historical average.
+ * Returns 0 if no stats available - event will still be inserted and updated with actual price.
  */
-export function getEstimatedCost(
+export function getEstimatedPrice(
     modelStats: Map<string, ModelStat>,
     model: string,
 ): number {
-    return modelStats.get(model)?.avg_cost_usd ?? 0;
+    return modelStats.get(model)?.avg_price_usd ?? 0;
 }

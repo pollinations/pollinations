@@ -1,40 +1,11 @@
 import { getLogger } from "@logtape/logtape";
 import type { Polar } from "@polar-sh/sdk";
 import { exponentialBackoffDelay } from "./util.ts";
+import type { TierName, TierProductMap } from "./tier-products.ts";
 
 const log = getLogger(["hono", "tier-sync"]);
 
 const MAX_ATTEMPTS = 3;
-
-export type TierName = "spore" | "seed" | "flower" | "nectar" | "router";
-
-export interface TierProductMap {
-    spore: string;
-    seed: string;
-    flower: string;
-    nectar: string;
-    router: string;
-}
-
-export function getTierProductMap(env: {
-    POLAR_PRODUCT_TIER_SPORE?: string;
-    POLAR_PRODUCT_TIER_SEED?: string;
-    POLAR_PRODUCT_TIER_FLOWER?: string;
-    POLAR_PRODUCT_TIER_NECTAR?: string;
-    POLAR_PRODUCT_TIER_ROUTER?: string;
-}): TierProductMap {
-    return {
-        spore: env.POLAR_PRODUCT_TIER_SPORE || "",
-        seed: env.POLAR_PRODUCT_TIER_SEED || "",
-        flower: env.POLAR_PRODUCT_TIER_FLOWER || "",
-        nectar: env.POLAR_PRODUCT_TIER_NECTAR || "",
-        router: env.POLAR_PRODUCT_TIER_ROUTER || "",
-    };
-}
-
-export function isValidTier(tier: string): tier is TierName {
-    return ["spore", "seed", "flower", "nectar", "router"].includes(tier);
-}
 
 /**
  * Sync a user's Polar subscription to match their D1 tier.

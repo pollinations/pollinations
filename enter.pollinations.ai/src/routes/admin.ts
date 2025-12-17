@@ -6,12 +6,12 @@ import { eq } from "drizzle-orm";
 import { Polar } from "@polar-sh/sdk";
 import type { Env } from "../env.ts";
 import { user as userTable } from "../db/schema/better-auth.ts";
+import { syncUserTier } from "../tier-sync.ts";
 import {
     isValidTier,
-    syncUserTier,
-    getTierProductMap,
+    getTierProductMapCached,
     type TierName,
-} from "../tier-sync.ts";
+} from "../tier-products.ts";
 
 const log = getLogger(["hono", "admin"]);
 
@@ -81,7 +81,7 @@ export const adminRoutes = new Hono<Env>()
                 c.env.POLAR_SERVER === "production" ? "production" : "sandbox",
         });
 
-        const productMap = getTierProductMap(c.env);
+        const productMap = await getTierProductMapCached(polar);
 
         // Sync tier directly with retry logic
         const result = await syncUserTier(

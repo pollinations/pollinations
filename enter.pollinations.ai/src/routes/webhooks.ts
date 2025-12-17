@@ -6,12 +6,12 @@ import { eq } from "drizzle-orm";
 import { Polar } from "@polar-sh/sdk";
 import type { Env } from "../env.ts";
 import { user as userTable } from "../db/schema/better-auth.ts";
+import { syncUserTier } from "../tier-sync.ts";
 import {
-    syncUserTier,
-    getTierProductMap,
     isValidTier,
+    getTierProductMapCached,
     type TierName,
-} from "../tier-sync.ts";
+} from "../tier-products.ts";
 
 const log = getLogger(["hono", "webhooks"]);
 
@@ -207,7 +207,7 @@ async function handleSubscriptionCanceled(
         server: env.POLAR_SERVER === "production" ? "production" : "sandbox",
     });
 
-    const productMap = getTierProductMap(env);
+    const productMap = await getTierProductMapCached(polar);
     const result = await syncUserTier(
         polar,
         externalId,

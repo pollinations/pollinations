@@ -13,9 +13,13 @@ import { user as userTable } from "../db/schema/better-auth.ts";
 import { syncUserTier } from "../tier-sync.ts";
 import {
     isValidTier,
-    createTierProductMapCached,
+    getTierProductMapCached,
     type TierName,
-} from "./polar.ts";
+} from "@/utils/polar.ts";
+import { WebhookSubscriptionRevokedPayload } from "@polar-sh/sdk/models/components/webhooksubscriptionrevokedpayload.js";
+import { WebhookSubscriptionCanceledPayload } from "@polar-sh/sdk/models/components/webhooksubscriptioncanceledpayload.js";
+import { WebhookSubscriptionUpdatedPayload } from "@polar-sh/sdk/models/components/webhooksubscriptionupdatedpayload.js";
+import { WebhookSubscriptionCreatedPayload } from "@polar-sh/sdk/models/components/webhooksubscriptioncreatedpayload.js";
 
 const log = getLogger(["hono", "webhooks"]);
 
@@ -30,10 +34,29 @@ export const webhooksRoutes = new Hono<Env>().post("/polar", async (c) => {
     const rawBody = await c.req.text();
     const headers = Object.fromEntries(c.req.raw.headers.entries());
 
-    let payload: WebhookPayload;
     try {
-        const event = validateEvent(rawBody, headers, webhookSecret);
-        payload = event as unknown as WebhookPayload;
+        const payload = validateEvent(rawBody, headers, webhookSecret);
+        log.info("Received Polar webhook: {type}", { type: payload.type });
+
+        switch (payload.type) {
+            case "subscription.canceled":
+            case "subscription.revoked":
+                await handleSubscriptionCanceled(c.env, payload);
+                break;
+
+            case "subscription.updated":
+                await handleSubscriptionUpdated(payload);
+                break;
+
+            case "subscription.created":
+                await handleSubscriptionCreated(payload);
+                break;
+
+            default:
+                log.debug("Unhandled webhook type: {type}", {
+                    type: payload.type,
+                });
+        }
     } catch (error) {
         if (error instanceof WebhookVerificationError) {
             log.warn("Invalid webhook signature: {error}", {
@@ -45,56 +68,20 @@ export const webhooksRoutes = new Hono<Env>().post("/polar", async (c) => {
         throw new HTTPException(400, { message: "Invalid payload" });
     }
 
-    log.info("Received Polar webhook: {type}", { type: payload.type });
-
-    switch (payload.type) {
-        case "subscription.canceled":
-        case "subscription.revoked":
-            await handleSubscriptionCanceled(c.env, payload);
-            break;
-
-        case "subscription.updated":
-            await handleSubscriptionUpdated(payload);
-            break;
-
-        case "subscription.created":
-            await handleSubscriptionCreated(payload);
-            break;
-
-        default:
-            log.debug("Unhandled webhook type: {type}", { type: payload.type });
-    }
-
     return c.json({ received: true });
 });
 
-interface WebhookPayload {
-    type: string;
-    data: {
-        id: string;
-        customer_id: string;
-        product_id: string;
-        status: string;
-        customer?: {
-            id: string;
-            external_id?: string;
-            email?: string;
-        };
-        product?: {
-            id: string;
-            name?: string;
-            metadata?: Record<string, unknown>;
-        };
-    };
-}
-
 async function handleSubscriptionCanceled(
     env: Cloudflare.Env,
-    payload: WebhookPayload,
+    event:
+        | WebhookSubscriptionCanceledPayload
+        | WebhookSubscriptionRevokedPayload,
 ): Promise<void> {
-    const externalId = payload.data.customer?.external_id;
+    const externalId = event.data.customer.externalId;
     if (!externalId) {
-        log.warn("Subscription canceled but no external_id found");
+        log.warn(
+            "Received subscription canceled webhook without external customer id",
+        );
         return;
     }
 
@@ -137,8 +124,7 @@ async function handleSubscriptionCanceled(
         server: env.POLAR_SERVER === "production" ? "production" : "sandbox",
     });
 
-    const getTierProductMap = createTierProductMapCached(env.KV);
-    const productMap = await getTierProductMap(polar);
+    const productMap = await getTierProductMapCached(polar, env.KV);
     const result = await syncUserTier(
         polar,
         externalId,
@@ -166,10 +152,13 @@ async function handleSubscriptionCanceled(
 }
 
 async function handleSubscriptionUpdated(
-    payload: WebhookPayload,
+    payload: WebhookSubscriptionUpdatedPayload,
 ): Promise<void> {
-    const externalId = payload.data.customer?.external_id;
+    const externalId = payload.data.customer.externalId;
     if (!externalId) {
+        log.warn(
+            "Received subscription.updated webhook without external customer id",
+        );
         return;
     }
 
@@ -179,10 +168,13 @@ async function handleSubscriptionUpdated(
 }
 
 async function handleSubscriptionCreated(
-    payload: WebhookPayload,
+    payload: WebhookSubscriptionCreatedPayload,
 ): Promise<void> {
-    const externalId = payload.data.customer?.external_id;
+    const externalId = payload.data.customer.externalId;
     if (!externalId) {
+        log.warn(
+            "Received subscription.created webhook without external customer id",
+        );
         return;
     }
 

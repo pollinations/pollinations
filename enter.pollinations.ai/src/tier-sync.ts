@@ -1,7 +1,11 @@
 import { getLogger } from "@logtape/logtape";
 import type { Polar } from "@polar-sh/sdk";
 import { exponentialBackoffDelay } from "./util.ts";
-import type { TierName, TierProductMap } from "./routes/polar.ts";
+import {
+    TierName,
+    TierProductMap,
+    tierProductSlugFromName,
+} from "@/utils/polar.ts";
 
 const log = getLogger(["hono", "tier-sync"]);
 
@@ -17,7 +21,8 @@ export async function syncUserTier(
     targetTier: TierName,
     productMap: TierProductMap,
 ): Promise<{ success: boolean; error?: string; attempts: number }> {
-    const targetProductId = productMap[targetTier];
+    const targetTierSlug = tierProductSlugFromName(targetTier);
+    const targetProductId = productMap[targetTierSlug].id;
     if (!targetProductId) {
         return {
             success: false,

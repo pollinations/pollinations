@@ -8,7 +8,8 @@ import {
 } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { APIError } from "better-auth/api";
-import { admin, apiKey, openAPI } from "better-auth/plugins";
+import { admin, openAPI } from "better-auth/plugins";
+import { apiKeyExtended } from "./plugins/api-key-extended.ts";
 import { drizzle } from "drizzle-orm/d1";
 import * as betterAuthSchema from "./db/schema/better-auth.ts";
 
@@ -25,7 +26,7 @@ export function createAuth(env: Cloudflare.Env) {
     const PUBLISHABLE_KEY_PREFIX = "pk";
     const SECRET_KEY_PREFIX = "sk";
 
-    const apiKeyPlugin = apiKey({
+    const apiKeyPlugin = apiKeyExtended({
         enableMetadata: true,
         defaultPrefix: PUBLISHABLE_KEY_PREFIX,
         defaultKeyLength: 16, // Minimum key length for validation (matches custom generator)

@@ -135,14 +135,16 @@ function RouteComponent() {
             formState.allowedModels !== null &&
             formState.allowedModels !== undefined
         ) {
+            // Use our extended better-auth endpoint that allows permissions from HTTP
             const updateResponse = await fetch(
-                `/api/api-keys/${apiKey.id}/update`,
+                "/api/auth/api-key/update-permissions",
                 {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     credentials: "include",
                     body: JSON.stringify({
-                        allowedModels: formState.allowedModels,
+                        keyId: apiKey.id,
+                        permissions: { models: formState.allowedModels },
                     }),
                 },
             );

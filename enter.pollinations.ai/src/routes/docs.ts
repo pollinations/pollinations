@@ -22,8 +22,6 @@ function transformOpenAPISchema(
     return {
         ...schema,
         paths: newPaths,
-        // Scalar extension: group tags to prevent "Authentication" grouping
-        "x-tagGroups": [{ name: "API", tags: ["gen.pollinations.ai"] }],
     };
 }
 

@@ -11,7 +11,7 @@ import {
     isValidTier,
     getTierProductMapCached,
     type TierName,
-} from "../tier-products.ts";
+} from "./polar.ts";
 
 const log = getLogger(["hono", "webhooks"]);
 

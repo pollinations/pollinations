@@ -17,6 +17,53 @@ export const productSlugs = [
     "v1:product:pack:20x2",
     "v1:product:pack:50x2",
 ] as const;
+
+export const tierSlugs = [
+    "v1:product:tier:spore",
+    "v1:product:tier:seed",
+    "v1:product:tier:flower",
+    "v1:product:tier:nectar",
+    "v1:product:tier:router",
+] as const;
+
+export type TierName = "spore" | "seed" | "flower" | "nectar" | "router";
+
+export interface TierProductMap {
+    spore: string;
+    seed: string;
+    flower: string;
+    nectar: string;
+    router: string;
+}
+
+export function isValidTier(tier: string): tier is TierName {
+    return ["spore", "seed", "flower", "nectar", "router"].includes(tier);
+}
+
+let cachedTierProducts: TierProductMap | null = null;
+let tierCacheTime = 0;
+const TIER_CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+
+export async function getTierProductMapCached(
+    polar: Polar,
+): Promise<TierProductMap> {
+    if (cachedTierProducts && Date.now() - tierCacheTime < TIER_CACHE_TTL) {
+        return cachedTierProducts;
+    }
+    const result = await polar.products.list({
+        limit: 100,
+        metadata: { slug: [...tierSlugs] },
+    });
+    const map: Partial<TierProductMap> = {};
+    for (const product of result.result.items) {
+        const slug = product.metadata?.slug as string;
+        const match = slug?.match(/^v1:product:tier:(\w+)$/);
+        if (match) map[match[1] as TierName] = product.id;
+    }
+    cachedTierProducts = map as TierProductMap;
+    tierCacheTime = Date.now();
+    return cachedTierProducts;
+}
 type ProductSlug = z.infer<typeof productParamSchema>;
 const productParamSchema = z.enum(productSlugs.map(productSlugToUrlParam));
 

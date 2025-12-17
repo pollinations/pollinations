@@ -9,3 +9,13 @@ custom_domain = true
 [assets]
 directory = "dist"
 not_found_handling = "single-page-application"
+
+# API Proxy Worker - routes /api/* to enter.pollinations.ai with secret key
+# The POLLINATIONS_API_KEY secret must be set in Cloudflare dashboard
+[[workers]]
+name = "api-proxy"
+main = "workers/api-proxy.ts"
+
+[[workers.routes]]
+pattern = "hello.pollinations.ai/api/*"
+zone_name = "pollinations.ai"

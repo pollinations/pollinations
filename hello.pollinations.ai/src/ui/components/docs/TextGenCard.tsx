@@ -2,7 +2,14 @@ import { useState, useEffect } from "react";
 import { Heading, Label } from "../ui/typography";
 import { Button } from "../ui/button";
 import { DOCS_PAGE } from "../../../theme";
-import { API_KEY } from "../../../api.config";
+import { API_KEY, IS_CLOUDFLARE } from "../../../api.config";
+
+const API_BASE = IS_CLOUDFLARE ? "/api" : "https://enter.pollinations.ai/api";
+
+function getAuthHeaders(): Record<string, string> {
+    if (IS_CLOUDFLARE) return {};
+    return { Authorization: `Bearer ${API_KEY}` };
+}
 
 /**
  * Text Generation Card Component
@@ -24,7 +31,7 @@ export function TextGenCard() {
 
     const buildUrl = () => {
         // For display only - show what the equivalent GET URL would look like
-        let url = `https://enter.pollinations.ai/api/generate/text/${encodeURIComponent(
+        let url = `${API_BASE}/generate/text/${encodeURIComponent(
             selectedPrompt
         )}`;
         const params = [];
@@ -38,7 +45,7 @@ export function TextGenCard() {
 
     useEffect(() => {
         const buildTextUrl = () => {
-            let url = `https://enter.pollinations.ai/api/generate/text/${encodeURIComponent(
+            let url = `${API_BASE}/generate/text/${encodeURIComponent(
                 selectedPrompt
             )}`;
             const params = [];
@@ -56,9 +63,7 @@ export function TextGenCard() {
                 // Use GET to /api/generate/text/{prompt}
                 const url = buildTextUrl();
                 const res = await fetch(url, {
-                    headers: {
-                        Authorization: `Bearer ${API_KEY}`,
-                    },
+                    headers: getAuthHeaders(),
                 });
                 const text = await res.text();
                 setResponse(text);

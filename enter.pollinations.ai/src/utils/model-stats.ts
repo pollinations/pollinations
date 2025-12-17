@@ -5,8 +5,11 @@
 
 import type { Logger } from "@logtape/logtape";
 
-export const CACHE_KEY = "model-stats";
-export const CACHE_TTL = 3600; // 1 hour in seconds
+const TINYBIRD_URL =
+    "https://api.europe-west2.gcp.tinybird.co/v0/pipes/public_model_stats.json?token=p.eyJ1IjogImFjYTYzZjc5LThjNTYtNDhlNC05NWJjLWEyYmFjMTY0NmJkMyIsICJpZCI6ICJiYzdkOTY4YS0wZmM1LTRmY2MtYWViNi0zZDQ0MWIwMGFlZjQiLCAiaG9zdCI6ICJnY3AtZXVyb3BlLXdlc3QyIn0.fhyEk0_6wt5a2RnM5tu4n_6nUfFdgN_YBMxg8VPv-Dw";
+
+const CACHE_KEY = "model-stats";
+const CACHE_TTL = 3600; // 1 hour in seconds
 
 export type ModelStat = {
     model: string;
@@ -23,7 +26,6 @@ export type ModelStatsResponse = {
  */
 export async function getModelStats(
     kv: KVNamespace,
-    modelStatsUrl: string,
     log?: Logger,
 ): Promise<Map<string, ModelStat>> {
     try {
@@ -34,7 +36,7 @@ export async function getModelStats(
         }
 
         // Fetch from Tinybird
-        const response = await fetch(modelStatsUrl);
+        const response = await fetch(TINYBIRD_URL);
         if (!response.ok) {
             log?.warn("Failed to fetch model stats from Tinybird: {status}", {
                 status: response.status,

@@ -160,10 +160,9 @@ export const track = (eventType: EventType) =>
                     resolvedModelRequested:
                         requestTracking.resolvedModelRequested,
                     modelProviderUsed: requestTracking.modelProvider,
-                    isBilledUsage: true, // Assume billable, will be updated
+                    isBilledUsage: false, // Unknown until request completes
                     estimatedCost,
-                    totalCost: 0,
-                    totalPrice: 0,
+                    // totalCost and totalPrice left undefined - will be set when request completes
                     ...priceToEventParams(requestTracking.modelPriceDefinition),
                     ...usageToEventParams(undefined),
                     ...requestTracking.referrerData,

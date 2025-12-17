@@ -39,7 +39,22 @@ if (isCloudflare) {
 
 // On Cloudflare, use relative /api/* path (goes through Worker proxy)
 // Locally, use direct enter.pollinations.ai URL
-const API_BASE = isCloudflare ? "/api" : "https://enter.pollinations.ai/api";
+export const API_BASE = isCloudflare
+    ? "/api"
+    : "https://enter.pollinations.ai/api";
+
+/**
+ * Get auth headers for API requests
+ * On Cloudflare, the Worker adds auth - we don't need to
+ */
+export function getAuthHeaders(contentType?: string): Record<string, string> {
+    const headers: Record<string, string> = {};
+    if (contentType) headers["Content-Type"] = contentType;
+    if (!isCloudflare && API_KEY) {
+        headers["Authorization"] = `Bearer ${API_KEY}`;
+    }
+    return headers;
+}
 
 export const API = {
     TEXT_GENERATION: `${API_BASE}/generate/v1/chat/completions`,

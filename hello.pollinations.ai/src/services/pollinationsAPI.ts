@@ -1,34 +1,18 @@
-import { API, DEFAULTS, IS_CLOUDFLARE } from "../api.config";
-
-/**
- * Build headers for API requests
- * On Cloudflare, the Worker adds auth - we don't need to
- */
-function getHeaders(
-    apiKey: string,
-    contentType?: string,
-): Record<string, string> {
-    const headers: Record<string, string> = {};
-    if (contentType) headers["Content-Type"] = contentType;
-    if (!IS_CLOUDFLARE && apiKey) {
-        headers["Authorization"] = `Bearer ${apiKey}`;
-    }
-    return headers;
-}
+import { API, DEFAULTS, getAuthHeaders } from "../api.config";
 
 /**
  * Fetch text from Pollinations text generation API
  */
 export async function generateText(
     prompt: string,
-    apiKey: string,
+    _apiKey: string,
     seed?: number | number[],
     model?: string,
     signal?: AbortSignal,
 ): Promise<string> {
     const response = await fetch(API.TEXT_GENERATION, {
         method: "POST",
-        headers: getHeaders(apiKey, "application/json"),
+        headers: getAuthHeaders("application/json"),
         body: JSON.stringify({
             messages: [{ role: "user", content: prompt }],
             model: model || DEFAULTS.TEXT_MODEL,
@@ -53,7 +37,7 @@ export async function generateText(
  */
 export async function generateImage(
     prompt: string,
-    apiKey: string,
+    _apiKey: string,
     options: {
         width?: number;
         height?: number;
@@ -83,7 +67,7 @@ export async function generateImage(
 
     const response = await fetch(url, {
         method: "GET",
-        headers: getHeaders(apiKey),
+        headers: getAuthHeaders(),
         signal,
     });
 

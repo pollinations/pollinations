@@ -46,8 +46,8 @@ export async function storeEvents(
     for (const batch of batches(events, BUFFER_BATCH_SIZE)) {
         try {
             await db.insert(event).values(batch).onConflictDoNothing();
-        } catch (e) {
-            log.error("Failed to insert event batch: {e}", { e });
+        } catch (error) {
+            log.error("Failed to insert event batch: {error}", { error });
         }
     }
 }

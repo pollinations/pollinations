@@ -42,7 +42,7 @@ new_classes = ["PollenRateLimiter"]
 [vars]
 ENVIRONMENT = "development"
 LOG_LEVEL = "trace"
-LOG_FORMAT = "json"
+LOG_FORMAT = "text"
 ALLOW_ANONYMOUS_USAGE = false
 POLAR_SUCCESS_URL = "http://localhost:3000"
 POLAR_SERVER = "sandbox"

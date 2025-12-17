@@ -1,5 +1,18 @@
 import { useState, useEffect } from "react";
-import { API_KEY } from "../api.config";
+import { API_KEY, IS_CLOUDFLARE } from "../api.config";
+
+// Use proxy on Cloudflare, direct URL locally
+const IMAGE_MODELS_URL = IS_CLOUDFLARE
+    ? "/api/generate/image/models"
+    : "https://enter.pollinations.ai/api/generate/image/models";
+const TEXT_MODELS_URL = IS_CLOUDFLARE
+    ? "/api/generate/text/models"
+    : "https://enter.pollinations.ai/api/generate/text/models";
+
+function getAuthHeaders(): Record<string, string> {
+    if (IS_CLOUDFLARE) return {};
+    return { Authorization: `Bearer ${API_KEY}` };
+}
 
 export interface Model {
     id: string;
@@ -34,22 +47,8 @@ export function useModelList(): UseModelListReturn {
         const fetchModels = async () => {
             try {
                 const [imageRes, textRes] = await Promise.all([
-                    fetch(
-                        "https://enter.pollinations.ai/api/generate/image/models",
-                        {
-                            headers: {
-                                Authorization: `Bearer ${API_KEY}`,
-                            },
-                        },
-                    ),
-                    fetch(
-                        "https://enter.pollinations.ai/api/generate/text/models",
-                        {
-                            headers: {
-                                Authorization: `Bearer ${API_KEY}`,
-                            },
-                        },
-                    ),
+                    fetch(IMAGE_MODELS_URL, { headers: getAuthHeaders() }),
+                    fetch(TEXT_MODELS_URL, { headers: getAuthHeaders() }),
                 ]);
 
                 const imageList = await imageRes.json();

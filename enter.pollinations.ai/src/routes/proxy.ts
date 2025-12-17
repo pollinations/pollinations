@@ -9,6 +9,7 @@ import { resolveModel } from "@/middleware/model.ts";
 import { frontendKeyRateLimit } from "@/middleware/rate-limit-durable.ts";
 import { imageCache } from "@/middleware/image-cache.ts";
 import { edgeRateLimit } from "@/middleware/rate-limit-edge.ts";
+import { keepAlive, thinkingTokenKeepAlive } from "@/middleware/keep-alive.ts";
 import { describeRoute, resolver } from "hono-openapi";
 import { validator } from "@/middleware/validator.ts";
 import {
@@ -41,6 +42,7 @@ const factory = createFactory<Env>();
 const chatCompletionHandlers = factory.createHandlers(
     validator("json", CreateChatCompletionRequestSchema),
     resolveModel("generate.text"),
+    thinkingTokenKeepAlive, // Prevent Cloudflare 524 timeout on long generations
     track("generate.text"),
     async (c) => {
         const log = c.get("log");

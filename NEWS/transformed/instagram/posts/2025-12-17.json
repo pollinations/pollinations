@@ -1,0 +1,47 @@
+{
+  "date": "2025-12-17",
+  "generated_at": "2025-12-17T16:12:16.171824+00:00",
+  "post_type": "carousel",
+  "content_type": "shitpost",
+  "linked_images": false,
+  "strategy_reasoning": "Devs love security panic jokes (leaking keys) and obsessive code cleanup (changing 19 files). Mixing high-stakes security fixes with trivial link unification creates that specific 'changelog whiplash' vibe.",
+  "story_arc": "",
+  "images": [
+    {
+      "url": "https://gen.pollinations.ai/image/A%20high-contrast%2C%20dramatic%20meme%20style%20illustration.%20A%20panicked%20cartoon%20server%20rack%20is%20sweating%20profusely%2C%20holding%20a%20sign%20that%20says%20%27I%20AM%20LEAKING%20API%20KEYS%27.%20A%20superhero%20labeled%20%27PROXY%20WORKER%27%20flies%20in%20and%20wraps%20the%20server%20in%20a%20thick%20steel%20blanket.%20Text%20at%20the%20bottom%3A%20%27Safety%20First%20%28Finally%29%27.?model=nanobanana-pro&width=2048&height=2048&quality=hd&nologo=true&private=true&nofeed=true&seed=877081755",
+      "prompt": "A high-contrast, dramatic meme style illustration. A panicked cartoon server rack is sweating profusely, holding a sign that says 'I AM LEAKING API KEYS'. A superhero labeled 'PROXY WORKER' flies in and wraps the server in a thick steel blanket. Text at the bottom: 'Safety First (Finally)'.",
+      "description": "Visualizing the move from client-side keys to the new Proxy Worker."
+    },
+    {
+      "url": "https://gen.pollinations.ai/image/A%20close-up%20of%20a%20developer%27s%20face%2C%20looking%20absolutely%20deranged%20and%20sleep-deprived%2C%20eye%20twitching.%20Behind%20them%20is%20a%20matrix%20of%20screens%2C%20and%20every%20single%20screen%20displays%20the%20exact%20same%20Discord%20Invite%20URL.%20Text%20overlay%3A%20%27I%20changed%20the%20Discord%20link%20in%2019%20files.%20It%20is%20unified.%20I%20am%20at%20peace.%27?model=nanobanana-pro&width=2048&height=2048&quality=hd&nologo=true&private=true&nofeed=true&seed=244581824",
+      "prompt": "A close-up of a developer's face, looking absolutely deranged and sleep-deprived, eye twitching. Behind them is a matrix of screens, and every single screen displays the exact same Discord Invite URL. Text overlay: 'I changed the Discord link in 19 files. It is unified. I am at peace.'",
+      "description": "Mocking the obsessive cleanup of the Discord links across the codebase."
+    }
+  ],
+  "caption": "We pushed to prod on a Friday. Choose your fighter: \n\n🛡️ The API Proxy Worker (because leaking keys in the browser is so last sprint)\n🎥 Veo I2V (it actually looks at the image now, groundbreaking tech)\n🔗 The Discord Link Unifier (I touched 19 files for this, please clap)\n\nGo break the new features. It's free.\n\n#pollinations #opensource #devlife #gitpushforce #aiart #bugfix #frontendtears",
+  "hashtags": [
+    "#pollinations",
+    "#opensource",
+    "#devlife",
+    "#gitpushforce",
+    "#aiart",
+    "#bugfix",
+    "#frontendtears"
+  ],
+  "alt_text": "Carousel of memes: 1. A server being saved by a proxy worker. 2. A robot realizing it can see to paint. 3. A deranged developer obsessed with Discord links.",
+  "pr_references": [
+    "#6122",
+    "#6123",
+    "#6068",
+    "#6121",
+    "#6116",
+    "#6101",
+    "#6078",
+    "#6094",
+    "#6092",
+    "#6093",
+    "#6091",
+    "#6090",
+    "#6079"
+  ]
+}

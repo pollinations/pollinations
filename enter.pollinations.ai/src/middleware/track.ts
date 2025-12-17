@@ -1,4 +1,5 @@
 import { processEvents, storeEvents } from "@/events.ts";
+import { atomicBalanceDeduction } from "@/balance.ts";
 import {
     getActivePriceDefinition,
     calculateCost,
@@ -25,12 +26,15 @@ import {
 } from "@/schemas/openai.ts";
 import { generateRandomId } from "@/util.ts";
 import { createMiddleware } from "hono/factory";
+import { user } from "@/db/schema/better-auth";
 import {
     contentFilterResultsToEventParams,
     priceToEventParams,
     usageToEventParams,
 } from "@/db/schema/event.ts";
 import { drizzle } from "drizzle-orm/d1";
+import { eq } from "drizzle-orm";
+import { HTTPException } from "hono/http-exception";
 import { HonoRequest } from "hono";
 import type {
     ApiKeyType,
@@ -133,6 +137,29 @@ export const track = (eventType: EventType) =>
                     response,
                 );
 
+                // Atomic balance deduction to prevent race conditions
+                const totalPrice = responseTracking.price?.totalPrice || 0;
+                if (totalPrice > 0 && c.var.auth.user?.id) {
+                    try {
+                        const db = drizzle(c.env.DB);
+                        await atomicBalanceDeduction(db, c.var.auth.user.id, totalPrice);
+                        log.debug("Atomically deducted {totalPrice} from user {userId}", {
+                            totalPrice,
+                            userId: c.var.auth.user.id,
+                        });
+                    } catch (error) {
+                        if (error instanceof HTTPException && error.status === 403) {
+                            // Insufficient balance - this should have been caught earlier
+                            // but if it happens here, we need to handle it
+                            log.error("Insufficient balance during atomic deduction: {error}", { error });
+                            throw error;
+                        } else {
+                            // Other errors - log but continue (fallback to Polar system)
+                            log.error("Failed to atomically deduct balance: {error}", { error });
+                        }
+                    }
+                }
+
                 // register pollen consumption with rate limiter
                 await c.var.frontendKeyRateLimit?.consumePollen(
                     responseTracking.price?.totalPrice || 0,
@@ -149,12 +176,28 @@ export const track = (eventType: EventType) =>
                     apiKeyName: c.var.auth.apiKey?.name,
                 } satisfies UserData;
 
+                // Get updated balance after atomic deduction for tracking
+                let updatedBalance = undefined;
+                if (c.var.auth.user?.id && totalPrice > 0) {
+                    try {
+                        const db = drizzle(c.env.DB);
+                        const balanceResult = await db
+                            .select({ balance: user.balance })
+                            .from(user)
+                            .where(eq(user.id, c.var.auth.user.id))
+                            .limit(1);
+                        updatedBalance = balanceResult[0]?.balance;
+                    } catch (error) {
+                        log.debug("Failed to get updated balance for tracking: {error}", { error });
+                    }
+                }
+
                 const balanceTracking = {
                     selectedMeterId:
                         c.var.polar.balanceCheckResult?.selectedMeterId,
                     selectedMeterSlug:
                         c.var.polar.balanceCheckResult?.selectedMeterSlug,
-                    balances: Object.fromEntries(
+                    balances: updatedBalance ? { local_balance: updatedBalance } : Object.fromEntries(
                         c.var.polar.balanceCheckResult?.meters.map((meter) => [
                             meter.metadata.slug,
                             meter.balance,

@@ -11,6 +11,7 @@ import { getPendingSpend } from "@/events.ts";
 import { drizzle } from "drizzle-orm/d1";
 import { event } from "@/db/schema/event.ts";
 import { and, eq, gte, sql } from "drizzle-orm";
+import { atomicBalanceDeduction, getUserBalance } from "@/balance.ts";
 
 type BalanceCheckResult = {
     selectedMeterId: string;
@@ -110,6 +111,53 @@ export const polar = createMiddleware<PolarEnv>(async (c, next) => {
     };
 
     const requirePositiveBalance = async (userId: string, message?: string) => {
+        const db = drizzle(c.env.DB);
+        
+        // First, try atomic balance deduction from local balance
+        // This prevents race conditions for the initial balance check
+        try {
+            const currentBalance = await getUserBalance(db, userId);
+            
+            // Get the cost estimate from pending spend (this will be the minimum required)
+            const pendingSpend = await getPendingSpend(db, userId);
+            
+            if (pendingSpend > 0) {
+                log.debug("Pending spend from D1: {pendingSpend}", {
+                    pendingSpend,
+                });
+            }
+
+            // Check if user has sufficient local balance
+            if (currentBalance <= pendingSpend) {
+                throw new HTTPException(403, {
+                    message: message || `Your pollen balance is too low. Current balance: ${currentBalance}, pending spend: ${pendingSpend}`,
+                });
+            }
+
+            // Store balance check result for later use in tracking
+            c.var.polar.balanceCheckResult = {
+                selectedMeterId: "local_balance",
+                selectedMeterSlug: "local_balance",
+                meters: [{
+                    meterId: "local_balance",
+                    balance: currentBalance - pendingSpend,
+                    metadata: { slug: "local_balance", priority: 1 }
+                }]
+            };
+            
+            return;
+            
+        } catch (error) {
+            // If it's already an HTTPException, re-throw it
+            if (error instanceof HTTPException) {
+                throw error;
+            }
+            
+            // If local balance check fails, fall back to Polar meter system
+            log.debug("Local balance check failed, falling back to Polar meters: {error}", { error });
+        }
+
+        // Fallback to original Polar meter-based system
         const customerMeters = await getCustomerMeters(userId);
         const activeMeters = getSimplifiedMatchingMeters(customerMeters);
         const sortedMeters = sortMetersByDescendingPriority(activeMeters);

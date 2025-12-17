@@ -19,26 +19,23 @@ export const adminRoutes = new Hono<Env>()
     .use("*", async (c, next) => {
         // Use ENTER_TOKEN for admin authentication (already in GH secrets)
         const adminKey = c.env.ENTER_TOKEN;
-        if (!adminKey) {
-            return c.json({ error: "Admin API not configured" }, 500);
-        }
 
         const authHeader = c.req.header("Authorization");
         if (!authHeader?.startsWith("Bearer ")) {
-            return c.json({ error: "Unauthorized" }, 401);
+            throw new HTTPException(401, { message: "Unauthorized" });
         }
         const providedKey = authHeader.slice(7);
 
         // Constant-time comparison to prevent timing attacks
         if (providedKey.length !== adminKey.length) {
-            return c.json({ error: "Unauthorized" }, 401);
+            throw new HTTPException(401, { message: "Unauthorized" });
         }
         let result = 0;
         for (let i = 0; i < providedKey.length; i++) {
             result |= providedKey.charCodeAt(i) ^ adminKey.charCodeAt(i);
         }
         if (result !== 0) {
-            return c.json({ error: "Unauthorized" }, 401);
+            throw new HTTPException(401, { message: "Unauthorized" });
         }
 
         return await next();
@@ -47,7 +44,7 @@ export const adminRoutes = new Hono<Env>()
         const body = await c.req.json<{ userId: string; tier?: string }>();
 
         if (!body.userId) {
-            return c.json({ error: "userId is required" }, 400);
+            throw new HTTPException(400, { message: "userId is required" });
         }
 
         const db = drizzle(c.env.DB);
@@ -64,12 +61,14 @@ export const adminRoutes = new Hono<Env>()
                 .limit(1);
 
             if (users.length === 0) {
-                return c.json({ error: "User not found" }, 404);
+                throw new HTTPException(404, { message: "User not found" });
             }
 
             const userTier = users[0]?.tier;
             if (!userTier || !isValidTier(userTier)) {
-                return c.json({ error: "User has invalid tier" }, 400);
+                throw new HTTPException(400, {
+                    message: "User has invalid tier",
+                });
             }
             targetTier = userTier;
         }

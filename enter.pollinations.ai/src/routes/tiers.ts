@@ -206,27 +206,7 @@ export const tiersRoutes = new Hono<Env>()
             // Subscriptions are now auto-created on signup and auto-reactivated on cancellation
             // No manual activation button needed
             const should_show_activate_button = false;
-
-            // If button should show, fetch target tier's product name for the button
-            let target_tier_name: string | undefined;
-            if (should_show_activate_button && target_tier !== "none") {
-                try {
-                    const assignedProductId = getTierProductId(
-                        c.env,
-                        target_tier as ActivatableTier,
-                    );
-                    const assignedProduct =
-                        (await c.var.polar.client.products.get({
-                            id: assignedProductId,
-                        })) as PolarProductMinimal;
-                    target_tier_name = assignedProduct.name;
-                } catch (error) {
-                    log.warn("Failed to fetch target tier product: {error}", {
-                        tier: target_tier,
-                        error,
-                    });
-                }
-            }
+            const target_tier_name: string | undefined = undefined;
 
             const viewModel: TierViewModel = {
                 target_tier,

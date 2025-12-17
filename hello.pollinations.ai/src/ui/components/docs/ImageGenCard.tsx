@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Heading, Label } from "../ui/typography";
 import { Button } from "../ui/button";
 import { DOCS_PAGE } from "../../../theme";
-import { API_KEY } from "../../../api.config";
+import { API_BASE, getAuthHeaders } from "../../../api.config";
 
 /**
  * Image Generation Card Component
@@ -27,7 +27,7 @@ export function ImageGenCard() {
     };
 
     const buildUrl = () => {
-        let url = `https://enter.pollinations.ai/api/generate/image/${encodeURIComponent(
+        let url = `${API_BASE}/generate/image/${encodeURIComponent(
             selectedPrompt
         )}`;
         const urlParams = new URLSearchParams();
@@ -50,7 +50,7 @@ export function ImageGenCard() {
 
     useEffect(() => {
         const buildImageUrl = () => {
-            let url = `https://enter.pollinations.ai/api/generate/image/${encodeURIComponent(
+            let url = `${API_BASE}/generate/image/${encodeURIComponent(
                 selectedPrompt
             )}`;
             const urlParams = new URLSearchParams();
@@ -76,9 +76,7 @@ export function ImageGenCard() {
             try {
                 const url = buildImageUrl();
                 const response = await fetch(url, {
-                    headers: {
-                        Authorization: `Bearer ${API_KEY}`,
-                    },
+                    headers: getAuthHeaders(),
                 });
                 if (!response.ok) {
                     throw new Error(

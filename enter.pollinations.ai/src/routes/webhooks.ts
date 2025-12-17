@@ -4,12 +4,16 @@ import { getLogger } from "@logtape/logtape";
 import { drizzle } from "drizzle-orm/d1";
 import { eq } from "drizzle-orm";
 import { Polar } from "@polar-sh/sdk";
+import {
+    validateEvent,
+    WebhookVerificationError,
+} from "@polar-sh/sdk/webhooks";
 import type { Env } from "../env.ts";
 import { user as userTable } from "../db/schema/better-auth.ts";
 import { syncUserTier } from "../tier-sync.ts";
 import {
     isValidTier,
-    getTierProductMapCached,
+    createTierProductMapCached,
     type TierName,
 } from "./polar.ts";
 
@@ -23,29 +27,21 @@ export const webhooksRoutes = new Hono<Env>().post("/polar", async (c) => {
         throw new HTTPException(500, { message: "Webhook not configured" });
     }
 
-    const signature = c.req.header("webhook-signature");
-    if (!signature) {
-        log.warn("Missing webhook signature");
-        throw new HTTPException(401, { message: "Missing signature" });
-    }
-
     const rawBody = await c.req.text();
-
-    const isValid = await verifyWebhookSignature(
-        rawBody,
-        signature,
-        webhookSecret,
-    );
-    if (!isValid) {
-        log.warn("Invalid webhook signature");
-        throw new HTTPException(401, { message: "Invalid signature" });
-    }
+    const headers = Object.fromEntries(c.req.raw.headers.entries());
 
     let payload: WebhookPayload;
     try {
-        payload = JSON.parse(rawBody);
-    } catch {
-        log.warn("Invalid webhook payload");
+        const event = validateEvent(rawBody, headers, webhookSecret);
+        payload = event as unknown as WebhookPayload;
+    } catch (error) {
+        if (error instanceof WebhookVerificationError) {
+            log.warn("Invalid webhook signature: {error}", {
+                error: error.message,
+            });
+            throw new HTTPException(401, { message: "Invalid signature" });
+        }
+        log.warn("Invalid webhook payload: {error}", { error });
         throw new HTTPException(400, { message: "Invalid payload" });
     }
 
@@ -90,72 +86,6 @@ interface WebhookPayload {
             metadata?: Record<string, unknown>;
         };
     };
-}
-
-async function verifyWebhookSignature(
-    payload: string,
-    signature: string,
-    secret: string,
-): Promise<boolean> {
-    try {
-        const parts = signature.split(",");
-        const timestampPart = parts.find((p) => p.startsWith("t="));
-        const signaturePart = parts.find((p) => p.startsWith("v1="));
-
-        if (!timestampPart || !signaturePart) {
-            return false;
-        }
-
-        const timestamp = timestampPart.substring(2);
-        const expectedSignature = signaturePart.substring(3);
-
-        // Validate timestamp is within 5 minutes to prevent replay attacks
-        const timestampSeconds = parseInt(timestamp, 10);
-        const now = Math.floor(Date.now() / 1000);
-        const FIVE_MINUTES = 5 * 60;
-        if (
-            isNaN(timestampSeconds) ||
-            Math.abs(now - timestampSeconds) > FIVE_MINUTES
-        ) {
-            log.warn("Webhook timestamp too old or invalid: {timestamp}", {
-                timestamp,
-            });
-            return false;
-        }
-
-        const signedPayload = `${timestamp}.${payload}`;
-        const encoder = new TextEncoder();
-        const key = await crypto.subtle.importKey(
-            "raw",
-            encoder.encode(secret),
-            { name: "HMAC", hash: "SHA-256" },
-            false,
-            ["sign"],
-        );
-        const signatureBuffer = await crypto.subtle.sign(
-            "HMAC",
-            key,
-            encoder.encode(signedPayload),
-        );
-        const computedSignature = Array.from(new Uint8Array(signatureBuffer))
-            .map((b) => b.toString(16).padStart(2, "0"))
-            .join("");
-
-        // Constant-time comparison to prevent timing attacks
-        if (computedSignature.length !== expectedSignature.length) {
-            return false;
-        }
-        let result = 0;
-        for (let i = 0; i < computedSignature.length; i++) {
-            result |=
-                computedSignature.charCodeAt(i) ^
-                expectedSignature.charCodeAt(i);
-        }
-        return result === 0;
-    } catch (error) {
-        log.error("Webhook signature verification failed: {error}", { error });
-        return false;
-    }
 }
 
 async function handleSubscriptionCanceled(
@@ -207,7 +137,8 @@ async function handleSubscriptionCanceled(
         server: env.POLAR_SERVER === "production" ? "production" : "sandbox",
     });
 
-    const productMap = await getTierProductMapCached(polar);
+    const getTierProductMap = createTierProductMapCached(env.KV);
+    const productMap = await getTierProductMap(polar);
     const result = await syncUserTier(
         polar,
         externalId,

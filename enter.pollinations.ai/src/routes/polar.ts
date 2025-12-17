@@ -1,15 +1,19 @@
 import { Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
 import z from "zod";
+import { getLogger } from "@logtape/logtape";
 import { auth } from "../middleware/auth.ts";
 import { polar } from "../middleware/polar.ts";
 import { validator } from "../middleware/validator.ts";
 import type { Env } from "../env.ts";
 import { describeRoute } from "hono-openapi";
-import { Polar } from "@polar-sh/sdk";
+import type { Polar } from "@polar-sh/sdk";
 import { drizzle } from "drizzle-orm/d1";
 import { event } from "../db/schema/event.ts";
 import { and, eq, gte, sql } from "drizzle-orm";
+import { cached } from "../cache.ts";
+
+const log = getLogger(["hono", "polar"]);
 
 export const productSlugs = [
     "v1:product:pack:5x2",
@@ -40,29 +44,33 @@ export function isValidTier(tier: string): tier is TierName {
     return ["spore", "seed", "flower", "nectar", "router"].includes(tier);
 }
 
-let cachedTierProducts: TierProductMap | null = null;
-let tierCacheTime = 0;
-const TIER_CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+const TIER_CACHE_TTL = 300; // 5 minutes in seconds
 
-export async function getTierProductMapCached(
-    polar: Polar,
-): Promise<TierProductMap> {
-    if (cachedTierProducts && Date.now() - tierCacheTime < TIER_CACHE_TTL) {
-        return cachedTierProducts;
-    }
+async function fetchTierProductMap(polar: Polar): Promise<TierProductMap> {
     const result = await polar.products.list({
         limit: 100,
         metadata: { slug: [...tierSlugs] },
     });
     const map: Partial<TierProductMap> = {};
     for (const product of result.result.items) {
-        const slug = product.metadata?.slug as string;
-        const match = slug?.match(/^v1:product:tier:(\w+)$/);
-        if (match) map[match[1] as TierName] = product.id;
+        const tierName = (product.metadata?.slug as string)?.replace(
+            "v1:product:tier:",
+            "",
+        ) as TierName;
+        if (tierName) map[tierName] = product.id;
     }
-    cachedTierProducts = map as TierProductMap;
-    tierCacheTime = Date.now();
-    return cachedTierProducts;
+    return map as TierProductMap;
+}
+
+export function createTierProductMapCached(
+    kv: KVNamespace,
+): (polar: Polar) => Promise<TierProductMap> {
+    return cached(fetchTierProductMap, {
+        log,
+        ttl: TIER_CACHE_TTL,
+        kv,
+        keyGenerator: () => "tier:product:map",
+    });
 }
 type ProductSlug = z.infer<typeof productParamSchema>;
 const productParamSchema = z.enum(productSlugs.map(productSlugToUrlParam));
@@ -77,8 +85,6 @@ const redirectQuerySchema = z.object({
         .transform((v) => v.toLowerCase().trim() === "true")
         .default(true),
 });
-
-type ProductMap = { [key in ProductSlug]: string };
 
 export function productSlugToUrlParam(slug: string): string {
     return slug.split(":").join("-");

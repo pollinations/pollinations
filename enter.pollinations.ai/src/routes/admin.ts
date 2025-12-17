@@ -9,7 +9,7 @@ import { user as userTable } from "../db/schema/better-auth.ts";
 import { syncUserTier } from "../tier-sync.ts";
 import {
     isValidTier,
-    getTierProductMapCached,
+    createTierProductMapCached,
     type TierName,
 } from "./polar.ts";
 
@@ -80,7 +80,8 @@ export const adminRoutes = new Hono<Env>()
                 c.env.POLAR_SERVER === "production" ? "production" : "sandbox",
         });
 
-        const productMap = await getTierProductMapCached(polar);
+        const getTierProductMap = createTierProductMapCached(c.env.KV);
+        const productMap = await getTierProductMap(polar);
 
         // Sync tier directly with retry logic
         const result = await syncUserTier(

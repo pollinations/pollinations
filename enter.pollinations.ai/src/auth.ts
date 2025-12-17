@@ -203,30 +203,13 @@ function onAfterUserCreate(polar: Polar, defaultTierProductId?: string) {
 
             // Auto-create subscription for new user's default tier
             if (existingCustomer && defaultTierProductId) {
-                try {
-                    // Check if user already has an active subscription
-                    const { result: subs } = await polar.subscriptions.list({
-                        customerId: existingCustomer.id,
-                        active: true,
-                        limit: 1,
-                    });
-
-                    if (subs.items.length === 0) {
-                        // No active subscription, create one for the default tier
-                        await polar.subscriptions.create({
-                            productId: defaultTierProductId,
-                            customerId: existingCustomer.id,
-                        });
-                        ctx.context.logger.info(
-                            `Created default tier subscription for user ${user.id}`,
-                        );
-                    }
-                } catch (subError) {
-                    // Log but don't fail user creation if subscription fails
-                    ctx.context.logger.error(
-                        `Failed to create default subscription: ${subError}`,
-                    );
-                }
+                await ensureDefaultSubscription(
+                    polar,
+                    existingCustomer.id,
+                    defaultTierProductId,
+                    user.id,
+                    ctx.context.logger,
+                );
             }
         } catch (e: unknown) {
             const messageOrError = e instanceof Error ? e.message : e;
@@ -255,4 +238,30 @@ function onUserUpdate(polar: Polar) {
             );
         }
     };
+}
+
+async function ensureDefaultSubscription(
+    polar: Polar,
+    customerId: string,
+    productId: string,
+    userId: string,
+    logger: { info: (msg: string) => void; error: (msg: string) => void },
+): Promise<void> {
+    try {
+        const { result: subs } = await polar.subscriptions.list({
+            customerId,
+            active: true,
+            limit: 1,
+        });
+
+        if (subs.items.length === 0) {
+            await polar.subscriptions.create({
+                productId,
+                customerId,
+            });
+            logger.info(`Created default tier subscription for user ${userId}`);
+        }
+    } catch (error) {
+        logger.error(`Failed to create default subscription: ${error}`);
+    }
 }

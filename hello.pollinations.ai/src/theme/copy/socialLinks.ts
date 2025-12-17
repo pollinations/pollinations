@@ -12,7 +12,7 @@ export const SOCIAL_LINKS = {
     discord: {
         label: "Discord",
         icon: DiscordIcon,
-        url: "https://discord.gg/k9F7SyTgqn",
+        url: "https://discord.gg/pollinations-ai-885844321461485618",
         width: "32px",
         height: "32px",
     },

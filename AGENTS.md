@@ -96,7 +96,7 @@ When handling app submission issues (labeled as **APPS** in GitHub):
 **Pollinations Discord Server:**
 
 -   **Guild ID**: `885844321461485618`
--   **Server**: https://discord.gg/pollinations
+-   **Server**: https://discord.gg/pollinations-ai-885844321461485618
 
 Use this guild ID when interacting with Discord MCP tools for announcements, community management, etc.
 

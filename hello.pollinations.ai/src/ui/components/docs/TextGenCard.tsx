@@ -2,14 +2,7 @@ import { useState, useEffect } from "react";
 import { Heading, Label } from "../ui/typography";
 import { Button } from "../ui/button";
 import { DOCS_PAGE } from "../../../theme";
-import { API_KEY, IS_CLOUDFLARE } from "../../../api.config";
-
-const API_BASE = IS_CLOUDFLARE ? "/api" : "https://enter.pollinations.ai/api";
-
-function getAuthHeaders(): Record<string, string> {
-    if (IS_CLOUDFLARE) return {};
-    return { Authorization: `Bearer ${API_KEY}` };
-}
+import { API_BASE, getAuthHeaders } from "../../../api.config";
 
 /**
  * Text Generation Card Component

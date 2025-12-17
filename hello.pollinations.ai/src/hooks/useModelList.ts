@@ -1,18 +1,8 @@
 import { useState, useEffect } from "react";
-import { API_KEY, IS_CLOUDFLARE } from "../api.config";
+import { API_BASE, getAuthHeaders } from "../api.config";
 
-// Use proxy on Cloudflare, direct URL locally
-const IMAGE_MODELS_URL = IS_CLOUDFLARE
-    ? "/api/generate/image/models"
-    : "https://enter.pollinations.ai/api/generate/image/models";
-const TEXT_MODELS_URL = IS_CLOUDFLARE
-    ? "/api/generate/text/models"
-    : "https://enter.pollinations.ai/api/generate/text/models";
-
-function getAuthHeaders(): Record<string, string> {
-    if (IS_CLOUDFLARE) return {};
-    return { Authorization: `Bearer ${API_KEY}` };
-}
+const IMAGE_MODELS_URL = `${API_BASE}/generate/image/models`;
+const TEXT_MODELS_URL = `${API_BASE}/generate/text/models`;
 
 export interface Model {
     id: string;

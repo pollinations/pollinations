@@ -4,18 +4,7 @@ import { CloseIcon } from "../../assets/CloseIcon";
 import type { Model } from "../../../hooks/useModelList";
 
 import { PLAY_PAGE } from "../../../theme";
-import { API_KEY, IS_CLOUDFLARE } from "../../../api.config";
-
-const API_BASE = IS_CLOUDFLARE ? "/api" : "https://enter.pollinations.ai/api";
-
-function getAuthHeaders(contentType?: string): Record<string, string> {
-    const headers: Record<string, string> = {};
-    if (contentType) headers["Content-Type"] = contentType;
-    if (!IS_CLOUDFLARE && API_KEY) {
-        headers["Authorization"] = `Bearer ${API_KEY}`;
-    }
-    return headers;
-}
+import { API_BASE, getAuthHeaders } from "../../../api.config";
 
 interface PlayGeneratorProps {
     selectedModel: string;

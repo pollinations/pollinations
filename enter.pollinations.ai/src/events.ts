@@ -1,5 +1,16 @@
 import { Polar } from "@polar-sh/sdk";
-import { eq, sql, and, gte, or, lt, count, min, max } from "drizzle-orm";
+import {
+    eq,
+    sql,
+    and,
+    gte,
+    or,
+    lt,
+    count,
+    min,
+    max,
+    isNull,
+} from "drizzle-orm";
 import type { DrizzleD1Database } from "drizzle-orm/d1";
 import { event } from "./db/schema/event.ts";
 import {
@@ -48,7 +59,7 @@ export async function processEvents(
         polarAccessToken: string;
         polarServer: "sandbox" | "production";
         tinybirdIngestUrl: string;
-        tinybirdAccessToken: string;
+        tinybirdIngestToken: string;
         minBatchSize?: number;
         maxBatchSize?: number;
         minRetryDelay?: number;
@@ -73,7 +84,7 @@ export async function processEvents(
         const tinybirdDelivery = await sendTinybirdEvents(
             events,
             config.tinybirdIngestUrl,
-            config.tinybirdAccessToken,
+            config.tinybirdIngestToken,
             log,
         );
         if (
@@ -498,4 +509,27 @@ function tinybirdDeliveryStats(events: SelectGenerationEvent[]): {
         }),
         { minDeliveryAttempts: MAX_DELIVERY_ATTEMPTS, maxDeliveryAttempts: 0 },
     );
+}
+
+export async function getPendingSpend(
+    db: DrizzleD1Database,
+    userId: string,
+): Promise<number> {
+    const maxPendingSpendWindowMs = 10 * 60 * 1000; // 10 minutes
+    const result = await db
+        .select({
+            total: sql<number>`COALESCE(SUM(${event.totalPrice}), 0)`,
+        })
+        .from(event)
+        .where(
+            and(
+                gte(
+                    event.createdAt,
+                    new Date(Date.now() - maxPendingSpendWindowMs),
+                ),
+                eq(event.userId, userId),
+                eq(event.isBilledUsage, true),
+            ),
+        );
+    return result[0]?.total || 0;
 }

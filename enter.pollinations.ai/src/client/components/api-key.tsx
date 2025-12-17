@@ -36,9 +36,11 @@ const Cell: FC<React.ComponentProps<"div">> = ({ children, ...props }) => {
     );
 };
 
-const KeyDisplay: FC<{ fullKey: string }> = ({ fullKey }) => {
+const KeyDisplay: FC<{ fullKey: string; start: string }> = ({
+    fullKey,
+    start,
+}) => {
     const [copied, setCopied] = useState(false);
-    const suffix = fullKey.slice(-4);
 
     const handleCopy = async () => {
         try {
@@ -62,7 +64,7 @@ const KeyDisplay: FC<{ fullKey: string }> = ({ fullKey }) => {
             )}
             title={copied ? "Copied!" : "Click to copy full key"}
         >
-            {copied ? "✓ Copied!" : `...${suffix}`}
+            {copied ? "✓ Copied!" : `${start}...`}
         </button>
     );
 };
@@ -78,12 +80,17 @@ const ModelsBadge: FC<{
     return (
         <button
             type="button"
-            className="relative inline-flex items-center group/models"
-            onClick={() => setShowTooltip(!showTooltip)}
+            className="relative inline-flex items-center"
+            onClick={(e) => {
+                e.stopPropagation();
+                setShowTooltip((prev) => !prev);
+            }}
+            onMouseEnter={() => setShowTooltip(true)}
+            onMouseLeave={() => setShowTooltip(false)}
             onKeyDown={(e) => {
                 if (e.key === "Enter" || e.key === " ") {
                     e.preventDefault();
-                    setShowTooltip(!showTooltip);
+                    setShowTooltip((prev) => !prev);
                 }
             }}
             aria-label="Show allowed models"
@@ -99,7 +106,7 @@ const ModelsBadge: FC<{
                 {isAllModels ? "All" : modelCount}
             </span>
             <span
-                className={`${showTooltip ? "visible" : "invisible"} group-hover/models:visible absolute right-0 top-full mt-1 px-3 py-2 bg-gradient-to-r from-pink-50 to-purple-50 text-gray-800 text-xs rounded-lg shadow-lg border border-pink-200 z-50 pointer-events-none whitespace-normal w-48 max-h-32 overflow-y-auto`}
+                className={`${showTooltip ? "visible" : "invisible"} absolute right-0 top-full mt-1 px-3 py-2 bg-gradient-to-r from-pink-50 to-purple-50 text-gray-800 text-xs rounded-lg shadow-lg border border-pink-200 z-50 pointer-events-none whitespace-normal`}
             >
                 {isAllModels ? (
                     "Access to all models"
@@ -212,6 +219,10 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                                                             fullKey={
                                                                 plaintextKey
                                                             }
+                                                            start={
+                                                                apiKey.start ??
+                                                                undefined
+                                                            }
                                                         />
                                                     ) : (
                                                         <span className="font-mono text-xs text-gray-500">
@@ -273,8 +284,8 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                 open={!!deleteId}
                 onOpenChange={({ open }) => !open && setDeleteId(null)}
             >
-                <Dialog.Backdrop className="fixed inset-0 bg-green-950/50" />
-                <Dialog.Positioner className="fixed inset-0 flex items-center justify-center p-4">
+                <Dialog.Backdrop className="fixed inset-0 bg-green-950/50 z-[100]" />
+                <Dialog.Positioner className="fixed inset-0 flex items-center justify-center p-4 z-[100]">
                     <Dialog.Content className="bg-green-100 border-green-950 border-4 rounded-lg shadow-lg max-w-md w-full p-6">
                         <Dialog.Title className="text-lg font-semibold mb-4">
                             Delete API Key
@@ -644,8 +655,8 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
                     Create new key
                 </Button>
             </Dialog.Trigger>
-            <Dialog.Backdrop className="fixed inset-0 bg-green-950/50" />
-            <Dialog.Positioner className="fixed inset-0 flex items-center justify-center p-4">
+            <Dialog.Backdrop className="fixed inset-0 bg-green-950/50 z-[100]" />
+            <Dialog.Positioner className="fixed inset-0 flex items-center justify-center p-4 z-[100]">
                 <Dialog.Content
                     className={
                         "bg-green-100 border-green-950 border-4 rounded-lg shadow-lg max-w-lg w-full p-6 max-h-[85vh] overflow-y-auto"

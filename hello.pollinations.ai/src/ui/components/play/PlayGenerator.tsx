@@ -4,7 +4,7 @@ import { CloseIcon } from "../../assets/CloseIcon";
 import type { Model } from "../../../hooks/useModelList";
 
 import { PLAY_PAGE } from "../../../theme";
-import { API_KEY } from "../../../api.config";
+import { API_BASE, getAuthHeaders } from "../../../api.config";
 
 interface PlayGeneratorProps {
     selectedModel: string;
@@ -20,6 +20,15 @@ interface PlayGeneratorProps {
  * Handles prompt input, parameters, and generation
  * Model selection is managed by parent PlayPage
  */
+// Error messages for different error types
+const ERROR_MESSAGES = {
+    RATE_LIMIT: "⏳ Rate limit reached. Please wait a moment and try again.",
+    FORBIDDEN:
+        "🔒 Access denied. You may need to log in to enter.pollinations.ai for this model.",
+    GENERIC:
+        "⚠️ Something went wrong. Please try again or choose a different model.",
+};
+
 export function PlayGenerator({
     selectedModel,
     prompt,
@@ -28,6 +37,7 @@ export function PlayGenerator({
 }: PlayGeneratorProps) {
     const [result, setResult] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(false);
+    const [error, setError] = useState<string | null>(null);
     const [uploadedImages, setUploadedImages] = useState<string[]>([]);
 
     // Cleanup blob URLs when result changes
@@ -61,6 +71,7 @@ export function PlayGenerator({
 
     const handleGenerate = async () => {
         setIsLoading(true);
+        setError(null);
 
         if (isImageModel) {
             try {
@@ -74,22 +85,34 @@ export function PlayGenerator({
                 });
 
                 const response = await fetch(
-                    `https://enter.pollinations.ai/api/generate/image/${encodeURIComponent(
+                    `${API_BASE}/generate/image/${encodeURIComponent(
                         prompt
                     )}?${params}`,
                     {
-                        headers: {
-                            Authorization: `Bearer ${API_KEY}`,
-                        },
+                        headers: getAuthHeaders(),
                     }
                 );
+
+                if (!response.ok) {
+                    if (response.status === 429) {
+                        setError(ERROR_MESSAGES.RATE_LIMIT);
+                    } else if (response.status === 403) {
+                        setError(ERROR_MESSAGES.FORBIDDEN);
+                    } else {
+                        setError(ERROR_MESSAGES.GENERIC);
+                    }
+                    setResult(null);
+                    setIsLoading(false);
+                    return;
+                }
 
                 const blob = await response.blob();
                 const imageURL = URL.createObjectURL(blob);
                 setResult(imageURL);
                 setIsLoading(false);
-            } catch (error) {
-                console.error("Image generation error:", error);
+            } catch (err) {
+                console.error("Image generation error:", err);
+                setError(ERROR_MESSAGES.GENERIC);
                 setResult(null);
                 setIsLoading(false);
             }
@@ -110,13 +133,10 @@ export function PlayGenerator({
                         : prompt;
 
                 const response = await fetch(
-                    "https://enter.pollinations.ai/api/generate/v1/chat/completions",
+                    `${API_BASE}/generate/v1/chat/completions`,
                     {
                         method: "POST",
-                        headers: {
-                            "Content-Type": "application/json",
-                            Authorization: `Bearer ${API_KEY}`,
-                        },
+                        headers: getAuthHeaders("application/json"),
                         body: JSON.stringify({
                             model: selectedModel,
                             messages: [
@@ -129,14 +149,28 @@ export function PlayGenerator({
                     }
                 );
 
+                if (!response.ok) {
+                    if (response.status === 429) {
+                        setError(ERROR_MESSAGES.RATE_LIMIT);
+                    } else if (response.status === 403) {
+                        setError(ERROR_MESSAGES.FORBIDDEN);
+                    } else {
+                        setError(ERROR_MESSAGES.GENERIC);
+                    }
+                    setResult(null);
+                    setIsLoading(false);
+                    return;
+                }
+
                 const data = await response.json();
                 const text =
                     data.choices?.[0]?.message?.content || "No response";
                 setResult(text);
                 setIsLoading(false);
-            } catch (error) {
-                console.error("Text generation error:", error);
-                setResult("Error generating text");
+            } catch (err) {
+                console.error("Text generation error:", err);
+                setError(ERROR_MESSAGES.GENERIC);
+                setResult(null);
                 setIsLoading(false);
             }
         }
@@ -284,12 +318,18 @@ export function PlayGenerator({
                             />
                         </div>
                         <div>
-                            <label
-                                htmlFor="image-seed"
-                                className="block font-headline text-text-body-main mb-2 uppercase text-xs tracking-wider font-black"
-                            >
-                                {PLAY_PAGE.seedLabel.text}
-                            </label>
+                            <div className="relative group/seed inline-block">
+                                <label
+                                    htmlFor="image-seed"
+                                    className="block font-headline text-text-body-main mb-2 uppercase text-xs tracking-wider font-black cursor-help"
+                                >
+                                    {PLAY_PAGE.seedLabel.text}
+                                </label>
+                                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-charcoal text-text-body-main text-xs rounded-input shadow-lg border border-border-main opacity-0 group-hover/seed:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-50">
+                                    Same seed + same prompt = same image
+                                    <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-charcoal" />
+                                </div>
+                            </div>
                             <input
                                 id="image-seed"
                                 name="image-seed"
@@ -303,12 +343,18 @@ export function PlayGenerator({
                             />
                         </div>
                         <div>
-                            <label
-                                htmlFor="enhance-prompt"
-                                className="block font-headline text-text-body-main mb-2 uppercase text-xs tracking-wider font-black"
-                            >
-                                {PLAY_PAGE.enhanceLabel.text}
-                            </label>
+                            <div className="relative group/enhance inline-block">
+                                <label
+                                    htmlFor="enhance-prompt"
+                                    className="block font-headline text-text-body-main mb-2 uppercase text-xs tracking-wider font-black cursor-help"
+                                >
+                                    {PLAY_PAGE.enhanceLabel.text}
+                                </label>
+                                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-charcoal text-text-body-main text-xs rounded-input shadow-lg border border-border-main opacity-0 group-hover/enhance:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-50">
+                                    AI improves your prompt for better results
+                                    <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-charcoal" />
+                                </div>
+                            </div>
                             <label className="relative flex items-center justify-center h-[52px] bg-input-background hover:bg-input-background transition-colors cursor-pointer select-none group">
                                 <input
                                     id="enhance-prompt"
@@ -377,28 +423,42 @@ export function PlayGenerator({
             )}
 
             {/* Generate Button */}
-            <Button
-                type="button"
-                onClick={handleGenerate}
-                disabled={!prompt || isLoading}
-                variant="generate"
-                size={null}
-                data-type={
-                    isAudioModel ? "audio" : isImageModel ? "image" : "text"
-                }
-                className="mb-6"
-            >
-                {isLoading
-                    ? PLAY_PAGE.generatingText.text
-                    : isAudioModel
-                    ? "Generate Audio"
-                    : isImageModel
-                    ? PLAY_PAGE.generateImageButton.text
-                    : PLAY_PAGE.generateTextButton.text}
-            </Button>
+            <div className="relative group/generate inline-block mb-6">
+                <Button
+                    type="button"
+                    onClick={handleGenerate}
+                    disabled={!prompt || isLoading}
+                    variant="generate"
+                    size={null}
+                    data-type={
+                        isAudioModel ? "audio" : isImageModel ? "image" : "text"
+                    }
+                >
+                    {isLoading
+                        ? PLAY_PAGE.generatingText.text
+                        : isAudioModel
+                        ? "Generate Audio"
+                        : isImageModel
+                        ? PLAY_PAGE.generateImageButton.text
+                        : PLAY_PAGE.generateTextButton.text}
+                </Button>
+                {!prompt && !isLoading && (
+                    <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-charcoal text-text-body-main text-xs rounded-input shadow-lg border border-border-main opacity-0 group-hover/generate:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-50">
+                        First, enter a prompt
+                        <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-charcoal" />
+                    </div>
+                )}
+            </div>
+
+            {/* Error Display */}
+            {error && (
+                <div className="mb-6 p-4 bg-surface-card border border-border-strong rounded-input text-text-body-main font-body text-sm">
+                    {error}
+                </div>
+            )}
 
             {/* Result Display */}
-            {result && (
+            {result && !error && (
                 <div className={isImageModel ? "" : "bg-input-background p-6"}>
                     {isImageModel ? (
                         <img

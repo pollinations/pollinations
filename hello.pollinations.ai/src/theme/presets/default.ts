@@ -43,6 +43,10 @@ export const AVastDeepOceanSceneFilledWithDriftingBioluminescentLifeSoftDarkness
                 "hex": "#ff4081",
                 "ids": ["indicator.audio", "logo.accent"],
             },
+            "slot_21": {
+                "hex": "#00e676",
+                "ids": ["indicator.video"],
+            },
             "slot_9": {
                 "hex": "#1e3d52",
                 "ids": ["border.main"],
@@ -361,7 +365,7 @@ export const AVastDeepOceanSceneFilledWithDriftingBioluminescentLifeSoftDarkness
         "PLAY_PAGE.generateImageButton.text": "Generate Image",
         "PLAY_PAGE.generateTextButton.text": "Generate Text",
         "SOCIAL_LINKS.discord.label": "Discord",
-        "SOCIAL_LINKS.discord.url": "https://discord.gg/k9F7SyTgqn",
+        "SOCIAL_LINKS.discord.url": "https://discord.gg/pollinations-ai-885844321461485618",
         "SOCIAL_LINKS.discord.width": "32px",
         "SOCIAL_LINKS.discord.height": "32px",
         "SOCIAL_LINKS.github.label": "GitHub",

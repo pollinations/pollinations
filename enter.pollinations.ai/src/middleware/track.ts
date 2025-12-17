@@ -55,6 +55,28 @@ import type { ErrorVariables } from "@/env.ts";
 import type { FrontendKeyRateLimitVariables } from "./rate-limit-durable.ts";
 import { getLogger } from "@logtape/logtape";
 
+// Simple token estimation function for fallback billing
+function estimateTokens(text: string): number {
+    // Rough estimation: 1 token ≈ 4 characters on average i hope
+    return Math.ceil(text.length / 4);
+}
+
+// Est. usage from partial stream data
+function estimateUsageFromStream(
+    model: ModelId,
+    promptText: string = "",
+    completionText: string = "",
+): TokenUsage {
+    const promptTokens = estimateTokens(promptText);
+    const completionTokens = estimateTokens(completionText);
+    
+    return {
+        unit: "TOKENS" as const,
+        promptTextTokens: promptTokens,
+        completionTextTokens: completionTokens,
+    };
+}
+
 export type ModelUsage = {
     model: ModelId;
     usage: TokenUsage;
@@ -127,6 +149,12 @@ export const track = (eventType: EventType) =>
         c.executionCtx.waitUntil(
             (async () => {
                 const response = responseOverride || c.res.clone();
+                
+                // Log if this is a streaming request that might be vulnerable to disconnect exploits
+                if (requestTracking.streamRequested) {
+                    log.info("Processing streaming response with enhanced billing protection");
+                }
+                
                 const responseTracking = await trackResponse(
                     eventType,
                     requestTracking,
@@ -134,9 +162,19 @@ export const track = (eventType: EventType) =>
                 );
 
                 // register pollen consumption with rate limiter
-                await c.var.frontendKeyRateLimit?.consumePollen(
-                    responseTracking.price?.totalPrice || 0,
-                );
+                const billedAmount = responseTracking.price?.totalPrice || 0;
+                await c.var.frontendKeyRateLimit?.consumePollen(billedAmount);
+                
+                // Log billing outcome for monitoring
+                if (responseTracking.isBilledUsage) {
+                    log.info("Successfully billed streaming request: ${amount} for model {model}", {
+                        amount: billedAmount,
+                        model: responseTracking.modelUsed,
+                        tokens: responseTracking.usage,
+                    });
+                } else {
+                    log.warn("Streaming request not billed - this should be rare");
+                }
 
                 const userTracking: UserData = {
                     userId: c.var.auth.user?.id,
@@ -253,11 +291,25 @@ async function trackResponse(
         );
     if (!modelUsage) {
         log.error("Failed to extract model usage");
+        // CRITICAL FIX: Always bill something to prevent infinite free exploit
+        // Even if we can't extract usage, bill a minimal amount
+        const minimalUsage: TokenUsage = {
+            unit: "TOKENS" as const,
+            promptTextTokens: 1,
+            completionTextTokens: 1,
+        };
+        const minimalCost = calculateCost(resolvedModelRequested as ModelId, minimalUsage);
+        const minimalPrice = calculatePrice(resolvedModelRequested as ServiceId, minimalUsage);
+        
         return {
             responseOk: response.ok,
             responseStatus: response.status,
             cacheData: cacheInfo,
-            isBilledUsage: false,
+            isBilledUsage: true, // Force billing even on failure
+            cost: minimalCost,
+            price: minimalPrice,
+            modelUsed: resolvedModelRequested as ModelId,
+            usage: minimalUsage,
             contentFilterResults,
         };
     }
@@ -290,9 +342,17 @@ async function* extractResponseStream(
         .pipeThrough(textDecoder)
         .pipeThrough(sseParser);
 
-    for await (const event of asyncIteratorStream(eventStream)) {
-        if (event.data === "[DONE]") return;
-        yield JSON.parse(event.data);
+    try {
+        for await (const event of asyncIteratorStream(eventStream)) {
+            if (event.data === "[DONE]") return;
+            yield JSON.parse(event.data);
+        }
+    } catch (error) {
+        // Log but don't rethrow - we need to ensure billing happens
+        const log = getLogger(["hono", "track", "stream"]);
+        log.warn("Stream extraction interrupted (likely client disconnect): {error}", { error });
+        // Return gracefully to allow billing to proceed with partial data
+        return;
     }
 }
 
@@ -446,6 +506,9 @@ async function extractUsageAndContentFilterResultsStream(
         usage: CompletionUsageSchema.nullish(),
         choices: z.array(
             z.object({
+                delta: z.object({
+                    content: z.string().optional(),
+                }).optional(),
                 content_filter_results: ContentFilterResultSchema.nullish(),
             }),
         ),
@@ -462,35 +525,51 @@ async function extractUsageAndContentFilterResultsStream(
     let usage: CompletionUsage | undefined = undefined;
     let promptFilterResults: ContentFilterResult = {};
     let completionFilterResults: ContentFilterResult = {};
+    
+    // Track partial content for fallback billing
+    let accumulatedContent = "";
+    let hasUsageFromStream = false;
 
-    for await (const event of events) {
-        const parseResult = EventSchema.safeParse(event);
+    try {
+        for await (const event of events) {
+            const parseResult = EventSchema.safeParse(event);
 
-        const incomingPromptFilterResults =
-            parseResult.data?.prompt_filter_results?.map(
-                (entry) => entry.content_filter_results,
-            ) || [];
+            const incomingPromptFilterResults =
+                parseResult.data?.prompt_filter_results?.map(
+                    (entry) => entry.content_filter_results,
+                ) || [];
 
-        promptFilterResults = mergeContentFilterResults([
-            ...incomingPromptFilterResults,
-            promptFilterResults,
-        ]);
+            promptFilterResults = mergeContentFilterResults([
+                ...incomingPromptFilterResults,
+                promptFilterResults,
+            ]);
 
-        const incomingCompletionFilterResults =
-            parseResult.data?.choices[0]?.content_filter_results;
+            const incomingCompletionFilterResults =
+                parseResult.data?.choices[0]?.content_filter_results;
 
-        completionFilterResults = mergeContentFilterResults([
-            incomingCompletionFilterResults || {},
-            completionFilterResults,
-        ]);
+            completionFilterResults = mergeContentFilterResults([
+                incomingCompletionFilterResults || {},
+                completionFilterResults,
+            ]);
 
-        if (parseResult.data?.usage) {
-            if (usage) {
-                log.warn("Multiple usage objects found in event stream");
+            // Accumulate content for fallback billing
+            const deltaContent = parseResult.data?.choices[0]?.delta?.content;
+            if (deltaContent) {
+                accumulatedContent += deltaContent;
             }
-            usage = parseResult.data?.usage;
-            model = parseResult.data?.model;
+
+            if (parseResult.data?.usage) {
+                if (usage) {
+                    log.warn("Multiple usage objects found in event stream");
+                }
+                usage = parseResult.data?.usage;
+                model = parseResult.data?.model;
+                hasUsageFromStream = true;
+            }
         }
+    } catch (error) {
+        // Client disconnected mid-stream - we still need to bill for partial usage
+        log.warn("Stream interrupted, using partial usage data: {error}", { error });
     }
 
     const contentFilterResults = contentFilterResultsToEventParams({
@@ -498,18 +577,29 @@ async function extractUsageAndContentFilterResultsStream(
         completionFilterResults,
     });
 
-    if (!model || !usage) {
-        log.error("No usage object found in event stream");
+    // Determine model for billing
+    if (!model) {
+        log.warn("No model found in stream, cannot bill for usage");
         return {
             modelUsage: null,
             contentFilterResults,
         };
     }
 
+    // Use actual usage if available, otherwise estimate from accumulated content
+    let finalUsage: TokenUsage;
+    if (usage) {
+        finalUsage = openaiUsageToTokenUsage(usage);
+    } else {
+        // Fallback: estimate usage from accumulated content
+        log.warn("No usage object in stream, estimating from content length");
+        finalUsage = estimateUsageFromStream(model as ModelId, "", accumulatedContent);
+    }
+
     return {
         modelUsage: {
             model: model as ModelId,
-            usage: openaiUsageToTokenUsage(usage),
+            usage: finalUsage,
         },
         contentFilterResults,
     };
@@ -528,8 +618,50 @@ async function extractUsageAndContentFilterResults(
         requestTracking.streamRequested &&
         response.body instanceof ReadableStream
     ) {
-        const eventStream = extractResponseStream(response);
-        return await extractUsageAndContentFilterResultsStream(eventStream);
+        const log = getLogger(["hono", "track", "extract"]);
+        
+        try {
+            // Clone the response to avoid consuming the original stream
+            const clonedResponse = response.clone();
+            const eventStream = extractResponseStream(clonedResponse);
+            const result = await extractUsageAndContentFilterResultsStream(eventStream);
+            
+            // Ensure we always return some billing data, even if stream was interrupted
+            if (!result.modelUsage) {
+                log.warn("No usage data extracted from stream, providing fallback");
+                // Return minimal billing data to prevent infinite free usage
+                return {
+                    modelUsage: {
+                        model: requestTracking.resolvedModelRequested as ModelId,
+                        usage: {
+                            unit: "TOKENS" as const,
+                            promptTextTokens: 1,
+                            completionTextTokens: 1,
+                        },
+                    },
+                    contentFilterResults: result.contentFilterResults,
+                };
+            }
+            
+            return result;
+        } catch (error) {
+            log.error("Failed to extract usage from stream: {error}", { error });
+            // Ensure billing still happens even if extraction fails
+            return {
+                modelUsage: {
+                    model: requestTracking.resolvedModelRequested as ModelId,
+                    usage: {
+                        unit: "TOKENS" as const,
+                        promptTextTokens: 0,
+                        completionTextTokens: 10, // Reasonable minimum for failed extraction
+                    },
+                },
+                contentFilterResults: contentFilterResultsToEventParams({
+                    promptFilterResults: {},
+                    completionFilterResults: {},
+                }),
+            };
+        }
     }
     return extractUsageAndContentFilterResultsHeaders(response);
 }

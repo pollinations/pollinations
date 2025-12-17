@@ -176,24 +176,26 @@ export const TEXT_SERVICES = {
     //     provider: "scaleway",
     //     tier: "flower",
     // },
-    "openai-audio": {
-        aliases: ["gpt-4o-mini-audio-preview"],
-        modelId: "gpt-4o-mini-audio-preview-2024-12-17",
-        provider: "azure-openai",
-        tier: "seed",
-    },
+    // Disabled - available via enter.pollinations.ai
+    // "openai-audio": {
+    //     aliases: ["gpt-4o-mini-audio-preview"],
+    //     modelId: "gpt-4o-mini-audio-preview-2024-12-17",
+    //     provider: "azure-openai",
+    //     tier: "seed",
+    // },
     "roblox-rp": {
         aliases: ["llama-roblox", "llama-fast-roblox"],
         modelId: "us.meta.llama3-1-8b-instruct-v1:0",
         provider: "aws-bedrock",
         tier: "seed",
     },
-    "openai-reasoning": {
-        aliases: ["o4-mini"],
-        modelId: "openai/o4-mini",
-        provider: "api-navy",
-        tier: "seed",
-    },
+    // Disabled - available via enter.pollinations.ai
+    // "openai-reasoning": {
+    //     aliases: ["o4-mini"],
+    //     modelId: "openai/o4-mini",
+    //     provider: "api-navy",
+    //     tier: "seed",
+    // },
     "gemini": {
         aliases: ["gemini-2.5-flash-lite"],
         modelId: "gemini-2.5-flash-lite",

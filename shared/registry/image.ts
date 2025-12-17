@@ -84,12 +84,13 @@ export const IMAGE_SERVICES = {
         provider: "bytedance-ark",
         tier: "nectar",
     },
-    "gptimage": {
-        aliases: ["gpt-image", "gpt-image-1-mini"],
-        modelId: "gptimage",
-        provider: "azure-openai",
-        tier: "seed",
-    },
+    // Disabled - available via enter.pollinations.ai
+    // "gptimage": {
+    //     aliases: ["gpt-image", "gpt-image-1-mini"],
+    //     modelId: "gptimage",
+    //     provider: "azure-openai",
+    //     tier: "seed",
+    // },
 } as const satisfies ServiceRegistry<typeof IMAGE_COSTS>;
 
 

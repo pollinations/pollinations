@@ -67,12 +67,12 @@ export const IMAGE_CONFIG: ImageModelsConfig = {
         defaultSideLength: 1024,
     },
 
-    // Azure GPT Image model - gpt-image-1-minica
-    gptimage: {
-        type: "azure",
-        enhance: false,
-        maxSideLength: 1024,
-    },
+    // Disabled - available via enter.pollinations.ai
+    // gptimage: {
+    //     type: "azure",
+    //     enhance: false,
+    //     maxSideLength: 1024,
+    // },
 };
 
 /**

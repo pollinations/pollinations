@@ -28,6 +28,8 @@ import { GenerateImageRequestQueryParamsSchema } from "@/schemas/image.ts";
 import { GenerateTextRequestQueryParamsSchema } from "@/schemas/text.ts";
 import { z } from "zod";
 import { HTTPException } from "hono/http-exception";
+import { jsonSchemaEnforcement, JsonSchemaVariables } from "@/middleware/json-schema.ts";
+import { jsonSchemaValidation } from "@/middleware/json-schema-validation.ts";
 import {
     ModelInfoSchema,
     getImageModelsInfo,
@@ -35,13 +37,15 @@ import {
 } from "@shared/registry/model-info.ts";
 import { createFactory } from "hono/factory";
 
-const factory = createFactory<Env>();
+const factory = createFactory<Env & JsonSchemaVariables>();
 
 // Shared handler for OpenAI-compatible chat completions
 const chatCompletionHandlers = factory.createHandlers(
     validator("json", CreateChatCompletionRequestSchema),
+    jsonSchemaEnforcement,
     resolveModel("generate.text"),
     track("generate.text"),
+    jsonSchemaValidation,
     async (c) => {
         const log = c.get("log");
         await c.var.auth.requireAuthorization();

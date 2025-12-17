@@ -212,4 +212,44 @@ describe("Veo Video Generation", () => {
             expect(buffer.byteLength).toBeGreaterThan(1000);
         },
     );
+
+    /**
+     * Test veo image-to-video (I2V) - PR #6068
+     * Provides an image URL to test the I2V functionality
+     */
+    test(
+        "veo I2V should return video/mp4",
+        { timeout: 180000 },
+        async ({ apiKey, mocks }) => {
+            await mocks.enable("polar", "tinybird", "vcr");
+
+            // Use a simple white image - results in smaller compressed video
+            const imageUrl =
+                "https://image.pollinations.ai/prompt/pure%20white%20background?width=512&height=512&nologo=true&seed=42";
+
+            const response = await SELF.fetch(
+                `http://localhost:3000/api/generate/image/animate%20this%20image?model=veo&duration=4&image=${encodeURIComponent(imageUrl)}`,
+                {
+                    method: "GET",
+                    headers: {
+                        authorization: `Bearer ${apiKey}`,
+                    },
+                },
+            );
+
+            // Log response for debugging if it fails
+            if (response.status !== 200) {
+                const body = await response.clone().text();
+                console.log("Veo I2V response:", response.status, body);
+            }
+
+            expect(response.status).toBe(200);
+
+            const contentType = response.headers.get("content-type");
+            expect(contentType).toContain("video/mp4");
+
+            const buffer = await response.arrayBuffer();
+            expect(buffer.byteLength).toBeGreaterThan(1000);
+        },
+    );
 });

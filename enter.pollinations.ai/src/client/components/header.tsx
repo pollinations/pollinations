@@ -16,7 +16,7 @@ export const Header: FC<HeaderProps> = ({ children }) => {
                     />
                     <div className="flex flex-wrap justify-center sm:justify-start gap-1.5 text-xs">
                         <a
-                            href="https://discord.gg/pollinations"
+                            href="https://discord.gg/pollinations-ai-885844321461485618"
                             target="_blank"
                             rel="noopener noreferrer"
                             className="bg-black/10 hover:bg-black/20 transition-colors rounded-full px-2 py-0.5 whitespace-nowrap"

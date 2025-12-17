@@ -137,7 +137,7 @@ Once your idea is approved (or if you're feeling confident):
 -   [API Docs](../APIDOCS.md)
 -   [Main README](../README.md)
 -   [Contributing Guide](../CONTRIBUTING.md)
--   [Discord](https://discord.gg/8HqSRhJVxn)
+-   [Discord](https://discord.gg/pollinations-ai-885844321461485618)
 
 ## Recognition
 

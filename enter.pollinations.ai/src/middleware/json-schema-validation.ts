@@ -115,6 +115,9 @@ async function handleNonStreamingValidation(
 
 /**
  * Handle validation for streaming responses
+ * 
+ * THE FIX: Properly buffers incomplete lines to prevent JSON parse errors
+ * when TCP packets split in the middle of SSE data lines.
  */
 async function handleStreamingValidation(
     c: any,
@@ -138,6 +141,7 @@ async function handleStreamingValidation(
 
         let accumulatedContent = "";
         let isValidating = false;
+        let lineBuffer = ""; // THE FIX: Buffer for incomplete lines
 
         // Process the stream
         (async () => {
@@ -146,6 +150,25 @@ async function handleStreamingValidation(
                     const { done, value } = await reader.read();
                     
                     if (done) {
+                        // Process any remaining data in the buffer
+                        if (lineBuffer.trim()) {
+                            // Treat remaining buffer as a complete line
+                            if (lineBuffer.startsWith("data: ")) {
+                                const dataStr = lineBuffer.slice(6);
+                                if (dataStr !== "[DONE]") {
+                                    try {
+                                        const data = JSON.parse(dataStr);
+                                        const deltaContent = data.choices?.[0]?.delta?.content;
+                                        if (deltaContent) {
+                                            accumulatedContent += deltaContent;
+                                        }
+                                    } catch (error) {
+                                        // Ignore parse errors in final buffer
+                                    }
+                                }
+                            }
+                        }
+                        
                         // Validate the complete content
                         if (accumulatedContent.trim()) {
                             const validation = validateJsonResponse(accumulatedContent, jsonSchema);
@@ -178,10 +201,17 @@ async function handleStreamingValidation(
                         break;
                     }
 
-                    // Decode and process the chunk
+                    // THE FIX: Decode and append to buffer
                     const chunk = new TextDecoder().decode(value);
-                    const lines = chunk.split("\n");
+                    lineBuffer += chunk;
+                    
+                    // Split on newlines, keeping incomplete line in buffer
+                    const lines = lineBuffer.split("\n");
+                    
+                    // Keep last element in buffer (might be incomplete)
+                    lineBuffer = lines.pop() || "";
 
+                    // Process only complete lines
                     for (const line of lines) {
                         if (line.startsWith("data: ")) {
                             const dataStr = line.slice(6);

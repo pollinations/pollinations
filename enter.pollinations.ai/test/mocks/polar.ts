@@ -511,7 +511,7 @@ const mockPackProducts = [
         "trial_interval_count": null,
         "name": "🐝 5 pollen + 5 FREE",
         "description":
-            "We're still in beta, and we want to thank you for trying our services!\nThe product isn't perfect yet, so for now you get twice the Pollen with every pollen you buy.\nWe hope it helps you create more, explore more, and tell us what feels off.\n\nIf you want to share feedback, ideas, or bugs, come hang out with us on Discord — we're listening. 💬 https://discord.gg/z5uMbEYK",
+            "We're still in beta, and we want to thank you for trying our services!\nThe product isn't perfect yet, so for now you get twice the Pollen with every pollen you buy.\nWe hope it helps you create more, explore more, and tell us what feels off.\n\nIf you want to share feedback, ideas, or bugs, come hang out with us on Discord — we're listening. 💬 https://discord.gg/pollinations-ai-885844321461485618",
         "recurring_interval": null,
         "recurring_interval_count": null,
         "is_recurring": false,
@@ -564,7 +564,7 @@ const mockPackProducts = [
         "trial_interval_count": null,
         "name": "🐝 50 pollen + 50 FREE",
         "description":
-            "We're still in beta, and we want to thank you for trying our services!\nThe product isn't perfect yet, so for now you get twice the Pollen with every pollen you buy.\nWe hope it helps you create more, explore more, and tell us what feels off.\n\nIf you want to share feedback, ideas, or bugs, come hang out with us on Discord — we're listening. 💬 https://discord.gg/z5uMbEYK",
+            "We're still in beta, and we want to thank you for trying our services!\nThe product isn't perfect yet, so for now you get twice the Pollen with every pollen you buy.\nWe hope it helps you create more, explore more, and tell us what feels off.\n\nIf you want to share feedback, ideas, or bugs, come hang out with us on Discord — we're listening. 💬 https://discord.gg/pollinations-ai-885844321461485618",
         "recurring_interval": null,
         "recurring_interval_count": null,
         "is_recurring": false,
@@ -617,7 +617,7 @@ const mockPackProducts = [
         "trial_interval_count": null,
         "name": "🐝 20 pollen + 20 FREE",
         "description":
-            "We're still in beta, and we want to thank you for trying our services!\nThe product isn't perfect yet, so for now you get twice the Pollen with every pollen you buy.\nWe hope it helps you create more, explore more, and tell us what feels off.\n\nIf you want to share feedback, ideas, or bugs, come hang out with us on Discord — we're listening. 💬 https://discord.gg/z5uMbEYK",
+            "We're still in beta, and we want to thank you for trying our services!\nThe product isn't perfect yet, so for now you get twice the Pollen with every pollen you buy.\nWe hope it helps you create more, explore more, and tell us what feels off.\n\nIf you want to share feedback, ideas, or bugs, come hang out with us on Discord — we're listening. 💬 https://discord.gg/pollinations-ai-885844321461485618",
         "recurring_interval": null,
         "recurring_interval_count": null,
         "is_recurring": false,
@@ -670,7 +670,7 @@ const mockPackProducts = [
         "trial_interval_count": null,
         "name": "🐝 10 pollen + 10 FREE",
         "description":
-            "We're still in beta, and we want to thank you for trying our services!\nThe product isn't perfect yet, so for now you get twice the Pollen with every pollen you buy.\nWe hope it helps you create more, explore more, and tell us what feels off.\n\nIf you want to share feedback, ideas, or bugs, come hang out with us on Discord — we're listening. 💬 https://discord.gg/z5uMbEYK",
+            "We're still in beta, and we want to thank you for trying our services!\nThe product isn't perfect yet, so for now you get twice the Pollen with every pollen you buy.\nWe hope it helps you create more, explore more, and tell us what feels off.\n\nIf you want to share feedback, ideas, or bugs, come hang out with us on Discord — we're listening. 💬 https://discord.gg/pollinations-ai-885844321461485618",
         "recurring_interval": null,
         "recurring_interval_count": null,
         "is_recurring": false,

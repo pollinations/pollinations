@@ -76,7 +76,7 @@ Usage-Guideline: Consider adding attribution when using generated content
 Usage-Guideline: Tier system available for domain verification and referrer recognition
 
 # Contact Information
-Contact: https://discord.gg/k9F7SyTgqn
+Contact: https://discord.gg/pollinations-ai-885844321461485618
 Contact: https://github.com/pollinations/pollinations/issues
 
 # Data Practices

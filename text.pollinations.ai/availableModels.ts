@@ -88,6 +88,14 @@ const models: ModelDefinition[] = [
     },
     {
         name: "gemini",
+        config: portkeyConfig["gemini-3-flash-preview"],
+        transform: pipe(
+            createSystemPromptTransform(BASE_PROMPTS.conversational),
+            createGeminiToolsTransform(),
+        ),
+    },
+    {
+        name: "gemini-fast",
         config: portkeyConfig["gemini-2.5-flash-lite"],
         transform: pipe(
             createSystemPromptTransform(BASE_PROMPTS.conversational),
@@ -96,7 +104,7 @@ const models: ModelDefinition[] = [
     },
     {
         name: "gemini-search",
-        config: portkeyConfig["gemini-2.5-flash-lite"],
+        config: portkeyConfig["gemini-3-flash-preview"],
         transform: pipe(createGoogleSearchTransform()),
     },
     {

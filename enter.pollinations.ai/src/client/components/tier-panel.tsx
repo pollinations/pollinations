@@ -1,18 +1,6 @@
 import { useEffect, useState, type FC } from "react";
 import { TierExplanation } from "./tier-explanation";
-
-type TierStatus = "none" | "spore" | "seed" | "flower" | "nectar" | "router";
-
-interface TierPanelProps {
-    status: TierStatus;
-    next_refill_at_utc: string;
-    active_tier_name?: string;
-    daily_pollen?: number;
-    subscription_status?: string;
-    subscription_ends_at?: string;
-    subscription_canceled_at?: string;
-    has_polar_error?: boolean;
-}
+import { TierName, TierStatus } from "../../utils/polar.ts";
 
 // Badge colors for each tier level
 const TIER_BADGE_COLORS: Record<TierStatus, string> = {
@@ -41,8 +29,8 @@ const BetaNotice = () => (
     </div>
 );
 
-function formatCountdown(targetUTC: string): string {
-    const diff = new Date(targetUTC).getTime() - Date.now();
+function formatCountdown(targetDate: Date): string {
+    const diff = targetDate.getTime() - Date.now();
     if (diff <= 0) return "0h 0m";
 
     const hours = Math.floor(diff / 3600000);
@@ -62,13 +50,11 @@ const NoTierScreen: FC<{ has_polar_error?: boolean }> = ({
                     the page or try again later.
                 </p>
             ) : (
-                <div className="px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg">
-                    <p className="text-sm text-gray-900 leading-relaxed">
-                        ⭕ <strong>No Active Subscription:</strong> You don't
-                        have an active tier subscription yet.
-                        <br />
-                        Click the <strong>Activate Tier</strong> button above to
-                        get started.
+                <div className="px-3 py-2 bg-yellow-50 border border-yellow-200 rounded-lg">
+                    <p className="text-sm text-yellow-900 leading-relaxed">
+                        ⏳ <strong>Setting Up Your Subscription:</strong> Your
+                        subscription is being activated. Please refresh the page
+                        in 1-2 minutes.
                     </p>
                 </div>
             )}
@@ -97,13 +83,6 @@ const TierScreen: FC<{
 
     // Detect cancellation
     const isCanceled = !!subscription_canceled_at && !!subscription_ends_at;
-    const endsAt = subscription_ends_at
-        ? new Date(subscription_ends_at).toLocaleDateString("en-US", {
-              year: "numeric",
-              month: "long",
-              day: "numeric",
-          })
-        : "";
 
     return (
         <TierContainer>
@@ -117,25 +96,24 @@ const TierScreen: FC<{
                     {daily_pollen} pollen/day
                 </span>
                 <span
-                    className={`inline-flex items-center px-3 py-1 rounded-full font-semibold text-sm ${isCanceled ? "bg-red-50 border border-red-200 text-red-900" : "bg-blue-100 border border-blue-300 text-blue-800"}`}
+                    className={`inline-flex items-center px-3 py-1 rounded-full font-semibold text-sm ${isCanceled ? "bg-yellow-50 border border-yellow-200 text-yellow-900" : "bg-blue-100 border border-blue-300 text-blue-800"}`}
                 >
-                    ⏱️ {countdown}
+                    ⏱ {countdown}
                 </span>
             </div>
 
             {isCanceled ? (
-                <div className="px-3 py-2 bg-red-50 border border-red-200 rounded-lg">
-                    <p className="text-sm text-red-900 leading-relaxed">
-                        🔔 <strong>Subscription Ending:</strong> Your
-                        subscription is active until <strong>{endsAt}</strong>.
-                        It will not auto-renew. Unused pollen does not carry
-                        over.
+                <div className="px-3 py-2 bg-blue-50 border border-blue-200 rounded-lg">
+                    <p className="text-sm text-blue-900 leading-relaxed">
+                        🔄 Cancellation pending – but don't worry, you'll be
+                        automatically resubscribed to keep your {daily_pollen}{" "}
+                        daily pollen.
                     </p>
                 </div>
             ) : (
                 <div className="px-3 py-2 bg-green-50 border border-green-200 rounded-lg">
                     <p className="text-sm text-green-900 leading-relaxed">
-                        ✓ Your subscription is active and will earn you{" "}
+                        ✓ Your subscription is active and earns you{" "}
                         {daily_pollen} pollen daily. Unused pollen does not
                         carry over.
                     </p>
@@ -147,43 +125,56 @@ const TierScreen: FC<{
     );
 };
 
-export const TierPanel: FC<TierPanelProps> = ({
-    status,
-    next_refill_at_utc,
-    active_tier_name,
-    daily_pollen,
-    subscription_canceled_at,
-    subscription_ends_at,
-    has_polar_error,
-}) => {
+type TierPanelProps = {
+    target: TierName;
+    active: {
+        tier: TierStatus;
+        displayName: string;
+        subscriptionDetails?: {
+            status: "active" | "canceled" | "trialing" | "none";
+            endsAt?: string;
+            canceledAt?: string;
+            nextRefillAt?: string;
+            dailyPollen?: number;
+        };
+    };
+};
+
+export const TierPanel: FC<TierPanelProps> = ({ target, active }) => {
     // Hooks must be called before any conditional returns
     const [countdown, setCountdown] = useState<string>(
-        formatCountdown(next_refill_at_utc),
+        formatCountdown(
+            new Date(active.subscriptionDetails?.nextRefillAt || ""),
+        ),
     );
 
     useEffect(() => {
         const id = setInterval(() => {
-            setCountdown(formatCountdown(next_refill_at_utc));
+            setCountdown(
+                formatCountdown(
+                    new Date(active.subscriptionDetails?.nextRefillAt || ""),
+                ),
+            );
         }, 60000);
         return () => clearInterval(id);
-    }, [next_refill_at_utc]);
+    }, [active]);
 
-    if (status === "none") {
-        return <NoTierScreen has_polar_error={has_polar_error} />;
+    if (active.tier === "none") {
+        return <NoTierScreen has_polar_error={false} />;
     }
 
     // These should always be defined when status !== "none", but provide fallbacks for type safety
-    const displayName = active_tier_name || "Unknown Tier";
-    const displayPollen = daily_pollen ?? 0;
+    const displayName = active.displayName || "Unknown Tier";
+    const displayPollen = active.subscriptionDetails?.dailyPollen ?? 0;
 
     return (
         <TierScreen
-            tier={status}
+            tier={active.tier}
             countdown={countdown}
             active_tier_name={displayName}
             daily_pollen={displayPollen}
-            subscription_canceled_at={subscription_canceled_at}
-            subscription_ends_at={subscription_ends_at}
+            subscription_canceled_at={active.subscriptionDetails?.canceledAt}
+            subscription_ends_at={active.subscriptionDetails?.endsAt}
         />
     );
 };

@@ -372,7 +372,7 @@ export const GayPrideLgbtqCopy = {
     "PLAY_PAGE.generateImageButton.text": "Generate Image",
     "PLAY_PAGE.generateTextButton.text": "Generate Text",
     "SOCIAL_LINKS.discord.label": "Discord",
-    "SOCIAL_LINKS.discord.url": "https://discord.gg/k9F7SyTgqn",
+    "SOCIAL_LINKS.discord.url": "https://discord.gg/pollinations-ai-885844321461485618",
     "SOCIAL_LINKS.discord.width": "32px",
     "SOCIAL_LINKS.discord.height": "32px",
     "SOCIAL_LINKS.github.label": "GitHub",

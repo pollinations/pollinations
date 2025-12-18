@@ -221,7 +221,7 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                                                             }
                                                             start={
                                                                 apiKey.start ??
-                                                                undefined
+                                                                ""
                                                             }
                                                         />
                                                     ) : (

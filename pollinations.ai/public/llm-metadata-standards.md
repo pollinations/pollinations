@@ -488,4 +488,4 @@ Some future enhancements we're considering:
 3. **Enhanced MCP server capabilities**: Adding more functions and models to our MCP server
 4. **AI-friendly headers**: Implementing specific HTTP headers to guide AI crawlers
 
-If you have suggestions for additional metadata standards or improvements to our current implementations, please join our [Discord community](https://discord.gg/k9F7SyTgqn) or create an issue on our [GitHub repository](https://github.com/pollinations/pollinations/issues).
+If you have suggestions for additional metadata standards or improvements to our current implementations, please join our [Discord community](https://discord.gg/pollinations-ai-885844321461485618) or create an issue on our [GitHub repository](https://github.com/pollinations/pollinations/issues).

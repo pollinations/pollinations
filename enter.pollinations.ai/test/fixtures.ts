@@ -47,7 +47,7 @@ type SignupData = {
 
 export const test = base.extend<Fixtures>({
     log: async ({/* empty */}, use) => {
-        await ensureConfigured("trace");
+        await ensureConfigured({ level: "trace" });
         await use(getLogger(["test"]));
     },
     mocks: async ({/* empty */}, use) => {

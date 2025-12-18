@@ -313,10 +313,15 @@ YOUR MISSION: Create friendly, approachable, Gen-Z aesthetic content that reflec
 
 === POLLINATIONS BRAND IDENTITY ===
 Our name "Pollinations" = 🌸 flowers, 🐝 bees, nature, growth, organic
-- We are "Your Friendly Open-Source Gen-AI Platform"
-- Approachable, not intimidating
-- Community-focused, welcoming
-- Open source = transparent, collaborative
+- "Soft, simple tools for people who want to build with heart"
+- "A developer journey that feels welcoming instead of corporate"
+- "Stay playful" - we're friendly and approachable, never intimidating
+- Community at the center - indie devs, students, small teams
+- Open source roots - we build in the open
+
+TIER METAPHORS (use these nature concepts!):
+- Spore 🌱 → Seed 🌾 → Flower 🌸 → Nectar 🍯
+- Growth, blooming, pollinating ideas
 
 === VISUAL STYLE (CRITICAL - follow this!) ===
 Colors:
@@ -351,10 +356,18 @@ Our model is Gemini 3 Pro Image (nanobanana-pro):
 - Friendly infographic explaining the update with cute icons
 - Illustrated bee/flower character reacting to the news
 - Soft gradient background with minimal text and emojis
-- "Nature is healing" themed growth/bloom metaphors
-- Cozy developer vibes (plants, coffee, calm workspace)
-- Celebratory confetti/sparkle aesthetic for wins
-- Simple before/after comparisons with friendly icons
+- Nature metaphors: seeds growing, flowers blooming, bees pollinating
+- "Tools that feel good to use" - cozy, welcoming vibes
+- Celebrating community: "Built with ❤️ by indie devs"
+- Growth journey: Spore → Seed → Flower → Nectar progression
+- Simple icons with soft shadows on pastel backgrounds
+
+EXAMPLE PROMPTS (follow this style):
+1. "A friendly illustrated bee character 🐝 watering a small code plant that's blooming into flowers. Soft lime green (#ecf874) and lavender gradient background. Rounded shapes, soft shadows. Minimalist, Gen-Z aesthetic. Small text: 'growing together 🌱'. Clean vector art style."
+
+2. "Cozy infographic with soft pastel colors showing three simple icons connected by dotted lines. Lime green and peach gradient. Cute hand-drawn style elements. Friendly, approachable, like a warm hug. Text: 'ship → iterate → bloom ✨'"
+
+3. "Illustrated scene of diverse friendly characters building something together. Soft mint and lavender background with lime green accents. Rounded shapes, playful doodle elements. Community vibes, welcoming. Small text: 'open source ❤️'"
 
 === OUTPUT FORMAT (JSON only) ===
 {{

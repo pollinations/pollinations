@@ -12,18 +12,20 @@ function generateNonce(): string {
 /**
  * CSP Middleware for Scalar Documentation
  * 
- * Scalar API documentation uses inline scripts for functionality.
- * This middleware provides a balanced CSP policy that allows necessary
- * functionality while maintaining security.
+ * Implements Content Security Policy with nonce-based script protection.
+ * The nonce ensures only authorized scripts can execute, preventing XSS attacks.
  * 
- * In production, we use a restrictive policy with specific allowances for Scalar.
- * In development, we allow unsafe-inline for easier debugging.
+ * SECURITY: Production uses nonce-only approach - NO unsafe-inline allowed.
+ * Development allows unsafe-inline for debugging convenience only.
  */
 export const cspMiddleware = createMiddleware<Env>(async (c, next) => {
-    // Generate nonce for this request
+    // Generate cryptographic nonce for this request
     const nonce = generateNonce();
     
-    // Store nonce in custom header for potential use
+    // Store nonce in context for templates/scripts to use
+    c.set("cspNonce", nonce);
+    
+    // Expose nonce via header for client-side access if needed
     c.header("X-CSP-Nonce", nonce);
     
     await next();
@@ -39,13 +41,14 @@ export const cspMiddleware = createMiddleware<Env>(async (c, next) => {
     
     if (isDevelopment) {
         // Development: Allow unsafe-inline for easier debugging
+        // This is intentionally less secure for development convenience
         const devCSP = [
             "default-src 'self'",
-            "script-src 'self' 'unsafe-inline' 'unsafe-eval'", // Allow inline scripts and eval
-            "style-src 'self' 'unsafe-inline'", // Allow inline styles
+            "script-src 'self' 'unsafe-inline' 'unsafe-eval'", // Dev only: allows inline/eval
+            "style-src 'self' 'unsafe-inline'",
             "img-src 'self' data: https:",
             "font-src 'self' data:",
-            "connect-src 'self' https:", // Allow API calls
+            "connect-src 'self' https:",
             "frame-src 'none'",
             "object-src 'none'",
             "base-uri 'self'",
@@ -58,14 +61,15 @@ export const cspMiddleware = createMiddleware<Env>(async (c, next) => {
         c.header("X-Content-Security-Policy", devCSP); // IE fallback
         c.header("X-WebKit-CSP", devCSP); // Old WebKit fallback
     } else {
-        // Production: More restrictive but functional for Scalar
+        // Production: Secure nonce-based policy
+        // THE FIX: Removed 'unsafe-inline' and injected nonce into CSP header
         const prodCSP = [
             "default-src 'self'",
-            "script-src 'self' 'unsafe-inline'", // Scalar needs inline scripts
-            "style-src 'self' 'unsafe-inline'", // Scalar needs inline styles
+            `script-src 'self' 'nonce-${nonce}'`, // THE FIX: nonce-based, NO unsafe-inline
+            "style-src 'self' 'unsafe-inline'", // Styles still need inline for Scalar
             "img-src 'self' data: https:",
             "font-src 'self' data:",
-            "connect-src 'self' https:", // Allow API calls
+            "connect-src 'self' https:",
             "frame-src 'none'",
             "object-src 'none'",
             "base-uri 'self'",

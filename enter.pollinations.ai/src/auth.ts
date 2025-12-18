@@ -7,7 +7,7 @@ import {
     type User as GenericUser,
 } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
-import { APIError } from "better-auth/api";
+import { APIError, createAuthMiddleware } from "better-auth/api";
 import { admin, apiKey, openAPI } from "better-auth/plugins";
 import { drizzle } from "drizzle-orm/d1";
 import * as betterAuthSchema from "./db/schema/better-auth.ts";
@@ -22,6 +22,7 @@ export function createAuth(env: Cloudflare.Env) {
 
     const PUBLISHABLE_KEY_PREFIX = "pk";
     const SECRET_KEY_PREFIX = "sk";
+    const PK_EXPIRATION_SECONDS = 30 * 24 * 60 * 60; // 30 days in seconds
 
     const apiKeyPlugin = apiKey({
         enableMetadata: true,
@@ -98,6 +99,31 @@ export function createAuth(env: Cloudflare.Env) {
             },
         },
         plugins: [adminPlugin, apiKeyPlugin, polarPlugin(polar), openAPIPlugin],
+        hooks: {
+            before: createAuthMiddleware(async (ctx) => {
+                // Enforce expiration for publishable keys server-side
+                if (ctx.path !== "/api-key/create") {
+                    return;
+                }
+
+                const prefix = ctx.body?.prefix;
+                const isPublishable =
+                    prefix === PUBLISHABLE_KEY_PREFIX || prefix === "plln_pk";
+
+                // Force 30-day expiration for publishable keys, no expiration for secret keys
+                return {
+                    context: {
+                        ...ctx,
+                        body: {
+                            ...ctx.body,
+                            expiresIn: isPublishable
+                                ? PK_EXPIRATION_SECONDS
+                                : undefined,
+                        },
+                    },
+                };
+            }),
+        },
         telemetry: { enabled: false },
     });
 }

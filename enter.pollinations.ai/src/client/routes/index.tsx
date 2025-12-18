@@ -98,17 +98,11 @@ function RouteComponent() {
         const isPublishable = keyType === "publishable";
         const prefix = isPublishable ? "plln_pk" : "plln_sk";
 
-        // Publishable keys expire in 30 days, secret keys never expire
-        const PK_EXPIRATION_DAYS = 30;
-        const expiresIn = isPublishable
-            ? PK_EXPIRATION_DAYS * 24 * 60 * 60
-            : undefined;
-
         // Step 1: Create key via better-auth's native API
+        // Note: Expiration is enforced server-side based on prefix
         const createResult = await auth.apiKey.create({
             name: formState.name,
             prefix,
-            expiresIn,
             metadata: {
                 description: formState.description,
                 keyType,

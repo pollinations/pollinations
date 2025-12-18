@@ -95,6 +95,42 @@ const KeyDisplay: FC<{ fullKey: string; start: string }> = ({
     );
 };
 
+const ExpirationBadge: FC<{ expiresAt: Date | null | undefined }> = ({
+    expiresAt,
+}) => {
+    if (!expiresAt) {
+        return <span className="text-xs text-gray-400">Never</span>;
+    }
+
+    const expiresDate = new Date(expiresAt);
+    const now = new Date();
+    const daysLeft = Math.ceil(
+        (expiresDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24),
+    );
+    const timeLeft = formatDistanceToNowStrict(expiresDate, {
+        addSuffix: false,
+        locale: shortLocale,
+    });
+
+    if (daysLeft <= 0) {
+        return (
+            <span className="text-xs px-2 py-0.5 rounded-full bg-red-100 text-red-700 border border-red-300">
+                Expired
+            </span>
+        );
+    }
+
+    if (daysLeft <= 7) {
+        return (
+            <span className="text-xs px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 border border-amber-300">
+                ⚠️ {timeLeft}
+            </span>
+        );
+    }
+
+    return <span className="text-xs text-gray-600">{timeLeft}</span>;
+};
+
 const ModelsBadge: FC<{
     permissions: { [key: string]: string[] } | null;
 }> = ({ permissions }) => {
@@ -253,7 +289,7 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                                                             }
                                                             start={
                                                                 apiKey.start ??
-                                                                undefined
+                                                                ""
                                                             }
                                                         />
                                                     ) : (
@@ -289,58 +325,11 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                                                     </span>
                                                 </Cell>
                                                 <Cell>
-                                                    {(() => {
-                                                        if (!apiKey.expiresAt) {
-                                                            return (
-                                                                <span className="text-xs text-gray-400">
-                                                                    Never
-                                                                </span>
-                                                            );
+                                                    <ExpirationBadge
+                                                        expiresAt={
+                                                            apiKey.expiresAt
                                                         }
-                                                        const expiresDate =
-                                                            new Date(
-                                                                apiKey.expiresAt,
-                                                            );
-                                                        const now = new Date();
-                                                        const daysLeft =
-                                                            Math.ceil(
-                                                                (expiresDate.getTime() -
-                                                                    now.getTime()) /
-                                                                    (1000 *
-                                                                        60 *
-                                                                        60 *
-                                                                        24),
-                                                            );
-                                                        const timeLeft =
-                                                            formatDistanceToNowStrict(
-                                                                expiresDate,
-                                                                {
-                                                                    addSuffix: false,
-                                                                    locale: shortLocale,
-                                                                },
-                                                            );
-
-                                                        if (daysLeft <= 0) {
-                                                            return (
-                                                                <span className="text-xs px-2 py-0.5 rounded-full bg-red-100 text-red-700 border border-red-300">
-                                                                    Expired
-                                                                </span>
-                                                            );
-                                                        }
-                                                        if (daysLeft <= 7) {
-                                                            return (
-                                                                <span className="text-xs px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 border border-amber-300">
-                                                                    ⚠️{" "}
-                                                                    {timeLeft}
-                                                                </span>
-                                                            );
-                                                        }
-                                                        return (
-                                                            <span className="text-xs text-gray-600">
-                                                                {timeLeft}
-                                                            </span>
-                                                        );
-                                                    })()}
+                                                    />
                                                 </Cell>
                                                 <Cell>
                                                     <ModelsBadge

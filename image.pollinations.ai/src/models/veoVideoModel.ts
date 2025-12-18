@@ -2,6 +2,7 @@ import debug from "debug";
 import sleep from "await-sleep";
 import googleCloudAuth from "../../auth/googleCloudAuth.ts";
 import { HttpError } from "../httpError.ts";
+import { downloadImageAsBase64 } from "../utils/imageDownload.ts";
 import type { ImageParams } from "../params.ts";
 import type { ProgressManager } from "../progressBar.ts";
 
@@ -95,20 +96,59 @@ export const callVeoAPI = async (
     // TODO: Enable 1080p later by adding resolution param and updating cost calculation
     const resolution = "720p";
 
+    // Check for input image (image-to-video)
+    const hasImage = safeParams.image && safeParams.image.length > 0;
+
     logOps("Video params:", {
         durationSeconds,
         aspectRatio,
         generateAudio,
         resolution,
+        hasImage,
     });
+
+    // Build instance object
+    const instance: {
+        prompt: string;
+        image?: { bytesBase64Encoded: string; mimeType: string };
+    } = {
+        prompt: prompt,
+    };
+
+    // Add image for I2V generation (Veo supports 1 reference image as first frame)
+    if (hasImage) {
+        const imageUrl = Array.isArray(safeParams.image)
+            ? safeParams.image[0]
+            : safeParams.image;
+
+        logOps("Adding first frame image for I2V:", imageUrl);
+        progress.updateBar(
+            requestId,
+            38,
+            "Processing",
+            "Processing reference image...",
+        );
+
+        try {
+            const { base64, mimeType } = await downloadImageAsBase64(imageUrl);
+            instance.image = {
+                bytesBase64Encoded: base64,
+                mimeType: mimeType,
+            };
+            logOps("Image processed successfully, mimeType:", mimeType);
+        } catch (error) {
+            const errorMessage = error instanceof Error ? error.message : String(error);
+            logError("Error processing reference image:", errorMessage);
+            throw new HttpError(
+                `Failed to process reference image: ${errorMessage}`,
+                400,
+            );
+        }
+    }
 
     // Build request body
     const requestBody = {
-        instances: [
-            {
-                prompt: prompt,
-            },
-        ],
+        instances: [instance],
         parameters: {
             sampleCount: 1,
             durationSeconds: durationSeconds,
@@ -120,7 +160,15 @@ export const callVeoAPI = async (
         },
     };
 
-    logOps("Veo API request body:", JSON.stringify(requestBody, null, 2));
+    // Log request (hide base64)
+    const logSafeRequest = {
+        ...requestBody,
+        instances: requestBody.instances.map((inst) => ({
+            ...inst,
+            image: inst.image ? { ...inst.image, bytesBase64Encoded: "[BASE64]" } : undefined,
+        })),
+    };
+    logOps("Veo API request body:", JSON.stringify(logSafeRequest, null, 2));
 
     // Step 1: Start video generation with predictLongRunning
     progress.updateBar(

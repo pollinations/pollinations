@@ -116,9 +116,9 @@ export function safeRound(amount: number, precision: number = 6): number {
 }
 
 export type ExponentialBackoffOptions = {
+    maxAttempts?: number;
     minDelay?: number;
     maxDelay?: number;
-    maxAttempts?: number;
     jitter?: number; // 0 to 1 (e.g., 0.25 = ±25%)
 };
 
@@ -146,4 +146,61 @@ export function exponentialBackoffDelay(
 
     // return clamped delay
     return Math.max(minDelay, Math.min(maxDelay, delay));
+}
+
+export type RetryOptions = {
+    maxAttempts?: number;
+    minDelay?: number;
+    maxDelay?: number;
+    jitter?: number;
+    onRetry?: (
+        error: Error,
+        attempt: number,
+        delay: number,
+    ) => void | Promise<void>;
+    shouldRetry?: (error: Error, attempt: number) => boolean;
+};
+
+export async function withRetry<T extends (...args: any[]) => any>(
+    fn: T,
+    options: RetryOptions = {},
+): Promise<Awaited<ReturnType<T>>> {
+    const {
+        maxAttempts = 5,
+        minDelay = 100,
+        maxDelay = 10000,
+        jitter = 0.25,
+        onRetry,
+        shouldRetry = () => true,
+    } = options;
+
+    let attempt = 0;
+    let lastError: Error | undefined;
+
+    while (attempt < maxAttempts) {
+        try {
+            attempt += 1;
+            return await fn();
+        } catch (error) {
+            lastError =
+                error instanceof Error ? error : new Error(String(error));
+
+            if (attempt >= maxAttempts || !shouldRetry(lastError, attempt)) {
+                // This was the last attempt or the error was deemed unretryable
+                break;
+            }
+
+            const delay = exponentialBackoffDelay(attempt, {
+                minDelay,
+                maxDelay,
+                maxAttempts,
+                jitter,
+            });
+
+            await onRetry?.(lastError, attempt, delay);
+            await new Promise((resolve) => setTimeout(resolve, delay));
+        }
+    }
+    // All attempts failed
+    throw lastError;
 }

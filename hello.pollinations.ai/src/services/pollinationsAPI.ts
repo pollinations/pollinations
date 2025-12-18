@@ -1,21 +1,18 @@
-import { API, DEFAULTS } from "../api.config";
+import { API, DEFAULTS, getAuthHeaders } from "../api.config";
 
 /**
  * Fetch text from Pollinations text generation API
  */
 export async function generateText(
     prompt: string,
-    apiKey: string,
+    _apiKey: string,
     seed?: number | number[],
     model?: string,
     signal?: AbortSignal,
 ): Promise<string> {
     const response = await fetch(API.TEXT_GENERATION, {
         method: "POST",
-        headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${apiKey}`,
-        },
+        headers: getAuthHeaders("application/json"),
         body: JSON.stringify({
             messages: [{ role: "user", content: prompt }],
             model: model || DEFAULTS.TEXT_MODEL,
@@ -40,7 +37,7 @@ export async function generateText(
  */
 export async function generateImage(
     prompt: string,
-    apiKey: string,
+    _apiKey: string,
     options: {
         width?: number;
         height?: number;
@@ -70,9 +67,7 @@ export async function generateImage(
 
     const response = await fetch(url, {
         method: "GET",
-        headers: {
-            Authorization: `Bearer ${apiKey}`,
-        },
+        headers: getAuthHeaders(),
         signal,
     });
 

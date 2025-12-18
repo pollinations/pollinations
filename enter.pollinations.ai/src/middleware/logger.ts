@@ -12,18 +12,20 @@ type Env = {
 };
 
 export const logger = createMiddleware<Env>(async (c, next) => {
-    await ensureConfigured(c.env.LOG_LEVEL || "debug");
+    await ensureConfigured({
+        level: c.env.LOG_LEVEL || "debug",
+        format: c.env.LOG_FORMAT || "text",
+    });
     const log = getLogger(["hono"]);
     c.set("log", log);
 
-    const requestId = c.var.requestId;
     const startTime = Date.now();
 
     await withContext(
         {
             requestId: c.var.requestId,
             method: c.req.method,
-            url: c.req.url,
+            routePath: c.req.url,
             userAgent: c.req.header("user-agent"),
             ipAddress:
                 c.req.header("cf-connecting-ip") ||
@@ -33,7 +35,6 @@ export const logger = createMiddleware<Env>(async (c, next) => {
             log.info("{method} {url}", {
                 method: c.req.method,
                 url: c.req.url,
-                requestId,
             });
 
             await next();

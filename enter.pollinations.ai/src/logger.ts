@@ -5,9 +5,12 @@ import {
     configure,
     getConsoleSink,
     getAnsiColorFormatter,
+    getJsonLinesFormatter,
     FormattedValues,
     LogLevel,
 } from "@logtape/logtape";
+
+export type LogFormat = "json" | "text";
 
 function formatValue(v: unknown): string {
     if (typeof v === "string") return v;
@@ -27,16 +30,31 @@ function formatLogline(vs: FormattedValues): string {
 
 let configured = false;
 
-export async function ensureConfigured(logLevel: LogLevel) {
+const jsonLinesFormatter = () =>
+    getJsonLinesFormatter({
+        properties: "nest:properties",
+        categorySeparator: ":",
+    });
+
+export const ansiColorFormatter = () =>
+    getAnsiColorFormatter({
+        level: "FULL",
+        value: formatValue,
+        format: formatLogline,
+    });
+
+export async function ensureConfigured(options: {
+    level: LogLevel;
+    format?: LogFormat;
+}) {
     if (configured) return;
     await configure({
         sinks: {
             console: getConsoleSink({
-                formatter: getAnsiColorFormatter({
-                    level: "FULL",
-                    value: formatValue,
-                    format: formatLogline,
-                }),
+                formatter:
+                    options.format === "json"
+                        ? jsonLinesFormatter()
+                        : ansiColorFormatter(),
             }),
         },
         loggers: [
@@ -46,19 +64,9 @@ export async function ensureConfigured(logLevel: LogLevel) {
                 lowestLevel: "warning",
             },
             {
-                category: ["hono"],
+                category: [], // catches all categories
                 sinks: ["console"],
-                lowestLevel: logLevel,
-            },
-            {
-                category: ["durable"],
-                sinks: ["console"],
-                lowestLevel: logLevel,
-            },
-            {
-                category: ["test"],
-                sinks: ["console"],
-                lowestLevel: logLevel,
+                lowestLevel: options.level,
             },
         ],
         contextLocalStorage: new AsyncLocalStorage(),

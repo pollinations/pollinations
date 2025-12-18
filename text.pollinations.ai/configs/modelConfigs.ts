@@ -155,6 +155,14 @@ export const portkeyConfig: PortkeyConfigMap = {
         }),
 
     // Google Vertex AI configurations
+    "gemini-3-flash-preview": () => ({
+        provider: "vertex-ai",
+        authKey: googleCloudAuth.getAccessToken,
+        "vertex-project-id": process.env.GCLOUD_PROJECT_ID,
+        "vertex-region": "global",
+        "vertex-model-id": "gemini-3-flash-preview",
+        "strict-openai-compliance": "false",
+    }),
     "gemini-2.5-flash-lite": () => ({
         provider: "vertex-ai",
         authKey: googleCloudAuth.getAccessToken,

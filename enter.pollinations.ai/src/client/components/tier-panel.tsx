@@ -1,10 +1,6 @@
 import { useEffect, useState, type FC } from "react";
 import { TierExplanation } from "./tier-explanation";
 import { TierName, TierStatus } from "../../utils/polar.ts";
-import type {
-    TiersRoutes,
-    TierSubscriptionStatus,
-} from "../../routes/tiers.ts";
 
 // Badge colors for each tier level
 const TIER_BADGE_COLORS: Record<TierStatus, string> = {
@@ -24,7 +20,7 @@ const TierContainer: FC<{ children: React.ReactNode }> = ({ children }) => (
 );
 
 const BetaNotice = () => (
-    <div className="bg-linear-to-r from-gray-100 to-slate-100 rounded-xl p-4 border border-gray-300 mt-3">
+    <div className="bg-gradient-to-r from-gray-100 to-slate-100 rounded-xl p-4 border border-gray-300 mt-3">
         <p className="text-sm font-medium text-gray-900">
             ✨ <strong>We're in beta!</strong> We're learning what works best
             for our community and may adjust pollen values and tier rules as we

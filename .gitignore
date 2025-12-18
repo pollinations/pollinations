@@ -343,3 +343,4 @@ debugsession_*/
 
 # Claude skills mutable data (sensitive/local)
 .claude/skills/*/data/
+.letta/  

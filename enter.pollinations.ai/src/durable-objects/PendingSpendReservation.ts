@@ -17,6 +17,7 @@ type Reservation = {
  *
  * How it works:
  * - Reserves estimated cost atomically (no race conditions)
+ * - Validates user has sufficient balance BEFORE creating reservation
  * - Tracks all active reservations per user
  * - Releases or confirms after request completes
  * - Auto-expires stale reservations (failsafe for crashed requests)
@@ -53,15 +54,41 @@ export class PendingSpendReservation extends DurableObject {
     /**
      * Reserve funds for an upcoming request
      *
-     * This is the critical atomic operation that prevents abuse. Returns a
-     * reservation ID that must be used to confirm or release the funds.
+     * This is the critical atomic operation that prevents abuse. Validates
+     * that the user has sufficient balance before creating the reservation.
      *
      * @param estimatedCost - Estimated pollen cost for the request
+     * @param availableBalance - User's current available balance
      * @returns reservationId to track this reservation
+     * @throws Error if insufficient balance
      */
-    async reserveSpend(estimatedCost: number): Promise<string> {
+    async reserveSpend(
+        estimatedCost: number,
+        availableBalance: number,
+    ): Promise<string> {
         // Clean up expired reservations first
         await this.cleanupExpiredReservations();
+
+        // Calculate current pending spend
+        const currentPending = Array.from(this.reservations.values())
+            .filter((r) => r.status === "pending")
+            .reduce((sum, r) => sum + r.estimatedCost, 0);
+
+        // THE FIX: Check if user has enough balance for this reservation
+        // This is the atomic check that prevents parallel abuse
+        if (currentPending + estimatedCost > availableBalance) {
+            this.log.warn(
+                "Reservation denied: insufficient balance (pending: {pending}, new: {new}, available: {available})",
+                {
+                    pending: currentPending,
+                    new: estimatedCost,
+                    available: availableBalance,
+                },
+            );
+            throw new Error(
+                `Insufficient balance. Available: ${availableBalance}, Pending: ${currentPending}, Requested: ${estimatedCost}`,
+            );
+        }
 
         const reservationId = crypto.randomUUID();
         const reservation: Reservation = {
@@ -74,17 +101,13 @@ export class PendingSpendReservation extends DurableObject {
         this.reservations.set(reservationId, reservation);
         await this.persist();
 
-        // Schedule alarm for cleanup if not already set
-        const currentAlarm = await this.ctx.storage.getAlarm();
-        if (!currentAlarm) {
-            await this.ctx.storage.setAlarm(Date.now() + this.RESERVATION_TIMEOUT_MS);
-        }
-
         this.log.debug(
-            "Reserved {cost} pollen with ID {id} (total reservations: {total})",
+            "Reserved {cost} pollen with ID {id} (pending: {pending}/{available}, total reservations: {total})",
             {
                 cost: estimatedCost,
                 id: reservationId,
+                pending: currentPending + estimatedCost,
+                available: availableBalance,
                 total: this.reservations.size,
             },
         );
@@ -92,6 +115,9 @@ export class PendingSpendReservation extends DurableObject {
         return reservationId;
     }
 
+    /**
+     * Release a reservation without charging (e.g., request failed)
+     */
     async releaseReservation(reservationId: string): Promise<void> {
         const reservation = this.reservations.get(reservationId);
         if (!reservation) {
@@ -144,20 +170,17 @@ export class PendingSpendReservation extends DurableObject {
     }
 
     /**
-     * Get total pending spend across all reservations
+     * Get total pending spend across all active reservations
      */
     async getPendingSpend(): Promise<number> {
         await this.cleanupExpiredReservations();
-        
-        let totalPending = 0;
-        for (const reservation of this.reservations.values()) {
-            if (reservation.status === "pending") {
-                totalPending += reservation.estimatedCost;
-            }
-        }
-        
-        this.log.debug("Total pending spend: {total} pollen", { total: totalPending });
-        return totalPending;
+
+        const total = Array.from(this.reservations.values())
+            .filter((r) => r.status === "pending")
+            .reduce((sum, r) => sum + r.estimatedCost, 0);
+
+        this.log.debug("Total pending spend: {total} pollen", { total });
+        return total;
     }
 
     /**
@@ -219,23 +242,6 @@ export class PendingSpendReservation extends DurableObject {
                 count: expiredIds.length,
             });
         }
-    }
-
-    /**
-     * Periodic alarm to clean up expired reservations
-     * 
-     * This is the ultimate failsafe - if a worker crashes after reserving funds
-     * but before the request completes, this alarm will clean up the zombie
-     * reservation after the timeout period.
-     * 
-     * Think of it as the "zombie apocalypse prevention squad" for your billing system.
-     */
-    async alarm(): Promise<void> {
-        this.log.debug("Alarm triggered - cleaning up expired reservations");
-        await this.cleanupExpiredReservations();
-        
-        // Schedule next cleanup in 5 minutes
-        await this.ctx.storage.setAlarm(Date.now() + 5 * 60 * 1000);
     }
 
     /**

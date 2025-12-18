@@ -39,8 +39,8 @@ export const portkeyConfig: PortkeyConfigMap = {
     }),
     "gpt-4o-mini-audio-preview-2024-12-17": () => ({
         ...createAzureModelConfig(
-            process.env.AZURE_OPENAI_AUDIO_API_KEY,
-            process.env.AZURE_OPENAI_AUDIO_ENDPOINT,
+            process.env.AZURE_MYCELI_GPT4O_AUDIO_API_KEY,
+            process.env.AZURE_MYCELI_GPT4O_AUDIO_ENDPOINT,
             "gpt-4o-mini-audio-preview-2024-12-17",
         ),
         "max-completion-tokens": 2048,
@@ -53,16 +53,16 @@ export const portkeyConfig: PortkeyConfigMap = {
     // ============================================================================
     "gpt-5-nano-2025-08-07": () => ({
         ...createAzureModelConfig(
-            process.env.AZURE_OPENAI_NANO_5_API_KEY,
-            process.env.AZURE_OPENAI_NANO_5_ENDPOINT,
+            process.env.AZURE_PF_GPT5NANO_API_KEY,
+            process.env.AZURE_PF_GPT5NANO_ENDPOINT,
             "gpt-5-nano-2025-08-07",
         ),
         "max-completion-tokens": 512,
     }),
     "gpt-4.1-2025-04-14": () => ({
         ...createAzureModelConfig(
-            process.env.AZURE_OPENAI_41_API_KEY,
-            process.env.AZURE_OPENAI_41_ENDPOINT,
+            process.env.AZURE_PF_GPT41_API_KEY,
+            process.env.AZURE_PF_GPT41_ENDPOINT,
             "gpt-4.1-2025-04-14",
         ),
         "max-tokens": 512,
@@ -113,7 +113,7 @@ export const portkeyConfig: PortkeyConfigMap = {
     "gemini-3-flash-preview": () => ({
         provider: "vertex-ai",
         authKey: googleCloudAuth.getAccessToken,
-        "vertex-project-id": process.env.GCLOUD_PROJECT_ID,
+        "vertex-project-id": process.env.GOOGLE_PROJECT_ID,
         "vertex-region": "global",
         "vertex-model-id": "gemini-3-flash-preview",
         "strict-openai-compliance": "false",
@@ -121,7 +121,7 @@ export const portkeyConfig: PortkeyConfigMap = {
     "gemini-2.5-flash-lite": () => ({
         provider: "vertex-ai",
         authKey: googleCloudAuth.getAccessToken,
-        "vertex-project-id": process.env.GCLOUD_PROJECT_ID,
+        "vertex-project-id": process.env.GOOGLE_PROJECT_ID,
         "vertex-region": "us-central1",
         "vertex-model-id": "gemini-2.5-flash-lite",
         "strict-openai-compliance": "false",
@@ -129,7 +129,7 @@ export const portkeyConfig: PortkeyConfigMap = {
     "gemini-3-pro-preview": () => ({
         provider: "vertex-ai",
         authKey: googleCloudAuth.getAccessToken,
-        "vertex-project-id": process.env.GCLOUD_PROJECT_ID,
+        "vertex-project-id": process.env.GOOGLE_PROJECT_ID,
         "vertex-region": "global",
         "vertex-model-id": "gemini-3-pro-preview",
         "strict-openai-compliance": "false",
@@ -137,7 +137,7 @@ export const portkeyConfig: PortkeyConfigMap = {
     "kimi-k2-thinking-maas": () => ({
         provider: "openai",
         authKey: googleCloudAuth.getAccessToken,
-        "custom-host": `https://aiplatform.googleapis.com/v1/projects/${process.env.GCLOUD_PROJECT_ID}/locations/global/endpoints/openapi`,
+        "custom-host": `https://aiplatform.googleapis.com/v1/projects/${process.env.GOOGLE_PROJECT_ID}/locations/global/endpoints/openapi`,
         "strict-openai-compliance": "false",
         model: "moonshotai/kimi-k2-thinking-maas",
     }),

@@ -234,9 +234,9 @@ function loadExistingProjects() {
 
 // ===== LLM tagging =====
 async function callLLM(prompt) {
-  const apiKey = process.env.POLLINATIONS_API_KEY || process.env.VITE_POLLINATIONS_API_KEY;
+  const apiKey = process.env.PLN_APPS_KEY || process.env.VITE_PLN_APPS_KEY;
   if (!apiKey) {
-    throw new Error("POLLINATIONS_API_KEY or VITE_POLLINATIONS_API_KEY environment variable is required");
+    throw new Error("PLN_APPS_KEY or VITE_PLN_APPS_KEY environment variable is required");
   }
 
   const url = "https://enter.pollinations.ai/api/generate/openai";

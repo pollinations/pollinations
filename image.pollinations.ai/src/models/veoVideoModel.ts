@@ -62,11 +62,11 @@ export const callVeoAPI = async (
     progress: ProgressManager,
     requestId: string,
 ): Promise<VideoGenerationResult> => {
-    const PROJECT_ID = process.env.GCLOUD_PROJECT_ID;
+    const PROJECT_ID = process.env.GOOGLE_PROJECT_ID;
 
     if (!PROJECT_ID) {
         throw new HttpError(
-            "GCLOUD_PROJECT_ID environment variable is required",
+            "GOOGLE_PROJECT_ID environment variable is required",
             500,
         );
     }
@@ -254,7 +254,7 @@ async function pollVeoOperation(
     progress: ProgressManager,
     requestId: string,
 ): Promise<Buffer> {
-    const PROJECT_ID = process.env.GCLOUD_PROJECT_ID;
+    const PROJECT_ID = process.env.GOOGLE_PROJECT_ID;
 
     // Extract model from operation name
     const modelMatch = operationName.match(/models\/([^\/]+)\/operations/);

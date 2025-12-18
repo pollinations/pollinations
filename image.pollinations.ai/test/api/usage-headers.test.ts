@@ -1,11 +1,11 @@
 import { describe, it, expect, beforeAll } from "vitest";
 
 const BASE_URL = process.env.TEST_BASE_URL || "http://localhost:16384";
-const ENTER_TOKEN = process.env.ENTER_TOKEN;
+const PLN_ENTER_TOKEN = process.env.PLN_ENTER_TOKEN;
 
 // Helper to add auth headers to requests
 function authHeaders(): HeadersInit {
-    return ENTER_TOKEN ? { "x-enter-token": ENTER_TOKEN } : {};
+    return PLN_ENTER_TOKEN ? { "x-enter-token": PLN_ENTER_TOKEN } : {};
 }
 
 beforeAll(() => {

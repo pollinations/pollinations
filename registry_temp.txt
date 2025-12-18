@@ -268,7 +268,6 @@ export function calculateCost(modelId: ModelId, usage: TokenUsage): UsageCost {
             (total, cost) => total + cost,
         ),
         PRECISION,
-        ),
     );
     return {
         ...usageCost,
@@ -289,12 +288,11 @@ export function calculatePrice(
             `Failed to get current price for service: ${serviceId.toString()}`,
         );
     const usagePrice = convertUsage(usage, priceDefinition);
-    const totalPrice = toMicroPollen(safeRound(
+    const totalPrice = safeRound(
         Object.values(omit(usagePrice, "unit")).reduce(
             (total, price) => total + price,
         ),
         PRECISION,
-        ),
     );
     return {
         ...usagePrice,

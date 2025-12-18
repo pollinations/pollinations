@@ -1,5 +1,4 @@
 import { PriceDefinition, TokenUsage } from "@shared/registry/registry.ts";
-import { toMicroPollen } from "@shared/registry/pollen-precision.ts";
 import {
     index,
     integer,
@@ -92,26 +91,26 @@ export const event = sqliteTable(
         }).notNull(),
 
         // Pricing
-        tokenPricePromptText: integer("token_price_prompt_text").notNull(), // micro-pollen
-        tokenPricePromptCached: integer("token_price_prompt_cached").notNull(), // micro-pollen
-        tokenPricePromptAudio: integer("token_price_prompt_audio").notNull(), // micro-pollen
-        tokenPricePromptImage: integer("token_price_prompt_image").notNull(),
-        tokenPriceCompletionText: integer("token_price_completion_text").notNull(),
-        tokenPriceCompletionReasoning: integer( // micro-pollen
+        tokenPricePromptText: real("token_price_prompt_text").notNull(),
+        tokenPricePromptCached: real("token_price_prompt_cached").notNull(),
+        tokenPricePromptAudio: real("token_price_prompt_audio").notNull(),
+        tokenPricePromptImage: real("token_price_prompt_image").notNull(),
+        tokenPriceCompletionText: real("token_price_completion_text").notNull(),
+        tokenPriceCompletionReasoning: real(
             "token_price_completion_reasoning",
         ).notNull(),
-        tokenPriceCompletionAudio: integer( // micro-pollen
+        tokenPriceCompletionAudio: real(
             "token_price_completion_audio",
         ).notNull(),
-        tokenPriceCompletionImage: integer( // micro-pollen
+        tokenPriceCompletionImage: real(
             "token_price_completion_image",
         ).notNull(),
-        tokenPriceCompletionVideoSeconds: integer( // micro-pollen
+        tokenPriceCompletionVideoSeconds: real(
             "token_price_completion_video_seconds",
         )
             .notNull()
             .default(0),
-        tokenPriceCompletionVideoTokens: integer( // micro-pollen
+        tokenPriceCompletionVideoTokens: real(
             "token_price_completion_video_tokens",
         )
             .notNull()
@@ -146,8 +145,8 @@ export const event = sqliteTable(
             .default(0),
 
         // Totals
-        totalCost: integer("total_cost").notNull(), // micro-pollen
-        totalPrice: integer("total_price").notNull(), // micro-pollen
+        totalCost: real("total_cost").notNull(),
+        totalPrice: real("total_price").notNull(),
 
         // Prompt Moderation
         moderationPromptHateSeverity: text("moderation_prompt_hate_severity"),
@@ -250,25 +249,25 @@ export function priceToEventParams(
     // Rates are now just numbers (DPT), not objects with .rate property
     return {
         tokenPricePromptText: 
-            toMicroPollen(priceDefinition?.promptTextTokens || 0),
+            priceDefinition?.promptTextTokens || 0,
         tokenPricePromptCached: 
-            toMicroPollen(priceDefinition?.promptCachedTokens || 0),
+            priceDefinition?.promptCachedTokens || 0,
         tokenPricePromptAudio: 
-            toMicroPollen(priceDefinition?.promptAudioTokens || 0),
+            priceDefinition?.promptAudioTokens || 0,
         tokenPricePromptImage: 
-            toMicroPollen(priceDefinition?.promptImageTokens || 0),
+            priceDefinition?.promptImageTokens || 0,
         tokenPriceCompletionText:
-            toMicroPollen(priceDefinition?.completionTextTokens || 0),
+            priceDefinition?.completionTextTokens || 0,
         tokenPriceCompletionReasoning:
-            toMicroPollen(priceDefinition?.completionReasoningTokens || 0),
+            priceDefinition?.completionReasoningTokens || 0,
         tokenPriceCompletionAudio:
-            toMicroPollen(priceDefinition?.completionAudioTokens || 0),
+            priceDefinition?.completionAudioTokens || 0,
         tokenPriceCompletionImage:
-            toMicroPollen(priceDefinition?.completionImageTokens || 0),
+            priceDefinition?.completionImageTokens || 0,
         tokenPriceCompletionVideoSeconds:
-            toMicroPollen(priceDefinition?.completionVideoSeconds || 0),
+            priceDefinition?.completionVideoSeconds || 0,
         tokenPriceCompletionVideoTokens:
-            toMicroPollen(priceDefinition?.completionVideoTokens || 0),
+            priceDefinition?.completionVideoTokens || 0,
     };
 }
 

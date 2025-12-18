@@ -29,6 +29,7 @@ export const user = sqliteTable("user", {
   githubId: integer("github_id"),
   githubUsername: text("github_username"),
   tier: text("tier").default("spore").notNull(),
+  balance: integer("balance").default(10000000).notNull(), // 10 pollen in micro-pollen (1M = 1 pollen)
 }, (table) => [
   index("idx_user_email").on(table.email),
 ]);

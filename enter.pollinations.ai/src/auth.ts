@@ -101,27 +101,14 @@ export function createAuth(env: Cloudflare.Env) {
         plugins: [adminPlugin, apiKeyPlugin, polarPlugin(polar), openAPIPlugin],
         hooks: {
             before: createAuthMiddleware(async (ctx) => {
-                // Enforce expiration for publishable keys server-side
+                // Hook for API key creation - expiration logic preserved but not enforced by default
                 if (ctx.path !== "/api-key/create") {
                     return;
                 }
 
-                const prefix = ctx.body?.prefix;
-                const isPublishable =
-                    prefix === PUBLISHABLE_KEY_PREFIX || prefix === "plln_pk";
-
-                // Force 30-day expiration for publishable keys, no expiration for secret keys
-                return {
-                    context: {
-                        ...ctx,
-                        body: {
-                            ...ctx.body,
-                            expiresIn: isPublishable
-                                ? PK_EXPIRATION_SECONDS
-                                : undefined,
-                        },
-                    },
-                };
+                // Keep the body as-is - expiration can be set by the client if needed
+                // The PK_EXPIRATION_SECONDS constant is available for future use
+                return;
             }),
         },
         telemetry: { enabled: false },

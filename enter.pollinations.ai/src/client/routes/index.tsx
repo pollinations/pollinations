@@ -96,10 +96,9 @@ function RouteComponent() {
     const handleCreateApiKey = async (formState: CreateApiKey) => {
         const keyType = formState.keyType || "secret";
         const isPublishable = keyType === "publishable";
-        const prefix = isPublishable ? "plln_pk" : "plln_sk";
+        const prefix = isPublishable ? "pk" : "sk";
 
         // Step 1: Create key via better-auth's native API
-        // Note: Expiration is enforced server-side based on prefix
         const createResult = await auth.apiKey.create({
             name: formState.name,
             prefix,

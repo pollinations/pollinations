@@ -7,7 +7,7 @@ import {
     type User as GenericUser,
 } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
-import { APIError, createAuthMiddleware } from "better-auth/api";
+import { APIError } from "better-auth/api";
 import { admin, apiKey, openAPI } from "better-auth/plugins";
 import { drizzle } from "drizzle-orm/d1";
 import * as betterAuthSchema from "./db/schema/better-auth.ts";
@@ -24,7 +24,6 @@ export function createAuth(env: Cloudflare.Env) {
 
     const PUBLISHABLE_KEY_PREFIX = "pk";
     const SECRET_KEY_PREFIX = "sk";
-    const PK_EXPIRATION_SECONDS = 30 * 24 * 60 * 60; // 30 days in seconds
 
     const apiKeyPlugin = apiKey({
         enableMetadata: true,
@@ -106,18 +105,6 @@ export function createAuth(env: Cloudflare.Env) {
             polarPlugin(polar, defaultTierProductId),
             openAPIPlugin,
         ],
-        hooks: {
-            before: createAuthMiddleware(async (ctx) => {
-                // Hook for API key creation - expiration logic preserved but not enforced by default
-                if (ctx.path !== "/api-key/create") {
-                    return;
-                }
-
-                // Keep the body as-is - expiration can be set by the client if needed
-                // The PK_EXPIRATION_SECONDS constant is available for future use
-                return;
-            }),
-        },
         telemetry: { enabled: false },
     });
 }

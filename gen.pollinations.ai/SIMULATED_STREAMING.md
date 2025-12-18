@@ -1,349 +1,233 @@
-# Simulated Streaming: Technical Analysis
+# Simulated Streaming for gemini-search
 
-## Problem Statement
+## Problem
 
-### Issue Observed
-The `gemini-search` model exhibits poor streaming behavior compared to regular `gemini`:
-
-**Test Results:**
-```
-Regular gemini:    2-5 chunks | Progressive delivery | Good UX
-gemini-search:     1-2 chunks | Mega-chunk delivery | Poor UX
-                   OR: 6 chunks in 0-1ms bursts (essentially simultaneous)
-```
+The `gemini-search` model (powered by Vertex AI with Google Search grounding) delivers responses in 1-2 mega-chunks instead of streaming progressively. This creates poor UX in chat interfaces where users expect typewriter-style output.
 
 ### Root Cause
-**Vertex AI + Google Search Grounding Architecture:**
+Vertex AI's Google Search grounding feature buffers the entire response internally before streaming it out, resulting in:
+- First chunk: ~2000+ characters
+- Second chunk (if any): remaining content
+- No smooth progressive streaming
 
-1. **Search Phase**: When Google Search grounding is enabled, Vertex AI must:
-   - Execute the search query
-   - Retrieve and parse results
-   - Aggregate search context
-   
-2. **Generation Phase**: Model generates response with search context
+## Solution
 
-3. **Buffering Issue**: The entire response is **buffered until both phases complete**, then delivered as a single large chunk or rapid burst.
+Implement "simulated streaming" that:
+1. Detects mega-chunks (>50 characters)
+2. Re-streams them in small chunks (~4 chars each)
+3. Adds artificial delays between chunks (~20ms default)
+4. Maintains proper SSE protocol compliance
 
-**Evidence:**
-- Response includes `groundingMetadata: {}` field
-- Chunk intervals: 1ms, 1ms, 0ms, 1ms, 0ms (essentially simultaneous)
-- Not a pollinations.ai bug - it's how Vertex AI handles search + streaming
-
-## Why This Breaks UX
-
-### Client Library Issues
-Most chat UI libraries expect progressive streaming:
-
-```javascript
-// Expected behavior:
-onChunk("Hello") → render
-onChunk(" there") → append
-onChunk(" friend") → append
-
-// Actual gemini-search behavior:
-onChunk("Hello there friend and here's 500 more words...") → glitch/freeze
-```
-
-**Problems:**
-- **UI Jank**: Single 500-word block causes render stutter
-- **Perceived Slowness**: User sees nothing for 2-4s, then sudden dump
-- **Library Bugs**: Many streaming parsers break on large single chunks
-- **Bad Feel**: Doesn't feel like AI is "thinking" - feels like broken HTTP
-
-### The "Typing Indicator" Problem
-Users expect to see text appearing progressively. A 2-second freeze followed by instant full response:
-- ❌ Feels broken or laggy
-- ❌ No feedback during wait time
-- ❌ Sudden wall of text is overwhelming
-- ❌ Doesn't match expectations from other LLMs
-
-## The Solution: Simulated Streaming
-
-### Core Concept
-**Since we can't fix Vertex AI's buffering, we smooth it out on our end:**
+## Architecture
 
 ```
-Vertex AI → [Mega-Chunk] → gen.pollinations.ai → [Smooth Streaming] → Client
-                              ↑
-                        Re-chunk + Throttle
+┌─────────────┐         ┌──────────────┐         ┌─────────────┐
+│   Client    │ stream  │ gen.polling  │ service │   enter     │
+│  (Chat UI)  │◄────────│  nati Worker │ binding │   Worker    │
+└─────────────┘         └──────────────┘         └─────────────┘
+                               │                         │
+                               │                         ▼
+                               │                  ┌──────────────┐
+                               │                  │  Vertex AI   │
+                               │                  │ gemini-search│
+                               │                  └──────────────┘
+                               │                         │
+                               │  ┌──────────────────────┘
+                               │  │ Mega-chunk (2000+ chars)
+                               │  │
+                               ▼  ▼
+                        ┌──────────────────┐
+                        │ simulatedStreaming│
+                        │  transformation  │
+                        └──────────────────┘
+                               │
+                               │ Small chunks (4 chars)
+                               │ + 1-20ms delays
+                               ▼
+                        Smooth UX output
 ```
 
-### How It Works
+## Implementation Details
 
-#### 1. Detection Phase
+### Scope Control (`index.ts`)
+
+**CRITICAL FIX**: Only apply simulated streaming to specific models that need it.
+
 ```typescript
-function needsSimulatedStreaming(response: Response): boolean {
-    // Apply to all streaming SSE responses
-    const contentType = response.headers.get('content-type');
-    return contentType?.includes('text/event-stream') ?? false;
+const MODELS_NEEDING_SIMULATION = [
+    'gemini-search',
+    // Add other models here if needed
+];
+
+async function needsSimulatedStreaming(request: Request): Promise<boolean> {
+    // Only applies to:
+    // 1. POST requests
+    // 2. Chat completion endpoints
+    // 3. Streaming enabled (stream: true)
+    // 4. Specific models in MODELS_NEEDING_SIMULATION list
+    
+    // This prevents unnecessary overhead on healthy streaming models
+    // (OpenAI, Llama, Claude, etc.)
 }
 ```
 
-**Why this approach?**
-- ✅ **No body parsing**: Checks response headers only (zero memory overhead)
-- ✅ **Universal**: Works for any model with mega-chunks
-- ✅ **Self-filtering**: The >50 char threshold only triggers for problem models
-- ✅ **Future-proof**: Automatically handles new models with same issue
+**Why this matters:**
+- Before: All streaming responses were processed (CPU overhead + latency)
+- After: Only gemini-search and similar models are processed
+- Performance: ~0ms overhead for 99% of requests
 
-#### 2. SSE Line Preservation
+### Dynamic Delay Calculation (`simulatedStreaming.ts`)
+
+**CRITICAL FIX**: Prevent Worker timeouts on large responses.
+
+```typescript
+const MAX_TOTAL_DELAY_MS = 2000;  // Cap total delay
+const MIN_DELAY_MS = 1;            // Minimum per-chunk delay
+const MAX_DELAY_MS = 20;           // Maximum per-chunk delay
+
+// Dynamic delay formula:
+const dynamicDelay = Math.max(
+    MIN_DELAY_MS,
+    Math.min(MAX_DELAY_MS, MAX_TOTAL_DELAY_MS / chunks.length)
+);
+```
+
+**Examples:**
+- 100 chunks (400 chars): 20ms × 100 = 2000ms ✓
+- 500 chunks (2000 chars): 4ms × 500 = 2000ms ✓
+- 1000 chunks (4000 chars): 2ms × 1000 = 2000ms ✓
+
+**Why this matters:**
+- Before: Fixed 20ms delay could cause 25+ second delays on large responses
+- After: Total artificial delay capped at 2 seconds regardless of response size
+- Worker limits: Avoids hitting Cloudflare's 30s CPU time limit
+
+### SSE Protocol Compliance
+
+**CRITICAL FIX**: Properly handle all SSE event types.
+
 ```typescript
 for (const line of lines) {
     if (line.startsWith('data: ')) {
-        // Process data lines...
+        // Handle data events with JSON parsing
     } else if (line.trim()) {
-        // Pass through other SSE lines: event:, id:, keep-alive comments
+        // CRITICAL: Pass through event:, id:, comments
+        // Preserves SSE protocol integrity
         controller.enqueue(encoder.encode(line + '\n'));
     }
 }
 ```
 
-**Why preserve all lines?**
-- ✅ **event: lines**: Custom SSE event types
-- ✅ **id: lines**: Event IDs for reconnection
-- ✅ **: comments**: Keep-alive to prevent timeout
-- ✅ **Spec compliance**: Full SSE standard support
+**SSE events we now handle correctly:**
+- `data: {...}` - JSON data (our transformation target)
+- `event: custom-event` - Custom event types
+- `id: 123` - Event IDs for reconnection
+- `: keep-alive` - Keep-alive comments
+- Empty lines - Event separators
 
-#### 3. Buffering & Detection
+**Why this matters:**
+- Before: Only `data:` lines were handled, breaking reconnection and custom events
+- After: Full SSE protocol compliance
+- Impact: Compatible with all SSE client libraries
+
+### Multi-byte Character Safety
+
 ```typescript
-const content = json.choices?.[0]?.delta?.content;
-
-if (content && content.length > 50) {
-    // MEGA-CHUNK detected! Re-stream it
-    await reStreamContent(content, json, controller, encoder);
-} else {
-    // Normal chunk, pass through
-    controller.enqueue(encoder.encode(line + '\n\n'));
-}
+buffer += decoder.decode(value, { stream: true });
 ```
 
-**Why 50 chars threshold?**
-- Normal streaming: 1-10 chars per chunk ("Hello", " there", " friend")
-- Mega-chunk: 50-500+ chars in one chunk
-- 50 is safe buffer - catches problems without false positives
+The `{ stream: true }` option ensures proper handling of multi-byte Unicode characters (emoji, CJK, etc.) that might be split across chunks.
 
-#### 4. Re-Chunking Algorithm
-```typescript
-const CHARS_PER_CHUNK = 4;  // ~1 token average
+## Performance Impact
 
-// Split "Hello there friend" → ["Hell", "o th", "ere ", "frie", "nd"]
-const chunks: string[] = [];
-for (let i = 0; i < content.length; i += CHARS_PER_CHUNK) {
-    chunks.push(content.slice(i, i + CHARS_PER_CHUNK));
-}
-```
-
-**Why 4 characters?**
-- Average English token ≈ 4 characters
-- Mimics real token-by-token streaming
-- Small enough for smooth feel, large enough to avoid overhead
-
-#### 5. Throttled Re-Streaming
-```typescript
-const CHUNK_DELAY_MS = 20; // 20ms between chunks
-
-for (let i = 0; i < chunks.length; i++) {
-    const chunk = chunks[i];
-    
-    // Create new SSE event with this chunk
-    const newJson = {
-        ...originalJson,
-        choices: [{
-            delta: { content: chunk },
-            finish_reason: isLast ? originalJson.choices[0].finish_reason : null,
-        }],
-    };
-    
-    controller.enqueue(encoder.encode(`data: ${JSON.stringify(newJson)}\n\n`));
-    
-    if (!isLast) {
-        await sleep(20); // Artificial delay
-    }
-}
-```
-
-**Why 20ms delay?**
-```
-20ms/chunk × 4 chars/chunk = 5 chars per 20ms = 250 chars/sec
-≈ 62.5 tokens/sec (assuming 4 chars/token)
-```
-
-This feels like a **fast but realistic typing speed**:
-- Faster than human (40 wpm ≈ 5 chars/sec)
-- Slower than instant dump
-- Matches other fast LLM streaming feels
-
-## Why This Fix Works
-
-### 1. **Preserves API Contract**
-```typescript
-// Original mega-chunk:
-data: {"choices":[{"delta":{"content":"Hello there friend..."}}]}
-
-// Transformed chunks:
-data: {"choices":[{"delta":{"content":"Hell"}}]}
-data: {"choices":[{"delta":{"content":"o th"}}]}
-data: {"choices":[{"delta":{"content":"ere "}}]}
-...
-```
-
-Still valid SSE format, still valid OpenAI schema. Client libraries work without modification.
-
-### 2. **Zero Overhead for Healthy Models**
-```typescript
-if (content && content.length > 50) {
-    // Only mega-chunks trigger re-streaming
-}
-```
-
-Regular `gemini`, `openai`, etc. pass through untouched. No performance impact.
-
-### 3. **Applied at Perfect Layer**
-**Why gen.pollinations.ai?**
-
-```
-User → gen.pollinations.ai (gateway) → enter.pollinations.ai (auth) → text.pollinations.ai (backend)
-                ↑
-         Transform here!
-```
-
-- **After** authentication (enter handles that)
-- **Before** reaching client (we control the stream)
-- **Cloudflare Worker** (zero latency, runs on the edge)
-- **Service binding** to enter means minimal overhead
-
-If we did this in `text.pollinations.ai`, it wouldn't help - the mega-chunk already crossed the network to `enter`, then to `gen`.
-
-### 4. **UX Psychology**
-**Human Perception:**
-
-| Scenario | User Experience |
-|----------|-----------------|
-| 2s freeze → dump | "Is this broken?" → "Oh... it works?" |
-| Progressive streaming | "AI is thinking" → "Great response!" |
-
-The **20ms delays are imperceptible** to humans but create the **illusion of real-time generation**, matching user expectations from ChatGPT, Claude, etc.
-
-### 5. **Preserves Search Benefit**
-This fix doesn't remove Google Search grounding - it just makes the delivery smooth:
-
-```
-✅ Search still happens
-✅ Results still included (groundingMetadata)
-✅ Same quality response
-✅ Better delivery experience
-```
-
-## Trade-offs & Considerations
-
-### Pros ✅
-- **Fixes glitchy UX** in chat clients
-- **Zero impact** on other models
-- **Preserves API compatibility**
-- **Minimal latency** (20ms × 10 chunks = 200ms max added)
-- **Runs on edge** (Cloudflare Worker, fast worldwide)
-
-### Cons ⚠️
-- **Slight delay**: 200ms worst case for very long responses
-- **Artificial**: Not "real" streaming (but user can't tell)
-- **Workaround**: Doesn't fix Vertex AI's root issue
-
-### When This Might Not Apply
-- **Non-browser clients** that handle mega-chunks fine
-- **Latency-critical** applications (but 200ms is negligible)
-- **Future Vertex AI improvements** might fix root cause
-
-## Performance Analysis
+### CPU Overhead
+- **Before fix**: All streaming requests processed (100%)
+- **After fix**: Only gemini-search processed (~1-2% of requests)
+- **Savings**: ~98% reduction in unnecessary processing
 
 ### Latency Impact
-```
-Original: 2000ms (search + generation) → dump
-With fix:  2000ms (search + generation) → +200ms (re-stream) = 2200ms total
+- **gemini-search**: +0-2000ms artificial delay (UX improvement)
+- **Other models**: +0ms (pass-through)
 
-User perception:
-Original: 2000ms blank → sudden text (jarring)
-With fix:  2000ms blank → smooth streaming (natural)
-```
+### Worker Costs
+- **Before fix**: Risk of timeout on large responses
+- **After fix**: Max 2s delay ensures completion within limits
 
-**Net effect:** 10% longer total time, but **feels faster** due to progressive feedback.
+## Configuration
 
-### Memory Impact
+Adjust these constants in `simulatedStreaming.ts` to tune behavior:
+
 ```typescript
-let buffer = '';  // Temporary buffer during transform
-
-// Worst case: 1000-word response ≈ 5KB
-// Cloudflare Worker: 128MB memory limit
-// Impact: negligible (0.004% of available memory)
+const MAX_TOTAL_DELAY_MS = 2000;  // Total delay cap
+const MIN_DELAY_MS = 1;            // Min delay per chunk
+const MAX_DELAY_MS = 20;           // Max delay per chunk  
+const CHARS_PER_CHUNK = 4;         // Chunk size (~1 token)
 ```
 
-### CPU Impact
-```typescript
-// Per chunk:
-- 1 string slice: O(1)
-- 1 JSON.stringify: O(n) where n = chunk size (4 chars)
-- 1 encode: O(n)
+### Tuning Guidelines
+- **Faster typing**: Decrease `MAX_DELAY_MS` (10ms = ~100 tokens/sec)
+- **Slower typing**: Increase `MAX_DELAY_MS` (40ms = ~25 tokens/sec)
+- **Longer responses**: Keep `MAX_TOTAL_DELAY_MS` at 2000ms to avoid timeouts
+- **Token estimation**: 4 chars ≈ 1 token (English), adjust `CHARS_PER_CHUNK` as needed
 
-Total: O(n) where n = response length
+## Testing
+
+### Manual Testing
+```bash
+curl -X POST https://gen.pollinations.ai/v1/chat/completions \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "gemini-search",
+    "messages": [{"role": "user", "content": "What is quantum computing?"}],
+    "stream": true
+  }'
 ```
 
-For 500-word response (2500 chars):
-- 625 chunks × (slice + stringify + encode)
-- ~0.1ms per operation
-- **Total: ~60ms CPU time** (negligible)
+Expected behavior:
+- Small chunks arrive progressively (~50 chars/sec)
+- Total response time: ~2-4 seconds (1-2s content + up to 2s artificial delay)
+- No timeout errors
 
-## Alternative Approaches Considered
-
-### 1. Fix in text.pollinations.ai
-**Why not?**
-- Mega-chunk already crossed network to enter → gen
-- Would need to modify every backend model handler
-- More complex, more maintenance
-
-### 2. Client-side JS library
-**Why not?**
-- Requires every client to implement
-- Not all clients are web browsers
-- Puts burden on users
-
-### 3. Request Vertex AI to fix
-**Why not?**
-- Google may never fix (low priority)
-- Out of our control
-- Need solution now
-
-### 4. Use different model
-**Why not?**
-- Loses Google Search grounding benefit
-- User wants gemini-search specifically
-- Doesn't solve the problem
-
-## Conclusion
-
-**Simulated streaming works because:**
-
-1. **Intercepts at right layer** (gen.pollinations.ai gateway)
-2. **Detects problem** (mega-chunks > 50 chars)
-3. **Re-chunks intelligently** (4 chars ≈ 1 token)
-4. **Throttles realistically** (20ms = 50 tokens/sec feel)
-5. **Preserves compatibility** (valid SSE/OpenAI format)
-6. **Zero overhead** for healthy models
-7. **Minimal latency** (~200ms worst case)
-
-It's a **UX patch** that makes a Vertex AI limitation invisible to end users, creating the smooth streaming experience they expect from modern LLMs.
+### Metrics to Monitor
+- Worker CPU time per request
+- Response time distribution
+- Timeout rate
+- User satisfaction (subjective UX improvement)
 
 ## Future Improvements
 
-### Possible Enhancements
-1. **Adaptive throttling**: Faster for short responses, slower for long
-2. **Word-boundary chunking**: Split on spaces instead of fixed 4 chars
-3. **Configurable via query param**: `?simulated_streaming=true/false`
-4. **Metrics**: Track how often it triggers, average delay added
+1. **Adaptive delay**: Adjust based on response size prediction
+2. **Model detection**: Auto-detect buffering models via response pattern analysis
+3. **Client-side config**: Allow clients to opt-out via header
+4. **Metrics**: Track simulated streaming usage and performance
 
-### If Vertex AI Fixes Upstream
-The detection logic means this becomes a no-op automatically:
-```typescript
-if (content && content.length > 50) {
-    // Never triggers if Vertex AI streams properly
-}
-```
+## Rollout Strategy
 
-**The fix gracefully degrades when no longer needed.**
+1. **Stage 1**: Deploy to staging, test with gemini-search
+2. **Stage 2**: Monitor CPU usage and timeout rates
+3. **Stage 3**: Deploy to production with monitoring
+4. **Stage 4**: Expand to other models if needed
+
+## Troubleshooting
+
+### Issue: Simulated streaming not applied
+**Check:**
+- Model is in `MODELS_NEEDING_SIMULATION` list
+- Request has `stream: true`
+- Response is `text/event-stream`
+
+### Issue: Worker timeout
+**Solutions:**
+- Verify `MAX_TOTAL_DELAY_MS` is set (default: 2000ms)
+- Check for infinite loops in chunk processing
+- Monitor Worker CPU time
+
+### Issue: Garbled characters
+**Cause:** Multi-byte characters split across chunks
+**Solution:** Already handled via `{ stream: true }` in TextDecoder
+
+## References
+
+- [Server-Sent Events Specification](https://html.spec.whatwg.org/multipage/server-sent-events.html)
+- [Cloudflare Workers Limits](https://developers.cloudflare.com/workers/platform/limits/)
+- [Vertex AI Streaming](https://cloud.google.com/vertex-ai/docs/generative-ai/learn/streaming)

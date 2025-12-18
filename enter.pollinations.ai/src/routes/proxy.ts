@@ -557,7 +557,7 @@ export function contentFilterResultsToHeaders(
     ) as Record<string, string>;
 }
 
-async function checkBalance({ auth, polar, pendingSpend }: AuthVariables & PolarVariables & PendingSpendVariables) {
+async function checkBalance({ auth, polar, pendingSpend }: AuthVariables & PolarVariables & PendingSpendVariables): Promise<void> {
     if (auth.user?.id) {
         // If we have a pending spend reservation, we can skip the balance check
         // because the reservation was already made atomically in the pendingSpend middleware

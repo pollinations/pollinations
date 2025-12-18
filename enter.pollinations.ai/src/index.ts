@@ -96,3 +96,4 @@ export default {
         });
     },
 } satisfies ExportedHandler<CloudflareBindings>;
+export { PendingSpendReservation } from "./durable-objects/PendingSpendReservation.ts"; 

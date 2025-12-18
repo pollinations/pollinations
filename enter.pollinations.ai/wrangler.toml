@@ -44,6 +44,10 @@ script_name = "pollinations-enter"
 tag = "v2"
 new_classes = ["PollenRateLimiter"]
 
+[[migrations]]
+tag = "v3"
+new_classes = ["PendingSpendReservation"]
+
 [vars]
 ENVIRONMENT = "development"
 LOG_LEVEL = "trace"
@@ -142,6 +146,10 @@ class_name = "PendingSpendReservation"
 tag = "v2"
 new_classes = ["PollenRateLimiter"]
 
+[[env.production.migrations]]
+tag = "v3"
+new_classes = ["PendingSpendReservation"]
+
 [env.production.vars]
 ENVIRONMENT = "production"
 LOG_LEVEL = "debug"
@@ -199,6 +207,10 @@ class_name = "PendingSpendReservation"
 tag = "v2"
 new_classes = ["PollenRateLimiter"]
 
+[[env.staging.migrations]]
+tag = "v3"
+new_classes = ["PendingSpendReservation"]
+
 [env.staging.vars]
 ENVIRONMENT = "staging"
 LOG_LEVEL = "debug"
@@ -245,6 +257,10 @@ class_name = "PollenRateLimiter"
 [[env.test.durable_objects.bindings]]
 name = "PENDING_SPEND_RESERVATION"
 class_name = "PendingSpendReservation"
+
+[[env.test.migrations]]
+tag = "v1"
+new_classes = ["PollenRateLimiter", "PendingSpendReservation"]
 
 [env.test.vars]
 ENVIRONMENT = "test"

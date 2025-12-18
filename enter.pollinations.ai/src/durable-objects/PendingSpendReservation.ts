@@ -38,7 +38,7 @@ export class PendingSpendReservation extends DurableObject {
         // during initialization. It's like putting up a "Closed for Inventory" sign
         // before opening the shop.
         ctx.blockConcurrencyWhile(async () => {
-            const stored = await ctx.storage.get<Map<string, Reservation>>(
+            const stored = await ctx.storage.get<[string, Reservation][]>(
                 "reservations",
             );
             if (stored) {
@@ -73,6 +73,12 @@ export class PendingSpendReservation extends DurableObject {
 
         this.reservations.set(reservationId, reservation);
         await this.persist();
+
+        // Schedule alarm for cleanup if not already set
+        const currentAlarm = await this.ctx.storage.getAlarm();
+        if (!currentAlarm) {
+            await this.ctx.storage.setAlarm(Date.now() + this.RESERVATION_TIMEOUT_MS);
+        }
 
         this.log.debug(
             "Reserved {cost} pollen with ID {id} (total reservations: {total})",
@@ -216,9 +222,29 @@ export class PendingSpendReservation extends DurableObject {
     }
 
     /**
+     * Periodic alarm to clean up expired reservations
+     * 
+     * This is the ultimate failsafe - if a worker crashes after reserving funds
+     * but before the request completes, this alarm will clean up the zombie
+     * reservation after the timeout period.
+     * 
+     * Think of it as the "zombie apocalypse prevention squad" for your billing system.
+     */
+    async alarm(): Promise<void> {
+        this.log.debug("Alarm triggered - cleaning up expired reservations");
+        await this.cleanupExpiredReservations();
+        
+        // Schedule next cleanup in 5 minutes
+        await this.ctx.storage.setAlarm(Date.now() + 5 * 60 * 1000);
+    }
+
+    /**
      * Persist reservations to durable storage
      */
     private async persist(): Promise<void> {
-        await this.ctx.storage.put("reservations", this.reservations);
+        await this.ctx.storage.put(
+            "reservations",
+            Array.from(this.reservations.entries()),
+        );
     }
 }

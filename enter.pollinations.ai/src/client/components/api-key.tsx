@@ -220,7 +220,8 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                                                                 plaintextKey
                                                             }
                                                             start={
-                                                                apiKey.start ?? ""
+                                                                apiKey.start ??
+                                                                undefined
                                                             }
                                                         />
                                                     ) : (

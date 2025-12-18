@@ -615,6 +615,39 @@ describe("POST /generate/v1/chat/completions (tool calls)", async () => {
     );
 });
 
+// GPT-5 temperature transformation test
+test(
+    "POST /v1/chat/completions should accept temperature=0.7 for GPT-5 models (transformed to 1)",
+    { timeout: 30000 },
+    async ({ apiKey, mocks }) => {
+        await mocks.enable("polar", "tinybird", "vcr");
+        const response = await SELF.fetch(
+            `http://localhost:3000/api/generate/v1/chat/completions`,
+            {
+                method: "POST",
+                headers: {
+                    "content-type": "application/json",
+                    "authorization": `Bearer ${apiKey}`,
+                },
+                body: JSON.stringify({
+                    model: "openai-fast",
+                    messages: [
+                        {
+                            role: "user",
+                            content: "Say yes",
+                        },
+                    ],
+                    temperature: 0.7,
+                    seed: testSeed(),
+                }),
+            },
+        );
+        // Should succeed - temperature is transformed to 1 for GPT-5 models
+        expect(response.status).toBe(200);
+        await response.text();
+    },
+);
+
 // Model gating tests - API keys with permissions.models restriction
 describe("Model gating by API key permissions", async () => {
     test(

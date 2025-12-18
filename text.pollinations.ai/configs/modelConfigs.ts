@@ -159,7 +159,7 @@ export const portkeyConfig: PortkeyConfigMap = {
         provider: "vertex-ai",
         authKey: googleCloudAuth.getAccessToken,
         "vertex-project-id": process.env.GCLOUD_PROJECT_ID,
-        "vertex-region": "us-central1",
+        "vertex-region": "global",
         "vertex-model-id": "gemini-3-flash-preview",
         "strict-openai-compliance": "false",
     }),

@@ -20,24 +20,13 @@ interface Env {
     ENTER: Fetcher;
 }
 
-async function needsSimulatedStreaming(request: Request): Promise<boolean> {
-    // Only apply to streaming chat completion requests
-    if (request.method !== 'POST') return false;
+function needsSimulatedStreaming(response: Response): boolean {
+    // Apply to all streaming SSE responses
+    // The content-length threshold (>50 chars) will filter out models that don't need it
+    // This is more efficient - no request body parsing needed!
     
-    const url = new URL(request.url);
-    if (!url.pathname.includes('/chat/completions') && !url.pathname.includes('/openai')) {
-        return false;
-    }
-
-    try {
-        const cloned = request.clone();
-        const body = await cloned.json();
-        
-        // Check if streaming is enabled and model is gemini-search
-        return body.stream === true && body.model === 'gemini-search';
-    } catch {
-        return false;
-    }
+    const contentType = response.headers.get('content-type');
+    return contentType?.includes('text/event-stream') ?? false;
 }
 
 export default {
@@ -64,14 +53,12 @@ export default {
         // Rewrite API paths: /image/*, /text/*, /v1/*, /openai → /api/generate/*
         url.pathname = "/api/generate" + path;
 
-        // Check if we need simulated streaming for gemini-search
-        const needsSimulation = await needsSimulatedStreaming(request);
-
         // Forward via service binding (zero latency - same V8 isolate)
         const response = await env.ENTER.fetch(new Request(url, request));
 
-        // Apply simulated streaming if needed
-        if (needsSimulation && response.ok && response.headers.get('content-type')?.includes('text/event-stream')) {
+        // Apply simulated streaming to all SSE responses
+        // The >50 char threshold filters out models that don't need it (zero overhead)
+        if (response.ok && needsSimulatedStreaming(response)) {
             return simulatedStreaming(response);
         }
 

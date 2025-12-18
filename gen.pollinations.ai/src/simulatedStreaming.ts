@@ -54,6 +54,9 @@ export async function simulatedStreaming(response: Response): Promise<Response> 
                                 // Not JSON, pass through
                                 controller.enqueue(encoder.encode(line + '\n\n'));
                             }
+                        } else if (line.trim()) {
+                            // Pass through other SSE lines: event:, id:, keep-alive comments, etc.
+                            controller.enqueue(encoder.encode(line + '\n'));
                         }
                     }
                 }

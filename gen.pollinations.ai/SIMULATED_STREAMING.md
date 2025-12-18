@@ -72,19 +72,38 @@ Vertex AI → [Mega-Chunk] → gen.pollinations.ai → [Smooth Streaming] → Cl
 
 #### 1. Detection Phase
 ```typescript
-async function needsSimulatedStreaming(request: Request): Promise<boolean> {
-    // Only for gemini-search streaming requests
-    const body = await request.json();
-    return body.stream === true && body.model === 'gemini-search';
+function needsSimulatedStreaming(response: Response): boolean {
+    // Apply to all streaming SSE responses
+    const contentType = response.headers.get('content-type');
+    return contentType?.includes('text/event-stream') ?? false;
 }
 ```
 
-**Why this check?**
-- Only gemini-search has the issue (gemini works fine)
-- Only applies to streaming (non-streaming doesn't care)
-- Zero overhead for other models
+**Why this approach?**
+- ✅ **No body parsing**: Checks response headers only (zero memory overhead)
+- ✅ **Universal**: Works for any model with mega-chunks
+- ✅ **Self-filtering**: The >50 char threshold only triggers for problem models
+- ✅ **Future-proof**: Automatically handles new models with same issue
 
-#### 2. Buffering & Detection
+#### 2. SSE Line Preservation
+```typescript
+for (const line of lines) {
+    if (line.startsWith('data: ')) {
+        // Process data lines...
+    } else if (line.trim()) {
+        // Pass through other SSE lines: event:, id:, keep-alive comments
+        controller.enqueue(encoder.encode(line + '\n'));
+    }
+}
+```
+
+**Why preserve all lines?**
+- ✅ **event: lines**: Custom SSE event types
+- ✅ **id: lines**: Event IDs for reconnection
+- ✅ **: comments**: Keep-alive to prevent timeout
+- ✅ **Spec compliance**: Full SSE standard support
+
+#### 3. Buffering & Detection
 ```typescript
 const content = json.choices?.[0]?.delta?.content;
 
@@ -102,7 +121,7 @@ if (content && content.length > 50) {
 - Mega-chunk: 50-500+ chars in one chunk
 - 50 is safe buffer - catches problems without false positives
 
-#### 3. Re-Chunking Algorithm
+#### 4. Re-Chunking Algorithm
 ```typescript
 const CHARS_PER_CHUNK = 4;  // ~1 token average
 
@@ -118,7 +137,7 @@ for (let i = 0; i < content.length; i += CHARS_PER_CHUNK) {
 - Mimics real token-by-token streaming
 - Small enough for smooth feel, large enough to avoid overhead
 
-#### 4. Throttled Re-Streaming
+#### 5. Throttled Re-Streaming
 ```typescript
 const CHUNK_DELAY_MS = 20; // 20ms between chunks
 

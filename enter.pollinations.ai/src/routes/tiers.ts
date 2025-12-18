@@ -18,9 +18,9 @@ import { errorResponseDescriptions } from "@/utils/api-docs.ts";
 
 const TierSubscriptionDetailsSchema = z.object({
     status: z.literal(["active", "canceled", "trialing", "none"]),
-    endsAt: z.date().optional(),
-    canceledAt: z.date().optional(),
-    nextRefillAt: z.date().optional(),
+    endsAt: z.iso.datetime().optional(),
+    canceledAt: z.iso.datetime().optional(),
+    nextRefillAt: z.iso.datetime().optional(),
     dailyPollen: z.number().optional(),
 });
 
@@ -57,11 +57,12 @@ async function getTierSubscriptionStatus(
     const subscriptionDetails = tierSubscription
         ? {
               status: tierSubscription.status,
-              endsAt: tierSubscription.endsAt || undefined,
-              canceledAt: tierSubscription.canceledAt || undefined,
+              endsAt: tierSubscription.endsAt?.toISOString() || undefined,
+              canceledAt:
+                  tierSubscription.canceledAt?.toISOString() || undefined,
               nextRefillAt: calculateNextPeriodStart(
                   tierSubscription.currentPeriodStart,
-              ),
+              ).toISOString(),
               dailyPollen: tierBenefit?.properties?.units,
           }
         : undefined;

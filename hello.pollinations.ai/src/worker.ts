@@ -5,7 +5,7 @@
  */
 
 interface Env {
-    POLLINATIONS_API_KEY: string;
+    PLN_APPS_KEY: string;
     ASSETS: { fetch: (request: Request) => Promise<Response> };
 }
 
@@ -34,7 +34,7 @@ export default {
 
             // Clone headers and add auth
             const headers = new Headers(request.headers);
-            headers.set("Authorization", `Bearer ${env.POLLINATIONS_API_KEY}`);
+            headers.set("Authorization", `Bearer ${env.PLN_APPS_KEY}`);
 
             const proxyRequest = new Request(targetUrl, {
                 method: request.method,

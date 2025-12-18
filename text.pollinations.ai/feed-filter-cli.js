@@ -358,7 +358,7 @@ const startFeedListener = async (options = {}) => {
     let feedUrl = `${baseUrl}/feed`;
 
     // Check for password first (from options or environment)
-    const password = options.password || process.env.FEED_PASSWORD;
+    const password = options.password || process.env.PLN_FEED_PASSWORD;
 
     // If a password is provided, use the authenticated feed URL
     if (password) {

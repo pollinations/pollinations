@@ -25,7 +25,8 @@
         "decrypt-vars:production": "sops decrypt secrets/prod.vars.json --output-type dotenv > .dev.vars",
         "push-secrets:staging": "sops exec-file --no-fifo secrets/staging.vars.json 'npx wrangler secret bulk {} --env staging'",
         "push-secrets:production": "sops exec-file --no-fifo secrets/prod.vars.json 'npx wrangler secret bulk {} --env production'",
-        "tail": "wrangler tail --env production | tsx scripts/format-logs.ts"
+        "tail": "wrangler tail --env production | jq -c '.logs[].message[] | fromjson' | tsx scripts/format-logs.ts",
+        "tail:json": "wrangler tail --env production | jq '.logs[].message[] | fromjson'"
     },
     "dependencies": {
         "@ark-ui/react": "^5.29.1",

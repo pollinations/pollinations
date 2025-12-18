@@ -3,6 +3,8 @@ import { cached } from "@/cache.ts";
 import { getLogger } from "@logtape/logtape";
 import z from "zod";
 import { Product } from "@polar-sh/sdk/models/components/product.js";
+import { CustomerSubscription } from "@polar-sh/sdk/models/components/customersubscription.js";
+import { addDays, differenceInDays } from "date-fns";
 
 const PRODUCT_CACHE_TTL = 300; // 5 minutes in seconds
 
@@ -96,16 +98,33 @@ export async function getPackProductMapCached(
     })(polar, packProductSlugs);
 }
 
-export function getTierFromProductId(
-    productId: string,
+type CustomerTierInfo = {
+    userId: string;
+    assignedTier: TierName;
+    activeTier: {
+        tier: TierStatus;
+        subscription: CustomerSubscription;
+        productSlug: TierProductSlug;
+        product: Product;
+    };
+};
+
+export function getTierProductById(
+    productId: string | undefined,
     tierProductMap: TierProductMap,
-): TierStatus {
-    const result = Object.entries(tierProductMap)
-        .map(([tierName, tierProduct]) => ({
-            tierName,
-            tierProductId: tierProduct.id,
-        }))
-        .find(({ tierProductId }) => tierProductId === productId);
-    if (!result) return "none";
-    return result.tierName as TierName;
+): Product | null {
+    if (!productId) return null;
+    return (
+        Object.entries(tierProductMap)
+            .filter(([_, product]) => product.id === productId)
+            .map(([_, product]) => product)
+            .at(0) || null
+    );
+}
+
+export function calculateNextPeriodStart(currentPeriodStart: Date): Date {
+    const now = new Date();
+    const daysPassed = differenceInDays(now, currentPeriodStart);
+    const nextPeriodStart = addDays(currentPeriodStart, daysPassed + 1);
+    return nextPeriodStart;
 }

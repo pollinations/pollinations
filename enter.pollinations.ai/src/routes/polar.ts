@@ -7,8 +7,6 @@ import { validator } from "../middleware/validator.ts";
 import type { Env } from "../env.ts";
 import { describeRoute } from "hono-openapi";
 import { drizzle } from "drizzle-orm/d1";
-import { event } from "../db/schema/event.ts";
-import { and, eq, gte, sql } from "drizzle-orm";
 import {
     getPackProductMapCached,
     PackProductSlug,

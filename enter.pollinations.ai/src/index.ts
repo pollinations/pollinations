@@ -32,8 +32,6 @@ export const api = new Hono<Env>()
     .route("/admin", adminRoutes)
     .route("/generate", proxyRoutes);
 
-export type ApiRoutes = typeof api;
-
 const docsRoutes = createDocsRoutes(api);
 
 const app = new Hono<Env>()

@@ -1,6 +1,13 @@
-import { createFileRoute, useRouter, Link } from "@tanstack/react-router";
+import {
+    createFileRoute,
+    redirect,
+    useRouter,
+    Link,
+} from "@tanstack/react-router";
+import { hc } from "hono/client";
 import { useState } from "react";
-import { productSlugToUrlParam } from "../../routes/polar.ts";
+import { productSlugToUrlParam, type PolarRoutes } from "../../routes/polar.ts";
+import type { TiersRoutes } from "../../routes/tiers.ts";
 import {
     ApiKeyList,
     type CreateApiKey,
@@ -14,24 +21,28 @@ import { TierPanel } from "../components/tier-panel.tsx";
 import { FAQ } from "../components/faq.tsx";
 import { Header } from "../components/header.tsx";
 import { Pricing } from "../components/pricing/index.ts";
-import { apiClient } from "../api.ts";
-import { authClient, getUserOrRedirect } from "../auth.ts";
 
 export const Route = createFileRoute("/")({
     component: RouteComponent,
-    beforeLoad: getUserOrRedirect,
+    beforeLoad: async ({ context }) => {
+        const result = await context.auth.getSession();
+        if (result.error) throw new Error("Autentication failed.");
+        else if (!result.data?.user) throw redirect({ to: "/sign-in" });
+        else return { user: result.data.user };
+    },
     loader: async ({ context }) => {
+        const honoPolar = hc<PolarRoutes>("/api/polar");
+        const honoTiers = hc<TiersRoutes>("/api/tiers");
+
         // Parallelize independent API calls for faster loading
         const [customer, tierData, apiKeysResult, pendingSpendResult] =
             await Promise.all([
-                apiClient.polar.customer.state
+                honoPolar.customer.state
                     .$get()
                     .then((r) => (r.ok ? r.json() : null)),
-                apiClient.tiers.view
-                    .$get()
-                    .then((r) => (r.ok ? r.json() : null)),
-                authClient.apiKey.list(),
-                apiClient.polar.customer["pending-spend"]
+                honoTiers.view.$get().then((r) => (r.ok ? r.json() : null)),
+                context.auth.apiKey.list(),
+                honoPolar.customer["pending-spend"]
                     .$get()
                     .then((r) => (r.ok ? r.json() : null)),
             ]);
@@ -39,6 +50,7 @@ export const Route = createFileRoute("/")({
         const pendingSpend = pendingSpendResult?.pendingSpend || 0;
 
         return {
+            auth: context.auth,
             user: context.user,
             customer,
             apiKeys,
@@ -50,8 +62,9 @@ export const Route = createFileRoute("/")({
 
 function RouteComponent() {
     const router = useRouter();
-    const { user, customer, apiKeys, tierData, pendingSpend } =
+    const { auth, user, customer, apiKeys, tierData, pendingSpend } =
         Route.useLoaderData();
+
     const balances = {
         pack:
             customer?.activeMeters.find(
@@ -64,12 +77,14 @@ function RouteComponent() {
     };
 
     const [isSigningOut, setIsSigningOut] = useState(false);
+    const [isActivating, setIsActivating] = useState(false);
+    const [activationError, setActivationError] = useState<string | null>(null);
 
     const handleSignOut = async () => {
         if (isSigningOut) return; // Prevent double-clicks
         setIsSigningOut(true);
         try {
-            await authClient.signOut();
+            await auth.signOut();
             window.location.href = "/";
         } catch (error) {
             console.error("Sign out failed:", error);
@@ -84,7 +99,7 @@ function RouteComponent() {
         const prefix = isPublishable ? "pk" : "sk";
 
         // Step 1: Create key via better-auth's native API
-        const createResult = await authClient.apiKey.create({
+        const createResult = await auth.apiKey.create({
             name: formState.name,
             prefix,
             metadata: {
@@ -104,7 +119,7 @@ function RouteComponent() {
 
         // For publishable keys, store the plaintext key in metadata for easy retrieval
         if (isPublishable) {
-            await authClient.apiKey.update({
+            await auth.apiKey.update({
                 keyId: apiKey.id,
                 metadata: {
                     description: formState.description,
@@ -149,18 +164,45 @@ function RouteComponent() {
     };
 
     const handleDeleteApiKey = async (id: string) => {
-        const result = await authClient.apiKey.delete({ keyId: id });
+        const result = await auth.apiKey.delete({ keyId: id });
         if (result.error) {
             console.error(result.error);
         }
         router.invalidate();
     };
 
+    const handleActivateTier = async () => {
+        if (isActivating || !tierData) return;
+        setIsActivating(true);
+        setActivationError(null);
+
+        try {
+            const response = await fetch("/api/tiers/activate", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                credentials: "include",
+                body: JSON.stringify({ target_tier: tierData.target_tier }),
+            });
+
+            if (!response.ok) {
+                const error = (await response.json()) as { message?: string };
+                setActivationError(error.message || "Unknown error");
+                setIsActivating(false);
+                return;
+            }
+
+            const data = (await response.json()) as { checkout_url: string };
+            window.location.href = data.checkout_url;
+        } catch (error) {
+            setActivationError(String(error));
+            setIsActivating(false);
+        }
+    };
+
     const handleBuyPollen = (slug: string) => {
         // Navigate directly to checkout endpoint - server will handle redirect
         window.location.href = `/api/polar/checkout/${productSlugToUrlParam(slug)}?redirect=true`;
     };
-
     return (
         <div className="flex flex-col gap-6">
             <div className="flex flex-col gap-20">
@@ -230,7 +272,7 @@ function RouteComponent() {
                                 href="https://github.com/pollinations/pollinations/issues/4826"
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="bg-purple-200! text-purple-900!"
+                                className="!bg-purple-200 !text-purple-900"
                                 color="purple"
                                 weight="light"
                             >
@@ -240,9 +282,7 @@ function RouteComponent() {
                     </div>
                     <PollenBalance
                         balances={balances}
-                        dailyPollen={
-                            tierData?.active.subscriptionDetails?.dailyPollen
-                        }
+                        dailyPollen={tierData?.daily_pollen}
                         pendingSpend={pendingSpend}
                     />
                 </div>
@@ -250,8 +290,42 @@ function RouteComponent() {
                     <div className="flex flex-col gap-2">
                         <div className="flex flex-col sm:flex-row justify-between gap-3">
                             <h2 className="font-bold flex-1">Tier</h2>
+                            {tierData.should_show_activate_button && (
+                                <div className="flex gap-3">
+                                    <Button
+                                        onClick={handleActivateTier}
+                                        disabled={isActivating}
+                                        color="green"
+                                        weight="light"
+                                        className="!bg-gray-50"
+                                    >
+                                        {isActivating
+                                            ? "Processing..."
+                                            : `Activate ${tierData.target_tier_name}`}
+                                    </Button>
+                                </div>
+                            )}
                         </div>
-                        <TierPanel {...tierData} />
+                        {activationError && (
+                            <div className="px-3 py-2 bg-red-50 border border-red-200 rounded-lg">
+                                <p className="text-sm text-red-900">
+                                    ❌ <strong>Activation Failed:</strong>{" "}
+                                    {activationError}
+                                </p>
+                            </div>
+                        )}
+                        <TierPanel
+                            status={tierData.active_tier}
+                            next_refill_at_utc={tierData.next_refill_at_utc}
+                            active_tier_name={tierData.active_tier_name}
+                            daily_pollen={tierData.daily_pollen}
+                            subscription_status={tierData.subscription_status}
+                            subscription_ends_at={tierData.subscription_ends_at}
+                            subscription_canceled_at={
+                                tierData.subscription_canceled_at
+                            }
+                            has_polar_error={tierData.has_polar_error}
+                        />
                     </div>
                 )}
                 <ApiKeyList

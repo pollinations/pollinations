@@ -17,13 +17,8 @@ import {
     type CreateChatCompletionResponse,
     GetModelsResponseSchema,
 } from "@/schemas/openai.ts";
-import {
-    createErrorResponseSchema,
-    type ErrorStatusCode,
-    getDefaultErrorMessage,
-    KNOWN_ERROR_STATUS_CODES,
-    UpstreamError,
-} from "@/error.ts";
+import { getDefaultErrorMessage, UpstreamError } from "@/error.ts";
+import { errorResponseDescriptions } from "@/utils/api-docs.ts";
 import { GenerateImageRequestQueryParamsSchema } from "@/schemas/image.ts";
 import { GenerateTextRequestQueryParamsSchema } from "@/schemas/text.ts";
 import { z } from "zod";
@@ -43,7 +38,7 @@ const chatCompletionHandlers = factory.createHandlers(
     resolveModel("generate.text"),
     track("generate.text"),
     async (c) => {
-        const log = c.get("log");
+        const log = c.get("log").getChild("generate");
         await c.var.auth.requireAuthorization();
         c.var.auth.requireModelAccess();
 
@@ -65,7 +60,7 @@ const chatCompletionHandlers = factory.createHandlers(
             // Read upstream error and throw UpstreamError to get structured error response
             // This preserves the status code while providing consistent error format
             const responseText = await response.text();
-            log.warn("[PROXY] Chat completions error {status}: {body}", {
+            log.warn("Chat completions error {status}: {body}", {
                 status: response.status,
                 body: responseText,
             });
@@ -116,28 +111,6 @@ const chatCompletionHandlers = factory.createHandlers(
     },
 );
 
-const errorResponseDescriptions = Object.fromEntries(
-    KNOWN_ERROR_STATUS_CODES.map((status) => [
-        status,
-        {
-            description: getDefaultErrorMessage(status),
-            content: {
-                "application/json": {
-                    schema: resolver(createErrorResponseSchema(status)),
-                },
-            },
-        },
-    ]),
-);
-
-function errorResponses(...codes: ErrorStatusCode[]) {
-    return Object.fromEntries(
-        Object.entries(errorResponseDescriptions).filter(([status, _]) => {
-            return codes.includes(Number(status) as ErrorStatusCode);
-        }),
-    );
-}
-
 export const proxyRoutes = new Hono<Env>()
     // Edge rate limiter: first line of defense (10 req/s per IP)
     .use("*", edgeRateLimit)
@@ -155,7 +128,7 @@ export const proxyRoutes = new Hono<Env>()
                         },
                     },
                 },
-                ...errorResponses(500),
+                ...errorResponseDescriptions(500),
             },
         }),
         async (c) => {
@@ -184,7 +157,7 @@ export const proxyRoutes = new Hono<Env>()
                         },
                     },
                 },
-                ...errorResponses(500),
+                ...errorResponseDescriptions(500),
             },
         }),
         async (c) => {
@@ -219,7 +192,7 @@ export const proxyRoutes = new Hono<Env>()
                         },
                     },
                 },
-                ...errorResponses(500),
+                ...errorResponseDescriptions(500),
             },
         }),
         async (c) => {
@@ -267,7 +240,7 @@ export const proxyRoutes = new Hono<Env>()
                         },
                     },
                 },
-                ...errorResponses(400, 401, 500),
+                ...errorResponseDescriptions(400, 401, 500),
             },
         }),
         ...chatCompletionHandlers,
@@ -304,6 +277,7 @@ export const proxyRoutes = new Hono<Env>()
                         },
                     },
                 },
+                ...errorResponseDescriptions(400, 401, 500),
             },
         }),
         validator(
@@ -319,7 +293,7 @@ export const proxyRoutes = new Hono<Env>()
         resolveModel("generate.text"),
         track("generate.text"),
         async (c) => {
-            const log = c.get("log");
+            const log = c.get("log").getChild("generate");
             await c.var.auth.requireAuthorization();
             c.var.auth.requireModelAccess();
             await checkBalance(c.var);
@@ -346,7 +320,7 @@ export const proxyRoutes = new Hono<Env>()
                 // Read upstream error and throw UpstreamError to get structured error response
                 // This preserves the status code while providing consistent error format
                 const responseText = await response.text();
-                log.warn("[PROXY] Text service error {status}: {body}", {
+                log.warn("Text service error {status}: {body}", {
                     status: response.status,
                     body: responseText,
                 });
@@ -416,7 +390,7 @@ export const proxyRoutes = new Hono<Env>()
                         },
                     },
                 },
-                ...errorResponses(400, 401, 500),
+                ...errorResponseDescriptions(400, 401, 500),
             },
         }),
         validator(
@@ -433,7 +407,7 @@ export const proxyRoutes = new Hono<Env>()
         resolveModel("generate.image"),
         track("generate.image"),
         async (c) => {
-            const log = c.get("log");
+            const log = c.get("log").getChild("generate");
             await c.var.auth.requireAuthorization();
             c.var.auth.requireModelAccess();
             await checkBalance(c.var);
@@ -441,7 +415,7 @@ export const proxyRoutes = new Hono<Env>()
             // Get prompt from validated param (using :prompt{[\\s\\S]+} regex pattern)
             const promptParam = c.req.param("prompt") || "";
 
-            log.debug("[PROXY] Extracted prompt param: {prompt}", {
+            log.debug("Extracted prompt param: {prompt}", {
                 prompt: promptParam,
                 length: promptParam.length,
             });
@@ -449,7 +423,7 @@ export const proxyRoutes = new Hono<Env>()
             const targetUrl = proxyUrl(c, `${c.env.IMAGE_SERVICE_URL}/prompt`);
             targetUrl.pathname = joinPaths(targetUrl.pathname, promptParam);
 
-            log.debug("[PROXY] Proxying to: {url}", {
+            log.debug("Proxying to: {url}", {
                 url: targetUrl.toString(),
             });
 
@@ -463,7 +437,7 @@ export const proxyRoutes = new Hono<Env>()
                 // Read upstream error and throw UpstreamError to get structured error response
                 // This preserves the status code while providing consistent error format
                 const responseText = await response.text();
-                log.warn("[PROXY] Image service error {status}: {body}", {
+                log.warn("Image service error {status}: {body}", {
                     status: response.status,
                     body: responseText,
                 });

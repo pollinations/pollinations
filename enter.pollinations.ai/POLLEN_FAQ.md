@@ -20,7 +20,7 @@ Currently, we accept credit cards. We're actively exploring other payment method
 
 ## Is there a monthly subscription?
 
-Not yet, but we're considering it based on community feedback. Check out the [voting issue](https://github.com/pollinations/pollinations/issues/2202) to share your thoughts or join our [Discord](https://discord.gg/pollinations) for updates.
+Not yet, but we're considering it based on community feedback. Check out the [voting issue](https://github.com/pollinations/pollinations/issues/2202) to share your thoughts or join our [Discord](https://discord.gg/pollinations-ai-885844321461485618) for updates.
 
 ## Can I try it without signing up?
 

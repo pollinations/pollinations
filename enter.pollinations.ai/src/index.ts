@@ -10,6 +10,8 @@ import { tiersRoutes } from "./routes/tiers.ts";
 import { usageRoutes } from "./routes/usage.ts";
 import { createDocsRoutes } from "./routes/docs.ts";
 import { apiKeysRoutes } from "./routes/api-keys.ts";
+import { webhooksRoutes } from "./routes/webhooks.ts";
+import { adminRoutes } from "./routes/admin.ts";
 import { requestId } from "hono/request-id";
 import { logger } from "./middleware/logger.ts";
 import { getLogger } from "@logtape/logtape";
@@ -26,7 +28,11 @@ export const api = new Hono<Env>()
     .route("/tiers", tiersRoutes)
     .route("/api-keys", apiKeysRoutes)
     .route("/usage", usageRoutes)
+    .route("/webhooks", webhooksRoutes)
+    .route("/admin", adminRoutes)
     .route("/generate", proxyRoutes);
+
+export type ApiRoutes = typeof api;
 
 const docsRoutes = createDocsRoutes(api);
 
@@ -81,6 +87,7 @@ export default {
     scheduled: async (_controller, env, _ctx) => {
         const db = drizzle(env.DB);
         const log = getLogger(["hono", "scheduled"]);
+
         await processEvents(db, log, {
             polarAccessToken: env.POLAR_ACCESS_TOKEN,
             polarServer: env.POLAR_SERVER,

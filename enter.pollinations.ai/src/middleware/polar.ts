@@ -12,6 +12,8 @@ import { drizzle } from "drizzle-orm/d1";
 import { event } from "@/db/schema/event.ts";
 import { and, eq, gte, sql } from "drizzle-orm";
 
+import { toMicroPollen } from "@shared/registry/pollen-precision.ts";
+
 type BalanceCheckResult = {
     selectedMeterId: string;
     selectedMeterSlug: string;
@@ -94,11 +96,11 @@ export const polar = createMiddleware<PolarEnv>(async (c, next) => {
 
         const { adjustedMeters } = sortedMeters.reduce(
             (acc, meter) => {
-                const deduction = Math.min(meter.balance, acc.remainingSpend);
+                const deduction = Math.min(toMicroPollen(meter.balance), acc.remainingSpend);
                 acc.remainingSpend -= deduction;
                 acc.adjustedMeters.push({
                     ...meter,
-                    balance: meter.balance - deduction,
+                    balance: toMicroPollen(meter.balance) - deduction,
                 });
                 return acc;
             },
@@ -130,11 +132,11 @@ export const polar = createMiddleware<PolarEnv>(async (c, next) => {
         // Polar syncs and cache refreshes.
         let remainingSpend = pendingSpend;
         const adjustedMeters = sortedMeters.map((meter) => {
-            const deduction = Math.min(meter.balance, remainingSpend);
+            const deduction = Math.min(toMicroPollen(meter.balance), remainingSpend);
             remainingSpend -= deduction;
             return {
                 ...meter,
-                balance: meter.balance - deduction,
+                balance: toMicroPollen(meter.balance) - deduction,
             };
         });
 

@@ -17,8 +17,13 @@ import {
     type CreateChatCompletionResponse,
     GetModelsResponseSchema,
 } from "@/schemas/openai.ts";
-import { getDefaultErrorMessage, UpstreamError } from "@/error.ts";
-import { errorResponseDescriptions } from "@/utils/api-docs.ts";
+import {
+    createErrorResponseSchema,
+    type ErrorStatusCode,
+    getDefaultErrorMessage,
+    KNOWN_ERROR_STATUS_CODES,
+    UpstreamError,
+} from "@/error.ts";
 import { GenerateImageRequestQueryParamsSchema } from "@/schemas/image.ts";
 import { GenerateTextRequestQueryParamsSchema } from "@/schemas/text.ts";
 import { z } from "zod";
@@ -111,6 +116,28 @@ const chatCompletionHandlers = factory.createHandlers(
     },
 );
 
+const errorResponseDescriptions = Object.fromEntries(
+    KNOWN_ERROR_STATUS_CODES.map((status) => [
+        status,
+        {
+            description: getDefaultErrorMessage(status),
+            content: {
+                "application/json": {
+                    schema: resolver(createErrorResponseSchema(status)),
+                },
+            },
+        },
+    ]),
+);
+
+function errorResponses(...codes: ErrorStatusCode[]) {
+    return Object.fromEntries(
+        Object.entries(errorResponseDescriptions).filter(([status, _]) => {
+            return codes.includes(Number(status) as ErrorStatusCode);
+        }),
+    );
+}
+
 export const proxyRoutes = new Hono<Env>()
     // Edge rate limiter: first line of defense (10 req/s per IP)
     .use("*", edgeRateLimit)
@@ -128,7 +155,7 @@ export const proxyRoutes = new Hono<Env>()
                         },
                     },
                 },
-                ...errorResponseDescriptions(500),
+                ...errorResponses(500),
             },
         }),
         async (c) => {
@@ -157,7 +184,7 @@ export const proxyRoutes = new Hono<Env>()
                         },
                     },
                 },
-                ...errorResponseDescriptions(500),
+                ...errorResponses(500),
             },
         }),
         async (c) => {
@@ -192,7 +219,7 @@ export const proxyRoutes = new Hono<Env>()
                         },
                     },
                 },
-                ...errorResponseDescriptions(500),
+                ...errorResponses(500),
             },
         }),
         async (c) => {
@@ -240,7 +267,7 @@ export const proxyRoutes = new Hono<Env>()
                         },
                     },
                 },
-                ...errorResponseDescriptions(400, 401, 500),
+                ...errorResponses(400, 401, 500),
             },
         }),
         ...chatCompletionHandlers,
@@ -277,7 +304,6 @@ export const proxyRoutes = new Hono<Env>()
                         },
                     },
                 },
-                ...errorResponseDescriptions(400, 401, 500),
             },
         }),
         validator(
@@ -390,7 +416,7 @@ export const proxyRoutes = new Hono<Env>()
                         },
                     },
                 },
-                ...errorResponseDescriptions(400, 401, 500),
+                ...errorResponses(400, 401, 500),
             },
         }),
         validator(

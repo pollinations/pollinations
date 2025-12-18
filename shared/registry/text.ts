@@ -1,6 +1,25 @@
 import { COST_START_DATE, perMillion } from "./price-helpers";
 import type { ServiceDefinition } from "./registry";
 
+// Voices available for openai-audio model - exported for schema validation
+export const AUDIO_VOICES = [
+    "alloy",
+    "echo",
+    "fable",
+    "onyx",
+    "nova",
+    "shimmer",
+    "coral",
+    "verse",
+    "ballad",
+    "ash",
+    "sage",
+    "amuch",
+    "dan",
+] as const;
+
+export type AudioVoice = (typeof AUDIO_VOICES)[number];
+
 export const DEFAULT_TEXT_MODEL = "openai" as const;
 export type TextServiceId = keyof typeof TEXT_SERVICES;
 export type TextModelId = (typeof TEXT_SERVICES)[TextServiceId]["modelId"];
@@ -116,21 +135,7 @@ export const TEXT_SERVICES = {
             },
         ],
         description: "OpenAI GPT-4o Mini Audio - Voice Input & Output",
-        voices: [
-            "alloy",
-            "echo",
-            "fable",
-            "onyx",
-            "nova",
-            "shimmer",
-            "coral",
-            "verse",
-            "ballad",
-            "ash",
-            "sage",
-            "amuch",
-            "dan",
-        ],
+        voices: [...AUDIO_VOICES],
         inputModalities: ["text", "image", "audio"],
         outputModalities: ["audio", "text"],
         tools: true,

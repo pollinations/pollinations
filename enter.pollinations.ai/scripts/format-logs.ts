@@ -1,7 +1,6 @@
 import { LogLevel, getLogger } from "@logtape/logtape";
 import { ensureConfigured } from "../src/logger.ts";
 import { createInterface } from "node:readline/promises";
-import { inspect } from "node:util";
 
 async function main() {
     await ensureConfigured({ level: "trace", format: "text" });
@@ -14,11 +13,6 @@ async function main() {
 function processLine(line: string) {
     try {
         const json = JSON.parse(line);
-
-        if (process.env.LOG_FORMAT === "json") {
-            console.log(inspect(json, { colors: true, compact: false }));
-            return;
-        }
 
         if (!json.level) {
             console.log(line);

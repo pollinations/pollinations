@@ -15,7 +15,6 @@ import type { DrizzleD1Database } from "drizzle-orm/d1";
 import { event } from "./db/schema/event.ts";
 import {
     batches,
-    capitalize,
     exponentialBackoffDelay,
     generateRandomId,
     removeUnset,
@@ -468,6 +467,10 @@ function flattenBalances(balances: Record<string, number> | null) {
             return [`pollen${capitalize(meterType)}Balance`, balance];
         }),
     );
+}
+
+function capitalize(str: string) {
+    return `${str.charAt(0).toUpperCase()}${str.slice(1)}`;
 }
 
 function polarDeliveryStats(events: SelectGenerationEvent[]): {

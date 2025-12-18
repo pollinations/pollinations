@@ -116,8 +116,13 @@ async function handleNonStreamingValidation(
 /**
  * Handle validation for streaming responses
  * 
- * THE FIX: Properly buffers incomplete lines to prevent JSON parse errors
- * when TCP packets split in the middle of SSE data lines.
+ * FIXES APPLIED:
+ * 1. Line buffering: Prevents JSON parse errors when TCP packets split SSE data lines
+ * 2. Multi-byte character handling: Reuses TextDecoder with stream:true for emojis/Unicode
+ * 
+ * NOTE: Validation happens at the END of the stream (when finish_reason appears).
+ * This means invalid JSON is still streamed to the client, but an error is appended.
+ * This trade-off prioritizes streaming speed/UX over preventing invalid data transmission.
  */
 async function handleStreamingValidation(
     c: any,
@@ -141,7 +146,8 @@ async function handleStreamingValidation(
 
         let accumulatedContent = "";
         let isValidating = false;
-        let lineBuffer = ""; // THE FIX: Buffer for incomplete lines
+        let lineBuffer = ""; // Buffer for incomplete lines
+        const decoder = new TextDecoder(); // THE FIX: Reuse decoder for multi-byte characters
 
         // Process the stream
         (async () => {
@@ -201,8 +207,9 @@ async function handleStreamingValidation(
                         break;
                     }
 
-                    // THE FIX: Decode and append to buffer
-                    const chunk = new TextDecoder().decode(value);
+                    // THE FIX: Decode with streaming to handle multi-byte characters (emojis, etc)
+                    // that may be split across TCP packet boundaries
+                    const chunk = decoder.decode(value, { stream: true });
                     lineBuffer += chunk;
                     
                     // Split on newlines, keeping incomplete line in buffer

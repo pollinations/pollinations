@@ -39,10 +39,7 @@ function createTextGenerationEvent({
     simulatePolarError?: boolean;
 }): InsertGenerationEvent {
     const userId = generateRandomId();
-    const resolvedModelRequested = resolveServiceId(
-        modelRequested,
-        "generate.text",
-    );
+    const resolvedModelRequested = resolveServiceId(modelRequested);
 
     const modelUsed = getServiceDefinition(resolvedModelRequested).modelId;
     const priceDefinition = getActivePriceDefinition(resolvedModelRequested);

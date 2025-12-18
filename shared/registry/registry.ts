@@ -11,6 +11,7 @@ import {
     ImageServiceId,
     ImageModelId,
 } from "./image";
+import { toMicroPollen } from "./pollen-precision";
 import { EventType } from "./types";
 import { z } from "zod";
 
@@ -262,11 +263,12 @@ export function calculateCost(modelId: ModelId, usage: TokenUsage): UsageCost {
             `Failed to get current cost for model: ${modelId.toString()}`,
         );
     const usageCost = convertUsage(usage, costDefinition);
-    const totalCost = safeRound(
+    const totalCost = toMicroPollen(safeRound(
         Object.values(omit(usageCost, "unit")).reduce(
             (total, cost) => total + cost,
         ),
         PRECISION,
+        ),
     );
     return {
         ...usageCost,
@@ -287,11 +289,12 @@ export function calculatePrice(
             `Failed to get current price for service: ${serviceId.toString()}`,
         );
     const usagePrice = convertUsage(usage, priceDefinition);
-    const totalPrice = safeRound(
+    const totalPrice = toMicroPollen(safeRound(
         Object.values(omit(usagePrice, "unit")).reduce(
             (total, price) => total + price,
         ),
         PRECISION,
+        ),
     );
     return {
         ...usagePrice,

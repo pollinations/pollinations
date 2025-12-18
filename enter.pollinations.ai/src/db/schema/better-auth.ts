@@ -5,7 +5,7 @@
 // released, we should consider updating to the latest version of better-auth
 // and re-generating the schema including the indexes.
 
-import { sqliteTable, text, integer, index, real } from "drizzle-orm/sqlite-core";
+import { sqliteTable, text, integer, index } from "drizzle-orm/sqlite-core";
 
 export const user = sqliteTable("user", {
   id: text("id").primaryKey(),
@@ -29,10 +29,9 @@ export const user = sqliteTable("user", {
   githubId: integer("github_id"),
   githubUsername: text("github_username"),
   tier: text("tier").default("spore").notNull(),
-  balance: real("balance").default(1000).notNull(),
+  balance: integer("balance").default(10000000).notNull(), // 10 pollen in micro-pollen (1M = 1 pollen)
 }, (table) => [
   index("idx_user_email").on(table.email),
-  index("idx_user_balance").on(table.balance),
 ]);
 
 export const session = sqliteTable("session", {

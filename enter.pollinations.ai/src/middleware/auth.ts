@@ -58,7 +58,7 @@ function extractApiKey(c: Context<AuthEnv>): string | null {
 
 export const auth = (options: AuthOptions) =>
     createMiddleware<AuthEnv>(async (c, next) => {
-        const log = c.get("log");
+        const log = c.get("log").getChild("auth");
         const client = createAuth(c.env);
 
         const authenticateSession = async (): Promise<AuthResult | null> => {
@@ -76,7 +76,7 @@ export const auth = (options: AuthOptions) =>
         const authenticateApiKey = async (): Promise<AuthResult | null> => {
             if (!options.allowApiKey) return null;
             const apiKey = extractApiKey(c);
-            log.debug("[AUTH] Extracted API key: {hasKey}", {
+            log.debug("Extracted API key: {hasKey}", {
                 hasKey: !!apiKey,
                 keyPrefix: apiKey?.substring(0, 8),
             });
@@ -86,7 +86,7 @@ export const auth = (options: AuthOptions) =>
                     key: apiKey,
                 },
             });
-            log.debug("[AUTH] API key verification result: {valid}", {
+            log.debug("API key verification result: {valid}", {
                 valid: keyResult.valid,
             });
             if (!keyResult.valid || !keyResult.key) return null;
@@ -103,7 +103,7 @@ export const auth = (options: AuthOptions) =>
                 where: eq(schema.user.id, keyResult.key.userId),
             });
 
-            log.debug("[AUTH] User lookup result: {found}", {
+            log.debug("User lookup result: {found}", {
                 found: !!user,
                 userId: user?.id,
             });
@@ -122,7 +122,7 @@ export const auth = (options: AuthOptions) =>
         const { user, session, apiKey } =
             (await authenticateSession()) || (await authenticateApiKey()) || {};
 
-        log.debug("[AUTH] Authentication result: {authenticated}", {
+        log.debug("Authentication result: {authenticated}", {
             authenticated: !!user,
             hasSession: !!session,
             hasApiKey: !!apiKey,
@@ -132,11 +132,11 @@ export const auth = (options: AuthOptions) =>
         const requireAuthorization = async (options?: {
             message?: string;
         }): Promise<void> => {
-            log.debug("[AUTH] Checking authorization: {hasUser}", {
+            log.debug("Checking authorization: {hasUser}", {
                 hasUser: !!user,
             });
             if (!user) {
-                log.debug("[AUTH] Authorization failed: No user");
+                log.debug("Authorization failed: No user");
                 throw new HTTPException(401, {
                     message: options?.message,
                 });
@@ -160,14 +160,11 @@ export const auth = (options: AuthOptions) =>
 
             // Check if resolved model is in the allowlist
             if (!apiKey.permissions.models.includes(model.resolved)) {
-                log.debug(
-                    "[AUTH] Model access denied: {model} not in allowlist",
-                    {
-                        model: model.requested,
-                        resolved: model.resolved,
-                        allowed: apiKey.permissions.models,
-                    },
-                );
+                log.debug("Model access denied: {model} not in allowlist", {
+                    model: model.requested,
+                    resolved: model.resolved,
+                    allowed: apiKey.permissions.models,
+                });
                 throw new HTTPException(403, {
                     message: `Model '${model.requested}' is not allowed for this API key`,
                 });

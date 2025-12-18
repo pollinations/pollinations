@@ -1,0 +1,50 @@
+{
+  "date": "2025-12-18",
+  "generated_at": "2025-12-18T16:13:37.735817+00:00",
+  "post_type": "carousel",
+  "content_type": "shitpost",
+  "linked_images": false,
+  "strategy_reasoning": "This update contains a revert of a major refactor (PR #6155 reverting #6139), which is peak developer relatable trauma. Combining that with the absurdity of Azure forcing specific temperature settings creates a perfect narrative of 'chaotic good' development cycles. High engagement potential from devs who have been there.",
+  "story_arc": "",
+  "images": [
+    {
+      "url": "https://gen.pollinations.ai/image/A%20dramatic%20oil%20painting%20in%20the%20style%20of%20The%20Death%20of%20Socrates%2C%20but%20it%27s%20a%20developer%20collapsing%20in%20a%20chair%20while%20staring%20at%20a%20monitor.%20The%20monitor%20displays%20red%20error%20logs.%20A%20heavenly%20hand%20reaches%20down%20from%20the%20clouds%20pressing%20a%20giant%20keyboard%20key%20labeled%20%27REVERT%27.%20Text%20floating%20in%20the%20air%20in%20gold%20serif%20font%3A%20%27PR%20%236155%3A%20THE%20WALK%20OF%20SHAME%27?model=nanobanana-pro&width=2048&height=2048&quality=hd&nologo=true&private=true&nofeed=true&seed=579843945",
+      "prompt": "A dramatic oil painting in the style of The Death of Socrates, but it's a developer collapsing in a chair while staring at a monitor. The monitor displays red error logs. A heavenly hand reaches down from the clouds pressing a giant keyboard key labeled 'REVERT'. Text floating in the air in gold serif font: 'PR #6155: THE WALK OF SHAME'",
+      "description": "Celebrating the revert of the refactor that broke everything."
+    },
+    {
+      "url": "https://gen.pollinations.ai/image/A%20close%20up%20of%20a%20futuristic%20industrial%20control%20panel.%20A%20dial%20is%20cranked%20all%20the%20way%20to%20the%20maximum.%20The%20dial%20is%20labeled%20%27CREATIVITY%27.%20A%20sticky%20note%20is%20stuck%20to%20it%20that%20says%20%27Azure%20says%20keep%20it%20at%201%27.%20Cinematic%20lighting%2C%20photorealistic.?model=nanobanana-pro&width=2048&height=2048&quality=hd&nologo=true&private=true&nofeed=true&seed=976167075",
+      "prompt": "A close up of a futuristic industrial control panel. A dial is cranked all the way to the maximum. The dial is labeled 'CREATIVITY'. A sticky note is stuck to it that says 'Azure says keep it at 1'. Cinematic lighting, photorealistic.",
+      "description": "GPT-5 temperature forcing update visualization."
+    },
+    {
+      "url": "https://gen.pollinations.ai/image/A%20cool%20cyberpunk%20robot%20wearing%20aviator%20sunglasses%20and%20a%20tuxedo%2C%20holding%20a%20globe%20of%20the%20Earth.%20The%20robot%20looks%20like%20a%20pop%20star.%20Text%20overlay%20in%20neon%20pink%3A%20%27MR.%20WORLDWIDE%27.%20Background%20is%20a%20matrix%20of%20server%20racks.?model=nanobanana-pro&width=2048&height=2048&quality=hd&nologo=true&private=true&nofeed=true&seed=1234554604",
+      "prompt": "A cool cyberpunk robot wearing aviator sunglasses and a tuxedo, holding a globe of the Earth. The robot looks like a pop star. Text overlay in neon pink: 'MR. WORLDWIDE'. Background is a matrix of server racks.",
+      "description": "Gemini 3 Flash moving to global region."
+    }
+  ],
+  "caption": "We refactored the tier system. It broke the docs. We reverted the refactor. Nature is healing. 🌱\n\nAlso in this chaos dump:\n🔥 Azure is forcing us to keep GPT-5 spicy (Temp=1 or bust)\n🌍 Gemini 3 Flash is now Mr. Worldwide (Global region fix)\n🗣️ 7 new voices added so the AI can hallucinate in different accents\n\nCode is free. Bugs are free. Fixes are free. Link in bio.",
+  "hashtags": [
+    "#pollinations",
+    "#opensource",
+    "#gitrevert",
+    "#productionoutage",
+    "#devhumor",
+    "#aiart",
+    "#azure",
+    "#shitposting"
+  ],
+  "alt_text": "Carousel: 1. A dramatic painting of a developer being saved by a Revert button. 2. A dial cranked to max because Azure demands temperature 1. 3. A robot looking like Mr Worldwide representing the global region fix.",
+  "pr_references": [
+    "#6161",
+    "#6115",
+    "#6159",
+    "#6157",
+    "#6155",
+    "#6154",
+    "#6139",
+    "#6144",
+    "#6096",
+    "#6046"
+  ]
+}

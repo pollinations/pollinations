@@ -15,6 +15,7 @@ import { adminRoutes } from "./routes/admin.ts";
 import { requestId } from "hono/request-id";
 import { logger } from "./middleware/logger.ts";
 import { getLogger } from "@logtape/logtape";
+import { cspMiddleware } from "./middleware/csp.ts";
 import type { Env } from "./env.ts";
 import { drizzle } from "drizzle-orm/d1";
 
@@ -46,6 +47,8 @@ const app = new Hono<Env>()
             maxAge: 600,
         }),
     )
+    // CSP for documentation routes
+    .use("/api/docs/*", cspMiddleware)
     // Restrictive CORS for auth/dashboard endpoints (use credentials)
     .use(
         "*",

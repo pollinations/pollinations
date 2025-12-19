@@ -70,6 +70,8 @@ const ChatCompletionRequestMessageContentPartImageSchema = z.object({
     }),
 });
 
+// Video URL content type - currently supported by Gemini models only
+// Enables native YouTube video analysis (visual frames + audio) without manual extraction
 const ChatCompletionRequestMessageContentPartVideoSchema = z.object({
     type: z.literal("video_url"),
     video_url: z.object({

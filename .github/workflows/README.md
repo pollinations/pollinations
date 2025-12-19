@@ -6,7 +6,7 @@
 
 | Part       | Description              | Examples                                                  |
 | ---------- | ------------------------ | --------------------------------------------------------- |
-| **Entity** | What is being acted upon | `issue`, `pr`, `discord`, `website`, `app`                |
+| **Entity** | What is being acted upon | `issue`, `pr`, `discord`, `website`, `app`, `branch`      |
 | **Action** | The verb/operation       | `create`, `post`, `generate`, `update`, `review`, `label` |
 | **What**   | The target/result        | `weekly-news`, `merged-pr`, `external`, `code`            |
 
@@ -15,7 +15,7 @@
 -   `discord-post-merged-pr` → Discord / post / merged PR
 -   `issue-label-external` → Issue / label / external
 -   `pr-create-weekly-news` → PR / create / weekly news
--   `app-sync-stars` → App / sync / stars
+-   `branch-delete-stale` → Branch / delete / stale
 
 **Entity = Effect** (what is affected/created, not what triggers it).
 
@@ -50,6 +50,13 @@ Secrets required: `POLLY_BOT_APP_ID`, `POLLY_BOT_PRIVATE_KEY`
 | `app:approved`    | App merged to showcase        | `app-issue-celebrate-approval.yml` |
 | `app:denied`      | Submission rejected           | Manual                             |
 
+### PR Labels
+
+| Label         | Purpose                    | Applied by              |
+| ------------- | -------------------------- | ----------------------- |
+| `pr:external` | PR from external contributor | `pr-label-external.yml` |
+| `pr:news`     | PR related to news/social  | Instagram workflows     |
+
 ## Workflows
 
 ### AI Agents
@@ -60,7 +67,7 @@ Secrets required: `POLLY_BOT_APP_ID`, `POLLY_BOT_PRIVATE_KEY`
 ### Triage
 
 -   **issue-label-external.yml** - Adds `inbox:github` to external issues. Skips if `inbox:discord` or `app:*` labels exist.
--   **issue-create-from-discord.yml** - Creates GitHub issues from Discord bot via `repository_dispatch`.
+-   **pr-label-external.yml** - Adds `pr:external` to PRs from external contributors. Skips internal users and bots.
 -   **pr-assign-author.yml** - Assigns the PR creator to the PR when opened.
 
 ### App Submissions
@@ -76,11 +83,25 @@ Secrets required: `POLLY_BOT_APP_ID`, `POLLY_BOT_PRIVATE_KEY`
 -   **discord-post-weekly-news.yml** - Triggered when `NEWS/*.md` is pushed. Posts weekly digest to Discord.
 -   **discord-post-merged-pr.yml** - Posts every merged PR to Discord immediately.
 
+### Instagram
+
+-   **instagram-generate-post.yml** - Daily at 16:00 UTC. Scans recent PRs, generates Instagram post content, creates PR with image and caption.
+-   **instagram-publish-post.yml** - When Instagram post PR is merged, publishes to Instagram via API.
+
 ### Project Management
 
 -   **issue-add-to-project.yml** - Adds all new issues to Project #20.
--   **issue-close-discarded.yml** - Auto-closes issues marked "Discarded" in project.
+-   **pr-add-to-project.yml** - Adds all new PRs to Project #20.
+-   **issue-close-discarded.yml** - Auto-closes issues marked "Discarded" in project (hourly).
 -   **pr-update-project-status.yml** - Updates PR status in project (In Progress/In Review/Done/Discarded).
+
+### Deployment
+
+-   **app-deploy.yml** - Auto-deploys apps to Cloudflare Pages when `apps/**` changes on `production` branch.
+-   **app-deploy-manual.yml** - Manual deployment of specific app to Cloudflare Pages.
+-   **deploy-enter-cloudflare.yml** - Deploys `enter.pollinations.ai` to Cloudflare Workers on `production` push.
+-   **deploy-enter-services.yml** - Deploys `text.pollinations.ai` and `image.pollinations.ai` to EC2 via SSH. Supports staging and production.
+-   **deploy-portkey-gateway.yml** - Deploys Portkey gateway to Cloudflare Workers.
 
 ### CI & Testing
 
@@ -91,19 +112,12 @@ Secrets required: `POLLY_BOT_APP_ID`, `POLLY_BOT_PRIVATE_KEY`
 -   **app-list-update-entries.yml** - Regenerates PROJECTS.md and README.md when projectList.js changes.
 -   **app-list-update-stars.yml** - Updates star counts from GitHub for app showcase projects (weekly).
 
+### Branch Cleanup
+
+-   **branch-delete-stale.yml** - Manual workflow to delete branches older than X days. Protected branches (main, master, production) always excluded.
+-   **branch-delete-merged.yml** - Auto-deletes the source branch when a PR is merged. Skips forks and protected branches.
+
 ## Flow Diagrams
-
-### Issue Triage
-
-```mermaid
-%%{init: {'theme': 'dark'}}%%
-flowchart TD
-    A[Issue opened on GitHub] --> B[issue-label-external.yml]
-    B --> C[inbox:github]
-
-    D[Issue from Discord bot] --> E[issue-create-from-discord.yml]
-    E --> F[inbox:discord]
-```
 
 ### Weekly News Pipeline
 
@@ -130,13 +144,94 @@ flowchart TD
     K --> L[Creates PR: update README.md]
 ```
 
-### Live PR Notifications
+### Instagram Pipeline
 
 ```mermaid
 %%{init: {'theme': 'dark'}}%%
 flowchart TD
-    A[Any PR merged to main] --> B[discord-post-merged-pr.yml]
-    B --> C[Posts to Discord immediately]
+    subgraph CRON["Daily 16:00 UTC"]
+        A[instagram-generate-post.yml] --> B[Scans recent PRs]
+        B --> C[AI generates caption + image]
+        C --> D[Creates PR with post JSON]
+    end
+
+    D -->|PR reviewed & merged| E[instagram-publish-post.yml]
+    E --> F[Publishes to Instagram API]
+```
+
+### Issue Triage
+
+```mermaid
+%%{init: {'theme': 'dark'}}%%
+flowchart TD
+    A[Issue opened on GitHub] --> B[issue-label-external.yml]
+    B --> C[inbox:github]
+
+    D[Issue from Discord bot] --> E[issue-create-from-discord.yml]
+    E --> F[inbox:discord]
+```
+
+### PR Triage
+
+```mermaid
+%%{init: {'theme': 'dark'}}%%
+flowchart TD
+    A[PR opened] --> B{Author check}
+    B -->|External| C[pr-label-external.yml]
+    C --> D[pr:external label]
+    B -->|Internal/Bot| E[No label]
+
+    A --> F[pr-assign-author.yml]
+    F --> G[Author assigned]
+
+    A --> H[pr-add-to-project.yml]
+    H --> I[Added to Project #20]
+```
+
+### Branch Cleanup
+
+```mermaid
+%%{init: {'theme': 'dark'}}%%
+flowchart TD
+    subgraph AUTO["On PR Merge"]
+        A[PR merged] --> B[branch-delete-merged.yml]
+        B --> C{Protected?}
+        C -->|No| D[Delete source branch]
+        C -->|Yes| E[Skip]
+    end
+
+    subgraph MANUAL["Manual Trigger"]
+        F[Run branch-delete-stale.yml] --> G[Input: X days]
+        G --> H[GraphQL: fetch all branches]
+        H --> I{Older than X days?}
+        I -->|Yes & not protected| J[Delete branch]
+        I -->|No or protected| K[Keep branch]
+    end
+```
+
+### Deployment Pipeline
+
+```mermaid
+%%{init: {'theme': 'dark'}}%%
+flowchart TD
+    subgraph APPS["Apps Deployment"]
+        A1[Push to production] --> A2{apps/** changed?}
+        A2 -->|Yes| A3[app-deploy.yml]
+        A3 --> A4[Deploy to Cloudflare Pages]
+    end
+
+    subgraph ENTER["Enter Gateway"]
+        B1[Push to production] --> B2{enter.pollinations.ai changed?}
+        B2 -->|Yes| B3[deploy-enter-cloudflare.yml]
+        B3 --> B4[Deploy to Cloudflare Workers]
+    end
+
+    subgraph SERVICES["Backend Services"]
+        C1[Push to production/staging] --> C2[deploy-enter-services.yml]
+        C2 --> C3[SSH to EC2]
+        C3 --> C4[Restart systemd services]
+        C4 --> C5[Health checks]
+    end
 ```
 
 ### AI Assistant (Polly)
@@ -150,4 +245,13 @@ flowchart TD
     D --> E[Starts Pollinations AI router]
     E --> F[Claude Code Action responds]
     F --> G[AI assists with code/questions]
+```
+
+### Live PR Notifications
+
+```mermaid
+%%{init: {'theme': 'dark'}}%%
+flowchart TD
+    A[Any PR merged to main] --> B[discord-post-merged-pr.yml]
+    B --> C[Posts to Discord immediately]
 ```

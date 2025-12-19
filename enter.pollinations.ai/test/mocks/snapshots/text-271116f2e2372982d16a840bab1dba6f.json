@@ -1,0 +1,91 @@
+{
+  "request": {
+    "url": "http://ec2-3-80-56-235.compute-1.amazonaws.com:16385/openai",
+    "method": "POST",
+    "body": {
+      "type": "json",
+      "data": {
+        "model": "gemini",
+        "messages": [
+          {
+            "role": "user",
+            "content": [
+              {
+                "type": "text",
+                "text": "What is happening in this video? Reply in one sentence."
+              },
+              {
+                "type": "video_url",
+                "video_url": {
+                  "url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
+                }
+              }
+            ]
+          }
+        ],
+        "max_tokens": 2048,
+        "seed": 42
+      }
+    },
+    "params": {}
+  },
+  "response": {
+    "status": 200,
+    "statusText": "OK",
+    "headers": {
+      "access-control-allow-origin": "*",
+      "connection": "keep-alive",
+      "content-length": "848",
+      "content-type": "application/json; charset=utf-8",
+      "date": "Fri, 19 Dec 2025 09:13:40 GMT",
+      "etag": "W/\"350-JpsK/gG3Xu1YEoLhSOFjm+pmIOQ\"",
+      "keep-alive": "timeout=5",
+      "x-model-used": "gemini-3-flash-preview",
+      "x-powered-by": "Express",
+      "x-usage-completion-reasoning-tokens": "213",
+      "x-usage-completion-text-tokens": "38",
+      "x-usage-prompt-audio-tokens": "5327",
+      "x-usage-prompt-text-tokens": "13897",
+      "x-usage-total-tokens": "19475"
+    },
+    "body": {
+      "type": "json",
+      "data": {
+        "id": "pllns_69ede80cffeb55334595ed5da88bfa74",
+        "object": "chat.completion",
+        "created": 1766135620,
+        "model": "gemini-3-flash-preview",
+        "provider": "vertex-ai",
+        "choices": [
+          {
+            "message": {
+              "role": "assistant",
+              "content": "This is the official music video for Rick Astley's 1987 hit \"Never Gonna Give You Up,\" featuring his signature dance moves and soulful vocals across several urban locations.",
+              "content_blocks": [
+                {
+                  "type": "text",
+                  "text": "This is the official music video for Rick Astley's 1987 hit \"Never Gonna Give You Up,\" featuring his signature dance moves and soulful vocals across several urban locations."
+                }
+              ]
+            },
+            "index": 0,
+            "finish_reason": "STOP"
+          }
+        ],
+        "usage": {
+          "prompt_tokens": 19224,
+          "completion_tokens": 251,
+          "total_tokens": 19475,
+          "completion_tokens_details": {
+            "reasoning_tokens": 213,
+            "audio_tokens": 0
+          },
+          "prompt_tokens_details": {
+            "cached_tokens": 0,
+            "audio_tokens": 5327
+          }
+        }
+      }
+    }
+  }
+}

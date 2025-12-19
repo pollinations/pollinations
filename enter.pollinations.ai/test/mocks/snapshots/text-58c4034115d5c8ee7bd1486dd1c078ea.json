@@ -1,0 +1,92 @@
+{
+  "request": {
+    "url": "http://ec2-3-80-56-235.compute-1.amazonaws.com:16385/openai",
+    "method": "POST",
+    "body": {
+      "type": "json",
+      "data": {
+        "model": "gemini",
+        "messages": [
+          {
+            "role": "user",
+            "content": [
+              {
+                "type": "text",
+                "text": "Describe this video briefly."
+              },
+              {
+                "type": "video_url",
+                "video_url": {
+                  "url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+                  "mime_type": "video/mp4"
+                }
+              }
+            ]
+          }
+        ],
+        "max_tokens": 2048,
+        "seed": 42
+      }
+    },
+    "params": {}
+  },
+  "response": {
+    "status": 200,
+    "statusText": "OK",
+    "headers": {
+      "access-control-allow-origin": "*",
+      "connection": "keep-alive",
+      "content-length": "1778",
+      "content-type": "application/json; charset=utf-8",
+      "date": "Fri, 19 Dec 2025 09:14:17 GMT",
+      "etag": "W/\"6f2-52ybviUDr2Nzjgw6iSKtM49uiTo\"",
+      "keep-alive": "timeout=5",
+      "x-model-used": "gemini-3-flash-preview",
+      "x-powered-by": "Express",
+      "x-usage-completion-reasoning-tokens": "383",
+      "x-usage-completion-text-tokens": "132",
+      "x-usage-prompt-audio-tokens": "5327",
+      "x-usage-prompt-text-tokens": "13890",
+      "x-usage-total-tokens": "19732"
+    },
+    "body": {
+      "type": "json",
+      "data": {
+        "id": "pllns_59c4ef9c762ad3e17ecacf938b1ce594",
+        "object": "chat.completion",
+        "created": 1766135657,
+        "model": "gemini-3-flash-preview",
+        "provider": "vertex-ai",
+        "choices": [
+          {
+            "message": {
+              "role": "assistant",
+              "content": "This is the official music video for Rick Astley’s 1987 hit \"Never Gonna Give You Up.\" \n\nThe video features Astley performing the song across several locations, most notably a hall with large stained-glass windows, a dark arched tunnel at night, and an outdoor area near a chain-link fence. Throughout the video, he delivers his signature dance moves while joined by backup dancers. One memorable scene includes a bartender who breaks into some impressive acrobatics behind the counter. The video is widely known today not just for its quintessential '80s pop aesthetic, but as the centerpiece of the \"Rickroll\" internet phenomenon.",
+              "content_blocks": [
+                {
+                  "type": "text",
+                  "text": "This is the official music video for Rick Astley’s 1987 hit \"Never Gonna Give You Up.\" \n\nThe video features Astley performing the song across several locations, most notably a hall with large stained-glass windows, a dark arched tunnel at night, and an outdoor area near a chain-link fence. Throughout the video, he delivers his signature dance moves while joined by backup dancers. One memorable scene includes a bartender who breaks into some impressive acrobatics behind the counter. The video is widely known today not just for its quintessential '80s pop aesthetic, but as the centerpiece of the \"Rickroll\" internet phenomenon."
+                }
+              ]
+            },
+            "index": 0,
+            "finish_reason": "STOP"
+          }
+        ],
+        "usage": {
+          "prompt_tokens": 19217,
+          "completion_tokens": 515,
+          "total_tokens": 19732,
+          "completion_tokens_details": {
+            "reasoning_tokens": 383,
+            "audio_tokens": 0
+          },
+          "prompt_tokens_details": {
+            "cached_tokens": 0,
+            "audio_tokens": 5327
+          }
+        }
+      }
+    }
+  }
+}

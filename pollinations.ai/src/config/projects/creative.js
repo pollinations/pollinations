@@ -1188,5 +1188,15 @@ export const creativeProjects = [
     "category": "creative",
     "submissionDate": "2025-12-16",
     "order": 5
+  },
+  {
+    "name": "🎨 Nosde Space",
+    "url": "https://www.nosde.space/",
+    "description": "All-in-one AI platform for creating images, videos, text, and audio. Features community gallery with remix capabilities, gamification system with daily rewards, and configurable AI models. Integrates Pollinations for image/video generation alongside other AI services.",
+    "author": "@unknow_junior",
+    "category": "creative",
+    "language": "pt-BR",
+    "submissionDate": "2025-12-19",
+    "order": 5
   }
 ];

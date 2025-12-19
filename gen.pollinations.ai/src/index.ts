@@ -22,11 +22,12 @@ interface Env {
 // Strategy: collect all params, find duplicates, keep outer ones and encode nested URL
 function fixNestedImageUrls(rawUrl: string): string {
     const imageMatch = rawUrl.match(/([?&])(image=)(https?:\/\/)/i);
-    if (!imageMatch) return rawUrl;
+    if (!imageMatch || imageMatch.index === undefined) return rawUrl;
 
-    const nestedUrlStart = imageMatch.index! + imageMatch[1].length + imageMatch[2].length;
+    const nestedUrlStart = imageMatch.index + imageMatch[1].length + imageMatch[2].length;
 
     // Known top-level params for image generation
+    // Keep in sync with: enter.pollinations.ai/src/schemas/image.ts
     const topLevelParams = new Set([
         'model', 'width', 'height', 'seed', 'enhance', 'negative_prompt',
         'private', 'nologo', 'nofeed', 'safe', 'quality', 'transparent',
@@ -66,8 +67,8 @@ function fixNestedImageUrls(rawUrl: string): string {
     } else {
         // No ? in nested URL - first known top-level param after it is outer
         const paramMatch = afterNestedUrlStart.match(/&([^=&]+)=/);
-        if (paramMatch && topLevelParams.has(paramMatch[1].toLowerCase())) {
-            nestedUrlEnd = paramMatch.index!;
+        if (paramMatch && paramMatch.index !== undefined && topLevelParams.has(paramMatch[1].toLowerCase())) {
+            nestedUrlEnd = paramMatch.index;
         }
     }
 

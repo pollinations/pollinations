@@ -1,0 +1,124 @@
+name: Cleanup Old Branches
+
+on:
+  workflow_dispatch:
+    inputs:
+      days_old:
+        description: 'Delete branches older than X days (minimum 30)'
+        required: true
+        type: number
+        default: 30
+      dry_run:
+        description: 'Dry run (preview only, no deletions)'
+        required: true
+        type: boolean
+        default: true
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Generate Pollinations AI Token
+        id: pollinations-ai
+        uses: actions/create-github-app-token@v1
+        with:
+          app-id: ${{ secrets.POLLY_BOT_APP_ID }}
+          private-key: ${{ secrets.POLLY_BOT_PRIVATE_KEY }}
+          owner: pollinations
+
+      - name: Delete old branches
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ steps.pollinations-ai.outputs.token }}
+          script: |
+            const DAYS_INPUT = ${{ github.event.inputs.days_old }};
+            const DRY_RUN = ${{ github.event.inputs.dry_run }};
+            const MIN_DAYS = 30;
+            const DAYS = Math.max(DAYS_INPUT, MIN_DAYS);
+            const PROTECTED = ['main', 'master', 'production'];
+            const cutoffDate = new Date();
+            cutoffDate.setDate(cutoffDate.getDate() - DAYS);
+
+            if (DAYS_INPUT < MIN_DAYS) {
+              console.log(`Warning: days_old (${DAYS_INPUT}) is below minimum. Using ${MIN_DAYS} days.`);
+            }
+
+            console.log(DRY_RUN ? '🔍 DRY RUN MODE - No branches will be deleted' : '🗑️ LIVE MODE - Branches will be deleted');
+            console.log(`Targeting branches older than ${DAYS} days (before ${cutoffDate.toISOString().split('T')[0]})`);
+            console.log(`Protected branches: ${PROTECTED.join(', ')}`);
+            console.log('----------------------------------------');
+
+            // GraphQL query to get all branches with their last commit date
+            const query = `
+              query($owner: String!, $repo: String!, $cursor: String) {
+                repository(owner: $owner, name: $repo) {
+                  refs(refPrefix: "refs/heads/", first: 100, after: $cursor) {
+                    pageInfo {
+                      hasNextPage
+                      endCursor
+                    }
+                    nodes {
+                      name
+                      target {
+                        ... on Commit {
+                          committedDate
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            `;
+
+            const [owner, repo] = '${{ github.repository }}'.split('/');
+            let deleted = 0;
+            let skipped = 0;
+            let cursor = null;
+
+            // Paginate through all branches
+            do {
+              const result = await github.graphql(query, { owner, repo, cursor });
+              const refs = result.repository.refs;
+
+              for (const branch of refs.nodes) {
+                // Skip protected branches
+                if (PROTECTED.includes(branch.name)) {
+                  console.log(`PROTECTED: ${branch.name}`);
+                  continue;
+                }
+
+                const lastCommit = new Date(branch.target.committedDate);
+
+                if (lastCommit < cutoffDate) {
+                  if (DRY_RUN) {
+                    console.log(`WOULD DELETE: ${branch.name} (last commit: ${lastCommit.toISOString().split('T')[0]})`);
+                    deleted++;
+                  } else {
+                    console.log(`DELETING: ${branch.name} (last commit: ${lastCommit.toISOString().split('T')[0]})`);
+                    try {
+                      await github.rest.git.deleteRef({
+                        owner,
+                        repo,
+                        ref: `heads/${branch.name}`
+                      });
+                      deleted++;
+                    } catch (err) {
+                      console.log(`  Failed to delete ${branch.name}: ${err.message}`);
+                    }
+                  }
+                } else {
+                  skipped++;
+                }
+              }
+
+              cursor = refs.pageInfo.hasNextPage ? refs.pageInfo.endCursor : null;
+            } while (cursor);
+
+            console.log('----------------------------------------');
+            console.log(`Summary: ${DRY_RUN ? 'Would delete' : 'Deleted'} ${deleted} branches, kept ${skipped} branches (+ protected)`);
+            if (DRY_RUN) {
+              console.log('To actually delete, run again with dry_run = false');
+            }
+
+            return { deleted, skipped, dryRun: DRY_RUN };

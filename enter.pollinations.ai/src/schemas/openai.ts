@@ -281,7 +281,6 @@ export const CreateChatCompletionRequestSchema = z.object({
     logprobs: z.boolean().nullable().optional().default(false),
     top_logprobs: z.number().int().min(0).max(20).nullable().optional(),
     max_tokens: z.number().int().min(0).nullable().optional(),
-    n: z.number().int().min(1).max(128).nullable().optional().default(1),
     presence_penalty: z
         .number()
         .min(-2)

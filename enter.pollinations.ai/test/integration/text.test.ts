@@ -648,6 +648,140 @@ test(
     },
 );
 
+// Video URL content type tests (Issue #6137)
+describe("Video URL content type support", async () => {
+    test(
+        "POST /v1/chat/completions should accept video_url content type for Gemini models",
+        { timeout: 60000 },
+        async ({ apiKey, mocks }) => {
+            await mocks.enable("polar", "tinybird", "vcr");
+            const response = await SELF.fetch(
+                `http://localhost:3000/api/generate/v1/chat/completions`,
+                {
+                    method: "POST",
+                    headers: {
+                        "content-type": "application/json",
+                        "authorization": `Bearer ${apiKey}`,
+                    },
+                    body: JSON.stringify({
+                        model: "gemini",
+                        messages: [
+                            {
+                                role: "user",
+                                content: [
+                                    {
+                                        type: "text",
+                                        text: "What is happening in this video? Reply in one sentence.",
+                                    },
+                                    {
+                                        type: "video_url",
+                                        video_url: {
+                                            url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+                                        },
+                                    },
+                                ],
+                            },
+                        ],
+                        max_tokens: 100,
+                        seed: testSeed(),
+                    }),
+                },
+            );
+            expect(response.status).toBe(200);
+            const data = await response.json();
+            expect((data as any).choices[0].message.content).toBeTruthy();
+        },
+    );
+
+    test(
+        "POST /v1/chat/completions should accept video_url with explicit mime_type",
+        { timeout: 60000 },
+        async ({ apiKey, mocks }) => {
+            await mocks.enable("polar", "tinybird", "vcr");
+            const response = await SELF.fetch(
+                `http://localhost:3000/api/generate/v1/chat/completions`,
+                {
+                    method: "POST",
+                    headers: {
+                        "content-type": "application/json",
+                        "authorization": `Bearer ${apiKey}`,
+                    },
+                    body: JSON.stringify({
+                        model: "gemini",
+                        messages: [
+                            {
+                                role: "user",
+                                content: [
+                                    {
+                                        type: "text",
+                                        text: "Describe this video briefly.",
+                                    },
+                                    {
+                                        type: "video_url",
+                                        video_url: {
+                                            url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+                                            mime_type: "video/mp4",
+                                        },
+                                    },
+                                ],
+                            },
+                        ],
+                        max_tokens: 100,
+                        seed: testSeed(),
+                    }),
+                },
+            );
+            expect(response.status).toBe(200);
+            const data = await response.json();
+            expect((data as any).choices[0].message.content).toBeTruthy();
+        },
+    );
+
+    test(
+        "POST /v1/chat/completions should accept image_url with mime_type",
+        { timeout: 60000 },
+        async ({ apiKey, mocks }) => {
+            await mocks.enable("polar", "tinybird", "vcr");
+            const response = await SELF.fetch(
+                `http://localhost:3000/api/generate/v1/chat/completions`,
+                {
+                    method: "POST",
+                    headers: {
+                        "content-type": "application/json",
+                        "authorization": `Bearer ${apiKey}`,
+                    },
+                    body: JSON.stringify({
+                        model: "gemini",
+                        messages: [
+                            {
+                                role: "user",
+                                content: [
+                                    {
+                                        type: "text",
+                                        text: "What is in this image? One word.",
+                                    },
+                                    {
+                                        type: "image_url",
+                                        image_url: {
+                                            url: "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a7/Camponotus_flavomarginatus_ant.jpg/320px-Camponotus_flavomarginatus_ant.jpg",
+                                            mime_type: "image/jpeg",
+                                        },
+                                    },
+                                ],
+                            },
+                        ],
+                        max_tokens: 50,
+                        seed: testSeed(),
+                    }),
+                },
+            );
+            expect(response.status).toBe(200);
+            const data = await response.json();
+            expect((data as any).choices[0].message.content).toBeTruthy();
+        },
+    );
+});
+
 // Model gating tests - API keys with permissions.models restriction
 describe("Model gating by API key permissions", async () => {
     test(

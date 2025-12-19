@@ -66,6 +66,17 @@ const ChatCompletionRequestMessageContentPartImageSchema = z.object({
     image_url: z.object({
         url: z.string(),
         detail: z.enum(["auto", "low", "high"]).optional(),
+        mime_type: z.string().optional(), // For explicit MIME type (e.g., "image/jpeg")
+    }),
+});
+
+// Video URL content type - currently supported by Gemini models only
+// Enables native YouTube video analysis (visual frames + audio) without manual extraction
+const ChatCompletionRequestMessageContentPartVideoSchema = z.object({
+    type: z.literal("video_url"),
+    video_url: z.object({
+        url: z.string(), // Supports YouTube URLs, gs://, https://, or data: URLs
+        mime_type: z.string().optional(), // Auto-detected for YouTube URLs as "video/mp4"
     }),
 });
 
@@ -107,6 +118,7 @@ const ChatCompletionRequestMessageContentPartFileSchema = z.object({
 const ChatCompletionRequestMessageContentPartSchema = z.union([
     ChatCompletionRequestMessageContentPartTextSchema,
     ChatCompletionRequestMessageContentPartImageSchema,
+    ChatCompletionRequestMessageContentPartVideoSchema,
     ChatCompletionRequestMessageContentPartAudioSchema,
     ChatCompletionRequestMessageContentPartFileSchema,
     // Allow any other content types for provider-specific extensions
@@ -281,7 +293,6 @@ export const CreateChatCompletionRequestSchema = z.object({
     logprobs: z.boolean().nullable().optional().default(false),
     top_logprobs: z.number().int().min(0).max(20).nullable().optional(),
     max_tokens: z.number().int().min(0).nullable().optional(),
-    n: z.number().int().min(1).max(128).nullable().optional().default(1),
     presence_penalty: z
         .number()
         .min(-2)

@@ -65,9 +65,6 @@ export function getRequestData(req) {
     // Extract logit_bias for token bias
     const logit_bias = data.logit_bias || undefined;
 
-    // Extract n for number of completions
-    const n = data.n || undefined;
-
     // Extract user identifier
     const user = data.user || undefined;
 
@@ -106,7 +103,6 @@ export function getRequestData(req) {
         logprobs,
         top_logprobs,
         logit_bias,
-        n,
         user,
     };
 }

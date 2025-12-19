@@ -8,7 +8,7 @@ set -e
 # Using pollinations fork with fix for Gemini completion_tokens including thoughtsTokenCount
 # PR: https://github.com/Portkey-AI/gateway/pull/1458
 PORTKEY_REPO="https://github.com/pollinations/gateway.git"
-PORTKEY_COMMIT="${PORTKEY_COMMIT:-a1d5949d5a9ae052b1eea54b739f753f2fab22af}"  # fix/gemini-completion-tokens-include-thoughts
+PORTKEY_COMMIT="${PORTKEY_COMMIT:-2287ad2ef12b44bc84c444272a1bbdea45d03b5b}"  # feat/video-url-support + gemini-completion-tokens fix
 CLONE_DIR="/tmp/portkey-gateway-$$"
 ENVIRONMENT="${PORTKEY_ENV:-production}"
 

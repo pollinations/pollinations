@@ -9,8 +9,8 @@
         "test": "vitest run",
         "test:watch": "vitest",
         "test:coverage": "vitest run --coverage",
-        "start": "npm run decrypt-vars && tsx src/index.ts",
-        "dev": "npm run decrypt-vars && DEBUG=pollinations:* tsx --watch src/index.ts"
+        "start": "npm run decrypt-vars && npx tsx src/index.ts",
+        "dev": "npm run decrypt-vars && DEBUG=pollinations:* npx tsx --watch src/index.ts"
     },
     "keywords": [],
     "author": "",

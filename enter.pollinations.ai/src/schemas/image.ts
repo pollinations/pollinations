@@ -81,6 +81,12 @@ export const GenerateImageRequestQueryParamsSchema = z.object({
         })
         .optional()
         .default([])
+        .refine(
+            (urls) => urls.every((url) => !url || url.startsWith("http://") || url.startsWith("https://")),
+            {
+                message: "Invalid image URL. Put image= param last in your URL, or URL-encode it.",
+            }
+        )
         .meta({
             description:
                 "Reference image URL(s) for image-to-image or video. Comma/pipe separated for multiple",

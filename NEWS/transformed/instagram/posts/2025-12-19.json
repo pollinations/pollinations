@@ -1,0 +1,63 @@
+{
+  "date": "2025-12-19",
+  "generated_at": "2025-12-19T21:57:49.731818+00:00",
+  "post_type": "carousel",
+  "content_type": "retro_infographic",
+  "linked_images": true,
+  "strategy_reasoning": "This update includes a 'meta' change where we updated our own Instagram generation prompts to be pixel-art focused. The best way to showcase this is to lean fully into that new 'Stardew Valley' aesthetic. The branch cleanup and bug fixes map perfectly to 'gardening/maintenance' metaphors in a cozy RPG style.",
+  "story_arc": "",
+  "images": [
+    {
+      "url": "https://gen.pollinations.ai/image/Cozy%20pixel%20art%20scene%20of%20a%20tiny%208-bit%20bee%20character%20painting%20a%20canvas%20on%20an%20easel.%20The%20painting%20on%20the%20canvas%20is%20a%20bright%20lime%20green%20%28%23ecf874%29%20flower.%20Soft%20pastel%20gradient%20background%20%28lavender%20to%20peach%29.%20Chunky%20retro%20sprites%2C%20warm%20lighting%2C%20lo-fi%20aesthetic%20like%20Stardew%20Valley.%20Text%20in%20pixel%20font%20at%20top%3A%20%27STYLE%20UPGRADE%27.%20Nostalgic%20but%20beautiful%2C%20emotionally%20warm.?model=nanobanana&width=2048&height=2048&quality=hd&nologo=true&private=true&nofeed=true&seed=604415632",
+      "prompt": "Cozy pixel art scene of a tiny 8-bit bee character painting a canvas on an easel. The painting on the canvas is a bright lime green (#ecf874) flower. Soft pastel gradient background (lavender to peach). Chunky retro sprites, warm lighting, lo-fi aesthetic like Stardew Valley. Text in pixel font at top: 'STYLE UPGRADE'. Nostalgic but beautiful, emotionally warm.",
+      "description": "Cover image announcing the new visual identity update."
+    },
+    {
+      "url": "https://gen.pollinations.ai/image/Pixel%20art%20scene%20of%20a%20digital%20garden.%20A%20tiny%208-bit%20character%20is%20raking%20up%20piles%20of%20pixelated%20leaves%20%28representing%20old%20git%20branches%29.%20Soft%20lime%20green%20%28%23ecf874%29%20grass%20and%20mint%20sky.%20Cozy%208-bit%20aesthetic%2C%20warm%20afternoon%20lighting.%20Text%20in%20pixel%20font%3A%20%27Branch%20Cleanup%27.%20Wholesome%20vibes%20like%20A%20Short%20Hike.?model=nanobanana&width=2048&height=2048&quality=hd&nologo=true&private=true&nofeed=true&seed=695497198&image=https%3A%2F%2Fgen.pollinations.ai%2Fimage%2FCozy%2520pixel%2520art%2520scene%2520of%2520a%2520tiny%25208-bit%2520bee%2520character%2520painting%2520a%2520canvas%2520on%2520an%2520easel.%2520The%2520painting%2520on%2520the%2520canvas%2520is%2520a%2520bright%2520lime%2520green%2520%2528%2523ecf874%2529%2520flower.%2520Soft%2520pastel%2520gradient%2520background%2520%2528lavender%2520to%2520peach%2529.%2520Chunky%2520retro%2520sprites%252C%2520warm%2520lighting%252C%2520lo-fi%2520aesthetic%2520like%2520Stardew%2520Valley.%2520Text%2520in%2520pixel%2520font%2520at%2520top%253A%2520%2527STYLE%2520UPGRADE%2527.%2520Nostalgic%2520but%2520beautiful%252C%2520emotionally%2520warm.%3Fmodel%3Dnanobanana%26width%3D2048%26height%3D2048%26quality%3Dhd%26nologo%3Dtrue%26private%3Dtrue%26nofeed%3Dtrue%26seed%3D604415632",
+      "prompt": "Pixel art scene of a digital garden. A tiny 8-bit character is raking up piles of pixelated leaves (representing old git branches). Soft lime green (#ecf874) grass and mint sky. Cozy 8-bit aesthetic, warm afternoon lighting. Text in pixel font: 'Branch Cleanup'. Wholesome vibes like A Short Hike.",
+      "description": "Visualizing the 'branch cleanup workflows' update as gardening."
+    },
+    {
+      "url": "https://gen.pollinations.ai/image/Retro%208-bit%20RPG%20inventory%20screen.%20Three%20slots%20are%20glowing%3A%20a%20magnifying%20glass%20%28search%29%2C%20a%20scroll%20%28code%29%2C%20and%20a%20link%20chain%20%28URL%20context%29.%20Soft%20pastel%20background.%20UI%20elements%20look%20like%20a%20cozy%20retro%20game.%20Text%20in%20pixel%20font%3A%20%27Gemini%20Tools%20Fixed%27.%20Clean%2C%20chunky%20pixels%2C%20warm%20glow%20effects.?model=nanobanana&width=2048&height=2048&quality=hd&nologo=true&private=true&nofeed=true&seed=70882611&image=https%3A%2F%2Fgen.pollinations.ai%2Fimage%2FPixel%2520art%2520scene%2520of%2520a%2520digital%2520garden.%2520A%2520tiny%25208-bit%2520character%2520is%2520raking%2520up%2520piles%2520of%2520pixelated%2520leaves%2520%2528representing%2520old%2520git%2520branches%2529.%2520Soft%2520lime%2520green%2520%2528%2523ecf874%2529%2520grass%2520and%2520mint%2520sky.%2520Cozy%25208-bit%2520aesthetic%252C%2520warm%2520afternoon%2520lighting.%2520Text%2520in%2520pixel%2520font%253A%2520%2527Branch%2520Cleanup%2527.%2520Wholesome%2520vibes%2520like%2520A%2520Short%2520Hike.%3Fmodel%3Dnanobanana%26width%3D2048%26height%3D2048%26quality%3Dhd%26nologo%3Dtrue%26private%3Dtrue%26nofeed%3Dtrue%26seed%3D695497198%26image%3Dhttps%253A%252F%252Fgen.pollinations.ai%252Fimage%252FCozy%252520pixel%252520art%252520scene%252520of%252520a%252520tiny%2525208-bit%252520bee%252520character%252520painting%252520a%252520canvas%252520on%252520an%252520easel.%252520The%252520painting%252520on%252520the%252520canvas%252520is%252520a%252520bright%252520lime%252520green%252520%252528%252523ecf874%252529%252520flower.%252520Soft%252520pastel%252520gradient%252520background%252520%252528lavender%252520to%252520peach%252529.%252520Chunky%252520retro%252520sprites%25252C%252520warm%252520lighting%25252C%252520lo-fi%252520aesthetic%252520like%252520Stardew%252520Valley.%252520Text%252520in%252520pixel%252520font%252520at%252520top%25253A%252520%252527STYLE%252520UPGRADE%252527.%252520Nostalgic%252520but%252520beautiful%25252C%252520emotionally%252520warm.%253Fmodel%253Dnanobanana%2526width%253D2048%2526height%253D2048%2526quality%253Dhd%2526nologo%253Dtrue%2526private%253Dtrue%2526nofeed%253Dtrue%2526seed%253D604415632",
+      "prompt": "Retro 8-bit RPG inventory screen. Three slots are glowing: a magnifying glass (search), a scroll (code), and a link chain (URL context). Soft pastel background. UI elements look like a cozy retro game. Text in pixel font: 'Gemini Tools Fixed'. Clean, chunky pixels, warm glow effects.",
+      "description": "Highlighting the Gemini-fast tools fix as an RPG inventory update."
+    },
+    {
+      "url": "https://gen.pollinations.ai/image/Pixel%20art%20dialogue%20box%20from%20a%20retro%20game.%20A%20friendly%208-bit%20robot%20helper%20is%20smiling.%20The%20text%20box%20says%20%27User%20Error%20%28400%29%27%20instead%20of%20%27Server%20Error%20%28500%29%27.%20Soft%20lime%20green%20%28%23ecf874%29%20accents.%20Cozy%2C%20helpful%20vibe%2C%20not%20scary%20or%20technical.%20Warm%20lighting.%20Text%3A%20%27Better%20Errors%27.?model=nanobanana&width=2048&height=2048&quality=hd&nologo=true&private=true&nofeed=true&seed=883370119&image=https%3A%2F%2Fgen.pollinations.ai%2Fimage%2FRetro%25208-bit%2520RPG%2520inventory%2520screen.%2520Three%2520slots%2520are%2520glowing%253A%2520a%2520magnifying%2520glass%2520%2528search%2529%252C%2520a%2520scroll%2520%2528code%2529%252C%2520and%2520a%2520link%2520chain%2520%2528URL%2520context%2529.%2520Soft%2520pastel%2520background.%2520UI%2520elements%2520look%2520like%2520a%2520cozy%2520retro%2520game.%2520Text%2520in%2520pixel%2520font%253A%2520%2527Gemini%2520Tools%2520Fixed%2527.%2520Clean%252C%2520chunky%2520pixels%252C%2520warm%2520glow%2520effects.%3Fmodel%3Dnanobanana%26width%3D2048%26height%3D2048%26quality%3Dhd%26nologo%3Dtrue%26private%3Dtrue%26nofeed%3Dtrue%26seed%3D70882611%26image%3Dhttps%253A%252F%252Fgen.pollinations.ai%252Fimage%252FPixel%252520art%252520scene%252520of%252520a%252520digital%252520garden.%252520A%252520tiny%2525208-bit%252520character%252520is%252520raking%252520up%252520piles%252520of%252520pixelated%252520leaves%252520%252528representing%252520old%252520git%252520branches%252529.%252520Soft%252520lime%252520green%252520%252528%252523ecf874%252529%252520grass%252520and%252520mint%252520sky.%252520Cozy%2525208-bit%252520aesthetic%25252C%252520warm%252520afternoon%252520lighting.%252520Text%252520in%252520pixel%252520font%25253A%252520%252527Branch%252520Cleanup%252527.%252520Wholesome%252520vibes%252520like%252520A%252520Short%252520Hike.%253Fmodel%253Dnanobanana%2526width%253D2048%2526height%253D2048%2526quality%253Dhd%2526nologo%253Dtrue%2526private%253Dtrue%2526nofeed%253Dtrue%2526seed%253D695497198%2526image%253Dhttps%25253A%25252F%25252Fgen.pollinations.ai%25252Fimage%25252FCozy%25252520pixel%25252520art%25252520scene%25252520of%25252520a%25252520tiny%252525208-bit%25252520bee%25252520character%25252520painting%25252520a%25252520canvas%25252520on%25252520an%25252520easel.%25252520The%25252520painting%25252520on%25252520the%25252520canvas%25252520is%25252520a%25252520bright%25252520lime%25252520green%25252520%25252528%25252523ecf874%25252529%25252520flower.%25252520Soft%25252520pastel%25252520gradient%25252520background%25252520%25252528lavender%25252520to%25252520peach%25252529.%25252520Chunky%25252520retro%25252520sprites%2525252C%25252520warm%25252520lighting%2525252C%25252520lo-fi%25252520aesthetic%25252520like%25252520Stardew%25252520Valley.%25252520Text%25252520in%25252520pixel%25252520font%25252520at%25252520top%2525253A%25252520%25252527STYLE%25252520UPGRADE%25252527.%25252520Nostalgic%25252520but%25252520beautiful%2525252C%25252520emotionally%25252520warm.%25253Fmodel%25253Dnanobanana%252526width%25253D2048%252526height%25253D2048%252526quality%25253Dhd%252526nologo%25253Dtrue%252526private%25253Dtrue%252526nofeed%25253Dtrue%252526seed%25253D604415632",
+      "prompt": "Pixel art dialogue box from a retro game. A friendly 8-bit robot helper is smiling. The text box says 'User Error (400)' instead of 'Server Error (500)'. Soft lime green (#ecf874) accents. Cozy, helpful vibe, not scary or technical. Warm lighting. Text: 'Better Errors'.",
+      "description": "Explaining the Veo error handling fix (400 vs 500) as a friendly game dialogue."
+    }
+  ],
+  "caption": "New look, who dis? 👾✨ We've officially updated our own prompts to bring you these cozy pixel vibes (meta, right?). \n\nPatch notes for today:\n🎨 Visual Style Upgrade: Retro 8-bit is the new black.\n🧹 Garden Maintenance: Added workflows to clean up old branches automatically.\n🛠️ Inventory Update: Gemini-fast tools (search, code, URLs) are back online and working perfectly.\n🤖 Better Comms: Veo now tells you if your prompt is the issue (400) instead of panicking (500).\n\nBuilding with heart (and pixels). Link in bio to create your own! 🌿\n\n#pollinations #pixelart #opensource #indiedev #cozyvibes #8bit #aiart #devlog",
+  "hashtags": [
+    "#pollinations",
+    "#pixelart",
+    "#opensource",
+    "#indiedev",
+    "#cozyvibes",
+    "#8bit",
+    "#aiart",
+    "#devlog",
+    "#retrogaming"
+  ],
+  "alt_text": "A carousel of cozy pixel art images. 1. An 8-bit bee painting a lime green flower. 2. A character raking leaves in a digital garden. 3. An RPG inventory screen showing fixed tools. 4. A friendly robot explaining error codes.",
+  "pr_references": [
+    "#6211",
+    "#6196",
+    "#6190",
+    "#6195",
+    "#6173",
+    "#6186",
+    "#6178",
+    "#6174",
+    "#6171",
+    "#6161",
+    "#6115",
+    "#6159",
+    "#6157",
+    "#6155",
+    "#6154",
+    "#6139",
+    "#6144"
+  ]
+}

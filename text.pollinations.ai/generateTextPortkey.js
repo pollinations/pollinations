@@ -6,6 +6,7 @@ import { generateHeaders } from "./transforms/headerGenerator.js";
 import { sanitizeMessages } from "./transforms/messageSanitizer.js";
 import { createImageUrlToBase64Transform } from "./transforms/imageUrlToBase64Transform.js";
 import { processParameters } from "./transforms/parameterProcessor.js";
+import { createToolsTransformer, createToolsResponseTransformer } from "./transforms/toolsTransformer.ts";
 import { findModelByName } from "./availableModels.js";
 
 dotenv.config();
@@ -140,6 +141,13 @@ export async function generateTextPortkey(messages, options = {}) {
             result = processParameters(processedMessages, processedOptions);
             processedMessages = result.messages;
             processedOptions = result.options;
+
+            // 6. Transform tools for cross-provider compatibility (Gemini, Claude)
+            const toolsTransform = createToolsTransformer();
+            result = toolsTransform(processedMessages, processedOptions);
+            processedMessages = result.messages;
+            processedOptions = result.options;
+            log("After toolsTransform:", !!processedOptions.tools);
         } catch (error) {
             errorLog("Error in request transformation:", error);
             throw error;
@@ -157,9 +165,18 @@ export async function generateTextPortkey(messages, options = {}) {
         delete processedOptions.additionalHeaders;
     }
 
-    return await genericOpenAIClient(
+    const response = await genericOpenAIClient(
         processedMessages,
         processedOptions,
         requestConfig,
     );
+
+    // Transform response tool calls back to OpenAI format (for Gemini/Claude)
+    // Skip for streaming responses - they're handled differently
+    if (!processedOptions.stream && response && typeof response === "object") {
+        const responseTransformer = createToolsResponseTransformer(processedOptions);
+        return responseTransformer(response);
+    }
+
+    return response;
 }

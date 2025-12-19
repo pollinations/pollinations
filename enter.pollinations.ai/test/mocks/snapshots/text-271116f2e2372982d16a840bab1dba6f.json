@@ -35,36 +35,36 @@
     "headers": {
       "access-control-allow-origin": "*",
       "connection": "keep-alive",
-      "content-length": "848",
+      "content-length": "820",
       "content-type": "application/json; charset=utf-8",
-      "date": "Fri, 19 Dec 2025 09:13:40 GMT",
-      "etag": "W/\"350-JpsK/gG3Xu1YEoLhSOFjm+pmIOQ\"",
+      "date": "Fri, 19 Dec 2025 09:22:41 GMT",
+      "etag": "W/\"334-5eJOasyEr+QJhOoPMZxEX6WQK5U\"",
       "keep-alive": "timeout=5",
       "x-model-used": "gemini-3-flash-preview",
       "x-powered-by": "Express",
-      "x-usage-completion-reasoning-tokens": "213",
+      "x-usage-completion-reasoning-tokens": "140",
       "x-usage-completion-text-tokens": "38",
       "x-usage-prompt-audio-tokens": "5327",
-      "x-usage-prompt-text-tokens": "13897",
-      "x-usage-total-tokens": "19475"
+      "x-usage-prompt-cached-tokens": "17701",
+      "x-usage-total-tokens": "23206"
     },
     "body": {
       "type": "json",
       "data": {
-        "id": "pllns_69ede80cffeb55334595ed5da88bfa74",
+        "id": "pllns_c325eb8f3ba7cbf3bfbdf34e399a5b4d",
         "object": "chat.completion",
-        "created": 1766135620,
+        "created": 1766136161,
         "model": "gemini-3-flash-preview",
         "provider": "vertex-ai",
         "choices": [
           {
             "message": {
               "role": "assistant",
-              "content": "This is the official music video for Rick Astley's 1987 hit \"Never Gonna Give You Up,\" featuring his signature dance moves and soulful vocals across several urban locations.",
+              "content": "Rick Astley sings and dances in several locations, including a studio and under a bridge, in the music video for his 1987 hit song \"Never Gonna Give You Up.\"",
               "content_blocks": [
                 {
                   "type": "text",
-                  "text": "This is the official music video for Rick Astley's 1987 hit \"Never Gonna Give You Up,\" featuring his signature dance moves and soulful vocals across several urban locations."
+                  "text": "Rick Astley sings and dances in several locations, including a studio and under a bridge, in the music video for his 1987 hit song \"Never Gonna Give You Up.\""
                 }
               ]
             },
@@ -74,14 +74,14 @@
         ],
         "usage": {
           "prompt_tokens": 19224,
-          "completion_tokens": 251,
-          "total_tokens": 19475,
+          "completion_tokens": 178,
+          "total_tokens": 19402,
           "completion_tokens_details": {
-            "reasoning_tokens": 213,
+            "reasoning_tokens": 140,
             "audio_tokens": 0
           },
           "prompt_tokens_details": {
-            "cached_tokens": 0,
+            "cached_tokens": 17701,
             "audio_tokens": 5327
           }
         }

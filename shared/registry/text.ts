@@ -150,6 +150,7 @@ export const TEXT_SERVICES = {
                 date: COST_START_DATE,
                 promptTextTokens: perMillion(0.5),
                 promptCachedTokens: perMillion(0.05),
+                promptAudioTokens: perMillion(0.5), // Audio billed at same rate as text
                 completionTextTokens: perMillion(3.0),
             },
         ],
@@ -171,6 +172,7 @@ export const TEXT_SERVICES = {
                 date: COST_START_DATE,
                 promptTextTokens: perMillion(0.1),
                 promptCachedTokens: perMillion(0.01),
+                promptAudioTokens: perMillion(0.1), // Audio billed at same rate as text
                 completionTextTokens: perMillion(0.4),
             },
         ],
@@ -233,6 +235,7 @@ export const TEXT_SERVICES = {
                 date: COST_START_DATE,
                 promptTextTokens: perMillion(0.5),
                 promptCachedTokens: perMillion(0.05),
+                promptAudioTokens: perMillion(0.5), // Audio billed at same rate as text
                 completionTextTokens: perMillion(3.0),
             },
         ],

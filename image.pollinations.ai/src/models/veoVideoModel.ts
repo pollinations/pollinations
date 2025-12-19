@@ -137,7 +137,8 @@ export const callVeoAPI = async (
             };
             logOps("Image processed successfully, mimeType:", mimeType);
         } catch (error) {
-            const errorMessage = error instanceof Error ? error.message : String(error);
+            const errorMessage =
+                error instanceof Error ? error.message : String(error);
             logError("Error processing reference image:", errorMessage);
             throw new HttpError(
                 `Failed to process reference image: ${errorMessage}`,
@@ -165,7 +166,9 @@ export const callVeoAPI = async (
         ...requestBody,
         instances: requestBody.instances.map((inst) => ({
             ...inst,
-            image: inst.image ? { ...inst.image, bytesBase64Encoded: "[BASE64]" } : undefined,
+            image: inst.image
+                ? { ...inst.image, bytesBase64Encoded: "[BASE64]" }
+                : undefined,
         })),
     };
     logOps("Veo API request body:", JSON.stringify(logSafeRequest, null, 2));
@@ -305,9 +308,18 @@ async function pollVeoOperation(
             // Check for error
             if (pollData.error) {
                 logError("Veo operation error:", pollData.error);
+
+                // Vertex AI uses gRPC status codes for errors:
+                // - 3 = INVALID_ARGUMENT (bad input/prompt)
+                // - 9 = FAILED_PRECONDITION (content policy violation)
+                // See: https://cloud.google.com/vertex-ai/generative-ai/docs/video/responsible-ai-and-usage-guidelines
+                const errorCode = pollData.error.code;
+                const isClientError =
+                    errorCode === 400 || errorCode === 3 || errorCode === 9;
+
                 throw new HttpError(
                     `Video generation failed: ${pollData.error.message}`,
-                    500,
+                    isClientError ? 400 : 500,
                 );
             }
 

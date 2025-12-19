@@ -552,13 +552,11 @@ def generate_image(prompt: str, token: str, index: int, reference_url: str = Non
             "key": token
         }
 
-        # Add reference image for I2I (must be URL-encoded, but avoid double-encoding)
+        # Add reference image for I2I (must be fully URL-encoded)
         if reference_url:
-            # Check if already encoded (contains %) to avoid double-encoding
-            if '%' in reference_url:
-                params["image"] = reference_url
-            else:
-                params["image"] = quote(reference_url, safe='')
+            # Always encode the full URL - the reference_url contains query params
+            # that must be encoded to avoid breaking the outer URL parsing
+            params["image"] = quote(reference_url, safe='')
 
         if attempt == 0:
             print(f"  Using seed: {seed}")

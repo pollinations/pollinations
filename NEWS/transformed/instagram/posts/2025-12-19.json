@@ -1,0 +1,54 @@
+{
+  "date": "2025-12-19",
+  "generated_at": "2025-12-19T16:10:05.090327+00:00",
+  "post_type": "carousel",
+  "content_type": "retro_infographic",
+  "linked_images": true,
+  "strategy_reasoning": "Using a cozy 'RPG Patch Notes' theme fits the pixel art aesthetic perfectly. It gamifies the technical updates (tools, cleanup, video support) making them feel like exciting gameplay improvements rather than dry code changes. The visual style leverages our signature lime green and soft pastels to create a 'warm hug' vibe.",
+  "story_arc": "",
+  "images": [
+    {
+      "url": "https://gen.pollinations.ai/image/Cozy%20pixel%20art%20title%20screen.%20A%20cute%208-bit%20bee%20character%20hovering%20over%20a%20pixelated%20open%20book%20in%20a%20sunlit%20garden.%20Soft%20lime%20green%20%28%23ecf874%29%20and%20lavender%20pastel%20gradient%20background.%20Chunky%20retro%20sprites%2C%20warm%20lighting%2C%20lo-fi%20aesthetic%20like%20Stardew%20Valley.%20Pixel%20text%20floating%20above%3A%20%27WEEKLY%20UPDATE%27.%20Nostalgic%2C%20wholesome%2C%20inviting.?model=nanobanana&width=2048&height=2048&quality=hd&nologo=true&private=true&nofeed=true&seed=1315994730",
+      "prompt": "Cozy pixel art title screen. A cute 8-bit bee character hovering over a pixelated open book in a sunlit garden. Soft lime green (#ecf874) and lavender pastel gradient background. Chunky retro sprites, warm lighting, lo-fi aesthetic like Stardew Valley. Pixel text floating above: 'WEEKLY UPDATE'. Nostalgic, wholesome, inviting.",
+      "description": "Title card featuring the Pollinations bee in a cozy garden setting."
+    },
+    {
+      "url": "https://gen.pollinations.ai/image/Retro%20RPG%20inventory%20screen%20in%20pixel%20art%20style.%20An%20open%20backpack%20showing%20equipped%20items%3A%20a%20magnifying%20glass%2C%20a%20code%20scroll%2C%20and%20a%20URL%20link%20icon.%20Soft%20pastel%20background%20with%20lime%20green%20%28%23ecf874%29%20borders.%20Text%20says%20%27Gemini%20Tools%3A%20EQUIPPED%27.%20Cozy%208-bit%20aesthetic%2C%20clean%20UI%20like%20Unpacking%20game.%20Warm%20vibes.?model=nanobanana&width=2048&height=2048&quality=hd&nologo=true&private=true&nofeed=true&seed=969960542&image=https://gen.pollinations.ai/image/Cozy%20pixel%20art%20title%20screen.%20A%20cute%208-bit%20bee%20character%20hovering%20over%20a%20pixelated%20open%20book%20in%20a%20sunlit%20garden.%20Soft%20lime%20green%20%28%23ecf874%29%20and%20lavender%20pastel%20gradient%20background.%20Chunky%20retro%20sprites%2C%20warm%20lighting%2C%20lo-fi%20aesthetic%20like%20Stardew%20Valley.%20Pixel%20text%20floating%20above%3A%20%27WEEKLY%20UPDATE%27.%20Nostalgic%2C%20wholesome%2C%20inviting.?model=nanobanana&width=2048&height=2048&quality=hd&nologo=true&private=true&nofeed=true&seed=1315994730",
+      "prompt": "Retro RPG inventory screen in pixel art style. An open backpack showing equipped items: a magnifying glass, a code scroll, and a URL link icon. Soft pastel background with lime green (#ecf874) borders. Text says 'Gemini Tools: EQUIPPED'. Cozy 8-bit aesthetic, clean UI like Unpacking game. Warm vibes.",
+      "description": "Visualizing the Gemini-fast tools fix as equipping items in an RPG."
+    },
+    {
+      "url": "https://gen.pollinations.ai/image/A%20cozy%20pixel%20art%20living%20room%20scene.%20A%20retro%20CRT%20television%20set%20glowing%20warmly%2C%20displaying%20a%20pixelated%20video%20of%20a%20flower%20blooming.%20Beside%20it%2C%20a%20tiny%20robot%20holds%20a%20sign%20saying%20%27Video%20Support%27.%20Soft%20lighting%2C%20shadows%2C%20pastel%20colors.%20Lo-fi%20chill%20vibes.%20Chunky%20pixels.?model=nanobanana&width=2048&height=2048&quality=hd&nologo=true&private=true&nofeed=true&seed=1061389149&image=https://gen.pollinations.ai/image/Retro%20RPG%20inventory%20screen%20in%20pixel%20art%20style.%20An%20open%20backpack%20showing%20equipped%20items%3A%20a%20magnifying%20glass%2C%20a%20code%20scroll%2C%20and%20a%20URL%20link%20icon.%20Soft%20pastel%20background%20with%20lime%20green%20%28%23ecf874%29%20borders.%20Text%20says%20%27Gemini%20Tools%3A%20EQUIPPED%27.%20Cozy%208-bit%20aesthetic%2C%20clean%20UI%20like%20Unpacking%20game.%20Warm%20vibes.?model=nanobanana&width=2048&height=2048&quality=hd&nologo=true&private=true&nofeed=true&seed=969960542&image=https://gen.pollinations.ai/image/Cozy%20pixel%20art%20title%20screen.%20A%20cute%208-bit%20bee%20character%20hovering%20over%20a%20pixelated%20open%20book%20in%20a%20sunlit%20garden.%20Soft%20lime%20green%20%28%23ecf874%29%20and%20lavender%20pastel%20gradient%20background.%20Chunky%20retro%20sprites%2C%20warm%20lighting%2C%20lo-fi%20aesthetic%20like%20Stardew%20Valley.%20Pixel%20text%20floating%20above%3A%20%27WEEKLY%20UPDATE%27.%20Nostalgic%2C%20wholesome%2C%20inviting.?model=nanobanana&width=2048&height=2048&quality=hd&nologo=true&private=true&nofeed=true&seed=1315994730",
+      "prompt": "A cozy pixel art living room scene. A retro CRT television set glowing warmly, displaying a pixelated video of a flower blooming. Beside it, a tiny robot holds a sign saying 'Video Support'. Soft lighting, shadows, pastel colors. Lo-fi chill vibes. Chunky pixels.",
+      "description": "Announcing video_url support and Veo fixes via a retro TV metaphor."
+    },
+    {
+      "url": "https://gen.pollinations.ai/image/Pixel%20art%20scene%20of%20a%20tiny%20gardener%20character%20sweeping%20away%20old%20leaves%20%28branches%29%20in%20a%20digital%20zen%20garden.%20Soft%20lime%20green%20%28%23ecf874%29%20grass.%20Peaceful%20atmosphere.%20Text%20in%20pixel%20font%3A%20%27Tidying%20Up%20Branches%27.%20Stardew%20Valley%20aesthetic%2C%20warm%20and%20clean.?model=nanobanana&width=2048&height=2048&quality=hd&nologo=true&private=true&nofeed=true&seed=1556367518&image=https://gen.pollinations.ai/image/A%20cozy%20pixel%20art%20living%20room%20scene.%20A%20retro%20CRT%20television%20set%20glowing%20warmly%2C%20displaying%20a%20pixelated%20video%20of%20a%20flower%20blooming.%20Beside%20it%2C%20a%20tiny%20robot%20holds%20a%20sign%20saying%20%27Video%20Support%27.%20Soft%20lighting%2C%20shadows%2C%20pastel%20colors.%20Lo-fi%20chill%20vibes.%20Chunky%20pixels.?model=nanobanana&width=2048&height=2048&quality=hd&nologo=true&private=true&nofeed=true&seed=1061389149&image=https://gen.pollinations.ai/image/Retro%20RPG%20inventory%20screen%20in%20pixel%20art%20style.%20An%20open%20backpack%20showing%20equipped%20items%3A%20a%20magnifying%20glass%2C%20a%20code%20scroll%2C%20and%20a%20URL%20link%20icon.%20Soft%20pastel%20background%20with%20lime%20green%20%28%23ecf874%29%20borders.%20Text%20says%20%27Gemini%20Tools%3A%20EQUIPPED%27.%20Cozy%208-bit%20aesthetic%2C%20clean%20UI%20like%20Unpacking%20game.%20Warm%20vibes.?model=nanobanana&width=2048&height=2048&quality=hd&nologo=true&private=true&nofeed=true&seed=969960542&image=https://gen.pollinations.ai/image/Cozy%20pixel%20art%20title%20screen.%20A%20cute%208-bit%20bee%20character%20hovering%20over%20a%20pixelated%20open%20book%20in%20a%20sunlit%20garden.%20Soft%20lime%20green%20%28%23ecf874%29%20and%20lavender%20pastel%20gradient%20background.%20Chunky%20retro%20sprites%2C%20warm%20lighting%2C%20lo-fi%20aesthetic%20like%20Stardew%20Valley.%20Pixel%20text%20floating%20above%3A%20%27WEEKLY%20UPDATE%27.%20Nostalgic%2C%20wholesome%2C%20inviting.?model=nanobanana&width=2048&height=2048&quality=hd&nologo=true&private=true&nofeed=true&seed=1315994730",
+      "prompt": "Pixel art scene of a tiny gardener character sweeping away old leaves (branches) in a digital zen garden. Soft lime green (#ecf874) grass. Peaceful atmosphere. Text in pixel font: 'Tidying Up Branches'. Stardew Valley aesthetic, warm and clean.",
+      "description": "Visualizing the branch cleanup workflow as gardening/maintenance."
+    }
+  ],
+  "caption": "New patch just dropped! 🎮✨ We've been tidying up the digital garden and equipping new items.\n\nHere’s the loot drop:\n🛠️ Gemini-fast tools (search, code, context) are fully operational again\n📺 Added support for video_url content & better Veo error handling (no more scary 500s!)\n🧹 Automated branch cleanup to keep our repo fresh\n🎨 Updated our own Instagram prompts to be extra cozy\n\nBuilding with heart, one pixel at a time. 🐝💛\n\nTry it out at the link in bio!\n\n#pollinations #opensource #pixelart #indiedev #aiart #retrogaming #cozyvibes #buildinpublic #8bit",
+  "hashtags": [
+    "#pollinations",
+    "#opensource",
+    "#pixelart",
+    "#indiedev",
+    "#aiart",
+    "#retrogaming",
+    "#cozyvibes",
+    "#buildinpublic",
+    "#8bit"
+  ],
+  "alt_text": "A carousel of cozy pixel art images in lime green and pastel colors. 1. A pixel bee reading a book. 2. An RPG inventory screen showing equipped tools. 3. A retro CRT TV showing video support. 4. A gardener sweeping leaves in a pixel garden.",
+  "pr_references": [
+    "#6196",
+    "#6190",
+    "#6195",
+    "#6173",
+    "#6186",
+    "#6178",
+    "#6174",
+    "#6171"
+  ]
+}

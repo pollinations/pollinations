@@ -1,0 +1,59 @@
+{
+  "date": "2025-12-19",
+  "generated_at": "2025-12-19T22:10:25.422651+00:00",
+  "post_type": "carousel",
+  "content_type": "retro_infographic",
+  "linked_images": true,
+  "strategy_reasoning": "Using a 'Garden Maintenance' RPG theme fits our nature-based brand identity while explaining technical updates (cleanup, bug fixes, tool restoration) in a cozy, gamified way. The pixel art style aligns with the requested nostalgic/Gen-Z aesthetic.",
+  "story_arc": "",
+  "images": [
+    {
+      "url": "https://gen.pollinations.ai/image/Cozy%20pixel%20art%20scene%20of%20a%20cute%208-bit%20bee%20character%20holding%20a%20pixelated%20wrench%2C%20hovering%20over%20a%20digital%20garden.%20Soft%20lime%20green%20%28%23ecf874%29%20and%20lavender%20gradient%20background.%20Chunky%20retro%20sprites%2C%20warm%20lighting%2C%20lo-fi%20aesthetic%20like%20Stardew%20Valley.%20Floating%20pixel%20text%20says%20%27PATCH%20NOTES%27.%20Nostalgic%2C%20wholesome%2C%20welcoming.?model=nanobanana&width=2048&height=2048&quality=hd&nologo=true&private=true&nofeed=true&seed=2110562150",
+      "prompt": "Cozy pixel art scene of a cute 8-bit bee character holding a pixelated wrench, hovering over a digital garden. Soft lime green (#ecf874) and lavender gradient background. Chunky retro sprites, warm lighting, lo-fi aesthetic like Stardew Valley. Floating pixel text says 'PATCH NOTES'. Nostalgic, wholesome, welcoming.",
+      "description": "Title card showing the bee character ready to work, setting the cozy maintenance vibe."
+    },
+    {
+      "url": "https://gen.pollinations.ai/image/Retro%208-bit%20pixel%20art%20of%20a%20magical%20open%20toolbox.%20Inside%20are%20glowing%20pixel%20icons%3A%20a%20magnifying%20glass%20and%20a%20code%20scroll%20%28representing%20Gemini%20tools%29.%20Soft%20pastel%20mint%20and%20peach%20gradient%20background.%20Magical%20sparkles%2C%20warm%20lighting%2C%20cozy%20vibes.%20Text%20in%20pixel%20font%3A%20%27TOOLS%20RESTORED%27.%20Lime%20green%20%28%23ecf874%29%20glow%20effects.?model=nanobanana&width=2048&height=2048&quality=hd&nologo=true&private=true&nofeed=true&seed=937976139&image=https%3A%2F%2Fgen.pollinations.ai%2Fimage%2FCozy%2520pixel%2520art%2520scene%2520of%2520a%2520cute%25208-bit%2520bee%2520character%2520holding%2520a%2520pixelated%2520wrench%252C%2520hovering%2520over%2520a%2520digital%2520garden.%2520Soft%2520lime%2520green%2520%2528%2523ecf874%2529%2520and%2520lavender%2520gradient%2520background.%2520Chunky%2520retro%2520sprites%252C%2520warm%2520lighting%252C%2520lo-fi%2520aesthetic%2520like%2520Stardew%2520Valley.%2520Floating%2520pixel%2520text%2520says%2520%2527PATCH%2520NOTES%2527.%2520Nostalgic%252C%2520wholesome%252C%2520welcoming.%3Fmodel%3Dnanobanana%26width%3D2048%26height%3D2048%26quality%3Dhd%26nologo%3Dtrue%26private%3Dtrue%26nofeed%3Dtrue%26seed%3D2110562150",
+      "prompt": "Retro 8-bit pixel art of a magical open toolbox. Inside are glowing pixel icons: a magnifying glass and a code scroll (representing Gemini tools). Soft pastel mint and peach gradient background. Magical sparkles, warm lighting, cozy vibes. Text in pixel font: 'TOOLS RESTORED'. Lime green (#ecf874) glow effects.",
+      "description": "Highlighting the fix for Gemini-fast tools (search and code execution) being back online."
+    },
+    {
+      "url": "https://gen.pollinations.ai/image/Pixel%20art%20scene%20of%20a%20broom%20sweeping%20away%20small%20glitchy%20%27bug%27%20sprites%20from%20a%20lime%20green%20%28%23ecf874%29%20floor.%20Clean%2C%20minimalist%208-bit%20aesthetic%20like%20the%20game%20Unpacking.%20Soft%20warm%20lighting.%20Background%20is%20a%20gentle%20purple%20gradient.%20Text%20in%20pixel%20font%3A%20%27BUG%20SQUASHING%27.%20Satisfying%20and%20tidy.?model=nanobanana&width=2048&height=2048&quality=hd&nologo=true&private=true&nofeed=true&seed=590611270&image=https%3A%2F%2Fgen.pollinations.ai%2Fimage%2FRetro%25208-bit%2520pixel%2520art%2520of%2520a%2520magical%2520open%2520toolbox.%2520Inside%2520are%2520glowing%2520pixel%2520icons%253A%2520a%2520magnifying%2520glass%2520and%2520a%2520code%2520scroll%2520%2528representing%2520Gemini%2520tools%2529.%2520Soft%2520pastel%2520mint%2520and%2520peach%2520gradient%2520background.%2520Magical%2520sparkles%252C%2520warm%2520lighting%252C%2520cozy%2520vibes.%2520Text%2520in%2520pixel%2520font%253A%2520%2527TOOLS%2520RESTORED%2527.%2520Lime%2520green%2520%2528%2523ecf874%2529%2520glow%2520effects.%3Fmodel%3Dnanobanana%26width%3D2048%26height%3D2048%26quality%3Dhd%26nologo%3Dtrue%26private%3Dtrue%26nofeed%3Dtrue%26seed%3D937976139%26image%3Dhttps%253A%252F%252Fgen.pollinations.ai%252Fimage%252FCozy%252520pixel%252520art%252520scene%252520of%252520a%252520cute%2525208-bit%252520bee%252520character%252520holding%252520a%252520pixelated%252520wrench%25252C%252520hovering%252520over%252520a%252520digital%252520garden.%252520Soft%252520lime%252520green%252520%252528%252523ecf874%252529%252520and%252520lavender%252520gradient%252520background.%252520Chunky%252520retro%252520sprites%25252C%252520warm%252520lighting%25252C%252520lo-fi%252520aesthetic%252520like%252520Stardew%252520Valley.%252520Floating%252520pixel%252520text%252520says%252520%252527PATCH%252520NOTES%252527.%252520Nostalgic%25252C%252520wholesome%25252C%252520welcoming.%253Fmodel%253Dnanobanana%2526width%253D2048%2526height%253D2048%2526quality%253Dhd%2526nologo%253Dtrue%2526private%253Dtrue%2526nofeed%253Dtrue%2526seed%253D2110562150",
+      "prompt": "Pixel art scene of a broom sweeping away small glitchy 'bug' sprites from a lime green (#ecf874) floor. Clean, minimalist 8-bit aesthetic like the game Unpacking. Soft warm lighting. Background is a gentle purple gradient. Text in pixel font: 'BUG SQUASHING'. Satisfying and tidy.",
+      "description": "Visualizing the branch cleanup, Veo error fixes, and URL encoding fixes as 'tidying up'."
+    }
+  ],
+  "caption": "Squashed some bugs 🐛, watered the code 🌱, and tidied up the garden! \n\nWe did some serious spring cleaning in the backend today. Here’s what’s fresh:\n\n✨ Gemini-fast tools (search & code) are fully equipped and working again\n🧹 Automated branch cleanup to keep our repo sparkling\n🔗 Sturdier links for Instagram workflows (no more broken image chains!)\n🚫 Better error messages for video gen (so you know if it's a prompt issue)\n\nEverything is running smoother than a fresh save file. Go create something beautiful! 🌸\n\nLink in bio to build for free! ✨\n\n#pollinations #opensource #pixelart #indiedev #cozyvibes #aiart #generativeai #8bit #retrogaming #buildinpublic",
+  "hashtags": [
+    "#pollinations",
+    "#aiart",
+    "#opensource",
+    "#pixelart",
+    "#retrogaming",
+    "#indiedev",
+    "#8bit",
+    "#cozyvibes",
+    "#generativeai"
+  ],
+  "alt_text": "A series of cozy pixel art images in lime green and pastel colors. 1. A cute pixel bee with a wrench in a garden. 2. A glowing toolbox with search and code icons. 3. A pixel broom sweeping away glitch bugs.",
+  "pr_references": [
+    "#6213",
+    "#6211",
+    "#6196",
+    "#6190",
+    "#6195",
+    "#6173",
+    "#6186",
+    "#6178",
+    "#6174",
+    "#6171",
+    "#6161",
+    "#6115",
+    "#6159",
+    "#6157",
+    "#6155",
+    "#6154",
+    "#6139",
+    "#6144"
+  ]
+}

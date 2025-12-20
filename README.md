@@ -2,18 +2,6 @@
   <img src="shared/assets/logo-text.svg" alt="pollinations.ai" width="100%"/>
 </div>
 
-## 📢 Hacktoberfest 2025 — Recap
-
-<img width="1024" height="553" alt="Hacktoberfest 2025 Banner" src="https://github.com/user-attachments/assets/d6dd03c3-9298-40d3-9be2-5d6730951d9f" />
-
-Hacktoberfest 2025 has concluded. Thanks to everyone who contributed — please continue following our [Code of Conduct](./CODE_OF_CONDUCT.md) and [Contributing Guidelines](./CONTRIBUTING.md).
-
-### Event highlights
-
-We opened 67 issues and closed 38, created 25 PRs with 22 merged (30 total contributions), added 8 new projects, gained 131 stars (Oct 10–31), partnered with GDG JIS University (Kolkata, India), and hosted a virtual Hacktoberfest meetup.
-
-> Thank you to contributors and project maintainers.
-
 ## 🆕 Latest News
 
 -   **2025-12-07** – **🎥 Video Generation** Create videos from text or images using the new `veo` and `seedance` models. [API Docs](https://enter.pollinations.ai/api/docs)

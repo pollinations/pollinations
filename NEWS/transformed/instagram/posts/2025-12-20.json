@@ -1,0 +1,60 @@
+{
+  "date": "2025-12-20",
+  "generated_at": "2025-12-20T11:39:40.519930+00:00",
+  "post_type": "carousel",
+  "content_type": "retro_infographic",
+  "linked_images": false,
+  "strategy_reasoning": "Using the 'cozy pixel garden' metaphor perfectly translates technical updates (URL fixes, error handling) into a welcoming visual language. The addition of a new bot is represented as a new character in the garden, making the community contribution feel special and tangible.",
+  "story_arc": "",
+  "images": [
+    {
+      "url": "https://gen.pollinations.ai/image/Cozy%208-bit%20pixel%20art%20scene%20of%20a%20cute%20tiny%20robot%20character%20arriving%20in%20a%20lush%20digital%20garden.%20The%20robot%20is%20waving%20hello.%20Soft%20lime%20green%20%28%23ecf874%29%20and%20lavender%20gradient%20background.%20Chunky%20retro%20sprites%2C%20warm%20lighting%2C%20lo-fi%20aesthetic%20like%20Stardew%20Valley.%20Text%20in%20pixel%20font%3A%20%27NEW%20BOT%20ALERT%27.%20Nostalgic%20but%20beautiful%2C%20emotionally%20warm.?model=nanobanana&width=2048&height=2048&quality=hd&nologo=true&private=true&nofeed=true&seed=1586913975",
+      "prompt": "Cozy 8-bit pixel art scene of a cute tiny robot character arriving in a lush digital garden. The robot is waving hello. Soft lime green (#ecf874) and lavender gradient background. Chunky retro sprites, warm lighting, lo-fi aesthetic like Stardew Valley. Text in pixel font: 'NEW BOT ALERT'. Nostalgic but beautiful, emotionally warm.",
+      "description": "Introduces the new TeleChars AI bot as a friendly character entering the Pollinations ecosystem."
+    },
+    {
+      "url": "https://gen.pollinations.ai/image/Pixel%20art%20scene%20of%20a%20tiny%20bee%20mechanic%20fixing%20a%20garden%20irrigation%20pipe%20with%20a%20golden%20wrench.%20Clear%20blue%20water%20flowing%20smoothly%20through%20the%20pipes.%20Cozy%208-bit%20pixel%20art%20aesthetic.%20Soft%20lime%20green%20%28%23ecf874%29%20and%20pastel%20gradient%20background.%20Chunky%20retro%20sprites.%20Warm%20lighting%2C%20lo-fi%20vibes%20like%20A%20Short%20Hike.%20Text%20in%20pixel%20font%3A%20%27PIPES%20FIXED%27.%20Nostalgic%20but%20beautiful%2C%20emotionally%20warm.?model=nanobanana&width=2048&height=2048&quality=hd&nologo=true&private=true&nofeed=true&seed=671743433",
+      "prompt": "Pixel art scene of a tiny bee mechanic fixing a garden irrigation pipe with a golden wrench. Clear blue water flowing smoothly through the pipes. Cozy 8-bit pixel art aesthetic. Soft lime green (#ecf874) and pastel gradient background. Chunky retro sprites. Warm lighting, lo-fi vibes like A Short Hike. Text in pixel font: 'PIPES FIXED'. Nostalgic but beautiful, emotionally warm.",
+      "description": "Visualizes the 'URL encoding' and 'workflow' fixes as fixing the plumbing in the garden to let data flow smoothly."
+    },
+    {
+      "url": "https://gen.pollinations.ai/image/Retro%20pixel%20art%20game%20UI%20%27Patch%20Notes%27%20scroll%20floating%20in%20a%20sky%20with%20fluffy%20clouds.%20Beige%20parchment%20style.%20Icons%20showing%20a%20robot%20face%2C%20a%20wrench%2C%20and%20a%20warning%20sign.%20Cozy%208-bit%20pixel%20art%20aesthetic.%20Soft%20lime%20green%20%28%23ecf874%29%20and%20pastel%20gradient%20background.%20Chunky%20retro%20sprites.%20Warm%20lighting%2C%20lo-fi%20vibes.%20Text%20in%20pixel%20font%3A%20%27UPDATE%20LOG%27.%20Nostalgic%20but%20beautiful%2C%20emotionally%20warm.?model=nanobanana&width=2048&height=2048&quality=hd&nologo=true&private=true&nofeed=true&seed=1293200533",
+      "prompt": "Retro pixel art game UI 'Patch Notes' scroll floating in a sky with fluffy clouds. Beige parchment style. Icons showing a robot face, a wrench, and a warning sign. Cozy 8-bit pixel art aesthetic. Soft lime green (#ecf874) and pastel gradient background. Chunky retro sprites. Warm lighting, lo-fi vibes. Text in pixel font: 'UPDATE LOG'. Nostalgic but beautiful, emotionally warm.",
+      "description": "A summary card in the style of an RPG inventory or quest log."
+    }
+  ],
+  "caption": "New friend in the garden! 🤖🌸\n\nWe just welcomed 'TeleChars AI' to our socialBots collection (shoutout to @MarcosFRG for the build! 🧱). \n\nPlus, the dev bees 🐝 have been busy tightening the bolts on our plumbing:\n💧 Smoother URL handling for nested images\n🛠️ Stricter validation for Instagram workflows\n🚦 Better error signals for video gen (no more scary 500s when it's just a prompt issue)\n\nEverything is flowing smooth. Come build with us.\n\nLink in bio to try the new bot! ✨\n\n#pollinations #opensource #pixelart #indiedev #aiart #retrogaming #cozyvibes #generativeai",
+  "hashtags": [
+    "#pollinations",
+    "#aiart",
+    "#opensource",
+    "#pixelart",
+    "#retrogaming",
+    "#indiedev",
+    "#8bit",
+    "#cozyvibes"
+  ],
+  "alt_text": "A carousel of cozy pixel art images. 1. A cute 8-bit robot waving in a lime green garden. 2. A pixel bee fixing a water pipe with a wrench. 3. A retro RPG-style scroll showing update icons against a pastel sky.",
+  "pr_references": [
+    "#6223",
+    "#6210",
+    "#6213",
+    "#6211",
+    "#6196",
+    "#6190",
+    "#6195",
+    "#6173",
+    "#6186",
+    "#6178",
+    "#6174",
+    "#6171",
+    "#6161",
+    "#6115",
+    "#6159",
+    "#6157",
+    "#6155",
+    "#6154",
+    "#6139",
+    "#6144"
+  ]
+}

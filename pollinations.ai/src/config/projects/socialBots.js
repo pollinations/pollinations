@@ -153,4 +153,14 @@ export const socialBotsProjects = [
         "submissionDate": "2025-12-16",
         "order": 5,
     },
+  {
+    "name": "🤖 TeleChars AI",
+    "url": "https://telecharsai.byethost14.com",
+    "description": "Plataforma para crear personajes IA personalizados en Telegram. Configura personalidad, parámetros de generación, conocimiento y ejemplos de conversación. Los bots tienen memoria a corto y largo plazo, pueden ver imágenes y escuchar audios.",
+    "author": "@marcosfrgames08",
+    "category": "socialBots",
+    "language": "es",
+    "submissionDate": "2025-12-20",
+    "order": 5
+  }
 ];

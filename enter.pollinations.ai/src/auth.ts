@@ -15,6 +15,10 @@ import { getLogger } from "@logtape/logtape";
 
 const log = getLogger(["auth", "polar"]);
 
+function addKeyPrefix(key: string) {
+    return `auth:${key}`;
+}
+
 export function createAuth(env: Cloudflare.Env) {
     const polar = new Polar({
         accessToken: env.POLAR_ACCESS_TOKEN,
@@ -28,6 +32,8 @@ export function createAuth(env: Cloudflare.Env) {
     const PUBLISHABLE_KEY_PREFIX = "pk";
 
     const apiKeyPlugin = apiKey({
+        storage: "secondary-storage",
+        fallbackToDatabase: true,
         enableMetadata: true,
         defaultPrefix: PUBLISHABLE_KEY_PREFIX,
         defaultKeyLength: 16, // Minimum key length for validation (matches custom generator)
@@ -77,6 +83,19 @@ export function createAuth(env: Cloudflare.Env) {
             schema: betterAuthSchema,
             provider: "sqlite",
         }),
+        secondaryStorage: {
+            get: async (key) => {
+                return await env.KV.get(addKeyPrefix(key));
+            },
+            set: async (key, value, ttl) => {
+                await env.KV.put(addKeyPrefix(key), value, {
+                    expirationTtl: ttl,
+                });
+            },
+            delete: async (key) => {
+                await env.KV.delete(addKeyPrefix(key));
+            },
+        },
         trustedOrigins: ["https://enter.pollinations.ai", "http://localhost"],
         user: {
             additionalFields: {

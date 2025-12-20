@@ -1188,5 +1188,14 @@ export const creativeProjects = [
     "category": "creative",
     "submissionDate": "2025-12-16",
     "order": 5
+  },
+  {
+    "name": "🎨 Imgoo",
+    "url": "https://imgoo.netlify.app/",
+    "description": "AI image generator with creative controls including aspect ratio, guidance scales, and seeds. Features built-in browser editor for cropping, rotating, and filters. Dark mode and PWA-ready.",
+    "author": "@redythacker-cyber",
+    "category": "creative",
+    "submissionDate": "2025-12-20",
+    "order": 5
   }
 ];

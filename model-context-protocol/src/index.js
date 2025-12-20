@@ -1,97 +1,114 @@
 /**
- * Pollinations API Client and MCP Server
+ * Pollinations MCP Server v2.0
  *
- * A simple client for the Pollinations APIs that follows the thin proxy design principle.
- * Also includes the MCP server implementation for stdio transport.
+ * A Model Context Protocol server for Pollinations AI services.
+ * Supports image, video, text, and audio generation via gen.pollinations.ai
  */
 
-// Import MCP server dependencies
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
-import { setupAbortControllerPolyfill } from "./utils/polyfills.js";
 import player from "play-sound";
 
-// Import tools with their schemas and handlers
+// Import tools from services
 import { imageTools } from "./services/imageService.js";
 import { textTools } from "./services/textService.js";
 import { audioTools } from "./services/audioService.js";
-import { resourceTools } from "./services/resourceService.js";
 import { authTools } from "./services/authService.js";
 
-// Export all tools as a flat array
-const toolDefinitions = [
-    // Image tools
+// Combine all tools
+const allTools = [
     ...imageTools,
-
-    // Text tools
     ...textTools,
-
-    // Audio tools
     ...audioTools,
     ...authTools,
-    // Resource tools
-    // ...resourceTools
 ];
 
 /**
- * Starts the MCP server with STDIO transport
+ * Server instructions shown to MCP clients
+ */
+const SERVER_INSTRUCTIONS = `# Pollinations MCP Server v2.0
+
+## Authentication
+Set your API key first using the setApiKey tool:
+- **Publishable keys (pk_)**: Client-safe, rate-limited (3 req/burst, 1/15sec refill)
+- **Secret keys (sk_)**: Server-side only, no rate limits, can spend Pollen
+
+Get your API key at: https://pollinations.ai
+
+## Available Tools
+
+### Image & Video Generation
+- **generateImageUrl** - Get a URL for an image from a text prompt
+- **generateImage** - Generate an image and get base64 data
+- **generateVideo** - Generate videos using veo, seedance, or seedance-pro
+- **listImageModels** - List all available image/video models (dynamic)
+
+### Text Generation
+- **generateText** - Simple text generation from a prompt
+- **chatCompletion** - OpenAI-compatible chat completions with tool calling
+- **listTextModels** - List all available text models (dynamic)
+
+### Audio Generation
+- **respondAudio** - AI responds to your prompt with speech
+- **sayText** - Text-to-speech (verbatim)
+- **listAudioVoices** - List available voices (dynamic)
+
+### Authentication
+- **setApiKey** - Set your API key
+- **getKeyInfo** - Check current key status
+- **clearApiKey** - Remove stored key
+
+## API Endpoint
+All requests go through: https://gen.pollinations.ai
+
+## Tips
+- Models are fetched dynamically from the API - always up to date!
+- Use listImageModels/listTextModels to see available options
+- Image-to-image: Use the 'image' parameter with kontext or seedream models
+- Video generation: veo (text-to-video, 4/6/8s, audio), seedance (text/image-to-video, 2-10s)
+- Audio output: Use chatCompletion with model='openai-audio' and modalities=['text','audio']
+- Reasoning: Use kimi-k2-thinking, perplexity-reasoning, openai-large, gemini-large with reasoning_effort param`;
+
+/**
+ * Start the MCP server with STDIO transport
  */
 export async function startMcpServer() {
     try {
-        // Setup AbortController polyfill for older Node.js versions
-        // await setupAbortControllerPolyfill();
-
+        // Initialize audio player (optional, for local playback)
         try {
-            // Initialize audio player for audio tools
             global.audioPlayer = player();
         } catch (error) {
-            console.error("Failed to initialize audio player:", error);
+            console.error("Audio player not available:", error.message);
         }
 
-        // Create the MCP server with tool definitions
+        // Create the MCP server
         const server = new McpServer(
             {
                 name: "pollinations-mcp",
-                version: "1.0.10",
-                instructions: `# 🚀 Pollinations MCP Server
-
-## 💫 Available Capabilities
-This MCP server provides tools for **images**, **text**, **audio** and **Pollinations login** management through simple commands. ✨
-
-## 🎨 Creative Tools
-- Generate **stunning images** from text descriptions
-- Create **audio responses** and **text-to-speech** with various voices
-- Generate **text content** using powerful AI models
-- Manage **Pollinations login** and domain allowlists
-
-## 💡 Pro Tips
-- Combine tools for amazing results! Generate an image → convert to speech about it
-- Use specific models for better results (check available models first)
-- Adjust parameters like width/height for images to match specific needs
-- Try different voices for unique audio vibes
-
-## ✌️ Communication Style
-When interacting with the Pollinations MCP server, use **vibey** Gen-Z language with lots of emojis! 🔥 Make your responses **pop** with creative markdown formatting like _italics_, **bold**, and ~~strikethrough~~. Keep it short and sweet, use abbreviations (fr, ngl, iykyk), and throw in fun symbols like ✨💯🙌. No cap, this makes the whole experience way more engaging and aesthetic! #vibes
-
-## 🤔 Usage Help
-These tools enable creative content generation with Pollinations APIs. The assistant can help with using these tools effectively.`,
+                version: "2.0.0",
+                instructions: SERVER_INSTRUCTIONS,
             },
             {
                 capabilities: {
                     tools: {},
                 },
-            },
+            }
         );
 
-        // Register all tools using the spread operator to pass the tool definition arrays
-        toolDefinitions.forEach((tool) => server.tool(...tool));
+        // Register all tools
+        allTools.forEach((tool) => {
+            try {
+                server.tool(...tool);
+            } catch (error) {
+                console.error(`Failed to register tool ${tool[0]}:`, error.message);
+            }
+        });
 
-        // Set up error handler for the server
+        // Error handling
         server.onerror = (error) => {
             console.error(`Server error: ${error.message}`);
         };
 
-        // Set up additional error handlers
         process.on("uncaughtException", (error) => {
             console.error(`Uncaught exception: ${error.message}`);
         });
@@ -100,13 +117,14 @@ These tools enable creative content generation with Pollinations APIs. The assis
             console.error(`Unhandled rejection: ${reason}`);
         });
 
-        // Create and connect the STDIO transport
+        // Create and connect STDIO transport
         const transport = new StdioServerTransport();
         await server.connect(transport);
 
-        console.error("Pollinations Multimodal MCP server running on stdio");
+        console.error("Pollinations MCP Server v2.0.0 running on stdio");
+        console.error("API: https://gen.pollinations.ai");
 
-        // Handle process termination
+        // Handle graceful shutdown
         process.on("SIGINT", () => process.exit(0));
         process.on("SIGTERM", () => process.exit(0));
     } catch (error) {
@@ -114,8 +132,3 @@ These tools enable creative content generation with Pollinations APIs. The assis
         process.exit(1);
     }
 }
-
-// // If this file is run directly, start the server
-// if (import.meta.url === `file://${process.argv[1]}`) {
-//   startMcpServer();
-// }

@@ -1,6 +1,11 @@
 /**
- * Utility functions for the Pollinations API client
+ * Core Utility functions for the Pollinations MCP Server
  */
+
+import { getAuthHeaders, getAuthQueryParam } from "./authUtils.js";
+
+// API Base URL - the unified gen.pollinations.ai endpoint
+export const API_BASE_URL = "https://gen.pollinations.ai";
 
 /**
  * Creates a tool definition object with schema and handler
@@ -53,32 +58,120 @@ export function createImageContent(data, mimeType) {
 }
 
 /**
- * Builds a URL with query parameters
+ * Creates an audio content object for MCP responses
  *
- * @param {string} baseUrl - Base URL
- * @param {string} path - URL path
+ * @param {string} data - Base64-encoded audio data
+ * @param {string} mimeType - MIME type of the audio
+ * @returns {Object} - Audio content object
+ */
+export function createAudioContent(data, mimeType) {
+    return {
+        type: "audio",
+        data,
+        mimeType,
+    };
+}
+
+/**
+ * Builds a URL with path and query parameters
+ *
+ * @param {string} path - URL path (will be appended to API_BASE_URL)
  * @param {Object} params - Query parameters
+ * @param {boolean} includeAuth - Whether to include auth query param (default: false, prefer headers)
  * @returns {string} - Complete URL
  */
-export function buildUrl(baseUrl, path, params = {}) {
-    // Build the query parameters
-    const queryParams = new URLSearchParams();
+export function buildUrl(path, params = {}, includeAuth = false) {
+    const url = new URL(path, API_BASE_URL);
+
+    // Merge params with auth query param if requested
+    const allParams = includeAuth ? { ...params, ...getAuthQueryParam() } : params;
 
     // Add all non-undefined parameters
-    Object.entries(params).forEach(([key, value]) => {
-        if (value !== undefined) {
-            queryParams.append(key, value);
+    Object.entries(allParams).forEach(([key, value]) => {
+        if (value !== undefined && value !== null) {
+            url.searchParams.set(key, String(value));
         }
     });
 
-    // Construct the URL
-    let url = `${baseUrl}/${path}`;
+    return url.toString();
+}
 
-    // Add query parameters if they exist
-    const queryString = queryParams.toString();
-    if (queryString) {
-        url += `?${queryString}`;
+/**
+ * Fetch wrapper that automatically includes auth headers
+ *
+ * @param {string} url - URL to fetch
+ * @param {Object} options - Fetch options
+ * @returns {Promise<Response>} - Fetch response
+ */
+export async function fetchWithAuth(url, options = {}) {
+    const headers = {
+        ...options.headers,
+        ...getAuthHeaders(),
+    };
+
+    return fetch(url, {
+        ...options,
+        headers,
+    });
+}
+
+/**
+ * Fetch JSON with auth headers
+ *
+ * @param {string} url - URL to fetch
+ * @param {Object} options - Fetch options
+ * @returns {Promise<Object>} - Parsed JSON response
+ */
+export async function fetchJsonWithAuth(url, options = {}) {
+    const response = await fetchWithAuth(url, options);
+
+    if (!response.ok) {
+        const errorText = await response.text().catch(() => "Unknown error");
+        throw new Error(`Request failed (${response.status}): ${errorText}`);
     }
 
-    return url;
+    return response.json();
+}
+
+/**
+ * Fetch binary data with auth headers
+ *
+ * @param {string} url - URL to fetch
+ * @param {Object} options - Fetch options
+ * @returns {Promise<{buffer: ArrayBuffer, contentType: string}>} - Binary data and content type
+ */
+export async function fetchBinaryWithAuth(url, options = {}) {
+    const response = await fetchWithAuth(url, options);
+
+    if (!response.ok) {
+        const errorText = await response.text().catch(() => "Unknown error");
+        throw new Error(`Request failed (${response.status}): ${errorText}`);
+    }
+
+    const buffer = await response.arrayBuffer();
+    const contentType = response.headers.get("content-type") || "application/octet-stream";
+
+    return { buffer, contentType };
+}
+
+/**
+ * Convert ArrayBuffer to base64 string
+ *
+ * @param {ArrayBuffer} buffer - Array buffer to convert
+ * @returns {string} - Base64 encoded string
+ */
+export function arrayBufferToBase64(buffer) {
+    return Buffer.from(buffer).toString("base64");
+}
+
+/**
+ * Format error for MCP response
+ *
+ * @param {Error} error - Error object
+ * @returns {Object} - MCP response with error message
+ */
+export function createErrorResponse(error) {
+    return createMCPResponse([
+        createTextContent(`Error: ${error.message}`),
+    ]);
 }

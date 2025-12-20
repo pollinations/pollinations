@@ -1,7 +1,9 @@
 /**
- * Pollinations Image Service
+ * Pollinations Image & Video Service
  *
- * Functions and schemas for interacting with the Pollinations Image API
+ * Complete implementation for image and video generation using gen.pollinations.ai
+ * Supports ALL API parameters for maximum control.
+ * Dynamic model discovery - no hardcoded model lists!
  */
 
 import {
@@ -9,119 +11,170 @@ import {
     createTextContent,
     createImageContent,
     buildUrl,
+    fetchBinaryWithAuth,
+    arrayBufferToBase64,
 } from "../utils/coreUtils.js";
+import { getImageModels } from "../utils/modelCache.js";
 import { z } from "zod";
 
-// Constants
-const IMAGE_API_BASE_URL = "https://image.pollinations.ai";
+// ============================================================================
+// SHARED PARAMETER BUILDERS
+// ============================================================================
 
 /**
- * Internal function to generate an image URL without MCP formatting
- *
- * @param {string} prompt - The text description of the image to generate
- * @param {Object} options - Additional options for image generation
- * @returns {Object} - Object containing the image URL and metadata
+ * Build query params object, filtering out undefined values
  */
-async function _generateImageUrlInternal(prompt, options = {}) {
-    const { model, seed, width = 1024, height = 1024 } = options;
-
-    // Construct the URL with query parameters
-    const encodedPrompt = encodeURIComponent(prompt);
-    const path = `prompt/${encodedPrompt}`;
-    const queryParams = { model, seed, width, height };
-
-    const url = buildUrl(IMAGE_API_BASE_URL, path, queryParams);
-
-    // Return the URL with metadata
-    return {
-        imageUrl: url,
-        prompt,
-        width,
-        height,
-        model,
-        seed,
-    };
+function buildQueryParams(params) {
+    const result = {};
+    for (const [key, value] of Object.entries(params)) {
+        if (value !== undefined && value !== null) {
+            result[key] = value;
+        }
+    }
+    return result;
 }
 
+// ============================================================================
+// IMAGE GENERATION
+// ============================================================================
+
 /**
- * Generates an image URL from a text prompt using the Pollinations Image API
- *
- * @param {Object} params - The parameters for image URL generation
- * @param {string} params.prompt - The text description of the image to generate
- * @param {Object} [params.options={}] - Additional options for image generation
- * @param {string} [params.options.model] - Model name to use for generation
- * @param {number} [params.options.seed] - Seed for reproducible results
- * @param {number} [params.options.width=1024] - Width of the generated image
- * @param {number} [params.options.height=1024] - Height of the generated image
- * @returns {Object} - MCP response object with the image URL
+ * Generate image URL from a text prompt
+ * Returns the URL without fetching the actual image - useful for embedding
  */
 async function generateImageUrl(params) {
-    const { prompt, options = {} } = params;
+    const {
+        prompt,
+        // Model selection
+        model,
+        // Dimensions
+        width,
+        height,
+        // Generation control
+        seed,
+        enhance,
+        negative_prompt,
+        guidance_scale,
+        quality,
+        // Image-to-image
+        image,
+        // Output options
+        transparent,
+        nologo,
+        nofeed,
+        safe,
+        private: isPrivate,
+    } = params;
 
     if (!prompt || typeof prompt !== "string") {
         throw new Error("Prompt is required and must be a string");
     }
 
-    // Generate the image URL and metadata
-    const result = await _generateImageUrlInternal(prompt, options);
+    const encodedPrompt = encodeURIComponent(prompt);
+    const queryParams = buildQueryParams({
+        model,
+        width,
+        height,
+        seed,
+        enhance,
+        negative_prompt,
+        guidance_scale,
+        quality,
+        image,
+        transparent,
+        nologo,
+        nofeed,
+        safe,
+        private: isPrivate,
+    });
 
-    // Return the response in MCP format
-    return createMCPResponse([createTextContent(result, true)]);
+    // Build URL with auth in query params (for shareable URLs)
+    const url = buildUrl(`/image/${encodedPrompt}`, queryParams, true);
+
+    return createMCPResponse([
+        createTextContent({
+            imageUrl: url,
+            prompt,
+            model: model || "flux",
+            width: width || 1024,
+            height: height || 1024,
+            seed,
+            quality: quality || "medium",
+        }, true),
+    ]);
 }
 
 /**
- * Generates an image from a text prompt and returns the image data as base64
- *
- * @param {Object} params - The parameters for image generation
- * @param {string} params.prompt - The text description of the image to generate
- * @param {Object} [params.options={}] - Additional options for image generation
- * @param {string} [params.options.model] - Model name to use for generation
- * @param {number} [params.options.seed] - Seed for reproducible results
- * @param {number} [params.options.width=1024] - Width of the generated image
- * @param {number} [params.options.height=1024] - Height of the generated image
- * @returns {Promise<Object>} - MCP response object with the image data
+ * Generate image and return base64 data
+ * Full image generation with all parameters
  */
 async function generateImage(params) {
-    const { prompt, options = {} } = params;
+    const {
+        prompt,
+        // Model selection
+        model,
+        // Dimensions
+        width,
+        height,
+        // Generation control
+        seed,
+        enhance,
+        negative_prompt,
+        guidance_scale,
+        quality,
+        // Image-to-image
+        image,
+        // Output options
+        transparent,
+        nologo,
+        nofeed,
+        safe,
+        private: isPrivate,
+    } = params;
 
     if (!prompt || typeof prompt !== "string") {
         throw new Error("Prompt is required and must be a string");
     }
 
-    // First, generate the image URL (but don't use the MCP response format)
-    const urlResult = await _generateImageUrlInternal(prompt, options);
+    const encodedPrompt = encodeURIComponent(prompt);
+    const queryParams = buildQueryParams({
+        model,
+        width,
+        height,
+        seed,
+        enhance,
+        negative_prompt,
+        guidance_scale,
+        quality,
+        image,
+        transparent,
+        nologo,
+        nofeed,
+        safe,
+        private: isPrivate,
+    });
+
+    const url = buildUrl(`/image/${encodedPrompt}`, queryParams);
 
     try {
-        // Fetch the image from the URL
-        const response = await fetch(urlResult.imageUrl);
-
-        if (!response.ok) {
-            throw new Error(`Failed to generate image: ${response.statusText}`);
-        }
-
-        // Get the image data as an ArrayBuffer
-        const imageBuffer = await response.arrayBuffer();
-
-        // Convert the ArrayBuffer to a base64 string
-        const base64Data = Buffer.from(imageBuffer).toString("base64");
-
-        // Determine the mime type from the response headers or default to image/jpeg
-        const contentType =
-            response.headers.get("content-type") || "image/jpeg";
+        const { buffer, contentType } = await fetchBinaryWithAuth(url);
+        const base64Data = arrayBufferToBase64(buffer);
 
         const metadata = {
-            prompt: urlResult.prompt,
-            width: urlResult.width,
-            height: urlResult.height,
-            model: urlResult.model,
-            seed: urlResult.seed,
+            prompt,
+            model: model || "flux",
+            width: width || 1024,
+            height: height || 1024,
+            seed,
+            quality: quality || "medium",
+            enhance: enhance || false,
+            transparent: transparent || false,
         };
 
-        // Return the response in MCP format
         return createMCPResponse([
             createImageContent(base64Data, contentType),
             createTextContent(
-                `Generated image from prompt: "${prompt}"\n\nImage metadata: ${JSON.stringify(metadata, null, 2)}`,
+                `Generated image from prompt: "${prompt}"\n\nMetadata: ${JSON.stringify(metadata, null, 2)}`
             ),
         ]);
     } catch (error) {
@@ -131,97 +184,465 @@ async function generateImage(params) {
 }
 
 /**
- * List available image generation models from Pollinations API
+ * Generate multiple images in parallel (batch generation)
+ * Best used with sk_ keys (no rate limits). pk_ keys will be rate-limited.
+ */
+async function generateImageBatch(params) {
+    const {
+        prompts,
+        // Shared params for all images
+        model,
+        width,
+        height,
+        seed: baseSeed,
+        enhance,
+        negative_prompt,
+        guidance_scale,
+        quality,
+        image,
+        transparent,
+        nologo,
+        nofeed,
+        safe,
+        private: isPrivate,
+    } = params;
+
+    if (!prompts || !Array.isArray(prompts) || prompts.length === 0) {
+        throw new Error("Prompts array is required and must not be empty");
+    }
+
+    if (prompts.length > 10) {
+        throw new Error("Maximum 10 images per batch. For more, call multiple times.");
+    }
+
+    // Generate all images in parallel
+    const results = await Promise.allSettled(
+        prompts.map(async (prompt, index) => {
+            const encodedPrompt = encodeURIComponent(prompt);
+            const queryParams = buildQueryParams({
+                model,
+                width,
+                height,
+                // Increment seed for each image if base seed provided
+                seed: baseSeed !== undefined ? baseSeed + index : undefined,
+                enhance,
+                negative_prompt,
+                guidance_scale,
+                quality,
+                image,
+                transparent,
+                nologo,
+                nofeed,
+                safe,
+                private: isPrivate,
+            });
+
+            const url = buildUrl(`/image/${encodedPrompt}`, queryParams);
+            const { buffer, contentType } = await fetchBinaryWithAuth(url);
+            const base64Data = arrayBufferToBase64(buffer);
+
+            return {
+                index,
+                prompt,
+                base64: base64Data,
+                contentType,
+                seed: baseSeed !== undefined ? baseSeed + index : undefined,
+            };
+        })
+    );
+
+    // Build response with all images
+    const responseContent = [];
+    const successful = [];
+    const failed = [];
+
+    results.forEach((result, index) => {
+        if (result.status === "fulfilled") {
+            const img = result.value;
+            responseContent.push(createImageContent(img.base64, img.contentType));
+            successful.push({ index: img.index, prompt: img.prompt, seed: img.seed });
+        } else {
+            failed.push({ index, prompt: prompts[index], error: result.reason?.message || "Unknown error" });
+        }
+    });
+
+    // Add summary
+    responseContent.push(createTextContent({
+        batch: {
+            total: prompts.length,
+            successful: successful.length,
+            failed: failed.length,
+        },
+        successful,
+        failed: failed.length > 0 ? failed : undefined,
+        model: model || "flux",
+        width: width || 1024,
+        height: height || 1024,
+    }, true));
+
+    return createMCPResponse(responseContent);
+}
+
+// ============================================================================
+// VIDEO GENERATION
+// ============================================================================
+
+/**
+ * Generate video from a text prompt or image
+ * Supports veo (text-to-video) and seedance/seedance-pro (text/image-to-video)
  *
- * @param {Object} params - The parameters for listing image models
- * @returns {Promise<Object>} - MCP response object with the list of available image models
+ * ALL video parameters:
+ * - model: veo, seedance, seedance-pro
+ * - duration: veo (4,6,8 seconds), seedance (2-10 seconds)
+ * - aspectRatio: 16:9, 9:16, etc.
+ * - audio: enable audio (veo only)
+ * - image: reference image for image-to-video (seedance)
+ * - seed: reproducible results
+ * - safe: safety filters
+ * - private/nofeed/nologo: output options
+ */
+async function generateVideo(params) {
+    const {
+        prompt,
+        // Model selection - video models only
+        model = "veo",
+        // Video-specific params
+        duration,
+        aspectRatio,
+        audio,
+        // Image input for image-to-video
+        image,
+        // Generation control
+        seed,
+        // Output options
+        nologo,
+        nofeed,
+        safe,
+        private: isPrivate,
+    } = params;
+
+    if (!prompt || typeof prompt !== "string") {
+        throw new Error("Prompt is required and must be a string");
+    }
+
+    // Validate model is a video model
+    const videoModels = ["veo", "seedance", "seedance-pro"];
+    if (!videoModels.includes(model)) {
+        throw new Error(
+            `Invalid video model "${model}". Available video models: ${videoModels.join(", ")}\n` +
+            `- veo: text-to-video, 4/6/8 seconds, supports audio\n` +
+            `- seedance: text/image-to-video, 2-10 seconds\n` +
+            `- seedance-pro: text/image-to-video, 2-10 seconds, better quality`
+        );
+    }
+
+    // Validate duration based on model
+    if (duration !== undefined) {
+        if (model === "veo" && ![4, 6, 8].includes(duration)) {
+            throw new Error("veo model only supports duration of 4, 6, or 8 seconds");
+        }
+        if ((model === "seedance" || model === "seedance-pro") && (duration < 2 || duration > 10)) {
+            throw new Error("seedance models support duration between 2-10 seconds");
+        }
+    }
+
+    // Warn if audio is used with non-veo model
+    if (audio && model !== "veo") {
+        console.warn("Warning: audio parameter is only supported by veo model");
+    }
+
+    const encodedPrompt = encodeURIComponent(prompt);
+    const queryParams = buildQueryParams({
+        model,
+        duration,
+        aspectRatio,
+        audio,
+        image,
+        seed,
+        nologo,
+        nofeed,
+        safe,
+        private: isPrivate,
+    });
+
+    const url = buildUrl(`/image/${encodedPrompt}`, queryParams);
+
+    try {
+        const { buffer, contentType } = await fetchBinaryWithAuth(url);
+        const base64Data = arrayBufferToBase64(buffer);
+
+        const metadata = {
+            prompt,
+            model,
+            duration,
+            aspectRatio,
+            audio: model === "veo" ? (audio || false) : undefined,
+            hasReferenceImage: !!image,
+            seed,
+        };
+
+        // Return video as base64 with metadata
+        return createMCPResponse([
+            {
+                type: "video",
+                data: base64Data,
+                mimeType: contentType || "video/mp4",
+            },
+            createTextContent(
+                `Generated video from prompt: "${prompt}"\n\nMetadata: ${JSON.stringify(metadata, null, 2)}`
+            ),
+        ]);
+    } catch (error) {
+        console.error("Error generating video:", error);
+        throw error;
+    }
+}
+
+// ============================================================================
+// MODEL LISTING
+// ============================================================================
+
+/**
+ * List available image and video models
+ * Fetches dynamically from the API - always up to date!
  */
 async function listImageModels(params) {
     try {
-        const url = buildUrl(IMAGE_API_BASE_URL, "models");
-        const response = await fetch(url);
+        const models = await getImageModels(params?.refresh === true);
 
-        if (!response.ok) {
-            throw new Error(`Failed to list models: ${response.statusText}`);
-        }
+        // Separate image and video models based on output modalities
+        const imageOnlyModels = models.filter(m =>
+            m.output_modalities?.includes("image") && !m.output_modalities?.includes("video")
+        );
+        const videoModels = models.filter(m =>
+            m.output_modalities?.includes("video")
+        );
+        const imageToImageModels = models.filter(m =>
+            m.input_modalities?.includes("image")
+        );
 
-        const models = await response.json();
+        const result = {
+            imageModels: imageOnlyModels.map(m => ({
+                name: m.name,
+                description: m.description,
+                aliases: m.aliases || [],
+                inputModalities: m.input_modalities,
+                outputModalities: m.output_modalities,
+                supportsImageToImage: m.input_modalities?.includes("image") || false,
+            })),
+            videoModels: videoModels.map(m => ({
+                name: m.name,
+                description: m.description,
+                aliases: m.aliases || [],
+                inputModalities: m.input_modalities,
+                outputModalities: m.output_modalities,
+                supportsImageToVideo: m.input_modalities?.includes("image") || false,
+            })),
+            imageToImageCapable: imageToImageModels.map(m => m.name),
+            summary: {
+                totalModels: models.length,
+                imageModels: imageOnlyModels.length,
+                videoModels: videoModels.length,
+                imageToImageCapable: imageToImageModels.length,
+            },
+            usage: {
+                image: "Use generateImage or generateImageUrl with image models",
+                video: "Use generateVideo with veo, seedance, or seedance-pro",
+                imageToImage: "Pass 'image' parameter with a URL to transform existing images",
+            },
+        };
 
-        // Return the response in MCP format
-        return createMCPResponse([createTextContent(models, true)]);
+        return createMCPResponse([createTextContent(result, true)]);
     } catch (error) {
         console.error("Error listing image models:", error);
         throw error;
     }
 }
 
+// ============================================================================
+// ZOD SCHEMAS - COMPLETE PARAMETER DEFINITIONS
+// ============================================================================
+
+// All image generation parameters
+const imageParamsSchema = {
+    prompt: z.string().describe("Text description of the image to generate (required)"),
+
+    // Model selection
+    model: z.string().optional().describe(
+        "Image model to use. Options: flux (default, fast), turbo (ultra-fast), gptimage (OpenAI), " +
+        "kontext (context-aware, supports i2i), seedream/seedream-pro (high quality, supports i2i), " +
+        "nanobanana/nanobanana-pro (Gemini-based), zimage (experimental). Use listImageModels for full list."
+    ),
+
+    // Dimensions
+    width: z.number().int().min(64).max(4096).optional().describe(
+        "Image width in pixels (default: 1024). Common sizes: 512, 768, 1024, 1280, 1536, 2048"
+    ),
+    height: z.number().int().min(64).max(4096).optional().describe(
+        "Image height in pixels (default: 1024). Common sizes: 512, 768, 1024, 1280, 1536, 2048"
+    ),
+
+    // Generation control
+    seed: z.number().int().min(0).optional().describe(
+        "Random seed for reproducible results (default: 42). Use same seed + prompt for identical images"
+    ),
+    enhance: z.boolean().optional().describe(
+        "Let AI improve your prompt for better results (default: false). Adds detail and style suggestions"
+    ),
+    negative_prompt: z.string().optional().describe(
+        "What to avoid in the image (default: 'worst quality, blurry'). Example: 'blurry, low quality, text, watermark'"
+    ),
+    guidance_scale: z.number().min(1).max(20).optional().describe(
+        "How closely to follow the prompt (1-20). Higher = more literal, lower = more creative. Default varies by model"
+    ),
+    quality: z.enum(["low", "medium", "high", "hd"]).optional().describe(
+        "Image quality level (default: 'medium'). 'hd' for maximum quality, 'low' for faster generation"
+    ),
+
+    // Image-to-image
+    image: z.string().optional().describe(
+        "Reference image URL(s) for image-to-image generation. Separate multiple URLs with | or comma.\n" +
+        "I2I models: seedream-pro, nanobanana-pro, nanobanana, gptimage, seedream (all multi-image), kontext (single image).\n" +
+        "Put this parameter last in URL or URL-encode it."
+    ),
+
+    // Output options
+    transparent: z.boolean().optional().describe(
+        "Generate with transparent background (default: false). Useful for logos, stickers, overlays"
+    ),
+    nologo: z.boolean().optional().describe(
+        "Remove Pollinations watermark from image (default: false)"
+    ),
+    nofeed: z.boolean().optional().describe(
+        "Don't add image to public feed (default: false)"
+    ),
+    safe: z.boolean().optional().describe(
+        "Enable safety content filters (default: false). Blocks NSFW content"
+    ),
+    private: z.boolean().optional().describe(
+        "Hide image from public feeds/gallery (default: false)"
+    ),
+};
+
+// All video generation parameters
+const videoParamsSchema = {
+    prompt: z.string().describe("Text description of the video to generate (required)"),
+
+    // Model selection - video models only
+    model: z.enum(["veo", "seedance", "seedance-pro"]).optional().describe(
+        "Video model (default: 'veo'):\n" +
+        "- veo: Google's model, text/image-to-video, 4/6/8 sec, supports audio, single image input\n" +
+        "- seedance: ByteDance, text/image-to-video, 2-10 sec, multi-image support\n" +
+        "- seedance-pro: ByteDance Pro, text/image-to-video, 2-10 sec, multi-image, best prompt adherence"
+    ),
+
+    // Video-specific params
+    duration: z.number().int().min(2).max(10).optional().describe(
+        "Video duration in seconds:\n" +
+        "- veo: 4, 6, or 8 seconds only\n" +
+        "- seedance/seedance-pro: 2-10 seconds"
+    ),
+    aspectRatio: z.string().optional().describe(
+        "Video aspect ratio. Examples: '16:9' (landscape), '9:16' (portrait/vertical), '1:1' (square)"
+    ),
+    audio: z.boolean().optional().describe(
+        "Enable audio generation (default: false). Only supported by veo model"
+    ),
+
+    // Image input for image-to-video
+    image: z.string().optional().describe(
+        "Reference image URL(s) for image-to-video generation. " +
+        "veo: single image only. seedance/seedance-pro: multi-image (separate with | or comma)."
+    ),
+
+    // Generation control
+    seed: z.number().int().min(0).optional().describe(
+        "Random seed for reproducible results"
+    ),
+
+    // Output options
+    nologo: z.boolean().optional().describe(
+        "Remove Pollinations watermark (default: false)"
+    ),
+    nofeed: z.boolean().optional().describe(
+        "Don't add to public feed (default: false)"
+    ),
+    safe: z.boolean().optional().describe(
+        "Enable safety content filters (default: false)"
+    ),
+    private: z.boolean().optional().describe(
+        "Hide from public feeds (default: false)"
+    ),
+};
+
+// ============================================================================
+// TOOL EXPORTS
+// ============================================================================
+
 /**
- * Export tools as complete arrays ready to be passed to server.tool()
+ * Export tools as arrays for MCP server registration
+ * Format: [name, description, schema, handler]
  */
 export const imageTools = [
     [
         "generateImageUrl",
-        "Generate an image URL from a text prompt",
-        {
-            prompt: z
-                .string()
-                .describe("The text description of the image to generate"),
-            options: z
-                .object({
-                    model: z
-                        .string()
-                        .optional()
-                        .describe("Model name to use for generation"),
-                    seed: z
-                        .number()
-                        .optional()
-                        .describe("Seed for reproducible results"),
-                    width: z
-                        .number()
-                        .optional()
-                        .describe("Width of the generated image"),
-                    height: z
-                        .number()
-                        .optional()
-                        .describe("Height of the generated image"),
-                })
-                .optional()
-                .describe("Additional options for image generation"),
-        },
+        "Generate an image URL from a text prompt. Returns a shareable/embeddable URL without downloading the image. " +
+        "Supports all image models and parameters including image-to-image with the 'image' parameter.",
+        imageParamsSchema,
         generateImageUrl,
     ],
 
     [
         "generateImage",
-        "Generate an image and return the base64-encoded data",
-        {
-            prompt: z
-                .string()
-                .describe("The text description of the image to generate"),
-            options: z
-                .object({
-                    model: z
-                        .string()
-                        .optional()
-                        .describe("Model name to use for generation"),
-                    seed: z
-                        .number()
-                        .optional()
-                        .describe("Seed for reproducible results"),
-                    width: z
-                        .number()
-                        .optional()
-                        .describe("Width of the generated image"),
-                    height: z
-                        .number()
-                        .optional()
-                        .describe("Height of the generated image"),
-                })
-                .optional()
-                .describe("Additional options for image generation"),
-        },
+        "Generate an image from a text prompt and return the base64-encoded image data. " +
+        "Full control over all generation parameters. Supports image-to-image with kontext, seedream, nanobanana models.",
+        imageParamsSchema,
         generateImage,
     ],
 
-    ["listImageModels", "List available image models", {}, listImageModels],
+    [
+        "generateImageBatch",
+        "Generate multiple images in parallel (up to 10). Best with sk_ keys (no rate limits). " +
+        "pk_ keys will be rate-limited. Each prompt generates one image with shared parameters.",
+        {
+            prompts: z.array(z.string()).min(1).max(10).describe(
+                "Array of prompts to generate images for (1-10 prompts). Each prompt generates one image."
+            ),
+            model: z.string().optional().describe("Image model for all images"),
+            width: z.number().int().optional().describe("Width for all images"),
+            height: z.number().int().optional().describe("Height for all images"),
+            seed: z.number().int().optional().describe("Base seed (incremented for each image)"),
+            enhance: z.boolean().optional().describe("Enhance all prompts"),
+            negative_prompt: z.string().optional().describe("Negative prompt for all images"),
+            guidance_scale: z.number().optional().describe("Guidance scale for all images"),
+            quality: z.enum(["low", "medium", "high", "hd"]).optional().describe("Quality for all images"),
+            image: z.string().optional().describe("Reference image for all (i2i)"),
+            transparent: z.boolean().optional().describe("Transparent background for all"),
+            nologo: z.boolean().optional().describe("Remove watermark from all"),
+            nofeed: z.boolean().optional().describe("Don't add any to feed"),
+            safe: z.boolean().optional().describe("Safety filters for all"),
+            private: z.boolean().optional().describe("Hide all from public"),
+        },
+        generateImageBatch,
+    ],
+
+    [
+        "generateVideo",
+        "Generate a video from a text prompt or image. " +
+        "Models: veo (text-to-video, 4-8s, audio), seedance (text/image-to-video, 2-10s), seedance-pro (best quality). " +
+        "Use 'image' parameter with seedance models for image-to-video generation.",
+        videoParamsSchema,
+        generateVideo,
+    ],
+
+    [
+        "listImageModels",
+        "List all available image and video generation models with their capabilities. " +
+        "Shows which models support image-to-image, video generation, and other features. " +
+        "Models are fetched dynamically from the API.",
+        {
+            refresh: z.boolean().optional().describe("Force refresh the model cache (default: false)"),
+        },
+        listImageModels,
+    ],
 ];

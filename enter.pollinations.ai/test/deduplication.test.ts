@@ -34,7 +34,7 @@ async function sendTestOpenAIRequest({
 }
 
 test(
-    "Concurrent identical requests are deduplicated with X-Dedup header",
+    "Concurrent identical requests are deduplicated with X-Cache header",
     { timeout: 30000 },
     async ({ apiKey, mocks }) => {
         await mocks.enable("polar", "tinybird", "vcr");
@@ -80,17 +80,21 @@ test(
         // Bodies should be identical (same response shared)
         expect(body1).toBe(body2);
 
-        // Verify deduplication via X-Dedup header
+        // Verify deduplication via X-Cache header (standard pattern)
         // One should be HIT (deduplicated), one should be null/MISS (original)
-        const dedup1 = response1.headers.get("X-Dedup");
-        const dedup2 = response2.headers.get("X-Dedup");
+        const cache1 = response1.headers.get("X-Cache");
+        const cache2 = response2.headers.get("X-Cache");
+        const cacheType1 = response1.headers.get("X-Cache-Type");
+        const cacheType2 = response2.headers.get("X-Cache-Type");
 
-        // At least one should have X-Dedup: HIT
-        const hasDedup = dedup1 === "HIT" || dedup2 === "HIT";
+        // At least one should have X-Cache: HIT with X-Cache-Type: DEDUP
+        const hasDedup =
+            (cache1 === "HIT" && cacheType1 === "DEDUP") ||
+            (cache2 === "HIT" && cacheType2 === "DEDUP");
         expect(hasDedup).toBe(true);
 
         log.info(
-            `✓ Deduplication verified: X-Dedup headers = [${dedup1}, ${dedup2}]`,
+            `✓ Deduplication verified: X-Cache=[${cache1}, ${cache2}], X-Cache-Type=[${cacheType1}, ${cacheType2}]`,
         );
     },
 );

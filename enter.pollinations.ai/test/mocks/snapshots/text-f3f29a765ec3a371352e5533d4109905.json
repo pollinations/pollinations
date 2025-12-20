@@ -1,0 +1,129 @@
+{
+  "request": {
+    "url": "http://ec2-3-80-56-235.compute-1.amazonaws.com:16385/openai",
+    "method": "POST",
+    "body": {
+      "type": "json",
+      "data": {
+        "model": "openai",
+        "messages": [
+          {
+            "role": "user",
+            "content": "Different message 1 - 1766259365987"
+          }
+        ]
+      }
+    },
+    "params": {}
+  },
+  "response": {
+    "status": 200,
+    "statusText": "OK",
+    "headers": {
+      "access-control-allow-origin": "*",
+      "connection": "keep-alive",
+      "content-length": "2187",
+      "content-type": "application/json; charset=utf-8",
+      "date": "Sat, 20 Dec 2025 19:36:12 GMT",
+      "etag": "W/\"88b-k7uGX0bPuawZJlRJ7QXpZZtSOV4\"",
+      "keep-alive": "timeout=5",
+      "x-model-used": "gpt-5-mini-2025-08-07",
+      "x-powered-by": "Express",
+      "x-usage-completion-reasoning-tokens": "640",
+      "x-usage-completion-text-tokens": "247",
+      "x-usage-prompt-text-tokens": "258",
+      "x-usage-total-tokens": "1145"
+    },
+    "body": {
+      "type": "json",
+      "data": {
+        "choices": [
+          {
+            "content_filter_results": {
+              "hate": {
+                "filtered": false,
+                "severity": "safe"
+              },
+              "protected_material_code": {
+                "filtered": false,
+                "detected": false
+              },
+              "protected_material_text": {
+                "filtered": false,
+                "detected": false
+              },
+              "self_harm": {
+                "filtered": false,
+                "severity": "safe"
+              },
+              "sexual": {
+                "filtered": false,
+                "severity": "safe"
+              },
+              "violence": {
+                "filtered": false,
+                "severity": "safe"
+              }
+            },
+            "finish_reason": "stop",
+            "index": 0,
+            "logprobs": null,
+            "message": {
+              "annotations": [],
+              "content": "I’m not sure what you want done with \"Different message 1 - 1766259365987\" — want me to interpret it, convert the number to a readable date/time, rename or reformat it, or something else?\n\nQuick guesses and options I can do right now:\n- If that trailing number is a Unix timestamp in milliseconds (1766259365987 ms), I can convert it to a human-readable date/time.\n- If it’s a filename or label you want cleaned up, I can suggest nicer naming conventions or rename examples.\n- If it’s some other code or ID you want decoded, tell me the context and I’ll try to parse it.\n\nIf you want to convert the timestamp yourself, here are quick snippets:\n- JavaScript: new Date(1766259365987)\n- Python: from datetime import datetime; datetime.utcfromtimestamp(1766259365987 / 1000)\n- Unix shell (if seconds): date -d @1766259365  (divide by 1000 first if it’s milliseconds)\n\nWhich of those should I do? Or tell me what the string is from and I’ll take it from there.",
+              "refusal": null,
+              "role": "assistant"
+            }
+          }
+        ],
+        "created": 1766259366,
+        "id": "pllns_4c0db3ad59281b478950940d75392af0",
+        "model": "gpt-5-mini-2025-08-07",
+        "object": "chat.completion",
+        "prompt_filter_results": [
+          {
+            "prompt_index": 0,
+            "content_filter_results": {
+              "hate": {
+                "filtered": false,
+                "severity": "safe"
+              },
+              "jailbreak": {
+                "filtered": false,
+                "detected": false
+              },
+              "self_harm": {
+                "filtered": false,
+                "severity": "safe"
+              },
+              "sexual": {
+                "filtered": false,
+                "severity": "safe"
+              },
+              "violence": {
+                "filtered": false,
+                "severity": "safe"
+              }
+            }
+          }
+        ],
+        "system_fingerprint": null,
+        "usage": {
+          "completion_tokens": 887,
+          "completion_tokens_details": {
+            "accepted_prediction_tokens": 0,
+            "audio_tokens": 0,
+            "reasoning_tokens": 640,
+            "rejected_prediction_tokens": 0
+          },
+          "prompt_tokens": 258,
+          "prompt_tokens_details": {
+            "audio_tokens": 0,
+            "cached_tokens": 0
+          },
+          "total_tokens": 1145
+        }
+      }
+    }
+  }
+}

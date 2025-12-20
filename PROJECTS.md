@@ -149,7 +149,7 @@ Pollinations.AI is used in various projects, including:
 | [LineSketch AI](https://linesketch-muse.lovable.app/) | LineSketch AI is a minimalist web app that turns ideas into clean... | ArslanDevelop |
 | [Ecoverse AI](https://ecoverse.cc) ([⭐ 0](https://github.com/achyuth0/Ecoverse-doc)) | Ecoverse is an AI-powered waste-recognition platform that helps users instantly... | achyuth0 |
 | 🇧🇷 [Cinepoca](https://cinepoca.com.br) | Cinepoca serves as a fully AI-driven hub for movie enthusiasts. Our project... | victorchiq |
-| 🆕 [Flowgen](https://flowgen.puter.site/) | A high-performance, web-based AI image generation studio built on the Puter.js... | alinaaa20708-ops |
+| [Flowgen](https://flowgen.puter.site/) | A high-performance, web-based AI image generation studio built on the Puter.js... | alinaaa20708-ops |
 | [Flux AI 🇹🇼](https://koy.xx.kg/) ([⭐ 0](https://github.com/kinai9661/Flux-AI-Pro)) | Cloudflare Workers' intelligent adaptive AI image generation platform | kinai9661 |
 | 🆕 🤖 [Robatika — AI Chat Platform](https://app.robatika.com) | Robatika is a rapidly growing AI chat platform that provides users with... | Robatika |
 | 🆕 [🛠️ NextGenTools](https://image-gen-adobe.nextgentools.online/) | AI-powered workflow for stock photography. Generate images, vectorize them, and... | @roni123332 |
@@ -167,6 +167,7 @@ Pollinations.AI is used in various projects, including:
 | 🆕 🇧🇷 [📚 IA-Books: AI Ebook Generator](https://iabooks.com.br) ([⭐ 0](https://github.com/FabioArieiraBaia/IA-Books)) | Professional ebook creation platform with AI. Auto-generates book covers and... | @FabioArieiraBaia |
 | 🆕 [⛽ TuffMeter](https://tuffmeter.netlify.app/) ([⭐ 0](https://github.com/VearyTry)) | Humorous AI tool that analyzes uploaded videos to rate your aura. Based on... | @VearyTry |
 | 🆕 🇧🇷 [🎨 Nosde Space](https://www.nosde.space/) | All-in-one AI platform for creating images, videos, text, and audio. Features... | @unknow_junior |
+| 🆕 [🎨 Imgoo](https://imgoo.netlify.app/) | AI image generator with creative controls including aspect ratio, guidance... | @redythacker-cyber |
 
 ### Games 🎲
 
@@ -343,6 +344,7 @@ Pollinations.AI is used in various projects, including:
 | 🆕 🤖 [Lily – AI Discord Companion](https://discord.com/oauth2/authorize?client_id=1448084290616164513&permissions=8&integration_type=0&scope=bot+applications.commands) | Lily is a next-generation conversational AI bot for Discord designed to feel... | CloudCompile |
 | 🆕 🤖 [🎨 Aqua AI Generator](https://top.gg/bot/1026133323023654932) | Free Discord AI image generator bot supporting up to 8 models, including 4 from... | @shaqkao1206 |
 | 🆕 [🤖 NullVector](https://discord.com/oauth2/authorize?client_id=1450613065069494423&permissions=8&integration_type=0&scope=applications.commands+bot) ([⭐ 0](https://github.com/CloudCompile/nullvector)) | Discord AI assistant with smart model routing. Evaluates each message to select... | @CloudCompile, @f... |
+| 🆕 🤖 [🤖 TeleChars AI](https://telecharsai.byethost14.com) | Plataforma para crear personajes IA personalizados en Telegram. Configura... | @marcosfrgames08 |
 
 ### Learn 📚
 

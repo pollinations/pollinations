@@ -85,7 +85,8 @@ const CacheControlSchema = z
     .object({
         type: z.enum(["ephemeral"]),
     })
-    .optional();
+    .optional()
+    .meta({ $id: "CacheControl" });
 
 const ChatCompletionRequestMessageContentPartTextSchema = z.object({
     type: z.literal("text"),
@@ -115,17 +116,19 @@ const ChatCompletionRequestMessageContentPartFileSchema = z.object({
     cache_control: CacheControlSchema,
 });
 
-const ChatCompletionRequestMessageContentPartSchema = z.union([
-    ChatCompletionRequestMessageContentPartTextSchema,
-    ChatCompletionRequestMessageContentPartImageSchema,
-    ChatCompletionRequestMessageContentPartVideoSchema,
-    ChatCompletionRequestMessageContentPartAudioSchema,
-    ChatCompletionRequestMessageContentPartFileSchema,
-    // Allow any other content types for provider-specific extensions
-    z
-        .object({ type: z.string() })
-        .passthrough(),
-]);
+const ChatCompletionRequestMessageContentPartSchema = z
+    .union([
+        ChatCompletionRequestMessageContentPartTextSchema,
+        ChatCompletionRequestMessageContentPartImageSchema,
+        ChatCompletionRequestMessageContentPartVideoSchema,
+        ChatCompletionRequestMessageContentPartAudioSchema,
+        ChatCompletionRequestMessageContentPartFileSchema,
+        // Allow any other content types for provider-specific extensions
+        z
+            .object({ type: z.string() })
+            .passthrough(),
+    ])
+    .meta({ $id: "MessageContentPart" });
 
 // Thinking (provider-specific; requires strict_openai_compliance=false)
 const ChatCompletionMessageContentPartThinkingSchema = z.object({
@@ -383,42 +386,41 @@ const ChatCompletionChoiceLogprobsSchema = z
     })
     .nullable();
 
-export const CompletionUsageSchema = z.object({
-    completion_tokens: z.number().int().nonnegative(),
-    completion_tokens_details: z
-        .object({
-            accepted_prediction_tokens: z
-                .number()
-                .int()
-                .nonnegative()
-                .optional(),
-            audio_tokens: z.number().int().nonnegative().optional(),
-            reasoning_tokens: z.number().int().nonnegative().optional(),
-            rejected_prediction_tokens: z
-                .number()
-                .int()
-                .nonnegative()
-                .optional(),
-        })
-        .nullish(),
-    prompt_tokens: z.number().int().nonnegative(),
-    prompt_tokens_details: z
-        .object({
-            audio_tokens: z.number().int().nonnegative().optional(),
-            cached_tokens: z.number().int().nonnegative().optional(),
-        })
-        .nullish(),
-    total_tokens: z.number().int().nonnegative(),
-});
+export const CompletionUsageSchema = z
+    .object({
+        completion_tokens: z.number().int().nonnegative(),
+        completion_tokens_details: z
+            .object({
+                accepted_prediction_tokens: z
+                    .number()
+                    .int()
+                    .nonnegative()
+                    .optional(),
+                audio_tokens: z.number().int().nonnegative().optional(),
+                reasoning_tokens: z.number().int().nonnegative().optional(),
+                rejected_prediction_tokens: z
+                    .number()
+                    .int()
+                    .nonnegative()
+                    .optional(),
+            })
+            .nullish(),
+        prompt_tokens: z.number().int().nonnegative(),
+        prompt_tokens_details: z
+            .object({
+                audio_tokens: z.number().int().nonnegative().optional(),
+                cached_tokens: z.number().int().nonnegative().optional(),
+            })
+            .nullish(),
+        total_tokens: z.number().int().nonnegative(),
+    })
+    .meta({ $id: "CompletionUsage" });
 
 export type CompletionUsage = z.infer<typeof CompletionUsageSchema>;
 
-export const ContentFilterSeveritySchema = z.enum([
-    "safe",
-    "low",
-    "medium",
-    "high",
-]);
+export const ContentFilterSeveritySchema = z
+    .enum(["safe", "low", "medium", "high"])
+    .meta({ $id: "ContentFilterSeverity" });
 
 export type ContentFilterSeverity = z.infer<typeof ContentFilterSeveritySchema>;
 
@@ -453,7 +455,8 @@ export const ContentFilterResultSchema = z
             detected: z.boolean(),
         }),
     })
-    .partial();
+    .partial()
+    .meta({ $id: "ContentFilterResult" });
 
 export type ContentFilterResult = z.infer<typeof ContentFilterResultSchema>;
 

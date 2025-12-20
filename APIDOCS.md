@@ -1,4 +1,13 @@
 # Pollinations.AI API Docs 🌸
+
+> **⚠️ Legacy Documentation Notice**
+>
+> This documentation refers to our legacy endpoints (`image.pollinations.ai`, `text.pollinations.ai`). We recommend using our new unified API at **https://gen.pollinations.ai** with the **https://enter.pollinations.ai** service.
+>
+> 📚 **[View Latest API Documentation](https://enter.pollinations.ai/api/docs)**
+>
+> The legacy endpoints will be deprecated in the future.
+
 ## The World's Most Accessible Open GenAI Platform
 
 APIs built by developers, for developers. We build everything in the open. 🚀  

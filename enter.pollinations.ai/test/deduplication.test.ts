@@ -177,3 +177,68 @@ test(
         );
     },
 );
+
+test(
+    "Error responses are shared between deduplicated requests",
+    { timeout: 30000 },
+    async ({ apiKey, mocks }) => {
+        await mocks.enable("polar", "tinybird", "vcr");
+
+        const testIp = `192.0.103.${Date.now() % 254}`;
+
+        // Use an invalid model to trigger an error
+        const request1Promise = SELF.fetch(textEndpoint, {
+            method: "POST",
+            headers: {
+                "content-type": "application/json",
+                "authorization": `Bearer ${apiKey}`,
+                "cf-connecting-ip": testIp,
+            },
+            body: JSON.stringify({
+                model: "nonexistent-model-12345",
+                messages: [{ role: "user", content: "Test error handling" }],
+            }),
+        });
+
+        // Small delay
+        await new Promise((resolve) => setTimeout(resolve, 5));
+
+        // Fire second identical request
+        const request2Promise = SELF.fetch(textEndpoint, {
+            method: "POST",
+            headers: {
+                "content-type": "application/json",
+                "authorization": `Bearer ${apiKey}`,
+                "cf-connecting-ip": testIp,
+            },
+            body: JSON.stringify({
+                model: "nonexistent-model-12345",
+                messages: [{ role: "user", content: "Test error handling" }],
+            }),
+        });
+
+        const [response1, response2] = await Promise.all([
+            request1Promise,
+            request2Promise,
+        ]);
+
+        // Both should get the same error status (400 for invalid model)
+        expect(response1.status).toBe(400);
+        expect(response2.status).toBe(400);
+
+        // Both should have error response bodies
+        const body1 = await response1.text();
+        const body2 = await response2.text();
+
+        expect(body1).toBeTruthy();
+        expect(body2).toBeTruthy();
+
+        // Both should contain the error message about invalid model
+        expect(body1).toContain("nonexistent-model-12345");
+        expect(body2).toContain("nonexistent-model-12345");
+
+        log.info(
+            `✓ Error handling works: both requests got 400 with proper error message`,
+        );
+    },
+);

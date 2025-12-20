@@ -143,8 +143,13 @@ async function createRequestKey(c: {
             if (body) {
                 parts.push(body);
             }
-        } catch {
+        } catch (error) {
             // If body reading fails, just use URL (graceful degradation)
+            // This can happen with malformed requests or stream issues
+            console.debug(
+                "[DEDUP] Failed to read request body for key generation",
+                error,
+            );
         }
     }
 

@@ -12,7 +12,7 @@ const logError = debug("pollinations:veo:error");
 
 // Veo API constants
 const LOCATION = "us-central1"; // Veo is only available in us-central1
-const MODEL_ID = "veo-3.1-fast-generate-preview";
+const DEFAULT_MODEL_ID = "veo-3.1-fast-generate-preview";
 
 /**
  * Result of video generation
@@ -99,43 +99,69 @@ export const callVeoAPI = async (
     // Check for input image (image-to-video)
     const hasImage = safeParams.image && safeParams.image.length > 0;
 
+    // Determine model based on whether we have an image (I2V uses the full model)
+    const modelId = hasImage ? "veo-3.1-generate" : DEFAULT_MODEL_ID;
+
     logOps("Video params:", {
         durationSeconds,
         aspectRatio,
         generateAudio,
         resolution,
         hasImage,
+        modelId,
     });
 
     // Build instance object
     const instance: {
         prompt: string;
         image?: { bytesBase64Encoded: string; mimeType: string };
+        lastImage?: { bytesBase64Encoded: string; mimeType: string };
     } = {
         prompt: prompt,
     };
 
-    // Add image for I2V generation (Veo supports 1 reference image as first frame)
+    // Add images for I2V generation (Veo supports start and end frame images)
     if (hasImage) {
-        const imageUrl = Array.isArray(safeParams.image)
-            ? safeParams.image[0]
-            : safeParams.image;
+        const images = Array.isArray(safeParams.image)
+            ? safeParams.image
+            : [safeParams.image];
 
-        logOps("Adding first frame image for I2V:", imageUrl);
+        // First image is the start frame
+        const startImageUrl = images[0];
+        // Second image (if provided) is the end frame
+        const endImageUrl = images.length > 1 ? images[1] : undefined;
+
+        logOps("Adding start frame image for I2V:", startImageUrl);
+        if (endImageUrl) {
+            logOps("Adding end frame image for I2V:", endImageUrl);
+        }
         progress.updateBar(
             requestId,
             38,
             "Processing",
-            "Processing reference image...",
+            "Processing reference image(s)...",
         );
 
         try {
-            const { base64, mimeType } = await downloadImageAsBase64(imageUrl);
+            // Download start image
+            const { base64: startBase64, mimeType: startMimeType } =
+                await downloadImageAsBase64(startImageUrl);
             instance.image = {
-                bytesBase64Encoded: base64,
-                mimeType: mimeType,
+                bytesBase64Encoded: startBase64,
+                mimeType: startMimeType,
             };
-            logOps("Image processed successfully, mimeType:", mimeType);
+            logOps("Start image processed successfully, mimeType:", startMimeType);
+
+            // Download end image if provided
+            if (endImageUrl) {
+                const { base64: endBase64, mimeType: endMimeType } =
+                    await downloadImageAsBase64(endImageUrl);
+                instance.lastImage = {
+                    bytesBase64Encoded: endBase64,
+                    mimeType: endMimeType,
+                };
+                logOps("End image processed successfully, mimeType:", endMimeType);
+            }
         } catch (error) {
             const errorMessage =
                 error instanceof Error ? error.message : String(error);
@@ -169,6 +195,9 @@ export const callVeoAPI = async (
             image: inst.image
                 ? { ...inst.image, bytesBase64Encoded: "[BASE64]" }
                 : undefined,
+            lastImage: inst.lastImage
+                ? { ...inst.lastImage, bytesBase64Encoded: "[BASE64]" }
+                : undefined,
         })),
     };
     logOps("Veo API request body:", JSON.stringify(logSafeRequest, null, 2));
@@ -181,7 +210,7 @@ export const callVeoAPI = async (
         "Initiating video generation...",
     );
 
-    const generateEndpoint = `https://${LOCATION}-aiplatform.googleapis.com/v1/projects/${PROJECT_ID}/locations/${LOCATION}/publishers/google/models/${MODEL_ID}:predictLongRunning`;
+    const generateEndpoint = `https://${LOCATION}-aiplatform.googleapis.com/v1/projects/${PROJECT_ID}/locations/${LOCATION}/publishers/google/models/${modelId}:predictLongRunning`;
     logOps("Generate endpoint:", generateEndpoint);
 
     const generateResponse = await fetch(generateEndpoint, {
@@ -261,7 +290,7 @@ async function pollVeoOperation(
 
     // Extract model from operation name
     const modelMatch = operationName.match(/models\/([^\/]+)\/operations/);
-    const model = modelMatch ? modelMatch[1] : MODEL_ID;
+    const model = modelMatch ? modelMatch[1] : DEFAULT_MODEL_ID;
 
     const pollUrl = `https://${LOCATION}-aiplatform.googleapis.com/v1/projects/${PROJECT_ID}/locations/${LOCATION}/publishers/google/models/${model}:fetchPredictOperation`;
     logOps("Poll URL:", pollUrl);

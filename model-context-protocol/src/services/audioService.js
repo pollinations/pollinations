@@ -18,7 +18,7 @@ import {
     API_BASE_URL,
 } from "../utils/coreUtils.js";
 import { getAudioVoices } from "../utils/modelCache.js";
-import { getAuthHeaders } from "../utils/authUtils.js";
+import { getAuthHeaders, requireApiKey } from "../utils/authUtils.js";
 import { z } from "zod";
 
 /**
@@ -26,6 +26,8 @@ import { z } from "zod";
  * The AI will respond to the prompt with speech
  */
 async function respondAudio(params) {
+    requireApiKey();
+
     const {
         prompt,
         voice = "alloy",
@@ -83,6 +85,8 @@ async function respondAudio(params) {
  * Direct text-to-speech without AI interpretation
  */
 async function sayText(params) {
+    requireApiKey();
+
     const {
         text,
         voice = "alloy",
@@ -170,6 +174,8 @@ async function listAudioVoices(params) {
  * Supports various audio formats
  */
 async function transcribeAudio(params) {
+    requireApiKey();
+
     const {
         audioUrl,
         prompt = "Transcribe this audio accurately. Include timestamps if there are multiple speakers.",

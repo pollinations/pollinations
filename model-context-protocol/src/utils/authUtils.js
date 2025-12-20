@@ -81,3 +81,16 @@ export function getMaskedKey() {
     if (apiKey.length <= 8) return "***";
     return `${apiKey.substring(0, 3)}...${apiKey.substring(apiKey.length - 6)}`;
 }
+
+/**
+ * Require API key to be set, throw error if not
+ * Call this at the start of any tool that needs authentication
+ */
+export function requireApiKey() {
+    if (!hasApiKey()) {
+        throw new Error(
+            "API key required. Use setApiKey tool first or set POLLINATIONS_API_KEY environment variable. " +
+            "Get your key at https://enter.pollinations.ai"
+        );
+    }
+}

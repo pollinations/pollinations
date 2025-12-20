@@ -17,7 +17,7 @@ import {
     API_BASE_URL,
 } from "../utils/coreUtils.js";
 import { getImageModels, validateImageModel } from "../utils/modelCache.js";
-import { getAuthHeaders } from "../utils/authUtils.js";
+import { getAuthHeaders, requireApiKey } from "../utils/authUtils.js";
 import { z } from "zod";
 
 // ============================================================================
@@ -47,6 +47,8 @@ function buildQueryParams(params) {
  * The image is generated with auth, but the returned URL is clean for sharing
  */
 async function generateImageUrl(params) {
+    requireApiKey();
+
     const {
         prompt,
         // Model selection
@@ -140,6 +142,8 @@ async function generateImageUrl(params) {
  * Full image generation with all parameters
  */
 async function generateImage(params) {
+    requireApiKey();
+
     const {
         prompt,
         // Model selection
@@ -230,6 +234,8 @@ async function generateImage(params) {
  * Best used with sk_ keys (no rate limits). pk_ keys will be rate-limited.
  */
 async function generateImageBatch(params) {
+    requireApiKey();
+
     const {
         prompts,
         // Shared params for all images
@@ -344,6 +350,8 @@ async function generateImageBatch(params) {
  * - private/nofeed/nologo: output options
  */
 async function generateVideo(params) {
+    requireApiKey();
+
     const {
         prompt,
         // Model selection - video models only
@@ -449,6 +457,8 @@ async function generateVideo(params) {
  * Returns a shareable URL without the API key - useful for embedding
  */
 async function generateVideoUrl(params) {
+    requireApiKey();
+
     const {
         prompt,
         model = "veo",
@@ -541,6 +551,8 @@ async function generateVideoUrl(params) {
  * Uses the chat completion endpoint with image input
  */
 async function describeImage(params) {
+    requireApiKey();
+
     const {
         imageUrl,
         prompt = "Describe this image in detail.",
@@ -611,6 +623,8 @@ async function describeImage(params) {
  * Uses gemini-large which has native video understanding
  */
 async function analyzeVideo(params) {
+    requireApiKey();
+
     const {
         videoUrl,
         prompt = "Describe what happens in this video in detail.",

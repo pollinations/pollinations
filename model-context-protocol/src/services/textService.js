@@ -14,7 +14,7 @@ import {
     parseApiError,
 } from "../utils/coreUtils.js";
 import { getTextModels, validateTextModel } from "../utils/modelCache.js";
-import { getAuthHeaders } from "../utils/authUtils.js";
+import { getAuthHeaders, requireApiKey } from "../utils/authUtils.js";
 import { z } from "zod";
 
 // ============================================================================
@@ -26,6 +26,8 @@ import { z } from "zod";
  * Simple wrapper that converts a single prompt into a chat completion call
  */
 async function generateText(params) {
+    requireApiKey();
+
     const {
         prompt,
         model = "openai",
@@ -119,6 +121,8 @@ async function generateText(params) {
  * Full control over the entire API
  */
 async function chatCompletion(params) {
+    requireApiKey();
+
     const {
         // Required
         messages,
@@ -374,6 +378,8 @@ async function listTextModels(params) {
  * Uses perplexity or gemini-search for real-time web results
  */
 async function webSearch(params) {
+    requireApiKey();
+
     const {
         query,
         model = "perplexity-fast",

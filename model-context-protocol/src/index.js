@@ -33,7 +33,7 @@ Set your API key first using the setApiKey tool:
 - **Publishable keys (pk_)**: Client-safe, rate-limited (3 req/burst, 1/15sec refill)
 - **Secret keys (sk_)**: Server-side only, no rate limits, can spend Pollen
 
-Get your API key at: https://pollinations.ai
+Get your API key at: https://enter.pollinations.ai
 
 ## Available Tools
 

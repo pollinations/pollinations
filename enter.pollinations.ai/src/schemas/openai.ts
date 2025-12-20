@@ -116,17 +116,19 @@ const ChatCompletionRequestMessageContentPartFileSchema = z.object({
     cache_control: CacheControlSchema,
 });
 
-const ChatCompletionRequestMessageContentPartSchema = z.union([
-    ChatCompletionRequestMessageContentPartTextSchema,
-    ChatCompletionRequestMessageContentPartImageSchema,
-    ChatCompletionRequestMessageContentPartVideoSchema,
-    ChatCompletionRequestMessageContentPartAudioSchema,
-    ChatCompletionRequestMessageContentPartFileSchema,
-    // Allow any other content types for provider-specific extensions
-    z
-        .object({ type: z.string() })
-        .passthrough(),
-]);
+const ChatCompletionRequestMessageContentPartSchema = z
+    .union([
+        ChatCompletionRequestMessageContentPartTextSchema,
+        ChatCompletionRequestMessageContentPartImageSchema,
+        ChatCompletionRequestMessageContentPartVideoSchema,
+        ChatCompletionRequestMessageContentPartAudioSchema,
+        ChatCompletionRequestMessageContentPartFileSchema,
+        // Allow any other content types for provider-specific extensions
+        z
+            .object({ type: z.string() })
+            .passthrough(),
+    ])
+    .meta({ $id: "MessageContentPart" });
 
 // Thinking (provider-specific; requires strict_openai_compliance=false)
 const ChatCompletionMessageContentPartThinkingSchema = z.object({

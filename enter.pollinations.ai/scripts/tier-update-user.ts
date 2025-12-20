@@ -5,8 +5,8 @@
  * Used by GitHub Actions when app submissions are approved.
  *
  * Usage:
- *   npx tsx scripts/user-update-tier.ts update-tier --github-username "john" --tier flower --env production
- *   npx tsx scripts/user-update-tier.ts check-user --github-username "john" --env production
+ *   npx tsx scripts/tier-update-user.ts update-tier --github-username "john" --tier flower --env production
+ *   npx tsx scripts/tier-update-user.ts check-user --github-username "john" --env production
  *
  * Environment variables:
  *   POLAR_ACCESS_TOKEN - Required for Polar subscription updates

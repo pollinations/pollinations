@@ -49,7 +49,7 @@ jobs:
           
           echo "Checking registration for $GITHUB_USERNAME..."
           
-          if npx tsx scripts/user-update-tier.ts check-user \
+          if npx tsx scripts/tier-update-user.ts check-user \
             --githubUsername "$GITHUB_USERNAME" \
             --env production 2>&1 | grep -q "EXISTS"; then
             echo "registered=true" >> $GITHUB_OUTPUT
@@ -71,7 +71,7 @@ jobs:
           cd enter.pollinations.ai
           
           echo "🌸 Upgrading $GITHUB_USERNAME to flower tier..."
-          if npx tsx scripts/user-update-tier.ts update-tier \
+          if npx tsx scripts/tier-update-user.ts update-tier \
             --githubUsername "$GITHUB_USERNAME" \
             --tier flower \
             --env production 2>&1; then

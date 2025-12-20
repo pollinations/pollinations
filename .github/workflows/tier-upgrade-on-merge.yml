@@ -116,7 +116,7 @@ jobs:
             TYPE=$(echo "$row" | jq -r '.type')
             
             echo "🌸 Upgrading $USERNAME to flower tier..."
-            if npx tsx scripts/user-update-tier.ts update-tier \
+            if npx tsx scripts/tier-update-user.ts update-tier \
               --githubUsername "$USERNAME" \
               --tier flower \
               --env production 2>&1; then

@@ -2,6 +2,19 @@
   <img src="shared/assets/logo-text.svg" alt="pollinations.ai" width="100%"/>
 </div>
 
+## 🚀 New Unified API — Now Live
+
+We've launched **https://gen.pollinations.ai** — a single endpoint for all your AI generation needs. Text, images, audio, video — all in one place.
+
+### What's new
+
+- **Unified endpoint** — no more juggling between image.pollinations.ai and text.pollinations.ai
+- **Pollen credits** — simple pay-as-you-go system ($1 ≈ 1 Pollen)
+- **All models, one place** — Flux, GPT-5, Claude, Gemini, Seedream, and more
+- **API keys** — publishable keys for frontend, secret keys for backend
+
+> Get started at [enter.pollinations.ai](https://enter.pollinations.ai) and check out the [API docs](https://enter.pollinations.ai/api/docs)
+
 ## 🆕 Latest News
 
 -   **2025-12-07** – **🎥 Video Generation** Create videos from text or images using the new `veo` and `seedance` models. [API Docs](https://enter.pollinations.ai/api/docs)

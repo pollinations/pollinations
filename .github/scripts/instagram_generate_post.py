@@ -8,6 +8,7 @@ import os
 import sys
 import json
 import time
+import re
 import random
 import base64
 import requests
@@ -552,13 +553,12 @@ def generate_image(prompt: str, token: str, index: int, reference_url: str = Non
             "key": token
         }
 
-        # Add reference image for I2I (must be URL-encoded, but avoid double-encoding)
+        # Add reference image for I2I (must be fully URL-encoded)
         if reference_url:
-            # Check if already encoded (contains %) to avoid double-encoding
-            if '%' in reference_url:
-                params["image"] = reference_url
-            else:
-                params["image"] = quote(reference_url, safe='')
+            # Strip key= param from reference URL if present (auth goes on outer URL only)
+            clean_ref = re.sub(r'[&?]key=[^&]*', '', reference_url)
+            # Encode the full URL so nested params don't break outer URL parsing
+            params["image"] = quote(clean_ref, safe='')
 
         if attempt == 0:
             print(f"  Using seed: {seed}")
@@ -916,10 +916,11 @@ def main():
         time.sleep(3)  # Rate limiting between images
 
     successful_images = sum(1 for img in images if img is not None)
-    print(f"Generated {successful_images}/{len(strategy.get('images', []))} images")
+    total_images = len(strategy.get('images', []))
+    print(f"Generated {successful_images}/{total_images} images")
 
-    if successful_images == 0:
-        print("No images generated successfully. Exiting.")
+    if successful_images < total_images:
+        print(f"Not all images generated successfully ({successful_images}/{total_images}). Exiting without creating PR.")
         sys.exit(1)
 
     # Step 5: Create PR

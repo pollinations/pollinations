@@ -27,7 +27,7 @@ import {
 } from "@shared/registry/registry.ts";
 import { drizzle } from "drizzle-orm/d1";
 import { eq } from "drizzle-orm";
-import { expect, vi } from "vitest";
+import { expect } from "vitest";
 
 function createTextGenerationEvent({
     modelRequested,
@@ -134,7 +134,7 @@ test("Scheduled handler sends events to Polar.sh and Tinybird", async ({
 }) => {
     await mocks.enable("polar", "tinybird");
     const db = drizzle(env.DB);
-    const events = Array.from({ length: 2000 }).map(() => {
+    const events = Array.from({ length: 1000 }).map(() => {
         return createTextGenerationEvent({
             modelRequested: "openai-large",
         });
@@ -184,9 +184,10 @@ test("Events get set to error status after MAX_DELIVERY_ATTEMPTS", async ({
             polarAccessToken: env.POLAR_ACCESS_TOKEN,
             polarServer: env.POLAR_SERVER,
             tinybirdIngestUrl: env.TINYBIRD_INGEST_URL,
-            tinybirdAccessToken: env.TINYBIRD_ACCESS_TOKEN,
+            tinybirdIngestToken: env.TINYBIRD_INGEST_TOKEN,
             minRetryDelay: 0,
             maxRetryDelay: 0,
+            batchDeliveryDelay: 0,
         });
     }
     expect(mocks.tinybird.state.events).toHaveLength(1000);

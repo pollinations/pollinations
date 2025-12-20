@@ -26,17 +26,21 @@ export class UpstreamError extends HTTPException {
     }
 }
 
-const GenericErrorDetailsSchema = z.object({
-    name: z.string(),
-    stack: z.string().optional(),
-});
+const GenericErrorDetailsSchema = z
+    .object({
+        name: z.string(),
+        stack: z.string().optional(),
+    })
+    .meta({ $id: "ErrorDetails" });
 
-const ValidationErrorDetailsSchema = z.object({
-    name: z.string(),
-    stack: z.string().optional(),
-    formErrors: z.array(z.string()),
-    fieldErrors: z.record(z.string(), z.array(z.string())),
-});
+const ValidationErrorDetailsSchema = z
+    .object({
+        name: z.string(),
+        stack: z.string().optional(),
+        formErrors: z.array(z.string()),
+        fieldErrors: z.record(z.string(), z.array(z.string())),
+    })
+    .meta({ $id: "ValidationErrorDetails" });
 
 export function createErrorResponseSchema(
     status: ContentfulStatusCode,

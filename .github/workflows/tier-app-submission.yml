@@ -13,6 +13,10 @@ on:
         required: true
         type: number
 
+concurrency:
+  group: tier-app-${{ github.event.issue.number || github.event.inputs.issue_number || github.run_id }}
+  cancel-in-progress: false
+
 jobs:
   review-submission:
     # Run on App Submission issues (by tier:review label) OR manual dispatch

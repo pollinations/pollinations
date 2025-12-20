@@ -4,6 +4,10 @@ on:
   pull_request_target:
     types: [opened]
 
+concurrency:
+  group: tier-label-${{ github.event.pull_request.number }}
+  cancel-in-progress: false
+
 jobs:
   label-external:
     runs-on: ubuntu-latest

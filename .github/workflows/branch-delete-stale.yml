@@ -1,10 +1,15 @@
-name: Cleanup Old Branches
+name: Cleanup Branches
 
 on:
   workflow_dispatch:
     inputs:
+      delete_merged:
+        description: 'Delete all branches with merged PRs'
+        required: true
+        type: boolean
+        default: true
       days_old:
-        description: 'Delete branches older than X days (minimum 30)'
+        description: 'Delete stale branches older than X days (minimum 30)'
         required: true
         type: number
         default: 30
@@ -27,30 +32,33 @@ jobs:
           private-key: ${{ secrets.POLLY_BOT_PRIVATE_KEY }}
           owner: pollinations
 
-      - name: Delete old branches
+      - name: Cleanup branches
         uses: actions/github-script@v7
         with:
           github-token: ${{ steps.pollinations-ai.outputs.token }}
           script: |
+            const DELETE_MERGED = ${{ github.event.inputs.delete_merged }};
             const DAYS_INPUT = ${{ github.event.inputs.days_old }};
             const DRY_RUN = ${{ github.event.inputs.dry_run }};
             const MIN_DAYS = 30;
             const DAYS = Math.max(DAYS_INPUT, MIN_DAYS);
             const PROTECTED = ['main', 'master', 'production'];
+            const [owner, repo] = '${{ github.repository }}'.split('/');
+
             const cutoffDate = new Date();
             cutoffDate.setDate(cutoffDate.getDate() - DAYS);
 
+            console.log(DRY_RUN ? '🔍 DRY RUN MODE - No branches will be deleted' : '🗑️ LIVE MODE - Branches will be deleted');
+            console.log(`Delete merged PRs: ${DELETE_MERGED}`);
+            console.log(`Protected branches: ${PROTECTED.join(', ')}`);
             if (DAYS_INPUT < MIN_DAYS) {
               console.log(`Warning: days_old (${DAYS_INPUT}) is below minimum. Using ${MIN_DAYS} days.`);
             }
-
-            console.log(DRY_RUN ? '🔍 DRY RUN MODE - No branches will be deleted' : '🗑️ LIVE MODE - Branches will be deleted');
-            console.log(`Targeting branches older than ${DAYS} days (before ${cutoffDate.toISOString().split('T')[0]})`);
-            console.log(`Protected branches: ${PROTECTED.join(', ')}`);
+            console.log(`Stale cutoff: ${DAYS} days (before ${cutoffDate.toISOString().split('T')[0]})`);
             console.log('----------------------------------------');
 
-            // GraphQL query to get all branches with their last commit date
-            const query = `
+            // Get all branches with commit dates
+            const branchQuery = `
               query($owner: String!, $repo: String!, $cursor: String) {
                 repository(owner: $owner, name: $repo) {
                   refs(refPrefix: "refs/heads/", first: 100, after: $cursor) {
@@ -71,54 +79,119 @@ jobs:
               }
             `;
 
-            const [owner, repo] = '${{ github.repository }}'.split('/');
-            let deleted = 0;
+            let deletedMerged = 0;
+            let deletedStale = 0;
             let skipped = 0;
             let cursor = null;
+            const allBranches = [];
 
-            // Paginate through all branches
+            // Collect all branches
             do {
-              const result = await github.graphql(query, { owner, repo, cursor });
+              const result = await github.graphql(branchQuery, { owner, repo, cursor });
               const refs = result.repository.refs;
+              allBranches.push(...refs.nodes);
+              cursor = refs.pageInfo.hasNextPage ? refs.pageInfo.endCursor : null;
+            } while (cursor);
 
-              for (const branch of refs.nodes) {
-                // Skip protected branches
+            console.log(`Found ${allBranches.length} branches total`);
+            console.log('----------------------------------------');
+
+            // First pass: delete merged PR branches (if enabled)
+            if (DELETE_MERGED) {
+              console.log('MERGED PR BRANCHES:');
+              console.log('----------------------------------------');
+
+              for (const branch of allBranches) {
                 if (PROTECTED.includes(branch.name)) {
-                  console.log(`PROTECTED: ${branch.name}`);
                   continue;
                 }
 
-                const lastCommit = new Date(branch.target.committedDate);
+                // Check if branch has a merged PR
+                const { data: prs } = await github.rest.pulls.list({
+                  owner,
+                  repo,
+                  head: `${owner}:${branch.name}`,
+                  state: 'closed',
+                  per_page: 1
+                });
 
-                if (lastCommit < cutoffDate) {
+                const mergedPR = prs.find(pr => pr.merged_at !== null);
+
+                if (mergedPR) {
                   if (DRY_RUN) {
-                    console.log(`WOULD DELETE: ${branch.name} (last commit: ${lastCommit.toISOString().split('T')[0]})`);
-                    deleted++;
+                    console.log(`WOULD DELETE: ${branch.name} (PR #${mergedPR.number} merged)`);
                   } else {
-                    console.log(`DELETING: ${branch.name} (last commit: ${lastCommit.toISOString().split('T')[0]})`);
+                    console.log(`DELETING: ${branch.name} (PR #${mergedPR.number} merged)`);
                     try {
                       await github.rest.git.deleteRef({
                         owner,
                         repo,
                         ref: `heads/${branch.name}`
                       });
-                      deleted++;
                     } catch (err) {
                       console.log(`  Failed to delete ${branch.name}: ${err.message}`);
                     }
                   }
-                } else {
-                  skipped++;
+                  deletedMerged++;
                 }
               }
-
-              cursor = refs.pageInfo.hasNextPage ? refs.pageInfo.endCursor : null;
-            } while (cursor);
+            } else {
+              console.log('Skipping merged PR branches (disabled)');
+            }
 
             console.log('----------------------------------------');
-            console.log(`Summary: ${DRY_RUN ? 'Would delete' : 'Deleted'} ${deleted} branches, kept ${skipped} branches (+ protected)`);
+            console.log('STALE BRANCHES:');
+            console.log('----------------------------------------');
+
+            // Second pass for stale branches (not already deleted)
+            for (const branch of allBranches) {
+              if (PROTECTED.includes(branch.name)) {
+                continue;
+              }
+
+              // Check if already handled as merged
+              const { data: prs } = await github.rest.pulls.list({
+                owner,
+                repo,
+                head: `${owner}:${branch.name}`,
+                state: 'closed',
+                per_page: 1
+              });
+
+              const mergedPR = prs.find(pr => pr.merged_at !== null);
+              if (mergedPR) {
+                continue; // Already handled above
+              }
+
+              // Check if branch is stale
+              const lastCommit = new Date(branch.target.committedDate);
+              if (lastCommit < cutoffDate) {
+                if (DRY_RUN) {
+                  console.log(`WOULD DELETE: ${branch.name} (last commit: ${lastCommit.toISOString().split('T')[0]})`);
+                } else {
+                  console.log(`DELETING: ${branch.name} (last commit: ${lastCommit.toISOString().split('T')[0]})`);
+                  try {
+                    await github.rest.git.deleteRef({
+                      owner,
+                      repo,
+                      ref: `heads/${branch.name}`
+                    });
+                  } catch (err) {
+                    console.log(`  Failed to delete ${branch.name}: ${err.message}`);
+                  }
+                }
+                deletedStale++;
+              } else {
+                skipped++;
+              }
+            }
+
+            console.log('----------------------------------------');
+            console.log(`Protected: ${PROTECTED.join(', ')}`);
+            console.log(`Summary: ${DRY_RUN ? 'Would delete' : 'Deleted'} ${deletedMerged} merged + ${deletedStale} stale = ${deletedMerged + deletedStale} total`);
+            console.log(`Kept: ${skipped} branches`);
             if (DRY_RUN) {
               console.log('To actually delete, run again with dry_run = false');
             }
 
-            return { deleted, skipped, dryRun: DRY_RUN };
+            return { deletedMerged, deletedStale, skipped, dryRun: DRY_RUN };

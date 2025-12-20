@@ -53,6 +53,14 @@ We opened 67 issues and closed 38, created 25 PRs with 22 merged (30 total contr
  </picture>
 </a>
 
+> **⚠️ Legacy Documentation Notice**
+>
+> This documentation refers to our legacy endpoints (`image.pollinations.ai`, `text.pollinations.ai`). We recommend using our new unified API at **https://gen.pollinations.ai** with the **https://enter.pollinations.ai** service.
+>
+> 📚 **[View Latest API Documentation](https://enter.pollinations.ai/api/docs)**
+>
+> The legacy endpoints will be deprecated in the future.
+
 ## 🚀 Getting Started
 
 [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/pollinations/pollinations)

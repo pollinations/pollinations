@@ -79,11 +79,13 @@ export const requestDeduplication = createMiddleware<Env>(async (c, next) => {
     if (existingPromise) {
         log.debug("[DEDUP] Waiting for inflight request");
         const data = await existingPromise;
-        // Create new Response from serialized data
+        // Create new Response from serialized data with dedup header
+        const headers = new Headers(data.headers);
+        headers.set("X-Dedup", "HIT");
         return new Response(data.body, {
             status: data.status,
             statusText: data.statusText,
-            headers: data.headers,
+            headers,
         });
     }
 

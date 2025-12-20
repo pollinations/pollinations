@@ -34,7 +34,7 @@ async function sendTestOpenAIRequest({
 }
 
 test(
-    "Concurrent identical requests are deduplicated",
+    "Concurrent identical requests are deduplicated with X-Dedup header",
     { timeout: 30000 },
     async ({ apiKey, mocks }) => {
         await mocks.enable("polar", "tinybird", "vcr");
@@ -42,20 +42,28 @@ test(
         const testIp = `192.0.100.${Date.now() % 254}`;
         const testMessage = `Dedup test ${Date.now()}`;
 
-        // Fire 2 identical requests concurrently
+        // Fire first request
+        const request1Promise = sendTestOpenAIRequest({
+            apiKey,
+            clientIp: testIp,
+            model: "openai",
+            message: testMessage,
+        });
+
+        // Small delay to simulate realistic conditions (5ms)
+        await new Promise((resolve) => setTimeout(resolve, 5));
+
+        // Fire second identical request while first is still in flight
+        const request2Promise = sendTestOpenAIRequest({
+            apiKey,
+            clientIp: testIp,
+            model: "openai",
+            message: testMessage,
+        });
+
         const [response1, response2] = await Promise.all([
-            sendTestOpenAIRequest({
-                apiKey,
-                clientIp: testIp,
-                model: "openai",
-                message: testMessage,
-            }),
-            sendTestOpenAIRequest({
-                apiKey,
-                clientIp: testIp,
-                model: "openai",
-                message: testMessage,
-            }),
+            request1Promise,
+            request2Promise,
         ]);
 
         // Both should succeed
@@ -72,7 +80,18 @@ test(
         // Bodies should be identical (same response shared)
         expect(body1).toBe(body2);
 
-        log.info("✓ Concurrent identical requests deduplicated successfully");
+        // Verify deduplication via X-Dedup header
+        // One should be HIT (deduplicated), one should be null/MISS (original)
+        const dedup1 = response1.headers.get("X-Dedup");
+        const dedup2 = response2.headers.get("X-Dedup");
+
+        // At least one should have X-Dedup: HIT
+        const hasDedup = dedup1 === "HIT" || dedup2 === "HIT";
+        expect(hasDedup).toBe(true);
+
+        log.info(
+            `✓ Deduplication verified: X-Dedup headers = [${dedup1}, ${dedup2}]`,
+        );
     },
 );
 

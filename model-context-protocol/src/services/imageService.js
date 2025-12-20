@@ -107,10 +107,17 @@ async function generateImageUrl(params) {
     const authUrl = buildUrl(`/image/${encodedPrompt}`, queryParams, true);
 
     // Make a HEAD request to trigger generation without downloading
-    await fetch(authUrl, {
-        method: "HEAD",
-        headers: getAuthHeaders(),
-    });
+    try {
+        const headResponse = await fetch(authUrl, {
+            method: "HEAD",
+            headers: getAuthHeaders(),
+        });
+        if (!headResponse.ok) {
+            console.warn(`Image generation may have failed (${headResponse.status}), but URL will still be returned`);
+        }
+    } catch (err) {
+        console.warn("HEAD request failed, image may not be pre-generated:", err.message);
+    }
 
     // Return shareable URL without the key
     const shareableUrl = buildShareableUrl(`/image/${encodedPrompt}`, queryParams);
@@ -416,15 +423,19 @@ async function generateVideo(params) {
             seed,
         };
 
-        // Return video as base64 with metadata
+        // Return video data as resource (MCP doesn't have native video type)
+        // The base64 data can be decoded and saved as mp4
         return createMCPResponse([
             {
-                type: "video",
-                data: base64Data,
-                mimeType: contentType || "video/mp4",
+                type: "resource",
+                resource: {
+                    uri: `pollinations://video/${Date.now()}`,
+                    mimeType: contentType || "video/mp4",
+                    blob: base64Data,
+                },
             },
             createTextContent(
-                `Generated video from prompt: "${prompt}"\n\nMetadata: ${JSON.stringify(metadata, null, 2)}`
+                `Generated video from prompt: "${prompt}"\n\nMetadata: ${JSON.stringify(metadata, null, 2)}\n\nVideo returned as base64-encoded resource (decode and save as .mp4)`
             ),
         ]);
     } catch (error) {
@@ -492,10 +503,17 @@ async function generateVideoUrl(params) {
     const authUrl = buildUrl(`/image/${encodedPrompt}`, queryParams, true);
 
     // Make a HEAD request to trigger generation without downloading
-    await fetch(authUrl, {
-        method: "HEAD",
-        headers: getAuthHeaders(),
-    });
+    try {
+        const headResponse = await fetch(authUrl, {
+            method: "HEAD",
+            headers: getAuthHeaders(),
+        });
+        if (!headResponse.ok) {
+            console.warn(`Video generation may have failed (${headResponse.status}), but URL will still be returned`);
+        }
+    } catch (err) {
+        console.warn("HEAD request failed, video may not be pre-generated:", err.message);
+    }
 
     // Return shareable URL without the key
     const shareableUrl = buildShareableUrl(`/image/${encodedPrompt}`, queryParams);

@@ -369,6 +369,116 @@ async function listTextModels(params) {
     }
 }
 
+/**
+ * Search the web using search-enabled models
+ * Uses perplexity or gemini-search for real-time web results
+ */
+async function webSearch(params) {
+    const {
+        query,
+        model = "perplexity-fast",
+        detailed = false,
+    } = params;
+
+    if (!query || typeof query !== "string") {
+        throw new Error("Query is required and must be a string");
+    }
+
+    // Validate model is search-capable
+    const searchModels = ["perplexity-fast", "perplexity-reasoning", "gemini-search"];
+    if (!searchModels.includes(model)) {
+        throw new Error(
+            `Model "${model}" doesn't support web search. Use: ${searchModels.join(", ")}`
+        );
+    }
+
+    const systemPrompt = detailed
+        ? "Search the web and provide a comprehensive answer with sources. Include relevant details and cite your sources."
+        : "Search the web and provide a concise, accurate answer. Include source URLs.";
+
+    const requestBody = {
+        model,
+        messages: [
+            { role: "system", content: systemPrompt },
+            { role: "user", content: query },
+        ],
+    };
+
+    try {
+        const response = await fetch(`${API_BASE_URL}/v1/chat/completions`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                ...getAuthHeaders(),
+            },
+            body: JSON.stringify(requestBody),
+        });
+
+        if (!response.ok) {
+            const errorText = await response.text().catch(() => "Unknown error");
+            throw new Error(parseApiError(response.status, errorText));
+        }
+
+        const result = await response.json();
+        const answer = result.choices?.[0]?.message?.content || "";
+
+        const responseData = {
+            answer,
+            query,
+            model: result.model || model,
+        };
+
+        // Include citations if available (perplexity returns these)
+        if (result.citations?.length > 0) {
+            responseData.sources = result.citations;
+        }
+
+        return createMCPResponse([createTextContent(responseData, true)]);
+    } catch (error) {
+        console.error("Error in web search:", error);
+        throw error;
+    }
+}
+
+/**
+ * Get pricing information for models
+ * Returns cost per token/image for planning usage
+ */
+async function getPricing(params) {
+    const { type = "all" } = params;
+
+    try {
+        const results = {};
+
+        if (type === "all" || type === "text") {
+            const textModels = await getTextModels();
+            results.textModels = textModels.map(m => ({
+                name: m.name,
+                description: m.description,
+                pricing: m.pricing,
+            })).filter(m => m.pricing);
+        }
+
+        if (type === "all" || type === "image") {
+            const { getImageModels } = await import("../utils/modelCache.js");
+            const imageModels = await getImageModels();
+            results.imageModels = imageModels.map(m => ({
+                name: m.name,
+                description: m.description,
+                pricing: m.pricing,
+            })).filter(m => m.pricing);
+        }
+
+        results.currency = "pollen";
+        results.note = "Prices are in pollen. 1 pollen = $0.001 USD";
+
+        return createMCPResponse([createTextContent(results, true)]);
+    } catch (error) {
+        console.error("Error getting pricing:", error);
+        throw error;
+    }
+}
+
 // ============================================================================
 // ZOD SCHEMAS - COMPLETE PARAMETER DEFINITIONS
 // ============================================================================
@@ -626,5 +736,35 @@ export const textTools = [
             refresh: z.boolean().optional().describe("Force refresh the model cache (default: false)"),
         },
         listTextModels,
+    ],
+
+    [
+        "webSearch",
+        "Search the web for real-time information using search-enabled models. " +
+        "Returns answers with source citations. Great for current events, facts, research.",
+        {
+            query: z.string().describe("The search query or question"),
+            model: z.enum(["perplexity-fast", "perplexity-reasoning", "gemini-search"]).optional().describe(
+                "Search model (default: 'perplexity-fast'):\n" +
+                "- perplexity-fast: Quick answers with web search\n" +
+                "- perplexity-reasoning: Deeper analysis with web search\n" +
+                "- gemini-search: Google's Gemini with Google Search"
+            ),
+            detailed: z.boolean().optional().describe(
+                "Get comprehensive answer with more details (default: false)"
+            ),
+        },
+        webSearch,
+    ],
+
+    [
+        "getPricing",
+        "Get pricing information for all models. Shows cost per token/image in pollen.",
+        {
+            type: z.enum(["all", "text", "image"]).optional().describe(
+                "Which models to get pricing for (default: 'all')"
+            ),
+        },
+        getPricing,
     ],
 ];

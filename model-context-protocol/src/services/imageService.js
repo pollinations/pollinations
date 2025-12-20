@@ -587,6 +587,76 @@ async function describeImage(params) {
     }
 }
 
+/**
+ * Analyze a video using vision-capable text models
+ * Supports YouTube URLs, direct video URLs, and more
+ * Uses gemini-large which has native video understanding
+ */
+async function analyzeVideo(params) {
+    const {
+        videoUrl,
+        prompt = "Describe what happens in this video in detail.",
+        model = "gemini-large",
+    } = params;
+
+    if (!videoUrl || typeof videoUrl !== "string") {
+        throw new Error("videoUrl is required and must be a string");
+    }
+
+    // Build the chat completion request with video
+    const requestBody = {
+        model,
+        messages: [
+            {
+                role: "user",
+                content: [
+                    {
+                        type: "text",
+                        text: prompt,
+                    },
+                    {
+                        type: "video_url",
+                        video_url: {
+                            url: videoUrl,
+                        },
+                    },
+                ],
+            },
+        ],
+    };
+
+    try {
+        const response = await fetch(`${API_BASE_URL}/v1/chat/completions`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                ...getAuthHeaders(),
+            },
+            body: JSON.stringify(requestBody),
+        });
+
+        if (!response.ok) {
+            const errorText = await response.text().catch(() => "Unknown error");
+            throw new Error(`Failed to analyze video (${response.status}): ${errorText}`);
+        }
+
+        const result = await response.json();
+        const analysis = result.choices?.[0]?.message?.content || "";
+
+        return createMCPResponse([
+            createTextContent({
+                analysis,
+                videoUrl,
+                model: result.model || model,
+                prompt,
+            }, true),
+        ]);
+    } catch (error) {
+        console.error("Error analyzing video:", error);
+        throw error;
+    }
+}
+
 // ============================================================================
 // MODEL LISTING
 // ============================================================================
@@ -849,6 +919,28 @@ export const imageTools = [
             ),
         },
         describeImage,
+    ],
+
+    [
+        "analyzeVideo",
+        "Analyze a video using AI. Supports YouTube URLs and direct video links. " +
+        "Uses gemini-large for native video understanding (frames + audio). " +
+        "Great for video summarization, content analysis, and Q&A about videos.",
+        {
+            videoUrl: z.string().describe(
+                "URL of the video to analyze. Supports YouTube URLs (youtube.com, youtu.be), " +
+                "direct video URLs (https://...), and Google Cloud Storage (gs://...)"
+            ),
+            prompt: z.string().optional().describe(
+                "What to analyze about the video (default: 'Describe what happens in this video'). " +
+                "Examples: 'Summarize the key points', 'What is being discussed?', 'List all people shown'"
+            ),
+            model: z.string().optional().describe(
+                "Model to use (default: 'gemini-large'). " +
+                "gemini-large and gemini support native video input"
+            ),
+        },
+        analyzeVideo,
     ],
 
     [

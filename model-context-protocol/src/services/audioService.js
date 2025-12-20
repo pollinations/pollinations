@@ -15,8 +15,10 @@ import {
     buildUrl,
     fetchBinaryWithAuth,
     arrayBufferToBase64,
+    API_BASE_URL,
 } from "../utils/coreUtils.js";
 import { getAudioVoices } from "../utils/modelCache.js";
+import { getAuthHeaders } from "../utils/authUtils.js";
 import { z } from "zod";
 
 /**
@@ -164,6 +166,75 @@ async function listAudioVoices(params) {
 }
 
 /**
+ * Transcribe audio from a URL using gemini-large
+ * Supports various audio formats
+ */
+async function transcribeAudio(params) {
+    const {
+        audioUrl,
+        prompt = "Transcribe this audio accurately. Include timestamps if there are multiple speakers.",
+        model = "gemini-large",
+    } = params;
+
+    if (!audioUrl || typeof audioUrl !== "string") {
+        throw new Error("audioUrl is required and must be a string");
+    }
+
+    // Build chat completion request with audio input
+    const requestBody = {
+        model,
+        messages: [
+            {
+                role: "user",
+                content: [
+                    {
+                        type: "text",
+                        text: prompt,
+                    },
+                    {
+                        type: "input_audio",
+                        input_audio: {
+                            url: audioUrl,
+                        },
+                    },
+                ],
+            },
+        ],
+    };
+
+    try {
+        const response = await fetch(`${API_BASE_URL}/v1/chat/completions`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                ...getAuthHeaders(),
+            },
+            body: JSON.stringify(requestBody),
+        });
+
+        if (!response.ok) {
+            const errorText = await response.text().catch(() => "Unknown error");
+            throw new Error(`Failed to transcribe audio (${response.status}): ${errorText}`);
+        }
+
+        const result = await response.json();
+        const transcription = result.choices?.[0]?.message?.content || "";
+
+        return createMCPResponse([
+            createTextContent({
+                transcription,
+                audioUrl,
+                model: result.model || model,
+                prompt,
+            }, true),
+        ]);
+    } catch (error) {
+        console.error("Error transcribing audio:", error);
+        throw error;
+    }
+}
+
+/**
  * Play audio using system audio player
  * @private
  */
@@ -258,5 +329,20 @@ export const audioTools = [
         "List all available audio voices and supported formats. Voices are fetched dynamically from the API.",
         {},
         listAudioVoices,
+    ],
+
+    [
+        "transcribeAudio",
+        "Transcribe audio from a URL. Uses gemini-large for accurate speech-to-text transcription.",
+        {
+            audioUrl: z.string().describe("URL of the audio file to transcribe"),
+            prompt: z.string().optional().describe(
+                "Custom transcription instructions (default: 'Transcribe this audio accurately')"
+            ),
+            model: z.string().optional().describe(
+                "Model to use (default: 'gemini-large'). Also supports: gemini, openai-audio"
+            ),
+        },
+        transcribeAudio,
     ],
 ];

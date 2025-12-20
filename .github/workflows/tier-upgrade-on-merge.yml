@@ -5,6 +5,10 @@ on:
     types: [closed]
     branches: [main]
 
+concurrency:
+  group: tier-upgrade-${{ github.event.pull_request.number }}
+  cancel-in-progress: false
+
 jobs:
   upgrade-tier:
     # Only run when PR is merged AND has tier:flower label
@@ -48,6 +52,7 @@ jobs:
             const issueMatches = [...prBody.matchAll(closePattern)];
             
             const targets = [];
+            const seenUsers = new Set(); // Deduplicate by username
             
             if (issueMatches.length > 0) {
               // App submission: upgrade the issue author, celebrate on issue
@@ -59,12 +64,18 @@ jobs:
                     repo: context.repo.repo,
                     issue_number: issueNumber
                   });
-                  targets.push({
-                    username: issue.user.login,
-                    celebrateOn: 'issue',
-                    targetNumber: issueNumber,
-                    type: 'app'
-                  });
+                  const username = issue.user.login;
+                  if (!seenUsers.has(username)) {
+                    seenUsers.add(username);
+                    targets.push({
+                      username: username,
+                      celebrateOn: 'issue',
+                      targetNumber: issueNumber,
+                      type: 'app'
+                    });
+                  } else {
+                    console.log(`Skipping duplicate user: ${username}`);
+                  }
                 } catch (e) {
                   console.log(`Could not fetch issue #${issueNumber}: ${e.message}`);
                 }
@@ -124,11 +135,14 @@ jobs:
       - name: Post celebration and update labels
         if: steps.upgrade.outputs.results != '[]' && steps.upgrade.outputs.results != ''
         uses: actions/github-script@v7
+        env:
+          RESULTS_JSON: ${{ steps.upgrade.outputs.results }}
+          PR_NUMBER: ${{ steps.targets.outputs.pr_number }}
         with:
           github-token: ${{ steps.pollinations-ai.outputs.token }}
           script: |
-            const results = JSON.parse(`${{ steps.upgrade.outputs.results }}`);
-            const prNumber = ${{ steps.targets.outputs.pr_number }};
+            const results = JSON.parse(process.env.RESULTS_JSON);
+            const prNumber = parseInt(process.env.PR_NUMBER);
             
             for (const result of results) {
               const targetNumber = parseInt(result.targetNumber);

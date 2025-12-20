@@ -4,10 +4,16 @@ on:
   issue_comment:
     types: [created]
 
+concurrency:
+  group: tier-recheck-${{ github.event.issue.number }}
+  cancel-in-progress: false
+
 jobs:
   recheck-registration:
-    # Only run on issues/PRs with tier:info-needed label
-    if: contains(github.event.issue.labels.*.name, 'tier:info-needed')
+    # Only run on issues/PRs with tier:info-needed label AND comment is from issue author
+    if: |
+      contains(github.event.issue.labels.*.name, 'tier:info-needed') &&
+      github.event.comment.user.login == github.event.issue.user.login
     runs-on: ubuntu-latest
     permissions:
       contents: read

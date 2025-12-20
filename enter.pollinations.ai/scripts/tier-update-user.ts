@@ -142,8 +142,9 @@ function updatePolarSubscription(
             stdio: ["pipe", "inherit", "inherit"], // Show output
         });
         return true;
-    } catch {
+    } catch (error) {
         // manage-polar.ts exits with 1 if no subscription found - that's expected for new users
+        console.error(`Polar update failed: ${error instanceof Error ? error.message : String(error)}`);
         return false;
     }
 }

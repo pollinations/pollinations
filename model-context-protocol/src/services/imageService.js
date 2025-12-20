@@ -11,10 +11,13 @@ import {
     createTextContent,
     createImageContent,
     buildUrl,
+    buildShareableUrl,
     fetchBinaryWithAuth,
     arrayBufferToBase64,
+    API_BASE_URL,
 } from "../utils/coreUtils.js";
-import { getImageModels } from "../utils/modelCache.js";
+import { getImageModels, validateImageModel } from "../utils/modelCache.js";
+import { getAuthHeaders } from "../utils/authUtils.js";
 import { z } from "zod";
 
 // ============================================================================
@@ -40,7 +43,8 @@ function buildQueryParams(params) {
 
 /**
  * Generate image URL from a text prompt
- * Returns the URL without fetching the actual image - useful for embedding
+ * Returns a shareable URL without the API key - useful for embedding
+ * The image is generated with auth, but the returned URL is clean for sharing
  */
 async function generateImageUrl(params) {
     const {
@@ -70,6 +74,17 @@ async function generateImageUrl(params) {
         throw new Error("Prompt is required and must be a string");
     }
 
+    // Validate model if specified
+    if (model) {
+        const validation = await validateImageModel(model);
+        if (!validation.valid) {
+            throw new Error(
+                `${validation.error} Did you mean: ${validation.suggestions.join(", ")}? ` +
+                `Use listImageModels to see all ${validation.availableCount} available models.`
+            );
+        }
+    }
+
     const encodedPrompt = encodeURIComponent(prompt);
     const queryParams = buildQueryParams({
         model,
@@ -88,12 +103,21 @@ async function generateImageUrl(params) {
         private: isPrivate,
     });
 
-    // Build URL with auth in query params (for shareable URLs)
-    const url = buildUrl(`/image/${encodedPrompt}`, queryParams, true);
+    // First, trigger generation with auth (so the image gets created)
+    const authUrl = buildUrl(`/image/${encodedPrompt}`, queryParams, true);
+
+    // Make a HEAD request to trigger generation without downloading
+    await fetch(authUrl, {
+        method: "HEAD",
+        headers: getAuthHeaders(),
+    });
+
+    // Return shareable URL without the key
+    const shareableUrl = buildShareableUrl(`/image/${encodedPrompt}`, queryParams);
 
     return createMCPResponse([
         createTextContent({
-            imageUrl: url,
+            imageUrl: shareableUrl,
             prompt,
             model: model || "flux",
             width: width || 1024,
@@ -134,6 +158,17 @@ async function generateImage(params) {
 
     if (!prompt || typeof prompt !== "string") {
         throw new Error("Prompt is required and must be a string");
+    }
+
+    // Validate model if specified
+    if (model) {
+        const validation = await validateImageModel(model);
+        if (!validation.valid) {
+            throw new Error(
+                `${validation.error} Did you mean: ${validation.suggestions.join(", ")}? ` +
+                `Use listImageModels to see all ${validation.availableCount} available models.`
+            );
+        }
     }
 
     const encodedPrompt = encodeURIComponent(prompt);
@@ -398,6 +433,160 @@ async function generateVideo(params) {
     }
 }
 
+/**
+ * Generate video URL from a text prompt
+ * Returns a shareable URL without the API key - useful for embedding
+ */
+async function generateVideoUrl(params) {
+    const {
+        prompt,
+        model = "veo",
+        duration,
+        aspectRatio,
+        audio,
+        image,
+        seed,
+        nologo,
+        nofeed,
+        safe,
+        private: isPrivate,
+    } = params;
+
+    if (!prompt || typeof prompt !== "string") {
+        throw new Error("Prompt is required and must be a string");
+    }
+
+    // Validate model is a video model
+    const videoModels = ["veo", "seedance", "seedance-pro"];
+    if (!videoModels.includes(model)) {
+        throw new Error(
+            `Invalid video model "${model}". Available video models: ${videoModels.join(", ")}`
+        );
+    }
+
+    // Validate duration based on model
+    if (duration !== undefined) {
+        if (model === "veo" && ![4, 6, 8].includes(duration)) {
+            throw new Error("veo model only supports duration of 4, 6, or 8 seconds");
+        }
+        if ((model === "seedance" || model === "seedance-pro") && (duration < 2 || duration > 10)) {
+            throw new Error("seedance models support duration between 2-10 seconds");
+        }
+    }
+
+    const encodedPrompt = encodeURIComponent(prompt);
+    const queryParams = buildQueryParams({
+        model,
+        duration,
+        aspectRatio,
+        audio,
+        image,
+        seed,
+        nologo,
+        nofeed,
+        safe,
+        private: isPrivate,
+    });
+
+    // First, trigger generation with auth (so the video gets created)
+    const authUrl = buildUrl(`/image/${encodedPrompt}`, queryParams, true);
+
+    // Make a HEAD request to trigger generation without downloading
+    await fetch(authUrl, {
+        method: "HEAD",
+        headers: getAuthHeaders(),
+    });
+
+    // Return shareable URL without the key
+    const shareableUrl = buildShareableUrl(`/image/${encodedPrompt}`, queryParams);
+
+    return createMCPResponse([
+        createTextContent({
+            videoUrl: shareableUrl,
+            prompt,
+            model,
+            duration,
+            aspectRatio,
+            audio: model === "veo" ? (audio || false) : undefined,
+            hasReferenceImage: !!image,
+            seed,
+        }, true),
+    ]);
+}
+
+// ============================================================================
+// IMAGE ANALYSIS
+// ============================================================================
+
+/**
+ * Analyze/describe an image using vision-capable text models
+ * Uses the chat completion endpoint with image input
+ */
+async function describeImage(params) {
+    const {
+        imageUrl,
+        prompt = "Describe this image in detail.",
+        model = "openai",
+    } = params;
+
+    if (!imageUrl || typeof imageUrl !== "string") {
+        throw new Error("imageUrl is required and must be a string");
+    }
+
+    // Build the chat completion request with image
+    const requestBody = {
+        model,
+        messages: [
+            {
+                role: "user",
+                content: [
+                    {
+                        type: "text",
+                        text: prompt,
+                    },
+                    {
+                        type: "image_url",
+                        image_url: {
+                            url: imageUrl,
+                        },
+                    },
+                ],
+            },
+        ],
+    };
+
+    try {
+        const response = await fetch(`${API_BASE_URL}/v1/chat/completions`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                ...getAuthHeaders(),
+            },
+            body: JSON.stringify(requestBody),
+        });
+
+        if (!response.ok) {
+            const errorText = await response.text().catch(() => "Unknown error");
+            throw new Error(`Failed to analyze image (${response.status}): ${errorText}`);
+        }
+
+        const result = await response.json();
+        const description = result.choices?.[0]?.message?.content || "";
+
+        return createMCPResponse([
+            createTextContent({
+                description,
+                imageUrl,
+                model: result.model || model,
+                prompt,
+            }, true),
+        ]);
+    } catch (error) {
+        console.error("Error analyzing image:", error);
+        throw error;
+    }
+}
+
 // ============================================================================
 // MODEL LISTING
 // ============================================================================
@@ -633,6 +822,33 @@ export const imageTools = [
         "Use 'image' parameter with seedance models for image-to-video generation.",
         videoParamsSchema,
         generateVideo,
+    ],
+
+    [
+        "generateVideoUrl",
+        "Generate a video URL from a text prompt. Returns a shareable/embeddable URL without downloading the video. " +
+        "Models: veo (4-8s, audio), seedance (2-10s), seedance-pro (best quality).",
+        videoParamsSchema,
+        generateVideoUrl,
+    ],
+
+    [
+        "describeImage",
+        "Analyze and describe an image using vision-capable AI models. " +
+        "Pass an image URL and optionally a custom prompt. " +
+        "Great for image captioning, content analysis, OCR, and visual Q&A.",
+        {
+            imageUrl: z.string().describe("URL of the image to analyze (required)"),
+            prompt: z.string().optional().describe(
+                "What to analyze about the image (default: 'Describe this image in detail.'). " +
+                "Examples: 'What text is in this image?', 'What emotions are shown?', 'List all objects'"
+            ),
+            model: z.string().optional().describe(
+                "Vision-capable model to use (default: 'openai'). " +
+                "Options: openai, gemini, claude, grok - all support vision"
+            ),
+        },
+        describeImage,
     ],
 
     [

@@ -97,6 +97,27 @@ export function buildUrl(path, params = {}, includeAuth = false) {
 }
 
 /**
+ * Builds a shareable URL without auth key
+ * The URL will still work if it was generated once with auth
+ *
+ * @param {string} path - URL path (will be appended to API_BASE_URL)
+ * @param {Object} params - Query parameters (auth key will be excluded)
+ * @returns {string} - Complete URL without auth
+ */
+export function buildShareableUrl(path, params = {}) {
+    const url = new URL(path, API_BASE_URL);
+
+    // Add all non-undefined parameters, excluding any auth keys
+    Object.entries(params).forEach(([key, value]) => {
+        if (value !== undefined && value !== null && key !== "key" && key !== "token") {
+            url.searchParams.set(key, String(value));
+        }
+    });
+
+    return url.toString();
+}
+
+/**
  * Fetch wrapper that automatically includes auth headers
  *
  * @param {string} url - URL to fetch
@@ -127,7 +148,7 @@ export async function fetchJsonWithAuth(url, options = {}) {
 
     if (!response.ok) {
         const errorText = await response.text().catch(() => "Unknown error");
-        throw new Error(`Request failed (${response.status}): ${errorText}`);
+        throw new Error(parseApiError(response.status, errorText));
     }
 
     return response.json();
@@ -145,7 +166,7 @@ export async function fetchBinaryWithAuth(url, options = {}) {
 
     if (!response.ok) {
         const errorText = await response.text().catch(() => "Unknown error");
-        throw new Error(`Request failed (${response.status}): ${errorText}`);
+        throw new Error(parseApiError(response.status, errorText));
     }
 
     const buffer = await response.arrayBuffer();
@@ -174,4 +195,61 @@ export function createErrorResponse(error) {
     return createMCPResponse([
         createTextContent(`Error: ${error.message}`),
     ]);
+}
+
+/**
+ * Parse API error response into user-friendly message
+ *
+ * @param {number} status - HTTP status code
+ * @param {string} errorText - Raw error text from response
+ * @returns {string} - User-friendly error message
+ */
+export function parseApiError(status, errorText) {
+    // Try to parse JSON error
+    let parsed = null;
+    try {
+        parsed = JSON.parse(errorText);
+    } catch {
+        // Not JSON, use raw text
+    }
+
+    const errorMessage = parsed?.error?.message || parsed?.message || parsed?.error || errorText;
+
+    // Common error patterns
+    switch (status) {
+        case 400:
+            if (errorMessage.toLowerCase().includes("content moderation") ||
+                errorMessage.toLowerCase().includes("safety") ||
+                errorMessage.toLowerCase().includes("blocked")) {
+                return `Content blocked by safety filters. Try rephrasing your prompt or disable 'safe' mode if appropriate.`;
+            }
+            if (errorMessage.toLowerCase().includes("invalid model")) {
+                return `Invalid model specified. Use listImageModels or listTextModels to see available options.`;
+            }
+            return `Bad request: ${errorMessage}`;
+
+        case 401:
+            return `Authentication failed. Please set a valid API key using setApiKey. Get your key at https://pollinations.ai`;
+
+        case 403:
+            return `Access forbidden. Your API key may not have permission for this operation.`;
+
+        case 404:
+            return `Resource not found. The requested endpoint or model may not exist.`;
+
+        case 429:
+            return `Rate limited. You're making too many requests. ` +
+                `If using pk_ (publishable) key, consider upgrading to sk_ (secret) key for higher limits.`;
+
+        case 500:
+            return `Server error: ${errorMessage}. Please try again later.`;
+
+        case 502:
+        case 503:
+        case 504:
+            return `Service temporarily unavailable. Please try again in a few moments.`;
+
+        default:
+            return `Request failed (${status}): ${errorMessage}`;
+    }
 }

@@ -11,8 +11,9 @@ import {
     createMCPResponse,
     createTextContent,
     API_BASE_URL,
+    parseApiError,
 } from "../utils/coreUtils.js";
-import { getTextModels } from "../utils/modelCache.js";
+import { getTextModels, validateTextModel } from "../utils/modelCache.js";
 import { getAuthHeaders } from "../utils/authUtils.js";
 import { z } from "zod";
 
@@ -43,6 +44,15 @@ async function generateText(params) {
 
     if (!prompt || typeof prompt !== "string") {
         throw new Error("Prompt is required and must be a string");
+    }
+
+    // Validate model if specified
+    const validation = await validateTextModel(model);
+    if (!validation.valid) {
+        throw new Error(
+            `${validation.error} Did you mean: ${validation.suggestions.join(", ")}? ` +
+            `Use listTextModels to see all ${validation.availableCount} available models.`
+        );
     }
 
     // Build messages array from prompt and optional system message
@@ -89,7 +99,7 @@ async function generateText(params) {
 
         if (!response.ok) {
             const errorText = await response.text().catch(() => "Unknown error");
-            throw new Error(`Failed to generate text (${response.status}): ${errorText}`);
+            throw new Error(parseApiError(response.status, errorText));
         }
 
         const result = await response.json();
@@ -154,6 +164,15 @@ async function chatCompletion(params) {
         throw new Error("Messages array is required and must not be empty");
     }
 
+    // Validate model if specified
+    const validation = await validateTextModel(model);
+    if (!validation.valid) {
+        throw new Error(
+            `${validation.error} Did you mean: ${validation.suggestions.join(", ")}? ` +
+            `Use listTextModels to see all ${validation.availableCount} available models.`
+        );
+    }
+
     // Build request body with ALL supported parameters
     const requestBody = {
         messages,
@@ -213,7 +232,7 @@ async function chatCompletion(params) {
 
         if (!response.ok) {
             const errorText = await response.text().catch(() => "Unknown error");
-            throw new Error(`Chat completion failed (${response.status}): ${errorText}`);
+            throw new Error(parseApiError(response.status, errorText));
         }
 
         const result = await response.json();

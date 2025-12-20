@@ -190,3 +190,71 @@ export function getCacheStatus() {
         },
     };
 }
+
+/**
+ * Validate image model and return helpful error if invalid
+ * @param {string} modelName - Model name to validate
+ * @returns {Promise<{valid: boolean, error?: string, suggestions?: string[]}>}
+ */
+export async function validateImageModel(modelName) {
+    if (!modelName) {
+        return { valid: true }; // Default model will be used
+    }
+
+    const models = await getImageModels();
+    const model = models.find(m =>
+        m.name === modelName || m.aliases?.includes(modelName)
+    );
+
+    if (model) {
+        return { valid: true, model };
+    }
+
+    // Find similar models for suggestions
+    const allNames = models.flatMap(m => [m.name, ...(m.aliases || [])]);
+    const suggestions = allNames
+        .filter(name => name.toLowerCase().includes(modelName.toLowerCase()) ||
+                       modelName.toLowerCase().includes(name.toLowerCase()))
+        .slice(0, 3);
+
+    return {
+        valid: false,
+        error: `Unknown image model "${modelName}".`,
+        suggestions: suggestions.length > 0 ? suggestions : allNames.slice(0, 5),
+        availableCount: models.length,
+    };
+}
+
+/**
+ * Validate text model and return helpful error if invalid
+ * @param {string} modelName - Model name to validate
+ * @returns {Promise<{valid: boolean, error?: string, suggestions?: string[]}>}
+ */
+export async function validateTextModel(modelName) {
+    if (!modelName) {
+        return { valid: true }; // Default model will be used
+    }
+
+    const models = await getTextModels();
+    const model = models.find(m =>
+        m.name === modelName || m.aliases?.includes(modelName)
+    );
+
+    if (model) {
+        return { valid: true, model };
+    }
+
+    // Find similar models for suggestions
+    const allNames = models.flatMap(m => [m.name, ...(m.aliases || [])]);
+    const suggestions = allNames
+        .filter(name => name.toLowerCase().includes(modelName.toLowerCase()) ||
+                       modelName.toLowerCase().includes(name.toLowerCase()))
+        .slice(0, 3);
+
+    return {
+        valid: false,
+        error: `Unknown text model "${modelName}".`,
+        suggestions: suggestions.length > 0 ? suggestions : allNames.slice(0, 5),
+        availableCount: models.length,
+    };
+}

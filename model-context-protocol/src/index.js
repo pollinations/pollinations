@@ -38,9 +38,12 @@ Get your API key at: https://pollinations.ai
 ## Available Tools
 
 ### Image & Video Generation
-- **generateImageUrl** - Get a URL for an image from a text prompt
+- **generateImageUrl** - Get a shareable URL for an image (without API key)
 - **generateImage** - Generate an image and get base64 data
+- **generateImageBatch** - Generate multiple images in parallel (best with sk_ keys)
 - **generateVideo** - Generate videos using veo, seedance, or seedance-pro
+- **generateVideoUrl** - Get a shareable URL for a video (without API key)
+- **describeImage** - Analyze/describe an image using vision AI
 - **listImageModels** - List all available image/video models (dynamic)
 
 ### Text Generation
@@ -132,3 +135,6 @@ export async function startMcpServer() {
         process.exit(1);
     }
 }
+
+// Start the server
+startMcpServer();

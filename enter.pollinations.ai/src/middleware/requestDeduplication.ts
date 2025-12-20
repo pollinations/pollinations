@@ -2,23 +2,35 @@ import { createMiddleware } from "hono/factory";
 import type { Env } from "../env.ts";
 
 /**
- * In-memory map of inflight requests
- * Key: URL hash, Value: Promise<Response>
+ * Serialized response data that can be shared across request contexts
+ * Cloudflare Workers cannot share Response objects between requests,
+ * so we store the raw data and create new Response objects for each consumer
  */
-const inflightRequests = new Map<string, Promise<Response>>();
+type SerializedResponse = {
+    body: ArrayBuffer;
+    status: number;
+    statusText: string;
+    headers: [string, string][];
+};
+
+/**
+ * In-memory map of inflight requests
+ * Key: URL hash, Value: Promise<SerializedResponse>
+ */
+const inflightRequests = new Map<string, Promise<SerializedResponse>>();
 
 /**
  * Request deduplication middleware
  *
- * Prevents duplicate concurrent requests by sharing promises.
+ * Prevents duplicate concurrent requests by sharing response data.
  * When multiple identical requests arrive, only the first executes -
- * others wait for and share the same response.
+ * others wait for and share the same response data.
  *
  * How it works:
  * 1. Hash the request (method + URL + body) to create a unique key
  * 2. Check if a request for this key is already inflight
- * 3. If yes: wait for the existing promise
- * 4. If no: execute the request and store the promise
+ * 3. If yes: wait for the existing promise, create new Response from data
+ * 4. If no: execute the request, serialize response, store promise
  * 5. Auto-cleanup when request completes
  *
  * Key design: Uses method + URL + body (no user-specific data)
@@ -26,6 +38,9 @@ const inflightRequests = new Map<string, Promise<Response>>();
  * - POST: method + URL + request body (messages, model, etc.)
  * - Same request = same result for all users (deterministic endpoints)
  * - Maximizes deduplication efficiency
+ *
+ * Note: Stores serialized response data (not Response objects) because
+ * Cloudflare Workers cannot share I/O objects between request contexts.
  */
 export const requestDeduplication = createMiddleware<Env>(async (c, next) => {
     const log = c.get("log");
@@ -63,16 +78,31 @@ export const requestDeduplication = createMiddleware<Env>(async (c, next) => {
     const existingPromise = inflightRequests.get(key);
     if (existingPromise) {
         log.debug("[DEDUP] Waiting for inflight request");
-        return await existingPromise;
+        const data = await existingPromise;
+        // Create new Response from serialized data
+        return new Response(data.body, {
+            status: data.status,
+            statusText: data.statusText,
+            headers: data.headers,
+        });
     }
 
     // Start new request
     log.debug("[DEDUP] Starting new request");
 
     // Create and store promise BEFORE executing
-    const promise = (async () => {
+    // Serialize response data so it can be shared across request contexts
+    const promise = (async (): Promise<SerializedResponse> => {
         await next();
-        return c.res;
+        // Serialize the response for storage
+        const response = c.res;
+        const body = await response.clone().arrayBuffer();
+        return {
+            body,
+            status: response.status,
+            statusText: response.statusText,
+            headers: [...response.headers.entries()],
+        };
     })();
 
     inflightRequests.set(key, promise);
@@ -83,7 +113,9 @@ export const requestDeduplication = createMiddleware<Env>(async (c, next) => {
         log.debug("[DEDUP] Cleaned up request");
     });
 
-    return await promise;
+    // Wait for serialization to complete, then return original response
+    await promise;
+    return c.res;
 });
 
 /**

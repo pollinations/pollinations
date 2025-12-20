@@ -57,13 +57,7 @@ Secrets required: `POLLY_BOT_APP_ID`, `POLLY_BOT_PRIVATE_KEY`
 | `pr:external`      | PR from external contributor | `tier-label-external-pr.yml` |
 | `pr:review-needed` | Needs maintainer review      | Manual                       |
 | `pr:merge-ready`   | Approved, ready to merge     | Manual                       |
-
-### PR Labels
-
-| Label         | Purpose                      | Applied by              |
-| ------------- | ---------------------------- | ----------------------- |
-| `pr:external` | PR from external contributor | `pr-label-external.yml` |
-| `pr:news`     | PR related to news/social    | Instagram workflows     |
+| `pr:news`          | PR related to news/social    | Instagram workflows          |
 
 ## Workflows
 

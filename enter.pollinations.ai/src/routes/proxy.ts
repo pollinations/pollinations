@@ -9,7 +9,13 @@ import { resolveModel } from "@/middleware/model.ts";
 import { frontendKeyRateLimit } from "@/middleware/rate-limit-durable.ts";
 import { imageCache } from "@/middleware/image-cache.ts";
 import { edgeRateLimit } from "@/middleware/rate-limit-edge.ts";
-import { describeRoute, resolver } from "hono-openapi";
+import { describeRoute, resolver as baseResolver } from "hono-openapi";
+import type { StandardSchemaV1 } from "hono-openapi";
+
+// Wrapper for resolver that enables schema deduplication via $ref
+// Schemas with .meta({ $id: "Name" }) will be extracted to components/schemas
+const resolver = <T extends StandardSchemaV1>(schema: T) =>
+    baseResolver(schema, { reused: "ref" });
 import { validator } from "@/middleware/validator.ts";
 import {
     CreateChatCompletionResponseSchema,

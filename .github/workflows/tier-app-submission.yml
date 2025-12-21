@@ -4,8 +4,9 @@ on:
   issues:
     types: [opened, edited, reopened]
   pull_request:
-    paths:
-      - '.github/workflows/tier-app-submission.yml'  # Trigger on self to bootstrap
+    types: [closed]
+    branches:
+      - 'auto/app-*'  # Auto-generated app PRs
   workflow_dispatch:
     inputs:
       issue_number:
@@ -101,7 +102,7 @@ jobs:
               messages: [
                 {
                   role: "system",
-                  content: "You parse GitHub issue forms for app submissions. Extract and return ONLY valid JSON with these fields: name (required), url (required), description (required), category (required, one of: chat, creative, games, hackAndBuild, learn, socialBots, vibeCoding), repo (optional, GitHub URL), language (optional, omit if not a valid language code like zh-CN). Do NOT include author field - it will be added separately from GitHub. Only return error if REQUIRED fields are missing. Ignore invalid optional fields."
+                  content: "You parse GitHub issue forms for app submissions. Extract and return ONLY valid JSON with these fields: name (required), url (required, MUST start with http:// or https://), description (required), category (required, one of: chat, creative, games, hackAndBuild, learn, socialBots, vibeCoding), repo (optional, GitHub URL), language (optional, omit if not a valid language code like zh-CN). Do NOT include author field - it will be added separately from GitHub. Return {\"error\": \"reason\"} if url is not a valid HTTP/HTTPS URL or if other REQUIRED fields are missing. Ignore invalid optional fields."
                 },
                 {
                   role: "user",
@@ -349,5 +350,48 @@ jobs:
               owner: context.repo.owner,
               repo: context.repo.repo,
               issue_number: ${{ steps.issue.outputs.number }},
-              body: `🎉 Thanks @${{ steps.issue.outputs.author }}! I've created a PR to add **${{ steps.parse.outputs.name }}** to the **${{ steps.parse.outputs.category }}** category.\n\nA maintainer will review it shortly!`
+              body: `🎉 Thanks @${{ steps.issue.outputs.author }}! I've created a PR to add **${{ steps.parse.outputs.name }}** to the **${{ steps.parse.outputs.category }}** category.\n\nA maintainer will review it shortly. The issue will close automatically when the PR is merged.`
+            });
+
+  # Close linked issue when auto-generated app PR is closed (merged or rejected)
+  close-issue-on-pr-close:
+    if: github.event_name == 'pull_request' && github.event.action == 'closed'
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+    steps:
+      - name: Extract issue number from PR body
+        id: extract
+        run: |
+          # Extract issue number from "Fixes #123" in PR body
+          ISSUE_NUM=$(echo "${{ github.event.pull_request.body }}" | grep -oP 'Fixes #\K\d+' | head -1)
+          echo "issue_number=$ISSUE_NUM" >> $GITHUB_OUTPUT
+          
+      - name: Close linked issue
+        if: steps.extract.outputs.issue_number != ''
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const issueNumber = parseInt('${{ steps.extract.outputs.issue_number }}');
+            const wasMerged = ${{ github.event.pull_request.merged }};
+            
+            // Add appropriate comment
+            const message = wasMerged 
+              ? '✅ PR was merged! App has been added.'
+              : '❌ PR was closed without merging. Closing this issue.';
+            
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: issueNumber,
+              body: message
+            });
+            
+            // Close the issue
+            await github.rest.issues.update({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: issueNumber,
+              state: 'closed',
+              state_reason: wasMerged ? 'completed' : 'not_planned'
             });

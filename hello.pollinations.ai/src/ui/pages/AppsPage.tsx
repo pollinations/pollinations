@@ -21,6 +21,7 @@ import { socialBotsProjects } from "../../../../pollinations.ai/src/config/proje
 import { vibeCodingProjects } from "../../../../pollinations.ai/src/config/projects/vibeCoding.js";
 import { GithubIcon } from "../assets/SocialIcons";
 import { useTheme } from "../contexts/ThemeContext";
+import { LINKS } from "../../theme/copy/socialLinks";
 
 // Combine all projects with category tags
 const allProjects = [
@@ -191,7 +192,7 @@ export default function AppsPage() {
                     </div>
                     <Button
                         as="a"
-                        href="https://github.com/pollinations/pollinations/issues/new?template=app-submission.yml"
+                        href={LINKS.githubSubmitApp}
                         target="_blank"
                         rel="noopener noreferrer"
                         variant="primary"

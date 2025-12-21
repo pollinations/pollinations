@@ -721,5 +721,15 @@ export const chatProjects = [
     "category": "chat",
     "submissionDate": "2025-12-21",
     "order": 5
+  },
+  {
+    "name": "💬 AI Chat Studio",
+    "url": "https://github.com/Universe-shifting/AI-Chat-Studio",
+    "description": "Local desktop AI chat app built with PyQt6. Supports multimodal conversations with images, PDFs, DOCX, PPTX files, plus image generation. Features local workspace management where AI can create and modify files, multiple saved chats, custom system prompts, and streaming responses.",
+    "author": "@vsenikizanat81486",
+    "repo": "https://github.com/Universe-shifting/AI-Chat-Studio",
+    "category": "chat",
+    "submissionDate": "2025-12-21",
+    "order": 5
   }
 ];

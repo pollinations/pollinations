@@ -101,7 +101,7 @@ jobs:
               messages: [
                 {
                   role: "system",
-                  content: "You parse GitHub issue forms for app submissions. Extract and return ONLY valid JSON with these fields: name, url, description, author, repo (optional), category (one of: chat, creative, games, hackAndBuild, learn, socialBots, vibeCoding), language (optional, e.g. zh-CN for non-English). If info is missing or invalid, return {\"error\": \"reason\"}."
+                  content: "You parse GitHub issue forms for app submissions. Extract and return ONLY valid JSON with these fields: name (required), url (required), description (required), category (required, one of: chat, creative, games, hackAndBuild, learn, socialBots, vibeCoding), repo (optional, GitHub URL), language (optional, omit if not a valid language code like zh-CN). Do NOT include author field - it will be added separately from GitHub. Only return error if REQUIRED fields are missing. Ignore invalid optional fields."
                 },
                 {
                   role: "user",
@@ -296,9 +296,9 @@ jobs:
           BRANCH="auto/app-${ISSUE_NUMBER}-${SLUG}"
           git checkout -b "$BRANCH"
           
-          # Format project entry
+          # Format project entry - add author from GitHub username
           TODAY=$(date +%Y-%m-%d)
-          ENTRY=$(echo "$PROJECT_JSON" | jq --arg date "$TODAY" '. + {submissionDate: $date, order: 5}')
+          ENTRY=$(echo "$PROJECT_JSON" | jq --arg date "$TODAY" --arg author "@$ISSUE_AUTHOR" '. + {author: $author, submissionDate: $date, order: 5}')
           
           # Add to category file (before final ])
           node -e "

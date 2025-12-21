@@ -99,18 +99,24 @@ export const callVeoAPI = async (
     // Check for input image (image-to-video)
     const hasImage = safeParams.image && safeParams.image.length > 0;
 
+    // Check if we have a second image for last frame interpolation
+    const hasLastFrame =
+        Array.isArray(safeParams.image) && safeParams.image.length > 1;
+
     logOps("Video params:", {
         durationSeconds,
         aspectRatio,
         generateAudio,
         resolution,
         hasImage,
+        hasLastFrame,
     });
 
     // Build instance object
     const instance: {
         prompt: string;
         image?: { bytesBase64Encoded: string; mimeType: string };
+        lastFrame?: { bytesBase64Encoded: string; mimeType: string };
     } = {
         prompt: prompt,
     };
@@ -147,6 +153,36 @@ export const callVeoAPI = async (
         }
     }
 
+    // Add lastFrame for video interpolation (image[1] = last frame)
+    if (hasLastFrame) {
+        const lastFrameUrl = safeParams.image[1];
+        logOps("Adding last frame image for interpolation:", lastFrameUrl);
+        progress.updateBar(
+            requestId,
+            39,
+            "Processing",
+            "Processing last frame image...",
+        );
+
+        try {
+            const { base64, mimeType } =
+                await downloadImageAsBase64(lastFrameUrl);
+            instance.lastFrame = {
+                bytesBase64Encoded: base64,
+                mimeType: mimeType,
+            };
+            logOps("Last frame processed successfully, mimeType:", mimeType);
+        } catch (error) {
+            const errorMessage =
+                error instanceof Error ? error.message : String(error);
+            logError("Error processing last frame image:", errorMessage);
+            throw new HttpError(
+                `Failed to process last frame image: ${errorMessage}`,
+                400,
+            );
+        }
+    }
+
     // Build request body
     const requestBody = {
         instances: [instance],
@@ -168,6 +204,9 @@ export const callVeoAPI = async (
             ...inst,
             image: inst.image
                 ? { ...inst.image, bytesBase64Encoded: "[BASE64]" }
+                : undefined,
+            lastFrame: inst.lastFrame
+                ? { ...inst.lastFrame, bytesBase64Encoded: "[BASE64]" }
                 : undefined,
         })),
     };

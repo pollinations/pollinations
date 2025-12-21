@@ -1,6 +1,6 @@
 name: SubmitApp
 description: Get your app featured on pollinations.ai
-title: ""
+title: "[App Submission] "
 labels: ["tier:review"]
 body:
   - type: markdown

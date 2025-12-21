@@ -11,6 +11,7 @@ import { FeatureItem } from "../components/ui/feature-item";
 import { RoadmapItem } from "../components/ui/roadmap-item";
 import { useTheme } from "../contexts/ThemeContext";
 import { NewsSection } from "../components/NewsSection";
+import { LINKS } from "../../theme/copy/socialLinks";
 
 function HelloPage() {
     const { presetCopy } = useTheme();
@@ -98,7 +99,7 @@ function HelloPage() {
                                 spacing="comfortable"
                                 className="text-text-highlight font-bold"
                             >
-                                🎁 Buy 1, get 1 free during beta!
+                                {pageCopy.buyCardPromo.text}
                             </Body>
                             <Button
                                 as="a"
@@ -138,7 +139,7 @@ function HelloPage() {
                                 </Button>
                                 <Button
                                     as="a"
-                                    href="https://github.com/pollinations/pollinations/issues/new?template=app-submission.yml"
+                                    href={LINKS.githubSubmitApp}
                                     target="_blank"
                                     rel="noopener noreferrer"
                                     variant="secondary"

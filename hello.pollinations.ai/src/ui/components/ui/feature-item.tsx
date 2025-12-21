@@ -15,19 +15,7 @@ import { cn } from "../../../utils";
 // ============================================
 
 const featureItemVariants = cva(
-    "flex items-start gap-3 font-body text-sm text-text-body-secondary leading-relaxed",
-    {
-        variants: {
-            variant: {
-                brand: "",
-                highlight: "",
-                muted: "",
-            },
-        },
-        defaultVariants: {
-            variant: "brand",
-        },
-    }
+    "flex items-start gap-3 font-body text-sm text-text-body-secondary leading-relaxed"
 );
 
 const iconVariants = cva(
@@ -49,7 +37,7 @@ const iconVariants = cva(
 
 interface FeatureItemProps
     extends React.HTMLAttributes<HTMLLIElement>,
-        VariantProps<typeof featureItemVariants> {
+        VariantProps<typeof iconVariants> {
     icon?: string;
 }
 
@@ -58,7 +46,7 @@ export const FeatureItem = React.forwardRef<HTMLLIElement, FeatureItemProps>(
         return (
             <li
                 ref={ref}
-                className={cn(featureItemVariants({ variant, className }))}
+                className={cn(featureItemVariants(), className)}
                 {...props}
             >
                 {icon && (

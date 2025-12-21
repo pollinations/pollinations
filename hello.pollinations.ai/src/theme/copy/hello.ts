@@ -55,6 +55,10 @@ export const HELLO_PAGE = {
         text: "Add Pollen to your wallet and build. Straightforward packs, no subscriptions, no locked-in tiers.",
     },
 
+    buyCardPromo: {
+        text: "🎁 Buy 1, get 1 free during beta!",
+    },
+
     earnCardTitle: {
         text: "Contribute & Get Pollen",
     },

@@ -1,7 +1,7 @@
 import { useTheme } from "../contexts/ThemeContext";
 import { COMMUNITY_PAGE } from "../../theme";
 import { ImageGenerator } from "../components/ImageGenerator";
-import { SOCIAL_LINKS } from "../../theme/copy/socialLinks";
+import { SOCIAL_LINKS, LINKS } from "../../theme/copy/socialLinks";
 import { Button } from "../components/ui/button";
 import { ExternalLinkIcon } from "../assets/ExternalLinkIcon";
 import { Title, Heading, Body } from "../components/ui/typography";
@@ -54,7 +54,7 @@ export default function CommunityPage() {
                             </Button>
                             <Button
                                 as="a"
-                                href="https://discord.com/channels/885844321461485618/1432378056126894343"
+                                href={LINKS.discordPollenBeta}
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 variant="secondary"
@@ -88,7 +88,7 @@ export default function CommunityPage() {
                             </Button>
                             <Button
                                 as="a"
-                                href="https://github.com/pollinations/pollinations/issues/new?template=app-submission.yml"
+                                href={LINKS.githubSubmitApp}
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 variant="secondary"

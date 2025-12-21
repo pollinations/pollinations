@@ -144,7 +144,9 @@ function updatePolarSubscription(
         return true;
     } catch (error) {
         // manage-polar.ts exits with 1 if no subscription found - that's expected for new users
-        console.error(`Polar update failed: ${error instanceof Error ? error.message : String(error)}`);
+        console.error(
+            `Polar update failed: ${error instanceof Error ? error.message : String(error)}`,
+        );
         return false;
     }
 }
@@ -195,21 +197,19 @@ const updateTierCommand = command({
             t !== null && TIER_HIERARCHY.includes(t as TierName);
 
         if (isValidTier(currentTier)) {
-            if (currentTier === targetTier) {
-                console.log(
-                    `\n✅ Already on ${targetTier} tier - no changes needed`,
-                );
-                return;
-            }
-
             const currentRank = getTierRank(currentTier);
             const targetRank = getTierRank(targetTier);
 
-            if (targetRank > currentRank) {
-                console.log(`\n⬆️  Upgrading: ${currentTier} → ${targetTier}`);
-            } else {
-                console.log(`\n⬇️  Downgrading: ${currentTier} → ${targetTier}`);
+            if (currentRank >= targetRank) {
+                // User is already at or above target tier - skip silently
+                console.log(
+                    `\n✅ User already at ${currentTier} tier (>= ${targetTier}) - skipping`,
+                );
+                console.log(`SKIP_UPGRADE=true`);
+                return;
             }
+
+            console.log(`\n⬆️  Upgrading: ${currentTier} → ${targetTier}`);
         }
 
         // Step 2: Update D1 tier

@@ -116,10 +116,19 @@ jobs:
             TYPE=$(echo "$row" | jq -r '.type')
             
             echo "🌸 Upgrading $USERNAME to flower tier..."
-            if npx tsx scripts/tier-update-user.ts update-tier \
+            OUTPUT=$(npx tsx scripts/tier-update-user.ts update-tier \
               --githubUsername "$USERNAME" \
               --tier flower \
-              --env production 2>&1; then
+              --env production 2>&1) || true
+            
+            echo "$OUTPUT"
+            
+            # Check if user already at higher tier (skip silently)
+            if echo "$OUTPUT" | grep -q "SKIP_UPGRADE=true"; then
+              echo "✅ User $USERNAME already at flower tier or higher - skipping"
+              RESULTS=$(echo "$RESULTS" | jq --arg user "$USERNAME" --arg num "$TARGET_NUMBER" --arg on "$CELEBRATE_ON" --arg type "$TYPE" \
+                '. + [{"user": $user, "targetNumber": $num, "celebrateOn": $on, "type": $type, "success": "skipped"}]')
+            elif echo "$OUTPUT" | grep -q "Tier update complete"; then
               RESULTS=$(echo "$RESULTS" | jq --arg user "$USERNAME" --arg num "$TARGET_NUMBER" --arg on "$CELEBRATE_ON" --arg type "$TYPE" \
                 '. + [{"user": $user, "targetNumber": $num, "celebrateOn": $on, "type": $type, "success": true}]')
             else
@@ -148,7 +157,13 @@ jobs:
               const targetNumber = parseInt(result.targetNumber);
               const isIssue = result.celebrateOn === 'issue';
               
-              if (result.success) {
+              // Skip if user already at higher tier (no action needed)
+              if (result.success === 'skipped') {
+                console.log(`Skipping ${result.user} - already at flower tier or higher`);
+                continue;
+              }
+              
+              if (result.success === true) {
                 // Post success message
                 const successMessage = result.type === 'app'
                   ? `## 🎉 App Approved!\n\nYour app has been added to the [pollinations.ai showcase](https://pollinations.ai)!\n\n### 🌸 Flower Tier Activated!\n\n@${result.user}, you've been upgraded to **Flower tier** which grants you **10 pollen per day**!\n\n⏰ **How it works:** Your pollen balance refills every 24 hours. Unused pollen does not roll over.\n\nCheck your balance at [enter.pollinations.ai](https://enter.pollinations.ai)\n\nThank you for contributing to Pollinations! 🌻`

@@ -71,10 +71,18 @@ jobs:
           cd enter.pollinations.ai
           
           echo "🌸 Upgrading $GITHUB_USERNAME to flower tier..."
-          if npx tsx scripts/tier-update-user.ts update-tier \
+          OUTPUT=$(npx tsx scripts/tier-update-user.ts update-tier \
             --githubUsername "$GITHUB_USERNAME" \
             --tier flower \
-            --env production 2>&1; then
+            --env production 2>&1) || true
+          
+          echo "$OUTPUT"
+          
+          # Check if user already at higher tier (skip silently)
+          if echo "$OUTPUT" | grep -q "SKIP_UPGRADE=true"; then
+            echo "✅ User already at flower tier or higher - skipping"
+            echo "success=skipped" >> $GITHUB_OUTPUT
+          elif echo "$OUTPUT" | grep -q "Tier update complete"; then
             echo "success=true" >> $GITHUB_OUTPUT
           else
             echo "success=false" >> $GITHUB_OUTPUT
@@ -86,10 +94,18 @@ jobs:
           github-token: ${{ steps.pollinations-ai.outputs.token }}
           script: |
             const registered = '${{ steps.check.outputs.registered }}' === 'true';
-            const upgraded = '${{ steps.upgrade.outputs.success }}' === 'true';
+            const upgradeResult = '${{ steps.upgrade.outputs.success }}';
+            const upgraded = upgradeResult === 'true';
+            const skipped = upgradeResult === 'skipped';
             const issueNumber = context.payload.issue.number;
             const username = context.payload.issue.user.login;
             const isPR = !!context.payload.issue.pull_request;
+            
+            // If user already at flower tier or higher, skip silently
+            if (skipped) {
+              console.log(`User ${username} already at flower tier or higher - no action needed`);
+              return;
+            }
             
             if (registered && upgraded) {
               // Success! Update labels and celebrate

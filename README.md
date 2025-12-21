@@ -484,6 +484,7 @@ Pollinations.AI is used in various projects, including:
 | [UltimaX Intelligence CLI](https://huggingface.co/spaces/umint/cli) | Extension of the UltimaX Intelligence project based on Pollinations Python SDK. | @hadadarjt |
 | [AI Agent Portal](https://agent.makululinux.com/) ([⭐ 0](https://github.com/raymerjacque/Makulu-Agent-Portal)) | A next-generation development environment that leverages a sophisticated... | @raymerjacque |
 | PDF-to-Speech 🔊 ([⭐ 0](https://github.com/Ak-Yadav/pdf_to_speech)) | Convert any PDF document into natural-sounding audio using Pollinations AI TTS.... | @Ak-Yadav |
+| 🆕 🦀 Zuhri ([⭐ 0](https://github.com/humair-m/zuhri.rs)) | High-performance Rust CLI AI assistant with interactive chat, code generation... | @Humair-025 |
 | [pollinations.ai Python SDK](https://github.com/pollinations-ai/pollinations.ai) | Official Python SDK for working with Pollinations' models. | @pollinations-ai |
 | MCPollinations (Community) ([⭐ 32](https://github.com/pinkpixel-dev/MCPollinations)) | Community-maintained Model Context Protocol server with advanced features like... | @pinkpixel-dev |
 | [pollinations_ai](https://pub.dev/packages/pollinations_ai) | Dart/Flutter package for Pollinations API. | @Meenapintu |

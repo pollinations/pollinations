@@ -11,7 +11,13 @@ import type { ContentFilterResult } from "@/schemas/openai";
 const eventTypeValues = ["generate.text", "generate.image"] as const;
 export type EventType = (typeof eventTypeValues)[number];
 
-const eventStatusValues = ["pending", "processing", "sent", "error"] as const;
+const eventStatusValues = [
+    "pending",
+    "pending_estimate",
+    "processing",
+    "sent",
+    "error",
+] as const;
 export type EventStatus = (typeof eventStatusValues)[number];
 
 const apiKeyTypeValues = ["secret", "publishable"] as const;
@@ -147,6 +153,8 @@ export const event = sqliteTable(
         // Totals
         totalCost: real("total_cost").notNull(),
         totalPrice: real("total_price").notNull(),
+        // Estimated price for in-flight requests (pending_estimate status)
+        estimatedPrice: real("estimated_price"),
 
         // Prompt Moderation
         moderationPromptHateSeverity: text("moderation_prompt_hate_severity"),
@@ -199,21 +207,20 @@ export const event = sqliteTable(
         errorMessage: text("error_message"),
     },
     (table) => [
-        index("idx_event_processing_status").on(
-            table.eventProcessingId,
-            table.eventStatus,
-        ),
-        index("idx_event_created_at").on(table.createdAt),
-        index("idx_event_status_created_at").on(
+        // For rollbackProcessingEvents, confirmProcessingEvents: WHERE eventProcessingId = ?
+        index("idx_event_processing_id").on(table.eventProcessingId),
+
+        // For checkPendingBatchIsReady, preparePendingEvents: WHERE eventStatus = 'pending'
+        // For clearExpiredEvents: WHERE eventStatus = 'sent' AND createdAt < ?
+        // Status first for equality, then createdAt for range/ordering
+        index("idx_event_status_created").on(
             table.eventStatus,
             table.createdAt,
         ),
-        // Composite index for pending spend query (user balance check)
-        index("idx_event_user_billed_created").on(
-            table.userId,
-            table.isBilledUsage,
-            table.createdAt,
-        ),
+
+        // For getPendingSpend: WHERE userId = ? AND createdAt >= ?
+        // Covers the 10-minute window query for pending spend calculation
+        index("idx_event_user_created").on(table.userId, table.createdAt),
     ],
 );
 

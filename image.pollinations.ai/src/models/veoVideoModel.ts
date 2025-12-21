@@ -145,6 +145,9 @@ export const callVeoAPI = async (
         const imageUrl = Array.isArray(safeParams.image)
             ? safeParams.image[0]
             : safeParams.image;
+        if (!imageUrl) {
+            throw new HttpError("First frame URL is empty", 400);
+        }
         logOps("Adding first frame image for I2V:", imageUrl);
         progress.updateBar(
             requestId,
@@ -158,6 +161,9 @@ export const callVeoAPI = async (
     // Add lastFrame for video interpolation (image[1] = last frame)
     if (hasLastFrame) {
         const lastFrameUrl = safeParams.image[1];
+        if (!lastFrameUrl) {
+            throw new HttpError("Last frame URL is empty", 400);
+        }
         logOps("Adding last frame image for interpolation:", lastFrameUrl);
         progress.updateBar(
             requestId,

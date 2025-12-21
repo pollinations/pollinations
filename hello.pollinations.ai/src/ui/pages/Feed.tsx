@@ -42,7 +42,7 @@ function Feed() {
                             seed: data.seed,
                             timestamp: Date.now(),
                         };
-                        setAllImages((prev) => [newImage, ...prev]);
+                        setAllImages((prev) => [...prev, newImage]);
                         if (isLoading) setIsLoading(false);
                     }
                 }
@@ -64,19 +64,22 @@ function Feed() {
     }, [isLoading]);
 
     useEffect(() => {
-        setDisplayedImages(allImages.slice(0, imagesPerLoad));
+        if (allImages.length > 0 && displayedImages.length === 0) {
+            setDisplayedImages(allImages.slice(0, imagesPerLoad));
+        }
     }, [allImages]);
 
     useEffect(() => {
         const observer = new IntersectionObserver(
             ([entry]) => {
                 if (entry.isIntersecting && displayedImages.length < allImages.length) {
-                    setDisplayedImages((prev) =>
-                        allImages.slice(0, prev.length + imagesPerLoad)
-                    );
+                    setDisplayedImages((prev) => [
+                        ...prev,
+                        ...allImages.slice(prev.length, prev.length + imagesPerLoad),
+                    ]);
                 }
             },
-            { threshold: 0.1 }
+            { threshold: 0.2 }
         );
 
         if (loadMoreTriggerRef.current) {
@@ -112,13 +115,15 @@ function Feed() {
 
                 {displayedImages.length > 0 && (
                     <>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                            {displayedImages.map((item, index) => (
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 max-h-[calc(100vh-200px)] overflow-y-auto pr-2">
+                            {displayedImages.map((item, index) => {
+                                const positionInBatch = index % imagesPerLoad;
+                                return (
                                 <div
                                     key={`${item.imageURL}-${item.timestamp}`}
                                     className="group relative overflow-hidden rounded-lg bg-surface-secondary cursor-pointer hover:shadow-lg transition-shadow duration-300 animate-in fade-in slide-in-from-bottom-4"
                                     style={{
-                                        animationDelay: `${(index % imagesPerLoad) * 50}ms`,
+                                        animationDelay: `${positionInBatch * 30}ms`,
                                         animationFillMode: 'both',
                                     }}
                                 >
@@ -138,17 +143,18 @@ function Feed() {
                                         </div>
                                     </div>
                                 </div>
-                            ))}
-                        </div>
+                                );
+                            })}
 
-                        {displayedImages.length < allImages.length && (
-                            <div
-                                ref={loadMoreTriggerRef}
-                                className="flex items-center justify-center py-12 mt-8"
-                            >
-                                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-border-brand"></div>
-                            </div>
-                        )}
+                            {displayedImages.length < allImages.length && (
+                                <div
+                                    ref={loadMoreTriggerRef}
+                                    className="flex items-center justify-center py-12 mt-8"
+                                >
+                                    <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-border-brand"></div>
+                                </div>
+                            )}
+                        </div>
                     </>
                 )}
             </PageCard>

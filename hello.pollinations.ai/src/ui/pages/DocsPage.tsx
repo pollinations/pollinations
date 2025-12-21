@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useTheme } from "../contexts/ThemeContext";
 import { CopyIcon } from "../assets/CopyIcon";
 import { ExternalLinkIcon } from "../assets/ExternalLinkIcon";
@@ -16,6 +16,16 @@ function DocsPage() {
     const { presetCopy } = useTheme();
     const pageCopy = presetCopy.DOCS_PAGE;
     const [agentPromptCopied, setAgentPromptCopied] = useState(false);
+    const [agentPrompt, setAgentPrompt] = useState("");
+
+    useEffect(() => {
+        fetch(
+            "https://raw.githubusercontent.com/pollinations/pollinations/production/APIDOCS.md"
+        )
+            .then((res) => res.text())
+            .then(setAgentPrompt)
+            .catch(console.error);
+    }, []);
 
     return (
         <PageContainer>
@@ -45,7 +55,6 @@ function DocsPage() {
                         size="lg"
                         className="relative"
                         onClick={() => {
-                            const agentPrompt = `You can generate images using Pollinations API:\n\nGET https://image.pollinations.ai/prompt/{prompt}?model=flux&width=1024&height=1024`;
                             navigator.clipboard.writeText(agentPrompt);
                             setAgentPromptCopied(true);
                             setTimeout(() => setAgentPromptCopied(false), 2000);

@@ -353,14 +353,25 @@ export const hackAndBuildProjects = [
         submissionDate: "2025-11-25",
         order: 1,
     },
-  {
-    "name": "🛠️ Content Auto Manager",
-    "url": "https://github.com/pptt121212/content-auto-manager",
-    "description": "WordPress plugin for automated AI content production. Features scheduled task queues, SEO optimization, and vector matching for topic generation. Uses Pollinations API for free text and image generation, streamlining the full workflow from ideation to publishing.",
-    "author": "@pptt121212",
-    "repo": "https://github.com/pptt121212/content-auto-manager",
-    "category": "hackAndBuild",
-    "submissionDate": "2025-12-13",
-    "order": 5
-  }
+    {
+        "name": "🛠️ Content Auto Manager",
+        "url": "https://github.com/pptt121212/content-auto-manager",
+        "description":
+            "WordPress plugin for automated AI content production. Features scheduled task queues, SEO optimization, and vector matching for topic generation. Uses Pollinations API for free text and image generation, streamlining the full workflow from ideation to publishing.",
+        "author": "@pptt121212",
+        "repo": "https://github.com/pptt121212/content-auto-manager",
+        "category": "hackAndBuild",
+        "submissionDate": "2025-12-13",
+        "order": 5,
+    },
+    {
+        name: "🦀 Zuhri",
+        url: "https://github.com/humair-m/zuhri.rs",
+        description:
+            "High-performance Rust CLI AI assistant with interactive chat, code generation with syntax highlighting, smart shell commands, image generation, and real-time streaming. Powered by Pollinations AI.",
+        author: "@Humair-025",
+        repo: "https://github.com/humair-m/zuhri.rs",
+        submissionDate: "2025-12-21",
+        order: 1,
+    },
 ];

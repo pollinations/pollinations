@@ -91,7 +91,8 @@ const models: ModelDefinition[] = [
         config: portkeyConfig["gemini-3-flash-preview"],
         transform: pipe(
             createSystemPromptTransform(BASE_PROMPTS.conversational),
-            createGeminiToolsTransform(),
+            // Only code_execution - cannot mix with search tools on Vertex AI
+            createGeminiToolsTransform(["code_execution"]),
         ),
     },
     {
@@ -99,7 +100,8 @@ const models: ModelDefinition[] = [
         config: portkeyConfig["gemini-2.5-flash-lite"],
         transform: pipe(
             createSystemPromptTransform(BASE_PROMPTS.conversational),
-            createGeminiToolsTransform(),
+            // Only code_execution - cannot mix with search tools on Vertex AI
+            createGeminiToolsTransform(["code_execution"]),
         ),
     },
     {
@@ -124,7 +126,7 @@ const models: ModelDefinition[] = [
     },
     {
         name: "perplexity-reasoning",
-        config: portkeyConfig["sonar-reasoning"],
+        config: portkeyConfig["sonar-reasoning-pro"],
         transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
     },
     {

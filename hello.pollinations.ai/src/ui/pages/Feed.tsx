@@ -14,10 +14,13 @@ interface FeedItem {
 }
 
 function Feed() {
-    const [images, setImages] = useState<FeedItem[]>([]);
+    const [displayedImages, setDisplayedImages] = useState<FeedItem[]>([]);
+    const [allImages, setAllImages] = useState<FeedItem[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const eventSourceRef = useRef<EventSource | null>(null);
     const seenImagesRef = useRef<Set<string>>(new Set());
+    const loadMoreTriggerRef = useRef<HTMLDivElement>(null);
+    const imagesPerLoad = 12;
 
     useEffect(() => {
         eventSourceRef.current = new EventSource(
@@ -30,18 +33,16 @@ function Feed() {
                 if (data.imageURL && data.status === "end_generating") {
                     if (!seenImagesRef.current.has(data.imageURL)) {
                         seenImagesRef.current.add(data.imageURL);
-                        setImages((prev) => [
-                            {
-                                imageURL: data.imageURL,
-                                prompt: data.prompt || "No prompt",
-                                model: data.model || "unknown",
-                                width: data.width,
-                                height: data.height,
-                                seed: data.seed,
-                                timestamp: Date.now(),
-                            },
-                            ...prev.slice(0, 49),
-                        ]);
+                        const newImage = {
+                            imageURL: data.imageURL,
+                            prompt: data.prompt || "No prompt",
+                            model: data.model || "unknown",
+                            width: data.width,
+                            height: data.height,
+                            seed: data.seed,
+                            timestamp: Date.now(),
+                        };
+                        setAllImages((prev) => [newImage, ...prev]);
                         if (isLoading) setIsLoading(false);
                     }
                 }
@@ -60,7 +61,34 @@ function Feed() {
         return () => {
             eventSourceRef.current?.close();
         };
-    }, []);
+    }, [isLoading]);
+
+    useEffect(() => {
+        setDisplayedImages(allImages.slice(0, imagesPerLoad));
+    }, [allImages]);
+
+    useEffect(() => {
+        const observer = new IntersectionObserver(
+            ([entry]) => {
+                if (entry.isIntersecting && displayedImages.length < allImages.length) {
+                    setDisplayedImages((prev) =>
+                        allImages.slice(0, prev.length + imagesPerLoad)
+                    );
+                }
+            },
+            { threshold: 0.1 }
+        );
+
+        if (loadMoreTriggerRef.current) {
+            observer.observe(loadMoreTriggerRef.current);
+        }
+
+        return () => {
+            if (loadMoreTriggerRef.current) {
+                observer.unobserve(loadMoreTriggerRef.current);
+            }
+        };
+    }, [displayedImages.length, allImages.length]);
 
     return (
         <PageContainer>
@@ -76,37 +104,52 @@ function Feed() {
                     </div>
                 )}
 
-                {!isLoading && images.length === 0 && (
+                {!isLoading && displayedImages.length === 0 && (
                     <div className="text-center py-24 text-text-caption">
                         <p>Waiting for images...</p>
                     </div>
                 )}
 
-                {images.length > 0 && (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                        {images.map((item) => (
-                            <div
-                                key={`${item.imageURL}-${item.timestamp}`}
-                                className="group relative overflow-hidden rounded-lg bg-surface-secondary cursor-pointer hover:shadow-lg transition-shadow duration-300"
-                            >
-                                <img
-                                    src={item.imageURL}
-                                    alt={item.prompt}
-                                    loading="lazy"
-                                    className="w-full aspect-square object-cover group-hover:scale-105 transition-transform duration-300"
-                                />
-                                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col justify-end p-4">
-                                    <p className="text-white text-sm font-body line-clamp-3 mb-2">
-                                        {item.prompt}
-                                    </p>
-                                    <div className="flex justify-between text-xs text-gray-300">
-                                        <span>{item.model}</span>
-                                        <span>#{item.seed}</span>
+                {displayedImages.length > 0 && (
+                    <>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                            {displayedImages.map((item, index) => (
+                                <div
+                                    key={`${item.imageURL}-${item.timestamp}`}
+                                    className="group relative overflow-hidden rounded-lg bg-surface-secondary cursor-pointer hover:shadow-lg transition-shadow duration-300 animate-in fade-in slide-in-from-bottom-4"
+                                    style={{
+                                        animationDelay: `${(index % imagesPerLoad) * 50}ms`,
+                                        animationFillMode: 'both',
+                                    }}
+                                >
+                                    <img
+                                        src={item.imageURL}
+                                        alt={item.prompt}
+                                        loading="lazy"
+                                        className="w-full aspect-square object-cover group-hover:scale-105 transition-transform duration-300"
+                                    />
+                                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col justify-end p-4">
+                                        <p className="text-white text-sm font-body line-clamp-3 mb-2">
+                                            {item.prompt}
+                                        </p>
+                                        <div className="flex justify-between text-xs text-gray-300">
+                                            <span>{item.model}</span>
+                                            <span>#{item.seed}</span>
+                                        </div>
                                     </div>
                                 </div>
+                            ))}
+                        </div>
+
+                        {displayedImages.length < allImages.length && (
+                            <div
+                                ref={loadMoreTriggerRef}
+                                className="flex items-center justify-center py-12 mt-8"
+                            >
+                                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-border-brand"></div>
                             </div>
-                        ))}
-                    </div>
+                        )}
+                    </>
                 )}
             </PageCard>
         </PageContainer>

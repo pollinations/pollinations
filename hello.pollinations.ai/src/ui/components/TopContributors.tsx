@@ -91,7 +91,7 @@ export function TopContributors() {
                      Most Active Contributors
                 </Heading>
                 <Body size="sm" spacing="comfortable">
-                    These amazing humans keep Pollinations thriving. Check them out!
+                    Meet the most active contributors to the Pollinations GitHub repository over the past year. 
                 </Body>
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
                     {contributors.map((contributor, index) => {

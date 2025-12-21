@@ -153,4 +153,8 @@ export const portkeyConfig: PortkeyConfigMap = {
         createPerplexityModelConfig({
             model: "sonar-reasoning",
         }),
+    "sonar-reasoning-pro": () =>
+        createPerplexityModelConfig({
+            model: "sonar-reasoning-pro",
+        }),
 };

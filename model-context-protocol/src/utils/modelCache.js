@@ -39,9 +39,13 @@ export async function getImageModels(forceRefresh = false) {
     }
 
     try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 20000); // 10 second timeout
+        
         const response = await fetch(`${API_BASE_URL}/image/models`, {
             headers: getAuthHeaders(),
-        });
+            signal: controller.signal,
+        }).finally(() => clearTimeout(timeoutId));
 
         if (!response.ok) {
             throw new Error(`Failed to fetch image models: ${response.status}`);
@@ -53,7 +57,7 @@ export async function getImageModels(forceRefresh = false) {
     } catch (error) {
         // Return cached data if available, even if expired
         if (cache.imageModels.data) {
-            console.error("Using cached image models due to fetch error:", error.message);
+            console.warn("Using cached image models due to fetch error:", error.message);
             return cache.imageModels.data;
         }
         throw error;
@@ -71,9 +75,13 @@ export async function getTextModels(forceRefresh = false) {
     }
 
     try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 20000); // 10 second timeout
+        
         const response = await fetch(`${API_BASE_URL}/text/models`, {
             headers: getAuthHeaders(),
-        });
+            signal: controller.signal,
+        }).finally(() => clearTimeout(timeoutId));
 
         if (!response.ok) {
             throw new Error(`Failed to fetch text models: ${response.status}`);
@@ -85,7 +93,7 @@ export async function getTextModels(forceRefresh = false) {
     } catch (error) {
         // Return cached data if available, even if expired
         if (cache.textModels.data) {
-            console.error("Using cached text models due to fetch error:", error.message);
+            console.warn("Using cached text models due to fetch error:", error.message);
             return cache.textModels.data;
         }
         throw error;

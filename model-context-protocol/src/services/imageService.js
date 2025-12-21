@@ -108,17 +108,26 @@ async function generateImageUrl(params) {
     // First, trigger generation with auth (so the image gets created)
     const authUrl = buildUrl(`/image/${encodedPrompt}`, queryParams, true);
 
-    // Make a HEAD request to trigger generation without downloading
+    // Use GET with timeout to trigger generation and validate URL
     try {
-        const headResponse = await fetch(authUrl, {
-            method: "HEAD",
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
+        
+        const preGenResponse = await fetch(authUrl, {
+            method: "GET",
             headers: getAuthHeaders(),
-        });
-        if (!headResponse.ok) {
-            console.warn(`Image generation may have failed (${headResponse.status}), but URL will still be returned`);
+            signal: controller.signal,
+        }).finally(() => clearTimeout(timeoutId));
+        
+        if (!preGenResponse.ok) {
+            console.warn(`Image generation may have failed (${preGenResponse.status}), but URL will still be returned`);
         }
     } catch (err) {
-        console.warn("HEAD request failed, image may not be pre-generated:", err.message);
+        if (err.name === "AbortError") {
+            console.warn("Image generation request timed out, but URL will still be returned");
+        } else {
+            console.warn("Image generation request failed, URL will still be returned:", err.message);
+        }
     }
 
     // Return shareable URL without the key

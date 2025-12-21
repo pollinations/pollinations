@@ -119,9 +119,10 @@ export function buildShareableUrl(path, params = {}) {
 
 /**
  * Fetch wrapper that automatically includes auth headers
+ * Includes timeout handling to prevent hanging requests
  *
  * @param {string} url - URL to fetch
- * @param {Object} options - Fetch options
+ * @param {Object} options - Fetch options (can include timeoutMs)
  * @returns {Promise<Response>} - Fetch response
  */
 export async function fetchWithAuth(url, options = {}) {
@@ -130,10 +131,19 @@ export async function fetchWithAuth(url, options = {}) {
         ...getAuthHeaders(),
     };
 
-    return fetch(url, {
-        ...options,
-        headers,
-    });
+    const timeoutMs = options.timeoutMs || 30000; // 30 second default timeout
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+
+    try {
+        return await fetch(url, {
+            ...options,
+            headers,
+            signal: controller.signal,
+        });
+    } finally {
+        clearTimeout(timeoutId);
+    }
 }
 
 /**

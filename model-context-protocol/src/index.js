@@ -106,7 +106,12 @@ export async function startMcpServer() {
         // Register all tools
         allTools.forEach((tool) => {
             try {
-                server.tool(...tool);
+                // Tool format: [name, description, inputSchema, handler]
+                if (!Array.isArray(tool) || tool.length < 4) {
+                    throw new Error(`Invalid tool format for ${tool[0] || 'unknown'}`);
+                }
+                const [name, description, inputSchema, handler] = tool;
+                server.tool(name, description, inputSchema, handler);
             } catch (error) {
                 console.error(`Failed to register tool ${tool[0]}:`, error.message);
             }

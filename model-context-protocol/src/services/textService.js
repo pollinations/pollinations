@@ -82,25 +82,34 @@ async function generateText(params) {
         requestBody.response_format = { type: "json_object" };
     }
 
-    // Remove undefined values
-    Object.keys(requestBody).forEach(key => {
-        if (requestBody[key] === undefined) {
-            delete requestBody[key];
+    // Remove undefined values using a filtered approach
+    const cleanedBody = {};
+    Object.entries(requestBody).forEach(([key, value]) => {
+        if (value !== undefined && value !== null) {
+            cleanedBody[key] = value;
         }
     });
 
     try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
+        
         const response = await fetch(`${API_BASE_URL}/v1/chat/completions`, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
                 ...getAuthHeaders(),
             },
-            body: JSON.stringify(requestBody),
-        });
+            body: JSON.stringify(cleanedBody),
+            signal: controller.signal,
+        }).finally(() => clearTimeout(timeoutId));
 
         if (!response.ok) {
             const errorText = await response.text().catch(() => "Unknown error");
+            // Handle rate limiting with retry guidance
+            if (response.status === 429) {
+                throw new Error("Rate limited. Please wait before retrying.");
+            }
             throw new Error(parseApiError(response.status, errorText));
         }
 
@@ -218,24 +227,33 @@ async function chatCompletion(params) {
     };
 
     // Remove undefined values
-    Object.keys(requestBody).forEach(key => {
-        if (requestBody[key] === undefined) {
-            delete requestBody[key];
+    const cleanedBody = {};
+    Object.entries(requestBody).forEach(([key, value]) => {
+        if (value !== undefined && value !== null) {
+            cleanedBody[key] = value;
         }
     });
 
     try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
+        
         const response = await fetch(`${API_BASE_URL}/v1/chat/completions`, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
                 ...getAuthHeaders(),
             },
-            body: JSON.stringify(requestBody),
-        });
+            body: JSON.stringify(cleanedBody),
+            signal: controller.signal,
+        }).finally(() => clearTimeout(timeoutId));
 
         if (!response.ok) {
             const errorText = await response.text().catch(() => "Unknown error");
+            // Handle rate limiting with retry guidance
+            if (response.status === 429) {
+                throw new Error("Rate limited. Please wait before retrying.");
+            }
             throw new Error(parseApiError(response.status, errorText));
         }
 

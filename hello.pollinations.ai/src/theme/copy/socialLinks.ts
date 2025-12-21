@@ -3,6 +3,7 @@ import {
     GithubIcon,
     InstagramIcon,
     LinkedinIcon,
+    RedditIcon,
     TiktokIcon,
     XIcon,
     YoutubeIcon,
@@ -58,6 +59,13 @@ export const SOCIAL_LINKS = {
         width: "27px",
         height: "27px",
     },
+    reddit: {
+        label: "Reddit",
+        icon: RedditIcon,
+        url: "https://www.reddit.com/r/pollinations/",
+        width: "24px",
+        height: "24px",
+    },
 };
 
 // Additional links (not rendered as social icons)
@@ -65,5 +73,5 @@ export const LINKS = {
     discordPollenBeta:
         "https://discord.com/channels/885844321461485618/1432378056126894343",
     githubSubmitApp:
-        "https://github.com/pollinations/pollinations/issues/new?template=app-submission.yml",
+        "https://github.com/pollinations/pollinations/issues/new?template=tier-app-submission.yml",
 };

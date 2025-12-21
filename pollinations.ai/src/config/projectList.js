@@ -240,8 +240,20 @@ const allProjects = (() => {
     });
 })();
 
+// Create a source object for organizing projects
+const sourceProjects = {
+    featured: featuredApps,
+    vibeCoding: vibeCodingProjects,
+    creative: creativeProjects,
+    games: gamesProjects,
+    hackAndBuild: hackAndBuildProjects,
+    chat: chatProjects,
+    socialBots: socialBotsProjects,
+    learn: learnProjects,
+};
+
 // Deduplicate projects first
-const deduplicatedProjects = deduplicateProjects(allProjects);
+const deduplicatedProjects = deduplicateProjects(sourceProjects);
 
 // Generate the organized projects
 const organizedProjects = organizeProjects(deduplicatedProjects);

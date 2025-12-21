@@ -6,6 +6,7 @@ import { PageCard } from "../components/ui/page-card";
 import { PageContainer } from "../components/ui/page-container";
 import { SubCard } from "../components/ui/sub-card";
 import { useTheme } from "../contexts/ThemeContext";
+import { NewsSection } from "../components/NewsSection";
 
 function HelloPage() {
     const { presetCopy } = useTheme();
@@ -46,6 +47,11 @@ function HelloPage() {
                         <ExternalLinkIcon className="w-4 h-4 text-text-body-main" />
                     </Button>
                 </div>
+
+                <Divider />
+
+                {/* What's New - Compact news feed */}
+                <NewsSection limit={5} compact title="What's New" />
 
                 <Divider />
 

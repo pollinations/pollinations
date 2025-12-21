@@ -4,7 +4,7 @@ import { CloseIcon } from "../../assets/CloseIcon";
 import type { Model } from "../../../hooks/useModelList";
 
 import { PLAY_PAGE } from "../../../theme";
-import { API_BASE, getAuthHeaders } from "../../../api.config";
+import { API_BASE, API_KEY } from "../../../api.config";
 
 interface PlayGeneratorProps {
     selectedModel: string;
@@ -85,12 +85,8 @@ export function PlayGenerator({
                 });
 
                 const response = await fetch(
-                    `${API_BASE}/generate/image/${encodeURIComponent(
-                        prompt
-                    )}?${params}`,
-                    {
-                        headers: getAuthHeaders(),
-                    }
+                    `${API_BASE}/image/${encodeURIComponent(prompt)}?${params}`,
+                    { headers: { Authorization: `Bearer ${API_KEY}` } }
                 );
 
                 if (!response.ok) {
@@ -133,10 +129,13 @@ export function PlayGenerator({
                         : prompt;
 
                 const response = await fetch(
-                    `${API_BASE}/generate/v1/chat/completions`,
+                    `${API_BASE}/v1/chat/completions`,
                     {
                         method: "POST",
-                        headers: getAuthHeaders("application/json"),
+                        headers: {
+                            "Content-Type": "application/json",
+                            Authorization: `Bearer ${API_KEY}`,
+                        },
                         body: JSON.stringify({
                             model: selectedModel,
                             messages: [

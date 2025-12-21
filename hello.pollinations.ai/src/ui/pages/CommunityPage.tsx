@@ -9,13 +9,11 @@ import { Divider } from "../components/ui/divider";
 import { PageCard } from "../components/ui/page-card";
 import { PageContainer } from "../components/ui/page-container";
 import { SubCard } from "../components/ui/sub-card";
-import { useNews } from "../../hooks/useNews";
-import ReactMarkdown from "react-markdown";
+import { NewsSection } from "../components/NewsSection";
 
 export default function CommunityPage() {
     const { presetCopy } = useTheme();
     const pageCopy = presetCopy.COMMUNITY_PAGE;
-    const { news, loading: newsLoading } = useNews(COMMUNITY_PAGE.newsFilePath);
 
     return (
         <PageContainer>
@@ -73,94 +71,52 @@ export default function CommunityPage() {
                 {/* Divider */}
                 <Divider />
 
-                {/* News Section */}
-                {!newsLoading && news.length > 0 && (
-                    <>
-                        <Heading variant="section">
-                            {pageCopy.newsTitle.text}
-                        </Heading>
-                        <div className="mb-12 space-y-3">
-                            {news.map((item) => {
-                                // Remove date from content for display
-                                const contentWithoutDate = item.content.replace(
-                                    /\*\*\d{4}-\d{2}-\d{2}\*\*:?\s*/,
-                                    ""
-                                );
-
-                                return (
-                                    <div
-                                        key={item.id}
-                                        className="bg-input-background p-3 border-l-2 border-border-highlight"
-                                    >
-                                        {item.date && (
-                                            <span className="inline-block bg-button-primary-bg text-text-on-color px-2 py-0.5 font-mono text-xs font-black mb-2">
-                                                {item.date}
-                                            </span>
-                                        )}
-                                        <div className="font-body text-sm text-text-body-secondary leading-relaxed">
-                                            <ReactMarkdown
-                                                components={{
-                                                    a: ({ node, ...props }) => (
-                                                        <a
-                                                            {...props}
-                                                            className="text-text-brand hover:underline font-bold"
-                                                            target="_blank"
-                                                            rel="noopener noreferrer"
-                                                        />
-                                                    ),
-                                                    code: ({
-                                                        node,
-                                                        className,
-                                                        children,
-                                                        ...props
-                                                    }: any) => {
-                                                        const match =
-                                                            /language-(\w+)/.exec(
-                                                                className || ""
-                                                            );
-                                                        const isInline =
-                                                            !match &&
-                                                            !String(
-                                                                children
-                                                            ).includes("\n");
-                                                        return isInline ? (
-                                                            <code
-                                                                {...props}
-                                                                className="bg-input-background px-1 py-0.5 font-mono text-xs"
-                                                            >
-                                                                {children}
-                                                            </code>
-                                                        ) : (
-                                                            <code
-                                                                {...props}
-                                                                className={
-                                                                    className
-                                                                }
-                                                            >
-                                                                {children}
-                                                            </code>
-                                                        );
-                                                    },
-                                                    p: ({ node, ...props }) => (
-                                                        <p
-                                                            {...props}
-                                                            className="mb-0"
-                                                        />
-                                                    ),
-                                                }}
-                                            >
-                                                {contentWithoutDate}
-                                            </ReactMarkdown>
-                                        </div>
+                {/* Voting Section */}
+                <div className="mb-12">
+                    <Heading variant="section">
+                        {pageCopy.votingTitle?.text || "Have Your Say"}
+                    </Heading>
+                    <Body size="sm" spacing="comfortable">
+                        {pageCopy.votingSubtitle?.text ||
+                            "We build what the community wants. Vote on what matters to you:"}
+                    </Body>
+                    <div className="space-y-3">
+                        {COMMUNITY_PAGE.votingIssues?.map((issue: any) => (
+                            <a
+                                key={issue.url}
+                                href={issue.url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="block bg-input-background p-4 border-l-2 border-border-brand hover:border-border-highlight transition-colors"
+                            >
+                                <div className="flex items-center gap-3">
+                                    <span className="text-2xl">
+                                        {issue.emoji}
+                                    </span>
+                                    <div className="flex-1">
+                                        <p className="font-headline text-sm font-black text-text-body-main">
+                                            {issue.title}
+                                        </p>
                                     </div>
-                                );
-                            })}
-                        </div>
+                                    <div className="flex items-center gap-1 text-text-caption">
+                                        <span className="font-mono text-xs">
+                                            👍 {issue.votes}
+                                        </span>
+                                    </div>
+                                </div>
+                            </a>
+                        ))}
+                    </div>
+                </div>
 
-                        {/* Divider */}
-                        <Divider />
-                    </>
-                )}
+                {/* Divider */}
+                <Divider />
+
+                {/* News Section */}
+                <NewsSection limit={15} title={pageCopy.newsTitle?.text} />
+
+                {/* Divider */}
+                <Divider />
 
                 {/* Supporters Section */}
                 <div>

@@ -5,9 +5,26 @@ import { PageCard } from "../components/ui/page-card";
 import { PageContainer } from "../components/ui/page-container";
 import { SubCard } from "../components/ui/sub-card";
 import { ExternalLinkIcon } from "../assets/ExternalLinkIcon";
-import { allProjects } from "../../theme/copy/apps-list";
+import { creativeProjects } from "../../../../pollinations.ai/src/config/projects/creative.js";
+import { chatProjects } from "../../../../pollinations.ai/src/config/projects/chat.js";
+import { gamesProjects } from "../../../../pollinations.ai/src/config/projects/games.js";
+import { hackAndBuildProjects } from "../../../../pollinations.ai/src/config/projects/hackAndBuild.js";
+import { learnProjects } from "../../../../pollinations.ai/src/config/projects/learn.js";
+import { socialBotsProjects } from "../../../../pollinations.ai/src/config/projects/socialBots.js";
+import { vibeCodingProjects } from "../../../../pollinations.ai/src/config/projects/vibeCoding.js";
 import { GithubIcon } from "../assets/SocialIcons";
 import { useTheme } from "../contexts/ThemeContext";
+
+// Combine all projects with category tags
+const allProjects = [
+    ...creativeProjects.map((p: any) => ({ ...p, category: "creative" })),
+    ...chatProjects.map((p: any) => ({ ...p, category: "chat" })),
+    ...gamesProjects.map((p: any) => ({ ...p, category: "games" })),
+    ...hackAndBuildProjects.map((p: any) => ({ ...p, category: "devtools" })),
+    ...learnProjects.map((p: any) => ({ ...p, category: "learn" })),
+    ...socialBotsProjects.map((p: any) => ({ ...p, category: "socialbots" })),
+    ...vibeCodingProjects.map((p: any) => ({ ...p, category: "vibes" })),
+];
 
 interface Project {
     category: string;

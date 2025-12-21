@@ -1,4 +1,4 @@
-import { API, DEFAULTS, getAuthHeaders } from "../api.config";
+import { API, DEFAULTS, API_KEY } from "../api.config";
 
 /**
  * Fetch text from Pollinations text generation API
@@ -12,7 +12,10 @@ export async function generateText(
 ): Promise<string> {
     const response = await fetch(API.TEXT_GENERATION, {
         method: "POST",
-        headers: getAuthHeaders("application/json"),
+        headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${API_KEY}`,
+        },
         body: JSON.stringify({
             messages: [{ role: "user", content: prompt }],
             model: model || DEFAULTS.TEXT_MODEL,
@@ -66,8 +69,7 @@ export async function generateImage(
     const url = `${baseUrl}?${params.toString()}`;
 
     const response = await fetch(url, {
-        method: "GET",
-        headers: getAuthHeaders(),
+        headers: { Authorization: `Bearer ${API_KEY}` },
         signal,
     });
 

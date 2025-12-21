@@ -1,0 +1,68 @@
+{
+  "request": {
+    "url": "http://ec2-3-80-56-235.compute-1.amazonaws.com:16385/openai",
+    "method": "POST",
+    "body": {
+      "type": "json",
+      "data": {
+        "model": "openai-fast",
+        "messages": [
+          {
+            "role": "user",
+            "content": "Say yes"
+          }
+        ],
+        "temperature": 0.7,
+        "seed": 42
+      }
+    },
+    "params": {}
+  },
+  "response": {
+    "status": 429,
+    "statusText": "Too Many Requests",
+    "headers": {
+      "access-control-allow-origin": "*",
+      "connection": "keep-alive",
+      "content-length": "672",
+      "content-type": "application/json; charset=utf-8",
+      "date": "Sun, 21 Dec 2025 16:30:38 GMT",
+      "etag": "W/\"2a0-ZxzaIXDcbBF97sXFHnIgUCtIojQ\"",
+      "keep-alive": "timeout=5",
+      "x-powered-by": "Express"
+    },
+    "body": {
+      "type": "json",
+      "data": {
+        "error": "Too Many Requests",
+        "message": "429 Too Many Requests",
+        "requestId": "uzx294",
+        "requestParameters": {
+          "messages": [
+            {
+              "role": "user",
+              "content": "Say yes"
+            }
+          ],
+          "jsonMode": false,
+          "seed": 42,
+          "model": "openai-fast",
+          "temperature": 0.7,
+          "referrer": null,
+          "isPrivate": true,
+          "voice": "alloy",
+          "private": true
+        },
+        "details": {
+          "error": {
+            "message": "azure-openai error: The system is currently experiencing high demand and cannot process your request. Your request exceeds the maximum usage size allowed during peak load. Please retry after 1 second. For improved latency reliability, consider switching to Provisioned Throughput.",
+            "type": null,
+            "param": null,
+            "code": "NoCapacity"
+          },
+          "provider": "azure-openai"
+        }
+      }
+    }
+  }
+}

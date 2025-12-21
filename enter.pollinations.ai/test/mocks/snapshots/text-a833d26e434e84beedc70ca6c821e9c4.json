@@ -1,0 +1,142 @@
+{
+  "request": {
+    "url": "http://ec2-3-80-56-235.compute-1.amazonaws.com:16385/openai",
+    "method": "POST",
+    "body": {
+      "type": "json",
+      "data": {
+        "model": "openai-fast",
+        "messages": [
+          {
+            "role": "user",
+            "content": "What is 5 + 3? You must use the calculator tool to compute this."
+          }
+        ],
+        "tools": [
+          {
+            "type": "function",
+            "function": {
+              "name": "calculator",
+              "description": "Perform basic arithmetic operations",
+              "parameters": {
+                "type": "object",
+                "properties": {
+                  "operation": {
+                    "type": "string",
+                    "enum": [
+                      "add",
+                      "subtract",
+                      "multiply",
+                      "divide"
+                    ],
+                    "description": "The arithmetic operation to perform"
+                  },
+                  "a": {
+                    "type": "number",
+                    "description": "First operand"
+                  },
+                  "b": {
+                    "type": "number",
+                    "description": "Second operand"
+                  }
+                },
+                "required": [
+                  "operation",
+                  "a",
+                  "b"
+                ]
+              }
+            }
+          }
+        ],
+        "tool_choice": "required",
+        "seed": 42
+      }
+    },
+    "params": {}
+  },
+  "response": {
+    "status": 429,
+    "statusText": "Too Many Requests",
+    "headers": {
+      "access-control-allow-origin": "*",
+      "connection": "keep-alive",
+      "content-length": "1164",
+      "content-type": "application/json; charset=utf-8",
+      "date": "Sun, 21 Dec 2025 16:29:53 GMT",
+      "etag": "W/\"48c-bwo3eUofkizyzMZoUtxvcwk8pGM\"",
+      "keep-alive": "timeout=5",
+      "x-powered-by": "Express"
+    },
+    "body": {
+      "type": "json",
+      "data": {
+        "error": "Too Many Requests",
+        "message": "429 Too Many Requests",
+        "requestId": "82sxzo",
+        "requestParameters": {
+          "messages": [
+            {
+              "role": "user",
+              "content": "What is 5 + 3? You must use the calculator tool to compute this."
+            }
+          ],
+          "jsonMode": false,
+          "seed": 42,
+          "model": "openai-fast",
+          "referrer": null,
+          "isPrivate": true,
+          "voice": "alloy",
+          "tools": [
+            {
+              "type": "function",
+              "function": {
+                "name": "calculator",
+                "description": "Perform basic arithmetic operations",
+                "parameters": {
+                  "type": "object",
+                  "properties": {
+                    "operation": {
+                      "type": "string",
+                      "enum": [
+                        "add",
+                        "subtract",
+                        "multiply",
+                        "divide"
+                      ],
+                      "description": "The arithmetic operation to perform"
+                    },
+                    "a": {
+                      "type": "number",
+                      "description": "First operand"
+                    },
+                    "b": {
+                      "type": "number",
+                      "description": "Second operand"
+                    }
+                  },
+                  "required": [
+                    "operation",
+                    "a",
+                    "b"
+                  ]
+                }
+              }
+            }
+          ],
+          "tool_choice": "required",
+          "private": true
+        },
+        "details": {
+          "error": {
+            "message": "azure-openai error: The system is currently experiencing high demand and cannot process your request. Your request exceeds the maximum usage size allowed during peak load. Please retry after 7 seconds. For improved latency reliability, consider switching to Provisioned Throughput.",
+            "type": null,
+            "param": null,
+            "code": "NoCapacity"
+          },
+          "provider": "azure-openai"
+        }
+      }
+    }
+  }
+}

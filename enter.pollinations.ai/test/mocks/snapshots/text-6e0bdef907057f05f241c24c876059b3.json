@@ -1,0 +1,76 @@
+{
+  "request": {
+    "url": "http://ec2-3-80-56-235.compute-1.amazonaws.com:16385/openai",
+    "method": "POST",
+    "body": {
+      "type": "json",
+      "data": {
+        "model": "kimi-k2-thinking",
+        "messages": [
+          {
+            "role": "user",
+            "content": "Is Berlin the capital of Germany? Reply yes or no."
+          }
+        ],
+        "seed": 42
+      }
+    },
+    "params": {}
+  },
+  "response": {
+    "status": 200,
+    "statusText": "OK",
+    "headers": {
+      "access-control-allow-origin": "*",
+      "connection": "keep-alive",
+      "content-length": "1504",
+      "content-type": "application/json; charset=utf-8",
+      "date": "Sun, 21 Dec 2025 16:28:11 GMT",
+      "etag": "W/\"5e0-xrervjKNF5bUpYFEp+fOCHDJ2kc\"",
+      "keep-alive": "timeout=5",
+      "x-model-used": "moonshotai/kimi-k2-thinking-maas",
+      "x-powered-by": "Express",
+      "x-usage-completion-text-tokens": "209",
+      "x-usage-prompt-text-tokens": "262",
+      "x-usage-total-tokens": "471"
+    },
+    "body": {
+      "type": "json",
+      "data": {
+        "choices": [
+          {
+            "finish_reason": "stop",
+            "index": 0,
+            "logprobs": null,
+            "matched_stop": 163586,
+            "message": {
+              "content": "Yes.",
+              "reasoning_content": "The user asks: \"Is Berlin the capital of Germany? Reply yes or no.\"\n\nThis is a straightforward factual question. The answer is yes.\nThe user specifically wants a yes or no reply. I should comply with that request. I should not add extra fluff or lecturing language.\n\nI need to avoid phrases like \"it's important to\", \"it's crucial to\", \"it's essential to\", \"it's unethical to\", \"it's worth noting…\", \"Remember…\" etc.\nI should also avoid moral superiority or a sense of authority.\nThe tone should be direct and answer the question as asked.\n\nThe question is simple: Is Berlin the capital of Germany?\nThe answer is: Yes.\n\nI will just reply \"Yes.\" This fulfills the user's request perfectly. It's concise, accurate, and follows the instruction to reply \"yes or no\". I don't need to add anything else. The user wants a minimal answer. I will give a minimal answer. No need for extra explanation or commentary. Just the single word \"Yes\". ",
+              "role": "assistant",
+              "tool_calls": null
+            }
+          }
+        ],
+        "created": 1766334491,
+        "id": "pllns_c8697a10bdeaa990ccc0e1d581a5ca4c",
+        "metadata": {
+          "weight_version": "default"
+        },
+        "model": "moonshotai/kimi-k2-thinking-maas",
+        "object": "chat.completion",
+        "usage": {
+          "completion_tokens": 209,
+          "extra_properties": {
+            "google": {
+              "traffic_type": "ON_DEMAND"
+            }
+          },
+          "prompt_tokens": 262,
+          "prompt_tokens_details": null,
+          "reasoning_tokens": 0,
+          "total_tokens": 471
+        }
+      }
+    }
+  }
+}

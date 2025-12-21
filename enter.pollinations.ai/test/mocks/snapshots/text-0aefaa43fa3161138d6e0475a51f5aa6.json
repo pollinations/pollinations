@@ -1,0 +1,64 @@
+{
+  "request": {
+    "url": "http://ec2-3-80-56-235.compute-1.amazonaws.com:16385/openai",
+    "method": "POST",
+    "body": {
+      "type": "json",
+      "data": {
+        "model": "nova-micro",
+        "messages": [
+          {
+            "role": "user",
+            "content": "Is Berlin the capital of Germany? Reply yes or no."
+          }
+        ],
+        "seed": 42
+      }
+    },
+    "params": {}
+  },
+  "response": {
+    "status": 200,
+    "statusText": "OK",
+    "headers": {
+      "access-control-allow-origin": "*",
+      "connection": "keep-alive",
+      "content-length": "587",
+      "content-type": "application/json; charset=utf-8",
+      "date": "Sun, 21 Dec 2025 16:28:19 GMT",
+      "etag": "W/\"24b-FHxV9VzrCTWXqG2SvTG8HlhhSKI\"",
+      "keep-alive": "timeout=5",
+      "x-model-used": "amazon.nova-micro-v1:0",
+      "x-powered-by": "Express",
+      "x-usage-completion-text-tokens": "52",
+      "x-usage-prompt-text-tokens": "262",
+      "x-usage-total-tokens": "314"
+    },
+    "body": {
+      "type": "json",
+      "data": {
+        "id": "pllns_d5fd8c6dd654fe68b989b4c1919500be",
+        "created": 1766334499,
+        "model": "amazon.nova-micro-v1:0",
+        "system_fingerprint": "fp",
+        "choices": [
+          {
+            "index": 0,
+            "finish_reason": "stop",
+            "logprobs": null,
+            "message": {
+              "role": "assistant",
+              "content": "Absolutely, Berlin is indeed the capital of Germany! So, in short—yes, that's correct! Berlin holds that title with all its historical and cultural significance. Need more details or have something specific in mind about Berlin or Germany's governance?"
+            }
+          }
+        ],
+        "object": "chat.completion",
+        "usage": {
+          "prompt_tokens": 262,
+          "completion_tokens": 52,
+          "total_tokens": 314
+        }
+      }
+    }
+  }
+}

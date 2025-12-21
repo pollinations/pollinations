@@ -1,0 +1,134 @@
+{
+  "request": {
+    "url": "http://ec2-3-80-56-235.compute-1.amazonaws.com:16385/openai",
+    "method": "POST",
+    "body": {
+      "type": "json",
+      "data": {
+        "model": "gemini",
+        "messages": [
+          {
+            "role": "user",
+            "content": "What is 5 + 3? You must use the calculator tool to compute this."
+          },
+          {
+            "role": "assistant",
+            "tool_calls": [
+              {
+                "id": "portkey-8d44f8ca-d558-4115-b70e-5226c3eba746",
+                "type": "function",
+                "function": {
+                  "name": "calculator",
+                  "arguments": "{\"b\":3,\"a\":5,\"operation\":\"add\"}",
+                  "thought_signature": "Cs4BAY89a1/Iqg5S/Wb/pLM4KAl2idnXnJq3deXTj8q4SEf4oXKBZ7nuPo7yIdEfwklBQLbP4Niopfet1wHdxvGJdxHVOyMJ9OloX6p5ue6vxOcpdyvZo7oCmKw5S4xb9dYMVenDt8IKqwVh0FMs6V+urGKN8DYYTJPzE83Ehg2Qd1zmbFv+GnWbqInKOqUbum7KyI7j9nxFc5LWrM7bw2Ct0y0oz9YUpc8IaBzpdwEeUfXHG90A53NOfsmSWGQ8LdMAUtci2kIYiQGhXM6KEPw="
+                }
+              }
+            ]
+          },
+          {
+            "role": "tool",
+            "tool_call_id": "portkey-8d44f8ca-d558-4115-b70e-5226c3eba746",
+            "content": "{\"result\":8}"
+          }
+        ],
+        "tools": [
+          {
+            "type": "function",
+            "function": {
+              "name": "calculator",
+              "description": "Perform basic arithmetic operations",
+              "parameters": {
+                "type": "object",
+                "properties": {
+                  "operation": {
+                    "type": "string",
+                    "enum": [
+                      "add",
+                      "subtract",
+                      "multiply",
+                      "divide"
+                    ],
+                    "description": "The arithmetic operation to perform"
+                  },
+                  "a": {
+                    "type": "number",
+                    "description": "First operand"
+                  },
+                  "b": {
+                    "type": "number",
+                    "description": "Second operand"
+                  }
+                },
+                "required": [
+                  "operation",
+                  "a",
+                  "b"
+                ]
+              }
+            }
+          }
+        ],
+        "seed": 42,
+        "max_tokens": 4096
+      }
+    },
+    "params": {}
+  },
+  "response": {
+    "status": 200,
+    "statusText": "OK",
+    "headers": {
+      "access-control-allow-origin": "*",
+      "connection": "keep-alive",
+      "content-length": "509",
+      "content-type": "application/json; charset=utf-8",
+      "date": "Sun, 21 Dec 2025 16:30:03 GMT",
+      "etag": "W/\"1fd-y4CE+jduxQuyrUoAVhPziahXgtQ\"",
+      "keep-alive": "timeout=5",
+      "x-model-used": "gemini-3-flash-preview",
+      "x-powered-by": "Express",
+      "x-usage-completion-text-tokens": "8",
+      "x-usage-prompt-text-tokens": "319",
+      "x-usage-total-tokens": "327"
+    },
+    "body": {
+      "type": "json",
+      "data": {
+        "id": "pllns_b0325376ccc4efc436e1f163d551d300",
+        "object": "chat.completion",
+        "created": 1766334603,
+        "model": "gemini-3-flash-preview",
+        "provider": "vertex-ai",
+        "choices": [
+          {
+            "message": {
+              "role": "assistant",
+              "content": "5 + 3 is 8.",
+              "content_blocks": [
+                {
+                  "type": "text",
+                  "text": "5 + 3 is 8."
+                }
+              ]
+            },
+            "index": 0,
+            "finish_reason": "STOP"
+          }
+        ],
+        "usage": {
+          "prompt_tokens": 319,
+          "completion_tokens": 8,
+          "total_tokens": 327,
+          "completion_tokens_details": {
+            "reasoning_tokens": 0,
+            "audio_tokens": 0
+          },
+          "prompt_tokens_details": {
+            "cached_tokens": 0,
+            "audio_tokens": 0
+          }
+        }
+      }
+    }
+  }
+}

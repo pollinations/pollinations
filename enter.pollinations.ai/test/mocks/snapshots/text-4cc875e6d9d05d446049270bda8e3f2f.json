@@ -1,0 +1,72 @@
+{
+  "request": {
+    "url": "http://ec2-3-80-56-235.compute-1.amazonaws.com:16385/openai",
+    "method": "POST",
+    "body": {
+      "type": "json",
+      "data": {
+        "model": "claude-large",
+        "messages": [
+          {
+            "role": "user",
+            "content": "Is Berlin the capital of Germany? Reply yes or no."
+          }
+        ],
+        "seed": 42
+      }
+    },
+    "params": {}
+  },
+  "response": {
+    "status": 200,
+    "statusText": "OK",
+    "headers": {
+      "access-control-allow-origin": "*",
+      "connection": "keep-alive",
+      "content-length": "434",
+      "content-type": "application/json; charset=utf-8",
+      "date": "Sun, 21 Dec 2025 16:28:06 GMT",
+      "etag": "W/\"1b2-Ru2q9EZ3TzjX0fVVfV1Hd6jNyZ4\"",
+      "keep-alive": "timeout=5",
+      "x-model-used": "global.anthropic.claude-opus-4-5-20251101-v1:0",
+      "x-powered-by": "Express",
+      "x-usage-completion-text-tokens": "4",
+      "x-usage-prompt-text-tokens": "289",
+      "x-usage-total-tokens": "293"
+    },
+    "body": {
+      "type": "json",
+      "data": {
+        "id": "pllns_11dd2c418200a9e55dc40f2a3deea7d6",
+        "object": "chat.completion",
+        "created": 1766334486,
+        "model": "global.anthropic.claude-opus-4-5-20251101-v1:0",
+        "provider": "bedrock",
+        "choices": [
+          {
+            "index": 0,
+            "message": {
+              "role": "assistant",
+              "content": "Yes",
+              "content_blocks": [
+                {
+                  "type": "text",
+                  "text": "Yes"
+                }
+              ]
+            },
+            "finish_reason": "end_turn"
+          }
+        ],
+        "usage": {
+          "prompt_tokens": 289,
+          "completion_tokens": 4,
+          "total_tokens": 293,
+          "prompt_tokens_details": {
+            "cached_tokens": 0
+          }
+        }
+      }
+    }
+  }
+}

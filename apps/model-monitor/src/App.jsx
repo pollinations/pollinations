@@ -9,11 +9,12 @@ function formatPercent(count, total, showZero = false) {
     return pct < 1 ? pct.toFixed(1) + "%" : Math.round(pct) + "%";
 }
 
-// Helper to get 2xx color
-function get2xxColor(ok2xx, total) {
-    if (!total) return "text-gray-300";
+// Helper to get 2xx color (excludes 401/403 from total since those are user errors)
+function get2xxColor(ok2xx, total, excluded401_403 = 0) {
+    const adjustedTotal = total - excluded401_403;
+    if (!adjustedTotal || adjustedTotal <= 0) return "text-gray-300";
     if (ok2xx === 0) return "text-red-600 font-medium"; // 0% success = red
-    const pct = (ok2xx / total) * 100;
+    const pct = (ok2xx / adjustedTotal) * 100;
     if (pct > 95) return "text-green-600 font-medium";
     if (pct > 80) return "text-green-500";
     if (pct > 50) return "text-yellow-500";
@@ -153,10 +154,10 @@ function TrendIndicator({ trend }) {
         p95Change > 5
             ? "text-red-600"
             : p95Change > 0.5
-            ? "text-yellow-600"
-            : p95Change < -0.5
-            ? "text-green-600"
-            : "text-gray-400";
+              ? "text-yellow-600"
+              : p95Change < -0.5
+                ? "text-green-600"
+                : "text-gray-400";
 
     // 5xx trend - any change matters
     const err5xxArrow =
@@ -165,10 +166,10 @@ function TrendIndicator({ trend }) {
         err5xxChange > 1
             ? "text-red-600"
             : err5xxChange > 0.1
-            ? "text-yellow-600"
-            : err5xxChange < -0.1
-            ? "text-green-600"
-            : "text-gray-400";
+              ? "text-yellow-600"
+              : err5xxChange < -0.1
+                ? "text-green-600"
+                : "text-gray-400";
 
     // Format the change value for display
     const formatChange = (val) => {
@@ -183,7 +184,7 @@ function TrendIndicator({ trend }) {
             <span
                 className={p95Color}
                 title={`P95: ${p95Change > 0 ? "+" : ""}${p95Change.toFixed(
-                    0
+                    0,
                 )}%`}
             >
                 {p95Arrow}
@@ -252,19 +253,27 @@ function Sparkline({ data, color = "blue" }) {
 
 // Compute health status from stats
 // Different thresholds for text vs image models
+// Excludes 401 (auth) and 403 (pollen) errors from uptime calculation since those are user errors
 function computeHealthStatus(stats, modelType = "text") {
     if (!stats || !stats.total_requests) return "on";
 
     const total = stats.total_requests;
+    // Exclude 401/403 from total - these are user errors (no auth, no pollen), not model failures
+    const excluded401_403 = (stats.errors_401 || 0) + (stats.errors_403 || 0);
+    const adjustedTotal = total - excluded401_403;
+
+    // If all requests were 401/403, model is healthy (no actual model errors)
+    if (adjustedTotal <= 0) return "on";
+
     const pct5xx =
         (((stats.errors_500 || 0) +
             (stats.errors_502 || 0) +
             (stats.errors_503 || 0) +
             (stats.errors_504 || 0)) /
-            total) *
+            adjustedTotal) *
         100;
-    const pct504 = ((stats.errors_504 || 0) / total) * 100;
-    const pct429 = ((stats.errors_429 || 0) / total) * 100;
+    const pct504 = ((stats.errors_504 || 0) / adjustedTotal) * 100;
+    const pct429 = ((stats.errors_429 || 0) / adjustedTotal) * 100;
     const p95 = stats.latency_p95_ms || 0;
     const count2xx = stats.status_2xx || 0;
 
@@ -274,9 +283,9 @@ function computeHealthStatus(stats, modelType = "text") {
     // OFF: pct_5xx >= 20%, pct_504 >= 5%, no 2xx, or very low success rate
     if (pct5xx >= 20) return "off";
     if (pct504 >= 5) return "off";
-    if (count2xx === 0 && total > 0) return "off";
-    const successRate = (count2xx / total) * 100;
-    if (successRate < 25 && total > 0) return "off"; // Less than 25% success = OFF
+    if (count2xx === 0 && adjustedTotal > 0) return "off";
+    const successRate = (count2xx / adjustedTotal) * 100;
+    if (successRate < 25 && adjustedTotal > 0) return "off"; // Less than 25% success = OFF
 
     // TURBULENT: pct_5xx 5-20%, pct_429 >= 15%, P95 > threshold
     if (pct5xx >= 5) return "turbulent";
@@ -320,8 +329,8 @@ function SortableTh({ label, sortKey, currentSort, onSort, align = "left" }) {
         align === "right"
             ? "text-right"
             : align === "center"
-            ? "text-center"
-            : "text-left";
+              ? "text-center"
+              : "text-left";
 
     return (
         <th
@@ -347,7 +356,7 @@ function GatewayHealth({ stats }) {
             err429: acc.err429 + (s.errors_429 || 0),
             err4xxOther: acc.err4xxOther + (s.errors_4xx_other || 0),
         }),
-        { requests: 0, err401: 0, err403: 0, err429: 0, err4xxOther: 0 }
+        { requests: 0, err401: 0, err403: 0, err429: 0, err4xxOther: 0 },
     );
 
     if (totals.requests === 0) return null;
@@ -451,7 +460,7 @@ function App() {
     // Calculate total requests across all models
     const totalAllRequests = models.reduce(
         (sum, m) => sum + (m.stats?.total_requests || 0),
-        0
+        0,
     );
 
     // Helper to calculate status codes
@@ -528,14 +537,14 @@ function App() {
                                         endpointStatus.image === true
                                             ? "bg-green-500"
                                             : endpointStatus.image === false
-                                            ? "bg-red-500"
-                                            : "bg-gray-300"
+                                              ? "bg-red-500"
+                                              : "bg-gray-300"
                                     }`}
                                 />
                                 image:{" "}
                                 {
                                     sortedModels.filter(
-                                        (m) => m.type === "image"
+                                        (m) => m.type === "image",
                                     ).length
                                 }
                             </span>
@@ -545,14 +554,14 @@ function App() {
                                         endpointStatus.text === true
                                             ? "bg-green-500"
                                             : endpointStatus.text === false
-                                            ? "bg-red-500"
-                                            : "bg-gray-300"
+                                              ? "bg-red-500"
+                                              : "bg-gray-300"
                                     }`}
                                 />
                                 text:{" "}
                                 {
                                     sortedModels.filter(
-                                        (m) => m.type === "text"
+                                        (m) => m.type === "text",
                                     ).length
                                 }
                             </span>
@@ -704,6 +713,12 @@ function App() {
                                 sortedModels.map((model) => {
                                     const stats = model.stats;
                                     const total = stats?.total_requests || 0;
+                                    // Exclude 401/403 from uptime calculation - these are user errors (no auth, no pollen)
+                                    const excluded401_403 =
+                                        (stats?.errors_401 || 0) +
+                                        (stats?.errors_403 || 0);
+                                    const adjustedTotal =
+                                        total - excluded401_403;
                                     const share =
                                         totalAllRequests > 0
                                             ? (total / totalAllRequests) * 100
@@ -766,7 +781,7 @@ function App() {
                                                         <span className="text-[9px] text-gray-400 ml-1">
                                                             (
                                                             {Math.round(
-                                                                total / 5
+                                                                total / 5,
                                                             )}
                                                             /m)
                                                         </span>
@@ -787,13 +802,19 @@ function App() {
                                             <td
                                                 className={`px-3 py-2 text-right tabular-nums ${get2xxColor(
                                                     ok2xx,
-                                                    total
+                                                    total,
+                                                    excluded401_403,
                                                 )}`}
+                                                title={
+                                                    excluded401_403 > 0
+                                                        ? `Excluding ${excluded401_403} auth/pollen errors from uptime`
+                                                        : undefined
+                                                }
                                             >
                                                 {formatPercent(
                                                     ok2xx,
-                                                    total,
-                                                    true
+                                                    adjustedTotal,
+                                                    true,
                                                 )}
                                             </td>
                                             {/* Errors breakdown */}
@@ -803,7 +824,7 @@ function App() {
                                             {/* Last Error */}
                                             <td
                                                 className={`px-3 py-2 text-right tabular-nums ${getLastErrorColor(
-                                                    lastErrorAt
+                                                    lastErrorAt,
                                                 )}`}
                                             >
                                                 {lastErrorAgo || "—"}
@@ -813,7 +834,7 @@ function App() {
                                                 className={`px-3 py-2 text-right tabular-nums ${
                                                     p50Sec
                                                         ? getLatencyColor(
-                                                              p50Sec
+                                                              p50Sec,
                                                           )
                                                         : "text-gray-300"
                                                 }`}
@@ -828,12 +849,12 @@ function App() {
                                                     !p95Sec
                                                         ? "text-gray-300"
                                                         : tailRatio > 3
-                                                        ? "text-red-600 font-medium"
-                                                        : tailRatio > 2
-                                                        ? "text-yellow-600"
-                                                        : getLatencyColor(
-                                                              p95Sec
-                                                          )
+                                                          ? "text-red-600 font-medium"
+                                                          : tailRatio > 2
+                                                            ? "text-yellow-600"
+                                                            : getLatencyColor(
+                                                                  p95Sec,
+                                                              )
                                                 }`}
                                             >
                                                 {p95Sec
@@ -882,6 +903,11 @@ function App() {
                                 1min (image)
                             </span>
                         </div>
+                    </div>
+                    <div className="text-gray-400 italic">
+                        Note: 401 (no auth) and 403 (no pollen) errors are
+                        excluded from uptime calculations as they are user
+                        errors, not model failures.
                     </div>
                 </div>
             </div>

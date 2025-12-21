@@ -2,8 +2,7 @@ import { Polar } from "@polar-sh/sdk";
 import { cached } from "@/cache.ts";
 import { getLogger } from "@logtape/logtape";
 import z from "zod";
-import { Product } from "@polar-sh/sdk/models/components/product.js";
-import { CustomerSubscription } from "@polar-sh/sdk/models/components/customersubscription.js";
+import type { Product } from "@polar-sh/sdk/models/components/product.js";
 import { addDays, differenceInDays } from "date-fns";
 
 const PRODUCT_CACHE_TTL = 300; // 5 minutes in seconds
@@ -97,17 +96,6 @@ export async function getPackProductMapCached(
         keyGenerator: () => "polar:products:pack:map",
     })(polar, packProductSlugs);
 }
-
-type CustomerTierInfo = {
-    userId: string;
-    assignedTier: TierName;
-    activeTier: {
-        tier: TierStatus;
-        subscription: CustomerSubscription;
-        productSlug: TierProductSlug;
-        product: Product;
-    };
-};
 
 export function getTierProductById(
     productId: string | undefined,

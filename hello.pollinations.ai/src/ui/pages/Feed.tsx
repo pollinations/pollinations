@@ -176,7 +176,7 @@ function Feed() {
                                         <p className="text-white text-sm font-body line-clamp-3 mb-2">
                                             {item.prompt}
                                         </p>
-                                        <div className="flex justify-between text-xs text-gray-300">
+                                        <div className="flex justify-between text-xs text-[#ccc]">
                                             <span>{item.model}</span>
                                             <span>#{item.seed}</span>
                                         </div>
@@ -204,19 +204,19 @@ function Feed() {
                     onClick={() => setSelectedImage(null)}
                 >
                     <div
-                        className="modal-content bg-gray-950 rounded-xl max-w-4xl w-full max-h-[95vh] overflow-hidden flex flex-col relative shadow-2xl"
+                        className="modal-content bg-gray-950 rounded-2xl max-w-6xl w-full max-h-[90vh] overflow-hidden flex relative shadow-2xl"
                         onClick={(e) => e.stopPropagation()}
                     >
                         <button
                             onClick={() => setSelectedImage(null)}
-                            className="absolute top-4 right-4 z-10 bg-white/20 hover:bg-white/30 rounded-full p-2 transition-colors backdrop-blur-sm"
+                            className="absolute top-0 right-0 z-10 bg-white/20 hover:bg-white/30 rounded-full p-2 transition-colors backdrop-blur-sm"
                         >
                             <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                             </svg>
                         </button>
 
-                        <div className="relative bg-black flex items-center justify-center flex-1 overflow-hidden">
+                        <div className="w-1/2 bg-black flex items-center justify-center overflow-hidden">
                             <img
                                 src={selectedImage.imageURL}
                                 alt={selectedImage.prompt}
@@ -224,37 +224,51 @@ function Feed() {
                             />
                         </div>
 
-                        <div className="p-6 space-y-4 bg-gray-950 border-t border-white/10 overflow-y-auto max-h-56">
-                            <div>
-                                <h3 className="text-xs font-semibold text-gray-400 mb-2 uppercase tracking-wide">Prompt</h3>
-                                <p className="text-white text-sm leading-relaxed">{selectedImage.prompt}</p>
+                        <div className="w-1/2 flex flex-col bg-gray-950 p-8">
+                            <div className="flex-1 overflow-y-auto space-y-6 pr-4">
+                                <div className="bg-gradient-to-br from-purple-900/30 to-blue-900/30 rounded-xl p-5 border border-purple-500/20 backdrop-blur-sm">
+                                    <div className="flex items-center gap-2 mb-3">
+                                        <div className="w-2 h-2 rounded-full bg-gradient-to-r from-purple-400 to-blue-400"></div>
+                                        <h3 className="text-xs font-bold text-purple-300 uppercase tracking-widest">Prompt</h3>
+                                    </div>
+                                    <p className="text-white text-sm leading-relaxed break-words whitespace-normal">{(selectedImage.prompt).slice(0, 200) + "..."}</p>
+                                </div>
+
+                                <div>
+                                    <div className="flex items-center gap-2 mb-4">
+                                        <div className="w-2 h-2 rounded-full bg-gradient-to-r from-emerald-400 to-cyan-400"></div>
+                                        <h3 className="text-xs font-bold text-emerald-300 uppercase tracking-widest">Details</h3>
+                                    </div>
+                                    <div className="grid grid-cols-2 gap-3">
+                                        <div className="bg-gradient-to-br from-blue-900/40 to-blue-800/20 rounded-lg p-4 border border-blue-500/30 backdrop-blur-sm hover:border-blue-400/50 transition-colors">
+                                            <span className="text-[#ffc] text-xs uppercase tracking-widest font-semibold block mb-2">Model</span>
+                                            <span className="text-white font-bold text-sm">{selectedImage.model}</span>
+                                        </div>
+
+                                        <div className="bg-gradient-to-br from-amber-900/40 to-amber-800/20 rounded-lg p-4 border border-amber-500/30 backdrop-blur-sm hover:border-amber-400/50 transition-colors">
+                                            <span className="text-[#ffc] text-xs uppercase tracking-widest font-semibold block mb-2">Seed</span>
+                                            <span className="text-white font-bold text-sm font-mono">#{selectedImage.seed}</span>
+                                        </div>
+
+                                        <div className="bg-gradient-to-br from-pink-900/40 to-pink-800/20 rounded-lg p-4 border border-pink-500/30 backdrop-blur-sm hover:border-pink-400/50 transition-colors">
+                                            <span className="text-[#ffc] text-xs uppercase tracking-widest font-semibold block mb-2">Resolution</span>
+                                            <span className="text-white font-bold text-sm">{selectedImage.width}×{selectedImage.height}</span>
+                                        </div>
+
+                                        <div className="bg-gradient-to-br from-cyan-900/40 to-cyan-800/20 rounded-lg p-4 border border-cyan-500/30 backdrop-blur-sm hover:border-cyan-400/50 transition-colors">
+                                            <span className="text-[#ffc] text-xs uppercase tracking-widest font-semibold block mb-2">Aspect Ratio</span>
+                                            <span className="text-white font-bold text-sm">{(selectedImage.width / selectedImage.height).toFixed(2)}</span>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
 
-                            <div className="grid grid-cols-4 gap-3">
-                                <div>
-                                    <h4 className="text-xs font-semibold text-gray-400 mb-1 uppercase tracking-wide">Model</h4>
-                                    <p className="text-white text-sm">{selectedImage.model}</p>
-                                </div>
-                                <div>
-                                    <h4 className="text-xs font-semibold text-gray-400 mb-1 uppercase tracking-wide">Seed</h4>
-                                    <p className="text-white text-sm">#{selectedImage.seed}</p>
-                                </div>
-                                <div>
-                                    <h4 className="text-xs font-semibold text-gray-400 mb-1 uppercase tracking-wide">Resolution</h4>
-                                    <p className="text-white text-sm">{selectedImage.width}×{selectedImage.height}</p>
-                                </div>
-                                <div>
-                                    <h4 className="text-xs font-semibold text-gray-400 mb-1 uppercase tracking-wide">Aspect Ratio</h4>
-                                    <p className="text-white text-sm">{(selectedImage.width / selectedImage.height).toFixed(2)}</p>
-                                </div>
-                            </div>
-
-                            <div className="flex gap-3 pt-2">
+                            <div className="flex gap-3 pt-6 mt-6 border-t border-white/10">
                                 <button
                                     onClick={() => window.open(selectedImage.imageURL, '_blank')}
-                                    className="flex-1 px-4 py-2.5 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-500 hover:to-blue-600 text-white rounded-lg transition-all duration-200 text-sm font-semibold shadow-lg hover:shadow-blue-600/50"
+                                    className="flex-1 px-4 py-3 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-500 hover:to-blue-600 text-white rounded-lg transition-all duration-200 text-sm font-bold shadow-lg hover:shadow-blue-600/50 uppercase tracking-wide"
                                 >
-                                    Open Full Size
+                                    Open Full
                                 </button>
                                 <button
                                     onClick={() => {
@@ -265,7 +279,7 @@ function Feed() {
                                         link.click();
                                         document.body.removeChild(link);
                                     }}
-                                    className="flex-1 px-4 py-2.5 bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-500 hover:to-emerald-600 text-white rounded-lg transition-all duration-200 text-sm font-semibold shadow-lg hover:shadow-emerald-600/50"
+                                    className="flex-1 px-4 py-3 bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-500 hover:to-emerald-600 text-white rounded-lg transition-all duration-200 text-sm font-bold shadow-lg hover:shadow-emerald-600/50 uppercase tracking-wide"
                                 >
                                     Download
                                 </button>

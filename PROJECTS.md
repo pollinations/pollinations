@@ -326,6 +326,7 @@ Pollinations.AI is used in various projects, including:
 | 🆕 [💬 Yerty AI](https://yerty.xdativo.cloud) | A calm, friendly AI chat companion focused on everyday thinking, writing, and... | @losingdivine |
 | 🆕 🖥️ 💬 AI Chat Studio ([⭐ 0](https://github.com/Universe-shifting/AI-Chat-Studio)) | Local desktop AI chat app built with PyQt6. Supports multimodal conversations... | @vsenikizanat81486 |
 | 🆕 🖥️ 💬 AI Chat Studio ([⭐ 0](https://github.com/Universe-shifting/AI-Chat-Studio)) | Local desktop AI chat app built with PyQt6. Supports multimodal conversations... | @vsenikizanat81486 |
+| 🆕 🖥️ 💬 AI Chat Studio ([⭐ 0](https://github.com/Universe-shifting/AI-Chat-Studio)) | Local desktop chat app built with PyQt6. Features multimodal conversations with... | @vsenikizanat81486 |
 
 ### Social Bots 🤖
 

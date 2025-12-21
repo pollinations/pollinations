@@ -5,12 +5,19 @@ import { PageCard } from "../components/ui/page-card";
 import { PageContainer } from "../components/ui/page-container";
 import { SubCard } from "../components/ui/sub-card";
 import { ExternalLinkIcon } from "../assets/ExternalLinkIcon";
+// @ts-ignore - External JS imports from monorepo
 import { creativeProjects } from "../../../../pollinations.ai/src/config/projects/creative.js";
+// @ts-ignore - External JS imports from monorepo
 import { chatProjects } from "../../../../pollinations.ai/src/config/projects/chat.js";
+// @ts-ignore - External JS imports from monorepo
 import { gamesProjects } from "../../../../pollinations.ai/src/config/projects/games.js";
+// @ts-ignore - External JS imports from monorepo
 import { hackAndBuildProjects } from "../../../../pollinations.ai/src/config/projects/hackAndBuild.js";
+// @ts-ignore - External JS imports from monorepo
 import { learnProjects } from "../../../../pollinations.ai/src/config/projects/learn.js";
+// @ts-ignore - External JS imports from monorepo
 import { socialBotsProjects } from "../../../../pollinations.ai/src/config/projects/socialBots.js";
+// @ts-ignore - External JS imports from monorepo
 import { vibeCodingProjects } from "../../../../pollinations.ai/src/config/projects/vibeCoding.js";
 import { GithubIcon } from "../assets/SocialIcons";
 import { useTheme } from "../contexts/ThemeContext";

@@ -59,3 +59,11 @@ export const SOCIAL_LINKS = {
         height: "27px",
     },
 };
+
+// Additional links (not rendered as social icons)
+export const LINKS = {
+    discordPollenBeta:
+        "https://discord.com/channels/885844321461485618/1432378056126894343",
+    githubSubmitApp:
+        "https://github.com/pollinations/pollinations/issues/new?template=app-submission.yml",
+};

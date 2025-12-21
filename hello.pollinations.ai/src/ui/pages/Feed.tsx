@@ -132,7 +132,7 @@ function Feed() {
 
                 {displayedImages.length > 0 && (
                     <>
-                        <div className="feed-grid grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 max-h-[calc(100vh-240px)] overflow-y-auto pr-4 scrollbar-thin scrollbar-thumb-border-brand scrollbar-track-surface-secondary rounded-lg"
+                        <div className="feed-grid grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 max-h-[calc(100vh-340px)] overflow-y-auto pr-4 scrollbar-thin scrollbar-thumb-border-brand scrollbar-track-surface-secondary rounded-lg"
                             style={{
                                 scrollbarWidth: 'thin',
                                 scrollbarColor: 'var(--color-border-brand) var(--color-surface-secondary)',

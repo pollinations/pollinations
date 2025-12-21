@@ -1,7 +1,6 @@
 /**
  * Worker entry point for hello.pollinations.ai
- * Handles /api/* routes by proxying to enter.pollinations.ai with secret key
- * All other requests are served from static assets
+ * Serves static assets only - API calls go directly to gen.pollinations.ai from frontend
  */
 
 interface Env {

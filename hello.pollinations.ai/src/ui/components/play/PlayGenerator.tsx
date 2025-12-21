@@ -4,7 +4,7 @@ import { CloseIcon } from "../../assets/CloseIcon";
 import type { Model } from "../../../hooks/useModelList";
 
 import { PLAY_PAGE } from "../../../theme";
-import { API_BASE, getAuthHeaders } from "../../../api.config";
+import { API_BASE, API_KEY } from "../../../api.config";
 
 interface PlayGeneratorProps {
     selectedModel: string;
@@ -85,12 +85,8 @@ export function PlayGenerator({
                 });
 
                 const response = await fetch(
-                    `${API_BASE}/generate/image/${encodeURIComponent(
-                        prompt
-                    )}?${params}`,
-                    {
-                        headers: getAuthHeaders(),
-                    }
+                    `${API_BASE}/image/${encodeURIComponent(prompt)}?${params}`,
+                    { headers: { Authorization: `Bearer ${API_KEY}` } }
                 );
 
                 if (!response.ok) {
@@ -133,10 +129,13 @@ export function PlayGenerator({
                         : prompt;
 
                 const response = await fetch(
-                    `${API_BASE}/generate/v1/chat/completions`,
+                    `${API_BASE}/v1/chat/completions`,
                     {
                         method: "POST",
-                        headers: getAuthHeaders("application/json"),
+                        headers: {
+                            "Content-Type": "application/json",
+                            Authorization: `Bearer ${API_KEY}`,
+                        },
                         body: JSON.stringify({
                             model: selectedModel,
                             messages: [
@@ -430,17 +429,27 @@ export function PlayGenerator({
                     disabled={!prompt || isLoading}
                     variant="generate"
                     size={null}
+                    className={isLoading ? "animate-pulse" : ""}
                     data-type={
                         isAudioModel ? "audio" : isImageModel ? "image" : "text"
                     }
                 >
-                    {isLoading
-                        ? PLAY_PAGE.generatingText.text
-                        : isAudioModel
-                        ? "Generate Audio"
-                        : isImageModel
-                        ? PLAY_PAGE.generateImageButton.text
-                        : PLAY_PAGE.generateTextButton.text}
+                    {isLoading ? (
+                        <span className="flex items-center gap-2">
+                            <span className="flex gap-1">
+                                <span className="w-1.5 h-1.5 bg-current rounded-full animate-bounce [animation-delay:-0.3s]" />
+                                <span className="w-1.5 h-1.5 bg-current rounded-full animate-bounce [animation-delay:-0.15s]" />
+                                <span className="w-1.5 h-1.5 bg-current rounded-full animate-bounce" />
+                            </span>
+                            {PLAY_PAGE.generatingText.text}
+                        </span>
+                    ) : isAudioModel ? (
+                        "Generate Audio"
+                    ) : isImageModel ? (
+                        PLAY_PAGE.generateImageButton.text
+                    ) : (
+                        PLAY_PAGE.generateTextButton.text
+                    )}
                 </Button>
                 {!prompt && !isLoading && (
                     <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-charcoal text-text-body-main text-xs rounded-input shadow-lg border border-border-main opacity-0 group-hover/generate:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-50">

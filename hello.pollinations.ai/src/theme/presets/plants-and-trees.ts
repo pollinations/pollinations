@@ -7,108 +7,108 @@ export const PlantsAndTreesTheme: LLMThemeResponse = {
             "ids": ["text.primary", "input.text"],
         },
         "slot_1": {
-            "hex": "#a5d6a7",
+            "hex": "#e09e52",
             "ids": ["text.secondary", "indicator.text"],
         },
         "slot_2": {
-            "hex": "#1b3026",
-            "ids": ["input.bg", "button.secondary.bg", "border.subtle"],
-        },
-        "slot_3": {
-            "hex": "#2e4d3e",
-            "ids": ["input.border", "button.secondary.border", "border.main"],
-        },
-        "slot_4": {
-            "hex": "#4c6b5d",
-            "ids": ["input.placeholder"],
-        },
-        "slot_5": {
-            "hex": "#2e7d32",
-            "ids": ["button.primary.bg", "button.active.overlay"],
-        },
-        "slot_6": {
-            "hex": "#43a047",
-            "ids": ["button.primary.border", "background.element1"],
-        },
-        "slot_7": {
-            "hex": "#1b2621",
-            "ids": ["button.disabled.bg"],
-        },
-        "slot_8": {
-            "hex": "#66bb6a",
-            "ids": ["button.focus.ring", "indicator.image", "border.highlight"],
-        },
-        "slot_9": {
-            "hex": "#8d6e63",
-            "ids": ["indicator.audio"],
-        },
-        "slot_10": {
-            "hex": "#558b2f",
+            "hex": "#892f6c",
             "ids": ["indicator.video"],
         },
-        "slot_11": {
+        "slot_3": {
             "hex": "#388e3c",
             "ids": ["border.strong"],
         },
-        "slot_12": {
+        "slot_4": {
             "hex": "#607d8b",
             "ids": ["text.tertiary"],
         },
-        "slot_13": {
+        "slot_5": {
             "hex": "#003300",
             "ids": ["shadow.brand.lg"],
         },
-        "slot_14": {
+        "slot_6": {
             "hex": "#000000",
             "ids": ["shadow.dark.sm", "shadow.dark.lg", "shadow.dark.xl"],
         },
-        "slot_15": {
+        "slot_7": {
             "hex": "#050a08",
             "ids": ["shadow.dark.md"],
         },
-        "slot_16": {
+        "slot_8": {
             "hex": "#33691e",
             "ids": ["shadow.highlight.sm", "shadow.highlight.md"],
         },
-        "slot_17": {
+        "slot_9": {
             "hex": "#81c784",
             "ids": ["logo.main"],
         },
-        "slot_18": {
+        "slot_10": {
             "hex": "#cddc39",
             "ids": ["logo.accent", "background.particle"],
         },
-        "slot_19": {
+        "slot_11": {
             "hex": "#795548",
             "ids": ["background.element2"],
         },
-        "slot_20": {
+        "slot_12": {
+            "hex": "#1b3026",
+            "ids": ["input.bg", "button.secondary.bg", "border.subtle"],
+        },
+        "slot_13": {
             "hex": "#546e7a",
             "ids": ["text.caption"],
         },
-        "slot_21": {
+        "slot_14": {
             "hex": "#1b5e20",
             "ids": ["text.inverse", "shadow.brand.sm", "shadow.brand.md"],
         },
-        "slot_22": {
-            "hex": "#4caf50",
+        "slot_15": {
+            "hex": "#acae4c",
             "ids": ["text.brand", "button.hover.overlay", "border.brand"],
         },
-        "slot_23": {
+        "slot_16": {
             "hex": "#b9f6ca",
             "ids": ["text.highlight"],
         },
-        "slot_24": {
+        "slot_17": {
             "hex": "#0a1410",
             "ids": ["surface.page", "background.base"],
         },
-        "slot_25": {
+        "slot_18": {
             "hex": "#13261e",
             "ids": ["surface.card", "border.faint"],
         },
-        "slot_26": {
+        "slot_19": {
             "hex": "#0f1f1a",
             "ids": ["surface.base"],
+        },
+        "slot_20": {
+            "hex": "#2e4d3e",
+            "ids": ["input.border", "button.secondary.border", "border.main"],
+        },
+        "slot_21": {
+            "hex": "#4c6b5d",
+            "ids": ["input.placeholder"],
+        },
+        "slot_22": {
+            "hex": "#eee0af",
+            "ids": ["button.active.overlay", "button.primary.bg"],
+        },
+        "slot_23": {
+            "hex": "#43a047",
+            "ids": ["button.primary.border", "background.element1"],
+        },
+        "slot_24": {
+            "hex": "#1b2621",
+            "ids": ["button.disabled.bg"],
+        },
+        "slot_25": {
+            "hex": "#66bb6a",
+            "ids": ["button.focus.ring", "indicator.image", "border.highlight"],
+        },
+        "slot_26": {
+            "hex": "#4394df",
+            "ids": ["indicator.audio"],
         },
     },
     "borderRadius": {
@@ -130,27 +130,27 @@ export const PlantsAndTreesTheme: LLMThemeResponse = {
 export const PlantsAndTreesCssVariables =
     processTheme(PlantsAndTreesTheme).cssVariables;
 
-// Copy from: "plants and trees"
+// Copy from: "plants-and-trees"
 export const PlantsAndTreesCopy = {
     "APPS_PAGE.title.text": "Ecosystem",
     "APPS_PAGE.subtitle.text":
-        "Explore our lush ecosystem of Pollinations-powered tools.",
+        "Paradise-built apps, tools, and experiments—Pollinations-powered. Browse, try, ship.",
     "COMMUNITY_PAGE.title.text": "Contribute",
     "COMMUNITY_PAGE.subtitle.text":
-        "A fertile garden where creators and developers cultivate ideas and bloom together.",
+        "We're crafting a haven where developers, creators, and AI enthusiasts collaborate and bloom together.",
     "COMMUNITY_PAGE.newsTitle.text": "What's New",
     "COMMUNITY_PAGE.newsFilePath": "/NEWS.md",
     "COMMUNITY_PAGE.discordTitle.text": "Discord",
     "COMMUNITY_PAGE.discordSubtitle.text":
-        "Gather in our sunlit grove for support.",
+        "Join our sunlit community for chats and support.",
     "COMMUNITY_PAGE.githubTitle.text": "GitHub",
     "COMMUNITY_PAGE.githubSubtitle.text":
-        "Branch out and contribute to open-source code.",
+        "Collaborate on open-source projects and contribute code.",
     "COMMUNITY_PAGE.joinDiscordButton.text": "Join Discord",
     "COMMUNITY_PAGE.contributeButton.text": "Contribute",
     "COMMUNITY_PAGE.supportersTitle.text": "Supporters",
     "COMMUNITY_PAGE.supportersSubtitle.text":
-        "Grateful to those who nourish our platform's soil.",
+        "We're grateful to our supporters for their contributions to the platform.",
     "COMMUNITY_PAGE.supportersList.0.name": "Perplexity AI",
     "COMMUNITY_PAGE.supportersList.0.url": "https://www.perplexity.ai/",
     "COMMUNITY_PAGE.supportersList.0.description":
@@ -210,7 +210,8 @@ export const PlantsAndTreesCopy = {
     "DOCS_PAGE.copiedLabel.text": "Copied!",
     "DOCS_PAGE.imageGenerationTitle.text": "Image Generation",
     "DOCS_PAGE.pickPromptLabel.text": "Pick a prompt",
-    "DOCS_PAGE.optionalParametersLabel.text": "Optional parameters",
+    "DOCS_PAGE.modelSelectLabel.text": "Model",
+    "DOCS_PAGE.parametersLabel.text": "Parameters",
     "DOCS_PAGE.generatingLabel.text": "Generating...",
     "DOCS_PAGE.copyUrlButton.text": "Copy URL",
     "DOCS_PAGE.imagePrompts.0": "a blooming flower in golden hour",
@@ -219,6 +220,28 @@ export const PlantsAndTreesCopy = {
     "DOCS_PAGE.imagePrompts.3": "harmonious forest ecosystem",
     "DOCS_PAGE.imagePrompts.4": "symbiotic nature interactions",
     "DOCS_PAGE.imagePrompts.5": "flowing river through biosphere",
+    "DOCS_PAGE.imageParameters.0.key": "width",
+    "DOCS_PAGE.imageParameters.0.value": "1024",
+    "DOCS_PAGE.imageParameters.0.description": "Image width in pixels",
+    "DOCS_PAGE.imageParameters.1.key": "height",
+    "DOCS_PAGE.imageParameters.1.value": "1024",
+    "DOCS_PAGE.imageParameters.1.description": "Image height in pixels",
+    "DOCS_PAGE.imageParameters.2.key": "seed",
+    "DOCS_PAGE.imageParameters.2.value": "42",
+    "DOCS_PAGE.imageParameters.2.description":
+        "Random seed for reproducible results",
+    "DOCS_PAGE.imageParameters.3.key": "enhance",
+    "DOCS_PAGE.imageParameters.3.value": "true",
+    "DOCS_PAGE.imageParameters.3.description": "Let AI improve your prompt",
+    "DOCS_PAGE.imageParameters.4.key": "nologo",
+    "DOCS_PAGE.imageParameters.4.value": "true",
+    "DOCS_PAGE.imageParameters.4.description": "Remove Pollinations watermark",
+    "DOCS_PAGE.imageParameters.5.key": "safe",
+    "DOCS_PAGE.imageParameters.5.value": "true",
+    "DOCS_PAGE.imageParameters.5.description": "Enable safety filters",
+    "DOCS_PAGE.imageParameters.6.key": "private",
+    "DOCS_PAGE.imageParameters.6.value": "true",
+    "DOCS_PAGE.imageParameters.6.description": "Hide from public feeds",
     "DOCS_PAGE.textGenerationTitle.text": "Text Generation",
     "DOCS_PAGE.modelLabel.text": "Model",
     "DOCS_PAGE.defaultModelLabel.text": "Default: openai",
@@ -227,6 +250,22 @@ export const PlantsAndTreesCopy = {
     "DOCS_PAGE.textPrompts.1": "write a poem about nature",
     "DOCS_PAGE.textPrompts.2": "describe ecosystem harmony",
     "DOCS_PAGE.textPrompts.3": "explain symbiosis",
+    "DOCS_PAGE.textParameters.0.key": "system",
+    "DOCS_PAGE.textParameters.0.value": "You are helpful",
+    "DOCS_PAGE.textParameters.0.description": "System prompt for context",
+    "DOCS_PAGE.textParameters.1.key": "json",
+    "DOCS_PAGE.textParameters.1.value": "true",
+    "DOCS_PAGE.textParameters.1.description": "Return response in JSON format",
+    "DOCS_PAGE.textParameters.2.key": "temperature",
+    "DOCS_PAGE.textParameters.2.value": "0.7",
+    "DOCS_PAGE.textParameters.2.description":
+        "Creativity (0=strict, 2=creative)",
+    "DOCS_PAGE.textParameters.3.key": "stream",
+    "DOCS_PAGE.textParameters.3.value": "true",
+    "DOCS_PAGE.textParameters.3.description": "Stream response in real-time",
+    "DOCS_PAGE.textParameters.4.key": "private",
+    "DOCS_PAGE.textParameters.4.value": "true",
+    "DOCS_PAGE.textParameters.4.description": "Hide from public feeds",
     "DOCS_PAGE.modelDiscoveryTitle.text": "Model Discovery",
     "DOCS_PAGE.selectTypeLabel.text": "Select a type",
     "DOCS_PAGE.imageTypeLabel.text": "Image",
@@ -237,20 +276,22 @@ export const PlantsAndTreesCopy = {
     "DOCS_PAGE.keyTypesLabel.text": "Key Types",
     "DOCS_PAGE.publishableLabel.text": "Publishable",
     "DOCS_PAGE.publishableFeature1.text": "Safe for client-side code",
-    "DOCS_PAGE.publishableFeature2.text": "1 pollen/hour per IP+key",
+    "DOCS_PAGE.publishableFeature2.text":
+        "Rate limited: 3 req/burst, 1/15sec refill",
     "DOCS_PAGE.publishableFeature3.text":
-        "Beta: Use secret keys for production",
+        "Best for: demos, prototypes, public tools",
     "DOCS_PAGE.secretLabel.text": "Secret",
     "DOCS_PAGE.secretFeature1.text": "Server-side only",
     "DOCS_PAGE.secretFeature2.text": "Never expose publicly",
-    "DOCS_PAGE.secretFeature3.text": "No rate limits",
+    "DOCS_PAGE.secretFeature3.text": "No rate limits, can spend Pollen",
     "DOCS_PAGE.getYourKeyLabel.text": "Get Your Key",
     "DOCS_PAGE.usageExamplesLabel.text": "Usage Examples",
     "DOCS_PAGE.serverSideDescription.text":
         "Server-side (Recommended): Use secret key in Authorization header",
     "DOCS_PAGE.clientSideDescription.text":
         "Client-side (Public): Use publishable key in query parameter",
-    "HELLO_PAGE.heroTitle.text": "Fertile ground for creative developers.",
+    "DOCS_PAGE.apiBaseUrl.text": "gen.pollinations.ai",
+    "HELLO_PAGE.heroTitle.text": "An AI platform for creative developers.",
     "HELLO_PAGE.heroIntro.text":
         "Soft, simple tools for people who want to build with heart — whether you're exploring ideas, crafting worlds, or shipping serious apps.",
     "HELLO_PAGE.heroTagline.text":
@@ -365,7 +406,8 @@ export const PlantsAndTreesCopy = {
     "PLAY_PAGE.generateImageButton.text": "Generate Image",
     "PLAY_PAGE.generateTextButton.text": "Generate Text",
     "SOCIAL_LINKS.discord.label": "Discord",
-    "SOCIAL_LINKS.discord.url": "https://discord.gg/pollinations-ai-885844321461485618",
+    "SOCIAL_LINKS.discord.url":
+        "https://discord.gg/pollinations-ai-885844321461485618",
     "SOCIAL_LINKS.discord.width": "32px",
     "SOCIAL_LINKS.discord.height": "32px",
     "SOCIAL_LINKS.github.label": "GitHub",

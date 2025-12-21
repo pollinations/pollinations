@@ -14,8 +14,6 @@ export function processParameters(messages, options) {
     }
 
     const config = options.modelConfig;
-    const modelConfig = options.modelDef;
-    const requestedModel = options.requestedModel;
     const updatedOptions = { ...options };
 
     // Apply model-specific sampling parameter defaults
@@ -65,43 +63,6 @@ export function processParameters(messages, options) {
     if (isReasoningOrGpt5Model) {
         log(`Forcing temperature=1 for reasoning/GPT-5 model: ${model}`);
         updatedOptions.temperature = 1;
-    }
-
-    // Apply parameter filtering if defined
-    if (modelConfig.allowedParameters) {
-        const allowedParams = modelConfig.allowedParameters;
-        log(
-            `Applying parameter filter for model ${requestedModel}, allowing only: ${allowedParams.join(", ")}`,
-        );
-
-        const filteredOptions = {};
-
-        // Only include allowed parameters
-        for (const param of allowedParams) {
-            if (updatedOptions[param] !== undefined) {
-                filteredOptions[param] = updatedOptions[param];
-            }
-        }
-
-        // Preserve internal properties and stream_options
-        if (updatedOptions.additionalHeaders) {
-            filteredOptions.additionalHeaders =
-                updatedOptions.additionalHeaders;
-        }
-        if (updatedOptions.modelConfig) {
-            filteredOptions.modelConfig = updatedOptions.modelConfig;
-        }
-        if (updatedOptions.modelDef) {
-            filteredOptions.modelDef = updatedOptions.modelDef;
-        }
-        if (updatedOptions.requestedModel) {
-            filteredOptions.requestedModel = updatedOptions.requestedModel;
-        }
-        if (updatedOptions.stream_options) {
-            filteredOptions.stream_options = updatedOptions.stream_options;
-        }
-
-        return { messages, options: filteredOptions };
     }
 
     return { messages, options: updatedOptions };

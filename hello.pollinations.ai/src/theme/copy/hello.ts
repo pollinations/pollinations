@@ -4,16 +4,16 @@
 export const HELLO_PAGE = {
     // Hero Section
     heroTitle: {
-        text: "An AI platform for creative developers.",
+        text: "Open-source AI for people who make things.",
         transform: true,
     },
 
     heroIntro: {
-        text: "Soft, simple tools for people who want to build with heart — whether you're exploring ideas, crafting worlds, or shipping serious apps.",
+        text: "A community-driven platform where developers, artists, and tinkerers build together. No gatekeeping, no corporate nonsense — just good tools and good people.",
     },
 
     heroTagline: {
-        text: "Open-source roots. Community at the center.",
+        text: "APIs built in the open. Loved by developers. Powered by community.",
     },
 
     // What Pollinations Is
@@ -22,20 +22,20 @@ export const HELLO_PAGE = {
     },
 
     whatIsDescription: {
-        text: "Pollinations is a credit-based AI platform for developers who want to move quickly, stay playful, and still have something they can rely on in production. We offer a unified multimodal API for images, text, audio — with real-time and video on the way. Pollen, a simple credit system that makes usage predictable and transparent. A developer journey that feels welcoming instead of corporate. A community that's already building tools, games, and experiments with us every day.",
+        text: "Pollinations is an open-source AI platform built by and for the community. We offer a unified API for images, text, audio, and video. Everything runs in the open: our code, our roadmap, our conversations. Hundreds of developers are already building tools, games, bots, and weird experiments with us. You're welcome to join.",
     },
 
     whatIsTagline: {
-        text: "Pollen exists so developers can experiment freely, without getting lost in pricing tables or infrastructure details.",
+        text: "No black boxes. No vendor lock-in. Just a friendly API and a Discord full of people who actually help each other.",
     },
 
     // Pollen Section
     pollenTitle: {
-        text: "Pollen — One Simple Credit for Everything",
+        text: "Pollen",
     },
 
     pollenDescription: {
-        text: "Pollen is the single credit you use across Pollinations for all generative media. One unit for many models, so you can switch, mix, and iterate without mental overhead.",
+        text: "Running AI models costs money. Pollen is how we keep the servers humming without ads or selling your data. One simple credit across all models — predictable, transparent, no surprises.",
     },
 
     // Get Pollen Section
@@ -55,75 +55,79 @@ export const HELLO_PAGE = {
         text: "Add Pollen to your wallet and build. Straightforward packs, no subscriptions, no locked-in tiers.",
     },
 
+    buyCardPromo: {
+        text: "🎁 Buy 1, get 1 free during beta!",
+    },
+
     earnCardTitle: {
-        text: "Earn Pollen",
+        text: "Contribute & Get Pollen",
     },
 
     earnCardDescription: {
-        text: "For developers growing inside the Pollinations ecosystem. Earn through daily sponsorship grants as you progress through tiers, or complete one-off quests and bounties.",
+        text: "Ship an app, help in Discord, fix bugs, improve docs — every contribution earns you Pollen. We notice and we share.",
     },
 
     // Earn Pollen: Sponsorship Tiers
     tiersSubtitle: {
-        text: "Sponsorship Tiers",
+        text: "Grow",
     },
 
     tiersDescription: {
-        text: "Grow your daily Pollen grant as you build and ship:",
+        text: "Start small, contribute, watch your Pollen grow:",
     },
 
     tierSporeTitle: {
-        text: "Spore — You join.",
+        text: "Spore — Just arrived",
     },
 
     tierSporeDescription: {
-        text: "Small daily Pollen to try the platform.",
+        text: "Welcome! Here's some Pollen to play with.",
     },
 
     tierSeedTitle: {
-        text: "Seed — You verify as a developer.",
+        text: "Seed — Part of the community",
     },
 
     tierSeedDescription: {
-        text: "Higher daily Pollen. Based on light signals like GitHub, Discord, and a short intro.",
+        text: "You're on GitHub or Discord, you've said hi. More Pollen for you.",
     },
 
     tierFlowerTitle: {
-        text: "Flower — You publish a working app.",
+        text: "Flower — You shipped something",
     },
 
     tierFlowerDescription: {
-        text: "Bigger daily Pollen grants. Your app is registered and reviewed in the dashboard.",
+        text: "You built an app with Pollinations. Nice! Even more Pollen.",
     },
 
     tierNectarTitle: {
-        text: "Nectar — Your app shows real traction.",
+        text: "Nectar — Community pillar",
     },
 
     tierNectarDescription: {
-        text: "The highest grants. Tuned to apps that create value and activity in the ecosystem.",
+        text: "Your work helps others. You're part of what makes this place good.",
     },
 
     // Earn Pollen: Quests
     questsSubtitle: {
-        text: "Quests & One-Off Rewards",
+        text: "Ways to Contribute",
     },
 
     questsDescription: {
-        text: "Complete community quests, bounties, and contributions to earn extra Pollen. Fix issues, share knowledge, contribute to projects, or take part in creative challenges.",
+        text: "Fix a bug, answer a question, share what you built, improve the docs. Every contribution matters and gets recognized.",
     },
 
     questsStatus: {
-        text: "Coming soon",
+        text: "New",
     },
 
     // What You Can Build Section
     buildTitle: {
-        text: "What You Can Build",
+        text: "What People Build",
     },
 
     buildIntro: {
-        text: "Generative tools without friction:",
+        text: "Some things the community has made:",
     },
 
     buildFeature1: {
@@ -160,49 +164,49 @@ export const HELLO_PAGE = {
     },
 
     whyChooseFeature3: {
-        text: "Simple Credits — Pollen makes usage and cost easier to reason about.",
+        text: "No BS Pricing — Pollen is simple and transparent. You always know what you're paying.",
     },
 
     whyChooseFeature4: {
-        text: "Community-First — roadmap influenced directly by people building with us.",
+        text: "Community-Driven — the roadmap comes from Discord conversations, not boardrooms.",
     },
 
     whyChooseFeature5: {
-        text: "Open Source — we build in the open and invite you to look under the hood.",
+        text: "Fully Open Source — every line of code is on GitHub. Fork it, read it, improve it.",
     },
 
     // Community Section
     communityTitle: {
-        text: "Built With Community",
+        text: "Built Together",
     },
 
     communityDescription: {
-        text: "Pollinations is shaped by students, indie devs, small teams, and studios experimenting with new forms of AI-native creativity. Active community channels, open discussions on features and models, bounties and quests coming soon.",
+        text: "Students, indie devs, artists, researchers, hobbyists — all building weird and wonderful things together. Jump into Discord, browse the GitHub, see what people are making. This is a place where people actually help each other.",
     },
 
     // Roadmap Section
     roadmapTitle: {
-        text: "Roadmap (Preview)",
+        text: "What's Next",
     },
 
     roadmapIntro: {
-        text: "We're in beta, and we share where we're heading:",
+        text: "Here's what we're working on:",
     },
 
     roadmapItem1Title: {
-        text: "Secure Front-End Spending",
+        text: "Frontend Auth",
     },
 
     roadmapItem1Description: {
-        text: "Let client-side apps use Pollen safely.",
+        text: "Call the API from the browser — no backend needed.",
     },
 
     roadmapItem2Title: {
-        text: "In-App Pollen Purchases",
+        text: "User Pollen",
     },
 
     roadmapItem2Description: {
-        text: "Users buy Pollen inside your app; you earn a share. (Q1 2026)",
+        text: "Your users bring their own Pollen. You build, they pay for what they use.",
     },
 
     roadmapItem3Title: {
@@ -214,11 +218,11 @@ export const HELLO_PAGE = {
     },
 
     roadmapItem4Title: {
-        text: "Expanded Modalities & Models",
+        text: "More Models, More Modalities",
     },
 
     roadmapItem4Description: {
-        text: "Real-time experiences, video generation, and a growing catalog—more choices, same simple Pollen system.",
+        text: "Video, real-time, and whatever comes next.",
     },
 
     // CTA Section

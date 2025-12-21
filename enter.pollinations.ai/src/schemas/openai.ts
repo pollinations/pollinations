@@ -66,6 +66,17 @@ const ChatCompletionRequestMessageContentPartImageSchema = z.object({
     image_url: z.object({
         url: z.string(),
         detail: z.enum(["auto", "low", "high"]).optional(),
+        mime_type: z.string().optional(), // For explicit MIME type (e.g., "image/jpeg")
+    }),
+});
+
+// Video URL content type - currently supported by Gemini models only
+// Enables native YouTube video analysis (visual frames + audio) without manual extraction
+const ChatCompletionRequestMessageContentPartVideoSchema = z.object({
+    type: z.literal("video_url"),
+    video_url: z.object({
+        url: z.string(), // Supports YouTube URLs, gs://, https://, or data: URLs
+        mime_type: z.string().optional(), // Auto-detected for YouTube URLs as "video/mp4"
     }),
 });
 
@@ -74,7 +85,8 @@ const CacheControlSchema = z
     .object({
         type: z.enum(["ephemeral"]),
     })
-    .optional();
+    .optional()
+    .meta({ $id: "CacheControl" });
 
 const ChatCompletionRequestMessageContentPartTextSchema = z.object({
     type: z.literal("text"),
@@ -104,16 +116,19 @@ const ChatCompletionRequestMessageContentPartFileSchema = z.object({
     cache_control: CacheControlSchema,
 });
 
-const ChatCompletionRequestMessageContentPartSchema = z.union([
-    ChatCompletionRequestMessageContentPartTextSchema,
-    ChatCompletionRequestMessageContentPartImageSchema,
-    ChatCompletionRequestMessageContentPartAudioSchema,
-    ChatCompletionRequestMessageContentPartFileSchema,
-    // Allow any other content types for provider-specific extensions
-    z
-        .object({ type: z.string() })
-        .passthrough(),
-]);
+const ChatCompletionRequestMessageContentPartSchema = z
+    .union([
+        ChatCompletionRequestMessageContentPartTextSchema,
+        ChatCompletionRequestMessageContentPartImageSchema,
+        ChatCompletionRequestMessageContentPartVideoSchema,
+        ChatCompletionRequestMessageContentPartAudioSchema,
+        ChatCompletionRequestMessageContentPartFileSchema,
+        // Allow any other content types for provider-specific extensions
+        z
+            .object({ type: z.string() })
+            .passthrough(),
+    ])
+    .meta({ $id: "MessageContentPart" });
 
 // Thinking (provider-specific; requires strict_openai_compliance=false)
 const ChatCompletionMessageContentPartThinkingSchema = z.object({
@@ -281,7 +296,6 @@ export const CreateChatCompletionRequestSchema = z.object({
     logprobs: z.boolean().nullable().optional().default(false),
     top_logprobs: z.number().int().min(0).max(20).nullable().optional(),
     max_tokens: z.number().int().min(0).nullable().optional(),
-    n: z.number().int().min(1).max(128).nullable().optional().default(1),
     presence_penalty: z
         .number()
         .min(-2)
@@ -372,42 +386,41 @@ const ChatCompletionChoiceLogprobsSchema = z
     })
     .nullable();
 
-export const CompletionUsageSchema = z.object({
-    completion_tokens: z.number().int().nonnegative(),
-    completion_tokens_details: z
-        .object({
-            accepted_prediction_tokens: z
-                .number()
-                .int()
-                .nonnegative()
-                .optional(),
-            audio_tokens: z.number().int().nonnegative().optional(),
-            reasoning_tokens: z.number().int().nonnegative().optional(),
-            rejected_prediction_tokens: z
-                .number()
-                .int()
-                .nonnegative()
-                .optional(),
-        })
-        .nullish(),
-    prompt_tokens: z.number().int().nonnegative(),
-    prompt_tokens_details: z
-        .object({
-            audio_tokens: z.number().int().nonnegative().optional(),
-            cached_tokens: z.number().int().nonnegative().optional(),
-        })
-        .nullish(),
-    total_tokens: z.number().int().nonnegative(),
-});
+export const CompletionUsageSchema = z
+    .object({
+        completion_tokens: z.number().int().nonnegative(),
+        completion_tokens_details: z
+            .object({
+                accepted_prediction_tokens: z
+                    .number()
+                    .int()
+                    .nonnegative()
+                    .optional(),
+                audio_tokens: z.number().int().nonnegative().optional(),
+                reasoning_tokens: z.number().int().nonnegative().optional(),
+                rejected_prediction_tokens: z
+                    .number()
+                    .int()
+                    .nonnegative()
+                    .optional(),
+            })
+            .nullish(),
+        prompt_tokens: z.number().int().nonnegative(),
+        prompt_tokens_details: z
+            .object({
+                audio_tokens: z.number().int().nonnegative().optional(),
+                cached_tokens: z.number().int().nonnegative().optional(),
+            })
+            .nullish(),
+        total_tokens: z.number().int().nonnegative(),
+    })
+    .meta({ $id: "CompletionUsage" });
 
 export type CompletionUsage = z.infer<typeof CompletionUsageSchema>;
 
-export const ContentFilterSeveritySchema = z.enum([
-    "safe",
-    "low",
-    "medium",
-    "high",
-]);
+export const ContentFilterSeveritySchema = z
+    .enum(["safe", "low", "medium", "high"])
+    .meta({ $id: "ContentFilterSeverity" });
 
 export type ContentFilterSeverity = z.infer<typeof ContentFilterSeveritySchema>;
 
@@ -442,7 +455,8 @@ export const ContentFilterResultSchema = z
             detected: z.boolean(),
         }),
     })
-    .partial();
+    .partial()
+    .meta({ $id: "ContentFilterResult" });
 
 export type ContentFilterResult = z.infer<typeof ContentFilterResultSchema>;
 

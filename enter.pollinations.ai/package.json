@@ -27,7 +27,8 @@
         "push-secrets:staging": "sops exec-file --no-fifo secrets/staging.vars.json 'npx wrangler secret bulk {} --env staging'",
         "push-secrets:production": "sops exec-file --no-fifo secrets/prod.vars.json 'npx wrangler secret bulk {} --env production'",
         "tail": "wrangler tail --env production | jq -c '.logs[].message[] | fromjson' | tsx scripts/format-logs.ts",
-        "tail:json": "wrangler tail --env production | jq '.logs[].message[] | fromjson'"
+        "tail:json": "wrangler tail --env production | jq '.logs[].message[] | fromjson'",
+        "docs:generate": "tsx scripts/generate-apidocs.ts"
     },
     "dependencies": {
         "@ark-ui/react": "^5.29.1",
@@ -62,6 +63,7 @@
         "@cloudflare/vitest-pool-workers": "^0.10.10",
         "@drizzle-team/brocli": "^0.11.0",
         "@hono/node-server": "^1.19.6",
+        "@scalar/openapi-to-markdown": "^0.3.11",
         "@tailwindcss/typography": "^0.5.19",
         "@tailwindcss/vite": "^4.1.17",
         "@tanstack/react-router-devtools": "^1.139.3",

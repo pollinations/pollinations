@@ -95,6 +95,23 @@ function Feed() {
 
     return (
         <PageContainer>
+            <style>{`
+                .feed-grid::-webkit-scrollbar {
+                    width: 8px;
+                }
+                .feed-grid::-webkit-scrollbar-track {
+                    background: rgba(255, 255, 255, 0.05);
+                    border-radius: 10px;
+                }
+                .feed-grid::-webkit-scrollbar-thumb {
+                    background: linear-gradient(to bottom, rgba(255, 255, 255, 0.3), rgba(255, 255, 255, 0.2));
+                    border-radius: 10px;
+                    border: 2px solid rgba(255, 255, 255, 0.1);
+                }
+                .feed-grid::-webkit-scrollbar-thumb:hover {
+                    background: linear-gradient(to bottom, rgba(255, 255, 255, 0.5), rgba(255, 255, 255, 0.4));
+                }
+            `}</style>
             <PageCard>
                 <Title spacing="none">Live Feed</Title>
                 <Body className="mb-8">
@@ -115,7 +132,11 @@ function Feed() {
 
                 {displayedImages.length > 0 && (
                     <>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 max-h-[calc(100vh-200px)] overflow-y-auto pr-2">
+                        <div className="feed-grid grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 max-h-[calc(100vh-240px)] overflow-y-auto pr-4 scrollbar-thin scrollbar-thumb-border-brand scrollbar-track-surface-secondary rounded-lg"
+                            style={{
+                                scrollbarWidth: 'thin',
+                                scrollbarColor: 'var(--color-border-brand) var(--color-surface-secondary)',
+                            }}>
                             {displayedImages.map((item, index) => {
                                 const positionInBatch = index % imagesPerLoad;
                                 return (

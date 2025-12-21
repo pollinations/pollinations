@@ -11,6 +11,13 @@ import { PageContainer } from "../components/ui/page-container";
 import { SubCard } from "../components/ui/sub-card";
 import { NewsSection } from "../components/NewsSection";
 
+interface VotingIssue {
+    emoji: string;
+    title: string;
+    url: string;
+    votes: number;
+}
+
 export default function CommunityPage() {
     const { presetCopy } = useTheme();
     const pageCopy = presetCopy.COMMUNITY_PAGE;
@@ -81,31 +88,33 @@ export default function CommunityPage() {
                             "We build what the community wants. Vote on what matters to you:"}
                     </Body>
                     <div className="space-y-3">
-                        {COMMUNITY_PAGE.votingIssues?.map((issue: any) => (
-                            <a
-                                key={issue.url}
-                                href={issue.url}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="block bg-input-background p-4 border-l-2 border-border-brand hover:border-border-highlight transition-colors"
-                            >
-                                <div className="flex items-center gap-3">
-                                    <span className="text-2xl">
-                                        {issue.emoji}
-                                    </span>
-                                    <div className="flex-1">
-                                        <p className="font-headline text-sm font-black text-text-body-main">
-                                            {issue.title}
-                                        </p>
-                                    </div>
-                                    <div className="flex items-center gap-1 text-text-caption">
-                                        <span className="font-mono text-xs">
-                                            👍 {issue.votes}
+                        {(COMMUNITY_PAGE.votingIssues as VotingIssue[])?.map(
+                            (issue) => (
+                                <a
+                                    key={issue.url}
+                                    href={issue.url}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="block bg-input-background p-4 border-l-2 border-border-brand hover:border-border-highlight transition-colors"
+                                >
+                                    <div className="flex items-center gap-3">
+                                        <span className="text-2xl">
+                                            {issue.emoji}
                                         </span>
+                                        <div className="flex-1">
+                                            <p className="font-headline text-sm font-black text-text-body-main">
+                                                {issue.title}
+                                            </p>
+                                        </div>
+                                        <div className="flex items-center gap-1 text-text-caption">
+                                            <span className="font-mono text-xs">
+                                                👍 {issue.votes}
+                                            </span>
+                                        </div>
                                     </div>
-                                </div>
-                            </a>
-                        ))}
+                                </a>
+                            )
+                        )}
                     </div>
                 </div>
 

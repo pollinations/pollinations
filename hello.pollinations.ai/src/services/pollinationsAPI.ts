@@ -5,7 +5,6 @@ import { API, DEFAULTS, API_KEY } from "../api.config";
  */
 export async function generateText(
     prompt: string,
-    _apiKey: string,
     seed?: number | number[],
     model?: string,
     signal?: AbortSignal,
@@ -40,7 +39,6 @@ export async function generateText(
  */
 export async function generateImage(
     prompt: string,
-    _apiKey: string,
     options: {
         width?: number;
         height?: number;

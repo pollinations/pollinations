@@ -15,7 +15,8 @@ export const COMMUNITY_PAGE = {
         text: "What's New",
     },
 
-    newsFilePath: "https://raw.githubusercontent.com/pollinations/pollinations/production/NEWS/transformed/highlights.md",
+    newsFilePath:
+        "https://raw.githubusercontent.com/pollinations/pollinations/production/NEWS/transformed/highlights.md",
 
     discordTitle: {
         text: "Discord",
@@ -53,6 +54,7 @@ export const COMMUNITY_PAGE = {
         text: "We build what the community wants. Vote on what matters to you:",
     },
 
+    // Vote counts are approximate and need manual updates
     votingIssues: [
         {
             emoji: "🤖",

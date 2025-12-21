@@ -9,7 +9,6 @@ import {
 } from "../../style/theme-processor";
 import { assembleStylePrompt } from "../../buildPrompts";
 import { generateText } from "../../../services/pollinationsAPI";
-import { API_KEY } from "../../../api.config";
 import { STYLING_GUIDELINES } from "../designer";
 import type { MacroConfig } from "../../style/simplified-config.types";
 import { macrosToTheme } from "../../style/simplified-to-theme";
@@ -152,7 +151,6 @@ Generate the theme JSON now:`;
     );
     const text = await generateText(
         fullPrompt,
-        API_KEY,
         42,
         THEME_MODELS.designer,
         signal,
@@ -175,7 +173,6 @@ export async function generateFullTheme(
     );
     const text = await generateText(
         fullPrompt,
-        API_KEY,
         42,
         THEME_MODELS.designer,
         signal,

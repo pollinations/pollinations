@@ -32,7 +32,7 @@ export function NewsSection({
             <Heading variant="section" spacing={compact ? "tight" : "default"}>
                 {title}
             </Heading>
-            <div className={`space-y-${compact ? "2" : "3"}`}>
+            <div className={compact ? "space-y-2" : "space-y-3"}>
                 {displayNews.map((item) => {
                     // Remove date from content for display
                     const contentWithoutDate = item.content.replace(

@@ -5,7 +5,6 @@
 
 import { BACKGROUND_GUIDELINES } from "../animator";
 import { generateText } from "../../../services/pollinationsAPI";
-import { API_KEY } from "../../../api.config";
 import { THEME_MODELS } from "../../models";
 
 export async function generateBackground(
@@ -22,7 +21,6 @@ export async function generateBackground(
     );
     const html = await generateText(
         fullPrompt,
-        API_KEY,
         42,
         THEME_MODELS.animator,
         signal,

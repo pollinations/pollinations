@@ -143,7 +143,7 @@ export function AuthCard() {
                                 {"// Add to URL"}
                             </div>
                             <div className="mt-2">
-                                {"https://enter.pollinations.ai/..."}
+                                {`https://${DOCS_PAGE.apiBaseUrl.text}/...`}
                             </div>
                             <div className="pl-4">
                                 <span className="text-text-on-color/80">

@@ -5,7 +5,6 @@
 
 import { assembleLogoPrompt } from "../../buildPrompts";
 import { generateImage } from "../../../services/pollinationsAPI";
-import { API_KEY } from "../../../api.config";
 import { THEME_MODELS } from "../../models";
 
 // ==============================================
@@ -45,7 +44,6 @@ export async function generateSupporterLogo(
     // Generate the logo image
     const logoUrl = await generateImage(
         prompt,
-        API_KEY,
         {
             width,
             height,

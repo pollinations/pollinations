@@ -8,20 +8,21 @@ import { DOCS_PAGE } from "../../../theme";
  * Displays available models from different endpoints
  */
 export function ModelDiscoveryCard() {
+    const apiBase = `https://${DOCS_PAGE.apiBaseUrl.text}`;
     const modelEndpoints = {
         image: {
             label: DOCS_PAGE.imageTypeLabel.text,
-            url: "https://enter.pollinations.ai/api/generate/image/models",
+            url: `${apiBase}/image/models`,
             path: "/image/models",
         },
         text: {
             label: DOCS_PAGE.textTypeLabel.text,
-            url: "https://enter.pollinations.ai/api/generate/text/models",
+            url: `${apiBase}/text/models`,
             path: "/text/models",
         },
         openai: {
             label: DOCS_PAGE.textOpenAITypeLabel.text,
-            url: "https://enter.pollinations.ai/api/generate/v1/models",
+            url: `${apiBase}/v1/models`,
             path: "/v1/models",
         },
     };
@@ -90,10 +91,10 @@ export function ModelDiscoveryCard() {
                     {/* URL Display */}
                     <div className="p-3 bg-input-background font-mono text-xs text-text-body-main break-all">
                         <span className="text-text-caption">
-                            https://enter.pollinations.ai/api/generate
+                            https://{DOCS_PAGE.apiBaseUrl.text}
                         </span>
                         <span className="bg-indicator-text px-1 font-black text-text-inverse">
-                            {selectedModel && `/${selectedModel}`}
+                            {currentEndpoint.path}
                         </span>
                     </div>
 

@@ -15,7 +15,8 @@ export const COMMUNITY_PAGE = {
         text: "What's New",
     },
 
-    newsFilePath: "/NEWS.md",
+    newsFilePath:
+        "https://raw.githubusercontent.com/pollinations/pollinations/production/NEWS/transformed/highlights.md",
 
     discordTitle: {
         text: "Discord",
@@ -43,6 +44,37 @@ export const COMMUNITY_PAGE = {
     contributeButton: {
         text: "Contribute",
     },
+
+    // Voting section
+    votingTitle: {
+        text: "Have Your Say",
+    },
+
+    votingSubtitle: {
+        text: "We build what the community wants. Vote on what matters to you:",
+    },
+
+    // Vote counts are approximate and need manual updates
+    votingIssues: [
+        {
+            emoji: "🤖",
+            title: "Which models should we add next?",
+            url: "https://github.com/pollinations/pollinations/issues/5321",
+            votes: 172,
+        },
+        {
+            emoji: "💳",
+            title: "What payment methods do you want?",
+            url: "https://github.com/pollinations/pollinations/issues/4826",
+            votes: 201,
+        },
+        {
+            emoji: "🔐",
+            title: "What login providers do you want?",
+            url: "https://github.com/pollinations/pollinations/issues/5543",
+            votes: 35,
+        },
+    ],
 
     supportersTitle: {
         text: "Supporters",

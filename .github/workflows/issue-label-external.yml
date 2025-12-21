@@ -37,13 +37,13 @@ jobs:
 
             let label = null;
 
-            // Check for app:* labels (handled by app-review workflow)
-            const hasAppLabel = current.some(l => l.startsWith('app:'));
+            // Check for tier:* labels (handled by tier workflows)
+            const hasTierLabel = current.some(l => l.startsWith('tier:'));
             // Check for inbox:discord (already triaged via Discord)
             const hasDiscordInbox = current.includes('inbox:discord');
 
-            if (hasAppLabel) {
-              console.log("App submission issue (has app:* label), skipping inbox:github");
+            if (hasTierLabel) {
+              console.log("Tier-related issue (has tier:* label), skipping inbox:github");
             } else if (hasDiscordInbox) {
               console.log("Already has inbox:discord, skipping inbox:github");
             } else if (INTERNAL_USERS.includes(author)) {

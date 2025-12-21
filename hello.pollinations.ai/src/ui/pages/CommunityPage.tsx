@@ -40,17 +40,30 @@ export default function CommunityPage() {
                         <div className="font-body text-sm text-text-body-secondary mb-6">
                             {pageCopy.discordSubtitle.text}
                         </div>
-                        <Button
-                            as="a"
-                            href={SOCIAL_LINKS.discord.url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            variant="primary"
-                            size="lg"
-                        >
-                            {pageCopy.joinDiscordButton.text}
-                            <ExternalLinkIcon className="w-4 h-4 stroke-text-highlight" />
-                        </Button>
+                        <div className="flex flex-col sm:flex-row gap-2">
+                            <Button
+                                as="a"
+                                href={SOCIAL_LINKS.discord.url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                variant="primary"
+                                size="default"
+                            >
+                                {pageCopy.joinDiscordButton.text}
+                                <ExternalLinkIcon className="w-3 h-3 stroke-text-highlight" />
+                            </Button>
+                            <Button
+                                as="a"
+                                href="https://discord.com/channels/885844321461485618/1432378056126894343"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                variant="secondary"
+                                size="default"
+                            >
+                                🧪 #pollen-beta
+                                <ExternalLinkIcon className="w-3 h-3 text-text-body-main" />
+                            </Button>
+                        </div>
                     </SubCard>
 
                     {/* GitHub Card */}
@@ -61,17 +74,30 @@ export default function CommunityPage() {
                         <div className="font-body text-sm text-text-body-secondary mb-6">
                             {pageCopy.githubSubtitle.text}
                         </div>
-                        <Button
-                            as="a"
-                            href={SOCIAL_LINKS.github.url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            variant="primary"
-                            size="lg"
-                        >
-                            {pageCopy.contributeButton.text}
-                            <ExternalLinkIcon className="w-4 h-4 stroke-text-highlight" />
-                        </Button>
+                        <div className="flex flex-wrap gap-2">
+                            <Button
+                                as="a"
+                                href={SOCIAL_LINKS.github.url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                variant="primary"
+                                size="default"
+                            >
+                                ⭐ Star & Contribute
+                                <ExternalLinkIcon className="w-3 h-3 stroke-text-highlight" />
+                            </Button>
+                            <Button
+                                as="a"
+                                href="https://github.com/pollinations/pollinations/issues/new?template=app-submission.yml"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                variant="secondary"
+                                size="default"
+                            >
+                                🚀 Submit App
+                                <ExternalLinkIcon className="w-3 h-3 text-text-body-main" />
+                            </Button>
+                        </div>
                     </SubCard>
                 </div>
 
@@ -87,7 +113,7 @@ export default function CommunityPage() {
                         {pageCopy.votingSubtitle?.text ||
                             "We build what the community wants. Vote on what matters to you:"}
                     </Body>
-                    <div className="space-y-3">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                         {(COMMUNITY_PAGE.votingIssues as VotingIssue[])?.map(
                             (issue) => (
                                 <a
@@ -95,22 +121,20 @@ export default function CommunityPage() {
                                     href={issue.url}
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    className="block bg-input-background p-4 border-l-2 border-border-brand hover:border-border-highlight transition-colors"
+                                    className="block bg-input-background p-4 rounded-sub-card border-l-4 border-border-brand hover:border-border-highlight transition-colors"
                                 >
-                                    <div className="flex items-center gap-3">
-                                        <span className="text-2xl">
-                                            {issue.emoji}
-                                        </span>
-                                        <div className="flex-1">
-                                            <p className="font-headline text-sm font-black text-text-body-main">
-                                                {issue.title}
-                                            </p>
-                                        </div>
-                                        <div className="flex items-center gap-1 text-text-caption">
-                                            <span className="font-mono text-xs">
+                                    <div className="flex flex-col gap-2">
+                                        <div className="flex items-center justify-between">
+                                            <span className="text-2xl">
+                                                {issue.emoji}
+                                            </span>
+                                            <span className="font-mono text-xs text-text-caption">
                                                 👍 {issue.votes}
                                             </span>
                                         </div>
+                                        <p className="font-headline text-sm font-black text-text-body-main">
+                                            {issue.title}
+                                        </p>
                                     </div>
                                 </a>
                             )

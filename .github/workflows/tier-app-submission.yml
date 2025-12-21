@@ -4,8 +4,9 @@ on:
   issues:
     types: [opened, edited, reopened]
   pull_request:
-    paths:
-      - '.github/workflows/tier-app-submission.yml'  # Trigger on self to bootstrap
+    types: [closed]
+    branches:
+      - 'auto/app-*'  # Auto-generated app PRs
   workflow_dispatch:
     inputs:
       issue_number:
@@ -101,28 +102,46 @@ jobs:
               messages: [
                 {
                   role: "system",
-                  content: "You parse GitHub issue forms for app submissions. Extract and return ONLY valid JSON with these fields: name, url, description, author, repo (optional), category (one of: chat, creative, games, hackAndBuild, learn, socialBots, vibeCoding), language (optional, e.g. zh-CN for non-English). If info is missing or invalid, return {\"error\": \"reason\"}."
+                  content: "You parse GitHub issue forms for app submissions. Extract and return ONLY valid JSON with these fields: name (required), url (required, MUST start with http:// or https://), description (required), category (required, one of: chat, creative, games, hackAndBuild, learn, socialBots, vibeCoding), repo (optional, GitHub URL), language (optional, omit if not a valid language code like zh-CN). Do NOT include author field - it will be added separately from GitHub. Return {\"error\": \"reason\"} if url is not a valid HTTP/HTTPS URL or if other REQUIRED fields are missing. Ignore invalid optional fields."
                 },
                 {
                   role: "user",
                   content: $body
                 }
               ],
-              jsonMode: true
+              response_format: { type: "json_object" }
             }')
           
           echo "Calling Pollinations API..."
           echo "Payload: $PAYLOAD"
           
-          # Call Pollinations API (no auth needed for basic usage)
-          RESPONSE=$(curl -s -X POST "https://text.pollinations.ai/" \
-            -H "Content-Type: application/json" \
-            -d "$PAYLOAD")
+          # Call gen.pollinations.ai API with retry for rate limits
+          MAX_RETRIES=3
+          RETRY_DELAY=5
+          for i in $(seq 1 $MAX_RETRIES); do
+            HTTP_CODE=$(curl -s -w "%{http_code}" -o /tmp/response.json -X POST "https://gen.pollinations.ai/v1/chat/completions" \
+              -H "Content-Type: application/json" \
+              -H "Authorization: Bearer ${{ secrets.POLLINATIONS_TOKEN }}" \
+              -d "$PAYLOAD")
+            
+            if [ "$HTTP_CODE" = "200" ]; then
+              break
+            elif [ "$HTTP_CODE" = "429" ] && [ $i -lt $MAX_RETRIES ]; then
+              echo "Rate limited (429), retrying in ${RETRY_DELAY}s... (attempt $i/$MAX_RETRIES)"
+              sleep $RETRY_DELAY
+              RETRY_DELAY=$((RETRY_DELAY * 2))
+            else
+              echo "API call failed with HTTP $HTTP_CODE"
+              cat /tmp/response.json
+              break
+            fi
+          done
           
+          RESPONSE=$(cat /tmp/response.json)
           echo "Response: $RESPONSE"
           
-          # Extract the JSON content - try both OpenAI format and direct text
-          PROJECT_JSON=$(echo "$RESPONSE" | jq -r '.choices[0].message.content // .text // empty' 2>/dev/null)
+          # Extract the JSON content from OpenAI-compatible response
+          PROJECT_JSON=$(echo "$RESPONSE" | jq -r '.choices[0].message.content // empty' 2>/dev/null)
           
           # If still empty, maybe it's direct JSON
           if [ -z "$PROJECT_JSON" ]; then
@@ -278,9 +297,9 @@ jobs:
           BRANCH="auto/app-${ISSUE_NUMBER}-${SLUG}"
           git checkout -b "$BRANCH"
           
-          # Format project entry
+          # Format project entry - add author from GitHub username
           TODAY=$(date +%Y-%m-%d)
-          ENTRY=$(echo "$PROJECT_JSON" | jq --arg date "$TODAY" '. + {submissionDate: $date, order: 5}')
+          ENTRY=$(echo "$PROJECT_JSON" | jq --arg date "$TODAY" --arg author "@$ISSUE_AUTHOR" '. + {author: $author, submissionDate: $date, order: 5}')
           
           # Add to category file (before final ])
           node -e "
@@ -331,5 +350,48 @@ jobs:
               owner: context.repo.owner,
               repo: context.repo.repo,
               issue_number: ${{ steps.issue.outputs.number }},
-              body: `🎉 Thanks @${{ steps.issue.outputs.author }}! I've created a PR to add **${{ steps.parse.outputs.name }}** to the **${{ steps.parse.outputs.category }}** category.\n\nA maintainer will review it shortly!`
+              body: `🎉 Thanks @${{ steps.issue.outputs.author }}! I've created a PR to add **${{ steps.parse.outputs.name }}** to the **${{ steps.parse.outputs.category }}** category.\n\nA maintainer will review it shortly. The issue will close automatically when the PR is merged.`
+            });
+
+  # Close linked issue when auto-generated app PR is closed (merged or rejected)
+  close-issue-on-pr-close:
+    if: github.event_name == 'pull_request' && github.event.action == 'closed'
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+    steps:
+      - name: Extract issue number from PR body
+        id: extract
+        run: |
+          # Extract issue number from "Fixes #123" in PR body
+          ISSUE_NUM=$(echo "${{ github.event.pull_request.body }}" | grep -oP 'Fixes #\K\d+' | head -1)
+          echo "issue_number=$ISSUE_NUM" >> $GITHUB_OUTPUT
+          
+      - name: Close linked issue
+        if: steps.extract.outputs.issue_number != ''
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const issueNumber = parseInt('${{ steps.extract.outputs.issue_number }}');
+            const wasMerged = ${{ github.event.pull_request.merged }};
+            
+            // Add appropriate comment
+            const message = wasMerged 
+              ? '✅ PR was merged! App has been added.'
+              : '❌ PR was closed without merging. Closing this issue.';
+            
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: issueNumber,
+              body: message
+            });
+            
+            // Close the issue
+            await github.rest.issues.update({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: issueNumber,
+              state: 'closed',
+              state_reason: wasMerged ? 'completed' : 'not_planned'
             });

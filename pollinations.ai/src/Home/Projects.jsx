@@ -43,7 +43,7 @@ const handleSubmitButtonClick = (e) => {
   e.preventDefault()
   // Opens project submission template (labeled as "APPS" in GitHub)
   window.open(
-    "https://github.com/pollinations/pollinations/issues/new?template=app-submission.yml",
+    "https://github.com/pollinations/pollinations/issues/new?template=tier-app-submission.yml",
     "_blank"
   )
   trackEvent({

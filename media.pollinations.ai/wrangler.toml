@@ -1,0 +1,27 @@
+name = "pollinations-media"
+main = "src/index.ts"
+compatibility_date = "2024-11-01"
+compatibility_flags = ["nodejs_compat"]
+
+[dev]
+port = 8790
+
+# R2 bucket for media storage
+[[r2_buckets]]
+binding = "MEDIA_BUCKET"
+bucket_name = "pollinations-media"
+
+# Production environment
+[env.production]
+
+[[env.production.routes]]
+pattern = "media.pollinations.ai"
+zone_name = "pollinations.ai"
+custom_domain = true
+
+[[env.production.r2_buckets]]
+binding = "MEDIA_BUCKET"
+bucket_name = "pollinations-media"
+
+[vars]
+MAX_FILE_SIZE = "10485760"  # 10MB in bytes

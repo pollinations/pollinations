@@ -1045,157 +1045,184 @@ export const creativeProjects = [
         "submissionDate": "2025-12-04",
         "order": 5,
     },
-  {
-    "name": "Robatika — AI Chat Platform",
-    "url": "https://app.robatika.com",
-    "description": "Robatika is a rapidly growing AI chat platform that provides users with seamless access to advanced OpenAI models and a fully integrated creative suite powered by Pollinations.\\nOur current users rely heavily on Pollinations for image, text, and audio generation inside the chat experience.\\n\\nWe are actively expanding our capabilities and plan to deeply integrate Pollinations as a core creative engine for both free users and future developer tools. The system is designed to be lightweight, fast, and highly scalable. All user sessions run locally in-browser, and we do not store any user data.",
-    "author": "Robatika",
-    "category": "creative",
-    "submissionDate": "2025-12-10",
-    "order": 5
-  },
-  {
-    "name": "🛠️ NextGenTools",
-    "url": "https://image-gen-adobe.nextgentools.online/",
-    "description": "AI-powered workflow for stock photography. Generate images, vectorize them, and inject metadata for Adobe Stock submissions. Streamlines the process from creation to marketplace-ready assets.",
-    "author": "@roni123332",
-    "category": "creative",
-    "submissionDate": "2025-12-12",
-    "order": 5
-  },
-  {
-    "name": "📚 AI Story Illustrator",
-    "url": "https://soft-cucurucho-6758e7.netlify.app/",
-    "description": "Interactive storybook creator where you write scenes and get AI-generated illustrations for each one. Features sequential reveal animations, responsive layout, and automatic empty scene handling. Great for learning async JavaScript and API integration.",
-    "author": "@KAmaL-senpai",
-    "repo": "",
-    "category": "creative",
-    "submissionDate": "2025-12-13",
-    "order": 5
-  },
-  {
-    "name": "🎨 ChimeraStudio",
-    "url": "https://github.com/migueland94/ChimeraStudio",
-    "description": "Lightweight browser-based sandbox for testing Pollinations API capabilities. Explore AI image generation, computer vision analysis, and editing in one client-side tool. No backend required—keys and settings stay local for privacy.",
-    "author": "@migueland94",
-    "repo": "https://github.com/migueland94/ChimeraStudio",
-    "category": "creative",
-    "submissionDate": "2025-12-13",
-    "order": 5
-  },
-  {
-    "name": "🎨 imgs_ai_bot",
-    "url": "https://t.me/imgs_ai_bot",
-    "description": "A multifunctional Telegram bot for generating images using artificial intelligence. Create AI-generated artwork directly within Telegram conversations.",
-    "author": "@lwakis",
-    "category": "creative",
-    "submissionDate": "2025-12-13",
-    "order": 5
-  },
-  {
-    "name": "✨ Storycraft Pro",
-    "url": "https://storycraftpro11-orpin.vercel.app/",
-    "description": "Create illustrated stories with consistent characters, narrated audio, and AI-generated artwork. Generate complete visual narratives without design skills.",
-    "author": "@souravk11318",
-    "category": "creative",
-    "submissionDate": "2025-12-13",
-    "order": 5
-  },
-  {
-    "name": "🎨 Sugen",
-    "url": "https://sugen.puter.site/",
-    "description": "Browser-based AI art studio using Puter.js and Pollinations.ai. Features unlimited generation with Flux/Seedream/Kontext models, live global feed, img2img support, and pro controls including guidance scale and negative prompts.",
-    "author": "@red444ytchess-jpg",
-    "category": "creative",
-    "submissionDate": "2025-12-13",
-    "order": 5
-  },
-  {
-    "name": "🎨 BinaryPH RSS AI",
-    "url": "https://binary.ph/posts/",
-    "description": "WordPress plugin that transforms RSS feed items into complete blog posts using Pollinations.AI for both text generation and featured image creation.",
-    "author": "@amin-IT",
-    "category": "creative",
-    "submissionDate": "2025-12-13",
-    "order": 5
-  },
-  {
-    "name": "🎨 Imagly AI",
-    "url": "https://imaglyai.web.app/",
-    "description": "Free AI image generator that creates realistic photos, digital artwork, fantasy illustrations, and social media visuals from text prompts. Offers multiple artistic styles with no technical skills required.",
-    "author": "@imaglyai",
-    "category": "creative",
-    "submissionDate": "2025-12-13",
-    "order": 5
-  },
-  {
-    "name": "🕰️ CHRONOS - Time Machine",
-    "url": "https://github.com/yvr98/TimeMachine",
-    "description": "Immersive time-travel experience where users select any location on a 3D globe and year in history. Pollinations generates historically accurate scene visualizations and streams first-person narratives of what travelers see, hear, and feel upon arrival.",
-    "author": "@yvr98",
-    "repo": "https://github.com/yvr98/TimeMachine",
-    "category": "creative",
-    "submissionDate": "2025-12-13",
-    "order": 5
-  },
-  {
-    "name": "🎬 Viral Flow",
-    "url": "https://fabioarieira.com/viralflow",
-    "description": "Browser-based video production platform using Pollinations for visual generation. Creates short-form viral content and long-form documentaries with customizable visual styles and editing rhythms. All processing happens locally in-browser for privacy.",
-    "author": "@fabioarieira",
-    "category": "creative",
-    "submissionDate": "2025-12-13",
-    "order": 5
-  },
-  {
-    "name": "🎬 PolliVision",
-    "url": "https://fabioarieira.com/pollivision",
-    "description": "Chat-based AI video generator using Pollinations APIs. Type a scene description to get AI-generated videos with auto-enhanced prompts and thumbnails. Features a modern dark theme interface with glass-morphism effects.",
-    "author": "@FabioArieiraBaia",
-    "repo": "https://github.com/FabioArieiraBaia/PolliVision",
-    "category": "creative",
-    "submissionDate": "2025-12-14",
-    "order": 5
-  },
-  {
-    "name": "🎄 Northpolelibrary",
-    "url": "https://northpolelibrary.eu",
-    "description": "Create personalized Christmas stories for children in minutes. Enter a child's name, age, and theme to generate unique stories with AI illustrations and text-to-speech narration. Available in English and Hungarian with printable formats.",
-    "author": "@bzddbz",
-    "discord_user": "bendmachine",
-    "category": "creative",
-    "language": "hu",
-    "submissionDate": "2025-12-14",
-    "order": 5
-  },
-  {
-    "name": "📚 IA-Books: AI Ebook Generator",
-    "url": "https://iabooks.com.br",
-    "description": "Professional ebook creation platform with AI. Auto-generates book covers and chapter illustrations via Pollinations Flux, plans chapters, writes content. PWA with offline support, client-side storage for privacy. Supports Portuguese and English.",
-    "author": "@FabioArieiraBaia",
-    "repo": "https://github.com/FabioArieiraBaia/IA-Books",
-    "category": "creative",
-    "language": "pt-BR",
-    "submissionDate": "2025-12-15",
-    "order": 5
-  },
-  {
-    "name": "⛽ TuffMeter",
-    "url": "https://tuffmeter.netlify.app/",
-    "description": "Humorous AI tool that analyzes uploaded videos to rate your aura. Based on visual content, the AI decides if your video is Tuff, Peak, or Cringe. Features multilingual support via built-in AI translator.",
-    "author": "@VearyTry",
-    "repo": "https://github.com/VearyTry",
-    "category": "creative",
-    "submissionDate": "2025-12-16",
-    "order": 5
-  },
-  {
-    "name": "🎨 Imgoo",
-    "url": "https://imgoo.netlify.app/",
-    "description": "AI image generator with creative controls including aspect ratio, guidance scales, and seeds. Features built-in browser editor for cropping, rotating, and filters. Dark mode and PWA-ready.",
-    "author": "@redythacker-cyber",
-    "category": "creative",
-    "submissionDate": "2025-12-20",
-    "order": 5
-  }
+    {
+        "name": "Robatika — AI Chat Platform",
+        "url": "https://app.robatika.com",
+        "description":
+            "Robatika is a rapidly growing AI chat platform that provides users with seamless access to advanced OpenAI models and a fully integrated creative suite powered by Pollinations.\\nOur current users rely heavily on Pollinations for image, text, and audio generation inside the chat experience.\\n\\nWe are actively expanding our capabilities and plan to deeply integrate Pollinations as a core creative engine for both free users and future developer tools. The system is designed to be lightweight, fast, and highly scalable. All user sessions run locally in-browser, and we do not store any user data.",
+        "author": "Robatika",
+        "category": "creative",
+        "submissionDate": "2025-12-10",
+        "order": 5,
+    },
+    {
+        "name": "🛠️ NextGenTools",
+        "url": "https://image-gen-adobe.nextgentools.online/",
+        "description":
+            "AI-powered workflow for stock photography. Generate images, vectorize them, and inject metadata for Adobe Stock submissions. Streamlines the process from creation to marketplace-ready assets.",
+        "author": "@roni123332",
+        "category": "creative",
+        "submissionDate": "2025-12-12",
+        "order": 5,
+    },
+    {
+        "name": "📚 AI Story Illustrator",
+        "url": "https://soft-cucurucho-6758e7.netlify.app/",
+        "description":
+            "Interactive storybook creator where you write scenes and get AI-generated illustrations for each one. Features sequential reveal animations, responsive layout, and automatic empty scene handling. Great for learning async JavaScript and API integration.",
+        "author": "@KAmaL-senpai",
+        "repo": "",
+        "category": "creative",
+        "submissionDate": "2025-12-13",
+        "order": 5,
+    },
+    {
+        "name": "🎨 ChimeraStudio",
+        "url": "https://github.com/migueland94/ChimeraStudio",
+        "description":
+            "Lightweight browser-based sandbox for testing Pollinations API capabilities. Explore AI image generation, computer vision analysis, and editing in one client-side tool. No backend required—keys and settings stay local for privacy.",
+        "author": "@migueland94",
+        "repo": "https://github.com/migueland94/ChimeraStudio",
+        "category": "creative",
+        "submissionDate": "2025-12-13",
+        "order": 5,
+    },
+    {
+        "name": "🎨 imgs_ai_bot",
+        "url": "https://t.me/imgs_ai_bot",
+        "description":
+            "A multifunctional Telegram bot for generating images using artificial intelligence. Create AI-generated artwork directly within Telegram conversations.",
+        "author": "@lwakis",
+        "category": "creative",
+        "submissionDate": "2025-12-13",
+        "order": 5,
+    },
+    {
+        "name": "✨ Storycraft Pro",
+        "url": "https://storycraftpro11-orpin.vercel.app/",
+        "description":
+            "Create illustrated stories with consistent characters, narrated audio, and AI-generated artwork. Generate complete visual narratives without design skills.",
+        "author": "@souravk11318",
+        "category": "creative",
+        "submissionDate": "2025-12-13",
+        "order": 5,
+    },
+    {
+        "name": "🎨 Sugen",
+        "url": "https://sugen.puter.site/",
+        "description":
+            "Browser-based AI art studio using Puter.js and Pollinations.ai. Features unlimited generation with Flux/Seedream/Kontext models, live global feed, img2img support, and pro controls including guidance scale and negative prompts.",
+        "author": "@red444ytchess-jpg",
+        "category": "creative",
+        "submissionDate": "2025-12-13",
+        "order": 5,
+    },
+    {
+        "name": "🎨 BinaryPH RSS AI",
+        "url": "https://binary.ph/posts/",
+        "description":
+            "WordPress plugin that transforms RSS feed items into complete blog posts using Pollinations.AI for both text generation and featured image creation.",
+        "author": "@amin-IT",
+        "category": "creative",
+        "submissionDate": "2025-12-13",
+        "order": 5,
+    },
+    {
+        "name": "🎨 Imagly AI",
+        "url": "https://imaglyai.web.app/",
+        "description":
+            "Free AI image generator that creates realistic photos, digital artwork, fantasy illustrations, and social media visuals from text prompts. Offers multiple artistic styles with no technical skills required.",
+        "author": "@imaglyai",
+        "category": "creative",
+        "submissionDate": "2025-12-13",
+        "order": 5,
+    },
+    {
+        "name": "🕰️ CHRONOS - Time Machine",
+        "url": "https://github.com/yvr98/TimeMachine",
+        "description":
+            "Immersive time-travel experience where users select any location on a 3D globe and year in history. Pollinations generates historically accurate scene visualizations and streams first-person narratives of what travelers see, hear, and feel upon arrival.",
+        "author": "@yvr98",
+        "repo": "https://github.com/yvr98/TimeMachine",
+        "category": "creative",
+        "submissionDate": "2025-12-13",
+        "order": 5,
+    },
+    {
+        "name": "🎬 Viral Flow",
+        "url": "https://fabioarieira.com/viralflow",
+        "description":
+            "Browser-based video production platform using Pollinations for visual generation. Creates short-form viral content and long-form documentaries with customizable visual styles and editing rhythms. All processing happens locally in-browser for privacy.",
+        "author": "@fabioarieira",
+        "category": "creative",
+        "submissionDate": "2025-12-13",
+        "order": 5,
+    },
+    {
+        "name": "🎬 PolliVision",
+        "url": "https://fabioarieira.com/pollivision",
+        "description":
+            "Chat-based AI video generator using Pollinations APIs. Type a scene description to get AI-generated videos with auto-enhanced prompts and thumbnails. Features a modern dark theme interface with glass-morphism effects.",
+        "author": "@FabioArieiraBaia",
+        "repo": "https://github.com/FabioArieiraBaia/PolliVision",
+        "category": "creative",
+        "submissionDate": "2025-12-14",
+        "order": 5,
+    },
+    {
+        "name": "🎄 Northpolelibrary",
+        "url": "https://northpolelibrary.eu",
+        "description":
+            "Create personalized Christmas stories for children in minutes. Enter a child's name, age, and theme to generate unique stories with AI illustrations and text-to-speech narration. Available in English and Hungarian with printable formats.",
+        "author": "@bzddbz",
+        "discord_user": "bendmachine",
+        "category": "creative",
+        "language": "hu",
+        "submissionDate": "2025-12-14",
+        "order": 5,
+    },
+    {
+        "name": "📚 IA-Books: AI Ebook Generator",
+        "url": "https://iabooks.com.br",
+        "description":
+            "Professional ebook creation platform with AI. Auto-generates book covers and chapter illustrations via Pollinations Flux, plans chapters, writes content. PWA with offline support, client-side storage for privacy. Supports Portuguese and English.",
+        "author": "@FabioArieiraBaia",
+        "repo": "https://github.com/FabioArieiraBaia/IA-Books",
+        "category": "creative",
+        "language": "pt-BR",
+        "submissionDate": "2025-12-15",
+        "order": 5,
+    },
+    {
+        "name": "⛽ TuffMeter",
+        "url": "https://tuffmeter.netlify.app/",
+        "description":
+            "Humorous AI tool that analyzes uploaded videos to rate your aura. Based on visual content, the AI decides if your video is Tuff, Peak, or Cringe. Features multilingual support via built-in AI translator.",
+        "author": "@VearyTry",
+        "repo": "https://github.com/VearyTry",
+        "category": "creative",
+        "submissionDate": "2025-12-16",
+        "order": 5,
+    },
+    {
+        "name": "🎨 Nosde Space",
+        "url": "https://www.nosde.space/",
+        "description":
+            "All-in-one AI platform for creating images, videos, text, and audio. Features community gallery with remix capabilities, gamification system with daily rewards, and configurable AI models. Integrates Pollinations for image/video generation alongside other AI services.",
+        "author": "@unknow_junior",
+        "category": "creative",
+        "language": "pt-BR",
+        "submissionDate": "2025-12-19",
+        "order": 5,
+    },
+    {
+        "name": "🎨 Imgoo",
+        "url": "https://imgoo.netlify.app/",
+        "description":
+            "AI image generator with creative controls including aspect ratio, guidance scales, and seeds. Features built-in browser editor for cropping, rotating, and filters. Dark mode and PWA-ready.",
+        "author": "@redythacker-cyber",
+        "category": "creative",
+        "submissionDate": "2025-12-20",
+        "order": 5,
+    },
 ];

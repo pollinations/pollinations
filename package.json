@@ -9,6 +9,7 @@
     "dev:image": "npm run dev --prefix image.pollinations.ai"
   },
   "devDependencies": {
+    "@biomejs/biome": "^2.3.10",
     "concurrently": "^9.2.1"
   },
   "dependencies": {

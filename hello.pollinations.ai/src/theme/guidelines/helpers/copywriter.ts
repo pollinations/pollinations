@@ -5,7 +5,6 @@
 
 import { assembleCopyPrompt } from "../../buildPrompts";
 import { generateText } from "../../../services/pollinationsAPI";
-import { API_KEY } from "../../../api.config";
 import { ALL_COPY } from "../../copy/index";
 import { THEME_MODELS } from "../../models";
 
@@ -61,7 +60,6 @@ export async function generateCopy(
     try {
         const response = await generateText(
             fullPrompt,
-            API_KEY,
             42,
             THEME_MODELS.copywriter,
             signal,

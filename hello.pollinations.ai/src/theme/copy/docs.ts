@@ -35,8 +35,12 @@ export const DOCS_PAGE = {
         text: "Pick a prompt",
     },
 
-    optionalParametersLabel: {
-        text: "Optional parameters",
+    modelSelectLabel: {
+        text: "Model",
+    },
+
+    parametersLabel: {
+        text: "Parameters",
     },
 
     generatingLabel: {
@@ -55,6 +59,17 @@ export const DOCS_PAGE = {
         "harmonious forest ecosystem",
         "symbiotic nature interactions",
         "flowing river through biosphere",
+    ],
+
+    // Image parameters (from API docs)
+    imageParameters: [
+        { key: "width", value: "1024", description: "Image width in pixels" },
+        { key: "height", value: "1024", description: "Image height in pixels" },
+        { key: "seed", value: "42", description: "Random seed for reproducible results" },
+        { key: "enhance", value: "true", description: "Let AI improve your prompt" },
+        { key: "nologo", value: "true", description: "Remove Pollinations watermark" },
+        { key: "safe", value: "true", description: "Enable safety filters" },
+        { key: "private", value: "true", description: "Hide from public feeds" },
     ],
 
     // TextGenCard
@@ -80,6 +95,15 @@ export const DOCS_PAGE = {
         "write a poem about nature",
         "describe ecosystem harmony",
         "explain symbiosis",
+    ],
+
+    // Text parameters (from API docs)
+    textParameters: [
+        { key: "system", value: "You are helpful", description: "System prompt for context" },
+        { key: "json", value: "true", description: "Return response in JSON format" },
+        { key: "temperature", value: "0.7", description: "Creativity (0=strict, 2=creative)" },
+        { key: "stream", value: "true", description: "Stream response in real-time" },
+        { key: "private", value: "true", description: "Hide from public feeds" },
     ],
 
     // ModelDiscoveryCard
@@ -125,11 +149,11 @@ export const DOCS_PAGE = {
     },
 
     publishableFeature2: {
-        text: "1 pollen/hour per IP+key",
+        text: "Rate limited: 3 req/burst, 1/15sec refill",
     },
 
     publishableFeature3: {
-        text: "Beta: Use secret keys for production",
+        text: "Best for: demos, prototypes, public tools",
     },
 
     secretLabel: {
@@ -145,7 +169,7 @@ export const DOCS_PAGE = {
     },
 
     secretFeature3: {
-        text: "No rate limits",
+        text: "No rate limits, can spend Pollen",
     },
 
     getYourKeyLabel: {
@@ -162,5 +186,10 @@ export const DOCS_PAGE = {
 
     clientSideDescription: {
         text: "Client-side (Public): Use publishable key in query parameter",
+    },
+
+    // API base URL for display
+    apiBaseUrl: {
+        text: "gen.pollinations.ai",
     },
 };

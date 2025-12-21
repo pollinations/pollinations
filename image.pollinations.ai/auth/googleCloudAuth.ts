@@ -1,5 +1,4 @@
 import fetch from "node-fetch";
-import fs from "fs/promises";
 import debug from "debug";
 import jwt from "jsonwebtoken";
 
@@ -8,6 +7,7 @@ const errorLog = debug("pollinations:google-auth:error");
 
 // Types
 interface ServiceAccountKey {
+    type: string;
     private_key: string;
     private_key_id: string;
     client_email: string;
@@ -45,41 +45,40 @@ let gcloudAccessToken = "";
 let tokenExpiration: number | null = null;
 
 /**
- * Refreshes the Google Cloud access token using a service account key file
+ * Refreshes the Google Cloud access token using environment variables
  * @returns A promise that resolves to the access token or null if authentication fails
  */
 async function refreshGcloudAccessToken(): Promise<string | null> {
     try {
-        // Get the path to the service account key file
-        const credentialsPath = process.env.GOOGLE_APPLICATION_CREDENTIALS;
-        log("GOOGLE_APPLICATION_CREDENTIALS path:", credentialsPath);
+        // Get credentials from environment variables
+        const privateKey = process.env.GOOGLE_PRIVATE_KEY;
+        const privateKeyId = process.env.GOOGLE_PRIVATE_KEY_ID;
+        const clientEmail = process.env.GOOGLE_CLIENT_EMAIL;
+        const projectId = process.env.GOOGLE_PROJECT_ID;
 
-        if (!credentialsPath) {
+        log("Checking Google Cloud credentials from environment...");
+        log("- GOOGLE_PRIVATE_KEY:", privateKey ? "[SET]" : "[NOT SET]");
+        log("- GOOGLE_PRIVATE_KEY_ID:", privateKeyId ? "[SET]" : "[NOT SET]");
+        log("- GOOGLE_CLIENT_EMAIL:", clientEmail ? "[SET]" : "[NOT SET]");
+        log("- GOOGLE_PROJECT_ID:", projectId);
+
+        if (!privateKey || !privateKeyId || !clientEmail) {
             errorLog(
-                "GOOGLE_APPLICATION_CREDENTIALS environment variable not set",
+                "Missing required Google Cloud credentials. Need: GOOGLE_PRIVATE_KEY, GOOGLE_PRIVATE_KEY_ID, GOOGLE_CLIENT_EMAIL",
             );
             return null;
         }
 
-        // Read and parse the service account key file
-        log("Reading service account key file...");
-        let keyFileContent: string;
-        try {
-            keyFileContent = await fs.readFile(credentialsPath, "utf8");
-        } catch (fileError) {
-            errorLog("Failed to read service account key file:", fileError);
-            return null;
-        }
+        // Construct keyData from environment variables
+        const keyData: ServiceAccountKey = {
+            type: "service_account",
+            project_id: projectId || "",
+            private_key_id: privateKeyId,
+            private_key: privateKey.replace(/\\n/g, "\n"), // Handle escaped newlines from env
+            client_email: clientEmail,
+        };
 
-        let keyData: ServiceAccountKey;
-        try {
-            keyData = JSON.parse(keyFileContent);
-        } catch (parseError) {
-            errorLog("Failed to parse service account key file:", parseError);
-            return null;
-        }
-
-        log("Service account key file loaded successfully");
+        log("Service account credentials loaded from environment");
         log("Project ID:", keyData.project_id);
         log("Client email:", keyData.client_email);
 
@@ -288,15 +287,14 @@ function initGoogleCloudAuth(): AuthInstance {
     try {
         log("Initializing Google Cloud authentication...");
         log("Environment variables:");
-        log(
-            "- GOOGLE_APPLICATION_CREDENTIALS:",
-            process.env.GOOGLE_APPLICATION_CREDENTIALS,
-        );
-        log("- GCLOUD_PROJECT_ID:", process.env.GCLOUD_PROJECT_ID);
+        log("- GOOGLE_PRIVATE_KEY:", process.env.GOOGLE_PRIVATE_KEY ? "[SET]" : "[NOT SET]");
+        log("- GOOGLE_PRIVATE_KEY_ID:", process.env.GOOGLE_PRIVATE_KEY_ID ? "[SET]" : "[NOT SET]");
+        log("- GOOGLE_CLIENT_EMAIL:", process.env.GOOGLE_CLIENT_EMAIL ? "[SET]" : "[NOT SET]");
+        log("- GOOGLE_PROJECT_ID:", process.env.GOOGLE_PROJECT_ID);
 
         // Check if credentials are available
-        if (!process.env.GOOGLE_APPLICATION_CREDENTIALS) {
-            log("GOOGLE_APPLICATION_CREDENTIALS not set, returning null");
+        if (!process.env.GOOGLE_PRIVATE_KEY || !process.env.GOOGLE_CLIENT_EMAIL) {
+            log("Google Cloud credentials not set, returning null");
             return {
                 getAccessToken: async () => null,
             };

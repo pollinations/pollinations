@@ -1,0 +1,172 @@
+{
+  "request": {
+    "url": "http://localhost:16385/openai",
+    "method": "POST",
+    "body": {
+      "type": "json",
+      "data": {
+        "model": "deepseek",
+        "messages": [
+          {
+            "role": "user",
+            "content": "What is 5 + 3? You must use the calculator tool to compute this."
+          },
+          {
+            "role": "assistant",
+            "tool_calls": [
+              {
+                "id": "call_6exYoNUXQjO7wPvYugNnOQ",
+                "index": 0,
+                "type": "function",
+                "function": {
+                  "name": "calculator",
+                  "arguments": "{\"operation\": \"add\", \"a\": 5, \"b\": 3}"
+                }
+              }
+            ]
+          },
+          {
+            "role": "tool",
+            "tool_call_id": "call_6exYoNUXQjO7wPvYugNnOQ",
+            "content": "{\"result\":8}"
+          }
+        ],
+        "tools": [
+          {
+            "type": "function",
+            "function": {
+              "name": "calculator",
+              "description": "Perform basic arithmetic operations",
+              "parameters": {
+                "type": "object",
+                "properties": {
+                  "operation": {
+                    "type": "string",
+                    "enum": [
+                      "add",
+                      "subtract",
+                      "multiply",
+                      "divide"
+                    ],
+                    "description": "The arithmetic operation to perform"
+                  },
+                  "a": {
+                    "type": "number",
+                    "description": "First operand"
+                  },
+                  "b": {
+                    "type": "number",
+                    "description": "Second operand"
+                  }
+                },
+                "required": [
+                  "operation",
+                  "a",
+                  "b"
+                ]
+              }
+            }
+          }
+        ],
+        "seed": 42,
+        "max_tokens": 4096
+      }
+    },
+    "params": {}
+  },
+  "response": {
+    "status": 200,
+    "statusText": "OK",
+    "headers": {
+      "access-control-allow-origin": "*",
+      "connection": "keep-alive",
+      "content-length": "967",
+      "content-type": "application/json; charset=utf-8",
+      "date": "Sat, 20 Dec 2025 15:41:39 GMT",
+      "etag": "W/\"3c7-YoXvs+X34wg8ihDFV/rLk1OsxJs\"",
+      "keep-alive": "timeout=5",
+      "x-model-used": "DeepSeek-V3.1",
+      "x-powered-by": "Express",
+      "x-usage-completion-text-tokens": "14",
+      "x-usage-prompt-text-tokens": "508",
+      "x-usage-total-tokens": "522"
+    },
+    "body": {
+      "type": "json",
+      "data": {
+        "id": "pllns_710367464232262aed2795c0b23185e8",
+        "model": "DeepSeek-V3.1",
+        "choices": [
+          {
+            "index": 0,
+            "message": {
+              "role": "assistant",
+              "content": "5 + 3 equals 8. The calculator confirmed it!"
+            },
+            "finish_reason": "",
+            "content_filter_results": {
+              "violence": {
+                "filtered": false,
+                "severity": "safe"
+              },
+              "sexual": {
+                "filtered": false,
+                "severity": "safe"
+              },
+              "hate": {
+                "filtered": false,
+                "severity": "safe"
+              },
+              "self_harm": {
+                "filtered": false,
+                "severity": "safe"
+              },
+              "protected_material_code": {
+                "filtered": false,
+                "detected": false
+              },
+              "protected_material_text": {
+                "filtered": false,
+                "detected": false
+              }
+            }
+          }
+        ],
+        "usage": {
+          "prompt_tokens": 508,
+          "completion_tokens": 14,
+          "total_tokens": 522
+        },
+        "created": 1766245299,
+        "object": "chat.completion",
+        "prompt_filter_results": [
+          {
+            "prompt_index": 0,
+            "content_filter_results": {
+              "violence": {
+                "filtered": false,
+                "severity": "safe"
+              },
+              "sexual": {
+                "filtered": false,
+                "severity": "safe"
+              },
+              "hate": {
+                "filtered": false,
+                "severity": "safe"
+              },
+              "self_harm": {
+                "filtered": false,
+                "severity": "safe"
+              },
+              "jailbreak": {
+                "filtered": false,
+                "detected": false
+              }
+            }
+          }
+        ]
+      }
+    }
+  }
+}

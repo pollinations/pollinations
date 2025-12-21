@@ -165,8 +165,8 @@ export const callComfyUI = async (
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
-                    ...(process.env.ENTER_TOKEN && {
-                        "x-enter-token": process.env.ENTER_TOKEN,
+                    ...(process.env.PLN_ENTER_TOKEN && {
+                        "x-enter-token": process.env.PLN_ENTER_TOKEN,
                     }),
                 },
                 body: JSON.stringify(body),
@@ -343,7 +343,11 @@ async function callCloudflareModel(
         logCloudflare(`Image buffer size: ${imageBuffer.length} bytes`);
     } else {
         // JSON response with base64 encoded image (typical for Flux)
-        const data = await response.json();
+        const data = (await response.json()) as {
+            success?: boolean;
+            errors?: Array<{ message?: string }>;
+            result?: { image?: string };
+        };
         logCloudflare(
             `Received JSON response from Cloudflare ${modelPath}:`,
             JSON.stringify(data, null, 2),
@@ -513,8 +517,8 @@ const callAzureGPTImageWithEndpoint = async (
     safeParams: ImageParams,
     userInfo: AuthResult,
 ): Promise<ImageGenerationResult> => {
-    const apiKey = process.env[`GPT_IMAGE_1_AZURE_API_KEY`];
-    let endpoint = process.env[`GPT_IMAGE_1_ENDPOINT`];
+    const apiKey = process.env[`AZURE_PF_GPTIMAGE_API_KEY`];
+    let endpoint = process.env[`AZURE_PF_GPTIMAGE_ENDPOINT`];
 
     if (!apiKey || !endpoint) {
         throw new Error(

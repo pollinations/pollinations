@@ -1,0 +1,83 @@
+{
+  "request": {
+    "url": "http://localhost:16385/openai",
+    "method": "POST",
+    "body": {
+      "type": "json",
+      "data": {
+        "model": "claude",
+        "messages": [
+          {
+            "role": "user",
+            "content": [
+              {
+                "type": "text",
+                "text": "Describe this image in one word."
+              },
+              {
+                "type": "image_url",
+                "image_url": {
+                  "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a7/Camponotus_flavomarginatus_ant.jpg/320px-Camponotus_flavomarginatus_ant.jpg"
+                }
+              }
+            ]
+          }
+        ],
+        "max_tokens": 50
+      }
+    },
+    "params": {}
+  },
+  "response": {
+    "status": 200,
+    "statusText": "OK",
+    "headers": {
+      "access-control-allow-origin": "*",
+      "connection": "keep-alive",
+      "content-length": "440",
+      "content-type": "application/json; charset=utf-8",
+      "date": "Sat, 20 Dec 2025 15:41:19 GMT",
+      "etag": "W/\"1b8-5b34vsf/UWYKo/LMG/+R3mt38FM\"",
+      "keep-alive": "timeout=5",
+      "x-model-used": "us.anthropic.claude-sonnet-4-5-20250929-v1:0",
+      "x-powered-by": "Express",
+      "x-usage-completion-text-tokens": "6",
+      "x-usage-prompt-text-tokens": "384",
+      "x-usage-total-tokens": "390"
+    },
+    "body": {
+      "type": "json",
+      "data": {
+        "id": "pllns_8b62c8c3a7b008e8563dba7d0210f91b",
+        "object": "chat.completion",
+        "created": 1766245279,
+        "model": "us.anthropic.claude-sonnet-4-5-20250929-v1:0",
+        "provider": "bedrock",
+        "choices": [
+          {
+            "index": 0,
+            "message": {
+              "role": "assistant",
+              "content": "Defiant",
+              "content_blocks": [
+                {
+                  "type": "text",
+                  "text": "Defiant"
+                }
+              ]
+            },
+            "finish_reason": "end_turn"
+          }
+        ],
+        "usage": {
+          "prompt_tokens": 384,
+          "completion_tokens": 6,
+          "total_tokens": 390,
+          "prompt_tokens_details": {
+            "cached_tokens": 0
+          }
+        }
+      }
+    }
+  }
+}

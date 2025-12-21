@@ -1,7 +1,7 @@
 import { HELLO_PAGE } from "../src/theme/copy/hello";
 
 const API_KEY =
-    process.env.VITE_POLLINATIONS_API_KEY ||
+    process.env.VITE_PLN_APPS_KEY ||
     "plln_pk_JYeNIYDfEi0dwDT7kPAXujYWyYT2TaKm";
 const API_URL =
     "https://enter.pollinations.ai/api/generate/v1/chat/completions";

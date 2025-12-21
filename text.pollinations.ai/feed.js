@@ -12,7 +12,7 @@ const connectedClients = new Map();
 const authenticatedClients = new Map();
 
 // Get feed password from environment, default to a placeholder if not set
-const FEED_PASSWORD = process.env.FEED_PASSWORD;
+const PLN_FEED_PASSWORD = process.env.PLN_FEED_PASSWORD;
 
 function sendToFeedListeners(response, requestParams, ip) {
     // Always log statistics for all requests (private and public)
@@ -41,7 +41,7 @@ function setupFeedEndpoint(app) {
     // Single feed endpoint with optional password parameter
     app.get("/feed", (req, res) => {
         const providedPassword = req.query.password;
-        const isAuthenticated = providedPassword === FEED_PASSWORD;
+        const isAuthenticated = providedPassword === PLN_FEED_PASSWORD;
 
         res.writeHead(200, {
             "Content-Type": "text/event-stream; charset=utf-8",

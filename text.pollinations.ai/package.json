@@ -2,8 +2,9 @@
     "name": "text.pollinations.ai",
     "version": "1.0.0",
     "scripts": {
-        "start": "tsx startServer.js",
-        "dev": "clear && DEBUG=pollinations:* tsx startServer.js",
+        "decrypt-vars": "sops decrypt secrets/env.json --output-type dotenv > .env",
+        "start": "npm run decrypt-vars && npx tsx startServer.js",
+        "dev": "npm run decrypt-vars && DEBUG=pollinations:* npx tsx startServer.js",
         "type-check": "tsc --noEmit",
         "validate-configs": "tsx configs/validateConfigKeys.ts",
         "test": "echo \"Error: no test specified\" && exit 1",

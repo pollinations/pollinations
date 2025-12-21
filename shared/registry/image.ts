@@ -52,7 +52,7 @@ export const IMAGE_SERVICES = {
     "nanobanana": {
         aliases: [],
         modelId: "nanobanana",
-        provider: "vertex-ai",
+        provider: "google",
         cost: [
             // Gemini 2.5 Flash Image via Vertex AI
             {
@@ -69,7 +69,7 @@ export const IMAGE_SERVICES = {
     "nanobanana-pro": {
         aliases: [],
         modelId: "nanobanana-pro",
-        provider: "vertex-ai",
+        provider: "google",
         cost: [
             // Gemini 3 Pro Image via Vertex AI
             // 1K/2K image: 1120 tokens = $0.134/image ($120/M tokens)
@@ -88,7 +88,7 @@ export const IMAGE_SERVICES = {
     "seedream": {
         aliases: [],
         modelId: "seedream",
-        provider: "bytedance-ark",
+        provider: "bytedance",
         cost: [
             // ByteDance ARK Seedream 4.0 - $0.03 per image
             {
@@ -103,7 +103,7 @@ export const IMAGE_SERVICES = {
     "seedream-pro": {
         aliases: [],
         modelId: "seedream-pro",
-        provider: "bytedance-ark",
+        provider: "bytedance",
         cost: [
             // ByteDance ARK Seedream 4.5 - $0.04 per image
             {
@@ -118,7 +118,7 @@ export const IMAGE_SERVICES = {
     "gptimage": {
         aliases: ["gpt-image", "gpt-image-1-mini"],
         modelId: "gptimage",
-        provider: "azure-openai",
+        provider: "azure-2",
         cost: [
             // Azure gpt-image-1-mini
             {
@@ -136,10 +136,10 @@ export const IMAGE_SERVICES = {
     "zimage": {
         aliases: ["z-image", "z-image-turbo"],
         modelId: "zimage",
-        provider: "self-hosted",
+        provider: "aws",
         cost: [
             // Z-Image-Turbo (6B params, 9 steps)
-            // Self-hosted on L40S, ~0.9s for 512x512, ~3.5s for 1024x1024
+            // AWS (L40S), ~0.9s for 512x512, ~3.5s for 1024x1024
             {
                 date: COST_START_DATE,
                 completionImageTokens: 0.0002, // ~$0.0002 per image (GPU cost estimate)
@@ -152,7 +152,7 @@ export const IMAGE_SERVICES = {
     "veo": {
         aliases: ["veo-3.1-fast", "video"],
         modelId: "veo",
-        provider: "vertex-ai",
+        provider: "google",
         cost: [
             // Veo 3.1 Fast - $0.15 per second of video
             // We bill by "video seconds" - each second is counted like a token
@@ -168,7 +168,7 @@ export const IMAGE_SERVICES = {
     "seedance": {
         aliases: [],
         modelId: "seedance",
-        provider: "bytedance-ark",
+        provider: "bytedance",
         cost: [
             // Seedance Lite - $1.8/M tokens
             // Token formula: (height × width × FPS × duration) / 1024
@@ -185,7 +185,7 @@ export const IMAGE_SERVICES = {
     "seedance-pro": {
         aliases: [],
         modelId: "seedance-pro",
-        provider: "bytedance-ark",
+        provider: "bytedance",
         cost: [
             // Seedance Pro-Fast - $1/M tokens
             // Token formula: (height × width × FPS × duration) / 1024

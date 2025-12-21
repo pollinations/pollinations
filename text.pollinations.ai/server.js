@@ -94,23 +94,23 @@ app.use((req, res, next) => {
 app.use(bodyParser.json({ limit: "20mb" }));
 app.use(cors());
 
-// Middleware to verify ENTER_TOKEN (after CORS for consistency)
+// Middleware to verify PLN_ENTER_TOKEN (after CORS for consistency)
 app.use((req, res, next) => {
     const token = req.headers["x-enter-token"];
-    const expectedToken = process.env.ENTER_TOKEN;
+    const expectedToken = process.env.PLN_ENTER_TOKEN;
 
     if (!expectedToken) {
-        // If ENTER_TOKEN is not configured, allow all requests (backward compatibility)
-        authLog("!  ENTER_TOKEN not configured - allowing request");
+        // If PLN_ENTER_TOKEN is not configured, allow all requests (backward compatibility)
+        authLog("!  PLN_ENTER_TOKEN not configured - allowing request");
         return next();
     }
 
     if (token !== expectedToken) {
-        authLog("❌ Invalid or missing ENTER_TOKEN from IP:", getIp(req));
+        authLog("❌ Invalid or missing PLN_ENTER_TOKEN from IP:", getIp(req));
         return res.status(403).json({ error: "Unauthorized" });
     }
 
-    authLog("✅ Valid ENTER_TOKEN from IP:", getIp(req));
+    authLog("✅ Valid PLN_ENTER_TOKEN from IP:", getIp(req));
     next();
 });
 // New route handler for root path

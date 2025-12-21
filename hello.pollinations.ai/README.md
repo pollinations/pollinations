@@ -15,7 +15,7 @@ To use the Theme Creator, add your API key:
 
 ```bash
 # Create .env file
-echo "VITE_POLLINATIONS_API_KEY=your_secret_key_here" > .env
+echo "VITE_PLN_APPS_KEY=your_secret_key_here" > .env
 ```
 
 Get your key at https://enter.pollinations.ai

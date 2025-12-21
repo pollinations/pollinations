@@ -1,0 +1,79 @@
+{
+  "request": {
+    "url": "http://localhost:16385/openai",
+    "method": "POST",
+    "body": {
+      "type": "json",
+      "data": {
+        "model": "deepseek",
+        "messages": [
+          {
+            "role": "user",
+            "content": "Is Berlin the capital of Germany? Reply yes or no."
+          }
+        ],
+        "stream": true,
+        "seed": 42
+      }
+    },
+    "params": {}
+  },
+  "response": {
+    "status": 200,
+    "statusText": "OK",
+    "headers": {
+      "access-control-allow-origin": "*",
+      "cache-control": "no-cache",
+      "connection": "keep-alive",
+      "content-type": "text/event-stream; charset=utf-8",
+      "date": "Sat, 20 Dec 2025 15:40:18 GMT",
+      "transfer-encoding": "chunked",
+      "x-powered-by": "Express"
+    },
+    "body": {
+      "type": "stream",
+      "data": [
+        {
+          "data": "data: {\"choices\":[],\"create",
+          "delay": 25
+        },
+        {
+          "data": "d\":0,\"id\":\"\",\"model\":\"\",\"object\":\"\",\"prompt_filter_results\":[{\"prompt_index\":0,\"content_filter_results\":{\"hate\":{\"filtered\":false,\"severity\":\"safe\"},\"jailbreak\":{\"filtered\":false,\"detected\":false},\"self_harm\":{\"filtered\":false,\"severity\":\"safe\"},\"sexual\":{\"filtered\":false,\"severity\":\"safe\"},\"violence\":{\"filtered\":false,\"severity\":\"safe\"}}}]}\n\ndata: {\"choices\":[{\"content_filter_results\":{},\"delta\":{\"content\":null,\"role\":\"assistant\",\"tool_calls\":null},\"finish_reason\":null,\"index\":0,\"logprobs\":null,\"matched_stop\":null}],\"created\":1766245218,\"id\":\"823084590da34b50a042d152b792e422\",\"model\":\"DeepSeek-V3.1\",\"object\":\"chat.completion.chunk\",\"usage\":null}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"choices\":[{\"content",
+          "delay": 77
+        },
+        {
+          "data": "_filter_results\":{\"hate\":{\"filtered\":false,\"severity\":\"safe\"},\"protected_material_code\":{\"filtered\":false,\"detected\":false},\"protected_material_text\":{\"filtered\":false,\"detected\":false},\"self_harm\":{\"filtered\":false,\"severity\":\"safe\"},\"sexual\":{\"filtered\":false,\"severity\":\"safe\"},\"violence\":{\"filtered\":false,\"severity\":\"safe\"}},\"delta\":{\"content\":\"Yes\",\"role\":null,\"tool_calls\":null},\"finish_reason\":null,\"index\":0,\"logprobs\":null,\"matched_stop\":null}],\"created\":1766245218,\"id\":\"823084590da34b50a042d152b792e422\",\"model\":\"DeepSeek-V3.1\",\"object\":\"chat.completion.chunk\",\"usage\":null}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"choices\":[{\"conte",
+          "delay": 0
+        },
+        {
+          "data": "nt_filter_results\":{},\"delta\":{\"content\":\".\",\"role\":null,\"tool_calls\":null},\"finish_reason\":null,\"index\":0,\"logprobs\":null,\"matched_stop\":null}],\"created\":1766245218,\"id\":\"823084590da34b50a042d152b792e422\",\"model\":\"DeepSeek-V3.1\",\"object\":\"chat.completion.chunk\",\"usage\":null}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"choices\":[{\"conte",
+          "delay": 0
+        },
+        {
+          "data": "nt_filter_results\":{},\"delta\":{\"content\":null,\"role\":null,\"tool_calls\":null},\"finish_reason\":\"stop\",\"index\":0,\"logprobs\":null,\"matched_stop\":1}],\"created\":1766245218,\"id\":\"823084590da34b50a042d152b792e422\",\"model\":\"DeepSeek-V3.1\",\"object\":\"chat.completion.chunk\",\"usage\":null}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"choices\":[],\"creat",
+          "delay": 0
+        },
+        {
+          "data": "ed\":1766245218,\"id\":\"823084590da34b50a042d152b792e422\",\"model\":\"DeepSeek-V3.1\",\"object\":\"chat.completion.chunk\",\"usage\":{\"completion_tokens\":3,\"prompt_tokens\":265,\"total_tokens\":268}}\n\ndata: [DONE]\n\n",
+          "delay": 0
+        }
+      ]
+    }
+  }
+}

@@ -5,7 +5,6 @@ import {
     removeSystemMessages,
 } from "./transforms/createSystemPromptTransform.js";
 import { pipe } from "./transforms/pipe.js";
-import { createGoogleSearchTransform } from "./transforms/createGoogleSearchTransform.js";
 import { createGeminiToolsTransform } from "./transforms/createGeminiToolsTransform.ts";
 
 // Import persona prompts
@@ -107,7 +106,10 @@ const models: ModelDefinition[] = [
     {
         name: "gemini-search",
         config: portkeyConfig["gemini-2.5-flash-lite"],
-        transform: pipe(createGoogleSearchTransform()),
+        transform: pipe(
+            // Only google_search - url_context is NOT a search tool on Vertex AI
+            createGeminiToolsTransform(["google_search"]),
+        ),
     },
     {
         name: "midijourney",

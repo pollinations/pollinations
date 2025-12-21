@@ -1,0 +1,120 @@
+{
+  "request": {
+    "url": "http://ec2-3-80-56-235.compute-1.amazonaws.com:16385/openai",
+    "method": "POST",
+    "body": {
+      "type": "json",
+      "data": {
+        "model": "gemini-large",
+        "messages": [
+          {
+            "role": "user",
+            "content": "What is 5 + 3? You must use the calculator tool to compute this."
+          }
+        ],
+        "tools": [
+          {
+            "type": "function",
+            "function": {
+              "name": "calculator",
+              "description": "Perform basic arithmetic operations",
+              "parameters": {
+                "type": "object",
+                "properties": {
+                  "operation": {
+                    "type": "string",
+                    "enum": [
+                      "add",
+                      "subtract",
+                      "multiply",
+                      "divide"
+                    ],
+                    "description": "The arithmetic operation to perform"
+                  },
+                  "a": {
+                    "type": "number",
+                    "description": "First operand"
+                  },
+                  "b": {
+                    "type": "number",
+                    "description": "Second operand"
+                  }
+                },
+                "required": [
+                  "operation",
+                  "a",
+                  "b"
+                ]
+              }
+            }
+          }
+        ],
+        "tool_choice": "required",
+        "seed": 42
+      }
+    },
+    "params": {}
+  },
+  "response": {
+    "status": 200,
+    "statusText": "OK",
+    "headers": {
+      "access-control-allow-origin": "*",
+      "connection": "keep-alive",
+      "content-length": "1180",
+      "content-type": "application/json; charset=utf-8",
+      "date": "Sun, 21 Dec 2025 16:30:33 GMT",
+      "etag": "W/\"49c-mbtOr4Hj8LFa7yPm/b6xQ8Rb4pk\"",
+      "keep-alive": "timeout=5",
+      "x-model-used": "gemini-3-pro-preview",
+      "x-powered-by": "Express",
+      "x-usage-completion-reasoning-tokens": "119",
+      "x-usage-completion-text-tokens": "11",
+      "x-usage-prompt-text-tokens": "299",
+      "x-usage-total-tokens": "429"
+    },
+    "body": {
+      "type": "json",
+      "data": {
+        "id": "pllns_cdec09471ec34f7faa04fb6c8052cef3",
+        "object": "chat.completion",
+        "created": 1766334633,
+        "model": "gemini-3-pro-preview",
+        "provider": "vertex-ai",
+        "choices": [
+          {
+            "message": {
+              "role": "assistant",
+              "tool_calls": [
+                {
+                  "id": "portkey-32a734bf-5012-4878-8c1a-31b68138b384",
+                  "type": "function",
+                  "function": {
+                    "name": "calculator",
+                    "arguments": "{\"a\":5,\"b\":3,\"operation\":\"add\"}",
+                    "thought_signature": "CpoDAY89a1/V9EXxO2jV6DCTI5QF5MxbQwoz+jkxM9K2LOZOnvrAY2zdL9MasDKJSSn7PaP32ATekgyqd6eSXAKnL2Jzc90tiWO9u3TCOCOShft2gK1eDLldJ40hv0Hn4wKMeMbxqBmyZFT2mPEXkynb/1LK2aUfw22s/HMTRfo/r0o6c3S0ronNUnFigvuu5Di3VCpFByneOmty7XVfqk1NLaMokljayUgs9GBv5lmixehycbl0JnISwU0R2BRHnoJ5q2vu9iF6aNEiAhmEmVFkTOZIvOTEC7rOwY2JvoeoPekPsL526KexXMgmKhq6ieMV0de21EzV3jOdhBgO/YUjJNcy3o/k2UQ3E2DK5ixflMyfpj8nSc0+ihk6/Gx8mlwiQh9YfHAM7wufHY/lw8KL+Xr6yQaQeqFhvTgV7qETiSovcHQ4jR3COCUUy1GjVOK9dt400aeqZrkS8uA7kMS9sM1EBRTMZcSaJnP9dN5EB+vINpttuEvyDTWoOqEFFtr+WLLlBXB1RzcIMf6sZ2gCYw+hJ4aSqtM+zPM="
+                  }
+                }
+              ]
+            },
+            "index": 0,
+            "finish_reason": "STOP"
+          }
+        ],
+        "usage": {
+          "prompt_tokens": 299,
+          "completion_tokens": 130,
+          "total_tokens": 429,
+          "completion_tokens_details": {
+            "reasoning_tokens": 119,
+            "audio_tokens": 0
+          },
+          "prompt_tokens_details": {
+            "cached_tokens": 0,
+            "audio_tokens": 0
+          }
+        }
+      }
+    }
+  }
+}

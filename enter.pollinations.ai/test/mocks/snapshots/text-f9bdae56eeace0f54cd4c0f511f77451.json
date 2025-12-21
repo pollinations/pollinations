@@ -1,0 +1,83 @@
+{
+  "request": {
+    "url": "http://ec2-3-80-56-235.compute-1.amazonaws.com:16385/openai",
+    "method": "POST",
+    "body": {
+      "type": "json",
+      "data": {
+        "model": "openai",
+        "messages": [
+          {
+            "role": "user",
+            "content": "Is Berlin the capital of Germany? Reply yes or no."
+          }
+        ],
+        "stream": true,
+        "seed": 42
+      }
+    },
+    "params": {}
+  },
+  "response": {
+    "status": 200,
+    "statusText": "OK",
+    "headers": {
+      "access-control-allow-origin": "*",
+      "cache-control": "no-cache",
+      "connection": "keep-alive",
+      "content-type": "text/event-stream; charset=utf-8",
+      "date": "Sun, 21 Dec 2025 16:28:21 GMT",
+      "transfer-encoding": "chunked",
+      "x-powered-by": "Express"
+    },
+    "body": {
+      "type": "stream",
+      "data": [
+        {
+          "data": "data: {\"choices\":[],\"create",
+          "delay": 25
+        },
+        {
+          "data": "d\":0,\"id\":\"\",\"model\":\"\",\"object\":\"\",\"prompt_filter_results\":[{\"prompt_index\":0,\"content_filter_results\":{\"hate\":{\"filtered\":false,\"severity\":\"safe\"},\"jailbreak\":{\"filtered\":false,\"detected\":false},\"self_harm\":{\"filtered\":false,\"severity\":\"safe\"},\"sexual\":{\"filtered\":false,\"severity\":\"safe\"},\"violence\":{\"filtered\":false,\"severity\":\"safe\"}}}]}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"choices\":[{\"conte",
+          "delay": 0
+        },
+        {
+          "data": "nt_filter_results\":{},\"delta\":{\"content\":\"\",\"refusal\":null,\"role\":\"assistant\"},\"finish_reason\":null,\"index\":0,\"logprobs\":null}],\"created\":1766334500,\"id\":\"chatcmpl-CpGa45NoogyoFy7NQOehS6BOLo0Sl\",\"model\":\"gpt-5-mini-2025-08-07\",\"obfuscation\":\"mlHD0UTuYG9zh4\",\"object\":\"chat.completion.chunk\",\"system_fingerprint\":null,\"usage\":null}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"choices\":[{\"content",
+          "delay": 64
+        },
+        {
+          "data": "_filter_results\":{\"hate\":{\"filtered\":false,\"severity\":\"safe\"},\"self_harm\":{\"filtered\":false,\"severity\":\"safe\"},\"sexual\":{\"filtered\":false,\"severity\":\"safe\"},\"violence\":{\"filtered\":false,\"severity\":\"safe\"}},\"delta\":{\"content\":\"Yes\"},\"finish_reason\":null,\"index\":0,\"logprobs\":null}],\"created\":1766334500,\"id\":\"chatcmpl-CpGa45NoogyoFy7NQOehS6BOLo0Sl\",\"model\":\"gpt-5-mini-2025-08-07\",\"obfuscation\":\"He68LTIpcVsXF\",\"object\":\"chat.completion.chunk\",\"system_fingerprint\":null,\"usage\":null}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"choices\":[{\"content",
+          "delay": 2
+        },
+        {
+          "data": "_filter_results\":{},\"delta\":{},\"finish_reason\":\"stop\",\"index\":0,\"logprobs\":null}],\"created\":1766334500,\"id\":\"chatcmpl-CpGa45NoogyoFy7NQOehS6BOLo0Sl\",\"model\":\"gpt-5-mini-2025-08-07\",\"obfuscation\":\"MjFLIQhcki\",\"object\":\"chat.completion.chunk\",\"system_fingerprint\":null,\"usage\":null}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"choices\":[],\"crea",
+          "delay": 0
+        },
+        {
+          "data": "ted\":1766334500,\"id\":\"chatcmpl-CpGa45NoogyoFy7NQOehS6BOLo0Sl\",\"model\":\"gpt-5-mini-2025-08-07\",\"obfuscation\":\"hQ6WZ0IWWe\",\"object\":\"chat.completion.chunk\",\"system_fingerprint\":null,\"usage\":{\"completion_tokens\":139,\"completion_tokens_details\":{\"accepted_prediction_tokens\":0,\"audio_tokens\":0,\"reasoning_tokens\":128,\"rejected_prediction_tokens\":0},\"prompt_tokens\":259,\"prompt_tokens_details\":{\"audio_tokens\":0,\"cached_tokens\":0},\"total_tokens\":398}}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: [DONE]\n\n",
+          "delay": 1
+        }
+      ]
+    }
+  }
+}

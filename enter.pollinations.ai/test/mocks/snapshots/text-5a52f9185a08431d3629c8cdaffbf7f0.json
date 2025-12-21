@@ -1,0 +1,55 @@
+{
+  "request": {
+    "url": "http://ec2-3-80-56-235.compute-1.amazonaws.com:16385/openai",
+    "method": "POST",
+    "body": {
+      "type": "json",
+      "data": {
+        "model": "mistral",
+        "messages": [
+          {
+            "role": "user",
+            "content": "Is Berlin the capital of Germany? Reply yes or no."
+          }
+        ],
+        "stream": true,
+        "seed": 42
+      }
+    },
+    "params": {}
+  },
+  "response": {
+    "status": 200,
+    "statusText": "OK",
+    "headers": {
+      "access-control-allow-origin": "*",
+      "cache-control": "no-cache",
+      "connection": "keep-alive",
+      "content-type": "text/event-stream; charset=utf-8",
+      "date": "Sun, 21 Dec 2025 16:28:25 GMT",
+      "transfer-encoding": "chunked",
+      "x-powered-by": "Express"
+    },
+    "body": {
+      "type": "stream",
+      "data": [
+        {
+          "data": "data: {\"id\":\"chatcmpl-8c14e",
+          "delay": 20
+        },
+        {
+          "data": "52a-5330-47b8-9218-490170f91f13\",\"object\":\"chat.completion.chunk\",\"created\":1766334505,\"model\":\"mistral-small-3.2-24b-instruct-2506\",\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"\"},\"logprobs\":null,\"finish_reason\":null}],\"usage\":null,\"prompt_token_ids\":null}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"id\":\"chatcmpl-8c1",
+          "delay": 0
+        },
+        {
+          "data": "4e52a-5330-47b8-9218-490170f91f13\",\"object\":\"chat.completion.chunk\",\"created\":1766334505,\"model\":\"mistral-small-3.2-24b-instruct-2506\",\"choices\":[{\"index\":0,\"delta\":{\"content\":\"Yes\"},\"logprobs\":null,\"finish_reason\":null,\"token_ids\":null}],\"usage\":null}\n\ndata: {\"id\":\"chatcmpl-8c14e52a-5330-47b8-9218-490170f91f13\",\"object\":\"chat.completion.chunk\",\"created\":1766334505,\"model\":\"mistral-small-3.2-24b-instruct-2506\",\"choices\":[{\"index\":0,\"delta\":{\"content\":\".\"},\"logprobs\":null,\"finish_reason\":null,\"token_ids\":null}],\"usage\":null}\n\ndata: {\"id\":\"chatcmpl-8c14e52a-5330-47b8-9218-490170f91f13\",\"object\":\"chat.completion.chunk\",\"created\":1766334505,\"model\":\"mistral-small-3.2-24b-instruct-2506\",\"choices\":[{\"index\":0,\"delta\":{\"content\":\"\"},\"logprobs\":null,\"finish_reason\":\"stop\",\"stop_reason\":null,\"token_ids\":null}],\"usage\":null}\n\ndata: {\"id\":\"chatcmpl-8c14e52a-5330-47b8-9218-490170f91f13\",\"object\":\"chat.completion.chunk\",\"created\":1766334505,\"model\":\"mistral-small-3.2-24b-instruct-2506\",\"choices\":[],\"usage\":{\"prompt_tokens\":270,\"total_tokens\":273,\"completion_tokens\":3}}\n\ndata: [DONE]\n\n",
+          "delay": 0
+        }
+      ]
+    }
+  }
+}

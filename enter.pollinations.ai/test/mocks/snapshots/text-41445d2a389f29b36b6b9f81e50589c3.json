@@ -1,0 +1,129 @@
+{
+  "request": {
+    "url": "http://ec2-3-80-56-235.compute-1.amazonaws.com:16385/openai",
+    "method": "POST",
+    "body": {
+      "type": "json",
+      "data": {
+        "model": "openai",
+        "messages": [
+          {
+            "role": "user",
+            "content": "Sequential test 1766334406242"
+          }
+        ]
+      }
+    },
+    "params": {}
+  },
+  "response": {
+    "status": 200,
+    "statusText": "OK",
+    "headers": {
+      "access-control-allow-origin": "*",
+      "connection": "keep-alive",
+      "content-length": "2217",
+      "content-type": "application/json; charset=utf-8",
+      "date": "Sun, 21 Dec 2025 16:26:51 GMT",
+      "etag": "W/\"8a9-dYKls4msPcFU6cvb4CoHBhbw+/Y\"",
+      "keep-alive": "timeout=5",
+      "x-model-used": "gpt-5-mini-2025-08-07",
+      "x-powered-by": "Express",
+      "x-usage-completion-reasoning-tokens": "256",
+      "x-usage-completion-text-tokens": "267",
+      "x-usage-prompt-text-tokens": "255",
+      "x-usage-total-tokens": "778"
+    },
+    "body": {
+      "type": "json",
+      "data": {
+        "choices": [
+          {
+            "content_filter_results": {
+              "hate": {
+                "filtered": false,
+                "severity": "safe"
+              },
+              "protected_material_code": {
+                "filtered": false,
+                "detected": false
+              },
+              "protected_material_text": {
+                "filtered": false,
+                "detected": false
+              },
+              "self_harm": {
+                "filtered": false,
+                "severity": "safe"
+              },
+              "sexual": {
+                "filtered": false,
+                "severity": "safe"
+              },
+              "violence": {
+                "filtered": false,
+                "severity": "safe"
+              }
+            },
+            "finish_reason": "stop",
+            "index": 0,
+            "logprobs": null,
+            "message": {
+              "annotations": [],
+              "content": "I’m not sure what you mean by “Sequential test 1766334406242.” A few possibilities — pick one or tell me what you actually want and I’ll jump in:\n\n- You mean a sequential hypothesis test (like SPRT)? I can run one or simulate it if you give null/alternative probabilities (or means/variances), and alpha/beta (type I/II) or desired error rates.\n  - Quick reminder of the SPRT math: log-likelihood ratio after n observations = sum log[f(xi|H1)/f(xi|H0)]. Stop when that sum ≥ log A or ≤ log B, where A = (1−β)/α and B = β/(1−α).\n- You mean a software test named “Sequential test 1766334406242” (a test ID)? Tell me the codebase, test framework, and what’s failing or what you want checked.\n- You pasted a job/transaction/test ID and want status or decoding? Tell me the system/source and what you want: lookup, parse, or explain.\n- Something else (a lab test, QA procedure, random string)? Give me more context.\n\nTell me which one, and any parameters or data, and I’ll proceed.",
+              "refusal": null,
+              "role": "assistant"
+            }
+          }
+        ],
+        "created": 1766334406,
+        "id": "pllns_ef61045d3ef4e8c3381f4cf62e59532f",
+        "model": "gpt-5-mini-2025-08-07",
+        "object": "chat.completion",
+        "prompt_filter_results": [
+          {
+            "prompt_index": 0,
+            "content_filter_results": {
+              "hate": {
+                "filtered": false,
+                "severity": "safe"
+              },
+              "jailbreak": {
+                "filtered": false,
+                "detected": false
+              },
+              "self_harm": {
+                "filtered": false,
+                "severity": "safe"
+              },
+              "sexual": {
+                "filtered": false,
+                "severity": "safe"
+              },
+              "violence": {
+                "filtered": false,
+                "severity": "safe"
+              }
+            }
+          }
+        ],
+        "system_fingerprint": null,
+        "usage": {
+          "completion_tokens": 523,
+          "completion_tokens_details": {
+            "accepted_prediction_tokens": 0,
+            "audio_tokens": 0,
+            "reasoning_tokens": 256,
+            "rejected_prediction_tokens": 0
+          },
+          "prompt_tokens": 255,
+          "prompt_tokens_details": {
+            "audio_tokens": 0,
+            "cached_tokens": 0
+          },
+          "total_tokens": 778
+        }
+      }
+    }
+  }
+}

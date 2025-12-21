@@ -1,16 +1,14 @@
 import { cached } from "@/cache";
 import { Polar } from "@polar-sh/sdk";
 import { createMiddleware } from "hono/factory";
-import { LoggerVariables } from "@/middleware/logger.ts";
+import type { LoggerVariables } from "@/middleware/logger.ts";
 import type { AuthVariables } from "@/middleware/auth.ts";
-import { CustomerState } from "@polar-sh/sdk/models/components/customerstate.js";
+import type { CustomerState } from "@polar-sh/sdk/models/components/customerstate.js";
 import { HTTPException } from "hono/http-exception";
 import { z } from "zod";
-import { CustomerMeter } from "@polar-sh/sdk/models/components/customermeter.js";
+import type { CustomerMeter } from "@polar-sh/sdk/models/components/customermeter.js";
 import { getPendingSpend } from "@/events.ts";
 import { drizzle } from "drizzle-orm/d1";
-import { event } from "@/db/schema/event.ts";
-import { and, eq, gte, sql } from "drizzle-orm";
 
 type BalanceCheckResult = {
     selectedMeterId: string;

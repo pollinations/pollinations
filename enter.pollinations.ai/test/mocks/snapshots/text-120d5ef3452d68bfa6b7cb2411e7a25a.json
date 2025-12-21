@@ -1,0 +1,129 @@
+{
+  "request": {
+    "url": "http://ec2-3-80-56-235.compute-1.amazonaws.com:16385/openai",
+    "method": "POST",
+    "body": {
+      "type": "json",
+      "data": {
+        "model": "openai",
+        "messages": [
+          {
+            "role": "user",
+            "content": "Test secret key."
+          }
+        ]
+      }
+    },
+    "params": {}
+  },
+  "response": {
+    "status": 200,
+    "statusText": "OK",
+    "headers": {
+      "access-control-allow-origin": "*",
+      "connection": "keep-alive",
+      "content-length": "4107",
+      "content-type": "application/json; charset=utf-8",
+      "date": "Sun, 21 Dec 2025 16:27:10 GMT",
+      "etag": "W/\"100b-HAGIT0Em1tTwXqLo4hnhGftGHh8\"",
+      "keep-alive": "timeout=5",
+      "x-model-used": "gpt-5-mini-2025-08-07",
+      "x-powered-by": "Express",
+      "x-usage-completion-reasoning-tokens": "512",
+      "x-usage-completion-text-tokens": "735",
+      "x-usage-prompt-text-tokens": "251",
+      "x-usage-total-tokens": "1498"
+    },
+    "body": {
+      "type": "json",
+      "data": {
+        "choices": [
+          {
+            "content_filter_results": {
+              "hate": {
+                "filtered": false,
+                "severity": "safe"
+              },
+              "protected_material_code": {
+                "filtered": false,
+                "detected": false
+              },
+              "protected_material_text": {
+                "filtered": false,
+                "detected": false
+              },
+              "self_harm": {
+                "filtered": false,
+                "severity": "safe"
+              },
+              "sexual": {
+                "filtered": false,
+                "severity": "safe"
+              },
+              "violence": {
+                "filtered": false,
+                "severity": "safe"
+              }
+            },
+            "finish_reason": "stop",
+            "index": 0,
+            "logprobs": null,
+            "message": {
+              "annotations": [],
+              "content": "I can help — but don’t paste the actual secret here. Tell me what type of secret key you mean (API key, SSH key, JWT secret, TLS/private key, AWS credentials, GPG key, Kubernetes secret, symmetric AES key, etc.) and whether you want a quick single-check or a full validation/rotation procedure.\n\nMeanwhile, here are safe, practical ways to test different kinds of keys:\n\n- General safety first\n  - Never paste a real secret in a public chat. Use test/staging keys when possible.\n  - If a secret might be leaked, rotate/revoke it immediately.\n\n- API key (example: Stripe/other bearer tokens)\n  - Use curl against a test endpoint with the key in an Authorization header:\n    - curl -H \"Authorization: Bearer <KEY>\" https://api.example.com/v1/endpoint\n  - Expected: 200 or a predictable error indicating auth succeeded/failed. Use the provider’s test keys if available (e.g., Stripe uses sk_test_…).\n\n- AWS access key + secret\n  - Export them locally and call STS to verify:\n    - export AWS_ACCESS_KEY_ID=…\n    - export AWS_SECRET_ACCESS_KEY=…\n    - aws sts get-caller-identity\n  - If valid you’ll get the caller ARN and account id. Use IAM policies to test allowed actions.\n\n- SSH private key\n  - Test connection (no password prompt):\n    - ssh -i /path/to/key user@host\n  - For GitHub: ssh -i key -T git@github.com\n  - To check key format: ssh-keygen -lf /path/to/key\n\n- TLS private key vs certificate match\n  - Compare modulus (or public key):\n    - openssl rsa -in privkey.pem -noout -modulus | openssl md5\n    - openssl x509 -in cert.pem -noout -modulus | openssl md5\n  - If hashes match, key pairs with certificate.\n\n- JWT secret (HMAC-based)\n  - Use a local script (Node/Python) to sign and verify a test payload with the secret, or paste the token into a trusted local debugger:\n    - Node example: jwt.verify(token, SECRET)\n  - For RS256 keys, verify the signature with the public key.\n\n- GPG secret key\n  - List secret keys: gpg --list-secret-keys --keyid-format LONG\n  - Try decrypting a small test message encrypted with the corresponding public key.\n\n- Kubernetes secret\n  - Get and decode:\n    - kubectl get secret mysecret -o jsonpath=\"{.data.somekey}\" | base64 --decode\n\n- Symmetric keys (AES)\n  - Encrypt then decrypt a short known plaintext locally using the key and compare results:\n    - openssl enc -aes-256-cbc -K <hexkey> -iv <hexiv> -in plain.txt -out enc.bin\n    - openssl enc -d -aes-256-cbc -K <hexkey> -iv <hexiv> -in enc.bin -out out.txt\n\n- PGP/SSH/GCP/other provider-specific tips\n  - Use provider tooling or SDKs in a safe environment (local/staging) to exercise an auth flow or operation that requires the key.\n\nIf you tell me which kind of key and what system you’re testing, I’ll give exact commands or a tiny script you can run locally (and remind you how to do it without exposing the secret).",
+              "refusal": null,
+              "role": "assistant"
+            }
+          }
+        ],
+        "created": 1766334420,
+        "id": "pllns_d8f0d0ef4e6638adcb6041941ba88444",
+        "model": "gpt-5-mini-2025-08-07",
+        "object": "chat.completion",
+        "prompt_filter_results": [
+          {
+            "prompt_index": 0,
+            "content_filter_results": {
+              "hate": {
+                "filtered": false,
+                "severity": "safe"
+              },
+              "jailbreak": {
+                "filtered": false,
+                "detected": false
+              },
+              "self_harm": {
+                "filtered": false,
+                "severity": "safe"
+              },
+              "sexual": {
+                "filtered": false,
+                "severity": "safe"
+              },
+              "violence": {
+                "filtered": false,
+                "severity": "safe"
+              }
+            }
+          }
+        ],
+        "system_fingerprint": null,
+        "usage": {
+          "completion_tokens": 1247,
+          "completion_tokens_details": {
+            "accepted_prediction_tokens": 0,
+            "audio_tokens": 0,
+            "reasoning_tokens": 512,
+            "rejected_prediction_tokens": 0
+          },
+          "prompt_tokens": 251,
+          "prompt_tokens_details": {
+            "audio_tokens": 0,
+            "cached_tokens": 0
+          },
+          "total_tokens": 1498
+        }
+      }
+    }
+  }
+}

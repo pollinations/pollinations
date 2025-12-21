@@ -1,0 +1,77 @@
+{
+  "request": {
+    "url": "http://ec2-3-80-56-235.compute-1.amazonaws.com:16385/openai",
+    "method": "POST",
+    "body": {
+      "type": "json",
+      "data": {
+        "model": "qwen-coder",
+        "messages": [
+          {
+            "role": "user",
+            "content": "Is Berlin the capital of Germany? Reply yes or no."
+          }
+        ],
+        "seed": 42
+      }
+    },
+    "params": {}
+  },
+  "response": {
+    "status": 200,
+    "statusText": "OK",
+    "headers": {
+      "access-control-allow-origin": "*",
+      "connection": "keep-alive",
+      "content-length": "606",
+      "content-type": "application/json; charset=utf-8",
+      "date": "Sun, 21 Dec 2025 16:27:47 GMT",
+      "etag": "W/\"25e-XvF41mCCMoJW42pLRqowokWeU90\"",
+      "keep-alive": "timeout=5",
+      "x-model-used": "qwen3-coder-30b-a3b-instruct",
+      "x-powered-by": "Express",
+      "x-usage-completion-text-tokens": "2",
+      "x-usage-prompt-text-tokens": "80",
+      "x-usage-total-tokens": "82"
+    },
+    "body": {
+      "type": "json",
+      "data": {
+        "id": "pllns_d07ad5f8c80f46e5b651793bbcbcda82",
+        "object": "chat.completion",
+        "created": 1766334467,
+        "model": "qwen3-coder-30b-a3b-instruct",
+        "choices": [
+          {
+            "index": 0,
+            "message": {
+              "role": "assistant",
+              "content": "Yes",
+              "refusal": null,
+              "annotations": null,
+              "audio": null,
+              "function_call": null,
+              "tool_calls": [],
+              "reasoning_content": null
+            },
+            "logprobs": null,
+            "finish_reason": "stop",
+            "stop_reason": null,
+            "token_ids": null
+          }
+        ],
+        "service_tier": null,
+        "system_fingerprint": null,
+        "usage": {
+          "prompt_tokens": 80,
+          "total_tokens": 82,
+          "completion_tokens": 2,
+          "prompt_tokens_details": null
+        },
+        "prompt_logprobs": null,
+        "prompt_token_ids": null,
+        "kv_transfer_params": null
+      }
+    }
+  }
+}

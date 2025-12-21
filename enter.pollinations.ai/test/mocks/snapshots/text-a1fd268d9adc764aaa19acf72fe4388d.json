@@ -1,0 +1,115 @@
+{
+  "request": {
+    "url": "http://ec2-3-80-56-235.compute-1.amazonaws.com:16385/openai",
+    "method": "POST",
+    "body": {
+      "type": "json",
+      "data": {
+        "model": "claude",
+        "messages": [
+          {
+            "role": "user",
+            "content": "What is 5 + 3? You must use the calculator tool to compute this."
+          }
+        ],
+        "tools": [
+          {
+            "type": "function",
+            "function": {
+              "name": "calculator",
+              "description": "Perform basic arithmetic operations",
+              "parameters": {
+                "type": "object",
+                "properties": {
+                  "operation": {
+                    "type": "string",
+                    "enum": [
+                      "add",
+                      "subtract",
+                      "multiply",
+                      "divide"
+                    ],
+                    "description": "The arithmetic operation to perform"
+                  },
+                  "a": {
+                    "type": "number",
+                    "description": "First operand"
+                  },
+                  "b": {
+                    "type": "number",
+                    "description": "Second operand"
+                  }
+                },
+                "required": [
+                  "operation",
+                  "a",
+                  "b"
+                ]
+              }
+            }
+          }
+        ],
+        "tool_choice": "required",
+        "seed": 42
+      }
+    },
+    "params": {}
+  },
+  "response": {
+    "status": 200,
+    "statusText": "OK",
+    "headers": {
+      "access-control-allow-origin": "*",
+      "connection": "keep-alive",
+      "content-length": "564",
+      "content-type": "application/json; charset=utf-8",
+      "date": "Sun, 21 Dec 2025 16:30:20 GMT",
+      "etag": "W/\"234-g/Sryllly3JQtjczSs4e3Km4ADQ\"",
+      "keep-alive": "timeout=5",
+      "x-model-used": "us.anthropic.claude-sonnet-4-5-20250929-v1:0",
+      "x-powered-by": "Express",
+      "x-usage-completion-text-tokens": "70",
+      "x-usage-prompt-text-tokens": "1003",
+      "x-usage-total-tokens": "1073"
+    },
+    "body": {
+      "type": "json",
+      "data": {
+        "id": "pllns_ff9d40519044e53d813733eb1b2b2954",
+        "object": "chat.completion",
+        "created": 1766334620,
+        "model": "us.anthropic.claude-sonnet-4-5-20250929-v1:0",
+        "provider": "bedrock",
+        "choices": [
+          {
+            "index": 0,
+            "message": {
+              "role": "assistant",
+              "content": "",
+              "content_blocks": [],
+              "tool_calls": [
+                {
+                  "id": "tooluse_C-X5B8qGRH22U6rt2DWRQA",
+                  "type": "function",
+                  "function": {
+                    "name": "calculator",
+                    "arguments": "{\"operation\":\"add\",\"a\":5,\"b\":3}"
+                  }
+                }
+              ]
+            },
+            "finish_reason": "tool_use"
+          }
+        ],
+        "usage": {
+          "prompt_tokens": 1003,
+          "completion_tokens": 70,
+          "total_tokens": 1073,
+          "prompt_tokens_details": {
+            "cached_tokens": 0
+          }
+        }
+      }
+    }
+  }
+}

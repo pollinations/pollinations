@@ -1,0 +1,68 @@
+{
+  "request": {
+    "url": "http://ec2-3-80-56-235.compute-1.amazonaws.com:16385/openai",
+    "method": "POST",
+    "body": {
+      "type": "json",
+      "data": {
+        "model": "openai-fast",
+        "messages": [
+          {
+            "role": "user",
+            "content": "Is Berlin the capital of Germany? Reply yes or no."
+          }
+        ],
+        "stream": true,
+        "seed": 42
+      }
+    },
+    "params": {}
+  },
+  "response": {
+    "status": 429,
+    "statusText": "Too Many Requests",
+    "headers": {
+      "access-control-allow-origin": "*",
+      "connection": "keep-alive",
+      "content-length": "711",
+      "content-type": "application/json; charset=utf-8",
+      "date": "Sun, 21 Dec 2025 16:28:22 GMT",
+      "etag": "W/\"2c7-efbLPijiBASDS9XQOwS/og0bVK4\"",
+      "keep-alive": "timeout=5",
+      "x-powered-by": "Express"
+    },
+    "body": {
+      "type": "json",
+      "data": {
+        "error": "Too Many Requests",
+        "message": "429 Too Many Requests",
+        "requestId": "m1kev",
+        "requestParameters": {
+          "messages": [
+            {
+              "role": "user",
+              "content": "Is Berlin the capital of Germany? Reply yes or no."
+            }
+          ],
+          "jsonMode": false,
+          "seed": 42,
+          "model": "openai-fast",
+          "referrer": null,
+          "stream": true,
+          "isPrivate": true,
+          "voice": "alloy",
+          "private": true
+        },
+        "details": {
+          "error": {
+            "message": "azure-openai error: The system is currently experiencing high demand and cannot process your request. Your request exceeds the maximum usage size allowed during peak load. Please retry after 2 seconds. For improved latency reliability, consider switching to Provisioned Throughput.",
+            "type": null,
+            "param": null,
+            "code": "NoCapacity"
+          },
+          "provider": "azure-openai"
+        }
+      }
+    }
+  }
+}

@@ -2,9 +2,11 @@ import type { FC } from "react";
 import { getModelPrices } from "./data.ts";
 import { ModelTable } from "./ModelTable.tsx";
 import { Button } from "../button.tsx";
+import { useModelStats } from "./useModelStats.ts";
 
 export const Pricing: FC = () => {
     const allModels = getModelPrices();
+    const { stats: modelStats } = useModelStats();
 
     const imageModels = allModels.filter((m) => m.type === "image");
     const videoModels = allModels.filter((m) => m.type === "video");
@@ -26,9 +28,21 @@ export const Pricing: FC = () => {
                 </Button>
             </div>
             <div className="bg-amber-50/30 rounded-2xl p-8 border border-amber-300 space-y-8 overflow-x-auto md:overflow-x-visible [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
-                <ModelTable models={imageModels} type="image" />
-                <ModelTable models={videoModels} type="video" />
-                <ModelTable models={textModels} type="text" />
+                <ModelTable
+                    models={imageModels}
+                    type="image"
+                    modelStats={modelStats}
+                />
+                <ModelTable
+                    models={videoModels}
+                    type="video"
+                    modelStats={modelStats}
+                />
+                <ModelTable
+                    models={textModels}
+                    type="text"
+                    modelStats={modelStats}
+                />
 
                 <div className="pt-4 space-y-3">
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">

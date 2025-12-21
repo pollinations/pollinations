@@ -97,6 +97,7 @@ function createTextGenerationEvent({
         modelUsed,
         modelProviderUsed: "azure-openai",
         isBilledUsage: true,
+        estimatedPrice: undefined,
 
         ...priceToEventParams(priceDefinition),
         ...usageToEventParams(usage),
@@ -343,6 +344,55 @@ test("Expired sent events are cleared after processing", async ({
         (e) => e.eventStatus === "sent",
     );
     expect(remainingSentEvents).toHaveLength(100);
+});
+
+test("pending_estimate events are excluded from Polar and Tinybird delivery", async ({
+    log,
+    mocks,
+}) => {
+    await mocks.enable("polar", "tinybird");
+    const db = drizzle(env.DB);
+
+    // Create mix of pending and pending_estimate events
+    const pendingEvents = Array.from({ length: 100 }).map(() => {
+        return createTextGenerationEvent({
+            modelRequested: "openai-large",
+        });
+    });
+
+    const pendingEstimateEvents = Array.from({ length: 50 }).map(() => {
+        const e = createTextGenerationEvent({
+            modelRequested: "openai-large",
+        });
+        e.eventStatus = "pending_estimate";
+        e.estimatedPrice = 0.001;
+        e.totalPrice = 0;
+        e.totalCost = 0;
+        return e;
+    });
+
+    await storeEvents(db, log, [...pendingEvents, ...pendingEstimateEvents]);
+
+    await processEvents(db, log, {
+        polarAccessToken: env.POLAR_ACCESS_TOKEN,
+        polarServer: env.POLAR_SERVER,
+        tinybirdIngestUrl: env.TINYBIRD_INGEST_URL,
+        tinybirdIngestToken: env.TINYBIRD_INGEST_TOKEN,
+        minBatchSize: 0,
+        minRetryDelay: 0,
+        maxRetryDelay: 0,
+    });
+
+    // Only the 100 pending events should be sent, not the 50 pending_estimate
+    expect(mocks.polar.state.events).toHaveLength(100);
+    expect(mocks.tinybird.state.events).toHaveLength(100);
+
+    // pending_estimate events should remain unchanged
+    const remainingPendingEstimate = await db
+        .select()
+        .from(event)
+        .where(eq(event.eventStatus, "pending_estimate"));
+    expect(remainingPendingEstimate).toHaveLength(50);
 });
 
 test("Exponential backoff delay", async () => {

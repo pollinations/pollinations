@@ -1,0 +1,124 @@
+{
+  "request": {
+    "url": "http://ec2-3-80-56-235.compute-1.amazonaws.com:16385/openai",
+    "method": "POST",
+    "body": {
+      "type": "json",
+      "data": {
+        "model": "qwen-coder",
+        "messages": [
+          {
+            "role": "user",
+            "content": "What is 5 + 3? You must use the calculator tool to compute this."
+          }
+        ],
+        "tools": [
+          {
+            "type": "function",
+            "function": {
+              "name": "calculator",
+              "description": "Perform basic arithmetic operations",
+              "parameters": {
+                "type": "object",
+                "properties": {
+                  "operation": {
+                    "type": "string",
+                    "enum": [
+                      "add",
+                      "subtract",
+                      "multiply",
+                      "divide"
+                    ],
+                    "description": "The arithmetic operation to perform"
+                  },
+                  "a": {
+                    "type": "number",
+                    "description": "First operand"
+                  },
+                  "b": {
+                    "type": "number",
+                    "description": "Second operand"
+                  }
+                },
+                "required": [
+                  "operation",
+                  "a",
+                  "b"
+                ]
+              }
+            }
+          }
+        ],
+        "tool_choice": "required",
+        "seed": 42
+      }
+    },
+    "params": {}
+  },
+  "response": {
+    "status": 200,
+    "statusText": "OK",
+    "headers": {
+      "access-control-allow-origin": "*",
+      "connection": "keep-alive",
+      "content-length": "771",
+      "content-type": "application/json; charset=utf-8",
+      "date": "Sun, 21 Dec 2025 16:29:56 GMT",
+      "etag": "W/\"303-eLrv6jxTenoUmn8sGxVUJZvMRMs\"",
+      "keep-alive": "timeout=5",
+      "x-model-used": "qwen3-coder-30b-a3b-instruct",
+      "x-powered-by": "Express",
+      "x-usage-completion-text-tokens": "30",
+      "x-usage-prompt-text-tokens": "413",
+      "x-usage-total-tokens": "443"
+    },
+    "body": {
+      "type": "json",
+      "data": {
+        "id": "pllns_b96c1530b22eb99d4607a015d2856ab3",
+        "object": "chat.completion",
+        "created": 1766334596,
+        "model": "qwen3-coder-30b-a3b-instruct",
+        "choices": [
+          {
+            "index": 0,
+            "message": {
+              "role": "assistant",
+              "content": "",
+              "refusal": null,
+              "annotations": null,
+              "audio": null,
+              "function_call": null,
+              "tool_calls": [
+                {
+                  "id": "chatcmpl-tool-8e553abd7ee740df960d4531b36402e4",
+                  "type": "function",
+                  "function": {
+                    "name": "calculator",
+                    "arguments": "{\"a\": 5, \"b\": 3, \"operation\": \"add\"}"
+                  }
+                }
+              ],
+              "reasoning_content": null
+            },
+            "logprobs": null,
+            "finish_reason": "stop",
+            "stop_reason": null,
+            "token_ids": null
+          }
+        ],
+        "service_tier": null,
+        "system_fingerprint": null,
+        "usage": {
+          "prompt_tokens": 413,
+          "total_tokens": 443,
+          "completion_tokens": 30,
+          "prompt_tokens_details": null
+        },
+        "prompt_logprobs": null,
+        "prompt_token_ids": null,
+        "kv_transfer_params": null
+      }
+    }
+  }
+}

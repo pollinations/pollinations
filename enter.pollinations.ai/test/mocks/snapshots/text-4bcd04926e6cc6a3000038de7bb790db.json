@@ -1,0 +1,64 @@
+{
+  "request": {
+    "url": "http://ec2-3-80-56-235.compute-1.amazonaws.com:16385/openai",
+    "method": "POST",
+    "body": {
+      "type": "json",
+      "data": {
+        "model": "chickytutor",
+        "messages": [
+          {
+            "role": "user",
+            "content": "Is Berlin the capital of Germany? Reply yes or no."
+          }
+        ],
+        "seed": 42
+      }
+    },
+    "params": {}
+  },
+  "response": {
+    "status": 200,
+    "statusText": "OK",
+    "headers": {
+      "access-control-allow-origin": "*",
+      "connection": "keep-alive",
+      "content-length": "359",
+      "content-type": "application/json; charset=utf-8",
+      "date": "Sun, 21 Dec 2025 16:27:59 GMT",
+      "etag": "W/\"167-Ov2lgV7qk+9Q/0QfFHvhS/zO59Y\"",
+      "keep-alive": "timeout=5",
+      "x-model-used": "us.anthropic.claude-3-5-haiku-20241022-v1:0",
+      "x-powered-by": "Express",
+      "x-usage-completion-text-tokens": "5",
+      "x-usage-prompt-text-tokens": "3703",
+      "x-usage-total-tokens": "3708"
+    },
+    "body": {
+      "type": "json",
+      "data": {
+        "id": "pllns_ee5b143c2eeb63897fe9052dcc0e0bc0",
+        "created": 1766334479,
+        "model": "us.anthropic.claude-3-5-haiku-20241022-v1:0",
+        "system_fingerprint": "fp",
+        "choices": [
+          {
+            "index": 0,
+            "finish_reason": "stop",
+            "logprobs": null,
+            "message": {
+              "role": "assistant",
+              "content": "Yes."
+            }
+          }
+        ],
+        "object": "chat.completion",
+        "usage": {
+          "prompt_tokens": 3703,
+          "completion_tokens": 5,
+          "total_tokens": 3708
+        }
+      }
+    }
+  }
+}

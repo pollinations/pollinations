@@ -1,0 +1,66 @@
+{
+  "request": {
+    "url": "http://ec2-3-80-56-235.compute-1.amazonaws.com:16385/openai",
+    "method": "POST",
+    "body": {
+      "type": "json",
+      "data": {
+        "model": "openai-fast",
+        "messages": [
+          {
+            "role": "user",
+            "content": "Is Berlin the capital of Germany? Reply yes or no."
+          }
+        ],
+        "seed": 42
+      }
+    },
+    "params": {}
+  },
+  "response": {
+    "status": 429,
+    "statusText": "Too Many Requests",
+    "headers": {
+      "access-control-allow-origin": "*",
+      "connection": "keep-alive",
+      "content-length": "698",
+      "content-type": "application/json; charset=utf-8",
+      "date": "Sun, 21 Dec 2025 16:27:46 GMT",
+      "etag": "W/\"2ba-RRtzE8bCImflWNIKQ3GQkhwtyGY\"",
+      "keep-alive": "timeout=5",
+      "x-powered-by": "Express"
+    },
+    "body": {
+      "type": "json",
+      "data": {
+        "error": "Too Many Requests",
+        "message": "429 Too Many Requests",
+        "requestId": "1fp93",
+        "requestParameters": {
+          "messages": [
+            {
+              "role": "user",
+              "content": "Is Berlin the capital of Germany? Reply yes or no."
+            }
+          ],
+          "jsonMode": false,
+          "seed": 42,
+          "model": "openai-fast",
+          "referrer": null,
+          "isPrivate": true,
+          "voice": "alloy",
+          "private": true
+        },
+        "details": {
+          "error": {
+            "message": "azure-openai error: The system is currently experiencing high demand and cannot process your request. Your request exceeds the maximum usage size allowed during peak load. Please retry after 14 seconds. For improved latency reliability, consider switching to Provisioned Throughput.",
+            "type": null,
+            "param": null,
+            "code": "NoCapacity"
+          },
+          "provider": "azure-openai"
+        }
+      }
+    }
+  }
+}

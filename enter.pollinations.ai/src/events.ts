@@ -44,6 +44,24 @@ export async function storeEvents(
     }
 }
 
+/**
+ * Update an existing event by ID with partial data.
+ * Used to transition pending_estimate events to completed events.
+ */
+export async function updateEvent(
+    db: DrizzleD1Database,
+    log: Logger,
+    eventId: string,
+    updates: Partial<InsertGenerationEvent>,
+) {
+    log.trace("Updating event: {eventId}", { eventId });
+    try {
+        await db.update(event).set(updates).where(eq(event.id, eventId));
+    } catch (e) {
+        log.error("Failed to update event {eventId}: {e}", { eventId, e });
+    }
+}
+
 export async function processEvents(
     db: DrizzleD1Database,
     log: Logger,
@@ -380,7 +398,10 @@ async function sendPolarEvents(
     });
     const polarEvents = events
         .filter(
-            (event) => event.isBilledUsage && event.polarDeliveredAt == null,
+            (event) =>
+                event.isBilledUsage &&
+                event.polarDeliveredAt == null &&
+                event.eventStatus !== "pending_estimate",
         )
         .map((event) => createPolarEvent(event));
     const deliveryStats = polarDeliveryStats(events);
@@ -425,7 +446,11 @@ async function sendTinybirdEvents(
 ): Promise<DeliveryStatus> {
     const deliveryStats = tinybirdDeliveryStats(events);
     const tinybirdEvents = events
-        .filter((event) => event.tinybirdDeliveredAt == null)
+        .filter(
+            (event) =>
+                event.tinybirdDeliveredAt == null &&
+                event.eventStatus !== "pending_estimate",
+        )
         .map((event) => {
             return removeUnset(
                 omit(
@@ -543,20 +568,21 @@ export async function getPendingSpend(
     userId: string,
 ): Promise<number> {
     const maxPendingSpendWindowMs = 10 * 60 * 1000; // 10 minutes
+    const windowStart = new Date(Date.now() - maxPendingSpendWindowMs);
     const result = await db
         .select({
-            total: sql<number>`COALESCE(SUM(${event.totalPrice}), 0)`,
+            // Sum estimatedPrice for pending_estimate events, totalPrice for billed events
+            total: sql<number>`COALESCE(SUM(
+                CASE 
+                    WHEN ${event.eventStatus} = 'pending_estimate' THEN ${event.estimatedPrice}
+                    WHEN ${event.isBilledUsage} = 1 THEN ${event.totalPrice}
+                    ELSE 0
+                END
+            ), 0)`,
         })
         .from(event)
         .where(
-            and(
-                gte(
-                    event.createdAt,
-                    new Date(Date.now() - maxPendingSpendWindowMs),
-                ),
-                eq(event.userId, userId),
-                eq(event.isBilledUsage, true),
-            ),
+            and(gte(event.createdAt, windowStart), eq(event.userId, userId)),
         );
     return result[0]?.total || 0;
 }

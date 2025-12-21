@@ -1,4 +1,5 @@
-import { processEvents, storeEvents } from "@/events.ts";
+import { processEvents, storeEvents, updateEvent } from "@/events.ts";
+import { getModelStats, getEstimatedPrice } from "@/utils/model-stats.ts";
 import {
     getActivePriceDefinition,
     calculateCost,
@@ -105,6 +106,7 @@ export const track = (eventType: EventType) =>
     createMiddleware<TrackEnv>(async (c, next) => {
         const log = getLogger(["hono", "track"]);
         const startTime = new Date();
+        const db = drizzle(c.env.DB);
 
         // Get model from resolveModel middleware
         const modelInfo = c.var.model;
@@ -119,6 +121,67 @@ export const track = (eventType: EventType) =>
                 responseOverride = response;
             },
         });
+
+        // --- PRE-REQUEST: Insert pending_estimate event ---
+        // Only for authenticated users who will be billed
+        const userId = c.var.auth.user?.id;
+        const eventId = generateRandomId();
+        let pendingEventInserted = false;
+
+        if (userId) {
+            try {
+                // Get estimated price from historical model stats
+                const modelStats = await getModelStats(c.env.KV, log);
+                const estimatedPrice = getEstimatedPrice(
+                    modelStats,
+                    requestTracking.resolvedModelRequested,
+                );
+
+                const pendingEvent: InsertGenerationEvent = {
+                    id: eventId,
+                    requestId: c.get("requestId"),
+                    requestPath: `${routePath(c)}`,
+                    startTime,
+                    endTime: startTime, // Will be updated after response
+                    responseTime: 0,
+                    responseStatus: 0,
+                    environment: c.env.ENVIRONMENT,
+                    eventType,
+                    eventStatus: "pending_estimate",
+                    userId,
+                    userTier: c.var.auth.user?.tier,
+                    userGithubId: `${c.var.auth.user?.githubId}`,
+                    userGithubUsername: c.var.auth.user?.githubUsername,
+                    apiKeyId: c.var.auth.apiKey?.id,
+                    apiKeyType: c.var.auth.apiKey?.metadata
+                        ?.keyType as ApiKeyType,
+                    apiKeyName: c.var.auth.apiKey?.name,
+                    modelRequested: requestTracking.modelRequested,
+                    resolvedModelRequested:
+                        requestTracking.resolvedModelRequested,
+                    modelProviderUsed: requestTracking.modelProvider,
+                    isBilledUsage: false, // Unknown until request completes
+                    estimatedPrice,
+                    totalCost: 0, // Will be set when request completes
+                    totalPrice: 0, // Will be set when request completes
+                    ...priceToEventParams(requestTracking.modelPriceDefinition),
+                    ...usageToEventParams(undefined),
+                    ...requestTracking.referrerData,
+                };
+
+                await storeEvents(db, log, [pendingEvent]);
+                pendingEventInserted = true;
+                log.trace("Inserted pending_estimate event: {eventId}", {
+                    eventId,
+                    estimatedPrice,
+                });
+            } catch (e) {
+                log.error("Failed to insert pending_estimate event: {e}", {
+                    e,
+                });
+                // Continue without pre-request tracking
+            }
+        }
 
         await next();
 
@@ -162,34 +225,70 @@ export const track = (eventType: EventType) =>
                     ),
                 } satisfies BalanceData;
 
-                const event = createTrackingEvent({
-                    requestId: c.get("requestId"),
-                    requestPath: `${routePath(c)}`,
-                    startTime,
-                    endTime,
-                    environment: c.env.ENVIRONMENT,
-                    eventType,
-                    userTracking,
-                    balanceTracking,
-                    requestTracking,
-                    responseTracking,
-                    errorTracking: collectErrorData(response, c.get("error")),
-                });
+                // --- POST-REQUEST: Update or insert event ---
+                if (pendingEventInserted) {
+                    // Update the pending_estimate event with actual data
+                    await updateEvent(db, log, eventId, {
+                        eventStatus: "pending", // Ready for Polar/Tinybird delivery
+                        endTime,
+                        responseTime: endTime.getTime() - startTime.getTime(),
+                        responseStatus: responseTracking.responseStatus,
+                        isBilledUsage: responseTracking.isBilledUsage,
+                        estimatedPrice: null, // Clear estimate
+                        totalCost: responseTracking.cost?.totalCost || 0,
+                        totalPrice: responseTracking.price?.totalPrice || 0,
+                        modelUsed: responseTracking.modelUsed,
+                        ...balanceTracking,
+                        ...usageToEventParams(responseTracking.usage),
+                        ...responseTracking.contentFilterResults,
+                        ...collectErrorData(response, c.get("error")),
+                        cacheHit: responseTracking.cacheData.cacheHit,
+                        cacheType: responseTracking.cacheData.cacheType,
+                        cacheSemanticSimilarity:
+                            responseTracking.cacheData.cacheSemanticSimilarity,
+                        cacheSemanticThreshold:
+                            responseTracking.cacheData.cacheSemanticThreshold,
+                        cacheKey: responseTracking.cacheData.cacheKey,
+                    });
+                    log.trace(
+                        "Updated event from pending_estimate: {eventId}",
+                        {
+                            eventId,
+                        },
+                    );
+                } else {
+                    // No pending event was inserted, create a new one (fallback)
+                    const event = createTrackingEvent({
+                        requestId: c.get("requestId"),
+                        requestPath: `${routePath(c)}`,
+                        startTime,
+                        endTime,
+                        environment: c.env.ENVIRONMENT,
+                        eventType,
+                        userTracking,
+                        balanceTracking,
+                        requestTracking,
+                        responseTracking,
+                        errorTracking: collectErrorData(
+                            response,
+                            c.get("error"),
+                        ),
+                    });
 
-                log.trace(
-                    [
-                        "Tracking event:",
-                        "  isBilledUsage={event.isBilledUsage}",
-                        "  balances[v1:meter:tier]={event.balances[v1:meter:tier]}",
-                        "  balances[v1:meter:pack]={event.balances[v1:meter:pack]}",
-                        '  selectedMeterSlug="{event.selectedMeterSlug}"',
-                        "  totalCost={event.totalCost}",
-                        "  totalPrice={event.totalPrice}",
-                    ].join("\n"),
-                    { event },
-                );
-                const db = drizzle(c.env.DB);
-                await storeEvents(db, c.var.log, [event]);
+                    log.trace(
+                        [
+                            "Tracking event:",
+                            "  isBilledUsage={event.isBilledUsage}",
+                            "  balances[v1:meter:tier]={event.balances[v1:meter:tier]}",
+                            "  balances[v1:meter:pack]={event.balances[v1:meter:pack]}",
+                            '  selectedMeterSlug="{event.selectedMeterSlug}"',
+                            "  totalCost={event.totalCost}",
+                            "  totalPrice={event.totalPrice}",
+                        ].join("\n"),
+                        { event },
+                    );
+                    await storeEvents(db, log, [event]);
+                }
 
                 // process events immediately in development/testing
                 if (

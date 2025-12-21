@@ -1,0 +1,129 @@
+{
+  "request": {
+    "url": "http://ec2-3-80-56-235.compute-1.amazonaws.com:16385/openai",
+    "method": "POST",
+    "body": {
+      "type": "json",
+      "data": {
+        "model": "openai",
+        "messages": [
+          {
+            "role": "user",
+            "content": "First request"
+          }
+        ]
+      }
+    },
+    "params": {}
+  },
+  "response": {
+    "status": 200,
+    "statusText": "OK",
+    "headers": {
+      "access-control-allow-origin": "*",
+      "connection": "keep-alive",
+      "content-length": "2116",
+      "content-type": "application/json; charset=utf-8",
+      "date": "Sun, 21 Dec 2025 16:27:15 GMT",
+      "etag": "W/\"844-Q2dppdXwSrtrDFWRNMnvH8QjX9M\"",
+      "keep-alive": "timeout=5",
+      "x-model-used": "gpt-5-mini-2025-08-07",
+      "x-powered-by": "Express",
+      "x-usage-completion-reasoning-tokens": "192",
+      "x-usage-completion-text-tokens": "216",
+      "x-usage-prompt-text-tokens": "249",
+      "x-usage-total-tokens": "657"
+    },
+    "body": {
+      "type": "json",
+      "data": {
+        "choices": [
+          {
+            "content_filter_results": {
+              "hate": {
+                "filtered": false,
+                "severity": "safe"
+              },
+              "protected_material_code": {
+                "filtered": false,
+                "detected": false
+              },
+              "protected_material_text": {
+                "filtered": false,
+                "detected": false
+              },
+              "self_harm": {
+                "filtered": false,
+                "severity": "safe"
+              },
+              "sexual": {
+                "filtered": false,
+                "severity": "safe"
+              },
+              "violence": {
+                "filtered": false,
+                "severity": "safe"
+              }
+            },
+            "finish_reason": "stop",
+            "index": 0,
+            "logprobs": null,
+            "message": {
+              "annotations": [],
+              "content": "Nice to meet you — what would you like me to do first? If you’re not sure, here are some quick ideas you can pick or tweak:\n\n- Write a short bio or LinkedIn summary (give me profession + tone)\n- Draft an email or message (brief details and recipient)\n- Brainstorm ideas (startup names, gift ideas, story prompts)\n- Edit or proofread text (paste it here)\n- Summarize an article or book chapter (paste or describe)\n- Help with coding (language, problem, error message)\n- Plan a trip or itinerary (where, how many days, travel style)\n- Create a meal plan or recipe (diet restrictions, likes/dislikes)\n- Roleplay a conversation or practice an interview\n- Generate social posts or ad copy (platform and audience)\n- Solve a math or logic problem (paste it)\n- Give quick explanations of a topic (which topic and depth)\n\nOr just tell me what you’re thinking and I’ll jump in. Which one sounds good?",
+              "refusal": null,
+              "role": "assistant"
+            }
+          }
+        ],
+        "created": 1766334431,
+        "id": "pllns_65be9a55db7968ac810e99f52e286a70",
+        "model": "gpt-5-mini-2025-08-07",
+        "object": "chat.completion",
+        "prompt_filter_results": [
+          {
+            "prompt_index": 0,
+            "content_filter_results": {
+              "hate": {
+                "filtered": false,
+                "severity": "safe"
+              },
+              "jailbreak": {
+                "filtered": false,
+                "detected": false
+              },
+              "self_harm": {
+                "filtered": false,
+                "severity": "safe"
+              },
+              "sexual": {
+                "filtered": false,
+                "severity": "safe"
+              },
+              "violence": {
+                "filtered": false,
+                "severity": "safe"
+              }
+            }
+          }
+        ],
+        "system_fingerprint": null,
+        "usage": {
+          "completion_tokens": 408,
+          "completion_tokens_details": {
+            "accepted_prediction_tokens": 0,
+            "audio_tokens": 0,
+            "reasoning_tokens": 192,
+            "rejected_prediction_tokens": 0
+          },
+          "prompt_tokens": 249,
+          "prompt_tokens_details": {
+            "audio_tokens": 0,
+            "cached_tokens": 0
+          },
+          "total_tokens": 657
+        }
+      }
+    }
+  }
+}

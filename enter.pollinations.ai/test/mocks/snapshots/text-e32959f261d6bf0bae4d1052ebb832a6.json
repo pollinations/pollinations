@@ -1,0 +1,59 @@
+{
+  "request": {
+    "url": "http://ec2-3-80-56-235.compute-1.amazonaws.com:16385/openai",
+    "method": "POST",
+    "body": {
+      "type": "json",
+      "data": {
+        "model": "claude-fast",
+        "messages": [
+          {
+            "role": "user",
+            "content": "Is Berlin the capital of Germany? Reply yes or no."
+          }
+        ],
+        "stream": true,
+        "seed": 42
+      }
+    },
+    "params": {}
+  },
+  "response": {
+    "status": 200,
+    "statusText": "OK",
+    "headers": {
+      "access-control-allow-origin": "*",
+      "cache-control": "no-cache",
+      "connection": "keep-alive",
+      "content-type": "text/event-stream; charset=utf-8",
+      "date": "Sun, 21 Dec 2025 16:28:42 GMT",
+      "transfer-encoding": "chunked",
+      "x-powered-by": "Express"
+    },
+    "body": {
+      "type": "stream",
+      "data": [
+        {
+          "data": "data: {\"id\":\"bedrock-1766334522851\",\"object\":\"chat.completion.chunk\",\"created\":1766334522,\"model\":\"us.anthropic.claude-haiku-4-5-20251001-v1:0\",\"provider\":\"bedrock\",\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\"},\"finish_reason\":null}]}\n\ndata: {\"id\":\"bedrock-1766334522851\",\"object\":\"chat.completion.chunk\",\"created\":1766334522,\"model\":\"us.anthropic.claude-haiku-4-5-20251001-v1:0\",\"provider\":\"bedrock\",\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"Yes\",\"content_blocks\":[{\"index\":0,\"delta\":{\"text\":\"Yes\"}}]},\"finish_reason\":null}]}\n\nda",
+          "delay": 0
+        },
+        {
+          "data": "ta: {\"id\":\"bedrock-1766334522851\",\"object\":\"chat.completion.chunk\",\"created\":1766334522,\"model\":\"us.anthropic.claude-haiku-4-5-20251001-v1:0\",\"provider\":\"bedrock\",\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\".\",\"content_blocks\":[{\"index\":0,\"delta\":{\"text\":\".\"}}]},\"finish_reason\":null}]}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"id\":\"bedrock-1766334522851\",\"object\":\"chat.completion.chunk\",\"created\":1766334522,\"model\":\"us.anthropic.claude-haiku-4-5-20251001-v1:0\",\"provider\":\"bedrock\",\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\"},\"finish_reason\":null}]}\n\ndata: {\"id\":\"bedrock-1766334522851\",\"object\":\"chat.completion.chunk\",\"created\":1766334522,\"model\":\"us.anthropic.claude-haiku-4-5-20251001-v1:0\",\"provider\":\"bedrock\",\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\"},\"finish_reason\":null}]}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"id\":\"bedrock-1766334522851\",\"object\":\"chat.completion.chunk\",\"created\":1766334522,\"model\":\"us.anthropic.claude-haiku-4-5-20251001-v1:0\",\"provider\":\"bedrock\",\"choices\":[{\"index\":0,\"delta\":{},\"finish_reason\":\"end_turn\"}],\"usage\":{\"prompt_tokens\":289,\"completion_tokens\":5,\"total_tokens\":294,\"prompt_tokens_details\":{\"cached_tokens\":0}}}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: [DONE]\n\n",
+          "delay": 0
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,133 @@
+{
+  "request": {
+    "url": "http://ec2-3-80-56-235.compute-1.amazonaws.com:16385/openai",
+    "method": "POST",
+    "body": {
+      "type": "json",
+      "data": {
+        "model": "mistral",
+        "messages": [
+          {
+            "role": "user",
+            "content": "What is 5 + 3? You must use the calculator tool to compute this."
+          },
+          {
+            "role": "assistant",
+            "tool_calls": [
+              {
+                "id": "chatcmpl-tool-b7dfe9fdb3444a57933a8a052fd249b8",
+                "type": "function",
+                "function": {
+                  "name": "calculator",
+                  "arguments": "{\"a\": 5, \"b\": 3, \"operation\": \"add\"}"
+                }
+              }
+            ]
+          },
+          {
+            "role": "tool",
+            "tool_call_id": "chatcmpl-tool-b7dfe9fdb3444a57933a8a052fd249b8",
+            "content": "{\"result\":8}"
+          }
+        ],
+        "tools": [
+          {
+            "type": "function",
+            "function": {
+              "name": "calculator",
+              "description": "Perform basic arithmetic operations",
+              "parameters": {
+                "type": "object",
+                "properties": {
+                  "operation": {
+                    "type": "string",
+                    "enum": [
+                      "add",
+                      "subtract",
+                      "multiply",
+                      "divide"
+                    ],
+                    "description": "The arithmetic operation to perform"
+                  },
+                  "a": {
+                    "type": "number",
+                    "description": "First operand"
+                  },
+                  "b": {
+                    "type": "number",
+                    "description": "Second operand"
+                  }
+                },
+                "required": [
+                  "operation",
+                  "a",
+                  "b"
+                ]
+              }
+            }
+          }
+        ],
+        "seed": 42,
+        "max_tokens": 4096
+      }
+    },
+    "params": {}
+  },
+  "response": {
+    "status": 200,
+    "statusText": "OK",
+    "headers": {
+      "access-control-allow-origin": "*",
+      "connection": "keep-alive",
+      "content-length": "637",
+      "content-type": "application/json; charset=utf-8",
+      "date": "Sun, 21 Dec 2025 16:29:59 GMT",
+      "etag": "W/\"27d-x1UGQPIhZzgXUUb2NYRamTcTPwQ\"",
+      "keep-alive": "timeout=5",
+      "x-model-used": "mistral-small-3.2-24b-instruct-2506",
+      "x-powered-by": "Express",
+      "x-usage-completion-text-tokens": "13",
+      "x-usage-prompt-text-tokens": "449",
+      "x-usage-total-tokens": "462"
+    },
+    "body": {
+      "type": "json",
+      "data": {
+        "id": "pllns_3a6ee09f5a6183368c8ccf8b78e2772f",
+        "object": "chat.completion",
+        "created": 1766334599,
+        "model": "mistral-small-3.2-24b-instruct-2506",
+        "choices": [
+          {
+            "index": 0,
+            "message": {
+              "role": "assistant",
+              "content": "The sum of 5 and 3 is 8.",
+              "refusal": null,
+              "annotations": null,
+              "audio": null,
+              "function_call": null,
+              "tool_calls": [],
+              "reasoning_content": null
+            },
+            "logprobs": null,
+            "finish_reason": "stop",
+            "stop_reason": null,
+            "token_ids": null
+          }
+        ],
+        "service_tier": null,
+        "system_fingerprint": null,
+        "usage": {
+          "prompt_tokens": 449,
+          "total_tokens": 462,
+          "completion_tokens": 13,
+          "prompt_tokens_details": null
+        },
+        "prompt_logprobs": null,
+        "prompt_token_ids": null,
+        "kv_transfer_params": null
+      }
+    }
+  }
+}

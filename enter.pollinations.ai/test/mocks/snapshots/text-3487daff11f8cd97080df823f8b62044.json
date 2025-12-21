@@ -1,0 +1,120 @@
+{
+  "request": {
+    "url": "http://ec2-3-80-56-235.compute-1.amazonaws.com:16385/openai",
+    "method": "POST",
+    "body": {
+      "type": "json",
+      "data": {
+        "model": "chickytutor",
+        "messages": [
+          {
+            "role": "user",
+            "content": "What is 5 + 3? You must use the calculator tool to compute this."
+          },
+          {
+            "role": "assistant",
+            "tool_calls": [
+              {
+                "id": "tooluse_n_aN2cnLSDqhL05QYr3PPQ",
+                "type": "function",
+                "function": {
+                  "name": "calculator",
+                  "arguments": "{\"operation\": \"add\", \"a\": 5, \"b\": 3}"
+                }
+              }
+            ]
+          },
+          {
+            "role": "tool",
+            "tool_call_id": "tooluse_n_aN2cnLSDqhL05QYr3PPQ",
+            "content": "{\"result\":8}"
+          }
+        ],
+        "tools": [
+          {
+            "type": "function",
+            "function": {
+              "name": "calculator",
+              "description": "Perform basic arithmetic operations",
+              "parameters": {
+                "type": "object",
+                "properties": {
+                  "operation": {
+                    "type": "string",
+                    "enum": [
+                      "add",
+                      "subtract",
+                      "multiply",
+                      "divide"
+                    ],
+                    "description": "The arithmetic operation to perform"
+                  },
+                  "a": {
+                    "type": "number",
+                    "description": "First operand"
+                  },
+                  "b": {
+                    "type": "number",
+                    "description": "Second operand"
+                  }
+                },
+                "required": [
+                  "operation",
+                  "a",
+                  "b"
+                ]
+              }
+            }
+          }
+        ],
+        "seed": 42,
+        "max_tokens": 4096
+      }
+    },
+    "params": {}
+  },
+  "response": {
+    "status": 200,
+    "statusText": "OK",
+    "headers": {
+      "access-control-allow-origin": "*",
+      "connection": "keep-alive",
+      "content-length": "438",
+      "content-type": "application/json; charset=utf-8",
+      "date": "Sun, 21 Dec 2025 16:30:13 GMT",
+      "etag": "W/\"1b6-AtpZKeKjT6JKuzpJ7VvrhMz1Axc\"",
+      "keep-alive": "timeout=5",
+      "x-model-used": "us.anthropic.claude-3-5-haiku-20241022-v1:0",
+      "x-powered-by": "Express",
+      "x-usage-completion-text-tokens": "30",
+      "x-usage-prompt-text-tokens": "4194",
+      "x-usage-total-tokens": "4224"
+    },
+    "body": {
+      "type": "json",
+      "data": {
+        "id": "pllns_bba1b64b588ca7cec0fb5fb2911c869a",
+        "created": 1766334613,
+        "model": "us.anthropic.claude-3-5-haiku-20241022-v1:0",
+        "system_fingerprint": "fp",
+        "choices": [
+          {
+            "index": 0,
+            "finish_reason": "stop",
+            "logprobs": null,
+            "message": {
+              "role": "assistant",
+              "content": "The answer is 8. I used the calculator tool to compute 5 + 3, which resulted in 8."
+            }
+          }
+        ],
+        "object": "chat.completion",
+        "usage": {
+          "prompt_tokens": 4194,
+          "completion_tokens": 30,
+          "total_tokens": 4224
+        }
+      }
+    }
+  }
+}

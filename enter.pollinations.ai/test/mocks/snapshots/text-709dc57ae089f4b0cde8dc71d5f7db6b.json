@@ -1,0 +1,35 @@
+{
+  "request": {
+    "url": "http://ec2-3-80-56-235.compute-1.amazonaws.com:16385/Is%20Berlin%20the%20capital%20of%20Germany%3F%20Reply%20yes%20or%20no.?model=grok&seed=42",
+    "method": "GET",
+    "body": {
+      "type": "empty",
+      "data": null
+    },
+    "params": {}
+  },
+  "response": {
+    "status": 200,
+    "statusText": "OK",
+    "headers": {
+      "access-control-allow-origin": "*",
+      "cache-control": "public, max-age=31536000, immutable",
+      "connection": "keep-alive",
+      "content-length": "4",
+      "content-type": "text/plain; charset=utf-8",
+      "date": "Sun, 21 Dec 2025 16:29:16 GMT",
+      "etag": "W/\"4-xTxWLatLM7PkLzvE2OVxlDmpwVU\"",
+      "keep-alive": "timeout=5",
+      "x-model-used": "grok-4-fast-non-reasoning",
+      "x-powered-by": "Express",
+      "x-usage-completion-text-tokens": "2",
+      "x-usage-prompt-cached-tokens": "159",
+      "x-usage-prompt-text-tokens": "256",
+      "x-usage-total-tokens": "417"
+    },
+    "body": {
+      "type": "text",
+      "data": "Yes."
+    }
+  }
+}

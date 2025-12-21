@@ -17,6 +17,7 @@ function Feed() {
     const [displayedImages, setDisplayedImages] = useState<FeedItem[]>([]);
     const [allImages, setAllImages] = useState<FeedItem[]>([]);
     const [isLoading, setIsLoading] = useState(true);
+    const [selectedImage, setSelectedImage] = useState<FeedItem | null>(null);
     const eventSourceRef = useRef<EventSource | null>(null);
     const seenImagesRef = useRef<Set<string>>(new Set());
     const loadMoreTriggerRef = useRef<HTMLDivElement>(null);
@@ -111,6 +112,20 @@ function Feed() {
                                 background: var(--color-border-brand);
                                 opacity: 0.8;
                             }
+                            .modal-backdrop {
+                                animation: fadeIn 0.2s ease-in-out;
+                            }
+                            .modal-content {
+                                animation: slideUp 0.3s ease-out;
+                            }
+                            @keyframes fadeIn {
+                                from { opacity: 0; }
+                                to { opacity: 1; }
+                            }
+                            @keyframes slideUp {
+                                from { transform: translateY(20px); opacity: 0; }
+                                to { transform: translateY(0); opacity: 1; }
+                            }
                         `}</style>
             <PageCard>
                 <Title spacing="none">Live Feed</Title>
@@ -139,6 +154,7 @@ function Feed() {
                             }}>
                             {displayedImages.map((item, index) => {
                                 const positionInBatch = index % imagesPerLoad;
+                                const aspectRatio = item.width / item.height;
                                 return (
                                 <div
                                     key={`${item.imageURL}-${item.timestamp}`}
@@ -146,13 +162,15 @@ function Feed() {
                                     style={{
                                         animationDelay: `${positionInBatch * 30}ms`,
                                         animationFillMode: 'both',
+                                        aspectRatio: `${aspectRatio}`,
                                     }}
+                                    onClick={() => setSelectedImage(item)}
                                 >
                                     <img
                                         src={item.imageURL}
                                         alt={item.prompt}
                                         loading="lazy"
-                                        className="w-full aspect-square object-cover group-hover:scale-105 transition-transform duration-300"
+                                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                                     />
                                     <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col justify-end p-4">
                                         <p className="text-white text-sm font-body line-clamp-3 mb-2">
@@ -179,6 +197,68 @@ function Feed() {
                     </>
                 )}
             </PageCard>
+
+            {selectedImage && (
+                <div
+                    className="modal-backdrop fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+                    onClick={() => setSelectedImage(null)}
+                >
+                    <div
+                        className="modal-content bg-surface-base rounded-xl max-w-3xl max-h-[90vh] overflow-y-auto flex flex-col relative"
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        <button
+                            onClick={() => setSelectedImage(null)}
+                            className="absolute top-4 right-4 z-10 bg-black/50 hover:bg-black/70 rounded-full p-2 transition-colors"
+                        >
+                            <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                        </button>
+
+                        <div className="relative bg-black flex items-center justify-center">
+                            <img
+                                src={selectedImage.imageURL}
+                                alt={selectedImage.prompt}
+                                className="w-full h-auto object-contain"
+                            />
+                        </div>
+
+                        <div className="p-6 space-y-4">
+                            <div>
+                                <h3 className="text-sm font-semibold text-text-caption mb-2">Prompt</h3>
+                                <p className="text-text-body text-sm leading-relaxed">{selectedImage.prompt}</p>
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <h4 className="text-xs font-semibold text-text-caption mb-1">Model</h4>
+                                    <p className="text-sm text-text-body">{selectedImage.model}</p>
+                                </div>
+                                <div>
+                                    <h4 className="text-xs font-semibold text-text-caption mb-1">Seed</h4>
+                                    <p className="text-sm text-text-body">#{selectedImage.seed}</p>
+                                </div>
+                                <div>
+                                    <h4 className="text-xs font-semibold text-text-caption mb-1">Resolution</h4>
+                                    <p className="text-sm text-text-body">{selectedImage.width}×{selectedImage.height}</p>
+                                </div>
+                                <div>
+                                    <h4 className="text-xs font-semibold text-text-caption mb-1">Aspect Ratio</h4>
+                                    <p className="text-sm text-text-body">{(selectedImage.width / selectedImage.height).toFixed(2)}</p>
+                                </div>
+                            </div>
+
+                            <button
+                                onClick={() => window.open(selectedImage.imageURL, '_blank')}
+                                className="w-full mt-4 px-4 py-2 bg-border-brand hover:bg-opacity-90 text-white rounded-lg transition-colors text-sm font-medium"
+                            >
+                                Open Full Size
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </PageContainer>
     );
 }

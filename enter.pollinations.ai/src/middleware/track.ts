@@ -253,19 +253,13 @@ export const track = (eventType: EventType) =>
 
                 // --- POST-REQUEST: Update pending_estimate or insert new event ---
                 if (pendingEventInserted) {
-                    // Update the pending_estimate event with actual data
+                    // Update the pending_estimate event with all final data
+                    // Spread finalEvent to get all fields, then override specific ones
                     await updateEvent(db, c.var.log, eventId, {
+                        ...finalEvent,
+                        id: eventId, // Keep original ID
                         eventStatus: "pending", // Move to pending for normal processing
-                        endTime: finalEvent.endTime,
-                        responseTime: finalEvent.responseTime,
-                        responseStatus: finalEvent.responseStatus,
-                        modelUsed: finalEvent.modelUsed,
-                        isBilledUsage: finalEvent.isBilledUsage,
-                        totalCost: finalEvent.totalCost,
-                        totalPrice: finalEvent.totalPrice,
                         estimatedPrice: null, // Clear estimate after completion
-                        ...usageToEventParams(responseTracking.usage),
-                        ...responseTracking.contentFilterResults,
                     });
                     log.debug(
                         "Updated pending_estimate event {eventId} with actual data",

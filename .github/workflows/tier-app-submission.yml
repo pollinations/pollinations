@@ -108,21 +108,39 @@ jobs:
                   content: $body
                 }
               ],
-              jsonMode: true
+              response_format: { type: "json_object" }
             }')
           
           echo "Calling Pollinations API..."
           echo "Payload: $PAYLOAD"
           
-          # Call Pollinations API (no auth needed for basic usage)
-          RESPONSE=$(curl -s -X POST "https://text.pollinations.ai/" \
-            -H "Content-Type: application/json" \
-            -d "$PAYLOAD")
+          # Call gen.pollinations.ai API with retry for rate limits
+          MAX_RETRIES=3
+          RETRY_DELAY=5
+          for i in $(seq 1 $MAX_RETRIES); do
+            HTTP_CODE=$(curl -s -w "%{http_code}" -o /tmp/response.json -X POST "https://gen.pollinations.ai/v1/chat/completions" \
+              -H "Content-Type: application/json" \
+              -H "Authorization: Bearer ${{ secrets.POLLINATIONS_API_KEY }}" \
+              -d "$PAYLOAD")
+            
+            if [ "$HTTP_CODE" = "200" ]; then
+              break
+            elif [ "$HTTP_CODE" = "429" ] && [ $i -lt $MAX_RETRIES ]; then
+              echo "Rate limited (429), retrying in ${RETRY_DELAY}s... (attempt $i/$MAX_RETRIES)"
+              sleep $RETRY_DELAY
+              RETRY_DELAY=$((RETRY_DELAY * 2))
+            else
+              echo "API call failed with HTTP $HTTP_CODE"
+              cat /tmp/response.json
+              break
+            fi
+          done
           
+          RESPONSE=$(cat /tmp/response.json)
           echo "Response: $RESPONSE"
           
-          # Extract the JSON content - try both OpenAI format and direct text
-          PROJECT_JSON=$(echo "$RESPONSE" | jq -r '.choices[0].message.content // .text // empty' 2>/dev/null)
+          # Extract the JSON content from OpenAI-compatible response
+          PROJECT_JSON=$(echo "$RESPONSE" | jq -r '.choices[0].message.content // empty' 2>/dev/null)
           
           # If still empty, maybe it's direct JSON
           if [ -z "$PROJECT_JSON" ]; then

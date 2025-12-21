@@ -71,6 +71,13 @@
       "when": 1766335384151,
       "tag": "0009_even_morg",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "6",
+      "when": 1766348172604,
+      "tag": "0010_crazy_mojo",
+      "breakpoints": true
     }
   ]
 }

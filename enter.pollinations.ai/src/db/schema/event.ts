@@ -222,6 +222,8 @@ export const event = sqliteTable(
             table.isBilledUsage,
             table.createdAt,
         ),
+        // Index for getPendingSpend query (userId + createdAt range scan)
+        index("idx_event_user_created").on(table.userId, table.createdAt),
     ],
 );
 

@@ -5,7 +5,7 @@ import debug from "debug";
 dotenv.config();
 
 const BING_SEARCH_ENDPOINT = "https://api.bing.microsoft.com/v7.0/search";
-const BING_API_KEY = process.env.BING_API_KEY;
+const AZURE_BING_SEARCH_KEY = process.env.AZURE_BING_SEARCH_KEY;
 
 // Add timeout constant
 const SEARCH_TIMEOUT = 20000; // 10 seconds timeout for search
@@ -53,7 +53,7 @@ export async function performWebSearch({ query, num_results = 20 }) {
         );
         const response = await axios.get(BING_SEARCH_ENDPOINT, {
             params: { q: query, count: num_results },
-            headers: { "Ocp-Apim-Subscription-Key": BING_API_KEY },
+            headers: { "Ocp-Apim-Subscription-Key": AZURE_BING_SEARCH_KEY },
             timeout: SEARCH_TIMEOUT,
         });
         perfLog(

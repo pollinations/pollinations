@@ -17,8 +17,8 @@ const log = getLogger(["hono", "admin"]);
 
 export const adminRoutes = new Hono<Env>()
     .use("*", async (c, next) => {
-        // Use ENTER_TOKEN for admin authentication (already in GH secrets)
-        const adminKey = c.env.ENTER_TOKEN;
+        // Use PLN_ENTER_TOKEN for admin authentication (already in GH secrets)
+        const adminKey = c.env.PLN_ENTER_TOKEN;
 
         const authHeader = c.req.header("Authorization");
         if (!authHeader?.startsWith("Bearer ")) {

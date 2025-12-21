@@ -1,0 +1,78 @@
+{
+  "request": {
+    "url": "http://localhost:16385/openai",
+    "method": "POST",
+    "body": {
+      "type": "json",
+      "data": {
+        "model": "gemini-large",
+        "messages": [
+          {
+            "role": "user",
+            "content": "Is Berlin the capital of Germany? Reply yes or no."
+          }
+        ],
+        "seed": 42
+      }
+    },
+    "params": {}
+  },
+  "response": {
+    "status": 200,
+    "statusText": "OK",
+    "headers": {
+      "access-control-allow-origin": "*",
+      "connection": "keep-alive",
+      "content-length": "497",
+      "content-type": "application/json; charset=utf-8",
+      "date": "Sat, 20 Dec 2025 15:40:05 GMT",
+      "etag": "W/\"1f1-96t6Bau6fPpxP8VjwIzOP1YZIss\"",
+      "keep-alive": "timeout=5",
+      "x-model-used": "gemini-3-pro-preview",
+      "x-powered-by": "Express",
+      "x-usage-completion-reasoning-tokens": "362",
+      "x-usage-completion-text-tokens": "2",
+      "x-usage-prompt-text-tokens": "265",
+      "x-usage-total-tokens": "629"
+    },
+    "body": {
+      "type": "json",
+      "data": {
+        "id": "pllns_b7718405abd5032b2bb3e5482b21957f",
+        "object": "chat.completion",
+        "created": 1766245205,
+        "model": "gemini-3-pro-preview",
+        "provider": "vertex-ai",
+        "choices": [
+          {
+            "message": {
+              "role": "assistant",
+              "content": "Yes.",
+              "content_blocks": [
+                {
+                  "type": "text",
+                  "text": "Yes."
+                }
+              ]
+            },
+            "index": 0,
+            "finish_reason": "STOP"
+          }
+        ],
+        "usage": {
+          "prompt_tokens": 265,
+          "completion_tokens": 364,
+          "total_tokens": 629,
+          "completion_tokens_details": {
+            "reasoning_tokens": 362,
+            "audio_tokens": 0
+          },
+          "prompt_tokens_details": {
+            "cached_tokens": 0,
+            "audio_tokens": 0
+          }
+        }
+      }
+    }
+  }
+}

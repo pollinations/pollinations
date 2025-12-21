@@ -14,4 +14,4 @@ not_found_handling = "single-page-application"
 run_worker_first = ["/api/*"]
 
 # API Proxy handled by Worker in src/worker.ts
-# The POLLINATIONS_API_KEY secret must be set via: npx wrangler secret put POLLINATIONS_API_KEY
+# The PLN_APPS_KEY secret must be set via: npx wrangler secret put PLN_APPS_KEY

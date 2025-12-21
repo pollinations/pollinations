@@ -7,7 +7,7 @@
  */
 
 interface Env {
-    POLLINATIONS_API_KEY: string;
+    PLN_APPS_KEY: string;
 }
 
 interface CFContext {
@@ -40,7 +40,7 @@ export async function onRequest(context: CFContext): Promise<Response> {
 
     // Clone headers and add auth
     const headers = new Headers(request.headers);
-    headers.set("Authorization", `Bearer ${env.POLLINATIONS_API_KEY}`);
+    headers.set("Authorization", `Bearer ${env.PLN_APPS_KEY}`);
 
     // Forward the request
     const proxyRequest = new Request(targetUrl, {

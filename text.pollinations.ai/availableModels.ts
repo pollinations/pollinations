@@ -106,7 +106,7 @@ const models: ModelDefinition[] = [
     },
     {
         name: "gemini-search",
-        config: portkeyConfig["gemini-3-flash-preview"],
+        config: portkeyConfig["gemini-2.5-flash-lite"],
         transform: pipe(createGoogleSearchTransform()),
     },
     {

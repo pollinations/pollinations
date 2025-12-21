@@ -110,7 +110,7 @@ export const IMAGE_CONFIG = {
         defaultResolution: "720p",
     },
 
-    // Z-Image-Turbo - Fast 6B parameter image generation (self-hosted)
+    // Z-Image-Turbo - Fast 6B parameter image generation (AWS)
     zimage: {
         type: "zimage",
         enhance: false,

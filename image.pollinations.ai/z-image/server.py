@@ -356,12 +356,12 @@ def is_safety_checker_enabled() -> bool:
 
 
 def verify_enter_token(x_enter_token: str = Header(None, alias="x-enter-token")):
-    expected_token = os.getenv("ENTER_TOKEN")
+    expected_token = os.getenv("PLN_ENTER_TOKEN")
     if not expected_token:
-        logger.warning("ENTER_TOKEN not configured - allowing request")
+        logger.warning("PLN_ENTER_TOKEN not configured - allowing request")
         return True
     if x_enter_token != expected_token:
-        logger.warning("Invalid or missing ENTER_TOKEN")
+        logger.warning("Invalid or missing PLN_ENTER_TOKEN")
         raise HTTPException(status_code=403, detail="Unauthorized")
     return True
 

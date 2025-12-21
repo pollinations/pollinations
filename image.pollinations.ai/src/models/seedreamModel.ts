@@ -47,10 +47,10 @@ export const callSeedreamAPI = async (
     try {
         logOps("Calling Seedream 4.0 API with prompt:", prompt);
 
-        const apiKey = process.env.SEEDREAM_API_KEY;
+        const apiKey = process.env.BYTEDANCE_API_KEY;
         if (!apiKey) {
             throw new Error(
-                "SEEDREAM_API_KEY environment variable is required",
+                "BYTEDANCE_API_KEY environment variable is required",
             );
         }
 
@@ -104,10 +104,10 @@ export const callSeedreamProAPI = async (
     try {
         logOps("Calling Seedream 4.5 Pro API with prompt:", prompt);
 
-        const apiKey = process.env.SEEDREAM_API_KEY;
+        const apiKey = process.env.BYTEDANCE_API_KEY;
         if (!apiKey) {
             throw new Error(
-                "SEEDREAM_API_KEY environment variable is required",
+                "BYTEDANCE_API_KEY environment variable is required",
             );
         }
 
@@ -294,7 +294,7 @@ async function generateWithSeedream(
         );
     }
 
-    const data: SeedreamResponse = await response.json();
+    const data = (await response.json()) as SeedreamResponse;
     logOps("Seedream API response:", JSON.stringify(data, null, 2));
 
     if (!data.data || !data.data[0] || !data.data[0].url) {

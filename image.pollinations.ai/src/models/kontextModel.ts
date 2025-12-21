@@ -54,9 +54,9 @@ export const callKontextAPI = async (
 
         const headers = {};
 
-        // Add Bearer token if FLUX_KONTEXT_KEY is available
-        if (process.env.FLUX_KONTEXT_KEY) {
-            headers["Authorization"] = `Bearer ${process.env.FLUX_KONTEXT_KEY}`;
+        // Add Bearer token if SCALEWAY_KONTEXT_KEY is available
+        if (process.env.SCALEWAY_KONTEXT_KEY) {
+            headers["Authorization"] = `Bearer ${process.env.SCALEWAY_KONTEXT_KEY}`;
         }
 
         const response = await withTimeoutSignal(

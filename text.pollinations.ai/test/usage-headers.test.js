@@ -2,8 +2,8 @@ import { describe, it, expect, beforeAll } from "vitest";
 import fetch from "node-fetch";
 
 const BASE_URL = process.env.TEST_BASE_URL || "http://localhost:16385";
-const ENTER_TOKEN =
-    process.env.ENTER_TOKEN ||
+const PLN_ENTER_TOKEN =
+    process.env.PLN_ENTER_TOKEN ||
     "cZOpvvV4xpbOe1IOYrN0R2a3zxHEAcLntneihfU3f2Y3Pfy5";
 
 // Skip Claude tests in CI if no credentials available
@@ -193,7 +193,7 @@ describe("Usage headers - Streaming (Issue #4638)", () => {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
-                "x-enter-token": ENTER_TOKEN,
+                "x-enter-token": PLN_ENTER_TOKEN,
             },
             body: JSON.stringify({
                 model: "openai-fast",
@@ -248,7 +248,7 @@ describe("Native Bedrock - Array content support", () => {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
-                    "x-enter-token": ENTER_TOKEN,
+                    "x-enter-token": PLN_ENTER_TOKEN,
                 },
                 body: JSON.stringify({
                     model: "claude-large",
@@ -285,7 +285,7 @@ describe("Native Bedrock - Array content support", () => {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
-                    "x-enter-token": ENTER_TOKEN,
+                    "x-enter-token": PLN_ENTER_TOKEN,
                 },
                 body: JSON.stringify({
                     model: "claude-large",

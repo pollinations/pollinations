@@ -19,20 +19,20 @@ export const COMMUNITY_PAGE = {
         "https://raw.githubusercontent.com/pollinations/pollinations/production/NEWS/transformed/highlights.md",
 
     discordTitle: {
-        text: "Discord",
+        text: "💬 Discord",
     },
 
     discordSubtitle: {
-        text: "Join our sunlit community for chats and support.",
+        text: "Chat with builders, get help, share what you're working on. We're friendly!",
         transform: true,
     },
 
     githubTitle: {
-        text: "GitHub",
+        text: "🛠️ GitHub",
     },
 
     githubSubtitle: {
-        text: "Collaborate on open-source projects and contribute code.",
+        text: "Contribute code, report bugs, submit your app to the showcase, or just star us!",
         transform: true,
     },
 

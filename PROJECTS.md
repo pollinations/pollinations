@@ -324,6 +324,8 @@ Pollinations.AI is used in various projects, including:
 | 🆕 🤖 [💬 Chat AI](https://t.me/Chat2qai_bot) | Arabic Telegram bot serving as a versatile AI assistant. Answers questions,... | @Alhmam |
 | 🆕 🤖 [SaturnAI 🪐](https://chat.xdativo.cloud) | Web-based AI chat app focused on clean UI and smooth user experience. Features... | @xdativo |
 | 🆕 [💬 Yerty AI](https://yerty.xdativo.cloud) | A calm, friendly AI chat companion focused on everyday thinking, writing, and... | @losingdivine |
+| 🆕 🖥️ 💬 AI Chat Studio ([⭐ 0](https://github.com/Universe-shifting/AI-Chat-Studio)) | Local desktop AI chat app built with PyQt6. Supports multimodal conversations... | @vsenikizanat81486 |
+| 🆕 🖥️ 💬 AI Chat Studio ([⭐ 0](https://github.com/Universe-shifting/AI-Chat-Studio)) | Local desktop AI chat app built with PyQt6. Supports multimodal conversations... | @vsenikizanat81486 |
 
 ### Social Bots 🤖
 

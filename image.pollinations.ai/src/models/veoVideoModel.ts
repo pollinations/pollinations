@@ -146,35 +146,37 @@ export const callVeoAPI = async (
             ? safeParams.image[0]
             : safeParams.image;
         if (!imageUrl) {
-            throw new HttpError("First frame URL is empty", 400);
+            logOps("Skipping first frame - empty URL");
+        } else {
+            logOps("Adding first frame image for I2V:", imageUrl);
+            progress.updateBar(
+                requestId,
+                38,
+                "Processing",
+                "Processing first frame...",
+            );
+            instance.image = await processImageForVeo(imageUrl, "first frame");
         }
-        logOps("Adding first frame image for I2V:", imageUrl);
-        progress.updateBar(
-            requestId,
-            38,
-            "Processing",
-            "Processing first frame...",
-        );
-        instance.image = await processImageForVeo(imageUrl, "first frame");
     }
 
     // Add lastFrame for video interpolation (image[1] = last frame)
     if (hasLastFrame) {
         const lastFrameUrl = safeParams.image[1];
         if (!lastFrameUrl) {
-            throw new HttpError("Last frame URL is empty", 400);
+            logOps("Skipping last frame - empty URL");
+        } else {
+            logOps("Adding last frame image for interpolation:", lastFrameUrl);
+            progress.updateBar(
+                requestId,
+                39,
+                "Processing",
+                "Processing last frame...",
+            );
+            instance.lastFrame = await processImageForVeo(
+                lastFrameUrl,
+                "last frame",
+            );
         }
-        logOps("Adding last frame image for interpolation:", lastFrameUrl);
-        progress.updateBar(
-            requestId,
-            39,
-            "Processing",
-            "Processing last frame...",
-        );
-        instance.lastFrame = await processImageForVeo(
-            lastFrameUrl,
-            "last frame",
-        );
     }
 
     // Build request body

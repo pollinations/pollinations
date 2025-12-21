@@ -10,6 +10,25 @@ import type { ProgressManager } from "../progressBar.ts";
 const logOps = debug("pollinations:veo:ops");
 const logError = debug("pollinations:veo:error");
 
+/**
+ * Helper to download and encode an image for Veo API
+ */
+async function processImageForVeo(
+    imageUrl: string,
+    label: string,
+): Promise<{ bytesBase64Encoded: string; mimeType: string }> {
+    try {
+        const { base64, mimeType } = await downloadImageAsBase64(imageUrl);
+        logOps(`${label} processed successfully, mimeType:`, mimeType);
+        return { bytesBase64Encoded: base64, mimeType };
+    } catch (error) {
+        const errorMessage =
+            error instanceof Error ? error.message : String(error);
+        logError(`Error processing ${label}:`, errorMessage);
+        throw new HttpError(`Failed to process ${label}: ${errorMessage}`, 400);
+    }
+}
+
 // Veo API constants
 const LOCATION = "us-central1"; // Veo is only available in us-central1
 const MODEL_ID = "veo-3.1-fast-generate-preview";
@@ -126,31 +145,14 @@ export const callVeoAPI = async (
         const imageUrl = Array.isArray(safeParams.image)
             ? safeParams.image[0]
             : safeParams.image;
-
         logOps("Adding first frame image for I2V:", imageUrl);
         progress.updateBar(
             requestId,
             38,
             "Processing",
-            "Processing reference image...",
+            "Processing first frame...",
         );
-
-        try {
-            const { base64, mimeType } = await downloadImageAsBase64(imageUrl);
-            instance.image = {
-                bytesBase64Encoded: base64,
-                mimeType: mimeType,
-            };
-            logOps("Image processed successfully, mimeType:", mimeType);
-        } catch (error) {
-            const errorMessage =
-                error instanceof Error ? error.message : String(error);
-            logError("Error processing reference image:", errorMessage);
-            throw new HttpError(
-                `Failed to process reference image: ${errorMessage}`,
-                400,
-            );
-        }
+        instance.image = await processImageForVeo(imageUrl, "first frame");
     }
 
     // Add lastFrame for video interpolation (image[1] = last frame)
@@ -161,26 +163,12 @@ export const callVeoAPI = async (
             requestId,
             39,
             "Processing",
-            "Processing last frame image...",
+            "Processing last frame...",
         );
-
-        try {
-            const { base64, mimeType } =
-                await downloadImageAsBase64(lastFrameUrl);
-            instance.lastFrame = {
-                bytesBase64Encoded: base64,
-                mimeType: mimeType,
-            };
-            logOps("Last frame processed successfully, mimeType:", mimeType);
-        } catch (error) {
-            const errorMessage =
-                error instanceof Error ? error.message : String(error);
-            logError("Error processing last frame image:", errorMessage);
-            throw new HttpError(
-                `Failed to process last frame image: ${errorMessage}`,
-                400,
-            );
-        }
+        instance.lastFrame = await processImageForVeo(
+            lastFrameUrl,
+            "last frame",
+        );
     }
 
     // Build request body

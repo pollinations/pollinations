@@ -10,13 +10,7 @@ const usePollinationsModels = (type = "text", options = {}) => {
 
     useEffect(() => {
         const fetchModels = async () => {
-            if (!apiKey) {
-                setError("API key is required");
-                setIsLoading(false);
-                return;
-            }
-
-            if (!/^(pk_|sk_)/.test(apiKey)) {
+            if (apiKey && !/^(pk_|sk_)/.test(apiKey)) {
                 console.warn("API key format may be invalid");
             }
 
@@ -29,14 +23,19 @@ const usePollinationsModels = (type = "text", options = {}) => {
             setError(null);
 
             try {
-                const headers = {
-                    "Authorization": `Bearer ${apiKey}`,
-                };
+                const headers = {};
+                if (apiKey) {
+                    headers["Authorization"] = `Bearer ${apiKey}`;
+                }
 
-                const response = await fetch(
-                    "https://gen.pollinations.ai/text/models",
-                    { headers, signal: abortControllerRef.current.signal }
-                );
+                const endpoint =
+                    type === "image"
+                        ? "https://gen.pollinations.ai/image/models"
+                        : "https://gen.pollinations.ai/text/models";
+                const response = await fetch(endpoint, {
+                    headers,
+                    signal: abortControllerRef.current.signal,
+                });
 
                 if (!response.ok) {
                     throw new Error(`HTTP error! status: ${response.status}`);
@@ -44,11 +43,11 @@ const usePollinationsModels = (type = "text", options = {}) => {
 
                 const data = await response.json();
                 setModels(Array.isArray(data) ? data : []);
+                setIsLoading(false);
             } catch (err) {
                 if (err.name === "AbortError") return;
                 console.error("Error fetching models:", err);
                 setError(err.message);
-            } finally {
                 setIsLoading(false);
             }
         };

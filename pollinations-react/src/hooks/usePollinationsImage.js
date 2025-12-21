@@ -15,6 +15,7 @@ const usePollinationsImage = (prompt, options = {}) => {
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState(null);
     const abortControllerRef = useRef(null);
+    const blobUrlRef = useRef(null);
 
     const fetchImage = useCallback(async () => {
         if (!prompt) return;
@@ -28,7 +29,6 @@ const usePollinationsImage = (prompt, options = {}) => {
             setError("Seed must be a 32-bit unsigned integer (0-4294967295)");
             return;
         }
-
 
         if (!apiKey) {
             setError("API key is required");
@@ -63,20 +63,25 @@ const usePollinationsImage = (prompt, options = {}) => {
 
             const response = await fetch(
                 `https://gen.pollinations.ai/image/${encodeURIComponent(prompt)}?${params.toString()}`,
-                { headers, signal: abortControllerRef.current.signal }
+                { headers, signal: abortControllerRef.current.signal },
             );
 
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
 
-            const imageData = await response.text();
-            setData(imageData);
+            if (blobUrlRef.current) {
+                URL.revokeObjectURL(blobUrlRef.current);
+            }
+            const blob = await response.blob();
+            const imageUrl = URL.createObjectURL(blob);
+            blobUrlRef.current = imageUrl;
+            setData(imageUrl);
+            setIsLoading(false);
         } catch (err) {
             if (err.name === "AbortError") return;
             console.error("Error in usePollinationsImage:", err);
             setError(err.message);
-        } finally {
             setIsLoading(false);
         }
     }, [prompt, width, height, model, seed, nologo, enhance, apiKey]);
@@ -86,6 +91,9 @@ const usePollinationsImage = (prompt, options = {}) => {
         return () => {
             if (abortControllerRef.current) {
                 abortControllerRef.current.abort();
+            }
+            if (blobUrlRef.current) {
+                URL.revokeObjectURL(blobUrlRef.current);
             }
         };
     }, [fetchImage]);

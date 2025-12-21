@@ -22,7 +22,6 @@ const usePollinationsText = (prompt, options = {}) => {
             return;
         }
 
-
         if (abortControllerRef.current) {
             abortControllerRef.current.abort();
         }
@@ -40,7 +39,7 @@ const usePollinationsText = (prompt, options = {}) => {
                 : [{ role: "user", content: prompt }];
 
             const headers = { "Content-Type": "application/json" };
-            
+
             if (!apiKey) {
                 throw new Error("API key is required");
             }
@@ -51,12 +50,15 @@ const usePollinationsText = (prompt, options = {}) => {
 
             headers["Authorization"] = `Bearer ${apiKey}`;
 
-            const response = await fetch("https://gen.pollinations.ai/v1/chat/completions", {
-                method: "POST",
-                headers,
-                body: JSON.stringify({ messages, seed, model, jsonMode }),
-                signal: abortControllerRef.current.signal,
-            });
+            const response = await fetch(
+                "https://gen.pollinations.ai/v1/chat/completions",
+                {
+                    method: "POST",
+                    headers,
+                    body: JSON.stringify({ messages, seed, model, jsonMode }),
+                    signal: abortControllerRef.current.signal,
+                },
+            );
 
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
@@ -68,15 +70,17 @@ const usePollinationsText = (prompt, options = {}) => {
                 try {
                     result = JSON.parse(text);
                 } catch (parseErr) {
-                    throw new Error(`Failed to parse JSON response: ${parseErr.message}`);
+                    throw new Error(
+                        `Failed to parse JSON response: ${parseErr.message}`,
+                    );
                 }
             }
             setData(result);
+            setIsLoading(false);
         } catch (err) {
             if (err.name === "AbortError") return;
             console.error("Error in usePollinationsText:", err);
             setError(err.message);
-        } finally {
             setIsLoading(false);
         }
     }, [prompt, seed, model, systemPrompt, jsonMode, apiKey]);

@@ -18,15 +18,23 @@ import {
     usePollinationsText,
     usePollinationsImage,
     usePollinationsChat,
-    usePollinationsModels
+    usePollinationsModels,
 } from "@pollinations/react";
 
 function App() {
-    const { data: text, isLoading: textLoading } = usePollinationsText("Write a haiku about AI");
-    const imageUrl = usePollinationsImage("A beautiful sunset");
-    const { sendMessage, messages, isLoading: chatLoading } = usePollinationsChat(
-        [{ role: "system", content: "You are helpful" }]
+    const { data: text, isLoading: textLoading } = usePollinationsText(
+        "Write a haiku about AI"
     );
+    const {
+        data: imageUrl,
+        isLoading: imageLoading,
+        error: imageError,
+    } = usePollinationsImage("A beautiful sunset", { apiKey: "pk_..." });
+    const {
+        sendMessage,
+        messages,
+        isLoading: chatLoading,
+    } = usePollinationsChat([{ role: "system", content: "You are helpful" }]);
     const { models, isLoading: modelsLoading } = usePollinationsModels("text");
 
     return (
@@ -35,7 +43,11 @@ function App() {
             {textLoading ? <p>Loading...</p> : <p>{text}</p>}
 
             <h2>Image</h2>
-            <img src={imageUrl} alt="Generated" />
+            {imageLoading ? (
+                <p>Generating image...</p>
+            ) : (
+                <img src={imageUrl} alt="Generated" />
+            )}
 
             <h2>Chat</h2>
             <button onClick={() => sendMessage("Hello!")}>Send Hello</button>
@@ -48,7 +60,11 @@ function App() {
             </ul>
 
             <h2>Models</h2>
-            {modelsLoading ? <p>Loading models...</p> : <pre>{JSON.stringify(models, null, 2)}</pre>}
+            {modelsLoading ? (
+                <p>Loading models...</p>
+            ) : (
+                <pre>{JSON.stringify(models, null, 2)}</pre>
+            )}
         </div>
     );
 }
@@ -61,62 +77,52 @@ function App() {
 Generate text using AI models.
 
 ```tsx
-const { data, isLoading, error } = usePollinationsText(
-    prompt,
-    {
-        model: "openai", // default
-        seed: 42, // for reproducibility
-        systemPrompt: "...", // optional system prompt
-        jsonMode: false, // parse response as JSON
-        apiKey: "pk_...", // optional API key
-    }
-);
+const { data, isLoading, error } = usePollinationsText(prompt, {
+    model: "openai", // default
+    seed: 42, // for reproducibility
+    systemPrompt: "...", // optional system prompt
+    jsonMode: false, // parse response as JSON
+    apiKey: "pk_...", // optional API key
+});
 ```
 
-- `data`: string | object (if `jsonMode` is true)
-- `isLoading`: boolean
-- `error`: Error | null
+-   `data`: string | object (if `jsonMode` is true)
+-   `isLoading`: boolean
+-   `error`: Error | null
 
 ### `usePollinationsImage`
 
 Generate image URLs.
 
 ```tsx
-const imageUrl = usePollinationsImage(
-    prompt,
-    {
-        model: "flux", // default
-        width: 1024,
-        height: 1024,
-        seed: 42,
-        nologo: true,
-        enhance: false,
-        apiKey: "pk_...",
-    }
-);
+const { data, isLoading, error } = usePollinationsImage(prompt, {
+    model: "flux", // default
+    width: 1024,
+    height: 1024,
+    seed: 42,
+    nologo: true,
+    enhance: false,
+    apiKey: "pk_...", // required
+});
 ```
 
-- Returns a string (image URL).
+-   `data`: string (blob URL) or null
+-   `isLoading`: boolean
+-   `error`: Error | null
 
 ### `usePollinationsChat`
 
 Multi-turn chat conversations.
 
 ```tsx
-const {
-    sendMessage,
-    messages,
-    isLoading,
-    error,
-    reset
-} = usePollinationsChat(
+const { sendMessage, messages, isLoading, error, reset } = usePollinationsChat(
     [
-        { role: "system", content: "You are helpful" }
+        { role: "system", content: "You are helpful" },
         // ...other initial messages
     ],
     {
         model: "openai", // default
-        apiKey: "pk_..."
+        apiKey: "pk_...",
     }
 );
 
@@ -127,11 +133,11 @@ sendMessage("Hello!");
 reset();
 ```
 
-- `messages`: Array of `{ role: string, content: string }`
-- `sendMessage`: (message: string) => void
-- `isLoading`: boolean
-- `error`: Error | null
-- `reset`: () => void
+-   `messages`: Array of `{ role: string, content: string }`
+-   `sendMessage`: (message: string) => void
+-   `isLoading`: boolean
+-   `error`: Error | null
+-   `reset`: () => void
 
 ### `usePollinationsModels`
 
@@ -141,9 +147,9 @@ Fetch available models.
 const { models, isLoading, error } = usePollinationsModels("text"); // or "image"
 ```
 
-- `models`: Array of model objects
-- `isLoading`: boolean
-- `error`: Error | null
+-   `models`: Array of model objects
+-   `isLoading`: boolean
+-   `error`: Error | null
 
 ## Authentication
 
@@ -154,17 +160,14 @@ Get your API key at [enter.pollinations.ai](https://enter.pollinations.ai).
 | **Publishable** | `pk_...` | Client-side, rate limited        |
 | **Secret**      | `sk_...` | Server-side only, no rate limits |
 
-
-3. **New features**: `isLoading`, `error`, `reset()` on chat hook
-
 See [CHANGELOG.md](./CHANGELOG.md) for full migration guide.
 
 ## Links
 
-- [Pollinations.ai](https://pollinations.ai)
-- [API Docs](https://enter.pollinations.ai/api/docs)
-- [Discord](https://discord.gg/pollinations)
-- [GitHub](https://github.com/pollinations/pollinations)
+-   [Pollinations.ai](https://pollinations.ai)
+-   [API Docs](https://enter.pollinations.ai/api/docs)
+-   [Discord](https://discord.gg/pollinations)
+-   [GitHub](https://github.com/pollinations/pollinations)
 
 ## License
 

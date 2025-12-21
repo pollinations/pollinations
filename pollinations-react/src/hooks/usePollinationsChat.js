@@ -18,6 +18,10 @@ const usePollinationsChat = (initMessages = [], options = {}) => {
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState(null);
     const initialMessagesRef = useRef(initMessages);
+
+    useEffect(() => {
+        initialMessagesRef.current = initMessages;
+    }, [initMessages]);
     const abortControllerRef = useRef(null);
 
     const sendMessage = useCallback(
@@ -25,7 +29,9 @@ const usePollinationsChat = (initMessages = [], options = {}) => {
             if (!userMessage || userMessage.trim() === "") return;
 
             if (typeof seed !== "number" || seed < 0 || seed > 4294967295) {
-                setError("Seed must be a 32-bit unsigned integer (0-4294967295)");
+                setError(
+                    "Seed must be a 32-bit unsigned integer (0-4294967295)",
+                );
                 return;
             }
 
@@ -44,7 +50,7 @@ const usePollinationsChat = (initMessages = [], options = {}) => {
 
             try {
                 const headers = { "Content-Type": "application/json" };
-                
+
                 if (!apiKey) {
                     throw new Error("API key is required");
                 }
@@ -55,17 +61,20 @@ const usePollinationsChat = (initMessages = [], options = {}) => {
 
                 headers["Authorization"] = `Bearer ${apiKey}`;
 
-                const response = await fetch(`https://gen.pollinations.ai/v1/chat/completions`, {
-                    method: "POST",
-                    headers,
-                    body: JSON.stringify({
-                        messages: updatedMessages,
-                        jsonMode,
-                        seed,
-                        model,
-                    }),
-                    signal: abortControllerRef.current.signal,
-                });
+                const response = await fetch(
+                    `https://gen.pollinations.ai/v1/chat/completions`,
+                    {
+                        method: "POST",
+                        headers,
+                        body: JSON.stringify({
+                            messages: updatedMessages,
+                            jsonMode,
+                            seed,
+                            model,
+                        }),
+                        signal: abortControllerRef.current.signal,
+                    },
+                );
 
                 if (!response.ok) {
                     throw new Error(`HTTP error! status: ${response.status}`);
@@ -77,7 +86,9 @@ const usePollinationsChat = (initMessages = [], options = {}) => {
                     try {
                         assistantMessage = JSON.parse(data);
                     } catch (parseErr) {
-                        throw new Error(`Failed to parse JSON response: ${parseErr.message}`);
+                        throw new Error(
+                            `Failed to parse JSON response: ${parseErr.message}`,
+                        );
                     }
                 }
 
@@ -85,11 +96,11 @@ const usePollinationsChat = (initMessages = [], options = {}) => {
                     ...prevMessages,
                     { role: "assistant", content: assistantMessage },
                 ]);
+                setIsLoading(false);
             } catch (err) {
                 if (err.name === "AbortError") return;
                 console.error("Error fetching chat:", err);
                 setError(err.message);
-            } finally {
                 setIsLoading(false);
             }
         },

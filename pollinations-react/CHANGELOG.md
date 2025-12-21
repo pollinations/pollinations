@@ -19,7 +19,7 @@ All notable changes to `@pollinations/react` will be documented in this file.
 
 ### ⚠️ Breaking Changes
 
--   **New API Gateway**: All hooks now use `enter.pollinations.ai` instead of legacy endpoints
+-   **New API Gateway**: All hooks now use `gen.pollinations.ai` instead of legacy endpoints
 -   **New return shape**: `usePollinationsText` now returns `{ data, isLoading, error }` instead of just `string | null`
 -   **TypeScript rewrite**: Full TypeScript type definitions (separate `.d.ts` files)
 
@@ -60,3 +60,4 @@ const { data, isLoading, error } = usePollinationsText("prompt", {
 if (data) {
     /* use data */
 }
+```

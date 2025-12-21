@@ -15,7 +15,7 @@ declare module "@pollinations/react" {
         model?: string;
         systemPrompt?: string;
         jsonMode?: boolean;
-        apiKey?: string;
+        apiKey: string;
     }
 
     export interface ImageOptions {
@@ -25,14 +25,14 @@ declare module "@pollinations/react" {
         model?: string;
         nologo?: boolean;
         enhance?: boolean;
-        apiKey?: string;
+        apiKey: string;
     }
 
     export interface ChatOptions {
         seed?: number;
         model?: string;
         jsonMode?: boolean;
-        apiKey?: string;
+        apiKey: string;
     }
 
     export interface ModelsOptions {

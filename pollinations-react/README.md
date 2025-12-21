@@ -23,7 +23,8 @@ import {
 
 function App() {
     const { data: text, isLoading: textLoading } = usePollinationsText(
-        "Write a haiku about AI"
+        "Write a haiku about AI",
+        { apiKey: "pk_..." }
     );
     const {
         data: imageUrl,

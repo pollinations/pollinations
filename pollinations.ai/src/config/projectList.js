@@ -187,20 +187,64 @@ const organizeProjects = (sourceProjects) => {
     return result;
 };
 
-// Create a source object with all imported project arrays
-const allProjects = {
-    featured: featuredApps,
-    vibeCoding: vibeCodingProjects,
-    creative: creativeProjects,
-    games: gamesProjects,
-    hackAndBuild: hackAndBuildProjects,
-    chat: chatProjects,
-    socialBots: socialBotsProjects,
-    learn: learnProjects,
+/**
+ * Deduplicates projects across categories, keeping only one instance per project
+ * Uses project name as the unique identifier
+ *
+ * @param {Object} sourceProjects - Object containing projects by category
+ * @returns {Object} - Deduplicated projects object
+ */
+const deduplicateProjects = (sourceProjects) => {
+    const seenProjects = new Set();
+    const result = {};
+
+    // Initialize result structure
+    Object.keys(sourceProjects).forEach((category) => {
+        result[category] = [];
+    });
+
+    // Track which projects have been seen
+    Object.keys(sourceProjects).forEach((category) => {
+        sourceProjects[category].forEach((project) => {
+            const projectKey = project.name.toLowerCase().trim();
+
+            // Only add if not seen before and not hidden
+            if (!seenProjects.has(projectKey) && !project.hidden) {
+                seenProjects.add(projectKey);
+                result[category].push(project);
+            }
+        });
+    });
+
+    return result;
 };
 
+// Combine all projects with category tags, deduplicating by project name
+const allProjects = (() => {
+    const seen = new Set();
+    const combined = [
+        ...creativeProjects.map((p) => ({ ...p, category: "creative" })),
+        ...chatProjects.map((p) => ({ ...p, category: "chat" })),
+        ...gamesProjects.map((p) => ({ ...p, category: "games" })),
+        ...hackAndBuildProjects.map((p) => ({ ...p, category: "devtools" })),
+        ...learnProjects.map((p) => ({ ...p, category: "learn" })),
+        ...socialBotsProjects.map((p) => ({ ...p, category: "socialbots" })),
+        ...vibeCodingProjects.map((p) => ({ ...p, category: "vibes" })),
+    ];
+
+    return combined.filter((project) => {
+        const key = project.name.toLowerCase().trim();
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+    });
+})();
+
+// Deduplicate projects first
+const deduplicatedProjects = deduplicateProjects(allProjects);
+
 // Generate the organized projects
-const organizedProjects = organizeProjects(allProjects);
+const organizedProjects = organizeProjects(deduplicatedProjects);
 // Export the final projects object
 Object.keys(projects).forEach((category) => {
     projects[category] = organizedProjects[category];

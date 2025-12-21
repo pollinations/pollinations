@@ -31,13 +31,13 @@ export async function getModelStats(
             throw new Error(`Tinybird API error: ${response.status}`);
         }
         const data = (await response.json()) as {
-            data?: Array<{ model: string; avg_price: number }>;
+            data?: Array<{ model: string; avg_cost_usd: number }>;
         };
 
         // Transform to lookup map
         const stats: ModelStats = {};
         for (const row of data.data || []) {
-            stats[row.model] = { avg_price: row.avg_price };
+            stats[row.model] = { avg_price: row.avg_cost_usd };
         }
 
         // Cache result

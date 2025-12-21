@@ -255,7 +255,7 @@ export const track = (eventType: EventType) =>
                 if (pendingEventInserted) {
                     // Update the pending_estimate event with actual data
                     await updateEvent(db, c.var.log, eventId, {
-                        eventStatus: finalEvent.eventStatus,
+                        eventStatus: "pending", // Move to pending for normal processing
                         endTime: finalEvent.endTime,
                         responseTime: finalEvent.responseTime,
                         responseStatus: finalEvent.responseStatus,

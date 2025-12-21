@@ -207,22 +207,19 @@ export const event = sqliteTable(
         errorMessage: text("error_message"),
     },
     (table) => [
-        index("idx_event_processing_status").on(
-            table.eventProcessingId,
-            table.eventStatus,
-        ),
-        index("idx_event_created_at").on(table.createdAt),
-        index("idx_event_status_created_at").on(
+        // For rollbackProcessingEvents, confirmProcessingEvents: WHERE eventProcessingId = ?
+        index("idx_event_processing_id").on(table.eventProcessingId),
+
+        // For checkPendingBatchIsReady, preparePendingEvents: WHERE eventStatus = 'pending'
+        // For clearExpiredEvents: WHERE eventStatus = 'sent' AND createdAt < ?
+        // Status first for equality, then createdAt for range/ordering
+        index("idx_event_status_created").on(
             table.eventStatus,
             table.createdAt,
         ),
-        // Composite index for pending spend query (user balance check)
-        index("idx_event_user_billed_created").on(
-            table.userId,
-            table.isBilledUsage,
-            table.createdAt,
-        ),
-        // Index for getPendingSpend query (userId + createdAt range scan)
+
+        // For getPendingSpend: WHERE userId = ? AND createdAt >= ?
+        // Covers the 10-minute window query for pending spend calculation
         index("idx_event_user_created").on(table.userId, table.createdAt),
     ],
 );

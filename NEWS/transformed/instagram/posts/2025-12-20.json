@@ -1,0 +1,57 @@
+{
+  "date": "2025-12-20",
+  "generated_at": "2025-12-20T16:09:33.907587+00:00",
+  "post_type": "carousel",
+  "content_type": "retro_infographic",
+  "linked_images": false,
+  "strategy_reasoning": "Translating technical updates (markdown docs, schema deduplication, deprecation) into a 'cozy RPG' metaphor makes them accessible and warm. Using the 'inventory cleanup' and 'new quest' tropes fits the retro gaming aesthetic perfectly while maintaining the Pollinations brand of being organic and friendly.",
+  "story_arc": "",
+  "images": [
+    {
+      "url": "https://gen.pollinations.ai/image/Cozy%20pixel%20art%20title%20screen.%20A%20tiny%208-bit%20bee%20character%20reading%20a%20large%20glowing%20scroll%20in%20a%20lush%20pixelated%20garden.%20Soft%20lime%20green%20%28%23ecf874%29%20and%20pastel%20lavender%20gradient%20background.%20Chunky%20retro%20sprites%2C%20warm%20sunlight%20beams.%20Text%20in%20pixel%20font%3A%20%27DOCS%20%26%20CLEANUP%27.%20Lo-fi%20aesthetic%20like%20Stardew%20Valley.%20Wholesome%2C%20inviting%2C%20emotionally%20warm.?model=nanobanana&width=2048&height=2048&quality=hd&nologo=true&private=true&nofeed=true&seed=254056857",
+      "prompt": "Cozy pixel art title screen. A tiny 8-bit bee character reading a large glowing scroll in a lush pixelated garden. Soft lime green (#ecf874) and pastel lavender gradient background. Chunky retro sprites, warm sunlight beams. Text in pixel font: 'DOCS & CLEANUP'. Lo-fi aesthetic like Stardew Valley. Wholesome, inviting, emotionally warm.",
+      "description": "Cover image introducing the update theme: documentation and cleanup."
+    },
+    {
+      "url": "https://gen.pollinations.ai/image/Retro%20RPG%20inventory%20screen%20in%20cozy%20pixel%20art%20style.%20Items%20are%20being%20organized%20neatly.%20A%20pixelated%20scroll%20labeled%20%27MD%27%20%28Markdown%29%20and%20a%20neat%20stack%20of%20books%20representing%20%27Schemas%27.%20Background%20is%20soft%20pastel%20mint%20with%20lime%20green%20%28%23ecf874%29%20UI%20borders.%20A%20tiny%208-bit%20broom%20icon%20sweeping%20dust.%20Warm%20glow%2C%20nostalgic%20gaming%20vibes%2C%20clean%20and%20satisfying.?model=nanobanana&width=2048&height=2048&quality=hd&nologo=true&private=true&nofeed=true&seed=1913642333",
+      "prompt": "Retro RPG inventory screen in cozy pixel art style. Items are being organized neatly. A pixelated scroll labeled 'MD' (Markdown) and a neat stack of books representing 'Schemas'. Background is soft pastel mint with lime green (#ecf874) UI borders. A tiny 8-bit broom icon sweeping dust. Warm glow, nostalgic gaming vibes, clean and satisfying.",
+      "description": "Visualizing the API docs generation and schema deduplication as an inventory organization task."
+    },
+    {
+      "url": "https://gen.pollinations.ai/image/Cozy%20pixel%20art%20scene%20of%20a%20wooden%20easel%20with%20a%20colorful%20painting%20standing%20in%20a%20pixel%20flower%20field.%20A%20tiny%20pixel%20artist%20robot%20holding%20a%20brush.%20Soft%20lime%20green%20grass%2C%20pastel%20peach%20sky.%20Represents%20the%20new%20app%20%27Imgoo%27.%20Warm%20sunlight%2C%20chunky%20pixels%2C%20serene%20atmosphere%20like%20A%20Short%20Hike.%20Text%20in%20pixel%20font%3A%20%27NEW%20ART%20TOOL%27.%20Beautiful%20and%20artistic.?model=nanobanana&width=2048&height=2048&quality=hd&nologo=true&private=true&nofeed=true&seed=1945430085",
+      "prompt": "Cozy pixel art scene of a wooden easel with a colorful painting standing in a pixel flower field. A tiny pixel artist robot holding a brush. Soft lime green grass, pastel peach sky. Represents the new app 'Imgoo'. Warm sunlight, chunky pixels, serene atmosphere like A Short Hike. Text in pixel font: 'NEW ART TOOL'. Beautiful and artistic.",
+      "description": "Announcing the new Imgoo app with a creative outdoor painting scene."
+    },
+    {
+      "url": "https://gen.pollinations.ai/image/Pixel%20art%20landscape%20with%20a%20wooden%20signpost%20at%20a%20fork%20in%20the%20road.%20The%20sign%20points%20to%20a%20bright%2C%20sunny%20path%20labeled%20%27V2%27.%20The%20old%20path%20is%20peacefully%20overgrown%20with%20pixel%20vines%20and%20flowers.%20Soft%20pastel%20gradient%20sky%20%28sunset%20colors%29.%20Lime%20green%20fireflies.%20Cozy%2C%20atmospheric%2C%208-bit%20aesthetic.%20Text%20in%20pixel%20font%3A%20%27MOVING%20FWD%27.%20Nostalgic%20and%20peaceful.?model=nanobanana&width=2048&height=2048&quality=hd&nologo=true&private=true&nofeed=true&seed=770056038",
+      "prompt": "Pixel art landscape with a wooden signpost at a fork in the road. The sign points to a bright, sunny path labeled 'V2'. The old path is peacefully overgrown with pixel vines and flowers. Soft pastel gradient sky (sunset colors). Lime green fireflies. Cozy, atmospheric, 8-bit aesthetic. Text in pixel font: 'MOVING FWD'. Nostalgic and peaceful.",
+      "description": "Visualizing the legacy API deprecation as a peaceful transition in a game world."
+    }
+  ],
+  "caption": "Cozy vibes only in the repo this week 🌸✨. We did some spring cleaning in the code garden!\n\n📜 **Docs for Robots:** Added Markdown generation for API docs so LLMs can read them better. Your AI agents will thank us.\n🎒 **Inventory Cleanup:** Deduplicated OpenAPI schemas to make the package lighter (13.5% smaller!).\n🎨 **New Toy:** Welcoming 'Imgoo' to the creative showcase!\n🚧 **Pathfinding:** Added notices for legacy API deprecation. The new path is brighter!\n\nBuilding with heart (and clean code). 💚\n\n#pollinations #opensource #pixelart #indiedev #retrogaming #cozycode #aiart #8bit",
+  "hashtags": [
+    "#pollinations",
+    "#opensource",
+    "#pixelart",
+    "#retrogaming",
+    "#indiedev",
+    "#cozyvibes",
+    "#aiart",
+    "#8bit"
+  ],
+  "alt_text": "A series of cozy 8-bit pixel art images. 1. A bee reading a scroll in a garden. 2. A retro RPG inventory screen being organized. 3. An easel in a flower field. 4. A signpost pointing to a new path while the old one is overgrown with vines. All feature soft lime green and pastel colors.",
+  "pr_references": [
+    "#6241",
+    "#6236",
+    "#6239",
+    "#6237",
+    "#6235",
+    "#6202",
+    "#6201",
+    "#6230",
+    "#6223",
+    "#6210",
+    "#6213",
+    "#6211"
+  ]
+}

@@ -5,9 +5,9 @@
 
 export const THEME_MODELS = {
     // Text generation models (for design tokens, copy, backgrounds)
-    designer: "gemini-large", // Theme colors, fonts, spacing
-    copywriter: "gemini-large", // Page copy rewriting
-    animator: "gemini-large", // WebGL background HTML generation
+    designer: "gemini", // Theme colors, fonts, spacing
+    copywriter: "gemini", // Page copy rewriting
+    animator: "gemini", // WebGL background HTML generation
 
     // Image generation models
     illustrator: "nanobanana", // Supporter logo images

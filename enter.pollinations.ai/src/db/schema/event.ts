@@ -204,6 +204,10 @@ export const event = sqliteTable(
             table.eventStatus,
         ),
         index("idx_event_created_at").on(table.createdAt),
+        index("idx_event_status_created_at").on(
+            table.eventStatus,
+            table.createdAt,
+        ),
         // Composite index for pending spend query (user balance check)
         index("idx_event_user_billed_created").on(
             table.userId,

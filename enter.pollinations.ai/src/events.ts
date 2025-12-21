@@ -1,16 +1,5 @@
 import { Polar } from "@polar-sh/sdk";
-import {
-    eq,
-    sql,
-    and,
-    gte,
-    or,
-    lt,
-    count,
-    min,
-    max,
-    isNull,
-} from "drizzle-orm";
+import { eq, sql, and, gte, or, lt } from "drizzle-orm";
 import type { DrizzleD1Database } from "drizzle-orm/d1";
 import { event } from "./db/schema/event.ts";
 import {
@@ -28,9 +17,12 @@ import { z } from "zod";
 import { Logger } from "@logtape/logtape";
 
 const BUFFER_BATCH_SIZE = 1;
+const MAX_DELIVERY_ATTEMPTS = 5;
 const DEFAULT_MIN_BATCH_SIZE = 100;
 const DEFAULT_MAX_BATCH_SIZE = 500;
-const MAX_DELIVERY_ATTEMPTS = 5;
+const DEFAULT_BATCH_DELIVERY_DELAY = 100;
+const DEFAULT_MIN_RETRY_DELAY = 100;
+const DEFAULT_MAX_RETRY_DELAY = 10000;
 
 const tbIngestResponseSchema = z.object({
     successful_rows: z.number(),
@@ -62,19 +54,28 @@ export async function processEvents(
         tinybirdIngestToken: string;
         minBatchSize?: number;
         maxBatchSize?: number;
+        batchDeliveryDelay?: number;
         minRetryDelay?: number;
         maxRetryDelay?: number;
     },
 ) {
+    const {
+        minBatchSize = DEFAULT_MIN_BATCH_SIZE,
+        maxBatchSize = DEFAULT_MAX_BATCH_SIZE,
+        batchDeliveryDelay = DEFAULT_BATCH_DELIVERY_DELAY,
+        minRetryDelay = DEFAULT_MIN_RETRY_DELAY,
+        maxRetryDelay = DEFAULT_MAX_RETRY_DELAY,
+    } = config;
+
     for await (const { processingId, events } of pendingEventBatches(
         db,
-        config.minBatchSize ?? DEFAULT_MIN_BATCH_SIZE,
-        config.maxBatchSize ?? DEFAULT_MAX_BATCH_SIZE,
+        minBatchSize,
+        maxBatchSize,
     )) {
+        if (events.length === 0) return;
         log.trace("Processing event batch with {count} events", {
             count: events.length,
         });
-        if (events.length === 0) return;
         const polarDelivery = await sendPolarEvents(
             events,
             config.polarAccessToken,
@@ -95,6 +96,15 @@ export async function processEvents(
                 processingId,
             });
             await confirmProcessingEvents(processingId, db);
+            if (batchDeliveryDelay > 0) {
+                log.trace(
+                    "Waiting {batchDeliveryDelay}ms before processing next batch",
+                    { batchDeliveryDelay },
+                );
+                await new Promise((resolve) =>
+                    setTimeout(resolve, batchDeliveryDelay),
+                );
+            }
         } else {
             log.trace("Event processing failed, rolling back: {processingId}", {
                 processingId,
@@ -103,15 +113,15 @@ export async function processEvents(
                 polarDelivery,
                 tinybirdDelivery,
             });
-            if (config.minRetryDelay) {
+            if (maxRetryDelay > 0) {
                 const retryDelay = exponentialBackoffDelay(
                     Math.max(
                         polarDelivery.maxDeliveryAttempts,
                         tinybirdDelivery.maxDeliveryAttempts,
                     ),
                     {
-                        minDelay: config.minRetryDelay,
-                        maxDelay: config.maxRetryDelay,
+                        minDelay: minRetryDelay,
+                        maxDelay: maxRetryDelay,
                         maxAttempts: MAX_DELIVERY_ATTEMPTS,
                     },
                 );
@@ -128,45 +138,62 @@ export async function processEvents(
     await clearExpiredEvents(db);
 }
 
-type PendingEventsStats = {
-    count: number;
-    oldestCreatedAt: Date | null;
-};
-
-async function checkPendingEvents(
+async function checkPendingBatchIsReady(
     db: DrizzleD1Database,
-): Promise<PendingEventsStats> {
-    const result = await db
-        .select({ count: count(), oldestCreatedAt: min(event.createdAt) })
+    minBatchSize: number,
+    maxAgeSeconds: number,
+): Promise<boolean> {
+    const batchIsReady = await db
+        .select({ id: event.id })
         .from(event)
-        .where(eq(event.eventStatus, "pending"));
-    const stats: PendingEventsStats = result[0];
-    if (!stats) {
-        throw new Error("Failed to count pending events");
-    }
-    return stats;
+        .where(
+            and(
+                eq(event.eventStatus, "pending"),
+                or(
+                    // Checks for events older than maxAgeSeconds
+                    lt(
+                        event.createdAt,
+                        new Date(Date.now() - maxAgeSeconds * 1000),
+                    ),
+                    // Low level subquery to check if there are at least
+                    // minBatchSize pending events without counting
+                    sql`
+                        ${event.id} IN (SELECT id FROM ${event} 
+                        WHERE event_status = 'pending' 
+                        ORDER BY created_at ASC 
+                        LIMIT 1 OFFSET ${minBatchSize - 1})
+                    `,
+                ),
+            ),
+        )
+        .limit(1);
+
+    return !!batchIsReady[0];
 }
+
+type EventBatch = {
+    processingId: string;
+    events: SelectGenerationEvent[];
+};
 
 async function preparePendingEvents(
     db: DrizzleD1Database,
     minBatchSize: number,
     maxBatchSize: number,
-): Promise<{ processingId: string; events: SelectGenerationEvent[] }> {
-    const processingId = generateRandomId();
-
+): Promise<EventBatch | null> {
     // Only create a processing batch if there are at least minBatchSize
     // pending events, or if events are older than 30 seconds
-    const pendingStats = await checkPendingEvents(db);
-    const secondsSinceOldestPendingEvent = Math.floor(
-        (Date.now() - (pendingStats.oldestCreatedAt?.getTime() || 0)) / 1000,
+    const maxAgeSeconds = 30;
+    const batchIsReady = await checkPendingBatchIsReady(
+        db,
+        minBatchSize,
+        maxAgeSeconds,
     );
-    if (
-        pendingStats.count < minBatchSize &&
-        secondsSinceOldestPendingEvent < 30
-    ) {
-        return { processingId, events: [] };
+    if (!batchIsReady) {
+        return null;
     }
 
+    const processingId = generateRandomId();
     const [_, events] = await db.batch([
         // Update events to processing status
         db
@@ -192,15 +219,15 @@ async function* pendingEventBatches(
     db: DrizzleD1Database,
     minBatchSize: number,
     maxBatchSize: number,
-) {
+): AsyncGenerator<EventBatch> {
     while (true) {
-        const { processingId, events } = await preparePendingEvents(
+        const batch = await preparePendingEvents(
             db,
             minBatchSize,
             maxBatchSize,
         );
-        if (events.length === 0) break;
-        yield { processingId, events };
+        if (!batch) break;
+        yield batch;
     }
 }
 

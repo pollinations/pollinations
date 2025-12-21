@@ -15,6 +15,19 @@ def numpy_to_pil(images):
     return [Image.fromarray(image) for image in images]
 
 
+# Per-concept threshold adjustments (negative = more lenient, positive = stricter)
+# Based on observed false positives from logs
+CONCEPT_ADJUSTMENTS = {
+    1: -0.01,   # Concept 1 triggered on "thorn branch" with score 0.005
+    2: -0.01,   # Concept 2 triggered on "bikini" prompts with score 0.003
+    4: -0.01,   # Concept 4 triggered on "woman from behind" with score 0.009
+    8: -0.01,   # Concept 8 triggered on "bikini" prompts with score 0.007
+    10: -0.02,  # Concept 10 triggered on "voluptuous silhouette" clipart with score 0.014
+    11: -0.02,  # Concept 11 triggered on same clipart with score 0.010
+    16: -0.01,  # Concept 16 triggered on "busty/bikini" prompts with score 0.008
+}
+
+
 class StableDiffusionSafetyChecker(BaseSafetyChecker, ABC):
     def __init__(self, config: CLIPConfig):
         super().__init__(config)
@@ -44,7 +57,9 @@ class StableDiffusionSafetyChecker(BaseSafetyChecker, ABC):
             for concept_idx in range(len(cos_dist[0])):
                 concept_cos = cos_dist[i][concept_idx]
                 concept_threshold = self.concept_embeds_weights[concept_idx].item()
-                result_img["concept_scores"][concept_idx] = round(concept_cos - concept_threshold + adjustment, 3)
+                # Apply per-concept adjustment if defined
+                per_concept_adj = CONCEPT_ADJUSTMENTS.get(concept_idx, 0)
+                result_img["concept_scores"][concept_idx] = round(concept_cos - concept_threshold + adjustment + per_concept_adj, 3)
                 if result_img["concept_scores"][concept_idx] > 0:
                     result_img["bad_concepts"].append(concept_idx)
 

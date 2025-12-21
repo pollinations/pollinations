@@ -2,17 +2,18 @@
   <img src="shared/assets/logo-text.svg" alt="pollinations.ai" width="100%"/>
 </div>
 
-## 📢 Hacktoberfest 2025 — Recap
+## 🚀 New Unified API — Now Live
 
-<img width="1024" height="553" alt="Hacktoberfest 2025 Banner" src="https://github.com/user-attachments/assets/d6dd03c3-9298-40d3-9be2-5d6730951d9f" />
+We've launched **https://gen.pollinations.ai** — a single endpoint for all your AI generation needs. Text, images, audio, video — all in one place.
 
-Hacktoberfest 2025 has concluded. Thanks to everyone who contributed — please continue following our [Code of Conduct](./CODE_OF_CONDUCT.md) and [Contributing Guidelines](./CONTRIBUTING.md).
+### What's new
 
-### Event highlights
+- **Unified endpoint** — no more juggling between image.pollinations.ai and text.pollinations.ai
+- **Pollen credits** — simple pay-as-you-go system ($1 ≈ 1 Pollen)
+- **All models, one place** — Flux, GPT-5, Claude, Gemini, Seedream, and more
+- **API keys** — publishable keys for frontend, secret keys for backend
 
-We opened 67 issues and closed 38, created 25 PRs with 22 merged (30 total contributions), added 8 new projects, gained 131 stars (Oct 10–31), partnered with GDG JIS University (Kolkata, India), and hosted a virtual Hacktoberfest meetup.
-
-> Thank you to contributors and project maintainers.
+> Get started at [enter.pollinations.ai](https://enter.pollinations.ai) and check out the [API docs](https://enter.pollinations.ai/api/docs)
 
 ## 🆕 Latest News
 
@@ -29,11 +30,11 @@ We opened 67 issues and closed 38, created 25 PRs with 22 merged (30 total contr
 
 ---
 
-[![Pollinations.AI Logo](https://pollinations.ai/p/3D_wireframe_blueprint_of_the_conceptual_isometric_world_of_Pollinations_AI_a_surreal_hyperrealistic_digital_garden_Elements_emerge_partially_from_all_sides?width=3000&height=1000&seed=-1)](https://pollinations.ai/p/3D_wireframe_blueprint_of_the_conceptual_isometric_world_of_Pollinations_AI_a_surreal_hyperrealistic_digital_garden_Elements_emerge_partially_from_all_sides?width=3000&height=1000&seed=-1)
+[![pollinations.ai Logo](https://pollinations.ai/p/3D_wireframe_blueprint_of_the_conceptual_isometric_world_of_Pollinations_AI_a_surreal_hyperrealistic_digital_garden_Elements_emerge_partially_from_all_sides?width=3000&height=1000&seed=-1)](https://pollinations.ai/p/3D_wireframe_blueprint_of_the_conceptual_isometric_world_of_Pollinations_AI_a_surreal_hyperrealistic_digital_garden_Elements_emerge_partially_from_all_sides?width=3000&height=1000&seed=-1)
 
 ## 🌟 Introduction
 
-[Pollinations.AI](https://pollinations.ai) is an open-source gen AI platform based in Berlin, powering 500+ community projects with accessible text and image generation APIs. We build in the open and keep AI accessible to everyone—thanks to our amazing supporters.
+[pollinations.ai](https://pollinations.ai) is an open-source gen AI platform based in Berlin, powering 500+ community projects with accessible text and image generation APIs. We build in the open and keep AI accessible to everyone—thanks to our amazing supporters.
 
 ## 🚀 Key Features
 
@@ -52,6 +53,14 @@ We opened 67 issues and closed 38, created 25 PRs with 22 merged (30 total contr
    <img alt="Star History Chart" src="https://api.star-history.com/svg?repos=pollinations/pollinations&type=Date" width="600" />
  </picture>
 </a>
+
+> **⚠️ Legacy Documentation Notice**
+>
+> This documentation refers to our legacy endpoints (`image.pollinations.ai`, `text.pollinations.ai`). We recommend using our new unified API at **https://gen.pollinations.ai** with the **https://enter.pollinations.ai** service.
+>
+> 📚 **[View Latest API Documentation](https://enter.pollinations.ai/api/docs)**
+>
+> The legacy endpoints will be deprecated in the future.
 
 ## 🚀 Getting Started
 
@@ -105,7 +114,7 @@ AI assistants can:
 -   Generate images from text descriptions
 -   Create text-to-speech audio with various voice options
 -   Play audio responses through the system speakers
--   Access all Pollinations.AI models and services
+-   Access all pollinations.ai models and services
 -   List available models, voices, and capabilities
 
 For more advanced usage, check out our [API documentation](APIDOCS.md).
@@ -229,7 +238,7 @@ graph LR
     CFM --> CFL[Llama & Deepseek Models]
 ```
 
-## Projects Using Pollinations.AI
+## Projects Using pollinations.ai
 
 > **⭐ GitHub Star Counts:** Projects with GitHub repositories include star counts to help you gauge their popularity.
 >
@@ -276,7 +285,7 @@ Pollinations.AI is used in various projects, including:
 | [Pollin-Coder](https://pollin-coder.megavault.in) | A free AI-powered website builder that lets anyone create a clean site just by... | @r3ap3redit |
 | [JustBuildThings](https://justbuildthings.com) | A natural language programming interface that lets users create web... | @buildmaster |
 | [Websim](https://websim.ai/c/bXsmNE96e3op5rtUS) | A web simulation tool that integrates Pollinations.ai. | @voodoohop |
-| 🆕 [Aqua Application Programming Interface](https://aquadevs.com/) | This is an learning project for me to learn how to track users, backend check,... | kiskreforev |
+| [Aqua Application Programming Interface](https://aquadevs.com/) | This is an learning project for me to learn how to track users, backend check,... | kiskreforev |
 | 🆕 [🔍 Polli YT Search](https://replit.com/@nojeheg897/VideoFind5) ([⭐ 0](https://github.com/Fanimazahuia/VideoFind5)) | YouTube search engine that goes beyond titles—uses Pollinations to analyze... | @Alfa |
 | 🆕 [✨ Pollinations.AI Codex](https://marketplace.visualstudio.com/items?itemName=pollinations-ai-codex.pollinations-like-ai) | VS Code extension with AI-powered coding assistant. Features intelligent chat... | @Murdered_again |
 
@@ -381,15 +390,15 @@ Pollinations.AI is used in various projects, including:
 | [PollinVerse 🚀](https://pollinverse.netlify.app) ([⭐ 0](No response)) | A rapid AI development and prototyping platform powered by Pollinations.AI.... | VearyTry |
 | [Pollinations.ai Model Comparison](https://endemicmedia.github.io/FLARE/llm-comparison-tool/) ([⭐ 0](https://github.com/EndemicMedia)) | An interactive tool designed to compare outputs from various large language... | [Link](https://github.com/dseeker) |
 | 🇨🇳 [IMyself AI 🇨🇳](https://openai.lmyself.top/) | 我们提供高质量的AI生成服务，包括图像生成、文本生成、音频生成和语音转文本服务， 让您轻松创建各种创意内容。 (We provide high-quality... | Shadownc |
-| 🆕 🇧🇷 [Thelas.ia](https://thelasia.netlify.app/) | Thelas.ia is a Social Media Content Creation Tool that generates corporative,... | studiostein |
-| 🆕 [SAGE](https://starlightguardians.com) ([⭐ 0](sebastianpw/sage)) | SAGE (Storyboard Animation Generation Environment) is an open-source multimedia... | sebastianpw |
-| 🆕 🇧🇷 [ViralFlow AI](https://fabioarieira.com/viralflow) ([⭐ 0](https://github.com/FabioArieiraBaia/ViralFlow)) | An automated generator of viral videos that uses the pollinations.ai API to... | FabioArieiraBaia |
-| 🆕 🤖 [Gemini ai telegram-bot](https://t.me/index_bot) | Gemini ai telegram-bot: a Telegram bot offering chat (text, voice, images)... | mosavy |
-| 🆕 [LineSketch AI](https://linesketch-muse.lovable.app/) | LineSketch AI is a minimalist web app that turns ideas into clean... | ArslanDevelop |
-| 🆕 [Ecoverse AI](https://ecoverse.cc) ([⭐ 0](https://github.com/achyuth0/Ecoverse-doc)) | Ecoverse is an AI-powered waste-recognition platform that helps users instantly... | achyuth0 |
-| 🆕 🇧🇷 [Cinepoca](https://cinepoca.com.br) | Cinepoca serves as a fully AI-driven hub for movie enthusiasts. Our project... | victorchiq |
-| 🆕 [Flowgen](https://flowgen.puter.site/) | A high-performance, web-based AI image generation studio built on the Puter.js... | alinaaa20708-ops |
-| 🆕 [Flux AI 🇹🇼](https://koy.xx.kg/) ([⭐ 0](https://github.com/kinai9661/Flux-AI-Pro)) | Cloudflare Workers' intelligent adaptive AI image generation platform | kinai9661 |
+| 🇧🇷 [Thelas.ia](https://thelasia.netlify.app/) | Thelas.ia is a Social Media Content Creation Tool that generates corporative,... | studiostein |
+| [SAGE](https://starlightguardians.com) ([⭐ 0](sebastianpw/sage)) | SAGE (Storyboard Animation Generation Environment) is an open-source multimedia... | sebastianpw |
+| 🇧🇷 [ViralFlow AI](https://fabioarieira.com/viralflow) ([⭐ 0](https://github.com/FabioArieiraBaia/ViralFlow)) | An automated generator of viral videos that uses the pollinations.ai API to... | FabioArieiraBaia |
+| 🤖 [Gemini ai telegram-bot](https://t.me/index_bot) | Gemini ai telegram-bot: a Telegram bot offering chat (text, voice, images)... | mosavy |
+| [LineSketch AI](https://linesketch-muse.lovable.app/) | LineSketch AI is a minimalist web app that turns ideas into clean... | ArslanDevelop |
+| [Ecoverse AI](https://ecoverse.cc) ([⭐ 0](https://github.com/achyuth0/Ecoverse-doc)) | Ecoverse is an AI-powered waste-recognition platform that helps users instantly... | achyuth0 |
+| 🇧🇷 [Cinepoca](https://cinepoca.com.br) | Cinepoca serves as a fully AI-driven hub for movie enthusiasts. Our project... | victorchiq |
+| [Flowgen](https://flowgen.puter.site/) | A high-performance, web-based AI image generation studio built on the Puter.js... | alinaaa20708-ops |
+| [Flux AI 🇹🇼](https://koy.xx.kg/) ([⭐ 0](https://github.com/kinai9661/Flux-AI-Pro)) | Cloudflare Workers' intelligent adaptive AI image generation platform | kinai9661 |
 | 🆕 🤖 [Robatika — AI Chat Platform](https://app.robatika.com) | Robatika is a rapidly growing AI chat platform that provides users with... | Robatika |
 | 🆕 [🛠️ NextGenTools](https://image-gen-adobe.nextgentools.online/) | AI-powered workflow for stock photography. Generate images, vectorize them, and... | @roni123332 |
 | 🆕 [📚 AI Story Illustrator](https://soft-cucurucho-6758e7.netlify.app/) | Interactive storybook creator where you write scenes and get AI-generated... | @KAmaL-senpai |
@@ -405,6 +414,8 @@ Pollinations.AI is used in various projects, including:
 | 🆕 [🎄 Northpolelibrary](https://northpolelibrary.eu) | Create personalized Christmas stories for children in minutes. Enter a child's... | @bzddbz |
 | 🆕 🇧🇷 [📚 IA-Books: AI Ebook Generator](https://iabooks.com.br) ([⭐ 0](https://github.com/FabioArieiraBaia/IA-Books)) | Professional ebook creation platform with AI. Auto-generates book covers and... | @FabioArieiraBaia |
 | 🆕 [⛽ TuffMeter](https://tuffmeter.netlify.app/) ([⭐ 0](https://github.com/VearyTry)) | Humorous AI tool that analyzes uploaded videos to rate your aura. Based on... | @VearyTry |
+| 🆕 🇧🇷 [🎨 Nosde Space](https://www.nosde.space/) | All-in-one AI platform for creating images, videos, text, and audio. Features... | @unknow_junior |
+| 🆕 [🎨 Imgoo](https://imgoo.netlify.app/) | AI image generator with creative controls including aspect ratio, guidance... | @redythacker-cyber |
 
 ### Games 🎲
 
@@ -434,7 +445,7 @@ Pollinations.AI is used in various projects, including:
 | [roastmyselfie.app](https://roastmyselfie.app) | AI Personality Analyzer - Get roasted and psychoanalyzed.. just from one... | @andres_11 |
 | [Watch TV with neko (Roblox)](https://www.roblox.com/games/15087497266/UPD-Watch-TV-with-neko-AI) | Roblox game where you can talk with AI catgirls 🐾 or just have fun, talking... | [Link](https://www.roblox.com/users/3857849039/profile/) |
 | Infinite Tales ([⭐ 29](https://github.com/JayJayBinks/infinite-tales-rpg)) | Interactive storytelling platform powered by AI that creates endless narrative... | @infinite_tales |
-| 🆕 Godville Heroic Moment ([⭐ 0](https://github.com/migueland94/Godville-Heroic-Moment)) | Firefox-only browser extension that adds a Heroic Moment block to your Godville... | migueland94 |
+| Godville Heroic Moment ([⭐ 0](https://github.com/migueland94/Godville-Heroic-Moment)) | Firefox-only browser extension that adds a Heroic Moment block to your Godville... | migueland94 |
 | 🆕 [🎮 Nikke-DB Story/Roleplaying Generator](https://nikke-db.pages.dev/) ([⭐ 0](https://github.com/Nikke-db/nikke-db-vue)) | Interactive story and roleplay generator for Goddess of Victory: NIKKE.... | @rhystic1 |
 | 🆕 [🎮 Nikke-DB Story/Roleplaying Generator](https://nikke-db.pages.dev/) ([⭐ 0](https://github.com/Nikke-db/nikke-db-vue)) | Interactive story and roleplay generator for Goddess of Victory: NIKKE.... | @rhystic1 |
 | 🆕 🎮 ii's Stupid Menu ([⭐ 0](https://github.com/iiDk-the-actual/iis.Stupid.Menu)) | A mod menu for Gorilla Tag featuring 1600+ mods and an AI Assistant powered by... | @iiDk-the-actual |
@@ -550,17 +561,19 @@ Pollinations.AI is used in various projects, including:
 | [Pollinations Chat](https://websim.ai/@AdrianoDev1/pollinations-ai-assistant/4) | Pollinations' integrated AI for text and images, totally free and unlimited. | @adrianoprogramer |
 | [LiteAI](https://liteai.chat/) | A free, fast, and anonymous AI chat and image generation platform with no login... | LiteAI Team |
 | 🤖 [UR Imagine & Chat AI](https://urimagine.netlify.app/) | A versatile AI platform offering both image generation and chat... | @ur_imagine |
-| 🆕 [MindFlow](https://note.aegis-plus.my.id/) ([⭐ 0](https://github.com/Aegis-plus/Mindflow)) | # MindFlow\n\n> **Capture thoughts, find clarity.** An AI-powered second brain... | Aegis-plus |
-| 🆕 [Synapse](https://chat.aegis-plus.my.id) ([⭐ 0](https://github.com/Aegis-plus/Synapse)) | An AI-powered chat application built with Vite and React, enabling multi-model... | Aegis-plus |
-| 🆕 [HelpChatGPT](https://helpchatgpt.ru) | HelpChatGPT is a free web platform that provides access to ChatGPT-like models... | viaea |
-| 🆕 [Debootai](https://deboott.puter.site/) | Next-gen AI chat playground with file/image uploads, real-time web search,... | Chess-Base |
-| 🆕 [SimplifyMind AI (ELI5)](https://simplify-eloquent-ai.lovable.app/) | A modern one-page web app that turns any complex question into a simple,... | CompaDeveloper |
+| [MindFlow](https://note.aegis-plus.my.id/) ([⭐ 0](https://github.com/Aegis-plus/Mindflow)) | # MindFlow\n\n> **Capture thoughts, find clarity.** An AI-powered second brain... | Aegis-plus |
+| [Synapse](https://chat.aegis-plus.my.id) ([⭐ 0](https://github.com/Aegis-plus/Synapse)) | An AI-powered chat application built with Vite and React, enabling multi-model... | Aegis-plus |
+| [HelpChatGPT](https://helpchatgpt.ru) | HelpChatGPT is a free web platform that provides access to ChatGPT-like models... | viaea |
+| [Debootai](https://deboott.puter.site/) | Next-gen AI chat playground with file/image uploads, real-time web search,... | Chess-Base |
+| [SimplifyMind AI (ELI5)](https://simplify-eloquent-ai.lovable.app/) | A modern one-page web app that turns any complex question into a simple,... | CompaDeveloper |
 | 🆕 [🍎 AI Food Guide and Track Calories](https://nutri.selfhost.io.vn/) ([⭐ 0](https://github.com/newnol/nutritrack)) | AI-powered nutrition assistant that helps identify foods and track daily... | @newnol |
 | 🆕 [✨ ToneShift AI](https://toneshift-ai.lovable.app/) | Rewrite any text into different emotional tones while preserving meaning.... | @UstaDeveloper |
 | 🆕 [✨ ToneShift AI](https://toneshift-ai.lovable.app/) | Instantly rewrite any text into different emotional tones while preserving... | @UstaDeveloper |
 | 🆕 🤖 [💬 Chat AI](https://t.me/Chat2qai_bot) | Arabic Telegram bot serving as a versatile AI assistant. Answers questions,... | @Alhmam |
 | 🆕 🤖 [SaturnAI 🪐](https://chat.xdativo.cloud) | Web-based AI chat app focused on clean UI and smooth user experience. Features... | @xdativo |
 | 🆕 [💬 Yerty AI](https://yerty.xdativo.cloud) | A calm, friendly AI chat companion focused on everyday thinking, writing, and... | @losingdivine |
+| 🆕 🖥️ 💬 AI Chat Studio ([⭐ 0](https://github.com/Universe-shifting/AI-Chat-Studio)) | Local desktop AI chat app built with PyQt6. Supports multimodal conversations... | @vsenikizanat81486 |
+| 🆕 🖥️ 💬 AI Chat Studio ([⭐ 0](https://github.com/Universe-shifting/AI-Chat-Studio)) | Local desktop AI chat app built with PyQt6. Supports multimodal conversations... | @vsenikizanat81486 |
 
 ### Social Bots 🤖
 
@@ -581,6 +594,7 @@ Pollinations.AI is used in various projects, including:
 | 🆕 🤖 [Lily – AI Discord Companion](https://discord.com/oauth2/authorize?client_id=1448084290616164513&permissions=8&integration_type=0&scope=bot+applications.commands) | Lily is a next-generation conversational AI bot for Discord designed to feel... | CloudCompile |
 | 🆕 🤖 [🎨 Aqua AI Generator](https://top.gg/bot/1026133323023654932) | Free Discord AI image generator bot supporting up to 8 models, including 4 from... | @shaqkao1206 |
 | 🆕 [🤖 NullVector](https://discord.com/oauth2/authorize?client_id=1450613065069494423&permissions=8&integration_type=0&scope=applications.commands+bot) ([⭐ 0](https://github.com/CloudCompile/nullvector)) | Discord AI assistant with smart model routing. Evaluates each message to select... | @CloudCompile, @f... |
+| 🆕 🤖 [🤖 TeleChars AI](https://telecharsai.byethost14.com) | Plataforma para crear personajes IA personalizados en Telegram. Configura... | @marcosfrgames08 |
 
 ### Learn 📚
 
@@ -596,6 +610,7 @@ Pollinations.AI is used in various projects, including:
 | [Whizzy AI](https://whizzyai.vercel.app) | An educational AI platform for students featuring AI-powered study assistance,... | @vaibhavcoding69 |
 | [SearchGPT](https://huggingface.co/spaces/umint/searchgpt) | ChatGPT with real-time web search & URL reading capability. Part of the UltimaX... | @hadadarjt |
 | 🇧🇷 [EduGen AI 🇧🇷](https://ensinoedugenai.online) | E uma ia voltada para professores e queria a IA pollinations.ai para criar... | [mlspfc360@gm...](mailto:mlspfc360@gmail.com) |
+| 🆕 🤖 [🤖 Discord Bot Tutorial](https://gist.github.com/Tolerable/9908e626147689fe72cdab8f2e1e6743) | Comprehensive tutorial for building Discord bots with Pollinations.ai. Covers... | @Tolerable |
 | [AI儿童故事 🇨🇳](https://kidss.netlify.app/) | 基于此项目 构建有趣的孩子故事书应用演示 (Based on this project, build an interesting children's... | MZ |
 | [Pollinations.AI AI/Teens talk](https://www.youtube.com/live/5Rvdfr2qYGA?si=i5NLOKI49fGxNAEK&t=1034) | Session 2: ai/teens worldwide conference exploring the forces shaping AI today,... | @thomash_pollinat... |
 | [MalaysiaPrompt 🇲🇾](https://malaysiaprompt.rf.gd/) | A resource for discovering and sharing creative prompts, supporting the... | - |
@@ -606,7 +621,7 @@ Pollinations.AI is used in various projects, including:
 
 <!-- AUTO-GENERATED-CONTENT:END -->
 
-Have you created a project using Pollinations.AI? [Submit it through our project submission form](https://github.com/pollinations/pollinations/issues/new?template=project-submission.yml) to get it listed here! We use a structured GitHub issue template (labeled as **APPS**) to make the submission process easy and organized.
+Have you created a project using pollinations.ai? [Submit it through our project submission form](https://github.com/pollinations/pollinations/issues/new?template=project-submission.yml) to get it listed here! We use a structured GitHub issue template (labeled as **APPS**) to make the submission process easy and organized.
 
 ## 🔮 Future Developments
 
@@ -618,7 +633,7 @@ We're constantly exploring new ways to push the boundaries of AI-driven content 
 
 ## 🌍 Our Vision
 
-Pollinations.AI envisions a future where AI technology is:
+pollinations.ai envisions a future where AI technology is:
 
 -   **Open & Accessible**: We believe AI should be available to everyone, not locked behind paywalls or restricted access
 
@@ -634,11 +649,11 @@ We're committed to developing AI technology that serves humanity while respectin
 
 ## 🤝 Community and Development
 
-We believe in community-driven development. You can contribute to Pollinations.AI in several ways:
+We believe in community-driven development. You can contribute to pollinations.ai in several ways:
 
 1. **Coding Assistant**: The easiest way to contribute! Just [create a GitHub issue](https://github.com/pollinations/pollinations/issues/new) describing the feature you'd like to see implemented. The [MentatBot AI assistant](https://mentat.ai/) will analyze and implement it directly! No coding required - just describe what you want.
 
-2. **Project Submissions**: Have you built something with Pollinations.AI? [Use our project submission template](https://github.com/pollinations/pollinations/issues/new?template=project-submission.yml) (labeled as **APPS**) to share it with the community and get it featured in our README.
+2. **Project Submissions**: Have you built something with pollinations.ai? [Use our project submission template](https://github.com/pollinations/pollinations/issues/new?template=project-submission.yml) (labeled as **APPS**) to share it with the community and get it featured in our README.
 
 3. **Feature Requests & Bug Reports**: Have an idea or found a bug? [Open an issue](https://github.com/pollinations/pollinations/issues/new) and let us know. Our team and the MentatBot assistant will review it.
 
@@ -652,7 +667,7 @@ For any questions or support, please visit our [Discord channel](https://discord
 
 ## 🗂️ Project Structure
 
-Our codebase is organized into several key folders, each serving a specific purpose in the Pollinations.AI ecosystem:
+Our codebase is organized into several key folders, each serving a specific purpose in the pollinations.ai ecosystem:
 
 -   [`pollinations.ai/`](./app/): The main React application for the Pollinations.ai website.
 
@@ -664,13 +679,13 @@ Our codebase is organized into several key folders, each serving a specific purp
 
 -   [`model-context-protocol/`](./model-context-protocol/): Model Context Protocol (MCP) server for AI assistants like Claude to generate images directly.
 
-This structure encompasses the frontend website, backend services for image and text generation, and integrations like the Discord bot and MCP server, providing a comprehensive framework for the Pollinations.AI platform.
+This structure encompasses the frontend website, backend services for image and text generation, and integrations like the Discord bot and MCP server, providing a comprehensive framework for the pollinations.ai platform.
 
 For development setup and environment management, see [DEVELOP.md](./DEVELOP.md).
 
 ## 🏢 Supported By
 
-Pollinations.AI is proud to be supported by:
+pollinations.ai is proud to be supported by:
 
 [![Supported Companies](https://pollinations.ai/p/Logos_of_AWS_Activate,_Google_Cloud_for_Startups,_NVIDIA_Inception,_Azure,_Cloudflare,_Scaleway,_and_Modal_arranged_in_a_2_rows_and_4_columns_grid?width=400&height=200&nologo=true&seed=-1)](https://pollinations.ai/p/Logos_of_AWS_Activate,_Google_Cloud_for_Startups,_NVIDIA_Inception,_Azure,_Cloudflare,_Scaleway,_and_Modal_arranged_in_a_2_rows_and_4_columns_grid?width=400&height=200&nologo=true&seed=-1)
 
@@ -687,11 +702,11 @@ Pollinations.AI is proud to be supported by:
 
 ## 📜 License
 
-Pollinations.AI is open-source software licensed under the [MIT license](LICENSE).
+pollinations.ai is open-source software licensed under the [MIT license](LICENSE).
 
 ---
 
-Made with ❤️ by the Pollinations.AI team
+Made with ❤️ by the pollinations.ai team
 
 ## Contributors
 

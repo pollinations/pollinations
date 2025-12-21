@@ -53,7 +53,7 @@ export const TierExplanation: FC = () => {
                         <p>
                             →{" "}
                             <a
-                                href="https://github.com/pollinations/pollinations/issues/new?template=app-submission.yml"
+                                href="https://github.com/pollinations/pollinations/issues/new?template=tier-app-submission.yml"
                                 className="text-blue-600 hover:underline"
                             >
                                 Featured App

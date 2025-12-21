@@ -59,13 +59,18 @@ config.mcpServers.pollinations = {
 
 // Write the updated config back to the file
 const configDir = path.dirname(configPath);
-if (!fs.existsSync(configDir)) {
-    fs.mkdirSync(configDir, { recursive: true });
-    console.log(`Created directory: ${configDir}`);
-}
+try {
+    if (!fs.existsSync(configDir)) {
+        fs.mkdirSync(configDir, { recursive: true });
+        console.log(`Created directory: ${configDir}`);
+    }
 
-fs.writeFileSync(configPath, JSON.stringify(config, null, 2));
-console.log(
-    `Pollinations MCP server installed in Claude Desktop config at ${configPath}`,
-);
-console.log("Please restart Claude Desktop to apply the changes");
+    fs.writeFileSync(configPath, JSON.stringify(config, null, 2));
+    console.log(
+        `Pollinations MCP server installed in Claude Desktop config at ${configPath}`,
+    );
+    console.log("Please restart Claude Desktop to apply the changes");
+} catch (error) {
+    console.error(`Failed to write config: ${error.message}`);
+    process.exit(1);
+}

@@ -1,0 +1,335 @@
+name: Tier App Submission
+
+on:
+  issues:
+    types: [opened, edited, reopened]
+  pull_request:
+    paths:
+      - '.github/workflows/tier-app-submission.yml'  # Trigger on self to bootstrap
+  workflow_dispatch:
+    inputs:
+      issue_number:
+        description: 'Issue number to process'
+        required: true
+        type: number
+
+concurrency:
+  group: tier-app-${{ github.event.issue.number || github.event.inputs.issue_number || github.run_id }}
+  cancel-in-progress: false
+
+jobs:
+  review-submission:
+    # Run on App Submission issues (by tier:review label) OR manual dispatch
+    if: |
+      github.event_name == 'workflow_dispatch' ||
+      contains(github.event.issue.labels.*.name, 'tier:review')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      issues: write
+      pull-requests: write
+      id-token: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Ensure tier labels exist
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const labels = [
+              { name: 'tier:review', color: '0e8a16', description: 'Submission under review for tier upgrade' },
+              { name: 'tier:info-needed', color: 'fbca04', description: 'Awaiting registration or more info' },
+              { name: 'tier:flower', color: '1d76db', description: 'Approved for Flower tier upgrade' },
+              { name: 'tier:done', color: '6f42c1', description: 'Tier upgrade completed' }
+            ];
+            
+            for (const label of labels) {
+              try {
+                await github.rest.issues.getLabel({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  name: label.name
+                });
+              } catch (e) {
+                if (e.status === 404) {
+                  await github.rest.issues.createLabel({
+                    owner: context.repo.owner,
+                    repo: context.repo.repo,
+                    ...label
+                  });
+                  console.log(`Created label: ${label.name}`);
+                }
+              }
+            }
+
+      - name: Get issue data
+        id: issue
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const issueNumber = context.payload.inputs?.issue_number || context.payload.issue?.number;
+            const { data: issue } = await github.rest.issues.get({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: issueNumber
+            });
+            core.setOutput('number', issue.number);
+            core.setOutput('author', issue.user.login);
+            core.setOutput('author_id', issue.user.id);
+            core.setOutput('body', issue.body || '');
+
+      - name: Parse submission with Pollinations AI
+        id: parse
+        env:
+          ISSUE_BODY: ${{ steps.issue.outputs.body }}
+        run: |
+          # Build JSON payload safely
+          PAYLOAD=$(jq -n \
+            --arg body "$ISSUE_BODY" \
+            '{
+              model: "openai",
+              messages: [
+                {
+                  role: "system",
+                  content: "You parse GitHub issue forms for app submissions. Extract and return ONLY valid JSON with these fields: name, url, description, author, repo (optional), category (one of: chat, creative, games, hackAndBuild, learn, socialBots, vibeCoding), language (optional, e.g. zh-CN for non-English). If info is missing or invalid, return {\"error\": \"reason\"}."
+                },
+                {
+                  role: "user",
+                  content: $body
+                }
+              ],
+              jsonMode: true
+            }')
+          
+          echo "Calling Pollinations API..."
+          echo "Payload: $PAYLOAD"
+          
+          # Call Pollinations API (no auth needed for basic usage)
+          RESPONSE=$(curl -s -X POST "https://text.pollinations.ai/" \
+            -H "Content-Type: application/json" \
+            -d "$PAYLOAD")
+          
+          echo "Response: $RESPONSE"
+          
+          # Extract the JSON content - try both OpenAI format and direct text
+          PROJECT_JSON=$(echo "$RESPONSE" | jq -r '.choices[0].message.content // .text // empty' 2>/dev/null)
+          
+          # If still empty, maybe it's direct JSON
+          if [ -z "$PROJECT_JSON" ]; then
+            PROJECT_JSON="$RESPONSE"
+          fi
+          
+          echo "Parsed JSON: $PROJECT_JSON"
+          
+          # Validate it's actual JSON
+          if ! echo "$PROJECT_JSON" | jq . > /dev/null 2>&1; then
+            echo "error=Response is not valid JSON" >> $GITHUB_OUTPUT
+            exit 1
+          fi
+          
+          # Check for error in parsed result
+          ERROR=$(echo "$PROJECT_JSON" | jq -r '.error // empty')
+          if [ -n "$ERROR" ]; then
+            echo "error=$ERROR" >> $GITHUB_OUTPUT
+            echo "needs_info=true" >> $GITHUB_OUTPUT
+          else
+            echo "project_json<<EOF" >> $GITHUB_OUTPUT
+            echo "$PROJECT_JSON" >> $GITHUB_OUTPUT
+            echo "EOF" >> $GITHUB_OUTPUT
+            echo "name=$(echo "$PROJECT_JSON" | jq -r '.name')" >> $GITHUB_OUTPUT
+            echo "category=$(echo "$PROJECT_JSON" | jq -r '.category')" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Check if user has Enter account
+        if: steps.parse.outputs.needs_info != 'true'
+        id: check-enter
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          GITHUB_USERNAME: ${{ steps.issue.outputs.author }}
+        run: |
+          # Install wrangler
+          npm install -g wrangler
+          
+          # Sanitize GitHub username (alphanumeric + hyphens only, max 39 chars)
+          SAFE_USERNAME=$(echo "$GITHUB_USERNAME" | tr -cd 'a-zA-Z0-9-' | head -c 39)
+          if [ -z "$SAFE_USERNAME" ]; then
+            echo "❌ Invalid GitHub username"
+            echo "exists=false" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+          
+          # Query D1 database for user
+          cd enter.pollinations.ai
+          RESULT=$(npx wrangler d1 execute DB --remote --env production \
+            --command "SELECT id, email FROM user WHERE LOWER(github_username) = LOWER('$SAFE_USERNAME') LIMIT 1;" \
+            --json 2>/dev/null || echo '[]')
+          
+          echo "D1 query result: $RESULT"
+          
+          # Parse results - wrangler returns array with results property
+          USER_COUNT=$(echo "$RESULT" | jq -r '.[0].results | length // 0' 2>/dev/null || echo "0")
+          
+          if [ "$USER_COUNT" -gt 0 ]; then
+            USER_ID=$(echo "$RESULT" | jq -r '.[0].results[0].id' 2>/dev/null)
+            USER_EMAIL=$(echo "$RESULT" | jq -r '.[0].results[0].email' 2>/dev/null)
+            echo "exists=true" >> $GITHUB_OUTPUT
+            echo "user_id=$USER_ID" >> $GITHUB_OUTPUT
+            echo "user_email=$USER_EMAIL" >> $GITHUB_OUTPUT
+            echo "✅ User found in Enter database: $USER_EMAIL"
+          else
+            echo "exists=false" >> $GITHUB_OUTPUT
+            echo "❌ User not found in Enter database"
+          fi
+
+      - name: Request Enter signup if needed
+        if: steps.parse.outputs.needs_info != 'true' && steps.check-enter.outputs.exists == 'false'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: ${{ steps.issue.outputs.number }},
+              body: `👋 @${{ steps.issue.outputs.author }}, thanks for submitting your app!\n\nBefore we can review it, please **create an account** at [enter.pollinations.ai](https://enter.pollinations.ai) using your GitHub login.\n\nOnce you've signed up, comment here and we'll process your submission. 🌸`
+            });
+            
+            // Swap labels
+            try {
+              await github.rest.issues.removeLabel({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: ${{ steps.issue.outputs.number }},
+                name: 'tier:review'
+              });
+            } catch (e) {}
+            
+            await github.rest.issues.addLabels({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: ${{ steps.issue.outputs.number }},
+              labels: ['tier:info-needed']
+            });
+
+      - name: Request more info if parsing failed
+        if: steps.parse.outputs.needs_info == 'true'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: ${{ steps.issue.outputs.number }},
+              body: `👋 @${{ steps.issue.outputs.author }}, thanks for submitting!\n\nI couldn't fully parse your submission: **${{ steps.parse.outputs.error }}**\n\nPlease update your issue with the missing info.`
+            });
+            
+            // Swap labels
+            try {
+              await github.rest.issues.removeLabel({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: ${{ steps.issue.outputs.number }},
+                name: 'tier:review'
+              });
+            } catch (e) {}
+            
+            await github.rest.issues.addLabels({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: ${{ steps.issue.outputs.number }},
+              labels: ['tier:info-needed']
+            });
+
+      - name: Add project and create PR
+        if: steps.parse.outputs.needs_info != 'true' && steps.check-enter.outputs.exists == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ISSUE_NUMBER: ${{ steps.issue.outputs.number }}
+          ISSUE_AUTHOR: ${{ steps.issue.outputs.author }}
+          ISSUE_AUTHOR_ID: ${{ steps.issue.outputs.author_id }}
+          PROJECT_JSON: ${{ steps.parse.outputs.project_json }}
+          PROJECT_NAME: ${{ steps.parse.outputs.name }}
+          CATEGORY: ${{ steps.parse.outputs.category }}
+        run: |
+          # Determine file path
+          case "$CATEGORY" in
+            chat) FILE="pollinations.ai/src/config/projects/chat.js" ;;
+            creative) FILE="pollinations.ai/src/config/projects/creative.js" ;;
+            games) FILE="pollinations.ai/src/config/projects/games.js" ;;
+            hackAndBuild) FILE="pollinations.ai/src/config/projects/hackAndBuild.js" ;;
+            learn) FILE="pollinations.ai/src/config/projects/learn.js" ;;
+            socialBots) FILE="pollinations.ai/src/config/projects/socialBots.js" ;;
+            vibeCoding) FILE="pollinations.ai/src/config/projects/vibeCoding.js" ;;
+            *) echo "Unknown category: $CATEGORY" && exit 1 ;;
+          esac
+          
+          # Create branch
+          SLUG=$(echo "$PROJECT_NAME" | tr '[:upper:]' '[:lower:]' | tr ' ' '-' | tr -cd 'a-z0-9-')
+          BRANCH="auto/app-${ISSUE_NUMBER}-${SLUG}"
+          git checkout -b "$BRANCH"
+          
+          # Format project entry
+          TODAY=$(date +%Y-%m-%d)
+          ENTRY=$(echo "$PROJECT_JSON" | jq --arg date "$TODAY" '. + {submissionDate: $date, order: 5}')
+          
+          # Add to category file (before final ])
+          node -e "
+            const fs = require('fs');
+            let content = fs.readFileSync('$FILE', 'utf8');
+            const entry = JSON.stringify($ENTRY, null, 2).replace(/^/gm, '  ');
+            // Insert before final ]; ensuring proper comma
+            content = content.replace(/(\}),?(\s*\n];?\s*$)/, '\$1,\n' + entry + '\$2');
+            fs.writeFileSync('$FILE', content);
+          "
+          
+          # Update README
+          node pollinator-agent/project-list-scripts/generate-project-table.js --update-readme || true
+          
+          # Commit and push
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Add $PROJECT_NAME to $CATEGORY
+
+          Co-authored-by: $ISSUE_AUTHOR <${ISSUE_AUTHOR_ID}+${ISSUE_AUTHOR}@users.noreply.github.com>
+          Fixes #$ISSUE_NUMBER"
+          # Force push with lease (handles re-runs where branch already exists)
+          # Using --force-with-lease is safer as it fails if remote has unexpected changes
+          git push origin "$BRANCH" --force-with-lease
+          
+          # Create PR (or update existing)
+          EXISTING_PR=$(gh pr list --head "$BRANCH" --json number -q '.[0].number')
+          if [ -n "$EXISTING_PR" ]; then
+            echo "PR #$EXISTING_PR already exists, updating..."
+          else
+            gh pr create \
+              --title "Add $PROJECT_NAME to $CATEGORY" \
+              --body "Adds **$PROJECT_NAME** to **$CATEGORY** projects.
+
+          Co-authored-by: $ISSUE_AUTHOR <${ISSUE_AUTHOR_ID}+${ISSUE_AUTHOR}@users.noreply.github.com>
+          Fixes #$ISSUE_NUMBER" \
+              --base main \
+              --head "$BRANCH"
+          fi
+
+      - name: Comment on issue with PR link
+        if: steps.parse.outputs.needs_info != 'true' && steps.check-enter.outputs.exists == 'true'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: ${{ steps.issue.outputs.number }},
+              body: `🎉 Thanks @${{ steps.issue.outputs.author }}! I've created a PR to add **${{ steps.parse.outputs.name }}** to the **${{ steps.parse.outputs.category }}** category.\n\nA maintainer will review it shortly!`
+            });

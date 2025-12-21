@@ -1,4 +1,5 @@
-import { processEvents, storeEvents } from "@/events.ts";
+import { processEvents, storeEvents, updateEvent } from "@/events.ts";
+import { getModelStats, getEstimatedPrice } from "@/utils/model-stats.ts";
 import {
     getActivePriceDefinition,
     calculateCost,
@@ -105,6 +106,7 @@ export const track = (eventType: EventType) =>
     createMiddleware<TrackEnv>(async (c, next) => {
         const log = getLogger(["hono", "track"]);
         const startTime = new Date();
+        const db = drizzle(c.env.DB);
 
         // Get model from resolveModel middleware
         const modelInfo = c.var.model;
@@ -119,6 +121,66 @@ export const track = (eventType: EventType) =>
                 responseOverride = response;
             },
         });
+
+        // --- PRE-REQUEST: Insert pending_estimate event ---
+        const userId = c.var.auth.user?.id;
+        const eventId = generateRandomId();
+        let pendingEventInserted = false;
+
+        if (userId) {
+            try {
+                const modelStats = await getModelStats(
+                    c.env.KV as Parameters<typeof getModelStats>[0],
+                    log,
+                );
+                const estimatedPrice = getEstimatedPrice(
+                    modelStats,
+                    requestTracking.resolvedModelRequested,
+                );
+
+                const pendingEvent: InsertGenerationEvent = {
+                    id: eventId,
+                    requestId: c.get("requestId"),
+                    requestPath: `${routePath(c)}`,
+                    startTime,
+                    endTime: startTime,
+                    responseTime: 0,
+                    responseStatus: 0,
+                    environment: c.env.ENVIRONMENT,
+                    eventType,
+                    eventStatus: "pending_estimate",
+                    userId,
+                    userTier: c.var.auth.user?.tier,
+                    userGithubId: `${c.var.auth.user?.githubId}`,
+                    userGithubUsername: c.var.auth.user?.githubUsername,
+                    apiKeyId: c.var.auth.apiKey?.id,
+                    apiKeyType: c.var.auth.apiKey?.metadata
+                        ?.keyType as ApiKeyType,
+                    apiKeyName: c.var.auth.apiKey?.name,
+                    modelRequested: requestTracking.modelRequested,
+                    resolvedModelRequested:
+                        requestTracking.resolvedModelRequested,
+                    modelProviderUsed: requestTracking.modelProvider,
+                    isBilledUsage: false,
+                    estimatedPrice,
+                    ...priceToEventParams(requestTracking.modelPriceDefinition),
+                    ...usageToEventParams(undefined),
+                    totalCost: 0,
+                    totalPrice: 0,
+                };
+
+                await storeEvents(db, log, [pendingEvent]);
+                pendingEventInserted = true;
+                log.debug(
+                    "Inserted pending_estimate event: {eventId} with estimatedPrice={estimatedPrice}",
+                    { eventId, estimatedPrice },
+                );
+            } catch (e) {
+                log.error("Failed to insert pending_estimate event: {e}", {
+                    e,
+                });
+            }
+        }
 
         await next();
 
@@ -162,7 +224,7 @@ export const track = (eventType: EventType) =>
                     ),
                 } satisfies BalanceData;
 
-                const event = createTrackingEvent({
+                const finalEvent = createTrackingEvent({
                     requestId: c.get("requestId"),
                     requestPath: `${routePath(c)}`,
                     startTime,
@@ -186,10 +248,33 @@ export const track = (eventType: EventType) =>
                         "  totalCost={event.totalCost}",
                         "  totalPrice={event.totalPrice}",
                     ].join("\n"),
-                    { event },
+                    { event: finalEvent },
                 );
-                const db = drizzle(c.env.DB);
-                await storeEvents(db, c.var.log, [event]);
+
+                // --- POST-REQUEST: Update pending_estimate or insert new event ---
+                if (pendingEventInserted) {
+                    // Update the pending_estimate event with actual data
+                    await updateEvent(db, c.var.log, eventId, {
+                        eventStatus: finalEvent.eventStatus,
+                        endTime: finalEvent.endTime,
+                        responseTime: finalEvent.responseTime,
+                        responseStatus: finalEvent.responseStatus,
+                        modelUsed: finalEvent.modelUsed,
+                        isBilledUsage: finalEvent.isBilledUsage,
+                        totalCost: finalEvent.totalCost,
+                        totalPrice: finalEvent.totalPrice,
+                        estimatedPrice: null, // Clear estimate after completion
+                        ...usageToEventParams(responseTracking.usage),
+                        ...responseTracking.contentFilterResults,
+                    });
+                    log.debug(
+                        "Updated pending_estimate event {eventId} with actual data",
+                        { eventId },
+                    );
+                } else {
+                    // No pending event was inserted, store a new event
+                    await storeEvents(db, c.var.log, [finalEvent]);
+                }
 
                 // process events immediately in development/testing
                 if (

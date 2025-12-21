@@ -96,22 +96,22 @@ function Feed() {
     return (
         <PageContainer>
             <style>{`
-                .feed-grid::-webkit-scrollbar {
-                    width: 8px;
-                }
-                .feed-grid::-webkit-scrollbar-track {
-                    background: rgba(255, 255, 255, 0.05);
-                    border-radius: 10px;
-                }
-                .feed-grid::-webkit-scrollbar-thumb {
-                    background: linear-gradient(to bottom, rgba(255, 255, 255, 0.3), rgba(255, 255, 255, 0.2));
-                    border-radius: 10px;
-                    border: 2px solid rgba(255, 255, 255, 0.1);
-                }
-                .feed-grid::-webkit-scrollbar-thumb:hover {
-                    background: linear-gradient(to bottom, rgba(255, 255, 255, 0.5), rgba(255, 255, 255, 0.4));
-                }
-            `}</style>
+                            .feed-grid::-webkit-scrollbar {
+                                width: 8px;
+                            }
+                            .feed-grid::-webkit-scrollbar-track {
+                                background: var(--color-surface-secondary);
+                                border-radius: 10px;
+                            }
+                            .feed-grid::-webkit-scrollbar-thumb {
+                                background: var(--color-border-brand);
+                                border-radius: 10px;
+                            }
+                            .feed-grid::-webkit-scrollbar-thumb:hover {
+                                background: var(--color-border-brand);
+                                opacity: 0.8;
+                            }
+                        `}</style>
             <PageCard>
                 <Title spacing="none">Live Feed</Title>
                 <Body className="mb-8">

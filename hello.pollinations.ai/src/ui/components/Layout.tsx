@@ -11,6 +11,7 @@ import { useTheme } from "../contexts/ThemeContext";
 const tabs = [
     { path: "/", label: "Hello" },
     { path: "/play", label: "Play" },
+    { path: "/feed", label: "Feed" },
     { path: "/docs", label: "Docs" },
     { path: "/apps", label: "Apps" },
     { path: "/community", label: "Community" },

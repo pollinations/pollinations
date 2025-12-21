@@ -9,6 +9,7 @@ import { FontLoader } from "./ui/components/FontLoader";
 // Lazy load pages
 const HelloPage = lazy(() => import("./ui/pages/HelloPage"));
 const PlayPage = lazy(() => import("./ui/pages/PlayPage"));
+const FeedPage = lazy(() => import("./ui/pages/Feed"));
 const AppsPage = lazy(() => import("./ui/pages/AppsPage"));
 const DocsPage = lazy(() => import("./ui/pages/DocsPage"));
 const CommunityPage = lazy(() => import("./ui/pages/CommunityPage"));
@@ -32,6 +33,7 @@ function App() {
                     <Route path="/" element={<Layout />}>
                         <Route index element={<HelloPage />} />
                         <Route path="play" element={<PlayPage />} />
+                        <Route path="feed" element={<FeedPage />} />
                         <Route path="apps" element={<AppsPage />} />
                         <Route path="docs" element={<DocsPage />} />
                         <Route path="community" element={<CommunityPage />} />

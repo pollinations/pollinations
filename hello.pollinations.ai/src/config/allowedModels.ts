@@ -7,9 +7,7 @@
 export const ALLOWED_IMAGE_MODELS = [
     "zimage",
     "flux",
-    "turbo",
     "nanobanana",
-    "gptimage",
 ];
 
 export const ALLOWED_TEXT_MODELS = [
@@ -18,12 +16,11 @@ export const ALLOWED_TEXT_MODELS = [
     "mistral",
     "openai-audio",
     "gemini",
-    "midijourney",
     "chickytutor",
-    "grok",
-    "deepseek",
+    "midijourney",
     "claude-fast",
     "perplexity-fast",
+    "nova-micro",
 ];
 
 /**

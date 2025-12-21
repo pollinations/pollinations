@@ -141,7 +141,8 @@ const models: ModelDefinition[] = [
         config: portkeyConfig["gemini-3-pro-preview"],
         transform: pipe(
             createSystemPromptTransform(BASE_PROMPTS.conversational),
-            createGeminiToolsTransform(["google_search", "url_context"]),
+            // code_execution + url_context (both non-search tools, can be combined)
+            createGeminiToolsTransform(["code_execution", "url_context"]),
         ),
     },
     {

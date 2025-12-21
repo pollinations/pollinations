@@ -120,7 +120,7 @@ jobs:
           for i in $(seq 1 $MAX_RETRIES); do
             HTTP_CODE=$(curl -s -w "%{http_code}" -o /tmp/response.json -X POST "https://gen.pollinations.ai/v1/chat/completions" \
               -H "Content-Type: application/json" \
-              -H "Authorization: Bearer ${{ secrets.POLLINATIONS_API_KEY }}" \
+              -H "Authorization: Bearer ${{ secrets.POLLINATIONS_TOKEN }}" \
               -d "$PAYLOAD")
             
             if [ "$HTTP_CODE" = "200" ]; then

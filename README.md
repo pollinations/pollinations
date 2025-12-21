@@ -17,17 +17,16 @@ We've launched **https://gen.pollinations.ai** — a single endpoint for all you
 
 ## 🆕 Latest News
 
--   **2025-12-07** – **🎥 Video Generation** Create videos from text or images using the new `veo` and `seedance` models. [API Docs](https://enter.pollinations.ai/api/docs)
--   **2025-12-07** – **🎨 High-Res Upgrades** `seedream` updated to v4.5 (2K resolution) and `seedance` upgraded to Pro-Fast for superior quality.
--   **2025-12-07** – **📊 Richer Chat** The [Chat UI](https://chat.pollinations.ai) now renders data charts and supports video generation directly.
--   **2025-12-07** – **🤖 New Models** Added Amazon `nova-micro` and enabled web search for `gemini-search` and `perplexity` models.
--   **2025-11-29** – **🎨 Nano Banana Pro** New `nanobanana-pro` model (powered by Gemini 3 Pro) featuring 4K resolution support and built-in reasoning capabilities.
--   **2025-11-29** – **🤖 Claude Opus 4.5** Access the powerful new Claude Opus 4.5 model via the text API using the model ID `claude-xlarge`. Check the [API Docs](https://enter.pollinations.ai/api/docs).
--   **2025-11-29** – **🛠️ Advanced API Control** Added pass-through support for advanced parameters like `logprobs`, `logit_bias`, and `stream_options` for fine-grained generation control.
--   **2025-11-29** – **📱 PolliPalmTop App** A new Android app featuring AI chat, web search, and image generation has been added to the community showcase.
--   **2025-11-22** – **🚀 Massive Model Update** Added support for `Kimi K2 Thinking`, `Gemini Large`, `DeepSeek V3.1`, `Grok 4 Fast`, and `GPT-5 Nano`. Try them in the [Text API](https://enter.pollinations.ai).
--   **2025-11-22** – **🎤 Multimodal Audio API** Full support for OpenAI's Audio API features, including `input_audio` and mixed text/audio generation modalities.
-
+- **2025-12-15** – **🚀 GPT-5.2 & Gemini Tools** Upgraded `openai-large` to GPT-5.2 and enabled Google Search & Code Execution by default for Gemini models.
+- **2025-12-15** – **🎨 Face-Aware Upscaling** Enhanced image generation with GFPGAN face restoration and MediaPipe detection for sharper portraits.
+- **2025-12-15** – **✨ New Website Experience** Complete rebuild of [hello.pollinations.ai](https://hello.pollinations.ai) with AI-powered theming and dynamic 3D backgrounds.
+- **2025-12-15** – **🚫 No More Watermarks** Removed the Pollinations logo from all generated images—outputs are now clean by default.
+- **2025-12-07** – **🎥 Video Generation** Create videos from text or images using **Veo** and **Seedance** models via API or [Chat](https://hello.pollinations.ai).
+- **2025-12-07** – **✨ Seedream 4.5** Upgraded image generation to **Seedream 4.5** supporting stunning 2K resolution.
+- **2025-12-07** – **🔍 Web Search** **Perplexity** and **Gemini** models can now access real-time web search results.
+- **2025-12-07** – **🚀 Amazon Nova Micro** Added `nova-micro` to text services for ultra-low-cost, high-speed inference.
+- **2025-12-07** – **🎥 Video Generation** Create videos from text or images using the new `veo` and `seedance` models. [API Docs](https://enter.pollinations.ai/api/docs)
+- **2025-12-07** – **🎨 High-Res Upgrades** `seedream` updated to v4.5 (2K resolution) and `seedance` upgraded to Pro-Fast for superior quality.
 ---
 
 [![pollinations.ai Logo](https://pollinations.ai/p/3D_wireframe_blueprint_of_the_conceptual_isometric_world_of_Pollinations_AI_a_surreal_hyperrealistic_digital_garden_Elements_emerge_partially_from_all_sides?width=3000&height=1000&seed=-1)](https://pollinations.ai/p/3D_wireframe_blueprint_of_the_conceptual_isometric_world_of_Pollinations_AI_a_surreal_hyperrealistic_digital_garden_Elements_emerge_partially_from_all_sides?width=3000&height=1000&seed=-1)

@@ -57,7 +57,7 @@ declare namespace Cloudflare {
         GITHUB_CLIENT_SECRET: string;
         TINYBIRD_ACCESS_TOKEN: string;
         TESTING_REFERRER: string;
-        ENTER_TOKEN: string;
+        PLN_ENTER_TOKEN: string;
         POLAR_ACCESS_TOKEN: string;
         POLAR_WEBHOOK_SECRET: string;
         TINYBIRD_INGEST_TOKEN: string;
@@ -98,7 +98,7 @@ declare namespace NodeJS {
                 | "GITHUB_CLIENT_SECRET"
                 | "TINYBIRD_ACCESS_TOKEN"
                 | "TESTING_REFERRER"
-                | "ENTER_TOKEN"
+                | "PLN_ENTER_TOKEN"
                 | "POLAR_ACCESS_TOKEN"
                 | "POLAR_WEBHOOK_SECRET"
                 | "TINYBIRD_INGEST_TOKEN"

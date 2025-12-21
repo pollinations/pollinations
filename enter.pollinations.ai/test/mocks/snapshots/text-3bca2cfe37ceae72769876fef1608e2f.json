@@ -1,0 +1,115 @@
+{
+  "request": {
+    "url": "http://localhost:16385/openai",
+    "method": "POST",
+    "body": {
+      "type": "json",
+      "data": {
+        "model": "claude-fast",
+        "messages": [
+          {
+            "role": "user",
+            "content": "What is 5 + 3? You must use the calculator tool to compute this."
+          }
+        ],
+        "tools": [
+          {
+            "type": "function",
+            "function": {
+              "name": "calculator",
+              "description": "Perform basic arithmetic operations",
+              "parameters": {
+                "type": "object",
+                "properties": {
+                  "operation": {
+                    "type": "string",
+                    "enum": [
+                      "add",
+                      "subtract",
+                      "multiply",
+                      "divide"
+                    ],
+                    "description": "The arithmetic operation to perform"
+                  },
+                  "a": {
+                    "type": "number",
+                    "description": "First operand"
+                  },
+                  "b": {
+                    "type": "number",
+                    "description": "Second operand"
+                  }
+                },
+                "required": [
+                  "operation",
+                  "a",
+                  "b"
+                ]
+              }
+            }
+          }
+        ],
+        "tool_choice": "required",
+        "seed": 42
+      }
+    },
+    "params": {}
+  },
+  "response": {
+    "status": 200,
+    "statusText": "OK",
+    "headers": {
+      "access-control-allow-origin": "*",
+      "connection": "keep-alive",
+      "content-length": "563",
+      "content-type": "application/json; charset=utf-8",
+      "date": "Sat, 20 Dec 2025 15:41:46 GMT",
+      "etag": "W/\"233-HIv5mkm4l4rLes1wO86iCeUcwEE\"",
+      "keep-alive": "timeout=5",
+      "x-model-used": "us.anthropic.claude-haiku-4-5-20251001-v1:0",
+      "x-powered-by": "Express",
+      "x-usage-completion-text-tokens": "70",
+      "x-usage-prompt-text-tokens": "1003",
+      "x-usage-total-tokens": "1073"
+    },
+    "body": {
+      "type": "json",
+      "data": {
+        "id": "pllns_b29d226fa48bd0c61ce1a946b6e042d9",
+        "object": "chat.completion",
+        "created": 1766245306,
+        "model": "us.anthropic.claude-haiku-4-5-20251001-v1:0",
+        "provider": "bedrock",
+        "choices": [
+          {
+            "index": 0,
+            "message": {
+              "role": "assistant",
+              "content": "",
+              "content_blocks": [],
+              "tool_calls": [
+                {
+                  "id": "tooluse_t2RTzOfZQV6_A1SqqJyKcQ",
+                  "type": "function",
+                  "function": {
+                    "name": "calculator",
+                    "arguments": "{\"operation\":\"add\",\"a\":5,\"b\":3}"
+                  }
+                }
+              ]
+            },
+            "finish_reason": "tool_use"
+          }
+        ],
+        "usage": {
+          "prompt_tokens": 1003,
+          "completion_tokens": 70,
+          "total_tokens": 1073,
+          "prompt_tokens_details": {
+            "cached_tokens": 0
+          }
+        }
+      }
+    }
+  }
+}

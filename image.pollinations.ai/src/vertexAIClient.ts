@@ -73,9 +73,9 @@ export async function generateImageWithVertexAI(
         }
 
         // Build the API endpoint
-        const projectId = process.env.GCLOUD_PROJECT_ID;
+        const projectId = process.env.GOOGLE_PROJECT_ID;
         if (!projectId) {
-            throw new Error("GCLOUD_PROJECT_ID environment variable not set");
+            throw new Error("GOOGLE_PROJECT_ID environment variable not set");
         }
 
         // Use provided model or default to gemini-2.5-flash-image-preview (Nano Banana)

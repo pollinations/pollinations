@@ -1,3 +1,7 @@
+- **2025-12-15** – **🚀 GPT-5.2 & Gemini Tools** Upgraded `openai-large` to GPT-5.2 and enabled Google Search & Code Execution by default for Gemini models.
+- **2025-12-15** – **🎨 Face-Aware Upscaling** Enhanced image generation with GFPGAN face restoration and MediaPipe detection for sharper portraits.
+- **2025-12-15** – **✨ New Website Experience** Complete rebuild of [hello.pollinations.ai](https://hello.pollinations.ai) with AI-powered theming and dynamic 3D backgrounds.
+- **2025-12-15** – **🚫 No More Watermarks** Removed the Pollinations logo from all generated images—outputs are now clean by default.
 - **2025-12-07** – **🎥 Video Generation** Create videos from text or images using **Veo** and **Seedance** models via API or [Chat](https://hello.pollinations.ai).
 - **2025-12-07** – **✨ Seedream 4.5** Upgraded image generation to **Seedream 4.5** supporting stunning 2K resolution.
 - **2025-12-07** – **🔍 Web Search** **Perplexity** and **Gemini** models can now access real-time web search results.

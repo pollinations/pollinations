@@ -66,10 +66,10 @@ Respond only with the new prompt. Nothing Else.`,
             "Referer": "image.pollinations.ai",
         };
 
-        // Use POLLINATIONS_KEY from environment if available
-        if (process.env.POLLINATIONS_KEY) {
-            headers["Authorization"] = `Bearer ${process.env.POLLINATIONS_KEY}`;
-            logPimp("Using POLLINATIONS_KEY for authentication");
+        // Use PLN_PROMPT_ENHANCER_KEY from environment if available
+        if (process.env.PLN_PROMPT_ENHANCER_KEY) {
+            headers["Authorization"] = `Bearer ${process.env.PLN_PROMPT_ENHANCER_KEY}`;
+            logPimp("Using PLN_PROMPT_ENHANCER_KEY for authentication");
         }
 
         response = await Promise.race([

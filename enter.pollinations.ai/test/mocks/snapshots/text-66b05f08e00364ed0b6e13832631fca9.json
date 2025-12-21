@@ -1,0 +1,64 @@
+{
+  "request": {
+    "url": "http://localhost:16385/openai",
+    "method": "POST",
+    "body": {
+      "type": "json",
+      "data": {
+        "model": "nova-micro",
+        "messages": [
+          {
+            "role": "user",
+            "content": "Is Berlin the capital of Germany? Reply yes or no."
+          }
+        ],
+        "seed": 42
+      }
+    },
+    "params": {}
+  },
+  "response": {
+    "status": 200,
+    "statusText": "OK",
+    "headers": {
+      "access-control-allow-origin": "*",
+      "connection": "keep-alive",
+      "content-length": "594",
+      "content-type": "application/json; charset=utf-8",
+      "date": "Sat, 20 Dec 2025 15:40:08 GMT",
+      "etag": "W/\"252-sFUj+Z089Mv8lmTPh9eYn69uaLE\"",
+      "keep-alive": "timeout=5",
+      "x-model-used": "amazon.nova-micro-v1:0",
+      "x-powered-by": "Express",
+      "x-usage-completion-text-tokens": "54",
+      "x-usage-prompt-text-tokens": "262",
+      "x-usage-total-tokens": "316"
+    },
+    "body": {
+      "type": "json",
+      "data": {
+        "id": "pllns_24ab6e08f5febd75a1597fe0134bb355",
+        "created": 1766245208,
+        "model": "amazon.nova-micro-v1:0",
+        "system_fingerprint": "fp",
+        "choices": [
+          {
+            "index": 0,
+            "finish_reason": "stop",
+            "logprobs": null,
+            "message": {
+              "role": "assistant",
+              "content": "Yes, Berlin is the capital of Germany. It's also an exciting city full of history, culture, and modern flair. Whether you're exploring its historical sites or indulging in its vibrant arts scene, Berlin's dynamic atmosphere is something to experience firsthand!"
+            }
+          }
+        ],
+        "object": "chat.completion",
+        "usage": {
+          "prompt_tokens": 262,
+          "completion_tokens": 54,
+          "total_tokens": 316
+        }
+      }
+    }
+  }
+}

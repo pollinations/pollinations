@@ -1,0 +1,128 @@
+{
+  "request": {
+    "url": "http://localhost:16385/openai",
+    "method": "POST",
+    "body": {
+      "type": "json",
+      "data": {
+        "model": "claude-fast",
+        "messages": [
+          {
+            "role": "user",
+            "content": "What is 5 + 3? You must use the calculator tool to compute this."
+          },
+          {
+            "role": "assistant",
+            "tool_calls": [
+              {
+                "id": "tooluse_t2RTzOfZQV6_A1SqqJyKcQ",
+                "type": "function",
+                "function": {
+                  "name": "calculator",
+                  "arguments": "{\"operation\":\"add\",\"a\":5,\"b\":3}"
+                }
+              }
+            ]
+          },
+          {
+            "role": "tool",
+            "tool_call_id": "tooluse_t2RTzOfZQV6_A1SqqJyKcQ",
+            "content": "{\"result\":8}"
+          }
+        ],
+        "tools": [
+          {
+            "type": "function",
+            "function": {
+              "name": "calculator",
+              "description": "Perform basic arithmetic operations",
+              "parameters": {
+                "type": "object",
+                "properties": {
+                  "operation": {
+                    "type": "string",
+                    "enum": [
+                      "add",
+                      "subtract",
+                      "multiply",
+                      "divide"
+                    ],
+                    "description": "The arithmetic operation to perform"
+                  },
+                  "a": {
+                    "type": "number",
+                    "description": "First operand"
+                  },
+                  "b": {
+                    "type": "number",
+                    "description": "Second operand"
+                  }
+                },
+                "required": [
+                  "operation",
+                  "a",
+                  "b"
+                ]
+              }
+            }
+          }
+        ],
+        "seed": 42,
+        "max_tokens": 4096
+      }
+    },
+    "params": {}
+  },
+  "response": {
+    "status": 200,
+    "statusText": "OK",
+    "headers": {
+      "access-control-allow-origin": "*",
+      "connection": "keep-alive",
+      "content-length": "446",
+      "content-type": "application/json; charset=utf-8",
+      "date": "Sat, 20 Dec 2025 15:41:47 GMT",
+      "etag": "W/\"1be-oDcW/qaj/myFwUplPSWuWzWkKU4\"",
+      "keep-alive": "timeout=5",
+      "x-model-used": "us.anthropic.claude-haiku-4-5-20251001-v1:0",
+      "x-powered-by": "Express",
+      "x-usage-completion-text-tokens": "12",
+      "x-usage-prompt-text-tokens": "1013",
+      "x-usage-total-tokens": "1025"
+    },
+    "body": {
+      "type": "json",
+      "data": {
+        "id": "pllns_f4704787a2f9490b2c5907b36eced8a7",
+        "object": "chat.completion",
+        "created": 1766245307,
+        "model": "us.anthropic.claude-haiku-4-5-20251001-v1:0",
+        "provider": "bedrock",
+        "choices": [
+          {
+            "index": 0,
+            "message": {
+              "role": "assistant",
+              "content": "5 + 3 = 8",
+              "content_blocks": [
+                {
+                  "type": "text",
+                  "text": "5 + 3 = 8"
+                }
+              ]
+            },
+            "finish_reason": "end_turn"
+          }
+        ],
+        "usage": {
+          "prompt_tokens": 1013,
+          "completion_tokens": 12,
+          "total_tokens": 1025,
+          "prompt_tokens_details": {
+            "cached_tokens": 0
+          }
+        }
+      }
+    }
+  }
+}

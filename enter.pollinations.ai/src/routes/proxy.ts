@@ -506,7 +506,7 @@ function proxyHeaders(c: Context): Record<string, string> {
         "x-forwarded-host": clientHost,
         "x-forwarded-for": clientIP,
         "x-real-ip": clientIP,
-        "x-enter-token": c.env.ENTER_TOKEN,
+        "x-enter-token": c.env.PLN_ENTER_TOKEN,
     };
 }
 

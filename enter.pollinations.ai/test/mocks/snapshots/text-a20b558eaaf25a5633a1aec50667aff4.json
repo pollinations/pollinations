@@ -1,0 +1,129 @@
+{
+  "request": {
+    "url": "http://localhost:16385/openai",
+    "method": "POST",
+    "body": {
+      "type": "json",
+      "data": {
+        "model": "openai",
+        "messages": [
+          {
+            "role": "user",
+            "content": "Test secret key."
+          }
+        ]
+      }
+    },
+    "params": {}
+  },
+  "response": {
+    "status": 200,
+    "statusText": "OK",
+    "headers": {
+      "access-control-allow-origin": "*",
+      "connection": "keep-alive",
+      "content-length": "3863",
+      "content-type": "application/json; charset=utf-8",
+      "date": "Sat, 20 Dec 2025 15:42:32 GMT",
+      "etag": "W/\"f17-lLDrCvBkoVEBP4r/Y1QbtJu/zVg\"",
+      "keep-alive": "timeout=5",
+      "x-model-used": "gpt-5-mini-2025-08-07",
+      "x-powered-by": "Express",
+      "x-usage-completion-reasoning-tokens": "448",
+      "x-usage-completion-text-tokens": "710",
+      "x-usage-prompt-text-tokens": "251",
+      "x-usage-total-tokens": "1409"
+    },
+    "body": {
+      "type": "json",
+      "data": {
+        "choices": [
+          {
+            "content_filter_results": {
+              "hate": {
+                "filtered": false,
+                "severity": "safe"
+              },
+              "protected_material_code": {
+                "filtered": false,
+                "detected": false
+              },
+              "protected_material_text": {
+                "filtered": false,
+                "detected": false
+              },
+              "self_harm": {
+                "filtered": false,
+                "severity": "safe"
+              },
+              "sexual": {
+                "filtered": false,
+                "severity": "safe"
+              },
+              "violence": {
+                "filtered": false,
+                "severity": "safe"
+              }
+            },
+            "finish_reason": "stop",
+            "index": 0,
+            "logprobs": null,
+            "message": {
+              "annotations": [],
+              "content": "Sure — what kind of secret key do you want to test (API key, JWT/HMAC secret, AES encryption key, SSH/GPG/TLS private key, cloud credentials, etc.)? I can give exact commands/snippets. For now, here’s a compact checklist and quick test commands for common types so you can pick what matches yours.\n\nGeneral safety first\n- Don’t paste the real secret here or anywhere public. Share a masked example if you want help debugging.\n- Prefer to test in a safe environment (local machine or isolated container).\n\nAPI key\n- Quick functional test: make an authenticated request using curl (replace HEADER/KEY/URL):\n  curl -H \"Authorization: Bearer YOUR_KEY\" https://api.example.com/endpoint\n- If it returns 200 or expected data the key works; 401/403 means invalid/insufficient perms.\n\nJWT / HMAC secret\n- Verify a JWT’s signature with a library. Python example (PyJWT):\n  import jwt\n  jwt.decode(token, \"YOUR_SECRET\", algorithms=[\"HS256\"])\n- If it raises InvalidSignatureError then the secret is wrong.\n\nAES / symmetric encryption key\n- Check length: base64 decode then count bytes:\n  echo -n \"BASE64_KEY\" | base64 --decode | wc -c\n  Valid AES lengths: 16, 24, 32 bytes (128/192/256 bits).\n- Round‑trip test: encrypt known plaintext and decrypt it with the key (OpenSSL example with a hex key):\n  printf \"hello\" > plain.txt\n  openssl enc -aes-256-cbc -K <HEX_KEY> -iv <HEX_IV> -in plain.txt -out c.enc\n  openssl enc -d -aes-256-cbc -K <HEX_KEY> -iv <HEX_IV> -in c.enc\n\nSSH private key\n- Check and extract public key:\n  ssh-keygen -y -f /path/to/private_key\n- Test connection:\n  ssh -i /path/to/private_key user@host\n\nGPG secret key\n- List secret keys:\n  gpg --list-secret-keys\n\nTLS / RSA private key\n- Check validity and consistency:\n  openssl rsa -in key.pem -check\n- Compare with certificate:\n  openssl x509 -noout -modulus -in cert.pem | openssl md5\n  openssl rsa -noout -modulus -in key.pem | openssl md5\n  (hashes should match)\n\nCloud credentials\n- AWS: try a simple call with AWS CLI:\n  AWS_ACCESS_KEY_ID=... AWS_SECRET_ACCESS_KEY=... aws sts get-caller-identity\n- GCP / Azure have similar CLI validation commands.\n\nFormat/encoding checks\n- Is it base64 or hex? Quickly inspect and decode:\n  echo -n \"KEY\" | base64 --decode >/dev/null && echo \"base64\" || echo \"not base64\"\n  echo -n \"KEY\" | xxd -r -p >/dev/null && echo \"hex\" || echo \"not hex\"\n- Check entropy/length: echo -n \"KEY\" | wc -c (bytes) or base64 decode first to count raw bytes.\n\nIf you tell me which type of key you have and where you want to use it, I’ll give an exact one-liner or short script to test it.",
+              "refusal": null,
+              "role": "assistant"
+            }
+          }
+        ],
+        "created": 1766245341,
+        "id": "pllns_e95fcdd47593228adbffb9a869d62b21",
+        "model": "gpt-5-mini-2025-08-07",
+        "object": "chat.completion",
+        "prompt_filter_results": [
+          {
+            "prompt_index": 0,
+            "content_filter_results": {
+              "hate": {
+                "filtered": false,
+                "severity": "safe"
+              },
+              "jailbreak": {
+                "filtered": false,
+                "detected": false
+              },
+              "self_harm": {
+                "filtered": false,
+                "severity": "safe"
+              },
+              "sexual": {
+                "filtered": false,
+                "severity": "safe"
+              },
+              "violence": {
+                "filtered": false,
+                "severity": "safe"
+              }
+            }
+          }
+        ],
+        "system_fingerprint": null,
+        "usage": {
+          "completion_tokens": 1158,
+          "completion_tokens_details": {
+            "accepted_prediction_tokens": 0,
+            "audio_tokens": 0,
+            "reasoning_tokens": 448,
+            "rejected_prediction_tokens": 0
+          },
+          "prompt_tokens": 251,
+          "prompt_tokens_details": {
+            "audio_tokens": 0,
+            "cached_tokens": 0
+          },
+          "total_tokens": 1409
+        }
+      }
+    }
+  }
+}

@@ -45,23 +45,31 @@ export function AIPromptInput({ isOpen }: AIPromptInputProps) {
 
         const runGeneration = async () => {
             try {
-                console.log(
-                    "🚀 [GENERATING] Running all generators simultaneously"
+                // Run sequentially - API has built-in retry with rate limit handling
+                console.log("🎨 [GENERATING] Step 1/3: Theme...");
+                const theme = await generateTheme(
+                    activePrompt,
+                    controller.signal
                 );
-
-                const [theme, copyResult, bgHtml] = await Promise.all([
-                    generateTheme(activePrompt, controller.signal),
-                    generateCopy(
-                        activePrompt,
-                        isMobile,
-                        ALL_COPY,
-                        "en",
-                        controller.signal
-                    ),
-                    generateBackground(activePrompt, controller.signal),
-                ]);
-
                 if (controller.signal.aborted) return;
+
+                console.log("📝 [GENERATING] Step 2/3: Copy...");
+                const copyResult = await generateCopy(
+                    activePrompt,
+                    isMobile,
+                    ALL_COPY,
+                    "en",
+                    controller.signal
+                );
+                if (controller.signal.aborted) return;
+
+                console.log("🎬 [GENERATING] Step 3/3: Background...");
+                const bgHtml = await generateBackground(
+                    activePrompt,
+                    controller.signal
+                );
+                if (controller.signal.aborted) return;
+
                 setTheme(theme, activePrompt, copyResult.full, bgHtml);
 
                 setActivePrompt(null);

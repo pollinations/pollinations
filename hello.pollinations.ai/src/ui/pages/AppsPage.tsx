@@ -5,9 +5,34 @@ import { PageCard } from "../components/ui/page-card";
 import { PageContainer } from "../components/ui/page-container";
 import { SubCard } from "../components/ui/sub-card";
 import { ExternalLinkIcon } from "../assets/ExternalLinkIcon";
-import { allProjects } from "../../theme/copy/apps-list";
+// @ts-ignore - External JS imports from monorepo
+import { creativeProjects } from "../../../../pollinations.ai/src/config/projects/creative.js";
+// @ts-ignore - External JS imports from monorepo
+import { chatProjects } from "../../../../pollinations.ai/src/config/projects/chat.js";
+// @ts-ignore - External JS imports from monorepo
+import { gamesProjects } from "../../../../pollinations.ai/src/config/projects/games.js";
+// @ts-ignore - External JS imports from monorepo
+import { hackAndBuildProjects } from "../../../../pollinations.ai/src/config/projects/hackAndBuild.js";
+// @ts-ignore - External JS imports from monorepo
+import { learnProjects } from "../../../../pollinations.ai/src/config/projects/learn.js";
+// @ts-ignore - External JS imports from monorepo
+import { socialBotsProjects } from "../../../../pollinations.ai/src/config/projects/socialBots.js";
+// @ts-ignore - External JS imports from monorepo
+import { vibeCodingProjects } from "../../../../pollinations.ai/src/config/projects/vibeCoding.js";
 import { GithubIcon } from "../assets/SocialIcons";
 import { useTheme } from "../contexts/ThemeContext";
+import { LINKS } from "../../theme/copy/socialLinks";
+
+// Combine all projects with category tags
+const allProjects = [
+    ...creativeProjects.map((p: any) => ({ ...p, category: "creative" })),
+    ...chatProjects.map((p: any) => ({ ...p, category: "chat" })),
+    ...gamesProjects.map((p: any) => ({ ...p, category: "games" })),
+    ...hackAndBuildProjects.map((p: any) => ({ ...p, category: "devtools" })),
+    ...learnProjects.map((p: any) => ({ ...p, category: "learn" })),
+    ...socialBotsProjects.map((p: any) => ({ ...p, category: "socialbots" })),
+    ...vibeCodingProjects.map((p: any) => ({ ...p, category: "vibes" })),
+];
 
 interface Project {
     category: string;
@@ -155,9 +180,28 @@ export default function AppsPage() {
         <PageContainer>
             <PageCard>
                 <Title>{pageCopy.title.text}</Title>
-                <Body spacing="none" className="mb-8">
-                    {pageCopy.subtitle.text}
-                </Body>
+                <Body spacing="comfortable">{pageCopy.subtitle.text}</Body>
+                <div className="flex items-center gap-4 p-4 mb-10 bg-surface-card rounded-sub-card border-l-4 border-border-highlight">
+                    <div className="flex-1">
+                        <p className="font-headline text-sm font-black text-text-body-main mb-1">
+                            🚀 Built something cool?
+                        </p>
+                        <p className="font-body text-xs text-text-body-secondary">
+                            Get featured in the showcase and earn Pollen!
+                        </p>
+                    </div>
+                    <Button
+                        as="a"
+                        href={LINKS.githubSubmitApp}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        variant="primary"
+                        size="default"
+                    >
+                        ✨ Submit App
+                        <ExternalLinkIcon className="w-3 h-3 stroke-text-highlight" />
+                    </Button>
+                </div>
 
                 {/* Category Filters */}
                 <div className="flex flex-wrap gap-2 mb-8">

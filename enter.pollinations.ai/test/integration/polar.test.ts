@@ -1,6 +1,7 @@
 import { SELF } from "cloudflare:test";
 import { test } from "../fixtures.ts";
-import { productSlugs, productSlugToUrlParam } from "@/routes/polar.ts";
+import { productSlugToUrlParam } from "@/routes/polar.ts";
+import { packProductSlugs } from "@/utils/polar.ts";
 import { expect } from "vitest";
 
 const base = "http://localhost:3000/api/polar";
@@ -9,7 +10,7 @@ const customerRoutes = [
     "/customer/events",
     "/customer/portal",
 ];
-const checkoutRoutes = productSlugs.map(
+const checkoutRoutes = packProductSlugs.map(
     (slug) => `/checkout/${productSlugToUrlParam(slug)}`,
 );
 const routes = [...customerRoutes, ...checkoutRoutes];

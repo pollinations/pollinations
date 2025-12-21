@@ -6,19 +6,15 @@ import { polar } from "../middleware/polar.ts";
 import { validator } from "../middleware/validator.ts";
 import type { Env } from "../env.ts";
 import { describeRoute } from "hono-openapi";
-import { Polar } from "@polar-sh/sdk";
 import { drizzle } from "drizzle-orm/d1";
-import { event } from "../db/schema/event.ts";
-import { and, eq, gte, sql } from "drizzle-orm";
+import {
+    getPackProductMapCached,
+    type PackProductSlug,
+    packProductSlugs,
+} from "@/utils/polar.ts";
+import { getPendingSpend } from "@/events.ts";
 
-export const productSlugs = [
-    "v1:product:pack:5x2",
-    "v1:product:pack:10x2",
-    "v1:product:pack:20x2",
-    "v1:product:pack:50x2",
-] as const;
-type ProductSlug = z.infer<typeof productParamSchema>;
-const productParamSchema = z.enum(productSlugs.map(productSlugToUrlParam));
+const productParamSchema = z.enum(packProductSlugs.map(productSlugToUrlParam));
 
 const checkoutParamsSchema = z.object({
     slug: productParamSchema,
@@ -31,29 +27,12 @@ const redirectQuerySchema = z.object({
         .default(true),
 });
 
-type ProductMap = { [key in ProductSlug]: string };
-
 export function productSlugToUrlParam(slug: string): string {
     return slug.split(":").join("-");
 }
 
 export function productUrlParamToSlug(slug: string): string {
     return slug.split("-").join(":");
-}
-
-async function getProductsBySlugs(polar: Polar) {
-    const result = await polar.products.list({
-        limit: 100,
-        metadata: {
-            slug: [...productSlugs],
-        },
-    });
-
-    const productMap = Object.fromEntries(
-        result.result.items.map((product) => [product.metadata.slug, product]),
-    );
-
-    return productMap;
 }
 
 export const polarRoutes = new Hono<Env>()
@@ -98,27 +77,11 @@ export const polarRoutes = new Hono<Env>()
         }),
         async (c) => {
             const user = c.var.auth.requireUser();
-            const db = drizzle(c.env.DB);
-            const PENDING_SPEND_WINDOW_MS = 10 * 60 * 1000; // 10 minutes
-            const windowStart = new Date(Date.now() - PENDING_SPEND_WINDOW_MS);
-            const result = await db
-                .select({
-                    total: sql<number>`COALESCE(SUM(
-                        CASE 
-                            WHEN ${event.eventStatus} = 'pending_estimate' THEN ${event.estimatedPrice}
-                            WHEN ${event.isBilledUsage} = 1 THEN ${event.totalPrice}
-                            ELSE 0
-                        END
-                    ), 0)`,
-                })
-                .from(event)
-                .where(
-                    and(
-                        eq(event.userId, user.id),
-                        gte(event.createdAt, windowStart),
-                    ),
-                );
-            return c.json({ pendingSpend: result[0]?.total || 0 });
+            const pendingSpend = await getPendingSpend(
+                drizzle(c.env.DB),
+                user.id,
+            );
+            return c.json({ pendingSpend });
         },
     )
     .get(
@@ -167,10 +130,13 @@ export const polarRoutes = new Hono<Env>()
             const { redirect } = c.req.valid("query");
             try {
                 const polar = c.var.polar.client;
-                const packProducts = await getProductsBySlugs(polar);
+                const packProducts = await getPackProductMapCached(
+                    polar,
+                    c.env.KV,
+                );
                 const response = await polar.checkouts.create({
                     externalCustomerId: user.id,
-                    products: [packProducts[slug].id],
+                    products: [packProducts[slug as PackProductSlug].id],
                     successUrl: c.env.POLAR_SUCCESS_URL,
                 });
                 if (redirect) return c.redirect(response.url);

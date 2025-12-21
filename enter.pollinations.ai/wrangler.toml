@@ -42,6 +42,7 @@ new_classes = ["PollenRateLimiter"]
 [vars]
 ENVIRONMENT = "development"
 LOG_LEVEL = "trace"
+LOG_FORMAT = "text"
 ALLOW_ANONYMOUS_USAGE = false
 POLAR_SUCCESS_URL = "http://localhost:3000"
 POLAR_SERVER = "sandbox"
@@ -77,6 +78,7 @@ remote = true
 [env.local.vars]
 ENVIRONMENT = "local"
 LOG_LEVEL = "trace"
+LOG_FORMAT = "text"
 ALLOW_ANONYMOUS_USAGE = false
 POLAR_SUCCESS_URL = "http://localhost:3000"
 POLAR_SERVER = "sandbox"
@@ -92,6 +94,10 @@ TEXT_SERVICE_URL = "http://localhost:16385"
 POLLEN_REFILL_PER_HOUR = 1
 
 [env.production]
+
+[env.production.observability]
+enabled = true
+head_sampling_rate = 1
 
 [[env.production.routes]]
 pattern = "enter.pollinations.ai"
@@ -130,6 +136,7 @@ new_classes = ["PollenRateLimiter"]
 [env.production.vars]
 ENVIRONMENT = "production"
 LOG_LEVEL = "debug"
+LOG_FORMAT = "json"
 ALLOW_ANONYMOUS_USAGE = false
 POLAR_SUCCESS_URL = "https://enter.pollinations.ai"
 POLAR_SERVER = "production"
@@ -182,6 +189,7 @@ new_classes = ["PollenRateLimiter"]
 [env.staging.vars]
 ENVIRONMENT = "staging"
 LOG_LEVEL = "debug"
+LOG_FORMAT = "json"
 ALLOW_ANONYMOUS_USAGE = false
 POLAR_SUCCESS_URL = "https://staging.enter.pollinations.ai"
 POLAR_SERVER = "sandbox"
@@ -224,6 +232,7 @@ class_name = "PollenRateLimiter"
 [env.test.vars]
 ENVIRONMENT = "test"
 LOG_LEVEL = "trace"
+LOG_FORMAT = "text"
 ALLOW_ANONYMOUS_USAGE = true
 GITHUB_CLIENT_ID = "test_github_client_id"
 GITHUB_CLIENT_SECRET = "test_github_client_secret"

@@ -62,13 +62,11 @@ const NoTierScreen: FC<{ has_polar_error?: boolean }> = ({
                     the page or try again later.
                 </p>
             ) : (
-                <div className="px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg">
-                    <p className="text-sm text-gray-900 leading-relaxed">
-                        ⭕ <strong>No Active Subscription:</strong> You don't
-                        have an active tier subscription yet.
-                        <br />
-                        Click the <strong>Activate Tier</strong> button above to
-                        get started.
+                <div className="px-3 py-2 bg-yellow-50 border border-yellow-200 rounded-lg">
+                    <p className="text-sm text-yellow-900 leading-relaxed">
+                        ⏳ <strong>Setting Up Your Subscription:</strong> Your
+                        subscription is being activated. Please refresh the page
+                        in 1-2 minutes.
                     </p>
                 </div>
             )}
@@ -97,13 +95,6 @@ const TierScreen: FC<{
 
     // Detect cancellation
     const isCanceled = !!subscription_canceled_at && !!subscription_ends_at;
-    const endsAt = subscription_ends_at
-        ? new Date(subscription_ends_at).toLocaleDateString("en-US", {
-              year: "numeric",
-              month: "long",
-              day: "numeric",
-          })
-        : "";
 
     return (
         <TierContainer>
@@ -117,25 +108,24 @@ const TierScreen: FC<{
                     {daily_pollen} pollen/day
                 </span>
                 <span
-                    className={`inline-flex items-center px-3 py-1 rounded-full font-semibold text-sm ${isCanceled ? "bg-red-50 border border-red-200 text-red-900" : "bg-blue-100 border border-blue-300 text-blue-800"}`}
+                    className={`inline-flex items-center px-3 py-1 rounded-full font-semibold text-sm ${isCanceled ? "bg-yellow-50 border border-yellow-200 text-yellow-900" : "bg-blue-100 border border-blue-300 text-blue-800"}`}
                 >
                     ⏱️ {countdown}
                 </span>
             </div>
 
             {isCanceled ? (
-                <div className="px-3 py-2 bg-red-50 border border-red-200 rounded-lg">
-                    <p className="text-sm text-red-900 leading-relaxed">
-                        🔔 <strong>Subscription Ending:</strong> Your
-                        subscription is active until <strong>{endsAt}</strong>.
-                        It will not auto-renew. Unused pollen does not carry
-                        over.
+                <div className="px-3 py-2 bg-blue-50 border border-blue-200 rounded-lg">
+                    <p className="text-sm text-blue-900 leading-relaxed">
+                        🔄 Cancellation pending – but don't worry, you'll be
+                        automatically resubscribed to keep your {daily_pollen}{" "}
+                        daily pollen.
                     </p>
                 </div>
             ) : (
                 <div className="px-3 py-2 bg-green-50 border border-green-200 rounded-lg">
                     <p className="text-sm text-green-900 leading-relaxed">
-                        ✓ Your subscription is active and will earn you{" "}
+                        ✓ Your subscription is active and earns you{" "}
                         {daily_pollen} pollen daily. Unused pollen does not
                         carry over.
                     </p>

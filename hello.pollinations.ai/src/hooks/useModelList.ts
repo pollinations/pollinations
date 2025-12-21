@@ -1,5 +1,8 @@
 import { useState, useEffect } from "react";
-import { API_KEY } from "../api.config";
+import { API_BASE, API_KEY } from "../api.config";
+
+const IMAGE_MODELS_URL = `${API_BASE}/image/models`;
+const TEXT_MODELS_URL = `${API_BASE}/text/models`;
 
 export interface Model {
     id: string;
@@ -34,22 +37,8 @@ export function useModelList(): UseModelListReturn {
         const fetchModels = async () => {
             try {
                 const [imageRes, textRes] = await Promise.all([
-                    fetch(
-                        "https://enter.pollinations.ai/api/generate/image/models",
-                        {
-                            headers: {
-                                Authorization: `Bearer ${API_KEY}`,
-                            },
-                        },
-                    ),
-                    fetch(
-                        "https://enter.pollinations.ai/api/generate/text/models",
-                        {
-                            headers: {
-                                Authorization: `Bearer ${API_KEY}`,
-                            },
-                        },
-                    ),
+                    fetch(IMAGE_MODELS_URL, { headers: { Authorization: `Bearer ${API_KEY}` } }),
+                    fetch(TEXT_MODELS_URL, { headers: { Authorization: `Bearer ${API_KEY}` } }),
                 ]);
 
                 const imageList = await imageRes.json();

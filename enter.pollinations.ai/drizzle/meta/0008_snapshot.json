@@ -1,7 +1,7 @@
 {
   "version": "6",
   "dialect": "sqlite",
-  "id": "21e5cea7-2ee0-4edb-9f59-355465a8e207",
+  "id": "d189b497-23e5-471e-9ffc-741473efe3cd",
   "prevId": "46213677-f052-450a-ae6f-f410d4351c13",
   "tables": {
     "account": {
@@ -1021,13 +1021,6 @@
           "notNull": true,
           "autoincrement": false
         },
-        "estimated_cost": {
-          "name": "estimated_cost",
-          "type": "real",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
         "moderation_prompt_hate_severity": {
           "name": "moderation_prompt_hate_severity",
           "type": "text",
@@ -1174,6 +1167,14 @@
         "idx_event_created_at": {
           "name": "idx_event_created_at",
           "columns": [
+            "created_at"
+          ],
+          "isUnique": false
+        },
+        "idx_event_status_created_at": {
+          "name": "idx_event_status_created_at",
+          "columns": [
+            "event_status",
             "created_at"
           ],
           "isUnique": false

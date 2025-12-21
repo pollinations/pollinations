@@ -69,14 +69,6 @@ function getTierFromProductId(
     return tier || "none";
 }
 
-function shouldShowActivateButton(
-    assigned: TierStatus,
-    active: TierStatus,
-): boolean {
-    // Show button if assigned tier differs from active subscription
-    return assigned !== "none" && assigned !== active;
-}
-
 function getNextMidnightUTC(): string {
     const now = new Date();
     const tomorrow = new Date(now);
@@ -211,32 +203,10 @@ export const tiersRoutes = new Hono<Env>()
                 has_polar_error = true;
             }
 
-            // Determine if activate button should be shown
-            // Don't show button if Polar API failed - can't verify state safely
-            const should_show_activate_button =
-                !has_polar_error &&
-                shouldShowActivateButton(target_tier, active_tier);
-
-            // If button should show, fetch target tier's product name for the button
-            let target_tier_name: string | undefined;
-            if (should_show_activate_button && target_tier !== "none") {
-                try {
-                    const assignedProductId = getTierProductId(
-                        c.env,
-                        target_tier as ActivatableTier,
-                    );
-                    const assignedProduct =
-                        (await c.var.polar.client.products.get({
-                            id: assignedProductId,
-                        })) as PolarProductMinimal;
-                    target_tier_name = assignedProduct.name;
-                } catch (error) {
-                    log.warn("Failed to fetch target tier product: {error}", {
-                        tier: target_tier,
-                        error,
-                    });
-                }
-            }
+            // Subscriptions are now auto-created on signup and auto-reactivated on cancellation
+            // No manual activation button needed
+            const should_show_activate_button = false;
+            const target_tier_name: string | undefined = undefined;
 
             const viewModel: TierViewModel = {
                 target_tier,

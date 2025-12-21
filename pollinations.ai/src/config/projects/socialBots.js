@@ -120,24 +120,47 @@ export const socialBotsProjects = [
         "submissionDate": "2025-10-21",
         "order": 4,
     },
+    {
+        "name": "Lily – AI Discord Companion",
+        "url": "https://discord.com/oauth2/authorize?client_id=1448084290616164513&permissions=8&integration_type=0&scope=bot+applications.commands",
+        "description":
+            "Lily is a next-generation conversational AI bot for Discord designed to feel like a real person. She naturally learns user facts, tracks relationships over time, understands emotional tone, and decides when to speak using an AI-powered social decision engine. Lily delivers adaptive, emotionally aware, lifelike conversation.",
+        "author": "CloudCompile",
+        "category": "socialBots",
+        "language": "en",
+        "submissionDate": "2025-12-10",
+        "order": 5,
+    },
+    {
+        "name": "🎨 Aqua AI Generator",
+        "url": "https://top.gg/bot/1026133323023654932",
+        "description":
+            "Free Discord AI image generator bot supporting up to 8 models, including 4 from Pollinations. Users can set aspect ratios, load reference images, remix AI art, and manage prompts. Features tiering, usage controls, and configurable settings (ratios, references, negatives, resolution).",
+        "author": "@shaqkao1206",
+        "repo": "",
+        "category": "socialBots",
+        "submissionDate": "2025-12-12",
+        "order": 5,
+    },
+    {
+        "name": "🤖 NullVector",
+        "url": "https://discord.com/oauth2/authorize?client_id=1450613065069494423&permissions=8&integration_type=0&scope=applications.commands+bot",
+        "description":
+            "Discord AI assistant with smart model routing. Evaluates each message to select the best AI model for coding, reasoning, or research tasks. Features context-aware memory, transparent reasoning views, and natural conversation flow across DMs and servers.",
+        "author": "@CloudCompile, @fricker2025-star",
+        "repo": "https://github.com/CloudCompile/nullvector",
+        "category": "socialBots",
+        "submissionDate": "2025-12-16",
+        "order": 5,
+    },
   {
-    "name": "Lily – AI Discord Companion",
-    "url": "https://discord.com/oauth2/authorize?client_id=1448084290616164513&permissions=8&integration_type=0&scope=bot+applications.commands",
-    "description": "Lily is a next-generation conversational AI bot for Discord designed to feel like a real person. She naturally learns user facts, tracks relationships over time, understands emotional tone, and decides when to speak using an AI-powered social decision engine. Lily delivers adaptive, emotionally aware, lifelike conversation.",
-    "author": "CloudCompile",
+    "name": "🤖 TeleChars AI",
+    "url": "https://telecharsai.byethost14.com",
+    "description": "Plataforma para crear personajes IA personalizados en Telegram. Configura personalidad, parámetros de generación, conocimiento y ejemplos de conversación. Los bots tienen memoria a corto y largo plazo, pueden ver imágenes y escuchar audios.",
+    "author": "@marcosfrgames08",
     "category": "socialBots",
-    "language": "en",
-    "submissionDate": "2025-12-10",
-    "order": 5
-  },
-  {
-    "name": "🎨 Aqua AI Generator",
-    "url": "https://top.gg/bot/1026133323023654932",
-    "description": "Free Discord AI image generator bot supporting up to 8 models, including 4 from Pollinations. Users can set aspect ratios, load reference images, remix AI art, and manage prompts. Features tiering, usage controls, and configurable settings (ratios, references, negatives, resolution).",
-    "author": "@shaqkao1206",
-    "repo": "",
-    "category": "socialBots",
-    "submissionDate": "2025-12-12",
+    "language": "es",
+    "submissionDate": "2025-12-20",
     "order": 5
   }
 ];

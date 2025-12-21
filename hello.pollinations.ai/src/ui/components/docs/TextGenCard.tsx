@@ -2,7 +2,8 @@ import { useState, useEffect } from "react";
 import { Heading, Label } from "../ui/typography";
 import { Button } from "../ui/button";
 import { DOCS_PAGE } from "../../../theme";
-import { API_KEY } from "../../../api.config";
+import { API_BASE, API_KEY } from "../../../api.config";
+import { ALLOWED_TEXT_MODELS } from "../../../config/allowedModels";
 
 /**
  * Text Generation Card Component
@@ -12,40 +13,55 @@ export function TextGenCard() {
     const [selectedPrompt, setSelectedPrompt] = useState(
         DOCS_PAGE.textPrompts[0]
     );
-    const [selectedModel, setSelectedModel] = useState(""); // Empty = default openai
-    const [jsonMode, setJsonMode] = useState(false);
+    const [selectedModel, setSelectedModel] = useState("openai-fast");
+    const [params, setParams] = useState<Set<string>>(new Set());
     const [response, setResponse] = useState("");
     const [isLoading, setIsLoading] = useState(false);
 
-    const toggleModel = (model: string) => {
-        // If clicking the active model, deactivate it (go back to default)
-        setSelectedModel(selectedModel === model ? "" : model);
+    const toggleParam = (param: string) => {
+        const newParams = new Set(params);
+        if (newParams.has(param)) {
+            newParams.delete(param);
+        } else {
+            newParams.add(param);
+        }
+        setParams(newParams);
     };
 
     const buildUrl = () => {
-        // For display only - show what the equivalent GET URL would look like
-        let url = `https://enter.pollinations.ai/api/generate/text/${encodeURIComponent(
-            selectedPrompt
-        )}`;
-        const params = [];
-        if (selectedModel) params.push(`model=${selectedModel}`);
-        if (jsonMode) params.push("json=true");
-        if (params.length > 0) {
-            url += "?" + params.join("&");
+        let url = `${API_BASE}/text/${encodeURIComponent(selectedPrompt)}`;
+        const urlParams = new URLSearchParams();
+        urlParams.append("model", selectedModel);
+        if (params.size > 0) {
+            Array.from(params).forEach((p) => {
+                const [key, value] = p.split("=");
+                urlParams.append(key, value);
+            });
+        }
+        const paramString = urlParams.toString();
+        if (paramString) {
+            url += "?" + paramString;
         }
         return url;
     };
 
     useEffect(() => {
         const buildTextUrl = () => {
-            let url = `https://enter.pollinations.ai/api/generate/text/${encodeURIComponent(
-                selectedPrompt
-            )}`;
-            const params = [];
-            if (selectedModel) params.push(`model=${selectedModel}`);
-            if (jsonMode) params.push("json=true");
-            if (params.length > 0) {
-                url += "?" + params.join("&");
+            let url = `${API_BASE}/text/${encodeURIComponent(selectedPrompt)}`;
+            const urlParams = new URLSearchParams();
+            urlParams.append("model", selectedModel);
+            // Don't include stream param in actual fetch - just for display
+            if (params.size > 0) {
+                Array.from(params)
+                    .filter((p) => !p.startsWith("stream="))
+                    .forEach((p) => {
+                        const [key, value] = p.split("=");
+                        urlParams.append(key, value);
+                    });
+            }
+            const paramString = urlParams.toString();
+            if (paramString) {
+                url += "?" + paramString;
             }
             return url;
         };
@@ -53,12 +69,9 @@ export function TextGenCard() {
         const fetchText = async () => {
             setIsLoading(true);
             try {
-                // Use GET to /api/generate/text/{prompt}
                 const url = buildTextUrl();
                 const res = await fetch(url, {
-                    headers: {
-                        Authorization: `Bearer ${API_KEY}`,
-                    },
+                    headers: { Authorization: `Bearer ${API_KEY}` },
                 });
                 const text = await res.text();
                 setResponse(text);
@@ -70,7 +83,7 @@ export function TextGenCard() {
         };
 
         fetchText();
-    }, [selectedPrompt, selectedModel, jsonMode]);
+    }, [selectedPrompt, selectedModel, params]);
 
     return (
         <div>
@@ -80,7 +93,7 @@ export function TextGenCard() {
 
             {/* Prompts/Parameters and Response - Side by Side */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                {/* Left side: Prompts and Parameters */}
+                {/* Left side: Prompts, Model, and Parameters */}
                 <div className="space-y-4">
                     {/* Prompt Selection */}
                     <div>
@@ -107,25 +120,18 @@ export function TextGenCard() {
                     <div>
                         <Label>{DOCS_PAGE.modelLabel.text}</Label>
                         <div className="flex flex-wrap gap-2">
-                            {[
-                                { value: "mistral", label: "model=mistral" },
-                                { value: "claude", label: "model=claude" },
-                                {
-                                    value: "qwen-coder",
-                                    label: "model=qwen-coder",
-                                },
-                            ].map(({ value, label }) => (
+                            {ALLOWED_TEXT_MODELS.slice(0, 6).map((model) => (
                                 <button
-                                    key={value}
+                                    key={model}
                                     type="button"
-                                    onClick={() => toggleModel(value)}
+                                    onClick={() => setSelectedModel(model)}
                                     className={`px-3 py-1.5 font-mono text-xs border-2 transition-all cursor-pointer ${
-                                        selectedModel === value
+                                        selectedModel === model
                                             ? "bg-indicator-text border-border-brand font-black shadow-shadow-brand-sm text-text-inverse"
                                             : "bg-input-background border-border-main hover:border-border-brand text-text-body-main"
                                     }`}
                                 >
-                                    {label}
+                                    {model}
                                 </button>
                             ))}
                         </div>
@@ -134,24 +140,37 @@ export function TextGenCard() {
                         </p>
                     </div>
 
-                    {/* Optional Parameters */}
+                    {/* Parameters */}
                     <div>
-                        <Label>{DOCS_PAGE.optionalLabel.text}</Label>
-                        <button
-                            type="button"
-                            onClick={() => setJsonMode(!jsonMode)}
-                            className={`px-3 py-1.5 font-mono text-xs border-2 transition-all cursor-pointer ${
-                                jsonMode
-                                    ? "bg-indicator-text border-border-brand font-black shadow-shadow-brand-sm text-text-inverse"
-                                    : "bg-input-background border-border-main hover:border-border-brand text-text-body-main"
-                            }`}
-                        >
-                            json=true
-                        </button>
+                        <Label>{DOCS_PAGE.parametersLabel.text}</Label>
+                        <div className="flex flex-wrap gap-2">
+                            {DOCS_PAGE.textParameters.map(({ key, value }) => {
+                                const param = `${key}=${value}`;
+                                return (
+                                    <button
+                                        key={param}
+                                        type="button"
+                                        onClick={() => toggleParam(param)}
+                                        className={`px-3 py-1.5 font-mono text-xs border-2 transition-all cursor-pointer ${
+                                            params.has(param)
+                                                ? "bg-indicator-text border-border-brand font-black shadow-shadow-brand-sm text-text-inverse"
+                                                : "bg-input-background border-border-main hover:border-border-brand text-text-body-main"
+                                        }`}
+                                        title={
+                                            DOCS_PAGE.textParameters.find(
+                                                (p) => p.key === key
+                                            )?.description
+                                        }
+                                    >
+                                        {key}={value}
+                                    </button>
+                                );
+                            })}
+                        </div>
                     </div>
                 </div>
 
-                {/* Right side: Response (no label, no border, no scrollbar) */}
+                {/* Right side: Response */}
                 <div className="bg-surface-card p-3 min-h-[200px] max-h-[200px] overflow-hidden">
                     {isLoading ? (
                         <p className="text-text-caption font-body text-xs">
@@ -168,27 +187,25 @@ export function TextGenCard() {
             {/* URL Display */}
             <div className="mb-4 p-3 bg-input-background font-mono text-xs text-text-body-main break-all">
                 <span className="text-text-caption">
-                    https://enter.pollinations.ai/api/generate/text/
+                    https://{DOCS_PAGE.apiBaseUrl.text}/text/
                 </span>
                 <span className="bg-indicator-text px-1 font-black text-text-inverse">
                     {selectedPrompt}
                 </span>
-                {(selectedModel || jsonMode) && (
+                <span className="text-text-caption">?model=</span>
+                <span className="bg-indicator-text px-1 font-black text-text-inverse">
+                    {selectedModel}
+                </span>
+                {params.size > 0 && (
                     <>
-                        <span className="text-text-caption">?</span>
-                        {selectedModel && (
-                            <span className="bg-indicator-text px-1 font-black text-text-inverse">
-                                model={selectedModel}
+                        {Array.from(params).map((param) => (
+                            <span key={param}>
+                                <span className="text-text-caption">&</span>
+                                <span className="bg-indicator-text px-1 font-black text-text-inverse">
+                                    {param}
+                                </span>
                             </span>
-                        )}
-                        {selectedModel && jsonMode && (
-                            <span className="text-text-caption">&</span>
-                        )}
-                        {jsonMode && (
-                            <span className="bg-indicator-text px-1 font-black text-text-inverse">
-                                json=true
-                            </span>
-                        )}
+                        ))}
                     </>
                 )}
             </div>

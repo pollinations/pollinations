@@ -104,7 +104,7 @@ export type TrackEnv = {
 
 export const track = (eventType: EventType) =>
     createMiddleware<TrackEnv>(async (c, next) => {
-        const log = c.get("log");
+        const log = getLogger(["hono", "track"]);
         const startTime = new Date();
         const db = drizzle(c.env.DB);
 
@@ -275,7 +275,18 @@ export const track = (eventType: EventType) =>
                         ),
                     });
 
-                    log.trace("Event: {event}", { event });
+                    log.trace(
+                        [
+                            "Tracking event:",
+                            "  isBilledUsage={event.isBilledUsage}",
+                            "  balances[v1:meter:tier]={event.balances[v1:meter:tier]}",
+                            "  balances[v1:meter:pack]={event.balances[v1:meter:pack]}",
+                            '  selectedMeterSlug="{event.selectedMeterSlug}"',
+                            "  totalCost={event.totalCost}",
+                            "  totalPrice={event.totalPrice}",
+                        ].join("\n"),
+                        { event },
+                    );
                     await storeEvents(db, log, [event]);
                 }
 
@@ -283,8 +294,11 @@ export const track = (eventType: EventType) =>
                 if (
                     ["test", "development", "local"].includes(c.env.ENVIRONMENT)
                 ) {
-                    log.trace("Processing events immediately");
-                    await processEvents(db, log, {
+                    log.trace(
+                        "Processing events immediately (ENVIRONMENT={environment})",
+                        { environment: c.env.ENVIRONMENT },
+                    );
+                    await processEvents(db, log.getChild("events"), {
                         polarAccessToken: c.env.POLAR_ACCESS_TOKEN,
                         polarServer: c.env.POLAR_SERVER,
                         tinybirdIngestUrl: c.env.TINYBIRD_INGEST_URL,

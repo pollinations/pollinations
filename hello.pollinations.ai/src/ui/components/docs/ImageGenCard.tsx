@@ -2,7 +2,8 @@ import { useState, useEffect } from "react";
 import { Heading, Label } from "../ui/typography";
 import { Button } from "../ui/button";
 import { DOCS_PAGE } from "../../../theme";
-import { API_KEY } from "../../../api.config";
+import { API_BASE, API_KEY } from "../../../api.config";
+import { ALLOWED_IMAGE_MODELS } from "../../../config/allowedModels";
 
 /**
  * Image Generation Card Component
@@ -12,6 +13,7 @@ export function ImageGenCard() {
     const [selectedPrompt, setSelectedPrompt] = useState(
         DOCS_PAGE.imagePrompts[0]
     );
+    const [selectedModel, setSelectedModel] = useState("flux");
     const [params, setParams] = useState<Set<string>>(new Set());
     const [imageUrl, setImageUrl] = useState("");
     const [isLoading, setIsLoading] = useState(false);
@@ -27,19 +29,14 @@ export function ImageGenCard() {
     };
 
     const buildUrl = () => {
-        let url = `https://enter.pollinations.ai/api/generate/image/${encodeURIComponent(
-            selectedPrompt
-        )}`;
+        let url = `${API_BASE}/image/${encodeURIComponent(selectedPrompt)}`;
         const urlParams = new URLSearchParams();
+        urlParams.append("model", selectedModel);
         if (params.size > 0) {
             Array.from(params).forEach((p) => {
                 const [key, value] = p.split("=");
                 urlParams.append(key, value);
             });
-        }
-        // Add default model if not specified
-        if (!Array.from(params).some((p) => p.startsWith("model="))) {
-            urlParams.append("model", "flux");
         }
         const paramString = urlParams.toString();
         if (paramString) {
@@ -50,19 +47,14 @@ export function ImageGenCard() {
 
     useEffect(() => {
         const buildImageUrl = () => {
-            let url = `https://enter.pollinations.ai/api/generate/image/${encodeURIComponent(
-                selectedPrompt
-            )}`;
+            let url = `${API_BASE}/image/${encodeURIComponent(selectedPrompt)}`;
             const urlParams = new URLSearchParams();
+            urlParams.append("model", selectedModel);
             if (params.size > 0) {
                 Array.from(params).forEach((p) => {
                     const [key, value] = p.split("=");
                     urlParams.append(key, value);
                 });
-            }
-            // Add default model if not specified
-            if (!Array.from(params).some((p) => p.startsWith("model="))) {
-                urlParams.append("model", "flux");
             }
             const paramString = urlParams.toString();
             if (paramString) {
@@ -76,9 +68,7 @@ export function ImageGenCard() {
             try {
                 const url = buildImageUrl();
                 const response = await fetch(url, {
-                    headers: {
-                        Authorization: `Bearer ${API_KEY}`,
-                    },
+                    headers: { Authorization: `Bearer ${API_KEY}` },
                 });
                 if (!response.ok) {
                     throw new Error(
@@ -96,7 +86,7 @@ export function ImageGenCard() {
         };
 
         fetchImage();
-    }, [selectedPrompt, params]);
+    }, [selectedPrompt, selectedModel, params]);
 
     // Cleanup blob URLs
     useEffect(() => {
@@ -115,7 +105,7 @@ export function ImageGenCard() {
 
             {/* Prompts/Parameters and Image Preview - Side by Side */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                {/* Left side: Prompts and Parameters */}
+                {/* Left side: Prompts, Model, and Parameters */}
                 <div className="space-y-4">
                     {/* Prompt Selection */}
                     <div>
@@ -138,31 +128,53 @@ export function ImageGenCard() {
                         </div>
                     </div>
 
-                    {/* Optional Parameters */}
+                    {/* Model Selection */}
                     <div>
-                        <Label>{DOCS_PAGE.optionalParametersLabel.text}</Label>
+                        <Label>{DOCS_PAGE.modelSelectLabel.text}</Label>
                         <div className="flex flex-wrap gap-2">
-                            {[
-                                "model=nanobanana",
-                                "width=1024",
-                                "height=1024",
-                                "seed=42",
-                                "enhance=true",
-                                "nologo=true",
-                            ].map((param) => (
+                            {ALLOWED_IMAGE_MODELS.map((model) => (
                                 <button
-                                    key={param}
+                                    key={model}
                                     type="button"
-                                    onClick={() => toggleParam(param)}
+                                    onClick={() => setSelectedModel(model)}
                                     className={`px-3 py-1.5 font-mono text-xs border-2 transition-all cursor-pointer ${
-                                        params.has(param)
+                                        selectedModel === model
                                             ? "bg-indicator-text border-border-brand font-black shadow-shadow-brand-sm text-text-inverse"
                                             : "bg-input-background border-border-main hover:border-border-brand text-text-body-main"
                                     }`}
                                 >
-                                    {param}
+                                    {model}
                                 </button>
                             ))}
+                        </div>
+                    </div>
+
+                    {/* Parameters */}
+                    <div>
+                        <Label>{DOCS_PAGE.parametersLabel.text}</Label>
+                        <div className="flex flex-wrap gap-2">
+                            {DOCS_PAGE.imageParameters.map(({ key, value }) => {
+                                const param = `${key}=${value}`;
+                                return (
+                                    <button
+                                        key={param}
+                                        type="button"
+                                        onClick={() => toggleParam(param)}
+                                        className={`px-3 py-1.5 font-mono text-xs border-2 transition-all cursor-pointer ${
+                                            params.has(param)
+                                                ? "bg-indicator-text border-border-brand font-black shadow-shadow-brand-sm text-text-inverse"
+                                                : "bg-input-background border-border-main hover:border-border-brand text-text-body-main"
+                                        }`}
+                                        title={
+                                            DOCS_PAGE.imageParameters.find(
+                                                (p) => p.key === key
+                                            )?.description
+                                        }
+                                    >
+                                        {key}={value}
+                                    </button>
+                                );
+                            })}
                         </div>
                     </div>
                 </div>
@@ -186,19 +198,20 @@ export function ImageGenCard() {
             {/* URL Display */}
             <div className="mb-4 p-3 bg-input-background font-mono text-xs text-text-body-main break-all">
                 <span className="text-text-caption">
-                    https://enter.pollinations.ai/api/generate/image/
+                    https://{DOCS_PAGE.apiBaseUrl.text}/image/
                 </span>
                 <span className="bg-indicator-text px-1 font-black text-text-inverse">
                     {selectedPrompt}
                 </span>
+                <span className="text-text-caption">?model=</span>
+                <span className="bg-indicator-text px-1 font-black text-text-inverse">
+                    {selectedModel}
+                </span>
                 {params.size > 0 && (
                     <>
-                        <span className="text-text-caption">?</span>
-                        {Array.from(params).map((param, i) => (
+                        {Array.from(params).map((param) => (
                             <span key={param}>
-                                {i > 0 && (
-                                    <span className="text-text-caption">&</span>
-                                )}
+                                <span className="text-text-caption">&</span>
                                 <span className="bg-indicator-text px-1 font-black text-text-inverse">
                                     {param}
                                 </span>

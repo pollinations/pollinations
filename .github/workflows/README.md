@@ -41,21 +41,23 @@ Secrets required: `POLLY_BOT_APP_ID`, `POLLY_BOT_PRIVATE_KEY`
 | `inbox:discord` | Issue created from Discord       | `issue-create-from-discord.yml` (via Discord bot) |
 | `inbox:news`    | PR related to weekly news update | `pr-create-weekly-news.yml`                       |
 
-### App Submission Labels
+### Tier Labels (Unified for Apps & PRs)
 
-| Label             | Purpose                       | Applied by                         |
-| ----------------- | ----------------------------- | ---------------------------------- |
-| `app:review`      | App submission pending review | Issue template                     |
-| `app:info-needed` | Awaiting submitter response   | `pr-create-app-submission.yml`     |
-| `app:approved`    | App merged to showcase        | `app-issue-celebrate-approval.yml` |
-| `app:denied`      | Submission rejected           | Manual                             |
+| Label              | Purpose                                     | Applied by                                              |
+| ------------------ | ------------------------------------------- | ------------------------------------------------------- |
+| `tier:review`      | Submission/PR under review                  | Issue template / `tier-label-external-pr.yml`           |
+| `tier:info-needed` | Awaiting registration or more info          | `tier-app-submission.yml` / `tier-upgrade-on-merge.yml` |
+| `tier:flower`      | Approved for Flower tier (add before merge) | Manual (maintainer)                                     |
+| `tier:done`        | Tier upgrade completed                      | `tier-upgrade-on-merge.yml`                             |
 
 ### PR Labels
 
-| Label         | Purpose                    | Applied by              |
-| ------------- | -------------------------- | ----------------------- |
-| `pr:external` | PR from external contributor | `pr-label-external.yml` |
-| `pr:news`     | PR related to news/social  | Instagram workflows     |
+| Label              | Purpose                      | Applied by                   |
+| ------------------ | ---------------------------- | ---------------------------- |
+| `pr:external`      | PR from external contributor | `tier-label-external-pr.yml` |
+| `pr:review-needed` | Needs maintainer review      | Manual                       |
+| `pr:merge-ready`   | Approved, ready to merge     | Manual                       |
+| `pr:news`          | PR related to news/social    | Instagram workflows          |
 
 ## Workflows
 
@@ -70,10 +72,12 @@ Secrets required: `POLLY_BOT_APP_ID`, `POLLY_BOT_PRIVATE_KEY`
 -   **pr-label-external.yml** - Adds `pr:external` to PRs from external contributors. Skips internal users and bots.
 -   **pr-assign-author.yml** - Assigns the PR creator to the PR when opened.
 
-### App Submissions
+### Tier Upgrade System
 
--   **pr-create-app-submission.yml** - AI-powered review of app submissions. Parses issue, creates PR to add project.
--   **app-issue-celebrate-approval.yml** - Post-merge: adds `app:approved` label and celebration comment.
+-   **tier-app-submission.yml** - AI-powered review of app submissions. Parses issue, checks registration, creates PR.
+-   **tier-label-external-pr.yml** - Labels external contributor PRs with `tier:review` and `pr:external`.
+-   **tier-upgrade-on-merge.yml** - When PR with `tier:flower` label merges, upgrades user to Flower tier in D1 + Polar.
+-   **tier-recheck-registration.yml** - When user comments on issue/PR with `tier:info-needed`, re-checks registration.
 
 ### News & Discord
 
@@ -254,4 +258,40 @@ flowchart TD
 flowchart TD
     A[Any PR merged to main] --> B[discord-post-merged-pr.yml]
     B --> C[Posts to Discord immediately]
+```
+
+### Tier Upgrade Flow
+
+```mermaid
+%%{init: {'theme': 'dark'}}%%
+flowchart TD
+    subgraph APP["App Submission"]
+        A1[User opens issue] --> A2[tier:review label]
+        A2 --> A3[tier-app-submission.yml]
+        A3 --> A4{Registered?}
+        A4 -->|No| A5[tier:info-needed + comment]
+        A5 --> A6[User comments]
+        A6 --> A7[tier-recheck-registration.yml]
+        A7 --> A4
+        A4 -->|Yes| A8[Create PR automatically]
+    end
+
+    subgraph PR["Direct PR"]
+        B1[User opens PR] --> B2[tier-label-external-pr.yml]
+        B2 --> B3[tier:review + pr:external]
+    end
+
+    A8 --> C[Maintainer reviews]
+    B3 --> C
+
+    C --> D{Approve for Flower?}
+    D -->|Yes| E[Add tier:flower label]
+    D -->|No| F[Close or merge without label]
+
+    E --> G[Merge PR]
+    G --> H[tier-upgrade-on-merge.yml]
+    H --> I{User registered?}
+    I -->|Yes| J[Upgrade D1 + Polar]
+    J --> K[tier:done + celebration comment]
+    I -->|No| L[tier:info-needed + reminder]
 ```

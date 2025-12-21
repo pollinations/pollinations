@@ -4,23 +4,23 @@
  * Users will see a tooltip prompting them to log in to enter.pollinations.ai to access them.
  */
 
-export const ALLOWED_IMAGE_MODELS = [
-    "zimage",
-    "flux",
-    "nanobanana",
-];
+export const ALLOWED_IMAGE_MODELS = ["zimage", "flux", "turbo", "nanobanana"];
 
 export const ALLOWED_TEXT_MODELS = [
-    "openai-fast",
-    "qwen-coder",
-    "mistral",
-    "openai-audio",
+    "nova-micro",
     "gemini",
-    "chickytutor",
+    "gemini-fast",
+    "kimi-k2-thinking",
+    "perplexity-fast",
     "midijourney",
     "claude-fast",
-    "perplexity-fast",
-    "nova-micro",
+    "chickytutor",
+    "grok",
+    "deepseek",
+    "qwen-coder",
+    "mistral",
+    "openai-fast",
+    "openai-audio",
 ];
 
 /**

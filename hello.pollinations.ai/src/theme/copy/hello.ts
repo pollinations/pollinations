@@ -22,7 +22,7 @@ export const HELLO_PAGE = {
     },
 
     whatIsDescription: {
-        text: "Pollinations is an open-source AI platform built by and for the community. We offer a unified API for images, text, and audio — with video on the way. Everything runs in the open: our code, our roadmap, our conversations. Hundreds of developers are already building tools, games, bots, and weird experiments with us. You're welcome to join.",
+        text: "Pollinations is an open-source AI platform built by and for the community. We offer a unified API for images, text, audio, and video. Everything runs in the open: our code, our roadmap, our conversations. Hundreds of developers are already building tools, games, bots, and weird experiments with us. You're welcome to join.",
     },
 
     whatIsTagline: {
@@ -35,7 +35,7 @@ export const HELLO_PAGE = {
     },
 
     pollenDescription: {
-        text: "Running AI models costs money. Pollen is how we keep the servers humming without ads or selling your data. One simple credit across all models — predictable, transparent, no surprises. Two ways to get it:",
+        text: "Running AI models costs money. Pollen is how we keep the servers humming without ads or selling your data. One simple credit across all models — predictable, transparent, no surprises.",
     },
 
     // Get Pollen Section
@@ -48,11 +48,11 @@ export const HELLO_PAGE = {
     },
 
     buyCardTitle: {
-        text: "Support the Project",
+        text: "Buy Pollen",
     },
 
     buyCardDescription: {
-        text: "Grab some Pollen and help keep Pollinations running. No subscriptions, no tricks — just straightforward support.",
+        text: "Add Pollen to your wallet and build. Straightforward packs, no subscriptions, no locked-in tiers.",
     },
 
     earnCardTitle: {
@@ -60,7 +60,7 @@ export const HELLO_PAGE = {
     },
 
     earnCardDescription: {
-        text: "Active community members get free Pollen. Ship an app, help others in Discord, fix a bug, write docs — we notice and we share.",
+        text: "Ship an app, help in Discord, fix bugs, improve docs — every contribution earns you Pollen. We notice and we share.",
     },
 
     // Earn Pollen: Sponsorship Tiers
@@ -73,7 +73,7 @@ export const HELLO_PAGE = {
     },
 
     tierSporeTitle: {
-        text: "🦠 Spore — Just arrived",
+        text: "Spore — Just arrived",
     },
 
     tierSporeDescription: {
@@ -81,7 +81,7 @@ export const HELLO_PAGE = {
     },
 
     tierSeedTitle: {
-        text: "🌱 Seed — Part of the community",
+        text: "Seed — Part of the community",
     },
 
     tierSeedDescription: {
@@ -89,7 +89,7 @@ export const HELLO_PAGE = {
     },
 
     tierFlowerTitle: {
-        text: "🌸 Flower — You shipped something",
+        text: "Flower — You shipped something",
     },
 
     tierFlowerDescription: {
@@ -97,7 +97,7 @@ export const HELLO_PAGE = {
     },
 
     tierNectarTitle: {
-        text: "🍯 Nectar — Community pillar",
+        text: "Nectar — Community pillar",
     },
 
     tierNectarDescription: {
@@ -114,7 +114,7 @@ export const HELLO_PAGE = {
     },
 
     questsStatus: {
-        text: "Coming soon",
+        text: "New",
     },
 
     // What You Can Build Section

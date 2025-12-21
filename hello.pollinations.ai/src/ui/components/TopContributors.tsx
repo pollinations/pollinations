@@ -15,34 +15,63 @@ export function TopContributors() {
     const [loadingContributors, setLoadingContributors] = useState(true);
 
     useEffect(() => {
-        const fetchContributors = async () => {
+        const fetchTopContributors365 = async () => {
             try {
-                const response = await fetch(
-                    "https://api.github.com/repos/pollinations/pollinations/contributors?per_page=15&sort=contributions"
-                );
-                const data = await response.json();
-                if (Array.isArray(data)) {
-                    // Filter out bots and take top 12 users
-                    const userContributors = data
-                        .filter((contrib: any) => !contrib.login.includes("[bot]") && !contrib.login.endsWith("-bot"))
-                        .slice(0, 12)
-                        .map((contrib: any) => ({
-                            login: contrib.login,
-                            avatar_url: contrib.avatar_url,
-                            profile_url: contrib.html_url,
-                            contributions: contrib.contributions,
-                        }));
-                    setContributors(userContributors);
+                const since = new Date(Date.now() - 365 * 24 * 60 * 60 * 1000).toISOString();
+
+                const perPage = 100;
+                let page = 1;
+                const contributorMap = new Map<string, any>();
+
+                while (page <= 5) { 
+                    const res = await fetch(
+                        `https://api.github.com/repos/pollinations/pollinations/commits?since=${since}&per_page=${perPage}&page=${page}`,
+                        {
+                            headers: {
+                                Accept: "application/vnd.github+json",
+                            },
+                        }
+                    );
+
+                    const commits = await res.json();
+                    if (!Array.isArray(commits) || commits.length === 0) break;
+
+                    for (const c of commits) {
+                        if (!c.author || !c.author.login) continue;
+
+                        const login = c.author.login;
+                        if (login.includes("[bot]") || login.endsWith("-bot") || login.includes("Copilot")) continue;
+
+                        if (!contributorMap.has(login)) {
+                            contributorMap.set(login, {
+                                login,
+                                avatar_url: c.author.avatar_url,
+                                profile_url: c.author.html_url,
+                                contributions: 0,
+                            });
+                        }
+
+                        contributorMap.get(login).contributions += 1;
+                    }
+
+                    page++;
                 }
-            } catch (error) {
-                console.error("Failed to fetch contributors:", error);
+
+                const topContributors = Array.from(contributorMap.values())
+                    .sort((a, b) => b.contributions - a.contributions)
+                    .slice(0, 12);
+
+                setContributors(topContributors);
+            } catch (err) {
+                console.error("Contributor aggregation failed:", err);
             } finally {
                 setLoadingContributors(false);
             }
         };
 
-        fetchContributors();
+        fetchTopContributors365();
     }, []);
+
 
     if (loadingContributors && contributors.length === 0) {
         return null;

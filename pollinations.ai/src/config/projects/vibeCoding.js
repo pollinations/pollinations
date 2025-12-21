@@ -182,5 +182,14 @@ export const vibeCodingProjects = [
     "category": "vibeCoding",
     "submissionDate": "2025-12-13",
     "order": 5
+  },
+  {
+    "name": "pollinations.ai new website",
+    "url": "hello@pollinations.ai",
+    "description": "very cool website",
+    "category": "vibeCoding",
+    "author": "@ElliotEtag",
+    "submissionDate": "2025-12-21",
+    "order": 5
   }
 ];

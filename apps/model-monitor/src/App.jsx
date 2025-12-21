@@ -154,10 +154,10 @@ function TrendIndicator({ trend }) {
         p95Change > 5
             ? "text-red-600"
             : p95Change > 0.5
-              ? "text-yellow-600"
-              : p95Change < -0.5
-                ? "text-green-600"
-                : "text-gray-400";
+            ? "text-yellow-600"
+            : p95Change < -0.5
+            ? "text-green-600"
+            : "text-gray-400";
 
     // 5xx trend - any change matters
     const err5xxArrow =
@@ -166,10 +166,10 @@ function TrendIndicator({ trend }) {
         err5xxChange > 1
             ? "text-red-600"
             : err5xxChange > 0.1
-              ? "text-yellow-600"
-              : err5xxChange < -0.1
-                ? "text-green-600"
-                : "text-gray-400";
+            ? "text-yellow-600"
+            : err5xxChange < -0.1
+            ? "text-green-600"
+            : "text-gray-400";
 
     // Format the change value for display
     const formatChange = (val) => {
@@ -184,7 +184,7 @@ function TrendIndicator({ trend }) {
             <span
                 className={p95Color}
                 title={`P95: ${p95Change > 0 ? "+" : ""}${p95Change.toFixed(
-                    0,
+                    0
                 )}%`}
             >
                 {p95Arrow}
@@ -295,6 +295,140 @@ function computeHealthStatus(stats, modelType = "text") {
     return "on";
 }
 
+// Global health summary component
+function GlobalHealthSummary({ models }) {
+    // Separate by type
+    const textModels = models.filter((m) => m.type === "text");
+    const imageModels = models.filter((m) => m.type === "image");
+
+    // Calculate aggregate stats for a group of models
+    const calcGroupStats = (group, modelType) => {
+        let total2xx = 0;
+        let totalAdjusted = 0;
+        let countOn = 0;
+        let countTurbulent = 0;
+        let countOff = 0;
+
+        group.forEach((m) => {
+            const stats = m.stats;
+            if (!stats) return;
+
+            const total = stats.total_requests || 0;
+            const excluded401_403 =
+                (stats.errors_401 || 0) + (stats.errors_403 || 0);
+            const adjusted = total - excluded401_403;
+
+            total2xx += stats.status_2xx || 0;
+            totalAdjusted += adjusted > 0 ? adjusted : 0;
+
+            const status = computeHealthStatus(stats, modelType);
+            if (status === "on") countOn++;
+            else if (status === "turbulent") countTurbulent++;
+            else countOff++;
+        });
+
+        const successRate =
+            totalAdjusted > 0 ? (total2xx / totalAdjusted) * 100 : 100;
+
+        // Determine aggregate status based on success rate (traffic-weighted)
+        let status = "healthy";
+        if (successRate < 75) status = "critical";
+        else if (successRate < 95) status = "degraded";
+
+        return {
+            successRate,
+            status,
+            countOn,
+            countTurbulent,
+            countOff,
+            totalModels: group.length,
+        };
+    };
+
+    const textStats = calcGroupStats(textModels, "text");
+    const imageStats = calcGroupStats(imageModels, "image");
+
+    const statusStyles = {
+        healthy: {
+            bg: "bg-green-50",
+            border: "border-green-200",
+            dot: "bg-green-500",
+            text: "text-green-700",
+            label: "Healthy",
+        },
+        degraded: {
+            bg: "bg-yellow-50",
+            border: "border-yellow-200",
+            dot: "bg-yellow-500",
+            text: "text-yellow-700",
+            label: "Degraded",
+        },
+        critical: {
+            bg: "bg-red-50",
+            border: "border-red-200",
+            dot: "bg-red-500 animate-pulse",
+            text: "text-red-700",
+            label: "Critical",
+        },
+    };
+
+    const HealthCard = ({ title, emoji, stats }) => {
+        const style = statusStyles[stats.status];
+        return (
+            <div
+                className={`flex-1 min-w-[140px] ${style.bg} ${style.border} border rounded-lg p-3`}
+            >
+                <div className="flex items-center gap-2 mb-1">
+                    <span className="text-sm">{emoji}</span>
+                    <span className="text-xs font-medium text-gray-700">
+                        {title}
+                    </span>
+                </div>
+                <div className="flex items-center gap-1.5 mb-1">
+                    <span className={`w-2 h-2 rounded-full ${style.dot}`} />
+                    <span className={`text-sm font-semibold ${style.text}`}>
+                        {style.label}
+                    </span>
+                </div>
+                <div className="text-xs text-gray-600">
+                    {stats.successRate.toFixed(1)}% success
+                </div>
+                <div className="text-[10px] text-gray-500 mt-1">
+                    {stats.totalModels} models
+                    {(stats.countTurbulent > 0 || stats.countOff > 0) && (
+                        <span className="ml-1">
+                            (
+                            {stats.countOff > 0 && (
+                                <span className="text-red-600">
+                                    {stats.countOff} off
+                                </span>
+                            )}
+                            {stats.countOff > 0 &&
+                                stats.countTurbulent > 0 &&
+                                ", "}
+                            {stats.countTurbulent > 0 && (
+                                <span className="text-yellow-600">
+                                    {stats.countTurbulent} degraded
+                                </span>
+                            )}
+                            )
+                        </span>
+                    )}
+                </div>
+            </div>
+        );
+    };
+
+    if (models.length === 0) return null;
+
+    return (
+        <div className="flex flex-wrap gap-3">
+            <HealthCard title="Text" emoji="📝" stats={textStats} />
+            <HealthCard title="Image" emoji="🖼️" stats={imageStats} />
+        </div>
+    );
+}
+
 // Status badge for model health (off/turbulent/on)
 function StatusBadge({ stats, modelType }) {
     const status = computeHealthStatus(stats, modelType);
@@ -329,8 +463,8 @@ function SortableTh({ label, sortKey, currentSort, onSort, align = "left" }) {
         align === "right"
             ? "text-right"
             : align === "center"
-              ? "text-center"
-              : "text-left";
+            ? "text-center"
+            : "text-left";
 
     return (
         <th
@@ -356,7 +490,7 @@ function GatewayHealth({ stats }) {
             err429: acc.err429 + (s.errors_429 || 0),
             err4xxOther: acc.err4xxOther + (s.errors_4xx_other || 0),
         }),
-        { requests: 0, err401: 0, err403: 0, err429: 0, err4xxOther: 0 },
+        { requests: 0, err401: 0, err403: 0, err429: 0, err4xxOther: 0 }
     );
 
     if (totals.requests === 0) return null;
@@ -460,7 +594,7 @@ function App() {
     // Calculate total requests across all models
     const totalAllRequests = models.reduce(
         (sum, m) => sum + (m.stats?.total_requests || 0),
-        0,
+        0
     );
 
     // Helper to calculate status codes
@@ -537,14 +671,14 @@ function App() {
                                         endpointStatus.image === true
                                             ? "bg-green-500"
                                             : endpointStatus.image === false
-                                              ? "bg-red-500"
-                                              : "bg-gray-300"
+                                            ? "bg-red-500"
+                                            : "bg-gray-300"
                                     }`}
                                 />
                                 image:{" "}
                                 {
                                     sortedModels.filter(
-                                        (m) => m.type === "image",
+                                        (m) => m.type === "image"
                                     ).length
                                 }
                             </span>
@@ -554,14 +688,14 @@ function App() {
                                         endpointStatus.text === true
                                             ? "bg-green-500"
                                             : endpointStatus.text === false
-                                              ? "bg-red-500"
-                                              : "bg-gray-300"
+                                            ? "bg-red-500"
+                                            : "bg-gray-300"
                                     }`}
                                 />
                                 text:{" "}
                                 {
                                     sortedModels.filter(
-                                        (m) => m.type === "text",
+                                        (m) => m.type === "text"
                                     ).length
                                 }
                             </span>
@@ -616,6 +750,9 @@ function App() {
                         {error}
                     </div>
                 )}
+
+                {/* Global Health Summary */}
+                <GlobalHealthSummary models={models} />
 
                 {/* Gateway Health (pre-model errors) */}
                 <GatewayHealth stats={gatewayStats} />
@@ -781,7 +918,7 @@ function App() {
                                                         <span className="text-[9px] text-gray-400 ml-1">
                                                             (
                                                             {Math.round(
-                                                                total / 5,
+                                                                total / 5
                                                             )}
                                                             /m)
                                                         </span>
@@ -803,7 +940,7 @@ function App() {
                                                 className={`px-3 py-2 text-right tabular-nums ${get2xxColor(
                                                     ok2xx,
                                                     total,
-                                                    excluded401_403,
+                                                    excluded401_403
                                                 )}`}
                                                 title={
                                                     excluded401_403 > 0
@@ -814,7 +951,7 @@ function App() {
                                                 {formatPercent(
                                                     ok2xx,
                                                     adjustedTotal,
-                                                    true,
+                                                    true
                                                 )}
                                             </td>
                                             {/* Errors breakdown */}
@@ -824,7 +961,7 @@ function App() {
                                             {/* Last Error */}
                                             <td
                                                 className={`px-3 py-2 text-right tabular-nums ${getLastErrorColor(
-                                                    lastErrorAt,
+                                                    lastErrorAt
                                                 )}`}
                                             >
                                                 {lastErrorAgo || "—"}
@@ -834,7 +971,7 @@ function App() {
                                                 className={`px-3 py-2 text-right tabular-nums ${
                                                     p50Sec
                                                         ? getLatencyColor(
-                                                              p50Sec,
+                                                              p50Sec
                                                           )
                                                         : "text-gray-300"
                                                 }`}
@@ -849,12 +986,12 @@ function App() {
                                                     !p95Sec
                                                         ? "text-gray-300"
                                                         : tailRatio > 3
-                                                          ? "text-red-600 font-medium"
-                                                          : tailRatio > 2
-                                                            ? "text-yellow-600"
-                                                            : getLatencyColor(
-                                                                  p95Sec,
-                                                              )
+                                                        ? "text-red-600 font-medium"
+                                                        : tailRatio > 2
+                                                        ? "text-yellow-600"
+                                                        : getLatencyColor(
+                                                              p95Sec
+                                                          )
                                                 }`}
                                             >
                                                 {p95Sec

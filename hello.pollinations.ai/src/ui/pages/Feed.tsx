@@ -147,7 +147,7 @@ function Feed() {
 
                 {displayedImages.length > 0 && (
                     <>
-                        <div className="feed-grid grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 max-h-[calc(100vh-340px)] overflow-y-auto pr-4 scrollbar-thin scrollbar-thumb-border-brand scrollbar-track-surface-secondary rounded-lg"
+                        <div className="feed-grid grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2 max-h-[calc(100vh-340px)] overflow-y-auto pr-4 scrollbar-thin scrollbar-thumb-border-brand scrollbar-track-surface-secondary rounded-lg"
                             style={{
                                 scrollbarWidth: 'thin',
                                 scrollbarColor: 'var(--color-border-brand) var(--color-surface-secondary)',
@@ -200,61 +200,76 @@ function Feed() {
 
             {selectedImage && (
                 <div
-                    className="modal-backdrop fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+                    className="modal-backdrop fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4"
                     onClick={() => setSelectedImage(null)}
                 >
                     <div
-                        className="modal-content bg-surface-base rounded-xl max-w-3xl max-h-[90vh] overflow-y-auto flex flex-col relative"
+                        className="modal-content bg-gray-950 rounded-xl max-w-4xl w-full max-h-[95vh] overflow-hidden flex flex-col relative shadow-2xl"
                         onClick={(e) => e.stopPropagation()}
                     >
                         <button
                             onClick={() => setSelectedImage(null)}
-                            className="absolute top-4 right-4 z-10 bg-black/50 hover:bg-black/70 rounded-full p-2 transition-colors"
+                            className="absolute top-4 right-4 z-10 bg-white/20 hover:bg-white/30 rounded-full p-2 transition-colors backdrop-blur-sm"
                         >
                             <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                             </svg>
                         </button>
 
-                        <div className="relative bg-black flex items-center justify-center">
+                        <div className="relative bg-black flex items-center justify-center flex-1 overflow-hidden">
                             <img
                                 src={selectedImage.imageURL}
                                 alt={selectedImage.prompt}
-                                className="w-full h-auto object-contain"
+                                className="w-full h-full object-contain"
                             />
                         </div>
 
-                        <div className="p-6 space-y-4">
+                        <div className="p-6 space-y-4 bg-gray-950 border-t border-white/10 overflow-y-auto max-h-56">
                             <div>
-                                <h3 className="text-sm font-semibold text-text-caption mb-2">Prompt</h3>
-                                <p className="text-text-body text-sm leading-relaxed">{selectedImage.prompt}</p>
+                                <h3 className="text-xs font-semibold text-gray-400 mb-2 uppercase tracking-wide">Prompt</h3>
+                                <p className="text-white text-sm leading-relaxed">{selectedImage.prompt}</p>
                             </div>
 
-                            <div className="grid grid-cols-2 gap-4">
+                            <div className="grid grid-cols-4 gap-3">
                                 <div>
-                                    <h4 className="text-xs font-semibold text-text-caption mb-1">Model</h4>
-                                    <p className="text-sm text-text-body">{selectedImage.model}</p>
+                                    <h4 className="text-xs font-semibold text-gray-400 mb-1 uppercase tracking-wide">Model</h4>
+                                    <p className="text-white text-sm">{selectedImage.model}</p>
                                 </div>
                                 <div>
-                                    <h4 className="text-xs font-semibold text-text-caption mb-1">Seed</h4>
-                                    <p className="text-sm text-text-body">#{selectedImage.seed}</p>
+                                    <h4 className="text-xs font-semibold text-gray-400 mb-1 uppercase tracking-wide">Seed</h4>
+                                    <p className="text-white text-sm">#{selectedImage.seed}</p>
                                 </div>
                                 <div>
-                                    <h4 className="text-xs font-semibold text-text-caption mb-1">Resolution</h4>
-                                    <p className="text-sm text-text-body">{selectedImage.width}×{selectedImage.height}</p>
+                                    <h4 className="text-xs font-semibold text-gray-400 mb-1 uppercase tracking-wide">Resolution</h4>
+                                    <p className="text-white text-sm">{selectedImage.width}×{selectedImage.height}</p>
                                 </div>
                                 <div>
-                                    <h4 className="text-xs font-semibold text-text-caption mb-1">Aspect Ratio</h4>
-                                    <p className="text-sm text-text-body">{(selectedImage.width / selectedImage.height).toFixed(2)}</p>
+                                    <h4 className="text-xs font-semibold text-gray-400 mb-1 uppercase tracking-wide">Aspect Ratio</h4>
+                                    <p className="text-white text-sm">{(selectedImage.width / selectedImage.height).toFixed(2)}</p>
                                 </div>
                             </div>
 
-                            <button
-                                onClick={() => window.open(selectedImage.imageURL, '_blank')}
-                                className="w-full mt-4 px-4 py-2 bg-border-brand hover:bg-opacity-90 text-white rounded-lg transition-colors text-sm font-medium"
-                            >
-                                Open Full Size
-                            </button>
+                            <div className="flex gap-3 pt-2">
+                                <button
+                                    onClick={() => window.open(selectedImage.imageURL, '_blank')}
+                                    className="flex-1 px-4 py-2.5 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-500 hover:to-blue-600 text-white rounded-lg transition-all duration-200 text-sm font-semibold shadow-lg hover:shadow-blue-600/50"
+                                >
+                                    Open Full Size
+                                </button>
+                                <button
+                                    onClick={() => {
+                                        const link = document.createElement('a');
+                                        link.href = selectedImage.imageURL;
+                                        link.download = `pollinations-${selectedImage.seed}.png`;
+                                        document.body.appendChild(link);
+                                        link.click();
+                                        document.body.removeChild(link);
+                                    }}
+                                    className="flex-1 px-4 py-2.5 bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-500 hover:to-emerald-600 text-white rounded-lg transition-all duration-200 text-sm font-semibold shadow-lg hover:shadow-emerald-600/50"
+                                >
+                                    Download
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>

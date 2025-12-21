@@ -1,10 +1,3 @@
-/**
- * Pollinations Authentication Service
- *
- * Simple API key management for authenticated requests
- * Supports publishable keys (pk_) and secret keys (sk_)
- */
-
 import { createMCPResponse, createTextContent } from "../utils/coreUtils.js";
 import {
     setApiKey as storeApiKey,
@@ -16,9 +9,6 @@ import {
 } from "../utils/authUtils.js";
 import { z } from "zod";
 
-/**
- * Set the API key for authenticated requests
- */
 async function setApiKey(params) {
     const { key } = params;
 
@@ -26,7 +16,6 @@ async function setApiKey(params) {
         throw new Error("API key is required and must be a string");
     }
 
-    // Validate key format
     if (!key.startsWith("pk_") && !key.startsWith("sk_")) {
         throw new Error(
             "Invalid API key format. Keys should start with 'pk_' (publishable) or 'sk_' (secret)"
@@ -51,9 +40,6 @@ async function setApiKey(params) {
     ]);
 }
 
-/**
- * Get information about the current API key
- */
 async function getKeyInfo(params) {
     if (!hasApiKey()) {
         return createMCPResponse([
@@ -80,9 +66,6 @@ async function getKeyInfo(params) {
     ]);
 }
 
-/**
- * Clear the stored API key
- */
 async function clearApiKey(params) {
     const wasSet = hasApiKey();
     clearStoredKey();
@@ -97,9 +80,6 @@ async function clearApiKey(params) {
     ]);
 }
 
-/**
- * Export tools as arrays for MCP server registration
- */
 export const authTools = [
     [
         "setApiKey",

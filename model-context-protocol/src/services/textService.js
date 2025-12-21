@@ -1,12 +1,3 @@
-/**
- * Pollinations Text Service
- *
- * Complete implementation for text generation using gen.pollinations.ai
- * Uses POST /v1/chat/completions exclusively (no GET endpoint)
- * Supports ALL API parameters for maximum control.
- * Dynamic model discovery - no hardcoded model lists!
- */
-
 import {
     createMCPResponse,
     createTextContent,
@@ -17,21 +8,12 @@ import { getTextModels, validateTextModel } from "../utils/modelCache.js";
 import { getAuthHeaders, requireApiKey } from "../utils/authUtils.js";
 import { z } from "zod";
 
-// ============================================================================
-// TEXT GENERATION (using POST /v1/chat/completions)
-// ============================================================================
-
-/**
- * Generate text from a prompt using chat completions
- * Simple wrapper that converts a single prompt into a chat completion call
- */
 async function generateText(params) {
     requireApiKey();
 
     const {
         prompt,
         model = "openai",
-        // Generation control
         seed,
         system,
         temperature,
@@ -39,7 +21,6 @@ async function generateText(params) {
         top_p,
         frequency_penalty,
         presence_penalty,
-        // Output options
         json: jsonMode,
         private: isPrivate,
     } = params;
@@ -48,7 +29,6 @@ async function generateText(params) {
         throw new Error("Prompt is required and must be a string");
     }
 
-    // Validate model if specified
     const validation = await validateTextModel(model);
     if (!validation.valid) {
         throw new Error(
@@ -57,14 +37,12 @@ async function generateText(params) {
         );
     }
 
-    // Build messages array from prompt and optional system message
     const messages = [];
     if (system) {
         messages.push({ role: "system", content: system });
     }
     messages.push({ role: "user", content: prompt });
 
-    // Build request body
     const requestBody = {
         messages,
         model,
@@ -77,12 +55,10 @@ async function generateText(params) {
         stream: false,
     };
 
-    // Add JSON mode if requested
     if (jsonMode) {
         requestBody.response_format = { type: "json_object" };
     }
 
-    // Remove undefined values using a filtered approach
     const cleanedBody = {};
     Object.entries(requestBody).forEach(([key, value]) => {
         if (value !== undefined && value !== null) {
@@ -92,7 +68,7 @@ async function generateText(params) {
 
     try {
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
+        const timeoutId = setTimeout(() => controller.abort(), 30000);
         
         const response = await fetch(`${API_BASE_URL}/v1/chat/completions`, {
             method: "POST",
@@ -106,7 +82,6 @@ async function generateText(params) {
 
         if (!response.ok) {
             const errorText = await response.text().catch(() => "Unknown error");
-            // Handle rate limiting with retry guidance
             if (response.status === 429) {
                 throw new Error("Rate limited. Please wait before retrying.");
             }
@@ -125,19 +100,12 @@ async function generateText(params) {
     }
 }
 
-/**
- * OpenAI-compatible chat completions with ALL parameters
- * Full control over the entire API
- */
 async function chatCompletion(params) {
     requireApiKey();
 
     const {
-        // Required
         messages,
-        // Model
         model = "openai",
-        // Generation control
         temperature,
         max_tokens,
         top_p,
@@ -146,30 +114,22 @@ async function chatCompletion(params) {
         repetition_penalty,
         seed,
         stop,
-        // Response format
         response_format,
-        // Streaming (note: MCP doesn't support streaming, but we include for completeness)
         stream = false,
         stream_options,
-        // Reasoning/thinking (for reasoning models like deepseek, grok, claude)
         thinking,
         reasoning_effort,
         thinking_budget,
-        // Tool/function calling
         tools,
         tool_choice,
         parallel_tool_calls,
-        // Legacy function calling (deprecated but supported)
         functions,
         function_call,
-        // Audio output (for openai-audio model)
         modalities,
         audio,
-        // Logprobs
         logprobs,
         top_logprobs,
         logit_bias,
-        // User tracking
         user,
     } = params;
 
@@ -177,7 +137,6 @@ async function chatCompletion(params) {
         throw new Error("Messages array is required and must not be empty");
     }
 
-    // Validate model if specified
     const validation = await validateTextModel(model);
     if (!validation.valid) {
         throw new Error(
@@ -186,11 +145,9 @@ async function chatCompletion(params) {
         );
     }
 
-    // Build request body with ALL supported parameters
     const requestBody = {
         messages,
         model,
-        // Generation control
         temperature,
         max_tokens,
         top_p,
@@ -199,34 +156,25 @@ async function chatCompletion(params) {
         repetition_penalty,
         seed,
         stop,
-        // Response format
         response_format,
-        // Streaming
         stream,
         stream_options,
-        // Reasoning/thinking
         thinking,
         reasoning_effort,
         thinking_budget,
-        // Tools
         tools,
         tool_choice,
         parallel_tool_calls,
-        // Legacy functions
         functions,
         function_call,
-        // Audio
         modalities,
         audio,
-        // Logprobs
         logprobs,
         top_logprobs,
         logit_bias,
-        // User
         user,
     };
 
-    // Remove undefined values
     const cleanedBody = {};
     Object.entries(requestBody).forEach(([key, value]) => {
         if (value !== undefined && value !== null) {
@@ -236,7 +184,7 @@ async function chatCompletion(params) {
 
     try {
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
+        const timeoutId = setTimeout(() => controller.abort(), 30000);
         
         const response = await fetch(`${API_BASE_URL}/v1/chat/completions`, {
             method: "POST",
@@ -250,7 +198,6 @@ async function chatCompletion(params) {
 
         if (!response.ok) {
             const errorText = await response.text().catch(() => "Unknown error");
-            // Handle rate limiting with retry guidance
             if (response.status === 429) {
                 throw new Error("Rate limited. Please wait before retrying.");
             }
@@ -259,40 +206,33 @@ async function chatCompletion(params) {
 
         const result = await response.json();
 
-        // Extract the assistant's response
         const choice = result.choices?.[0];
         const assistantMessage = choice?.message;
 
-        // Build response content
         const responseContent = [];
 
-        // Add text content if present
         if (assistantMessage?.content) {
             responseContent.push(createTextContent(assistantMessage.content));
         }
 
-        // Add reasoning content if present (for reasoning models)
         if (assistantMessage?.reasoning_content) {
             responseContent.push(createTextContent({
                 reasoning: assistantMessage.reasoning_content,
             }, true));
         }
 
-        // Add tool calls if present
         if (assistantMessage?.tool_calls?.length > 0) {
             responseContent.push(createTextContent({
                 tool_calls: assistantMessage.tool_calls,
             }, true));
         }
 
-        // Add function call if present (legacy)
         if (assistantMessage?.function_call) {
             responseContent.push(createTextContent({
                 function_call: assistantMessage.function_call,
             }, true));
         }
 
-        // Add audio if present
         if (assistantMessage?.audio) {
             responseContent.push({
                 type: "audio",
@@ -306,14 +246,12 @@ async function chatCompletion(params) {
             }
         }
 
-        // Add citations if present (for perplexity models)
         if (result.citations?.length > 0) {
             responseContent.push(createTextContent({
                 citations: result.citations,
             }, true));
         }
 
-        // Add usage/metadata
         responseContent.push(createTextContent({
             model: result.model,
             finish_reason: choice?.finish_reason,
@@ -328,15 +266,10 @@ async function chatCompletion(params) {
     }
 }
 
-/**
- * List available text models
- * Fetches dynamically from the API - always up to date!
- */
 async function listTextModels(params) {
     try {
         const models = await getTextModels(params?.refresh === true);
 
-        // Categorize models by capabilities
         const generalModels = models.filter(m => !m.is_specialized);
         const specializedModels = models.filter(m => m.is_specialized);
         const reasoningModels = models.filter(m => m.reasoning);
@@ -391,10 +324,6 @@ async function listTextModels(params) {
     }
 }
 
-/**
- * Search the web using search-enabled models
- * Uses perplexity or gemini-search for real-time web results
- */
 async function webSearch(params) {
     requireApiKey();
 
@@ -408,7 +337,6 @@ async function webSearch(params) {
         throw new Error("Query is required and must be a string");
     }
 
-    // Validate model is search-capable
     const searchModels = ["perplexity-fast", "perplexity-reasoning", "gemini-search"];
     if (!searchModels.includes(model)) {
         throw new Error(
@@ -452,7 +380,6 @@ async function webSearch(params) {
             model: result.model || model,
         };
 
-        // Include citations if available (perplexity returns these)
         if (result.citations?.length > 0) {
             responseData.sources = result.citations;
         }
@@ -464,10 +391,6 @@ async function webSearch(params) {
     }
 }
 
-/**
- * Get pricing information for models
- * Returns cost per token/image for planning usage
- */
 async function getPricing(params) {
     const { type = "all" } = params;
 
@@ -503,15 +426,8 @@ async function getPricing(params) {
     }
 }
 
-// ============================================================================
-// ZOD SCHEMAS - COMPLETE PARAMETER DEFINITIONS
-// ============================================================================
-
-// Simple text generation parameters
 const textParamsSchema = {
     prompt: z.string().describe("Text prompt to generate a response for (required)"),
-
-    // Model selection
     model: z.string().optional().describe(
         "Text model to use (default: 'openai'). Popular options:\n" +
         "- openai/openai-fast/openai-large: GPT models (balanced/fast/powerful)\n" +
@@ -522,8 +438,6 @@ const textParamsSchema = {
         "- mistral, qwen-coder, perplexity-fast, perplexity-reasoning\n" +
         "Use listTextModels for complete list."
     ),
-
-    // Generation control
     seed: z.number().int().min(0).optional().describe(
         "Random seed for reproducible results"
     ),
@@ -545,8 +459,6 @@ const textParamsSchema = {
     presence_penalty: z.number().min(-2).max(2).optional().describe(
         "Reduce repetition of topics (-2 to 2, default: 0)"
     ),
-
-    // Output options
     json: z.boolean().optional().describe(
         "Return response in JSON format (default: false). Model will output valid JSON"
     ),
@@ -555,7 +467,6 @@ const textParamsSchema = {
     ),
 };
 
-// Message schema for chat completions
 const messageSchema = z.object({
     role: z.enum(["system", "user", "assistant", "tool", "function", "developer"]).describe(
         "Message role: system (set behavior), user (your input), assistant (AI response), tool (tool result)"
@@ -568,7 +479,6 @@ const messageSchema = z.object({
     tool_calls: z.array(z.any()).optional().describe("Tool calls from assistant (for continuing tool use)"),
 });
 
-// Tool schema for function calling
 const toolSchema = z.object({
     type: z.enum(["function", "code_execution", "google_search", "google_maps", "url_context", "file_search"]).describe(
         "Tool type. 'function' for custom functions, others are Gemini built-in tools"
@@ -581,7 +491,6 @@ const toolSchema = z.object({
     }).optional().describe("Function definition (required for type='function')"),
 });
 
-// Audio options schema
 const audioOptionsSchema = z.object({
     voice: z.enum([
         "alloy", "echo", "fable", "onyx", "nova", "shimmer",
@@ -590,7 +499,6 @@ const audioOptionsSchema = z.object({
     format: z.enum(["wav", "mp3", "flac", "opus", "pcm16"]).describe("Audio format"),
 });
 
-// Response format schema
 const responseFormatSchema = z.object({
     type: z.enum(["text", "json_object", "json_schema"]).describe(
         "Response format type"
@@ -603,25 +511,18 @@ const responseFormatSchema = z.object({
     }).optional().describe("JSON schema for structured output (when type='json_schema')"),
 });
 
-// Thinking/reasoning schema
 const thinkingSchema = z.object({
     type: z.enum(["enabled", "disabled"]).describe("Enable/disable thinking mode"),
     budget_tokens: z.number().int().min(1).optional().describe("Token budget for thinking"),
 });
 
-// Full chat completion parameters
 const chatParamsSchema = {
-    // Required
     messages: z.array(messageSchema).describe(
         "Array of messages in the conversation. Include system message first to set behavior"
     ),
-
-    // Model selection
     model: z.string().optional().describe(
         "Text model (default: 'openai'). See listTextModels for all options"
     ),
-
-    // Generation control
     temperature: z.number().min(0).max(2).optional().describe(
         "Creativity level (0-2, default: 1). Lower = more focused, higher = more creative"
     ),
@@ -646,13 +547,9 @@ const chatParamsSchema = {
     stop: z.union([z.string(), z.array(z.string()).max(4)]).optional().describe(
         "Stop sequences. Generation stops when these are encountered. Max 4 sequences"
     ),
-
-    // Response format
     response_format: responseFormatSchema.optional().describe(
         "Response format. Use 'json_object' for JSON output, 'json_schema' for structured data"
     ),
-
-    // Reasoning/thinking (for reasoning models: kimi-k2-thinking, perplexity-reasoning, openai-large, gemini-large)
     thinking: thinkingSchema.optional().describe(
         "Thinking mode for reasoning models. Use with kimi-k2-thinking, perplexity-reasoning, openai-large, gemini-large"
     ),
@@ -662,8 +559,6 @@ const chatParamsSchema = {
     thinking_budget: z.number().int().min(0).optional().describe(
         "Token budget for model thinking/reasoning"
     ),
-
-    // Tool/function calling
     tools: z.array(toolSchema).optional().describe(
         "Tools available to the model. For function calling or Gemini built-in tools"
     ),
@@ -679,8 +574,6 @@ const chatParamsSchema = {
     parallel_tool_calls: z.boolean().optional().describe(
         "Allow parallel tool calls (default: true)"
     ),
-
-    // Legacy function calling (deprecated but supported)
     functions: z.array(z.object({
         name: z.string(),
         description: z.string().optional(),
@@ -694,16 +587,12 @@ const chatParamsSchema = {
     ]).optional().describe(
         "Legacy function call option (deprecated, use 'tool_choice' instead)"
     ),
-
-    // Audio output (for openai-audio model)
     modalities: z.array(z.enum(["text", "audio"])).optional().describe(
         "Output modalities. Include 'audio' for voice output (openai-audio model)"
     ),
     audio: audioOptionsSchema.optional().describe(
         "Audio output options. Requires modalities to include 'audio'"
     ),
-
-    // Logprobs (for analysis)
     logprobs: z.boolean().optional().describe(
         "Return log probabilities of tokens (default: false)"
     ),
@@ -713,66 +602,39 @@ const chatParamsSchema = {
     logit_bias: z.record(z.number().int()).optional().describe(
         "Token ID to bias mapping. Adjust likelihood of specific tokens"
     ),
-
-    // User tracking
     user: z.string().optional().describe(
         "Unique user identifier for tracking/abuse prevention"
     ),
 };
 
-// ============================================================================
-// TOOL EXPORTS
-// ============================================================================
-
-/**
- * Export tools as arrays for MCP server registration
- * Format: [name, description, schema, handler]
- */
 export const textTools = [
     [
         "generateText",
-        "Generate text from a simple prompt. Easy-to-use text generation with essential parameters. " +
-        "For advanced features (tool calling, multi-turn, audio), use chatCompletion instead.",
+        "Generate text from a simple prompt. Easy-to-use text generation with essential parameters. For advanced features (tool calling, multi-turn, audio), use chatCompletion instead.",
         textParamsSchema,
         generateText,
     ],
-
     [
         "chatCompletion",
-        "OpenAI-compatible chat completions with ALL parameters. Supports:\n" +
-        "- Multi-turn conversations with message history\n" +
-        "- Function/tool calling for AI agents\n" +
-        "- Audio input/output (openai-audio model)\n" +
-        "- Reasoning mode (kimi-k2-thinking, perplexity-reasoning, openai-large, gemini-large)\n" +
-        "- JSON/structured output\n" +
-        "- Built-in Gemini tools (google_search, code_execution, etc.)\n" +
-        "- Perplexity web search with citations",
+        "OpenAI-compatible chat completions with ALL parameters. Supports:\n- Multi-turn conversations with message history\n- Function/tool calling for AI agents\n- Audio input/output (openai-audio model)\n- Reasoning mode (kimi-k2-thinking, perplexity-reasoning, openai-large, gemini-large)\n- JSON/structured output\n- Built-in Gemini tools (google_search, code_execution, etc.)\n- Perplexity web search with citations",
         chatParamsSchema,
         chatCompletion,
     ],
-
     [
         "listTextModels",
-        "List all available text generation models with their capabilities. " +
-        "Shows which models support reasoning, tools, audio, vision, etc. " +
-        "Models are fetched dynamically from the API.",
+        "List all available text generation models with their capabilities. Shows which models support reasoning, tools, audio, vision, etc. Models are fetched dynamically from the API.",
         {
             refresh: z.boolean().optional().describe("Force refresh the model cache (default: false)"),
         },
         listTextModels,
     ],
-
     [
         "webSearch",
-        "Search the web for real-time information using search-enabled models. " +
-        "Returns answers with source citations. Great for current events, facts, research.",
+        "Search the web for real-time information using search-enabled models. Returns answers with source citations. Great for current events, facts, research.",
         {
             query: z.string().describe("The search query or question"),
             model: z.enum(["perplexity-fast", "perplexity-reasoning", "gemini-search"]).optional().describe(
-                "Search model (default: 'perplexity-fast'):\n" +
-                "- perplexity-fast: Quick answers with web search\n" +
-                "- perplexity-reasoning: Deeper analysis with web search\n" +
-                "- gemini-search: Google's Gemini with Google Search"
+                "Search model (default: 'perplexity-fast'):\n- perplexity-fast: Quick answers with web search\n- perplexity-reasoning: Deeper analysis with web search\n- gemini-search: Google's Gemini with Google Search"
             ),
             detailed: z.boolean().optional().describe(
                 "Get comprehensive answer with more details (default: false)"
@@ -780,7 +642,6 @@ export const textTools = [
         },
         webSearch,
     ],
-
     [
         "getPricing",
         "Get pricing information for all models. Shows cost per token/image in pollen.",

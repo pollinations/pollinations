@@ -1,11 +1,3 @@
-/**
- * Pollinations Image & Video Service
- *
- * Complete implementation for image and video generation using gen.pollinations.ai
- * Supports ALL API parameters for maximum control.
- * Dynamic model discovery - no hardcoded model lists!
- */
-
 import {
     createMCPResponse,
     createTextContent,
@@ -20,13 +12,6 @@ import { getImageModels, validateImageModel } from "../utils/modelCache.js";
 import { getAuthHeaders, requireApiKey } from "../utils/authUtils.js";
 import { z } from "zod";
 
-// ============================================================================
-// SHARED PARAMETER BUILDERS
-// ============================================================================
-
-/**
- * Build query params object, filtering out undefined values
- */
 function buildQueryParams(params) {
     const result = {};
     for (const [key, value] of Object.entries(params)) {
@@ -37,34 +22,20 @@ function buildQueryParams(params) {
     return result;
 }
 
-// ============================================================================
-// IMAGE GENERATION
-// ============================================================================
-
-/**
- * Generate image URL from a text prompt
- * Returns a shareable URL without the API key - useful for embedding
- * The image is generated with auth, but the returned URL is clean for sharing
- */
 async function generateImageUrl(params) {
     requireApiKey();
 
     const {
         prompt,
-        // Model selection
         model,
-        // Dimensions
         width,
         height,
-        // Generation control
         seed,
         enhance,
         negative_prompt,
         guidance_scale,
         quality,
-        // Image-to-image
         image,
-        // Output options
         transparent,
         nologo,
         nofeed,
@@ -76,7 +47,6 @@ async function generateImageUrl(params) {
         throw new Error("Prompt is required and must be a string");
     }
 
-    // Validate model if specified
     if (model) {
         const validation = await validateImageModel(model);
         if (!validation.valid) {
@@ -105,13 +75,11 @@ async function generateImageUrl(params) {
         private: isPrivate,
     });
 
-    // First, trigger generation with auth (so the image gets created)
     const authUrl = buildUrl(`/image/${encodedPrompt}`, queryParams, true);
 
-    // Use GET with timeout to trigger generation and validate URL
     try {
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
+        const timeoutId = setTimeout(() => controller.abort(), 5000);
         
         const preGenResponse = await fetch(authUrl, {
             method: "GET",
@@ -130,7 +98,6 @@ async function generateImageUrl(params) {
         }
     }
 
-    // Return shareable URL without the key
     const shareableUrl = buildShareableUrl(`/image/${encodedPrompt}`, queryParams);
 
     return createMCPResponse([
@@ -146,29 +113,20 @@ async function generateImageUrl(params) {
     ]);
 }
 
-/**
- * Generate image and return base64 data
- * Full image generation with all parameters
- */
 async function generateImage(params) {
     requireApiKey();
 
     const {
         prompt,
-        // Model selection
         model,
-        // Dimensions
         width,
         height,
-        // Generation control
         seed,
         enhance,
         negative_prompt,
         guidance_scale,
         quality,
-        // Image-to-image
         image,
-        // Output options
         transparent,
         nologo,
         nofeed,
@@ -180,7 +138,6 @@ async function generateImage(params) {
         throw new Error("Prompt is required and must be a string");
     }
 
-    // Validate model if specified
     if (model) {
         const validation = await validateImageModel(model);
         if (!validation.valid) {
@@ -238,16 +195,11 @@ async function generateImage(params) {
     }
 }
 
-/**
- * Generate multiple images in parallel (batch generation)
- * Best used with sk_ keys (no rate limits). pk_ keys will be rate-limited.
- */
 async function generateImageBatch(params) {
     requireApiKey();
 
     const {
         prompts,
-        // Shared params for all images
         model,
         width,
         height,
@@ -272,7 +224,6 @@ async function generateImageBatch(params) {
         throw new Error("Maximum 10 images per batch. For more, call multiple times.");
     }
 
-    // Generate all images in parallel
     const results = await Promise.allSettled(
         prompts.map(async (prompt, index) => {
             const encodedPrompt = encodeURIComponent(prompt);
@@ -280,7 +231,6 @@ async function generateImageBatch(params) {
                 model,
                 width,
                 height,
-                // Increment seed for each image if base seed provided
                 seed: baseSeed !== undefined ? baseSeed + index : undefined,
                 enhance,
                 negative_prompt,
@@ -308,7 +258,6 @@ async function generateImageBatch(params) {
         })
     );
 
-    // Build response with all images
     const responseContent = [];
     const successful = [];
     const failed = [];
@@ -323,7 +272,6 @@ async function generateImageBatch(params) {
         }
     });
 
-    // Add summary
     responseContent.push(createTextContent({
         batch: {
             total: prompts.length,
@@ -340,40 +288,17 @@ async function generateImageBatch(params) {
     return createMCPResponse(responseContent);
 }
 
-// ============================================================================
-// VIDEO GENERATION
-// ============================================================================
-
-/**
- * Generate video from a text prompt or image
- * Supports veo (text-to-video) and seedance/seedance-pro (text/image-to-video)
- *
- * ALL video parameters:
- * - model: veo, seedance, seedance-pro
- * - duration: veo (4,6,8 seconds), seedance (2-10 seconds)
- * - aspectRatio: 16:9, 9:16, etc.
- * - audio: enable audio (veo only)
- * - image: reference image for image-to-video (seedance)
- * - seed: reproducible results
- * - safe: safety filters
- * - private/nofeed/nologo: output options
- */
 async function generateVideo(params) {
     requireApiKey();
 
     const {
         prompt,
-        // Model selection - video models only
         model = "veo",
-        // Video-specific params
         duration,
         aspectRatio,
         audio,
-        // Image input for image-to-video
         image,
-        // Generation control
         seed,
-        // Output options
         nologo,
         nofeed,
         safe,
@@ -384,7 +309,6 @@ async function generateVideo(params) {
         throw new Error("Prompt is required and must be a string");
     }
 
-    // Validate model is a video model
     const videoModels = ["veo", "seedance", "seedance-pro"];
     if (!videoModels.includes(model)) {
         throw new Error(
@@ -395,7 +319,6 @@ async function generateVideo(params) {
         );
     }
 
-    // Validate duration based on model
     if (duration !== undefined) {
         if (model === "veo" && ![4, 6, 8].includes(duration)) {
             throw new Error("veo model only supports duration of 4, 6, or 8 seconds");
@@ -405,7 +328,6 @@ async function generateVideo(params) {
         }
     }
 
-    // Warn if audio is used with non-veo model
     if (audio && model !== "veo") {
         console.warn("Warning: audio parameter is only supported by veo model");
     }
@@ -440,8 +362,6 @@ async function generateVideo(params) {
             seed,
         };
 
-        // Return video data as resource (MCP doesn't have native video type)
-        // The base64 data can be decoded and saved as mp4
         return createMCPResponse([
             {
                 type: "resource",
@@ -461,10 +381,6 @@ async function generateVideo(params) {
     }
 }
 
-/**
- * Generate video URL from a text prompt
- * Returns a shareable URL without the API key - useful for embedding
- */
 async function generateVideoUrl(params) {
     requireApiKey();
 
@@ -486,7 +402,6 @@ async function generateVideoUrl(params) {
         throw new Error("Prompt is required and must be a string");
     }
 
-    // Validate model is a video model
     const videoModels = ["veo", "seedance", "seedance-pro"];
     if (!videoModels.includes(model)) {
         throw new Error(
@@ -494,7 +409,6 @@ async function generateVideoUrl(params) {
         );
     }
 
-    // Validate duration based on model
     if (duration !== undefined) {
         if (model === "veo" && ![4, 6, 8].includes(duration)) {
             throw new Error("veo model only supports duration of 4, 6, or 8 seconds");
@@ -518,10 +432,8 @@ async function generateVideoUrl(params) {
         private: isPrivate,
     });
 
-    // First, trigger generation with auth (so the video gets created)
     const authUrl = buildUrl(`/image/${encodedPrompt}`, queryParams, true);
 
-    // Make a HEAD request to trigger generation without downloading
     try {
         const headResponse = await fetch(authUrl, {
             method: "HEAD",
@@ -534,7 +446,6 @@ async function generateVideoUrl(params) {
         console.warn("HEAD request failed, video may not be pre-generated:", err.message);
     }
 
-    // Return shareable URL without the key
     const shareableUrl = buildShareableUrl(`/image/${encodedPrompt}`, queryParams);
 
     return createMCPResponse([
@@ -551,14 +462,6 @@ async function generateVideoUrl(params) {
     ]);
 }
 
-// ============================================================================
-// IMAGE ANALYSIS
-// ============================================================================
-
-/**
- * Analyze/describe an image using vision-capable text models
- * Uses the chat completion endpoint with image input
- */
 async function describeImage(params) {
     requireApiKey();
 
@@ -572,7 +475,6 @@ async function describeImage(params) {
         throw new Error("imageUrl is required and must be a string");
     }
 
-    // Build the chat completion request with image
     const requestBody = {
         model,
         messages: [
@@ -626,11 +528,6 @@ async function describeImage(params) {
     }
 }
 
-/**
- * Analyze a video using vision-capable text models
- * Supports YouTube URLs, direct video URLs, and more
- * Uses gemini-large which has native video understanding
- */
 async function analyzeVideo(params) {
     requireApiKey();
 
@@ -644,7 +541,6 @@ async function analyzeVideo(params) {
         throw new Error("videoUrl is required and must be a string");
     }
 
-    // Build the chat completion request with video
     const requestBody = {
         model,
         messages: [
@@ -698,19 +594,10 @@ async function analyzeVideo(params) {
     }
 }
 
-// ============================================================================
-// MODEL LISTING
-// ============================================================================
-
-/**
- * List available image and video models
- * Fetches dynamically from the API - always up to date!
- */
 async function listImageModels(params) {
     try {
         const models = await getImageModels(params?.refresh === true);
 
-        // Separate image and video models based on output modalities
         const imageOnlyModels = models.filter(m =>
             m.output_modalities?.includes("image") && !m.output_modalities?.includes("video")
         );
@@ -759,30 +646,19 @@ async function listImageModels(params) {
     }
 }
 
-// ============================================================================
-// ZOD SCHEMAS - COMPLETE PARAMETER DEFINITIONS
-// ============================================================================
-
-// All image generation parameters
 const imageParamsSchema = {
     prompt: z.string().describe("Text description of the image to generate (required)"),
-
-    // Model selection
     model: z.string().optional().describe(
         "Image model to use. Options: flux (default, fast), turbo (ultra-fast), gptimage (OpenAI), " +
         "kontext (context-aware, supports i2i), seedream/seedream-pro (high quality, supports i2i), " +
         "nanobanana/nanobanana-pro (Gemini-based), zimage (experimental). Use listImageModels for full list."
     ),
-
-    // Dimensions
     width: z.number().int().min(64).max(4096).optional().describe(
         "Image width in pixels (default: 1024). Common sizes: 512, 768, 1024, 1280, 1536, 2048"
     ),
     height: z.number().int().min(64).max(4096).optional().describe(
         "Image height in pixels (default: 1024). Common sizes: 512, 768, 1024, 1280, 1536, 2048"
     ),
-
-    // Generation control
     seed: z.number().int().min(0).optional().describe(
         "Random seed for reproducible results (default: 42). Use same seed + prompt for identical images"
     ),
@@ -798,15 +674,11 @@ const imageParamsSchema = {
     quality: z.enum(["low", "medium", "high", "hd"]).optional().describe(
         "Image quality level (default: 'medium'). 'hd' for maximum quality, 'low' for faster generation"
     ),
-
-    // Image-to-image
     image: z.string().optional().describe(
         "Reference image URL(s) for image-to-image generation. Separate multiple URLs with | or comma.\n" +
         "I2I models: seedream-pro, nanobanana-pro, nanobanana, gptimage, seedream (all multi-image), kontext (single image).\n" +
         "Put this parameter last in URL or URL-encode it."
     ),
-
-    // Output options
     transparent: z.boolean().optional().describe(
         "Generate with transparent background (default: false). Useful for logos, stickers, overlays"
     ),
@@ -824,19 +696,14 @@ const imageParamsSchema = {
     ),
 };
 
-// All video generation parameters
 const videoParamsSchema = {
     prompt: z.string().describe("Text description of the video to generate (required)"),
-
-    // Model selection - video models only
     model: z.enum(["veo", "seedance", "seedance-pro"]).optional().describe(
         "Video model (default: 'veo'):\n" +
         "- veo: Google's model, text/image-to-video, 4/6/8 sec, supports audio, single image input\n" +
         "- seedance: ByteDance, text/image-to-video, 2-10 sec, multi-image support\n" +
         "- seedance-pro: ByteDance Pro, text/image-to-video, 2-10 sec, multi-image, best prompt adherence"
     ),
-
-    // Video-specific params
     duration: z.number().int().min(2).max(10).optional().describe(
         "Video duration in seconds:\n" +
         "- veo: 4, 6, or 8 seconds only\n" +
@@ -848,19 +715,13 @@ const videoParamsSchema = {
     audio: z.boolean().optional().describe(
         "Enable audio generation (default: false). Only supported by veo model"
     ),
-
-    // Image input for image-to-video
     image: z.string().optional().describe(
         "Reference image URL(s) for image-to-video generation. " +
         "veo: single image only. seedance/seedance-pro: multi-image (separate with | or comma)."
     ),
-
-    // Generation control
     seed: z.number().int().min(0).optional().describe(
         "Random seed for reproducible results"
     ),
-
-    // Output options
     nologo: z.boolean().optional().describe(
         "Remove Pollinations watermark (default: false)"
     ),
@@ -875,14 +736,6 @@ const videoParamsSchema = {
     ),
 };
 
-// ============================================================================
-// TOOL EXPORTS
-// ============================================================================
-
-/**
- * Export tools as arrays for MCP server registration
- * Format: [name, description, schema, handler]
- */
 export const imageTools = [
     [
         "generateImageUrl",
@@ -891,7 +744,6 @@ export const imageTools = [
         imageParamsSchema,
         generateImageUrl,
     ],
-
     [
         "generateImage",
         "Generate an image from a text prompt and return the base64-encoded image data. " +
@@ -899,7 +751,6 @@ export const imageTools = [
         imageParamsSchema,
         generateImage,
     ],
-
     [
         "generateImageBatch",
         "Generate multiple images in parallel (up to 10). Best with sk_ keys (no rate limits). " +
@@ -925,7 +776,6 @@ export const imageTools = [
         },
         generateImageBatch,
     ],
-
     [
         "generateVideo",
         "Generate a video from a text prompt or image. " +
@@ -934,7 +784,6 @@ export const imageTools = [
         videoParamsSchema,
         generateVideo,
     ],
-
     [
         "generateVideoUrl",
         "Generate a video URL from a text prompt. Returns a shareable/embeddable URL without downloading the video. " +
@@ -942,7 +791,6 @@ export const imageTools = [
         videoParamsSchema,
         generateVideoUrl,
     ],
-
     [
         "describeImage",
         "Analyze and describe an image using vision-capable AI models. " +
@@ -961,7 +809,6 @@ export const imageTools = [
         },
         describeImage,
     ],
-
     [
         "analyzeVideo",
         "Analyze a video using AI. Supports YouTube URLs and direct video links. " +
@@ -983,7 +830,6 @@ export const imageTools = [
         },
         analyzeVideo,
     ],
-
     [
         "listImageModels",
         "List all available image and video generation models with their capabilities. " +

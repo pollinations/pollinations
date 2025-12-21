@@ -1,10 +1,3 @@
-/**
- * Pollinations Audio Service
- *
- * Functions for audio/speech generation using gen.pollinations.ai
- * Uses the openai-audio model for text-to-speech
- */
-
 import fs from "fs";
 import path from "path";
 import os from "os";
@@ -21,10 +14,6 @@ import { getAudioVoices } from "../utils/modelCache.js";
 import { getAuthHeaders, requireApiKey } from "../utils/authUtils.js";
 import { z } from "zod";
 
-/**
- * Generate an audio response to a text prompt
- * The AI will respond to the prompt with speech
- */
 async function respondAudio(params) {
     requireApiKey();
 
@@ -41,7 +30,6 @@ async function respondAudio(params) {
         throw new Error("Prompt is required and must be a string");
     }
 
-    // Prepare the prompt with optional voice instructions
     let finalPrompt = prompt;
     if (voiceInstructions) {
         finalPrompt = `${voiceInstructions}\n\n${prompt}`;
@@ -59,10 +47,8 @@ async function respondAudio(params) {
         const { buffer, contentType } = await fetchBinaryWithAuth(url);
         const base64Data = arrayBufferToBase64(buffer);
 
-        // Determine MIME type
         const mimeType = contentType || `audio/${format === "mp3" ? "mpeg" : format}`;
 
-        // Play audio if player is provided
         if (audioPlayer) {
             const tempDirPath = tempDir || os.tmpdir();
             await playAudio(base64Data, mimeType, "respond_audio", audioPlayer, tempDirPath);
@@ -80,10 +66,6 @@ async function respondAudio(params) {
     }
 }
 
-/**
- * Generate speech that says the provided text verbatim
- * Direct text-to-speech without AI interpretation
- */
 async function sayText(params) {
     requireApiKey();
 
@@ -100,7 +82,6 @@ async function sayText(params) {
         throw new Error("Text is required and must be a string");
     }
 
-    // Use verbatim instruction to ensure exact text is spoken
     let finalPrompt = `Say verbatim: ${text}`;
     if (voiceInstructions) {
         finalPrompt = `${voiceInstructions}\n\n${finalPrompt}`;
@@ -137,10 +118,6 @@ async function sayText(params) {
     }
 }
 
-/**
- * List available audio voices
- * Fetches dynamically from the API
- */
 async function listAudioVoices(params) {
     try {
         const voices = await getAudioVoices();
@@ -155,7 +132,6 @@ async function listAudioVoices(params) {
         return createMCPResponse([createTextContent(result, true)]);
     } catch (error) {
         console.error("Error listing audio voices:", error);
-        // Return default voices on error
         const defaultVoices = ["alloy", "echo", "fable", "onyx", "nova", "shimmer"];
         return createMCPResponse([
             createTextContent({
@@ -169,10 +145,6 @@ async function listAudioVoices(params) {
     }
 }
 
-/**
- * Transcribe audio from a URL using gemini-large
- * Supports various audio formats
- */
 async function transcribeAudio(params) {
     requireApiKey();
 
@@ -186,7 +158,6 @@ async function transcribeAudio(params) {
         throw new Error("audioUrl is required and must be a string");
     }
 
-    // Build chat completion request with audio input
     const requestBody = {
         model,
         messages: [
@@ -240,10 +211,6 @@ async function transcribeAudio(params) {
     }
 }
 
-/**
- * Play audio using system audio player
- * @private
- */
 function playAudio(audioData, mimeType, prefix, audioPlayer, tempDir) {
     if (!audioPlayer || !tempDir) {
         return Promise.resolve();
@@ -256,7 +223,6 @@ function playAudio(audioData, mimeType, prefix, audioPlayer, tempDir) {
             fs.writeFileSync(tempFile, Buffer.from(audioData, "base64"));
 
             audioPlayer.play(tempFile, (err) => {
-                // Clean up temp file after playing
                 try {
                     fs.unlinkSync(tempFile);
                 } catch (e) {
@@ -275,10 +241,6 @@ function playAudio(audioData, mimeType, prefix, audioPlayer, tempDir) {
     });
 }
 
-/**
- * Get file format from MIME type
- * @private
- */
 function getFormatFromMimeType(mimeType) {
     const formats = {
         "audio/mpeg": "mp3",
@@ -290,7 +252,6 @@ function getFormatFromMimeType(mimeType) {
     return formats[mimeType] || "mp3";
 }
 
-// Voice enum for Zod schema
 const voiceEnum = z.enum([
     "alloy", "echo", "fable", "onyx", "nova", "shimmer",
     "coral", "verse", "ballad", "ash", "sage", "amuch", "dan"
@@ -298,9 +259,6 @@ const voiceEnum = z.enum([
 
 const formatEnum = z.enum(["wav", "mp3", "flac", "opus", "pcm16"]);
 
-/**
- * Export tools as arrays for MCP server registration
- */
 export const audioTools = [
     [
         "respondAudio",

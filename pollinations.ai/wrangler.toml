@@ -8,11 +8,6 @@ zone_name = "pollinations.ai"
 custom_domain = true
 
 [[routes]]
-pattern = "www.pollinations.ai"
-zone_name = "pollinations.ai"
-custom_domain = true
-
-[[routes]]
 pattern = "hello.pollinations.ai"
 zone_name = "pollinations.ai"
 custom_domain = true

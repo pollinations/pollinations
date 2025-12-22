@@ -2,94 +2,45 @@
 
 ## App Submission Handling
 
-When handling app submission issues (labeled as **APPS** in GitHub):
+App submissions are now **fully automated** via the `tier-app-submission.yml` workflow.
 
-1. Add new apps to the appropriate category file in:
+**Source of truth:** `apps/APPS.md` - A single markdown table with all apps.
 
-    - pollinations.ai/src/config/projects/[category].js (e.g., creative.js, vibeCoding.js, etc.)
-    - DO NOT manually edit the README.md file directly
-    - After adding apps, regenerate the lists by running:
-        ```bash
-        node pollinator-agent/project-list-scripts/generate-project-table.js --update-readme
-        ```
+**How it works:**
 
-2. App Entry Format:
+1. User opens issue with `tier:review` label
+2. Workflow parses issue with AI, checks Enter registration
+3. If valid: fetches GitHub stars, AI generates emoji + description
+4. Prepends new row to `apps/APPS.md`, updates README with last 10 apps
+5. Creates PR automatically
 
-    ```javascript
-    {
-      name: "App Name",
-      url: "https://app-url.com", // REQUIRED - working app URL
-      description: "Brief description of the app.",
-      author: "@discord_username", // if available or alternatively a URL to a social media profile
-      repo: "https://github.com/repo-url", // OPTIONAL - GitHub repo if available
-      submissionDate: "YYYY-MM-DD", // automatically added for new submissions
-      language: "zh-CN", // for non-English apps, include the language code
-      hidden: true, // optional, set to true for broken apps that shouldn't appear in README.md
-      order: 1 // ordering priority based on status (1=highest, 5=lowest)
-    }
-    ```
+**Manual edits (if needed):**
 
-3. App Ordering Rules:
+-   Edit `apps/APPS.md` directly
+-   Run `node .github/scripts/tier-apps-update-readme.js` to refresh README
 
-    - In the README.md file, apps should be ordered within their categories:
-        - First by the `order` parameter (lower values first: 1, 2, 3, 4, 5)
-        - Then by GitHub star count (higher star counts first)
-        - For apps with the same order and no stars, use the submission date if there is one, if not keep the order as it is.
-    - In the website rendering, the projectList.js order will be dynamically sorted using the same criteria so the actual order in the projectList.js file should not be changed
+**Table format in APPS.md:**
 
-4. Hiding Broken Apps:
+```markdown
+| Emoji | Name            | Description                   | Language | Category | GitHub  | Repo                   | Stars | Discord | Other | Submitted  |
+| ----- | --------------- | ----------------------------- | -------- | -------- | ------- | ---------------------- | ----- | ------- | ----- | ---------- |
+| 🎨    | [App Name](url) | Brief description (~80 chars) |          | creative | @github | https://github.com/... | ⭐123 |         |       | 2025-01-01 |
+```
 
-    - Set `hidden: true` for broken/unmaintained apps
-    - Hidden apps excluded from README.md but remain in projectList.js
+**Categories:**
 
-5. GitHub Star Counts:
+-   Vibe Coding ✨ (`vibeCoding`): No-code / describe-to-code playgrounds and builders
+-   Creative 🎨 (`creative`): Turn prompts into images, video, music, design, slides
+-   Games 🎲 (`games`): AI-powered play, interactive fiction, puzzle & agent worlds
+-   Hack-&-Build 🛠️ (`hackAndBuild`): SDKs, integration libs, extensions, dashboards, MCP servers
+-   Chat 💬 (`chat`): Standalone chat UIs / multi-model playgrounds
+-   Social Bots 🤖 (`socialBots`): Discord / Telegram / WhatsApp / Roblox bots & NPCs
+-   Learn 📚 (`learn`): Tutorials, guides, style books & educational demos
 
-    - Add `stars` property for GitHub repos
-    - Update counts: `node .github/scripts/app_list_update_stars.js [owner/repo]`
+## Non-English Apps
 
-6. Categories (as of June 2025):
-    - Vibe Coding ✨ (`vibeCoding.js`): No-code / describe-to-code playgrounds and builders
-    - Creative 🎨 (`creative.js`): Turn prompts into images, video, music, design, slides
-    - Games 🎲 (`games.js`): AI-powered play, interactive fiction, puzzle & agent worlds
-    - Hack-&-Build 🛠️ (`hackAndBuild.js`): SDKs, integration libs, extensions, dashboards, MCP servers
-    - Chat 💬 (`chat.js`): Standalone chat UIs / multi-model playgrounds
-    - Social Bots 🤖 (`socialBots.js`): Discord / Telegram / WhatsApp / Roblox bots & NPCs
-    - Learn 📚 (`learn.js`): Tutorials, guides, style books & educational demos
-    - (Tracking file: `tracking/toProcess.md` for workflow management)
-
-## Classification Guidelines
-
--   One category per app (no duplicates)
--   Based on actual functionality, not source JSON category
--   Prefer less-populated categories for balance
--   Track uncategorized in `tracking/toProcess.md`
--   Source of truth: `accumulated-apps.json`
-
-**Category Mapping:**
-
--   `learn.js`: Educational/interactive learning
--   `hackAndBuild.js`: SDKs, APIs, toolkits
--   `creative.js`: Image/text/audio generation
--   `chat.js`: Chatbots, conversational agents
--   `games.js`: Games, interactive fiction
--   `socialBots.js`: Platform bots (Discord/Telegram/etc)
-
-7. Add UTF-8 icons to titles (🤖 bots, 🎨 creative, etc.)
-
-8. Non-English apps:
-
-    - Add country flag emoji (🇨🇳, 🇪🇸, etc.)
-    - Include `language` field with language code
-    - Add English translation in parentheses
-
-9. Commit attribution:
-
-    ```
-    Add [App Name] to [category]
-
-    Co-authored-by: [Username] <[user_id]+[username]@users.noreply.github.com>
-    Closes #[Issue]
-    ```
+-   Use ISO language code in the `Language` column (e.g., `zh-CN`, `es`, `pt-BR`, `ja`)
+-   No flags in the table - use language codes only
 
 ## Discord Configuration
 

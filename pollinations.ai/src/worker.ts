@@ -1,6 +1,6 @@
 /**
- * Worker entry point for hello.pollinations.ai
- * Serves static assets only - API calls go directly to gen.pollinations.ai from frontend
+ * Worker entry point for pollinations.ai
+ * Serves static assets and handles API proxy
  */
 
 interface Env {

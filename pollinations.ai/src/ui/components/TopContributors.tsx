@@ -9,7 +9,6 @@ interface Contributor {
     contributions: number;
 }
 
-
 export function TopContributors() {
     const [contributors, setContributors] = useState<Contributor[]>([]);
     const [loadingContributors, setLoadingContributors] = useState(true);
@@ -17,13 +16,15 @@ export function TopContributors() {
     useEffect(() => {
         const fetchTopContributors365 = async () => {
             try {
-                const since = new Date(Date.now() - 365 * 24 * 60 * 60 * 1000).toISOString();
+                const since = new Date(
+                    Date.now() - 365 * 24 * 60 * 60 * 1000
+                ).toISOString();
 
                 const perPage = 100;
                 let page = 1;
                 const contributorMap = new Map<string, any>();
 
-                while (page <= 5) { 
+                while (page <= 5) {
                     const res = await fetch(
                         `https://api.github.com/repos/pollinations/pollinations/commits?since=${since}&per_page=${perPage}&page=${page}`,
                         {
@@ -40,7 +41,12 @@ export function TopContributors() {
                         if (!c.author || !c.author.login) continue;
 
                         const login = c.author.login;
-                        if (login.includes("[bot]") || login.endsWith("-bot") || login.includes("Copilot")) continue;
+                        if (
+                            login.includes("[bot]") ||
+                            login.endsWith("-bot") ||
+                            login.includes("Copilot")
+                        )
+                            continue;
 
                         if (!contributorMap.has(login)) {
                             contributorMap.set(login, {
@@ -71,7 +77,6 @@ export function TopContributors() {
 
         fetchTopContributors365();
     }, []);
-
 
     if (loadingContributors && contributors.length === 0) {
         return null;
@@ -116,11 +121,18 @@ export function TopContributors() {
                 }
             `}</style>
             <div className="mb-12">
-                <Heading variant="section">
-                     Most Active Contributors
-                </Heading>
+                <Heading variant="section">Most Active Contributors</Heading>
                 <Body size="sm" spacing="comfortable">
-                    Meet the most active contributors to the Pollinations GitHub repository over the past year. 
+                    Meet the most active contributors to the pollinations.ai{" "}
+                    <a
+                        href="https://github.com/pollinations/pollinations"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="underline hover:opacity-80"
+                    >
+                        GitHub repository
+                    </a>{" "}
+                    over the past year.
                 </Body>
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
                     {contributors.map((contributor, index) => {
@@ -148,11 +160,13 @@ export function TopContributors() {
                                         className="w-full h-full object-cover"
                                     />
                                 </div>
-                                <p className={`font-headline text-xs font-black ${
-                                    isTopThree
-                                        ? "text-text-body-main"
-                                        : "text-text-body-main"
-                                } mb-1`}>
+                                <p
+                                    className={`font-headline text-xs font-black ${
+                                        isTopThree
+                                            ? "text-text-body-main"
+                                            : "text-text-body-main"
+                                    } mb-1`}
+                                >
                                     {contributor.login}
                                 </p>
                                 <p className="font-body text-[10px] text-text-body-tertiary">

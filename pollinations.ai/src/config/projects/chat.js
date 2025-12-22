@@ -656,89 +656,98 @@ export const chatProjects = [
         "submissionDate": "2025-12-04",
         "order": 5,
     },
-  {
-    "name": "🍎 AI Food Guide and Track Calories",
-    "url": "https://nutri.selfhost.io.vn/",
-    "description": "AI-powered nutrition assistant that helps identify foods and track daily calorie intake. Get nutritional information and maintain dietary awareness through conversational AI guidance.",
-    "author": "@newnol",
-    "repo": "https://github.com/newnol/nutritrack",
-    "category": "chat",
-    "submissionDate": "2025-12-13",
-    "order": 5
-  },
-  {
-    "name": "✨ ToneShift AI",
-    "url": "https://toneshift-ai.lovable.app/",
-    "description": "Rewrite any text into different emotional tones while preserving meaning. Choose from Calm, Friendly, Excited, Professional, Empathetic, Confident, Playful, Apologetic, or Direct. Chat-style interface with example prompts, no sign-in required.",
-    "author": "@UstaDeveloper",
-    "category": "chat",
-    "submissionDate": "2025-12-13",
-    "order": 5
-  },
-  {
-    "name": "✨ ToneShift AI",
-    "url": "https://toneshift-ai.lovable.app/",
-    "description": "Instantly rewrite any text into different emotional tones while preserving meaning. Choose from Calm, Friendly, Excited, Professional, Empathetic, and more. Paste your message, pick a tone, and transform it with one click. Powered by Pollinations LLM.",
-    "author": "@UstaDeveloper",
-    "category": "chat",
-    "submissionDate": "2025-12-13",
-    "order": 5
-  },
-  {
-    "name": "💬 Chat AI",
-    "url": "https://t.me/Chat2qai_bot",
-    "description": "Arabic Telegram bot serving as a versatile AI assistant. Answers questions, helps brainstorm ideas, assists with translation and summarization, and supports image creation and editing.",
-    "author": "@Alhmam",
-    "category": "chat",
-    "language": "ar",
-    "submissionDate": "2025-12-13",
-    "order": 5
-  },
-  {
-    "name": "SaturnAI 🪐",
-    "url": "https://chat.xdativo.cloud",
-    "description": "Web-based AI chat app focused on clean UI and smooth user experience. Features text chat and image generation through Pollinations, optimized for both mobile and desktop with a lightweight, responsive design.",
-    "author": "@xdativo",
-    "category": "chat",
-    "submissionDate": "2025-12-14",
-    "order": 5
-  },
-  {
-    "name": "💬 Yerty AI",
-    "url": "https://yerty.xdativo.cloud",
-    "description": "A calm, friendly AI chat companion focused on everyday thinking, writing, and casual problem-solving. Built with emphasis on UI polish, subtle animations, and smooth conversational flow over raw features.",
-    "author": "@losingdivine",
-    "category": "chat",
-    "submissionDate": "2025-12-16",
-    "order": 5
-  },
-  {
-    "name": "💬 AI Chat Studio",
-    "url": "https://github.com/Universe-shifting/AI-Chat-Studio",
-    "description": "Local desktop AI chat app built with PyQt6. Supports multimodal conversations with images, PDFs, DOCX, PPTX files. Features local workspace management where AI can create and modify files, multiple saved chats, streaming responses, and a modern dark-themed UI.",
-    "author": "@vsenikizanat81486",
-    "repo": "https://github.com/Universe-shifting/AI-Chat-Studio",
-    "category": "chat",
-    "submissionDate": "2025-12-21",
-    "order": 5
-  },
-  {
-    "name": "💬 AI Chat Studio",
-    "url": "https://github.com/Universe-shifting/AI-Chat-Studio",
-    "description": "Local desktop AI chat app built with PyQt6. Supports multimodal conversations with images, PDFs, DOCX, PPTX files, plus image generation. Features local workspace management where AI can create and modify files, multiple saved chats, custom system prompts, and streaming responses.",
-    "author": "@vsenikizanat81486",
-    "repo": "https://github.com/Universe-shifting/AI-Chat-Studio",
-    "category": "chat",
-    "submissionDate": "2025-12-21",
-    "order": 5
-  },
-  {
-    "name": "Asive AI",
-    "url": "https://asive.duckdns.org",
-    "description": "Asive AI is a gen-z based chatbot that meets your needs whether it's coding or talking. It uses pollination ai text and vision model to contribute. It has an smooth ui with smooth animations that will make you lost in itself.",
-    "category": "chat",
-    "author": "@flyinqe",
-    "submissionDate": "2025-12-22",
-    "order": 5
-  }
+    {
+        "name": "🍎 AI Food Guide and Track Calories",
+        "url": "https://nutri.selfhost.io.vn/",
+        "description":
+            "AI-powered nutrition assistant that helps identify foods and track daily calorie intake. Get nutritional information and maintain dietary awareness through conversational AI guidance.",
+        "author": "@newnol",
+        "repo": "https://github.com/newnol/nutritrack",
+        "category": "chat",
+        "submissionDate": "2025-12-13",
+        "order": 5,
+    },
+    {
+        "name": "✨ ToneShift AI",
+        "url": "https://toneshift-ai.lovable.app/",
+        "description":
+            "Rewrite any text into different emotional tones while preserving meaning. Choose from Calm, Friendly, Excited, Professional, Empathetic, Confident, Playful, Apologetic, or Direct. Chat-style interface with example prompts, no sign-in required.",
+        "author": "@UstaDeveloper",
+        "category": "chat",
+        "submissionDate": "2025-12-13",
+        "order": 5,
+    },
+    {
+        "name": "✨ ToneShift AI",
+        "url": "https://toneshift-ai.lovable.app/",
+        "description":
+            "Instantly rewrite any text into different emotional tones while preserving meaning. Choose from Calm, Friendly, Excited, Professional, Empathetic, and more. Paste your message, pick a tone, and transform it with one click. Powered by Pollinations LLM.",
+        "author": "@UstaDeveloper",
+        "category": "chat",
+        "submissionDate": "2025-12-13",
+        "order": 5,
+    },
+    {
+        "name": "💬 Chat AI",
+        "url": "https://t.me/Chat2qai_bot",
+        "description":
+            "Arabic Telegram bot serving as a versatile AI assistant. Answers questions, helps brainstorm ideas, assists with translation and summarization, and supports image creation and editing.",
+        "author": "@Alhmam",
+        "category": "chat",
+        "language": "ar",
+        "submissionDate": "2025-12-13",
+        "order": 5,
+    },
+    {
+        "name": "SaturnAI 🪐",
+        "url": "https://chat.xdativo.cloud",
+        "description":
+            "Web-based AI chat app focused on clean UI and smooth user experience. Features text chat and image generation through Pollinations, optimized for both mobile and desktop with a lightweight, responsive design.",
+        "author": "@xdativo",
+        "category": "chat",
+        "submissionDate": "2025-12-14",
+        "order": 5,
+    },
+    {
+        "name": "💬 Yerty AI",
+        "url": "https://yerty.xdativo.cloud",
+        "description":
+            "A calm, friendly AI chat companion focused on everyday thinking, writing, and casual problem-solving. Built with emphasis on UI polish, subtle animations, and smooth conversational flow over raw features.",
+        "author": "@losingdivine",
+        "category": "chat",
+        "submissionDate": "2025-12-16",
+        "order": 5,
+    },
+    {
+        "name": "💬 AI Chat Studio",
+        "url": "https://github.com/Universe-shifting/AI-Chat-Studio",
+        "description":
+            "Local desktop AI chat app built with PyQt6. Supports multimodal conversations with images, PDFs, DOCX, PPTX files. Features local workspace management where AI can create and modify files, multiple saved chats, streaming responses, and a modern dark-themed UI.",
+        "author": "@vsenikizanat81486",
+        "repo": "https://github.com/Universe-shifting/AI-Chat-Studio",
+        "category": "chat",
+        "submissionDate": "2025-12-21",
+        "order": 5,
+    },
+    {
+        "name": "💬 AI Chat Studio",
+        "url": "https://github.com/Universe-shifting/AI-Chat-Studio",
+        "description":
+            "Local desktop AI chat app built with PyQt6. Supports multimodal conversations with images, PDFs, DOCX, PPTX files, plus image generation. Features local workspace management where AI can create and modify files, multiple saved chats, custom system prompts, and streaming responses.",
+        "author": "@vsenikizanat81486",
+        "repo": "https://github.com/Universe-shifting/AI-Chat-Studio",
+        "category": "chat",
+        "submissionDate": "2025-12-21",
+        "order": 5,
+    },
+    {
+        "name": "💬 Asive AI",
+        "url": "https://asive.duckdns.org",
+        "description":
+            "Gen-Z chatbot with smooth UI and animations. Uses Pollinations text and vision models for coding help and conversation.",
+        "category": "chat",
+        "author": "@flyinqe",
+        "submissionDate": "2025-12-22",
+        "order": 5,
+    },
 ];

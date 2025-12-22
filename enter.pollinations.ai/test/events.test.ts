@@ -385,7 +385,7 @@ test("Exponential backoff delay", async () => {
     ).toBeLessThanOrEqual(10000 + 10000 * 0.1);
 });
 
-test("getPendingSpend returns 0 for user with no events", async ({ log }) => {
+test("getPendingSpend returns 0 for user with no events", async () => {
     const db = drizzle(env.DB);
     const userId = generateRandomId();
     const spend = await getPendingSpend(db, userId);

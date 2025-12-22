@@ -168,6 +168,7 @@ Pollinations.AI is used in various projects, including:
 | 🆕 [⛽ TuffMeter](https://tuffmeter.netlify.app/) ([⭐ 0](https://github.com/VearyTry)) | Humorous AI tool that analyzes uploaded videos to rate your aura. Based on... | @VearyTry |
 | 🆕 🇧🇷 [🎨 Nosde Space](https://www.nosde.space/) | All-in-one AI platform for creating images, videos, text, and audio. Features... | @unknow_junior |
 | 🆕 [🎨 Imgoo](https://imgoo.netlify.app/) | AI image generator with creative controls including aspect ratio, guidance... | @redythacker-cyber |
+| 🆕 [Multi Image Generator](https://perchance.org/multi-image-generator) | Hello! I'm working on a Perchance image generator that supports image-to-image... | @itzGlitch-AS |
 
 ### Games 🎲
 
@@ -236,6 +237,7 @@ Pollinations.AI is used in various projects, including:
 | [UltimaX Intelligence CLI](https://huggingface.co/spaces/umint/cli) | Extension of the UltimaX Intelligence project based on Pollinations Python SDK. | @hadadarjt |
 | [AI Agent Portal](https://agent.makululinux.com/) ([⭐ 0](https://github.com/raymerjacque/Makulu-Agent-Portal)) | A next-generation development environment that leverages a sophisticated... | @raymerjacque |
 | PDF-to-Speech 🔊 ([⭐ 0](https://github.com/Ak-Yadav/pdf_to_speech)) | Convert any PDF document into natural-sounding audio using Pollinations AI TTS.... | @Ak-Yadav |
+| 🆕 🦀 Zuhri ([⭐ 0](https://github.com/humair-m/zuhri.rs)) | High-performance Rust CLI AI assistant with interactive chat, code generation... | @Humair-025 |
 | [pollinations.ai Python SDK](https://github.com/pollinations-ai/pollinations.ai) | Official Python SDK for working with Pollinations' models. | @pollinations-ai |
 | MCPollinations (Community) ([⭐ 32](https://github.com/pinkpixel-dev/MCPollinations)) | Community-maintained Model Context Protocol server with advanced features like... | @pinkpixel-dev |
 | [pollinations_ai](https://pub.dev/packages/pollinations_ai) | Dart/Flutter package for Pollinations API. | @Meenapintu |
@@ -246,6 +248,7 @@ Pollinations.AI is used in various projects, including:
 | 🇨🇳 [imggen.top 🇨🇳](https://www.imggen.top/) | Create stunning AI-generated images in seconds with our free AI image... | [lipengliang2...](mailto:lipengliang2012@163.com) |
 | 🇨🇳 [Quicker Pollinations AI](https://getquicker.net/Sharedaction?code=9ac738ed-a4b2-4ded-933c-08dd5f710a8b&fromMyShare=true) | This project provides a free API interface supporting various text and image... | [Link](https://linux.do/u/s_s/summary) |
 | 🆕 🛠️ Content Auto Manager ([⭐ 0](https://github.com/pptt121212/content-auto-manager)) | WordPress plugin for automated AI content production. Features scheduled task... | @pptt121212 |
+| 🆕 [BhaujAI](https://bhaujai.cc) | At bhaujai.cc we automate 70% of business or creator's tasks using AI. In short... | @royalashu4u |
 
 ### Chat 💬
 
@@ -326,6 +329,7 @@ Pollinations.AI is used in various projects, including:
 | 🆕 [💬 Yerty AI](https://yerty.xdativo.cloud) | A calm, friendly AI chat companion focused on everyday thinking, writing, and... | @losingdivine |
 | 🆕 🖥️ 💬 AI Chat Studio ([⭐ 0](https://github.com/Universe-shifting/AI-Chat-Studio)) | Local desktop AI chat app built with PyQt6. Supports multimodal conversations... | @vsenikizanat81486 |
 | 🆕 🖥️ 💬 AI Chat Studio ([⭐ 0](https://github.com/Universe-shifting/AI-Chat-Studio)) | Local desktop AI chat app built with PyQt6. Supports multimodal conversations... | @vsenikizanat81486 |
+| 🆕 🤖 [Asive AI](https://asive.duckdns.org) | Asive AI is a gen-z based chatbot that meets your needs whether it's coding or... | @flyinqe |
 
 ### Social Bots 🤖
 

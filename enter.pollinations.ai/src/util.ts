@@ -103,6 +103,10 @@ export function lines(...lines: string[]): string {
     return lines.join("\n");
 }
 
+export function capitalize(str: string) {
+    return `${str.charAt(0).toUpperCase()}${str.slice(1)}`;
+}
+
 export function safeRound(amount: number, precision: number = 6): number {
     if (!isFinite(amount) || isNaN(amount)) {
         return 0;

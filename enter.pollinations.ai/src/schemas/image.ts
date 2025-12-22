@@ -82,14 +82,21 @@ export const GenerateImageRequestQueryParamsSchema = z.object({
         .optional()
         .default([])
         .refine(
-            (urls) => urls.every((url) => !url || url.startsWith("http://") || url.startsWith("https://")),
+            (urls) =>
+                urls.every(
+                    (url) =>
+                        !url ||
+                        url.startsWith("http://") ||
+                        url.startsWith("https://"),
+                ),
             {
-                message: "Invalid image URL. Put image= param last in your URL, or URL-encode it.",
-            }
+                message:
+                    "Invalid image URL. Put image= param last in your URL, or URL-encode it.",
+            },
         )
         .meta({
             description:
-                "Reference image URL(s) for image-to-image or video. Comma/pipe separated for multiple",
+                "Reference image URL(s). Comma/pipe separated for multiple. For veo: image[0]=first frame, image[1]=last frame (interpolation)",
         }),
     transparent: z.coerce
         .boolean()

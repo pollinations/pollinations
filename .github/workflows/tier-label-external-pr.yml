@@ -22,7 +22,7 @@ jobs:
           app-id: ${{ secrets.POLLY_BOT_APP_ID }}
           private-key: ${{ secrets.POLLY_BOT_PRIVATE_KEY }}
 
-      - name: Label external contributors
+      - name: Label PR based on contributor status
         uses: actions/github-script@v7
         with:
           github-token: ${{ steps.pollinations-ai.outputs.token }}
@@ -31,28 +31,43 @@ jobs:
             const association = context.payload.pull_request.author_association;
             const prNumber = context.payload.pull_request.number;
             
-            // Only label truly new contributors (first-timers)
-            const FIRST_TIMER_ASSOCIATIONS = ['FIRST_TIME_CONTRIBUTOR', 'FIRST_TIMER', 'NONE'];
-            const isFirstTimer = FIRST_TIMER_ASSOCIATIONS.includes(association);
-            
             // Skip bots
             if (author.endsWith('[bot]')) {
               console.log(`Skipping bot: ${author}`);
               return;
             }
             
-            if (isFirstTimer) {
-              console.log(`First-time contributor detected: ${author} (${association})`);
-              
-              // Add tier:review label for external contributors
+            const labels = [];
+            
+            // pr:external - if not an org member (OWNER or MEMBER)
+            const isOrgMember = ['OWNER', 'MEMBER'].includes(association);
+            if (!isOrgMember) {
+              labels.push('pr:external');
+              console.log(`External contributor: ${author} (${association})`);
+            }
+            
+            // tier:review - if user has never had a merged PR
+            const { data: mergedPRs } = await github.rest.search.issuesAndPullRequests({
+              q: `author:${author} is:pr is:merged repo:${context.repo.owner}/${context.repo.repo}`
+            });
+            const hasMergedPR = mergedPRs.total_count > 0;
+            
+            if (!hasMergedPR) {
+              labels.push('tier:review');
+              console.log(`First-time contributor (no merged PRs): ${author}`);
+            } else {
+              console.log(`Returning contributor (${mergedPRs.total_count} merged PRs): ${author}`);
+            }
+            
+            // Add labels if any
+            if (labels.length > 0) {
               await github.rest.issues.addLabels({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
                 issue_number: prNumber,
-                labels: ['tier:review', 'pr:external']
+                labels
               });
-              
-              console.log(`Added tier:review and pr:external labels to PR #${prNumber}`);
+              console.log(`Added labels to PR #${prNumber}: ${labels.join(', ')}`);
             } else {
-              console.log(`Returning contributor: ${author} (${association}), skipping labels`);
+              console.log(`No labels needed for ${author}`);
             }

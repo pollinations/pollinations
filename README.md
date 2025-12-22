@@ -100,18 +100,21 @@ We've launched **https://gen.pollinations.ai** — a single endpoint for all you
 
 ### MCP Server for AI Assistants
 
-Our MCP (Model Context Protocol) server enables AI assistants like Claude to generate images and audio directly. [Learn more](./model-context-protocol/README.md)
+Our MCP (Model Context Protocol) server enables AI assistants like Claude to generate images, videos, and audio directly. [Learn more](./model-context-protocol/README.md)
 
 #### Configuration
 
-Add this to your MCP client configuration:
+Get your API key at [pollinations.ai](https://pollinations.ai), then add to your MCP client config:
 
 ```json
 {
     "mcpServers": {
         "pollinations": {
             "command": "npx",
-            "args": ["@pollinations/model-context-protocol"]
+            "args": ["@pollinations/model-context-protocol"],
+            "env": {
+                "POLLINATIONS_API_KEY": "pk_your_key_here"
+            }
         }
     }
 }

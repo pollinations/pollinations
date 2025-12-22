@@ -16,8 +16,16 @@ import type {
 import { PollinationsError } from './types.js';
 
 const DEFAULT_BASE_URL = 'https://gen.pollinations.ai';
-const MAX_RETRIES = 3;
+const DEFAULT_MAX_RETRIES = 3;
 const MAX_INT32 = 2147483647;
+
+// Default timeouts in milliseconds
+const DEFAULT_TIMEOUT = 300_000; // 5min for text/chat
+const DEFAULT_IMAGE_TIMEOUT = 600_000; // 10min for images
+const DEFAULT_VIDEO_TIMEOUT = 600_000; // 10min for videos
+
+// HTTP status codes that should NOT be retried
+const NON_RETRIABLE_CODES = [400, 401, 403, 404, 422];
 
 // Helper to get env var (works in Node.js, Deno, Bun, and edge runtimes)
 function getEnvVar(name: string): string | undefined {
@@ -55,6 +63,45 @@ function getRetryDelay(attempt: number): number {
   return Math.pow(2, attempt) * 1000;
 }
 
+// Check if an error should be retried
+function isRetriableError(error: unknown): boolean {
+  if (error instanceof PollinationsError) {
+    // Don't retry client errors (4xx except rate limits)
+    return !NON_RETRIABLE_CODES.includes(error.status);
+  }
+  // Network errors, timeouts, etc. are retriable
+  return true;
+}
+
+// Fetch with timeout using AbortController
+async function fetchWithTimeout(
+  url: string,
+  options: RequestInit,
+  timeoutMs: number
+): Promise<Response> {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+
+  try {
+    const response = await fetch(url, {
+      ...options,
+      signal: controller.signal,
+    });
+    return response;
+  } catch (err) {
+    if ((err as Error).name === 'AbortError') {
+      throw new PollinationsError(
+        `Request timed out after ${timeoutMs}ms`,
+        'TIMEOUT',
+        408
+      );
+    }
+    throw err;
+  } finally {
+    clearTimeout(timeoutId);
+  }
+}
+
 // Strip API key from URL for safe sharing
 function stripKeyFromUrl(url: string): string {
   const urlObj = new URL(url);
@@ -83,11 +130,22 @@ function stripKeyFromUrl(url: string): string {
 export class Pollinations {
   private apiKey?: string;
   private baseUrl: string;
+  private maxRetries: number;
+  private textTimeout: number;
+  private imageTimeout: number;
+  private videoTimeout: number;
 
   constructor(config: PollinationsConfig = {}) {
     // Auto-detect API key from environment if not provided
     this.apiKey = config.apiKey || getEnvVar('POLLINATIONS_API_KEY');
     this.baseUrl = config.baseUrl?.replace(/\/$/, '') || DEFAULT_BASE_URL;
+    this.maxRetries = config.maxRetries ?? DEFAULT_MAX_RETRIES;
+
+    // Allow timeout to be a default fallback for all types
+    const defaultTimeout = config.timeout ?? DEFAULT_TIMEOUT;
+    this.textTimeout = config.textTimeout ?? defaultTimeout;
+    this.imageTimeout = config.imageTimeout ?? (config.timeout ? config.timeout : DEFAULT_IMAGE_TIMEOUT);
+    this.videoTimeout = config.videoTimeout ?? (config.timeout ? config.timeout : DEFAULT_VIDEO_TIMEOUT);
   }
 
   // ============================================================================
@@ -194,7 +252,7 @@ export class Pollinations {
 
   /**
    * Generate an image and return it as binary data.
-   * Automatically retries up to 3 times with exponential backoff on failure.
+   * Automatically retries up to 3 times with exponential backoff on retriable failures.
    *
    * @example
    * ```ts
@@ -203,17 +261,23 @@ export class Pollinations {
    * ```
    */
   async image(prompt: string, options: ImageGenerateOptions = {}): Promise<ImageResponse> {
-    let lastError: Error | null = null;
+    if (!prompt || typeof prompt !== 'string') {
+      throw new PollinationsError('Prompt is required and must be a string', 'INVALID_INPUT', 400);
+    }
 
-    for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
+    let lastError: Error = new Error('Unknown error during image generation');
+
+    for (let attempt = 0; attempt < this.maxRetries; attempt++) {
       // Generate new seed for each retry (or use resolved seed on first attempt)
       const seed = attempt === 0 ? resolveSeed(options.seed) : randomSeed();
       const url = this.buildImageUrl(prompt, options, seed);
 
       try {
-        const response = await fetch(url, {
-          headers: this.getHeaders(),
-        });
+        const response = await fetchWithTimeout(
+          url,
+          { headers: this.getHeaders() },
+          this.imageTimeout
+        );
 
         if (!response.ok) {
           await this.handleErrorResponse(response);
@@ -225,7 +289,13 @@ export class Pollinations {
         return { buffer, contentType, url: stripKeyFromUrl(url) };
       } catch (err) {
         lastError = err as Error;
-        if (attempt < MAX_RETRIES - 1) {
+
+        // Don't retry non-retriable errors (400, 401, 403, 404, 422)
+        if (!isRetriableError(err)) {
+          throw lastError;
+        }
+
+        if (attempt < this.maxRetries - 1) {
           await sleep(getRetryDelay(attempt));
         }
       }
@@ -300,7 +370,8 @@ export class Pollinations {
 
   /**
    * Generate a video and return it as binary data.
-   * Automatically retries up to 3 times with exponential backoff on failure.
+   * Automatically retries up to 3 times with exponential backoff on retriable failures.
+   * Note: Video generation can take several minutes - timeout is set to 10 minutes.
    *
    * @example
    * ```ts
@@ -308,16 +379,22 @@ export class Pollinations {
    * ```
    */
   async video(prompt: string, options: VideoGenerateOptions = {}): Promise<VideoResponse> {
-    let lastError: Error | null = null;
+    if (!prompt || typeof prompt !== 'string') {
+      throw new PollinationsError('Prompt is required and must be a string', 'INVALID_INPUT', 400);
+    }
 
-    for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
+    let lastError: Error = new Error('Unknown error during video generation');
+
+    for (let attempt = 0; attempt < this.maxRetries; attempt++) {
       const seed = attempt === 0 ? resolveSeed(options.seed) : randomSeed();
       const url = this.buildVideoUrl(prompt, options, seed);
 
       try {
-        const response = await fetch(url, {
-          headers: this.getHeaders(),
-        });
+        const response = await fetchWithTimeout(
+          url,
+          { headers: this.getHeaders() },
+          this.videoTimeout
+        );
 
         if (!response.ok) {
           await this.handleErrorResponse(response);
@@ -329,7 +406,13 @@ export class Pollinations {
         return { buffer, contentType, url: stripKeyFromUrl(url) };
       } catch (err) {
         lastError = err as Error;
-        if (attempt < MAX_RETRIES - 1) {
+
+        // Don't retry non-retriable errors (400, 401, 403, 404, 422)
+        if (!isRetriableError(err)) {
+          throw lastError;
+        }
+
+        if (attempt < this.maxRetries - 1) {
           await sleep(getRetryDelay(attempt));
         }
       }
@@ -344,7 +427,7 @@ export class Pollinations {
 
   /**
    * Generate text from a prompt.
-   * Automatically retries up to 3 times with exponential backoff on failure.
+   * Automatically retries up to 3 times with exponential backoff on retriable failures.
    *
    * @example
    * ```ts
@@ -353,9 +436,13 @@ export class Pollinations {
    * ```
    */
   async text(prompt: string, options: TextGenerateOptions = {}): Promise<string> {
-    let lastError: Error | null = null;
+    if (!prompt || typeof prompt !== 'string') {
+      throw new PollinationsError('Prompt is required and must be a string', 'INVALID_INPUT', 400);
+    }
 
-    for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
+    let lastError: Error = new Error('Unknown error during text generation');
+
+    for (let attempt = 0; attempt < this.maxRetries; attempt++) {
       const seed = attempt === 0 ? resolveSeed(options.seed) : randomSeed();
 
       const messages: Message[] = [];
@@ -386,11 +473,15 @@ export class Pollinations {
       });
 
       try {
-        const response = await fetch(`${this.baseUrl}/v1/chat/completions`, {
-          method: 'POST',
-          headers: this.getHeaders('application/json'),
-          body: JSON.stringify(body),
-        });
+        const response = await fetchWithTimeout(
+          `${this.baseUrl}/v1/chat/completions`,
+          {
+            method: 'POST',
+            headers: this.getHeaders('application/json'),
+            body: JSON.stringify(body),
+          },
+          this.textTimeout
+        );
 
         if (!response.ok) {
           await this.handleErrorResponse(response);
@@ -400,7 +491,13 @@ export class Pollinations {
         return data.choices[0]?.message?.content || '';
       } catch (err) {
         lastError = err as Error;
-        if (attempt < MAX_RETRIES - 1) {
+
+        // Don't retry non-retriable errors (400, 401, 403, 404, 422)
+        if (!isRetriableError(err)) {
+          throw lastError;
+        }
+
+        if (attempt < this.maxRetries - 1) {
           await sleep(getRetryDelay(attempt));
         }
       }
@@ -420,6 +517,10 @@ export class Pollinations {
    * ```
    */
   async *textStream(prompt: string, options: Omit<TextGenerateOptions, 'stream'> = {}): AsyncGenerator<string> {
+    if (!prompt || typeof prompt !== 'string') {
+      throw new PollinationsError('Prompt is required and must be a string', 'INVALID_INPUT', 400);
+    }
+
     const messages: Message[] = [];
 
     if (options.systemPrompt) {
@@ -447,11 +548,15 @@ export class Pollinations {
       if (body[key] === undefined) delete body[key];
     });
 
-    const response = await fetch(`${this.baseUrl}/v1/chat/completions`, {
-      method: 'POST',
-      headers: this.getHeaders('application/json'),
-      body: JSON.stringify(body),
-    });
+    const response = await fetchWithTimeout(
+      `${this.baseUrl}/v1/chat/completions`,
+      {
+        method: 'POST',
+        headers: this.getHeaders('application/json'),
+        body: JSON.stringify(body),
+      },
+      this.textTimeout
+    );
 
     if (!response.ok) {
       await this.handleErrorResponse(response);
@@ -495,7 +600,7 @@ export class Pollinations {
 
   /**
    * Create a chat completion (OpenAI-compatible).
-   * Automatically retries up to 3 times with exponential backoff on failure.
+   * Automatically retries up to 3 times with exponential backoff on retriable failures.
    *
    * @example
    * ```ts
@@ -506,9 +611,13 @@ export class Pollinations {
    * ```
    */
   async chat(messages: Message[], options: ChatOptions = {}): Promise<ChatResponse> {
-    let lastError: Error | null = null;
+    if (!messages || !Array.isArray(messages) || messages.length === 0) {
+      throw new PollinationsError('Messages array is required and cannot be empty', 'INVALID_INPUT', 400);
+    }
 
-    for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
+    let lastError: Error = new Error('Unknown error during chat completion');
+
+    for (let attempt = 0; attempt < this.maxRetries; attempt++) {
       const seed = attempt === 0 ? resolveSeed(options.seed) : randomSeed();
 
       const body: Record<string, unknown> = {
@@ -549,11 +658,15 @@ export class Pollinations {
       });
 
       try {
-        const response = await fetch(`${this.baseUrl}/v1/chat/completions`, {
-          method: 'POST',
-          headers: this.getHeaders('application/json'),
-          body: JSON.stringify(body),
-        });
+        const response = await fetchWithTimeout(
+          `${this.baseUrl}/v1/chat/completions`,
+          {
+            method: 'POST',
+            headers: this.getHeaders('application/json'),
+            body: JSON.stringify(body),
+          },
+          this.textTimeout
+        );
 
         if (!response.ok) {
           await this.handleErrorResponse(response);
@@ -562,7 +675,13 @@ export class Pollinations {
         return response.json() as Promise<ChatResponse>;
       } catch (err) {
         lastError = err as Error;
-        if (attempt < MAX_RETRIES - 1) {
+
+        // Don't retry non-retriable errors (400, 401, 403, 404, 422)
+        if (!isRetriableError(err)) {
+          throw lastError;
+        }
+
+        if (attempt < this.maxRetries - 1) {
           await sleep(getRetryDelay(attempt));
         }
       }
@@ -588,6 +707,10 @@ export class Pollinations {
     messages: Message[],
     options: Omit<ChatOptions, 'stream'> = {}
   ): AsyncGenerator<ChatStreamChunk> {
+    if (!messages || !Array.isArray(messages) || messages.length === 0) {
+      throw new PollinationsError('Messages array is required and cannot be empty', 'INVALID_INPUT', 400);
+    }
+
     const body: Record<string, unknown> = {
       messages,
       model: options.model || 'openai',
@@ -625,11 +748,15 @@ export class Pollinations {
       }
     });
 
-    const response = await fetch(`${this.baseUrl}/v1/chat/completions`, {
-      method: 'POST',
-      headers: this.getHeaders('application/json'),
-      body: JSON.stringify(body),
-    });
+    const response = await fetchWithTimeout(
+      `${this.baseUrl}/v1/chat/completions`,
+      {
+        method: 'POST',
+        headers: this.getHeaders('application/json'),
+        body: JSON.stringify(body),
+      },
+      this.textTimeout
+    );
 
     if (!response.ok) {
       await this.handleErrorResponse(response);
@@ -725,9 +852,11 @@ export class Pollinations {
    * ```
    */
   async textModels(): Promise<ModelInfo[]> {
-    const response = await fetch(`${this.baseUrl}/text/models`, {
-      headers: this.getHeaders(),
-    });
+    const response = await fetchWithTimeout(
+      `${this.baseUrl}/text/models`,
+      { headers: this.getHeaders() },
+      this.textTimeout
+    );
 
     if (!response.ok) {
       await this.handleErrorResponse(response);
@@ -746,9 +875,11 @@ export class Pollinations {
    * ```
    */
   async imageModels(): Promise<ModelInfo[]> {
-    const response = await fetch(`${this.baseUrl}/image/models`, {
-      headers: this.getHeaders(),
-    });
+    const response = await fetchWithTimeout(
+      `${this.baseUrl}/image/models`,
+      { headers: this.getHeaders() },
+      this.textTimeout
+    );
 
     if (!response.ok) {
       await this.handleErrorResponse(response);
@@ -766,9 +897,11 @@ export class Pollinations {
    * ```
    */
   async models(): Promise<ModelInfo[]> {
-    const response = await fetch(`${this.baseUrl}/v1/models`, {
-      headers: this.getHeaders(),
-    });
+    const response = await fetchWithTimeout(
+      `${this.baseUrl}/v1/models`,
+      { headers: this.getHeaders() },
+      this.textTimeout
+    );
 
     if (!response.ok) {
       await this.handleErrorResponse(response);

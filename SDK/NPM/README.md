@@ -11,12 +11,6 @@ Official SDK for [Pollinations.AI](https://pollinations.ai) - Generate images, t
 npm install @pollinations/sdk
 ```
 
-### Browser (CDN)
-
-```html
-<script src="https://cdn.pollinations.ai/sdk.js"></script>
-```
-
 ## Quick Start
 
 ```javascript
@@ -31,20 +25,49 @@ const text = await generateText('explain quantum computing in simple terms');
 console.log(text);
 ```
 
+### Complete Beginner Example
+
+New to coding? Here's a complete file you can copy-paste and run:
+
+```javascript
+// save this as: my-first-ai.mjs
+
+import { generateText, generateImage } from '@pollinations/sdk';
+
+async function main() {
+  // Generate text
+  const poem = await generateText('write a short poem about robots');
+  console.log('Generated poem:');
+  console.log(poem);
+
+  // Generate an image
+  const image = await generateImage('a friendly robot waving hello');
+  await image.saveToFile('robot.png');
+  console.log('Image saved to robot.png!');
+}
+
+main();
+```
+
+Run it with: `node my-first-ai.mjs`
+
 ### Browser Example
 
 ```html
-<script src="https://cdn.pollinations.ai/sdk.js"></script>
-<script>
+<script type="module">
+  import { generateText, generateImage } from 'https://esm.sh/@pollinations/sdk';
+
   // Generate text
-  Pollinations.generateText('write a haiku').then(text => {
-    document.body.innerText = text;
-  });
+  const text = await generateText('write a haiku');
 
   // Generate image
-  Pollinations.generateImage('a cute robot').then(image => {
-    document.body.innerHTML = `<img src="${image.toDataURL()}">`;
-  });
+  const image = await generateImage('a cute robot');
+
+  // Display both
+  document.body.innerHTML = `
+    <p>${text}</p>
+    <img src="${image.toDataURL()}">
+  `;
 </script>
 ```
 
@@ -110,13 +133,13 @@ import { generateText, generateTextStream } from '@pollinations/sdk';
 const text = await generateText('write a poem about coding');
 
 // With options
-const response = await generateText('explain gravity', {
+const story = await generateText('explain gravity', {
   model: 'openai',
   systemPrompt: 'You are a physics teacher',
 });
 
 // Multiple responses
-const texts = await generateText('give me a random fact', { n: 3 });
+const facts = await generateText('give me a random fact', { n: 3 });
 
 // Streaming
 for await (const chunk of generateTextStream('tell me a story')) {
@@ -124,10 +147,10 @@ for await (const chunk of generateTextStream('tell me a story')) {
 }
 
 // Full response with metadata
-const response = await generateText('hello', { raw: true });
-console.log(response.text);
-console.log(response.tokens);      // { input, output, total }
-console.log(response.actualModel); // actual model used
+const result = await generateText('hello', { raw: true });
+console.log(result.text);
+console.log(result.tokens);      // { input, output, total }
+console.log(result.actualModel); // actual model used
 ```
 
 ### Options
@@ -190,24 +213,24 @@ const videos = await generateVideo('ocean waves', { n: 2, duration: 4 });
 
 | Option | Type | Default | Description |
 |--------|------|---------|-------------|
-| `model` | string | `'veo'` | Model to use |
-| `duration` | number | - | Seconds (veo: 4,6,8) |
-| `aspectRatio` | string | - | e.g. `'16:9'` |
-| `audio` | boolean | `false` | Include audio |
+| `model` | string | `'veo'` | `'veo'` or `'seedance'` |
+| `duration` | number | - | veo: 4, 6, or 8 sec / seedance: 2-10 sec |
+| `aspectRatio` | string | - | e.g. `'16:9'`, `'9:16'`, `'1:1'` |
+| `audio` | boolean | `false` | Include audio (veo only) |
 | `n` | number | `1` | Number of videos |
 
 ## Audio (Text-to-Speech)
 
 ```javascript
 import { generateAudio } from '@pollinations/sdk';
+import { writeFileSync } from 'fs';
 
 const audio = await generateAudio('Hello, welcome!', {
   voice: 'nova',
 });
 
 // Save to file (Node.js)
-const fs = require('fs');
-fs.writeFileSync('welcome.mp3', Buffer.from(audio.data, 'base64'));
+writeFileSync('welcome.mp3', Buffer.from(audio.data, 'base64'));
 
 // Play in browser
 const audioEl = new Audio(`data:audio/mp3;base64,${audio.data}`);
@@ -308,7 +331,51 @@ import type {
 | `generateAudio(text, options?)` | Text to speech |
 | `getTextModels()` | List text models |
 | `getImageModels()` | List image models |
+| `getModels()` | List all models |
 | `configure({ apiKey })` | Set global config |
+
+## Troubleshooting
+
+### "saveToFile is only available in Node.js"
+
+If you're in a browser, use `toDataURL()` or `toBase64()` instead:
+
+```javascript
+const image = await generateImage('a cat');
+const dataUrl = image.toDataURL();  // Use this for <img src="">
+const base64 = image.toBase64();    // Raw base64 string
+```
+
+### Request Timeout
+
+Default timeouts: text/chat 5min, images 10min, videos 10min. For custom timeouts:
+
+```javascript
+import { Pollinations } from '@pollinations/sdk';
+
+const client = new Pollinations({
+  timeout: 600000,       // 10 minutes for all requests
+  textTimeout: 300000,   // 5 minutes for text
+  imageTimeout: 600000,  // 10 minutes for images
+  videoTimeout: 900000,  // 15 minutes for videos
+});
+```
+
+### Rate Limiting
+
+If you're getting rate limited, get an API key at https://enter.pollinations.ai
+
+### Network Errors
+
+The SDK automatically retries failed requests up to 3 times. To customize:
+
+```javascript
+import { Pollinations } from '@pollinations/sdk';
+
+const client = new Pollinations({
+  maxRetries: 5,  // Retry up to 5 times
+});
+```
 
 ## Links
 

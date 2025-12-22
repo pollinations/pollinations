@@ -12,6 +12,16 @@ export interface PollinationsConfig {
   apiKey?: string;
   /** Base URL for the API (defaults to https://gen.pollinations.ai) */
   baseUrl?: string;
+  /** Maximum number of retry attempts (default: 3) */
+  maxRetries?: number;
+  /** Default timeout in ms for all requests (default: 60000) */
+  timeout?: number;
+  /** Timeout in ms for text requests - overrides default timeout (default: 60000) */
+  textTimeout?: number;
+  /** Timeout in ms for image requests - overrides default timeout (default: 120000) */
+  imageTimeout?: number;
+  /** Timeout in ms for video requests - overrides default timeout (default: 600000) */
+  videoTimeout?: number;
 }
 
 // ============================================================================

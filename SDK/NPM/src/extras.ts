@@ -80,7 +80,7 @@ function arrayBufferToBase64(buffer: ArrayBuffer): string {
 async function saveBufferToFile(buffer: ArrayBuffer, path: string): Promise<void> {
   // Check if we're in Node.js
   if (typeof globalThis.process === 'undefined' || !globalThis.process.versions?.node) {
-    throw new Error('saveToFile is only available in Node.js');
+    throw new Error('saveToFile() is only available in Node.js. In browsers, use toDataURL() or toBase64() instead.');
   }
   // Dynamic import for Node.js fs - wrapped to avoid bundler issues
   const fsModule = 'fs';
@@ -250,11 +250,6 @@ export class Conversation {
     forked.messages = [...this.messages];
     return forked;
   }
-}
-
-/** Create a new conversation */
-export function conversation(options?: ChatOptions, client?: Pollinations): Conversation {
-  return new Conversation(options, client);
 }
 
 // ============================================================================

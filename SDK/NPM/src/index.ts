@@ -6,7 +6,7 @@
  *
  * @example
  * ```ts
- * import { generateImage, generateText } from 'pollinations';
+ * import { generateImage, generateText } from '@pollinations/sdk';
  *
  * const image = await generateImage('a cat in space');
  * await image.saveToFile('cat.png');

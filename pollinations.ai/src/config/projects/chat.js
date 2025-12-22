@@ -731,5 +731,14 @@ export const chatProjects = [
     "category": "chat",
     "submissionDate": "2025-12-21",
     "order": 5
+  },
+  {
+    "name": "Asive AI",
+    "url": "https://asive.duckdns.org",
+    "description": "Asive AI is a gen-z based chatbot that meets your needs whether it's coding or talking. It uses pollination ai text and vision model to contribute. It has an smooth ui with smooth animations that will make you lost in itself.",
+    "category": "chat",
+    "author": "@flyinqe",
+    "submissionDate": "2025-12-22",
+    "order": 5
   }
 ];

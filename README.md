@@ -494,6 +494,7 @@ Pollinations.AI is used in various projects, including:
 | 🇨🇳 [imggen.top 🇨🇳](https://www.imggen.top/) | Create stunning AI-generated images in seconds with our free AI image... | [lipengliang2...](mailto:lipengliang2012@163.com) |
 | 🇨🇳 [Quicker Pollinations AI](https://getquicker.net/Sharedaction?code=9ac738ed-a4b2-4ded-933c-08dd5f710a8b&fromMyShare=true) | This project provides a free API interface supporting various text and image... | [Link](https://linux.do/u/s_s/summary) |
 | 🆕 🛠️ Content Auto Manager ([⭐ 0](https://github.com/pptt121212/content-auto-manager)) | WordPress plugin for automated AI content production. Features scheduled task... | @pptt121212 |
+| 🆕 [BhaujAI](https://bhaujai.cc) | At bhaujai.cc we automate 70% of business or creator's tasks using AI. In short... | @royalashu4u |
 
 ### Chat 💬
 

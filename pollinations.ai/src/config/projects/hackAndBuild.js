@@ -374,4 +374,13 @@ export const hackAndBuildProjects = [
         submissionDate: "2025-12-21",
         order: 1,
     },
+  {
+    "name": "BhaujAI",
+    "url": "https://bhaujai.cc",
+    "description": "At bhaujai.cc we automate 70% of business or creator's tasks using AI. In short — imagine chatGPT with access to all tools or apps needed in a business. MVP is ready and a few creators are already in beta testing. Features are simple: you just talk to the AI and it will perform tasks in the background like a personal team in your hand.",
+    "category": "hackAndBuild",
+    "author": "@royalashu4u",
+    "submissionDate": "2025-12-22",
+    "order": 5
+  }
 ];

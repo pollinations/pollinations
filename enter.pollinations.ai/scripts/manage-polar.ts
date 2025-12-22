@@ -2,7 +2,6 @@ import { Polar } from "@polar-sh/sdk";
 import { command, number, run, string, boolean } from "@drizzle-team/brocli";
 import { inspect } from "node:util";
 import { applyColor, applyStyle } from "../src/util.ts";
-import { type Subscription } from "@polar-sh/sdk/models/components/subscription.js";
 
 const VERSION = "v1";
 
@@ -731,17 +730,24 @@ const userUpdateTier = command({
 
         console.log(`Searching subscription for: ${opts.email}`);
 
-        // Find user's subscription using async iterator
-        let subscription: Subscription | undefined;
-        const paginator = await polar.subscriptions.list({ limit: 100 });
-        for await (const page of paginator) {
-            subscription = page.result.items.find(
-                (s) =>
-                    s.customer.email?.toLowerCase() ===
-                    opts.email.toLowerCase(),
-            );
-            if (subscription) break;
+        // First, look up customer by email (fast)
+        const customerResponse = await polar.customers.list({
+            email: opts.email,
+            limit: 1,
+        });
+        const customer = customerResponse.result.items[0];
+        if (!customer) {
+            console.error(`No customer found for ${opts.email}`);
+            return;
         }
+
+        // Then filter subscriptions by customerId (fast)
+        const subscriptionResponse = await polar.subscriptions.list({
+            customerId: customer.id,
+            active: true,
+            limit: 1,
+        });
+        const subscription = subscriptionResponse.result.items[0];
 
         if (!subscription) {
             console.error(`No subscription found for ${opts.email}`);
@@ -752,14 +758,6 @@ const userUpdateTier = command({
         console.log(`   ID: ${subscription.id}`);
         console.log(`   Current: ${subscription.product.name}`);
         console.log(`   Status: ${subscription.status}`);
-
-        if (subscription.status !== "active") {
-            console.error(
-                `Subscription not active (status: ${subscription.status})`,
-            );
-            console.log(`   User needs to reactivate at enter.pollinations.ai`);
-            return;
-        }
 
         if (subscription.productId === targetProductId) {
             console.log(`Already on ${opts.tier} tier`);

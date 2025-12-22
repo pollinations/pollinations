@@ -213,6 +213,33 @@ We offer React hooks for easy integration. Example usage:
 
 Check out our [Pollinations React Hooks](./pollinations-react/README.md) for more details.
 
+### Official SDK
+
+The easiest way to integrate Pollinations into your app:
+
+```bash
+npm install @pollinations/sdk
+```
+
+```javascript
+import { generateImage, generateText } from '@pollinations/sdk';
+
+const image = await generateImage('a robot painting');
+await image.saveToFile('robot.png');
+
+const text = await generateText('write a haiku about coding');
+```
+
+**Browser (no build tools):**
+```html
+<script src="https://cdn.pollinations.ai/sdk.js"></script>
+<script>
+  Pollinations.generateText('hello').then(console.log);
+</script>
+```
+
+Full documentation: [SDK/NPM/README.md](./SDK/NPM/README.md)
+
 ## Architecture
 
 ```mermaid

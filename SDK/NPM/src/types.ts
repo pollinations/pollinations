@@ -14,13 +14,13 @@ export interface PollinationsConfig {
   baseUrl?: string;
   /** Maximum number of retry attempts (default: 3) */
   maxRetries?: number;
-  /** Default timeout in ms for all requests (default: 60000) */
+  /** Default timeout in ms for all requests (default: 300000 = 5min) */
   timeout?: number;
-  /** Timeout in ms for text requests - overrides default timeout (default: 60000) */
+  /** Timeout in ms for text requests (default: 300000 = 5min) */
   textTimeout?: number;
-  /** Timeout in ms for image requests - overrides default timeout (default: 120000) */
+  /** Timeout in ms for image requests (default: 600000 = 10min) */
   imageTimeout?: number;
-  /** Timeout in ms for video requests - overrides default timeout (default: 600000) */
+  /** Timeout in ms for video requests (default: 600000 = 10min) */
   videoTimeout?: number;
 }
 

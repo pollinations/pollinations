@@ -120,8 +120,15 @@ const url = await imageUrl('a sunset');
 | `height` | number | `1024` | Height in pixels |
 | `seed` | number | random | Reproducible results |
 | `enhance` | boolean | `false` | AI prompt enhancement |
+| `negativePrompt` | string | - | What to avoid in the image |
 | `nologo` | boolean | `false` | Remove watermark |
+| `nofeed` | boolean | `false` | Don't show in public feed |
+| `private` | boolean | `false` | Keep generation private |
 | `safe` | boolean | `false` | Safety filter |
+| `quality` | string | `'medium'` | `'low'`, `'medium'`, `'high'`, `'hd'` |
+| `referenceImage` | string | - | URL for image-to-image |
+| `transparent` | boolean | `false` | Transparent background (PNG) |
+| `guidanceScale` | number | - | Prompt strictness (1-20) |
 | `n` | number | `1` | Number of images |
 
 ## Text Generation
@@ -161,8 +168,11 @@ console.log(result.actualModel); // actual model used
 | `systemPrompt` | string | - | System prompt |
 | `temperature` | number | `1` | Creativity (0-2) |
 | `maxTokens` | number | - | Max output tokens |
+| `frequencyPenalty` | number | - | Reduce repetition (-2 to 2) |
+| `presencePenalty` | number | - | Encourage new topics (-2 to 2) |
 | `seed` | number | random | Reproducible results |
 | `json` | boolean | `false` | JSON output mode |
+| `private` | boolean | `false` | Keep generation private |
 | `n` | number | `1` | Number of responses |
 | `raw` | boolean | `false` | Return full response |
 
@@ -216,7 +226,12 @@ const videos = await generateVideo('ocean waves', { n: 2, duration: 4 });
 | `model` | string | `'veo'` | `'veo'` or `'seedance'` |
 | `duration` | number | - | veo: 4, 6, or 8 sec / seedance: 2-10 sec |
 | `aspectRatio` | string | - | e.g. `'16:9'`, `'9:16'`, `'1:1'` |
+| `seed` | number | random | Reproducible results |
 | `audio` | boolean | `false` | Include audio (veo only) |
+| `referenceImage` | string | - | URL for image-to-video |
+| `private` | boolean | `false` | Keep generation private |
+| `nologo` | boolean | `false` | Remove watermark |
+| `safe` | boolean | `false` | Safety filter |
 | `n` | number | `1` | Number of videos |
 
 ## Audio (Text-to-Speech)
@@ -242,7 +257,9 @@ audioEl.play();
 | Option | Type | Default | Description |
 |--------|------|---------|-------------|
 | `voice` | string | `'alloy'` | Voice to use |
-| `format` | string | `'mp3'` | Output format |
+| `model` | string | `'openai-audio'` | Model to use |
+| `format` | string | `'mp3'` | `'mp3'`, `'wav'`, `'flac'`, `'opus'`, `'pcm16'` |
+| `seed` | number | random | Reproducible results |
 | `n` | number | `1` | Number of outputs |
 
 ## Vision (Image Input)
@@ -380,6 +397,7 @@ const client = new Pollinations({
 ## Links
 
 - [Pollinations.AI](https://pollinations.ai)
+- [API Documentation](https://enter.pollinations.ai/api/docs) - Full API reference
 - [Get API Key](https://enter.pollinations.ai)
 - [Discord](https://discord.gg/pollinations-ai-885844321461485618)
 - [GitHub](https://github.com/pollinations/pollinations)

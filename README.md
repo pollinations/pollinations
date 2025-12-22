@@ -4,21 +4,20 @@
 
 ## 🆕 Recent Apps
 
-| Name                                                                                                                                                 | Description                                                                         | Author                           |
-| ---------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------- | -------------------------------- |
-| [💬 AI Chat Studio](https://github.com/Universe-shifting/AI-Chat-Studio)                                                                             | Local desktop AI chat app built with PyQt6. Supports multimodal conversations wi... | @vsenikizanat81486               |
-| [🦀 Zuhri](https://github.com/humair-m/zuhri.rs)                                                                                                     | High-performance Rust CLI AI assistant with interactive chat, code generation wi... | @Humair-025                      |
-| [🎨 Imgoo](https://imgoo.netlify.app/)                                                                                                               | AI image generator with creative controls including aspect ratio, guidance scale... | @redythacker-cyber               |
-| [🤖 TeleChars AI](https://telecharsai.byethost14.com)                                                                                                | Plataforma para crear personajes IA personalizados en Telegram. Configura person... | @marcosfrgames08                 |
-| [🎨 Nosde Space](https://www.nosde.space/)                                                                                                           | All-in-one AI platform for creating images, videos, text, and audio. Features co... | @unknow_junior                   |
-| [🤖 Discord Bot Tutorial](https://gist.github.com/Tolerable/9908e626147689fe72cdab8f2e1e6743)                                                        | Comprehensive tutorial for building Discord bots with Pollinations.ai. Covers te... | @Tolerable                       |
-| [⛽ TuffMeter](https://tuffmeter.netlify.app/)                                                                                                       | Humorous AI tool that analyzes uploaded videos to rate your aura. Based on visua... | @VearyTry                        |
-| [💬 Yerty AI](https://yerty.xdativo.cloud)                                                                                                           | A calm, friendly AI chat companion focused on everyday thinking, writing, and ca... | @losingdivine                    |
-| [🤖 NullVector](https://discord.com/oauth2/authorize?client_id=1450613065069494423&permissions=8&integration_type=0&scope=applications.commands+bot) | Discord AI assistant with smart model routing. Evaluates each message to select ... | @CloudCompile, @fricker2025-star |
-| [📚 IA-Books: AI Ebook Generator](https://iabooks.com.br)                                                                                            | Professional ebook creation platform with AI. Auto-generates book covers and cha... | @FabioArieiraBaia                |
+| Name | Description | Author |
+|------|-------------|--------|
+| [TEST 2](https://hello.pollinations.ai) | Good stuff | @ElliotEtag |
+| [Asive AI](https://asive.duckdns.org) | Gen-Z chatbot with smooth UI and animations. Uses Pollinations text and vision m... | @flyinqe |
+| [Multi Image Generator](https://perchance.org/multi-image-generator) | Perchance image generator with img2img and multi-model comparison. Generate with... | @itzGlitch-AS |
+| [BhaujAI](https://bhaujai.cc) | Automates 70% of business or creator's tasks using AI. ChatGPT with access to al... | @royalashu4u |
+| [AI Chat Studio](https://github.com/Universe-shifting/AI-Chat-Studio) | Local desktop AI chat app built with PyQt6. Supports multimodal conversations wi... | @vsenikizanat81486 |
+| [Zuhri](https://github.com/humair-m/zuhri.rs) | High-performance Rust CLI AI assistant with interactive chat, code generation wi... | @Humair-025 |
+| [Imgoo](https://imgoo.netlify.app/) | AI image generator with creative controls including aspect ratio, guidance scale... | @redythacker-cyber |
+| [TeleChars AI](https://telecharsai.byethost14.com) | Plataforma para crear personajes IA personalizados en Telegram. Configura person... | @marcosfrgames08 |
+| [Nosde Space](https://www.nosde.space/) | All-in-one AI platform for creating images, videos, text, and audio. Features co... | @unknow_junior |
+| [Discord Bot Tutorial](https://gist.github.com/Tolerable/9908e626147689fe72cdab8f2e1e6743) | Comprehensive tutorial for building Discord bots with Pollinations.ai. Covers te... | @Tolerable |
 
 [View all apps →](apps/APPS.md)
-
 ## 🚀 New Unified API — Now Live
 
 We've launched **https://gen.pollinations.ai** — a single endpoint for all your AI generation needs. Text, images, audio, video — all in one place.

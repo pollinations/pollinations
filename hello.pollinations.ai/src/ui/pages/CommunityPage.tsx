@@ -10,6 +10,7 @@ import { PageCard } from "../components/ui/page-card";
 import { PageContainer } from "../components/ui/page-container";
 import { SubCard } from "../components/ui/sub-card";
 import { NewsSection } from "../components/NewsSection";
+import { TopContributors } from "../components/TopContributors";
 
 interface VotingIssue {
     emoji: string;
@@ -145,11 +146,11 @@ export default function CommunityPage() {
                 {/* Divider */}
                 <Divider />
 
+                {/* Top Contributors Component */}
+                <TopContributors />
+
                 {/* News Section */}
                 <NewsSection limit={15} title={pageCopy.newsTitle?.text} />
-
-                {/* Divider */}
-                <Divider />
 
                 {/* Supporters Section */}
                 <div>

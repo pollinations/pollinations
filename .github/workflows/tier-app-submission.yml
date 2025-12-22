@@ -302,13 +302,15 @@ jobs:
           EXISTING_PR=$(gh pr list --head "$BRANCH" --json number -q '.[0].number')
           if [ -z "$EXISTING_PR" ]; then
             # Build PR body with app details (using printf to avoid YAML parsing issues)
+            # Use double newlines for GitHub markdown paragraph breaks
             PR_BODY=$(printf '## 🆕 New App: %s\n\n' "$PROJECT_NAME")
-            PR_BODY="${PR_BODY}$(printf 'Category: %s\n' "$CATEGORY")"
-            PR_BODY="${PR_BODY}$(printf 'URL: %s\n' "$URL")"
-            PR_BODY="${PR_BODY}$(printf 'Description: %s\n' "$SHORT_DESC")"
-            [ -n "$REPO" ] && PR_BODY="${PR_BODY}$(printf 'Repo: %s\n' "$REPO")"
-            [ -n "$DISCORD" ] && PR_BODY="${PR_BODY}$(printf 'Discord: %s\n' "$DISCORD")"
-            [ -n "$LANGUAGE" ] && PR_BODY="${PR_BODY}$(printf 'Language: %s\n' "$LANGUAGE")"
+            PR_BODY="${PR_BODY}$(printf '**Category:** %s  \n' "$CATEGORY")"
+            PR_BODY="${PR_BODY}$(printf '**URL:** %s  \n' "$URL")"
+            PR_BODY="${PR_BODY}$(printf '**Description:** %s  \n' "$SHORT_DESC")"
+            [ -n "$REPO" ] && PR_BODY="${PR_BODY}$(printf '**Repo:** %s  \n' "$REPO")"
+            [ -n "$DISCORD" ] && PR_BODY="${PR_BODY}$(printf '**Discord:** %s  \n' "$DISCORD")"
+            [ -n "$LANGUAGE" ] && PR_BODY="${PR_BODY}$(printf '**Language:** %s  \n' "$LANGUAGE")"
+            [ -n "$OTHER" ] && PR_BODY="${PR_BODY}$(printf '**Other Contact:** %s  \n' "$OTHER")"
             PR_BODY="${PR_BODY}$(printf '\n---\nCo-authored-by: %s <%s+%s@users.noreply.github.com>\nFixes #%s' "$ISSUE_AUTHOR" "$ISSUE_AUTHOR_ID" "$ISSUE_AUTHOR" "$ISSUE_NUMBER")"
 
             gh pr create --title "Add $PROJECT_NAME to $CATEGORY" \

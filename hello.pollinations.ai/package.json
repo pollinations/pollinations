@@ -1,40 +1,42 @@
 {
-  "name": "hello.pollinations.ai",
-  "version": "1.0.0",
-  "private": true,
-  "type": "module",
-  "scripts": {
-    "dev": "vite",
-    "build": "tsc && vite build",
-    "preview": "vite preview"
-  },
-  "dependencies": {
-    "@pollinations/react": "^2.0.7",
-    "@types/webfontloader": "^1.6.38",
-    "class-variance-authority": "^0.7.1",
-    "clsx": "^2.1.1",
-    "lucide-react": "^0.553.0",
-    "react": "^18.2.0",
-    "react-dom": "^18.2.0",
-    "react-markdown": "^10.1.0",
-    "react-router-dom": "^6.20.0",
-    "tailwind-merge": "^3.4.0",
-    "webfontloader": "^1.6.28"
-  },
-  "devDependencies": {
-    "@cloudflare/vite-plugin": "^1.15.0",
-    "@types/node": "^24.10.1",
-    "@types/react": "^19.2.6",
-    "@types/react-dom": "^19.2.3",
-    "@vitejs/plugin-react": "^5.0.4",
-    "autoprefixer": "^10.4.22",
-    "eslint-plugin-jsx-a11y": "^6.10.2",
-    "postcss": "^8.5.6",
-    "tailwindcss": "^3.4.18",
-    "typescript": "^5.9.3",
-    "vite": "^7.1.7",
-    "vite-plugin-svgr": "^4.5.0",
-    "vite-tsconfig-paths": "^5.1.4",
-    "wrangler": "^4.49.0"
-  }
+    "name": "hello.pollinations.ai",
+    "version": "1.0.0",
+    "private": true,
+    "type": "module",
+    "scripts": {
+        "predev": "cp ../apps/APPS.md src/lib/APPS.md",
+        "dev": "vite",
+        "prebuild": "cp ../apps/APPS.md src/lib/APPS.md",
+        "build": "tsc && vite build",
+        "preview": "vite preview"
+    },
+    "dependencies": {
+        "@pollinations/react": "^2.0.7",
+        "@types/webfontloader": "^1.6.38",
+        "class-variance-authority": "^0.7.1",
+        "clsx": "^2.1.1",
+        "lucide-react": "^0.553.0",
+        "react": "^18.2.0",
+        "react-dom": "^18.2.0",
+        "react-markdown": "^10.1.0",
+        "react-router-dom": "^6.20.0",
+        "tailwind-merge": "^3.4.0",
+        "webfontloader": "^1.6.28"
+    },
+    "devDependencies": {
+        "@cloudflare/vite-plugin": "^1.15.0",
+        "@types/node": "^24.10.1",
+        "@types/react": "^19.2.6",
+        "@types/react-dom": "^19.2.3",
+        "@vitejs/plugin-react": "^5.0.4",
+        "autoprefixer": "^10.4.22",
+        "eslint-plugin-jsx-a11y": "^6.10.2",
+        "postcss": "^8.5.6",
+        "tailwindcss": "^3.4.18",
+        "typescript": "^5.9.3",
+        "vite": "^7.1.7",
+        "vite-plugin-svgr": "^4.5.0",
+        "vite-tsconfig-paths": "^5.1.4",
+        "wrangler": "^4.49.0"
+    }
 }

@@ -415,6 +415,7 @@ Pollinations.AI is used in various projects, including:
 | 🆕 [⛽ TuffMeter](https://tuffmeter.netlify.app/) ([⭐ 0](https://github.com/VearyTry)) | Humorous AI tool that analyzes uploaded videos to rate your aura. Based on... | @VearyTry |
 | 🆕 🇧🇷 [🎨 Nosde Space](https://www.nosde.space/) | All-in-one AI platform for creating images, videos, text, and audio. Features... | @unknow_junior |
 | 🆕 [🎨 Imgoo](https://imgoo.netlify.app/) | AI image generator with creative controls including aspect ratio, guidance... | @redythacker-cyber |
+| 🆕 [Multi Image Generator](https://perchance.org/multi-image-generator) | Hello! I'm working on a Perchance image generator that supports image-to-image... | @itzGlitch-AS |
 
 ### Games 🎲
 
@@ -575,6 +576,7 @@ Pollinations.AI is used in various projects, including:
 | 🆕 [💬 Yerty AI](https://yerty.xdativo.cloud) | A calm, friendly AI chat companion focused on everyday thinking, writing, and... | @losingdivine |
 | 🆕 🖥️ 💬 AI Chat Studio ([⭐ 0](https://github.com/Universe-shifting/AI-Chat-Studio)) | Local desktop AI chat app built with PyQt6. Supports multimodal conversations... | @vsenikizanat81486 |
 | 🆕 🖥️ 💬 AI Chat Studio ([⭐ 0](https://github.com/Universe-shifting/AI-Chat-Studio)) | Local desktop AI chat app built with PyQt6. Supports multimodal conversations... | @vsenikizanat81486 |
+| 🆕 🤖 [Asive AI](https://asive.duckdns.org) | Asive AI is a gen-z based chatbot that meets your needs whether it's coding or... | @flyinqe |
 
 ### Social Bots 🤖
 

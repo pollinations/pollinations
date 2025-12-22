@@ -8,9 +8,9 @@ import { ExternalLinkIcon } from "../assets/ExternalLinkIcon";
 import { GithubIcon } from "../assets/SocialIcons";
 import { useTheme } from "../contexts/ThemeContext";
 import { LINKS } from "../../theme/copy/socialLinks";
-import { allApps, CATEGORIES } from "../../data/parseApps";
+import { allApps, CATEGORIES } from "../../lib/parseApps";
 
-import type { App } from "../../data/parseApps";
+import type { App } from "../../lib/parseApps";
 
 // Helper to extract GitHub username from author field
 function getGitHubUsername(author: string) {
@@ -32,7 +32,7 @@ interface AppCardProps {
 
 // App Card Component
 function AppCard({ app }: AppCardProps) {
-    const githubUsername = getGitHubUsername(app.author);
+    const githubUsername = getGitHubUsername(app.github);
     // Extract repo from URL if it's a GitHub URL
     const repoName = app.url?.includes("github.com")
         ? getRepoName(app.url)
@@ -71,18 +71,18 @@ function AppCard({ app }: AppCardProps) {
                         target="_blank"
                         rel="noopener noreferrer"
                         className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-mono font-medium bg-input-background hover:bg-input-background border border-border-faint hover:border-border-main transition-all max-w-[200px]"
-                        title={`View ${app.author} on GitHub`}
+                        title={`View ${app.github} on GitHub`}
                     >
                         <GithubIcon className="w-3 h-3 text-text-body-main opacity-60 flex-shrink-0" />
                         <span className="truncate text-text-body-main">
-                            {app.author}
+                            {app.github}
                         </span>
                     </a>
                 )}
-                {!githubUsername && app.author && (
+                {!githubUsername && app.github && (
                     <div className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-mono font-medium bg-input-background border border-border-faint max-w-[200px]">
                         <span className="truncate text-text-body-main">
-                            {app.author}
+                            {app.github}
                         </span>
                     </div>
                 )}

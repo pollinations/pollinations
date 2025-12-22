@@ -21,4 +21,4 @@ build
 # Note: .encrypted.env is NOT ignored (encrypted, safe to commit)
 
 # Copied from apps/ at build time (source of truth: apps/APPS.md)
-src/data/APPS.md
+src/lib/APPS.md

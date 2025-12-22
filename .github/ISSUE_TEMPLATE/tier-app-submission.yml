@@ -6,9 +6,11 @@ body:
   - type: markdown
     attributes:
       value: |
-        # pollinations.ai - Feature App
+        # Submit Your App to pollinations.ai
         
         Thanks for submitting your app! Fill out the form below and we'll review it for the [pollinations.ai showcase](https://pollinations.ai).
+        
+        Your GitHub username (from this issue) will be credited as the app author.
 
   - type: input
     id: app-name
@@ -72,5 +74,12 @@ body:
     id: app-language
     attributes:
       label: App Language
-      description: If your app is not in English, specify the language code (e.g., zh-CN, es-ES, pt-BR)
-      placeholder: "e.g., zh-CN for Chinese, es-ES for Spanish"
+      description: If your app is not in English, specify the language code (e.g., zh-CN, es, pt-BR, ja)
+      placeholder: "e.g., zh-CN for Chinese, es for Spanish, ja for Japanese"
+
+  - type: input
+    id: other-contact
+    attributes:
+      label: Other Contact (optional)
+      description: Any other way to reach you (Twitter/X, Instagram, website, etc.)
+      placeholder: "e.g., https://twitter.com/yourhandle"

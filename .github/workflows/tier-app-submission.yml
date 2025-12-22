@@ -90,7 +90,7 @@ jobs:
           PAYLOAD=$(jq -n --arg body "$ISSUE_BODY" '{
             model: "openai",
             messages: [
-              { role: "system", content: "Parse app submissions. Return JSON: name (required), url (required, must start with http:// or https://), description (required), category (required: chat/creative/games/hackAndBuild/learn/socialBots/vibeCoding), repo (optional GitHub URL), discord (optional Discord username), language (optional language code like zh-CN). Return {\"error\": \"reason\"} if invalid." },
+              { role: "system", content: "Parse app submissions. Return JSON: name (required), url (required, must start with http:// or https://), description (required), category (required: chat/creative/games/hackAndBuild/learn/socialBots/vibeCoding), repo (optional GitHub URL), discord (optional Discord username), other (optional other contact info), language (optional language code like zh-CN, es, pt-BR). Return {\"error\": \"reason\"} if invalid." },
               { role: "user", content: $body }
             ],
             response_format: { type: "json_object" }
@@ -274,6 +274,7 @@ jobs:
           URL=$(echo "$PROJECT_JSON" | jq -r '.url // "-"')
           REPO=$(echo "$PROJECT_JSON" | jq -r '.repo // empty')
           DISCORD=$(echo "$PROJECT_JSON" | jq -r '.discord // empty')
+          OTHER=$(echo "$PROJECT_JSON" | jq -r '.other // empty')
           LANGUAGE=$(echo "$PROJECT_JSON" | jq -r '.language // empty')
           TODAY=$(date +%Y-%m-%d)
           
@@ -284,8 +285,8 @@ jobs:
           
           [ "$URL" != "-" ] && NAME_DISPLAY="[$PROJECT_NAME]($URL)" || NAME_DISPLAY="$PROJECT_NAME"
           
-          # Format: Emoji | Name | Description | Category | Author | Repo | Discord | Language | Stars | Date
-          export NEW_ROW="| $EMOJI | $NAME_DISPLAY | $SHORT_DESC | $CATEGORY | @$ISSUE_AUTHOR | $REPO | $DISCORD | $LANGUAGE | $STARS_DISPLAY | $TODAY |"
+          # Format: Emoji | Name | Description | Language | Category | GitHub | Repo | Stars | Discord | Other | Submitted
+          export NEW_ROW="| $EMOJI | $NAME_DISPLAY | $SHORT_DESC | $LANGUAGE | $CATEGORY | @$ISSUE_AUTHOR | $REPO | $STARS_DISPLAY | $DISCORD | $OTHER | $TODAY |"
           node .github/scripts/tier-apps-prepend.js
           node .github/scripts/tier-apps-update-readme.js
           

@@ -31,8 +31,8 @@ const simplifiedRows = last10.map((row) => {
         .split("|")
         .map((c) => c.trim())
         .filter(Boolean);
-    // cols: [emoji, name, desc, category, author, stars, date]
-    return "| " + cols[1] + " | " + cols[2] + " | " + cols[4] + " |";
+    // cols: [emoji, name, desc, language, category, github, repo, stars, discord, other, submitted]
+    return "| " + cols[1] + " | " + cols[2] + " | " + cols[5] + " |";
 });
 
 const recentAppsSection = `## 🆕 Recent Apps

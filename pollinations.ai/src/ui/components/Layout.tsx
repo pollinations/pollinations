@@ -7,6 +7,7 @@ import { SOCIAL_LINKS } from "../../theme/copy/socialLinks";
 import { AIPromptInput } from "./theme/AIPromptInput";
 import { BackgroundRenderer } from "./BackgroundRenderer";
 import { useTheme } from "../contexts/ThemeContext";
+import { BetaBanner } from "./BetaBanner";
 
 const tabs = [
     { path: "/", label: "Hello" },
@@ -36,6 +37,7 @@ function Layout() {
                 backgroundHtml ? "bg-transparent" : "bg-surface-base"
             }`}
         >
+            <BetaBanner />
             <BackgroundRenderer />
             {/* Fixed Header */}
             <header
@@ -149,7 +151,7 @@ function Layout() {
                                             .filter(
                                                 ([key]) =>
                                                     key === "discord" ||
-                                                    key === "github"
+                                                    key === "github",
                                             )
                                             .map(
                                                 ([
@@ -169,7 +171,7 @@ function Layout() {
                                                     >
                                                         <Icon className="w-full h-full" />
                                                     </Button>
-                                                )
+                                                ),
                                             )}
 
                                         {/* Enter Button */}
@@ -251,7 +253,7 @@ function Layout() {
                                         .filter(
                                             ([key]) =>
                                                 key !== "github" &&
-                                                key !== "discord"
+                                                key !== "discord",
                                         )
                                         .map(
                                             ([
@@ -271,7 +273,7 @@ function Layout() {
                                                 >
                                                     <Icon className="w-full h-full" />
                                                 </Button>
-                                            )
+                                            ),
                                         )}
                                 </div>
                                 <Button
@@ -318,12 +320,12 @@ function Layout() {
                                     type="button"
                                     onClick={() => {
                                         navigator.clipboard.writeText(
-                                            "hello@pollinations.ai"
+                                            "hello@pollinations.ai",
                                         );
                                         setEmailCopied(true);
                                         setTimeout(
                                             () => setEmailCopied(false),
-                                            2000
+                                            2000,
                                         );
                                     }}
                                     variant="iconText"
@@ -386,12 +388,12 @@ function Layout() {
                                     type="button"
                                     onClick={() => {
                                         navigator.clipboard.writeText(
-                                            "hello@pollinations.ai"
+                                            "hello@pollinations.ai",
                                         );
                                         setEmailCopied(true);
                                         setTimeout(
                                             () => setEmailCopied(false),
-                                            2000
+                                            2000,
                                         );
                                     }}
                                     variant="iconText"
@@ -443,7 +445,7 @@ function Layout() {
                                         .filter(
                                             ([key]) =>
                                                 key !== "github" &&
-                                                key !== "discord"
+                                                key !== "discord",
                                         )
                                         .map(
                                             ([
@@ -463,7 +465,7 @@ function Layout() {
                                                 >
                                                     <Icon className="w-full h-full" />
                                                 </Button>
-                                            )
+                                            ),
                                         )}
                                 </div>
                                 {/* Enter Button */}

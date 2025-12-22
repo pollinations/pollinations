@@ -31,9 +31,9 @@ jobs:
             const association = context.payload.pull_request.author_association;
             const prNumber = context.payload.pull_request.number;
             
-            // Internal = OWNER, MEMBER, COLLABORATOR (has push access)
-            const INTERNAL_ASSOCIATIONS = ['OWNER', 'MEMBER', 'COLLABORATOR'];
-            const isExternal = !INTERNAL_ASSOCIATIONS.includes(association);
+            // Only label truly new contributors (first-timers)
+            const FIRST_TIMER_ASSOCIATIONS = ['FIRST_TIME_CONTRIBUTOR', 'FIRST_TIMER', 'NONE'];
+            const isFirstTimer = FIRST_TIMER_ASSOCIATIONS.includes(association);
             
             // Skip bots
             if (author.endsWith('[bot]')) {
@@ -41,8 +41,8 @@ jobs:
               return;
             }
             
-            if (isExternal) {
-              console.log(`External contributor detected: ${author} (${association})`);
+            if (isFirstTimer) {
+              console.log(`First-time contributor detected: ${author} (${association})`);
               
               // Add tier:review label for external contributors
               await github.rest.issues.addLabels({
@@ -54,5 +54,5 @@ jobs:
               
               console.log(`Added tier:review and pr:external labels to PR #${prNumber}`);
             } else {
-              console.log(`Internal contributor: ${author} (${association}), skipping tier labels`);
+              console.log(`Returning contributor: ${author} (${association}), skipping labels`);
             }

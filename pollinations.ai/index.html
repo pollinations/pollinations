@@ -1,96 +1,46 @@
 <!DOCTYPE html>
 <html lang="en">
   <head>
-    <meta charset="utf-8" />
-    <meta
-      name="viewport"
-      content="width=device-width, initial-scale=0.8, maximum-scale=1.0, user-scalable=no"
-    />
-    <meta name="theme-color" content="#d6379e" />
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     
-    <!-- Additional Apple Touch Icon Sizes -->
+    <!-- Theme & Description -->
+    <meta name="theme-color" content="#ff6b35" />
+    <meta name="description" content="AI creation playground - Generate images, text & audio with open source models" />
+    
+    <!-- Favicons -->
+    <link rel="icon" type="image/x-icon" href="/favicon.ico" />
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
+    
+    <!-- Apple Touch Icons -->
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <link rel="apple-touch-icon" sizes="152x152" href="/apple-touch-icon-152x152.png" />
     <link rel="apple-touch-icon" sizes="167x167" href="/apple-touch-icon-167x167.png" />
-    <meta name="description" content="Generative AI APIs for developers. Integrate AI models via one simple API. Built for app creators, with sponsorship programs available." />
-
-    <!-- Open Graph / Social Media Meta Tags -->
+    
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="/manifest.json" />
+    
+    <!-- Open Graph / Social Media -->
     <meta property="og:title" content="pollinations.ai" />
-    <meta property="og:description" content="Generative AI APIs for developers. Integrate AI models via one simple API. Built for app creators, with sponsorship programs available." />
-    <meta property="og:image" content="https://pollinations.ai/og-image.png?v=2" />
-    <meta property="og:image:width" content="1200" />
-    <meta property="og:image:height" content="630" />
-    <meta property="og:url" content="https://pollinations.ai" />
+    <meta property="og:description" content="AI creation playground - Generate images, text & audio with open source models" />
+    <meta property="og:image" content="/og-image.png" />
     <meta property="og:type" content="website" />
-    <meta property="og:site_name" content="pollinations.ai" />
+    <meta property="og:url" content="https://pollinations.ai" />
+    
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content="pollinations.ai" />
-    <meta name="twitter:description" content="Generative AI APIs for developers. Integrate AI models via one simple API. Built for app creators, with sponsorship programs available." />
-    <meta name="twitter:image" content="https://pollinations.ai/og-image.png?v=2" />
-    <meta property="twitter:creator" content="pollinations.ai" />
-
-    <!-- Favicon and Apple Touch Icon -->
-    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
-    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
-    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
-    <link rel="manifest" href="/site.webmanifest" />
+    <meta name="twitter:description" content="AI creation playground - Generate images, text & audio with open source models" />
+    <meta name="twitter:image" content="/og-image.png" />
     
-    <!-- iOS Meta Tags -->
-    <meta name="mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="pollinations.ai">
-
-    <!-- Fonts and Stylesheets -->
-    <link
-      rel="stylesheet"
-      href="https://fonts.googleapis.com/css?family=Roboto:300,400,500,700&display=swap"
-    />
-    <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons" />
+    <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Maven+Pro:wght@400..900&display=swap"
-      rel="stylesheet"
-    />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Mako&display=swap"
-      rel="stylesheet"
-    />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Duru+Sans&display=swap"
-      rel="stylesheet"
-    />
-
+    
     <title>pollinations.ai</title>
-
-    <!-- Google Analytics -->
-    <script async src="https://www.googletagmanager.com/gtag/js?id=G-LPZ9GEJVHR"></script>
-    <script>
-      window.dataLayer = window.dataLayer || [];
-      function gtag() {
-        dataLayer.push(arguments);
-      }
-      gtag("js", new Date());
-      gtag("config", "G-LPZ9GEJVHR");
-    </script>
-
-    <!-- Plausible Analytics (commented out) -->
-    <!-- <script defer data-domain="pollinations.ai" src="https://plausable.zencraft.studio/js/pl.js"></script> -->
-
-    <script type="application/ld+json">
-      {
-        "@context": "https://schema.org",
-        "@type": "Organization",
-        "url": "https://pollinations.ai",
-        "logo": "https://pollinations.ai/og-image.png"
-      }
-    </script>
   </head>
   <body>
-    <noscript>You need to enable JavaScript to run this app.</noscript>
-    <div id="root" class="scale-container"></div>
-
-    <!-- Vite requires this script to bootstrap the app -->
-    <script type="module" src="./src/main.jsx"></script>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

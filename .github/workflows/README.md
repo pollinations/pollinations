@@ -118,6 +118,7 @@ Secrets required: `POLLY_BOT_APP_ID`, `POLLY_BOT_PRIVATE_KEY`
 
 -   **.github/scripts/tier-apps-prepend.js** - Prepends a new row to `apps/APPS.md`.
 -   **.github/scripts/tier-apps-update-readme.js** - Updates README with last 10 apps from `apps/APPS.md`.
+-   **.github/scripts/tier-apps-check-links.js** - Checks all app URLs for broken links. Run with `--report` to generate `apps/BROKEN_APPS.md`.
 
 ### Branch Cleanup
 

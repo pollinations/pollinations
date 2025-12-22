@@ -22,9 +22,9 @@ App submissions are now **fully automated** via the `tier-app-submission.yml` wo
 **Table format in APPS.md:**
 
 ```markdown
-| Emoji | Name            | Description                      | Category | Author  | Stars | Date       |
-| ----- | --------------- | -------------------------------- | -------- | ------- | ----- | ---------- |
-| 🎨    | [App Name](url) | Brief description (max 80 chars) | creative | @author | ⭐123 | 2025-01-01 |
+| Emoji | Name            | Description                   | Language | Category | GitHub  | Repo                   | Stars | Discord | Other | Submitted  |
+| ----- | --------------- | ----------------------------- | -------- | -------- | ------- | ---------------------- | ----- | ------- | ----- | ---------- |
+| 🎨    | [App Name](url) | Brief description (~80 chars) |          | creative | @github | https://github.com/... | ⭐123 |         |       | 2025-01-01 |
 ```
 
 **Categories:**
@@ -37,39 +37,10 @@ App submissions are now **fully automated** via the `tier-app-submission.yml` wo
 -   Social Bots 🤖 (`socialBots`): Discord / Telegram / WhatsApp / Roblox bots & NPCs
 -   Learn 📚 (`learn`): Tutorials, guides, style books & educational demos
 
-## Classification Guidelines
+## Non-English Apps
 
--   One category per app (no duplicates)
--   Based on actual functionality, not source JSON category
--   Prefer less-populated categories for balance
--   Track uncategorized in `tracking/toProcess.md`
--   Source of truth: `accumulated-apps.json`
-
-**Category Mapping:**
-
--   `learn.js`: Educational/interactive learning
--   `hackAndBuild.js`: SDKs, APIs, toolkits
--   `creative.js`: Image/text/audio generation
--   `chat.js`: Chatbots, conversational agents
--   `games.js`: Games, interactive fiction
--   `socialBots.js`: Platform bots (Discord/Telegram/etc)
-
-7. Add UTF-8 icons to titles (🤖 bots, 🎨 creative, etc.)
-
-8. Non-English apps:
-
-    - Add country flag emoji (🇨🇳, 🇪🇸, etc.)
-    - Include `language` field with language code
-    - Add English translation in parentheses
-
-9. Commit attribution:
-
-    ```
-    Add [App Name] to [category]
-
-    Co-authored-by: [Username] <[user_id]+[username]@users.noreply.github.com>
-    Closes #[Issue]
-    ```
+-   Use ISO language code in the `Language` column (e.g., `zh-CN`, `es`, `pt-BR`, `ja`)
+-   No flags in the table - use language codes only
 
 ## Discord Configuration
 

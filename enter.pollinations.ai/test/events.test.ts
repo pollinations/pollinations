@@ -10,6 +10,7 @@ import { processEvents, storeEvents, getPendingSpend } from "@/events.ts";
 import { exponentialBackoffDelay } from "@/util.ts";
 import {
     event,
+    EventStatus,
     priceToEventParams,
     usageToEventParams,
     type InsertGenerationEvent,
@@ -31,10 +32,12 @@ import { expect } from "vitest";
 
 function createTextGenerationEvent({
     modelRequested,
+    eventStatus = "pending",
     simulateTinybirdError = false,
     simulatePolarError = false,
 }: {
     modelRequested: ServiceId;
+    eventStatus?: EventStatus;
     simulateTinybirdError?: boolean;
     simulatePolarError?: boolean;
 }): InsertGenerationEvent {
@@ -73,7 +76,7 @@ function createTextGenerationEvent({
         environment: env.ENVIRONMENT,
         eventType: "generate.text",
         eventProcessingId: undefined,
-        eventStatus: undefined,
+        eventStatus,
         polarDeliveryAttempts: undefined,
         polarDeliveredAt: undefined,
         tinybirdDeliveryAttempts: undefined,
@@ -389,7 +392,7 @@ test("getPendingSpend returns 0 for user with no events", async ({ log }) => {
     expect(spend).toBe(0);
 });
 
-test("getPendingSpend sums estimatedPrice for pending_estimate events", async ({
+test("getPendingSpend sums estimatedPrice for estimate events", async ({
     log,
 }) => {
     const db = drizzle(env.DB);
@@ -399,7 +402,7 @@ test("getPendingSpend sums estimatedPrice for pending_estimate events", async ({
         {
             ...createTextGenerationEvent({ modelRequested: "openai-large" }),
             userId,
-            eventStatus: "pending_estimate",
+            eventStatus: "estimate",
             isBilledUsage: false,
             estimatedPrice: 0.05,
             totalPrice: 0,
@@ -407,7 +410,7 @@ test("getPendingSpend sums estimatedPrice for pending_estimate events", async ({
         {
             ...createTextGenerationEvent({ modelRequested: "openai-large" }),
             userId,
-            eventStatus: "pending_estimate",
+            eventStatus: "estimate",
             isBilledUsage: false,
             estimatedPrice: 0.03,
             totalPrice: 0,
@@ -447,9 +450,7 @@ test("getPendingSpend sums totalPrice for billed events", async ({ log }) => {
     expect(spend).toBeCloseTo(0.25, 5);
 });
 
-test("getPendingSpend combines pending_estimate and billed events", async ({
-    log,
-}) => {
+test("getPendingSpend combines estimate and billed events", async ({ log }) => {
     const db = drizzle(env.DB);
     const userId = generateRandomId();
 
@@ -457,7 +458,7 @@ test("getPendingSpend combines pending_estimate and billed events", async ({
         {
             ...createTextGenerationEvent({ modelRequested: "openai-large" }),
             userId,
-            eventStatus: "pending_estimate",
+            eventStatus: "estimate",
             isBilledUsage: false,
             estimatedPrice: 0.05,
             totalPrice: 0,

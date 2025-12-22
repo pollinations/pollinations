@@ -38,7 +38,7 @@ import {
   type ChatResponseExt,
 } from './extras.js';
 
-// Default client instance (no API key - works for basic usage)
+// Default client instance
 let defaultClient: Pollinations | null = null;
 
 function getClient(apiKey?: string): Pollinations {

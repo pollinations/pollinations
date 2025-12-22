@@ -13,6 +13,14 @@ npm install @pollinations/sdk
 
 ## Quick Start
 
+First, get your API key at **https://enter.pollinations.ai** and set it:
+
+```bash
+export POLLINATIONS_API_KEY=your_api_key
+```
+
+Then:
+
 ```javascript
 import { generateImage, generateText } from '@pollinations/sdk';
 
@@ -31,6 +39,7 @@ New to coding? Here's a complete file you can copy-paste and run:
 
 ```javascript
 // save this as: my-first-ai.mjs
+// First run: export POLLINATIONS_API_KEY=your_api_key
 
 import { generateText, generateImage } from '@pollinations/sdk';
 
@@ -49,13 +58,20 @@ async function main() {
 main();
 ```
 
-Run it with: `node my-first-ai.mjs`
+Run it with:
+```bash
+export POLLINATIONS_API_KEY=your_api_key
+node my-first-ai.mjs
+```
 
 ### Browser Example
 
 ```html
 <script type="module">
-  import { generateText, generateImage } from 'https://esm.sh/@pollinations/sdk';
+  import { configure, generateText, generateImage } from 'https://esm.sh/@pollinations/sdk';
+
+  // Set your API key
+  configure({ apiKey: 'your_api_key' });
 
   // Generate text
   const text = await generateText('write a haiku');
@@ -380,7 +396,7 @@ const client = new Pollinations({
 
 ### Rate Limiting
 
-If you're getting rate limited, get an API key at https://enter.pollinations.ai
+Publishable keys (`pk_`) have rate limits. Use a secret key (`sk_`) for unlimited requests.
 
 ### Network Errors
 

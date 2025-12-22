@@ -10,7 +10,6 @@ import type {
   ChatOptions,
   ChatResponse,
   Message,
-  CompletionUsage,
 } from './types.js';
 import { Pollinations } from './client.js';
 

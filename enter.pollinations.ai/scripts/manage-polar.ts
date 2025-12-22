@@ -744,11 +744,10 @@ const userUpdateTier = command({
         // Then filter subscriptions by customerId (fast)
         const subscriptionResponse = await polar.subscriptions.list({
             customerId: customer.id,
-            limit: 10,
+            active: true,
+            limit: 1,
         });
-        const subscription = subscriptionResponse.result.items.find(
-            (s) => s.status === "active",
-        );
+        const subscription = subscriptionResponse.result.items[0];
 
         if (!subscription) {
             console.error(`No subscription found for ${opts.email}`);
@@ -759,14 +758,6 @@ const userUpdateTier = command({
         console.log(`   ID: ${subscription.id}`);
         console.log(`   Current: ${subscription.product.name}`);
         console.log(`   Status: ${subscription.status}`);
-
-        if (subscription.status !== "active") {
-            console.error(
-                `Subscription not active (status: ${subscription.status})`,
-            );
-            console.log(`   User needs to reactivate at enter.pollinations.ai`);
-            return;
-        }
 
         if (subscription.productId === targetProductId) {
             console.log(`Already on ${opts.tier} tier`);

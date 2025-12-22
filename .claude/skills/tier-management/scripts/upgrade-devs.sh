@@ -29,7 +29,7 @@ if [ -z "$USERNAMES_FILE" ] || [ ! -f "$USERNAMES_FILE" ]; then
 fi
 
 SCRIPT_DIR="$(dirname "$0")"
-ENTER_DIR="$SCRIPT_DIR/../../enter.pollinations.ai"
+ENTER_DIR="$SCRIPT_DIR/../../../../enter.pollinations.ai"
 
 # Colors
 GREEN='\033[0;32m'

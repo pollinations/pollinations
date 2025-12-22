@@ -9,7 +9,7 @@ if [ -z "$USER_QUERY" ]; then
 fi
 
 SCRIPT_DIR="$(dirname "$0")"
-ENTER_DIR="$SCRIPT_DIR/../../enter.pollinations.ai"
+ENTER_DIR="$SCRIPT_DIR/../../../../enter.pollinations.ai"
 cd "$ENTER_DIR"
 
 # Find user in DB

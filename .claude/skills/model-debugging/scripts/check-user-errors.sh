@@ -12,7 +12,7 @@ if [ -z "$USERNAME" ]; then
 fi
 
 SCRIPT_DIR="$(dirname "$0")"
-ENTER_DIR="$SCRIPT_DIR/../../../enter.pollinations.ai"
+ENTER_DIR="$SCRIPT_DIR/../../../../enter.pollinations.ai"
 
 # Get Tinybird admin token
 TINYBIRD_TOKEN=$(jq -r '.token' "$ENTER_DIR/observability/.tinyb" 2>/dev/null)

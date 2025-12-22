@@ -9,11 +9,12 @@ function formatPercent(count, total, showZero = false) {
     return pct < 1 ? pct.toFixed(1) + "%" : Math.round(pct) + "%";
 }
 
-// Helper to get 2xx color
-function get2xxColor(ok2xx, total) {
-    if (!total) return "text-gray-300";
+// Helper to get 2xx color (excludes 401/403 from total since those are user errors)
+function get2xxColor(ok2xx, total, excluded401_403 = 0) {
+    const adjustedTotal = total - excluded401_403;
+    if (!adjustedTotal || adjustedTotal <= 0) return "text-gray-300";
     if (ok2xx === 0) return "text-red-600 font-medium"; // 0% success = red
-    const pct = (ok2xx / total) * 100;
+    const pct = (ok2xx / adjustedTotal) * 100;
     if (pct > 95) return "text-green-600 font-medium";
     if (pct > 80) return "text-green-500";
     if (pct > 50) return "text-yellow-500";
@@ -252,19 +253,27 @@ function Sparkline({ data, color = "blue" }) {
 
 // Compute health status from stats
 // Different thresholds for text vs image models
+// Excludes 401 (auth) and 403 (pollen) errors from uptime calculation since those are user errors
 function computeHealthStatus(stats, modelType = "text") {
     if (!stats || !stats.total_requests) return "on";
 
     const total = stats.total_requests;
+    // Exclude 401/403 from total - these are user errors (no auth, no pollen), not model failures
+    const excluded401_403 = (stats.errors_401 || 0) + (stats.errors_403 || 0);
+    const adjustedTotal = total - excluded401_403;
+
+    // If all requests were 401/403, model is healthy (no actual model errors)
+    if (adjustedTotal <= 0) return "on";
+
     const pct5xx =
         (((stats.errors_500 || 0) +
             (stats.errors_502 || 0) +
             (stats.errors_503 || 0) +
             (stats.errors_504 || 0)) /
-            total) *
+            adjustedTotal) *
         100;
-    const pct504 = ((stats.errors_504 || 0) / total) * 100;
-    const pct429 = ((stats.errors_429 || 0) / total) * 100;
+    const pct504 = ((stats.errors_504 || 0) / adjustedTotal) * 100;
+    const pct429 = ((stats.errors_429 || 0) / adjustedTotal) * 100;
     const p95 = stats.latency_p95_ms || 0;
     const count2xx = stats.status_2xx || 0;
 
@@ -274,9 +283,9 @@ function computeHealthStatus(stats, modelType = "text") {
     // OFF: pct_5xx >= 20%, pct_504 >= 5%, no 2xx, or very low success rate
     if (pct5xx >= 20) return "off";
     if (pct504 >= 5) return "off";
-    if (count2xx === 0 && total > 0) return "off";
-    const successRate = (count2xx / total) * 100;
-    if (successRate < 25 && total > 0) return "off"; // Less than 25% success = OFF
+    if (count2xx === 0 && adjustedTotal > 0) return "off";
+    const successRate = (count2xx / adjustedTotal) * 100;
+    if (successRate < 25 && adjustedTotal > 0) return "off"; // Less than 25% success = OFF
 
     // TURBULENT: pct_5xx 5-20%, pct_429 >= 15%, P95 > threshold
     if (pct5xx >= 5) return "turbulent";
@@ -284,6 +293,140 @@ function computeHealthStatus(stats, modelType = "text") {
     if (p95 > p95TurbulentThreshold) return "turbulent";
 
     return "on";
+}
+
+// Global health summary component
+function GlobalHealthSummary({ models }) {
+    // Separate by type
+    const textModels = models.filter((m) => m.type === "text");
+    const imageModels = models.filter((m) => m.type === "image");
+
+    // Calculate aggregate stats for a group of models
+    const calcGroupStats = (group, modelType) => {
+        let total2xx = 0;
+        let totalAdjusted = 0;
+        let countOn = 0;
+        let countTurbulent = 0;
+        let countOff = 0;
+
+        group.forEach((m) => {
+            const stats = m.stats;
+            if (!stats) return;
+
+            const total = stats.total_requests || 0;
+            const excluded401_403 =
+                (stats.errors_401 || 0) + (stats.errors_403 || 0);
+            const adjusted = total - excluded401_403;
+
+            total2xx += stats.status_2xx || 0;
+            totalAdjusted += adjusted > 0 ? adjusted : 0;
+
+            const status = computeHealthStatus(stats, modelType);
+            if (status === "on") countOn++;
+            else if (status === "turbulent") countTurbulent++;
+            else countOff++;
+        });
+
+        const successRate =
+            totalAdjusted > 0 ? (total2xx / totalAdjusted) * 100 : 100;
+
+        // Determine aggregate status based on success rate (traffic-weighted)
+        let status = "healthy";
+        if (successRate < 75) status = "critical";
+        else if (successRate < 95) status = "degraded";
+
+        return {
+            successRate,
+            status,
+            countOn,
+            countTurbulent,
+            countOff,
+            totalModels: group.length,
+        };
+    };
+
+    const textStats = calcGroupStats(textModels, "text");
+    const imageStats = calcGroupStats(imageModels, "image");
+
+    const statusStyles = {
+        healthy: {
+            bg: "bg-green-50",
+            border: "border-green-200",
+            dot: "bg-green-500",
+            text: "text-green-700",
+            label: "Healthy",
+        },
+        degraded: {
+            bg: "bg-yellow-50",
+            border: "border-yellow-200",
+            dot: "bg-yellow-500",
+            text: "text-yellow-700",
+            label: "Degraded",
+        },
+        critical: {
+            bg: "bg-red-50",
+            border: "border-red-200",
+            dot: "bg-red-500 animate-pulse",
+            text: "text-red-700",
+            label: "Critical",
+        },
+    };
+
+    const HealthCard = ({ title, emoji, stats }) => {
+        const style = statusStyles[stats.status];
+        return (
+            <div
+                className={`flex-1 min-w-[140px] ${style.bg} ${style.border} border rounded-lg p-3`}
+            >
+                <div className="flex items-center gap-2 mb-1">
+                    <span className="text-sm">{emoji}</span>
+                    <span className="text-xs font-medium text-gray-700">
+                        {title}
+                    </span>
+                </div>
+                <div className="flex items-center gap-1.5 mb-1">
+                    <span className={`w-2 h-2 rounded-full ${style.dot}`} />
+                    <span className={`text-sm font-semibold ${style.text}`}>
+                        {style.label}
+                    </span>
+                </div>
+                <div className="text-xs text-gray-600">
+                    {stats.successRate.toFixed(1)}% success
+                </div>
+                <div className="text-[10px] text-gray-500 mt-1">
+                    {stats.totalModels} models
+                    {(stats.countTurbulent > 0 || stats.countOff > 0) && (
+                        <span className="ml-1">
+                            (
+                            {stats.countOff > 0 && (
+                                <span className="text-red-600">
+                                    {stats.countOff} off
+                                </span>
+                            )}
+                            {stats.countOff > 0 &&
+                                stats.countTurbulent > 0 &&
+                                ", "}
+                            {stats.countTurbulent > 0 && (
+                                <span className="text-yellow-600">
+                                    {stats.countTurbulent} degraded
+                                </span>
+                            )}
+                            )
+                        </span>
+                    )}
+                </div>
+            </div>
+        );
+    };
+
+    if (models.length === 0) return null;
+
+    return (
+        <div className="flex flex-wrap gap-3">
+            <HealthCard title="Text" emoji="📝" stats={textStats} />
+            <HealthCard title="Image" emoji="🖼️" stats={imageStats} />
+        </div>
+    );
 }
 
 // Status badge for model health (off/turbulent/on)
@@ -608,6 +751,9 @@ function App() {
                     </div>
                 )}
 
+                {/* Global Health Summary */}
+                <GlobalHealthSummary models={models} />
+
                 {/* Gateway Health (pre-model errors) */}
                 <GatewayHealth stats={gatewayStats} />
 
@@ -704,6 +850,12 @@ function App() {
                                 sortedModels.map((model) => {
                                     const stats = model.stats;
                                     const total = stats?.total_requests || 0;
+                                    // Exclude 401/403 from uptime calculation - these are user errors (no auth, no pollen)
+                                    const excluded401_403 =
+                                        (stats?.errors_401 || 0) +
+                                        (stats?.errors_403 || 0);
+                                    const adjustedTotal =
+                                        total - excluded401_403;
                                     const share =
                                         totalAllRequests > 0
                                             ? (total / totalAllRequests) * 100
@@ -787,12 +939,18 @@ function App() {
                                             <td
                                                 className={`px-3 py-2 text-right tabular-nums ${get2xxColor(
                                                     ok2xx,
-                                                    total
+                                                    total,
+                                                    excluded401_403
                                                 )}`}
+                                                title={
+                                                    excluded401_403 > 0
+                                                        ? `Excluding ${excluded401_403} auth/pollen errors from uptime`
+                                                        : undefined
+                                                }
                                             >
                                                 {formatPercent(
                                                     ok2xx,
-                                                    total,
+                                                    adjustedTotal,
                                                     true
                                                 )}
                                             </td>
@@ -882,6 +1040,11 @@ function App() {
                                 1min (image)
                             </span>
                         </div>
+                    </div>
+                    <div className="text-gray-400 italic">
+                        Note: 401 (no auth) and 403 (no pollen) errors are
+                        excluded from uptime calculations as they are user
+                        errors, not model failures.
                     </div>
                 </div>
             </div>

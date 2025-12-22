@@ -4,7 +4,7 @@ export const SOCIAL_LINKS = {
     discord: {
         label: "Discord",
         icon: ICONS.discord,
-        url: "https://discord.gg/k9F7SyTgqn",
+        url: "https://discord.gg/pollinations-ai-885844321461485618",
         width: "32px",
         height: "32px",
     },
@@ -15,7 +15,13 @@ export const SOCIAL_LINKS = {
         width: "25px",
         height: "25px",
     },
-
+    linkedin: {
+        label: "LinkedIn",
+        icon: ICONS.linkedin,
+        url: "https://www.linkedin.com/company/pollinations-ai",
+        width: "22px",
+        height: "22px",
+    },
     instagram: {
         label: "Instagram",
         icon: ICONS.instagram,
@@ -36,12 +42,5 @@ export const SOCIAL_LINKS = {
         url: "https://tiktok.com/@pollinations.ai",
         width: "27px",
         height: "27px",
-    },
-    linkedin: {
-        label: "LinkedIn",
-        icon: ICONS.linkedin,
-        url: "#",
-        width: "22px",
-        height: "22px",
     },
 };

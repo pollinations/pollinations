@@ -5,7 +5,7 @@ export const context = `The text appears on the website Pollinations.AI. Pollina
 
 // 4) Use combos throughout
 export const HERO_INTRO =
-    "Introduce our open-source platform that provides easy-to-use text and image generation APIs. It requires no sign-ups or API keys, prioritizing user privacy and anonymity. 20 words maximum.";
+    "Introduce our community-built, open-source platform. We build in the open. 500+ projects already use us. 20 words maximum.";
 
 export const HERO_CTO = "Talk to us, reach out.";
 
@@ -45,12 +45,12 @@ export const IMAGE_FEED_LOGO_WATERMARK =
 
 export const INTEGRATE_TITLE = "Integrate";
 export const INTEGRATE_SUBTITLE =
-    "Discover how to seamlessly integrate our free image and text generation API into your projects.";
+    "Built by developers, for developers. Discover how to integrate our image and text generation APIs into your projects.";
 
 export const INTEGRATE_GITHUB_LINK = "APIDOCS.md";
 export const PROJECT_TITLE = "Projects";
 export const PROJECT_SUBTITLE =
-    " Here are some of the various implementations that our API is currently powering.";
+    "500+ projects built by our community. Here are some favorites.";
 
 export const PROJECT_CTO_1 =
     "Ask if the user has created a project that integrates Pollinations.AI and would like it to be featured in this section. Keep in short, one sentence";
@@ -63,7 +63,7 @@ export const PROJECT_LOGO_STYLE =
 
 export const COMMUNITY_TITLE = "Contribute";
 export const COMMUNITY_SUBTITLE =
-    "Introduce our community-driven approach. We're building a platform where developers, creators, and AI enthusiasts can collaborate and innovate.";
+    "We build in the open—code, decisions, roadmap all public. 500+ projects and counting. Join developers and creators shaping accessible AI.";
 
 export const COMMUNITY_DISCORD_SUBTITLE =
     "Introduce our Discord channel, make it just a few words. In a single very short sentence.";
@@ -88,7 +88,7 @@ export const SUPPORTER_LOGO_STYLE =
 export const FOOTER_TERMS_CONDITIONS_LINK = "Terms & Conditions";
 
 export const FOOTER_CLOSE = "Close";
-export const FOOTER_INFO_1 = " 2025 pollinations.ai";
+export const FOOTER_INFO_1 = "- pollinations.ai - 2025";
 export const FOOTER_INFO_2 = "Open source AI innovation from Berlin";
 
 export const ASCII_ART_PROMPT = (width, height) =>

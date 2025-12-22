@@ -437,7 +437,7 @@ npx @pollinations/model-context-protocol
 - Deep codebase understanding (Sequa MCP)
 - No authentication required
 
-For more details, see the [MCP Server Documentation](https://github.com/pollinations/pollinations/tree/master/model-context-protocol).`,
+For more details, see the [MCP Server Documentation](https://github.com/pollinations/pollinations/tree/main/model-context-protocol).`,
         language: "markdown",
     },
 };

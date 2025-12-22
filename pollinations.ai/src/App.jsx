@@ -1,8 +1,9 @@
-import { Navigate, Route, Routes, useSearchParams } from "react-router-dom";
+import { Navigate, Route, Routes, useSearchParams, useLocation } from "react-router-dom";
 import { useEffect } from "react";
 import Header from "./Home/Header.jsx";
 import Footer from "./Home/Footer.jsx";
 import Home from "./Home/index.jsx";
+import Terms from "./components/Terms.jsx";
 import { trackEvent } from "./config/analytics";
 import { ThemeProvider } from "@mui/material/styles";
 import { theme } from "./styles/theme";
@@ -46,22 +47,33 @@ const AppRoutes = [
         key: "referral",
     },
     {
+        exact: true,
+        path: "/terms",
+        element: <Terms />,
+        key: "terms",
+    },
+    {
         path: "*",
         element: <Navigate to="/" replace={true} />,
         key: "404",
     },
 ];
 
-const App = () => (
-    <ThemeProvider theme={theme}>
-        <Header />
-        <Routes>
-            {AppRoutes.map(({ key, ...route }) => (
-                <Route key={key} {...route} />
-            ))}
-        </Routes>
-        <Footer />
-    </ThemeProvider>
-);
+const App = () => {
+    const location = useLocation();
+    const hideHeaderFooter = location.pathname === "/terms";
+    
+    return (
+        <ThemeProvider theme={theme}>
+            {!hideHeaderFooter && <Header />}
+            <Routes>
+                {AppRoutes.map(({ key, ...route }) => (
+                    <Route key={key} {...route} />
+                ))}
+            </Routes>
+            {!hideHeaderFooter && <Footer />}
+        </ThemeProvider>
+    );
+};
 
 export default App;

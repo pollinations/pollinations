@@ -4,9 +4,7 @@
  * @returns {string} - The constructed image URL.
  */
 import { modelSupportsImageInput } from "../config/imageModels";
-
-const ENTER_BASE_URL = "https://enter.pollinations.ai/api";
-const API_KEY = "plln_pk_RRHEqHFAF7utI50fgWc418G7vLXybWg7wkkGQtBgNnZPGs3y4JKpqgEneL0YwQP2";
+import { ENTER_BASE_URL, PLAYGROUND_IMAGE_API_KEY } from "./enterApi";
 
 export function getImageURL(newImage) {
     const queryParams = [];
@@ -44,7 +42,7 @@ export function getImageURL(newImage) {
     }
 
     // Add API key
-    queryParams.push(`key=${API_KEY}`);
+    queryParams.push(`key=${PLAYGROUND_IMAGE_API_KEY}`);
 
     const imageURL = `${ENTER_BASE_URL}/generate/image/${encodeURIComponent(newImage.prompt)}?${queryParams.join("&")}`;
     return imageURL;

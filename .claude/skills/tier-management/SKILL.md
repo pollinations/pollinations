@@ -1,6 +1,6 @@
 ---
 name: tier-management
-description: Evaluate and update Pollinations user tiers. Requires: gh CLI, npx/wrangler, sops.
+description: Evaluate and update Pollinations user tiers. Check balances, upgrade devs, batch process users. For finding users with errors, see model-debugging skill first.
 ---
 
 # Requirements
@@ -132,6 +132,50 @@ Thanks for being part of Pollinations! 🚀
 ---
 
 # Batch Processing
+
+## Find Users with Quota Issues
+
+Use the model-debugging skill to find users hitting 403 errors:
+
+```bash
+# Find spore-tier users with >10 403 errors in last 24 hours
+.claude/skills/model-debugging/scripts/find-403-users.sh 24 10 spore
+
+# Save to file for batch processing
+.claude/skills/model-debugging/scripts/find-403-users.sh 24 10 spore | cut -f1 > /tmp/users.txt
+```
+
+## Check if User is a Developer
+
+```bash
+# Check single user
+.claude/skills/tier-management/scripts/check-github-dev.sh OliverCWY
+# Output: dev: repos=12 followers=13 account_year=2017
+```
+
+## Batch Upgrade Devs to Seed
+
+```bash
+# Dry run first (no changes)
+.claude/skills/tier-management/scripts/upgrade-devs.sh /tmp/users.txt --dry-run
+
+# Apply upgrades
+.claude/skills/tier-management/scripts/upgrade-devs.sh /tmp/users.txt
+```
+
+The script:
+- Checks GitHub profile for dev activity (repos, followers, account age)
+- Only upgrades users currently on spore tier (won't downgrade)
+- Has 2s delay between GitHub API calls to avoid rate limiting
+- Shows summary of upgraded/skipped users
+
+## Check User Balance
+
+```bash
+.claude/skills/tier-management/scripts/check-user-balance.sh username_or_email
+```
+
+## Legacy Batch Evaluate
 
 ```bash
 export ENTER_ADMIN_TOKEN=your_token

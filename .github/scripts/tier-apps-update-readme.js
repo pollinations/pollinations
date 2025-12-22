@@ -27,10 +27,10 @@ const last10 = dataRows.slice(0, 10);
 
 // Create simplified table for README (Name, Description, Author only)
 const simplifiedRows = last10.map((row) => {
-    const cols = row
-        .split("|")
-        .map((c) => c.trim())
-        .filter(Boolean);
+    const cols = row.split("|").map((c) => c.trim());
+    // Remove first and last empty strings from split (matches parseApps.ts pattern)
+    cols.shift();
+    cols.pop();
     // cols: [emoji, name, desc, language, category, github, repo, stars, discord, other, submitted]
     return "| " + cols[1] + " | " + cols[2] + " | " + cols[5] + " |";
 });

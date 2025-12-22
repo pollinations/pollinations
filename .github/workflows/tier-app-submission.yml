@@ -280,7 +280,7 @@ jobs:
           
           STARS_DISPLAY=""
           if [ -n "$STARS" ] && [ "$STARS" != "0" ] && [ "$STARS" != "null" ]; then
-            [ "$STARS" -ge 1000 ] && STARS_DISPLAY="⭐$(echo "scale=1; $STARS/1000" | bc)k" || STARS_DISPLAY="⭐$STARS"
+            [ "$STARS" -ge 1000 ] && STARS_DISPLAY="⭐$((STARS / 1000))k" || STARS_DISPLAY="⭐$STARS"
           fi
           
           [ "$URL" != "-" ] && NAME_DISPLAY="[$PROJECT_NAME]($URL)" || NAME_DISPLAY="$PROJECT_NAME"

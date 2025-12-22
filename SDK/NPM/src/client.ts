@@ -128,7 +128,7 @@ function stripKeyFromUrl(url: string): string {
  * ```
  */
 export class Pollinations {
-  private apiKey?: string;
+  private apiKey: string;
   private baseUrl: string;
   private maxRetries: number;
   private textTimeout: number;
@@ -137,7 +137,17 @@ export class Pollinations {
 
   constructor(config: PollinationsConfig = {}) {
     // Auto-detect API key from environment if not provided
-    this.apiKey = config.apiKey || getEnvVar('POLLINATIONS_API_KEY');
+    const apiKey = config.apiKey || getEnvVar('POLLINATIONS_API_KEY');
+
+    if (!apiKey) {
+      throw new PollinationsError(
+        'API key is required. Get one for free at https://enter.pollinations.ai',
+        'API_KEY',
+        401
+      );
+    }
+
+    this.apiKey = apiKey;
     this.baseUrl = config.baseUrl?.replace(/\/$/, '') || DEFAULT_BASE_URL;
     this.maxRetries = config.maxRetries ?? DEFAULT_MAX_RETRIES;
 

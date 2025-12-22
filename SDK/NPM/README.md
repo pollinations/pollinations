@@ -71,9 +71,9 @@ Run it with: `node my-first-ai.mjs`
 </script>
 ```
 
-## API Key (Optional)
+## API Key
 
-Most features work without an API key. For higher rate limits, get a key at **https://enter.pollinations.ai**
+An API key is required. Get one for free at **https://enter.pollinations.ai**
 
 ```javascript
 import { configure } from '@pollinations/sdk';

@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pollinations Feed Test</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #0a0a0a;
+      color: #fff;
+      min-height: 100vh;
+      padding: 20px;
+    }
+    h1 { margin-bottom: 20px; color: #a855f7; }
+    .container { display: flex; gap: 20px; flex-wrap: wrap; }
+    .feed-section {
+      flex: 1;
+      min-width: 400px;
+      background: #1a1a1a;
+      border-radius: 12px;
+      padding: 20px;
+    }
+    h2 {
+      margin-bottom: 15px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .status {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: #ef4444;
+    }
+    .status.connected { background: #22c55e; }
+    .controls { margin-bottom: 15px; display: flex; gap: 10px; }
+    button {
+      padding: 8px 16px;
+      border-radius: 6px;
+      border: none;
+      cursor: pointer;
+      font-size: 14px;
+    }
+    .btn-start { background: #22c55e; color: #000; }
+    .btn-stop { background: #ef4444; color: #fff; }
+    .btn-clear { background: #3b82f6; color: #fff; }
+    .feed-list {
+      max-height: 600px;
+      overflow-y: auto;
+    }
+    .feed-item {
+      background: #2a2a2a;
+      border-radius: 8px;
+      padding: 12px;
+      margin-bottom: 10px;
+      animation: fadeIn 0.3s ease;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(-10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .feed-item img {
+      width: 100%;
+      max-width: 300px;
+      border-radius: 6px;
+      margin-top: 10px;
+    }
+    .feed-item .prompt {
+      color: #a855f7;
+      font-weight: 500;
+      word-break: break-word;
+    }
+    .feed-item .model {
+      color: #6b7280;
+      font-size: 12px;
+      margin-top: 4px;
+    }
+    .feed-item .response {
+      color: #d1d5db;
+      font-size: 14px;
+      margin-top: 8px;
+      max-height: 150px;
+      overflow-y: auto;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+    .count { color: #6b7280; font-size: 14px; margin-left: auto; }
+  </style>
+</head>
+<body>
+  <h1>Pollinations Live Feed</h1>
+
+  <div class="container">
+    <div class="feed-section">
+      <h2>
+        <span class="status" id="image-status"></span>
+        Image Feed
+        <span class="count" id="image-count">0 images</span>
+      </h2>
+      <div class="controls">
+        <button class="btn-start" onclick="startImageFeed()">Start</button>
+        <button class="btn-stop" onclick="stopImageFeed()">Stop</button>
+        <button class="btn-clear" onclick="clearImageFeed()">Clear</button>
+      </div>
+      <div class="feed-list" id="image-feed"></div>
+    </div>
+
+    <div class="feed-section">
+      <h2>
+        <span class="status" id="text-status"></span>
+        Text Feed
+        <span class="count" id="text-count">0 messages</span>
+      </h2>
+      <div class="controls">
+        <button class="btn-start" onclick="startTextFeed()">Start</button>
+        <button class="btn-stop" onclick="stopTextFeed()">Stop</button>
+        <button class="btn-clear" onclick="clearTextFeed()">Clear</button>
+      </div>
+      <div class="feed-list" id="text-feed"></div>
+    </div>
+  </div>
+
+  <script type="module">
+    // Import from the built SDK
+    import { subscribeToImageFeed, subscribeToTextFeed } from './dist/index.js';
+
+    let imageFeedSub = null;
+    let textFeedSub = null;
+    let imageCount = 0;
+    let textCount = 0;
+
+    // Image Feed
+    window.startImageFeed = () => {
+      if (imageFeedSub) return;
+
+      imageFeedSub = subscribeToImageFeed(
+        (event) => {
+          imageCount++;
+          document.getElementById('image-count').textContent = `${imageCount} images`;
+
+          const item = document.createElement('div');
+          item.className = 'feed-item';
+          item.innerHTML = `
+            <div class="prompt">${escapeHtml(event.prompt.slice(0, 200))}${event.prompt.length > 200 ? '...' : ''}</div>
+            <div class="model">Model: ${event.model} ${event.wasPimped ? '(enhanced)' : ''}</div>
+            <img src="${event.imageURL}" alt="${escapeHtml(event.prompt.slice(0, 50))}" loading="lazy">
+          `;
+
+          const feed = document.getElementById('image-feed');
+          feed.insertBefore(item, feed.firstChild);
+
+          // Keep only last 50 items
+          while (feed.children.length > 50) {
+            feed.removeChild(feed.lastChild);
+          }
+        },
+        {
+          onOpen: () => {
+            document.getElementById('image-status').classList.add('connected');
+          },
+          onError: () => {
+            document.getElementById('image-status').classList.remove('connected');
+          }
+        }
+      );
+    };
+
+    window.stopImageFeed = () => {
+      if (imageFeedSub) {
+        imageFeedSub.close();
+        imageFeedSub = null;
+        document.getElementById('image-status').classList.remove('connected');
+      }
+    };
+
+    window.clearImageFeed = () => {
+      document.getElementById('image-feed').innerHTML = '';
+      imageCount = 0;
+      document.getElementById('image-count').textContent = '0 images';
+    };
+
+    // Text Feed
+    window.startTextFeed = () => {
+      if (textFeedSub) return;
+
+      textFeedSub = subscribeToTextFeed(
+        (event) => {
+          textCount++;
+          document.getElementById('text-count').textContent = `${textCount} messages`;
+
+          const item = document.createElement('div');
+          item.className = 'feed-item';
+          item.innerHTML = `
+            <div class="model">Model: ${event.parameters?.model || 'unknown'}</div>
+            <div class="response">${escapeHtml(event.response.slice(0, 500))}${event.response.length > 500 ? '...' : ''}</div>
+          `;
+
+          const feed = document.getElementById('text-feed');
+          feed.insertBefore(item, feed.firstChild);
+
+          // Keep only last 50 items
+          while (feed.children.length > 50) {
+            feed.removeChild(feed.lastChild);
+          }
+        },
+        {
+          onOpen: () => {
+            document.getElementById('text-status').classList.add('connected');
+          },
+          onError: () => {
+            document.getElementById('text-status').classList.remove('connected');
+          }
+        }
+      );
+    };
+
+    window.stopTextFeed = () => {
+      if (textFeedSub) {
+        textFeedSub.close();
+        textFeedSub = null;
+        document.getElementById('text-status').classList.remove('connected');
+      }
+    };
+
+    window.clearTextFeed = () => {
+      document.getElementById('text-feed').innerHTML = '';
+      textCount = 0;
+      document.getElementById('text-count').textContent = '0 messages';
+    };
+
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    // Auto-start both feeds
+    window.startImageFeed();
+    window.startTextFeed();
+  </script>
+</body>
+</html>

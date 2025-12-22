@@ -125,3 +125,19 @@ export type {
 
 // Export the error class
 export { PollinationsError } from './types.js';
+
+// Feed subscriptions (real-time SSE streams)
+export {
+  subscribeToImageFeed,
+  subscribeToTextFeed,
+  imageFeed,
+  textFeed,
+  type FeedSubscription,
+} from './feed.js';
+
+// Feed types
+export type {
+  ImageFeedEvent,
+  TextFeedEvent,
+  FeedOptions,
+} from './types.js';

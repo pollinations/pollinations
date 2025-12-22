@@ -1225,4 +1225,14 @@ export const creativeProjects = [
         "submissionDate": "2025-12-20",
         "order": 5,
     },
+    {
+        "name": "🎨 Multi Image Generator",
+        "url": "https://perchance.org/multi-image-generator",
+        "description":
+            "Perchance image generator with img2img and multi-model comparison. Generate with multiple models simultaneously to compare outputs side-by-side.",
+        "category": "creative",
+        "author": "@itzGlitch-AS",
+        "submissionDate": "2025-12-22",
+        "order": 5,
+    },
 ];

@@ -415,6 +415,7 @@ Pollinations.AI is used in various projects, including:
 | 🆕 [⛽ TuffMeter](https://tuffmeter.netlify.app/) ([⭐ 0](https://github.com/VearyTry)) | Humorous AI tool that analyzes uploaded videos to rate your aura. Based on... | @VearyTry |
 | 🆕 🇧🇷 [🎨 Nosde Space](https://www.nosde.space/) | All-in-one AI platform for creating images, videos, text, and audio. Features... | @unknow_junior |
 | 🆕 [🎨 Imgoo](https://imgoo.netlify.app/) | AI image generator with creative controls including aspect ratio, guidance... | @redythacker-cyber |
+| 🆕 [Multi Image Generator](https://perchance.org/multi-image-generator) | Hello! I'm working on a Perchance image generator that supports image-to-image... | @itzGlitch-AS |
 
 ### Games 🎲
 

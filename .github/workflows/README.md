@@ -74,7 +74,10 @@ Secrets required: `POLLY_BOT_APP_ID`, `POLLY_BOT_PRIVATE_KEY`
 
 ### Tier Upgrade System
 
--   **tier-app-submission.yml** - AI-powered review of app submissions. Parses issue, checks registration, creates PR.
+-   **tier-app-submission.yml** - AI-powered app submission pipeline. Split into 3 jobs:
+    -   `tier-parse-issue` - Parse submission with AI, validate, check Enter registration
+    -   `tier-create-app-pr` - Fetch stars, AI-format (emoji + description), prepend to `apps/APPS.md`, create PR
+    -   `tier-close-issue-on-pr` - Close linked issue when PR is merged/closed
 -   **tier-label-external-pr.yml** - Labels external contributor PRs with `tier:review` and `pr:external`.
 -   **tier-upgrade-on-merge.yml** - When PR with `tier:flower` label merges, upgrades user to Flower tier in D1 + Polar.
 -   **tier-recheck-registration.yml** - When user comments on issue/PR with `tier:info-needed`, re-checks registration.
@@ -111,10 +114,10 @@ Secrets required: `POLLY_BOT_APP_ID`, `POLLY_BOT_PRIVATE_KEY`
 
 -   **backend-run-tests.yml** - Runs backend tests for `text` and `image` services when files change.
 
-### Maintenance
+### Tier Scripts
 
--   **app-list-update-entries.yml** - Regenerates PROJECTS.md and README.md when projectList.js changes.
--   **app-list-update-stars.yml** - Updates star counts from GitHub for app showcase projects (weekly).
+-   **.github/scripts/tier-apps-prepend.js** - Prepends a new row to `apps/APPS.md`.
+-   **.github/scripts/tier-apps-update-readme.js** - Updates README with last 10 apps from `apps/APPS.md`.
 
 ### Branch Cleanup
 
@@ -273,7 +276,9 @@ flowchart TD
         A5 --> A6[User comments]
         A6 --> A7[tier-recheck-registration.yml]
         A7 --> A4
-        A4 -->|Yes| A8[Create PR automatically]
+        A4 -->|Yes| A8[Fetch stars + AI format]
+        A8 --> A9[Prepend to apps/APPS.md]
+        A9 --> A10[Create PR automatically]
     end
 
     subgraph PR["Direct PR"]
@@ -281,7 +286,7 @@ flowchart TD
         B2 --> B3[tier:review + pr:external]
     end
 
-    A8 --> C[Maintainer reviews]
+    A10 --> C[Maintainer reviews]
     B3 --> C
 
     C --> D{Approve for Flower?}

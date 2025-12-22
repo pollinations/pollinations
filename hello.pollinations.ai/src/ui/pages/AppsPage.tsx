@@ -5,64 +5,12 @@ import { PageCard } from "../components/ui/page-card";
 import { PageContainer } from "../components/ui/page-container";
 import { SubCard } from "../components/ui/sub-card";
 import { ExternalLinkIcon } from "../assets/ExternalLinkIcon";
-// @ts-ignore - External JS imports from monorepo
-import { creativeProjects } from "../../../../pollinations.ai/src/config/projects/creative.js";
-// @ts-ignore - External JS imports from monorepo
-import { chatProjects } from "../../../../pollinations.ai/src/config/projects/chat.js";
-// @ts-ignore - External JS imports from monorepo
-import { gamesProjects } from "../../../../pollinations.ai/src/config/projects/games.js";
-// @ts-ignore - External JS imports from monorepo
-import { hackAndBuildProjects } from "../../../../pollinations.ai/src/config/projects/hackAndBuild.js";
-// @ts-ignore - External JS imports from monorepo
-import { learnProjects } from "../../../../pollinations.ai/src/config/projects/learn.js";
-// @ts-ignore - External JS imports from monorepo
-import { socialBotsProjects } from "../../../../pollinations.ai/src/config/projects/socialBots.js";
-// @ts-ignore - External JS imports from monorepo
-import { vibeCodingProjects } from "../../../../pollinations.ai/src/config/projects/vibeCoding.js";
 import { GithubIcon } from "../assets/SocialIcons";
 import { useTheme } from "../contexts/ThemeContext";
 import { LINKS } from "../../theme/copy/socialLinks";
+import { allApps, CATEGORIES } from "../../data/parseApps";
 
-// Combine all projects with category tags
-const allProjects = [
-    ...creativeProjects.map((p: any) => ({ ...p, category: "creative" })),
-    ...chatProjects.map((p: any) => ({ ...p, category: "chat" })),
-    ...gamesProjects.map((p: any) => ({ ...p, category: "games" })),
-    ...hackAndBuildProjects.map((p: any) => ({ ...p, category: "devtools" })),
-    ...learnProjects.map((p: any) => ({ ...p, category: "learn" })),
-    ...socialBotsProjects.map((p: any) => ({ ...p, category: "socialbots" })),
-    ...vibeCodingProjects.map((p: any) => ({ ...p, category: "vibes" })),
-];
-
-interface Project {
-    category: string;
-    name: string;
-    url: string;
-    description: string;
-    author: string;
-    repo: string;
-    submissionDate: string;
-    language: string;
-    order: number;
-    stars?: number;
-    authorEmail?: string;
-    hidden?: boolean;
-}
-
-interface Category {
-    id: string;
-    label: string;
-}
-
-const CATEGORIES: Category[] = [
-    { id: "creative", label: "Creative" },
-    { id: "chat", label: "Chat" },
-    { id: "games", label: "Games" },
-    { id: "devtools", label: "Dev Tools" },
-    { id: "learn", label: "Learn" },
-    { id: "socialbots", label: "Social Bots" },
-    { id: "vibes", label: "Vibes" },
-];
+import type { App } from "../../data/parseApps";
 
 // Helper to extract GitHub username from author field
 function getGitHubUsername(author: string) {
@@ -78,22 +26,25 @@ function getRepoName(repoUrl: string) {
     return match ? match[1] : null;
 }
 
-interface ProjectCardProps {
-    project: Project;
+interface AppCardProps {
+    app: App;
 }
 
-// Project Card Component
-function ProjectCard({ project }: ProjectCardProps) {
-    const githubUsername = getGitHubUsername(project.author);
-    const repoName = getRepoName(project.repo);
+// App Card Component
+function AppCard({ app }: AppCardProps) {
+    const githubUsername = getGitHubUsername(app.author);
+    // Extract repo from URL if it's a GitHub URL
+    const repoName = app.url?.includes("github.com")
+        ? getRepoName(app.url)
+        : null;
 
     return (
         <SubCard className="flex flex-col h-full bg-transparent">
             <div className="flex-1">
-                {/* Project name as button */}
+                {/* App name as button */}
                 <Button
                     as="a"
-                    href={project.url}
+                    href={app.url}
                     target="_blank"
                     rel="noopener noreferrer"
                     variant="primary"
@@ -101,14 +52,14 @@ function ProjectCard({ project }: ProjectCardProps) {
                     className="self-start mb-3 w-full relative pr-10 shadow-none hover:shadow-none text-left justify-start bg-input-background hover:bg-input-background"
                 >
                     <span className="font-headline text-base font-black uppercase text-left block text-text-body-main">
-                        {project.name}
+                        {app.name}
                     </span>
                     <ExternalLinkIcon className="w-4 h-4 absolute top-3 right-3 text-text-body-main" />
                 </Button>
 
-                {project.description && (
+                {app.description && (
                     <Body className="text-sm text-text-body-secondary line-clamp-6 mb-4">
-                        {project.description}
+                        {app.description}
                     </Body>
                 )}
             </div>
@@ -120,18 +71,18 @@ function ProjectCard({ project }: ProjectCardProps) {
                         target="_blank"
                         rel="noopener noreferrer"
                         className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-mono font-medium bg-input-background hover:bg-input-background border border-border-faint hover:border-border-main transition-all max-w-[200px]"
-                        title={`View ${project.author} on GitHub`}
+                        title={`View ${app.author} on GitHub`}
                     >
                         <GithubIcon className="w-3 h-3 text-text-body-main opacity-60 flex-shrink-0" />
                         <span className="truncate text-text-body-main">
-                            {project.author}
+                            {app.author}
                         </span>
                     </a>
                 )}
-                {!githubUsername && project.author && (
+                {!githubUsername && app.author && (
                     <div className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-mono font-medium bg-input-background border border-border-faint max-w-[200px]">
                         <span className="truncate text-text-body-main">
-                            {project.author}
+                            {app.author}
                         </span>
                     </div>
                 )}
@@ -139,7 +90,7 @@ function ProjectCard({ project }: ProjectCardProps) {
                 {/* Repo Badge */}
                 {repoName && (
                     <a
-                        href={project.repo}
+                        href={app.url}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-mono font-medium bg-input-background hover:bg-input-background border border-border-faint hover:border-border-main transition-all max-w-[200px]"
@@ -149,9 +100,9 @@ function ProjectCard({ project }: ProjectCardProps) {
                         <span className="truncate flex-1 min-w-0 text-text-body-main">
                             {repoName}
                         </span>
-                        {(project.stars || 0) > 0 && (
+                        {(app.stars || 0) > 0 && (
                             <span className="text-text-body-secondary flex-shrink-0">
-                                ⭐ {project.stars}
+                                ⭐ {app.stars}
                             </span>
                         )}
                     </a>
@@ -168,12 +119,9 @@ export default function AppsPage() {
     const { presetCopy } = useTheme();
     const pageCopy = presetCopy.APPS_PAGE;
 
-    // Filter projects by category
-    const filteredProjects = useMemo(() => {
-        return (allProjects as Project[]).filter((p) => {
-            if (p.hidden) return false;
-            return p.category === selectedCategory;
-        });
+    // Filter apps by category
+    const filteredApps = useMemo(() => {
+        return allApps.filter((app) => app.category === selectedCategory);
     }, [selectedCategory]);
 
     return (
@@ -218,21 +166,18 @@ export default function AppsPage() {
                     ))}
                 </div>
 
-                {/* Project Grid */}
+                {/* App Grid */}
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
-                    {filteredProjects.map((project, index) => (
-                        <ProjectCard
-                            key={`${project.name}-${index}`}
-                            project={project}
-                        />
+                    {filteredApps.map((app, index) => (
+                        <AppCard key={`${app.name}-${index}`} app={app} />
                     ))}
                 </div>
 
                 {/* No Results */}
-                {filteredProjects.length === 0 && (
+                {filteredApps.length === 0 && (
                     <div className="text-center py-12">
                         <Body className="text-text-body-main">
-                            No projects found in this category yet.
+                            No apps found in this category yet.
                         </Body>
                     </div>
                 )}

@@ -1225,4 +1225,13 @@ export const creativeProjects = [
         "submissionDate": "2025-12-20",
         "order": 5,
     },
+  {
+    "name": "Multi Image Generator",
+    "url": "https://perchance.org/multi-image-generator",
+    "description": "Hello! I'm working on a Perchance image generator that supports image-to-image and simultaneous multi-model generation, allowing the user to compare the output of multiple models at once. However because the app sends multiple requests at once, I hit the rate limit pretty fast while testing. Could I get a tier upgrade? I'd like to polish this up without needing to wait 24 hours every 10-20 images.",
+    "category": "creative",
+    "author": "@itzGlitch-AS",
+    "submissionDate": "2025-12-22",
+    "order": 5
+  }
 ];

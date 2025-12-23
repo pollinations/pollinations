@@ -133,6 +133,24 @@ export const IMAGE_SERVICES = {
         inputModalities: ["text", "image"],
         outputModalities: ["image"],
     },
+    "gptimage-large": {
+        aliases: ["gpt-image-1.5", "gpt-image-large"],
+        modelId: "gptimage-large",
+        provider: "azure",
+        cost: [
+            // Azure GPT Image 1.5 (via AI Foundry)
+            {
+                date: COST_START_DATE,
+                promptTextTokens: perMillion(8), // $8.00 per 1M input tokens
+                promptCachedTokens: perMillion(2), // $2.00 per 1M cached input tokens
+                promptImageTokens: perMillion(8), // $8.00 per 1M image input tokens
+                completionImageTokens: perMillion(32), // $32.00 per 1M output tokens
+            },
+        ],
+        description: "GPT Image 1.5 - OpenAI's advanced image generation model",
+        inputModalities: ["text", "image"],
+        outputModalities: ["image"],
+    },
     "zimage": {
         aliases: ["z-image", "z-image-turbo"],
         modelId: "zimage",
@@ -145,7 +163,8 @@ export const IMAGE_SERVICES = {
                 completionImageTokens: 0.0002, // ~$0.0002 per image (GPU cost estimate)
             },
         ],
-        description: "Z-Image-Turbo - Fast 6B parameter image generation (alpha)",
+        description:
+            "Z-Image-Turbo - Fast 6B parameter image generation (alpha)",
         inputModalities: ["text"],
         outputModalities: ["image"],
     },

@@ -506,19 +506,43 @@ export async function convertToJpeg(buffer: Buffer): Promise<Buffer> {
 }
 
 /**
+ * Configuration for Azure GPT Image endpoints
+ */
+interface AzureGPTImageConfig {
+    apiKeyEnvVar: string;
+    endpointEnvVar: string;
+    modelName: string;
+}
+
+const AZURE_GPTIMAGE_CONFIGS: Record<string, AzureGPTImageConfig> = {
+    gptimage: {
+        apiKeyEnvVar: "AZURE_PF_GPTIMAGE_API_KEY",
+        endpointEnvVar: "AZURE_PF_GPTIMAGE_ENDPOINT",
+        modelName: "gpt-image-1-mini",
+    },
+    "gptimage-large": {
+        apiKeyEnvVar: "AZURE_MYCELI_GPTIMAGE_LARGE_API_KEY",
+        endpointEnvVar: "AZURE_MYCELI_GPTIMAGE_LARGE_ENDPOINT",
+        modelName: "gpt-image-1.5",
+    },
+};
+
+/**
  * Helper function to call Azure GPT Image with specific endpoint
  * @param {string} prompt - The prompt for image generation or editing
  * @param {Object} safeParams - The parameters for image generation or editing
  * @param {Object} userInfo - User authentication info object
+ * @param {AzureGPTImageConfig} config - Configuration for the specific GPT Image model
  * @returns {Promise<{buffer: Buffer, isMature: boolean, isChild: boolean}>}
  */
 const callAzureGPTImageWithEndpoint = async (
     prompt: string,
     safeParams: ImageParams,
     userInfo: AuthResult,
+    config: AzureGPTImageConfig = AZURE_GPTIMAGE_CONFIGS.gptimage,
 ): Promise<ImageGenerationResult> => {
-    const apiKey = process.env[`AZURE_PF_GPTIMAGE_API_KEY`];
-    let endpoint = process.env[`AZURE_PF_GPTIMAGE_ENDPOINT`];
+    const apiKey = process.env[config.apiKeyEnvVar];
+    let endpoint = process.env[config.endpointEnvVar];
 
     if (!apiKey || !endpoint) {
         throw new Error(
@@ -529,14 +553,14 @@ const callAzureGPTImageWithEndpoint = async (
     // Check if we have input images for edit mode
     const isEditMode = safeParams.image && safeParams.image.length > 0;
 
-    // gpt-image-1-mini supports both generation and editing
+    // GPT Image models support both generation and editing
     // Edit API uses /images/edits endpoint with multipart/form-data
     if (isEditMode) {
         endpoint = endpoint.replace("/images/generations", "/images/edits");
-        logCloudflare(`Using Azure gpt-image-1-mini in edit mode (img2img)`);
+        logCloudflare(`Using Azure ${config.modelName} in edit mode (img2img)`);
     } else {
         logCloudflare(
-            `Using Azure gpt-image-1-mini in generation mode (text2img)`,
+            `Using Azure ${config.modelName} in generation mode (text2img)`,
         );
     }
 
@@ -772,21 +796,29 @@ const callAzureGPTImageWithEndpoint = async (
  * @param {string} prompt - The prompt for image generation or editing
  * @param {Object} safeParams - The parameters for image generation or editing
  * @param {Object} userInfo - Complete user authentication info object with authenticated, userId, tier, etc.
+ * @param {string} model - Model name (gptimage or gptimage-large)
  * @returns {Promise<{buffer: Buffer, isMature: boolean, isChild: boolean}>}
  */
 export const callAzureGPTImage = async (
     prompt: string,
     safeParams: ImageParams,
     userInfo: AuthResult,
+    model: string = "gptimage",
 ): Promise<ImageGenerationResult> => {
+    const config =
+        AZURE_GPTIMAGE_CONFIGS[model] || AZURE_GPTIMAGE_CONFIGS.gptimage;
     try {
         return await callAzureGPTImageWithEndpoint(
             prompt,
             safeParams,
             userInfo,
+            config,
         );
     } catch (error) {
-        logError("Error calling Azure GPT Image API:", error);
+        logError(
+            `Error calling Azure GPT Image API (${config.modelName}):`,
+            error,
+        );
         throw error;
     }
 };
@@ -814,11 +846,15 @@ const generateImage = async (
 
     // Model selection strategy using a more functional approach
 
-    // GPT Image model - gpt-image-1-mini
-    if (safeParams.model === "gptimage") {
+    // GPT Image models - gpt-image-1-mini and gpt-image-1.5
+    if (
+        safeParams.model === "gptimage" ||
+        safeParams.model === "gptimage-large"
+    ) {
+        const gptConfig = AZURE_GPTIMAGE_CONFIGS[safeParams.model];
         // Detailed logging of authentication info for GPT image access
         logError(
-            "GPT Image authentication check:",
+            `GPT Image (${gptConfig.modelName}) authentication check:`,
             userInfo
                 ? `authenticated=${userInfo.authenticated}, tokenAuth=${userInfo.tokenAuth}, referrerAuth=${userInfo.referrerAuth}, reason=${userInfo.reason}, userId=${userInfo.userId || "none"}`
                 : "No userInfo provided",
@@ -826,7 +862,7 @@ const generateImage = async (
 
         // All requests assumed to come from enter.pollinations.ai - tier checks bypassed
         {
-            // For gptimage model, always throw errors instead of falling back
+            // For gptimage models, always throw errors instead of falling back
             progress.updateBar(
                 requestId,
                 30,
@@ -876,9 +912,14 @@ const generateImage = async (
                     requestId,
                     35,
                     "Processing",
-                    "Trying Azure GPT Image (gpt-image-1-mini)...",
+                    `Trying Azure GPT Image (${gptConfig.modelName})...`,
                 );
-                return await callAzureGPTImage(prompt, safeParams, userInfo);
+                return await callAzureGPTImage(
+                    prompt,
+                    safeParams,
+                    userInfo,
+                    safeParams.model,
+                );
             } catch (error) {
                 // Log the error but don't fall back - propagate it to the caller
                 logError(

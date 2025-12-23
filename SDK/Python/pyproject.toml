@@ -1,0 +1,473 @@
+# ============================================================================
+# BUILD SYSTEM
+# ============================================================================
+
+[build-system]
+requires = ["hatchling>=1.18.0"]
+build-backend = "hatchling.build"
+
+
+# ============================================================================
+# PROJECT METADATA
+# ============================================================================
+
+[project]
+name = "eclips-blossom-ai"
+version = "0.7.0"
+description = "🌸 Beautiful and simple AI generation library for images, text, and audio"
+readme = "README.md"
+requires-python = ">=3.11"
+license = {text = "MIT"}
+authors = [
+    {name = "Eclips Team", email = "develop@eclips-team.ru"}
+]
+maintainers = [
+    {name = "Eclips Team", email = "develop@eclips-team.ru"}
+]
+keywords = [
+    "ai",
+    "artificial-intelligence",
+    "image-generation",
+    "text-generation",
+    "audio-generation",
+    "text-to-speech",
+    "tts",
+    "pollinations",
+    "stable-diffusion",
+    "gpt",
+    "llm",
+    "generative-ai",
+    "machine-learning",
+    "deep-learning"
+]
+classifiers = [
+    # Development Status
+    "Development Status :: 5 - Production/Stable",
+
+    # Intended Audience
+    "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
+    "Intended Audience :: Information Technology",
+
+    # License
+    "License :: OSI Approved :: MIT License",
+
+    # Programming Language
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: Implementation :: CPython",
+
+    # Topics
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Topic :: Scientific/Engineering :: Image Processing",
+    "Topic :: Multimedia :: Graphics",
+    "Topic :: Multimedia :: Sound/Audio :: Speech",
+    "Topic :: Internet :: WWW/HTTP :: Dynamic Content",
+
+    # Operating System
+    "Operating System :: OS Independent",
+
+    # Typing
+    "Typing :: Typed",
+
+    # Natural Language
+    "Natural Language :: English",
+    "Natural Language :: Russian"
+]
+
+# ============================================================================
+# DEPENDENCIES
+# ============================================================================
+
+dependencies = [
+    "httpx>=0.25.0,<1.0.0",
+    "python-dotenv>=1.0.0",
+    "tenacity>=9.0.0,<9.1.3",
+    "pydantic>=2.5.0,<3.0.0",
+    "typing-extensions>=4.5.0; python_version<'3.11'"
+]
+
+# ============================================================================
+# OPTIONAL DEPENDENCIES
+# ============================================================================
+
+[project.optional-dependencies]
+# Development dependencies
+dev = [
+    "pytest>=7.4.0",
+    "pytest-asyncio>=0.21.0",
+    "pytest-cov>=4.1.0",
+    "pytest-mock>=3.11.0",
+    "pytest-timeout>=2.1.0",
+    "black>=23.7.0",
+    "ruff>=0.0.287",
+    "mypy>=1.5.0",
+    "types-requests>=2.31.0",
+    "pre-commit>=3.3.0",
+    "bandit>=1.7.0",
+    "safety>=2.3.0",
+]
+
+# Documentation dependencies
+docs = [
+    "mkdocs>=1.5.0",
+    "mkdocs-material>=9.2.0",
+    "mkdocstrings[python]>=0.22.0",
+    "mkdocs-gen-files>=0.5.0",
+    "mkdocs-literate-nav>=0.6.0",
+    "mkdocs-section-index>=0.3.0",
+]
+
+# Structured logging support
+structlog = [
+    "structlog>=23.1.0",
+]
+
+# File type detection (improves security validation)
+magic = [
+    "python-magic>=0.4.27; sys_platform != 'win32'",
+    "python-magic-bin>=0.4.14; sys_platform == 'win32'",
+]
+
+# Testing dependencies (subset of dev)
+test = [
+    "pytest>=7.4.0",
+    "pytest-asyncio>=0.21.0",
+    "pytest-cov>=4.1.0",
+    "pytest-mock>=3.11.0",
+    "pytest-timeout>=2.1.0",
+]
+
+# All optional dependencies
+all = [
+    "eclips-blossom-ai[dev,docs,structlog,magic]",
+]
+
+# ============================================================================
+# PROJECT URLS
+# ============================================================================
+
+[project.urls]
+Homepage = "https://github.com/PrimeevolutionZ/blossom-ai"
+Documentation = "https://github.com/PrimeevolutionZ/blossom-ai/blob/master/blossom_ai/docs/INDEX.md"
+Repository = "https://github.com/PrimeevolutionZ/blossom-ai"
+"Source Code" = "https://github.com/PrimeevolutionZ/blossom-ai"
+"Bug Tracker" = "https://github.com/PrimeevolutionZ/blossom-ai/issues"
+"Issue Tracker" = "https://github.com/PrimeevolutionZ/blossom-ai/issues"
+Changelog = "https://github.com/PrimeevolutionZ/blossom-ai/blob/master/blossom_ai/docs/CHANGELOG.md"
+"Security Policy" = "https://github.com/PrimeevolutionZ/blossom-ai/blob/master/SECURITY.md"
+
+
+# ============================================================================
+# HATCH BUILD CONFIGURATION
+# ============================================================================
+
+[tool.hatch.version]
+path = "blossom_ai/__init__.py"
+
+[tool.hatch.build.targets.wheel]
+packages = ["blossom_ai"]
+
+[tool.hatch.build.targets.sdist]
+include = [
+    "/blossom_ai",
+    "/tests",
+    "/README.md",
+    "/LICENSE",
+    "/pyproject.toml",
+    "/blossom_ai/py.typed",
+]
+exclude = [
+    "/.github",
+    "/.venv",
+    "/.pytest_cache",
+    "/__pycache__",
+    "*.pyc",
+    "*.pyo",
+    "*.pyd",
+    ".DS_Store",
+    "*.egg-info",
+    "/dist",
+    "/build",
+    "/docs/site",
+    "/htmlcov",
+    "/.coverage",
+    "/coverage.xml",
+    "/.mypy_cache",
+    "/.ruff_cache",
+    "/.pre-commit-config.yaml",
+]
+
+
+# ============================================================================
+# PYTEST CONFIGURATION
+# ============================================================================
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py", "*_test.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+asyncio_mode = "auto"
+timeout = 10
+timeout_method = "thread"
+addopts = [
+    "-v",
+    "--strict-markers",
+    "--tb=short",
+    "--disable-warnings",
+    "--maxfail=5",
+    "--cov=blossom_ai",
+    "--cov-report=term-missing",
+]
+markers = [
+    "unit: Unit tests (fast, no external dependencies)",
+    "integration: Integration tests (may require API)",
+    "slow: Slow running tests",
+    "asyncio: Async tests using pytest-asyncio",
+    "timeout: Test timeout in seconds",
+    "api: API integration tests requiring internet connection",
+    "e2e: End-to-end tests (real API calls, may cost quota)",
+    "benchmark: Performance benchmark tests",
+]
+
+
+# ============================================================================
+# COVERAGE CONFIGURATION
+# ============================================================================
+
+[tool.coverage.run]
+source = ["blossom_ai"]
+branch = true
+omit = [
+    "*/tests/*",
+    "*/__pycache__/*",
+    "*/.venv/*",
+    "*/venv/*",
+    "**/interfaces.py",
+    "**/__init__.py",
+    "**/docs/*",
+    "**/examples/*",
+]
+
+[tool.coverage.report]
+precision = 2
+show_missing = true
+skip_covered = false
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "raise AssertionError",
+    "raise NotImplementedError",
+    "if __name__ == .__main__.:",
+    "if TYPE_CHECKING:",
+    "@abstractmethod",
+    "@abc.abstractmethod",
+    "def __del__",
+]
+
+[tool.coverage.html]
+directory = "htmlcov"
+
+
+# ============================================================================
+# BLACK CONFIGURATION (Code Formatting)
+# ============================================================================
+
+[tool.black]
+line-length = 100
+target-version = ["py311", "py312", "py313"]
+include = '\.pyi?$'
+extend-exclude = '''
+/(
+    \.git
+  | \.venv
+  | \.pytest_cache
+  | __pycache__
+  | build
+  | dist
+  | docs\/site
+  | \.mypy_cache
+  | \.ruff_cache
+)/
+'''
+
+
+# ============================================================================
+# RUFF CONFIGURATION (Linting)
+# ============================================================================
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+select = [
+    "E",    # pycodestyle errors
+    "W",    # pycodestyle warnings
+    "F",    # pyflakes
+    "I",    # isort
+    "C",    # flake8-comprehensions
+    "B",    # flake8-bugbear
+    "UP",   # pyupgrade
+    "N",    # pep8-naming
+    "SIM",  # flake8-simplify
+    "RUF",  # Ruff-specific rules
+    "S",    # flake8-bandit (security)
+    "TCH",  # flake8-type-checking
+]
+ignore = [
+    "E501",   # Line too long (handled by black)
+    "B008",   # Do not perform function calls in argument defaults
+    "C901",   # Too complex
+    "W191",   # Indentation contains tabs
+    "S101",   # Use of assert (allowed in tests)
+    "S102",   # Use of exec (not used)
+    "S103",   # Setting os.chmod (not used)
+    "S104",   # Hardcoded bind address (not used)
+    "S105",   # Hardcoded password (allowed for test configs)
+    "S106",   # Hardcoded password in function (allowed for test configs)
+]
+exclude = [
+    ".git",
+    ".venv",
+    "venv",
+    "__pycache__",
+    "build",
+    "dist",
+    "*.egg-info",
+    "docs/site",
+    ".mypy_cache",
+    ".ruff_cache",
+    ".pytest_cache",
+]
+
+[tool.ruff.per-file-ignores]
+"__init__.py" = ["F401", "F403"]
+"tests/*" = ["S101", "PLR2004", "TCH001", "TCH002", "TCH003"]
+
+[tool.ruff.isort]
+known-first-party = ["blossom_ai"]
+force-single-line = false
+lines-after-imports = 2
+no-lines-before = ["future", "standard-library"]
+
+
+# ============================================================================
+# MYPY CONFIGURATION (Type Checking)
+# ============================================================================
+
+[tool.mypy]
+python_version = "3.11"
+warn_return_any = true
+warn_unused_configs = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+warn_no_return = true
+warn_unreachable = true
+strict_equality = true
+strict_optional = true
+check_untyped_defs = true
+disallow_untyped_defs = false
+disallow_any_generics = false
+disallow_untyped_calls = false
+disallow_incomplete_defs = true
+disallow_untyped_decorators = false
+no_implicit_optional = true
+warn_incomplete_stub = true
+namespace_packages = true
+explicit_package_bases = true
+
+[[tool.mypy.overrides]]
+module = "tests.*"
+disallow_untyped_defs = false
+check_untyped_defs = true
+
+[[tool.mypy.overrides]]
+module = "magic.*"
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = "structlog.*"
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = "aiohttp.*"
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = "requests.*"
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = "httpx.*"
+ignore_missing_imports = true
+
+
+# ============================================================================
+# BANDIT CONFIGURATION (Security Linting)
+# ============================================================================
+
+[tool.bandit]
+exclude_dirs = ["tests", ".venv", "venv", "docs", "examples"]
+skips = ["B101", "B601", "B603", "B607"]  # Skip assert and pickle warnings
+
+
+# ============================================================================
+# PYLINT CONFIGURATION
+# ============================================================================
+
+[tool.pylint.messages_control]
+disable = [
+    "C0103",  # Invalid name
+    "C0114",  # Missing module docstring
+    "C0115",  # Missing class docstring
+    "C0116",  # Missing function docstring
+    "R0903",  # Too few public methods
+    "R0913",  # Too many arguments
+    "W0212",  # Access to protected member
+    "W1203",  # Use of lazy % formatting in logging
+]
+
+[tool.pylint.format]
+max-line-length = 100
+
+[tool.pylint.basic]
+good-names = ["i", "j", "k", "e", "ex", "ai", "id", "ok", "rv", "T"]
+
+
+# ============================================================================
+# SETUPTOOLS CONFIGURATION (Fallback)
+# ============================================================================
+
+[tool.setuptools]
+zip-safe = false
+include-package-data = true
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["blossom_ai*"]
+exclude = [
+    "tests*",
+    "docs*",
+    "examples*",
+    "build*",
+    "dist*",
+]
+
+
+# ============================================================================
+# ADDITIONAL METADATA
+# ============================================================================
+
+[project.entry-points."blossom_ai.plugins"]
+# Будущая поддержка плагинов/ 100% будэт
+
+# ============================================================================
+# END OF CONFIGURATION
+# ============================================================================

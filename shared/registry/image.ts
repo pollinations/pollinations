@@ -162,7 +162,7 @@ export const IMAGE_SERVICES = {
             },
         ],
         description: "Veo 3.1 Fast - Google's video generation model (preview)",
-        inputModalities: ["text"],
+        inputModalities: ["text", "image"],
         outputModalities: ["video"],
     },
     "seedance": {

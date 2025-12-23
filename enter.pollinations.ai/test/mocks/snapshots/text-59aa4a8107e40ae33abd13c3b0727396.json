@@ -1,0 +1,75 @@
+{
+  "request": {
+    "url": "http://ec2-3-80-56-235.compute-1.amazonaws.com:16385/openai",
+    "method": "POST",
+    "body": {
+      "type": "json",
+      "data": {
+        "model": "chickytutor",
+        "messages": [
+          {
+            "role": "user",
+            "content": "Is Berlin the capital of Germany? Reply yes or no."
+          }
+        ],
+        "stream": true,
+        "seed": 42
+      }
+    },
+    "params": {}
+  },
+  "response": {
+    "status": 200,
+    "statusText": "OK",
+    "headers": {
+      "access-control-allow-origin": "*",
+      "cache-control": "no-cache",
+      "connection": "keep-alive",
+      "content-type": "text/event-stream; charset=utf-8",
+      "date": "Tue, 23 Dec 2025 13:55:20 GMT",
+      "transfer-encoding": "chunked",
+      "x-powered-by": "Express"
+    },
+    "body": {
+      "type": "stream",
+      "data": [
+        {
+          "data": "data: {\"id\":\"chatcmpl-da85d",
+          "delay": 1029
+        },
+        {
+          "data": "05f\",\"created\":1766498121,\"model\":\"us.anthropic.claude-3-5-haiku-20241022-v1:0\",\"system_fingerprint\":\"fp\",\"choices\":[{\"index\":0,\"finish_reason\":null,\"logprobs\":null,\"delta\":{\"role\":\"assistant\",\"content\":\"\"}}],\"object\":\"chat.completion.chunk\",\"usage\":null}\n\ndata: {\"id\":\"chatcmpl-da85d05f\",\"created\":1766498121,\"model\":\"us.anthropic.claude-3-5-haiku-20241022-v1:0\",\"system_fingerprint\":\"fp\",\"choices\":[{\"index\":0,\"finish_reason\":null,\"logprobs\":null,\"delta\":{\"content\":\"Yes\"}}],\"object\":\"chat.completion.chunk\",\"usage\":null}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"id\":\"chatcmpl-da85d",
+          "delay": 11
+        },
+        {
+          "data": "05f\",\"created\":1766498121,\"model\":\"us.anthropic.claude-3-5-haiku-20241022-v1:0\",\"system_fingerprint\":\"fp\",\"choices\":[{\"index\":0,\"finish_reason\":null,\"logprobs\":null,\"delta\":{\"content\":\".\"}}],\"object\":\"chat.completion.chunk\",\"usage\":null}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"id\":\"chatcmpl-da85d0",
+          "delay": 4
+        },
+        {
+          "data": "5f\",\"created\":1766498121,\"model\":\"us.anthropic.claude-3-5-haiku-20241022-v1:0\",\"system_fingerprint\":\"fp\",\"choices\":[{\"index\":0,\"finish_reason\":\"stop\",\"logprobs\":null,\"delta\":{}}],\"object\":\"chat.completion.chunk\",\"usage\":null}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"id\":\"chatcmpl-da85",
+          "delay": 1
+        },
+        {
+          "data": "d05f\",\"created\":1766498121,\"model\":\"us.anthropic.claude-3-5-haiku-20241022-v1:0\",\"system_fingerprint\":\"fp\",\"choices\":[],\"object\":\"chat.completion.chunk\",\"usage\":{\"prompt_tokens\":3703,\"completion_tokens\":5,\"total_tokens\":3708}}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: [DONE]\n\n",
+          "delay": 0
+        }
+      ]
+    }
+  }
+}

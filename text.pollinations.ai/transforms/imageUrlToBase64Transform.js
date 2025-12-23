@@ -130,20 +130,15 @@ async function processContentPart(part) {
         return part;
     }
 
-    try {
-        const dataUrl = await fetchImageAsBase64(url);
-        return {
-            ...part,
-            image_url: {
-                ...part.image_url,
-                url: dataUrl,
-            },
-        };
-    } catch {
-        // Return original on error - let it fail at provider level with clear error
-        errorLog(`Keeping original URL after conversion failure: ${url}`);
-        return part;
-    }
+    // Let errors propagate - gives users clear error messages instead of silent 500s
+    const dataUrl = await fetchImageAsBase64(url);
+    return {
+        ...part,
+        image_url: {
+            ...part.image_url,
+            url: dataUrl,
+        },
+    };
 }
 
 /**
@@ -154,18 +149,8 @@ async function processMessageContent(content) {
         return content;
     }
 
-    // Use allSettled to allow partial success - don't fail entire message if one image fails
-    const results = await Promise.allSettled(content.map(processContentPart));
-    return results.map((result, index) => {
-        if (result.status === "fulfilled") {
-            return result.value;
-        }
-        // On rejection, return original part
-        errorLog(
-            `Failed to process content part ${index}: ${result.reason?.message}`,
-        );
-        return content[index];
-    });
+    // Let errors propagate for clear error messages
+    return await Promise.all(content.map(processContentPart));
 }
 
 /**

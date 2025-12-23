@@ -5,7 +5,7 @@ import {
     createScalewayModelConfig,
     createBedrockLambdaModelConfig,
     createBedrockNativeConfig,
-    createMyceliDeepSeekV31Config,
+    createMyceliDeepSeekV32Config,
     createMyceliGrok4FastConfig,
     createPerplexityModelConfig,
 } from "./providerConfigs.js";
@@ -45,7 +45,7 @@ export const portkeyConfig: PortkeyConfigMap = {
         ),
         "max-completion-tokens": 2048,
     }),
-    "myceli-deepseek-v3.1": () => createMyceliDeepSeekV31Config(),
+    "myceli-deepseek-v3.2": () => createMyceliDeepSeekV32Config(),
     "myceli-grok-4-fast": () => createMyceliGrok4FastConfig(),
 
     // ============================================================================

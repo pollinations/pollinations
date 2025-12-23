@@ -35,6 +35,11 @@ export function subscribeToImageFeed(
     onOpen?: () => void;
   }
 ): FeedSubscription {
+
+
+if (typeof EventSource === 'undefined') {
+    throw new Error('Feed subscriptions are only available in browser environments. Use generateImage() or generateText() instead.');
+  }
   const params = new URLSearchParams();
   if (options?.password) {
     params.set('password', options.password);
@@ -92,6 +97,11 @@ export function subscribeToTextFeed(
     onOpen?: () => void;
   }
 ): FeedSubscription {
+
+    if (typeof EventSource === 'undefined') {
+    throw new Error('Feed subscriptions are only available in browser environments. Use generateImage() or generateText() instead.');
+  }
+  
   const params = new URLSearchParams();
   if (options?.password) {
     params.set('password', options.password);

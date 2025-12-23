@@ -349,7 +349,7 @@ function createPolarEvent(event: SelectGenerationEvent) {
         // request information
         requestId: event.requestId,
         startTime: event.startTime.toISOString(),
-        endTime: event.endTime.toISOString(),
+        endTime: event.endTime?.toISOString(),
         // model
         model: event.modelUsed,
         // token counts
@@ -402,7 +402,7 @@ async function sendPolarEvents(
     const polarEvents = events
         .filter(
             (event) =>
-                event.eventStatus !== "pending_estimate" &&
+                event.eventStatus !== "estimate" &&
                 event.isBilledUsage &&
                 event.polarDeliveredAt == null,
         )
@@ -451,7 +451,7 @@ async function sendTinybirdEvents(
     const tinybirdEvents = events
         .filter(
             (event) =>
-                event.eventStatus !== "pending_estimate" &&
+                event.eventStatus !== "estimate" &&
                 event.tinybirdDeliveredAt == null,
         )
         .map((event) => {
@@ -572,7 +572,7 @@ export async function getPendingSpend(
         .select({
             total: sql<number>`COALESCE(SUM(
                 CASE 
-                    WHEN ${event.eventStatus} = 'pending_estimate' THEN ${event.estimatedPrice}
+                    WHEN ${event.eventStatus} = 'estimate' THEN ${event.estimatedPrice}
                     WHEN ${event.isBilledUsage} = 1 THEN ${event.totalPrice}
                     ELSE 0
                 END

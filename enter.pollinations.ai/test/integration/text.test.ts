@@ -120,6 +120,10 @@ describe("POST /generate/v1/chat/completions (authenticated)", async () => {
                 expect(event.tokenCountCompletionText).toBeGreaterThan(0);
                 expect(event.totalCost).toBeGreaterThan(0);
                 expect(event.totalPrice).toBeGreaterThanOrEqual(0);
+                // Regression test: selectedMeterSlug must be captured AFTER next()
+                // If this is null, balanceTracking was captured before the balance check middleware ran
+                expect(event.selectedMeterSlug).toBeDefined();
+                expect(event.selectedMeterSlug).not.toBeNull();
             });
         },
     );
@@ -172,6 +176,9 @@ describe("POST /generate/v1/chat/completions (streaming)", async () => {
                 expect(event.tokenCountCompletionText).toBeGreaterThan(0);
                 expect(event.totalCost).toBeGreaterThan(0);
                 expect(event.totalPrice).toBeGreaterThanOrEqual(0);
+                // Regression test: selectedMeterSlug must be captured AFTER next()
+                expect(event.selectedMeterSlug).toBeDefined();
+                expect(event.selectedMeterSlug).not.toBeNull();
             });
         },
     );
@@ -218,6 +225,9 @@ describe("GET /text/:prompt", async () => {
                 expect(event.tokenCountCompletionText).toBeGreaterThan(0);
                 expect(event.totalCost).toBeGreaterThan(0);
                 expect(event.totalPrice).toBeGreaterThanOrEqual(0);
+                // Regression test: selectedMeterSlug must be captured AFTER next()
+                expect(event.selectedMeterSlug).toBeDefined();
+                expect(event.selectedMeterSlug).not.toBeNull();
             });
         },
     );

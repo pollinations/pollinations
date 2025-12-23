@@ -1,163 +1,118 @@
 /**
  * x402 Crypto Payment Routes
  *
- * Implements USDC payments on Base network using the x402 protocol.
- *
- * MVP: Logs payments for manual crediting via Polar dashboard.
- * TODO: Automate via Polar discount API once we confirm $0 checkout flow.
+ * Minimal x402 implementation using x402-hono middleware.
+ * Testnet: Base Sepolia + https://x402.org/facilitator (free)
+ * Mainnet: Base + CDP facilitator (requires CDP API keys)
  */
 
 import { Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
+import { paymentMiddleware } from "x402-hono";
 import { auth } from "../middleware/auth.ts";
 import { polar } from "../middleware/polar.ts";
 import type { Env } from "../env.ts";
 import { describeRoute } from "hono-openapi";
 
-// Pollen packs - must match existing Polar products
-export const CRYPTO_PACKS = {
-    "5": { price: "$5", pollen: 5000 },
-    "10": { price: "$10", pollen: 10000 },
-    "20": { price: "$20", pollen: 20000 },
-    "50": { price: "$50", pollen: 50000 },
-} as const;
-
-type PackAmount = keyof typeof CRYPTO_PACKS;
-
-// Extend CloudflareBindings for crypto-specific env vars
+// Extend CloudflareBindings for crypto env var
 declare global {
     interface CloudflareBindings {
         CRYPTO_WALLET_ADDRESS?: string;
     }
 }
 
-export const x402Routes = new Hono<Env>()
-    .get(
-        "/status",
-        describeRoute({
-            tags: ["Crypto"],
-            description: "Check crypto payment status and available packs",
-        }),
-        (c) => {
-            const walletAddress = c.env.CRYPTO_WALLET_ADDRESS;
-            const enabled = Boolean(walletAddress);
-            const network =
-                c.env.ENVIRONMENT === "production" ? "base" : "base-sepolia";
+// Pollen packs
+const PACKS = {
+    "5": 5000,
+    "10": 10000,
+    "20": 20000,
+    "50": 50000,
+} as const;
 
-            if (!enabled) {
-                return c.json({
-                    enabled: false,
-                    message: "Crypto payments not configured",
-                });
-            }
-            return c.json({
-                enabled: true,
-                network,
-                walletAddress,
-                packs: CRYPTO_PACKS,
-            });
-        },
-    )
+type Amount = keyof typeof PACKS;
+
+export const x402Routes = new Hono<Env>()
+    // Status endpoint
+    .get("/status", (c) => {
+        const wallet = c.env.CRYPTO_WALLET_ADDRESS;
+        if (!wallet) return c.json({ enabled: false });
+
+        const isMainnet = c.env.ENVIRONMENT === "production";
+        return c.json({
+            enabled: true,
+            network: isMainnet ? "base" : "base-sepolia",
+            wallet,
+            packs: PACKS,
+        });
+    })
+    // Auth + Polar middleware
     .use("/topup/*", auth({ allowApiKey: true, allowSessionCookie: true }))
     .use("/topup/*", polar)
+    // x402 payment middleware
+    .use("/topup/*", async (c, next) => {
+        const wallet = c.env.CRYPTO_WALLET_ADDRESS;
+        if (!wallet) {
+            throw new HTTPException(503, { message: "Crypto not configured" });
+        }
+
+        const isMainnet = c.env.ENVIRONMENT === "production";
+        const network = isMainnet ? "base" : "base-sepolia";
+        const facilitator = isMainnet
+            ? "https://api.cdp.coinbase.com/platform/v2/x402"
+            : "https://x402.org/facilitator";
+
+        return paymentMiddleware(
+            wallet as `0x${string}`,
+            {
+                "/topup/5": { price: "$5", network },
+                "/topup/10": { price: "$10", network },
+                "/topup/20": { price: "$20", network },
+                "/topup/50": { price: "$50", network },
+            },
+            { url: facilitator },
+        )(c, next);
+    })
+    // Credit pollen after payment verified
     .post(
         "/topup/:amount",
         describeRoute({
             tags: ["Crypto"],
-            description: "Purchase pollen with USDC via x402 protocol",
+            description: "Purchase pollen with USDC via x402",
         }),
         async (c) => {
-            const log = c.get("log");
-            const amount = c.req.param("amount") as PackAmount;
+            const amount = c.req.param("amount") as Amount;
+            const pollen = PACKS[amount];
 
-            if (!CRYPTO_PACKS[amount]) {
-                throw new HTTPException(400, {
-                    message: `Invalid amount. Valid: ${Object.keys(CRYPTO_PACKS).join(", ")}`,
-                });
-            }
-
-            const walletAddress = c.env.CRYPTO_WALLET_ADDRESS;
-            if (!walletAddress) {
-                throw new HTTPException(503, {
-                    message: "Crypto payments not configured",
-                });
+            if (!pollen) {
+                throw new HTTPException(400, { message: "Invalid amount" });
             }
 
             const user = c.var.auth.requireUser();
-            const pack = CRYPTO_PACKS[amount];
-            const paymentHeader = c.req.header("X-PAYMENT");
+            const log = c.get("log");
 
-            if (!paymentHeader) {
-                // Return 402 Payment Required with x402 payment details
-                const network =
-                    c.env.ENVIRONMENT === "production"
-                        ? "base"
-                        : "base-sepolia";
-                return c.json(
+            // Credit pollen via Polar
+            const response = await c.var.polar.client.events.ingest({
+                events: [
                     {
-                        paymentRequirements: [
-                            {
-                                scheme: "exact",
-                                network,
-                                maxAmountRequired: amount, // USDC amount
-                                resource: c.req.url,
-                                description: `Purchase ${pack.pollen.toLocaleString()} pollen`,
-                                mimeType: "application/json",
-                                payTo: walletAddress,
-                                maxTimeoutSeconds: 300,
-                                asset: "USDC",
-                            },
-                        ],
-                        x402Version: 1,
-                    },
-                    402,
-                );
-            }
-
-            // Payment header present - verify and credit automatically
-            try {
-                const paymentPayload = JSON.parse(atob(paymentHeader));
-                log.info(
-                    `Processing crypto payment: ${JSON.stringify(paymentPayload)}`,
-                );
-
-                // Credit pollen using Polar's events.ingest API
-                const polarClient = c.var.polar.client;
-                const response = await polarClient.events.ingest({
-                    events: [
-                        {
-                            name: "pollen_pack_purchase",
-                            externalCustomerId: user.id,
-                            metadata: {
-                                source: "x402_crypto_payment",
-                                amount: amount,
-                                pollen: pack.pollen,
-                                timestamp: new Date().toISOString(),
-                            },
+                        name: "pollen_pack_purchase",
+                        externalCustomerId: user.id,
+                        metadata: {
+                            source: "x402",
+                            amount,
+                            pollen,
+                            ts: new Date().toISOString(),
                         },
-                    ],
-                });
+                    },
+                ],
+            });
 
-                if (response.inserted !== 1) {
-                    throw new HTTPException(500, {
-                        message: "Failed to credit pollen",
-                    });
-                }
-
-                log.info(`Credited ${pack.pollen} pollen to user ${user.id}`);
-
-                return c.json({
-                    success: true,
-                    amount,
-                    pollen_credited: pack.pollen,
-                    user_id: user.id,
-                });
-            } catch (error) {
-                log.error(`Crypto payment failed: ${error}`);
-                throw new HTTPException(500, {
-                    message: "Failed to process payment",
-                });
+            if (response.inserted !== 1) {
+                log.error("Failed to credit pollen");
+                throw new HTTPException(500, { message: "Credit failed" });
             }
+
+            log.info(`Credited ${pollen} pollen to ${user.id}`);
+            return c.json({ success: true, pollen_credited: pollen });
         },
     );
 

@@ -16,6 +16,7 @@ import { Header } from "../components/header.tsx";
 import { Pricing } from "../components/pricing/index.ts";
 import { apiClient } from "../api.ts";
 import { authClient, getUserOrRedirect } from "../auth.ts";
+import { CryptoPayment } from "../components/crypto-payment.tsx";
 
 export const Route = createFileRoute("/")({
     component: RouteComponent,
@@ -245,6 +246,7 @@ function RouteComponent() {
                         }
                         pendingSpend={pendingSpend}
                     />
+                    <CryptoPayment />
                 </div>
                 {tierData && (
                     <div className="flex flex-col gap-2">

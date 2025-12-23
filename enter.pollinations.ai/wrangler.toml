@@ -51,8 +51,8 @@ TINYBIRD_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=g
 POLAR_PRODUCT_TIER_SPORE = "19fa1660-a90c-453d-8132-4d228cc7db39"
 IMAGE_SERVICE_URL = "http://ec2-3-80-56-235.compute-1.amazonaws.com:16384"
 TEXT_SERVICE_URL = "http://ec2-3-80-56-235.compute-1.amazonaws.com:16385"
-# Crypto payments - dummy address for testing (replace with real Coinbase wallet)
-CRYPTO_WALLET_ADDRESS = "0x0000000000000000000000000000000000000001"
+# Crypto payments - Pollinations Coinbase Wallet on Base
+CRYPTO_WALLET_ADDRESS = "0xBc1eCD4974Ad02194Aa1ed90710a28B0F012aF61"
 
 [env.local]
 
@@ -84,8 +84,8 @@ POLAR_PRODUCT_TIER_SPORE = "19fa1660-a90c-453d-8132-4d228cc7db39"
 IMAGE_SERVICE_URL = "http://localhost:16384"
 TEXT_SERVICE_URL = "http://localhost:16385"
 POLLEN_REFILL_PER_HOUR = 1
-# Crypto payments - dummy address for testing
-CRYPTO_WALLET_ADDRESS = "0x0000000000000000000000000000000000000001"
+# Crypto payments - Pollinations Coinbase Wallet on Base
+CRYPTO_WALLET_ADDRESS = "0xBc1eCD4974Ad02194Aa1ed90710a28B0F012aF61"
 
 [env.production]
 

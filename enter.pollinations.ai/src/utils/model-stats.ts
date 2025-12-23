@@ -1,4 +1,4 @@
-import type { KVNamespace } from "@cloudflare/workers-types";
+import { cached } from "@/cache";
 import type { Logger } from "@logtape/logtape";
 
 const TINYBIRD_MODEL_STATS_URL =
@@ -12,49 +12,12 @@ export async function getModelStats(
     kv: KVNamespace,
     log: Logger,
 ): Promise<ModelStats> {
-    // Try cache first
-    try {
-        const cached = await kv.get(CACHE_KEY, "json");
-        if (cached) {
-            log.debug("Model stats cache hit");
-            return cached as ModelStats;
-        }
-    } catch (e) {
-        log.warn("Failed to read model stats from cache: {e}", { e });
-    }
-
-    // Fetch from Tinybird
-    log.debug("Fetching model stats from Tinybird");
-    try {
-        const response = await fetch(TINYBIRD_MODEL_STATS_URL);
-        if (!response.ok) {
-            throw new Error(`Tinybird API error: ${response.status}`);
-        }
-        const data = (await response.json()) as {
-            data?: Array<{ model: string; avg_cost_usd: number }>;
-        };
-
-        // Transform to lookup map
-        const stats: ModelStats = {};
-        for (const row of data.data || []) {
-            stats[row.model] = { avg_price: row.avg_cost_usd };
-        }
-
-        // Cache result
-        try {
-            await kv.put(CACHE_KEY, JSON.stringify(stats), {
-                expirationTtl: CACHE_TTL,
-            });
-            log.debug("Model stats cached successfully");
-        } catch (e) {
-            log.warn("Failed to cache model stats: {e}", { e });
-        }
-
-        return stats;
-    } catch (e) {
-        log.error("Failed to fetch model stats from Tinybird: {e}", { e });
-        return {};
-    }
+    return await cached(fetchModelStats, {
+        log,
+        ttl: CACHE_TTL,
+        kv,
+        keyGenerator: () => CACHE_KEY,
+    })(log);
 }
 
 export function getEstimatedPrice(
@@ -63,4 +26,30 @@ export function getEstimatedPrice(
 ): number {
     if (!model) return 0;
     return stats[model]?.avg_price || 0;
+}
+
+async function fetchModelStats(log: Logger): Promise<ModelStats> {
+    try {
+        const response = await fetch(TINYBIRD_MODEL_STATS_URL);
+        if (!response.ok) {
+            throw new Error(`Tinybird API error: ${response.status}`);
+        }
+
+        const data = (await response.json()) as {
+            data?: Array<{ model: string; avg_cost_usd: number }>;
+        };
+
+        const stats: ModelStats = {};
+        for (const row of data.data || []) {
+            stats[row.model] = { avg_price: row.avg_cost_usd };
+        }
+
+        return stats;
+    } catch (error) {
+        log.error("Failed to fetch model stats from Tinybird: {error}", {
+            error,
+        });
+        // NOTE: should this throw an error instead maybe?
+        return {};
+    }
 }

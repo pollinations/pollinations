@@ -373,7 +373,7 @@ test(
                                 {
                                     type: "image_url",
                                     image_url: {
-                                        url: "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a7/Camponotus_flavomarginatus_ant.jpg/320px-Camponotus_flavomarginatus_ant.jpg",
+                                        url: "https://picsum.photos/id/237/200/300",
                                     },
                                 },
                             ],

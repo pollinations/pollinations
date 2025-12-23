@@ -18,6 +18,10 @@ import { PollinationsError } from './types.js';
 const DEFAULT_BASE_URL = 'https://gen.pollinations.ai';
 const DEFAULT_MAX_RETRIES = 3;
 const MAX_INT32 = 2147483647;
+declare const process: {
+  env?: Record<string, string | undefined>;
+  versions?: { node?: string };
+};
 
 // Default timeouts in milliseconds
 const DEFAULT_TIMEOUT = 300_000; // 5min for text/chat

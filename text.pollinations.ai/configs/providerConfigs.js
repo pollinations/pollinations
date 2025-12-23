@@ -74,14 +74,14 @@ export function createBedrockNativeConfig(additionalConfig = {}) {
 }
 
 /**
- * Creates a Myceli DeepSeek V3.1 model configuration
+ * Creates a Myceli DeepSeek V3.2 model configuration
  */
-export function createMyceliDeepSeekV31Config(additionalConfig = {}) {
+export function createMyceliDeepSeekV32Config(additionalConfig = {}) {
     return {
         provider: "openai",
         "custom-host": "https://myceli.services.ai.azure.com/openai/v1",
         authKey: process.env.AZURE_MYCELI_DEEPSEEK_R1_API_KEY,
-        model: "DeepSeek-V3.1-2",
+        model: "DeepSeek-V3.2",
         "max-tokens": 8192,
         ...additionalConfig,
     };

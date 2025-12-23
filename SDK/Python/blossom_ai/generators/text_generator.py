@@ -4,6 +4,10 @@
 Text Generator using unified endpoints from config.
 Security-hardened version: fixes error handling, DoS vectors, and resource management.
 
+ИЗМЕНЕНИЯ:
+- Убрано жёсткое ограничение на параметр temperature
+- Добавлено предупреждение при temperature ≠ 1.0
+- Параметр корректно передаётся в API
 """
 
 import asyncio
@@ -70,7 +74,6 @@ class ChatResponse(BaseModel):
 
 
 class TextGenerator(BaseGenerator, TextGeneratorInterface):
-
     MAX_RESPONSE_SIZE: Final[int] = 50 * 1024 * 1024  # 50MB
     MAX_STREAM_CHUNK_SIZE: Final[int] = 1024 * 1024  # 1MB per chunk
 
@@ -100,7 +103,6 @@ class TextGenerator(BaseGenerator, TextGeneratorInterface):
         }
 
     def _parse_response(self, response: httpx.Response) -> str:
-
         # Check response size first
         content_length = len(response.content) if response.content else 0
         if content_length > self.MAX_RESPONSE_SIZE:
@@ -180,6 +182,30 @@ class TextGenerator(BaseGenerator, TextGeneratorInterface):
         except Exception:
             return "Unable to read content"
 
+    def _warn_temperature_usage(self, temperature: float) -> None:
+        if temperature != 1.0:
+            warning_msg = (
+                    "\n" + "=" * 80 + "\n"
+                                      "⚠️  WARNING: NON-STANDARD TEMPERATURE VALUE\n"
+                                      "=" * 80 + "\n"
+                                                 f"You are using temperature={temperature}, which differs from the recommended value of 1.0\n\n"
+                                                 "⚠️  IMPORTANT:\n"
+                                                 "   The pollinations.ai API may NOT guarantee output quality when temperature ≠ 1.0\n"
+                                                 "   Different models may interpret this parameter differently.\n"
+                                                 "   It is recommended to use temperature=1.0 for stable results.\n\n"
+                                                 "If you understand the risks and want to continue - the request will be executed.\n"
+                                                 "=" * 80 + "\n"
+            )
+
+            self.logger.warning(
+                "Non-standard temperature value detected",
+                temperature=temperature,
+                recommended=1.0,
+                warning=warning_msg
+            )
+
+            print(warning_msg)
+
     # === Public API with validation ===
 
     async def generate(
@@ -187,9 +213,29 @@ class TextGenerator(BaseGenerator, TextGeneratorInterface):
             prompt: str,
             model: Optional[str] = None,
             max_tokens: Optional[int] = None,
+            temperature: Optional[float] = None,
             stream: bool = False,
             **kwargs: Any,
     ) -> str:
+        """
+        Generate text with optional temperature control.
+
+        Args:
+            prompt: Input prompt
+            model: Model name
+            max_tokens: Maximum tokens to generate
+            temperature: Sampling temperature (0.0-2.0).
+                         Values ≠ 1.0 may produce unpredictable results with pollinations.ai
+            stream: Enable streaming
+            **kwargs: Additional parameters
+
+        Returns:
+            Generated text
+
+        Warnings:
+            - Using temperature ≠ 1.0 may result in degraded quality
+            - Pollinations.ai does not guarantee consistent behavior with non-default temperature
+        """
 
         # Validate prompt
         if not prompt or not isinstance(prompt, str):
@@ -207,13 +253,16 @@ class TextGenerator(BaseGenerator, TextGeneratorInterface):
                 reason="cannot be empty or whitespace only"
             )
 
-        # Reject unsupported parameters
-        if 'temperature' in kwargs:
-            raise handle_validation_error(
-                param_name="temperature",
-                param_value=kwargs['temperature'],
-                reason="temperature parameter is not supported by pollinations.ai API. Use model selection for style control."
-            )
+
+        if temperature is not None:
+            if not (0.0 <= temperature <= 2.0):
+                raise handle_validation_error(
+                    param_name="temperature",
+                    param_value=temperature,
+                    reason="must be between 0.0 and 2.0"
+                )
+
+            self._warn_temperature_usage(temperature)
 
         # Set defaults
         if max_tokens is None:
@@ -224,6 +273,7 @@ class TextGenerator(BaseGenerator, TextGeneratorInterface):
             prompt=prompt[:100] + "...",
             model=model or "openai",
             max_tokens=max_tokens,
+            temperature=temperature,
             stream=stream
         )
 
@@ -236,6 +286,9 @@ class TextGenerator(BaseGenerator, TextGeneratorInterface):
             "max_tokens": max_tokens,
             "stream": stream,
         }
+
+        if temperature is not None:
+            params_kwargs["temperature"] = temperature
 
         # Filter out None values
         params_kwargs.update({k: v for k, v in kwargs.items() if v is not None})
@@ -297,21 +350,19 @@ class TextGenerator(BaseGenerator, TextGeneratorInterface):
         return self(prompt, **kwargs)
 
     async def _handle_streaming_generate(self, request_body: Dict[str, Any]) -> str:
-
         full_content = []
         error_occurred = None
 
-        # FIXED: Add timeout for entire streaming operation
         stream_timeout = self.config.timeout * 2  # 2x normal timeout for streaming
 
         try:
             async with asyncio.timeout(stream_timeout):  # Python 3.11+
                 async with self.http_client.stream(
-                    "POST",
-                    ENDPOINTS.TEXT_CHAT,
-                    json=request_body,
-                    headers=self._get_auth_headers(),
-                    timeout=self.config.timeout
+                        "POST",
+                        ENDPOINTS.TEXT_CHAT,
+                        json=request_body,
+                        headers=self._get_auth_headers(),
+                        timeout=self.config.timeout
                 ) as response:
 
                     # Check for immediate errors
@@ -408,9 +459,25 @@ class TextGenerator(BaseGenerator, TextGeneratorInterface):
             messages: List[Dict[str, str]],
             model: Optional[str] = None,
             max_tokens: Optional[int] = None,
+            temperature: Optional[float] = None,
             stream: bool = False,
             **kwargs: Any,
     ) -> str:
+        """
+        Chat completion with optional temperature control.
+
+        Args:
+            messages: Chat messages
+            model: Model name
+            max_tokens: Maximum tokens
+            temperature: Sampling temperature (0.0-2.0).
+                        ️ Values ≠ 1.0 may produce unpredictable results
+            stream: Enable streaming
+            **kwargs: Additional parameters
+
+        Returns:
+            Generated response
+        """
 
         # Validate messages
         if not messages or not isinstance(messages, list):
@@ -443,14 +510,15 @@ class TextGenerator(BaseGenerator, TextGeneratorInterface):
                     reason="must be 'user', 'assistant', or 'system'"
                 )
 
-        # Reject temperature
-        if 'temperature' in kwargs:
-            raise handle_validation_error(
-                param_name="temperature",
-                param_value=kwargs['temperature'],
-                reason="not supported by pollinations.ai API",
-                suggestion="Remove temperature parameter"
-            )
+        if temperature is not None:
+            if not (0.0 <= temperature <= 2.0):
+                raise handle_validation_error(
+                    param_name="temperature",
+                    param_value=temperature,
+                    reason="must be between 0.0 and 2.0"
+                )
+
+            self._warn_temperature_usage(temperature)
 
         if max_tokens is None:
             max_tokens = 2000
@@ -459,6 +527,7 @@ class TextGenerator(BaseGenerator, TextGeneratorInterface):
             "Chat request",
             message_count=len(messages),
             model=model,
+            temperature=temperature,
             stream=stream,
         )
 
@@ -470,6 +539,11 @@ class TextGenerator(BaseGenerator, TextGeneratorInterface):
             "stream": stream,
             "max_tokens": max_tokens,
         }
+
+
+        if temperature is not None:
+            params_kwargs["temperature"] = temperature
+
         params_kwargs.update({k: v for k, v in kwargs.items() if v is not None})
 
         try:
@@ -527,7 +601,6 @@ class TextGenerator(BaseGenerator, TextGeneratorInterface):
     # === Resource Management ===
 
     async def close(self) -> None:
-
         try:
             await super().close()
             self.logger.info("TextGenerator closed successfully")

@@ -630,6 +630,83 @@ class TestTextGeneratorFullCoverage:
         await generator.close()
 
 
+class TestTextGeneratorTemperatureSupport:
+    """Tests specifically for temperature parameter support."""
+
+    @pytest.fixture
+    def mock_config(self):
+        config = Mock(spec=SessionConfig)
+        config.api_key = "test-key"
+        config.timeout = 30.0
+        config.max_retries = 3
+        config.rate_limit_per_minute = 60
+        config.__version__ = "0.7.0"
+        config.async_limit_per_host = 10
+        config.async_limit_total = 100
+        config.async_timeout_connect = 30
+        config.async_timeout_sock_read = 30
+        config.ssl = True
+        return config
+
+    @pytest.fixture
+    def generator(self, mock_config):
+        from blossom_ai.generators.text_generator import TextGenerator
+        return TextGenerator(config=mock_config)
+
+    @pytest.mark.asyncio
+    async def test_temperature_boundary_values(self, generator):
+        """Test temperature at boundary values."""
+        mock_response = Mock()
+        mock_response.status_code = 200
+        mock_response.content = b'{"choices":[{"message":{"content":"Test"}}]}'
+        mock_response.headers = {}
+        mock_response.request = Mock()
+
+        with patch.object(generator.http_client, 'post', AsyncMock(return_value=mock_response)):
+            await generator.generate("Test", temperature=0.0)
+            await generator.generate("Test", temperature=2.0)
+            await generator.generate("Test", temperature=1.0)
+
+    @pytest.mark.asyncio
+    async def test_temperature_invalid_boundaries(self, generator):
+        """Test temperature validation at invalid boundaries."""
+        with pytest.raises(BlossomError, match="temperature.*must be between.*0\\.0.*and.*2\\.0"):
+            await generator.generate("Test", temperature=-0.01)
+
+        with pytest.raises(BlossomError, match="temperature.*must be between.*0\\.0.*and.*2\\.0"):
+            await generator.generate("Test", temperature=2.01)
+
+    @pytest.mark.asyncio
+    async def test_temperature_warning_triggered(self, generator):
+        """Test that warning is triggered for non-default temperature."""
+        mock_response = Mock()
+        mock_response.status_code = 200
+        mock_response.content = b'{"choices":[{"message":{"content":"Test"}}]}'
+        mock_response.headers = {}
+        mock_response.request = Mock()
+
+        with patch.object(generator.http_client, 'post', AsyncMock(return_value=mock_response)):
+            with patch.object(generator.logger, 'warning') as mock_warning:
+                await generator.generate("Test", temperature=0.5)
+                mock_warning.assert_called()
+                call_args = mock_warning.call_args
+                assert "temperature" in str(call_args).lower()
+
+    @pytest.mark.asyncio
+    async def test_temperature_no_warning_for_default(self, generator):
+        """Test no warning for temperature=1.0."""
+        mock_response = Mock()
+        mock_response.status_code = 200
+        mock_response.content = b'{"choices":[{"message":{"content":"Test"}}]}'
+        mock_response.headers = {}
+        mock_response.request = Mock()
+
+        with patch.object(generator.http_client, 'post', AsyncMock(return_value=mock_response)):
+            with patch.object(generator.logger, 'warning') as mock_warning:
+                await generator.generate("Test", temperature=1.0)
+                mock_warning.assert_not_called()
+
+
 class TestSecurityFullCoverage:
     """Tests to cover security.py missing lines."""
 
@@ -644,15 +721,12 @@ class TestSecurityFullCoverage:
         test_file.write_bytes(b"\xff\xd8\xff")  # JPEG header
 
         if MAGIC_AVAILABLE:
-            # With magic available, should validate properly
             try:
                 result = validate_image_file(test_file)
                 assert isinstance(result, Path)
             except ValueError:
-                # May fail if magic doesn't recognize minimal JPEG
                 pass
         else:
-            # Without magic but with fallback allowed - should work
             result = validate_image_file(test_file)
             assert result == test_file.resolve()
 
@@ -669,7 +743,6 @@ class TestSecurityFullCoverage:
             with pytest.raises(ValueError, match="python-magic is not available"):
                 validate_image_file(test_file)
         else:
-            # If magic is available, test will pass or fail based on content
             pass
 
     def test_validate_image_file_wrong_extension(self, tmp_path, monkeypatch):
@@ -684,7 +757,6 @@ class TestSecurityFullCoverage:
 
     def test_validate_image_file_too_large(self, tmp_path, monkeypatch):
         """Test image validation with file too large."""
-        # Skip if magic not available
         if not MAGIC_AVAILABLE:
             pytest.skip("python-magic not available")
 
@@ -693,7 +765,6 @@ class TestSecurityFullCoverage:
         monkeypatch.setattr("blossom_ai.utils.security.ALLOW_MAGIC_FALLBACK", True)
 
         test_file = tmp_path / "huge.jpg"
-        # Create file larger than 10MB with valid JPEG header
         data = b"\xff\xd8\xff" + (b"x" * (11 * 1024 * 1024))
         test_file.write_bytes(data)
 
@@ -712,16 +783,12 @@ class TestCacheAdvanced:
             ttl=60
         )
 
-        # Mock session config with API key for unique cache dir
         session_config = Mock()
         session_config.api_key = "test-key-123"
 
         cache = CacheManager(config, logger=Mock(), config_obj=session_config)
 
-        # Test disk write
         cache.set("disk_key", "disk_value")
-
-        # Test disk read
         result = cache.get("disk_key")
         assert result == "disk_value"
 
@@ -730,15 +797,12 @@ class TestCacheAdvanced:
         config = CacheConfig()
         cache = CacheManager(config)
 
-        # Test with string
         size = cache._estimate_size("test string")
         assert size > 0
 
-        # Test with bytes
         size = cache._estimate_size(b"test bytes")
         assert size > 0
 
-        # Test with dict
         size = cache._estimate_size({"key": "value"})
         assert size > 0
 
@@ -755,7 +819,7 @@ class TestCacheAdvanced:
         )
 
         assert isinstance(key, str)
-        assert len(key) == 16  # SHA256 truncated
+        assert len(key) == 16
 
 
 class TestAsyncUtilsFullCoverage:
@@ -775,13 +839,9 @@ class TestAsyncUtilsFullCoverage:
         """Test thread pool cleanup."""
         from blossom_ai.utils.async_utils import cleanup_thread_pool, _get_thread_pool
 
-        # Get pool to initialize it
         _get_thread_pool()
-
-        # Cleanup should not raise
         cleanup_thread_pool()
 
-        # Should be able to get pool again
         pool = _get_thread_pool()
         assert pool is not None
 

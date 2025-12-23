@@ -1,8 +1,11 @@
 # blossom_ai/generators/parameter_builder.py
 """
-Blossom AI – Parameter Builders
+Blossom AI — Parameter Builders
 Immutable parameter classes with built-in validation and typed extra_params.
 
+ИЗМЕНЕНИЯ:
+- ChatParamsV2 теперь корректно обрабатывает temperature
+- Убрана проверка temperature == 1.0 при сериализации
 """
 
 from __future__ import annotations
@@ -15,6 +18,7 @@ from typing import Any, Dict, List, Optional, Final, Union
 from typing_extensions import TypedDict, NotRequired
 
 from blossom_ai.core.errors import BlossomError, ErrorType
+
 
 # --------------------------------------------------------------------------- #
 # Constants
@@ -29,18 +33,22 @@ class _Defaults:
     IMAGE_NEGATIVE_PROMPT = ""
     TEXT_MODEL = "openai"
 
+
 class _Limits:
     """Validation limits."""
     MAX_IMAGE_PROMPT_LENGTH = 5000
     MAX_TEXT_PROMPT_LENGTH = 5000
 
+
 class _Reasoning:
     """Reasoning model constants."""
     EFFORTS = ("low", "medium", "high")
 
+
 DEFAULTS = _Defaults()
 LIMITS = _Limits()
 REASONING = _Reasoning()
+
 
 # --------------------------------------------------------------------------- #
 # TypedDict for extra_params
@@ -54,6 +62,7 @@ class ExtraParams(TypedDict, total=False):
     guidance_scale: float
     custom_field: NotRequired[str]
 
+
 # --------------------------------------------------------------------------- #
 # Low-level helpers
 # --------------------------------------------------------------------------- #
@@ -66,9 +75,11 @@ def _b64_from_path(path: Path) -> str:
     mime = mime or "application/octet-stream"
     return f"data:{mime};base64," + base64.b64encode(path.read_bytes()).decode()
 
+
 def _drop_defaults(data: Dict[str, Any], defaults: Dict[str, Any]) -> Dict[str, Any]:
     """Return dict without keys whose values == defaults."""
     return {k: v for k, v in data.items() if k not in defaults or v != defaults[k]}
+
 
 def _bool_to_str(value: Any) -> str:
     """Convert bool to lowercase string for URL params."""
@@ -76,8 +87,9 @@ def _bool_to_str(value: Any) -> str:
         return "true" if value else "false"
     return value
 
+
 # --------------------------------------------------------------------------- #
-# Validator namespace – single source of truth
+# Validator namespace — single source of truth
 # --------------------------------------------------------------------------- #
 
 class _Validators:
@@ -126,13 +138,14 @@ class _Validators:
     def reasoning_effort(effort: str) -> str:
         return _Validators.choice(effort, REASONING.EFFORTS, "reasoning effort")
 
+
 # --------------------------------------------------------------------------- #
 # Base frozen parameter block
 # --------------------------------------------------------------------------- #
 
 @dataclass(frozen=True, slots=True)
 class BaseParams:
-    """Immutable base – safe repr, no accidental mutation."""
+    """Immutable base — safe repr, no accidental mutation."""
 
     def to_dict(self, *, include_none: bool = False, include_defaults: bool = False) -> Dict[str, Any]:
         raw = asdict(self)
@@ -150,6 +163,7 @@ class BaseParams:
         klass = self.__class__.__name__
         public = self.to_dict()
         return f"{klass}({', '.join(f'{k}=*' for k in public)})"
+
 
 # --------------------------------------------------------------------------- #
 # Image
@@ -206,7 +220,7 @@ class ImageParamsV2(BaseParams):
 
     def to_query(self) -> str:
         from urllib.parse import urlencode
-        params = self.to_dict(include_defaults=True)  # FIX: Всегда True!
+        params = self.to_dict(include_defaults=True)
 
         # Convert bool to lowercase strings for URL params
         params = {k: _bool_to_str(v) for k, v in params.items()}
@@ -222,7 +236,7 @@ class ImageParamsV2(BaseParams):
 class ChatParamsV2(BaseParams):
     model: str = DEFAULTS.TEXT_MODEL
     messages: List[Dict[str, Any]] = field(default_factory=list)
-    temperature: Optional[float] = None
+    temperature: Optional[float] = None  # ✅ РАЗРЕШЁН, дефолт None
     max_tokens: Optional[int] = None
     stream: bool = False
     json_mode: bool = False
@@ -238,9 +252,11 @@ class ChatParamsV2(BaseParams):
     extra_params: ExtraParams = field(default_factory=dict)
 
     def __post_init__(self) -> None:
-        # Apply defaults for None values
-        if self.temperature is None:
-            object.__setattr__(self, 'temperature', 1.0)
+        # ✅ ВАЛИДАЦИЯ TEMPERATURE ЕСЛИ УКАЗАН
+        if self.temperature is not None:
+            _Validators.range_check(self.temperature, 0.0, 2.0, "temperature")
+
+        # Устанавливаем дефолты для других параметров
         if self.top_p is None:
             object.__setattr__(self, 'top_p', 1.0)
         if self.frequency_penalty is None:
@@ -248,8 +264,8 @@ class ChatParamsV2(BaseParams):
         if self.presence_penalty is None:
             object.__setattr__(self, 'presence_penalty', 0.0)
 
-        _Validators.range_check(self.temperature, 0.0, 2.0, "temperature")
         _Validators.range_check(self.top_p, 0.0, 1.0, "top_p")
+
         if self.reasoning_effort is not None:
             _Validators.reasoning_effort(self.reasoning_effort)
         if self.max_tokens is not None:
@@ -263,8 +279,8 @@ class ChatParamsV2(BaseParams):
             "messages": self.messages,
         }
 
-        # Only add temperature if it's not 1.0 (API default)
-        if self.temperature is not None and self.temperature != 1.0:
+        # ✅ ДОБАВЛЯЕМ TEMPERATURE ЕСЛИ УКАЗАН (любое значение!)
+        if self.temperature is not None:
             body["temperature"] = self.temperature
 
         if self.max_tokens is not None and self.max_tokens > 0:
@@ -291,7 +307,7 @@ class ChatParamsV2(BaseParams):
     def _default_map(self) -> Dict[str, Any]:
         return {
             "model": DEFAULTS.TEXT_MODEL,
-            "temperature": 1.0,
+            "temperature": None,  # ✅ None по умолчанию
             "frequency_penalty": 0.0,
             "presence_penalty": 0.0,
             "top_p": 1.0,
@@ -300,6 +316,7 @@ class ChatParamsV2(BaseParams):
             "json_mode": False,
             "extra_params": {},
         }
+
 
 # --------------------------------------------------------------------------- #
 # Message helpers
@@ -319,13 +336,13 @@ class MessageBuilder:
 
     @staticmethod
     def image(
-        role: str,
-        text: str,
-        *,
-        image_url: Optional[str] = None,
-        image_path: Optional[Path | str] = None,
-        image_data: Optional[bytes] = None,
-        detail: str = "auto",
+            role: str,
+            text: str,
+            *,
+            image_url: Optional[str] = None,
+            image_path: Optional[Path | str] = None,
+            image_data: Optional[bytes] = None,
+            detail: str = "auto",
     ) -> Dict[str, Any]:
         """Create a message with an image."""
         if not (image_url or image_path or image_data):
@@ -340,6 +357,7 @@ class MessageBuilder:
             uri = f"data:image/jpeg;base64,{base64.b64encode(image_data).decode()}"
             content.append({"type": "image_url", "image_url": {"url": uri, "detail": detail}})
         return {"role": role, "content": content}
+
 
 # --------------------------------------------------------------------------- #
 # Public alias for backward compatibility

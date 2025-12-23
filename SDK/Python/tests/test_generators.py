@@ -1,4 +1,4 @@
-"""Tests for generator modules."""
+"""Tests for generator modules - UPDATED for temperature support."""
 
 import pytest
 import asyncio
@@ -25,6 +25,11 @@ class TestTextGenerator:
         config.max_retries = 3
         config.rate_limit_per_minute = 60
         config.__version__ = "0.6.0"
+        config.async_limit_per_host = 10
+        config.async_limit_total = 100
+        config.async_timeout_connect = 30
+        config.async_timeout_sock_read = 30
+        config.ssl = True
         return config
 
     @pytest.fixture
@@ -72,7 +77,7 @@ class TestTextGenerator:
         assert generator.rate_limiter is not None
 
     @pytest.mark.asyncio
-    @pytest.mark.timeout(5)  # 5 second timeout
+    @pytest.mark.timeout(5)
     async def test_generate_success(self, generator):
         """Test successful text generation."""
         mock_response = Mock(spec=httpx.Response)
@@ -102,10 +107,75 @@ class TestTextGenerator:
             await generator.generate("   ")
 
     @pytest.mark.asyncio
-    async def test_generate_with_temperature_raises_error(self, generator):
-        """Test generation with temperature parameter raises error."""
-        with pytest.raises(BlossomError, match="temperature parameter is not supported"):
-            await generator.generate("Test", temperature=0.7)
+    async def test_generate_with_temperature_works(self, generator):
+        """Test generation with a temperature parameter WORKS (no error)."""
+        mock_response = Mock(spec=httpx.Response)
+        mock_response.status_code = 200
+        mock_response.content = b'{"choices":[{"message":{"content":"Response with temp"}}]}'
+        mock_response.raise_for_status = Mock()
+        mock_response.headers = {}
+        mock_response.request = Mock()
+
+        generator.http_client.post = AsyncMock(return_value=mock_response)
+        generator.rate_limiter.acquire_with_wait = AsyncMock(return_value=True)
+
+        result = await generator.generate("Test", temperature=0.7)
+        assert result == "Response with temp"
+
+        call_args = generator.http_client.post.call_args
+        assert call_args is not None
+
+        args, kwargs = call_args
+        assert 'temperature' in str(kwargs) or 'json_data' in kwargs
+
+    @pytest.mark.asyncio
+    async def test_generate_with_non_default_temperature_warns(self, generator, capsys):
+        """Test that non-default temperature triggers warning."""
+        mock_response = Mock(spec=httpx.Response)
+        mock_response.status_code = 200
+        mock_response.content = b'{"choices":[{"message":{"content":"Response"}}]}'
+        mock_response.raise_for_status = Mock()
+        mock_response.headers = {}
+        mock_response.request = Mock()
+
+        generator.http_client.post = AsyncMock(return_value=mock_response)
+        generator.rate_limiter.acquire_with_wait = AsyncMock(return_value=True)
+
+        await generator.generate("Test", temperature=0.5)
+
+        generator.logger.warning.assert_called()
+        warning_call = generator.logger.warning.call_args
+        assert warning_call is not None
+        assert "temperature" in str(warning_call).lower()
+
+    @pytest.mark.asyncio
+    async def test_generate_with_default_temperature_no_warn(self, generator):
+        """Test that temperature=1.0 does NOT trigger warning."""
+        mock_response = Mock(spec=httpx.Response)
+        mock_response.status_code = 200
+        mock_response.content = b'{"choices":[{"message":{"content":"Response"}}]}'
+        mock_response.raise_for_status = Mock()
+        mock_response.headers = {}
+        mock_response.request = Mock()
+
+        generator.http_client.post = AsyncMock(return_value=mock_response)
+        generator.rate_limiter.acquire_with_wait = AsyncMock(return_value=True)
+
+        generator.logger.warning.reset_mock()
+
+        await generator.generate("Test", temperature=1.0)
+
+        generator.logger.warning.assert_not_called()
+
+    @pytest.mark.asyncio
+    async def test_generate_with_invalid_temperature_range(self, generator):
+        """Test that temperature outside [0.0, 2.0] raises error."""
+
+        with pytest.raises(BlossomError, match="temperature.*must be between.*0\\.0.*and.*2\\.0"):
+            await generator.generate("Test", temperature=-0.1)
+
+        with pytest.raises(BlossomError, match="temperature.*must be between.*0\\.0.*and.*2\\.0"):
+            await generator.generate("Test", temperature=2.1)
 
     @pytest.mark.asyncio
     async def test_generate_empty_response(self, generator):
@@ -159,3 +229,26 @@ class TestTextGenerator:
         """Test chat with empty messages raises error."""
         with pytest.raises(BlossomError, match="must be a non-empty list"):
             await generator.chat([])
+
+    @pytest.mark.asyncio
+    async def test_chat_with_temperature(self, generator):
+        """Test chat with temperature parameter works."""
+        messages = [{"role": "user", "content": "Hello"}]
+
+        mock_response = Mock(spec=httpx.Response)
+        mock_response.status_code = 200
+        mock_response.content = b'{"choices":[{"message":{"content":"Response"}}]}'
+        mock_response.raise_for_status = Mock()
+        mock_response.headers = {}
+        mock_response.request = Mock()
+
+        generator.http_client.post = AsyncMock(return_value=mock_response)
+
+        result = await generator.chat(messages, temperature=0.8)
+        assert result == "Response"
+
+        call_args = generator.http_client.post.call_args
+        assert call_args is not None
+
+        args, kwargs = call_args
+        assert 'temperature' in str(kwargs) or 'json_data' in kwargs

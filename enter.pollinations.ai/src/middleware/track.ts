@@ -123,18 +123,6 @@ export const track = (eventType: EventType) =>
             apiKeyName: c.var.auth.apiKey?.name,
         } satisfies UserData;
 
-        const balanceTracking = {
-            selectedMeterId: c.var.polar.balanceCheckResult?.selectedMeterId,
-            selectedMeterSlug:
-                c.var.polar.balanceCheckResult?.selectedMeterSlug,
-            balances: Object.fromEntries(
-                c.var.polar.balanceCheckResult?.meters.map((meter) => [
-                    meter.metadata.slug,
-                    meter.balance,
-                ]) || [],
-            ),
-        } satisfies BalanceData;
-
         let responseOverride = null;
 
         c.set("track", {
@@ -164,7 +152,11 @@ export const track = (eventType: EventType) =>
                     environment: c.env.ENVIRONMENT,
                     eventType,
                     userTracking,
-                    balanceTracking,
+                    balanceTracking: {
+                        selectedMeterId: undefined,
+                        selectedMeterSlug: undefined,
+                        balances: {},
+                    },
                     requestTracking,
                     estimatedPrice,
                 });
@@ -200,6 +192,20 @@ export const track = (eventType: EventType) =>
                 await c.var.frontendKeyRateLimit?.consumePollen(
                     responseTracking.price?.totalPrice || 0,
                 );
+
+                // Capture balance tracking AFTER next() so balanceCheckResult is set
+                const balanceTracking = {
+                    selectedMeterId:
+                        c.var.polar.balanceCheckResult?.selectedMeterId,
+                    selectedMeterSlug:
+                        c.var.polar.balanceCheckResult?.selectedMeterSlug,
+                    balances: Object.fromEntries(
+                        c.var.polar.balanceCheckResult?.meters.map((meter) => [
+                            meter.metadata.slug,
+                            meter.balance,
+                        ]) || [],
+                    ),
+                } satisfies BalanceData;
 
                 const finalEvent = createTrackingEvent({
                     id: estimateEventId || generateRandomId(),

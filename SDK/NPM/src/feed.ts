@@ -33,7 +33,7 @@ export function subscribeToImageFeed(
 
 
 if (typeof EventSource === 'undefined') {
-    throw new Error('Feed subscriptions are only available in browser environments. Use generateImage() or generateText() instead.');
+    throw new Error('subscribeToImageFeed() requires EventSource (browser only). In Node.js, use imageFeed() instead.');
   }
   const params = new URLSearchParams();
   if (options?.password) {
@@ -94,7 +94,7 @@ export function subscribeToTextFeed(
 ): FeedSubscription {
 
     if (typeof EventSource === 'undefined') {
-    throw new Error('Feed subscriptions are only available in browser environments. Use generateImage() or generateText() instead.');
+    throw new Error('subscribeToTextFeed() requires EventSource (browser only). In Node.js, use textFeed() instead.');
   }
 
   const params = new URLSearchParams();

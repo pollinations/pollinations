@@ -152,11 +152,6 @@ export const track = (eventType: EventType) =>
                     environment: c.env.ENVIRONMENT,
                     eventType,
                     userTracking,
-                    balanceTracking: {
-                        selectedMeterId: undefined,
-                        selectedMeterSlug: undefined,
-                        balances: {},
-                    },
                     requestTracking,
                     estimatedPrice,
                 });
@@ -405,7 +400,6 @@ type EstimateEventInput = {
     environment: string;
     eventType: EventType;
     userTracking: UserData;
-    balanceTracking: BalanceData;
     requestTracking: RequestTrackingData;
     estimatedPrice: number;
 };
@@ -418,7 +412,6 @@ function createEstimateEvent({
     environment,
     eventType,
     userTracking,
-    balanceTracking,
     requestTracking,
     estimatedPrice,
 }: EstimateEventInput): InsertGenerationEvent {
@@ -439,8 +432,6 @@ function createEstimateEvent({
         modelProviderUsed: requestTracking.modelProvider,
 
         isBilledUsage: false,
-        ...balanceTracking,
-
         estimatedPrice,
 
         ...priceToEventParams(requestTracking.modelPriceDefinition),

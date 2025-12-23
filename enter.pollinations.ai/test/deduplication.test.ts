@@ -27,7 +27,7 @@ async function sendTestOpenAIRequest({
             "cf-connecting-ip": clientIp,
         },
         body: JSON.stringify({
-            model: model || "gemini-fast",
+            model: model || "openai",
             messages: [{ role: "user", content: message || "Hello?" }],
         }),
     });
@@ -46,7 +46,7 @@ test(
         const request1Promise = sendTestOpenAIRequest({
             apiKey,
             clientIp: testIp,
-            model: "gemini-fast",
+            model: "openai",
             message: testMessage,
         });
 
@@ -57,7 +57,7 @@ test(
         const request2Promise = sendTestOpenAIRequest({
             apiKey,
             clientIp: testIp,
-            model: "gemini-fast",
+            model: "openai",
             message: testMessage,
         });
 
@@ -112,13 +112,13 @@ test(
             sendTestOpenAIRequest({
                 apiKey,
                 clientIp: testIp,
-                model: "gemini-fast",
+                model: "openai",
                 message: `Different message 1 - ${Date.now()}`,
             }),
             sendTestOpenAIRequest({
                 apiKey,
                 clientIp: testIp,
-                model: "gemini-fast",
+                model: "openai",
                 message: `Different message 2 - ${Date.now()}`,
             }),
         ]);
@@ -154,7 +154,7 @@ test(
         const response1 = await sendTestOpenAIRequest({
             apiKey,
             clientIp: testIp,
-            model: "gemini-fast",
+            model: "openai",
             message: testMessage,
         });
 
@@ -165,7 +165,7 @@ test(
         const response2 = await sendTestOpenAIRequest({
             apiKey,
             clientIp: testIp,
-            model: "gemini-fast",
+            model: "openai",
             message: testMessage,
         });
 

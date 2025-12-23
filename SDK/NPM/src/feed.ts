@@ -30,11 +30,10 @@ export function subscribeToImageFeed(
     onOpen?: () => void;
   }
 ): FeedSubscription {
-
-
-if (typeof EventSource === 'undefined') {
+  if (typeof EventSource === 'undefined') {
     throw new Error('subscribeToImageFeed() requires EventSource (browser only). In Node.js, use imageFeed() instead.');
   }
+
   const params = new URLSearchParams();
   if (options?.password) {
     params.set('password', options.password);
@@ -92,8 +91,7 @@ export function subscribeToTextFeed(
     onOpen?: () => void;
   }
 ): FeedSubscription {
-
-    if (typeof EventSource === 'undefined') {
+  if (typeof EventSource === 'undefined') {
     throw new Error('subscribeToTextFeed() requires EventSource (browser only). In Node.js, use textFeed() instead.');
   }
 

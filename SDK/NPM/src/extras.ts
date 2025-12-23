@@ -12,6 +12,12 @@ import type {
   Message,
 } from './types.js';
 import { Pollinations } from './client.js';
+declare const Buffer: {
+  from(data: ArrayBuffer | Uint8Array | string, encoding?: string): { toString(encoding?: string): string };
+};
+declare const process: {
+  versions?: { node?: string };
+};
 
 // ============================================================================
 // Extended Response Types (with extra goodies)
@@ -56,12 +62,20 @@ export interface ChatResponseExt extends ChatResponse {
 }
 
 // ============================================================================
+// Progress Status Type
+// ============================================================================
+
+/** Typed progress status */
+export type ProgressStatus = 'starting' | 'generating' | 'complete';
+
+// ============================================================================
 // Helper Functions
 // ============================================================================
 
 /** Convert ArrayBuffer to base64 */
 function arrayBufferToBase64(buffer: ArrayBuffer): string {
-  if (typeof Buffer !== 'undefined') {
+  // Check for Node.js Buffer more reliably
+  if (typeof Buffer !== 'undefined' && typeof Buffer.from === 'function') {
     // Node.js
     return Buffer.from(buffer).toString('base64');
   } else {
@@ -75,12 +89,28 @@ function arrayBufferToBase64(buffer: ArrayBuffer): string {
   }
 }
 
+/** Check if running in Node.js environment */
+function isNodeEnvironment(): boolean {
+  try {
+    // More reliable check for Node.js: verify process object structure
+    return (
+      typeof process !== 'undefined' &&
+      typeof process.versions === 'object' &&
+      typeof process.versions.node === 'string'
+    );
+  } catch {
+    return false;
+  }
+}
+
 /** Save buffer to file (Node.js only) */
 async function saveBufferToFile(buffer: ArrayBuffer, path: string): Promise<void> {
-  // Check if we're in Node.js
-  if (typeof globalThis.process === 'undefined' || !globalThis.process.versions?.node) {
-    throw new Error('saveToFile() is only available in Node.js. In browsers, use toDataURL() or toBase64() instead.');
+  if (!isNodeEnvironment()) {
+    throw new Error(
+      'saveToFile() is only available in Node.js. In browsers, use toDataURL() or toBase64() instead.'
+    );
   }
+
   // Dynamic import for Node.js fs - wrapped to avoid bundler issues
   const fsModule = 'fs';
   const fs = await import(/* @vite-ignore */ fsModule).then(m => m.promises);
@@ -126,37 +156,101 @@ export function wrapChatResponse(response: ChatResponse): ChatResponseExt {
 }
 
 // ============================================================================
-// Batch Generation (for different prompts)
+// Batch Generation (for different prompts) - WITH ERROR HANDLING
 // ============================================================================
 
-/** Generate multiple images from different prompts in parallel */
+/** Result of a batch generation attempt */
+export interface BatchResult<T> {
+  success: boolean;
+  prompt?: string;
+  result?: T;
+  error?: Error;
+}
+
+/**
+ * Generate multiple images from different prompts in parallel
+ * Handles partial failures gracefully with detailed error info
+ *
+ * @example
+ * ```ts
+ * const results = await generateImages(['cat in space', 'dog underwater']);
+ * results.forEach(r => {
+ *   if (r.success) {
+ *     console.log(`Generated: ${r.prompt}`);
+ *   } else {
+ *     console.error(`Failed: ${r.prompt}`, r.error);
+ *   }
+ * });
+ * ```
+ */
 export async function generateImages(
   prompts: string[],
   options?: ImageGenerateOptions,
   client?: Pollinations
-): Promise<ImageResponseExt[]> {
+): Promise<BatchResult<ImageResponseExt>[]> {
   const c = client || new Pollinations();
-  const results = await Promise.all(
-    prompts.map(prompt => c.image(prompt, options))
+
+  const results = await Promise.allSettled(
+    prompts.map(async prompt => ({
+      prompt,
+      result: wrapImageResponse(await c.image(prompt, options)),
+    }))
   );
-  return results.map(wrapImageResponse);
+
+  return results.map((settlement, index) => {
+    if (settlement.status === 'fulfilled') {
+      return {
+        success: true,
+        prompt: settlement.value.prompt,
+        result: settlement.value.result,
+      };
+    } else {
+      return {
+        success: false,
+        prompt: prompts[index],
+        error: settlement.reason instanceof Error ? settlement.reason : new Error(String(settlement.reason)),
+      };
+    }
+  });
 }
 
-/** Generate multiple videos from different prompts in parallel */
+/**
+ * Generate multiple videos from different prompts in parallel
+ * Handles partial failures gracefully with detailed error info
+ */
 export async function generateVideos(
   prompts: string[],
   options?: VideoGenerateOptions,
   client?: Pollinations
-): Promise<VideoResponseExt[]> {
+): Promise<BatchResult<VideoResponseExt>[]> {
   const c = client || new Pollinations();
-  const results = await Promise.all(
-    prompts.map(prompt => c.video(prompt, options))
+
+  const results = await Promise.allSettled(
+    prompts.map(async prompt => ({
+      prompt,
+      result: wrapVideoResponse(await c.video(prompt, options)),
+    }))
   );
-  return results.map(wrapVideoResponse);
+
+  return results.map((settlement, index) => {
+    if (settlement.status === 'fulfilled') {
+      return {
+        success: true,
+        prompt: settlement.value.prompt,
+        result: settlement.value.result,
+      };
+    } else {
+      return {
+        success: false,
+        prompt: prompts[index],
+        error: settlement.reason instanceof Error ? settlement.reason : new Error(String(settlement.reason)),
+      };
+    }
+  });
 }
 
 // ============================================================================
-// Conversation Helper
+// Conversation Helper - SIMPLIFIED & IMPROVED
 // ============================================================================
 
 /** Conversation state manager */
@@ -167,7 +261,7 @@ export class Conversation {
 
   constructor(options: ChatOptions = {}, client?: Pollinations) {
     this.client = client || new Pollinations();
-    this.options = options;
+    this.options = { ...options }; // Deep copy options
   }
 
   /** Add a system message */
@@ -200,30 +294,47 @@ export class Conversation {
     return this;
   }
 
-  /** Send a message and get a response */
+  /**
+   * Send a message (user or tool messages) and get an assistant response
+   * Automatically adds user message to history if content is provided
+   *
+   * @example
+   * ```ts
+   * const conv = new Conversation();
+   * const response = await conv.say('Hello');
+   * const followup = await conv.say('Explain that more');
+   * ```
+   */
   async say(content: string): Promise<ChatResponseExt> {
     this.messages.push({ role: 'user', content });
+    return this._sendAndAddResponse();
+  }
 
+  /**
+   * Send current messages without adding a new user message
+   * Useful after calling tool() or addMessage() with pre-composed messages
+   *
+   * @example
+   * ```ts
+   * const conv = new Conversation();
+   * conv.user('Calculate 2+2');
+   * const response = await conv.send();
+   * ```
+   */
+  async send(): Promise<ChatResponseExt> {
+    return this._sendAndAddResponse();
+  }
+
+  /** Internal: send and add response to history */
+  private async _sendAndAddResponse(): Promise<ChatResponseExt> {
     const response = await this.client.chat(this.messages, this.options);
     const wrapped = wrapChatResponse(response);
 
     // Add full assistant message to history (including tool_calls if present)
-    const assistantMessage: Message & { tool_calls?: unknown } = { role: 'assistant', content: wrapped.text };
-    if (response.choices[0]?.message?.tool_calls) {
-      assistantMessage.tool_calls = response.choices[0].message.tool_calls;
-    }
-    this.messages.push(assistantMessage as Message);
-
-    return wrapped;
-  }
-
-  /** Send current messages without adding a new user message (useful after adding tool results) */
-  async send(): Promise<ChatResponseExt> {
-    const response = await this.client.chat(this.messages, this.options);
-    const wrapped = wrapChatResponse(response);
-
-    // Add full assistant message to history
-    const assistantMessage: Message & { tool_calls?: unknown } = { role: 'assistant', content: wrapped.text };
+    const assistantMessage: Message & { tool_calls?: unknown } = {
+      role: 'assistant',
+      content: wrapped.text,
+    };
     if (response.choices[0]?.message?.tool_calls) {
       assistantMessage.tool_calls = response.choices[0].message.tool_calls;
     }
@@ -234,7 +345,7 @@ export class Conversation {
 
   /** Get the conversation history */
   getHistory(): Message[] {
-    return [...this.messages];
+    return structuredClone(this.messages); // Deep copy for immutability
   }
 
   /** Clear the conversation history */
@@ -243,11 +354,16 @@ export class Conversation {
     return this;
   }
 
-  /** Fork the conversation (create a copy) */
+  /** Fork the conversation (create an independent copy) */
   fork(): Conversation {
     const forked = new Conversation(this.options, this.client);
-    forked.messages = [...this.messages];
+    forked.messages = structuredClone(this.messages); // Deep copy
     return forked;
+  }
+
+  /** Get message count */
+  get length(): number {
+    return this.messages.length;
   }
 }
 
@@ -271,9 +387,8 @@ export async function showImage(
   img.alt = prompt;
   img.src = await c.imageUrl(prompt, options);
 
-  const target = typeof container === 'string'
-    ? document.querySelector(container)
-    : container;
+  const target =
+    typeof container === 'string' ? document.querySelector(container) : container;
 
   if (!target) {
     throw new Error(`Container not found: ${container}`);
@@ -301,9 +416,8 @@ export function displayImage(
     img.src = `data:${response.contentType};base64,${arrayBufferToBase64(response.buffer)}`;
   }
 
-  const target = typeof container === 'string'
-    ? document.querySelector(container)
-    : container;
+  const target =
+    typeof container === 'string' ? document.querySelector(container) : container;
 
   if (!target) {
     throw new Error(`Container not found: ${container}`);
@@ -314,28 +428,40 @@ export function displayImage(
 }
 
 // ============================================================================
-// Token Estimation
+// Token Estimation (with disclaimers)
 // ============================================================================
 
 /**
- * Rough token estimation (GPT-style tokenization)
- * ~4 chars per token for English, ~1.5 for code
+ * Rough token estimation for planning purposes only.
+ * This is a very approximate estimate (~4 chars per token for English text).
+ *
+ * **IMPORTANT**: Actual tokenization varies significantly by model and language.
+ * Use this only for rough capacity planning, not for precise billing calculations.
+ * For production billing, use actual token counts from API responses.
+ *
+ * @deprecated Consider using the `tokens` property on ChatResponseExt for actual counts
  */
 export function estimateTokens(text: string): number {
-  // Simple estimation: ~4 characters per token for English
-  // This is a rough approximation - actual tokenization varies by model
+  // Rough heuristic: ~4 characters per token for English
+  // Highly inaccurate for code, non-Latin scripts, etc.
   return Math.ceil(text.length / 4);
 }
 
-/** Estimate tokens for a message array */
+/**
+ * Estimate tokens for a message array (rough approximation)
+ *
+ * **IMPORTANT**: This is a very rough estimate. Actual token counts depend on model,
+ * formatting, and tokenization algorithm. Use only for planning.
+ *
+ * @deprecated Use actual token counts from ChatResponseExt.tokens instead
+ */
 export function estimateMessageTokens(messages: Message[]): {
   estimated: number;
   breakdown: { role: string; tokens: number }[];
 } {
   const breakdown = messages.map(msg => {
-    const content = typeof msg.content === 'string'
-      ? msg.content
-      : JSON.stringify(msg.content);
+    const content =
+      typeof msg.content === 'string' ? msg.content : JSON.stringify(msg.content);
     return {
       role: msg.role,
       tokens: estimateTokens(content) + 4, // +4 for role/formatting overhead
@@ -349,26 +475,39 @@ export function estimateMessageTokens(messages: Message[]): {
 }
 
 // ============================================================================
-// Utility: Wait for generation with progress
+// Utility: Image Generation with Progress Tracking
 // ============================================================================
 
-/** Options for awaited generation */
+/** Options for generation with progress tracking */
 export interface AwaitOptions {
   /** Polling interval in ms (default: 1000) */
   pollInterval?: number;
   /** Timeout in ms (default: 300000 = 5 min) */
   timeout?: number;
-  /** Progress callback */
-  onProgress?: (status: { elapsed: number; status: string }) => void;
+  /** Progress callback - guaranteed to fire on complete/error */
+  onProgress?: (status: { elapsed: number; status: ProgressStatus }) => void;
 }
 
-/** Generate image with progress tracking */
+/**
+ * Generate image with typed progress tracking
+ * Progress callback is guaranteed to be cleaned up even on errors
+ *
+ * @example
+ * ```ts
+ * const img = await generateImageWithProgress('A cat', {
+ *   onProgress: (status) => {
+ *     if (status.status === 'complete') console.log('Done!');
+ *   }
+ * });
+ * ```
+ */
 export async function generateImageWithProgress(
   prompt: string,
   options?: ImageGenerateOptions & AwaitOptions,
   client?: Pollinations
 ): Promise<ImageResponseExt> {
-  const { onProgress, pollInterval = 1000, timeout = 300000, ...imageOptions } = options || {};
+  const { onProgress, pollInterval = 1000, timeout = 300000, ...imageOptions } =
+    options || {};
   const c = client || new Pollinations();
   const startTime = Date.now();
 
@@ -387,7 +526,10 @@ export async function generateImageWithProgress(
     const result = await Promise.race([
       c.image(prompt, imageOptions),
       new Promise<never>((_, reject) =>
-        setTimeout(() => reject(new Error('Generation timeout')), timeout)
+        setTimeout(
+          () => reject(new Error(`Generation timeout after ${timeout}ms`)),
+          timeout
+        )
       ),
     ]);
 
@@ -397,7 +539,8 @@ export async function generateImageWithProgress(
 
     return wrapImageResponse(result);
   } finally {
-    if (progressInterval) {
+    // Always clear interval - even on errors
+    if (progressInterval !== null) {
       clearInterval(progressInterval);
     }
   }

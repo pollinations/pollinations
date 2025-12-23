@@ -1,12 +1,3 @@
-// ============================================================================
-// Pollinations SDK Types
-// Complete TypeScript definitions for the Pollinations AI API
-// ============================================================================
-
-// ============================================================================
-// Configuration
-// ============================================================================
-
 export interface PollinationsConfig {
   /** API key for authentication (get one at https://enter.pollinations.ai) */
   apiKey?: string;

@@ -1,8 +1,3 @@
-/**
- * Real-time feed subscriptions for Pollinations
- * Uses Server-Sent Events (SSE) to stream live generation events
- */
-
 import type { ImageFeedEvent, TextFeedEvent, FeedOptions } from './types.js';
 
 const IMAGE_FEED_URL = 'https://image.pollinations.ai/feed';
@@ -101,7 +96,7 @@ export function subscribeToTextFeed(
     if (typeof EventSource === 'undefined') {
     throw new Error('Feed subscriptions are only available in browser environments. Use generateImage() or generateText() instead.');
   }
-  
+
   const params = new URLSearchParams();
   if (options?.password) {
     params.set('password', options.password);

@@ -1,7 +1,3 @@
-/**
- * Extra utilities to make life easier
- */
-
 import type {
   ImageGenerateOptions,
   ImageResponse,
@@ -19,11 +15,6 @@ declare const process: {
   versions?: { node?: string };
 };
 
-// ============================================================================
-// Extended Response Types (with extra goodies)
-// ============================================================================
-
-/** Extended image response with helper methods */
 export interface ImageResponseExt extends ImageResponse {
   /** Save image to file (Node.js only) */
   saveToFile: (path: string) => Promise<void>;

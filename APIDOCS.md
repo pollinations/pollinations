@@ -2,11 +2,9 @@
 
 > **⚠️ Legacy Documentation Notice**
 >
-> This documentation refers to our legacy endpoints (`image.pollinations.ai`, `text.pollinations.ai`). We recommend using our new unified API at **https://gen.pollinations.ai** with the **https://enter.pollinations.ai** service.
+> This documentation has been updated to use our new unified API at **https://gen.pollinations.ai**. The legacy endpoints (`image.pollinations.ai`, `text.pollinations.ai`) will be deprecated in the future.
 >
 > 📚 **[View Latest API Documentation](https://enter.pollinations.ai/api/docs)**
->
-> The legacy endpoints will be deprecated in the future.
 
 ## The World's Most Accessible Open GenAI Platform
 
@@ -16,12 +14,12 @@ Think of pollinations.ai as a digital garden where you can plant a "seed" (your 
 ## Quick Start
 Ready to dive in? Here are some live examples you can try right in your browser to see what pollinations.ai can do:
 
-- 🖼️ **Create an Image**: Generate a logo for pollinations.ai [pollinations_logo](https://image.pollinations.ai/prompt/pollinations_logo)
-- 💬 **Generate Text**: Learn why donating to pollinations.ai is a great idea [why_you_should_donate](https://text.pollinations.ai/why_you_should_donate)
-- 🔍 **Search the Web**: Find the latest news about pollinations.ai [latest_news](https://text.pollinations.ai/latest_news?model=gemini-search)
-- 🎙️ **Create Audio**: Hear a fun, short hypnosis audio encouraging a donation (just for laughs!) [hypnosis_audio](https://text.pollinations.ai/hypnosis_audio?model=openai-audio&voice=nova)
+- 🖼️ **Create an Image**: Generate a logo for pollinations.ai [pollinations_logo](https://gen.pollinations.ai/image/pollinations_logo)
+- 💬 **Generate Text**: Learn why donating to pollinations.ai is a great idea [why_you_should_donate](https://gen.pollinations.ai/text/why_you_should_donate)
+- 🔍 **Search the Web**: Find the latest news about pollinations.ai [latest_news](https://gen.pollinations.ai/text/latest_news?model=gemini-search)
+- 🎙️ **Create Audio**: Hear a fun, short hypnosis audio encouraging a donation (just for laughs!) [hypnosis_audio](https://gen.pollinations.ai/text/hypnosis_audio?model=openai-audio&voice=nova)
 
-**How to Try These**: Just click the links above, and you’ll see the results instantly in your browser. No coding needed yet!
+**How to Try These**: Just click the links above, and you'll see the results instantly in your browser. No coding needed yet!
 
 ## Table of Contents
 - [Image Generation API](#image-generation-api)
@@ -37,14 +35,14 @@ Ready to dive in? Here are some live examples you can try right in your browser 
 - [Support & Resources](#support--resources)
 
 ## Image Generation API
-The Image Generation API lets you turn words into pictures. Imagine describing a scene to an artist, and they paint it for you—that’s what this API does, but with AI!
+The Image Generation API lets you turn words into pictures. Imagine describing a scene to an artist, and they paint it for you—that's what this API does, but with AI!
 
 ### Generate an Image
-**Endpoint**: `GET https://image.pollinations.ai/prompt/{prompt}`  
+**Endpoint**: `GET https://gen.pollinations.ai/image/{prompt}`  
 This endpoint takes a text description (called a "prompt") and creates an image based on it. For example, you could say "a cat wearing sunglasses," and the API will generate a picture of that.
 
 #### Parameters
-Here’s what you can customize when generating an image:
+Here's what you can customize when generating an image:
 
 | Parameter | Type   | Description                                      | Default | Example                     |
 |-----------|--------|--------------------------------------------------|---------|-----------------------------|
@@ -64,28 +62,28 @@ Here’s what you can customize when generating an image:
 ##### Simple Image (Command Line)
 Want a picture of a sunset? Use this command in your terminal:
 ```bash
-curl -o sunset.jpg "https://image.pollinations.ai/prompt/beautiful%20sunset%20over%20ocean"
+curl -o sunset.jpg "https://gen.pollinations.ai/image/beautiful%20sunset%20over%20ocean"
 ```
 
-**What’s Happening?**
+**What's Happening?**
 - `curl` is a tool to make web requests.
 - `-o sunset.jpg` saves the image as a file named `sunset.jpg`.
 - The `%20` in the URL is how spaces are encoded (e.g., "beautiful sunset" becomes `beautiful%20sunset`).
-- Run this, and you’ll get a stunning sunset image saved to your computer!
+- Run this, and you'll get a stunning sunset image saved to your computer!
 
 ##### Customized Image (Command Line)
-Let’s create a high-resolution cyberpunk city image with a specific seed for consistency:
+Let's create a high-resolution cyberpunk city image with a specific seed for consistency:
 ```bash
-curl -o city.jpg "https://image.pollinations.ai/prompt/cyberpunk%20city%20at%20night?width=1920&height=1080&seed=42&model=flux"
+curl -o city.jpg "https://gen.pollinations.ai/image/cyberpunk%20city%20at%20night?width=1920&height=1080&seed=42&model=flux"
 ```
 
-**What’s Happening?**
+**What's Happening?**
 - `width=1920&height=1080` makes a Full HD image.
 - `seed=42` ensures you get the same city every time you run this.
 - `model=flux` uses a specific AI model for better quality.
 
 ##### Python Example
-Here’s how to generate an image using Python, perfect for automating tasks:
+Here's how to generate an image using Python, perfect for automating tasks:
 ```python
 import requests
 from urllib.parse import quote
@@ -93,7 +91,7 @@ from urllib.parse import quote
 # Your idea for the image
 prompt = "A serene mountain landscape at sunrise"
 # Encode the prompt to handle spaces
-url = f"https://image.pollinations.ai/prompt/{quote(prompt)}"
+url = f"https://gen.pollinations.ai/image/{quote(prompt)}"
 # Customize the image size and model
 params = {"width": 1280, "height": 720, "model": "flux"}
 
@@ -106,20 +104,20 @@ with open("mountain.jpg", "wb") as f:
 print("Image saved as mountain.jpg!")
 ```
 
-**What’s Happening?**
+**What's Happening?**
 - `quote(prompt)` converts spaces to `%20` for the URL.
 - `requests.get` sends the request to the API.
 - The image is saved as `mountain.jpg` in your current directory.
 - Try changing the prompt to something like "a dragon flying over a castle"!
 
 ##### JavaScript Example (Node.js)
-If you prefer JavaScript, here’s how to do it:
+If you prefer JavaScript, here's how to do it:
 ```javascript
 const fetch = require('node-fetch');
 const fs = require('fs');
 
 const prompt = "A futuristic city with flying cars";
-const url = `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}?width=1280&height=720&model=flux`;
+const url = `https://gen.pollinations.ai/image/${encodeURIComponent(prompt)}?width=1280&height=720&model=flux`;
 
 fetch(url)
     .then(response => response.buffer())
@@ -130,27 +128,27 @@ fetch(url)
     .catch(error => console.error('Error:', error));
 ```
 
-**What’s Happening?**
-- `encodeURIComponent` is JavaScript’s version of Python’s `quote`.
+**What's Happening?**
+- `encodeURIComponent` is JavaScript's version of Python's `quote`.
 - `fetch` grabs the image from the API.
 - The image is saved as `city.jpg`.
 
 ### List Available Models
-**Endpoint**: `GET https://image.pollinations.ai/models`  
+**Endpoint**: `GET https://gen.pollinations.ai/models`  
 Want to know which AI models you can use for images? This endpoint lists them.
 
 **Example (Command Line)**:
 ```bash
-curl https://image.pollinations.ai/models
+curl https://gen.pollinations.ai/models
 ```
 
-**What You’ll Get**: A list like `["flux", "turbo", "stable-diffusion"]`, showing the available models.
+**What You'll Get**: A list like `["flux", "turbo", "stable-diffusion"]`, showing the available models.
 
 ## Text Generation API
 The Text Generation API is like having a super-smart assistant who can answer questions, write stories, or explain complex ideas based on your prompts.
 
 ### Simple Text Generation
-**Endpoint**: `GET https://text.pollinations.ai/{prompt}`  
+**Endpoint**: `GET https://gen.pollinations.ai/text/{prompt}`  
 This endpoint takes a text prompt and returns a response, like asking a question or requesting a story.
 
 #### Parameters
@@ -160,30 +158,30 @@ This endpoint takes a text prompt and returns a response, like asking a question
 | model       | string | The AI model to use                            | openai        | mistral                     |
 | seed        | integer| For consistent responses                        | random        | 123                         |
 | temperature | float  | Controls creativity (0.0=strict, 3.0=wild)     | model default | 1.5                         |
-| system      | string | Instructions for the AI’s behavior              | -             | "Act like a pirate"         |
+| system      | string | Instructions for the AI's behavior              | -             | "Act like a pirate"         |
 | json        | boolean| Get response in JSON format                    | false         | true                        |
 | stream      | boolean| Get response in real-time chunks               | false         | true                        |
 
-**Analogy**: The prompt is your question to a wise librarian. The temperature is like telling them how creative to be—low for a straightforward answer, high for a wild, imaginative one. The system parameter is like giving the librarian a personality, like "answer as if you’re a pirate."
+**Analogy**: The prompt is your question to a wise librarian. The temperature is like telling them how creative to be—low for a straightforward answer, high for a wild, imaginative one. The system parameter is like giving the librarian a personality, like "answer as if you're a pirate."
 
 #### Examples
 ##### Basic Query (Command Line)
 Ask a simple question:
 ```bash
-curl "https://text.pollinations.ai/What%20is%20the%20capital%20of%20France?"
+curl "https://gen.pollinations.ai/text/What%20is%20the%20capital%20of%20France?"
 ```
 
-**What’s Happening?**
-- You’ll get a response like: *The capital of France is Paris.*
+**What's Happening?**
+- You'll get a response like: *The capital of France is Paris.*
 - The prompt is URL-encoded (`%20` for spaces).
 
 ##### Creative Text (Command Line)
 Generate a haiku with some creativity:
 ```bash
-curl "https://text.pollinations.ai/Write%20a%20haiku%20about%20AI?model=mistral&temperature=1.5"
+curl "https://gen.pollinations.ai/text/Write%20a%20haiku%20about%20AI?model=mistral&temperature=1.5"
 ```
 
-**What’s Happening?**
+**What's Happening?**
 - `model=mistral` uses a different AI model for variety.
 - `temperature=1.5` makes the haiku more creative and poetic.
 
@@ -195,7 +193,7 @@ from urllib.parse import quote
 
 # Your question
 prompt = "Explain quantum computing simply"
-url = f"https://text.pollinations.ai/{quote(prompt)}"
+url = f"https://gen.pollinations.ai/text/{quote(prompt)}"
 params = {"model": "openai", "temperature": 0.7}
 
 # Get the response
@@ -203,7 +201,7 @@ response = requests.get(url, params=params)
 print(response.text)
 ```
 
-**What’s Happening?**
+**What's Happening?**
 - The API returns a clear explanation, like: *Quantum computing uses quantum bits, or qubits, which can be 0, 1, or both at once, allowing faster calculations for certain problems.*
 - `temperature=0.7` keeps the response clear but slightly creative.
 
@@ -213,7 +211,7 @@ Generate a short story:
 const fetch = require('node-fetch');
 
 const prompt = "Write a short story about a robot learning to love";
-const url = `https://text.pollinations.ai/${encodeURIComponent(prompt)}?model=openai&temperature=1.0`;
+const url = `https://gen.pollinations.ai/text/${encodeURIComponent(prompt)}?model=openai&temperature=1.0`;
 
 fetch(url)
     .then(response => response.text())
@@ -221,16 +219,16 @@ fetch(url)
     .catch(error => console.error('Error:', error));
 ```
 
-**What’s Happening?**
-- The API generates a creative story about a robot’s journey.
+**What's Happening?**
+- The API generates a creative story about a robot's journey.
 - `temperature=1.0` balances creativity and coherence.
 
 ### Advanced Text Generation (OpenAI Compatible)
-**Endpoint**: `POST https://text.pollinations.ai/openai`  
+**Endpoint**: `POST https://gen.pollinations.ai/v1/messages`  
 This is a more powerful way to interact with the API, letting you have a conversation with the AI, include images or audio, or even call external functions.
 
 #### Request Body
-Here’s what a request looks like in JSON format:
+Here's what a request looks like in JSON format:
 ```json
 {
   "model": "openai",
@@ -261,14 +259,14 @@ The `reasoning_effort` parameter controls how deeply the AI thinks:
 | Level   | Description                     | Best For                     | Example Use                    |
 |---------|---------------------------------|------------------------------|--------------------------------|
 | minimal | Quick, simple answers           | Extracting data, formatting  | "Extract names from a list"    |
-| low     | Light reasoning, fast           | Simple questions             | "What’s 2+2?"                 |
+| low     | Light reasoning, fast           | Simple questions             | "What's 2+2?"                 |
 | medium  | Balanced thinking (default)     | General tasks                | "Summarize a book"             |
 | high    | Deep analysis                   | Complex problems             | "Plan a 7-day trip"            |
 
 #### Example (Command Line)
 Plan a detailed road trip:
 ```bash
-curl https://text.pollinations.ai/openai \
+curl https://gen.pollinations.ai/v1/messages \
   -H "Content-Type: application/json" \
   -d '{
     "model": "openai",
@@ -277,7 +275,7 @@ curl https://text.pollinations.ai/openai \
   }'
 ```
 
-**What’s Happening?**
+**What's Happening?**
 - `reasoning_effort=high` makes the AI think deeply, giving a detailed itinerary with stops, activities, and tips.
 - The response might include a day-by-day plan with cities, hotels, and attractions.
 
@@ -297,32 +295,32 @@ payload = {
 }
 
 response = requests.post(
-    "https://text.pollinations.ai/openai",
+    "https://gen.pollinations.ai/v1/messages",
     json=payload
 )
 print(response.json()['choices'][0]['message']['content'])
 ```
 
-**What’s Happening?**
-- The system message sets the AI’s tone to be comedic.
+**What's Happening?**
+- The system message sets the AI's tone to be comedic.
 - You might get a response like: *Why did the AI go to therapy? It had an identity crisis after being asked if it was human!*
 
 ### List Available Models
-**Endpoint**: `GET https://text.pollinations.ai/models`  
+**Endpoint**: `GET https://gen.pollinations.ai/models`  
 See all available text models and their capabilities.
 
 **Example (Command Line)**:
 ```bash
-curl https://text.pollinations.ai/models
+curl https://gen.pollinations.ai/models
 ```
 
-**What You’ll Get**: A list like `["openai", "mistral", "searchgpt"]`, showing which models you can use.
+**What You'll Get**: A list like `["openai", "mistral", "searchgpt"]`, showing which models you can use.
 
 ## Audio Generation API
-The Audio Generation API lets you turn text into speech or transcribe audio into text. It’s like having a voice actor or a transcriptionist at your fingertips.
+The Audio Generation API lets you turn text into speech or transcribe audio into text. It's like having a voice actor or a transcriptionist at your fingertips.
 
 ### Text-to-Speech (Simple)
-**Endpoint**: `GET https://text.pollinations.ai/{prompt}?model=openai-audio&voice={voice}`  
+**Endpoint**: `GET https://gen.pollinations.ai/text/{prompt}?model=openai-audio&voice={voice}`  
 Turn text into spoken audio with different voice styles.
 
 #### Available Voices
@@ -337,10 +335,10 @@ Turn text into spoken audio with different voice styles.
 ##### Basic Text-to-Speech (Command Line)
 Create an audio file that says "Hello world":
 ```bash
-curl -o speech.mp3 "https://text.pollinations.ai/Hello%20world?model=openai-audio&voice=nova"
+curl -o speech.mp3 "https://gen.pollinations.ai/text/Hello%20world?model=openai-audio&voice=nova"
 ```
 
-**What’s Happening?**
+**What's Happening?**
 - The API generates an MP3 file with the voice `nova` saying "Hello world."
 - Save it as `speech.mp3` and play it!
 
@@ -351,7 +349,7 @@ import requests
 from urllib.parse import quote
 
 text = "You are capable of amazing things!"
-url = f"https://text.pollinations.ai/{quote(text)}"
+url = f"https://gen.pollinations.ai/text/{quote(text)}"
 params = {"model": "openai-audio", "voice": "alloy"}
 
 response = requests.get(url, params=params)
@@ -361,7 +359,7 @@ with open("motivation.mp3", "wb") as f:
 print("Audio saved as motivation.mp3!")
 ```
 
-**What’s Happening?**
+**What's Happening?**
 - The text is turned into a motivational audio clip in the `alloy` voice.
 - The file is saved as `motivation.mp3`.
 
@@ -372,7 +370,7 @@ const fetch = require('node-fetch');
 const fs = require('fs');
 
 const text = "Welcome to my app!";
-const url = `https://text.pollinations.ai/${encodeURIComponent(text)}?model=openai-audio&voice=shimmer`;
+const url = `https://gen.pollinations.ai/text/${encodeURIComponent(text)}?model=openai-audio&voice=shimmer`;
 
 fetch(url)
     .then(response => response.buffer())
@@ -384,7 +382,7 @@ fetch(url)
 ```
 
 ### Speech-to-Text
-**Endpoint**: `POST https://text.pollinations.ai/openai`  
+**Endpoint**: `POST https://gen.pollinations.ai/v1/messages`  
 Turn an audio file into text, like transcribing a podcast or voice note.
 
 #### Request Format
@@ -407,7 +405,7 @@ Turn an audio file into text, like transcribing a podcast or voice note.
 }
 ```
 
-**What’s Happening?**
+**What's Happening?**
 - You send an audio file encoded in base64 (a way to represent files as text).
 - The API returns the transcribed text.
 
@@ -437,18 +435,18 @@ payload = {
 
 # Send the request
 response = requests.post(
-    "https://text.pollinations.ai/openai",
+    "https://gen.pollinations.ai/v1/messages",
     json=payload
 )
 print(response.json()['choices'][0]['message']['content'])
 ```
 
-**What’s Happening?**
+**What's Happening?**
 - The audio file `audio.wav` is converted to base64.
 - The API transcribes it, returning something like: *Hello, this is my speech about AI.*
 
 ## Vision & Multimodal
-The Vision API lets the AI "see" images and describe or analyze them. It’s like giving the AI a pair of eyes to understand pictures.
+The Vision API lets the AI "see" images and describe or analyze them. It's like giving the AI a pair of eyes to understand pictures.
 
 ### Supported Models
 - **openai**: Standard vision capabilities.
@@ -467,7 +465,7 @@ payload = {
     "messages": [{
         "role": "user",
         "content": [
-            {"type": "text", "text": "What’s in this image?"},
+            {"type": "text", "text": "What's in this image?"},
             {
                 "type": "image_url",
                 "image_url": {"url": "https://example.com/sunset.jpg"}
@@ -478,13 +476,13 @@ payload = {
 }
 
 response = requests.post(
-    "https://text.pollinations.ai/openai",
+    "https://gen.pollinations.ai/v1/messages",
     json=payload
 )
 print(response.json()['choices'][0]['message']['content'])
 ```
 
-**What’s Happening?**
+**What's Happening?**
 - The AI looks at the image at the URL and describes it, e.g., *The image shows a vibrant sunset over an ocean with orange and purple hues.*
 - `max_tokens=500` limits the response length.
 
@@ -514,18 +512,18 @@ payload = {
 }
 
 response = requests.post(
-    "https://text.pollinations.ai/openai",
+    "https://gen.pollinations.ai/v1/messages",
     json=payload
 )
 print(response.json()['choices'][0]['message']['content'])
 ```
 
-**What’s Happening?**
+**What's Happening?**
 - The image `cat.jpg` is encoded as base64 and sent to the API.
 - The AI might respond: *The image shows a fluffy orange cat sitting on a windowsill.*
 
 ## Function Calling
-Function calling lets the AI interact with external tools, like checking the weather or performing calculations. It’s like giving the AI a phone to call for help when it needs more info.
+Function calling lets the AI interact with external tools, like checking the weather or performing calculations. It's like giving the AI a phone to call for help when it needs more info.
 
 ### Example: Weather Function (Python)
 ```python
@@ -563,7 +561,7 @@ payload = {
 }
 
 response = requests.post(
-    "https://text.pollinations.ai/openai",
+    "https://gen.pollinations.ai/v1/messages",
     json=payload
 ).json()
 
@@ -586,22 +584,22 @@ if response['choices'][0]['message'].get('tool_calls'):
     ]
     
     final_response = requests.post(
-        "https://text.pollinations.ai/openai",
+        "https://gen.pollinations.ai/v1/messages",
         json={"model": "openai", "messages": messages}
     )
     print(final_response.json()['choices'][0]['message']['content'])
 ```
 
-**What’s Happening?**
-- The AI sees the question about Tokyo’s weather and decides to call the `get_weather` function.
+**What's Happening?**
+- The AI sees the question about Tokyo's weather and decides to call the `get_weather` function.
 - You provide the weather data (here, simulated as JSON).
-- The AI responds with something like: *It’s 20°C and sunny in Tokyo today!*
+- The AI responds with something like: *It's 20°C and sunny in Tokyo today!*
 
 ## Real-time Feeds
 Real-time feeds let you watch what others are creating with the API, like a live gallery or news feed.
 
 ### Image Feed
-**Endpoint**: `GET https://image.pollinations.ai/feed`  
+**Endpoint**: `GET https://gen.pollinations.ai/feed`  
 See a stream of newly generated images.
 
 #### Python Example
@@ -611,7 +609,7 @@ import requests
 import json
 
 response = requests.get(
-    "https://image.pollinations.ai/feed",
+    "https://gen.pollinations.ai/feed",
     stream=True,
     headers={"Accept": "text/event-stream"}
 )
@@ -623,12 +621,12 @@ for event in client.events():
     print(f"URL: {data['imageURL']}")
 ```
 
-**What’s Happening?**
-- The API sends a stream of new images as they’re created.
-- You’ll see prompts like "a starry night" with URLs to the images.
+**What's Happening?**
+- The API sends a stream of new images as they're created.
+- You'll see prompts like "a starry night" with URLs to the images.
 
 ### Text Feed
-**Endpoint**: `GET https://text.pollinations.ai/feed`  
+**Endpoint**: `GET https://gen.pollinations.ai/feed`  
 See a stream of text generation activity.
 
 #### Python Example
@@ -638,7 +636,7 @@ import requests
 import json
 
 response = requests.get(
-    "https://text.pollinations.ai/feed",
+    "https://gen.pollinations.ai/feed",
     stream=True,
     headers={"Accept": "text/event-stream"}
 )
@@ -650,11 +648,11 @@ for event in client.events():
     print(f"Response: {data['response'][:100]}...")
 ```
 
-**What’s Happening?**
+**What's Happening?**
 - You get a live feed of text responses, like answers to questions or generated stories.
 
 ## React Integration
-If you’re building a web app with React, pollinations.ai has hooks to make integration super easy. Think of these as pre-built tools to add AI features to your app.
+If you're building a web app with React, pollinations.ai has hooks to make integration super easy. Think of these as pre-built tools to add AI features to your app.
 
 ### Install the Library
 ```bash
@@ -677,7 +675,7 @@ function ImageGenerator() {
 }
 ```
 
-**What’s Happening?**
+**What's Happening?**
 - The hook fetches an image of a sunset and displays it in your app.
 - You can change the prompt to anything, like "a dancing robot."
 
@@ -696,7 +694,7 @@ function TextGenerator() {
 }
 ```
 
-**What’s Happening?**
+**What's Happening?**
 - The hook generates a haiku, like: *Circuits hum with thought, / Learning dreams in lines of code, / AI shapes our world.*
 - `seed=42` ensures the same haiku every time.
 
@@ -729,7 +727,7 @@ function ChatBot() {
 }
 ```
 
-**What’s Happening?**
+**What's Happening?**
 - The hook manages a conversation, displaying messages and letting users send new ones.
 - The AI might respond with: *Did you know octopuses have three hearts?*
 
@@ -743,10 +741,10 @@ Thanks to our supporters, daily Pollen grants keep AI accessible for everyone. R
 For web apps, the browser automatically sends a referrer header to identify your app.  
 **Example**:
 ```
-https://image.pollinations.ai/prompt/landscape?referrer=myapp.com
+https://gen.pollinations.ai/image/landscape?referrer=myapp.com
 ```
 
-**What’s Happening?**
+**What's Happening?**
 - The `referrer` tells the API which app is making the request.
 - Great for simple web apps without backend code.
 
@@ -754,13 +752,13 @@ https://image.pollinations.ai/prompt/landscape?referrer=myapp.com
 For server-side apps, use a token for secure access.  
 **Example**:
 ```bash
-curl https://text.pollinations.ai/openai \
+curl https://gen.pollinations.ai/v1/messages \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer YOUR_TOKEN" \
   -d '{"model": "openai", "messages": [{"role": "user", "content": "Hello"}]}'
 ```
 
-**What’s Happening?**
+**What's Happening?**
 - Replace `YOUR_TOKEN` with a token from [auth.pollinations.ai](https://auth.pollinations.ai).
 - This is safer for backend apps.
 
@@ -788,7 +786,7 @@ The `kontext` model supports image-to-image generation, allowing you to transfor
 #### Example (Command Line)
 Transform a logo into a cake:
 ```bash
-curl -o logo_cake.png "https://image.pollinations.ai/prompt/bake_a_cake_from_this_logo?model=kontext&image=https://avatars.githubusercontent.com/u/86964862"
+curl -o logo_cake.png "https://gen.pollinations.ai/image/bake_a_cake_from_this_logo?model=kontext&image=https://avatars.githubusercontent.com/u/86964862"
 ```
 
 #### Python Example
@@ -806,7 +804,7 @@ params = {
 }
 
 encoded_prompt = urllib.parse.quote(prompt)
-url = f"https://image.pollinations.ai/prompt/{encoded_prompt}"
+url = f"https://gen.pollinations.ai/image/{encoded_prompt}"
 
 response = requests.get(url, params=params, timeout=300)
 with open("transformed_image.jpg", "wb") as f:
@@ -828,7 +826,7 @@ const params = new URLSearchParams({
     height: 1024
 });
 
-const url = `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}?${params}`;
+const url = `https://gen.pollinations.ai/image/${encodeURIComponent(prompt)}?${params}`;
 
 fetch(url)
     .then(response => response.buffer())
@@ -844,7 +842,7 @@ Use the `safe` parameter to enable strict NSFW filtering. When set to `true`, th
 
 #### Example
 ```bash
-curl -o safe_image.jpg "https://image.pollinations.ai/prompt/a%20beautiful%20landscape?safe=true"
+curl -o safe_image.jpg "https://gen.pollinations.ai/image/a%20beautiful%20landscape?safe=true"
 ```
 
 ### Reasoning Controls
@@ -865,7 +863,7 @@ Control how deeply the AI thinks before responding using the `reasoning_effort` 
 
 #### Example (Command Line)
 ```bash
-curl https://text.pollinations.ai/openai \
+curl https://gen.pollinations.ai/v1/messages \
   -H "Content-Type: application/json" \
   -d '{
     "model": "openai",
@@ -889,10 +887,10 @@ payload = {
 }
 
 response = requests.post(
-    "https://text.pollinations.ai/openai",
+    "https://gen.pollinations.ai/v1/messages",
     json=payload
 )
-result perspective = response.json()
+result = response.json()
 print(result['choices'][0]['message']['content'])
 ```
 
@@ -911,7 +909,7 @@ const payload = {
     ]
 };
 
-fetch('https://text.pollinations.ai/openai', {
+fetch('https://gen.pollinations.ai/v1/messages', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload)
@@ -930,11 +928,11 @@ Here are tips to make the most of the API:
 
 ### Security
 - **Keep Tokens Safe**: Never put Bearer tokens in frontend code (like JavaScript in browsers). Use `referrer` authentication for web apps or tokens in backend code.  
-  **Example**: If you’re building a website, use `referrer=myapp.com` instead of exposing a token.
+  **Example**: If you're building a website, use `referrer=myapp.com` instead of exposing a token.
 
 ### Performance
 - **Use seed**: Set a `seed` parameter (e.g., `seed=123`) to get consistent results, like generating the same image twice.
-- **Stream Responses**: For long text responses, set `stream=true` to get chunks as they’re generated, like streaming a video.
+- **Stream Responses**: For long text responses, set `stream=true` to get chunks as they're generated, like streaming a video.
 - **Cache Results**: Save API responses locally to avoid repeating requests for the same data.
 
 ### Rate Limits
@@ -950,6 +948,6 @@ Here are tips to make the most of the API:
 
 ## License
 **MIT License**  
-You’re free to use, modify, and share this API under the MIT License. Think of it as an open-source recipe you can tweak and share with others!
+You're free to use, modify, and share this API under the MIT License. Think of it as an open-source recipe you can tweak and share with others!
 
 Made with ❤️ by the pollinations.ai team

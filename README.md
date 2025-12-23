@@ -6,6 +6,7 @@
 
 | Name | Description | Author |
 |------|-------------|--------|
+| [AI drawing](https://draw.001412.xyz) | Free AI drawing powered by Pollinations.ai | @Komorebi-yaodong |
 | [Shaper AI](https://getshaper.app/) | AI Chrome extension to edit pages, chat, write, and summarize PDFs | @stanica |
 | [Asive AI](https://asive.duckdns.org) | Gen-Z chatbot with smooth UI and animations. Uses Pollinations text and vision m... | @flyinqe |
 | [Multi Image Generator](https://perchance.org/multi-image-generator) | Perchance image generator with img2img and multi-model comparison. Generate with... | @itzGlitch-AS |
@@ -15,7 +16,6 @@
 | [Imgoo](https://imgoo.netlify.app/) | AI image generator with creative controls including aspect ratio, guidance scale... | @redythacker-cyber |
 | [TeleChars AI](https://telecharsai.byethost14.com) | Plataforma para crear personajes IA personalizados en Telegram. Configura person... | @marcosfrgames08 |
 | [Nosde Space](https://www.nosde.space/) | All-in-one AI platform for creating images, videos, text, and audio. Features co... | @unknow_junior |
-| [Discord Bot Tutorial](https://gist.github.com/Tolerable/9908e626147689fe72cdab8f2e1e6743) | Comprehensive tutorial for building Discord bots with Pollinations.ai. Covers te... | @Tolerable |
 
 [View all apps →](apps/APPS.md)
 ## 🚀 New Unified API — Now Live

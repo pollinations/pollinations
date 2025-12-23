@@ -2,7 +2,7 @@ import crypto from "node:crypto";
 import { createHonoMockHandler, MockAPI } from "./fetch";
 import { env } from "cloudflare:test";
 import { Hono } from "hono";
-import { inject } from "vitest";
+import { expect, inject } from "vitest";
 import { getLogger } from "@logtape/logtape";
 
 const log = getLogger(["test", "mock", "vcr"]);
@@ -54,8 +54,10 @@ async function getSnapshotHash(request: Request): Promise<string> {
         const body = JSON.parse(text || "{}");
         hash.update(`${body.model}` || "");
         hash.update(`${body.stream}` || "");
-    } catch (e) {
-        log.warn(`Failed to parse request body: ${e}`);
+        hash.update(`${body.tool_choice}` || "");
+        hash.update(`${JSON.stringify(body.messages)}`);
+    } catch (error) {
+        log.warn("Failed to parse request body: {error}", { error });
     }
     return hash.digest("hex");
 }
@@ -106,30 +108,48 @@ async function writeSnapshot(
 }
 
 export function createMockVcr(originalFetch: typeof fetch): MockAPI<{}> {
-    const vcr = new Hono().all("*", async (c) => {
-        const snapshotFilename = await getSnapshotFilename(hosts, c.req.raw);
+    const vcr = new Hono()
+        .all("*", async (c) => {
+            const snapshotFilename = await getSnapshotFilename(
+                hosts,
+                c.req.raw,
+            );
 
-        // Replay snapshot if it exists
-        try {
-            const snapshot = await getSnapshot(snapshotFilename);
-            return replaySnapshotResponse(snapshot);
-        } catch (error: any) {
-            log.warn(`Missing snapshot: ${snapshotFilename}`);
-            if (process.env.TEST_VCR_MODE === "replay") {
-                return new Response(null, { status: 404 });
+            if (env.TEST_VCR_MODE !== "record-only") {
+                // Replay snapshot if it exists
+                try {
+                    const snapshot = await getSnapshot(snapshotFilename);
+                    return replaySnapshotResponse(snapshot);
+                } catch (error: any) {
+                    log.warn(`Missing snapshot: ${snapshotFilename}`);
+                }
             }
-        }
 
-        // Record actual upstream response
-        log.trace(`Recording: ${c.req.method} ${c.req.url}`);
-        // Clone request before fetch since it will consume the body
-        const requestClone = c.req.raw.clone() as Request;
-        const response = await originalFetch(c.req.raw);
-        const responseClone = response.clone();
-        const snapshot = await recordSnapshot(requestClone, responseClone);
-        await writeSnapshot(snapshotFilename, snapshot);
-        return response;
-    });
+            if (env.TEST_VCR_MODE !== "replay-only") {
+                // Record actual upstream response
+                log.trace(`Recording: ${c.req.method} ${c.req.url}`);
+                // Clone request before fetch since it will consume the body
+                const requestClone = c.req.raw.clone() as Request;
+                const response = await originalFetch(c.req.raw);
+                const responseClone = response.clone();
+                const snapshot = await recordSnapshot(
+                    requestClone,
+                    responseClone,
+                );
+                await writeSnapshot(snapshotFilename, snapshot);
+                return response;
+            }
+
+            expect.fail(
+                [
+                    "Encountered missing snapshot in replay-only mode.",
+                    "Run without TEST_VCR_MODE=replay-only to capture.",
+                ].join("\n"),
+            );
+        })
+        .onError((error) => {
+            throw error;
+        });
 
     return {
         state: {},

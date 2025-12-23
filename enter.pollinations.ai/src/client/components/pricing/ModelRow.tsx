@@ -4,28 +4,71 @@ import {
     hasReasoning,
     hasVision,
     hasAudioInput,
+    hasSearch,
+    hasCodeExecution,
     getModelDescription,
 } from "./model-info.ts";
 import { calculatePerPollen } from "./calculations.ts";
 import { PriceBadge } from "./PriceBadge.tsx";
+import { Tooltip } from "./Tooltip.tsx";
 
 type ModelRowProps = {
     model: ModelPrice;
 };
 
 export const ModelRow: FC<ModelRowProps> = ({ model }) => {
-    const modelDescription = getModelDescription(model.name, model.type);
+    const modelDescription = getModelDescription(model.name);
     const genPerPollen = calculatePerPollen(model);
     const [showTooltip, setShowTooltip] = useState(false);
+    const handleMouseEnter = () => setShowTooltip(true);
+    const handleMouseLeave = () => setShowTooltip(false);
+    const handleClick = (e: React.MouseEvent) => {
+        e.stopPropagation();
+        setShowTooltip((prev) => !prev);
+    };
 
     // Get model capabilities
-    const showReasoning = hasReasoning(model.name, model.type);
-    const showVision = hasVision(model.name, model.type);
-    const showAudioInput = hasAudioInput(model.name, model.type);
+    const showReasoning = hasReasoning(model.name);
+    const showVision = hasVision(model.name);
+    const showAudioInput = hasAudioInput(model.name);
+    const showSearch = hasSearch(model.name);
+    const showCodeExecution = hasCodeExecution(model.name);
 
-    // Show info icon if we have a description to display
+    // Show info icon if we have a description to display, or if it's a video model (for alpha notice)
+    const isVideoModel = model.type === "video";
+    const hasDescription = modelDescription && modelDescription !== model.name;
+
+    // Determine pricing type for image models
+    const isImageModel = model.type === "image";
+    const hasFlatPricing = isImageModel && model.perImagePrice;
+    const hasTokenPricing =
+        isImageModel &&
+        !model.perImagePrice &&
+        (model.promptTextPrice || model.completionTextPrice);
+
+    // Build pricing note for image models
+    const pricingNote = hasFlatPricing
+        ? "Flat rate per image (any resolution)"
+        : hasTokenPricing
+          ? "Token-based pricing (varies with prompt)"
+          : "";
+
     const showDescriptionInfo =
-        modelDescription && modelDescription !== model.name;
+        hasDescription || isVideoModel || (isImageModel && pricingNote);
+
+    // Build tooltip content
+    const alphaNotice = "Alpha – API may change";
+    const baseContent = isVideoModel
+        ? hasDescription
+            ? `${modelDescription}. ${alphaNotice}`
+            : alphaNotice
+        : modelDescription;
+
+    // Combine description with pricing note
+    const tooltipContent =
+        baseContent && pricingNote
+            ? `${baseContent}. ${pricingNote}`
+            : baseContent || pricingNote;
 
     return (
         <tr className="border-b border-gray-200">
@@ -35,12 +78,14 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
                     {showDescriptionInfo && (
                         <button
                             type="button"
-                            className="relative inline-flex items-center group/info"
-                            onClick={() => setShowTooltip(!showTooltip)}
+                            className="relative inline-flex items-center"
+                            onClick={handleClick}
+                            onMouseEnter={handleMouseEnter}
+                            onMouseLeave={handleMouseLeave}
                             onKeyDown={(e) => {
                                 if (e.key === "Enter" || e.key === " ") {
                                     e.preventDefault();
-                                    setShowTooltip(!showTooltip);
+                                    setShowTooltip((prev) => !prev);
                                 }
                             }}
                             aria-label="Show model information"
@@ -49,36 +94,42 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
                                 i
                             </span>
                             <span
-                                className={`${showTooltip ? "visible" : "invisible"} group-hover/info:visible absolute left-0 top-full mt-1 px-3 py-2 bg-gradient-to-r from-pink-50 to-purple-50 text-gray-800 text-xs rounded-lg shadow-lg border border-pink-200 whitespace-nowrap z-50 pointer-events-none`}
+                                className={`${showTooltip ? "visible" : "invisible"} absolute left-0 top-full mt-1 px-3 py-2 bg-gradient-to-r from-pink-50 to-purple-50 text-gray-800 text-xs rounded-lg shadow-lg border border-pink-200 whitespace-nowrap z-50 pointer-events-none`}
                             >
-                                {modelDescription}
+                                {tooltipContent}
                             </span>
                         </button>
                     )}
                     {showVision && (
-                        <span
-                            className="text-base"
-                            title={
+                        <Tooltip
+                            text={
                                 model.type === "image"
-                                    ? "Vision - supports image input (image-to-image)"
-                                    : "Vision - supports image input"
+                                    ? "Vision (image-to-image)"
+                                    : "Vision input"
                             }
                         >
-                            👁️
-                        </span>
+                            <span className="text-base">👁️</span>
+                        </Tooltip>
                     )}
                     {showAudioInput && (
-                        <span className="text-base" title="Audio input support">
-                            👂
-                        </span>
+                        <Tooltip text="Audio input">
+                            <span className="text-base">👂</span>
+                        </Tooltip>
                     )}
                     {showReasoning && (
-                        <span
-                            className="text-base"
-                            title="Advanced reasoning capabilities"
-                        >
-                            🧠
-                        </span>
+                        <Tooltip text="Reasoning">
+                            <span className="text-base">🧠</span>
+                        </Tooltip>
+                    )}
+                    {showSearch && (
+                        <Tooltip text="Web search">
+                            <span className="text-base">🔍</span>
+                        </Tooltip>
+                    )}
+                    {showCodeExecution && (
+                        <Tooltip text="Code execution">
+                            <span className="text-base">💻</span>
+                        </Tooltip>
                     )}
                 </div>
             </td>
@@ -137,7 +188,21 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
                             subEmojis={["🔊"]}
                             perToken={model.perToken}
                         />
-                        {model.perImagePrice ? (
+                        {model.perSecondPrice ? (
+                            <PriceBadge
+                                prices={[model.perSecondPrice]}
+                                emoji="🎬"
+                                subEmojis={["🎬"]}
+                                perSecond
+                            />
+                        ) : model.perTokenPrice ? (
+                            <PriceBadge
+                                prices={[model.perTokenPrice]}
+                                emoji="🎬"
+                                subEmojis={["🎬"]}
+                                perToken
+                            />
+                        ) : model.perImagePrice ? (
                             <PriceBadge
                                 prices={[model.perImagePrice]}
                                 emoji="🖼️"

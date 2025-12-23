@@ -20,6 +20,7 @@ import {
     buildUsageHeaders,
     openaiUsageToTokenUsage,
 } from "../shared/registry/usage-headers.js";
+import { getServiceDefinition } from "../shared/registry/registry.js";
 
 // Load environment variables including .env.local overrides
 // Load .env.local first (higher priority), then .env as fallback
@@ -93,23 +94,23 @@ app.use((req, res, next) => {
 app.use(bodyParser.json({ limit: "20mb" }));
 app.use(cors());
 
-// Middleware to verify ENTER_TOKEN (after CORS for consistency)
+// Middleware to verify PLN_ENTER_TOKEN (after CORS for consistency)
 app.use((req, res, next) => {
     const token = req.headers["x-enter-token"];
-    const expectedToken = process.env.ENTER_TOKEN;
+    const expectedToken = process.env.PLN_ENTER_TOKEN;
 
     if (!expectedToken) {
-        // If ENTER_TOKEN is not configured, allow all requests (backward compatibility)
-        authLog("!  ENTER_TOKEN not configured - allowing request");
+        // If PLN_ENTER_TOKEN is not configured, allow all requests (backward compatibility)
+        authLog("!  PLN_ENTER_TOKEN not configured - allowing request");
         return next();
     }
 
     if (token !== expectedToken) {
-        authLog("❌ Invalid or missing ENTER_TOKEN from IP:", getIp(req));
+        authLog("❌ Invalid or missing PLN_ENTER_TOKEN from IP:", getIp(req));
         return res.status(403).json({ error: "Unauthorized" });
     }
 
-    authLog("✅ Valid ENTER_TOKEN from IP:", getIp(req));
+    authLog("✅ Valid PLN_ENTER_TOKEN from IP:", getIp(req));
     next();
 });
 // New route handler for root path
@@ -348,7 +349,7 @@ export async function sendErrorResponse(
         404: "Not Found",
         429: "Too Many Requests",
     };
-    const errorType = errorTypes[statusCode] || "Internal Server Error";
+    const errorType = errorTypes[responseStatus] || "Internal Server Error";
 
     const errorResponse = {
         error: errorType,
@@ -357,7 +358,9 @@ export async function sendErrorResponse(
         requestParameters: requestData || {},
     };
 
-    if (error.details) errorResponse.details = error.details;
+    // Include upstream error details if available
+    const errorDetails = error.details || error.response?.data;
+    if (errorDetails) errorResponse.details = errorDetails;
 
     // Extract client information (for logs only)
     const clientInfo = {
@@ -599,11 +602,14 @@ async function processRequest(req, res, requestData) {
 
 // Helper function to check if a model is an audio model and add necessary parameters
 function prepareRequestParameters(requestParams) {
-    const modelConfig = availableModels.find(
-        (m) =>
-            m.name === requestParams.model || m.model === requestParams.model,
-    );
-    const isAudioModel = modelConfig && modelConfig.audio === true;
+    // Use registry to check if model supports audio output
+    let isAudioModel = false;
+    try {
+        const serviceDef = getServiceDefinition(requestParams.model);
+        isAudioModel = serviceDef?.outputModalities?.includes("audio") ?? false;
+    } catch {
+        // Model not in registry, fall back to false
+    }
 
     log("Is audio model:", isAudioModel);
 
@@ -940,18 +946,15 @@ async function generateTextBasedOnModel(messages, options) {
 
         // For streaming errors, return a special error response that can be streamed
         if (options.stream) {
-            // Create a detailed error response
-            let errorDetails = null;
-
-            if (error.response?.data) {
+            // Get error details from error.details or parse error.response.data
+            let errorDetails = error.details || null;
+            if (!errorDetails && error.response?.data) {
                 try {
-                    // Try to parse the data as JSON
                     errorDetails =
                         typeof error.response.data === "string"
                             ? JSON.parse(error.response.data)
                             : error.response.data;
-                } catch (e) {
-                    // If parsing fails, use the raw data
+                } catch {
                     errorDetails = error.response.data;
                 }
             }
@@ -962,7 +965,7 @@ async function generateTextBasedOnModel(messages, options) {
                     message:
                         error.message ||
                         "An error occurred during text generation",
-                    status: error.code || 500,
+                    status: error.status || error.code || 500,
                     details: errorDetails,
                 },
             };

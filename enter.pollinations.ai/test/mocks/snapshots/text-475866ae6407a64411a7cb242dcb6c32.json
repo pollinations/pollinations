@@ -1,0 +1,185 @@
+{
+  "request": {
+    "url": "http://ec2-3-80-56-235.compute-1.amazonaws.com:16385/openai",
+    "method": "POST",
+    "body": {
+      "type": "json",
+      "data": {
+        "model": "openai-fast",
+        "messages": [
+          {
+            "role": "user",
+            "content": "What is 5 + 3? You must use the calculator tool to compute this."
+          },
+          {
+            "role": "assistant",
+            "tool_calls": [
+              {
+                "function": {
+                  "arguments": "{\"operation\":\"add\",\"a\":5,\"b\":3}",
+                  "name": "calculator"
+                },
+                "id": "call_cxwBE4d4TqUFuc7w8CaZGMb7",
+                "type": "function"
+              }
+            ]
+          },
+          {
+            "role": "tool",
+            "tool_call_id": "call_cxwBE4d4TqUFuc7w8CaZGMb7",
+            "content": "{\"result\":8}"
+          }
+        ],
+        "tools": [
+          {
+            "type": "function",
+            "function": {
+              "name": "calculator",
+              "description": "Perform basic arithmetic operations",
+              "parameters": {
+                "type": "object",
+                "properties": {
+                  "operation": {
+                    "type": "string",
+                    "enum": [
+                      "add",
+                      "subtract",
+                      "multiply",
+                      "divide"
+                    ],
+                    "description": "The arithmetic operation to perform"
+                  },
+                  "a": {
+                    "type": "number",
+                    "description": "First operand"
+                  },
+                  "b": {
+                    "type": "number",
+                    "description": "Second operand"
+                  }
+                },
+                "required": [
+                  "operation",
+                  "a",
+                  "b"
+                ]
+              }
+            }
+          }
+        ],
+        "seed": 42,
+        "max_tokens": 4096
+      }
+    },
+    "params": {}
+  },
+  "response": {
+    "status": 200,
+    "statusText": "OK",
+    "headers": {
+      "access-control-allow-origin": "*",
+      "connection": "keep-alive",
+      "content-length": "1200",
+      "content-type": "application/json; charset=utf-8",
+      "date": "Tue, 23 Dec 2025 13:56:19 GMT",
+      "etag": "W/\"4b0-0cScJwKLNHrnzlnkN/D8SXz/vmg\"",
+      "keep-alive": "timeout=5",
+      "x-model-used": "gpt-5-nano-2025-08-07",
+      "x-powered-by": "Express",
+      "x-usage-completion-text-tokens": "5",
+      "x-usage-prompt-text-tokens": "454",
+      "x-usage-total-tokens": "459"
+    },
+    "body": {
+      "type": "json",
+      "data": {
+        "choices": [
+          {
+            "content_filter_results": {
+              "hate": {
+                "filtered": false,
+                "severity": "safe"
+              },
+              "protected_material_code": {
+                "filtered": false,
+                "detected": false
+              },
+              "protected_material_text": {
+                "filtered": false,
+                "detected": false
+              },
+              "self_harm": {
+                "filtered": false,
+                "severity": "safe"
+              },
+              "sexual": {
+                "filtered": false,
+                "severity": "safe"
+              },
+              "violence": {
+                "filtered": false,
+                "severity": "safe"
+              }
+            },
+            "finish_reason": "stop",
+            "index": 0,
+            "logprobs": null,
+            "message": {
+              "annotations": [],
+              "content": "8",
+              "refusal": null,
+              "role": "assistant"
+            }
+          }
+        ],
+        "created": 1766498178,
+        "id": "pllns_9531d89718faa854015a6ee50d7fe13d",
+        "model": "gpt-5-nano-2025-08-07",
+        "object": "chat.completion",
+        "prompt_filter_results": [
+          {
+            "prompt_index": 0,
+            "content_filter_results": {
+              "hate": {
+                "filtered": false,
+                "severity": "safe"
+              },
+              "jailbreak": {
+                "filtered": false,
+                "detected": false
+              },
+              "self_harm": {
+                "filtered": false,
+                "severity": "safe"
+              },
+              "sexual": {
+                "filtered": false,
+                "severity": "safe"
+              },
+              "violence": {
+                "filtered": false,
+                "severity": "safe"
+              }
+            }
+          }
+        ],
+        "system_fingerprint": null,
+        "usage": {
+          "completion_tokens": 5,
+          "completion_tokens_details": {
+            "accepted_prediction_tokens": 0,
+            "audio_tokens": 0,
+            "reasoning_tokens": 0,
+            "rejected_prediction_tokens": 0
+          },
+          "prompt_tokens": 454,
+          "prompt_tokens_details": {
+            "audio_tokens": 0,
+            "cached_tokens": 0
+          },
+          "total_tokens": 459
+        }
+      }
+    }
+  }
+}

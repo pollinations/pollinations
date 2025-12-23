@@ -7,6 +7,10 @@ import { CustomerState } from "@polar-sh/sdk/models/components/customerstate.js"
 import { HTTPException } from "hono/http-exception";
 import { z } from "zod";
 import { CustomerMeter } from "@polar-sh/sdk/models/components/customermeter.js";
+import { getPendingSpend } from "@/events.ts";
+import { drizzle } from "drizzle-orm/d1";
+import { event } from "@/db/schema/event.ts";
+import { and, eq, gte, sql } from "drizzle-orm";
 
 type BalanceCheckResult = {
     selectedMeterId: string;
@@ -32,7 +36,7 @@ export type PolarEnv = {
 };
 
 export const polar = createMiddleware<PolarEnv>(async (c, next) => {
-    const log = c.get("log");
+    const log = c.get("log").getChild("polar");
 
     const client = new Polar({
         accessToken: c.env.POLAR_ACCESS_TOKEN,
@@ -53,7 +57,7 @@ export const polar = createMiddleware<PolarEnv>(async (c, next) => {
         },
         {
             log,
-            ttl: 60, // 60 seconds (minimum allowed value)
+            ttl: 300, // 5 minutes - safe with local pending spend tracking
             kv: c.env.KV,
             keyGenerator: (userId) => `polar:customer:state:${userId}`,
         },
@@ -66,6 +70,7 @@ export const polar = createMiddleware<PolarEnv>(async (c, next) => {
                     externalCustomerId: userId,
                     limit: 100,
                 });
+                console.log(response.result.items);
                 return response.result.items;
             } catch (error) {
                 throw new Error("Failed to get customer meters.", {
@@ -75,23 +80,70 @@ export const polar = createMiddleware<PolarEnv>(async (c, next) => {
         },
         {
             log,
-            ttl: 60, // 60 seconds (minimum allowed value)
+            ttl: 300, // 5 minutes - safe with local pending spend tracking
             kv: c.env.KV,
             keyGenerator: (userId) => `polar:customer:meters:${userId}`,
         },
     );
+
+    const getAdjustedSimplifiedMeters = async (userId: string) => {
+        const customerMeters = await getCustomerMeters(userId);
+        const activeMeters = getSimplifiedMatchingMeters(customerMeters);
+        const sortedMeters = sortMetersByDescendingPriority(activeMeters);
+        const pendingSpend = await getPendingSpend(drizzle(c.env.DB), userId);
+
+        const { adjustedMeters } = sortedMeters.reduce(
+            (acc, meter) => {
+                const deduction = Math.min(meter.balance, acc.remainingSpend);
+                acc.remainingSpend -= deduction;
+                acc.adjustedMeters.push({
+                    ...meter,
+                    balance: meter.balance - deduction,
+                });
+                return acc;
+            },
+            {
+                remainingSpend: pendingSpend,
+                adjustedMeters: [] as typeof sortedMeters,
+            },
+        );
+    };
 
     const requirePositiveBalance = async (userId: string, message?: string) => {
         const customerMeters = await getCustomerMeters(userId);
         const activeMeters = getSimplifiedMatchingMeters(customerMeters);
         const sortedMeters = sortMetersByDescendingPriority(activeMeters);
 
-        for (const meter of sortedMeters) {
+        // Get recent local spend to account for Polar processing delay
+        const pendingSpend = await getPendingSpend(drizzle(c.env.DB), userId);
+
+        if (pendingSpend > 0) {
+            log.debug("Pending spend from D1: {pendingSpend}", {
+                pendingSpend,
+            });
+        }
+
+        // Adjust meter balances by subtracting recent spend.
+        // Note: We deduct from highest-priority meters first, which may not match
+        // actual meter usage. This is intentionally conservative - it may briefly
+        // over-restrict, but prevents negative balances. Accuracy restores when
+        // Polar syncs and cache refreshes.
+        let remainingSpend = pendingSpend;
+        const adjustedMeters = sortedMeters.map((meter) => {
+            const deduction = Math.min(meter.balance, remainingSpend);
+            remainingSpend -= deduction;
+            return {
+                ...meter,
+                balance: meter.balance - deduction,
+            };
+        });
+
+        for (const meter of adjustedMeters) {
             if (meter.balance > 0) {
                 c.var.polar.balanceCheckResult = {
                     selectedMeterId: meter.meterId,
                     selectedMeterSlug: meter.metadata.slug,
-                    meters: sortedMeters,
+                    meters: adjustedMeters,
                 };
                 return;
             }

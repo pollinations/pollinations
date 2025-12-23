@@ -1,0 +1,55 @@
+{
+  "request": {
+    "url": "http://localhost:16385/openai",
+    "method": "POST",
+    "body": {
+      "type": "json",
+      "data": {
+        "model": "gemini-fast",
+        "messages": [
+          {
+            "role": "user",
+            "content": "Is Berlin the capital of Germany? Reply yes or no."
+          }
+        ],
+        "stream": true,
+        "seed": 42
+      }
+    },
+    "params": {}
+  },
+  "response": {
+    "status": 200,
+    "statusText": "OK",
+    "headers": {
+      "access-control-allow-origin": "*",
+      "cache-control": "no-cache",
+      "connection": "keep-alive",
+      "content-type": "text/event-stream; charset=utf-8",
+      "date": "Sat, 20 Dec 2025 15:40:18 GMT",
+      "transfer-encoding": "chunked",
+      "x-powered-by": "Express"
+    },
+    "body": {
+      "type": "stream",
+      "data": [
+        {
+          "data": "data: {\"id\":\"vertex-ai-1766",
+          "delay": 23
+        },
+        {
+          "data": "245218017\",\"object\":\"chat.completion.chunk\",\"created\":1766245218,\"model\":\"gemini-2.5-flash-lite\",\"provider\":\"vertex-ai\",\"choices\":[{\"delta\":{\"role\":\"assistant\",\"content\":\"Yes\",\"content_blocks\":[{\"index\":0,\"delta\":{\"text\":\"Yes\"}}]},\"index\":0,\"finish_reason\":null}]}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"id\":\"vertex-ai-17",
+          "delay": 0
+        },
+        {
+          "data": "66245218017\",\"object\":\"chat.completion.chunk\",\"created\":1766245218,\"model\":\"gemini-2.5-flash-lite\",\"provider\":\"vertex-ai\",\"choices\":[{\"delta\":{\"role\":\"assistant\",\"content\":\".\",\"content_blocks\":[{\"index\":0,\"delta\":{\"text\":\".\"}}]},\"index\":0,\"finish_reason\":\"STOP\"}],\"usage\":{\"prompt_tokens\":265,\"completion_tokens\":2,\"total_tokens\":267,\"completion_tokens_details\":{\"reasoning_tokens\":0,\"audio_tokens\":0},\"prompt_tokens_details\":{\"audio_tokens\":0}}}\n\n",
+          "delay": 0
+        }
+      ]
+    }
+  }
+}

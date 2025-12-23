@@ -130,20 +130,15 @@ async function processContentPart(part) {
         return part;
     }
 
-    try {
-        const dataUrl = await fetchImageAsBase64(url);
-        return {
-            ...part,
-            image_url: {
-                ...part.image_url,
-                url: dataUrl,
-            },
-        };
-    } catch {
-        // Return original on error - let it fail at Vertex AI level with clear error
-        errorLog(`Keeping original URL after conversion failure: ${url}`);
-        return part;
-    }
+    // Let errors propagate - gives users clear error messages instead of silent 500s
+    const dataUrl = await fetchImageAsBase64(url);
+    return {
+        ...part,
+        image_url: {
+            ...part.image_url,
+            url: dataUrl,
+        },
+    };
 }
 
 /**
@@ -154,41 +149,34 @@ async function processMessageContent(content) {
         return content;
     }
 
-    // Use allSettled to allow partial success - don't fail entire message if one image fails
-    const results = await Promise.allSettled(content.map(processContentPart));
-    return results.map((result, index) => {
-        if (result.status === "fulfilled") {
-            return result.value;
-        }
-        // On rejection, return original part
-        errorLog(
-            `Failed to process content part ${index}: ${result.reason?.message}`,
-        );
-        return content[index];
-    });
+    // Let errors propagate for clear error messages
+    return await Promise.all(content.map(processContentPart));
 }
 
 /**
  * Transform function that converts HTTP image URLs to base64 data URLs
- * for Vertex AI compatibility.
+ * for Vertex AI and Bedrock compatibility.
  *
  * Vertex AI requires either:
  * - inlineData (base64 with mimeType)
  * - fileData (gs:// URLs with mimeType)
  *
- * HTTP URLs are not directly supported and cause "empty mimeType" errors.
+ * Bedrock/Claude requires base64 data URLs for images.
+ *
+ * HTTP URLs are not directly supported and cause errors.
  *
  * @returns {Function} Transform function
  */
 export function createImageUrlToBase64Transform() {
     return async (messages, options) => {
-        // Only apply to Vertex AI models
-        const isVertexAI = options?.modelConfig?.provider === "vertex-ai";
-        if (!isVertexAI) {
+        // Apply to Vertex AI and Bedrock providers (both require base64 images)
+        const provider = options?.modelConfig?.provider;
+        const needsBase64 = provider === "vertex-ai" || provider === "bedrock";
+        if (!needsBase64) {
             return { messages, options };
         }
 
-        log("Processing messages for Vertex AI image URL conversion");
+        log(`Processing messages for ${provider} image URL conversion`);
 
         // Process all messages in parallel
         const processedMessages = await Promise.all(

@@ -2,9 +2,12 @@ import { describe, it, expect, beforeAll } from "vitest";
 import fetch from "node-fetch";
 
 const BASE_URL = process.env.TEST_BASE_URL || "http://localhost:16385";
-const ENTER_TOKEN =
-    process.env.ENTER_TOKEN ||
+const PLN_ENTER_TOKEN =
+    process.env.PLN_ENTER_TOKEN ||
     "cZOpvvV4xpbOe1IOYrN0R2a3zxHEAcLntneihfU3f2Y3Pfy5";
+
+// Skip Claude tests in CI if no credentials available
+const SKIP_CLAUDE_TESTS = process.env.CI && !process.env.AWS_ACCESS_KEY_ID;
 
 beforeAll(() => {
     console.log(`Testing usage headers against: ${BASE_URL}`);
@@ -190,7 +193,7 @@ describe("Usage headers - Streaming (Issue #4638)", () => {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
-                "x-enter-token": ENTER_TOKEN,
+                "x-enter-token": PLN_ENTER_TOKEN,
             },
             body: JSON.stringify({
                 model: "openai-fast",
@@ -235,4 +238,83 @@ describe("Usage headers - Streaming (Issue #4638)", () => {
             usageData.prompt_tokens + usageData.completion_tokens,
         );
     }, 30000);
+});
+
+describe("Native Bedrock - Array content support", () => {
+    it.skipIf(SKIP_CLAUDE_TESTS)(
+        "should accept array content in system message for claude-large",
+        async () => {
+            const response = await fetch(`${BASE_URL}/v1/chat/completions`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "x-enter-token": PLN_ENTER_TOKEN,
+                },
+                body: JSON.stringify({
+                    model: "claude-large",
+                    messages: [
+                        {
+                            role: "system",
+                            content: [
+                                {
+                                    type: "text",
+                                    text: "Be brief.",
+                                    cache_control: { type: "ephemeral" },
+                                },
+                            ],
+                        },
+                        { role: "user", content: "Say yes" },
+                    ],
+                    max_tokens: 10,
+                }),
+            });
+
+            expect(response.status).toBe(200);
+
+            const data = await response.json();
+            expect(data.provider).toBe("bedrock");
+            expect(data.choices[0].message.content).toBeTruthy();
+        },
+        60000,
+    );
+
+    it.skipIf(SKIP_CLAUDE_TESTS)(
+        "should include prompt_tokens_details for cache tracking",
+        async () => {
+            const response = await fetch(`${BASE_URL}/v1/chat/completions`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "x-enter-token": PLN_ENTER_TOKEN,
+                },
+                body: JSON.stringify({
+                    model: "claude-large",
+                    messages: [
+                        {
+                            role: "system",
+                            content: [
+                                {
+                                    type: "text",
+                                    text: "You are helpful.",
+                                    cache_control: { type: "ephemeral" },
+                                },
+                            ],
+                        },
+                        { role: "user", content: "Hi" },
+                    ],
+                    max_tokens: 10,
+                }),
+            });
+
+            expect(response.status).toBe(200);
+
+            const data = await response.json();
+            expect(data.usage).toBeDefined();
+            expect(data.usage.prompt_tokens_details).toBeDefined();
+            expect(typeof data.usage.prompt_tokens_details.cached_tokens).toBe(
+                "number",
+            );
+        },
+        60000,
+    );
 });

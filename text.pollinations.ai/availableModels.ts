@@ -5,7 +5,7 @@ import {
     removeSystemMessages,
 } from "./transforms/createSystemPromptTransform.js";
 import { pipe } from "./transforms/pipe.js";
-import { createGoogleSearchTransform } from "./transforms/createGoogleSearchTransform.js";
+import { createGeminiToolsTransform } from "./transforms/createGeminiToolsTransform.ts";
 
 // Import persona prompts
 import midijourneyPrompt from "./personas/midijourney.js";
@@ -33,7 +33,7 @@ interface ModelDefinition {
 const models: ModelDefinition[] = [
     {
         name: "openai",
-        config: portkeyConfig["gpt-5-nano-2025-08-07"],
+        config: portkeyConfig["gpt-5-mini-2025-08-07"],
         transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
     },
     {
@@ -43,7 +43,7 @@ const models: ModelDefinition[] = [
     },
     {
         name: "openai-large",
-        config: portkeyConfig["gpt-4.1-2025-04-14"],
+        config: portkeyConfig["gpt-5.2-2025-12-11"],
         transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
     },
     {
@@ -54,11 +54,6 @@ const models: ModelDefinition[] = [
     {
         name: "mistral",
         config: portkeyConfig["mistral-small-3.2-24b-instruct-2506"],
-        transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
-    },
-    {
-        name: "mistral-fast",
-        config: portkeyConfig["us.meta.llama3-1-8b-instruct-v1:0"],
         transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
     },
     {
@@ -76,32 +71,45 @@ const models: ModelDefinition[] = [
         config: portkeyConfig["gpt-4o-mini-audio-preview-2024-12-17"],
     },
     {
-        name: "claude",
+        name: "claude-fast",
         config: portkeyConfig["us.anthropic.claude-haiku-4-5-20251001-v1:0"],
         transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
     },
     {
-        name: "claude-large",
+        name: "claude",
         config: portkeyConfig["us.anthropic.claude-sonnet-4-5-20250929-v1:0"],
         transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
     },
     {
-        name: "openai-reasoning",
-        config: portkeyConfig["openai/o4-mini"],
-        transform: pipe(
-            createSystemPromptTransform(BASE_PROMPTS.conversational),
-            removeSystemMessages,
-        ),
+        name: "claude-large",
+        config: portkeyConfig["global.anthropic.claude-opus-4-5-20251101-v1:0"],
+        transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
     },
     {
         name: "gemini",
+        config: portkeyConfig["gemini-3-flash-preview"],
+        transform: pipe(
+            createSystemPromptTransform(BASE_PROMPTS.conversational),
+            // code_execution + url_context (both non-search tools, can be combined)
+            createGeminiToolsTransform(["code_execution", "url_context"]),
+        ),
+    },
+    {
+        name: "gemini-fast",
         config: portkeyConfig["gemini-2.5-flash-lite"],
-        transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
+        transform: pipe(
+            createSystemPromptTransform(BASE_PROMPTS.conversational),
+            // code_execution + url_context (both non-search tools, can be combined)
+            createGeminiToolsTransform(["code_execution", "url_context"]),
+        ),
     },
     {
         name: "gemini-search",
         config: portkeyConfig["gemini-2.5-flash-lite"],
-        transform: pipe(createGoogleSearchTransform()),
+        transform: pipe(
+            // Only google_search - url_context is NOT a search tool on Vertex AI
+            createGeminiToolsTransform(["google_search"]),
+        ),
     },
     {
         name: "midijourney",
@@ -120,7 +128,7 @@ const models: ModelDefinition[] = [
     },
     {
         name: "perplexity-reasoning",
-        config: portkeyConfig["sonar-reasoning"],
+        config: portkeyConfig["sonar-reasoning-pro"],
         transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
     },
     {
@@ -131,6 +139,15 @@ const models: ModelDefinition[] = [
     {
         name: "gemini-large",
         config: portkeyConfig["gemini-3-pro-preview"],
+        transform: pipe(
+            createSystemPromptTransform(BASE_PROMPTS.conversational),
+            // code_execution + url_context (both non-search tools, can be combined)
+            createGeminiToolsTransform(["code_execution", "url_context"]),
+        ),
+    },
+    {
+        name: "nova-micro",
+        config: portkeyConfig["amazon.nova-micro-v1:0"],
         transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
     },
 ];

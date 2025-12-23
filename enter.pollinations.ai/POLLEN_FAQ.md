@@ -20,7 +20,7 @@ Currently, we accept credit cards. We're actively exploring other payment method
 
 ## Is there a monthly subscription?
 
-Not yet, but we're considering it based on community feedback. Check out the [voting issue](https://github.com/pollinations/pollinations/issues/2202) to share your thoughts or join our [Discord](https://discord.gg/pollinations) for updates.
+Not yet, but we're considering it based on community feedback. Check out the [voting issue](https://github.com/pollinations/pollinations/issues/2202) to share your thoughts or join our [Discord](https://discord.gg/pollinations-ai-885844321461485618) for updates.
 
 ## Can I try it without signing up?
 
@@ -37,8 +37,9 @@ Registration gives you access to the Pollinations API and the **Spore tier**, wh
 
 ## How do daily Pollen grants work?
 
-Registered developers receive daily Pollen grants to support experimentation based on their tier.
-Pollen grants are always spent before your purchased Pollen balance, and it expires each day.
+You receive a daily Pollen grant based on your tier. Daily Pollen is spent before your purchased Pollen. Unused Pollen expires each day.
+
+💚 **Thanks to our supporters**, all tiers receive free daily Pollen during beta.
 
 ## What can I create with Pollen?
 

@@ -1,8 +1,14 @@
 import { Polar } from "@polar-sh/sdk";
-import { eq, sql, and, gte, or } from "drizzle-orm";
+import { eq, sql, and, gte, or, lt } from "drizzle-orm";
 import type { DrizzleD1Database } from "drizzle-orm/d1";
 import { event } from "./db/schema/event.ts";
-import { batches, generateRandomId, removeUnset } from "./util.ts";
+import {
+    batches,
+    capitalize,
+    exponentialBackoffDelay,
+    generateRandomId,
+    removeUnset,
+} from "./util.ts";
 import {
     InsertGenerationEvent,
     SelectGenerationEvent,
@@ -12,8 +18,12 @@ import { z } from "zod";
 import { Logger } from "@logtape/logtape";
 
 const BUFFER_BATCH_SIZE = 1;
-const INGEST_BATCH_SIZE = 500;
 const MAX_DELIVERY_ATTEMPTS = 5;
+const DEFAULT_MIN_BATCH_SIZE = 100;
+const DEFAULT_MAX_BATCH_SIZE = 500;
+const DEFAULT_BATCH_DELIVERY_DELAY = 100;
+const DEFAULT_MIN_RETRY_DELAY = 100;
+const DEFAULT_MAX_RETRY_DELAY = 10000;
 
 const tbIngestResponseSchema = z.object({
     successful_rows: z.number(),
@@ -29,20 +39,29 @@ export async function storeEvents(
     for (const batch of batches(events, BUFFER_BATCH_SIZE)) {
         try {
             await db.insert(event).values(batch).onConflictDoNothing();
-        } catch (e) {
-            log.error("Failed to insert event batch: {e}", { e });
+        } catch (error) {
+            log.error("Failed to insert event batch: {error}", { error });
         }
     }
 }
 
-async function* pendingEventBatches(db: DrizzleD1Database, batchSize: number) {
-    while (true) {
-        const { processingId, events } = await preparePendingEvents(
-            db,
-            batchSize,
-        );
-        if (events.length === 0) break;
-        yield { processingId, events };
+export async function updateEvent(
+    db: DrizzleD1Database,
+    log: Logger,
+    eventId: string,
+    updates: Partial<InsertGenerationEvent>,
+): Promise<void> {
+    log.trace("Updating event: {eventId}", { eventId });
+    try {
+        await db
+            .update(event)
+            .set({ ...updates, updatedAt: new Date() })
+            .where(eq(event.id, eventId));
+    } catch (error) {
+        log.error("Failed to update event {eventId}: {error}", {
+            eventId,
+            error,
+        });
     }
 }
 
@@ -53,14 +72,31 @@ export async function processEvents(
         polarAccessToken: string;
         polarServer: "sandbox" | "production";
         tinybirdIngestUrl: string;
-        tinybirdAccessToken: string;
+        tinybirdIngestToken: string;
+        minBatchSize?: number;
+        maxBatchSize?: number;
+        batchDeliveryDelay?: number;
+        minRetryDelay?: number;
+        maxRetryDelay?: number;
     },
 ) {
+    const {
+        minBatchSize = DEFAULT_MIN_BATCH_SIZE,
+        maxBatchSize = DEFAULT_MAX_BATCH_SIZE,
+        batchDeliveryDelay = DEFAULT_BATCH_DELIVERY_DELAY,
+        minRetryDelay = DEFAULT_MIN_RETRY_DELAY,
+        maxRetryDelay = DEFAULT_MAX_RETRY_DELAY,
+    } = config;
+
     for await (const { processingId, events } of pendingEventBatches(
         db,
-        INGEST_BATCH_SIZE,
+        minBatchSize,
+        maxBatchSize,
     )) {
         if (events.length === 0) return;
+        log.trace("Processing event batch with {count} events", {
+            count: events.length,
+        });
         const polarDelivery = await sendPolarEvents(
             events,
             config.polarAccessToken,
@@ -70,17 +106,26 @@ export async function processEvents(
         const tinybirdDelivery = await sendTinybirdEvents(
             events,
             config.tinybirdIngestUrl,
-            config.tinybirdAccessToken,
+            config.tinybirdIngestToken,
             log,
         );
         if (
-            ["succeeded", "skipped"].includes(polarDelivery) &&
-            ["succeeded", "skipped"].includes(tinybirdDelivery)
+            ["succeeded", "skipped"].includes(polarDelivery.status) &&
+            ["succeeded", "skipped"].includes(tinybirdDelivery.status)
         ) {
             log.trace("Event processing complete: {processingId}", {
                 processingId,
             });
             await confirmProcessingEvents(processingId, db);
+            if (batchDeliveryDelay > 0) {
+                log.trace(
+                    "Waiting {batchDeliveryDelay}ms before processing next batch",
+                    { batchDeliveryDelay },
+                );
+                await new Promise((resolve) =>
+                    setTimeout(resolve, batchDeliveryDelay),
+                );
+            }
         } else {
             log.trace("Event processing failed, rolling back: {processingId}", {
                 processingId,
@@ -89,34 +134,122 @@ export async function processEvents(
                 polarDelivery,
                 tinybirdDelivery,
             });
+            if (maxRetryDelay > 0) {
+                const retryDelay = exponentialBackoffDelay(
+                    Math.max(
+                        polarDelivery.maxDeliveryAttempts,
+                        tinybirdDelivery.maxDeliveryAttempts,
+                    ),
+                    {
+                        minDelay: minRetryDelay,
+                        maxDelay: maxRetryDelay,
+                        maxAttempts: MAX_DELIVERY_ATTEMPTS,
+                    },
+                );
+                // Wait a bit to prevent rate limiting
+                log.trace(
+                    "Waiting {retryDelay}ms before retrying: {processingId}",
+                    { retryDelay, processingId },
+                );
+                await new Promise((resolve) => setTimeout(resolve, retryDelay));
+            }
         }
     }
+    // Clear successfully sent events
+    await clearExpiredEvents(db);
 }
+
+async function checkPendingBatchIsReady(
+    db: DrizzleD1Database,
+    minBatchSize: number,
+    maxAgeSeconds: number,
+): Promise<boolean> {
+    const batchIsReady = await db
+        .select({ id: event.id })
+        .from(event)
+        .where(
+            and(
+                eq(event.eventStatus, "pending"),
+                or(
+                    // Checks for events older than maxAgeSeconds
+                    lt(
+                        event.createdAt,
+                        new Date(Date.now() - maxAgeSeconds * 1000),
+                    ),
+                    // Low level subquery to check if there are at least
+                    // minBatchSize pending events without counting
+                    sql`
+                        ${event.id} IN (SELECT id FROM ${event} 
+                        WHERE event_status = 'pending' 
+                        ORDER BY created_at ASC 
+                        LIMIT 1 OFFSET ${minBatchSize - 1})
+                    `,
+                ),
+            ),
+        )
+        .limit(1);
+
+    return !!batchIsReady[0];
+}
+
+type EventBatch = {
+    processingId: string;
+    events: SelectGenerationEvent[];
+};
 
 async function preparePendingEvents(
     db: DrizzleD1Database,
-    batchSize: number,
-): Promise<{ processingId: string; events: SelectGenerationEvent[] }> {
+    minBatchSize: number,
+    maxBatchSize: number,
+): Promise<EventBatch | null> {
+    // Only create a processing batch if there are at least minBatchSize
+    // pending events, or if events are older than 30 seconds
+    const maxAgeSeconds = 30;
+    const batchIsReady = await checkPendingBatchIsReady(
+        db,
+        minBatchSize,
+        maxAgeSeconds,
+    );
+    if (!batchIsReady) {
+        return null;
+    }
+
     const processingId = generateRandomId();
-
-    // Update events to processing status
-    await db
-        .update(event)
-        .set({
-            eventStatus: "processing",
-            eventProcessingId: processingId,
-            updatedAt: new Date(),
-        })
-        .where(eq(event.eventStatus, "pending"))
-        .limit(batchSize);
-
-    // Fetch updated events (D1 has column limits on .returning())
-    const events = await db
-        .select()
-        .from(event)
-        .where(eq(event.eventProcessingId, processingId));
+    const [_, events] = await db.batch([
+        // Update events to processing status
+        db
+            .update(event)
+            .set({
+                eventStatus: "processing",
+                eventProcessingId: processingId,
+                updatedAt: new Date(),
+            })
+            .where(eq(event.eventStatus, "pending"))
+            .limit(maxBatchSize),
+        // Fetch updated events (D1 has column limits on .returning())
+        db
+            .select()
+            .from(event)
+            .where(eq(event.eventProcessingId, processingId)),
+    ]);
 
     return { processingId, events };
+}
+
+async function* pendingEventBatches(
+    db: DrizzleD1Database,
+    minBatchSize: number,
+    maxBatchSize: number,
+): AsyncGenerator<EventBatch> {
+    while (true) {
+        const batch = await preparePendingEvents(
+            db,
+            minBatchSize,
+            maxBatchSize,
+        );
+        if (!batch) break;
+        yield batch;
+    }
 }
 
 async function rollbackProcessingEvents(
@@ -127,43 +260,48 @@ async function rollbackProcessingEvents(
         tinybirdDelivery: DeliveryStatus;
     },
 ): Promise<void> {
-    // Mark events that exceed MAX_DELIVERY_ATTEMPTS as error
-    await db
-        .update(event)
-        .set({ eventStatus: "error" })
-        .where(
-            and(
-                eq(event.eventProcessingId, processingId),
-                or(
-                    gte(event.polarDeliveryAttempts, MAX_DELIVERY_ATTEMPTS),
-                    gte(event.tinybirdDeliveryAttempts, MAX_DELIVERY_ATTEMPTS),
+    await db.batch([
+        // Mark events that exceed MAX_DELIVERY_ATTEMPTS as error
+        db
+            .update(event)
+            .set({ eventStatus: "error" })
+            .where(
+                and(
+                    eq(event.eventProcessingId, processingId),
+                    or(
+                        gte(event.polarDeliveryAttempts, MAX_DELIVERY_ATTEMPTS),
+                        gte(
+                            event.tinybirdDeliveryAttempts,
+                            MAX_DELIVERY_ATTEMPTS,
+                        ),
+                    ),
                 ),
             ),
-        );
-    // Mark remaining events as pending
-    await db
-        .update(event)
-        .set({
-            eventStatus: "pending",
-            ...(status.polarDelivery === "succeeded" && {
-                polarDeliveredAt: new Date(),
-            }),
-            ...(status.polarDelivery !== "skipped" && {
-                polarDeliveryAttempts: sql`${event.polarDeliveryAttempts} + 1`,
-            }),
-            ...(status.tinybirdDelivery === "succeeded" && {
-                tinybirdDeliveredAt: new Date(),
-            }),
-            ...(status.tinybirdDelivery !== "skipped" && {
-                tinybirdDeliveryAttempts: sql`${event.tinybirdDeliveryAttempts} + 1`,
-            }),
-        })
-        .where(
-            and(
-                eq(event.eventProcessingId, processingId),
-                eq(event.eventStatus, "processing"),
+        // Mark remaining events as pending
+        db
+            .update(event)
+            .set({
+                eventStatus: "pending",
+                ...(status.polarDelivery.status === "succeeded" && {
+                    polarDeliveredAt: new Date(),
+                }),
+                ...(status.polarDelivery.status !== "skipped" && {
+                    polarDeliveryAttempts: sql`${event.polarDeliveryAttempts} + 1`,
+                }),
+                ...(status.tinybirdDelivery.status === "succeeded" && {
+                    tinybirdDeliveredAt: new Date(),
+                }),
+                ...(status.tinybirdDelivery.status !== "skipped" && {
+                    tinybirdDeliveryAttempts: sql`${event.tinybirdDeliveryAttempts} + 1`,
+                }),
+            })
+            .where(
+                and(
+                    eq(event.eventProcessingId, processingId),
+                    eq(event.eventStatus, "processing"),
+                ),
             ),
-        );
+    ]);
 }
 
 async function confirmProcessingEvents(
@@ -178,7 +316,21 @@ async function confirmProcessingEvents(
         .where(eq(event.eventProcessingId, processingId));
 }
 
-type DeliveryStatus = "skipped" | "failed" | "succeeded";
+async function clearExpiredEvents(db: DrizzleD1Database): Promise<void> {
+    // Calculate timestamp for 1 day ago (createdAt is stored as Unix timestamp integer)
+    const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+    await db
+        .delete(event)
+        .where(
+            and(eq(event.eventStatus, "sent"), lt(event.createdAt, oneDayAgo)),
+        );
+}
+
+type DeliveryStatus = {
+    status: "skipped" | "failed" | "succeeded";
+    minDeliveryAttempts: number;
+    maxDeliveryAttempts: number;
+};
 
 function createPolarEvent(event: SelectGenerationEvent) {
     if (!event.userId) {
@@ -197,7 +349,7 @@ function createPolarEvent(event: SelectGenerationEvent) {
         // request information
         requestId: event.requestId,
         startTime: event.startTime.toISOString(),
-        endTime: event.endTime.toISOString(),
+        endTime: event.endTime?.toISOString(),
         // model
         model: event.modelUsed,
         // token counts
@@ -216,6 +368,10 @@ function createPolarEvent(event: SelectGenerationEvent) {
         tokenPriceCompletionReasoning: event.tokenPriceCompletionReasoning,
         tokenPriceCompletionAudio: event.tokenPriceCompletionAudio,
         tokenPriceCompletionImage: event.tokenPriceCompletionImage,
+        tokenCountCompletionVideoSeconds:
+            event.tokenCountCompletionVideoSeconds,
+        tokenPriceCompletionVideoSeconds:
+            event.tokenPriceCompletionVideoSeconds,
         // calculated price
         totalPrice: event.totalPrice,
         // meter selection
@@ -225,6 +381,7 @@ function createPolarEvent(event: SelectGenerationEvent) {
     });
     return {
         name: event.eventType,
+        externalId: event.id,
         externalCustomerId: event.userId,
         metadata,
     };
@@ -244,10 +401,18 @@ async function sendPolarEvents(
     });
     const polarEvents = events
         .filter(
-            (event) => event.isBilledUsage && event.polarDeliveredAt == null,
+            (event) =>
+                event.eventStatus !== "estimate" &&
+                event.isBilledUsage &&
+                event.polarDeliveredAt == null,
         )
         .map((event) => createPolarEvent(event));
-    if (polarEvents.length === 0) return "skipped";
+    const deliveryStats = polarDeliveryStats(events);
+    if (polarEvents.length === 0)
+        return {
+            status: "skipped",
+            ...deliveryStats,
+        };
     let ingested = 0;
     try {
         const response = await polar.events.ingest({
@@ -265,9 +430,15 @@ async function sendPolarEvents(
             "Number of ingested Polar events did not match: {ingested}/{count}",
             { count: polarEvents.length, ingested },
         );
-        return "failed";
+        return {
+            status: "failed",
+            ...deliveryStats,
+        };
     }
-    return "succeeded";
+    return {
+        status: "succeeded",
+        ...deliveryStats,
+    };
 }
 
 async function sendTinybirdEvents(
@@ -276,8 +447,13 @@ async function sendTinybirdEvents(
     tinybirdAccessToken: string,
     log: Logger,
 ): Promise<DeliveryStatus> {
+    const deliveryStats = tinybirdDeliveryStats(events);
     const tinybirdEvents = events
-        .filter((event) => event.tinybirdDeliveredAt == null)
+        .filter(
+            (event) =>
+                event.eventStatus !== "estimate" &&
+                event.tinybirdDeliveredAt == null,
+        )
         .map((event) => {
             return removeUnset(
                 omit(
@@ -292,7 +468,11 @@ async function sendTinybirdEvents(
                 ),
             );
         });
-    if (tinybirdEvents.length === 0) return "skipped";
+    if (tinybirdEvents.length === 0)
+        return {
+            status: "skipped",
+            ...deliveryStats,
+        };
     let ingested = 0;
     try {
         const response = await fetch(tinybirdIngestUrl, {
@@ -323,9 +503,15 @@ async function sendTinybirdEvents(
             "Number of ingested Tinybird events did not match: {ingested}/{count}",
             { count: tinybirdEvents.length, ingested },
         );
-        return "failed";
+        return {
+            status: "failed",
+            ...deliveryStats,
+        };
     }
-    return "succeeded";
+    return {
+        status: "succeeded",
+        ...deliveryStats,
+    };
 }
 
 function flattenBalances(balances: Record<string, number> | null) {
@@ -338,6 +524,63 @@ function flattenBalances(balances: Record<string, number> | null) {
     );
 }
 
-function capitalize(str: string) {
-    return `${str.charAt(0).toUpperCase()}${str.slice(1)}`;
+function polarDeliveryStats(events: SelectGenerationEvent[]): {
+    minDeliveryAttempts: number;
+    maxDeliveryAttempts: number;
+} {
+    return events.reduce(
+        (stats, event) => ({
+            minDeliveryAttempts: Math.min(
+                event.polarDeliveryAttempts,
+                stats.minDeliveryAttempts,
+            ),
+            maxDeliveryAttempts: Math.max(
+                event.polarDeliveryAttempts,
+                stats.maxDeliveryAttempts,
+            ),
+        }),
+        { minDeliveryAttempts: MAX_DELIVERY_ATTEMPTS, maxDeliveryAttempts: 0 },
+    );
+}
+
+function tinybirdDeliveryStats(events: SelectGenerationEvent[]): {
+    minDeliveryAttempts: number;
+    maxDeliveryAttempts: number;
+} {
+    return events.reduce(
+        (stats, event) => ({
+            minDeliveryAttempts: Math.min(
+                event.tinybirdDeliveryAttempts,
+                stats.minDeliveryAttempts,
+            ),
+            maxDeliveryAttempts: Math.max(
+                event.tinybirdDeliveryAttempts,
+                stats.maxDeliveryAttempts,
+            ),
+        }),
+        { minDeliveryAttempts: MAX_DELIVERY_ATTEMPTS, maxDeliveryAttempts: 0 },
+    );
+}
+
+export async function getPendingSpend(
+    db: DrizzleD1Database,
+    userId: string,
+): Promise<number> {
+    const maxPendingSpendWindowMs = 10 * 60 * 1000; // 10 minutes
+    const windowStart = new Date(Date.now() - maxPendingSpendWindowMs);
+    const result = await db
+        .select({
+            total: sql<number>`COALESCE(SUM(
+                CASE 
+                    WHEN ${event.eventStatus} = 'estimate' THEN ${event.estimatedPrice}
+                    WHEN ${event.isBilledUsage} = 1 THEN ${event.totalPrice}
+                    ELSE 0
+                END
+            ), 0)`,
+        })
+        .from(event)
+        .where(
+            and(gte(event.createdAt, windowStart), eq(event.userId, userId)),
+        );
+    return result[0]?.total || 0;
 }

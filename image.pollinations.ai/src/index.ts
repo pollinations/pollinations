@@ -1,3 +1,4 @@
+import "dotenv/config";
 import type { IncomingMessage, ServerResponse } from "node:http";
 import http from "node:http";
 import { parse } from "node:url";
@@ -15,6 +16,11 @@ import {
     createAndReturnImageCached,
     type ImageGenerationResult,
 } from "./createAndReturnImages.js";
+import {
+    createAndReturnVideo,
+    isVideoModel,
+    type VideoGenerationResult,
+} from "./createAndReturnVideos.js";
 import { registerFeedListener, sendToFeedListeners } from "./feedListeners.js";
 import { makeParamsSafe } from "./makeParamsSafe.js";
 import { MODELS } from "./models.js";
@@ -340,7 +346,71 @@ const checkCacheAndGenerate = async (
             debugInfo: {},
         };
 
-        // Cache the generated image
+        // Check if this is a video model
+        const isVideo = isVideoModel(safeParams.model);
+
+        // Handle video generation separately (with caching)
+        if (isVideo) {
+            progress.updateBar(requestId, 10, "Processing", "Generating video");
+            timingInfo = [{ step: "Request received.", timestamp: Date.now() }];
+            progress.setProcessing(requestId);
+
+            // Cache video generation same as images
+            const videoResult = await cacheImagePromise(
+                originalPrompt,
+                safeParams,
+                async () => {
+                    return createAndReturnVideo(
+                        originalPrompt,
+                        safeParams,
+                        progress,
+                        requestId,
+                    );
+                },
+            );
+
+            timingInfo.push({ step: "Video generated", timestamp: Date.now() });
+
+            // Build headers for video response
+            const headers = {
+                "Content-Type": "video/mp4",
+                "Cache-Control": "public, max-age=31536000, immutable",
+            };
+
+            // Add Content-Disposition with .mp4 extension
+            if (originalPrompt) {
+                const baseFilename = originalPrompt
+                    .slice(0, 100)
+                    .replace(/[^a-z0-9\s-]/gi, "")
+                    .replace(/\s+/g, "-")
+                    .replace(/-+/g, "-")
+                    .replace(/^-|-$/g, "")
+                    .toLowerCase();
+                const filename = `${baseFilename || "generated-video"}.mp4`;
+                headers["Content-Disposition"] =
+                    `inline; filename="${filename}"`;
+            }
+
+            // Add tracking headers
+            const trackingHeaders = buildTrackingHeaders(
+                safeParams.model,
+                videoResult.trackingData,
+            );
+            Object.assign(headers, trackingHeaders);
+
+            res.writeHead(200, headers);
+            res.write(videoResult.buffer);
+            res.end();
+
+            logApi("Video generation complete:", {
+                originalPrompt,
+                safeParams,
+                referrer,
+            });
+            return;
+        }
+
+        // Cache the generated image (existing image flow)
         const bufferAndMaturity = await cacheImagePromise(
             originalPrompt,
             safeParams,
@@ -519,21 +589,21 @@ const server = http.createServer((req, res) => {
         return;
     }
 
-    // Verify ENTER_TOKEN
+    // Verify PLN_ENTER_TOKEN
     const token = req.headers["x-enter-token"];
-    const expectedToken = process.env.ENTER_TOKEN;
+    const expectedToken = process.env.PLN_ENTER_TOKEN;
 
     if (expectedToken && token !== expectedToken) {
-        logAuth("❌ Invalid or missing ENTER_TOKEN from IP:", getIp(req));
+        logAuth("❌ Invalid or missing PLN_ENTER_TOKEN from IP:", getIp(req));
         res.writeHead(403, { "Content-Type": "application/json" });
         res.end(JSON.stringify({ error: "Unauthorized" }));
         return;
     }
 
     if (expectedToken) {
-        logAuth("✅ Valid ENTER_TOKEN from IP:", getIp(req));
+        logAuth("✅ Valid PLN_ENTER_TOKEN from IP:", getIp(req));
     } else {
-        logAuth("!  ENTER_TOKEN not configured - allowing request");
+        logAuth("!  PLN_ENTER_TOKEN not configured - allowing request");
     }
 
     if (

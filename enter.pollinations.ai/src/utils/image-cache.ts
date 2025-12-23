@@ -107,7 +107,8 @@ export function setHttpMetadataHeaders(
             c.header(headerName, value);
         }
     } else {
-        // Fallback to default content type
+        // Fallback to default content type (image/jpeg for images, leave unset for videos)
+        // Video content types should be preserved from origin response
         c.header("Content-Type", "image/jpeg");
     }
 }
@@ -183,7 +184,8 @@ export async function cacheResponse<TEnv extends ImageCacheEnv>(
 
         return true;
     } catch (error) {
-        c.get("log")?.error("[CACHE] Error caching response: {error}", {
+        const log = c.get("log");
+        log.error("Error caching response: {error}", {
             error,
         });
         return false;

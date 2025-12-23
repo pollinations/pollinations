@@ -1,7 +1,6 @@
-import { processEvents, storeEvents } from "@/events.ts";
-import { HTTPException } from "hono/http-exception";
+import { processEvents, storeEvents, updateEvent } from "@/events.ts";
+import { getModelStats, getEstimatedPrice } from "@/utils/model-stats.ts";
 import {
-    resolveServiceId,
     getActivePriceDefinition,
     calculateCost,
     calculatePrice,
@@ -12,11 +11,12 @@ import {
     PriceDefinition,
     getServiceDefinition,
 } from "@shared/registry/registry.ts";
+import type { ModelVariables } from "./model.ts";
 import {
     openaiUsageToTokenUsage,
     parseUsageHeaders,
 } from "@shared/registry/usage-headers.ts";
-import { routePath, baseRoutePath } from "hono/route";
+import { routePath } from "hono/route";
 import {
     CompletionUsage,
     CompletionUsageSchema,
@@ -35,6 +35,7 @@ import { drizzle } from "drizzle-orm/d1";
 import { HonoRequest } from "hono";
 import type {
     ApiKeyType,
+    EstimateGenerationEvent,
     EventType,
     GenerationEventContentFilterParams,
     InsertGenerationEvent,
@@ -51,7 +52,6 @@ import {
     getErrorCode,
     UpstreamError,
 } from "@/error.ts";
-import { ValidationError } from "@/middleware/validator.ts";
 import type { LoggerVariables } from "./logger.ts";
 import type { ErrorVariables } from "@/env.ts";
 import type { FrontendKeyRateLimitVariables } from "./rate-limit-durable.ts";
@@ -99,15 +99,30 @@ export type TrackEnv = {
         AuthVariables &
         PolarVariables &
         FrontendKeyRateLimitVariables &
-        TrackVariables;
+        TrackVariables &
+        ModelVariables;
 };
 
 export const track = (eventType: EventType) =>
     createMiddleware<TrackEnv>(async (c, next) => {
-        const log = c.get("log");
+        const log = getLogger(["hono", "track"]);
         const startTime = new Date();
+        const db = drizzle(c.env.DB);
 
-        const requestTracking = await trackRequest(eventType, c.req);
+        // Get model from resolveModel middleware
+        const modelInfo = c.var.model;
+        const requestTracking = await trackRequest(modelInfo, c.req);
+
+        const userTracking: UserData = {
+            userId: c.var.auth.user?.id,
+            userTier: c.var.auth.user?.tier,
+            userGithubId: `${c.var.auth.user?.githubId}`,
+            userGithubUsername: c.var.auth.user?.githubUsername,
+            apiKeyId: c.var.auth.apiKey?.id,
+            apiKeyType: c.var.auth.apiKey?.metadata?.keyType as ApiKeyType,
+            apiKeyName: c.var.auth.apiKey?.name,
+        } satisfies UserData;
+
         let responseOverride = null;
 
         c.set("track", {
@@ -118,6 +133,42 @@ export const track = (eventType: EventType) =>
                 responseOverride = response;
             },
         });
+
+        let estimateEventId: string | undefined = generateRandomId();
+
+        if (userTracking.userId) {
+            try {
+                const modelStats = await getModelStats(c.env.KV, log);
+                const estimatedPrice = getEstimatedPrice(
+                    modelStats,
+                    requestTracking.resolvedModelRequested,
+                );
+
+                const estimateEvent = createEstimateEvent({
+                    id: estimateEventId,
+                    requestId: c.get("requestId"),
+                    requestPath: `${routePath(c)}`,
+                    startTime,
+                    environment: c.env.ENVIRONMENT,
+                    eventType,
+                    userTracking,
+                    requestTracking,
+                    estimatedPrice,
+                });
+
+                await storeEvents(db, log, [estimateEvent]);
+                log.debug(
+                    "Inserted estimate event: {estimateEventId} with estimatedPrice={estimatedPrice}",
+                    { estimateEventId, estimatedPrice },
+                );
+            } catch (error) {
+                log.error("Failed to insert estimate event: {error}", {
+                    error,
+                });
+                // Insertion failed, reset estimate event
+                estimateEventId = undefined;
+            }
+        }
 
         await next();
 
@@ -137,17 +188,7 @@ export const track = (eventType: EventType) =>
                     responseTracking.price?.totalPrice || 0,
                 );
 
-                const userTracking: UserData = {
-                    userId: c.var.auth.user?.id,
-                    userTier: c.var.auth.user?.tier,
-                    userGithubId: `${c.var.auth.user?.githubId}`,
-                    userGithubUsername: c.var.auth.user?.githubUsername,
-                    apiKeyId: c.var.auth.apiKey?.id,
-                    apiKeyType: c.var.auth.apiKey?.metadata
-                        ?.keyType as ApiKeyType,
-                    apiKeyName: c.var.auth.apiKey?.name,
-                } satisfies UserData;
-
+                // Capture balance tracking AFTER next() so balanceCheckResult is set
                 const balanceTracking = {
                     selectedMeterId:
                         c.var.polar.balanceCheckResult?.selectedMeterId,
@@ -161,9 +202,10 @@ export const track = (eventType: EventType) =>
                     ),
                 } satisfies BalanceData;
 
-                const event = createTrackingEvent({
+                const finalEvent = createTrackingEvent({
+                    id: estimateEventId || generateRandomId(),
                     requestId: c.get("requestId"),
-                    requestPath: `${baseRoutePath(c)}${routePath(c)}`,
+                    requestPath: `${routePath(c)}`,
                     startTime,
                     endTime,
                     environment: c.env.ENVIRONMENT,
@@ -175,17 +217,47 @@ export const track = (eventType: EventType) =>
                     errorTracking: collectErrorData(response, c.get("error")),
                 });
 
-                log.trace("Event: {event}", { event });
-                const db = drizzle(c.env.DB);
-                await storeEvents(db, c.var.log, [event]);
+                log.trace(
+                    [
+                        "Tracking event:",
+                        "  isBilledUsage={event.isBilledUsage}",
+                        "  balances[v1:meter:tier]={event.balances[v1:meter:tier]}",
+                        "  balances[v1:meter:pack]={event.balances[v1:meter:pack]}",
+                        '  selectedMeterSlug="{event.selectedMeterSlug}"',
+                        "  totalCost={event.totalCost}",
+                        "  totalPrice={event.totalPrice}",
+                    ].join("\n"),
+                    { event: finalEvent },
+                );
+
+                if (estimateEventId) {
+                    // Update the estimate event with all final data
+                    await updateEvent(db, log, estimateEventId, finalEvent);
+                    log.debug(
+                        "Updated estimate event {eventId} with actual data",
+                        { eventId: estimateEventId },
+                    );
+                } else {
+                    // No pending event was inserted, store a new event
+                    await storeEvents(db, c.var.log, [finalEvent]);
+                }
 
                 // process events immediately in development/testing
-                if (["test", "development"].includes(c.env.ENVIRONMENT)) {
-                    await processEvents(db, c.var.log, {
+                if (
+                    ["test", "development", "local"].includes(c.env.ENVIRONMENT)
+                ) {
+                    log.trace(
+                        "Processing events immediately (ENVIRONMENT={environment})",
+                        { environment: c.env.ENVIRONMENT },
+                    );
+                    await processEvents(db, log.getChild("events"), {
                         polarAccessToken: c.env.POLAR_ACCESS_TOKEN,
                         polarServer: c.env.POLAR_SERVER,
                         tinybirdIngestUrl: c.env.TINYBIRD_INGEST_URL,
-                        tinybirdAccessToken: c.env.TINYBIRD_ACCESS_TOKEN,
+                        tinybirdIngestToken: c.env.TINYBIRD_INGEST_TOKEN,
+                        minBatchSize: 0, // process all events immediately
+                        minRetryDelay: 0, // don't wait between retries
+                        maxRetryDelay: 0, // don't wait between retries
                     });
                 }
             })(),
@@ -193,20 +265,12 @@ export const track = (eventType: EventType) =>
     });
 
 async function trackRequest(
-    eventType: EventType,
+    modelInfo: ModelVariables["model"],
     request: HonoRequest,
 ): Promise<RequestTrackingData> {
-    const modelRequested = await extractModelRequested(request);
-
-    let resolvedModelRequested: ServiceId | undefined;
-    try {
-        resolvedModelRequested = resolveServiceId(modelRequested, eventType);
-    } catch (error) {
-        throw new HTTPException(400, {
-            message:
-                error instanceof Error ? error.message : "Invalid model name",
-        });
-    }
+    // Model is already resolved by the resolveModel middleware
+    const modelRequested = modelInfo.requested;
+    const resolvedModelRequested = modelInfo.resolved;
 
     const modelProvider = getServiceDefinition(resolvedModelRequested).provider;
     const modelPriceDefinition = getActivePriceDefinition(
@@ -328,7 +392,54 @@ type BalanceData = {
     balances: Record<string, number>;
 };
 
+type EstimateEventInput = {
+    id: string;
+    requestId: string;
+    requestPath: string;
+    startTime: Date;
+    environment: string;
+    eventType: EventType;
+    userTracking: UserData;
+    requestTracking: RequestTrackingData;
+    estimatedPrice: number;
+};
+
+function createEstimateEvent({
+    id,
+    requestId,
+    requestPath,
+    startTime,
+    environment,
+    eventType,
+    userTracking,
+    requestTracking,
+    estimatedPrice,
+}: EstimateEventInput): InsertGenerationEvent {
+    return {
+        id,
+        eventStatus: "estimate",
+        requestId,
+        requestPath,
+        startTime,
+        environment,
+        eventType,
+
+        ...userTracking,
+        ...requestTracking.referrerData,
+
+        modelRequested: requestTracking.modelRequested,
+        resolvedModelRequested: requestTracking.resolvedModelRequested,
+        modelProviderUsed: requestTracking.modelProvider,
+
+        isBilledUsage: false,
+        estimatedPrice,
+
+        ...priceToEventParams(requestTracking.modelPriceDefinition),
+    };
+}
+
 type TrackingEventInput = {
+    id: string;
     requestId: string;
     requestPath: string;
     startTime: Date;
@@ -343,6 +454,7 @@ type TrackingEventInput = {
 };
 
 function createTrackingEvent({
+    id,
     requestId,
     requestPath,
     startTime,
@@ -356,7 +468,8 @@ function createTrackingEvent({
     errorTracking,
 }: TrackingEventInput): InsertGenerationEvent {
     return {
-        id: generateRandomId(),
+        id,
+        eventStatus: "pending",
         requestId,
         requestPath,
         startTime,
@@ -373,6 +486,7 @@ function createTrackingEvent({
         modelRequested: requestTracking.modelRequested,
         resolvedModelRequested: requestTracking.resolvedModelRequested,
         modelUsed: responseTracking.modelUsed,
+        modelProviderUsed: requestTracking.modelProvider,
 
         isBilledUsage: responseTracking.isBilledUsage,
 
@@ -387,19 +501,6 @@ function createTrackingEvent({
         ...responseTracking.contentFilterResults,
         ...errorTracking,
     };
-}
-
-async function extractModelRequested(
-    request: HonoRequest,
-): Promise<string | null> {
-    if (request.method === "GET") {
-        return request.query("model") || null;
-    }
-    if (request.method === "POST") {
-        const body = await request.json();
-        return body.model || null;
-    }
-    return null;
 }
 
 async function extractStreamRequested(request: HonoRequest): Promise<boolean> {
@@ -646,28 +747,20 @@ type ErrorData = {
     errorResponseCode?: string;
     errorSource?: string;
     errorMessage?: string;
-    errorStack?: string;
-    errorDetails?: string;
+    // errorStack and errorDetails removed to reduce D1 memory usage
 };
 
 function collectErrorData(response: Response, error?: Error): ErrorData {
     if (response.ok && !error) return {};
-    let status, source, details;
-    if (error instanceof ValidationError) {
-        details = JSON.stringify(z.flattenError(error.zodError));
-    } else if (error instanceof UpstreamError) {
+    let source: string | undefined;
+    if (error instanceof UpstreamError) {
         source = error.requestUrl?.hostname;
-        details = JSON.stringify({
-            requestUrl: error.requestUrl,
-            requestBody: error.requestBody,
-        });
     }
+    // Note: errorStack and errorDetails removed to reduce D1 memory usage
+    // Stack traces and details are still logged but not stored in the database
     return {
-        errorResponseCode: getErrorCode(status || response.status),
+        errorResponseCode: getErrorCode(response.status),
         errorSource: source,
-        errorMessage:
-            error?.message || getDefaultErrorMessage(status || response.status),
-        errorStack: error?.stack,
-        errorDetails: details,
+        errorMessage: error?.message || getDefaultErrorMessage(response.status),
     };
 }

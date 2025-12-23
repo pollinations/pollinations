@@ -1,15 +1,24 @@
-# Pollinations.AI API Docs 🌸
+# pollinations.ai API Docs 🌸
+
+> **⚠️ Legacy Documentation Notice**
+>
+> This documentation refers to our legacy endpoints (`image.pollinations.ai`, `text.pollinations.ai`). We recommend using our new unified API at **https://gen.pollinations.ai** with the **https://enter.pollinations.ai** service.
+>
+> 📚 **[View Latest API Documentation](https://enter.pollinations.ai/api/docs)**
+>
+> The legacy endpoints will be deprecated in the future.
+
 ## The World's Most Accessible Open GenAI Platform
 
-Create amazing text, images, and audio with our APIs—no signup required to get started! 🚀  
-Think of Pollinations.AI as a digital garden where you can plant a "seed" (your idea) and watch it grow into text, images, or audio with the help of AI. Our APIs are like tools in your gardening shed—easy to use, powerful, and ready to help you create something beautiful.
+APIs built by developers, for developers. We build everything in the open. 🚀  
+Think of pollinations.ai as a digital garden where you can plant a "seed" (your idea) and watch it grow into text, images, or audio with the help of AI. Our APIs are like tools in your gardening shed—easy to use, powerful, and ready to help you create something beautiful.
 
 ## Quick Start
-Ready to dive in? Here are some live examples you can try right in your browser to see what Pollinations.AI can do:
+Ready to dive in? Here are some live examples you can try right in your browser to see what pollinations.ai can do:
 
-- 🖼️ **Create an Image**: Generate a logo for Pollinations.AI [pollinations_logo](https://image.pollinations.ai/prompt/pollinations_logo)
-- 💬 **Generate Text**: Learn why donating to Pollinations.AI is a great idea [why_you_should_donate](https://text.pollinations.ai/why_you_should_donate)
-- 🔍 **Search the Web**: Find the latest news about Pollinations.AI [latest_news](https://text.pollinations.ai/latest_news?model=gemini-search)
+- 🖼️ **Create an Image**: Generate a logo for pollinations.ai [pollinations_logo](https://image.pollinations.ai/prompt/pollinations_logo)
+- 💬 **Generate Text**: Learn why donating to pollinations.ai is a great idea [why_you_should_donate](https://text.pollinations.ai/why_you_should_donate)
+- 🔍 **Search the Web**: Find the latest news about pollinations.ai [latest_news](https://text.pollinations.ai/latest_news?model=gemini-search)
 - 🎙️ **Create Audio**: Hear a fun, short hypnosis audio encouraging a donation (just for laughs!) [hypnosis_audio](https://text.pollinations.ai/hypnosis_audio?model=openai-audio&voice=nova)
 
 **How to Try These**: Just click the links above, and you’ll see the results instantly in your browser. No coding needed yet!
@@ -645,7 +654,7 @@ for event in client.events():
 - You get a live feed of text responses, like answers to questions or generated stories.
 
 ## React Integration
-If you’re building a web app with React, Pollinations.AI has hooks to make integration super easy. Think of these as pre-built tools to add AI features to your app.
+If you’re building a web app with React, pollinations.ai has hooks to make integration super easy. Think of these as pre-built tools to add AI features to your app.
 
 ### Install the Library
 ```bash
@@ -727,7 +736,7 @@ function ChatBot() {
 **Playground**: Try these hooks live at [react-hooks.pollinations.ai](https://react-hooks.pollinations.ai).
 
 ## Authentication & Rate Limits
-You can use Pollinations.AI without signing up, but registering gives you higher limits and extra features, like removing watermarks.
+Thanks to our supporters, daily Pollen grants keep AI accessible for everyone. Register for higher limits and extra features like removing watermarks.
 
 ### Authentication Methods
 #### Referrer (Web Apps)
@@ -761,7 +770,7 @@ curl https://text.pollinations.ai/openai \
 | Anonymous| One request every 15s | Basic models     | No signup          | Good for testing          |
 | Seed     | One request every 5s  | Standard models  | Free registration  | Sign up at auth.pollinations.ai |
 | Flower   | One request every 3s  | Advanced models  | Paid tier          | Higher limits             |
-| Nectar   | No limits             | All models       | Enterprise         | Contact Pollinations.AI   |
+| Nectar   | No limits             | All models       | Enterprise         | Contact pollinations.ai   |
 
 **Starting March 31, 2025**:
 - Free tier images may include watermarks.
@@ -943,4 +952,4 @@ Here are tips to make the most of the API:
 **MIT License**  
 You’re free to use, modify, and share this API under the MIT License. Think of it as an open-source recipe you can tweak and share with others!
 
-Made with ❤️ by the Pollinations.AI team
+Made with ❤️ by the pollinations.ai team

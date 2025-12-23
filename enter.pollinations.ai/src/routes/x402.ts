@@ -121,26 +121,28 @@ export const x402Routes = new Hono<Env>()
                     `Processing crypto payment: ${JSON.stringify(paymentPayload)}`,
                 );
 
-                // Get the pollen pack meter ID from environment
-                const meterId = c.env.POLAR_POLLEN_PACK_METER_ID;
-                if (!meterId) {
+                // Credit pollen using Polar's events.ingest API
+                const polarClient = c.var.polar.client;
+                const response = await polarClient.events.ingest({
+                    events: [
+                        {
+                            name: "pollen_pack_purchase",
+                            externalCustomerId: user.id,
+                            metadata: {
+                                source: "x402_crypto_payment",
+                                amount: amount,
+                                pollen: pack.pollen,
+                                timestamp: new Date().toISOString(),
+                            },
+                        },
+                    ],
+                });
+
+                if (response.inserted !== 1) {
                     throw new HTTPException(500, {
-                        message: "Pollen meter not configured",
+                        message: "Failed to credit pollen",
                     });
                 }
-
-                // Credit pollen using Polar's meter API
-                const polarClient = c.var.polar.client;
-                await polarClient.events.create({
-                    externalCustomerId: user.id,
-                    meterId: meterId,
-                    value: pack.pollen,
-                    metadata: {
-                        source: "x402_crypto_payment",
-                        amount: amount,
-                        timestamp: new Date().toISOString(),
-                    },
-                });
 
                 log.info(`Credited ${pack.pollen} pollen to user ${user.id}`);
 

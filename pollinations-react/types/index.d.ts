@@ -5,16 +5,19 @@ declare module "@pollinations/react" {
     }
 
     export interface Model {
-        id: string;
-        name: string;
-        description?: string;
+        id?: string;
+        name?: string;
+        [key: string]: any;
     }
 
     export interface TextOptions {
         seed?: number;
         model?: string;
-        systemPrompt?: string;
-        jsonMode?: boolean;
+        system?: string;
+        json?: boolean;
+        temperature?: number;
+        stream?: boolean;
+        private?: boolean;
         apiKey: string;
     }
 
@@ -31,7 +34,7 @@ declare module "@pollinations/react" {
     export interface ChatOptions {
         seed?: number;
         model?: string;
-        jsonMode?: boolean;
+        json?: boolean;
         apiKey: string;
     }
 
@@ -43,7 +46,7 @@ declare module "@pollinations/react" {
         prompt: string | null,
         options?: TextOptions,
     ): {
-        data: string | null;
+        data: string | object | null;
         isLoading: boolean;
         error: string | null;
     };

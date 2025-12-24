@@ -3,7 +3,6 @@ import { Title, Body } from "../components/ui/typography";
 import { PageCard } from "../components/ui/page-card";
 import { PageContainer } from "../components/ui/page-container";
 import { Button } from "../components/ui/button";
-import { PLAY_PAGE } from "../../theme";
 import { ImageFeed } from "../components/play/ImageFeed";
 import { PlayGenerator } from "../components/play/PlayGenerator";
 import { ModelSelector } from "../components/play/ModelSelector";
@@ -19,7 +18,7 @@ function PlayPage() {
     const [view, setView] = useState("play"); // "play" or "feed"
     const [selectedModel, setSelectedModel] = useState("flux"); // Shared model state
     const [prompt, setPrompt] = useState(""); // Shared prompt state
-    const [currentFeedPrompt, setCurrentFeedPrompt] = useState(""); // Prompt from feed
+    const [currentFeedPrompt, setCurrentFeedPrompt] = useState(""); // Feed prompt state
     const { imageModels, textModels } = useModelList();
 
     // Get page copy from preset
@@ -35,8 +34,7 @@ function PlayPage() {
         [imageModels, textModels]
     );
 
-    // Display prompt based on view
-    const displayPrompt = view === "play" ? prompt : currentFeedPrompt;
+
 
     return (
         <PageContainer>
@@ -77,24 +75,6 @@ function PlayPage() {
                     />
                 )}
 
-                {/* Prompt - Independent of view state */}
-                <div className="mb-6">
-                    <label className="block font-headline text-text-body-main mb-2 uppercase text-xs tracking-wider font-black">
-                        {pageCopy.promptLabel.text}
-                    </label>
-                    {view === "play" ? (
-                        <textarea
-                            value={prompt}
-                            onChange={(e) => setPrompt(e.target.value)}
-                            placeholder={PLAY_PAGE.imagePlaceholder.text}
-                            className="w-full h-[7.5rem] p-4 bg-input-background text-text-body-main font-body resize-none focus:outline-none focus:bg-input-background hover:bg-input-background transition-colors scrollbar-hide placeholder:text-text-body-tertiary"
-                        />
-                    ) : (
-                        <div className="w-full h-[7.5rem] p-4 bg-surface-elevated text-text-body-main font-body overflow-y-auto break-words scrollbar-hide">
-                            {displayPrompt || "Waiting for content..."}
-                        </div>
-                    )}
-                </div>
 
                 {/* Content: Play Interface or Feed */}
                 {view === "play" ? (

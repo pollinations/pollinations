@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { Button } from "../ui/button";
 import type { Model } from "../../../hooks/useModelList";
 
 interface ImageFeedProps {
@@ -38,8 +39,13 @@ export function ImageFeed({
     const seenImages = useRef<Set<string>>(new Set());
     const imageQueue = useRef<ImageQueueItem[]>([]);
     const textQueue = useRef<TextQueueItem[]>([]);
+    const feedItems = useRef<FeedItem[]>([]);
     const MAX_QUEUE_SIZE = 10;
+    const MAX_FEED_ITEMS = 30;
+    
     const [currentDisplay, setCurrentDisplay] = useState<FeedItem | null>(null);
+    const [viewMode, setViewMode] = useState<"single" | "grid">("single"); 
+    const [feedHistory, setFeedHistory] = useState<FeedItem[]>([]);
 
     // Update parent with current feed prompt
     useEffect(() => {
@@ -109,7 +115,7 @@ export function ImageFeed({
         return () => eventSource.close();
     }, [selectedModel]);
 
-    // Update display
+    // Update display and feed history
     useEffect(() => {
         const interval = setInterval(() => {
             const selectedModelData = [...imageModels, ...textModels].find(
@@ -123,12 +129,20 @@ export function ImageFeed({
             ) {
                 const item = imageQueue.current.shift();
                 if (item) {
-                    setCurrentDisplay({
+                    const feedItem: FeedItem = {
                         type: "image",
                         content: item.imageURL,
                         prompt: item.prompt || "No prompt",
                         model: item.model,
-                    });
+                    };
+                    setCurrentDisplay(feedItem);
+                    
+                    // Add to history
+                    feedItems.current.push(feedItem);
+                    if (feedItems.current.length > MAX_FEED_ITEMS) {
+                        feedItems.current.shift();
+                    }
+                    setFeedHistory([...feedItems.current]);
                 }
             } else if (
                 selectedModelData.type === "text" &&
@@ -136,12 +150,20 @@ export function ImageFeed({
             ) {
                 const item = textQueue.current.shift();
                 if (item) {
-                    setCurrentDisplay({
+                    const feedItem: FeedItem = {
                         type: "text",
                         content: item.response,
                         prompt: item.prompt,
                         model: item.model,
-                    });
+                    };
+                    setCurrentDisplay(feedItem);
+                    
+                    // Add to history
+                    feedItems.current.push(feedItem);
+                    if (feedItems.current.length > MAX_FEED_ITEMS) {
+                        feedItems.current.shift();
+                    }
+                    setFeedHistory([...feedItems.current]);
                 }
             }
         }, 1000);
@@ -153,35 +175,171 @@ export function ImageFeed({
         imageQueue.current = [];
         textQueue.current = [];
         seenImages.current.clear();
+        feedItems.current = [];
         setCurrentDisplay(null);
+        setFeedHistory([]);
     }, [selectedModel]);
 
-    return (
-        <div className="w-full">
-            {/* Display */}
-            <div className="relative min-h-[32rem] max-h-[32rem] flex items-center justify-center overflow-hidden">
-                {!currentDisplay ? (
-                    <div className="text-center py-24 text-text-caption font-body">
-                        <p>Waiting for content...</p>
-                        {selectedModel && (
-                            <p className="text-xs mt-2">
-                                Listening to {selectedModel}
-                            </p>
+    // View toggle - shared between modes
+    const viewToggle = (
+        <div className="flex gap-2">
+            <Button
+                variant="toggle"
+                data-active={viewMode === "single"}
+                onClick={() => setViewMode("single")}
+                className="text-xs px-3 py-1.5"
+            >
+                Single View
+            </Button>
+            <Button
+                variant="toggle"
+                data-active={viewMode === "grid"}
+                onClick={() => setViewMode("grid")}
+                className="text-xs px-3 py-1.5"
+            >
+                Grid View
+            </Button>
+        </div>
+    );
+
+    // Single view mode
+    if (viewMode === "single") {
+        return (
+            <div className="w-full flex flex-col gap-4">
+                {/* View toggle */}
+                {viewToggle}
+
+                <div className="flex gap-6 max-h-[600px]">
+                    {/* Main display - 2/3 width */}
+                    <div className="flex-[2] relative bg-surface-elevated rounded-sub-card overflow-hidden">
+                        {!currentDisplay ? (
+                            <div className="flex items-center justify-center h-full text-center py-24 text-text-caption font-body">
+                                <div>
+                                    <p>Waiting for content...</p>
+                                    {selectedModel && (
+                                        <p className="text-xs mt-2">
+                                            Listening to {selectedModel}
+                                        </p>
+                                    )}
+                                </div>
+                            </div>
+                        ) : currentDisplay.type === "image" ? (
+                            <a
+                                href={currentDisplay.content}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="w-full h-full block overflow-hidden hover:opacity-90 transition-opacity"
+                            >
+                                <img
+                                    src={currentDisplay.content}
+                                    alt={currentDisplay.prompt}
+                                    className="w-full h-full object-contain"
+                                />
+                            </a>
+                        ) : (
+                            <div className="w-full h-full p-6 overflow-auto scrollbar-hide">
+                                <p className="font-body text-text-body-main text-sm leading-relaxed whitespace-pre-wrap">
+                                    {currentDisplay.content}
+                                </p>
+                            </div>
                         )}
                     </div>
-                ) : currentDisplay.type === "image" ? (
-                    <img
-                        src={currentDisplay.content}
-                        alt={currentDisplay.prompt}
-                        className="w-full h-full max-h-[32rem] object-contain"
-                    />
-                ) : (
-                    <div className="w-full p-8 overflow-auto max-h-[32rem] scrollbar-hide">
-                        <p className="font-body text-text-body-main text-lg leading-relaxed whitespace-pre-wrap">
-                            {currentDisplay.content}
-                        </p>
+
+                    {/* Sidebar - 1/3 width */}
+                    <div className="flex-1 bg-surface-elevated rounded-sub-card p-6 overflow-auto scrollbar-hide border-l-4 border-border-highlight">
+                        <div className="space-y-4">
+                            <div>
+                                <p className="font-headline text-xs uppercase tracking-wider font-black text-text-body-main mb-2">
+                                    Prompt
+                                </p>
+                                <p className="font-body text-sm text-text-body-secondary break-words">
+                                    {currentDisplay?.prompt.slice(0,200)+"..." || "No prompt available"}
+                                </p>
+                            </div>
+                            <div>
+                                <p className="font-headline text-xs uppercase tracking-wider font-black text-text-body-main mb-2">
+                                    Model
+                                </p>
+                                <p className="font-mono text-xs text-text-body-secondary">
+                                    {currentDisplay?.model || "-"}
+                                </p>
+                            </div>
+                            <div>
+                                <p className="font-headline text-xs uppercase tracking-wider font-black text-text-body-main mb-2">
+                                    Type
+                                </p>
+                                <p className="font-mono text-xs uppercase text-text-body-secondary">
+                                    {currentDisplay?.type || "-"}
+                                </p>
+                            </div>
+                        </div>
                     </div>
-                )}
+                </div>
+            </div>
+        );
+    }
+
+    // Grid view mode - Masonry layout
+    return (
+        <div className="w-full flex flex-col gap-4">
+            {/* View toggle */}
+            {viewToggle}
+
+            {/* Masonry grid */}
+            <div className="max-h-[600px] overflow-y-auto scrollbar-hide">
+                <div className="columns-1 sm:columns-2 lg:columns-3 gap-4 space-y-4">
+                    {feedHistory.length === 0 ? (
+                        <div className="col-span-full text-center py-12 text-text-caption font-body">
+                            <p>Waiting for content...</p>
+                            {selectedModel && (
+                                <p className="text-xs mt-2">
+                                    Listening to {selectedModel}
+                                </p>
+                            )}
+                        </div>
+                    ) : (
+                        feedHistory.map((item, index) => (
+                            <div
+                                key={`${item.content}-${index}`}
+                                className="break-inside-avoid group relative bg-surface-elevated rounded-sub-card overflow-hidden cursor-pointer hover:shadow-shadow-brand-md transition-all"
+                                onClick={() => {
+                                    setCurrentDisplay(item);
+                                    setViewMode("single");
+                                }}
+                            >
+                                {item.type === "image" ? (
+                                    <>
+                                        <a
+                                            href={item.content}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            onClick={(e) => e.stopPropagation()}
+                                            className="w-full block overflow-hidden"
+                                        >
+                                            <img
+                                                src={item.content}
+                                                alt={item.prompt}
+                                                className="w-full h-auto object-cover group-hover:opacity-70 transition-opacity"
+                                            />
+                                        </a>
+                                        {/* Hover prompt overlay */}
+                                        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/0 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-4">
+                                            <p className="font-body text-xs text-white line-clamp-3">
+                                                {item.prompt}
+                                            </p>
+                                        </div>
+                                    </>
+                                ) : (
+                                    <div className="p-4 min-h-[150px] flex items-center">
+                                        <p className="font-body text-xs text-text-body-secondary line-clamp-6">
+                                            {item.content}
+                                        </p>
+                                    </div>
+                                )}
+                            </div>
+                        ))
+                    )}
+                </div>
             </div>
         </div>
     );

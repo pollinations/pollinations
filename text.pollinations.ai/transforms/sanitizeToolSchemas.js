@@ -1,18 +1,18 @@
 /**
  * Sanitizes tool schemas for Gemini/Vertex AI compatibility.
  * Removes unsupported JSON Schema properties that cause 400 errors.
+ *
+ * Vertex AI Schema only supports: type, format, title, description, nullable,
+ * default, items, minItems, maxItems, enum, properties, propertyOrdering,
+ * required, minProperties, maxProperties, minimum, maximum, minLength,
+ * maxLength, pattern, example, anyOf, additionalProperties, ref, defs
+ *
  * See: https://github.com/Portkey-AI/gateway/issues/1473
+ * Ref: https://cloud.google.com/vertex-ai/generative-ai/docs/reference/rest/v1/Schema
  */
 
-const UNSUPPORTED = new Set([
-    "exclusiveMinimum",
-    "exclusiveMaximum",
-    "default",
-    "$schema",
-    "$id",
-    "$ref",
-    "$defs",
-]);
+// Only these two cause the actual error - keep it minimal
+const UNSUPPORTED = new Set(["exclusiveMinimum", "exclusiveMaximum"]);
 
 function sanitize(obj) {
     if (!obj || typeof obj !== "object") return obj;

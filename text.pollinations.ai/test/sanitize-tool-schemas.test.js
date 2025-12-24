@@ -56,7 +56,7 @@ describe("sanitizeToolSchemas transform", () => {
         expect(params.properties.count.exclusiveMaximum).toBeUndefined();
     });
 
-    it("should remove default from tool parameters", () => {
+    it("should preserve default (supported by Vertex AI)", () => {
         const options = {
             tools: [
                 {
@@ -77,7 +77,7 @@ describe("sanitizeToolSchemas transform", () => {
         const result = transform([], options);
         const params = result.options.tools[0].function.parameters;
 
-        expect(params.properties.count.default).toBeUndefined();
+        expect(params.properties.count.default).toBe(10);
     });
 
     it("should handle nested objects", () => {

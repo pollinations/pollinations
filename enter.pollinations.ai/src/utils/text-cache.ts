@@ -73,70 +73,19 @@ export async function generateCacheKey(
 
 /**
  * Prepare metadata for caching
- * Keeps metadata minimal to stay within R2 limits
+ * Minimal metadata - only what's needed to serve the cached response
  */
-export function prepareMetadata(
-    request: Request,
-    url: URL,
-    response: Response,
-    contentSize: number,
-    isStreaming: boolean,
-    hasRequestBody: boolean = false,
-): Record<string, string> {
-    const metadata: Record<string, string> = {
-        // Original URL information (truncated to leave room for other metadata)
-        originalUrl: url.toString().substring(0, 512),
-        cachedAt: new Date().toISOString(),
-        isStreaming: isStreaming.toString(),
-        responseSize: contentSize.toString(),
-
-        // Response metadata
+export function prepareMetadata(response: Response): Record<string, string> {
+    return {
         response_content_type: response.headers.get("content-type") || "",
-        response_cache_control: response.headers.get("cache-control") || "",
-        method: request.method,
         status: response.status.toString(),
         statusText: response.statusText,
-
-        // Request body reference
-        hasRequestBody: hasRequestBody.toString(),
-
-        // Essential response headers
-        response_server: response.headers.get("server") || "",
-        response_date: response.headers.get("date") || "",
+        cachedAt: new Date().toISOString(),
     };
-
-    // Add only essential request headers with size limits
-    const essentialHeaders = ["user-agent", "referer", "cf-connecting-ip"];
-    for (const headerName of essentialHeaders) {
-        const value = request.headers.get(headerName);
-        if (value) {
-            // Truncate to prevent metadata bloat
-            metadata[headerName] = value.substring(0, 200);
-        }
-    }
-
-    // Add essential Cloudflare data
-    const cf = (request as Request & { cf?: Record<string, unknown> }).cf;
-    if (cf && typeof cf === "object") {
-        const essentialCfProps = [
-            "country",
-            "colo",
-            "httpProtocol",
-            "asn",
-            "continent",
-        ];
-        for (const prop of essentialCfProps) {
-            if (cf[prop] !== null && cf[prop] !== undefined) {
-                metadata[prop] = String(cf[prop]);
-            }
-        }
-    }
-
-    return metadata;
 }
 
 /**
- * Prepare response headers by cleaning problematic ones and adding cache info
+ * Prepare response headers - add cache info headers
  */
 export function prepareResponseHeaders(
     originalHeaders: Headers,
@@ -148,37 +97,7 @@ export function prepareResponseHeaders(
 ): Headers {
     const headers = new Headers(originalHeaders);
 
-    // Remove problematic headers
-    const headersToRemove = [
-        "connection",
-        "keep-alive",
-        "proxy-authenticate",
-        "proxy-authorization",
-        "te",
-        "trailer",
-        "transfer-encoding",
-        "upgrade",
-    ];
-
-    for (const header of headersToRemove) {
-        headers.delete(header);
-    }
-
-    // Add CORS headers if not already present
-    if (!headers.has("Access-Control-Allow-Origin")) {
-        headers.set("Access-Control-Allow-Origin", "*");
-    }
-    if (!headers.has("Access-Control-Allow-Methods")) {
-        headers.set("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
-    }
-    if (!headers.has("Access-Control-Allow-Headers")) {
-        headers.set(
-            "Access-Control-Allow-Headers",
-            "Content-Type, Authorization",
-        );
-    }
-
-    // Add cache-related headers if provided
+    // Add cache-related headers
     if (cacheInfo.cacheStatus) {
         headers.set("X-Cache", cacheInfo.cacheStatus);
     }
@@ -199,39 +118,6 @@ type TextCacheEnv = {
         log: Logger;
     };
 };
-
-/**
- * Store request body separately if it exists
- * This follows the thin proxy design principle by keeping the implementation simple
- */
-export async function storeRequestBody<TEnv extends TextCacheEnv>(
-    c: Context<TEnv>,
-    key: string,
-    bodyText: string,
-): Promise<boolean> {
-    if (!bodyText || bodyText.length === 0) {
-        return false;
-    }
-
-    try {
-        const requestKey = `${key}-request`;
-        await c.env.TEXT_BUCKET.put(requestKey, bodyText);
-        c.get("log")?.debug(
-            "[TEXT-CACHE] Stored request body ({size} bytes) with key: {key}",
-            {
-                size: bodyText.length,
-                key: requestKey,
-            },
-        );
-        return true;
-    } catch (error) {
-        c.get("log")?.error(
-            "[TEXT-CACHE] Failed to cache request body: {error}",
-            { error },
-        );
-        return false;
-    }
-}
 
 /**
  * Cache a non-streaming response in R2
@@ -319,10 +205,7 @@ export async function getCachedResponse<TEnv extends TextCacheEnv>(
 export function createCaptureStream<TEnv extends TextCacheEnv>(
     c: Context<TEnv>,
     cacheKey: string,
-    request: Request,
-    url: URL,
     response: Response,
-    hasRequestBody: boolean,
 ): TransformStream<Uint8Array, Uint8Array> {
     const log = c.get("log");
     let chunks: Uint8Array[] = [];
@@ -361,14 +244,7 @@ export function createCaptureStream<TEnv extends TextCacheEnv>(
                         }
 
                         // Prepare metadata
-                        const metadata = prepareMetadata(
-                            request,
-                            url,
-                            response,
-                            totalSize,
-                            true,
-                            hasRequestBody,
-                        );
+                        const metadata = prepareMetadata(response);
 
                         // Store in R2
                         await c.env.TEXT_BUCKET.put(

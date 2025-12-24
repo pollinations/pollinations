@@ -10,7 +10,6 @@ import {
     getCachedResponse,
     prepareMetadata,
     prepareResponseHeaders,
-    storeRequestBody,
     cacheNonStreamingResponse,
     createCaptureStream,
 } from "@/utils/text-cache.ts";
@@ -61,16 +60,6 @@ export const textCache = createMiddleware<TextCacheEnv>(async (c, next) => {
         log.debug("[TEXT-CACHE] Skipping cache (non-cacheable path): {path}", {
             path: url.pathname,
         });
-        return next();
-    }
-
-    // Skip cache if no-cache header is set
-    if (
-        c.req.header("no-cache") ||
-        c.req.header("cache-control")?.includes("no-cache")
-    ) {
-        log.debug("[TEXT-CACHE] Skipping cache (no-cache header)");
-        c.header("X-Cache", "BYPASS");
         return next();
     }
 
@@ -131,7 +120,6 @@ export const textCache = createMiddleware<TextCacheEnv>(async (c, next) => {
     }
 
     const isStreaming = isStreamingResponse(c.res);
-    const hasRequestBody = !!bodyText;
 
     if (isStreaming) {
         // For streaming responses, use transform stream to capture while streaming
@@ -144,14 +132,7 @@ export const textCache = createMiddleware<TextCacheEnv>(async (c, next) => {
         }
 
         // Create capture stream that caches after streaming completes
-        const captureStream = createCaptureStream(
-            c,
-            cacheKey,
-            c.req.raw,
-            url,
-            c.res,
-            hasRequestBody,
-        );
+        const captureStream = createCaptureStream(c, cacheKey, c.res);
 
         // Pipe through capture stream
         const transformedBody = originalBody.pipeThrough(captureStream);
@@ -167,11 +148,6 @@ export const textCache = createMiddleware<TextCacheEnv>(async (c, next) => {
             statusText: c.res.statusText,
             headers,
         });
-
-        // Store request body separately if needed
-        if (hasRequestBody && bodyText) {
-            c.executionCtx.waitUntil(storeRequestBody(c, cacheKey, bodyText));
-        }
     } else {
         // For non-streaming responses, cache the complete response
         log.debug("[TEXT-CACHE] Caching non-streaming response");
@@ -181,15 +157,7 @@ export const textCache = createMiddleware<TextCacheEnv>(async (c, next) => {
                 try {
                     const responseClone = c.res.clone();
                     const content = await responseClone.arrayBuffer();
-
-                    const metadata = prepareMetadata(
-                        c.req.raw,
-                        url,
-                        c.res,
-                        content.byteLength,
-                        false,
-                        hasRequestBody,
-                    );
+                    const metadata = prepareMetadata(c.res);
 
                     await cacheNonStreamingResponse(
                         c,
@@ -197,11 +165,6 @@ export const textCache = createMiddleware<TextCacheEnv>(async (c, next) => {
                         content,
                         metadata,
                     );
-
-                    // Store request body separately if needed
-                    if (hasRequestBody && bodyText) {
-                        await storeRequestBody(c, cacheKey, bodyText);
-                    }
                 } catch (error) {
                     log.error("[TEXT-CACHE] Error caching response: {error}", {
                         error,

@@ -205,13 +205,13 @@ export function ImageFeed({
     // Single view mode
     if (viewMode === "single") {
         return (
-            <div className="w-full flex flex-col gap-4">
+            <div className="w-full flex flex-col gap-4" style={{ maxHeight: "calc(100vh - 280px)" }}>
                 {/* View toggle */}
                 {viewToggle}
 
-                <div className="flex gap-6 max-h-[600px]">
+                <div className="flex gap-6" style={{ height: "calc(100vh - 380px)" }}>
                     {/* Main display - 2/3 width */}
-                    <div className="flex-[2] relative bg-surface-elevated rounded-sub-card overflow-hidden">
+                    <div className="flex-[2] relative bg-surface-elevated rounded-sub-card overflow-hidden flex items-center justify-center">
                         {!currentDisplay ? (
                             <div className="flex items-center justify-center h-full text-center py-24 text-text-caption font-body">
                                 <div>
@@ -228,12 +228,12 @@ export function ImageFeed({
                                 href={currentDisplay.content}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="w-full h-full block overflow-hidden hover:opacity-90 transition-opacity"
+                                className="flex items-center justify-center hover:opacity-90 transition-opacity"
                             >
                                 <img
                                     src={currentDisplay.content}
                                     alt={currentDisplay.prompt}
-                                    className="w-full h-full object-contain"
+                                    className="max-w-full max-h-full object-contain"
                                 />
                             </a>
                         ) : (
@@ -285,8 +285,8 @@ export function ImageFeed({
             {/* View toggle */}
             {viewToggle}
 
-            {/* Masonry grid */}
-            <div className="max-h-[600px] overflow-y-auto scrollbar-hide">
+            {/* Masonry grid - scrollable */}
+            <div className="overflow-y-auto scrollbar-hide border border-border-subtle rounded-sub-card" style={{ maxHeight: "calc(100vh - 280px)" }}>
                 <div className="columns-1 sm:columns-2 lg:columns-3 gap-4 space-y-4">
                     {feedHistory.length === 0 ? (
                         <div className="col-span-full text-center py-12 text-text-caption font-body">

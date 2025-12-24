@@ -183,19 +183,16 @@ jobs:
             # Extract user's previous apps from APPS.md
             # Markdown table format: | Emoji | Name | Description | Language | Category | GitHub | Repo | Stars | Discord | Other | Submitted |
             PREV_APPS_TEXT=""
-            tail -n +2 apps/APPS.md | while IFS='|' read -r emoji name desc lang cat github repo stars discord other submitted; do
-              # Trim whitespace from each field
-              github=$(echo "$github" | xargs)
-              name=$(echo "$name" | xargs)
-              desc=$(echo "$desc" | xargs)
-              
-              # Check if this row matches the user (GitHub column)
-              if [ "$github" = "@$GITHUB_USERNAME" ]; then
-                # Remove markdown link syntax from name if present
+            while IFS='|' read -r emoji name desc lang cat github repo stars discord other submitted; do
+            github=$(echo "$github" | xargs)
+            name=$(echo "$name" | xargs)
+            desc=$(echo "$desc" | xargs)
+            
+            if [ "$github" = "@$GITHUB_USERNAME" ]; then
                 clean_name=$(echo "$name" | sed 's/\[//g; s/\].*//g')
                 PREV_APPS_TEXT="${PREV_APPS_TEXT}Name: ${clean_name} | Desc: ${desc}\n"
-              fi
-            done < apps/APPS.md
+            fi
+            done < <(tail -n +2 apps/APPS.md)
             
             # Only do semantic check if user has previous apps
             if [ -n "$PREV_APPS_TEXT" ]; then

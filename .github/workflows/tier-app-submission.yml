@@ -37,6 +37,7 @@ jobs:
       issue_author: ${{ steps.issue.outputs.author }}
       issue_author_id: ${{ steps.issue.outputs.author_id }}
       similarity_score: ${{ steps.duplicate-check.outputs.similarity_score }}
+      similarity_reason: ${{ steps.duplicate-check.outputs.similarity_reason }}
 
     steps:
       - name: Checkout repository
@@ -153,24 +154,24 @@ jobs:
             [ ! -f "$file" ] && continue
             
             # 1. Check for exact URL match (HARD MATCH)
-            if grep -qi "| [^|]*$(echo "$APP_URL" | sed 's/[&/\]/\\&/g')" "$file"; then
+            if grep -qi "| [^|]*$(printf '%s\n' "$APP_URL" | sed 's/[/&]/\\&/g')" "$file"; then
               DUPLICATE_FOUND="$file"
               MATCH_TYPE="url_exact"
               break
             fi
             
             # 2. Check for exact repo URL match (HARD MATCH)
-            if [ -n "$APP_REPO" ] && grep -qi "$(echo "$APP_REPO" | sed 's/[&/\]/\\&/g')" "$file"; then
+            if [ -n "$APP_REPO" ] && grep -qi "$(printf '%s\n' "$APP_REPO" | sed 's/[/&]/\\&/g')" "$file"; then
               DUPLICATE_FOUND="$file"
               MATCH_TYPE="repo_exact"
               break
             fi
             
-            # 3. Check for name+user match (HARD MATCH)
-            if grep -qi "\"name\"[[:space:]]*:[[:space:]]*\"$NORMALIZED_NAME\"" "$file"; then
-              # Extract author from file if possible
-              FILE_AUTHOR=$(grep -o "@[a-zA-Z0-9_-]*" "$file" | head -1 | tr -d '@')
-              if [ "$FILE_AUTHOR" = "$GITHUB_USERNAME" ]; then
+            # 3. Check for name+user match in markdown table (HARD MATCH)
+            # Format: | emoji | [Name](url) | description | language | category | @author |
+            if grep -qi "| .* | \[.*${APP_NAME}.*\]" "$file" || grep -qi "| .* | ${APP_NAME} |" "$file"; then
+              # Check if this user submitted it by looking for @username in that row
+              if grep "| .* | .*${APP_NAME}.*| .* | .* | .* | @${GITHUB_USERNAME}" "$file" | grep -qi .; then
                 DUPLICATE_FOUND="$file"
                 MATCH_TYPE="name_user_exact"
                 break
@@ -180,6 +181,7 @@ jobs:
           
           # If no exact match, check for semantic similarity in user's previous submissions
           if [ -z "$DUPLICATE_FOUND" ]; then
+            echo "similarity_score=0" >> $GITHUB_OUTPUT
             # Extract user's previous apps from APPS.md
             # Markdown table format: | Emoji | Name | Description | Language | Category | GitHub | Repo | Stars | Discord | Other | Submitted |
             PREV_APPS_TEXT=""
@@ -192,7 +194,7 @@ jobs:
                 clean_name=$(echo "$name" | sed 's/\[//g; s/\].*//g')
                 PREV_APPS_TEXT="${PREV_APPS_TEXT}Name: ${clean_name} | Desc: ${desc}\n"
             fi
-            done < <(tail -n +2 apps/APPS.md)
+            done < <(tail -n +3 apps/APPS.md)
             
             # Only do semantic check if user has previous apps
             if [ -n "$PREV_APPS_TEXT" ]; then
@@ -209,12 +211,28 @@ jobs:
                   response_format: { type: "json_object" }
                 }')
               
-              SIMILARITY=$(curl -s -X POST "https://gen.pollinations.ai/v1/chat/completions" \
+              HTTP_CODE=$(curl -s -w "%{http_code}" -o /tmp/similarity.json -X POST "https://gen.pollinations.ai/v1/chat/completions" \
                 -H "Content-Type: application/json" \
                 -H "Authorization: Bearer ${{ secrets.POLLINATIONS_TOKEN }}" \
-                -d "$PAYLOAD" | jq -r '.choices[0].message.content | fromjson | .similarity // 0')
+                -d "$PAYLOAD")
+              
+              if [ "$HTTP_CODE" = "200" ]; then
+                SIMILARITY=$(cat /tmp/similarity.json | jq -r '.choices[0].message.content | fromjson | .similarity // 0')
+                SIMILARITY_REASON=$(cat /tmp/similarity.json | jq -r '.choices[0].message.content | fromjson | .reason // ""')
+              else
+                SIMILARITY=0
+                SIMILARITY_REASON="API call failed (HTTP $HTTP_CODE)"
+              fi
               
               echo "similarity_score=$SIMILARITY" >> $GITHUB_OUTPUT
+              if [ -n "$SIMILARITY_REASON" ]; then
+                echo "similarity_reason=$SIMILARITY_REASON" >> $GITHUB_OUTPUT
+              fi
+              
+              # Validate SIMILARITY is numeric before comparison
+              if ! [[ "$SIMILARITY" =~ ^[0-9]+$ ]]; then
+                SIMILARITY=0
+              fi
               
               if [ "$SIMILARITY" -gt 90 ]; then
                 MATCH_TYPE="semantic_hard"
@@ -454,8 +472,12 @@ jobs:
             
             # Add similarity report if applicable
             SIMILARITY="${{ needs.tier-parse-issue.outputs.similarity_score }}"
+            SIMILARITY_REASON="${{ needs.tier-parse-issue.outputs.similarity_reason }}"
             if [ -n "$SIMILARITY" ] && [ "$SIMILARITY" != "null" ] && [ "$SIMILARITY" != "0" ]; then
               PR_BODY="${PR_BODY}$(printf '\n\n⚠️ **Similarity Report:** %s%% similar to previous submission(s) from @%s\n' "$SIMILARITY" "$ISSUE_AUTHOR")"
+              if [ -n "$SIMILARITY_REASON" ] && [ "$SIMILARITY_REASON" != "null" ]; then
+                PR_BODY="${PR_BODY}$(printf '**Reason:** %s\n' "$SIMILARITY_REASON")"
+              fi
               PR_BODY="${PR_BODY}$(printf 'Maintainer: Review if this is legitimate iteration or rebranding.\n')"
             fi
             

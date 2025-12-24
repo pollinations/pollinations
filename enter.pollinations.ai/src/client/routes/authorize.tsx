@@ -145,9 +145,60 @@ function AuthorizeComponent() {
         );
     }
 
+    // Not signed in - show simple sign-in screen
+    if (!user) {
+        return (
+            <div className="flex flex-col gap-6 max-w-lg mx-auto pt-8">
+                <div className="text-center">
+                    <img
+                        src="/logo_text_black.svg"
+                        alt="pollinations.ai"
+                        className="h-10 mx-auto invert"
+                    />
+                </div>
+
+                <div className="bg-white rounded-2xl p-8 border-2 border-gray-200 shadow-lg text-center">
+                    <h1 className="text-2xl font-bold mb-4">
+                        Connect to Pollinations
+                    </h1>
+
+                    {error ? (
+                        <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+                            <p className="text-red-800 text-sm">❌ {error}</p>
+                        </div>
+                    ) : (
+                        <>
+                            <div className="bg-gray-50 rounded-xl p-4 mb-6">
+                                <p className="font-semibold text-gray-900">
+                                    {redirectHostname}
+                                </p>
+                                <p className="text-xs text-gray-500">
+                                    wants to connect to your account
+                                </p>
+                            </div>
+
+                            <p className="text-gray-500 text-sm mb-6">
+                                Sign in to continue
+                            </p>
+                        </>
+                    )}
+
+                    <Button
+                        as="button"
+                        onClick={handleSignIn}
+                        disabled={isSigningIn || !!error}
+                        className="w-full bg-gray-900 text-white hover:!brightness-90"
+                    >
+                        {isSigningIn ? "Signing in..." : "Sign in with GitHub"}
+                    </Button>
+                </div>
+            </div>
+        );
+    }
+
+    // Signed in - show authorization details
     return (
         <div className="flex flex-col gap-6 max-w-lg mx-auto pt-8">
-            {/* Simple logo header */}
             <div className="text-center">
                 <img
                     src="/logo_text_black.svg"
@@ -211,19 +262,17 @@ function AuthorizeComponent() {
                             </p>
                         </div>
 
-                        {/* Model permissions - only show when signed in */}
-                        {user && (
-                            <div className="mb-6">
-                                <h3 className="font-semibold text-sm text-gray-700 mb-2">
-                                    Model Access
-                                </h3>
-                                <ModelPermissions
-                                    value={allowedModels}
-                                    onChange={setAllowedModels}
-                                    compact
-                                />
-                            </div>
-                        )}
+                        {/* Model permissions */}
+                        <div className="mb-6">
+                            <h3 className="font-semibold text-sm text-gray-700 mb-2">
+                                Model Access
+                            </h3>
+                            <ModelPermissions
+                                value={allowedModels}
+                                onChange={setAllowedModels}
+                                compact
+                            />
+                        </div>
 
                         {/* Redirect URL display */}
                         <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-6">
@@ -237,54 +286,29 @@ function AuthorizeComponent() {
                     </>
                 )}
 
-                {/* Conditional: Sign in or Authorize */}
-                {!user ? (
-                    <>
-                        <div className="text-center text-sm text-gray-500 mb-4">
-                            Sign in to authorize this application
-                        </div>
-                        <Button
-                            as="button"
-                            onClick={handleSignIn}
-                            disabled={isSigningIn || !!error}
-                            className="w-full bg-gray-900 text-white hover:!brightness-90"
-                        >
-                            {isSigningIn
-                                ? "Signing in..."
-                                : "Sign in with GitHub"}
-                        </Button>
-                    </>
-                ) : (
-                    <>
-                        <div className="text-center text-sm text-gray-500 mb-6">
-                            Signed in as{" "}
-                            <strong>
-                                {user?.githubUsername || user?.email}
-                            </strong>
-                        </div>
-                        <div className="flex gap-3">
-                            <Button
-                                as="button"
-                                onClick={handleCancel}
-                                weight="outline"
-                                className="flex-1"
-                            >
-                                Cancel
-                            </Button>
-                            <Button
-                                as="button"
-                                onClick={handleAuthorize}
-                                disabled={
-                                    !isValidUrl || isAuthorizing || !!error
-                                }
-                                color="green"
-                                className="flex-1"
-                            >
-                                {isAuthorizing ? "Authorizing..." : "Authorize"}
-                            </Button>
-                        </div>
-                    </>
-                )}
+                <div className="text-center text-sm text-gray-500 mb-6">
+                    Signed in as{" "}
+                    <strong>{user?.githubUsername || user?.email}</strong>
+                </div>
+                <div className="flex gap-3">
+                    <Button
+                        as="button"
+                        onClick={handleCancel}
+                        weight="outline"
+                        className="flex-1"
+                    >
+                        Cancel
+                    </Button>
+                    <Button
+                        as="button"
+                        onClick={handleAuthorize}
+                        disabled={!isValidUrl || isAuthorizing || !!error}
+                        color="green"
+                        className="flex-1"
+                    >
+                        {isAuthorizing ? "Authorizing..." : "Authorize"}
+                    </Button>
+                </div>
             </div>
         </div>
     );

@@ -1,0 +1,124 @@
+{
+  "request": {
+    "url": "http://ec2-3-80-56-235.compute-1.amazonaws.com:16385/openai",
+    "method": "POST",
+    "body": {
+      "type": "json",
+      "data": {
+        "model": "gemini",
+        "messages": [
+          {
+            "role": "user",
+            "content": "What is 25% of 80? Use the calculator."
+          }
+        ],
+        "tools": [
+          {
+            "type": "function",
+            "function": {
+              "name": "calculator",
+              "description": "Calculate a percentage",
+              "parameters": {
+                "type": "object",
+                "properties": {
+                  "value": {
+                    "type": "number",
+                    "exclusiveMinimum": 0,
+                    "exclusiveMaximum": 1000
+                  },
+                  "percentage": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 100
+                  }
+                },
+                "required": [
+                  "value",
+                  "percentage"
+                ]
+              }
+            }
+          }
+        ],
+        "tool_choice": "auto",
+        "seed": 42
+      }
+    },
+    "params": {}
+  },
+  "response": {
+    "status": 400,
+    "statusText": "Bad Request",
+    "headers": {
+      "access-control-allow-origin": "*",
+      "connection": "keep-alive",
+      "content-length": "1050",
+      "content-type": "application/json; charset=utf-8",
+      "date": "Wed, 24 Dec 2025 14:32:13 GMT",
+      "etag": "W/\"41a-aUfPEEEkZN6ha9jfvtcmF2laFOM\"",
+      "keep-alive": "timeout=5",
+      "x-powered-by": "Express"
+    },
+    "body": {
+      "type": "json",
+      "data": {
+        "error": "Bad Request",
+        "message": "400 Bad Request",
+        "requestId": "t2vw9j",
+        "requestParameters": {
+          "messages": [
+            {
+              "role": "user",
+              "content": "What is 25% of 80? Use the calculator."
+            }
+          ],
+          "jsonMode": false,
+          "seed": 42,
+          "model": "gemini",
+          "referrer": null,
+          "isPrivate": true,
+          "voice": "alloy",
+          "tools": [
+            {
+              "type": "function",
+              "function": {
+                "name": "calculator",
+                "description": "Calculate a percentage",
+                "parameters": {
+                  "type": "object",
+                  "properties": {
+                    "value": {
+                      "type": "number",
+                      "exclusiveMinimum": 0,
+                      "exclusiveMaximum": 1000
+                    },
+                    "percentage": {
+                      "type": "number",
+                      "minimum": 0,
+                      "maximum": 100
+                    }
+                  },
+                  "required": [
+                    "value",
+                    "percentage"
+                  ]
+                }
+              }
+            }
+          ],
+          "tool_choice": "auto",
+          "private": true
+        },
+        "details": {
+          "error": {
+            "message": "vertex-ai error: Invalid JSON payload received. Unknown name \"exclusiveMinimum\" at 'tools[0].function_declarations[0].parameters.properties[0].value': Cannot find field.\nInvalid JSON payload received. Unknown name \"exclusiveMaximum\" at 'tools[0].function_declarations[0].parameters.properties[0].value': Cannot find field.",
+            "type": "INVALID_ARGUMENT",
+            "param": null,
+            "code": "400"
+          },
+          "provider": "vertex-ai"
+        }
+      }
+    }
+  }
+}

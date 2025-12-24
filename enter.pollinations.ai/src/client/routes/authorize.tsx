@@ -1,6 +1,7 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState, useEffect } from "react";
 import { Button } from "../components/button.tsx";
+import { ModelPermissions } from "../components/model-permissions.tsx";
 
 // 6 hours in seconds
 const DEFAULT_EXPIRY_SECONDS = 6 * 60 * 60;
@@ -27,6 +28,8 @@ function AuthorizeComponent() {
     const [error, setError] = useState<string | null>(null);
     const [redirectHostname, setRedirectHostname] = useState<string>("");
     const [isValidUrl, setIsValidUrl] = useState(false);
+    // null = all models allowed, [] = restricted but none selected, [...] = specific models
+    const [allowedModels, setAllowedModels] = useState<string[] | null>(null);
 
     // Parse and validate the redirect URL
     useEffect(() => {
@@ -84,6 +87,23 @@ function AuthorizeComponent() {
             }
 
             const data = result.data;
+
+            // Set permissions if restricted (allowedModels is not null)
+            if (allowedModels !== null) {
+                const updateResponse = await fetch(
+                    `/api/api-keys/${data.id}/update`,
+                    {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        credentials: "include",
+                        body: JSON.stringify({ allowedModels }),
+                    },
+                );
+
+                if (!updateResponse.ok) {
+                    console.error("Failed to set API key permissions");
+                }
+            }
 
             // Redirect back to the app with the key in URL fragment (not query param)
             // Using fragment prevents key from leaking to server logs/Referer headers
@@ -190,6 +210,20 @@ function AuthorizeComponent() {
                                 expires in 6 hours (at {expiryString})
                             </p>
                         </div>
+
+                        {/* Model permissions - only show when signed in */}
+                        {user && (
+                            <div className="mb-6">
+                                <h3 className="font-semibold text-sm text-gray-700 mb-2">
+                                    Model Access
+                                </h3>
+                                <ModelPermissions
+                                    value={allowedModels}
+                                    onChange={setAllowedModels}
+                                    compact
+                                />
+                            </div>
+                        )}
 
                         {/* Redirect URL display */}
                         <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-6">

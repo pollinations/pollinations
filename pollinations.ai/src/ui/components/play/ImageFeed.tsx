@@ -228,12 +228,12 @@ export function ImageFeed({
                                 href={currentDisplay.content}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="flex items-center justify-center hover:opacity-90 transition-opacity"
+                                className="w-full h-full overflow-hidden hover:opacity-90 transition-opacity"
                             >
                                 <img
                                     src={currentDisplay.content}
                                     alt={currentDisplay.prompt}
-                                    className="max-w-full max-h-full object-contain"
+                                    className="w-full h-full object-cover"
                                 />
                             </a>
                         ) : (

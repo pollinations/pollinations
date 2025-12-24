@@ -1,0 +1,30 @@
+name: Create Issue from Discord
+
+on:
+  repository_dispatch:
+    types: [discord-issue]
+
+jobs:
+  create-issue:
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+    steps:
+      - name: Create GitHub Issue
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const title = context.payload.client_payload.title;
+            const body = context.payload.client_payload.body;
+            const labelsStr = context.payload.client_payload.labels || '';
+            const labels = labelsStr.split(',').map(l => l.trim()).filter(l => l);
+            
+            const issue = await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: title,
+              body: body,
+              labels: labels
+            });
+            
+            console.log(`Created issue #${issue.data.number}: ${issue.data.html_url}`);

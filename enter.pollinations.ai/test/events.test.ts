@@ -6,10 +6,11 @@ import {
 } from "cloudflare:test";
 import { test } from "./fixtures.ts";
 import worker from "@/index.ts";
-import { processEvents, storeEvents } from "@/events.ts";
+import { processEvents, storeEvents, getPendingSpend } from "@/events.ts";
 import { exponentialBackoffDelay } from "@/util.ts";
 import {
     event,
+    EventStatus,
     priceToEventParams,
     usageToEventParams,
     type InsertGenerationEvent,
@@ -31,10 +32,12 @@ import { expect } from "vitest";
 
 function createTextGenerationEvent({
     modelRequested,
+    eventStatus = "pending",
     simulateTinybirdError = false,
     simulatePolarError = false,
 }: {
     modelRequested: ServiceId;
+    eventStatus?: EventStatus;
     simulateTinybirdError?: boolean;
     simulatePolarError?: boolean;
 }): InsertGenerationEvent {
@@ -73,7 +76,7 @@ function createTextGenerationEvent({
         environment: env.ENVIRONMENT,
         eventType: "generate.text",
         eventProcessingId: undefined,
-        eventStatus: undefined,
+        eventStatus,
         polarDeliveryAttempts: undefined,
         polarDeliveredAt: undefined,
         tinybirdDeliveryAttempts: undefined,
@@ -380,4 +383,97 @@ test("Exponential backoff delay", async () => {
     expect(
         exponentialBackoffDelay(5, backoffConfigWithJitter),
     ).toBeLessThanOrEqual(10000 + 10000 * 0.1);
+});
+
+test("getPendingSpend returns 0 for user with no events", async () => {
+    const db = drizzle(env.DB);
+    const userId = generateRandomId();
+    const spend = await getPendingSpend(db, userId);
+    expect(spend).toBe(0);
+});
+
+test("getPendingSpend sums estimatedPrice for estimate events", async ({
+    log,
+}) => {
+    const db = drizzle(env.DB);
+    const userId = generateRandomId();
+
+    const pendingEvents: InsertGenerationEvent[] = [
+        {
+            ...createTextGenerationEvent({ modelRequested: "openai-large" }),
+            userId,
+            eventStatus: "estimate",
+            isBilledUsage: false,
+            estimatedPrice: 0.05,
+            totalPrice: 0,
+        },
+        {
+            ...createTextGenerationEvent({ modelRequested: "openai-large" }),
+            userId,
+            eventStatus: "estimate",
+            isBilledUsage: false,
+            estimatedPrice: 0.03,
+            totalPrice: 0,
+        },
+    ];
+
+    await storeEvents(db, log, pendingEvents);
+    const spend = await getPendingSpend(db, userId);
+    expect(spend).toBeCloseTo(0.08, 5);
+});
+
+test("getPendingSpend sums totalPrice for billed events", async ({ log }) => {
+    const db = drizzle(env.DB);
+    const userId = generateRandomId();
+
+    const billedEvents: InsertGenerationEvent[] = [
+        {
+            ...createTextGenerationEvent({ modelRequested: "openai-large" }),
+            userId,
+            eventStatus: "pending",
+            isBilledUsage: true,
+            estimatedPrice: null,
+            totalPrice: 0.1,
+        },
+        {
+            ...createTextGenerationEvent({ modelRequested: "openai-large" }),
+            userId,
+            eventStatus: "pending",
+            isBilledUsage: true,
+            estimatedPrice: null,
+            totalPrice: 0.15,
+        },
+    ];
+
+    await storeEvents(db, log, billedEvents);
+    const spend = await getPendingSpend(db, userId);
+    expect(spend).toBeCloseTo(0.25, 5);
+});
+
+test("getPendingSpend combines estimate and billed events", async ({ log }) => {
+    const db = drizzle(env.DB);
+    const userId = generateRandomId();
+
+    const mixedEvents: InsertGenerationEvent[] = [
+        {
+            ...createTextGenerationEvent({ modelRequested: "openai-large" }),
+            userId,
+            eventStatus: "estimate",
+            isBilledUsage: false,
+            estimatedPrice: 0.05,
+            totalPrice: 0,
+        },
+        {
+            ...createTextGenerationEvent({ modelRequested: "openai-large" }),
+            userId,
+            eventStatus: "pending",
+            isBilledUsage: true,
+            estimatedPrice: null,
+            totalPrice: 0.1,
+        },
+    ];
+
+    await storeEvents(db, log, mixedEvents);
+    const spend = await getPendingSpend(db, userId);
+    expect(spend).toBeCloseTo(0.15, 5);
 });

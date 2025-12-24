@@ -4,6 +4,7 @@ import type { DrizzleD1Database } from "drizzle-orm/d1";
 import { event } from "./db/schema/event.ts";
 import {
     batches,
+    capitalize,
     exponentialBackoffDelay,
     generateRandomId,
     removeUnset,
@@ -41,6 +42,26 @@ export async function storeEvents(
         } catch (error) {
             log.error("Failed to insert event batch: {error}", { error });
         }
+    }
+}
+
+export async function updateEvent(
+    db: DrizzleD1Database,
+    log: Logger,
+    eventId: string,
+    updates: Partial<InsertGenerationEvent>,
+): Promise<void> {
+    log.trace("Updating event: {eventId}", { eventId });
+    try {
+        await db
+            .update(event)
+            .set({ ...updates, updatedAt: new Date() })
+            .where(eq(event.id, eventId));
+    } catch (error) {
+        log.error("Failed to update event {eventId}: {error}", {
+            eventId,
+            error,
+        });
     }
 }
 
@@ -328,7 +349,7 @@ function createPolarEvent(event: SelectGenerationEvent) {
         // request information
         requestId: event.requestId,
         startTime: event.startTime.toISOString(),
-        endTime: event.endTime.toISOString(),
+        endTime: event.endTime?.toISOString(),
         // model
         model: event.modelUsed,
         // token counts
@@ -380,7 +401,10 @@ async function sendPolarEvents(
     });
     const polarEvents = events
         .filter(
-            (event) => event.isBilledUsage && event.polarDeliveredAt == null,
+            (event) =>
+                event.eventStatus !== "estimate" &&
+                event.isBilledUsage &&
+                event.polarDeliveredAt == null,
         )
         .map((event) => createPolarEvent(event));
     const deliveryStats = polarDeliveryStats(events);
@@ -425,7 +449,11 @@ async function sendTinybirdEvents(
 ): Promise<DeliveryStatus> {
     const deliveryStats = tinybirdDeliveryStats(events);
     const tinybirdEvents = events
-        .filter((event) => event.tinybirdDeliveredAt == null)
+        .filter(
+            (event) =>
+                event.eventStatus !== "estimate" &&
+                event.tinybirdDeliveredAt == null,
+        )
         .map((event) => {
             return removeUnset(
                 omit(
@@ -496,10 +524,6 @@ function flattenBalances(balances: Record<string, number> | null) {
     );
 }
 
-function capitalize(str: string) {
-    return `${str.charAt(0).toUpperCase()}${str.slice(1)}`;
-}
-
 function polarDeliveryStats(events: SelectGenerationEvent[]): {
     minDeliveryAttempts: number;
     maxDeliveryAttempts: number;
@@ -543,20 +567,20 @@ export async function getPendingSpend(
     userId: string,
 ): Promise<number> {
     const maxPendingSpendWindowMs = 10 * 60 * 1000; // 10 minutes
+    const windowStart = new Date(Date.now() - maxPendingSpendWindowMs);
     const result = await db
         .select({
-            total: sql<number>`COALESCE(SUM(${event.totalPrice}), 0)`,
+            total: sql<number>`COALESCE(SUM(
+                CASE 
+                    WHEN ${event.eventStatus} = 'estimate' THEN ${event.estimatedPrice}
+                    WHEN ${event.isBilledUsage} = 1 THEN ${event.totalPrice}
+                    ELSE 0
+                END
+            ), 0)`,
         })
         .from(event)
         .where(
-            and(
-                gte(
-                    event.createdAt,
-                    new Date(Date.now() - maxPendingSpendWindowMs),
-                ),
-                eq(event.userId, userId),
-                eq(event.isBilledUsage, true),
-            ),
+            and(gte(event.createdAt, windowStart), eq(event.userId, userId)),
         );
     return result[0]?.total || 0;
 }

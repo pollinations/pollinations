@@ -61,24 +61,25 @@
     "headers": {
       "access-control-allow-origin": "*",
       "connection": "keep-alive",
-      "content-length": "602",
+      "content-length": "908",
       "content-type": "application/json; charset=utf-8",
-      "date": "Thu, 11 Dec 2025 16:47:52 GMT",
-      "etag": "W/\"25a-m9vUPoanNvTZnT3zcCFWS4kkVBk\"",
+      "date": "Tue, 23 Dec 2025 13:56:27 GMT",
+      "etag": "W/\"38c-QQap56dbjsz5+t6xxbK8JicO9LY\"",
       "keep-alive": "timeout=5",
-      "x-model-used": "gemini-2.5-flash-lite",
+      "x-model-used": "gemini-3-flash-preview",
       "x-powered-by": "Express",
-      "x-usage-completion-text-tokens": "7",
+      "x-usage-completion-reasoning-tokens": "56",
+      "x-usage-completion-text-tokens": "11",
       "x-usage-prompt-text-tokens": "299",
-      "x-usage-total-tokens": "306"
+      "x-usage-total-tokens": "366"
     },
     "body": {
       "type": "json",
       "data": {
-        "id": "pllns_b0d9fc52643672b12cc81b9f0f6d4e9e",
+        "id": "pllns_eb69b66ab6917ed2b55e2ef85b5f2b03",
         "object": "chat.completion",
-        "created": 1765471672,
-        "model": "gemini-2.5-flash-lite",
+        "created": 1766498187,
+        "model": "gemini-3-flash-preview",
         "provider": "vertex-ai",
         "choices": [
           {
@@ -86,11 +87,12 @@
               "role": "assistant",
               "tool_calls": [
                 {
-                  "id": "portkey-18d8e626-4f11-440c-a4ce-7aad90a12454",
+                  "id": "portkey-6f815b31-d057-498b-9809-4ca0e7403150",
                   "type": "function",
                   "function": {
                     "name": "calculator",
-                    "arguments": "{\"a\":5,\"b\":3,\"operation\":\"add\"}"
+                    "arguments": "{\"b\":3,\"a\":5,\"operation\":\"add\"}",
+                    "thought_signature": "Cs4BAY89a1/nV6ULQ8DT1q7LMjZpEW+xvtYOoK6+aUgS5XGKDYPBk/1b9ZuqjZydia3Ne1blZyXkxCmz+/cf5pvwU9vlVraPPey/C/k2+wxtw+SzNvJIruReHdimUYR0wMQsfKr8fUauVTSci1RiKefGdERCL/3ZbKQTPu3LWw5bfUNBW5jKkfRC0IPeaC/KAfXqT80AxYJi9Gr4qVj8XgQ/Ph/SzUn5zSHzyL1SN656hffBZlHeM3Lgh4RRD/4IX+ZLnz67bAyKhNDh4xdpv90="
                   }
                 }
               ]
@@ -101,10 +103,10 @@
         ],
         "usage": {
           "prompt_tokens": 299,
-          "completion_tokens": 7,
-          "total_tokens": 306,
+          "completion_tokens": 67,
+          "total_tokens": 366,
           "completion_tokens_details": {
-            "reasoning_tokens": 0,
+            "reasoning_tokens": 56,
             "audio_tokens": 0
           },
           "prompt_tokens_details": {

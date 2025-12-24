@@ -17,14 +17,15 @@
       "connection": "keep-alive",
       "content-length": "4",
       "content-type": "text/plain; charset=utf-8",
-      "date": "Thu, 11 Dec 2025 16:46:52 GMT",
+      "date": "Tue, 23 Dec 2025 13:55:44 GMT",
       "etag": "W/\"4-xTxWLatLM7PkLzvE2OVxlDmpwVU\"",
       "keep-alive": "timeout=5",
-      "x-model-used": "gemini-2.5-flash-lite",
+      "x-model-used": "gemini-3-flash-preview",
       "x-powered-by": "Express",
+      "x-usage-completion-reasoning-tokens": "144",
       "x-usage-completion-text-tokens": "2",
-      "x-usage-prompt-text-tokens": "265",
-      "x-usage-total-tokens": "267"
+      "x-usage-prompt-text-tokens": "271",
+      "x-usage-total-tokens": "417"
     },
     "body": {
       "type": "text",

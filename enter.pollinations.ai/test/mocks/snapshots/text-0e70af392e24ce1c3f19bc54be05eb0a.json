@@ -61,16 +61,15 @@
     "headers": {
       "access-control-allow-origin": "*",
       "connection": "keep-alive",
-      "content-length": "1070",
+      "content-length": "1067",
       "content-type": "application/json; charset=utf-8",
-      "date": "Thu, 11 Dec 2025 16:49:03 GMT",
-      "etag": "W/\"42e-3z+0doPAqzErI9lA3/vvf6tGOc4\"",
+      "date": "Tue, 23 Dec 2025 13:56:40 GMT",
+      "etag": "W/\"42b-4qfAJXWCDyyulW9O6d+bnEND0iA\"",
       "keep-alive": "timeout=5",
       "x-model-used": "gpt-4.1-2025-04-14",
       "x-powered-by": "Express",
       "x-usage-completion-text-tokens": "23",
-      "x-usage-prompt-cached-tokens": "1152",
-      "x-usage-prompt-text-tokens": "95",
+      "x-usage-prompt-text-tokens": "1247",
       "x-usage-total-tokens": "1270"
     },
     "body": {
@@ -93,15 +92,15 @@
                     "arguments": "{\"operation\":\"add\",\"a\":5,\"b\":3}",
                     "name": "calculator"
                   },
-                  "id": "call_csIIUns5KsqND8udfkxKDzKQ",
+                  "id": "call_0sWziz2wB9w4HFyjnvhWaJT1",
                   "type": "function"
                 }
               ]
             }
           }
         ],
-        "created": 1765471743,
-        "id": "pllns_6633ebbd2d55522e110b01401155f40b",
+        "created": 1766498200,
+        "id": "pllns_b1675733f2aa40cb1037a830fe922041",
         "model": "gpt-4.1-2025-04-14",
         "object": "chat.completion",
         "prompt_filter_results": [
@@ -143,7 +142,7 @@
           "prompt_tokens": 1247,
           "prompt_tokens_details": {
             "audio_tokens": 0,
-            "cached_tokens": 1152
+            "cached_tokens": 0
           },
           "total_tokens": 1270
         }

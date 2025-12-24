@@ -28,7 +28,7 @@ export const TEXT_SERVICES = {
     "openai": {
         aliases: [],
         modelId: "gpt-5-mini-2025-08-07",
-        provider: "azure-openai",
+        provider: "azure",
         cost: [
             {
                 date: COST_START_DATE,
@@ -46,7 +46,7 @@ export const TEXT_SERVICES = {
     "openai-fast": {
         aliases: ["gpt-5-nano", "gpt-5-nano-2025-08-07"],
         modelId: "gpt-5-nano-2025-08-07",
-        provider: "azure-openai",
+        provider: "azure-2",
         cost: [
             {
                 date: COST_START_DATE,
@@ -64,7 +64,7 @@ export const TEXT_SERVICES = {
     "openai-large": {
         aliases: ["gpt-5.2", "openai-reasoning", "gpt-5.2-reasoning"],
         modelId: "gpt-5.2-2025-12-11",
-        provider: "azure-openai",
+        provider: "azure",
         cost: [
             {
                 date: COST_START_DATE,
@@ -124,7 +124,7 @@ export const TEXT_SERVICES = {
             "gpt-4o-mini-audio-preview-2024-12-17",
         ],
         modelId: "gpt-4o-mini-audio-preview-2024-12-17",
-        provider: "azure-openai",
+        provider: "azure",
         cost: [
             {
                 date: COST_START_DATE,
@@ -144,7 +144,7 @@ export const TEXT_SERVICES = {
     "gemini": {
         aliases: ["gemini-3-flash", "gemini-3-flash-preview"],
         modelId: "gemini-3-flash-preview",
-        provider: "vertex-ai",
+        provider: "google",
         cost: [
             {
                 date: COST_START_DATE,
@@ -166,7 +166,7 @@ export const TEXT_SERVICES = {
     "gemini-fast": {
         aliases: ["gemini-2.5-flash-lite"],
         modelId: "gemini-2.5-flash-lite",
-        provider: "vertex-ai",
+        provider: "google",
         cost: [
             {
                 date: COST_START_DATE,
@@ -186,22 +186,17 @@ export const TEXT_SERVICES = {
         isSpecialized: false,
     },
     "deepseek": {
-        aliases: [
-            "deepseek-v3",
-            "deepseek-v3.1",
-            "deepseek-reasoning",
-            "deepseek-r1-0528",
-        ],
-        modelId: "DeepSeek-V3.1",
+        aliases: ["deepseek-v3", "deepseek-v3.2", "deepseek-reasoning"],
+        modelId: "DeepSeek-V3.2",
         provider: "azure",
         cost: [
             {
                 date: COST_START_DATE,
-                promptTextTokens: perMillion(1.25),
-                completionTextTokens: perMillion(5.0),
+                promptTextTokens: perMillion(0.58),
+                completionTextTokens: perMillion(1.68),
             },
         ],
-        description: "DeepSeek V3.1 - Advanced Reasoning & Coding",
+        description: "DeepSeek V3.2 - Efficient Reasoning & Agentic AI",
         inputModalities: ["text"],
         outputModalities: ["text"],
         tools: true,
@@ -229,7 +224,7 @@ export const TEXT_SERVICES = {
     "gemini-search": {
         aliases: ["gemini-3-flash-search"],
         modelId: "gemini-3-flash-preview",
-        provider: "vertex-ai",
+        provider: "google",
         cost: [
             {
                 date: COST_START_DATE,
@@ -250,7 +245,7 @@ export const TEXT_SERVICES = {
     "chickytutor": {
         aliases: [],
         modelId: "us.anthropic.claude-3-5-haiku-20241022-v1:0",
-        provider: "aws-bedrock",
+        provider: "aws",
         cost: [
             {
                 date: COST_START_DATE,
@@ -267,7 +262,7 @@ export const TEXT_SERVICES = {
     "midijourney": {
         aliases: [],
         modelId: "gpt-4.1-2025-04-14",
-        provider: "azure-openai",
+        provider: "azure-2",
         cost: [
             {
                 date: COST_START_DATE,
@@ -285,7 +280,7 @@ export const TEXT_SERVICES = {
     "claude-fast": {
         aliases: ["claude-haiku-4.5", "claude-haiku"],
         modelId: "us.anthropic.claude-haiku-4-5-20251001-v1:0",
-        provider: "aws-bedrock",
+        provider: "aws",
         cost: [
             {
                 date: COST_START_DATE,
@@ -302,7 +297,7 @@ export const TEXT_SERVICES = {
     "claude": {
         aliases: ["claude-sonnet-4.5", "claude-sonnet"],
         modelId: "us.anthropic.claude-sonnet-4-5-20250929-v1:0",
-        provider: "aws-bedrock",
+        provider: "aws",
         cost: [
             {
                 date: COST_START_DATE,
@@ -319,7 +314,7 @@ export const TEXT_SERVICES = {
     "claude-large": {
         aliases: ["claude-opus-4.5", "claude-opus"],
         modelId: "global.anthropic.claude-opus-4-5-20251101-v1:0",
-        provider: "aws-bedrock",
+        provider: "aws",
         cost: [
             {
                 date: COST_START_DATE,
@@ -374,7 +369,7 @@ export const TEXT_SERVICES = {
     "kimi-k2-thinking": {
         aliases: ["kimi-k2", "kimi-thinking"],
         modelId: "moonshotai/kimi-k2-thinking-maas",
-        provider: "vertex-ai",
+        provider: "google",
         cost: [
             {
                 date: COST_START_DATE,
@@ -393,7 +388,7 @@ export const TEXT_SERVICES = {
     "gemini-large": {
         aliases: ["gemini-3-pro", "gemini-3", "gemini-3-pro-preview"],
         modelId: "gemini-3-pro-preview",
-        provider: "vertex-ai",
+        provider: "google",
         cost: [
             {
                 date: COST_START_DATE,
@@ -415,7 +410,7 @@ export const TEXT_SERVICES = {
     "nova-micro": {
         aliases: ["amazon-nova-micro", "nova"],
         modelId: "amazon.nova-micro-v1:0",
-        provider: "aws-bedrock",
+        provider: "aws",
         cost: [
             {
                 date: COST_START_DATE,

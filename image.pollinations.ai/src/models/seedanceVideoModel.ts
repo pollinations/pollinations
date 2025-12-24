@@ -88,10 +88,10 @@ async function generateSeedanceVideo(
     progress: ProgressManager,
     requestId: string,
 ): Promise<VideoGenerationResult> {
-    const apiKey = process.env.SEEDREAM_API_KEY;
+    const apiKey = process.env.BYTEDANCE_API_KEY;
     if (!apiKey) {
         throw new HttpError(
-            `SEEDREAM_API_KEY environment variable is required for ${config.displayName}`,
+            `BYTEDANCE_API_KEY environment variable is required for ${config.displayName}`,
             500,
         );
     }

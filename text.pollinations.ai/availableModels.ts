@@ -5,7 +5,6 @@ import {
     removeSystemMessages,
 } from "./transforms/createSystemPromptTransform.js";
 import { pipe } from "./transforms/pipe.js";
-import { createGoogleSearchTransform } from "./transforms/createGoogleSearchTransform.js";
 import { createGeminiToolsTransform } from "./transforms/createGeminiToolsTransform.ts";
 
 // Import persona prompts
@@ -59,7 +58,7 @@ const models: ModelDefinition[] = [
     },
     {
         name: "deepseek",
-        config: portkeyConfig["myceli-deepseek-v3.1"],
+        config: portkeyConfig["myceli-deepseek-v3.2"],
         transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
     },
     {
@@ -91,7 +90,8 @@ const models: ModelDefinition[] = [
         config: portkeyConfig["gemini-3-flash-preview"],
         transform: pipe(
             createSystemPromptTransform(BASE_PROMPTS.conversational),
-            createGeminiToolsTransform(),
+            // code_execution + url_context (both non-search tools, can be combined)
+            createGeminiToolsTransform(["code_execution", "url_context"]),
         ),
     },
     {
@@ -99,13 +99,17 @@ const models: ModelDefinition[] = [
         config: portkeyConfig["gemini-2.5-flash-lite"],
         transform: pipe(
             createSystemPromptTransform(BASE_PROMPTS.conversational),
-            createGeminiToolsTransform(),
+            // code_execution + url_context (both non-search tools, can be combined)
+            createGeminiToolsTransform(["code_execution", "url_context"]),
         ),
     },
     {
         name: "gemini-search",
-        config: portkeyConfig["gemini-3-flash-preview"],
-        transform: pipe(createGoogleSearchTransform()),
+        config: portkeyConfig["gemini-2.5-flash-lite"],
+        transform: pipe(
+            // Only google_search - url_context is NOT a search tool on Vertex AI
+            createGeminiToolsTransform(["google_search"]),
+        ),
     },
     {
         name: "midijourney",
@@ -124,7 +128,7 @@ const models: ModelDefinition[] = [
     },
     {
         name: "perplexity-reasoning",
-        config: portkeyConfig["sonar-reasoning"],
+        config: portkeyConfig["sonar-reasoning-pro"],
         transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
     },
     {
@@ -137,7 +141,8 @@ const models: ModelDefinition[] = [
         config: portkeyConfig["gemini-3-pro-preview"],
         transform: pipe(
             createSystemPromptTransform(BASE_PROMPTS.conversational),
-            createGeminiToolsTransform(["google_search", "url_context"]),
+            // code_execution + url_context (both non-search tools, can be combined)
+            createGeminiToolsTransform(["code_execution", "url_context"]),
         ),
     },
     {

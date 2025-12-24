@@ -26,7 +26,7 @@
       "cache-control": "no-cache",
       "connection": "keep-alive",
       "content-type": "text/event-stream; charset=utf-8",
-      "date": "Thu, 11 Dec 2025 16:46:15 GMT",
+      "date": "Tue, 23 Dec 2025 13:55:20 GMT",
       "transfer-encoding": "chunked",
       "x-powered-by": "Express"
     },
@@ -34,48 +34,40 @@
       "type": "stream",
       "data": [
         {
-          "data": "data: {\"id\":\"chatcmpl-e269c",
-          "delay": 1085
+          "data": "data: {\"id\":\"chatcmpl-da85d",
+          "delay": 1029
         },
         {
-          "data": "fab\",\"created\":1765471576,\"model\":\"us.anthropic.claude-3-5-haiku-20241022-v1:0\",\"system_fingerprint\":\"fp\",\"choices\":[{\"index\":0,\"finish_reason\":null,\"logprobs\":null,\"delta\":{\"role\":\"assistant\",\"content\":\"\"}}],\"object\":\"chat.completion.chunk\",\"usage\":null}\n\n",
+          "data": "05f\",\"created\":1766498121,\"model\":\"us.anthropic.claude-3-5-haiku-20241022-v1:0\",\"system_fingerprint\":\"fp\",\"choices\":[{\"index\":0,\"finish_reason\":null,\"logprobs\":null,\"delta\":{\"role\":\"assistant\",\"content\":\"\"}}],\"object\":\"chat.completion.chunk\",\"usage\":null}\n\ndata: {\"id\":\"chatcmpl-da85d05f\",\"created\":1766498121,\"model\":\"us.anthropic.claude-3-5-haiku-20241022-v1:0\",\"system_fingerprint\":\"fp\",\"choices\":[{\"index\":0,\"finish_reason\":null,\"logprobs\":null,\"delta\":{\"content\":\"Yes\"}}],\"object\":\"chat.completion.chunk\",\"usage\":null}\n\n",
           "delay": 0
         },
         {
-          "data": "data: {\"id\":\"chatcmpl-e26",
+          "data": "data: {\"id\":\"chatcmpl-da85d",
+          "delay": 11
+        },
+        {
+          "data": "05f\",\"created\":1766498121,\"model\":\"us.anthropic.claude-3-5-haiku-20241022-v1:0\",\"system_fingerprint\":\"fp\",\"choices\":[{\"index\":0,\"finish_reason\":null,\"logprobs\":null,\"delta\":{\"content\":\".\"}}],\"object\":\"chat.completion.chunk\",\"usage\":null}\n\n",
           "delay": 0
         },
         {
-          "data": "9cfab\",\"created\":1765471576,\"model\":\"us.anthropic.claude-3-5-haiku-20241022-v1:0\",\"system_fingerprint\":\"fp\",\"choices\":[{\"index\":0,\"finish_reason\":null,\"logprobs\":null,\"delta\":{\"content\":\"Yes\"}}],\"object\":\"chat.completion.chunk\",\"usage\":null}\n\n",
+          "data": "data: {\"id\":\"chatcmpl-da85d0",
+          "delay": 4
+        },
+        {
+          "data": "5f\",\"created\":1766498121,\"model\":\"us.anthropic.claude-3-5-haiku-20241022-v1:0\",\"system_fingerprint\":\"fp\",\"choices\":[{\"index\":0,\"finish_reason\":\"stop\",\"logprobs\":null,\"delta\":{}}],\"object\":\"chat.completion.chunk\",\"usage\":null}\n\n",
           "delay": 0
         },
         {
-          "data": "data: {\"id\":\"chatcmpl-e26",
-          "delay": 0
+          "data": "data: {\"id\":\"chatcmpl-da85",
+          "delay": 1
         },
         {
-          "data": "9cfab\",\"created\":1765471577,\"model\":\"us.anthropic.claude-3-5-haiku-20241022-v1:0\",\"system_fingerprint\":\"fp\",\"choices\":[{\"index\":0,\"finish_reason\":null,\"logprobs\":null,\"delta\":{\"content\":\".\"}}],\"object\":\"chat.completion.chunk\",\"usage\":null}\n\n",
-          "delay": 0
-        },
-        {
-          "data": "data: {\"id\":\"chatcmpl-e269",
-          "delay": 0
-        },
-        {
-          "data": "cfab\",\"created\":1765471577,\"model\":\"us.anthropic.claude-3-5-haiku-20241022-v1:0\",\"system_fingerprint\":\"fp\",\"choices\":[{\"index\":0,\"finish_reason\":\"stop\",\"logprobs\":null,\"delta\":{}}],\"object\":\"chat.completion.chunk\",\"usage\":null}\n\n",
-          "delay": 0
-        },
-        {
-          "data": "data: {\"id\":\"chatcmpl-e269",
-          "delay": 0
-        },
-        {
-          "data": "cfab\",\"created\":1765471577,\"model\":\"us.anthropic.claude-3-5-haiku-20241022-v1:0\",\"system_fingerprint\":\"fp\",\"choices\":[],\"object\":\"chat.completion.chunk\",\"usage\":{\"prompt_tokens\":3703,\"completion_tokens\":5,\"total_tokens\":3708}}\n\n",
+          "data": "d05f\",\"created\":1766498121,\"model\":\"us.anthropic.claude-3-5-haiku-20241022-v1:0\",\"system_fingerprint\":\"fp\",\"choices\":[],\"object\":\"chat.completion.chunk\",\"usage\":{\"prompt_tokens\":3703,\"completion_tokens\":5,\"total_tokens\":3708}}\n\n",
           "delay": 0
         },
         {
           "data": "data: [DONE]\n\n",
-          "delay": 1
+          "delay": 0
         }
       ]
     }

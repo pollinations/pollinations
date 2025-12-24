@@ -10,6 +10,25 @@ import type { ProgressManager } from "../progressBar.ts";
 const logOps = debug("pollinations:veo:ops");
 const logError = debug("pollinations:veo:error");
 
+/**
+ * Helper to download and encode an image for Veo API
+ */
+async function processImageForVeo(
+    imageUrl: string,
+    label: string,
+): Promise<{ bytesBase64Encoded: string; mimeType: string }> {
+    try {
+        const { base64, mimeType } = await downloadImageAsBase64(imageUrl);
+        logOps(`${label} processed successfully, mimeType:`, mimeType);
+        return { bytesBase64Encoded: base64, mimeType };
+    } catch (error) {
+        const errorMessage =
+            error instanceof Error ? error.message : String(error);
+        logError(`Error processing ${label}:`, errorMessage);
+        throw new HttpError(`Failed to process ${label}: ${errorMessage}`, 400);
+    }
+}
+
 // Veo API constants
 const LOCATION = "us-central1"; // Veo is only available in us-central1
 const MODEL_ID = "veo-3.1-fast-generate-preview";
@@ -62,11 +81,11 @@ export const callVeoAPI = async (
     progress: ProgressManager,
     requestId: string,
 ): Promise<VideoGenerationResult> => {
-    const PROJECT_ID = process.env.GCLOUD_PROJECT_ID;
+    const PROJECT_ID = process.env.GOOGLE_PROJECT_ID;
 
     if (!PROJECT_ID) {
         throw new HttpError(
-            "GCLOUD_PROJECT_ID environment variable is required",
+            "GOOGLE_PROJECT_ID environment variable is required",
             500,
         );
     }
@@ -99,18 +118,24 @@ export const callVeoAPI = async (
     // Check for input image (image-to-video)
     const hasImage = safeParams.image && safeParams.image.length > 0;
 
+    // Check if we have a second image for last frame interpolation
+    const hasLastFrame =
+        Array.isArray(safeParams.image) && safeParams.image.length > 1;
+
     logOps("Video params:", {
         durationSeconds,
         aspectRatio,
         generateAudio,
         resolution,
         hasImage,
+        hasLastFrame,
     });
 
     // Build instance object
     const instance: {
         prompt: string;
         image?: { bytesBase64Encoded: string; mimeType: string };
+        lastFrame?: { bytesBase64Encoded: string; mimeType: string };
     } = {
         prompt: prompt,
     };
@@ -120,31 +145,30 @@ export const callVeoAPI = async (
         const imageUrl = Array.isArray(safeParams.image)
             ? safeParams.image[0]
             : safeParams.image;
-
         logOps("Adding first frame image for I2V:", imageUrl);
         progress.updateBar(
             requestId,
             38,
             "Processing",
-            "Processing reference image...",
+            "Processing first frame...",
         );
+        instance.image = await processImageForVeo(imageUrl, "first frame");
+    }
 
-        try {
-            const { base64, mimeType } = await downloadImageAsBase64(imageUrl);
-            instance.image = {
-                bytesBase64Encoded: base64,
-                mimeType: mimeType,
-            };
-            logOps("Image processed successfully, mimeType:", mimeType);
-        } catch (error) {
-            const errorMessage =
-                error instanceof Error ? error.message : String(error);
-            logError("Error processing reference image:", errorMessage);
-            throw new HttpError(
-                `Failed to process reference image: ${errorMessage}`,
-                400,
-            );
-        }
+    // Add lastFrame for video interpolation (image[1] = last frame)
+    if (hasLastFrame) {
+        const lastFrameUrl = safeParams.image[1];
+        logOps("Adding last frame image for interpolation:", lastFrameUrl);
+        progress.updateBar(
+            requestId,
+            39,
+            "Processing",
+            "Processing last frame...",
+        );
+        instance.lastFrame = await processImageForVeo(
+            lastFrameUrl,
+            "last frame",
+        );
     }
 
     // Build request body
@@ -168,6 +192,9 @@ export const callVeoAPI = async (
             ...inst,
             image: inst.image
                 ? { ...inst.image, bytesBase64Encoded: "[BASE64]" }
+                : undefined,
+            lastFrame: inst.lastFrame
+                ? { ...inst.lastFrame, bytesBase64Encoded: "[BASE64]" }
                 : undefined,
         })),
     };
@@ -257,7 +284,7 @@ async function pollVeoOperation(
     progress: ProgressManager,
     requestId: string,
 ): Promise<Buffer> {
-    const PROJECT_ID = process.env.GCLOUD_PROJECT_ID;
+    const PROJECT_ID = process.env.GOOGLE_PROJECT_ID;
 
     // Extract model from operation name
     const modelMatch = operationName.match(/models\/([^\/]+)\/operations/);

@@ -52,7 +52,7 @@ export const IMAGE_SERVICES = {
     "nanobanana": {
         aliases: [],
         modelId: "nanobanana",
-        provider: "vertex-ai",
+        provider: "google",
         cost: [
             // Gemini 2.5 Flash Image via Vertex AI
             {
@@ -69,7 +69,7 @@ export const IMAGE_SERVICES = {
     "nanobanana-pro": {
         aliases: [],
         modelId: "nanobanana-pro",
-        provider: "vertex-ai",
+        provider: "google",
         cost: [
             // Gemini 3 Pro Image via Vertex AI
             // 1K/2K image: 1120 tokens = $0.134/image ($120/M tokens)
@@ -88,7 +88,7 @@ export const IMAGE_SERVICES = {
     "seedream": {
         aliases: [],
         modelId: "seedream",
-        provider: "bytedance-ark",
+        provider: "bytedance",
         cost: [
             // ByteDance ARK Seedream 4.0 - $0.03 per image
             {
@@ -103,7 +103,7 @@ export const IMAGE_SERVICES = {
     "seedream-pro": {
         aliases: [],
         modelId: "seedream-pro",
-        provider: "bytedance-ark",
+        provider: "bytedance",
         cost: [
             // ByteDance ARK Seedream 4.5 - $0.04 per image
             {
@@ -118,7 +118,7 @@ export const IMAGE_SERVICES = {
     "gptimage": {
         aliases: ["gpt-image", "gpt-image-1-mini"],
         modelId: "gptimage",
-        provider: "azure-openai",
+        provider: "azure-2",
         cost: [
             // Azure gpt-image-1-mini
             {
@@ -133,26 +133,45 @@ export const IMAGE_SERVICES = {
         inputModalities: ["text", "image"],
         outputModalities: ["image"],
     },
+    "gptimage-large": {
+        aliases: ["gpt-image-1.5", "gpt-image-large"],
+        modelId: "gptimage-large",
+        provider: "azure",
+        cost: [
+            // Azure GPT Image 1.5 (via AI Foundry)
+            {
+                date: COST_START_DATE,
+                promptTextTokens: perMillion(8), // $8.00 per 1M input tokens
+                promptCachedTokens: perMillion(2), // $2.00 per 1M cached input tokens
+                promptImageTokens: perMillion(8), // $8.00 per 1M image input tokens
+                completionImageTokens: perMillion(32), // $32.00 per 1M output tokens
+            },
+        ],
+        description: "GPT Image 1.5 - OpenAI's advanced image generation model",
+        inputModalities: ["text", "image"],
+        outputModalities: ["image"],
+    },
     "zimage": {
         aliases: ["z-image", "z-image-turbo"],
         modelId: "zimage",
-        provider: "self-hosted",
+        provider: "aws",
         cost: [
             // Z-Image-Turbo (6B params, 9 steps)
-            // Self-hosted on L40S, ~0.9s for 512x512, ~3.5s for 1024x1024
+            // AWS (L40S), ~0.9s for 512x512, ~3.5s for 1024x1024
             {
                 date: COST_START_DATE,
                 completionImageTokens: 0.0002, // ~$0.0002 per image (GPU cost estimate)
             },
         ],
-        description: "Z-Image-Turbo - Fast 6B parameter image generation (alpha)",
+        description:
+            "Z-Image-Turbo - Fast 6B parameter image generation (alpha)",
         inputModalities: ["text"],
         outputModalities: ["image"],
     },
     "veo": {
         aliases: ["veo-3.1-fast", "video"],
         modelId: "veo",
-        provider: "vertex-ai",
+        provider: "google",
         cost: [
             // Veo 3.1 Fast - $0.15 per second of video
             // We bill by "video seconds" - each second is counted like a token
@@ -162,13 +181,13 @@ export const IMAGE_SERVICES = {
             },
         ],
         description: "Veo 3.1 Fast - Google's video generation model (preview)",
-        inputModalities: ["text"],
+        inputModalities: ["text", "image"],
         outputModalities: ["video"],
     },
     "seedance": {
         aliases: [],
         modelId: "seedance",
-        provider: "bytedance-ark",
+        provider: "bytedance",
         cost: [
             // Seedance Lite - $1.8/M tokens
             // Token formula: (height × width × FPS × duration) / 1024
@@ -185,7 +204,7 @@ export const IMAGE_SERVICES = {
     "seedance-pro": {
         aliases: [],
         modelId: "seedance-pro",
-        provider: "bytedance-ark",
+        provider: "bytedance",
         cost: [
             // Seedance Pro-Fast - $1/M tokens
             // Token formula: (height × width × FPS × duration) / 1024

@@ -466,17 +466,6 @@ export const creativeProjects = [
         order: 1,
     },
     {
-        name: "CatGPT Meme Generator 🐱",
-        url: "https://pollinations.github.io/catgpt/",
-        description:
-            "Transform your questions into sassy cat wisdom! An AI-powered meme generator that creates personalized cat comics in response to your questions. A collaboration between Pollinations.AI and Tanika Godbole, the original creator of the CatGPT comic.",
-        author: "@voodoohop",
-        repo: "https://github.com/pollinations/catgpt",
-        stars: 2,
-        submissionDate: "2025-06-05",
-        order: 1,
-    },
-    {
         name: "Avatar GenStudio",
         url: "https://astudio-dcae4.web.app",
         description:

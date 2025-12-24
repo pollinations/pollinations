@@ -5,16 +5,6 @@
 
 export const socialBotsProjects = [
     {
-        name: "TeleChars AI 🤖 🇪🇸",
-        url: "https://extras.marcosfrg.x10.mx/TGChars",
-        description:
-            "Plataforma de creación de personajes con IA para Telegram. Soporta STM, LTM, y permite añadir conocimiento ilimitado a tus personajes. Los bots pueden recibir imágenes, stickers y audios. (AI character creation platform for Telegram with short-term and long-term memory.)",
-        author: "@MarcosFRG",
-        submissionDate: "2025-11-27",
-        language: "es",
-        order: 1,
-    },
-    {
         name: "ExodusAI 🤖",
         url: "https://api.whatsapp.com/send/?phone=6285150984232&text=Hi&type=phone_number&app_absent=0",
         description:

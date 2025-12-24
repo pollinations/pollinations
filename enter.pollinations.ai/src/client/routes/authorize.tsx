@@ -2,6 +2,7 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState, useEffect } from "react";
 import { Button } from "../components/button.tsx";
 import { ModelPermissions } from "../components/model-permissions.tsx";
+import { authClient } from "../auth.ts";
 
 // 6 hours in seconds
 const DEFAULT_EXPIRY_SECONDS = 6 * 60 * 60;
@@ -15,12 +16,11 @@ export const Route = createFileRoute("/authorize")({
 });
 
 function AuthorizeComponent() {
-    const { auth } = Route.useRouteContext();
     const { redirect_url } = Route.useSearch();
     const navigate = useNavigate();
 
-    // Fetch session directly - don't rely on route context
-    const { data: session, isPending } = auth.useSession();
+    // Fetch session directly using authClient
+    const { data: session, isPending } = authClient.useSession();
     const user = session?.user;
 
     const [isAuthorizing, setIsAuthorizing] = useState(false);
@@ -51,7 +51,7 @@ function AuthorizeComponent() {
         setIsSigningIn(true);
         // Pass current URL as callback so we return here after GitHub OAuth
         const callbackURL = window.location.href;
-        const { error } = await auth.signIn.social({
+        const { error } = await authClient.signIn.social({
             provider: "github",
             callbackURL,
         });
@@ -70,7 +70,7 @@ function AuthorizeComponent() {
 
         try {
             // Create a temporary API key with 6h expiry using better-auth's built-in endpoint
-            const result = await auth.apiKey.create({
+            const result = await authClient.apiKey.create({
                 name: `Temporary key for ${redirectHostname}`,
                 expiresIn: DEFAULT_EXPIRY_SECONDS,
                 prefix: "sk",

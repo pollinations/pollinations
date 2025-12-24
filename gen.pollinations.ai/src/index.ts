@@ -100,6 +100,19 @@ export default {
             return env.ENTER.fetch(request);
         }
 
+        // Normalize OpenAI-compatible endpoints that clients may mangle
+        // Many agents/clients append extra paths like:
+        //   /v1/chat/completions/some-id → /v1/chat/completions
+        //   /openai/v1/chat/completions  → /openai
+        //   /openai/chat/completions     → /openai
+        let normalizedPath = path;
+
+        if (path.startsWith("/v1/chat/completions")) {
+            normalizedPath = "/v1/chat/completions";
+        } else if (path.startsWith("/openai")) {
+            normalizedPath = "/openai";
+        }
+
         // Rewrite API paths: /image/*, /text/*, /v1/*, /openai → /api/generate/*
         // Examples:
         //   /image/models        → /api/generate/image/models
@@ -107,7 +120,7 @@ export default {
         //   /text/hello          → /api/generate/text/hello
         //   /v1/chat/completions → /api/generate/v1/chat/completions
         //   /openai              → /api/generate/openai
-        url.pathname = "/api/generate" + path;
+        url.pathname = "/api/generate" + normalizedPath;
 
         // Forward via service binding (zero latency - same V8 isolate)
         return env.ENTER.fetch(new Request(url, request));

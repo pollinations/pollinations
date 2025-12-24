@@ -18,7 +18,6 @@ function PlayPage() {
     const [view, setView] = useState("play"); // "play" or "feed"
     const [selectedModel, setSelectedModel] = useState("flux"); // Shared model state
     const [prompt, setPrompt] = useState(""); // Shared prompt state
-    const [currentFeedPrompt, setCurrentFeedPrompt] = useState(""); // Feed prompt state
     const { imageModels, textModels } = useModelList();
 
     // Get page copy from preset
@@ -88,7 +87,7 @@ function PlayPage() {
                 ) : (
                     <ImageFeed
                         selectedModel={selectedModel}
-                        onFeedPromptChange={setCurrentFeedPrompt}
+                        onFeedPromptChange={() => {}}
                         imageModels={imageModels}
                         textModels={textModels}
                     />

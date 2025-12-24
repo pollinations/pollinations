@@ -2,11 +2,17 @@
 
 All notable changes to `@pollinations/react` will be documented in this file.
 
-## [3.0.1] - 2025-12-16
+## [3.0.1] - 2025-12-24
 
 ### Fixed
 
--   Fixed all hooks pointing to legacy API endpoints - now use `gen.pollinations.ai`
+-   Fixed all hooks pointing to correct `gen.pollinations.ai` endpoints:
+    - Text: `GET /text/{prompt}` with query parameters
+    - Chat: `POST /v1/chat/completions`
+    - Image: `GET /image/{prompt}` with query parameters
+    - Text models: `GET /text/models`
+    - Image models: `GET /image/models`
+-   `usePollinationsText` now uses GET requests with URI-encoded prompts (matching image behavior)
 -   `usePollinationsImage` now returns consistent `{ data, isLoading, error }` object instead of string
 -   Added AbortController to `usePollinationsChat` for proper request cancellation
 -   Added input validation: seed (32-bit), model (non-empty string), dimensions (64-2048px)

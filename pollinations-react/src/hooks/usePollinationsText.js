@@ -31,15 +31,6 @@ const usePollinationsText = (prompt, options = {}) => {
         setError(null);
 
         try {
-            const messages = systemPrompt
-                ? [
-                      { role: "system", content: systemPrompt },
-                      { role: "user", content: prompt },
-                  ]
-                : [{ role: "user", content: prompt }];
-
-            const headers = { "Content-Type": "application/json" };
-
             if (!apiKey) {
                 throw new Error("API key is required");
             }
@@ -48,14 +39,21 @@ const usePollinationsText = (prompt, options = {}) => {
                 console.warn("API key format may be invalid");
             }
 
-            headers["Authorization"] = `Bearer ${apiKey}`;
+            const params = new URLSearchParams();
+            params.set("seed", seed.toString());
+            params.set("model", model);
+            if (jsonMode) params.set("json_mode", "true");
+            if (systemPrompt) params.set("system_prompt", systemPrompt);
+
+            const headers = {
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${apiKey}`,
+            };
 
             const response = await fetch(
-                "https://gen.pollinations.ai/v1/chat/completions",
+                `https://gen.pollinations.ai/text/${encodeURIComponent(prompt)}?${params.toString()}`,
                 {
-                    method: "POST",
                     headers,
-                    body: JSON.stringify({ messages, seed, model, jsonMode }),
                     signal: abortControllerRef.current.signal,
                 },
             );

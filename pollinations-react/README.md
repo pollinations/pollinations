@@ -161,7 +161,11 @@ Get your API key at [enter.pollinations.ai](https://enter.pollinations.ai).
 | **Publishable** | `pk_...` | Client-side, rate limited        |
 | **Secret**      | `sk_...` | Server-side only, no rate limits |
 
-See [CHANGELOG.md](./CHANGELOG.md) for full migration guide.
+All hooks use `gen.pollinations.ai` endpoints with the following patterns:
+- **Text**: `GET /text/{prompt}` with query parameters (seed, model, json_mode, system_prompt)
+- **Chat**: `POST /v1/chat/completions` with message array
+- **Image**: `GET /image/{prompt}` with query parameters (width, height, seed, model, nologo, enhance)
+- **Models**: `GET /text/models` or `GET /image/models`
 
 ## Links
 

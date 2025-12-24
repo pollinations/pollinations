@@ -11,8 +11,6 @@ import {
     ImageServiceId,
     ImageModelId,
 } from "./image";
-import { EventType } from "./types";
-import { z } from "zod";
 
 const PRECISION = 8;
 
@@ -76,6 +74,7 @@ export type ServiceDefinition<TModelId extends string = ModelId> = {
     tools?: boolean;
     reasoning?: boolean;
     search?: boolean;
+    codeExecution?: boolean;
     contextWindow?: number;
     voices?: string[];
     isSpecialized?: boolean;
@@ -138,19 +137,11 @@ const SERVICE_REGISTRY = Object.fromEntries(
 
 /**
  * Resolve a service ID from a name or alias
- * @param serviceId - Service name, alias, or null/undefined for default
- * @param eventType - Event type to determine default service
+ * @param serviceId - Service name or alias
  * @returns Resolved service ID
+ * @throws Error if service ID is not found
  */
-export function resolveServiceId(
-    serviceId: string | null | undefined,
-    eventType: EventType,
-): ServiceId {
-    if (!serviceId) {
-        return eventType === "generate.text"
-            ? DEFAULT_TEXT_MODEL
-            : DEFAULT_IMAGE_MODEL;
-    }
+export function resolveServiceId(serviceId: string): ServiceId {
     // Check if it's a direct service ID
     if (SERVICE_REGISTRY[serviceId]) {
         return serviceId as ServiceId;
@@ -306,85 +297,4 @@ export function calculatePrice(
     };
 }
 
-/**
- * Enriched model information exposed to end users via API
- * Shows pricing and aliases but not internal details (modelId, cost, provider)
- */
-export interface ModelInfo {
-    name: string; // Service name (user-facing identifier)
-    aliases: readonly string[]; // Alternative names for this model
-    pricing: {
-        input_token_price?: number;
-        output_token_price?: number;
-        cached_token_price?: number;
-        image_price?: number;
-        audio_input_price?: number;
-        audio_output_price?: number;
-        video_second_price?: number;
-        video_token_price?: number;
-        currency: "USD";
-    };
-    // User-facing metadata
-    description?: string;
-    input_modalities?: readonly string[];
-    output_modalities?: readonly string[];
-    tools?: boolean;
-    reasoning?: boolean;
-    search?: boolean;
-    context_window?: number;
-    voices?: readonly string[];
-    isSpecialized?: boolean;
-}
-
-/**
- * Get enriched model information for a service
- * Combines pricing from price definitions with metadata from service definition
- */
-export function getModelInfo(serviceId: ServiceId): ModelInfo {
-    const service = SERVICE_REGISTRY[serviceId];
-    const priceDefinition = getActivePriceDefinition(serviceId);
-
-    if (!priceDefinition) {
-        throw new Error(`No price definition found for service: ${serviceId}`);
-    }
-
-    return {
-        name: serviceId as string,
-        aliases: service.aliases,
-        pricing: {
-            input_token_price: priceDefinition.promptTextTokens,
-            output_token_price: priceDefinition.completionTextTokens,
-            cached_token_price: priceDefinition.promptCachedTokens,
-            image_price: priceDefinition.completionImageTokens,
-            audio_input_price: priceDefinition.promptAudioTokens,
-            audio_output_price: priceDefinition.completionAudioTokens,
-            video_second_price: priceDefinition.completionVideoSeconds,
-            video_token_price: priceDefinition.completionVideoTokens,
-            currency: "USD",
-        },
-        // User-facing metadata from service definition
-        description: service.description,
-        input_modalities: service.inputModalities,
-        output_modalities: service.outputModalities,
-        tools: service.tools,
-        reasoning: service.reasoning,
-        search: service.search,
-        context_window: service.contextWindow,
-        voices: service.voices,
-        isSpecialized: service.isSpecialized,
-    };
-}
-
-/**
- * Get all text models with enriched information
- */
-export function getTextModelsInfo(): ModelInfo[] {
-    return getTextServices().map(getModelInfo);
-}
-
-/**
- * Get all image models with enriched information
- */
-export function getImageModelsInfo(): ModelInfo[] {
-    return getImageServices().map(getModelInfo);
-}
+// ModelInfo, getModelInfo, getTextModelsInfo, getImageModelsInfo are in model-info.ts

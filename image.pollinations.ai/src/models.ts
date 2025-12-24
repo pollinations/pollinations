@@ -80,6 +80,13 @@ export const IMAGE_CONFIG = {
         defaultSideLength: 1021, // Prime number to detect default size for "auto" mode
     },
 
+    // Azure GPT Image 1.5 - advanced image generation
+    "gptimage-large": {
+        type: "azure-gptimage-large",
+        enhance: false,
+        defaultSideLength: 1024,
+    },
+
     // Veo 3.1 Fast - Video generation via Vertex AI
     veo: {
         type: "vertex-ai-video",
@@ -108,6 +115,13 @@ export const IMAGE_CONFIG = {
         defaultDuration: 5,
         maxDuration: 10,
         defaultResolution: "720p",
+    },
+
+    // Z-Image-Turbo - Fast 6B parameter image generation (AWS)
+    zimage: {
+        type: "zimage",
+        enhance: false,
+        defaultSideLength: 1024,
     },
 } as const satisfies ImageModelsConfig;
 

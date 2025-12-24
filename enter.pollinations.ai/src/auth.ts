@@ -12,11 +12,17 @@ import { admin, apiKey, openAPI } from "better-auth/plugins";
 import { drizzle } from "drizzle-orm/d1";
 import * as betterAuthSchema from "./db/schema/better-auth.ts";
 
+function addKeyPrefix(key: string) {
+    return `auth:${key}`;
+}
+
 export function createAuth(env: Cloudflare.Env) {
     const polar = new Polar({
         accessToken: env.POLAR_ACCESS_TOKEN,
         server: env.POLAR_SERVER,
     });
+
+    const defaultTierProductId = env.POLAR_PRODUCT_TIER_SPORE;
 
     const db = drizzle(env.DB);
 
@@ -24,9 +30,14 @@ export function createAuth(env: Cloudflare.Env) {
     const SECRET_KEY_PREFIX = "sk";
 
     const apiKeyPlugin = apiKey({
+        storage: "secondary-storage",
+        fallbackToDatabase: true,
         enableMetadata: true,
         defaultPrefix: PUBLISHABLE_KEY_PREFIX,
         defaultKeyLength: 16, // Minimum key length for validation (matches custom generator)
+        startingCharactersConfig: {
+            charactersLength: 10, // Store more characters for display (pk_xxxxxxxxxx...)
+        },
         customKeyGenerator: (options: {
             length: number;
             prefix: string | undefined;
@@ -66,6 +77,19 @@ export function createAuth(env: Cloudflare.Env) {
             schema: betterAuthSchema,
             provider: "sqlite",
         }),
+        secondaryStorage: {
+            get: async (key) => {
+                return await env.KV.get(addKeyPrefix(key));
+            },
+            set: async (key, value, ttl) => {
+                await env.KV.put(addKeyPrefix(key), value, {
+                    expirationTtl: ttl,
+                });
+            },
+            delete: async (key) => {
+                await env.KV.delete(addKeyPrefix(key));
+            },
+        },
         trustedOrigins: ["https://enter.pollinations.ai", "http://localhost"],
         user: {
             additionalFields: {
@@ -94,7 +118,12 @@ export function createAuth(env: Cloudflare.Env) {
                 }),
             },
         },
-        plugins: [adminPlugin, apiKeyPlugin, polarPlugin(polar), openAPIPlugin],
+        plugins: [
+            adminPlugin,
+            apiKeyPlugin,
+            polarPlugin(polar, defaultTierProductId),
+            openAPIPlugin,
+        ],
         telemetry: { enabled: false },
     });
 }
@@ -103,7 +132,10 @@ export type Auth = ReturnType<typeof createAuth>;
 export type Session = Auth["$Infer"]["Session"]["session"];
 export type User = Auth["$Infer"]["Session"]["user"];
 
-function polarPlugin(polar: Polar): BetterAuthPlugin {
+function polarPlugin(
+    polar: Polar,
+    defaultTierProductId?: string,
+): BetterAuthPlugin {
     return {
         id: "polar",
         init: () => ({
@@ -112,7 +144,10 @@ function polarPlugin(polar: Polar): BetterAuthPlugin {
                     user: {
                         create: {
                             before: onBeforeUserCreate(polar),
-                            after: onAfterUserCreate(polar),
+                            after: onAfterUserCreate(
+                                polar,
+                                defaultTierProductId,
+                            ),
                         },
                         update: {
                             after: onUserUpdate(polar),
@@ -167,7 +202,7 @@ function onBeforeUserCreate(polar: Polar) {
     };
 }
 
-function onAfterUserCreate(polar: Polar) {
+function onAfterUserCreate(polar: Polar, defaultTierProductId?: string) {
     return async (user: GenericUser, ctx?: GenericEndpointContext) => {
         if (!ctx) return;
         try {
@@ -183,6 +218,17 @@ function onAfterUserCreate(polar: Polar) {
                         externalId: user.id,
                     },
                 });
+            }
+
+            // Auto-create subscription for new user's default tier
+            if (existingCustomer && defaultTierProductId) {
+                await ensureDefaultSubscription(
+                    polar,
+                    existingCustomer.id,
+                    defaultTierProductId,
+                    user.id,
+                    ctx.context.logger,
+                );
             }
         } catch (e: unknown) {
             const messageOrError = e instanceof Error ? e.message : e;
@@ -211,4 +257,30 @@ function onUserUpdate(polar: Polar) {
             );
         }
     };
+}
+
+async function ensureDefaultSubscription(
+    polar: Polar,
+    customerId: string,
+    productId: string,
+    userId: string,
+    logger: { info: (msg: string) => void; error: (msg: string) => void },
+): Promise<void> {
+    try {
+        const { result: subs } = await polar.subscriptions.list({
+            customerId,
+            active: true,
+            limit: 1,
+        });
+
+        if (subs.items.length === 0) {
+            await polar.subscriptions.create({
+                productId,
+                customerId,
+            });
+            logger.info(`Created default tier subscription for user ${userId}`);
+        }
+    } catch (error) {
+        logger.error(`Failed to create default subscription: ${error}`);
+    }
 }

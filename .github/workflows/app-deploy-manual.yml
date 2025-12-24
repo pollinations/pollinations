@@ -1,0 +1,130 @@
+name: Deploy Apps (Manual)
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'apps/*/**'
+      - '!apps/scripts/**'
+      - '!apps/*.md'
+  workflow_dispatch:
+    inputs:
+      app_name:
+        description: 'App to deploy (e.g., virtual-makeup, ai-dungeon-master, catgpt)'
+        required: true
+        type: string
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 2  # Need previous commit to detect changes
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '20'
+
+      - name: Detect changed apps
+        id: detect
+        run: |
+          # Manual trigger - deploy specific app
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            APPS="${{ github.event.inputs.app_name }}"
+            echo "Manual deployment: $APPS"
+            echo "apps=$APPS" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+          
+          # Auto trigger - detect changed files
+          CHANGED_FILES=$(git diff --name-only HEAD^ HEAD | grep '^apps/' || true)
+          
+          if [ -z "$CHANGED_FILES" ]; then
+            echo "No apps changed"
+            echo "apps=" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+          
+          # Extract app names (first directory after apps/)
+          APPS=$(echo "$CHANGED_FILES" | \
+            grep -v '^apps/scripts/' | \
+            grep -v '^apps/.*\.md$' | \
+            sed 's|^apps/\([^/]*\)/.*|\1|' | \
+            sort -u | \
+            tr '\n' ',' | \
+            sed 's/,$//')
+          
+          echo "Changed apps: $APPS"
+          echo "apps=$APPS" >> $GITHUB_OUTPUT
+
+      - name: Deploy apps
+        if: steps.detect.outputs.apps != ''
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          TURNSTILE_SITE_ID: ${{ secrets.TURNSTILE_SITE_ID }}
+        run: |
+          IFS=',' read -ra APPS <<< "${{ steps.detect.outputs.apps }}"
+          for app in "${APPS[@]}"; do
+            echo "🚀 Deploying $app..."
+            node apps/scripts/deploy-app.js "$app"
+          done
+
+      - name: Upload app files
+        if: steps.detect.outputs.apps != ''
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          # Install wrangler
+          npm install -g wrangler
+          
+          IFS=',' read -ra APPS <<< "${{ steps.detect.outputs.apps }}"
+          for app in "${APPS[@]}"; do
+            echo "📦 Uploading files for $app..."
+            
+            # Check if app has package.json (needs build)
+            if [ -f "apps/$app/package.json" ]; then
+              cd "apps/$app"
+              npm install
+              npm run build || echo "No build script, using source files"
+              cd ../..
+            fi
+            
+            # Deploy via wrangler pages
+            APP_NAME="pollinations-$app"
+            SOURCE_DIR="apps/$app"
+            
+            # Get output dir from apps.json
+            OUTPUT_DIR=$(node -e "
+              const config = require('./apps/apps.json');
+              console.log(config['$app']?.outputDir || '.');
+            ")
+            
+            if [ "$OUTPUT_DIR" != "." ]; then
+              SOURCE_DIR="$SOURCE_DIR/$OUTPUT_DIR"
+            fi
+            
+            echo "Deploying from $SOURCE_DIR to $APP_NAME"
+            wrangler pages deploy "$SOURCE_DIR" --project-name="$APP_NAME" --branch=main
+          done
+
+      - name: Comment on commit
+        if: steps.detect.outputs.apps != ''
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const apps = '${{ steps.detect.outputs.apps }}'.split(',');
+            const urls = apps.map(app => `- https://${app}.pollinations.ai`).join('\n');
+            
+            github.rest.repos.createCommitComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              commit_sha: context.sha,
+              body: `🚀 Deployed apps:\n\n${urls}\n\n_Note: DNS propagation may take a few minutes_`
+            });

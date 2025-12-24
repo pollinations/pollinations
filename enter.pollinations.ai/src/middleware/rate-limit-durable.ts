@@ -34,12 +34,12 @@ type FrontendKeyRateLimitEnv = {
 export const frontendKeyRateLimit = createMiddleware<
     FrontendKeyRateLimitEnv & Env
 >(async (c, next) => {
-    const log = c.get("log");
+    const log = c.get("log").getChild("ratelimit");
 
     // Only apply to publishable keys
     const apiKey = c.var?.auth?.apiKey;
     if (apiKey?.metadata?.keyType !== "publishable") {
-        log.debug("[RATE_LIMIT] Skipping rate limit, not a publishable key");
+        log.debug("Skipping rate limit, not a publishable key");
         return next();
     }
 
@@ -48,7 +48,7 @@ export const frontendKeyRateLimit = createMiddleware<
     const identifier = `pk_${apiKey.id}:ip:${ip}`;
 
     log.debug(
-        "[RATE_LIMIT] Applying rate limit for publishable key: {keyId}, IP: {ip}, identifier: {identifier}",
+        "Applying rate limit for publishable key: id={keyId} ip={ip} identifier={identifier}",
         {
             keyId: apiKey.id,
             ip,

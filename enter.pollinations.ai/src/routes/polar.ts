@@ -6,18 +6,18 @@ import { polar } from "../middleware/polar.ts";
 import { validator } from "../middleware/validator.ts";
 import type { Env } from "../env.ts";
 import { describeRoute } from "hono-openapi";
+import { drizzle } from "drizzle-orm/d1";
+import {
+    getPackProductMapCached,
+    PackProductSlug,
+    packProductSlugs,
+} from "@/utils/polar.ts";
+import { getPendingSpend } from "@/events.ts";
 
-export const productSlugs = [
-    "v1:product:pack:5x2",
-    "v1:product:pack:10x2",
-    "v1:product:pack:20x2",
-    "v1:product:pack:50x2",
-] as const;
-const productSlugSchema = z.enum(productSlugs);
-type ProductSlug = z.infer<typeof productSlugSchema>;
+const productParamSchema = z.enum(packProductSlugs.map(productSlugToUrlParam));
 
 const checkoutParamsSchema = z.object({
-    slug: productSlugSchema,
+    slug: productParamSchema,
 });
 
 const redirectQuerySchema = z.object({
@@ -27,7 +27,13 @@ const redirectQuerySchema = z.object({
         .default(true),
 });
 
-type ProductMap = { [key in ProductSlug]: string };
+export function productSlugToUrlParam(slug: string): string {
+    return slug.split(":").join("-");
+}
+
+export function productUrlParamToSlug(slug: string): string {
+    return slug.split("-").join(":");
+}
 
 export const polarRoutes = new Hono<Env>()
     .use("*", auth({ allowApiKey: false, allowSessionCookie: true }))
@@ -59,6 +65,23 @@ export const polarRoutes = new Hono<Env>()
                 externalCustomerId: user.id,
             });
             return c.json(result);
+        },
+    )
+    .get(
+        "/customer/pending-spend",
+        describeRoute({
+            tags: ["Auth"],
+            description:
+                "Get pending spend from recent events not yet processed by Polar.",
+            hide: ({ c }) => c?.env.ENVIRONMENT !== "development",
+        }),
+        async (c) => {
+            const user = c.var.auth.requireUser();
+            const pendingSpend = await getPendingSpend(
+                drizzle(c.env.DB),
+                user.id,
+            );
+            return c.json({ pendingSpend });
         },
     )
     .get(
@@ -102,19 +125,18 @@ export const polarRoutes = new Hono<Env>()
         validator("query", redirectQuerySchema),
         async (c) => {
             const user = c.var.auth.requireUser();
-            const { slug } = c.req.valid("param");
+            const { slug: slugParam } = c.req.valid("param");
+            const slug = productUrlParamToSlug(slugParam);
             const { redirect } = c.req.valid("query");
-            const products: ProductMap = {
-                "v1:product:pack:5x2": c.env.POLAR_PRODUCT_PACK_5X2,
-                "v1:product:pack:10x2": c.env.POLAR_PRODUCT_PACK_10X2,
-                "v1:product:pack:20x2": c.env.POLAR_PRODUCT_PACK_20X2,
-                "v1:product:pack:50x2": c.env.POLAR_PRODUCT_PACK_50X2,
-            };
             try {
                 const polar = c.var.polar.client;
+                const packProducts = await getPackProductMapCached(
+                    polar,
+                    c.env.KV,
+                );
                 const response = await polar.checkouts.create({
                     externalCustomerId: user.id,
-                    products: [products[slug]],
+                    products: [packProducts[slug as PackProductSlug].id],
                     successUrl: c.env.POLAR_SUCCESS_URL,
                 });
                 if (redirect) return c.redirect(response.url);

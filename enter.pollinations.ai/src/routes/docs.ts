@@ -3,6 +3,28 @@ import { Scalar } from "@scalar/hono-api-reference";
 import { openAPIRouteHandler } from "hono-openapi";
 import type { Env } from "@/env.ts";
 
+// Transform OpenAPI schema for gen.pollinations.ai:
+// 1. Remove /generate/ prefix from paths
+// 2. Add x-tagGroups for Scalar sidebar organization
+function transformOpenAPISchema(
+    schema: Record<string, unknown>,
+): Record<string, unknown> {
+    const paths = schema.paths as Record<string, unknown> | undefined;
+    if (!paths) return schema;
+
+    const newPaths: Record<string, unknown> = {};
+    for (const [path, value] of Object.entries(paths)) {
+        // Strip /generate prefix: /generate/v1/models → /v1/models
+        const cleanPath = path.replace(/^\/generate/, "");
+        newPaths[cleanPath] = value;
+    }
+
+    return {
+        ...schema,
+        paths: newPaths,
+    };
+}
+
 export const createDocsRoutes = (apiRouter: Hono<Env>) => {
     return new Hono<Env>()
         .get("/", (c, next) =>
@@ -32,16 +54,16 @@ export const createDocsRoutes = (apiRouter: Hono<Env>) => {
                 },
             })(c, next),
         )
-        .get(
-            "/open-api/generate-schema",
-            openAPIRouteHandler(apiRouter, {
+        .get("/open-api/generate-schema", async (c, next) => {
+            // Generate schema using hono-openapi, then transform paths to remove /generate prefix
+            const handler = openAPIRouteHandler(apiRouter, {
                 documentation: {
-                    servers: [{ url: "/api" }],
+                    servers: [{ url: "https://gen.pollinations.ai" }],
                     info: {
                         title: "Pollinations.AI API",
                         version: "0.3.0",
                         description: [
-                            "Documentation for `enter.pollinations.ai`.",
+                            "Documentation for `gen.pollinations.ai` - the Pollinations.AI API gateway.",
                             "",
                             "[📝 Edit docs](https://github.com/pollinations/pollinations/edit/master/enter.pollinations.ai/src/routes/docs.ts)",
                             "",
@@ -51,26 +73,36 @@ export const createDocsRoutes = (apiRouter: Hono<Env>) => {
                             "",
                             "### Image Generation",
                             "```bash",
-                            "curl 'https://enter.pollinations.ai/api/generate/image/a%20cat?model=flux' \\",
+                            "curl 'https://gen.pollinations.ai/image/a%20cat?model=flux' \\",
                             "  -H 'Authorization: Bearer YOUR_API_KEY'",
                             "```",
                             "",
                             "### Text Generation",
                             "```bash",
-                            "curl 'https://enter.pollinations.ai/api/generate/v1/chat/completions' \\",
+                            "curl 'https://gen.pollinations.ai/v1/chat/completions' \\",
                             "  -H 'Authorization: Bearer YOUR_API_KEY' \\",
                             "  -H 'Content-Type: application/json' \\",
                             '  -d \'{"model": "openai", "messages": [{"role": "user", "content": "Hello"}]}\'',
                             "```",
                             "",
+                            "### Vision (Image Input)",
+                            "```bash",
+                            "curl 'https://gen.pollinations.ai/v1/chat/completions' \\",
+                            "  -H 'Authorization: Bearer YOUR_API_KEY' \\",
+                            "  -H 'Content-Type: application/json' \\",
+                            '  -d \'{"model": "openai", "messages": [{"role": "user", "content": [{"type": "text", "text": "Describe this image"}, {"type": "image_url", "image_url": {"url": "https://example.com/image.jpg"}}]}]}\'',
+                            "```",
+                            "",
+                            "**Note:** `gemini` model has `code_execution`, `google_search`, `url_context` tools enabled by default. Pass your own `tools` array to override.",
+                            "",
                             "### Simple Text Endpoint",
                             "```bash",
-                            "curl 'https://enter.pollinations.ai/api/generate/text/hello?key=YOUR_API_KEY'",
+                            "curl 'https://gen.pollinations.ai/text/hello?key=YOUR_API_KEY'",
                             "```",
                             "",
                             "### Streaming",
                             "```bash",
-                            "curl 'https://enter.pollinations.ai/api/generate/v1/chat/completions' \\",
+                            "curl 'https://gen.pollinations.ai/v1/chat/completions' \\",
                             "  -H 'Authorization: Bearer YOUR_API_KEY' \\",
                             "  -H 'Content-Type: application/json' \\",
                             '  -d \'{"model": "openai", "messages": [{"role": "user", "content": "Write a poem"}], "stream": true}\' \\',
@@ -80,8 +112,8 @@ export const createDocsRoutes = (apiRouter: Hono<Env>) => {
                             "### Model Discovery",
                             "**Always check available models before testing:**",
                             "",
-                            "- **Image models:** [/api/generate/image/models](https://enter.pollinations.ai/api/generate/image/models)",
-                            "- **Text models:** [/api/generate/v1/models](https://enter.pollinations.ai/api/generate/v1/models)",
+                            "- **Image models:** [/image/models](https://gen.pollinations.ai/image/models)",
+                            "- **Text models:** [/v1/models](https://gen.pollinations.ai/v1/models)",
                             "",
                             "## Authentication",
                             "",
@@ -110,7 +142,24 @@ export const createDocsRoutes = (apiRouter: Hono<Env>) => {
                             bearerAuth: [],
                         },
                     ],
+                    // Single tag for all generation endpoints
+                    tags: [
+                        {
+                            name: "gen.pollinations.ai",
+                            description:
+                                "Generate text, images, and videos using AI models",
+                        },
+                    ],
                 },
-            }),
-        );
+            });
+
+            // Call the handler to get the response
+            const response = await handler(c, next);
+            if (!response) return;
+
+            // Parse the schema, transform paths, and return
+            const schema = (await response.json()) as Record<string, unknown>;
+            const transformed = transformOpenAPISchema(schema);
+            return c.json(transformed);
+        });
 };

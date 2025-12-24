@@ -486,19 +486,53 @@ const meterCreate = command({
     },
 });
 
-const customerMeterList = command({
+const customerListMeters = command({
     name: "list-meters",
     options: {
-        userId: string().required(),
+        email: string().required(),
         env: string().enum("staging", "production").default("staging"),
     },
     handler: async (opts) => {
         const polar = createPolarClient(opts.env);
+        const getCustomerReponse = await polar.customers.list({
+            limit: 100,
+            email: opts.email,
+        });
+        const customer = getCustomerReponse.result.items[0];
+        if (!customer) {
+            throw new Error("Customer not found");
+        }
         const response = await polar.customerMeters.list({
             limit: 100,
-            externalCustomerId: opts.userId,
+            customerId: customer.id,
         });
-        console.log(inspect(response, false, 1000));
+        console.log(inspect(response.result.items, false, 1000));
+    },
+});
+
+const customerListEvents = command({
+    name: "list-events",
+    options: {
+        email: string().required(),
+        env: string().enum("staging", "production").default("staging"),
+    },
+    handler: async (opts) => {
+        const polar = createPolarClient(opts.env);
+        const getCustomerReponse = await polar.customers.list({
+            limit: 100,
+            email: opts.email,
+        });
+        const customer = getCustomerReponse.result.items[0];
+        if (!customer) {
+            throw new Error("Customer not found");
+        } else {
+            console.log(`Found customer id: ${customer.id}`);
+        }
+        const response = await polar.events.list({
+            limit: 100,
+            customerId: customer.id,
+        });
+        console.log(inspect(response.result.items, false, 1000));
     },
 });
 
@@ -685,61 +719,59 @@ const userUpdateTier = command({
             .required()
             .desc("Target tier"),
         env: string().enum("staging", "production").default("production"),
-        dryRun: boolean()
+        apply: boolean()
             .default(false)
-            .desc("Show what would be done without making changes"),
+            .desc("Apply changes to user's subscription"),
     },
     handler: async (opts) => {
         const polar = createPolarClient(opts.env);
         const tierProductIds = TIER_PRODUCT_IDS[opts.env];
         const targetProductId = tierProductIds[opts.tier as TierName];
 
-        console.log(`🔍 Searching for subscription: ${opts.email}`);
+        console.log(`Searching subscription for: ${opts.email}`);
 
-        // Find user's subscription using async iterator
-        let subscription = null;
-        const paginator = await polar.subscriptions.list({ limit: 100 });
-        for await (const page of paginator) {
-            subscription = page.result.items.find(
-                (s) =>
-                    s.customer.email?.toLowerCase() ===
-                    opts.email.toLowerCase(),
-            );
-            if (subscription) break;
+        // First, look up customer by email (fast)
+        const customerResponse = await polar.customers.list({
+            email: opts.email,
+            limit: 1,
+        });
+        const customer = customerResponse.result.items[0];
+        if (!customer) {
+            console.error(`No customer found for ${opts.email}`);
+            return;
         }
+
+        // Then filter subscriptions by customerId (fast)
+        const subscriptionResponse = await polar.subscriptions.list({
+            customerId: customer.id,
+            active: true,
+            limit: 1,
+        });
+        const subscription = subscriptionResponse.result.items[0];
 
         if (!subscription) {
-            console.error(`❌ No subscription found for ${opts.email}`);
-            process.exit(1);
+            console.error(`No subscription found for ${opts.email}`);
+            return;
         }
 
-        console.log(`📋 Found subscription:`);
+        console.log("Found subscription:");
         console.log(`   ID: ${subscription.id}`);
         console.log(`   Current: ${subscription.product.name}`);
         console.log(`   Status: ${subscription.status}`);
 
-        if (subscription.status !== "active") {
-            console.error(
-                `❌ Subscription not active (status: ${subscription.status})`,
-            );
-            console.log(`   User needs to reactivate at enter.pollinations.ai`);
-            process.exit(1);
-        }
-
         if (subscription.productId === targetProductId) {
-            console.log(`✅ Already on ${opts.tier} tier`);
+            console.log(`Already on ${opts.tier} tier`);
             return;
         }
 
-        if (opts.dryRun) {
+        if (!opts.apply) {
             console.log(
-                `\n🔄 Would update: ${subscription.product.name} → ${opts.tier}`,
+                `Would update: ${subscription.product.name} → ${opts.tier}`,
             );
-            console.log(`   (Use without --dryRun to apply)`);
+            console.log(`   (Use with --apply to make changes)`);
             return;
         }
-
-        console.log(`\n🔄 Updating subscription...`);
+        console.log(`Updating subscription...`);
         const result = await polar.subscriptions.update({
             id: subscription.id,
             subscriptionUpdate: {
@@ -747,9 +779,11 @@ const userUpdateTier = command({
                 prorationBehavior: "prorate",
             },
         });
-
         console.log(
-            `✅ Updated: ${subscription.product.name} → ${result.product.name}`,
+            applyColor(
+                "green",
+                `Updated: ${subscription.product.name} → ${result.product.name}`,
+            ),
         );
     },
 });
@@ -762,7 +796,7 @@ const tierMigrate = command({
     },
     handler: async (opts) => {
         if (!opts.apply) {
-            console.log("This is a dry run. Use --apply to apply changes.");
+            console.log("This is a dry run. Use --apply to make changes.");
         }
         const polarSandbox = createPolarClient("staging");
         const polarProduction = createPolarClient("production");
@@ -842,7 +876,7 @@ const commands = [
     }),
     command({
         name: "customer",
-        subcommands: [customerMigrate],
+        subcommands: [customerMigrate, customerListMeters, customerListEvents],
     }),
     command({
         name: "user",

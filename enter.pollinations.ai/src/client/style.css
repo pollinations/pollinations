@@ -82,7 +82,7 @@
 
     body {
         max-width: 800px;
-        @apply mx-auto px-4 sm:px-6 md:px-8 pt-4;
+        @apply mx-auto px-4 sm:px-6 md:px-8 pt-4 overflow-x-hidden;
     }
 
     h1 {

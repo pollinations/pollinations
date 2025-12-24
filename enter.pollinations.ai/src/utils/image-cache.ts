@@ -152,7 +152,8 @@ export async function cacheResponse<TEnv extends ImageCacheEnv>(
 
         return true;
     } catch (error) {
-        c.get("log")?.error("[CACHE] Error caching response: {error}", {
+        const log = c.get("log");
+        log.error("Error caching response: {error}", {
             error,
         });
         return false;

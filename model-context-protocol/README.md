@@ -1,153 +1,193 @@
-# Pollinations Multimodal MCP Server
+# Pollinations MCP Server v2.0
 
-A Model Context Protocol (MCP) server for the Pollinations APIs that enables AI assistants like Claude to generate images, text, and audio directly. This server follows the "thin proxy" design principle, focusing on minimal data transformation and direct communication through stdio.
+A Model Context Protocol (MCP) server for Pollinations AI that enables AI assistants to generate images, videos, text, and audio.
 
-## Features
+## What's New in v2.0
 
-- Generate image URLs from text prompts
-- Generate actual images and return them as base64-encoded data
-- Generate text responses from text prompts
-- Generate audio (text-to-speech) from text prompts
-- List available image and text generation models
-- STDIO transport for easy integration with MCP clients
-- Simple and lightweight
-- Compatible with the Model Context Protocol (MCP)
-
-## System Requirements
-
-- **Node.js**: Version 14.0.0 or higher
-  - For best performance, we recommend Node.js 16.0.0 or higher
-  - Node.js versions below 16 use an AbortController polyfill
+- **New API endpoint**: Uses `gen.pollinations.ai` - the unified Pollinations gateway
+- **Authentication**: Simple API key system (pk_/sk_ keys) replaces OAuth
+- **Video generation**: New `generateVideo` tool with veo, seedance, seedance-pro
+- **Chat completions**: OpenAI-compatible `chatCompletion` tool with function calling
+- **Dynamic models**: Models fetched from API - always up to date, no hardcoding!
+- **SDK upgrade**: Updated to MCP SDK 1.25.1 with latest protocol support
 
 ## Quick Start
-
-The easiest way to use the MCP server:
 
 ```bash
 # Run directly with npx (no installation required)
 npx @pollinations/model-context-protocol
 ```
 
-If you prefer to install it globally:
+Or install globally:
 
 ```bash
-# Install globally
 npm install -g @pollinations/model-context-protocol
-
-# Run the server
 pollinations-mcp
 ```
 
-## Transport
+## Authentication
 
-The MCP server exclusively uses STDIO transport, which is ideal for local integrations and command-line tools:
+Get your API key at [pollinations.ai](https://pollinations.ai)
+
+**Key Types:**
+- `pk_` (Publishable): Client-safe, rate-limited (3 req/burst, 1/15sec refill)
+- `sk_` (Secret): Server-side only, no rate limits, can spend Pollen
+
+Set your key via environment variable or the `setApiKey` tool:
 
 ```bash
-# Run with STDIO transport
+# Environment variable
+export POLLINATIONS_API_KEY=pk_your_key_here
 npx @pollinations/model-context-protocol
 ```
 
-For MCP clients, connect using:
+## Available Tools
 
-```bash
-npx supergateway --stdio -- pollinations-mcp
-```
+### Image & Video Generation
+
+| Tool | Description |
+|------|-------------|
+| `generateImageUrl` | Generate an image URL from text prompt |
+| `generateImage` | Generate image and return base64 data |
+| `generateVideo` | Generate video (veo, seedance, seedance-pro) |
+| `listImageModels` | List available models (dynamic) |
+
+**Image parameters:**
+- `prompt` (required): Text description
+- `model`: flux, turbo, gptimage, kontext, seedream, seedream-pro, nanobanana, nanobanana-pro, zimage
+- `width`, `height`: Image dimensions (default: 1024)
+- `seed`: Reproducible results
+- `enhance`: Improve prompt
+- `negative_prompt`: What to avoid
+- `quality`: low, medium, high, hd
+- `image`: Reference image URL for image-to-image
+- `transparent`: Transparent background
+
+**Video parameters:**
+- `model`: veo (text-to-video), seedance, seedance-pro (image-to-video)
+- `duration`: Video length in seconds
+- `aspectRatio`: 16:9, 9:16, etc.
+- `audio`: Enable audio (veo only)
+
+### Text Generation
+
+| Tool | Description |
+|------|-------------|
+| `generateText` | Simple text generation |
+| `chatCompletion` | OpenAI-compatible chat with tool calling |
+| `listTextModels` | List available models (dynamic) |
+
+**Text models include:** openai, openai-fast, openai-large, gemini, gemini-fast, gemini-large, claude, claude-fast, claude-large, deepseek, grok, mistral, qwen-coder, and more!
+
+**Chat completion features:**
+- Multi-turn conversations
+- Function/tool calling
+- JSON response format
+- Audio output (with openai-audio model)
+
+### Audio Generation
+
+| Tool | Description |
+|------|-------------|
+| `respondAudio` | AI responds with speech |
+| `sayText` | Text-to-speech (verbatim) |
+| `listAudioVoices` | List available voices |
+
+**Voices:** alloy, echo, fable, onyx, nova, shimmer, coral, verse, ballad, ash, sage, amuch, dan
+
+**Formats:** mp3, wav, flac, opus, pcm16
+
+### Authentication
+
+| Tool | Description |
+|------|-------------|
+| `setApiKey` | Set API key for requests |
+| `getKeyInfo` | Check current key status |
+| `clearApiKey` | Remove stored key |
 
 ## Claude Desktop Integration
 
-To install the MCP server in Claude Desktop:
-
 ```bash
-# Run the installation script
 npx @pollinations/model-context-protocol install-claude-mcp
 ```
 
-This script will automatically:
-- Find the Claude Desktop configuration file for your OS
-- Add the Pollinations MCP server to the configuration
-- Configure it to use npx for easy updates
+Or manually add to your Claude Desktop config:
 
-After installation, restart Claude Desktop and you can use commands like:
-```
-Generate an image of a sunset over the ocean using the Pollinations API.
-```
-
-## Alternative MCP Implementations
-
-- **MCPollinations**: A community-maintained alternative MCP server supporting similar capabilities. Available at [GitHub](https://github.com/pinkpixel-dev/MCPollinations) and [NPM](https://www.npmjs.com/package/@pinkpixel/mcpollinations).
-
-## Troubleshooting
-
-### "AbortController is not defined" Error
-
-If you encounter this error when running the MCP server:
-
-```
-ReferenceError: AbortController is not defined
+```json
+{
+  "mcpServers": {
+    "pollinations": {
+      "command": "npx",
+      "args": ["@pollinations/model-context-protocol"],
+      "env": {
+        "POLLINATIONS_API_KEY": "pk_your_key_here"
+      }
+    }
+  }
+}
 ```
 
-This is usually caused by running on an older version of Node.js (below version 16.0.0). Try one of these solutions:
+## Examples
 
-1. **Update Node.js** (recommended):
-   - Update to Node.js 16.0.0 or newer
-
-2. **Use our polyfill** (automatic in version 1.0.6+):
-   - Update to the latest version of the package:
-   ```bash
-   npm install -g @pollinations/model-context-protocol@latest
-   # or run with npx
-   npx @pollinations/model-context-protocol@latest
-   ```
-
-3. **Install AbortController manually**:
-   - If for some reason the polyfill doesn't work:
-   ```bash
-   npm install node-abort-controller
-   ```
-
-### Check Your Node.js Version
-
-To check your current Node.js version:
-
-```bash
-node --version
+### Generate an image
+```
+Generate an image of a sunset over mountains using the flux model
 ```
 
-If it shows a version lower than 16.0.0, consider upgrading for best compatibility.
+### Generate a video
+```
+Create a 6-second video of waves crashing on a beach using veo
+```
 
-## Available Tools
+### Chat with function calling
+```
+Use chatCompletion to have a conversation about the weather, with the ability to call a weather API
+```
 
-The MCP server provides the following tools:
+### Text-to-speech
+```
+Say "Hello, welcome to Pollinations!" using the nova voice
+```
 
-### Content Generation
+## System Requirements
 
-1. `generateImageUrl` - Generates an image URL from a text prompt
-2. `generateImage` - Generates an image and returns it as base64-encoded data
-3. `respondAudio` - Generates an audio response to a text prompt
-4. `sayText` - Generates speech that says the provided text verbatim
-5. `generateText` - Generates text from a prompt using text models
-6. `listModels` - Lists available models for image or text generation
+- **Node.js**: Version 18.0.0 or higher
 
-## Changelog
+## API Reference
 
-### Version 1.0.7
-- Simplified architecture by removing HTTP server components
-- Transitioned to stdio-only transport following MCP best practices
-- Removed authentication server (moved to separate github-app-auth service)
-- Reduced dependencies for a smaller, more focused package
-- Updated documentation to reflect the new architecture
+All requests go through `https://gen.pollinations.ai`
 
-### Version 1.0.6
-- Added compatibility with Node.js versions 14.0.0 and later
-- Added AbortController polyfill for Node.js versions below 16.0.0
-- Fixed "AbortController is not defined" error
-- Improved error handling and reporting
-- Added troubleshooting guide in README
-- Enhanced documentation with system requirements and installation options
+| Endpoint | Description |
+|----------|-------------|
+| GET `/image/{prompt}` | Generate image/video |
+| GET `/text/{prompt}` | Generate text |
+| POST `/v1/chat/completions` | Chat completions |
+| GET `/image/models` | List image models |
+| GET `/text/models` | List text models |
 
-### Version 1.0.5
-- Initial public release
+Full API docs: [enter.pollinations.ai/api/docs](https://enter.pollinations.ai/api/docs)
+
+## Migration from v1.x
+
+### Breaking Changes
+
+1. **Authentication**: OAuth removed → Use API keys (pk_/sk_)
+2. **Removed tools**: `startAuth`, `exchangeToken`, `refreshToken`, `getDomains`, `updateDomains`
+3. **New tools**: `generateVideo`, `chatCompletion`, `setApiKey`, `getKeyInfo`, `clearApiKey`
+4. **API endpoint**: Now uses `gen.pollinations.ai`
+
+### Upgrade Steps
+
+1. Get API key from [pollinations.ai](https://pollinations.ai)
+2. Update: `npm update @pollinations/model-context-protocol`
+3. Set your key: Use `setApiKey` tool or `POLLINATIONS_API_KEY` env var
 
 ## License
 
 MIT
+
+## Links
+
+- [Pollinations.AI](https://pollinations.ai)
+- [API Documentation](https://enter.pollinations.ai/api/docs)
+- [GitHub Issues](https://github.com/pollinations/pollinations/issues)

@@ -186,8 +186,8 @@ export const TEXT_SERVICES = {
         isSpecialized: false,
     },
     "deepseek": {
-        aliases: ["deepseek-v3", "deepseek-v3.2", "deepseek-reasoning"],
-        modelId: "DeepSeek-V3.2",
+        aliases: ["deepseek-v3", "DeepSeek-V3.2", "deepseek-reasoning"],
+        modelId: "deepseek-v3.2",
         provider: "azure",
         cost: [
             {

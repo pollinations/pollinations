@@ -32,7 +32,7 @@ remote = true
 
 [[r2_buckets]]
 binding = "TEXT_BUCKET"
-bucket_name = "pollinations-text"
+bucket_name = "pollinations-text-enter"
 remote = true
 
 [[durable_objects.bindings]]
@@ -135,7 +135,7 @@ bucket_name = "pollinations-images"
 
 [[env.production.r2_buckets]]
 binding = "TEXT_BUCKET"
-bucket_name = "pollinations-text"
+bucket_name = "pollinations-text-enter"
 
 # Edge rate limiter: ~10 req/s per IP (100 req per 10s)
 [[env.production.ratelimits]]
@@ -196,7 +196,7 @@ bucket_name = "pollinations-images"
 
 [[env.staging.r2_buckets]]
 binding = "TEXT_BUCKET"
-bucket_name = "pollinations-text"
+bucket_name = "pollinations-text-enter"
 
 [[env.staging.ratelimits]]
 name = "EDGE_RATE_LIMITER"

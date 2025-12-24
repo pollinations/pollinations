@@ -4,9 +4,9 @@
     "private": true,
     "type": "module",
     "scripts": {
-        "predev": "cp ../apps/APPS.md src/lib/APPS.md",
+        "predev": "cpy ../apps/APPS.md src/lib/",
         "dev": "vite",
-        "prebuild": "cp ../apps/APPS.md src/lib/APPS.md",
+        "prebuild": "cpy ../apps/APPS.md src/lib/",
         "build": "tsc && vite build",
         "preview": "vite preview"
     },
@@ -30,6 +30,7 @@
         "@types/react-dom": "^19.2.3",
         "@vitejs/plugin-react": "^5.0.4",
         "autoprefixer": "^10.4.22",
+        "cpy-cli": "^6.0.0",
         "eslint-plugin-jsx-a11y": "^6.10.2",
         "postcss": "^8.5.6",
         "tailwindcss": "^3.4.18",

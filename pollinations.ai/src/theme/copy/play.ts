@@ -19,7 +19,7 @@ export const PLAY_PAGE = {
     },
 
     toggleWatchOthers: {
-        text: "Watch what others are making",
+        text: "Watch Feed",
     },
 
     toggleBackToPlay: {

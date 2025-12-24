@@ -2,6 +2,7 @@ import { useState, useMemo } from "react";
 import { Title, Body } from "../components/ui/typography";
 import { PageCard } from "../components/ui/page-card";
 import { PageContainer } from "../components/ui/page-container";
+import { Button } from "../components/ui/button";
 import { PLAY_PAGE } from "../../theme";
 import { ImageFeed } from "../components/play/ImageFeed";
 import { PlayGenerator } from "../components/play/PlayGenerator";
@@ -40,24 +41,24 @@ function PlayPage() {
     return (
         <PageContainer>
             <PageCard>
-                {/* Title with toggle */}
-                <div className="flex items-center gap-4 mb-8">
+                {/* Title with toggle button */}
+                <div className="flex items-center justify-between gap-4 mb-8">
                     <Title spacing="none">
                         {view === "play"
                             ? pageCopy.createTitle.text
                             : pageCopy.watchTitle.text}
                     </Title>
-                    <button
-                        type="button"
+                    <Button
+                        variant="secondary"
+                        size="sm"
                         onClick={() =>
                             setView(view === "play" ? "feed" : "play")
                         }
-                        className="font-body text-sm text-text-body-tertiary hover:text-text-body-main transition-colors"
                     >
                         {view === "play"
                             ? pageCopy.toggleWatchOthers.text
                             : pageCopy.toggleBackToPlay.text}
-                    </button>
+                    </Button>
                 </div>
 
                 {/* Description */}

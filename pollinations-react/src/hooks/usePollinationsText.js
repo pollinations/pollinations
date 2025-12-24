@@ -3,9 +3,12 @@ import { useState, useEffect, useRef, useCallback } from "react";
 const usePollinationsText = (prompt, options = {}) => {
     const {
         seed = 42,
-        systemPrompt,
+        system,
         model = "openai",
-        jsonMode = false,
+        json = false,
+        temperature,
+        stream = false,
+        private: isPrivate = false,
         apiKey,
     } = options;
 
@@ -42,8 +45,11 @@ const usePollinationsText = (prompt, options = {}) => {
             const params = new URLSearchParams();
             params.set("seed", seed.toString());
             params.set("model", model);
-            if (jsonMode) params.set("json_mode", "true");
-            if (systemPrompt) params.set("system_prompt", systemPrompt);
+            if (json) params.set("json", "true");
+            if (system) params.set("system", system);
+            if (temperature !== undefined) params.set("temperature", temperature.toString());
+            if (stream) params.set("stream", "true");
+            if (isPrivate) params.set("private", "true");
 
             const headers = {
                 "Content-Type": "application/json",
@@ -64,7 +70,7 @@ const usePollinationsText = (prompt, options = {}) => {
 
             const text = await response.text();
             let result = text;
-            if (jsonMode) {
+            if (json) {
                 try {
                     result = JSON.parse(text);
                 } catch (parseErr) {
@@ -81,7 +87,7 @@ const usePollinationsText = (prompt, options = {}) => {
             setError(err.message);
             setIsLoading(false);
         }
-    }, [prompt, seed, model, systemPrompt, jsonMode, apiKey]);
+    }, [prompt, seed, model, system, json, temperature, stream, isPrivate, apiKey]);
 
     useEffect(() => {
         fetchText();

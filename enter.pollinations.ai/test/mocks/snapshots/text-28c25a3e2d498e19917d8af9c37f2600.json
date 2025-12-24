@@ -23,12 +23,12 @@
     "headers": {
       "access-control-allow-origin": "*",
       "connection": "keep-alive",
-      "content-length": "930",
+      "content-length": "806",
       "content-type": "application/json; charset=utf-8",
-      "date": "Sat, 20 Dec 2025 15:39:26 GMT",
-      "etag": "W/\"3a2-O9WYMgbyry23wTQt5G4/rrEvDII\"",
+      "date": "Wed, 24 Dec 2025 14:51:09 GMT",
+      "etag": "W/\"326-YFxiTm2fjLufZR/14APKHV0/JAY\"",
       "keep-alive": "timeout=5",
-      "x-model-used": "DeepSeek-V3.1",
+      "x-model-used": "deepseek-v3.2",
       "x-powered-by": "Express",
       "x-usage-completion-text-tokens": "3",
       "x-usage-prompt-text-tokens": "265",
@@ -37,8 +37,8 @@
     "body": {
       "type": "json",
       "data": {
-        "id": "pllns_4bfba53255b49b967fab2aecb36a7196",
-        "model": "DeepSeek-V3.1",
+        "id": "pllns_e07fbcbec8e22a485b4a74be09e7a849",
+        "model": "deepseek-v3.2",
         "choices": [
           {
             "index": 0,
@@ -63,14 +63,6 @@
               "self_harm": {
                 "filtered": false,
                 "severity": "safe"
-              },
-              "protected_material_code": {
-                "filtered": false,
-                "detected": false
-              },
-              "protected_material_text": {
-                "filtered": false,
-                "detected": false
               }
             }
           }
@@ -80,7 +72,7 @@
           "completion_tokens": 3,
           "total_tokens": 268
         },
-        "created": 1766245165,
+        "created": 1766587869,
         "object": "chat.completion",
         "prompt_filter_results": [
           {

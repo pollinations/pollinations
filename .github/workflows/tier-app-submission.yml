@@ -153,7 +153,7 @@ jobs:
             [ ! -f "$file" ] && continue
             
             # 1. Check for exact URL match (HARD MATCH)
-            if grep -qi "$(echo "$APP_URL" | sed 's/[&/\]/\\&/g')" "$file"; then
+            if grep -qi "| [^|]*$(echo "$APP_URL" | sed 's/[&/\]/\\&/g')" "$file"; then
               DUPLICATE_FOUND="$file"
               MATCH_TYPE="url_exact"
               break
@@ -167,7 +167,7 @@ jobs:
             fi
             
             # 3. Check for name+user match (HARD MATCH)
-            if grep -qi "\"name\"[[:space:]]*:[[:space:]]*\"[^\"]*$NORMALIZED_NAME[^\"]*\"" "$file"; then
+            if grep -qi "\"name\"[[:space:]]*:[[:space:]]*\"$NORMALIZED_NAME\"" "$file"; then
               # Extract author from file if possible
               FILE_AUTHOR=$(grep -o "@[a-zA-Z0-9_-]*" "$file" | head -1 | tr -d '@')
               if [ "$FILE_AUTHOR" = "$GITHUB_USERNAME" ]; then
@@ -183,7 +183,7 @@ jobs:
             # Extract user's previous apps from APPS.md
             # Markdown table format: | Emoji | Name | Description | Language | Category | GitHub | Repo | Stars | Discord | Other | Submitted |
             PREV_APPS_TEXT=""
-            while IFS='|' read -r emoji name desc lang cat github repo stars discord other submitted; do
+            tail -n +2 apps/APPS.md | while IFS='|' read -r emoji name desc lang cat github repo stars discord other submitted; do
               # Trim whitespace from each field
               github=$(echo "$github" | xargs)
               name=$(echo "$name" | xargs)
@@ -200,7 +200,7 @@ jobs:
             # Only do semantic check if user has previous apps
             if [ -n "$PREV_APPS_TEXT" ]; then
               APP_DESC=$(echo "$PROJECT_JSON" | jq -r '.description')
-              COMPARISON_MSG="Current submission:\nName: $APP_NAME\nDescription: $APP_DESC\n\n..."
+              COMPARISON_MSG="Current submission:\nName: $APP_NAME\nDescription: $APP_DESC\n\nUser's previous submissions:\n${PREV_APPS_TEXT}\n\nScore similarity 0-100 based on purpose, category, target use case, and core functionality."
               
               PAYLOAD=$(jq -n \
                 --arg comparison "$COMPARISON_MSG" '{

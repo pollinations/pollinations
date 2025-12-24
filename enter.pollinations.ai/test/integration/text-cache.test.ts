@@ -284,7 +284,7 @@ describe("Text Cache Integration Tests", () => {
 
     test(
         "streaming and non-streaming have different cache keys",
-        { timeout: 30000 },
+        { timeout: 60000 },
         async ({ apiKey, mocks }) => {
             await mocks.enable("polar", "tinybird", "vcr");
 
@@ -293,8 +293,20 @@ describe("Text Cache Integration Tests", () => {
                 content: "Stream vs non-stream test",
             };
 
-            // Non-streaming request
-            const responseA = await SELF.fetch(
+            const nonStreamingBody = JSON.stringify({
+                model: "openai-fast",
+                messages: [baseMessage],
+                stream: false,
+            });
+
+            const streamingBody = JSON.stringify({
+                model: "openai-fast",
+                messages: [baseMessage],
+                stream: true,
+            });
+
+            // First non-streaming request (MISS - populates cache)
+            const responseA1 = await SELF.fetch(
                 `http://localhost:3000/api/generate/v1/chat/completions`,
                 {
                     method: "POST",
@@ -302,20 +314,15 @@ describe("Text Cache Integration Tests", () => {
                         "content-type": "application/json",
                         "authorization": `Bearer ${apiKey}`,
                     },
-                    body: JSON.stringify({
-                        model: "openai-fast",
-                        messages: [baseMessage],
-                        stream: false,
-                    }),
+                    body: nonStreamingBody,
                 },
             );
-            expect(responseA.status).toBe(200);
-            await responseA.text();
+            expect(responseA1.status).toBe(200);
+            await responseA1.text();
+            expect(responseA1.headers.get("X-Cache")).toBe("MISS");
 
-            const keyA = responseA.headers.get("X-Cache-Key");
-
-            // Streaming request - should have DIFFERENT cache key
-            const responseB = await SELF.fetch(
+            // Second non-streaming request (HIT - get cache key)
+            const responseA2 = await SELF.fetch(
                 `http://localhost:3000/api/generate/v1/chat/completions`,
                 {
                     method: "POST",
@@ -323,17 +330,48 @@ describe("Text Cache Integration Tests", () => {
                         "content-type": "application/json",
                         "authorization": `Bearer ${apiKey}`,
                     },
-                    body: JSON.stringify({
-                        model: "openai-fast",
-                        messages: [baseMessage],
-                        stream: true,
-                    }),
+                    body: nonStreamingBody,
                 },
             );
-            expect(responseB.status).toBe(200);
-            await responseB.text();
+            expect(responseA2.status).toBe(200);
+            await responseA2.text();
+            expect(responseA2.headers.get("X-Cache")).toBe("HIT");
+            const keyA = responseA2.headers.get("X-Cache-Key");
+            expect(keyA).toBeTruthy();
 
-            const keyB = responseB.headers.get("X-Cache-Key");
+            // First streaming request (MISS - populates cache)
+            const responseB1 = await SELF.fetch(
+                `http://localhost:3000/api/generate/v1/chat/completions`,
+                {
+                    method: "POST",
+                    headers: {
+                        "content-type": "application/json",
+                        "authorization": `Bearer ${apiKey}`,
+                    },
+                    body: streamingBody,
+                },
+            );
+            expect(responseB1.status).toBe(200);
+            await responseB1.text();
+            expect(responseB1.headers.get("X-Cache")).toBe("MISS");
+
+            // Second streaming request (HIT - get cache key)
+            const responseB2 = await SELF.fetch(
+                `http://localhost:3000/api/generate/v1/chat/completions`,
+                {
+                    method: "POST",
+                    headers: {
+                        "content-type": "application/json",
+                        "authorization": `Bearer ${apiKey}`,
+                    },
+                    body: streamingBody,
+                },
+            );
+            expect(responseB2.status).toBe(200);
+            await responseB2.text();
+            expect(responseB2.headers.get("X-Cache")).toBe("HIT");
+            const keyB = responseB2.headers.get("X-Cache-Key");
+            expect(keyB).toBeTruthy();
 
             // Keys should be different because stream parameter differs
             expect(keyA).not.toBe(keyB);

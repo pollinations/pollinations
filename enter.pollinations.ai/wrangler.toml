@@ -78,7 +78,7 @@ remote = true
 
 [[env.local.r2_buckets]]
 binding = "TEXT_BUCKET"
-bucket_name = "pollinations-text"
+bucket_name = "pollinations-text-enter"
 remote = true
 
 [env.local.vars]
@@ -221,7 +221,7 @@ bucket_name = "pollinations-images"
 
 [[env.test.r2_buckets]]
 binding = "TEXT_BUCKET"
-bucket_name = "pollinations-text"
+bucket_name = "pollinations-text-enter"
 
 [[env.test.ratelimits]]
 name = "EDGE_RATE_LIMITER"

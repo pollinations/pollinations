@@ -52,9 +52,10 @@ export type PriceDefinition = UsageConversionDefinition;
 export type ModelDefinition = CostDefinition[];
 
 // Pre-build MODEL_REGISTRY (modelId -> sorted cost definitions)
+// Uses lowercase keys for case-insensitive lookup (Azure returns lowercase model IDs)
 const MODEL_REGISTRY = Object.fromEntries(
     Object.values({ ...TEXT_SERVICES, ...IMAGE_SERVICES }).map((service) => [
-        service.modelId,
+        service.modelId.toLowerCase(),
         sortDefinitions([...service.cost]),
     ]),
 );
@@ -161,7 +162,7 @@ export function resolveServiceId(serviceId: string): ServiceId {
  * Check if a model ID exists in the registry
  */
 export function isValidModel(modelId: ModelId): modelId is ModelId {
-    return !!MODEL_REGISTRY[modelId];
+    return !!MODEL_REGISTRY[modelId.toLowerCase()];
 }
 
 /**
@@ -217,7 +218,7 @@ export function getServiceAliases(serviceId: ServiceId): readonly string[] {
 export function getModelDefinition(
     modelId: string,
 ): ModelDefinition | undefined {
-    return MODEL_REGISTRY[modelId as ModelId];
+    return MODEL_REGISTRY[modelId.toLowerCase() as ModelId];
 }
 
 /**
@@ -227,7 +228,7 @@ export function getActiveCostDefinition(
     modelId: ModelId,
     date: Date = new Date(),
 ): CostDefinition | null {
-    const modelDefinition = MODEL_REGISTRY[modelId];
+    const modelDefinition = MODEL_REGISTRY[modelId.toLowerCase()];
     if (!modelDefinition) return null;
     for (const definition of modelDefinition) {
         if (definition.date < date.getTime()) return definition;

@@ -1,11 +1,12 @@
 name: PR Create App Submission
 
+
 on:
   issues:
     types: [opened, edited, reopened, labeled]
   pull_request:
     paths:
-      - '.github/workflows/pr-create-app-submission.yml'  # Trigger on self to bootstrap
+      - '.github/workflows/pr-create-app-submission.yml'  
   workflow_dispatch:
     inputs:
       issue_number:
@@ -15,7 +16,6 @@ on:
 
 jobs:
   review-submission:
-    # Run on App Submission issues (by app:review label) OR manual dispatch
     if: |
       github.event_name == 'workflow_dispatch' ||
       contains(github.event.issue.labels.*.name, 'app:review')
@@ -312,6 +312,77 @@ jobs:
           echo "APP_NAME_ENV=$APP_NAME" >> $GITHUB_ENV
           echo "CATEGORY_ENV=$CATEGORY" >> $GITHUB_ENV
           echo "BRANCH_ENV=$BRANCH" >> $GITHUB_ENV
+
+      - name: Check for duplicate app name
+        if: steps.parse.outputs.needs_info != 'true' && steps.parse.outputs.rejected != 'true'
+        id: duplicate-check
+        env:
+          APP_NAME: ${{ steps.parse.outputs.name }}
+        run: |
+          # Normalize app name for comparison (lowercase, remove special chars)
+          NORMALIZED=$(echo "$APP_NAME" | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9 ]//g' | xargs)
+          
+          echo "Checking for duplicate: $NORMALIZED"
+          
+          # Search all category files for matching app name
+          FOUND_IN=""
+          for file in pollinations.ai/src/config/projects/*.js; do
+            # Extract all app names from the file (handles both quoted styles)
+            NAMES=$(grep -o '"name"[[:space:]]*:[[:space:]]*"[^"]*"' "$file" | cut -d'"' -f4)
+            NAMES="$NAMES $(grep -o "name:[[:space:]]*\"[^\"]*\"" "$file" | cut -d'"' -f2)"
+            
+            # Check each name
+            while IFS= read -r name; do
+              if [ -z "$name" ]; then continue; fi
+              NORMALIZED_EXISTING=$(echo "$name" | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9 ]//g' | xargs)
+              
+              if [ "$NORMALIZED" = "$NORMALIZED_EXISTING" ]; then
+                FOUND_IN="$file"
+                break 2
+              fi
+            done <<< "$NAMES"
+          done
+          
+          if [ -n "$FOUND_IN" ]; then
+            echo "duplicate_found=true" >> $GITHUB_OUTPUT
+            echo "found_in=$FOUND_IN" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Reject duplicate submission
+        if: steps.duplicate-check.outputs.duplicate_found == 'true'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: ${{ steps.issue.outputs.number }},
+              body: `⚠️ @${{ steps.issue.outputs.author }}, thanks for your interest!\n\nAn app with this name already exists in our showcase (found in **${{ steps.duplicate-check.outputs.found_in }}**). \n\nPlease check our [existing apps](https://pollinations.ai) before resubmitting, or consider a different project.`
+            });
+            
+            // Swap to denied label and close
+            try {
+              await github.rest.issues.removeLabel({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: ${{ steps.issue.outputs.number }},
+                name: 'app:review'
+              });
+            } catch (e) {}
+            
+            await github.rest.issues.addLabels({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: ${{ steps.issue.outputs.number }},
+              labels: ['app:denied']
+            });
+            
+            await github.rest.issues.update({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: ${{ steps.issue.outputs.number }},
+              state: 'closed'
+            });
 
       - name: Create PR
         if: steps.parse.outputs.needs_info != 'true' && steps.parse.outputs.rejected != 'true'

@@ -68,12 +68,14 @@ function PlayPage() {
                         : pageCopy.feedDescription.text}
                 </Body>
 
-                {/* Model Selector - Independent of view state */}
-                <ModelSelector
-                    models={allModels}
-                    selectedModel={selectedModel}
-                    onSelectModel={setSelectedModel}
-                />
+
+                {view === "play" && (
+                    <ModelSelector
+                        models={allModels}
+                        selectedModel={selectedModel}
+                        onSelectModel={setSelectedModel}
+                    />
+                )}
 
                 {/* Prompt - Independent of view state */}
                 <div className="mb-6">

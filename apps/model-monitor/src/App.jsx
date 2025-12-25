@@ -612,7 +612,7 @@ function App() {
                 <GatewayHealth stats={gatewayStats} />
 
                 {/* Model Table */}
-                <div className="border border-gray-200 rounded-lg bg-white shadow-sm overflow-hidden">
+                <div className="border border-gray-200 rounded-lg bg-white shadow-sm overflow-x-auto">
                     <table className="w-full text-sm">
                         <thead className="bg-gray-50 text-[10px] text-gray-500 uppercase tracking-wide">
                             <tr>

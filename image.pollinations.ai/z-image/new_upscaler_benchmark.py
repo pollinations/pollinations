@@ -80,27 +80,6 @@ class ImageRequest(BaseModel):
     steps: int = Field(default=9, le=50)
     seed: int | None = None
 
-
-def print_threshold_guide():
-    """Print guidance on tuning thresholds"""
-    print("\n" + "="*60)
-    print("BLOCK CLASSIFICATION THRESHOLD GUIDE")
-    print("="*60)
-    print(f"Current FLAT_BLOCK_VARIANCE_THRESHOLD:    {FLAT_BLOCK_VARIANCE_THRESHOLD}")
-    print(f"Current BLUR_DETECTION_THRESHOLD:        {BLUR_DETECTION_THRESHOLD}")
-    print("="*60)
-    print("TO USE MORE SDXL (for better quality on detailed areas):")
-    print("  - INCREASE FLAT_BLOCK_VARIANCE_THRESHOLD (try: 250-400)")
-    print("  - INCREASE BLUR_DETECTION_THRESHOLD     (try: 1.3-1.5)")
-    print("")
-    print("TO USE MORE LANCZOS (for faster processing):")
-    print("  - DECREASE FLAT_BLOCK_VARIANCE_THRESHOLD (try: 100-150)")
-    print("  - DECREASE BLUR_DETECTION_THRESHOLD     (try: 0.8-1.0)")
-    print("")
-    print("Set DEBUG_BLOCK_ANALYSIS = True for detailed block analysis logs")
-    print("="*60 + "\n")
-
-
 def record_time(stage: str, elapsed: float):
     timing_report[stage] = elapsed
     logger.info(f"{stage}: {elapsed:.2f}s")
@@ -541,9 +520,6 @@ def generate_image(prompt: str, width: int = 1024, height: int = 1024, steps: in
     
     gen_w, gen_h, final_w, final_h = calculate_generation_dimensions(request.width, request.height)
     logger.info(f"Requested: {request.width}x{request.height} -> Generation: {gen_w}x{gen_h} -> Final: {final_w}x{final_h}")
-    
-    print_threshold_guide()
-    
     pipeline_start = time.perf_counter()
     
     try:
@@ -665,8 +641,6 @@ def generate_image(prompt: str, width: int = 1024, height: int = 1024, steps: in
             print(f"Blocks upscaled via LANCZOS............. {upscale_stats['lanczos_blocks']}")
             print(f"Faces enhanced in final image........... {upscale_stats['face_enhanced_blocks']}")
             print("="*50 + "\n")
-            
-            
             
             return {
                 "image": img_base64,

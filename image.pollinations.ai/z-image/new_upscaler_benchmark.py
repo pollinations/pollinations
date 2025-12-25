@@ -14,6 +14,7 @@ import threading
 import warnings
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from scipy.ndimage import gaussian_filter
+from scipy.spatial.distance import cosine
 from utility import StableDiffusionSafetyChecker, replace_numpy_with_python, replace_sets_with_lists, numpy_to_pil
 from transformers import AutoFeatureExtractor
 
@@ -106,6 +107,36 @@ def create_feather_mask(size: int, overlap: int) -> np.ndarray:
             mask[:, i] *= alpha
             mask[:, -i-1] *= alpha
     return mask
+
+
+def is_flat_or_smooth_block(block: np.ndarray, variance_threshold: float = 100.0, blur_detection_threshold: float = 0.7) -> bool:
+    if len(block.shape) == 3:
+        gray = np.mean(block[:, :, :3], axis=2)
+    else:
+        gray = block
+    
+    # Calculate color/intensity variance
+    block_variance = np.var(gray)
+    
+    if block_variance < variance_threshold:
+        # Very uniform color - definitely flat
+        return True
+    
+    # Detect blur using Laplacian (edge detection)
+    # Low Laplacian variance indicates blur/smoothness
+    laplacian = np.array([[0, -1, 0], [-1, 4, -1], [0, -1, 0]])
+    edges = np.abs(np.convolve(gray.flatten(), laplacian.flatten(), mode='valid'))
+    edge_variance = np.var(edges) if len(edges) > 0 else 0
+    
+    # Normalize edge variance
+    max_possible_edge_variance = 255 * 255  # Conservative upper bound
+    edge_intensity = edge_variance / max(max_possible_edge_variance, 1.0)
+    
+    if edge_intensity < blur_detection_threshold:
+        # Low edge detection = smooth/blurred area
+        return True
+    
+    return False
 
 
 def slice_into_overlapping_blocks(image_np: np.ndarray, block_size: int = BLOCK_SIZE, 
@@ -221,11 +252,29 @@ def upscale_block_sdxl(block_np: np.ndarray, upscaler_pipeline) -> np.ndarray:
         return np.array(upscaled_pil)
 
 
-def upscale_block_wrapper(idx: int, block: np.ndarray, upscaler_pipeline) -> tuple[int, np.ndarray]:
+def upscale_block_simple(block_np: np.ndarray, scale_factor: int = UPSCALE_FACTOR) -> np.ndarray:
+    """Simple LANCZOS upscaling for flat/smooth blocks (much faster)"""
+    if block_np.dtype == np.uint8:
+        block_pil = Image.fromarray(block_np)
+    else:
+        block_norm = ((block_np.astype(np.float32) + 1) / 2 * 255).astype(np.uint8)
+        block_pil = Image.fromarray(block_norm)
+    
+    new_size = (block_pil.width * scale_factor, block_pil.height * scale_factor)
+    upscaled_pil = block_pil.resize(new_size, Image.Resampling.LANCZOS)
+    return np.array(upscaled_pil)
+
+
+def upscale_block_wrapper(idx: int, block: np.ndarray, upscaler_pipeline, use_simple: bool = False) -> tuple[int, np.ndarray, bool]:
     try:
-        logger.info(f"Block {idx}: Using SD X4 upscaler")
-        upscaled = upscale_block_sdxl(block, upscaler_pipeline)
-        return (idx, upscaled)
+        if use_simple:
+            logger.info(f"Block {idx}: Using simple LANCZOS upscaling (flat/smooth block)")
+            upscaled = upscale_block_simple(block)
+            return (idx, upscaled, True)
+        else:
+            logger.info(f"Block {idx}: Using SD X4 upscaler")
+            upscaled = upscale_block_sdxl(block, upscaler_pipeline)
+            return (idx, upscaled, False)
     except Exception as e:
         logger.error(f"Block {idx} upscaling failed: {e}")
         raise
@@ -472,21 +521,32 @@ def generate_image(prompt: str, width: int = 1024, height: int = 1024, steps: in
             record_time("Block Slicing", time.perf_counter() - slice_start)
             logger.info(f"Created {len(blocks)} blocks from {orig_dims} image")
             
-            logger.info(f"Upscaling all blocks with SD X4 (max {MAX_CONCURRENT_UPSCALES} concurrent)...")
+            # Classify blocks to determine upscaling strategy
+            logger.info("Analyzing blocks to identify flat/smooth areas...")
+            flat_blocks = set()
+            for idx, block in enumerate(blocks):
+                if is_flat_or_smooth_block(block):
+                    flat_blocks.add(idx)
+            
+            logger.info(f"Block classification: {len(flat_blocks)} flat/smooth blocks, {len(blocks) - len(flat_blocks)} detail blocks")
+            
+            logger.info(f"Upscaling blocks (max {MAX_CONCURRENT_UPSCALES} concurrent)...")
             upscale_start = time.perf_counter()
             
             upscaled_blocks = [None] * len(blocks)
             with ThreadPoolExecutor(max_workers=MAX_CONCURRENT_UPSCALES) as executor:
                 futures = {}
                 for idx, block in enumerate(blocks):
-                    future = executor.submit(upscale_block_wrapper, idx, block, upscaler_pipeline)
+                    use_simple = idx in flat_blocks
+                    future = executor.submit(upscale_block_wrapper, idx, block, upscaler_pipeline, use_simple)
                     futures[future] = idx
                 
                 for future in as_completed(futures):
                     try:
-                        idx, upscaled_block = future.result()
+                        idx, upscaled_block, used_simple = future.result()
                         upscaled_blocks[idx] = upscaled_block
-                        logger.info(f"Block {idx} completed")
+                        method = "LANCZOS" if used_simple else "SD X4"
+                        logger.info(f"Block {idx} completed ({method})")
                     except Exception as e:
                         logger.error(f"Block {futures[future]} failed: {e}")
                         raise
@@ -551,12 +611,12 @@ if __name__ == "__main__":
     load_models()
     
     result = generate_image(
-        prompt="an indian brother and sister playing in a field of sunflowers during golden hour, highly detailed, photorealistic",
+        prompt="an indian girl in a coffee shop reading a book, detailed background, photorealistic",
         width=1024,
         height=1024,
         steps=9
     )
-    with open("generated_image5.jpg", "wb") as f:
+    with open("generated_image6.jpg", "wb") as f:
         f.write(base64.b64decode(result['image']))
     print(f"Image generated successfully!")
     print(f"Dimensions: {result['width']}x{result['height']}")

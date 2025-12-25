@@ -888,3 +888,62 @@ describe("Model gating by API key permissions", async () => {
         },
     );
 });
+
+// Gemini tool schema sanitization test (Issue: Portkey Gateway #1473)
+// Tests that exclusiveMinimum/exclusiveMaximum are stripped before sending to Vertex AI
+test(
+    "Gemini should accept tools with exclusiveMinimum/exclusiveMaximum (sanitized)",
+    { timeout: 60000 },
+    async ({ apiKey, mocks }) => {
+        await mocks.enable("polar", "tinybird", "vcr");
+        const response = await SELF.fetch(
+            `http://localhost:3000/api/generate/v1/chat/completions`,
+            {
+                method: "POST",
+                headers: {
+                    "content-type": "application/json",
+                    "authorization": `Bearer ${apiKey}`,
+                },
+                body: JSON.stringify({
+                    model: "gemini",
+                    messages: [
+                        {
+                            role: "user",
+                            content: "What is 25% of 80? Use the calculator.",
+                        },
+                    ],
+                    tools: [
+                        {
+                            type: "function",
+                            function: {
+                                name: "calculator",
+                                description: "Calculate a percentage",
+                                parameters: {
+                                    type: "object",
+                                    properties: {
+                                        value: {
+                                            type: "number",
+                                            exclusiveMinimum: 0,
+                                            exclusiveMaximum: 1000,
+                                        },
+                                        percentage: {
+                                            type: "number",
+                                            minimum: 0,
+                                            maximum: 100,
+                                        },
+                                    },
+                                    required: ["value", "percentage"],
+                                },
+                            },
+                        },
+                    ],
+                    tool_choice: "auto",
+                    seed: testSeed(),
+                }),
+            },
+        );
+        // Should succeed - exclusiveMinimum/exclusiveMaximum are sanitized by text service
+        expect(response.status).toBe(200);
+        await response.text();
+    },
+);

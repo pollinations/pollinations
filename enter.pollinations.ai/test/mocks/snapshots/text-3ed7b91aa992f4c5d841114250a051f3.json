@@ -15,20 +15,20 @@
       "access-control-allow-origin": "*",
       "cache-control": "public, max-age=31536000, immutable",
       "connection": "keep-alive",
-      "content-length": "4",
+      "content-length": "3",
       "content-type": "text/plain; charset=utf-8",
-      "date": "Sat, 20 Dec 2025 15:40:50 GMT",
-      "etag": "W/\"4-xTxWLatLM7PkLzvE2OVxlDmpwVU\"",
+      "date": "Wed, 24 Dec 2025 14:51:13 GMT",
+      "etag": "W/\"3-U5fgWD8U9siN4Gse8o9GCh+1sK4\"",
       "keep-alive": "timeout=5",
-      "x-model-used": "DeepSeek-V3.1",
+      "x-model-used": "deepseek-v3.2",
       "x-powered-by": "Express",
-      "x-usage-completion-text-tokens": "3",
+      "x-usage-completion-text-tokens": "2",
       "x-usage-prompt-text-tokens": "265",
-      "x-usage-total-tokens": "268"
+      "x-usage-total-tokens": "267"
     },
     "body": {
       "type": "text",
-      "data": "Yes."
+      "data": "Yes"
     }
   }
 }

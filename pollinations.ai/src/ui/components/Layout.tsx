@@ -234,8 +234,8 @@ function Layout() {
                 <div className="md:hidden">
                     <div className="w-full px-4 py-3">
                         <div className="max-w-4xl mx-auto flex flex-col gap-3">
-                            {/* 1. Social Icons + Enter */}
-                            <div className="flex items-center justify-center gap-3">
+                            {/* 1. Social Icons */}
+                            <div className="flex items-center justify-center">
                                 <div className="flex items-center">
                                     <Button
                                         as="a"
@@ -289,23 +289,9 @@ function Layout() {
                                             )
                                         )}
                                 </div>
-                                <Button
-                                    as="a"
-                                    href="https://enter.pollinations.ai"
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    variant="iconText"
-                                    size={null}
-                                    className="h-10"
-                                >
-                                    <span className="font-headline text-xs font-black uppercase tracking-wider text-text-brand">
-                                        Enter
-                                    </span>
-                                    <ExternalLinkIcon className="w-3 h-3 text-text-brand" />
-                                </Button>
                             </div>
 
-                            {/* 2. Terms, Privacy, Email */}
+                            {/* 2. Terms, Privacy, Email, Enter */}
                             <div className="flex items-center justify-center">
                                 <Button
                                     as="a"
@@ -353,6 +339,20 @@ function Layout() {
                                             Copied!
                                         </span>
                                     )}
+                                </Button>
+                                <Button
+                                    as="a"
+                                    href="https://enter.pollinations.ai"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    variant="iconText"
+                                    size={null}
+                                    className="h-10"
+                                >
+                                    <span className="font-headline text-xs font-black uppercase tracking-wider text-text-brand">
+                                        Enter
+                                    </span>
+                                    <ExternalLinkIcon className="w-3 h-3 text-text-brand" />
                                 </Button>
                             </div>
                         </div>

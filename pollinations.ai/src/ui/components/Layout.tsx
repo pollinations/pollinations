@@ -1,5 +1,5 @@
 import { NavLink, Outlet } from "react-router-dom";
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { Logo } from "./Logo";
 import { Button } from "./ui/button";
 import { ExternalLinkIcon } from "../assets/ExternalLinkIcon";
@@ -25,7 +25,12 @@ function Layout() {
     const showHeader = useHeaderVisibility();
     const [emailCopied, setEmailCopied] = useState(false);
     const [isPromptOpen, setIsPromptOpen] = useState(false);
+    const [isBannerVisible, setIsBannerVisible] = useState(false);
     const { backgroundHtml } = useTheme();
+
+    const handleBannerVisibilityChange = useCallback((visible: boolean) => {
+        setIsBannerVisible(visible);
+    }, []);
 
     const handleLogoClick = () => {
         setIsPromptOpen(!isPromptOpen);
@@ -37,13 +42,14 @@ function Layout() {
                 backgroundHtml ? "bg-transparent" : "bg-surface-base"
             }`}
         >
-            <BetaBanner />
+            <BetaBanner onVisibilityChange={handleBannerVisibilityChange} />
             <BackgroundRenderer />
             {/* Fixed Header */}
             <header
-                className={`fixed top-0 left-0 right-0 z-50 transition-transform duration-300 flex flex-col ${
+                className={`fixed left-0 right-0 z-50 transition-all duration-300 flex flex-col ${
                     showHeader ? "translate-y-0" : "-translate-y-full"
                 }`}
+                style={{ top: isBannerVisible ? "44px" : "0" }}
             >
                 <div className="w-full px-4 py-3 pb-5 md:py-4 md:pb-5">
                     <div className="max-w-4xl mx-auto pl-2 md:pl-8 relative overflow-visible">
@@ -151,7 +157,7 @@ function Layout() {
                                             .filter(
                                                 ([key]) =>
                                                     key === "discord" ||
-                                                    key === "github",
+                                                    key === "github"
                                             )
                                             .map(
                                                 ([
@@ -171,7 +177,7 @@ function Layout() {
                                                     >
                                                         <Icon className="w-full h-full" />
                                                     </Button>
-                                                ),
+                                                )
                                             )}
 
                                         {/* Enter Button */}
@@ -204,7 +210,14 @@ function Layout() {
                 className="w-full min-h-screen pb-40 md:pb-24 transition-all duration-200 pt-[calc(8rem+var(--banner-offset))] md:pt-[calc(7rem+var(--banner-offset))]"
                 style={
                     {
-                        "--banner-offset": isPromptOpen ? "4rem" : "0px",
+                        "--banner-offset":
+                            isBannerVisible && isPromptOpen
+                                ? "calc(44px + 4rem)"
+                                : isBannerVisible
+                                ? "44px"
+                                : isPromptOpen
+                                ? "4rem"
+                                : "0px",
                     } as React.CSSProperties
                 }
             >
@@ -253,7 +266,7 @@ function Layout() {
                                         .filter(
                                             ([key]) =>
                                                 key !== "github" &&
-                                                key !== "discord",
+                                                key !== "discord"
                                         )
                                         .map(
                                             ([
@@ -273,7 +286,7 @@ function Layout() {
                                                 >
                                                     <Icon className="w-full h-full" />
                                                 </Button>
-                                            ),
+                                            )
                                         )}
                                 </div>
                                 <Button
@@ -320,12 +333,12 @@ function Layout() {
                                     type="button"
                                     onClick={() => {
                                         navigator.clipboard.writeText(
-                                            "hello@pollinations.ai",
+                                            "hello@pollinations.ai"
                                         );
                                         setEmailCopied(true);
                                         setTimeout(
                                             () => setEmailCopied(false),
-                                            2000,
+                                            2000
                                         );
                                     }}
                                     variant="iconText"
@@ -388,12 +401,12 @@ function Layout() {
                                     type="button"
                                     onClick={() => {
                                         navigator.clipboard.writeText(
-                                            "hello@pollinations.ai",
+                                            "hello@pollinations.ai"
                                         );
                                         setEmailCopied(true);
                                         setTimeout(
                                             () => setEmailCopied(false),
-                                            2000,
+                                            2000
                                         );
                                     }}
                                     variant="iconText"
@@ -445,7 +458,7 @@ function Layout() {
                                         .filter(
                                             ([key]) =>
                                                 key !== "github" &&
-                                                key !== "discord",
+                                                key !== "discord"
                                         )
                                         .map(
                                             ([
@@ -465,7 +478,7 @@ function Layout() {
                                                 >
                                                     <Icon className="w-full h-full" />
                                                 </Button>
-                                            ),
+                                            )
                                         )}
                                 </div>
                                 {/* Enter Button */}

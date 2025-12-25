@@ -3,22 +3,65 @@ on:
   pull_request_target:
     types: [opened]
 
-permissions:
-  contents: read
-  pull-requests: write
+concurrency:
+  group: pr-label-${{ github.event.pull_request.number }}
+  cancel-in-progress: false
 
 jobs:
   label:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+
     steps:
-      - name: Label external PRs
-        uses: actions/github-script@v7
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Generate Pollinations AI Token
+        id: pollinations-ai
+        uses: actions/create-github-app-token@v1
         with:
+          app-id: ${{ secrets.POLLY_BOT_APP_ID }}
+          private-key: ${{ secrets.POLLY_BOT_PRIVATE_KEY }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Check user tier in D1
+        id: tier-check
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          GITHUB_USERNAME: ${{ github.event.pull_request.user.login }}
+        run: |
+          npm install -g wrangler
+          SAFE_USERNAME=$(echo "$GITHUB_USERNAME" | tr -cd 'a-zA-Z0-9-' | head -c 39)
+          [ -z "$SAFE_USERNAME" ] && echo "tier=" >> $GITHUB_OUTPUT && exit 0
+          
+          cd enter.pollinations.ai
+          RESULT=$(npx wrangler d1 execute DB --remote --env production \
+            --command "SELECT tier FROM user WHERE LOWER(github_username) = LOWER('$SAFE_USERNAME') LIMIT 1;" \
+            --json 2>/dev/null || echo '[]')
+          
+          TIER=$(echo "$RESULT" | jq -r '.[0].results[0].tier // empty' 2>/dev/null || echo "")
+          echo "tier=$TIER" >> $GITHUB_OUTPUT
+          echo "User $GITHUB_USERNAME has tier: ${TIER:-none}"
+
+      - name: Apply label based on tier
+        uses: actions/github-script@v7
+        env:
+          USER_TIER: ${{ steps.tier-check.outputs.tier }}
+        with:
+          github-token: ${{ steps.pollinations-ai.outputs.token }}
           script: |
             const author = context.payload.pull_request.user.login;
-            const assoc  = context.payload.pull_request.author_association;
+            const prNumber = context.payload.pull_request.number;
+            const userTier = process.env.USER_TIER || '';
 
-            // allow-list of known org members
+            // Allow-list of known org members
             const INTERNAL_USERS = [
               "ElliotEtag",
               "voodoohop",
@@ -36,11 +79,32 @@ jobs:
               return;
             }
 
-            // External contributor - add label
+            // Skip app submission PRs (handled by tier-app-submission.yml)
+            const branchName = context.payload.pull_request.head.ref;
+            if (branchName.startsWith('auto/app-')) {
+              console.log(`App submission PR from branch ${branchName}, skipping`);
+              return;
+            }
+
+            // Determine label based on tier
+            // Tier hierarchy (lowest to highest): none < spore < seed < flower < nectar
+            // - No tier, spore, seed = tier:review (eligible for Flower upgrade)
+            // - Flower, nectar = pr:external (already upgraded, returning contributor)
+            const UPGRADED_TIERS = ['flower', 'nectar'];
+            
+            let label;
+            if (userTier && UPGRADED_TIERS.includes(userTier.toLowerCase())) {
+              label = 'pr:external';
+              console.log(`User ${author} has tier ${userTier} - applying pr:external`);
+            } else {
+              label = 'tier:review';
+              console.log(`User ${author} has tier ${userTier || 'none'} - applying tier:review`);
+            }
+
             await github.rest.issues.addLabels({
               owner: context.repo.owner,
               repo: context.repo.repo,
-              issue_number: context.payload.pull_request.number,
-              labels: ["pr:external"]
+              issue_number: prNumber,
+              labels: [label]
             });
-            console.log(`Applied label: pr:external to PR #${context.payload.pull_request.number} by ${author}`);
+            console.log(`Applied label: ${label} to PR #${prNumber} by ${author}`);

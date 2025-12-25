@@ -86,6 +86,17 @@ export const validateJsonMode = (data) => {
  * @returns {Object} Validated parameters
  */
 export const validateTextGenerationParams = (data) => {
+    let thinking_budget = validateInt(data.thinking_budget);
+    
+    // Handle Anthropic-style 'thinking' object if thinking_budget wasn't explicitly provided
+    if (thinking_budget === undefined && data.thinking && typeof data.thinking === 'object') {
+        if (data.thinking.type === 'enabled') {
+            thinking_budget = validateInt(data.thinking.budget_tokens);
+        } else if (data.thinking.type === 'disabled') {
+            thinking_budget = 0;
+        }
+    }
+
     return {
         temperature: validateFloat(data.temperature),
         top_p: validateFloat(data.top_p),
@@ -98,7 +109,7 @@ export const validateTextGenerationParams = (data) => {
         model: validateString(data.model), // No default - gateway must provide valid model
         voice: validateString(data.voice, "alloy"),
         reasoning_effort: validateString(data.reasoning_effort),
-        thinking_budget: validateInt(data.thinking_budget),
+        thinking_budget: thinking_budget,
         jsonMode: validateJsonMode(data),
     };
 };

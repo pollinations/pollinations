@@ -1,0 +1,35 @@
+{
+  "request": {
+    "url": "http://ec2-3-80-56-235.compute-1.amazonaws.com:16385/cache-test-prompt?model=openai-fast",
+    "method": "GET",
+    "body": {
+      "type": "empty",
+      "data": null
+    },
+    "params": {}
+  },
+  "response": {
+    "status": 200,
+    "statusText": "OK",
+    "headers": {
+      "access-control-allow-origin": "*",
+      "cache-control": "public, max-age=31536000, immutable",
+      "connection": "keep-alive",
+      "content-length": "1390",
+      "content-type": "text/plain; charset=utf-8",
+      "date": "Wed, 24 Dec 2025 03:20:38 GMT",
+      "etag": "W/\"56e-mXgViyq4GNqoyfIT6AQLWJCKNUw\"",
+      "keep-alive": "timeout=5",
+      "x-model-used": "gpt-5-nano-2025-08-07",
+      "x-powered-by": "Express",
+      "x-usage-completion-reasoning-tokens": "1344",
+      "x-usage-completion-text-tokens": "323",
+      "x-usage-prompt-text-tokens": "251",
+      "x-usage-total-tokens": "1918"
+    },
+    "body": {
+      "type": "text",
+      "data": "Nice—looks like you’re testing how prompts get cached. I can help you with a quick, practical test plan, or I can run a tiny two-pass test right here if you want.\n\nA simple cache-test plan you can run\n- Step 1: Pick two prompts that are exactly the same text (Prompts A and A′ identical).\n- Step 2: Submit Prompt A twice in a row and note: response content, length, and timestamp.\n- Step 3: Submit a near-identical prompt (Prompts B and B′ with a minor difference, e.g., a punctuation tweak or capitalization) and note the same details.\n- Step 4: Compare results:\n  - If identical or nearly identical outputs appear for Prompt A A′, that hints at some caching or deterministic behavior for identical inputs.\n  - If Prompt B and B′ produce different outputs, it suggests the change in the prompt affects the result (as expected) and helps you see how sensitive the system is to small changes.\n- Optional: Measure latency for each run to see if caches reduce response time.\n\nA quick two-pass test you can run with me now\n- Tell me a single exact prompt you want tested, or paste Prompt X.\n- I’ll respond to Prompt X twice in a row and we can compare the two outputs here.\n\nIf you want, I can also explain what to expect about caching in typical LLM deployments and how to design prompts to be cache-friendly or cache-resistant, depending on your goal. What would you like to do?"
+    }
+  }
+}

@@ -27,13 +27,6 @@ type ImageCacheEnv = {
  */
 export const imageCache = createMiddleware<ImageCacheEnv>(async (c, next) => {
     const log = c.get("log").getChild("image-cache");
-
-    // Skip cache if no-cache header is set
-    if (c.req.header("no-cache")) {
-        log.debug("Skipping cache (no-cache header)");
-        return next();
-    }
-
     const cacheKey = generateCacheKey(new URL(c.req.url));
     log.debug("Cache key: {key}", { key: cacheKey });
 

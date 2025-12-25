@@ -46,6 +46,7 @@ MAX_FINAL_SIZE = 2048
 MAX_CONCURRENT_UPSCALES = 4
 UPSCALE_INFERENCE_STEPS = 10  
 ENABLE_FACE_RESTORATION = True
+ENABLE_NSFW_CHECK = False
 
 generate_lock = threading.Lock()
 upscale_semaphore = threading.Semaphore(MAX_CONCURRENT_UPSCALES)
@@ -506,7 +507,12 @@ def generate_image(prompt: str, width: int = 1024, height: int = 1024, steps: in
             image = output.images[0]
             image_np = np.array(image)
             record_time("Base Generation", time.perf_counter() - gen_start)
-            
+            if ENABLE_NSFW_CHECK:
+                has_nsfw, concepts = check_nsfw(image_np)
+                if has_nsfw:
+                    logger.warning("NSFW content detected in generated image.")
+                else:
+                    logger.info("No NSFW content detected.")
             faces = []
             if ENABLE_FACE_RESTORATION:
                 logger.info("Detecting faces in base image...")
@@ -521,7 +527,6 @@ def generate_image(prompt: str, width: int = 1024, height: int = 1024, steps: in
             record_time("Block Slicing", time.perf_counter() - slice_start)
             logger.info(f"Created {len(blocks)} blocks from {orig_dims} image")
             
-            # Classify blocks to determine upscaling strategy
             logger.info("Analyzing blocks to identify flat/smooth areas...")
             flat_blocks = set()
             for idx, block in enumerate(blocks):
@@ -588,8 +593,7 @@ def generate_image(prompt: str, width: int = 1024, height: int = 1024, steps: in
                 print(f"{stage:.<40} {elapsed:>8.2f}s")
             print("="*50 + "\n")
             
-            # Skip NSFW check for speed (uncomment to enable)
-            # has_nsfw, concepts = check_nsfw(result)
+            
             
             return {
                 "image": img_base64,
@@ -611,12 +615,12 @@ if __name__ == "__main__":
     load_models()
     
     result = generate_image(
-        prompt="an indian girl in a coffee shop reading a book, detailed background, photorealistic",
-        width=1024,
-        height=1024,
+        prompt="an korean man and woman in front of the taj mahal during sunset, highly detailed, vibrant colors, photorealistic",
+        width=2048,
+        height=2048,
         steps=9
     )
-    with open("generated_image6.jpg", "wb") as f:
+    with open("generated_image7.jpg", "wb") as f:
         f.write(base64.b64decode(result['image']))
     print(f"Image generated successfully!")
     print(f"Dimensions: {result['width']}x{result['height']}")

@@ -16,7 +16,6 @@ import requests
 UPSCALER_MODEL_PATH = "model_cache"
 MODEL_PATH = "model_cache"
 BLOCK_SIZE = 128
-OVERLAP = 16 
 DEBUG_BLOCK_ANALYSIS = False
 FLAT_BLOCK_VARIANCE_THRESHOLD = 350.0
 UPSCALE_INFERENCE_STEPS = 10  
@@ -104,30 +103,25 @@ def compute_saliency_map(image_np: np.ndarray) -> np.ndarray:
     return saliency
 
 
-def get_subject_aware_blocks(image_np: np.ndarray, blocks: list[np.ndarray], 
-                             block_positions: list[tuple], padded_dims: tuple,
-                             orig_dims: tuple, block_size: int = BLOCK_SIZE,
-                             overlap: int = OVERLAP) -> set[int]:
+def get_subject_aware_blocks_no_padding(image_np: np.ndarray, blocks: list[np.ndarray], 
+                                        block_positions: list[tuple], 
+                                        block_size: int = BLOCK_SIZE) -> set[int]:
     logger.info("Computing saliency map to identify main subject...")
     saliency = compute_saliency_map(image_np)
     
-    padded_h, padded_w = padded_dims
-    orig_h, orig_w = orig_dims
-    
+    h, w = image_np.shape[:2]
     saliency_threshold = np.percentile(saliency, 85)
     
     subject_blocks = set()
     
-    padded_saliency = np.zeros((padded_h, padded_w), dtype=np.float32)
-    padded_saliency[:orig_h, :orig_w] = saliency
-    
-    for idx, (y_orig, x_orig, _, _) in enumerate(block_positions):
-        y_end = min(y_orig + block_size, padded_h)
-        x_end = min(x_orig + block_size, padded_w)
+    for idx, (y, x) in enumerate(block_positions):
+        y_end = min(y + block_size, h)
+        x_end = min(x + block_size, w)
         
-        block_saliency = padded_saliency[y_orig:y_end, x_orig:x_end]
+        block_saliency = saliency[y:y_end, x:x_end]
         mean_saliency = np.mean(block_saliency)
         max_saliency = np.max(block_saliency)
+        
         if max_saliency > saliency_threshold and mean_saliency > saliency_threshold * 0.8:
             subject_blocks.add(idx)
             if DEBUG_BLOCK_ANALYSIS:
@@ -180,18 +174,6 @@ def enforce_upscaler_ratio(total_blocks: int, subject_blocks: set[int], flat_blo
     return sdxl_blocks, lanczos_blocks
 
 
-def create_feather_mask(size: int, overlap: int) -> np.ndarray:
-    mask = np.ones((size, size), dtype=np.float32)
-    if overlap > 0:
-        for i in range(overlap):
-            alpha = i / overlap
-            mask[i, :] *= alpha
-            mask[-i-1, :] *= alpha
-            mask[:, i] *= alpha
-            mask[:, -i-1] *= alpha
-    return mask
-
-
 def is_flat_or_smooth_block(block: np.ndarray) -> bool:
     if len(block.shape) == 3:
         gray = np.mean(block[:, :, :3], axis=2)
@@ -210,96 +192,134 @@ def is_flat_or_smooth_block(block: np.ndarray) -> bool:
     return False
 
 
-def slice_into_overlapping_blocks(image_np: np.ndarray, block_size: int = BLOCK_SIZE, 
-                                  overlap: int = OVERLAP) -> tuple[list[np.ndarray], list[tuple], tuple[int, int], tuple[int, int]]:
+def slice_into_non_overlapping_blocks(image_np: np.ndarray, 
+                                      block_size: int = BLOCK_SIZE) -> tuple[list[np.ndarray], list[tuple], list[dict]]:
+    """
+    Slice image into non-overlapping 128x128 blocks from top-left.
+    Returns complete blocks, their positions, and edge regions for Lanczos upscaling.
+    """
     h, w = image_np.shape[:2]
-    stride = block_size - overlap
     
-    n_blocks_h = int(np.ceil((h - overlap) / stride))
-    n_blocks_w = int(np.ceil((w - overlap) / stride))
-    
-    padded_h = (n_blocks_h - 1) * stride + block_size
-    padded_w = (n_blocks_w - 1) * stride + block_size
-    
-    if len(image_np.shape) == 3:
-        padded_image = np.zeros((padded_h, padded_w, image_np.shape[2]), dtype=image_np.dtype)
-    else:
-        padded_image = np.zeros((padded_h, padded_w), dtype=image_np.dtype)
-    
-    padded_image[:h, :w] = image_np
+    # Calculate how many complete blocks fit
+    n_blocks_h = h // block_size
+    n_blocks_w = w // block_size
     
     blocks = []
     block_positions = []
     
-    for block_idx in range(n_blocks_h):
+    # Extract complete 128x128 blocks
+    for i in range(n_blocks_h):
         for j in range(n_blocks_w):
-            y = block_idx * stride
-            x = j * stride
-            block = padded_image[y:y+block_size, x:x+block_size].copy()
+            y = i * block_size
+            x = j * block_size
+            block = image_np[y:y+block_size, x:x+block_size].copy()
             blocks.append(block)
-            block_positions.append((y, x, block_idx, j))
+            block_positions.append((y, x))
     
-    logger.info(f"Created {len(blocks)} overlapping blocks ({n_blocks_h}x{n_blocks_w} grid)")
+    # Handle edge regions (right edge and bottom edge)
+    edge_regions = []
     
-    return blocks, block_positions, (h, w), (padded_h, padded_w)
+    # Right edge (if exists)
+    right_edge_x = n_blocks_w * block_size
+    if right_edge_x < w:
+        right_edge = image_np[:, right_edge_x:].copy()
+        edge_regions.append({
+            'type': 'right',
+            'data': right_edge,
+            'x': right_edge_x,
+            'y': 0,
+            'width': w - right_edge_x,
+            'height': h
+        })
+    
+    # Bottom edge (if exists)
+    bottom_edge_y = n_blocks_h * block_size
+    if bottom_edge_y < h:
+        # Only take bottom edge up to where complete blocks end horizontally
+        bottom_edge_width = n_blocks_w * block_size
+        bottom_edge = image_np[bottom_edge_y:, :bottom_edge_width].copy()
+        edge_regions.append({
+            'type': 'bottom',
+            'data': bottom_edge,
+            'x': 0,
+            'y': bottom_edge_y,
+            'width': bottom_edge_width,
+            'height': h - bottom_edge_y
+        })
+    
+    # Bottom-right corner (if both edges exist)
+    if right_edge_x < w and bottom_edge_y < h:
+        corner = image_np[bottom_edge_y:, right_edge_x:].copy()
+        edge_regions.append({
+            'type': 'corner',
+            'data': corner,
+            'x': right_edge_x,
+            'y': bottom_edge_y,
+            'width': w - right_edge_x,
+            'height': h - bottom_edge_y
+        })
+    
+    logger.info(f"Created {len(blocks)} complete {block_size}x{block_size} blocks ({n_blocks_h}x{n_blocks_w} grid)")
+    logger.info(f"Edge regions: {len(edge_regions)} ({', '.join([e['type'] for e in edge_regions])})")
+    
+    return blocks, block_positions, edge_regions
 
 
-def stitch_overlapping_blocks(blocks: list[np.ndarray], block_positions: list[tuple], 
-                              padded_dims: tuple[int, int], original_dims: tuple[int, int],
-                              block_size: int = BLOCK_SIZE, overlap: int = OVERLAP,
-                              scale_factor: int = 1) -> np.ndarray:
-    padded_h, padded_w = padded_dims
+def stitch_non_overlapping_blocks(blocks: list[np.ndarray], 
+                                  block_positions: list[tuple],
+                                  edge_regions: list[dict],
+                                  original_dims: tuple[int, int],
+                                  block_size: int = BLOCK_SIZE,
+                                  scale_factor: int = 4) -> np.ndarray:
+    """
+    Stitch non-overlapping upscaled blocks and Lanczos-upscaled edge regions seamlessly.
+    """
     orig_h, orig_w = original_dims
-    
-    scaled_overlap = overlap * scale_factor
-    out_h = padded_h * scale_factor
-    out_w = padded_w * scale_factor
+    out_h = orig_h * scale_factor
+    out_w = orig_w * scale_factor
     
     if len(blocks[0].shape) == 3:
         channels = blocks[0].shape[2]
-        stitched = np.zeros((out_h, out_w, channels), dtype=np.float32)
-        weight_map = np.zeros((out_h, out_w, 1), dtype=np.float32)
+        result = np.zeros((out_h, out_w, channels), dtype=np.uint8)
     else:
-        stitched = np.zeros((out_h, out_w), dtype=np.float32)
-        weight_map = np.zeros((out_h, out_w), dtype=np.float32)
+        result = np.zeros((out_h, out_w), dtype=np.uint8)
     
-    upscaled_block_size = blocks[0].shape[0]
-    mask = create_feather_mask(upscaled_block_size, scaled_overlap)
+    upscaled_block_size = block_size * scale_factor
     
-    if len(blocks[0].shape) == 3:
-        mask = mask[:, :, np.newaxis]
-    
-    for block, pos in zip(blocks, block_positions):
-        y_orig, x_orig, _, _ = pos
+    # Place all upscaled blocks
+    for block, (y_orig, x_orig) in zip(blocks, block_positions):
         y = y_orig * scale_factor
         x = x_orig * scale_factor
         
+        # Ensure block is correct size
         if block.shape[0] != upscaled_block_size or block.shape[1] != upscaled_block_size:
             block_pil = Image.fromarray(block.astype(np.uint8))
             block_pil = block_pil.resize((upscaled_block_size, upscaled_block_size), Image.Resampling.LANCZOS)
-            block = np.array(block_pil).astype(np.float32)
-        else:
-            block = block.astype(np.float32)
+            block = np.array(block_pil)
         
-        y_end = min(y + upscaled_block_size, out_h)
-        x_end = min(x + upscaled_block_size, out_w)
-        block_h = y_end - y
-        block_w = x_end - x
+        result[y:y+upscaled_block_size, x:x+upscaled_block_size] = block
+    
+    # Upscale and place edge regions using Lanczos
+    for edge in edge_regions:
+        edge_data = edge['data']
+        edge_type = edge['type']
         
-        block_portion = block[:block_h, :block_w]
-        mask_portion = mask[:block_h, :block_w]
+        # Upscale edge region with Lanczos
+        edge_pil = Image.fromarray(edge_data.astype(np.uint8))
+        new_w = edge['width'] * scale_factor
+        new_h = edge['height'] * scale_factor
+        edge_upscaled = edge_pil.resize((new_w, new_h), Image.Resampling.LANCZOS)
+        edge_upscaled_np = np.array(edge_upscaled)
         
-        stitched[y:y_end, x:x_end] += block_portion * mask_portion
-        weight_map[y:y_end, x:x_end] += mask_portion
+        # Place in result
+        y_pos = edge['y'] * scale_factor
+        x_pos = edge['x'] * scale_factor
+        
+        result[y_pos:y_pos+new_h, x_pos:x_pos+new_w] = edge_upscaled_np
+        
+        logger.info(f"Placed {edge_type} edge region at ({x_pos}, {y_pos}) with size {new_w}x{new_h}")
     
-    weight_map = np.maximum(weight_map, 1e-8)
-    stitched = stitched / weight_map
-    
-    final_h = orig_h * scale_factor
-    final_w = orig_w * scale_factor
-    result = stitched[:final_h, :final_w]
-    
-    return result.astype(np.uint8)
+    return result
 
 
 def upscale_block_sdxl(block_np: np.ndarray, upscaler_pipeline) -> np.ndarray:
@@ -459,6 +479,19 @@ def restore_faces_in_upscaled_image(upscaled_np: np.ndarray, faces: list[tuple],
     return result
 
 
+def create_feather_mask(size: int, feather_width: int) -> np.ndarray:
+    """Create a feather mask for smooth blending."""
+    mask = np.ones((size, size), dtype=np.float32)
+    if feather_width > 0:
+        for i in range(feather_width):
+            alpha = i / feather_width
+            mask[i, :] *= alpha
+            mask[-i-1, :] *= alpha
+            mask[:, i] *= alpha
+            mask[:, -i-1] *= alpha
+    return mask
+
+
 class StableDiffusionSafetyChecker(BaseSafetyChecker, ABC):
     def __init__(self, config: CLIPConfig):
         super().__init__(config)
@@ -488,7 +521,6 @@ class StableDiffusionSafetyChecker(BaseSafetyChecker, ABC):
             for concept_idx in range(len(cos_dist[0])):
                 concept_cos = cos_dist[i][concept_idx]
                 concept_threshold = self.concept_embeds_weights[concept_idx].item()
-                # Apply per-concept adjustment if defined
                 per_concept_adj = CONCEPT_ADJUSTMENTS.get(concept_idx, 0)
                 result_img["concept_scores"][concept_idx] = round(concept_cos - concept_threshold + adjustment + per_concept_adj, 3)
                 if result_img["concept_scores"][concept_idx] > 0:

@@ -25,15 +25,15 @@ from utility import (
     replace_sets_with_lists, 
     numpy_to_pil,
     detect_faces_mediapipe,
-    slice_into_overlapping_blocks,
-    stitch_overlapping_blocks,
-    get_subject_aware_blocks,
+    slice_into_non_overlapping_blocks,
+    stitch_non_overlapping_blocks,
+    get_subject_aware_blocks_no_padding,
     is_flat_or_smooth_block,
     enforce_upscaler_ratio,
     restore_faces_in_upscaled_image,
     upscale_block_wrapper 
     )
-from utility import UPSCALE_FACTOR, MAX_CONCURRENT_UPSCALES, generate_lock, upscale_stats, OVERLAP
+from utility import UPSCALE_FACTOR, MAX_CONCURRENT_UPSCALES, generate_lock, upscale_stats
 from transformers import AutoFeatureExtractor
 
 
@@ -322,17 +322,17 @@ def generate(request: ImageRequest, _auth: bool = Depends(verify_enter_token)):
                 faces = detect_faces_mediapipe(image_np, face_detector)
                 logger.info(f"Detected {len(faces)} face(s)")
             
-            logger.info("Slicing image into overlapping blocks...")
+            logger.info("Slicing image into non-overlapping 128x128 blocks...")
             slice_start = time.time()
-            blocks, block_positions, orig_dims, padded_dims = slice_into_overlapping_blocks(
-                image_np, BLOCK_SIZE, OVERLAP
+            blocks, block_positions, edge_regions = slice_into_non_overlapping_blocks(
+                image_np, BLOCK_SIZE
             )
             logger.info(f"Block slicing took {time.time() - slice_start:.2f}s")
             upscale_stats["total_blocks"] = len(blocks)
-            logger.info(f"Created {len(blocks)} blocks from {orig_dims} image")
+            logger.info(f"Created {len(blocks)} blocks + {len(edge_regions)} edge regions from {image_np.shape[:2]} image")
             
             logger.info("Detecting main subject using saliency analysis...")
-            subject_blocks = get_subject_aware_blocks(image_np, blocks, block_positions, padded_dims, orig_dims, BLOCK_SIZE, OVERLAP)
+            subject_blocks = get_subject_aware_blocks_no_padding(image_np, blocks, block_positions, BLOCK_SIZE)
             
             logger.info("Analyzing blocks for very flat areas...")
             flat_blocks = set()
@@ -349,7 +349,7 @@ def generate(request: ImageRequest, _auth: bool = Depends(verify_enter_token)):
                 len(blocks), subject_blocks, flat_blocks, TARGET_LANCZOS_RATIO
             )
             
-            logger.info(f"Upscaling blocks (max {MAX_CONCURRENT_UPSCALES} concurrent)...")
+            logger.info(f"Upscaling {len(blocks)} blocks (max {MAX_CONCURRENT_UPSCALES} concurrent)...")
             upscale_start = time.time()
             
             upscaled_blocks = [None] * len(blocks)
@@ -380,11 +380,11 @@ def generate(request: ImageRequest, _auth: bool = Depends(verify_enter_token)):
             upscale_stats["lanczos_blocks"] = lanczos_count
             logger.info(f"Block upscaling took {time.time() - upscale_start:.2f}s")
             
-            logger.info("Stitching blocks with feather blending...")
+            logger.info("Stitching blocks seamlessly...")
             stitch_start = time.time()
-            upscaled_image = stitch_overlapping_blocks(
-                upscaled_blocks, block_positions, padded_dims, orig_dims,
-                BLOCK_SIZE, OVERLAP, UPSCALE_FACTOR
+            upscaled_image = stitch_non_overlapping_blocks(
+                upscaled_blocks, block_positions, edge_regions, 
+                image_np.shape[:2], BLOCK_SIZE, UPSCALE_FACTOR
             )
             logger.info(f"Block stitching took {time.time() - stitch_start:.2f}s")
             logger.info(f"Stitched result: {upscaled_image.shape}")

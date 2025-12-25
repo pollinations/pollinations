@@ -17,6 +17,7 @@ from scipy.ndimage import gaussian_filter
 from scipy.spatial.distance import cosine
 from utility import StableDiffusionSafetyChecker, replace_numpy_with_python, replace_sets_with_lists, numpy_to_pil
 from transformers import AutoFeatureExtractor
+from skimage import filters
 
 os.environ["HF_HUB_DISABLE_PROGRESS_BARS"] = "1"
 os.environ["TQDM_DISABLE"] = "1"
@@ -53,6 +54,153 @@ FLAT_BLOCK_VARIANCE_THRESHOLD = 350.0
 BLUR_DETECTION_THRESHOLD = 1.5
 # If we increase to ~1.3-1.5 to use more SDXL on moderately textured areas
 DEBUG_BLOCK_ANALYSIS = False
+TARGET_LANCZOS_RATIO = 0.8
+# ====================================================
+
+def compute_saliency_map(image_np: np.ndarray) -> np.ndarray:
+    if len(image_np.shape) == 3 and image_np.shape[2] >= 3:
+        gray = np.mean(image_np[:, :, :3], axis=2)
+    else:
+        gray = image_np if len(image_np.shape) == 2 else np.mean(image_np, axis=2)
+    
+    gray = gray.astype(np.float32) / 255.0 if gray.max() > 1 else gray
+    
+    # 1. Edge detection using Sobel
+    edges_x = filters.sobel_h(gray)
+    edges_y = filters.sobel_v(gray)
+    edge_map = np.sqrt(edges_x**2 + edges_y**2)
+    edge_map = edge_map / (edge_map.max() + 1e-8)
+    
+    # 2. Local contrast (Laplacian)
+    laplacian_map = np.abs(filters.laplace(gray))
+    laplacian_map = laplacian_map / (laplacian_map.max() + 1e-8)
+    
+    # 3. Color variance for RGB images
+    if len(image_np.shape) == 3 and image_np.shape[2] >= 3:
+        rgb_norm = image_np[:, :, :3].astype(np.float32) / 255.0 if image_np.max() > 1 else image_np[:, :, :3].astype(np.float32)
+        color_variance = np.var(rgb_norm, axis=2)
+        color_variance = color_variance / (color_variance.max() + 1e-8)
+    else:
+        color_variance = np.zeros_like(gray)
+    
+    # Combine saliency measures
+    saliency = 0.4 * edge_map + 0.4 * laplacian_map + 0.2 * color_variance
+    
+    # Apply Gaussian smoothing for spatial continuity
+    saliency = gaussian_filter(saliency, sigma=2)
+    
+    # Normalize
+    saliency = saliency / (saliency.max() + 1e-8)
+    
+    return saliency
+
+
+def get_subject_aware_blocks(image_np: np.ndarray, blocks: list[np.ndarray], 
+                             block_positions: list[tuple], padded_dims: tuple,
+                             orig_dims: tuple, block_size: int = BLOCK_SIZE,
+                             overlap: int = OVERLAP) -> set[int]:
+    """
+    Identify blocks that contain the main subject using saliency detection.
+    Returns set of block indices that should use SDXL (subject blocks).
+    Only marks ~15-20% of the image as subject for SDXL processing.
+    """
+    logger.info("Computing saliency map to identify main subject...")
+    saliency = compute_saliency_map(image_np)
+    
+    padded_h, padded_w = padded_dims
+    orig_h, orig_w = orig_dims
+    
+    # Threshold for subject detection (top 15% of saliency - stricter)
+    saliency_threshold = np.percentile(saliency, 85)
+    
+    subject_blocks = set()
+    stride = block_size - overlap
+    
+    # Create padded saliency map
+    padded_saliency = np.zeros((padded_h, padded_w), dtype=np.float32)
+    padded_saliency[:orig_h, :orig_w] = saliency
+    
+    for idx, (y_orig, x_orig, _, _) in enumerate(block_positions):
+        y_end = min(y_orig + block_size, padded_h)
+        x_end = min(x_orig + block_size, padded_w)
+        
+        block_saliency = padded_saliency[y_orig:y_end, x_orig:x_end]
+        mean_saliency = np.mean(block_saliency)
+        max_saliency = np.max(block_saliency)
+        if max_saliency > saliency_threshold and mean_saliency > saliency_threshold * 0.8:
+            subject_blocks.add(idx)
+            if DEBUG_BLOCK_ANALYSIS:
+                logger.info(f"  Block {idx}: SUBJECT (mean_sal={mean_saliency:.3f}, max_sal={max_saliency:.3f})")
+    
+    logger.info(f"Identified {len(subject_blocks)} subject blocks out of {len(blocks)} total blocks for SDXL")
+    return subject_blocks
+
+def enforce_upscaler_ratio(total_blocks: int, subject_blocks: set[int], flat_blocks: set[int], 
+                           target_lanczos_ratio: float) -> tuple[set[int], set[int]]:
+    """
+    Enforce target LANCZOS/SDXL ratio across all blocks.
+    
+    Priority order for LANCZOS (faster, lower quality):
+    1. Extremely flat blocks (best candidates for LANCZOS)
+    2. Non-subject background blocks (if we need more LANCZOS)
+    
+    Always preserves subject blocks for SDXL (highest priority).
+    
+    Args:
+        total_blocks: Total number of blocks
+        subject_blocks: Set of subject block indices (always SDXL)
+        flat_blocks: Set of flat block indices (candidates for LANCZOS)
+        target_lanczos_ratio: Target ratio (0.0 = all SDXL, 1.0 = all LANCZOS)
+    
+    Returns:
+        Tuple of (final_subject_blocks, final_flat_blocks) that meet the target ratio
+    """
+    target_lanczos_count = int(total_blocks * target_lanczos_ratio)
+    target_sdxl_count = total_blocks - target_lanczos_count
+    
+    # Start with what we have
+    lanczos_blocks = flat_blocks.copy()
+    sdxl_blocks = subject_blocks.copy()
+    other_blocks = set(range(total_blocks)) - subject_blocks - flat_blocks
+    
+    current_lanczos = len(lanczos_blocks)
+    current_sdxl = len(sdxl_blocks)
+    
+    logger.info(f"Target ratio: {target_lanczos_ratio:.1%} LANCZOS, {1-target_lanczos_ratio:.1%} SDXL")
+    logger.info(f"Before adjustment: {current_lanczos} LANCZOS, {current_sdxl} SDXL, {len(other_blocks)} unclassified")
+    
+    # If we need more LANCZOS blocks
+    if current_lanczos < target_lanczos_count:
+        needed = target_lanczos_count - current_lanczos
+        # Convert non-subject detail blocks to LANCZOS
+        other_blocks_list = sorted(list(other_blocks))
+        take_from_other = min(needed, len(other_blocks_list))
+        lanczos_blocks.update(other_blocks_list[:take_from_other])
+        for block_idx in other_blocks_list[:take_from_other]:
+            other_blocks.discard(block_idx)
+        current_lanczos += take_from_other
+    
+    # If we need fewer LANCZOS blocks (too many)
+    elif current_lanczos > target_lanczos_count:
+        excess = current_lanczos - target_lanczos_count
+        # Remove from flat blocks first (they're candidates)
+        flat_blocks_list = sorted(list(flat_blocks))
+        remove_from_flat = min(excess, len(flat_blocks_list))
+        for block_idx in flat_blocks_list[-remove_from_flat:]:
+            lanczos_blocks.discard(block_idx)
+            other_blocks.add(block_idx)
+        current_lanczos -= remove_from_flat
+    
+    # Remaining blocks go to SDXL
+    sdxl_blocks.update(other_blocks)
+    
+    final_lanczos_count = len(lanczos_blocks)
+    final_sdxl_count = len(sdxl_blocks)
+    final_lanczos_ratio = final_lanczos_count / total_blocks if total_blocks > 0 else 0
+    
+    logger.info(f"After adjustment: {final_lanczos_count} LANCZOS ({final_lanczos_ratio:.1%}), {final_sdxl_count} SDXL ({1-final_lanczos_ratio:.1%})")
+    
+    return sdxl_blocks, lanczos_blocks
 
 generate_lock = threading.Lock()
 upscale_semaphore = threading.Semaphore(MAX_CONCURRENT_UPSCALES)
@@ -123,15 +271,18 @@ def create_feather_mask(size: int, overlap: int) -> np.ndarray:
 
 def is_flat_or_smooth_block(block: np.ndarray) -> bool:
     """
-    Detect if a block is flat (solid color), smooth (sky, blurred areas) or has low detail.
+    Detect if a block is flat (solid color), smooth (sky, blurred areas) or has very low detail.
     Uses variance and edge detection to determine if upscaling is necessary.
+    
+    Only returns True for VERY flat/smooth areas (pure background).
+    Most detail-containing blocks will return False to use SDXL.
     
     Uses global thresholds:
     - FLAT_BLOCK_VARIANCE_THRESHOLD: Higher value = more SDXL usage (more sensitive to detail)
     - BLUR_DETECTION_THRESHOLD: Higher value = more SDXL usage (requires stronger blur)
     
     Returns:
-        True if block should use LANCZOS, False if should use SDXL
+        True if block is VERY flat and should use LANCZOS, False if should use SDXL
     """
     if len(block.shape) == 3:
         gray = np.mean(block[:, :, :3], axis=2)
@@ -141,31 +292,16 @@ def is_flat_or_smooth_block(block: np.ndarray) -> bool:
     # Calculate color/intensity variance
     block_variance = np.var(gray)
     
-    if block_variance < FLAT_BLOCK_VARIANCE_THRESHOLD:
+    # Only use LANCZOS for extremely flat areas (solid colors)
+    if block_variance < FLAT_BLOCK_VARIANCE_THRESHOLD * 0.5:
         # Very uniform color - use LANCZOS
         if DEBUG_BLOCK_ANALYSIS:
-            logger.info(f"  Block is FLAT: variance={block_variance:.2f} < {FLAT_BLOCK_VARIANCE_THRESHOLD}")
+            logger.info(f"  Block is VERY FLAT: variance={block_variance:.2f}")
         return True
     
-    # Detect blur using Laplacian (edge detection)
-    # Low Laplacian variance indicates blur/smoothness
-    laplacian = np.array([[0, -1, 0], [-1, 4, -1], [0, -1, 0]])
-    edges = np.abs(np.convolve(gray.flatten(), laplacian.flatten(), mode='valid'))
-    edge_variance = np.var(edges) if len(edges) > 0 else 0
-    
-    # Normalize edge variance
-    max_possible_edge_variance = 255 * 255  # Conservative upper bound
-    edge_intensity = edge_variance / max(max_possible_edge_variance, 1.0)
-    
-    if edge_intensity < BLUR_DETECTION_THRESHOLD:
-        # Low edge detection = smooth/blurred area - use LANCZOS
-        if DEBUG_BLOCK_ANALYSIS:
-            logger.info(f"  Block is BLURRED: edge_intensity={edge_intensity:.4f} < {BLUR_DETECTION_THRESHOLD}")
-        return True
-    
-    # Has detail - use SDXL
+    # For everything else with some variance, use SDXL for better quality
     if DEBUG_BLOCK_ANALYSIS:
-        logger.info(f"  Block is DETAILED: var={block_variance:.2f}, edges={edge_intensity:.4f}")
+        logger.info(f"  Block has detail: variance={block_variance:.2f}")
     return False
 
 
@@ -559,13 +695,25 @@ def generate_image(prompt: str, width: int = 1024, height: int = 1024, steps: in
             upscale_stats["total_blocks"] = len(blocks)
             logger.info(f"Created {len(blocks)} blocks from {orig_dims} image")
             
-            logger.info("Analyzing blocks to identify flat/smooth areas...")
+            logger.info("Detecting main subject using saliency analysis...")
+            subject_blocks = get_subject_aware_blocks(image_np, blocks, block_positions, padded_dims, orig_dims, BLOCK_SIZE, OVERLAP)
+            
+            logger.info("Analyzing blocks for very flat areas...")
             flat_blocks = set()
             for idx, block in enumerate(blocks):
-                if is_flat_or_smooth_block(block):
+                # Only use LANCZOS for extremely flat areas, never for subject
+                if idx not in subject_blocks and is_flat_or_smooth_block(block):
                     flat_blocks.add(idx)
             
-            logger.info(f"Block classification: {len(flat_blocks)} flat/smooth blocks, {len(blocks) - len(flat_blocks)} detail blocks")
+            logger.info(f"Block classification before ratio enforcement:")
+            logger.info(f"  Subject blocks (SDXL): {len(subject_blocks)}")
+            logger.info(f"  Very flat background blocks (LANCZOS): {len(flat_blocks)}")
+            logger.info(f"  Detail blocks (SDXL): {len(blocks) - len(flat_blocks) - len(subject_blocks)}")
+            
+            # Enforce target LANCZOS/SDXL ratio
+            sdxl_blocks_final, lanczos_blocks_final = enforce_upscaler_ratio(
+                len(blocks), subject_blocks, flat_blocks, TARGET_LANCZOS_RATIO
+            )
             
             logger.info(f"Upscaling blocks (max {MAX_CONCURRENT_UPSCALES} concurrent)...")
             upscale_start = time.perf_counter()
@@ -577,7 +725,7 @@ def generate_image(prompt: str, width: int = 1024, height: int = 1024, steps: in
             with ThreadPoolExecutor(max_workers=MAX_CONCURRENT_UPSCALES) as executor:
                 futures = {}
                 for idx, block in enumerate(blocks):
-                    use_simple = idx in flat_blocks
+                    use_simple = idx in lanczos_blocks_final
                     future = executor.submit(upscale_block_wrapper, idx, block, upscaler_pipeline, use_simple)
                     futures[future] = idx
                 
@@ -633,6 +781,14 @@ def generate_image(prompt: str, width: int = 1024, height: int = 1024, steps: in
             for stage, elapsed in timing_report.items():
                 print(f"{stage:.<40} {elapsed:>8.2f}s")
             print("="*50)
+            
+            print("\nBLOCK UPSCALING STATISTICS")
+            print("="*50)
+            print(f"Total blocks formed...................... {upscale_stats['total_blocks']}")
+            print(f"Blocks upscaled via SDXL................ {upscale_stats['sdxl_blocks']}")
+            print(f"Blocks upscaled via LANCZOS............. {upscale_stats['lanczos_blocks']}")
+            print(f"Faces enhanced in final image........... {upscale_stats['face_enhanced_blocks']}")
+            print("="*50 + "\n")
 
             return {
                 "image": img_base64,
@@ -654,12 +810,12 @@ if __name__ == "__main__":
     load_models()
     
     result = generate_image(
-        prompt="a japanese monk warrior in an ancient forest, intricate details, vibrant colors, digital art",
+        prompt="a high resolution cinematic photograph of a man holding an open book, shallow depth of field, dramatic warm lighting, professional studio setup, bokeh background, cinematic color grading, sharp focus on face and book, volumetric lighting, 8k, award winning photography",
         width=1024,
         height=768,
         steps=9
     )
-    with open("generated_image8.jpg", "wb") as f:
+    with open("generated_image9.jpg", "wb") as f:
         f.write(base64.b64decode(result['image']))
     print(f"Image generated successfully!")
     print(f"Dimensions: {result['width']}x{result['height']}")

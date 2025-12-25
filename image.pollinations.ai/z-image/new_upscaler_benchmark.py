@@ -633,14 +633,6 @@ def generate_image(prompt: str, width: int = 1024, height: int = 1024, steps: in
             for stage, elapsed in timing_report.items():
                 print(f"{stage:.<40} {elapsed:>8.2f}s")
             print("="*50)
-            
-            print("\nBLOCK UPSCALING STATISTICS")
-            print("="*50)
-            print(f"Total blocks formed...................... {upscale_stats['total_blocks']}")
-            print(f"Blocks upscaled via SDXL................ {upscale_stats['sdxl_blocks']}")
-            print(f"Blocks upscaled via LANCZOS............. {upscale_stats['lanczos_blocks']}")
-            print(f"Faces enhanced in final image........... {upscale_stats['face_enhanced_blocks']}")
-            print("="*50 + "\n")
 
             return {
                 "image": img_base64,
@@ -662,9 +654,9 @@ if __name__ == "__main__":
     load_models()
     
     result = generate_image(
-        prompt="a group of students in a classroom learning about artificial intelligence, detailed, vibrant colors, realistic",
-        width=2048,
-        height=2048,
+        prompt="a japanese monk warrior in an ancient forest, intricate details, vibrant colors, digital art",
+        width=1024,
+        height=768,
         steps=9
     )
     with open("generated_image8.jpg", "wb") as f:

@@ -60,9 +60,25 @@ export function processParameters(messages, options) {
     const isReasoningOrGpt5Model =
         requestedModel &&
         (/^o[134](-mini|-preview)?$/i.test(requestedModel) ||
-            /^gpt-5/i.test(requestedModel));
+            /^gpt-5/i.test(requestedModel) ||
+            /thinking/i.test(requestedModel));
     if (isReasoningOrGpt5Model) {
         updatedOptions.temperature = 1;
+    }
+
+    // Handle thinking parameter for Vertex AI models
+    if (updatedOptions.thinking && config.provider === "vertex-ai") {
+        log(
+            `Mapping thinking parameter to thinking_config for Vertex AI: ${JSON.stringify(updatedOptions.thinking)}`,
+        );
+        const thinking = updatedOptions.thinking;
+        // Map to Vertex AI thinking_config
+        updatedOptions.thinking_config = {
+            include_thoughts: thinking.type === "enabled",
+        };
+
+        // Note: budget_tokens is currently ignored by Vertex AI thinking_config
+        // but it is preserved in the top-level thinking object
     }
 
     // Apply parameter filtering if defined
@@ -97,6 +113,12 @@ export function processParameters(messages, options) {
         }
         if (updatedOptions.stream_options) {
             filteredOptions.stream_options = updatedOptions.stream_options;
+        }
+        if (updatedOptions.thinking) {
+            filteredOptions.thinking = updatedOptions.thinking;
+        }
+        if (updatedOptions.thinking_config) {
+            filteredOptions.thinking_config = updatedOptions.thinking_config;
         }
 
         return { messages, options: filteredOptions };

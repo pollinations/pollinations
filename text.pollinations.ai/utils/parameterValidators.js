@@ -99,6 +99,7 @@ export const validateTextGenerationParams = (data) => {
         voice: validateString(data.voice, "alloy"),
         reasoning_effort: validateString(data.reasoning_effort),
         thinking_budget: validateInt(data.thinking_budget),
+        thinking: data.thinking,
         jsonMode: validateJsonMode(data),
     };
 };

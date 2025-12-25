@@ -44,8 +44,8 @@ export const cleanNullAndUndefined = (obj) => {
     const removedProps = [];
 
     Object.keys(cleaned).forEach((key) => {
-        // Never clean modalities or audio properties
-        if (key === "modalities" || key === "audio") {
+        // Never clean modalities, audio, or thinking properties
+        if (key === "modalities" || key === "audio" || key === "thinking") {
             return;
         }
 

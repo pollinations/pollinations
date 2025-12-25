@@ -394,4 +394,22 @@ export const TEXT_SERVICES = {
         tools: true,
         isSpecialized: false,
     },
+    "gemini-thinking": {
+        aliases: ["gemini-2.0-flash-thinking"],
+        modelId: "gemini-2.0-flash-thinking",
+        provider: "vertex-ai",
+        cost: [
+            {
+                date: COST_START_DATE,
+                promptTextTokens: perMillion(0.0), // Free for now or very cheap
+                completionTextTokens: perMillion(0.0),
+            },
+        ],
+        description: "Google Gemini 2.0 Flash Thinking - High Speed Reasoning",
+        inputModalities: ["text", "image"],
+        outputModalities: ["text"],
+        tools: true,
+        reasoning: true,
+        isSpecialized: false,
+    },
 } as const satisfies Record<string, ServiceDefinition<string>>;

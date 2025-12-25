@@ -96,6 +96,7 @@ export function getRequestData(req) {
         tool_choice,
         modalities,
         audio,
+        thinking: validated.thinking,
         reasoning_effort: validated.reasoning_effort,
         thinking_budget: validated.thinking_budget,
         response_format,

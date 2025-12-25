@@ -5,7 +5,7 @@ import time
 url = "http://localhost:10002/generate"
 start_time = time.time()
 payload = {
-    "prompts": ["joyous clipart of a cute corgi puppy playing with a colorful ball in a sunny park, vibrant colors, cartoon style"],
+    "prompts": ["a high resolution cinematic photograph"],
     "width":2048,   
     "height": 2048,   
     "steps": 9

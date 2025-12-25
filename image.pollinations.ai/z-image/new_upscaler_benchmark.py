@@ -59,6 +59,12 @@ SAFETY_EXTRACTOR = None
 SAFETY_MODEL = None
 
 timing_report = {}
+upscale_stats = {
+    "total_blocks": 0,
+    "sdxl_blocks": 0,
+    "lanczos_blocks": 0,
+    "face_enhanced_blocks": 0
+}
 
 
 class ImageRequest(BaseModel):
@@ -289,6 +295,7 @@ def restore_faces_in_upscaled_image(upscaled_np: np.ndarray, faces: list[tuple],
     logger.info(f"Restoring {len(faces)} face(s) in upscaled image...")
     result = upscaled_np.copy()
     feather_mask_cache = {}
+    faces_enhanced = 0
     
     for idx, (x, y, w, h) in enumerate(faces):
         x_scaled = x * scale_factor
@@ -355,12 +362,14 @@ def restore_faces_in_upscaled_image(upscaled_np: np.ndarray, faces: list[tuple],
             blended = enhanced_face * blend_mask + face_region * (1 - blend_mask)
             
             result[y1:y2, x1:x2] = blended.astype(np.uint8)
+            faces_enhanced += 1
             logger.info(f"Face {idx}: Successfully enhanced and blended")
             
         except Exception as e:
             logger.error(f"Face {idx}: Enhancement failed: {e}")
             continue
     
+    upscale_stats["face_enhanced_blocks"] = faces_enhanced
     return result
 
 
@@ -525,6 +534,7 @@ def generate_image(prompt: str, width: int = 1024, height: int = 1024, steps: in
                 image_np, BLOCK_SIZE, OVERLAP
             )
             record_time("Block Slicing", time.perf_counter() - slice_start)
+            upscale_stats["total_blocks"] = len(blocks)
             logger.info(f"Created {len(blocks)} blocks from {orig_dims} image")
             
             logger.info("Analyzing blocks to identify flat/smooth areas...")
@@ -539,6 +549,9 @@ def generate_image(prompt: str, width: int = 1024, height: int = 1024, steps: in
             upscale_start = time.perf_counter()
             
             upscaled_blocks = [None] * len(blocks)
+            sdxl_count = 0
+            lanczos_count = 0
+            
             with ThreadPoolExecutor(max_workers=MAX_CONCURRENT_UPSCALES) as executor:
                 futures = {}
                 for idx, block in enumerate(blocks):
@@ -551,11 +564,17 @@ def generate_image(prompt: str, width: int = 1024, height: int = 1024, steps: in
                         idx, upscaled_block, used_simple = future.result()
                         upscaled_blocks[idx] = upscaled_block
                         method = "LANCZOS" if used_simple else "SD X4"
+                        if used_simple:
+                            lanczos_count += 1
+                        else:
+                            sdxl_count += 1
                         logger.info(f"Block {idx} completed ({method})")
                     except Exception as e:
                         logger.error(f"Block {futures[future]} failed: {e}")
                         raise
             
+            upscale_stats["sdxl_blocks"] = sdxl_count
+            upscale_stats["lanczos_blocks"] = lanczos_count
             record_time("Block Upscaling", time.perf_counter() - upscale_start)
             
             logger.info("Stitching blocks with feather blending...")
@@ -591,6 +610,14 @@ def generate_image(prompt: str, width: int = 1024, height: int = 1024, steps: in
             print("="*50)
             for stage, elapsed in timing_report.items():
                 print(f"{stage:.<40} {elapsed:>8.2f}s")
+            print("="*50)
+            
+            print("\nBLOCK UPSCALING STATISTICS")
+            print("="*50)
+            print(f"Total blocks formed...................... {upscale_stats['total_blocks']}")
+            print(f"Blocks upscaled via SDXL................ {upscale_stats['sdxl_blocks']}")
+            print(f"Blocks upscaled via LANCZOS............. {upscale_stats['lanczos_blocks']}")
+            print(f"Faces enhanced in final image........... {upscale_stats['face_enhanced_blocks']}")
             print("="*50 + "\n")
             
             
@@ -615,7 +642,7 @@ if __name__ == "__main__":
     load_models()
     
     result = generate_image(
-        prompt="an korean man and woman in front of the taj mahal during sunset, highly detailed, vibrant colors, photorealistic",
+        prompt="a majestic dragon soaring through a crystalline sky filled with floating islands, bioluminescent auroras, and impossibly detailed architecture carved from living crystal, cinematic lighting, hyperrealistic, 8k",
         width=2048,
         height=2048,
         steps=9

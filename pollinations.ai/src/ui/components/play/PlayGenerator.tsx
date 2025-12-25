@@ -246,7 +246,7 @@ export function PlayGenerator({
                                     addImageUrl();
                                 }
                             }}
-                            placeholder="https://example.com/image.jpg"
+                            placeholder="Image URL"
                             className="flex-1 p-3 bg-input-background text-text-body-main font-body focus:outline-none focus:bg-input-background hover:bg-input-background transition-colors placeholder:text-text-caption rounded-input"
                             disabled={imageUrls.length >= 4}
                         />

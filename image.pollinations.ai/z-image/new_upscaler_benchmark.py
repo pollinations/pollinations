@@ -38,11 +38,13 @@ SAFETY_NSFW_MODEL = "CompVis/stable-diffusion-safety-checker"
 
 MIN_GEN_SIZE = 512
 MAX_GEN_SIZE = 768
-BLOCK_SIZE = 128
-OVERLAP = 32
+BLOCK_SIZE = 128  
+OVERLAP = 32 
 UPSCALE_FACTOR = 4
 MAX_FINAL_SIZE = 2048
-MAX_CONCURRENT_UPSCALES = 20
+MAX_CONCURRENT_UPSCALES = 36
+UPSCALE_INFERENCE_STEPS = 10  
+ENABLE_FACE_RESTORATION = True
 
 generate_lock = threading.Lock()
 upscale_semaphore = threading.Semaphore(MAX_CONCURRENT_UPSCALES)
@@ -211,7 +213,7 @@ def upscale_block_sdxl(block_np: np.ndarray, upscaler_pipeline) -> np.ndarray:
             upscaled_pil = upscaler_pipeline(
                 prompt="high quality, detailed",
                 image=block_pil,
-                num_inference_steps=10,
+                num_inference_steps=UPSCALE_INFERENCE_STEPS,
                 guidance_scale=0.0,
                 output_type="pil"
             ).images[0]
@@ -349,13 +351,20 @@ def load_models():
             cache_dir=MODEL_CACHE,
             low_cpu_mem_usage=False,
         ).to("cuda")
+        try:
+            pipe.enable_xformers_memory_efficient_attention()
+        except:
+            pass
         
         upscaler_pipeline = StableDiffusionUpscalePipeline.from_pretrained(
             UPSCALER_MODEL_ID,
             torch_dtype=torch.float32,
             cache_dir=MODEL_CACHE,
         ).to("cuda")
-        upscaler_pipeline.enable_attention_slicing()
+        try:
+            upscaler_pipeline.enable_xformers_memory_efficient_attention()
+        except:
+            upscaler_pipeline.enable_attention_slicing()
         upscaler_pipeline.vae.to(torch.float32)
         
         face_enhancer = GFPGANer(
@@ -449,9 +458,11 @@ def generate_image(prompt: str, width: int = 1024, height: int = 1024, steps: in
             image_np = np.array(image)
             record_time("Base Generation", time.perf_counter() - gen_start)
             
-            logger.info("Detecting faces in base image...")
-            faces = detect_faces_mediapipe(image_np, face_detector)
-            logger.info(f"Detected {len(faces)} face(s)")
+            faces = []
+            if ENABLE_FACE_RESTORATION:
+                logger.info("Detecting faces in base image...")
+                faces = detect_faces_mediapipe(image_np, face_detector)
+                logger.info(f"Detected {len(faces)} face(s)")
             
             logger.info("Slicing image into overlapping blocks...")
             slice_start = time.perf_counter()
@@ -491,10 +502,13 @@ def generate_image(prompt: str, width: int = 1024, height: int = 1024, steps: in
             record_time("Block Stitching", time.perf_counter() - stitch_start)
             logger.info(f"Stitched result: {upscaled_image.shape}")
             
-            logger.info("Applying face restoration to upscaled image...")
-            face_restore_start = time.perf_counter()
-            result = restore_faces_in_upscaled_image(upscaled_image, faces, face_enhancer, UPSCALE_FACTOR)
-            record_time("Face Restoration", time.perf_counter() - face_restore_start)
+            if ENABLE_FACE_RESTORATION and len(faces) > 0:
+                logger.info("Applying face restoration to upscaled image...")
+                face_restore_start = time.perf_counter()
+                result = restore_faces_in_upscaled_image(upscaled_image, faces, face_enhancer, UPSCALE_FACTOR)
+                record_time("Face Restoration", time.perf_counter() - face_restore_start)
+            else:
+                result = upscaled_image
             
             logger.info(f"Resizing to requested dimensions: {request.width}x{request.height}")
             result_pil = Image.fromarray(result.astype(np.uint8))
@@ -513,6 +527,9 @@ def generate_image(prompt: str, width: int = 1024, height: int = 1024, steps: in
             for stage, elapsed in timing_report.items():
                 print(f"{stage:.<40} {elapsed:>8.2f}s")
             print("="*50 + "\n")
+            
+            # Skip NSFW check for speed (uncomment to enable)
+            # has_nsfw, concepts = check_nsfw(result)
             
             return {
                 "image": img_base64,

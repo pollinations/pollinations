@@ -6,6 +6,7 @@
 
 | Name | Description | Author |
 |------|-------------|--------|
+| [Word Wagon](https://wordwagon.app) | AI-powered vocabulary learning app with spaced repetition | @wordwagon |
 | [nusanexus](https://nusanexus.com) | AI-powered chat platform for Indonesian users | @nusanexus |
 | [Nuvole AI Lite](https://nuvoleai.com) | Lightweight AI chat app with clean UI and fast responses | @nuvoleai |
 | [BCA Nepal](https://play.google.com/store/apps/details/BCA_Nepal_BCA_Notes_Course?id=com.bcanepal&hl=en_IN) | BCA Nepal: Notes, courses, AI chat & PDF AI tools for smarter study | @sushilbalami |

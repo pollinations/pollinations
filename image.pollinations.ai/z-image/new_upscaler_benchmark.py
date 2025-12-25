@@ -55,7 +55,7 @@ BLUR_DETECTION_THRESHOLD = 1.5
 # If we increase to ~1.3-1.5 to use more SDXL on moderately textured areas
 DEBUG_BLOCK_ANALYSIS = False
 TARGET_LANCZOS_RATIO = 0.8
-# ====================================================
+
 
 def compute_saliency_map(image_np: np.ndarray) -> np.ndarray:
     if len(image_np.shape) == 3 and image_np.shape[2] >= 3:

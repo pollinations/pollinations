@@ -8,6 +8,7 @@ import { track, type TrackEnv } from "@/middleware/track.ts";
 import { resolveModel } from "@/middleware/model.ts";
 import { frontendKeyRateLimit } from "@/middleware/rate-limit-durable.ts";
 import { imageCache } from "@/middleware/image-cache.ts";
+import { textCache } from "@/middleware/text-cache.ts";
 import { edgeRateLimit } from "@/middleware/rate-limit-edge.ts";
 import { requestDeduplication } from "@/middleware/requestDeduplication.ts";
 import { describeRoute, resolver as baseResolver } from "hono-openapi";
@@ -222,6 +223,7 @@ export const proxyRoutes = new Hono<Env>()
     .use(requestDeduplication)
     .post(
         "/v1/chat/completions",
+        textCache,
         describeRoute({
             tags: ["gen.pollinations.ai"],
             description: [
@@ -254,16 +256,9 @@ export const proxyRoutes = new Hono<Env>()
         }),
         ...chatCompletionHandlers,
     )
-    // Undocumented /openai alias for backward compatibility (deprecated)
-    .post(
-        "/openai",
-        describeRoute({
-            hide: true, // Hide from OpenAPI docs completely
-        }),
-        ...chatCompletionHandlers,
-    )
     .get(
         "/text/:prompt",
+        textCache,
         describeRoute({
             tags: ["gen.pollinations.ai"],
             description: [

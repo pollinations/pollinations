@@ -6,6 +6,7 @@
 
 import type { Context } from "hono";
 import type { Logger } from "@logtape/logtape";
+import stableStringify from "fast-json-stable-stringify";
 
 // Parameters to exclude from cache key (auth + cache control)
 const EXCLUDED_PARAMS = ["key", "no-cache"];
@@ -52,7 +53,7 @@ export async function generateCacheKey(
                     filteredBody[key] = value;
                 }
             }
-            parts.push(JSON.stringify(filteredBody));
+            parts.push(stableStringify(filteredBody));
         } catch {
             // If not JSON, use body as-is
             parts.push(bodyText);

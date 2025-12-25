@@ -18,15 +18,21 @@ type TextCacheEnv = {
     Variables: LoggerVariables & RequestIdVariables;
 };
 
-// Paths that should NOT be cached
-const NON_CACHE_PATHS = ["/models", "/feed", "/openai/models", "/v1/models"];
+// Paths that should NOT be cached (exact suffixes with leading slash)
+const NON_CACHE_PATH_SUFFIXES = [
+    "/models",
+    "/feed",
+    "/openai/models",
+    "/v1/models",
+];
 
 /**
  * Check if a path should be excluded from caching
+ * Uses exact suffix matching to avoid false positives like /foo/models
  */
 function shouldSkipCache(pathname: string): boolean {
-    return NON_CACHE_PATHS.some(
-        (path) => pathname === path || pathname.endsWith(path),
+    return NON_CACHE_PATH_SUFFIXES.some(
+        (suffix) => pathname === suffix || pathname.endsWith(suffix),
     );
 }
 

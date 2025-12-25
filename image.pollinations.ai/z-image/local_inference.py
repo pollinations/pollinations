@@ -5,7 +5,7 @@ import time
 url = "http://localhost:10002/generate"
 start_time = time.time()
 payload = {
-    "prompts": ["a high resolution cinematic photograph"],
+    "prompts": ["an indian boy"],
     "width":2048,   
     "height": 2048,   
     "steps": 9

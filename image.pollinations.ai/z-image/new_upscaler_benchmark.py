@@ -641,7 +641,7 @@ def generate_image(prompt: str, width: int = 1024, height: int = 1024, steps: in
             print(f"Blocks upscaled via LANCZOS............. {upscale_stats['lanczos_blocks']}")
             print(f"Faces enhanced in final image........... {upscale_stats['face_enhanced_blocks']}")
             print("="*50 + "\n")
-            
+
             return {
                 "image": img_base64,
                 "has_nsfw_concept": False,
@@ -662,12 +662,12 @@ if __name__ == "__main__":
     load_models()
     
     result = generate_image(
-        prompt="a majestic dragon soaring through a crystalline sky filled with floating islands, bioluminescent auroras, and impossibly detailed architecture carved from living crystal, cinematic lighting, hyperrealistic, 8k",
+        prompt="a group of students in a classroom learning about artificial intelligence, detailed, vibrant colors, realistic",
         width=2048,
         height=2048,
         steps=9
     )
-    with open("generated_image7.jpg", "wb") as f:
+    with open("generated_image8.jpg", "wb") as f:
         f.write(base64.b64decode(result['image']))
     print(f"Image generated successfully!")
     print(f"Dimensions: {result['width']}x{result['height']}")

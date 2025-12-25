@@ -8,9 +8,6 @@ import { createMiddleware } from "hono/factory";
 import {
     generateCacheKey,
     getCachedResponse,
-    prepareMetadata,
-    prepareResponseHeaders,
-    cacheNonStreamingResponse,
     createCaptureStream,
 } from "@/utils/text-cache.ts";
 import type { LoggerVariables } from "@/middleware/logger.ts";
@@ -30,17 +27,6 @@ const NON_CACHE_PATHS = ["/models", "/feed", "/openai/models", "/v1/models"];
 function shouldSkipCache(pathname: string): boolean {
     return NON_CACHE_PATHS.some(
         (path) => pathname === path || pathname.endsWith(path),
-    );
-}
-
-/**
- * Check if response is streaming based on content-type
- */
-function isStreamingResponse(response: Response): boolean {
-    const contentType = response.headers.get("content-type") || "";
-    return (
-        contentType.includes("text/event-stream") ||
-        contentType.includes("application/x-ndjson")
     );
 }
 
@@ -119,58 +105,27 @@ export const textCache = createMiddleware<TextCacheEnv>(async (c, next) => {
         return;
     }
 
-    const isStreaming = isStreamingResponse(c.res);
-
-    if (isStreaming) {
-        // For streaming responses, use transform stream to capture while streaming
-        log.debug("[TEXT-CACHE] Caching streaming response");
-
-        const originalBody = c.res.body;
-        if (!originalBody) {
-            log.debug("[TEXT-CACHE] No response body to cache");
-            return;
-        }
-
-        // Create capture stream that caches after streaming completes
-        const captureStream = createCaptureStream(c, cacheKey, c.res);
-
-        // Pipe through capture stream
-        const transformedBody = originalBody.pipeThrough(captureStream);
-
-        // Create new response with transformed body
-        const headers = prepareResponseHeaders(c.res.headers, {
-            cacheStatus: "MISS",
-            cacheKey: cacheKey.substring(0, 16),
-        });
-
-        c.res = new Response(transformedBody, {
-            status: c.res.status,
-            statusText: c.res.statusText,
-            headers,
-        });
-    } else {
-        // For non-streaming responses, cache the complete response
-        log.debug("[TEXT-CACHE] Caching non-streaming response");
-
-        c.executionCtx.waitUntil(
-            (async () => {
-                try {
-                    const responseClone = c.res.clone();
-                    const content = await responseClone.arrayBuffer();
-                    const metadata = prepareMetadata(c.res);
-
-                    await cacheNonStreamingResponse(
-                        c,
-                        cacheKey,
-                        content,
-                        metadata,
-                    );
-                } catch (error) {
-                    log.error("[TEXT-CACHE] Error caching response: {error}", {
-                        error,
-                    });
-                }
-            })(),
-        );
+    const originalBody = c.res.body;
+    if (!originalBody) {
+        log.debug("[TEXT-CACHE] No response body to cache");
+        return;
     }
+
+    // Use TransformStream for ALL responses (streaming and non-streaming)
+    // Non-streaming responses just come through as one or a few chunks
+    log.debug("[TEXT-CACHE] Setting up cache capture");
+
+    const captureStream = createCaptureStream(c, cacheKey, c.res);
+    const transformedBody = originalBody.pipeThrough(captureStream);
+
+    // Create new response with transformed body and original headers
+    c.res = new Response(transformedBody, {
+        status: c.res.status,
+        statusText: c.res.statusText,
+        headers: c.res.headers, // Pass original headers (creates mutable copy)
+    });
+
+    // Add cache headers
+    c.res.headers.set("X-Cache", "MISS");
+    c.res.headers.set("X-Cache-Key", cacheKey.substring(0, 16));
 });

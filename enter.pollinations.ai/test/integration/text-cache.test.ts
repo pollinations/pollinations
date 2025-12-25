@@ -377,4 +377,74 @@ describe("Text Cache Integration Tests", () => {
             expect(keyA).not.toBe(keyB);
         },
     );
+
+    test(
+        "non-cacheable paths bypass cache (/v1/models)",
+        { timeout: 30000 },
+        async ({ apiKey }) => {
+            // /v1/models should NOT be cached - no X-Cache header
+            const response = await SELF.fetch(
+                `http://localhost:3000/api/generate/v1/models`,
+                {
+                    method: "GET",
+                    headers: {
+                        authorization: `Bearer ${apiKey}`,
+                    },
+                },
+            );
+            expect(response.status).toBe(200);
+
+            // No cache headers should be present for non-cacheable paths
+            const xCache = response.headers.get("X-Cache");
+            expect(xCache).toBeNull();
+        },
+    );
+
+    test(
+        "cached response preserves content-type header",
+        { timeout: 30000 },
+        async ({ apiKey, mocks }) => {
+            await mocks.enable("polar", "tinybird", "vcr");
+
+            const requestBody = JSON.stringify({
+                model: "openai-fast",
+                messages: [{ role: "user", content: "Content-type test" }],
+            });
+
+            // First request - populate cache
+            const responseA = await SELF.fetch(
+                `http://localhost:3000/api/generate/v1/chat/completions`,
+                {
+                    method: "POST",
+                    headers: {
+                        "content-type": "application/json",
+                        authorization: `Bearer ${apiKey}`,
+                    },
+                    body: requestBody,
+                },
+            );
+            expect(responseA.status).toBe(200);
+            const contentTypeA = responseA.headers.get("content-type");
+            await responseA.text();
+
+            // Second request - cache hit
+            const responseB = await SELF.fetch(
+                `http://localhost:3000/api/generate/v1/chat/completions`,
+                {
+                    method: "POST",
+                    headers: {
+                        "content-type": "application/json",
+                        authorization: `Bearer ${apiKey}`,
+                    },
+                    body: requestBody,
+                },
+            );
+            expect(responseB.status).toBe(200);
+            expect(responseB.headers.get("X-Cache")).toBe("HIT");
+
+            // Content-type should be preserved from original response
+            const contentTypeB = responseB.headers.get("content-type");
+            expect(contentTypeB).toBe(contentTypeA);
+        },
+    );
 });

@@ -43,21 +43,21 @@ Secrets required: `POLLY_BOT_APP_ID`, `POLLY_BOT_PRIVATE_KEY`
 
 ### Tier Labels (Unified for Apps & PRs)
 
-| Label              | Purpose                            | Applied by                                              |
-| ------------------ | ---------------------------------- | ------------------------------------------------------- |
-| `tier:review`      | Submission/PR under review         | Issue template / `tier-label-external-pr.yml`           |
-| `tier:info-needed` | Awaiting registration or more info | `tier-app-submission.yml` / `tier-upgrade-on-merge.yml` |
-| `tier:flower`      | Approved for Flower tier           | `tier-upgrade-on-merge.yml` (auto on merge)             |
-| `tier:done`        | Tier upgrade completed             | `tier-upgrade-on-merge.yml`                             |
+| Label              | Purpose                                         | Applied by                                              |
+| ------------------ | ----------------------------------------------- | ------------------------------------------------------- |
+| `tier:review`      | No tier/spore/seed, eligible for Flower upgrade | Issue template / `pr-label-external.yml`                |
+| `tier:info-needed` | Awaiting registration or more info              | `tier-app-submission.yml` / `tier-upgrade-on-merge.yml` |
+| `tier:flower`      | Approved for Flower tier                        | `tier-upgrade-on-merge.yml` (auto on merge)             |
+| `tier:done`        | Tier upgrade completed                          | `tier-upgrade-on-merge.yml`                             |
 
 ### PR Labels
 
-| Label              | Purpose                      | Applied by                   |
-| ------------------ | ---------------------------- | ---------------------------- |
-| `pr:external`      | PR from external contributor | `tier-label-external-pr.yml` |
-| `pr:review-needed` | Needs maintainer review      | Manual                       |
-| `pr:merge-ready`   | Approved, ready to merge     | Manual                       |
-| `pr:news`          | PR related to news/social    | Instagram workflows          |
+| Label              | Purpose                                           | Applied by              |
+| ------------------ | ------------------------------------------------- | ----------------------- |
+| `pr:external`      | Returning external contributor (has flower tier+) | `pr-label-external.yml` |
+| `pr:review-needed` | Needs maintainer review                           | Manual                  |
+| `pr:merge-ready`   | Approved, ready to merge                          | Manual                  |
+| `pr:news`          | PR related to news/social                         | Instagram workflows     |
 
 ## Workflows
 
@@ -69,7 +69,7 @@ Secrets required: `POLLY_BOT_APP_ID`, `POLLY_BOT_PRIVATE_KEY`
 ### Triage
 
 -   **issue-label-external.yml** - Adds `inbox:github` to external issues. Skips if `inbox:discord` or `app:*` labels exist.
--   **pr-label-external.yml** - Adds `pr:external` to PRs from external contributors. Skips internal users and bots.
+-   **pr-label-external.yml** - Checks user tier in D1: flower+ gets `pr:external`, others get `tier:review`. Skips internal users and bots.
 -   **pr-assign-author.yml** - Assigns the PR creator to the PR when opened.
 
 ### Tier Upgrade System
@@ -78,7 +78,6 @@ Secrets required: `POLLY_BOT_APP_ID`, `POLLY_BOT_PRIVATE_KEY`
     -   `tier-parse-issue` - Parse submission with AI, validate, check Enter registration
     -   `tier-create-app-pr` - Fetch stars, AI-format (emoji + description), prepend to `apps/APPS.md`, create PR
     -   `tier-close-issue-on-pr` - Close linked issue when PR is merged/closed
--   **tier-label-external-pr.yml** - Labels external contributor PRs with `tier:review` and `pr:external`.
 -   **tier-upgrade-on-merge.yml** - When PR with `tier:review` label merges, upgrades labels (`tier:review` → `tier:flower` → `tier:done`) and user to Flower tier in D1 + Polar.
 -   **tier-recheck-registration.yml** - When user comments on issue/PR with `tier:info-needed`, re-checks registration.
 
@@ -186,14 +185,16 @@ flowchart TD
 flowchart TD
     A[PR opened] --> B{Author check}
     B -->|External| C[pr-label-external.yml]
-    C --> D[pr:external label]
-    B -->|Internal/Bot| E[No label]
+    C --> D{Check D1 tier}
+    D -->|flower+| E[pr:external label]
+    D -->|seed/none| F[tier:review label]
+    B -->|Internal/Bot| G[No label]
 
-    A --> F[pr-assign-author.yml]
-    F --> G[Author assigned]
+    A --> H[pr-assign-author.yml]
+    H --> I[Author assigned]
 
-    A --> H[pr-add-to-project.yml]
-    H --> I[Added to Project #20]
+    A --> J[pr-add-to-project.yml]
+    J --> K[Added to Project #20]
 ```
 
 ### Branch Cleanup
@@ -283,12 +284,14 @@ flowchart TD
     end
 
     subgraph PR["Direct PR"]
-        B1[User opens PR] --> B2[tier-label-external-pr.yml]
-        B2 --> B3[tier:review + pr:external]
+        B1[User opens PR] --> B2[pr-label-external.yml]
+        B2 --> B3{Check D1 tier}
+        B3 -->|flower+| B4[pr:external]
+        B3 -->|seed/none| B5[tier:review]
     end
 
     A10 --> C[Maintainer reviews]
-    B3 --> C
+    B5 --> C
 
     C --> D{Approve?}
     D -->|Yes| E[Merge PR]

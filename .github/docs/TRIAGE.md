@@ -46,8 +46,7 @@ flowchart TD
 
     A --> H[pr-assign-author.yml]
     H --> I[Author assigned]
-
-    A --> J[pr-add-to-project.yml]
+    I --> J[pr-add-to-project.yml]
     J --> K[Added to Project #20]
 ```
 

@@ -447,4 +447,54 @@ describe("Text Cache Integration Tests", () => {
             expect(contentTypeB).toBe(contentTypeA);
         },
     );
+
+    test(
+        "Cache-Control header is set to immutable for cached responses",
+        { timeout: 30000 },
+        async ({ apiKey, mocks }) => {
+            await mocks.enable("polar", "tinybird", "vcr");
+
+            const requestBody = JSON.stringify({
+                model: "openai-fast",
+                messages: [{ role: "user", content: "Cache-Control test" }],
+            });
+
+            // First request - MISS
+            const responseA = await SELF.fetch(
+                `http://localhost:3000/api/generate/v1/chat/completions`,
+                {
+                    method: "POST",
+                    headers: {
+                        "content-type": "application/json",
+                        authorization: `Bearer ${apiKey}`,
+                    },
+                    body: requestBody,
+                },
+            );
+            expect(responseA.status).toBe(200);
+            expect(responseA.headers.get("X-Cache")).toBe("MISS");
+            expect(responseA.headers.get("Cache-Control")).toBe(
+                "public, max-age=31536000, immutable",
+            );
+            await responseA.text();
+
+            // Second request - HIT
+            const responseB = await SELF.fetch(
+                `http://localhost:3000/api/generate/v1/chat/completions`,
+                {
+                    method: "POST",
+                    headers: {
+                        "content-type": "application/json",
+                        authorization: `Bearer ${apiKey}`,
+                    },
+                    body: requestBody,
+                },
+            );
+            expect(responseB.status).toBe(200);
+            expect(responseB.headers.get("X-Cache")).toBe("HIT");
+            expect(responseB.headers.get("Cache-Control")).toBe(
+                "public, max-age=31536000, immutable",
+            );
+        },
+    );
 });

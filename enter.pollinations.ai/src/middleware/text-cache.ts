@@ -110,4 +110,6 @@ export const textCache = createMiddleware<TextCacheEnv>(async (c, next) => {
     // Add cache headers
     c.res.headers.set("X-Cache", "MISS");
     c.res.headers.set("X-Cache-Key", cacheKey.substring(0, 16));
+    // Browser cache: immutable since same request = same response (deterministic)
+    c.res.headers.set("Cache-Control", "public, max-age=31536000, immutable");
 });

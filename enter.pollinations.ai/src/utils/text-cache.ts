@@ -122,6 +122,8 @@ export async function getCachedResponse<TEnv extends TextCacheEnv>(
             "X-Cache-Date",
             metadata.cachedAt || cachedObject.uploaded.toISOString(),
         );
+        // Browser cache: immutable since same request = same response
+        headers.set("Cache-Control", "public, max-age=31536000, immutable");
 
         // Create response from cached object
         return new Response(cachedObject.body, {

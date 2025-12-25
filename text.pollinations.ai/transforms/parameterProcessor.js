@@ -64,14 +64,14 @@ export function processParameters(messages, options) {
         /thinking/i.test(model);
 
     if (isReasoningOrGpt5Model) {
-        log(`Forcing temperature=1 for reasoning/GPT-5 model: \${model}`);
+        log(`Forcing temperature=1 for reasoning/GPT-5 model: ${model}`);
         updatedOptions.temperature = 1;
     }
 
     // Handle thinking parameter for Vertex AI models
     if (updatedOptions.thinking && config.provider === "vertex-ai") {
         log(
-            `Mapping thinking parameter to thinking_config for Vertex AI: \${JSON.stringify(updatedOptions.thinking)}`,
+            `Mapping thinking parameter to thinking_config for Vertex AI: ${JSON.stringify(updatedOptions.thinking)}`,
         );
         const thinking = updatedOptions.thinking;
         // Map to Vertex AI thinking_config
@@ -87,7 +87,7 @@ export function processParameters(messages, options) {
     if (modelConfig.allowedParameters) {
         const allowedParams = modelConfig.allowedParameters;
         log(
-            `Applying parameter filter for model \${requestedModel}, allowing only: \${allowedParams.join(", ")}`,
+            `Applying parameter filter for model ${requestedModel}, allowing only: ${allowedParams.join(", ")}`,
         );
 
         const filteredOptions = {};

@@ -147,7 +147,8 @@ jobs:
             OUTPUT=$(npx tsx scripts/tier-update-user.ts update-tier \
               --githubUsername "$USERNAME" \
               --tier flower \
-              --env production 2>&1) || true
+              --env production \
+              --apply 2>&1) || true
             
             echo "$OUTPUT"
             

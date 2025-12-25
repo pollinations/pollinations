@@ -169,4 +169,34 @@ describe("Image Integration Tests", () => {
             await response.arrayBuffer();
         },
     );
+
+    test(
+        "gptimage-large with reference image returns 200 (img2img edit mode)",
+        { timeout: 60000 },
+        async ({ apiKey, mocks }) => {
+            await mocks.enable("polar", "tinybird");
+
+            // Use a small test image URL for reference image
+            // This tests that gptimage-large correctly uses the /images/edits endpoint
+            // which requires api-version=2025-04-01-preview (not the old 2024-02-01)
+            const referenceImageUrl =
+                "https://image.pollinations.ai/prompt/red%20circle?width=256&height=256&seed=1&nologo=true";
+            const encodedImageUrl = encodeURIComponent(referenceImageUrl);
+
+            const response = await SELF.fetch(
+                `http://localhost:3000/api/generate/image/transform%20into%20blue?model=gptimage-large&width=256&height=256&seed=42&image=${encodedImageUrl}`,
+                {
+                    method: "GET",
+                    headers: {
+                        "authorization": `Bearer ${apiKey}`,
+                    },
+                },
+            );
+
+            // Should return 200, not 404 "Resource not found"
+            // If this fails with 404, the API version is likely wrong (needs 2025-04-01-preview)
+            expect(response.status).toBe(200);
+            await response.arrayBuffer();
+        },
+    );
 });

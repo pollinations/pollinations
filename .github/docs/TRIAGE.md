@@ -46,8 +46,7 @@ flowchart TD
 
     A --> H[pr-assign-author.yml]
     H --> I[Author assigned]
-
-    A --> J[pr-add-to-project.yml]
+    I --> J[pr-add-to-project.yml]
     J --> K[Added to Project #20]
 ```
 
@@ -63,3 +62,14 @@ flowchart TD
     E --> F[Claude Code Action responds]
     F --> G[AI assists with code/questions]
 ```
+
+## Scripts
+
+| Script                 | Purpose        | AI Model     | Trigger               |
+| ---------------------- | -------------- | ------------ | --------------------- |
+| `pr_comment_review.py` | AI code review | claude-large | Comment `Review=True` |
+
+**pr_comment_review.py details:**
+
+-   Context: 900k tokens, Max output: 65k tokens
+-   Skips: lock files, minified, assets, source maps

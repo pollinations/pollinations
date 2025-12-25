@@ -19,16 +19,19 @@ flowchart TD
         A3 --> A4[Deploy to Cloudflare Pages]
     end
 
+    APPS --> ENTER
+
     subgraph ENTER["Enter Gateway"]
-        B1[Push to production] --> B2{enter.pollinations.ai changed?}
+        B1[Push to production] --> B2{enter changed?}
         B2 -->|Yes| B3[deploy-enter-cloudflare.yml]
-        B3 --> B4[Deploy to Cloudflare Workers]
+        B3 --> B4[Deploy to Workers]
     end
+
+    ENTER --> SERVICES
 
     subgraph SERVICES["Backend Services"]
         C1[Push to production/staging] --> C2[deploy-enter-services.yml]
         C2 --> C3[SSH to EC2]
-        C3 --> C4[Restart systemd services]
-        C4 --> C5[Health checks]
+        C3 --> C4[Restart services]
     end
 ```

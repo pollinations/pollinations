@@ -1,5 +1,13 @@
 # Tier Upgrade System
 
+## Issue Template
+
+The app submission process starts with the issue template at `.github/ISSUE_TEMPLATE/tier-app-submission.yml`:
+
+-   **Form fields**: App name, description, URL, GitHub repo, Discord, category, language
+-   **Categories**: Chat 💬, Creative 🎨, Games 🎲, Hack & Build 🛠️, Learn 📚, Social Bots 🤖, Vibe Coding ✨
+-   **Auto-label**: `tier:review` applied on creation
+
 ## Workflows
 
 -   **tier-app-submission.yml** - AI-powered app submission pipeline. Split into 3 jobs:
@@ -11,9 +19,13 @@
 
 ## Scripts
 
--   **.github/scripts/tier-apps-prepend.js** - Prepends a new row to `apps/APPS.md`.
--   **.github/scripts/tier-apps-update-readme.js** - Updates README with last 10 apps from `apps/APPS.md`.
--   **.github/scripts/tier-apps-check-links.js** - Checks all app URLs for broken links. Run with `--report` to generate `apps/BROKEN_APPS.md`.
+| Script                       | Purpose                         | Usage                                                     |
+| ---------------------------- | ------------------------------- | --------------------------------------------------------- |
+| `tier-apps-prepend.js`       | Prepend new app to APPS.md      | `NEW_ROW="..." node .github/scripts/tier-apps-prepend.js` |
+| `tier-apps-update-readme.js` | Update README with last 10 apps | `node .github/scripts/tier-apps-update-readme.js`         |
+| `tier-apps-check-links.js`   | Check for broken app links      | `node .github/scripts/tier-apps-check-links.js [options]` |
+
+**tier-apps-check-links.js options**: `--timeout=<ms>`, `--category=<name>`, `--verbose`, `--update`, `--report`
 
 ## Tier Hierarchy
 
@@ -43,15 +55,7 @@ flowchart TD
         A9 --> A10[Create PR automatically]
     end
 
-    subgraph PR["Direct PR"]
-        B1[User opens PR] --> B2[pr-label-external.yml]
-        B2 --> B3{Check D1 tier}
-        B3 -->|flower+| B4[pr:external]
-        B3 -->|seed/none| B5[tier:review]
-    end
-
     A10 --> C[Maintainer reviews]
-    B5 --> C
 
     C --> D{Approve?}
     D -->|Yes| E[Merge PR]

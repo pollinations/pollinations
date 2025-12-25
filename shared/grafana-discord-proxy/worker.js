@@ -75,11 +75,13 @@ function transformGrafanaToDiscord(grafana) {
         return { content: grafana.message || "Alert received" };
     }
 
-    // Bullet points with red emoji at end
+    // Bullet points with severity-based emoji at end
     const lines = firingAlerts.map((alert) => {
         const model = alert.labels?.model || "unknown";
+        const severity = alert.labels?.severity || "warning";
         const summary = alert.annotations?.summary || "Alert firing";
-        return `• **${model}**: ${summary} 🔴`;
+        const emoji = severity === "critical" ? "🔴" : "🟡";
+        return `• **${model}**: ${summary} ${emoji}`;
     });
 
     return { content: lines.join("\n") };

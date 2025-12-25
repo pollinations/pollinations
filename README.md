@@ -7,6 +7,11 @@
 | Name | Description | Author |
 |------|-------------|--------|
 | [BCA Nepal](https://play.google.com/store/apps/details/BCA_Nepal_BCA_Notes_Course?id=com.bcanepal&hl=en_IN) | BCA Nepal: Notes, courses, AI chat & PDF AI tools for smarter study | @sushilbalami |
+| [PromptPi!](https://chromewebstore.google.com/detail/promptpi-image-to-prompt/dmcckiclfondnkgncnajmdcblimekgbk) | Reverse-engineer images into pro AI prompts with batch & multi-model support | @dreamm160 |
+| [AI Logo and Business Name Generators](https://bilgu.com/tools/ai-generated-names) | Pollinations-powered AI logo + business name generators | @m4jor101 |
+| [IA Bob Goods - Coloring Book Generator](https://ia.gmtec.tec.br) | AI tool to generate kids' coloring books with stories, line art & PDFs | @adeniltogracheki |
+| [DOPPYai](https://doppyai.ir) | AI mobile app that generates high-quality images from text prompts | @hosi1996 |
+| [n8n-grok](https://perchance.org/n8n-style) | Node-based image gen: prompt+styles, sampler, I2P, drag layout save/load | @aikhusus2025-ctrl |
 | [Shaper AI](https://getshaper.app/) | AI Chrome extension to edit pages, chat, write, and summarize PDFs | @stanica |
 | [Asive AI](https://asive.duckdns.org) | Gen-Z chatbot with smooth UI and animations. Uses Pollinations text and vision m... | @flyinqe |
 | [Multi Image Generator](https://perchance.org/multi-image-generator) | Perchance image generator with img2img and multi-model comparison. Generate with... | @itzGlitch-AS |
@@ -15,7 +20,6 @@
 | [Zuhri](https://github.com/humair-m/zuhri.rs) | High-performance Rust CLI AI assistant with interactive chat, code generation wi... | @Humair-025 |
 | [Imgoo](https://imgoo.netlify.app/) | AI image generator with creative controls including aspect ratio, guidance scale... | @redythacker-cyber |
 | [TeleChars AI](https://telecharsai.byethost14.com) | Plataforma para crear personajes IA personalizados en Telegram. Configura person... | @marcosfrgames08 |
-| [Nosde Space](https://www.nosde.space/) | All-in-one AI platform for creating images, videos, text, and audio. Features co... | @unknow_junior |
 
 [View all apps →](apps/APPS.md)
 ## 🚀 New Unified API — Now Live

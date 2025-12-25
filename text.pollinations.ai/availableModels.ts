@@ -6,6 +6,7 @@ import {
 } from "./transforms/createSystemPromptTransform.js";
 import { pipe } from "./transforms/pipe.js";
 import { createGeminiToolsTransform } from "./transforms/createGeminiToolsTransform.ts";
+import { sanitizeToolSchemas } from "./transforms/sanitizeToolSchemas.js";
 
 // Import persona prompts
 import midijourneyPrompt from "./personas/midijourney.js";
@@ -90,7 +91,7 @@ const models: ModelDefinition[] = [
         config: portkeyConfig["gemini-3-flash-preview"],
         transform: pipe(
             createSystemPromptTransform(BASE_PROMPTS.conversational),
-            // code_execution + url_context (both non-search tools, can be combined)
+            sanitizeToolSchemas(),
             createGeminiToolsTransform(["code_execution", "url_context"]),
         ),
     },
@@ -99,7 +100,7 @@ const models: ModelDefinition[] = [
         config: portkeyConfig["gemini-2.5-flash-lite"],
         transform: pipe(
             createSystemPromptTransform(BASE_PROMPTS.conversational),
-            // code_execution + url_context (both non-search tools, can be combined)
+            sanitizeToolSchemas(),
             createGeminiToolsTransform(["code_execution", "url_context"]),
         ),
     },
@@ -107,7 +108,7 @@ const models: ModelDefinition[] = [
         name: "gemini-search",
         config: portkeyConfig["gemini-2.5-flash-lite"],
         transform: pipe(
-            // Only google_search - url_context is NOT a search tool on Vertex AI
+            sanitizeToolSchemas(),
             createGeminiToolsTransform(["google_search"]),
         ),
     },
@@ -141,7 +142,7 @@ const models: ModelDefinition[] = [
         config: portkeyConfig["gemini-3-pro-preview"],
         transform: pipe(
             createSystemPromptTransform(BASE_PROMPTS.conversational),
-            // code_execution + url_context (both non-search tools, can be combined)
+            sanitizeToolSchemas(),
             createGeminiToolsTransform(["code_execution", "url_context"]),
         ),
     },

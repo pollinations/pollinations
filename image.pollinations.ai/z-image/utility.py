@@ -1,11 +1,10 @@
 from gfpgan import GFPGANer
-from PIL import Image, ImageFilter
+from PIL import Image
 import numpy as np
 from diffusers.pipelines.stable_diffusion.safety_checker import StableDiffusionSafetyChecker as BaseSafetyChecker, cosine_distance
 from abc import ABC
 import torch
-from diffusers.utils import logging
-from transformers import CLIPConfig, AutoFeatureExtractor
+from transformers import CLIPConfig
 from scipy.ndimage import gaussian_filter
 from skimage import filters
 from loguru import logger

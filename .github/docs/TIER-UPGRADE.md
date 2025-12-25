@@ -1,5 +1,13 @@
 # Tier Upgrade System
 
+## Issue Template
+
+The app submission process starts with the issue template at `.github/ISSUE_TEMPLATE/tier-app-submission.yml`:
+
+-   **Form fields**: App name, description, URL, GitHub repo, Discord, category, language
+-   **Categories**: Chat 💬, Creative 🎨, Games 🎲, Hack & Build 🛠️, Learn 📚, Social Bots 🤖, Vibe Coding ✨
+-   **Auto-label**: `tier:review` applied on creation
+
 ## Workflows
 
 -   **tier-app-submission.yml** - AI-powered app submission pipeline. Split into 3 jobs:
@@ -11,9 +19,38 @@
 
 ## Scripts
 
--   **.github/scripts/tier-apps-prepend.js** - Prepends a new row to `apps/APPS.md`.
--   **.github/scripts/tier-apps-update-readme.js** - Updates README with last 10 apps from `apps/APPS.md`.
--   **.github/scripts/tier-apps-check-links.js** - Checks all app URLs for broken links. Run with `--report` to generate `apps/BROKEN_APPS.md`.
+### tier-apps-prepend.js
+
+Prepends a new app entry to `apps/APPS.md`.
+
+```bash
+NEW_ROW="| 🎨 | [App Name](url) | Description | en | creative | @user | repo | ⭐10 | | | 2025-01-01 |" \
+  node .github/scripts/tier-apps-prepend.js
+```
+
+### tier-apps-update-readme.js
+
+Updates root README with the last 10 apps from `apps/APPS.md`.
+
+```bash
+node .github/scripts/tier-apps-update-readme.js
+```
+
+### tier-apps-check-links.js
+
+Checks all app URLs for broken links.
+
+```bash
+# Basic check
+node .github/scripts/tier-apps-check-links.js
+
+# Options
+--timeout=<ms>     # Set timeout (default: 10000)
+--category=<name>  # Check only specific category
+--verbose          # Show detailed output
+--update           # Add ❌ to broken apps in APPS.md
+--report           # Generate apps/BROKEN_APPS.md
+```
 
 ## Tier Hierarchy
 

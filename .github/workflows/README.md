@@ -2,14 +2,14 @@
 
 ## Documentation
 
-| Document                             | Description                                      |
-| ------------------------------------ | ------------------------------------------------ |
-| [Labels](docs/LABELS.md)             | Label system reference (inbox, tier, PR labels)  |
-| [Tier Upgrade](docs/TIER-UPGRADE.md) | App submissions & contributor tier system        |
-| [News & Social](docs/NEWS-SOCIAL.md) | Weekly news, Discord, Instagram pipelines        |
-| [Triage](docs/TRIAGE.md)             | Issue/PR labeling, AI agents, project management |
-| [Deployment](docs/DEPLOYMENT.md)     | Deploy pipelines (Cloudflare, EC2)               |
-| [Maintenance](docs/MAINTENANCE.md)   | Branch cleanup, CI/testing                       |
+| Document                                | Description                                      |
+| --------------------------------------- | ------------------------------------------------ |
+| [Labels](../docs/LABELS.md)             | Label system reference (inbox, tier, PR labels)  |
+| [Tier Upgrade](../docs/TIER-UPGRADE.md) | App submissions & contributor tier system        |
+| [News & Social](../docs/NEWS-SOCIAL.md) | Weekly news, Discord, Instagram, Reddit          |
+| [Triage](../docs/TRIAGE.md)             | Issue/PR labeling, AI agents, project management |
+| [Deployment](../docs/DEPLOYMENT.md)     | Deploy pipelines (Cloudflare, EC2)               |
+| [Maintenance](../docs/MAINTENANCE.md)   | Branch cleanup, CI/testing                       |
 
 ---
 

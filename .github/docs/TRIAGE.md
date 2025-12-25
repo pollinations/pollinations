@@ -63,3 +63,34 @@ flowchart TD
     E --> F[Claude Code Action responds]
     F --> G[AI assists with code/questions]
 ```
+
+## Scripts
+
+### pr_comment_review.py
+
+AI-powered code review bot using Claude. Located at `.github/scripts/pr_comment_review.py`.
+
+**Configuration:**
+
+-   **AI Model**: `claude-large` (via Pollinations API)
+-   **Context window**: 900k tokens (1M limit with buffer)
+-   **Max output**: 65k tokens
+
+**Triggers:**
+
+-   Manual: Comment `Review=True` on any PR
+-   `AUTO_REVIEW = False` (disabled by default)
+-   `REVIEW_ON_SYNC = False` (disabled by default)
+
+**Skipped files:**
+
+-   Lock files: `package-lock.json`, `yarn.lock`, `pnpm-lock.yaml`
+-   Minified: `*.min.js`, `*.min.css`
+-   Assets: `*.svg`, `*.png`, `*.jpg`, `*.gif`, `*.ico`, `*.woff`, `*.woff2`
+-   Source maps: `*.map`
+
+**Environment Variables:**
+
+-   `GITHUB_TOKEN` - GitHub API access
+-   `PR_NUMBER` - PR to review
+-   `REPO_OWNER` / `REPO_NAME` - Repository info

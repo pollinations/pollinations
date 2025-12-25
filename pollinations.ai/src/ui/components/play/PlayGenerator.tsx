@@ -78,6 +78,13 @@ export function PlayGenerator({
     );
     const supportsImageInput = currentModelData?.hasImageInput || false;
 
+    const addImageUrl = () => {
+        if (imageUrlInput.trim() && imageUrls.length < 4) {
+            setImageUrls([...imageUrls, imageUrlInput.trim()]);
+            setImageUrlInput("");
+        }
+    };
+
     const handleGenerate = async () => {
         setIsLoading(true);
         setError(null);
@@ -202,7 +209,7 @@ export function PlayGenerator({
                     {imageUrls.length > 0 && (
                         <div className="flex gap-2 mb-2 flex-wrap">
                             {imageUrls.map((url, index) => (
-                                <div key={url} className="relative">
+                                <div key={index} className="relative">
                                     <img
                                         src={url}
                                         alt={`Reference ${index + 1}`}
@@ -234,17 +241,9 @@ export function PlayGenerator({
                             value={imageUrlInput}
                             onChange={(e) => setImageUrlInput(e.target.value)}
                             onKeyDown={(e) => {
-                                if (
-                                    e.key === "Enter" &&
-                                    imageUrlInput.trim() &&
-                                    imageUrls.length < 4
-                                ) {
+                                if (e.key === "Enter") {
                                     e.preventDefault();
-                                    setImageUrls([
-                                        ...imageUrls,
-                                        imageUrlInput.trim(),
-                                    ]);
-                                    setImageUrlInput("");
+                                    addImageUrl();
                                 }
                             }}
                             placeholder="https://example.com/image.jpg"
@@ -253,18 +252,7 @@ export function PlayGenerator({
                         />
                         <button
                             type="button"
-                            onClick={() => {
-                                if (
-                                    imageUrlInput.trim() &&
-                                    imageUrls.length < 4
-                                ) {
-                                    setImageUrls([
-                                        ...imageUrls,
-                                        imageUrlInput.trim(),
-                                    ]);
-                                    setImageUrlInput("");
-                                }
-                            }}
+                            onClick={addImageUrl}
                             disabled={
                                 !imageUrlInput.trim() || imageUrls.length >= 4
                             }

@@ -10,9 +10,14 @@ from scipy.ndimage import gaussian_filter
 from skimage import filters
 from loguru import logger
 import threading
+import os
+import requests
 
+
+UPSCALER_MODEL_PATH = "model_cache"
+MODEL_PATH = "model_cache"
 BLOCK_SIZE = 128
-OVERLAP = 32 
+OVERLAP = 16 
 DEBUG_BLOCK_ANALYSIS = False
 FLAT_BLOCK_VARIANCE_THRESHOLD = 350.0
 UPSCALE_INFERENCE_STEPS = 10  
@@ -27,6 +32,28 @@ upscale_stats = {
     "face_enhanced_blocks": 0
 }
 
+
+def download_model(model_name : str):
+    model_url_map = {
+        "GFPGANv1.4.pth": "https://github.com/TencentARC/GFPGAN/releases/download/v1.3.0/GFPGANv1.4.pth"
+    }
+    
+    if not os.path.exists(UPSCALER_MODEL_PATH):
+        os.makedirs(UPSCALER_MODEL_PATH, exist_ok=True)
+    model_path = os.path.join(UPSCALER_MODEL_PATH, model_name)
+    if not os.path.exists(model_path):
+        print(f"Downloading {model_name}...")
+        url = model_url_map.get(model_name)
+        if not url:
+            print(f"Model {model_name} not found in available models")
+            return
+        response = requests.get(url, stream=True)
+        response.raise_for_status()
+        with open(model_path, "wb") as f:
+            for chunk in response.iter_content(8192):
+                f.write(chunk)
+        
+        print(f"Model downloaded: {UPSCALER_MODEL_PATH}/{model_name}")
 
 def numpy_to_pil(images):
     if images.ndim == 3:
@@ -472,9 +499,6 @@ class StableDiffusionSafetyChecker(BaseSafetyChecker, ABC):
 
         has_nsfw_concepts = [len(res["bad_concepts"]) > 0 for res in result]
         return has_nsfw_concepts, result
-
-
-
 
 
 def replace_sets_with_lists(obj):

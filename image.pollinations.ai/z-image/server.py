@@ -33,7 +33,7 @@ from utility import (
     restore_faces_in_upscaled_image,
     upscale_block_wrapper 
     )
-from utility import UPSCALE_FACTOR, MAX_CONCURRENT_UPSCALES, generate_lock, upscale_stats
+from utility import UPSCALE_FACTOR, MAX_CONCURRENT_UPSCALES, generate_lock, upscale_stats, OVERLAP
 from transformers import AutoFeatureExtractor
 
 
@@ -60,12 +60,10 @@ SAFETY_NSFW_MODEL = "CompVis/stable-diffusion-safety-checker"
 MIN_GEN_SIZE = 512
 MAX_GEN_SIZE = 768
 BLOCK_SIZE = 128
-OVERLAP = 32 
 MAX_FINAL_SIZE = 2048
 ENABLE_FACE_RESTORATION = True
 ENABLE_NSFW_CHECK = True
-
-BLUR_DETECTION_THRESHOLD = 1.5
+BLUR_DETECTION_THRESHOLD = 1.6
 DEBUG_BLOCK_ANALYSIS = False
 TARGET_LANCZOS_RATIO = 0.9
 pipe = None
@@ -127,10 +125,6 @@ class ImageRequest(BaseModel):
     height: int = Field(default=1024, le=4096)
     steps: int = Field(default=9, le=50)
     seed: int | None = None
-
-
-
-
 
 
 

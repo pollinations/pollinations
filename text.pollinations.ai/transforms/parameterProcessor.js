@@ -61,9 +61,6 @@ export function processParameters(messages, options) {
         /^(o[134](-mini|-preview)?|gpt-5)/i.test(model) ||
         /thinking/i.test(model);
 
-    const isReasoningOrGpt5Model = /^(o[134](-mini|-preview)?|gpt-5)/i.test(
-        model,
-    );
     if (isReasoningOrGpt5Model) {
         log(`Forcing temperature=1 for reasoning/GPT-5 model: ${model}`);
         updatedOptions.temperature = 1;

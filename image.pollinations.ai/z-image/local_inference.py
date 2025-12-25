@@ -5,9 +5,9 @@ import time
 url = "http://localhost:10002/generate"
 start_time = time.time()
 payload = {
-    "prompts": ["A korean girl and indian girl with a dog in a meadow with flowers, 16:9 aspect ratio"],
-    "width":1024,   
-    "height": 576,   
+    "prompts": ["A couple having coffee in a modern cafe, 16:9 aspect ratio"],
+    "width": 768,   
+    "height":  768,   
     "steps": 9
 }
 

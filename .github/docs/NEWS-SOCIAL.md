@@ -95,14 +95,6 @@ All scripts are in `.github/scripts/` and use Python 3 with the Pollinations AI 
 | `instagram_generate_post.py` | Generates caption + image for Instagram | gemini-large |
 | `instagram_publish_post.py`  | Publishes to Instagram via Graph API    | -            |
 
-### Environment Variables
-
-These scripts require:
-
--   `GITHUB_TOKEN` - GitHub API access
--   `DISCORD_WEBHOOK_URL` - Discord webhook (for Discord scripts)
--   `INSTAGRAM_*` - Instagram API credentials (for Instagram scripts)
-
 ## Reddit Bot
 
 Automated bot for **r/pollinations_ai** subreddit. Located at `.github/scripts/reddit_workflow/`.

@@ -55,10 +55,18 @@ Most workflows use **Polly Bot** (GitHub App) for authentication instead of pers
 -   Actions appear as bot, not a user
 -   No PAT expiration issues
 
-**Required secrets:**
+---
 
--   `POLLY_BOT_APP_ID`
--   `POLLY_BOT_PRIVATE_KEY`
+## Environment Variables
+
+| Secret                  | Purpose                | Used by           |
+| ----------------------- | ---------------------- | ----------------- |
+| `POLLY_BOT_APP_ID`      | GitHub App ID          | Most workflows    |
+| `POLLY_BOT_PRIVATE_KEY` | GitHub App private key | Most workflows    |
+| `GITHUB_TOKEN`          | GitHub API access      | Scripts           |
+| `DISCORD_WEBHOOK_URL`   | Discord posting        | Discord scripts   |
+| `INSTAGRAM_*`           | Instagram Graph API    | Instagram scripts |
+| `CLOUDFLARE_*`          | Cloudflare deployment  | Deploy workflows  |
 
 ---
 

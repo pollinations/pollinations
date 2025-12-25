@@ -6,6 +6,7 @@
 
 | Name | Description | Author |
 |------|-------------|--------|
+| [PromptPi!](https://chromewebstore.google.com/detail/promptpi-image-to-prompt/dmcckiclfondnkgncnajmdcblimekgbk) | Reverse-engineer images into pro AI prompts with batch & multi-model support | @dreamm160 |
 | [AI Logo and Business Name Generators](https://bilgu.com/tools/ai-generated-names) | Pollinations-powered AI logo + business name generators | @m4jor101 |
 | [IA Bob Goods - Coloring Book Generator](https://ia.gmtec.tec.br) | AI tool to generate kids' coloring books with stories, line art & PDFs | @adeniltogracheki |
 | [DOPPYai](https://doppyai.ir) | AI mobile app that generates high-quality images from text prompts | @hosi1996 |

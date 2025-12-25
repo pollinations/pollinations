@@ -40,7 +40,6 @@ from transformers import AutoFeatureExtractor
 os.environ["HF_HUB_DISABLE_PROGRESS_BARS"] = "1"
 os.environ["TQDM_DISABLE"] = "1"
 warnings.filterwarnings("ignore")
-
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
@@ -51,13 +50,41 @@ for noisy in ["httpx", "httpcore", "urllib3", "diffusers", "transformers", "hugg
     logging.getLogger(noisy).setLevel(logging.WARNING)
 
 
+
+
+MODEL_ID = "Tongyi-MAI/Z-Image-Turbo"
+MODEL_CACHE = "model_cache"
+UPSCALER_MODEL_ID = "stabilityai/stable-diffusion-x4-upscaler"
+FACE_ENHANCER_MODEL = "model_cache/GFPGANv1.4.pth"
+SAFETY_NSFW_MODEL = "CompVis/stable-diffusion-safety-checker"
+MIN_GEN_SIZE = 512
+MAX_GEN_SIZE = 768
+BLOCK_SIZE = 128
+OVERLAP = 32 
+MAX_FINAL_SIZE = 2048
+ENABLE_FACE_RESTORATION = True
+ENABLE_NSFW_CHECK = True
+
+BLUR_DETECTION_THRESHOLD = 1.5
+DEBUG_BLOCK_ANALYSIS = False
+TARGET_LANCZOS_RATIO = 0.9
+pipe = None
+upscaler_pipeline = None
+face_enhancer = None
+face_detector = None
+heartbeat_task = None
+SAFETY_EXTRACTOR = None
+SAFETY_MODEL = None
+timing_report = {}
+
+
+
 def get_public_ip():
     try:
         response = requests.get('https://api.ipify.org', timeout=5)
         return response.text
     except Exception:
         return None
-
 
 async def send_heartbeat():
     public_ip = os.getenv("PUBLIC_IP")
@@ -92,33 +119,6 @@ async def periodic_heartbeat():
         except Exception as e:
             logger.error(f"Error in periodic heartbeat: {e}")
             await asyncio.sleep(5)
-
-
-MODEL_ID = "Tongyi-MAI/Z-Image-Turbo"
-MODEL_CACHE = "model_cache"
-UPSCALER_MODEL_ID = "stabilityai/stable-diffusion-x4-upscaler"
-FACE_ENHANCER_MODEL = "model_cache/GFPGANv1.4.pth"
-SAFETY_NSFW_MODEL = "CompVis/stable-diffusion-safety-checker"
-MIN_GEN_SIZE = 512
-MAX_GEN_SIZE = 768
-BLOCK_SIZE = 128
-OVERLAP = 32 
-MAX_FINAL_SIZE = 2048
-ENABLE_FACE_RESTORATION = True
-ENABLE_NSFW_CHECK = True
-
-BLUR_DETECTION_THRESHOLD = 1.5
-DEBUG_BLOCK_ANALYSIS = False
-TARGET_LANCZOS_RATIO = 0.9
-pipe = None
-upscaler_pipeline = None
-face_enhancer = None
-face_detector = None
-heartbeat_task = None
-SAFETY_EXTRACTOR = None
-SAFETY_MODEL = None
-timing_report = {}
-
 
 
 class ImageRequest(BaseModel):

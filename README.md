@@ -6,6 +6,7 @@
 
 | Name | Description | Author |
 |------|-------------|--------|
+| [AquaMind](https://aquamind.app) | AI-powered aquarium management and fish care assistant | @aquamind |
 | [Word Wagon](https://wordwagon.app) | AI-powered vocabulary learning app with spaced repetition | @wordwagon |
 | [nusanexus](https://nusanexus.com) | AI-powered chat platform for Indonesian users | @nusanexus |
 | [Nuvole AI Lite](https://nuvoleai.com) | Lightweight AI chat app with clean UI and fast responses | @nuvoleai |

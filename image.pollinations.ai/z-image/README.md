@@ -15,17 +15,23 @@ FastAPI server for Z-Image-Turbo (6B parameter text-to-image model from Tongyi-M
 flowchart TD
   A[Client Request] --> B["Calculate Dimensions<br/>(clamp to 512-768)"]
   B --> C["Z-Image Generation<br/>(6B model)"]
-  C --> D["Slice into Overlapping<br/>Blocks 128×128 + 32px overlap"]
+  C --> D["Slice into Overlapping<br/>Blocks 128×128"]
   D --> E["Saliency Analysis<br/>(edge + laplacian + color variance)"]
+  
   E --> F["Detect Subject Blocks<br/>(top 15% saliency)"]
-  F --> G["Variance Analysis<br/>(threshold: 350.0)"]
+  E --> G["Variance Analysis<br/>(threshold: 350.0)"]
+  
+  F --> I["Enforce SDXL Ratio<br/>(Priority: Subject)"]
   G --> H["Classify Flat Blocks<br/>(var < threshold/2)"]
-  H --> I["Enforce LANCZOS Ratio<br/>(target: 80% SDXL / 20% LANCZOS)"]
+  H --> I
+  
   I --> J["Parallel Upscaling<br/>(ThreadPool max 4)"]
   J --> J1["SDXL Path<br/>(SD X4 upscaler)"]
   J --> J2["LANCZOS Path<br/>(fast interpolation)"]
+  
   J1 --> K["Stitch with Feather Mask<br/>(gaussian blending)"]
   J2 --> K
+  
   K --> L["Face Detection<br/>(MediaPipe)"]
   L --> M["Face Restoration<br/>(GFPGAN v1.4)"]
   M --> N["Resize to Final Dimensions<br/>(client requested)"]

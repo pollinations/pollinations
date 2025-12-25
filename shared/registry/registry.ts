@@ -11,8 +11,6 @@ import {
     ImageServiceId,
     ImageModelId,
 } from "./image";
-import { EventType } from "./types";
-import { z } from "zod";
 
 const PRECISION = 8;
 
@@ -54,9 +52,10 @@ export type PriceDefinition = UsageConversionDefinition;
 export type ModelDefinition = CostDefinition[];
 
 // Pre-build MODEL_REGISTRY (modelId -> sorted cost definitions)
+// Uses lowercase keys for case-insensitive lookup (Azure returns lowercase model IDs)
 const MODEL_REGISTRY = Object.fromEntries(
     Object.values({ ...TEXT_SERVICES, ...IMAGE_SERVICES }).map((service) => [
-        service.modelId,
+        service.modelId.toLowerCase(),
         sortDefinitions([...service.cost]),
     ]),
 );
@@ -163,7 +162,7 @@ export function resolveServiceId(serviceId: string): ServiceId {
  * Check if a model ID exists in the registry
  */
 export function isValidModel(modelId: ModelId): modelId is ModelId {
-    return !!MODEL_REGISTRY[modelId];
+    return !!MODEL_REGISTRY[modelId.toLowerCase()];
 }
 
 /**
@@ -219,7 +218,7 @@ export function getServiceAliases(serviceId: ServiceId): readonly string[] {
 export function getModelDefinition(
     modelId: string,
 ): ModelDefinition | undefined {
-    return MODEL_REGISTRY[modelId as ModelId];
+    return MODEL_REGISTRY[modelId.toLowerCase() as ModelId];
 }
 
 /**
@@ -229,7 +228,7 @@ export function getActiveCostDefinition(
     modelId: ModelId,
     date: Date = new Date(),
 ): CostDefinition | null {
-    const modelDefinition = MODEL_REGISTRY[modelId];
+    const modelDefinition = MODEL_REGISTRY[modelId.toLowerCase()];
     if (!modelDefinition) return null;
     for (const definition of modelDefinition) {
         if (definition.date < date.getTime()) return definition;
@@ -299,85 +298,4 @@ export function calculatePrice(
     };
 }
 
-/**
- * Enriched model information exposed to end users via API
- * Shows pricing and aliases but not internal details (modelId, cost, provider)
- */
-export interface ModelInfo {
-    name: string; // Service name (user-facing identifier)
-    aliases: readonly string[]; // Alternative names for this model
-    pricing: {
-        input_token_price?: number;
-        output_token_price?: number;
-        cached_token_price?: number;
-        image_price?: number;
-        audio_input_price?: number;
-        audio_output_price?: number;
-        video_second_price?: number;
-        video_token_price?: number;
-        currency: "USD";
-    };
-    // User-facing metadata
-    description?: string;
-    input_modalities?: readonly string[];
-    output_modalities?: readonly string[];
-    tools?: boolean;
-    reasoning?: boolean;
-    search?: boolean;
-    context_window?: number;
-    voices?: readonly string[];
-    isSpecialized?: boolean;
-}
-
-/**
- * Get enriched model information for a service
- * Combines pricing from price definitions with metadata from service definition
- */
-export function getModelInfo(serviceId: ServiceId): ModelInfo {
-    const service = SERVICE_REGISTRY[serviceId];
-    const priceDefinition = getActivePriceDefinition(serviceId);
-
-    if (!priceDefinition) {
-        throw new Error(`No price definition found for service: ${serviceId}`);
-    }
-
-    return {
-        name: serviceId as string,
-        aliases: service.aliases,
-        pricing: {
-            input_token_price: priceDefinition.promptTextTokens,
-            output_token_price: priceDefinition.completionTextTokens,
-            cached_token_price: priceDefinition.promptCachedTokens,
-            image_price: priceDefinition.completionImageTokens,
-            audio_input_price: priceDefinition.promptAudioTokens,
-            audio_output_price: priceDefinition.completionAudioTokens,
-            video_second_price: priceDefinition.completionVideoSeconds,
-            video_token_price: priceDefinition.completionVideoTokens,
-            currency: "USD",
-        },
-        // User-facing metadata from service definition
-        description: service.description,
-        input_modalities: service.inputModalities,
-        output_modalities: service.outputModalities,
-        tools: service.tools,
-        reasoning: service.reasoning,
-        search: service.search,
-        context_window: service.contextWindow,
-        voices: service.voices,
-        isSpecialized: service.isSpecialized,
-    };
-}
-
-/**
- * Get all text models with enriched information
- */
-export function getTextModelsInfo(): ModelInfo[] {
-    return getTextServices().map(getModelInfo);
-}
-
-/**
- * Get all image models with enriched information
- */
-export function getImageModelsInfo(): ModelInfo[] {
-    return getImageServices().map(getModelInfo);
-}
+// ModelInfo, getModelInfo, getTextModelsInfo, getImageModelsInfo are in model-info.ts

@@ -1,0 +1,224 @@
+import { useState, useEffect } from "react";
+import { Heading, Label } from "../ui/typography";
+import { Button } from "../ui/button";
+import { DOCS_PAGE } from "../../../theme";
+import { API_BASE, API_KEY } from "../../../api.config";
+import { ALLOWED_TEXT_MODELS } from "../../../config/allowedModels";
+
+/**
+ * Text Generation Card Component
+ * Interactive demo for the text generation API
+ */
+export function TextGenCard() {
+    const [selectedPrompt, setSelectedPrompt] = useState(
+        DOCS_PAGE.textPrompts[0]
+    );
+    const [selectedModel, setSelectedModel] = useState("openai-fast");
+    const [params, setParams] = useState<Set<string>>(new Set());
+    const [response, setResponse] = useState("");
+    const [isLoading, setIsLoading] = useState(false);
+
+    const toggleParam = (param: string) => {
+        const newParams = new Set(params);
+        if (newParams.has(param)) {
+            newParams.delete(param);
+        } else {
+            newParams.add(param);
+        }
+        setParams(newParams);
+    };
+
+    const buildUrl = () => {
+        let url = `${API_BASE}/text/${encodeURIComponent(selectedPrompt)}`;
+        const urlParams = new URLSearchParams();
+        urlParams.append("model", selectedModel);
+        if (params.size > 0) {
+            Array.from(params).forEach((p) => {
+                const [key, value] = p.split("=");
+                urlParams.append(key, value);
+            });
+        }
+        const paramString = urlParams.toString();
+        if (paramString) {
+            url += "?" + paramString;
+        }
+        return url;
+    };
+
+    useEffect(() => {
+        const buildTextUrl = () => {
+            let url = `${API_BASE}/text/${encodeURIComponent(selectedPrompt)}`;
+            const urlParams = new URLSearchParams();
+            urlParams.append("model", selectedModel);
+            // Don't include stream param in actual fetch - just for display
+            if (params.size > 0) {
+                Array.from(params)
+                    .filter((p) => !p.startsWith("stream="))
+                    .forEach((p) => {
+                        const [key, value] = p.split("=");
+                        urlParams.append(key, value);
+                    });
+            }
+            const paramString = urlParams.toString();
+            if (paramString) {
+                url += "?" + paramString;
+            }
+            return url;
+        };
+
+        const fetchText = async () => {
+            setIsLoading(true);
+            try {
+                const url = buildTextUrl();
+                const res = await fetch(url, {
+                    headers: { Authorization: `Bearer ${API_KEY}` },
+                });
+                const text = await res.text();
+                setResponse(text);
+                setIsLoading(false);
+            } catch (error) {
+                console.error("Text fetch error:", error);
+                setIsLoading(false);
+            }
+        };
+
+        fetchText();
+    }, [selectedPrompt, selectedModel, params]);
+
+    return (
+        <div>
+            <Heading variant="section">
+                {DOCS_PAGE.textGenerationTitle.text}
+            </Heading>
+
+            {/* Prompts/Parameters and Response - Side by Side */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                {/* Left side: Prompts, Model, and Parameters */}
+                <div className="space-y-4">
+                    {/* Prompt Selection */}
+                    <div>
+                        <Label>{DOCS_PAGE.pickPromptLabel.text}</Label>
+                        <div className="flex flex-wrap gap-2">
+                            {DOCS_PAGE.textPrompts.map((prompt) => (
+                                <button
+                                    key={prompt}
+                                    type="button"
+                                    onClick={() => setSelectedPrompt(prompt)}
+                                    className={`px-3 py-1.5 font-mono text-xs border-2 transition-all cursor-pointer ${
+                                        selectedPrompt === prompt
+                                            ? "bg-indicator-text border-border-brand font-black shadow-shadow-brand-sm text-text-inverse"
+                                            : "bg-input-background border-border-main hover:border-border-brand text-text-body-main"
+                                    }`}
+                                >
+                                    {prompt}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+
+                    {/* Model Selection */}
+                    <div>
+                        <Label>{DOCS_PAGE.modelLabel.text}</Label>
+                        <div className="flex flex-wrap gap-2">
+                            {ALLOWED_TEXT_MODELS.slice(0, 6).map((model) => (
+                                <button
+                                    key={model}
+                                    type="button"
+                                    onClick={() => setSelectedModel(model)}
+                                    className={`px-3 py-1.5 font-mono text-xs border-2 transition-all cursor-pointer ${
+                                        selectedModel === model
+                                            ? "bg-indicator-text border-border-brand font-black shadow-shadow-brand-sm text-text-inverse"
+                                            : "bg-input-background border-border-main hover:border-border-brand text-text-body-main"
+                                    }`}
+                                >
+                                    {model}
+                                </button>
+                            ))}
+                        </div>
+                        <p className="font-body text-xs text-text-caption mt-2">
+                            {DOCS_PAGE.defaultModelLabel.text}
+                        </p>
+                    </div>
+
+                    {/* Parameters */}
+                    <div>
+                        <Label>{DOCS_PAGE.parametersLabel.text}</Label>
+                        <div className="flex flex-wrap gap-2">
+                            {DOCS_PAGE.textParameters.map(({ key, value }) => {
+                                const param = `${key}=${value}`;
+                                return (
+                                    <button
+                                        key={param}
+                                        type="button"
+                                        onClick={() => toggleParam(param)}
+                                        className={`px-3 py-1.5 font-mono text-xs border-2 transition-all cursor-pointer ${
+                                            params.has(param)
+                                                ? "bg-indicator-text border-border-brand font-black shadow-shadow-brand-sm text-text-inverse"
+                                                : "bg-input-background border-border-main hover:border-border-brand text-text-body-main"
+                                        }`}
+                                        title={
+                                            DOCS_PAGE.textParameters.find(
+                                                (p) => p.key === key
+                                            )?.description
+                                        }
+                                    >
+                                        {key}={value}
+                                    </button>
+                                );
+                            })}
+                        </div>
+                    </div>
+                </div>
+
+                {/* Right side: Response */}
+                <div className="bg-surface-card p-3 min-h-[200px] max-h-[200px] overflow-hidden">
+                    {isLoading ? (
+                        <p className="text-text-caption font-body text-xs">
+                            {DOCS_PAGE.generatingLabel.text}
+                        </p>
+                    ) : (
+                        <p className="font-body text-text-body-main text-xs leading-relaxed whitespace-pre-wrap overflow-y-auto h-full pr-2 scrollbar-hide">
+                            {response}
+                        </p>
+                    )}
+                </div>
+            </div>
+
+            {/* URL Display */}
+            <div className="mb-4 p-3 bg-input-background font-mono text-xs text-text-body-main break-all">
+                <span className="text-text-caption">
+                    https://{DOCS_PAGE.apiBaseUrl.text}/text/
+                </span>
+                <span className="bg-indicator-text px-1 font-black text-text-inverse">
+                    {selectedPrompt}
+                </span>
+                <span className="text-text-caption">?model=</span>
+                <span className="bg-indicator-text px-1 font-black text-text-inverse">
+                    {selectedModel}
+                </span>
+                {params.size > 0 && (
+                    <>
+                        {Array.from(params).map((param) => (
+                            <span key={param}>
+                                <span className="text-text-caption">&</span>
+                                <span className="bg-indicator-text px-1 font-black text-text-inverse">
+                                    {param}
+                                </span>
+                            </span>
+                        ))}
+                    </>
+                )}
+            </div>
+
+            {/* Copy Button */}
+            <Button
+                type="button"
+                onClick={() => navigator.clipboard.writeText(buildUrl())}
+                variant="copy"
+                size={null}
+            >
+                {DOCS_PAGE.copyUrlButton.text}
+            </Button>
+        </div>
+    );
+}

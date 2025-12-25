@@ -1,0 +1,157 @@
+name: Tier Recheck Registration
+
+on:
+  issue_comment:
+    types: [created]
+
+concurrency:
+  group: tier-recheck-${{ github.event.issue.number }}
+  cancel-in-progress: false
+
+jobs:
+  recheck-registration:
+    # Only run on issues/PRs with tier:info-needed label AND comment is from issue author
+    if: |
+      contains(github.event.issue.labels.*.name, 'tier:info-needed') &&
+      github.event.comment.user.login == github.event.issue.user.login
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: write
+      pull-requests: write
+
+    steps:
+      - name: Generate Pollinations AI Token
+        id: pollinations-ai
+        uses: actions/create-github-app-token@v1
+        with:
+          app-id: ${{ secrets.POLLY_BOT_APP_ID }}
+          private-key: ${{ secrets.POLLY_BOT_PRIVATE_KEY }}
+
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Check if user is now registered
+        id: check
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          GITHUB_USERNAME: ${{ github.event.issue.user.login }}
+        run: |
+          npm install -g wrangler
+          cd enter.pollinations.ai
+          npm install
+          
+          echo "Checking registration for $GITHUB_USERNAME..."
+          
+          if npx tsx scripts/tier-update-user.ts check-user \
+            --githubUsername "$GITHUB_USERNAME" \
+            --env production 2>&1 | grep -q "EXISTS"; then
+            echo "registered=true" >> $GITHUB_OUTPUT
+            echo "✅ User $GITHUB_USERNAME is now registered"
+          else
+            echo "registered=false" >> $GITHUB_OUTPUT
+            echo "❌ User $GITHUB_USERNAME is still not registered"
+          fi
+
+      - name: Upgrade tier if registered
+        id: upgrade
+        if: steps.check.outputs.registered == 'true'
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          POLAR_ACCESS_TOKEN: ${{ secrets.POLAR_ACCESS_TOKEN }}
+          GITHUB_USERNAME: ${{ github.event.issue.user.login }}
+        run: |
+          cd enter.pollinations.ai
+          
+          echo "🌸 Upgrading $GITHUB_USERNAME to flower tier..."
+          OUTPUT=$(npx tsx scripts/tier-update-user.ts update-tier \
+            --githubUsername "$GITHUB_USERNAME" \
+            --tier flower \
+            --env production \
+            --apply 2>&1) || true
+          
+          echo "$OUTPUT"
+          
+          # Check if user already at higher tier (skip silently)
+          if echo "$OUTPUT" | grep -q "SKIP_UPGRADE=true"; then
+            echo "✅ User already at flower tier or higher - skipping"
+            echo "success=skipped" >> $GITHUB_OUTPUT
+          elif echo "$OUTPUT" | grep -q "Tier update complete"; then
+            echo "success=true" >> $GITHUB_OUTPUT
+          else
+            echo "success=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Post result and update labels
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ steps.pollinations-ai.outputs.token }}
+          script: |
+            const registered = '${{ steps.check.outputs.registered }}' === 'true';
+            const upgradeResult = '${{ steps.upgrade.outputs.success }}';
+            const upgraded = upgradeResult === 'true';
+            const skipped = upgradeResult === 'skipped';
+            const issueNumber = context.payload.issue.number;
+            const username = context.payload.issue.user.login;
+            const isPR = !!context.payload.issue.pull_request;
+            
+            // If user already at flower tier or higher, skip silently
+            if (skipped) {
+              console.log(`User ${username} already at flower tier or higher - no action needed`);
+              return;
+            }
+            
+            if (registered && upgraded) {
+              // Success! Update labels and celebrate
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issueNumber,
+                body: `### 🌸 Flower Tier Activated!\n\n@${username}, you've been upgraded to **Flower tier** which grants you **10 pollen per day**!\n\n⏰ **How it works:** Your pollen balance refills every 24 hours. Unused pollen does not roll over.\n\nCheck your balance at [enter.pollinations.ai](https://enter.pollinations.ai) 🌻`
+              });
+              
+              // Update labels
+              try {
+                await github.rest.issues.removeLabel({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: issueNumber,
+                  name: 'tier:info-needed'
+                });
+              } catch (e) { /* label might not exist */ }
+              
+              try {
+                await github.rest.issues.removeLabel({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: issueNumber,
+                  name: 'tier:flower'
+                });
+              } catch (e) { /* label might not exist */ }
+              
+              await github.rest.issues.addLabels({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issueNumber,
+                labels: ['tier:done']
+              });
+              
+              console.log(`✅ Upgraded ${username} to Flower tier`);
+            } else if (!registered) {
+              // Still not registered - gentle reminder
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issueNumber,
+                body: `@${username}, I checked but couldn't find your account yet.\n\nPlease make sure you:\n1. Sign up at [enter.pollinations.ai](https://enter.pollinations.ai) using **GitHub login**\n2. Reply here once you've completed registration\n\nWe'll check again and upgrade your tier! 🌸`
+              });
+              
+              console.log(`User ${username} still not registered`);
+            }

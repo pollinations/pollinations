@@ -25,14 +25,14 @@
       "connection": "keep-alive",
       "content-length": "1283",
       "content-type": "application/json; charset=utf-8",
-      "date": "Thu, 11 Dec 2025 16:45:32 GMT",
-      "etag": "W/\"503-D5JKrYYM7XNBo+P8MedF4qas35U\"",
+      "date": "Tue, 23 Dec 2025 13:54:51 GMT",
+      "etag": "W/\"503-PAV1jO1NbM4D24j81C/C9jjH5HM\"",
       "keep-alive": "timeout=5",
       "x-model-used": "grok-4-fast-non-reasoning",
       "x-powered-by": "Express",
       "x-usage-completion-text-tokens": "2",
-      "x-usage-prompt-cached-tokens": "159",
-      "x-usage-prompt-text-tokens": "256",
+      "x-usage-prompt-cached-tokens": "396",
+      "x-usage-prompt-text-tokens": "19",
       "x-usage-total-tokens": "417"
     },
     "body": {
@@ -78,8 +78,8 @@
             "stop_reason": null
           }
         ],
-        "created": 1765471532,
-        "id": "pllns_a23e325c8ac24788a7e7173c8b272da0",
+        "created": 1766498090,
+        "id": "pllns_1c513c4954536afb62943e52ac8fdeab",
         "model": "grok-4-fast-non-reasoning",
         "object": "chat.completion",
         "prompt_filter_results": [
@@ -122,7 +122,7 @@
           "prompt_tokens": 415,
           "prompt_tokens_details": {
             "audio_tokens": 0,
-            "cached_tokens": 159,
+            "cached_tokens": 396,
             "image_tokens": 0,
             "text_tokens": 415
           },

@@ -8,6 +8,7 @@ import os
 import sys
 import json
 import time
+import re
 import random
 import base64
 import requests
@@ -22,7 +23,7 @@ POLLINATIONS_API_BASE = "https://gen.pollinations.ai/v1/chat/completions"
 POLLINATIONS_IMAGE_BASE = "https://gen.pollinations.ai/image"
 MODEL = "gemini-large"
 WEBSEARCH_MODEL = "perplexity-reasoning"
-IMAGE_MODEL = "nanobanana-pro"
+IMAGE_MODEL = "nanobanana"  # Use nanobanana for testing (nanobanana-pro for production)
 MAX_SEED = 2147483647  # Max int32
 MAX_RETRIES = 3
 INITIAL_RETRY_DELAY = 2  # Base delay for exponential backoff (2, 4, 8 seconds)
@@ -163,11 +164,12 @@ def get_merged_prs(owner: str, repo: str, start_date: datetime, token: str) -> L
     return all_prs
 
 
-def call_pollinations_api(system_prompt: str, user_prompt: str, token: str, temperature: float = 0.7, model: str = None) -> str:
+def call_pollinations_api(system_prompt: str, user_prompt: str, token: str, temperature: float = 0.7, model: str = None, verbose: bool = True) -> str:
     """Call Pollinations AI API with retry logic and exponential backoff
 
     Args:
         model: Model to use (defaults to MODEL constant if not specified)
+        verbose: If True, print full prompts sent to API
 
     Each attempt uses a new random seed (0 to MAX_SEED/int32).
     Retries use exponential backoff: 2s, 4s, 8s...
@@ -179,6 +181,20 @@ def call_pollinations_api(system_prompt: str, user_prompt: str, token: str, temp
 
     use_model = model or MODEL
     last_error = None
+
+    # Verbose logging
+    if verbose:
+        print(f"\n  [VERBOSE] API Call to {POLLINATIONS_API_BASE}")
+        print(f"  [VERBOSE] Model: {use_model}")
+        print(f"  [VERBOSE] Temperature: {temperature}")
+        print(f"  [VERBOSE] System prompt ({len(system_prompt)} chars):")
+        print(f"  ---BEGIN SYSTEM PROMPT---")
+        print(system_prompt[:2000] + ("..." if len(system_prompt) > 2000 else ""))
+        print(f"  ---END SYSTEM PROMPT---")
+        print(f"  [VERBOSE] User prompt ({len(user_prompt)} chars):")
+        print(f"  ---BEGIN USER PROMPT---")
+        print(user_prompt[:2000] + ("..." if len(user_prompt) > 2000 else ""))
+        print(f"  ---END USER PROMPT---")
 
     for attempt in range(MAX_RETRIES):
         # Each attempt gets a fresh random seed
@@ -213,7 +229,13 @@ def call_pollinations_api(system_prompt: str, user_prompt: str, token: str, temp
             if response.status_code == 200:
                 try:
                     result = response.json()
-                    return result['choices'][0]['message']['content']
+                    content = result['choices'][0]['message']['content']
+                    if verbose:
+                        print(f"  [VERBOSE] Response ({len(content)} chars):")
+                        print(f"  ---BEGIN RESPONSE---")
+                        print(content[:3000] + ("..." if len(content) > 3000 else ""))
+                        print(f"  ---END RESPONSE---")
+                    return content
                 except (KeyError, IndexError, json.JSONDecodeError) as e:
                     last_error = f"Error parsing API response: {e}"
                     print(f"  {last_error}")
@@ -229,61 +251,83 @@ def call_pollinations_api(system_prompt: str, user_prompt: str, token: str, temp
     return None
 
 
-def research_trending_content(token: str) -> Dict:
-    """Research current Instagram trends using AI with web capabilities"""
-
-    system_prompt = """You are a social media trend researcher for Pollinations.AI, an open-source AI platform.
-Your task is to research current Instagram trends that would work well for an AI/tech creative tools brand.
-
-Research and output a JSON object with:
-1. trending_styles: Current visual aesthetics trending on Instagram (colors, compositions, styles)
-2. popular_formats: What types of posts are performing well (carousels, single images, memes, etc.)
-3. ai_art_trends: What's trending in AI art community
-4. engagement_hooks: Caption styles, hooks, and CTAs that work
-5. meme_formats: Current popular meme templates or humor styles in tech/AI space
-6. hashtag_suggestions: Relevant trending hashtags
-
-Focus on: AI art, generative AI, creative tools, developer community, tech innovation.
-
-Output ONLY valid JSON, no markdown code blocks."""
-
-    user_prompt = """Research current Instagram trends for December 2025 that would work for Pollinations.AI -
-an open-source AI image/video generation platform. What visual styles, formats, and content types
-are performing well right now? What would make people stop scrolling?"""
-
-    print(f"Researching Instagram trends using {WEBSEARCH_MODEL}...")
-    response = call_pollinations_api(system_prompt, user_prompt, token, temperature=0.8, model=WEBSEARCH_MODEL)
-
-    if not response:
-        print("Trend research failed, using defaults")
-        return {
-            "trending_styles": ["vibrant gradients", "minimalist tech", "neon aesthetics"],
-            "popular_formats": ["carousel", "single striking image"],
-            "ai_art_trends": ["surrealism", "photorealistic", "abstract"],
-            "engagement_hooks": ["question in caption", "call to action"],
-            "meme_formats": ["tech humor", "AI jokes"],
-            "hashtag_suggestions": ["#aiart", "#generativeai", "#pollinations", "#opensource"]
-        }
-
-    try:
-        # Clean up response if it has markdown
-        response = response.strip()
-        if response.startswith("```"):
-            lines = response.split("\n")
-            lines = [l for l in lines if not l.startswith("```")]
-            response = "\n".join(lines)
-
-        return json.loads(response)
-    except json.JSONDecodeError as e:
-        print(f"Failed to parse trend research: {e}")
-        return {
-            "trending_styles": ["vibrant", "tech aesthetic"],
-            "popular_formats": ["carousel"],
-            "ai_art_trends": ["creative AI"],
-            "engagement_hooks": ["engagement"],
-            "meme_formats": ["tech humor"],
-            "hashtag_suggestions": ["#aiart", "#pollinations"]
-        }
+def get_instagram_trends() -> Dict:
+    """Return static Instagram trends data (researched Dec 2025)
+    
+    Based on research from Vista Social, Sprout Social, TechTimes, and EarlyGame.
+    
+    KEY AESTHETIC DIRECTION: Retro 8-bit pixel art but BEAUTIFUL
+    - Modern interpretation of nostalgic gaming visuals
+    - Clean, cozy pixel art with pastel palettes (like Unpacking, A Short Hike)
+    - Lo-fi aesthetic with soft lighting and warm colors
+    - Chunky pixels but emotionally resonant
+    - Think: Studio Ghibli meets retro gaming
+    
+    Why pixel art works in 2025:
+    - Retro game boom: $3.8B market, double-digit growth
+    - Gen Z discovering retro through TikTok (#retrogaming billions of views)
+    - Nostalgia for 80s/90s aesthetics crosses generations
+    - Pixel art = accessible, charming, instantly recognizable
+    """
+    return {
+        "trending_styles": [
+            "retro 8-bit pixel art with modern soft lighting",
+            "cozy pixel aesthetic (like Unpacking, A Short Hike)",
+            "lo-fi chunky pixels with pastel color palettes",
+            "lime green (#ecf874) as accent color",
+            "soft gradients behind pixel sprites",
+            "CRT monitor / retro screen glow effects",
+            "clean minimalist pixel illustrations",
+            "warm, emotionally resonant pixel scenes"
+        ],
+        "popular_formats": [
+            "carousel (up to 20 images) - highest engagement",
+            "pixel art animation loops (GIF-style)",
+            "retro game screenshot aesthetic",
+            "infographic with pixel icons",
+            "before/after or evolution sequences"
+        ],
+        "ai_art_trends": [
+            "pixel art characters (bees 🐝, flowers 🌸, cute robots)",
+            "retro game UI elements",
+            "cozy pixel scenes (gardens, workspaces, nature)",
+            "nostalgic gaming references",
+            "8-bit but beautiful - modern lighting on retro sprites"
+        ],
+        "engagement_hooks": [
+            "question in caption",
+            "swipe for more →",
+            "tag someone who needs this",
+            "save for later 📌",
+            "which one are you?",
+            "nostalgia check ✓"
+        ],
+        "meme_formats": [
+            "relatable developer struggles (pixel art style)",
+            "AI expectations vs reality",
+            "wholesome tech community moments",
+            "retro game references for coding life"
+        ],
+        "hashtag_suggestions": [
+            "#aiart", "#generativeai", "#pollinations", "#opensource",
+            "#pixelart", "#retrogaming", "#8bit", "#indiedev",
+            "#creativecoding", "#buildinpublic", "#cozyvibes"
+        ],
+        "visual_donts": [
+            "dark/dramatic/cyberpunk imagery",
+            "corporate stock photo vibes",
+            "intimidating or edgy tones",
+            "cold industrial aesthetics",
+            "hyper-realistic 3D renders"
+        ],
+        "pixel_art_references": [
+            "Unpacking (2021) - clean, cozy, pastel palette, warm hug vibes",
+            "A Short Hike (2019) - chunky low-res, wholesome, serene",
+            "Stardew Valley - friendly, nature-focused, community",
+            "Balatro (2024) - punchy lo-fi aesthetic, vibrant animations",
+            "Animal Well (2024) - moody yet whimsical, soft lighting"
+        ]
+    }
 
 
 def generate_post_strategy(prs: List[Dict], trends: Dict, token: str) -> Dict:
@@ -304,85 +348,129 @@ def generate_post_strategy(prs: List[Dict], trends: Dict, token: str) -> Dict:
     else:
         pr_summary = "NO UPDATES TODAY"
 
-    system_prompt = f"""You are the unhinged social media intern for Pollinations.AI Instagram.
+    system_prompt = f"""You are the Gen-Z social media lead for Pollinations.AI Instagram.
 Pollinations.AI is a free, open-source AI image generation platform - no login, no BS, just free AI art.
 
-YOUR MISSION: We're a tech company that shitposts our changelogs. Yes, really. Turn boring PR merges into viral meme content.
+YOUR MISSION: Create friendly, approachable, Gen-Z aesthetic content that reflects our brand. Turn updates into visually appealing infographics and friendly illustrations.
 
 {pr_summary}
 
-=== YOUR VIBE ===
-- Tech company shitposting changelogs - this is literally what we do
-- Meme lord energy - think r/ProgrammerHumor meets corporate shitposting
-- Self-aware AI company posting AI-generated content about AI updates (yes, embrace the meta)
-- Sarcastic, witty, relatable dev humor
-- "We pushed to prod on Friday" energy
-- Make devs exhale through their nose
+=== POLLINATIONS BRAND IDENTITY ===
+Our name "Pollinations" = 🌸 flowers, 🐝 bees, nature, growth, organic
+- "Soft, simple tools for people who want to build with heart"
+- "A developer journey that feels welcoming instead of corporate"
+- "Stay playful" - we're friendly and approachable, never intimidating
+- Community at the center - indie devs, students, small teams
+- Open source roots - we build in the open
+
+TIER METAPHORS (use these nature concepts!):
+- Spore 🌱 → Seed 🌾 → Flower 🌸 → Nectar 🍯
+- Growth, blooming, pollinating ideas
+
+=== VISUAL STYLE (CRITICAL - follow this!) ===
+
+*** PRIMARY AESTHETIC: RETRO 8-BIT PIXEL ART BUT BEAUTIFUL ***
+Think: Studio Ghibli meets retro gaming. Nostalgic but emotionally resonant.
+Reference games: Unpacking, A Short Hike, Stardew Valley, Balatro
+
+Colors:
+- PRIMARY: Lime green (#ecf874) 🌿 - use this a lot!
+- SECONDARY: Soft pastels (mint, lavender, peach, warm cream)
+- ACCENT: Dark purple (#110518) for text/contrast
+- Background: Soft gradients behind pixel sprites, warm lighting
+
+Pixel Art Style:
+- COZY PIXEL ART - chunky, clean, emotionally warm
+- Lo-fi 8-bit aesthetic with MODERN soft lighting and gradients
+- Pixel art characters (bees 🐝, flowers 🌸, cute robots, tiny devs)
+- Retro game UI elements (health bars, inventory slots, dialogue boxes)
+- CRT monitor glow effects, scanlines (subtle)
+- Pastel color palettes - NOT harsh neon
+- Think "warm hug" not "arcade flashy"
+
+AVOID:
+- Dark/dramatic/cyberpunk imagery
+- Hyper-realistic 3D renders
+- Corporate stock photo vibes
+- Intimidating or edgy tones
+- Harsh neon arcade colors
 
 === IMAGE GENERATION (nanobanana-pro) ===
-Our model is Gemini 3 Pro Image (nanobanana-pro) - it's absolutely cracked:
-- CONTEXTUAL UNDERSTANDING - It actually understands what you want, not just keywords
-- TEXT IN IMAGES - Use it! Meme text, fake error messages, fake UI, headlines - it renders text perfectly
-- Meme formats - describe the meme you want and it gets it
-- Absurdist humor - the weirder the better, it can handle complex scenes
+Our model is Gemini 3 Pro Image (nanobanana-pro):
+- CONTEXTUAL UNDERSTANDING - It gets nuance
+- TEXT IN IMAGES - Use simple pixel-style text sparingly
 - High quality 4K output
-- Just describe what you want naturally - it's smart enough to figure it out
+- Describe the STYLE explicitly: "cozy pixel art, 8-bit aesthetic, soft pastel gradients, retro gaming vibes, warm lighting"
 
-=== CONTENT IDEAS ===
-- Meme templates with update-related jokes
-- Fake error messages/notifications that are actually updates
-- "Corporate wants you to find the difference" formats
-- Fake app store reviews about our updates
-- Developer in-jokes (git push --force, undefined is not a function, etc.)
-- Self-deprecating AI humor
-- "Nobody: ... Pollinations devs at 3am:" format
-- Fake LinkedIn posts / PR announcements (satirical)
-- Changelog as movie poster / album cover / news headline
+=== CONTENT IDEAS (on-brand) ===
+- Pixel art bee character tending a digital garden
+- Retro game-style progress bar: Spore → Seed → Flower → Nectar
+- Cozy pixel workspace with code on screen
+- 8-bit flowers blooming in a soft gradient field
+- Pixel art community scene - tiny devs building together
+- Retro game UI showing "500+ apps built" achievement unlocked
+- Nostalgic gaming references for coding life
+
+EXAMPLE PROMPTS (follow this pixel art style):
+1. "Cozy pixel art scene of a tiny 8-bit bee character watering a small pixelated code plant. Soft lime green (#ecf874) and lavender gradient background. Chunky pixels, warm lighting, lo-fi aesthetic. Like Stardew Valley meets coding. Emotionally warm, nostalgic but beautiful."
+
+2. "Retro 8-bit pixel art infographic showing a growth journey: tiny seed → sprouting plant → blooming flower. Soft pastel gradient background (mint to peach). Clean pixel icons, cozy vibes like Unpacking game. Warm, inviting, not harsh."
+
+3. "Pixel art community garden scene with diverse tiny 8-bit characters tending colorful digital flowers. Soft lime green and lavender sky. Chunky retro sprites with modern soft lighting. Wholesome, like A Short Hike. Text in pixel font: 'open source ❤️'"
 
 === OUTPUT FORMAT (JSON only) ===
 {{
-    "content_type": "meme|shitpost|wholesome",
+    "content_type": "pixel_art|retro_infographic|cozy_scene",
     "linked_images": true/false,
-    "strategy_reasoning": "Why this will make people actually engage",
-    "meme_format": "What meme template/style you're going for",
+    "strategy_reasoning": "Why this visual approach works for our brand",
+    "visual_style": "Description of the pixel art style you're going for",
     "image_count": 1-4,
     "images": [
         {{
-            "prompt": "Detailed prompt - include any text that should appear in the image",
-            "description": "The joke explained",
-            "text_in_image": "Exact text to render (if any)"
+            "prompt": "Detailed prompt - MUST include: 'cozy pixel art, 8-bit aesthetic, soft pastel gradients, lime green (#ecf874), retro gaming vibes, warm lighting'. Add specific scene description.",
+            "description": "What this image communicates",
+            "text_in_image": "Short pixel-font text if any (keep minimal)"
         }}
     ],
-    "caption": "Witty caption - can be dry, sarcastic, or self-aware. Include CTA if natural",
-    "hashtags": ["#pollinations", "#aiart", "#opensource", "#devhumor", "#aiartcommunity"],
-    "alt_text": "Accessibility description (actually describe it properly)"
+    "caption": "Friendly, casual Gen-Z tone. Use emojis naturally ✨🌱. Include soft CTA like 'link in bio'",
+    "hashtags": ["#pollinations", "#aiart", "#opensource", "#pixelart", "#retrogaming", "#indiedev", "#8bit"],
+    "alt_text": "Accessibility description (describe pixel art style, colors, characters)"
 }}
 
+=== PROMPT TEMPLATE (use this structure for EVERY image) ===
+"[Scene description in pixel art style]. Cozy 8-bit pixel art aesthetic. Soft lime green (#ecf874) and pastel gradient background. [Pixel character/icon description] with chunky retro sprites. Warm lighting, lo-fi vibes like Stardew Valley or A Short Hike. [Any pixel-font text]. Nostalgic but beautiful, emotionally warm."
+
 === RULES ===
-- Be funny, not cringe
-- Punch up, not down
-- Self-deprecation > bragging
-- Keep it relatable to devs/creators/AI enthusiasts
+- Cozy pixel art > hyper-realistic
+- Warm and nostalgic > cold and modern
+- Celebrate community > brag about tech
+- Nature/growth metaphors fit our brand (pixel bees, flowers, gardens)
+- Always include style keywords: "cozy pixel art, 8-bit, soft pastel gradients, warm lighting, retro gaming vibes"
+- Reference games for style: Unpacking, A Short Hike, Stardew Valley, Balatro
 
 === CURRENT INSTAGRAM TRENDS (use these for inspiration) ===
 {json.dumps(trends, indent=2) if trends else "No trend data available"}"""
 
     if prs:
-        user_prompt = f"""Turn these updates into meme gold: {[pr['title'] for pr in prs[:5]]}
-Make it funny. Output valid JSON only."""
+        user_prompt = f"""Create a cozy pixel art post about these updates: {[pr['title'] for pr in prs[:5]]}
+
+Remember: Use RETRO 8-BIT PIXEL ART style - cozy, warm, nostalgic but beautiful. Like Stardew Valley or A Short Hike.
+Lime green (#ecf874), soft pastel gradients, chunky pixels, warm lighting.
+Output valid JSON only."""
     else:
-        user_prompt = """No code updates today - perfect excuse to shitpost!
+        user_prompt = """No code updates today - create brand content!
 
-Pick ONE of these vibes (don't do "no updates" jokes, those get repetitive):
-- Dev culture meme (meetings, coffee, debugging at 3am, "works on my machine")
-- AI industry hot take or satire (AI hype vs reality, prompt engineering jokes)
-- Open source life (stars vs actual users, issue spam, "can you add this feature")
-- Tech company self-awareness (we're an AI company posting AI-generated content about AI)
-- Current tech drama/trends (based on the trends data above)
-- Relatable creator struggles (creative block, "just one more iteration")
-- Meta humor about being a free AI platform
+Pick ONE of these on-brand themes:
+- Celebrate our community (500+ apps built with Pollinations)
+- Open source appreciation (free AI art for everyone 🌸)
+- Creative inspiration (what you can make with AI)
+- Behind the scenes (cozy pixel dev workspace, plants & coffee)
+- Nature/growth metaphors (pixel seeds blooming, 8-bit bees pollinating ideas)
+- Welcome new creators to the platform
+- Retro game achievement unlocked: "First AI Art Generated!"
 
-Use the trends data above for inspiration on what's currently hitting.
+Remember: RETRO 8-BIT PIXEL ART style - cozy, warm, nostalgic but beautiful. 
+Like Stardew Valley, A Short Hike, or Unpacking. Chunky pixels, soft pastel gradients, warm lighting.
 Output valid JSON only."""
 
     print("Generating post strategy...")
@@ -429,6 +517,17 @@ def generate_image(prompt: str, token: str, index: int, reference_url: str = Non
     encoded_prompt = quote(prompt)
     base_url = f"{POLLINATIONS_IMAGE_BASE}/{encoded_prompt}"  # GET https://gen.pollinations.ai/image/{prompt}
 
+    # Verbose logging for image generation
+    print(f"\n  [VERBOSE] Image Generation Request")
+    print(f"  [VERBOSE] Model: {IMAGE_MODEL}")
+    print(f"  [VERBOSE] Size: {IMAGE_WIDTH}x{IMAGE_HEIGHT}")
+    print(f"  [VERBOSE] Full prompt ({len(prompt)} chars):")
+    print(f"  ---BEGIN IMAGE PROMPT---")
+    print(prompt)
+    print(f"  ---END IMAGE PROMPT---")
+    if reference_url:
+        print(f"  [VERBOSE] Reference image (I2I): {reference_url}")
+
     # Add reference image for image-to-image generation (creates visual continuity)
     if reference_url:
         print(f"Generating image {index + 1} (I2I from previous): {prompt[:50]}...")
@@ -454,13 +553,12 @@ def generate_image(prompt: str, token: str, index: int, reference_url: str = Non
             "key": token
         }
 
-        # Add reference image for I2I (must be URL-encoded, but avoid double-encoding)
+        # Add reference image for I2I (must be fully URL-encoded)
         if reference_url:
-            # Check if already encoded (contains %) to avoid double-encoding
-            if '%' in reference_url:
-                params["image"] = reference_url
-            else:
-                params["image"] = quote(reference_url, safe='')
+            # Strip key= param from reference URL if present (auth goes on outer URL only)
+            clean_ref = re.sub(r'[&?]key=[^&]*', '', reference_url)
+            # Encode the full URL so nested params don't break outer URL parsing
+            params["image"] = quote(clean_ref, safe='')
 
         if attempt == 0:
             print(f"  Using seed: {seed}")
@@ -476,19 +574,49 @@ def generate_image(prompt: str, token: str, index: int, reference_url: str = Non
             if response.status_code == 200:
                 content_type = response.headers.get('content-type', '')
                 if 'image' in content_type:
-                    print(f"  Image {index + 1} generated successfully")
+                    image_bytes = response.content
+                    
+                    # Verify image is valid (check size and magic bytes)
+                    if len(image_bytes) < 1000:
+                        last_error = f"Image too small ({len(image_bytes)} bytes) - likely broken"
+                        print(f"  {last_error}")
+                        continue
+                    
+                    # Check for valid image magic bytes (JPEG, PNG, WebP)
+                    is_jpeg = image_bytes[:2] == b'\xff\xd8'
+                    is_png = image_bytes[:8] == b'\x89PNG\r\n\x1a\n'
+                    is_webp = image_bytes[:4] == b'RIFF' and image_bytes[8:12] == b'WEBP'
+                    
+                    if not (is_jpeg or is_png or is_webp):
+                        last_error = f"Invalid image format (magic bytes: {image_bytes[:12].hex()})"
+                        print(f"  {last_error}")
+                        continue
+                    
+                    img_format = "JPEG" if is_jpeg else ("PNG" if is_png else "WebP")
+                    print(f"  Image {index + 1} generated successfully ({img_format}, {len(image_bytes):,} bytes)")
 
                     # Build public URL without key for I2I reference
                     public_params = {k: v for k, v in params.items() if k != "key"}
                     public_url = base_url + "?" + "&".join(f"{k}={v}" for k, v in public_params.items())
 
-                    return response.content, public_url
+                    return image_bytes, public_url
                 else:
+                    # Not an image - likely an error response (JSON or text)
                     last_error = f"Unexpected content type: {content_type}"
-                    print(f"  {last_error}")
+                    try:
+                        error_body = response.text[:500]
+                        print(f"  {last_error}")
+                        print(f"  [ERROR RESPONSE]: {error_body}")
+                    except:
+                        print(f"  {last_error}")
             else:
                 last_error = f"HTTP error: {response.status_code}"
                 print(f"  {last_error}")
+                try:
+                    error_body = response.text[:500]
+                    print(f"  [ERROR RESPONSE]: {error_body}")
+                except:
+                    pass
 
         except requests.exceptions.RequestException as e:
             last_error = f"Request error: {e}"
@@ -673,7 +801,22 @@ Generated automatically by GitHub Actions
 
     if pr_response.status_code not in [200, 201]:
         if "A pull request already exists" in pr_response.text:
-            print("PR already exists for this branch")
+            # Find and update the existing PR
+            list_response = requests.get(
+                f"{GITHUB_API_BASE}/repos/{owner}/{repo}/pulls?head={owner}:{branch_name}&state=open",
+                headers=headers
+            )
+            if list_response.status_code == 200 and list_response.json():
+                existing_pr = list_response.json()[0]
+                update_response = requests.patch(
+                    f"{GITHUB_API_BASE}/repos/{owner}/{repo}/pulls/{existing_pr['number']}",
+                    headers=headers,
+                    json={"title": pr_title, "body": pr_body}
+                )
+                if update_response.status_code == 200:
+                    print(f"Updated existing PR #{existing_pr['number']}: {existing_pr['html_url']}")
+                    return
+            print("PR already exists but could not update it")
             return
         print(f"Error creating PR: {pr_response.text}")
         return
@@ -718,9 +861,10 @@ def main():
         merged_prs = get_merged_prs(source_owner, source_repo_name, start_date, github_token)
         print(f"Found {len(merged_prs)} merged PRs")
 
-    # Step 2: Research trending content
-    print(f"\n=== Researching Instagram Trends ===")
-    trends = research_trending_content(pollinations_token)
+    # Step 2: Get Instagram trends (static data, no API call needed)
+    print(f"\n=== Loading Instagram Trends ===")
+    trends = get_instagram_trends()
+    print(f"Loaded {len(trends['trending_styles'])} trending styles, {len(trends['popular_formats'])} formats")
 
     # Step 3: Generate post strategy
     print(f"\n=== Generating Post Strategy ===")
@@ -772,10 +916,11 @@ def main():
         time.sleep(3)  # Rate limiting between images
 
     successful_images = sum(1 for img in images if img is not None)
-    print(f"Generated {successful_images}/{len(strategy.get('images', []))} images")
+    total_images = len(strategy.get('images', []))
+    print(f"Generated {successful_images}/{total_images} images")
 
-    if successful_images == 0:
-        print("No images generated successfully. Exiting.")
+    if successful_images < total_images:
+        print(f"Not all images generated successfully ({successful_images}/{total_images}). Exiting without creating PR.")
         sys.exit(1)
 
     # Step 5: Create PR

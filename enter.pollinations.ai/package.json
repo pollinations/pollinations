@@ -6,9 +6,10 @@
     "main": "src/index.ts",
     "scripts": {
         "typecheck": "tsc --noEmit",
-        "dev": "vite dev",
+        "decrypt-vars": "sops decrypt secrets/dev.vars.json --output-type dotenv > .dev.vars",
+        "dev": "npm run decrypt-vars && vite dev",
         "dev:production": "npm run decrypt-vars:production && CLOUDFLARE_ENV=production vite dev",
-        "test": "npm run decrypt-vars:dev && vitest run",
+        "test": "npm run decrypt-vars && vitest run",
         "gen:migrations": "drizzle-kit generate",
         "gen:auth-schema": "npx @better-auth/cli@latest generate --config betterAuth.config.ts --output src/db/schema/better-auth.ts",
         "gen:types:runtime": "wrangler types --include-env=false worker-runtime.d.ts",
@@ -25,7 +26,9 @@
         "decrypt-vars:production": "sops decrypt secrets/prod.vars.json --output-type dotenv > .dev.vars",
         "push-secrets:staging": "sops exec-file --no-fifo secrets/staging.vars.json 'npx wrangler secret bulk {} --env staging'",
         "push-secrets:production": "sops exec-file --no-fifo secrets/prod.vars.json 'npx wrangler secret bulk {} --env production'",
-        "tail": "wrangler tail --env production | tsx scripts/format-logs.ts"
+        "tail": "wrangler tail --env production | jq -c '.logs[].message[] | fromjson' | tsx scripts/format-logs.ts",
+        "tail:json": "wrangler tail --env production | jq '.logs[].message[] | fromjson'",
+        "docs:generate": "tsx scripts/generate-apidocs.ts"
     },
     "dependencies": {
         "@ark-ui/react": "^5.29.1",
@@ -60,6 +63,7 @@
         "@cloudflare/vitest-pool-workers": "^0.10.10",
         "@drizzle-team/brocli": "^0.11.0",
         "@hono/node-server": "^1.19.6",
+        "@scalar/openapi-to-markdown": "^0.3.11",
         "@tailwindcss/typography": "^0.5.19",
         "@tailwindcss/vite": "^4.1.17",
         "@tanstack/react-router-devtools": "^1.139.3",

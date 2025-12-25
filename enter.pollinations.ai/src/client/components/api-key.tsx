@@ -1,6 +1,30 @@
 import { Dialog } from "@ark-ui/react/dialog";
 import { Field } from "@ark-ui/react/field";
-import { formatDistanceToNowStrict } from "date-fns";
+import { formatDistanceToNowStrict, type FormatDistanceToken } from "date-fns";
+
+const shortFormatDistance: Record<FormatDistanceToken, string> = {
+    lessThanXSeconds: "{{count}}s",
+    xSeconds: "{{count}}s",
+    halfAMinute: "30s",
+    lessThanXMinutes: "{{count}}m",
+    xMinutes: "{{count}}m",
+    aboutXHours: "{{count}}h",
+    xHours: "{{count}}h",
+    xDays: "{{count}}d",
+    aboutXWeeks: "{{count}}w",
+    xWeeks: "{{count}}w",
+    aboutXMonths: "{{count}}mo",
+    xMonths: "{{count}}mo",
+    aboutXYears: "{{count}}y",
+    xYears: "{{count}}y",
+    overXYears: "{{count}}y",
+    almostXYears: "{{count}}y",
+};
+
+const shortLocale = {
+    formatDistance: (token: FormatDistanceToken, count: number) =>
+        shortFormatDistance[token].replace("{{count}}", String(count)),
+};
 import type { FC } from "react";
 import { useState, useEffect } from "react";
 import { cn } from "@/util.ts";
@@ -18,6 +42,8 @@ type ApiKey = {
     name?: string | null;
     start?: string | null;
     createdAt: Date;
+    lastRequest?: Date | null;
+    expiresAt?: Date | null;
     permissions: { [key: string]: string[] } | null;
     metadata: Record<string, string> | null;
 };
@@ -67,6 +93,42 @@ const KeyDisplay: FC<{ fullKey: string; start: string }> = ({
             {copied ? "✓ Copied!" : `${start}...`}
         </button>
     );
+};
+
+const ExpirationBadge: FC<{ expiresAt: Date | null | undefined }> = ({
+    expiresAt,
+}) => {
+    if (!expiresAt) {
+        return <span className="text-xs text-gray-400">Never</span>;
+    }
+
+    const expiresDate = new Date(expiresAt);
+    const now = new Date();
+    const daysLeft = Math.ceil(
+        (expiresDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24),
+    );
+    const timeLeft = formatDistanceToNowStrict(expiresDate, {
+        addSuffix: false,
+        locale: shortLocale,
+    });
+
+    if (daysLeft <= 0) {
+        return (
+            <span className="text-xs px-2 py-0.5 rounded-full bg-red-100 text-red-700 border border-red-300">
+                Expired
+            </span>
+        );
+    }
+
+    if (daysLeft <= 7) {
+        return (
+            <span className="text-xs px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 border border-amber-300">
+                ⚠️ {timeLeft}
+            </span>
+        );
+    }
+
+    return <span className="text-xs text-gray-600">{timeLeft}</span>;
 };
 
 const ModelsBadge: FC<{
@@ -152,7 +214,7 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                 {apiKeys.length ? (
                     <div className="bg-blue-50/30 rounded-2xl p-8 border border-blue-300 overflow-hidden">
                         <div className="overflow-x-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
-                            <div className="grid grid-cols-[auto_1fr_auto_auto_auto_auto] gap-x-4 gap-y-4 min-w-max">
+                            <div className="grid grid-cols-[auto_1fr_auto_auto_auto_auto_auto_auto] gap-x-4 gap-y-4 min-w-max">
                                 <span className="font-bold text-pink-400 text-sm">
                                     Type
                                 </span>
@@ -164,6 +226,12 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                                 </span>
                                 <span className="font-bold text-pink-400 text-sm">
                                     Created
+                                </span>
+                                <span className="font-bold text-pink-400 text-sm">
+                                    Last Used
+                                </span>
+                                <span className="font-bold text-pink-400 text-sm">
+                                    Expires
                                 </span>
                                 <span className="font-bold text-pink-400 text-sm">
                                     Models
@@ -221,7 +289,7 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                                                             }
                                                             start={
                                                                 apiKey.start ??
-                                                                undefined
+                                                                ""
                                                             }
                                                         />
                                                     ) : (
@@ -236,9 +304,32 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                                                             apiKey.createdAt,
                                                             {
                                                                 addSuffix: false,
+                                                                locale: shortLocale,
                                                             },
                                                         )}
                                                     </span>
+                                                </Cell>
+                                                <Cell>
+                                                    <span className="text-xs text-gray-500 whitespace-nowrap">
+                                                        {apiKey.lastRequest
+                                                            ? formatDistanceToNowStrict(
+                                                                  new Date(
+                                                                      apiKey.lastRequest,
+                                                                  ),
+                                                                  {
+                                                                      addSuffix: false,
+                                                                      locale: shortLocale,
+                                                                  },
+                                                              )
+                                                            : "Never"}
+                                                    </span>
+                                                </Cell>
+                                                <Cell>
+                                                    <ExpirationBadge
+                                                        expiresAt={
+                                                            apiKey.expiresAt
+                                                        }
+                                                    />
                                                 </Cell>
                                                 <Cell>
                                                     <ModelsBadge

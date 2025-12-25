@@ -29,53 +29,53 @@
     "params": {}
   },
   "response": {
-    "status": 200,
-    "statusText": "OK",
+    "status": 500,
+    "statusText": "Internal Server Error",
     "headers": {
       "access-control-allow-origin": "*",
       "connection": "keep-alive",
-      "content-length": "446",
+      "content-length": "567",
       "content-type": "application/json; charset=utf-8",
-      "date": "Sat, 13 Dec 2025 20:34:10 GMT",
-      "etag": "W/\"1be-umU+gPKAttLpwfZXM87i4ALOOcg\"",
+      "date": "Tue, 23 Dec 2025 13:56:10 GMT",
+      "etag": "W/\"237-A3XL6RIJPHDFwigBhV7TY3ybrc8\"",
       "keep-alive": "timeout=5",
-      "x-model-used": "us.anthropic.claude-sonnet-4-5-20250929-v1:0",
-      "x-powered-by": "Express",
-      "x-usage-completion-text-tokens": "7",
-      "x-usage-prompt-text-tokens": "384",
-      "x-usage-total-tokens": "391"
+      "x-powered-by": "Express"
     },
     "body": {
       "type": "json",
       "data": {
-        "id": "pllns_bb26db01a9d533d89abcd1d257954fd2",
-        "object": "chat.completion",
-        "created": 1765658050,
-        "model": "us.anthropic.claude-sonnet-4-5-20250929-v1:0",
-        "provider": "bedrock",
-        "choices": [
-          {
-            "index": 0,
-            "message": {
-              "role": "assistant",
-              "content": "Triumphant",
-              "content_blocks": [
+        "error": "Internal Server Error",
+        "message": "500 Internal Server Error",
+        "requestId": "ryevz",
+        "requestParameters": {
+          "messages": [
+            {
+              "role": "user",
+              "content": [
                 {
                   "type": "text",
-                  "text": "Triumphant"
+                  "text": "Describe this image in one word."
+                },
+                {
+                  "type": "image_url",
+                  "image_url": {
+                    "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a7/Camponotus_flavomarginatus_ant.jpg/320px-Camponotus_flavomarginatus_ant.jpg"
+                  }
                 }
               ]
-            },
-            "finish_reason": "end_turn"
-          }
-        ],
-        "usage": {
-          "prompt_tokens": 384,
-          "completion_tokens": 7,
-          "total_tokens": 391,
-          "prompt_tokens_details": {
-            "cached_tokens": 0
-          }
+            }
+          ],
+          "jsonMode": false,
+          "model": "claude",
+          "referrer": null,
+          "isPrivate": true,
+          "voice": "alloy",
+          "max_tokens": 50,
+          "private": true
+        },
+        "details": {
+          "status": "failure",
+          "message": "Something went wrong"
         }
       }
     }

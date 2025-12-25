@@ -1,6 +1,25 @@
 import { COST_START_DATE, perMillion } from "./price-helpers";
 import type { ServiceDefinition } from "./registry";
 
+// Voices available for openai-audio model - exported for schema validation
+export const AUDIO_VOICES = [
+    "alloy",
+    "echo",
+    "fable",
+    "onyx",
+    "nova",
+    "shimmer",
+    "coral",
+    "verse",
+    "ballad",
+    "ash",
+    "sage",
+    "amuch",
+    "dan",
+] as const;
+
+export type AudioVoice = (typeof AUDIO_VOICES)[number];
+
 export const DEFAULT_TEXT_MODEL = "openai" as const;
 export type TextServiceId = keyof typeof TEXT_SERVICES;
 export type TextModelId = (typeof TEXT_SERVICES)[TextServiceId]["modelId"];
@@ -9,7 +28,7 @@ export const TEXT_SERVICES = {
     "openai": {
         aliases: [],
         modelId: "gpt-5-mini-2025-08-07",
-        provider: "azure-openai",
+        provider: "azure",
         cost: [
             {
                 date: COST_START_DATE,
@@ -27,7 +46,7 @@ export const TEXT_SERVICES = {
     "openai-fast": {
         aliases: ["gpt-5-nano", "gpt-5-nano-2025-08-07"],
         modelId: "gpt-5-nano-2025-08-07",
-        provider: "azure-openai",
+        provider: "azure-2",
         cost: [
             {
                 date: COST_START_DATE,
@@ -45,7 +64,7 @@ export const TEXT_SERVICES = {
     "openai-large": {
         aliases: ["gpt-5.2", "openai-reasoning", "gpt-5.2-reasoning"],
         modelId: "gpt-5.2-2025-12-11",
-        provider: "azure-openai",
+        provider: "azure",
         cost: [
             {
                 date: COST_START_DATE,
@@ -105,7 +124,7 @@ export const TEXT_SERVICES = {
             "gpt-4o-mini-audio-preview-2024-12-17",
         ],
         modelId: "gpt-4o-mini-audio-preview-2024-12-17",
-        provider: "azure-openai",
+        provider: "azure",
         cost: [
             {
                 date: COST_START_DATE,
@@ -116,61 +135,68 @@ export const TEXT_SERVICES = {
             },
         ],
         description: "OpenAI GPT-4o Mini Audio - Voice Input & Output",
-        voices: [
-            "alloy",
-            "echo",
-            "fable",
-            "onyx",
-            "nova",
-            "shimmer",
-            "coral",
-            "verse",
-            "ballad",
-            "ash",
-            "sage",
-            "amuch",
-            "dan",
-        ],
+        voices: [...AUDIO_VOICES],
         inputModalities: ["text", "image", "audio"],
         outputModalities: ["audio", "text"],
         tools: true,
         isSpecialized: false,
     },
     "gemini": {
+        aliases: ["gemini-3-flash", "gemini-3-flash-preview"],
+        modelId: "gemini-3-flash-preview",
+        provider: "google",
+        cost: [
+            {
+                date: COST_START_DATE,
+                promptTextTokens: perMillion(0.5),
+                promptCachedTokens: perMillion(0.05),
+                promptAudioTokens: perMillion(0.5), // Audio billed at same rate as text
+                completionTextTokens: perMillion(3.0),
+            },
+        ],
+        description:
+            "Google Gemini 3 Flash - Pro-Grade Reasoning at Flash Speed",
+        inputModalities: ["text", "image", "audio", "video"],
+        outputModalities: ["text"],
+        tools: true,
+        search: true,
+        codeExecution: true,
+        isSpecialized: false,
+    },
+    "gemini-fast": {
         aliases: ["gemini-2.5-flash-lite"],
         modelId: "gemini-2.5-flash-lite",
-        provider: "vertex-ai",
+        provider: "google",
         cost: [
             {
                 date: COST_START_DATE,
                 promptTextTokens: perMillion(0.1),
                 promptCachedTokens: perMillion(0.01),
+                promptAudioTokens: perMillion(0.1), // Audio billed at same rate as text
                 completionTextTokens: perMillion(0.4),
             },
         ],
-        description: "Google Gemini 2.5 Flash Lite - Fast & Multimodal",
+        description:
+            "Google Gemini 2.5 Flash Lite - Ultra Fast & Cost-Effective",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
         tools: true,
+        search: true,
+        codeExecution: true,
         isSpecialized: false,
     },
     "deepseek": {
-        aliases: [
-            "deepseek-v3",
-            "deepseek-v3.1",
-            "deepseek-reasoning",
-            "deepseek-r1-0528",
-        ],
-        modelId: "DeepSeek-V3.1",
+        aliases: ["deepseek-v3", "deepseek-reasoning"],
+        modelId: "deepseek-v3.2",
         provider: "azure",
         cost: [
             {
                 date: COST_START_DATE,
-                promptTextTokens: perMillion(1.25),
-                completionTextTokens: perMillion(5.0),
+                promptTextTokens: perMillion(0.58),
+                completionTextTokens: perMillion(1.68),
             },
         ],
-        description: "DeepSeek V3.1 - Advanced Reasoning & Coding",
+        description: "DeepSeek V3.2 - Efficient Reasoning & Agentic AI",
         inputModalities: ["text"],
         outputModalities: ["text"],
         tools: true,
@@ -196,28 +222,30 @@ export const TEXT_SERVICES = {
         isSpecialized: false,
     },
     "gemini-search": {
-        aliases: ["gemini-2.5-flash-lite-search"],
-        modelId: "gemini-2.5-flash-lite",
-        provider: "vertex-ai",
+        aliases: ["gemini-3-flash-search"],
+        modelId: "gemini-3-flash-preview",
+        provider: "google",
         cost: [
             {
                 date: COST_START_DATE,
-                promptTextTokens: perMillion(0.1),
-                promptCachedTokens: perMillion(0.01),
-                completionTextTokens: perMillion(0.4),
+                promptTextTokens: perMillion(0.5),
+                promptCachedTokens: perMillion(0.05),
+                promptAudioTokens: perMillion(0.5), // Audio billed at same rate as text
+                completionTextTokens: perMillion(3.0),
             },
         ],
-        description: "Google Gemini 2.5 Flash Lite - With Google Search",
+        description: "Google Gemini 3 Flash - With Google Search",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
         tools: false,
         search: true,
+        codeExecution: true,
         isSpecialized: false,
     },
     "chickytutor": {
         aliases: [],
         modelId: "us.anthropic.claude-3-5-haiku-20241022-v1:0",
-        provider: "aws-bedrock",
+        provider: "aws",
         cost: [
             {
                 date: COST_START_DATE,
@@ -234,7 +262,7 @@ export const TEXT_SERVICES = {
     "midijourney": {
         aliases: [],
         modelId: "gpt-4.1-2025-04-14",
-        provider: "azure-openai",
+        provider: "azure-2",
         cost: [
             {
                 date: COST_START_DATE,
@@ -252,7 +280,7 @@ export const TEXT_SERVICES = {
     "claude-fast": {
         aliases: ["claude-haiku-4.5", "claude-haiku"],
         modelId: "us.anthropic.claude-haiku-4-5-20251001-v1:0",
-        provider: "aws-bedrock",
+        provider: "aws",
         cost: [
             {
                 date: COST_START_DATE,
@@ -269,7 +297,7 @@ export const TEXT_SERVICES = {
     "claude": {
         aliases: ["claude-sonnet-4.5", "claude-sonnet"],
         modelId: "us.anthropic.claude-sonnet-4-5-20250929-v1:0",
-        provider: "aws-bedrock",
+        provider: "aws",
         cost: [
             {
                 date: COST_START_DATE,
@@ -286,7 +314,7 @@ export const TEXT_SERVICES = {
     "claude-large": {
         aliases: ["claude-opus-4.5", "claude-opus"],
         modelId: "global.anthropic.claude-opus-4-5-20251101-v1:0",
-        provider: "aws-bedrock",
+        provider: "aws",
         cost: [
             {
                 date: COST_START_DATE,
@@ -341,7 +369,7 @@ export const TEXT_SERVICES = {
     "kimi-k2-thinking": {
         aliases: ["kimi-k2", "kimi-thinking"],
         modelId: "moonshotai/kimi-k2-thinking-maas",
-        provider: "vertex-ai",
+        provider: "google",
         cost: [
             {
                 date: COST_START_DATE,
@@ -360,7 +388,7 @@ export const TEXT_SERVICES = {
     "gemini-large": {
         aliases: ["gemini-3-pro", "gemini-3", "gemini-3-pro-preview"],
         modelId: "gemini-3-pro-preview",
-        provider: "vertex-ai",
+        provider: "google",
         cost: [
             {
                 date: COST_START_DATE,
@@ -375,12 +403,14 @@ export const TEXT_SERVICES = {
         outputModalities: ["text"],
         tools: true,
         reasoning: true,
+        search: true,
+        codeExecution: false, // Disabled - was breaking gemini-large
         isSpecialized: false,
     },
     "nova-micro": {
         aliases: ["amazon-nova-micro", "nova"],
         modelId: "amazon.nova-micro-v1:0",
-        provider: "aws-bedrock",
+        provider: "aws",
         cost: [
             {
                 date: COST_START_DATE,

@@ -589,21 +589,21 @@ const server = http.createServer((req, res) => {
         return;
     }
 
-    // Verify ENTER_TOKEN
+    // Verify PLN_ENTER_TOKEN
     const token = req.headers["x-enter-token"];
-    const expectedToken = process.env.ENTER_TOKEN;
+    const expectedToken = process.env.PLN_ENTER_TOKEN;
 
     if (expectedToken && token !== expectedToken) {
-        logAuth("❌ Invalid or missing ENTER_TOKEN from IP:", getIp(req));
+        logAuth("❌ Invalid or missing PLN_ENTER_TOKEN from IP:", getIp(req));
         res.writeHead(403, { "Content-Type": "application/json" });
         res.end(JSON.stringify({ error: "Unauthorized" }));
         return;
     }
 
     if (expectedToken) {
-        logAuth("✅ Valid ENTER_TOKEN from IP:", getIp(req));
+        logAuth("✅ Valid PLN_ENTER_TOKEN from IP:", getIp(req));
     } else {
-        logAuth("!  ENTER_TOKEN not configured - allowing request");
+        logAuth("!  PLN_ENTER_TOKEN not configured - allowing request");
     }
 
     if (

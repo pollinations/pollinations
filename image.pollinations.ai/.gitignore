@@ -18,4 +18,4 @@ cloudflare-cache/.dev.vars
 .cloudflared/*.json
 ~/.cloudflared/*.json
 
-*.sql
+*.sqlcredentials/

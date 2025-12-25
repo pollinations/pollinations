@@ -55,12 +55,12 @@ jobs:
       - name: Deploy to staging via SSH
         uses: appleboy/ssh-action@v1.0.0
         env:
-          ENTER_TOKEN: ${{ secrets.ENTER_TOKEN }}
+          PLN_ENTER_TOKEN: ${{ secrets.PLN_ENTER_TOKEN }}
         with:
           host: ${{ secrets.ENTER_SERVICES_STAGING_HOST }}
           username: ${{ secrets.ENTER_SERVICES_STAGING_USER }}
           key: ${{ secrets.ENTER_SERVICES_STAGING_SSH_KEY }}
-          envs: ENTER_TOKEN
+          envs: PLN_ENTER_TOKEN
           script: |
             set -e
             echo "🚀 Deploying to STAGING..."
@@ -120,12 +120,12 @@ jobs:
       - name: Deploy via SSH
         uses: appleboy/ssh-action@v1.0.0
         env:
-          ENTER_TOKEN: ${{ secrets.ENTER_TOKEN }}
+          PLN_ENTER_TOKEN: ${{ secrets.PLN_ENTER_TOKEN }}
         with:
           host: ${{ secrets.ENTER_SERVICES_HOST }}
           username: ${{ secrets.ENTER_SERVICES_USER }}
           key: ${{ secrets.ENTER_SERVICES_SSH_KEY }}
-          envs: ENTER_TOKEN
+          envs: PLN_ENTER_TOKEN
           script: |
             set -e
             
@@ -167,11 +167,11 @@ jobs:
             echo "🏥 Running health checks..."
             sleep 2  # Give services a moment to fully initialize
             
-            # ENTER_TOKEN is passed as environment variable from GitHub secret
-            echo "Using ENTER_TOKEN: ${ENTER_TOKEN:0:10}..."
+            # PLN_ENTER_TOKEN is passed as environment variable from GitHub secret
+            echo "Using PLN_ENTER_TOKEN: ${PLN_ENTER_TOKEN:0:10}..."
             
             # Check text service health (use /openai/models - /models returns 410 deprecated)
-            TEXT_HEALTH=$(curl -s -o /dev/null -w "%{http_code}" -H "x-enter-token: $ENTER_TOKEN" http://localhost:16385/openai/models || echo "000")
+            TEXT_HEALTH=$(curl -s -o /dev/null -w "%{http_code}" -H "x-enter-token: $PLN_ENTER_TOKEN" http://localhost:16385/openai/models || echo "000")
             if [ "$TEXT_HEALTH" != "200" ]; then
               echo "❌ Text service health check failed (HTTP $TEXT_HEALTH)"
               exit 1
@@ -179,7 +179,7 @@ jobs:
             echo "✅ Text service responding (HTTP 200)"
             
             # Check image service health (use /about - /models returns 410 deprecated)
-            IMAGE_HEALTH=$(curl -s -o /dev/null -w "%{http_code}" -H "x-enter-token: $ENTER_TOKEN" http://localhost:16384/about || echo "000")
+            IMAGE_HEALTH=$(curl -s -o /dev/null -w "%{http_code}" -H "x-enter-token: $PLN_ENTER_TOKEN" http://localhost:16384/about || echo "000")
             if [ "$IMAGE_HEALTH" != "200" ]; then
               echo "❌ Image service health check failed (HTTP $IMAGE_HEALTH)"
               exit 1

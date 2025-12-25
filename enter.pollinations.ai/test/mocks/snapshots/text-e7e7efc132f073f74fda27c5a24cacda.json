@@ -15,20 +15,20 @@
       "access-control-allow-origin": "*",
       "cache-control": "public, max-age=31536000, immutable",
       "connection": "keep-alive",
-      "content-length": "2241",
+      "content-length": "901",
       "content-type": "text/plain; charset=utf-8",
-      "date": "Thu, 11 Dec 2025 16:47:13 GMT",
-      "etag": "W/\"8c1-vM9Gj5JlxJcp+79Gb1f14nbg2bo\"",
+      "date": "Tue, 23 Dec 2025 13:56:04 GMT",
+      "etag": "W/\"385-AiYwz9kWQ2QJz9rsE8MOXA0ziZs\"",
       "keep-alive": "timeout=5",
-      "x-model-used": "sonar-reasoning",
+      "x-model-used": "sonar-reasoning-pro",
       "x-powered-by": "Express",
-      "x-usage-completion-text-tokens": "460",
-      "x-usage-prompt-text-tokens": "259",
-      "x-usage-total-tokens": "719"
+      "x-usage-completion-text-tokens": "205",
+      "x-usage-prompt-text-tokens": "258",
+      "x-usage-total-tokens": "463"
     },
     "body": {
       "type": "text",
-      "data": "<think>\nLet me analyze the query and the search results to provide an accurate response.\n\nThe user is asking a very straightforward question: \"Is Berlin the capital of Germany? Reply yes or no.\"\n\nLooking at the search results:\n\n1. From Wikipedia (Berlin): \"Berlin is the capital of Germany, as well as its largest city by both area and population.\"\n\n2. From Wikipedia (Capital of Germany): \"The capital of Germany is the city of Berlin.\"\n\n3. From BMI (German Federal Ministry of the Interior): \"Berlin is the capital of Germany, the seat of its federal parliament and government, and its role is enshrined in the Basic Law.\"\n\n4. From Britannica: \"Berlin is the capital and chief urban center of Germany.\"\n\n5. From Germany Travel: \"Berlin, the capital city of Germany, is renowned for its exceptional range of landmarks...\"\n\n6. From Berlin's official website: It identifies itself as \"the city of Berlin, Capital of Germany\"\n\nAll of these sources consistently state that Berlin is the capital of Germany. There's no ambiguity in the sources - they all confirm this fact.\n\nThe user specifically asked for a \"yes or no\" response, so I should keep my answer simple and direct as requested. However, since I'm supposed to be a conversational expert who can provide context when helpful, I'll give a brief confirmation with just a touch of context, while still respecting the user's request for a simple answer.\n\nI should note that historically there was some debate after reunification about whether the capital should be in Berlin or remain in Bonn (the former West German capital), but the Bundestag voted in 1991 to move the seat of government to Berlin, and the German constitution was amended in 2006 to explicitly state that Berlin is the capital. All current official sources confirm Berlin as the capital.\n\nGiven the user's specific request for a \"yes or no\" answer, I'll lead with that but can add just a tiny bit of context since the search results provide such clear confirmation.\n</think>\n\nYes. Berlin is the capital of Germany, confirmed by all official sources including the German constitution, government websites, and international references. It's where the federal parliament, government, and president's residence are located."
+      "data": "<think>\nThe user is asking a straightforward yes/no question: \"Is Berlin the capital of Germany?\"\n\nBased on the search results provided:\n- [1] states \"Berlin is the capital of Germany, as well as its largest city by both area and population.\"\n- [2] states \"The capital of Germany is the city of Berlin.\"\n- [3] states \"Berlin is the capital and chief urban center of Germany.\"\n- [4] states \"Berlin, the capital city of Germany...\"\n- [5] states \"Berlin is not only the capital of the Federal Republic of Germany...\"\n\nThe answer is clearly \"Yes.\"\n\nThe user asked for yes or no, so I should keep this brief and direct. According to my instructions, I should start with a direct answer to the core question. Since this is a simple factual yes/no question, I can provide a very concise response with a citation.\n\nI should not over-elaborate since the user specifically asked for yes or no.\n</think>\n\nYes.[1]"
     }
   }
 }

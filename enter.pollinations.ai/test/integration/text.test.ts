@@ -120,6 +120,10 @@ describe("POST /generate/v1/chat/completions (authenticated)", async () => {
                 expect(event.tokenCountCompletionText).toBeGreaterThan(0);
                 expect(event.totalCost).toBeGreaterThan(0);
                 expect(event.totalPrice).toBeGreaterThanOrEqual(0);
+                // Regression test: selectedMeterSlug must be captured AFTER next()
+                // If this is null, balanceTracking was captured before the balance check middleware ran
+                expect(event.selectedMeterSlug).toBeDefined();
+                expect(event.selectedMeterSlug).not.toBeNull();
             });
         },
     );
@@ -172,6 +176,9 @@ describe("POST /generate/v1/chat/completions (streaming)", async () => {
                 expect(event.tokenCountCompletionText).toBeGreaterThan(0);
                 expect(event.totalCost).toBeGreaterThan(0);
                 expect(event.totalPrice).toBeGreaterThanOrEqual(0);
+                // Regression test: selectedMeterSlug must be captured AFTER next()
+                expect(event.selectedMeterSlug).toBeDefined();
+                expect(event.selectedMeterSlug).not.toBeNull();
             });
         },
     );
@@ -218,6 +225,9 @@ describe("GET /text/:prompt", async () => {
                 expect(event.tokenCountCompletionText).toBeGreaterThan(0);
                 expect(event.totalCost).toBeGreaterThan(0);
                 expect(event.totalPrice).toBeGreaterThanOrEqual(0);
+                // Regression test: selectedMeterSlug must be captured AFTER next()
+                expect(event.selectedMeterSlug).toBeDefined();
+                expect(event.selectedMeterSlug).not.toBeNull();
             });
         },
     );
@@ -373,7 +383,7 @@ test(
                                 {
                                     type: "image_url",
                                     image_url: {
-                                        url: "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a7/Camponotus_flavomarginatus_ant.jpg/320px-Camponotus_flavomarginatus_ant.jpg",
+                                        url: "https://picsum.photos/id/237/200/300",
                                     },
                                 },
                             ],
@@ -615,6 +625,173 @@ describe("POST /generate/v1/chat/completions (tool calls)", async () => {
     );
 });
 
+// GPT-5 temperature transformation test
+test(
+    "POST /v1/chat/completions should accept temperature=0.7 for GPT-5 models (transformed to 1)",
+    { timeout: 30000 },
+    async ({ apiKey, mocks }) => {
+        await mocks.enable("polar", "tinybird", "vcr");
+        const response = await SELF.fetch(
+            `http://localhost:3000/api/generate/v1/chat/completions`,
+            {
+                method: "POST",
+                headers: {
+                    "content-type": "application/json",
+                    "authorization": `Bearer ${apiKey}`,
+                },
+                body: JSON.stringify({
+                    model: "openai-fast",
+                    messages: [
+                        {
+                            role: "user",
+                            content: "Say yes",
+                        },
+                    ],
+                    temperature: 0.7,
+                    seed: testSeed(),
+                }),
+            },
+        );
+        // Should succeed - temperature is transformed to 1 for GPT-5 models
+        expect(response.status).toBe(200);
+        await response.text();
+    },
+);
+
+// Video URL content type tests (Issue #6137)
+describe("Video URL content type support", async () => {
+    test(
+        "POST /v1/chat/completions should accept video_url content type for Gemini models",
+        { timeout: 60000 },
+        async ({ apiKey, mocks }) => {
+            await mocks.enable("polar", "tinybird", "vcr");
+            const response = await SELF.fetch(
+                `http://localhost:3000/api/generate/v1/chat/completions`,
+                {
+                    method: "POST",
+                    headers: {
+                        "content-type": "application/json",
+                        "authorization": `Bearer ${apiKey}`,
+                    },
+                    body: JSON.stringify({
+                        model: "gemini",
+                        messages: [
+                            {
+                                role: "user",
+                                content: [
+                                    {
+                                        type: "text",
+                                        text: "What is happening in this video? Reply in one sentence.",
+                                    },
+                                    {
+                                        type: "video_url",
+                                        video_url: {
+                                            url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+                                        },
+                                    },
+                                ],
+                            },
+                        ],
+                        max_tokens: 2048,
+                        seed: testSeed(),
+                    }),
+                },
+            );
+            expect(response.status).toBe(200);
+            const data = await response.json();
+            expect((data as any).choices[0].message.content).toBeTruthy();
+        },
+    );
+
+    test(
+        "POST /v1/chat/completions should accept video_url with explicit mime_type",
+        { timeout: 60000 },
+        async ({ apiKey, mocks }) => {
+            await mocks.enable("polar", "tinybird", "vcr");
+            const response = await SELF.fetch(
+                `http://localhost:3000/api/generate/v1/chat/completions`,
+                {
+                    method: "POST",
+                    headers: {
+                        "content-type": "application/json",
+                        "authorization": `Bearer ${apiKey}`,
+                    },
+                    body: JSON.stringify({
+                        model: "gemini",
+                        messages: [
+                            {
+                                role: "user",
+                                content: [
+                                    {
+                                        type: "text",
+                                        text: "Describe this video briefly.",
+                                    },
+                                    {
+                                        type: "video_url",
+                                        video_url: {
+                                            url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+                                            mime_type: "video/mp4",
+                                        },
+                                    },
+                                ],
+                            },
+                        ],
+                        max_tokens: 2048,
+                        seed: testSeed(),
+                    }),
+                },
+            );
+            expect(response.status).toBe(200);
+            const data = await response.json();
+            expect((data as any).choices[0].message.content).toBeTruthy();
+        },
+    );
+
+    test(
+        "POST /v1/chat/completions should accept image_url with mime_type",
+        { timeout: 60000 },
+        async ({ apiKey, mocks }) => {
+            await mocks.enable("polar", "tinybird", "vcr");
+            const response = await SELF.fetch(
+                `http://localhost:3000/api/generate/v1/chat/completions`,
+                {
+                    method: "POST",
+                    headers: {
+                        "content-type": "application/json",
+                        "authorization": `Bearer ${apiKey}`,
+                    },
+                    body: JSON.stringify({
+                        model: "gemini",
+                        messages: [
+                            {
+                                role: "user",
+                                content: [
+                                    {
+                                        type: "text",
+                                        text: "What is in this image? One word.",
+                                    },
+                                    {
+                                        type: "image_url",
+                                        image_url: {
+                                            url: "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a7/Camponotus_flavomarginatus_ant.jpg/320px-Camponotus_flavomarginatus_ant.jpg",
+                                            mime_type: "image/jpeg",
+                                        },
+                                    },
+                                ],
+                            },
+                        ],
+                        max_tokens: 2048,
+                        seed: testSeed(),
+                    }),
+                },
+            );
+            expect(response.status).toBe(200);
+            const data = await response.json();
+            expect((data as any).choices[0].message.content).toBeTruthy();
+        },
+    );
+});
+
 // Model gating tests - API keys with permissions.models restriction
 describe("Model gating by API key permissions", async () => {
     test(
@@ -711,3 +888,62 @@ describe("Model gating by API key permissions", async () => {
         },
     );
 });
+
+// Gemini tool schema sanitization test (Issue: Portkey Gateway #1473)
+// Tests that exclusiveMinimum/exclusiveMaximum are stripped before sending to Vertex AI
+test(
+    "Gemini should accept tools with exclusiveMinimum/exclusiveMaximum (sanitized)",
+    { timeout: 60000 },
+    async ({ apiKey, mocks }) => {
+        await mocks.enable("polar", "tinybird", "vcr");
+        const response = await SELF.fetch(
+            `http://localhost:3000/api/generate/v1/chat/completions`,
+            {
+                method: "POST",
+                headers: {
+                    "content-type": "application/json",
+                    "authorization": `Bearer ${apiKey}`,
+                },
+                body: JSON.stringify({
+                    model: "gemini",
+                    messages: [
+                        {
+                            role: "user",
+                            content: "What is 25% of 80? Use the calculator.",
+                        },
+                    ],
+                    tools: [
+                        {
+                            type: "function",
+                            function: {
+                                name: "calculator",
+                                description: "Calculate a percentage",
+                                parameters: {
+                                    type: "object",
+                                    properties: {
+                                        value: {
+                                            type: "number",
+                                            exclusiveMinimum: 0,
+                                            exclusiveMaximum: 1000,
+                                        },
+                                        percentage: {
+                                            type: "number",
+                                            minimum: 0,
+                                            maximum: 100,
+                                        },
+                                    },
+                                    required: ["value", "percentage"],
+                                },
+                            },
+                        },
+                    ],
+                    tool_choice: "auto",
+                    seed: testSeed(),
+                }),
+            },
+        );
+        // Should succeed - exclusiveMinimum/exclusiveMaximum are sanitized by text service
+        expect(response.status).toBe(200);
+        await response.text();
+    },
+);

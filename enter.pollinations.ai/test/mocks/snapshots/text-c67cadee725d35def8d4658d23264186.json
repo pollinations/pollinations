@@ -23,16 +23,16 @@
     "headers": {
       "access-control-allow-origin": "*",
       "connection": "keep-alive",
-      "content-length": "1211",
+      "content-length": "1200",
       "content-type": "application/json; charset=utf-8",
-      "date": "Thu, 11 Dec 2025 16:44:13 GMT",
-      "etag": "W/\"4bb-/HxvPzKsmzENHpYTKApRx6aFdzg\"",
+      "date": "Tue, 23 Dec 2025 13:54:44 GMT",
+      "etag": "W/\"4b0-pFTvhwP54aZNnf2W19Eb6wGnqoA\"",
       "keep-alive": "timeout=5",
-      "x-model-used": "gpt-4.1-2025-04-14",
+      "x-model-used": "gpt-5.2-2025-12-11",
       "x-powered-by": "Express",
-      "x-usage-completion-text-tokens": "3",
-      "x-usage-prompt-text-tokens": "260",
-      "x-usage-total-tokens": "263"
+      "x-usage-completion-text-tokens": "6",
+      "x-usage-prompt-text-tokens": "259",
+      "x-usage-total-tokens": "265"
     },
     "body": {
       "type": "json",
@@ -76,9 +76,9 @@
             }
           }
         ],
-        "created": 1765471453,
-        "id": "pllns_8af65f9aaaaec6fcdb5ce3e4157324e3",
-        "model": "gpt-4.1-2025-04-14",
+        "created": 1766498083,
+        "id": "pllns_eea11b3425dc796f717fc787e0c9e946",
+        "model": "gpt-5.2-2025-12-11",
         "object": "chat.completion",
         "prompt_filter_results": [
           {
@@ -107,21 +107,21 @@
             }
           }
         ],
-        "system_fingerprint": "fp_f99638a8d7",
+        "system_fingerprint": null,
         "usage": {
-          "completion_tokens": 3,
+          "completion_tokens": 6,
           "completion_tokens_details": {
             "accepted_prediction_tokens": 0,
             "audio_tokens": 0,
             "reasoning_tokens": 0,
             "rejected_prediction_tokens": 0
           },
-          "prompt_tokens": 260,
+          "prompt_tokens": 259,
           "prompt_tokens_details": {
             "audio_tokens": 0,
             "cached_tokens": 0
           },
-          "total_tokens": 263
+          "total_tokens": 265
         }
       }
     }

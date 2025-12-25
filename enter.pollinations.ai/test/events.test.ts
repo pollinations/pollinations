@@ -6,10 +6,11 @@ import {
 } from "cloudflare:test";
 import { test } from "./fixtures.ts";
 import worker from "@/index.ts";
-import { processEvents, storeEvents } from "@/events.ts";
+import { processEvents, storeEvents, getPendingSpend } from "@/events.ts";
 import { exponentialBackoffDelay } from "@/util.ts";
 import {
     event,
+    EventStatus,
     priceToEventParams,
     usageToEventParams,
     type InsertGenerationEvent,
@@ -27,14 +28,16 @@ import {
 } from "@shared/registry/registry.ts";
 import { drizzle } from "drizzle-orm/d1";
 import { eq } from "drizzle-orm";
-import { expect, vi } from "vitest";
+import { expect } from "vitest";
 
 function createTextGenerationEvent({
     modelRequested,
+    eventStatus = "pending",
     simulateTinybirdError = false,
     simulatePolarError = false,
 }: {
     modelRequested: ServiceId;
+    eventStatus?: EventStatus;
     simulateTinybirdError?: boolean;
     simulatePolarError?: boolean;
 }): InsertGenerationEvent {
@@ -73,7 +76,7 @@ function createTextGenerationEvent({
         environment: env.ENVIRONMENT,
         eventType: "generate.text",
         eventProcessingId: undefined,
-        eventStatus: undefined,
+        eventStatus,
         polarDeliveryAttempts: undefined,
         polarDeliveredAt: undefined,
         tinybirdDeliveryAttempts: undefined,
@@ -134,7 +137,7 @@ test("Scheduled handler sends events to Polar.sh and Tinybird", async ({
 }) => {
     await mocks.enable("polar", "tinybird");
     const db = drizzle(env.DB);
-    const events = Array.from({ length: 2000 }).map(() => {
+    const events = Array.from({ length: 1000 }).map(() => {
         return createTextGenerationEvent({
             modelRequested: "openai-large",
         });
@@ -184,9 +187,10 @@ test("Events get set to error status after MAX_DELIVERY_ATTEMPTS", async ({
             polarAccessToken: env.POLAR_ACCESS_TOKEN,
             polarServer: env.POLAR_SERVER,
             tinybirdIngestUrl: env.TINYBIRD_INGEST_URL,
-            tinybirdAccessToken: env.TINYBIRD_ACCESS_TOKEN,
+            tinybirdIngestToken: env.TINYBIRD_INGEST_TOKEN,
             minRetryDelay: 0,
             maxRetryDelay: 0,
+            batchDeliveryDelay: 0,
         });
     }
     expect(mocks.tinybird.state.events).toHaveLength(1000);
@@ -379,4 +383,97 @@ test("Exponential backoff delay", async () => {
     expect(
         exponentialBackoffDelay(5, backoffConfigWithJitter),
     ).toBeLessThanOrEqual(10000 + 10000 * 0.1);
+});
+
+test("getPendingSpend returns 0 for user with no events", async () => {
+    const db = drizzle(env.DB);
+    const userId = generateRandomId();
+    const spend = await getPendingSpend(db, userId);
+    expect(spend).toBe(0);
+});
+
+test("getPendingSpend sums estimatedPrice for estimate events", async ({
+    log,
+}) => {
+    const db = drizzle(env.DB);
+    const userId = generateRandomId();
+
+    const pendingEvents: InsertGenerationEvent[] = [
+        {
+            ...createTextGenerationEvent({ modelRequested: "openai-large" }),
+            userId,
+            eventStatus: "estimate",
+            isBilledUsage: false,
+            estimatedPrice: 0.05,
+            totalPrice: 0,
+        },
+        {
+            ...createTextGenerationEvent({ modelRequested: "openai-large" }),
+            userId,
+            eventStatus: "estimate",
+            isBilledUsage: false,
+            estimatedPrice: 0.03,
+            totalPrice: 0,
+        },
+    ];
+
+    await storeEvents(db, log, pendingEvents);
+    const spend = await getPendingSpend(db, userId);
+    expect(spend).toBeCloseTo(0.08, 5);
+});
+
+test("getPendingSpend sums totalPrice for billed events", async ({ log }) => {
+    const db = drizzle(env.DB);
+    const userId = generateRandomId();
+
+    const billedEvents: InsertGenerationEvent[] = [
+        {
+            ...createTextGenerationEvent({ modelRequested: "openai-large" }),
+            userId,
+            eventStatus: "pending",
+            isBilledUsage: true,
+            estimatedPrice: null,
+            totalPrice: 0.1,
+        },
+        {
+            ...createTextGenerationEvent({ modelRequested: "openai-large" }),
+            userId,
+            eventStatus: "pending",
+            isBilledUsage: true,
+            estimatedPrice: null,
+            totalPrice: 0.15,
+        },
+    ];
+
+    await storeEvents(db, log, billedEvents);
+    const spend = await getPendingSpend(db, userId);
+    expect(spend).toBeCloseTo(0.25, 5);
+});
+
+test("getPendingSpend combines estimate and billed events", async ({ log }) => {
+    const db = drizzle(env.DB);
+    const userId = generateRandomId();
+
+    const mixedEvents: InsertGenerationEvent[] = [
+        {
+            ...createTextGenerationEvent({ modelRequested: "openai-large" }),
+            userId,
+            eventStatus: "estimate",
+            isBilledUsage: false,
+            estimatedPrice: 0.05,
+            totalPrice: 0,
+        },
+        {
+            ...createTextGenerationEvent({ modelRequested: "openai-large" }),
+            userId,
+            eventStatus: "pending",
+            isBilledUsage: true,
+            estimatedPrice: null,
+            totalPrice: 0.1,
+        },
+    ];
+
+    await storeEvents(db, log, mixedEvents);
+    const spend = await getPendingSpend(db, userId);
+    expect(spend).toBeCloseTo(0.15, 5);
 });

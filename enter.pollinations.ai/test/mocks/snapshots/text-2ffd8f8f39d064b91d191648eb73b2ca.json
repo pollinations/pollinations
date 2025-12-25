@@ -63,8 +63,8 @@
       "connection": "keep-alive",
       "content-length": "566",
       "content-type": "application/json; charset=utf-8",
-      "date": "Thu, 11 Dec 2025 16:49:14 GMT",
-      "etag": "W/\"236-XUeeum0go3YP6OelwgoUUNTHvEo\"",
+      "date": "Tue, 23 Dec 2025 13:56:51 GMT",
+      "etag": "W/\"236-j9qn7zT0z0mWJ0MKZDAREP4Mdto\"",
       "keep-alive": "timeout=5",
       "x-model-used": "global.anthropic.claude-opus-4-5-20251101-v1:0",
       "x-powered-by": "Express",
@@ -75,9 +75,9 @@
     "body": {
       "type": "json",
       "data": {
-        "id": "pllns_07d33113041fa3250faf602a96de4a4d",
+        "id": "pllns_d52013f79e418f9fb520c3f81316c1ee",
         "object": "chat.completion",
-        "created": 1765471754,
+        "created": 1766498211,
         "model": "global.anthropic.claude-opus-4-5-20251101-v1:0",
         "provider": "bedrock",
         "choices": [
@@ -89,7 +89,7 @@
               "content_blocks": [],
               "tool_calls": [
                 {
-                  "id": "tooluse_4trjuOJ8TK2WlJ-c-3-vhQ",
+                  "id": "tooluse_rx5nfqdBQcW5JpbuGYI25w",
                   "type": "function",
                   "function": {
                     "name": "calculator",

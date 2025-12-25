@@ -9,7 +9,14 @@ import { resolveModel } from "@/middleware/model.ts";
 import { frontendKeyRateLimit } from "@/middleware/rate-limit-durable.ts";
 import { imageCache } from "@/middleware/image-cache.ts";
 import { edgeRateLimit } from "@/middleware/rate-limit-edge.ts";
-import { describeRoute, resolver } from "hono-openapi";
+import { requestDeduplication } from "@/middleware/requestDeduplication.ts";
+import { describeRoute, resolver as baseResolver } from "hono-openapi";
+import type { StandardSchemaV1 } from "hono-openapi";
+
+// Wrapper for resolver that enables schema deduplication via $ref
+// Schemas with .meta({ $id: "Name" }) will be extracted to components/schemas
+const resolver = <T extends StandardSchemaV1>(schema: T) =>
+    baseResolver(schema, { reused: "ref" });
 import { validator } from "@/middleware/validator.ts";
 import {
     CreateChatCompletionResponseSchema,
@@ -17,13 +24,8 @@ import {
     type CreateChatCompletionResponse,
     GetModelsResponseSchema,
 } from "@/schemas/openai.ts";
-import {
-    createErrorResponseSchema,
-    type ErrorStatusCode,
-    getDefaultErrorMessage,
-    KNOWN_ERROR_STATUS_CODES,
-    UpstreamError,
-} from "@/error.ts";
+import { getDefaultErrorMessage, UpstreamError } from "@/error.ts";
+import { errorResponseDescriptions } from "@/utils/api-docs.ts";
 import { GenerateImageRequestQueryParamsSchema } from "@/schemas/image.ts";
 import { GenerateTextRequestQueryParamsSchema } from "@/schemas/text.ts";
 import { z } from "zod";
@@ -97,28 +99,6 @@ const chatCompletionHandlers = factory.createHandlers(
     },
 );
 
-const errorResponseDescriptions = Object.fromEntries(
-    KNOWN_ERROR_STATUS_CODES.map((status) => [
-        status,
-        {
-            description: getDefaultErrorMessage(status),
-            content: {
-                "application/json": {
-                    schema: resolver(createErrorResponseSchema(status)),
-                },
-            },
-        },
-    ]),
-);
-
-function errorResponses(...codes: ErrorStatusCode[]) {
-    return Object.fromEntries(
-        Object.entries(errorResponseDescriptions).filter(([status, _]) => {
-            return codes.includes(Number(status) as ErrorStatusCode);
-        }),
-    );
-}
-
 export const proxyRoutes = new Hono<Env>()
     // Edge rate limiter: first line of defense (10 req/s per IP)
     .use("*", edgeRateLimit)
@@ -136,7 +116,7 @@ export const proxyRoutes = new Hono<Env>()
                         },
                     },
                 },
-                ...errorResponses(500),
+                ...errorResponseDescriptions(500),
             },
         }),
         async (c) => {
@@ -165,7 +145,7 @@ export const proxyRoutes = new Hono<Env>()
                         },
                     },
                 },
-                ...errorResponses(500),
+                ...errorResponseDescriptions(500),
             },
         }),
         async (c) => {
@@ -200,7 +180,7 @@ export const proxyRoutes = new Hono<Env>()
                         },
                     },
                 },
-                ...errorResponses(500),
+                ...errorResponseDescriptions(500),
             },
         }),
         async (c) => {
@@ -219,6 +199,8 @@ export const proxyRoutes = new Hono<Env>()
     .use(auth({ allowApiKey: true, allowSessionCookie: false }))
     .use(frontendKeyRateLimit)
     .use(polar)
+    // Request deduplication: prevents duplicate concurrent requests by sharing promises
+    .use(requestDeduplication)
     .post(
         "/v1/chat/completions",
         describeRoute({
@@ -248,7 +230,7 @@ export const proxyRoutes = new Hono<Env>()
                         },
                     },
                 },
-                ...errorResponses(400, 401, 500),
+                ...errorResponseDescriptions(400, 401, 500),
             },
         }),
         ...chatCompletionHandlers,
@@ -285,6 +267,7 @@ export const proxyRoutes = new Hono<Env>()
                         },
                     },
                 },
+                ...errorResponseDescriptions(400, 401, 500),
             },
         }),
         validator(
@@ -397,7 +380,7 @@ export const proxyRoutes = new Hono<Env>()
                         },
                     },
                 },
-                ...errorResponses(400, 401, 500),
+                ...errorResponseDescriptions(400, 401, 500),
             },
         }),
         validator(
@@ -478,7 +461,7 @@ function proxyHeaders(c: Context): Record<string, string> {
         "x-forwarded-host": clientHost,
         "x-forwarded-for": clientIP,
         "x-real-ip": clientIP,
-        "x-enter-token": c.env.ENTER_TOKEN,
+        "x-enter-token": c.env.PLN_ENTER_TOKEN,
     };
 }
 

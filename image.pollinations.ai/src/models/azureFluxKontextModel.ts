@@ -22,8 +22,8 @@ export async function callAzureFluxKontext(
     safeParams: ImageParams,
     userInfo: AuthResult,
 ): Promise<ImageGenerationResult> {
-    const apiKey = process.env.AZURE_FLUX_KONTEXT_API_KEY;
-    let endpoint = process.env.AZURE_FLUX_KONTEXT_ENDPOINT;
+    const apiKey = process.env.AZURE_MYCELI_FLUX_KONTEXT_API_KEY;
+    let endpoint = process.env.AZURE_MYCELI_FLUX_KONTEXT_ENDPOINT;
 
     if (!apiKey || !endpoint) {
         throw new Error(

@@ -26,7 +26,7 @@
       "cache-control": "no-cache",
       "connection": "keep-alive",
       "content-type": "text/event-stream; charset=utf-8",
-      "date": "Thu, 11 Dec 2025 16:46:15 GMT",
+      "date": "Tue, 23 Dec 2025 13:55:19 GMT",
       "transfer-encoding": "chunked",
       "x-powered-by": "Express"
     },
@@ -34,11 +34,11 @@
       "type": "stream",
       "data": [
         {
-          "data": "data: {\"id\":\"vertex-ai-1765",
+          "data": "data: {\"id\":\"vertex-ai-1766",
           "delay": 24
         },
         {
-          "data": "471575627\",\"object\":\"chat.completion.chunk\",\"created\":1765471575,\"model\":\"gemini-2.5-flash-lite\",\"provider\":\"vertex-ai\",\"choices\":[{\"delta\":{\"role\":\"assistant\",\"content\":\"Yes\",\"content_blocks\":[{\"index\":0,\"delta\":{\"text\":\"Yes\"}}]},\"index\":0,\"finish_reason\":null,\"groundingMetadata\":{}}]}\n\ndata: {\"id\":\"vertex-ai-1765471575627\",\"object\":\"chat.completion.chunk\",\"created\":1765471575,\"model\":\"gemini-2.5-flash-lite\",\"provider\":\"vertex-ai\",\"choices\":[{\"delta\":{\"role\":\"assistant\",\"content\":\".\",\"content_blocks\":[{\"index\":0,\"delta\":{\"text\":\".\"}}]},\"index\":0,\"finish_reason\":\"STOP\",\"groundingMetadata\":{\"groundingSupports\":[{\"segment\":{\"endIndex\":4,\"text\":\"Yes.\"},\"groundingChunkIndices\":[0]}]}}],\"usage\":{\"prompt_tokens\":12,\"completion_tokens\":2,\"total_tokens\":14,\"completion_tokens_details\":{\"reasoning_tokens\":0,\"audio_tokens\":0},\"prompt_tokens_details\":{\"audio_tokens\":0}}}\n\n",
+          "data": "498119573\",\"object\":\"chat.completion.chunk\",\"created\":1766498119,\"model\":\"gemini-2.5-flash-lite\",\"provider\":\"vertex-ai\",\"choices\":[{\"delta\":{\"role\":\"assistant\",\"content\":\"Yes\",\"content_blocks\":[{\"index\":0,\"delta\":{\"text\":\"Yes\"}}]},\"index\":0,\"finish_reason\":null,\"groundingMetadata\":{}}]}\n\ndata: {\"id\":\"vertex-ai-1766498119573\",\"object\":\"chat.completion.chunk\",\"created\":1766498119,\"model\":\"gemini-2.5-flash-lite\",\"provider\":\"vertex-ai\",\"choices\":[{\"delta\":{\"role\":\"assistant\",\"content\":\".\",\"content_blocks\":[{\"index\":0,\"delta\":{\"text\":\".\"}}]},\"index\":0,\"finish_reason\":\"STOP\",\"groundingMetadata\":{\"groundingSupports\":[{\"segment\":{\"endIndex\":4,\"text\":\"Yes.\"},\"groundingChunkIndices\":[0]}]}}],\"usage\":{\"prompt_tokens\":12,\"completion_tokens\":2,\"total_tokens\":14,\"completion_tokens_details\":{\"reasoning_tokens\":0,\"audio_tokens\":0},\"prompt_tokens_details\":{\"audio_tokens\":0}}}\n\n",
           "delay": 0
         }
       ]

@@ -57,6 +57,41 @@
       "when": 1765787222986,
       "tag": "0007_new_shooting_star",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "6",
+      "when": 1766161057557,
+      "tag": "0008_mysterious_marrow",
+      "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "6",
+      "when": 1766335384151,
+      "tag": "0009_even_morg",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "6",
+      "when": 1766348172604,
+      "tag": "0010_crazy_mojo",
+      "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "6",
+      "when": 1766351297567,
+      "tag": "0011_optimize_event_indexes",
+      "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "6",
+      "when": 1766417598796,
+      "tag": "0012_even_dorian_gray",
+      "breakpoints": true
     }
   ]
 }

@@ -5,8 +5,8 @@ import {
     removeSystemMessages,
 } from "./transforms/createSystemPromptTransform.js";
 import { pipe } from "./transforms/pipe.js";
-import { createGoogleSearchTransform } from "./transforms/createGoogleSearchTransform.js";
 import { createGeminiToolsTransform } from "./transforms/createGeminiToolsTransform.ts";
+import { sanitizeToolSchemas } from "./transforms/sanitizeToolSchemas.js";
 
 // Import persona prompts
 import midijourneyPrompt from "./personas/midijourney.js";
@@ -59,7 +59,7 @@ const models: ModelDefinition[] = [
     },
     {
         name: "deepseek",
-        config: portkeyConfig["myceli-deepseek-v3.1"],
+        config: portkeyConfig["myceli-deepseek-v3.2"],
         transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
     },
     {
@@ -88,16 +88,29 @@ const models: ModelDefinition[] = [
     },
     {
         name: "gemini",
+        config: portkeyConfig["gemini-3-flash-preview"],
+        transform: pipe(
+            createSystemPromptTransform(BASE_PROMPTS.conversational),
+            sanitizeToolSchemas(),
+            createGeminiToolsTransform(["code_execution", "url_context"]),
+        ),
+    },
+    {
+        name: "gemini-fast",
         config: portkeyConfig["gemini-2.5-flash-lite"],
         transform: pipe(
             createSystemPromptTransform(BASE_PROMPTS.conversational),
-            createGeminiToolsTransform(),
+            sanitizeToolSchemas(),
+            createGeminiToolsTransform(["code_execution", "url_context"]),
         ),
     },
     {
         name: "gemini-search",
         config: portkeyConfig["gemini-2.5-flash-lite"],
-        transform: pipe(createGoogleSearchTransform()),
+        transform: pipe(
+            sanitizeToolSchemas(),
+            createGeminiToolsTransform(["google_search"]),
+        ),
     },
     {
         name: "midijourney",
@@ -116,7 +129,7 @@ const models: ModelDefinition[] = [
     },
     {
         name: "perplexity-reasoning",
-        config: portkeyConfig["sonar-reasoning"],
+        config: portkeyConfig["sonar-reasoning-pro"],
         transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
     },
     {
@@ -129,7 +142,8 @@ const models: ModelDefinition[] = [
         config: portkeyConfig["gemini-3-pro-preview"],
         transform: pipe(
             createSystemPromptTransform(BASE_PROMPTS.conversational),
-            createGeminiToolsTransform(["google_search", "url_context"]),
+            sanitizeToolSchemas(),
+            createGeminiToolsTransform(["code_execution", "url_context"]),
         ),
     },
     {

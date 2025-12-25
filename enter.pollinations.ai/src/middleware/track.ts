@@ -1,4 +1,5 @@
-import { processEvents, storeEvents } from "@/events.ts";
+import { processEvents, storeEvents, updateEvent } from "@/events.ts";
+import { getModelStats, getEstimatedPrice } from "@/utils/model-stats.ts";
 import {
     getActivePriceDefinition,
     calculateCost,
@@ -15,7 +16,7 @@ import {
     openaiUsageToTokenUsage,
     parseUsageHeaders,
 } from "@shared/registry/usage-headers.ts";
-import { routePath, baseRoutePath } from "hono/route";
+import { routePath } from "hono/route";
 import {
     CompletionUsage,
     CompletionUsageSchema,
@@ -34,6 +35,7 @@ import { drizzle } from "drizzle-orm/d1";
 import { HonoRequest } from "hono";
 import type {
     ApiKeyType,
+    EstimateGenerationEvent,
     EventType,
     GenerationEventContentFilterParams,
     InsertGenerationEvent,
@@ -105,10 +107,22 @@ export const track = (eventType: EventType) =>
     createMiddleware<TrackEnv>(async (c, next) => {
         const log = getLogger(["hono", "track"]);
         const startTime = new Date();
+        const db = drizzle(c.env.DB);
 
         // Get model from resolveModel middleware
         const modelInfo = c.var.model;
         const requestTracking = await trackRequest(modelInfo, c.req);
+
+        const userTracking: UserData = {
+            userId: c.var.auth.user?.id,
+            userTier: c.var.auth.user?.tier,
+            userGithubId: `${c.var.auth.user?.githubId}`,
+            userGithubUsername: c.var.auth.user?.githubUsername,
+            apiKeyId: c.var.auth.apiKey?.id,
+            apiKeyType: c.var.auth.apiKey?.metadata?.keyType as ApiKeyType,
+            apiKeyName: c.var.auth.apiKey?.name,
+        } satisfies UserData;
+
         let responseOverride = null;
 
         c.set("track", {
@@ -119,6 +133,42 @@ export const track = (eventType: EventType) =>
                 responseOverride = response;
             },
         });
+
+        let estimateEventId: string | undefined = generateRandomId();
+
+        if (userTracking.userId) {
+            try {
+                const modelStats = await getModelStats(c.env.KV, log);
+                const estimatedPrice = getEstimatedPrice(
+                    modelStats,
+                    requestTracking.resolvedModelRequested,
+                );
+
+                const estimateEvent = createEstimateEvent({
+                    id: estimateEventId,
+                    requestId: c.get("requestId"),
+                    requestPath: `${routePath(c)}`,
+                    startTime,
+                    environment: c.env.ENVIRONMENT,
+                    eventType,
+                    userTracking,
+                    requestTracking,
+                    estimatedPrice,
+                });
+
+                await storeEvents(db, log, [estimateEvent]);
+                log.debug(
+                    "Inserted estimate event: {estimateEventId} with estimatedPrice={estimatedPrice}",
+                    { estimateEventId, estimatedPrice },
+                );
+            } catch (error) {
+                log.error("Failed to insert estimate event: {error}", {
+                    error,
+                });
+                // Insertion failed, reset estimate event
+                estimateEventId = undefined;
+            }
+        }
 
         await next();
 
@@ -138,17 +188,7 @@ export const track = (eventType: EventType) =>
                     responseTracking.price?.totalPrice || 0,
                 );
 
-                const userTracking: UserData = {
-                    userId: c.var.auth.user?.id,
-                    userTier: c.var.auth.user?.tier,
-                    userGithubId: `${c.var.auth.user?.githubId}`,
-                    userGithubUsername: c.var.auth.user?.githubUsername,
-                    apiKeyId: c.var.auth.apiKey?.id,
-                    apiKeyType: c.var.auth.apiKey?.metadata
-                        ?.keyType as ApiKeyType,
-                    apiKeyName: c.var.auth.apiKey?.name,
-                } satisfies UserData;
-
+                // Capture balance tracking AFTER next() so balanceCheckResult is set
                 const balanceTracking = {
                     selectedMeterId:
                         c.var.polar.balanceCheckResult?.selectedMeterId,
@@ -162,7 +202,8 @@ export const track = (eventType: EventType) =>
                     ),
                 } satisfies BalanceData;
 
-                const event = createTrackingEvent({
+                const finalEvent = createTrackingEvent({
+                    id: estimateEventId || generateRandomId(),
                     requestId: c.get("requestId"),
                     requestPath: `${routePath(c)}`,
                     startTime,
@@ -186,10 +227,20 @@ export const track = (eventType: EventType) =>
                         "  totalCost={event.totalCost}",
                         "  totalPrice={event.totalPrice}",
                     ].join("\n"),
-                    { event },
+                    { event: finalEvent },
                 );
-                const db = drizzle(c.env.DB);
-                await storeEvents(db, c.var.log, [event]);
+
+                if (estimateEventId) {
+                    // Update the estimate event with all final data
+                    await updateEvent(db, log, estimateEventId, finalEvent);
+                    log.debug(
+                        "Updated estimate event {eventId} with actual data",
+                        { eventId: estimateEventId },
+                    );
+                } else {
+                    // No pending event was inserted, store a new event
+                    await storeEvents(db, c.var.log, [finalEvent]);
+                }
 
                 // process events immediately in development/testing
                 if (
@@ -341,7 +392,54 @@ type BalanceData = {
     balances: Record<string, number>;
 };
 
+type EstimateEventInput = {
+    id: string;
+    requestId: string;
+    requestPath: string;
+    startTime: Date;
+    environment: string;
+    eventType: EventType;
+    userTracking: UserData;
+    requestTracking: RequestTrackingData;
+    estimatedPrice: number;
+};
+
+function createEstimateEvent({
+    id,
+    requestId,
+    requestPath,
+    startTime,
+    environment,
+    eventType,
+    userTracking,
+    requestTracking,
+    estimatedPrice,
+}: EstimateEventInput): InsertGenerationEvent {
+    return {
+        id,
+        eventStatus: "estimate",
+        requestId,
+        requestPath,
+        startTime,
+        environment,
+        eventType,
+
+        ...userTracking,
+        ...requestTracking.referrerData,
+
+        modelRequested: requestTracking.modelRequested,
+        resolvedModelRequested: requestTracking.resolvedModelRequested,
+        modelProviderUsed: requestTracking.modelProvider,
+
+        isBilledUsage: false,
+        estimatedPrice,
+
+        ...priceToEventParams(requestTracking.modelPriceDefinition),
+    };
+}
+
 type TrackingEventInput = {
+    id: string;
     requestId: string;
     requestPath: string;
     startTime: Date;
@@ -356,6 +454,7 @@ type TrackingEventInput = {
 };
 
 function createTrackingEvent({
+    id,
     requestId,
     requestPath,
     startTime,
@@ -369,7 +468,8 @@ function createTrackingEvent({
     errorTracking,
 }: TrackingEventInput): InsertGenerationEvent {
     return {
-        id: generateRandomId(),
+        id,
+        eventStatus: "pending",
         requestId,
         requestPath,
         startTime,

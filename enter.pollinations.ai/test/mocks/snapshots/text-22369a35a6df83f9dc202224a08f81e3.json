@@ -26,7 +26,7 @@
       "cache-control": "no-cache",
       "connection": "keep-alive",
       "content-type": "text/event-stream; charset=utf-8",
-      "date": "Thu, 11 Dec 2025 16:46:09 GMT",
+      "date": "Tue, 23 Dec 2025 13:55:10 GMT",
       "transfer-encoding": "chunked",
       "x-powered-by": "Express"
     },
@@ -34,11 +34,19 @@
       "type": "stream",
       "data": [
         {
-          "data": "data: {\"choices\":[],\"created\":0,\"id\":\"\",\"model\":\"\",\"object\":\"\",\"prompt_filter_results\":[{\"prompt_index\":0,\"content_filter_results\":{\"hate\":{\"filtered\":false,\"severity\":\"safe\"},\"jailbreak\":{\"detected\":false,\"filtered\":false},\"self_harm\":{\"filtered\":false,\"severity\":\"safe\"},\"sexual\":{\"filtered\":false,\"severity\":\"safe\"},\"violence\":{\"filtered\":false,\"severity\":\"safe\"}}}]}\n\n",
+          "data": "data: {\"choices\":[],\"create",
+          "delay": 24
+        },
+        {
+          "data": "d\":0,\"id\":\"\",\"model\":\"\",\"object\":\"\",\"prompt_filter_results\":[{\"prompt_index\":0,\"content_filter_results\":{\"hate\":{\"filtered\":false,\"severity\":\"safe\"},\"jailbreak\":{\"detected\":false,\"filtered\":false},\"self_harm\":{\"filtered\":false,\"severity\":\"safe\"},\"sexual\":{\"filtered\":false,\"severity\":\"safe\"},\"violence\":{\"filtered\":false,\"severity\":\"safe\"}}}]}\n\n",
           "delay": 0
         },
         {
-          "data": "data: {\"choices\":[{\"content_filter_results\":{},\"delta\":{\"content\":\"\",\"refusal\":null,\"role\":\"assistant\"},\"finish_reason\":null,\"index\":0,\"logprobs\":null}],\"created\":1765471567,\"id\":\"chatcmpl-Cle5neU90cNKrJYRbvw2kKL4kgMwR\",\"model\":\"gpt-5-nano-2025-08-07\",\"obfuscation\":\"YFxk5yhh4W3Kza\",\"object\":\"chat.completion.chunk\",\"system_fingerprint\":null,\"usage\":null}\n\n",
+          "data": "data: {\"choices\":[{\"conte",
+          "delay": 0
+        },
+        {
+          "data": "nt_filter_results\":{},\"delta\":{\"content\":\"\",\"refusal\":null,\"role\":\"assistant\"},\"finish_reason\":null,\"index\":0,\"logprobs\":null}],\"created\":1766498109,\"id\":\"chatcmpl-Cpx8vfrroULhgPX5CS1sry0iUl2r7\",\"model\":\"gpt-5-nano-2025-08-07\",\"obfuscation\":\"0rFuwySWs47F30\",\"object\":\"chat.completion.chunk\",\"system_fingerprint\":null,\"usage\":null}\n\n",
           "delay": 0
         },
         {
@@ -46,15 +54,23 @@
           "delay": 7
         },
         {
-          "data": "_filter_results\":{\"protected_material_text\":{\"detected\":false,\"filtered\":false}},\"delta\":{\"content\":\"Yes\"},\"finish_reason\":null,\"index\":0,\"logprobs\":null}],\"created\":1765471567,\"id\":\"chatcmpl-Cle5neU90cNKrJYRbvw2kKL4kgMwR\",\"model\":\"gpt-5-nano-2025-08-07\",\"obfuscation\":\"GWFxWHZALaxnv\",\"object\":\"chat.completion.chunk\",\"system_fingerprint\":null,\"usage\":null}\n\ndata: {\"choices\":[{\"content_filter_results\":{\"protected_material_text\":{\"detected\":false,\"filtered\":false}},\"delta\":{\"content\":\".\"},\"finish_reason\":null,\"index\":0,\"logprobs\":null}],\"created\":1765471567,\"id\":\"chatcmpl-Cle5neU90cNKrJYRbvw2kKL4kgMwR\",\"model\":\"gpt-5-nano-2025-08-07\",\"obfuscation\":\"O1ZudeZmPNH2ybk\",\"object\":\"chat.completion.chunk\",\"system_fingerprint\":null,\"usage\":null}\n\n",
+          "data": "_filter_results\":{\"protected_material_text\":{\"detected\":false,\"filtered\":false}},\"delta\":{\"content\":\"Yes\"},\"finish_reason\":null,\"index\":0,\"logprobs\":null}],\"created\":1766498109,\"id\":\"chatcmpl-Cpx8vfrroULhgPX5CS1sry0iUl2r7\",\"model\":\"gpt-5-nano-2025-08-07\",\"obfuscation\":\"SwZUOcIqJmGUD\",\"object\":\"chat.completion.chunk\",\"system_fingerprint\":null,\"usage\":null}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"choices\":[{\"conte",
+          "delay": 1
+        },
+        {
+          "data": "nt_filter_results\":{\"protected_material_text\":{\"detected\":false,\"filtered\":false}},\"delta\":{\"content\":\".\"},\"finish_reason\":null,\"index\":0,\"logprobs\":null}],\"created\":1766498109,\"id\":\"chatcmpl-Cpx8vfrroULhgPX5CS1sry0iUl2r7\",\"model\":\"gpt-5-nano-2025-08-07\",\"obfuscation\":\"JYy5y6j2xBQhjMN\",\"object\":\"chat.completion.chunk\",\"system_fingerprint\":null,\"usage\":null}\n\n",
           "delay": 0
         },
         {
           "data": "data: {\"choices\":[{\"content",
-          "delay": 2
+          "delay": 1
         },
         {
-          "data": "_filter_results\":{},\"delta\":{},\"finish_reason\":\"stop\",\"index\":0,\"logprobs\":null}],\"created\":1765471567,\"id\":\"chatcmpl-Cle5neU90cNKrJYRbvw2kKL4kgMwR\",\"model\":\"gpt-5-nano-2025-08-07\",\"obfuscation\":\"WbS8kdJqyV\",\"object\":\"chat.completion.chunk\",\"system_fingerprint\":null,\"usage\":null}\n\n",
+          "data": "_filter_results\":{},\"delta\":{},\"finish_reason\":\"stop\",\"index\":0,\"logprobs\":null}],\"created\":1766498109,\"id\":\"chatcmpl-Cpx8vfrroULhgPX5CS1sry0iUl2r7\",\"model\":\"gpt-5-nano-2025-08-07\",\"obfuscation\":\"LUJkMzrQHd\",\"object\":\"chat.completion.chunk\",\"system_fingerprint\":null,\"usage\":null}\n\n",
           "delay": 0
         },
         {
@@ -62,12 +78,12 @@
           "delay": 18
         },
         {
-          "data": "d\":1765471567,\"id\":\"chatcmpl-Cle5neU90cNKrJYRbvw2kKL4kgMwR\",\"model\":\"gpt-5-nano-2025-08-07\",\"obfuscation\":\"fTSVHlikfb\",\"object\":\"chat.completion.chunk\",\"system_fingerprint\":null,\"usage\":{\"completion_tokens\":204,\"completion_tokens_details\":{\"accepted_prediction_tokens\":0,\"audio_tokens\":0,\"reasoning_tokens\":192,\"rejected_prediction_tokens\":0},\"prompt_tokens\":259,\"prompt_tokens_details\":{\"audio_tokens\":0,\"cached_tokens\":0},\"total_tokens\":463}}\n\n",
+          "data": "d\":1766498109,\"id\":\"chatcmpl-Cpx8vfrroULhgPX5CS1sry0iUl2r7\",\"model\":\"gpt-5-nano-2025-08-07\",\"obfuscation\":\"Bked9MK8Jc\",\"object\":\"chat.completion.chunk\",\"system_fingerprint\":null,\"usage\":{\"completion_tokens\":204,\"completion_tokens_details\":{\"accepted_prediction_tokens\":0,\"audio_tokens\":0,\"reasoning_tokens\":192,\"rejected_prediction_tokens\":0},\"prompt_tokens\":259,\"prompt_tokens_details\":{\"audio_tokens\":0,\"cached_tokens\":0},\"total_tokens\":463}}\n\n",
           "delay": 0
         },
         {
           "data": "data: [DONE]\n\n",
-          "delay": 1
+          "delay": 4
         }
       ]
     }

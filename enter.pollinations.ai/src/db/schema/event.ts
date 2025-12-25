@@ -11,7 +11,13 @@ import type { ContentFilterResult } from "@/schemas/openai";
 const eventTypeValues = ["generate.text", "generate.image"] as const;
 export type EventType = (typeof eventTypeValues)[number];
 
-const eventStatusValues = ["pending", "processing", "sent", "error"] as const;
+const eventStatusValues = [
+    "estimate",
+    "pending",
+    "processing",
+    "sent",
+    "error",
+] as const;
 export type EventStatus = (typeof eventStatusValues)[number];
 
 const apiKeyTypeValues = ["secret", "publishable"] as const;
@@ -23,11 +29,10 @@ export const event = sqliteTable(
         id: text("id").primaryKey(),
 
         // Event Processing (internal)
-        eventProcessingId: text("event_processing_id"),
         eventStatus: text("event_status", { enum: eventStatusValues })
             .$type<EventStatus>()
-            .default("pending")
             .notNull(),
+        eventProcessingId: text("event_processing_id"),
         polarDeliveryAttempts: integer("polar_delivery_attempts")
             .default(0)
             .notNull(),
@@ -51,7 +56,7 @@ export const event = sqliteTable(
         requestId: text("request_id").notNull(),
         requestPath: text("request_path"),
         startTime: integer("start_time", { mode: "timestamp_ms" }).notNull(),
-        endTime: integer("end_time", { mode: "timestamp_ms" }).notNull(),
+        endTime: integer("end_time", { mode: "timestamp_ms" }),
         responseTime: real("response_time"),
         responseStatus: integer("response_status"),
         environment: text("environment"),
@@ -91,20 +96,30 @@ export const event = sqliteTable(
         }).notNull(),
 
         // Pricing
-        tokenPricePromptText: real("token_price_prompt_text").notNull(),
-        tokenPricePromptCached: real("token_price_prompt_cached").notNull(),
-        tokenPricePromptAudio: real("token_price_prompt_audio").notNull(),
-        tokenPricePromptImage: real("token_price_prompt_image").notNull(),
-        tokenPriceCompletionText: real("token_price_completion_text").notNull(),
-        tokenPriceCompletionReasoning: real(
-            "token_price_completion_reasoning",
-        ).notNull(),
-        tokenPriceCompletionAudio: real(
-            "token_price_completion_audio",
-        ).notNull(),
-        tokenPriceCompletionImage: real(
-            "token_price_completion_image",
-        ).notNull(),
+        tokenPricePromptText: real("token_price_prompt_text")
+            .notNull()
+            .default(0),
+        tokenPricePromptCached: real("token_price_prompt_cached")
+            .notNull()
+            .default(0),
+        tokenPricePromptAudio: real("token_price_prompt_audio")
+            .notNull()
+            .default(0),
+        tokenPricePromptImage: real("token_price_prompt_image")
+            .notNull()
+            .default(0),
+        tokenPriceCompletionText: real("token_price_completion_text")
+            .notNull()
+            .default(0),
+        tokenPriceCompletionReasoning: real("token_price_completion_reasoning")
+            .notNull()
+            .default(0),
+        tokenPriceCompletionAudio: real("token_price_completion_audio")
+            .notNull()
+            .default(0),
+        tokenPriceCompletionImage: real("token_price_completion_image")
+            .notNull()
+            .default(0),
         tokenPriceCompletionVideoSeconds: real(
             "token_price_completion_video_seconds",
         )
@@ -117,22 +132,32 @@ export const event = sqliteTable(
             .default(0),
 
         // Usage
-        tokenCountPromptText: integer("token_count_prompt_text").notNull(),
-        tokenCountPromptAudio: integer("token_count_prompt_audio").notNull(),
-        tokenCountPromptCached: integer("token_count_prompt_cached").notNull(),
-        tokenCountPromptImage: integer("token_count_prompt_image").notNull(),
-        tokenCountCompletionText: integer(
-            "token_count_completion_text",
-        ).notNull(),
+        tokenCountPromptText: integer("token_count_prompt_text")
+            .notNull()
+            .default(0),
+        tokenCountPromptAudio: integer("token_count_prompt_audio")
+            .notNull()
+            .default(0),
+        tokenCountPromptCached: integer("token_count_prompt_cached")
+            .notNull()
+            .default(0),
+        tokenCountPromptImage: integer("token_count_prompt_image")
+            .notNull()
+            .default(0),
+        tokenCountCompletionText: integer("token_count_completion_text")
+            .notNull()
+            .default(0),
         tokenCountCompletionReasoning: integer(
             "token_count_completion_reasoning",
-        ).notNull(),
-        tokenCountCompletionAudio: integer(
-            "token_count_completion_audio",
-        ).notNull(),
-        tokenCountCompletionImage: integer(
-            "token_count_completion_image",
-        ).notNull(),
+        )
+            .notNull()
+            .default(0),
+        tokenCountCompletionAudio: integer("token_count_completion_audio")
+            .notNull()
+            .default(0),
+        tokenCountCompletionImage: integer("token_count_completion_image")
+            .notNull()
+            .default(0),
         tokenCountCompletionVideoSeconds: integer(
             "token_count_completion_video_seconds",
         )
@@ -145,8 +170,11 @@ export const event = sqliteTable(
             .default(0),
 
         // Totals
-        totalCost: real("total_cost").notNull(),
-        totalPrice: real("total_price").notNull(),
+        totalCost: real("total_cost").notNull().default(0),
+        totalPrice: real("total_price").notNull().default(0),
+
+        // Estimated price for in-flight requests
+        estimatedPrice: real("estimated_price"),
 
         // Prompt Moderation
         moderationPromptHateSeverity: text("moderation_prompt_hate_severity"),
@@ -199,22 +227,69 @@ export const event = sqliteTable(
         errorMessage: text("error_message"),
     },
     (table) => [
-        index("idx_event_processing_status").on(
-            table.eventProcessingId,
+        // For rollbackProcessingEvents, confirmProcessingEvents: WHERE eventProcessingId = ?
+        index("idx_event_processing_id").on(table.eventProcessingId),
+
+        // For checkPendingBatchIsReady, preparePendingEvents: WHERE eventStatus = 'pending'
+        // For clearExpiredEvents: WHERE eventStatus = 'sent' AND createdAt < ?
+        // Status first for equality, then createdAt for range/ordering
+        index("idx_event_status_created").on(
             table.eventStatus,
-        ),
-        index("idx_event_created_at").on(table.createdAt),
-        // Composite index for pending spend query (user balance check)
-        index("idx_event_user_billed_created").on(
-            table.userId,
-            table.isBilledUsage,
             table.createdAt,
         ),
+
+        // For getPendingSpend: WHERE userId = ? AND createdAt >= ?
+        // Covers the 10-minute window query for pending spend calculation
+        index("idx_event_user_created").on(table.userId, table.createdAt),
     ],
 );
 
 export type InsertGenerationEvent = typeof event.$inferInsert;
 export type SelectGenerationEvent = typeof event.$inferSelect;
+
+export type EstimateGenerationEvent = Omit<
+    InsertGenerationEvent,
+    | "endTime"
+    | "responseTime"
+    | "responseStatus"
+    | "modelUsed"
+    // Token counts
+    | "tokenCountPromptText"
+    | "tokenCountPromptAudio"
+    | "tokenCountPromptCached"
+    | "tokenCountPromptImage"
+    | "tokenCountCompletionText"
+    | "tokenCountCompletionReasoning"
+    | "tokenCountCompletionAudio"
+    | "tokenCountCompletionImage"
+    | "tokenCountCompletionVideoSeconds"
+    | "tokenCountCompletionVideoTokens"
+    // Cost / Price
+    | "totalCost"
+    | "totalPrice"
+    // Cache
+    | "cacheHit"
+    | "cacheType"
+    | "cacheSemanticSimilarity"
+    | "cacheSemanticThreshold"
+    | "cacheKey"
+    // Moderation
+    | "moderationPromptHateSeverity"
+    | "moderationPromptSelfHarmSeverity"
+    | "moderationPromptSexualSeverity"
+    | "moderationPromptViolenceSeverity"
+    | "moderationPromptJailbreakDetected"
+    | "moderationCompletionHateSeverity"
+    | "moderationCompletionSelfHarmSeverity"
+    | "moderationCompletionSexualSeverity"
+    | "moderationCompletionViolenceSeverity"
+    | "moderationCompletionProtectedMaterialCodeDetected"
+    | "moderationCompletionProtectedMaterialTextDetected"
+    // Error
+    | "errorResponseCode"
+    | "errorSource"
+    | "errorMessage"
+>;
 
 export type GenerationEventPriceParams = {
     tokenPricePromptText: number;

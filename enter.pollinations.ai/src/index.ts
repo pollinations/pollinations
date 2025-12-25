@@ -32,6 +32,8 @@ export const api = new Hono<Env>()
     .route("/admin", adminRoutes)
     .route("/generate", proxyRoutes);
 
+export type ApiRoutes = typeof api;
+
 const docsRoutes = createDocsRoutes(api);
 
 const app = new Hono<Env>()
@@ -91,8 +93,6 @@ export default {
             polarServer: env.POLAR_SERVER,
             tinybirdIngestUrl: env.TINYBIRD_INGEST_URL,
             tinybirdIngestToken: env.TINYBIRD_INGEST_TOKEN,
-            minRetryDelay: 100,
-            maxRetryDelay: 10000,
         });
     },
 } satisfies ExportedHandler<CloudflareBindings>;

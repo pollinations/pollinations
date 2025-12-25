@@ -23,38 +23,38 @@
     "headers": {
       "access-control-allow-origin": "*",
       "connection": "keep-alive",
-      "content-length": "1133",
+      "content-length": "1255",
       "content-type": "application/json; charset=utf-8",
-      "date": "Thu, 11 Dec 2025 16:45:45 GMT",
-      "etag": "W/\"46d-d+cnhDMzG2jhVm07ACBdl2PWSjE\"",
+      "date": "Tue, 23 Dec 2025 13:55:03 GMT",
+      "etag": "W/\"4e7-ruk0BArTeY7Izcjwe2G1NCKcYv4\"",
       "keep-alive": "timeout=5",
       "x-model-used": "sonar",
       "x-powered-by": "Express",
-      "x-usage-completion-text-tokens": "105",
+      "x-usage-completion-text-tokens": "135",
       "x-usage-prompt-text-tokens": "259",
-      "x-usage-total-tokens": "364"
+      "x-usage-total-tokens": "394"
     },
     "body": {
       "type": "json",
       "data": {
-        "id": "pllns_babb6987afe304ae1af44f294a3e18f0",
+        "id": "pllns_df46a82d81fdd177e2949f5c1191c31d",
         "object": "chat.completion",
-        "created": 1765471545,
+        "created": 1766498102,
         "model": "sonar",
         "provider": "perplexity-ai",
         "citations": [
           "https://en.wikipedia.org/wiki/Berlin",
           "https://en.wikipedia.org/wiki/Capital_of_Germany",
           "https://www.britannica.com/place/Berlin",
-          "https://www.bmi.bund.de/EN/topics/constitution/state-symbols/capital/capital-city-artikel.html",
           "https://www.germany.travel/en/inspiring-germany/berlin.html",
+          "https://www.bmi.bund.de/EN/topics/constitution/state-symbols/capital/capital-city-artikel.html",
           "https://www.berlin.de/en/"
         ],
         "choices": [
           {
             "message": {
               "role": "assistant",
-              "content": "Yes, **Berlin is the capital of Germany**. It is the largest city in Germany by both area and population and serves as the seat of the German federal parliament and government, including the official residence of the Federal President, the Chancellery, and the Bundestag (parliament) in the Reichstag building. Berlin has been the capital since German reunification in 1990, following prior historical roles as the capital of Prussia and unified Germany before World War II[1][2][3][4]."
+              "content": "**Yes**, Berlin is the capital of Germany.[1][2][3][5]\n\nIt serves as the seat of the federal government, including the Chancellor’s office, the Bundestag parliament, and the President’s residence at Bellevue Palace, a status reaffirmed after German reunification in 1990.[1][2][5] While some ministries maintain offices in Bonn (the former West German capital), the German constitution explicitly names Berlin as the capital since a 2006 amendment.[2] This is corroborated across official, encyclopedic, and governmental sources with no conflicting information as of the latest available data.[3][4][6]"
             },
             "index": 0,
             "logprobs": null,
@@ -63,8 +63,8 @@
         ],
         "usage": {
           "prompt_tokens": 259,
-          "completion_tokens": 105,
-          "total_tokens": 364
+          "completion_tokens": 135,
+          "total_tokens": 394
         }
       }
     }

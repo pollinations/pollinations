@@ -1,0 +1,129 @@
+{
+  "request": {
+    "url": "http://ec2-3-80-56-235.compute-1.amazonaws.com:16385/openai",
+    "method": "POST",
+    "body": {
+      "type": "json",
+      "data": {
+        "model": "openai-fast",
+        "messages": [
+          {
+            "role": "user",
+            "content": "Auth exclusion test"
+          }
+        ]
+      }
+    },
+    "params": {}
+  },
+  "response": {
+    "status": 200,
+    "statusText": "OK",
+    "headers": {
+      "access-control-allow-origin": "*",
+      "connection": "keep-alive",
+      "content-length": "4139",
+      "content-type": "application/json; charset=utf-8",
+      "date": "Wed, 24 Dec 2025 03:20:27 GMT",
+      "etag": "W/\"102b-nebaEZDcY+qDHKVZZGjELrNOV2Q\"",
+      "keep-alive": "timeout=5",
+      "x-model-used": "gpt-5-nano-2025-08-07",
+      "x-powered-by": "Express",
+      "x-usage-completion-reasoning-tokens": "1216",
+      "x-usage-completion-text-tokens": "607",
+      "x-usage-prompt-text-tokens": "250",
+      "x-usage-total-tokens": "2073"
+    },
+    "body": {
+      "type": "json",
+      "data": {
+        "choices": [
+          {
+            "content_filter_results": {
+              "hate": {
+                "filtered": false,
+                "severity": "safe"
+              },
+              "protected_material_code": {
+                "filtered": false,
+                "detected": false
+              },
+              "protected_material_text": {
+                "filtered": false,
+                "detected": false
+              },
+              "self_harm": {
+                "filtered": false,
+                "severity": "safe"
+              },
+              "sexual": {
+                "filtered": false,
+                "severity": "safe"
+              },
+              "violence": {
+                "filtered": false,
+                "severity": "safe"
+              }
+            },
+            "finish_reason": "stop",
+            "index": 0,
+            "logprobs": null,
+            "message": {
+              "annotations": [],
+              "content": "Nice—are you testing something about auth exclusions, or trying to perform an auth bypass test (pentest-style)? I can help either way, but I want to tailor it to your context.\n\nIf you’re validating which endpoints are excluded from authentication (public vs protected), here’s a practical, safe approach you can use in a typical web API or app:\n\n- Scope and map\n  - List public endpoints that should be accessible without auth (e.g., health check, docs, signup, login).\n  - List protected endpoints that require authentication (and possibly specific roles/scopes).\n\n- Testing approach (authorized tests, not exploitation)\n  - For public endpoints: call them without any auth token and expect 200/OK (or whatever your public contract is).\n  - For protected endpoints: call them without a token and expect 401/403.\n  - With a valid token: call protected endpoints and expect 200 (or the appropriate success) and, if applicable, verify required scopes/roles produce 403 when token lacks them.\n  - For endpoints configured to be excluded from auth, re-test with and without tokens to confirm they behave as public endpoints even when auth is present.\n  - Include edge cases: expired tokens, invalid signatures, insufficient scopes, and token-less requests from users with different roles if your system differentiates them.\n\n- How to implement the exclusion check in code (high level)\n  - Middleware/guard configuration: define an allowlist (or denylist) of routes that bypass authentication.\n  - Ensure the logic is centralized so you don’t accidentally forget an excluded route.\n  - Regularly audit the list as routes are added/removed.\n\n- Lightweight example ideas (conceptual)\n  - In Express-like apps: authMiddleware checks a list of excluded paths; if the request path is in the list, it calls next() without validating a token.\n  - In Spring Security: configure antMatchers(\"/public/**\").permitAll() alongside authenticated paths.\n  - In Django: decorate public views with no authentication requirement; ensure protected views require @login_required or a token check.\n\n- Testing tools you can use\n  - Postman or Insomnia for manual checks.\n  - Automated tests (e.g., Jest for Node, PyTest for Python, JUnit for Java) to assert behavior for public vs protected endpoints.\n  - Security testing tools (like OWASP ZAP) only in an authorized test environment to avoid disrupting production.\n\n- Safety and etiquette\n  - Make sure you have explicit permission to test and operate in a staging or test environment.\n  - Keep logs and audit trails of tests.\n  - Don’t reveal auth weaknesses in untrusted channels.\n\nIf you can share a bit more about:\n- the tech stack (language/framework),\n- whether you want a quick code snippet or a test plan,\n- and whether you specifically want to test public exposure vs exclusion logic,\n\nI can tailor concrete examples or scaffolding for your setup.",
+              "refusal": null,
+              "role": "assistant"
+            }
+          }
+        ],
+        "created": 1766546414,
+        "id": "pllns_3b989133cf5c53ca820cfc90ea27e37c",
+        "model": "gpt-5-nano-2025-08-07",
+        "object": "chat.completion",
+        "prompt_filter_results": [
+          {
+            "prompt_index": 0,
+            "content_filter_results": {
+              "hate": {
+                "filtered": false,
+                "severity": "safe"
+              },
+              "jailbreak": {
+                "filtered": false,
+                "detected": false
+              },
+              "self_harm": {
+                "filtered": false,
+                "severity": "safe"
+              },
+              "sexual": {
+                "filtered": false,
+                "severity": "safe"
+              },
+              "violence": {
+                "filtered": false,
+                "severity": "safe"
+              }
+            }
+          }
+        ],
+        "system_fingerprint": null,
+        "usage": {
+          "completion_tokens": 1823,
+          "completion_tokens_details": {
+            "accepted_prediction_tokens": 0,
+            "audio_tokens": 0,
+            "reasoning_tokens": 1216,
+            "rejected_prediction_tokens": 0
+          },
+          "prompt_tokens": 250,
+          "prompt_tokens_details": {
+            "audio_tokens": 0,
+            "cached_tokens": 0
+          },
+          "total_tokens": 2073
+        }
+      }
+    }
+  }
+}

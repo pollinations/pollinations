@@ -43,12 +43,12 @@ Secrets required: `POLLY_BOT_APP_ID`, `POLLY_BOT_PRIVATE_KEY`
 
 ### Tier Labels (Unified for Apps & PRs)
 
-| Label              | Purpose                                     | Applied by                                              |
-| ------------------ | ------------------------------------------- | ------------------------------------------------------- |
-| `tier:review`      | Submission/PR under review                  | Issue template / `tier-label-external-pr.yml`           |
-| `tier:info-needed` | Awaiting registration or more info          | `tier-app-submission.yml` / `tier-upgrade-on-merge.yml` |
-| `tier:flower`      | Approved for Flower tier (add before merge) | Manual (maintainer)                                     |
-| `tier:done`        | Tier upgrade completed                      | `tier-upgrade-on-merge.yml`                             |
+| Label              | Purpose                            | Applied by                                              |
+| ------------------ | ---------------------------------- | ------------------------------------------------------- |
+| `tier:review`      | Submission/PR under review         | Issue template / `tier-label-external-pr.yml`           |
+| `tier:info-needed` | Awaiting registration or more info | `tier-app-submission.yml` / `tier-upgrade-on-merge.yml` |
+| `tier:flower`      | Approved for Flower tier           | `tier-upgrade-on-merge.yml` (auto on merge)             |
+| `tier:done`        | Tier upgrade completed             | `tier-upgrade-on-merge.yml`                             |
 
 ### PR Labels
 
@@ -79,7 +79,7 @@ Secrets required: `POLLY_BOT_APP_ID`, `POLLY_BOT_PRIVATE_KEY`
     -   `tier-create-app-pr` - Fetch stars, AI-format (emoji + description), prepend to `apps/APPS.md`, create PR
     -   `tier-close-issue-on-pr` - Close linked issue when PR is merged/closed
 -   **tier-label-external-pr.yml** - Labels external contributor PRs with `tier:review` and `pr:external`.
--   **tier-upgrade-on-merge.yml** - When PR with `tier:flower` label merges, upgrades user to Flower tier in D1 + Polar.
+-   **tier-upgrade-on-merge.yml** - When PR with `tier:review` label merges, upgrades labels (`tier:review` → `tier:flower` → `tier:done`) and user to Flower tier in D1 + Polar.
 -   **tier-recheck-registration.yml** - When user comments on issue/PR with `tier:info-needed`, re-checks registration.
 
 ### News & Discord
@@ -290,13 +290,13 @@ flowchart TD
     A10 --> C[Maintainer reviews]
     B3 --> C
 
-    C --> D{Approve for Flower?}
-    D -->|Yes| E[Add tier:flower label]
-    D -->|No| F[Close or merge without label]
+    C --> D{Approve?}
+    D -->|Yes| E[Merge PR]
+    D -->|No| F[Close without merge]
 
-    E --> G[Merge PR]
-    G --> H[tier-upgrade-on-merge.yml]
-    H --> I{User registered?}
+    E --> G[tier-upgrade-on-merge.yml]
+    G --> G1[tier:review → tier:flower]
+    G1 --> I{User registered?}
     I -->|Yes| J[Upgrade D1 + Polar]
     J --> K[tier:done + celebration comment]
     I -->|No| L[tier:info-needed + reminder]

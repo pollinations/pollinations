@@ -43,6 +43,7 @@
         "date-fns": "^4.1.0",
         "drizzle-orm": "^0.44.7",
         "eventsource-parser": "^3.0.6",
+        "fast-json-stable-stringify": "^2.1.0",
         "hono": "^4.10.6",
         "hono-openapi": "^1.1.1",
         "hono-rate-limiter": "^0.4.2",

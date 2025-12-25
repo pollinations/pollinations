@@ -11,10 +11,11 @@ concurrency:
 
 jobs:
   upgrade-tier:
-    # Only run when PR is merged AND has tier:flower label
+    # Run when PR with tier:review label is merged.
+    # The merge is the manual approval - no manual labeling required.
     if: |
       github.event.pull_request.merged == true &&
-      contains(github.event.pull_request.labels.*.name, 'tier:flower')
+      contains(github.event.pull_request.labels.*.name, 'tier:review')
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -28,6 +29,33 @@ jobs:
         with:
           app-id: ${{ secrets.POLLY_BOT_APP_ID }}
           private-key: ${{ secrets.POLLY_BOT_PRIVATE_KEY }}
+
+      - name: Update PR labels (tier:review → tier:flower)
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ steps.pollinations-ai.outputs.token }}
+          script: |
+            const prNumber = context.payload.pull_request.number;
+            
+            // Remove tier:review
+            try {
+              await github.rest.issues.removeLabel({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: prNumber,
+                name: 'tier:review'
+              });
+            } catch (e) { /* label might not exist */ }
+            
+            // Add tier:flower
+            await github.rest.issues.addLabels({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: prNumber,
+              labels: ['tier:flower']
+            });
+            
+            console.log(`Updated PR #${prNumber}: tier:review → tier:flower`);
 
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -119,7 +147,8 @@ jobs:
             OUTPUT=$(npx tsx scripts/tier-update-user.ts update-tier \
               --githubUsername "$USERNAME" \
               --tier flower \
-              --env production 2>&1) || true
+              --env production \
+              --apply 2>&1) || true
             
             echo "$OUTPUT"
             

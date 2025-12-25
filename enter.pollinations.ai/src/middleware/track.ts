@@ -507,7 +507,7 @@ async function extractUsageAndContentFilterResultsStream(
 
             const incomingPromptFilterResults =
                 eventData.prompt_filter_results?.map(
-                    (entry) => entry.content_filter_results,
+                    (entry: any) => entry.content_filter_results,
                 ) || [];
 
             promptFilterResults = mergeContentFilterResults([

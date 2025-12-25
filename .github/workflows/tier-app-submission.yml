@@ -485,6 +485,7 @@ jobs:
 
             gh pr create --title "Add $PROJECT_NAME to $CATEGORY" \
               --body "$PR_BODY" \
+              --label "tier:review" \
               --base main --head "$BRANCH"
           fi
 

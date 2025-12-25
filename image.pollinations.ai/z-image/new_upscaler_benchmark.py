@@ -47,6 +47,12 @@ MAX_CONCURRENT_UPSCALES = 4
 UPSCALE_INFERENCE_STEPS = 10  
 ENABLE_FACE_RESTORATION = True
 ENABLE_NSFW_CHECK = False
+FLAT_BLOCK_VARIANCE_THRESHOLD = 350.0  
+# If we use more -- around 300-400 -- we get more SDXL usage on mildly detailed areas
+# We try to keep this range b/w 50 - 500
+BLUR_DETECTION_THRESHOLD = 1.5
+# If we increase to ~1.3-1.5 to use more SDXL on moderately textured areas
+DEBUG_BLOCK_ANALYSIS = False
 
 generate_lock = threading.Lock()
 upscale_semaphore = threading.Semaphore(MAX_CONCURRENT_UPSCALES)
@@ -73,6 +79,26 @@ class ImageRequest(BaseModel):
     height: int = Field(default=1024, le=4096)
     steps: int = Field(default=9, le=50)
     seed: int | None = None
+
+
+def print_threshold_guide():
+    """Print guidance on tuning thresholds"""
+    print("\n" + "="*60)
+    print("BLOCK CLASSIFICATION THRESHOLD GUIDE")
+    print("="*60)
+    print(f"Current FLAT_BLOCK_VARIANCE_THRESHOLD:    {FLAT_BLOCK_VARIANCE_THRESHOLD}")
+    print(f"Current BLUR_DETECTION_THRESHOLD:        {BLUR_DETECTION_THRESHOLD}")
+    print("="*60)
+    print("TO USE MORE SDXL (for better quality on detailed areas):")
+    print("  - INCREASE FLAT_BLOCK_VARIANCE_THRESHOLD (try: 250-400)")
+    print("  - INCREASE BLUR_DETECTION_THRESHOLD     (try: 1.3-1.5)")
+    print("")
+    print("TO USE MORE LANCZOS (for faster processing):")
+    print("  - DECREASE FLAT_BLOCK_VARIANCE_THRESHOLD (try: 100-150)")
+    print("  - DECREASE BLUR_DETECTION_THRESHOLD     (try: 0.8-1.0)")
+    print("")
+    print("Set DEBUG_BLOCK_ANALYSIS = True for detailed block analysis logs")
+    print("="*60 + "\n")
 
 
 def record_time(stage: str, elapsed: float):
@@ -116,7 +142,18 @@ def create_feather_mask(size: int, overlap: int) -> np.ndarray:
     return mask
 
 
-def is_flat_or_smooth_block(block: np.ndarray, variance_threshold: float = 100.0, blur_detection_threshold: float = 0.7) -> bool:
+def is_flat_or_smooth_block(block: np.ndarray) -> bool:
+    """
+    Detect if a block is flat (solid color), smooth (sky, blurred areas) or has low detail.
+    Uses variance and edge detection to determine if upscaling is necessary.
+    
+    Uses global thresholds:
+    - FLAT_BLOCK_VARIANCE_THRESHOLD: Higher value = more SDXL usage (more sensitive to detail)
+    - BLUR_DETECTION_THRESHOLD: Higher value = more SDXL usage (requires stronger blur)
+    
+    Returns:
+        True if block should use LANCZOS, False if should use SDXL
+    """
     if len(block.shape) == 3:
         gray = np.mean(block[:, :, :3], axis=2)
     else:
@@ -125,8 +162,10 @@ def is_flat_or_smooth_block(block: np.ndarray, variance_threshold: float = 100.0
     # Calculate color/intensity variance
     block_variance = np.var(gray)
     
-    if block_variance < variance_threshold:
-        # Very uniform color - definitely flat
+    if block_variance < FLAT_BLOCK_VARIANCE_THRESHOLD:
+        # Very uniform color - use LANCZOS
+        if DEBUG_BLOCK_ANALYSIS:
+            logger.info(f"  Block is FLAT: variance={block_variance:.2f} < {FLAT_BLOCK_VARIANCE_THRESHOLD}")
         return True
     
     # Detect blur using Laplacian (edge detection)
@@ -139,10 +178,15 @@ def is_flat_or_smooth_block(block: np.ndarray, variance_threshold: float = 100.0
     max_possible_edge_variance = 255 * 255  # Conservative upper bound
     edge_intensity = edge_variance / max(max_possible_edge_variance, 1.0)
     
-    if edge_intensity < blur_detection_threshold:
-        # Low edge detection = smooth/blurred area
+    if edge_intensity < BLUR_DETECTION_THRESHOLD:
+        # Low edge detection = smooth/blurred area - use LANCZOS
+        if DEBUG_BLOCK_ANALYSIS:
+            logger.info(f"  Block is BLURRED: edge_intensity={edge_intensity:.4f} < {BLUR_DETECTION_THRESHOLD}")
         return True
     
+    # Has detail - use SDXL
+    if DEBUG_BLOCK_ANALYSIS:
+        logger.info(f"  Block is DETAILED: var={block_variance:.2f}, edges={edge_intensity:.4f}")
     return False
 
 
@@ -497,6 +541,8 @@ def generate_image(prompt: str, width: int = 1024, height: int = 1024, steps: in
     
     gen_w, gen_h, final_w, final_h = calculate_generation_dimensions(request.width, request.height)
     logger.info(f"Requested: {request.width}x{request.height} -> Generation: {gen_w}x{gen_h} -> Final: {final_w}x{final_h}")
+    
+    print_threshold_guide()
     
     pipeline_start = time.perf_counter()
     

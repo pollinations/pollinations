@@ -379,10 +379,10 @@ describe("Text Cache Integration Tests", () => {
     );
 
     test(
-        "non-cacheable paths bypass cache (/v1/models)",
+        "/v1/models endpoint has no cache middleware",
         { timeout: 30000 },
         async ({ apiKey }) => {
-            // /v1/models should NOT be cached - no X-Cache header
+            // /v1/models doesn't use textCache middleware - no X-Cache header
             const response = await SELF.fetch(
                 `http://localhost:3000/api/generate/v1/models`,
                 {
@@ -394,7 +394,7 @@ describe("Text Cache Integration Tests", () => {
             );
             expect(response.status).toBe(200);
 
-            // No cache headers should be present for non-cacheable paths
+            // No cache headers since textCache middleware is not applied to this route
             const xCache = response.headers.get("X-Cache");
             expect(xCache).toBeNull();
         },

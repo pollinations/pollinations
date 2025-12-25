@@ -18,42 +18,18 @@ type TextCacheEnv = {
     Variables: LoggerVariables & RequestIdVariables;
 };
 
-// Paths that should NOT be cached (exact suffixes with leading slash)
-const NON_CACHE_PATH_SUFFIXES = [
-    "/models",
-    "/feed",
-    "/openai/models",
-    "/v1/models",
-];
-
-/**
- * Check if a path should be excluded from caching
- * Uses exact suffix matching to avoid false positives like /foo/models
- */
-function shouldSkipCache(pathname: string): boolean {
-    return NON_CACHE_PATH_SUFFIXES.some(
-        (suffix) => pathname === suffix || pathname.endsWith(suffix),
-    );
-}
-
 /**
  * Text cache middleware
  * - Checks cache FIRST (before auth/rate limiting)
  * - Returns immediately on cache HIT
  * - On MISS: continues to auth/rate limiting/origin
  * - After origin response: caches it (handles both streaming and non-streaming)
+ *
+ * Note: Only apply this middleware to cacheable routes (e.g., /v1/chat/completions, /text/:prompt)
+ * Non-cacheable routes like /v1/models should NOT use this middleware
  */
 export const textCache = createMiddleware<TextCacheEnv>(async (c, next) => {
     const log = c.get("log").getChild("text-cache");
-    const url = new URL(c.req.url);
-
-    // Skip cache for non-cacheable paths
-    if (shouldSkipCache(url.pathname)) {
-        log.debug("[TEXT-CACHE] Skipping cache (non-cacheable path): {path}", {
-            path: url.pathname,
-        });
-        return next();
-    }
 
     // Read request body for POST/PUT requests (needed for cache key)
     // IMPORTANT: Use c.req.raw.clone().text() to avoid consuming the body

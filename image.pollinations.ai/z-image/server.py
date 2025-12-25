@@ -19,10 +19,8 @@ from pydantic import BaseModel, Field
 import threading
 import warnings
 from contextlib import asynccontextmanager
-import math
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from scipy.ndimage import gaussian_filter
-from scipy.spatial.distance import cosine
 from utility import StableDiffusionSafetyChecker, replace_numpy_with_python, replace_sets_with_lists, numpy_to_pil
 from transformers import AutoFeatureExtractor
 from skimage import filters
@@ -134,17 +132,14 @@ def compute_saliency_map(image_np: np.ndarray) -> np.ndarray:
     
     gray = gray.astype(np.float32) / 255.0 if gray.max() > 1 else gray
     
-    # 1. Edge detection using Sobel
     edges_x = filters.sobel_h(gray)
     edges_y = filters.sobel_v(gray)
     edge_map = np.sqrt(edges_x**2 + edges_y**2)
     edge_map = edge_map / (edge_map.max() + 1e-8)
     
-    # 2. Local contrast (Laplacian)
     laplacian_map = np.abs(filters.laplace(gray))
     laplacian_map = laplacian_map / (laplacian_map.max() + 1e-8)
     
-    # 3. Color variance for RGB images
     if len(image_np.shape) == 3 and image_np.shape[2] >= 3:
         rgb_norm = image_np[:, :, :3].astype(np.float32) / 255.0 if image_np.max() > 1 else image_np[:, :, :3].astype(np.float32)
         color_variance = np.var(rgb_norm, axis=2)
@@ -152,13 +147,10 @@ def compute_saliency_map(image_np: np.ndarray) -> np.ndarray:
     else:
         color_variance = np.zeros_like(gray)
     
-    # Combine saliency measures
     saliency = 0.4 * edge_map + 0.4 * laplacian_map + 0.2 * color_variance
     
-    # Apply Gaussian smoothing for spatial continuity
     saliency = gaussian_filter(saliency, sigma=2)
     
-    # Normalize
     saliency = saliency / (saliency.max() + 1e-8)
     
     return saliency
@@ -179,13 +171,10 @@ def get_subject_aware_blocks(image_np: np.ndarray, blocks: list[np.ndarray],
     padded_h, padded_w = padded_dims
     orig_h, orig_w = orig_dims
     
-    # Threshold for subject detection (top 15% of saliency - stricter)
     saliency_threshold = np.percentile(saliency, 85)
     
     subject_blocks = set()
-    stride = block_size - overlap
     
-    # Create padded saliency map
     padded_saliency = np.zeros((padded_h, padded_w), dtype=np.float32)
     padded_saliency[:orig_h, :orig_w] = saliency
     
@@ -213,7 +202,6 @@ def enforce_upscaler_ratio(total_blocks: int, subject_blocks: set[int], flat_blo
     Always preserves subject blocks for SDXL (highest priority).
     """
     target_lanczos_count = int(total_blocks * target_lanczos_ratio)
-    target_sdxl_count = total_blocks - target_lanczos_count
     
     lanczos_blocks = flat_blocks.copy()
     sdxl_blocks = subject_blocks.copy()
@@ -225,7 +213,6 @@ def enforce_upscaler_ratio(total_blocks: int, subject_blocks: set[int], flat_blo
     logger.info(f"Target ratio: {target_lanczos_ratio:.1%} LANCZOS, {1-target_lanczos_ratio:.1%} SDXL")
     logger.info(f"Before adjustment: {current_lanczos} LANCZOS, {current_sdxl} SDXL, {len(other_blocks)} unclassified")
     
-    # If we need more LANCZOS blocks
     if current_lanczos < target_lanczos_count:
         needed = target_lanczos_count - current_lanczos
         other_blocks_list = sorted(list(other_blocks))
@@ -235,7 +222,6 @@ def enforce_upscaler_ratio(total_blocks: int, subject_blocks: set[int], flat_blo
             other_blocks.discard(block_idx)
         current_lanczos += take_from_other
     
-    # If we need fewer LANCZOS blocks (too many)
     elif current_lanczos > target_lanczos_count:
         excess = current_lanczos - target_lanczos_count
         flat_blocks_list = sorted(list(flat_blocks))
@@ -245,7 +231,6 @@ def enforce_upscaler_ratio(total_blocks: int, subject_blocks: set[int], flat_blo
             other_blocks.add(block_idx)
         current_lanczos -= remove_from_flat
     
-    # Remaining blocks go to SDXL
     sdxl_blocks.update(other_blocks)
     
     final_lanczos_count = len(lanczos_blocks)
@@ -584,81 +569,8 @@ def calculate_generation_dimensions(requested_width: int, requested_height: int)
     gen_h = max(256, (gen_h // 16) * 16)
     
     return gen_w, gen_h, final_w, final_h
-#     h, w = image_np.shape[:2]
-#     faces = []
-#     for detection in results.detections:
-#         bbox = detection.location_data.relative_bounding_box
-#         x = int(bbox.xmin * w)
-#         y = int(bbox.ymin * h)
-#         w_box = int(bbox.width * w)
-#         h_box = int(bbox.height * h)
-#         x = max(0, x)
-#         y = max(0, y)
-#         w_box = min(w_box, w - x)
-#         h_box = min(h_box, h - y)
-#         # Skip invalid face regions
-#         if w_box > 0 and h_box > 0:
-#             faces.append((x, y, w_box, h_box))
-#     return faces
-#
-#
-# def upscale_face_region(face_img_np, face_enhancer):
-#     _, _, face_restored = face_enhancer.enhance(
-#         face_img_np,
-#         has_aligned=False,
-#         only_center_face=False,
-#         paste_back=True
-#     )
-#     return face_restored
-#
-#
-# def upscale_background(image_np, upsampler, outscale=UPSCALE_FACTOR):
-#     upscaled_np, _ = upsampler.enhance(image_np, outscale=outscale)
-#     return upscaled_np
-#
-#
-# def blend_face_region(base_image, face_image, y1, x1, y2, x2, feather_width=20):
-#     """Blend face region into base image with feathering to avoid hard edges."""
-#     # Ensure bounds are valid
-#     y1, x1 = max(0, y1), max(0, x1)
-#     y2 = min(base_image.shape[0], y2)
-#     x2 = min(base_image.shape[1], x2)
-#     
-#     h_target = y2 - y1
-#     w_target = x2 - x1
-#     
-#     if h_target <= 0 or w_target <= 0:
-#         return
-#     
-#     # Resize face image to match target region
-#     face_resized = face_image[:h_target, :w_target]
-#     if face_resized.shape[:2] != (h_target, w_target):
-#         face_pil = Image.fromarray(face_resized)
-#         face_pil = face_pil.resize((w_target, h_target), Image.Resampling.LANCZOS)
-#         face_resized = np.array(face_pil)
-#     
-#     # Create feathering mask (Gaussian blur on edges)
-#     mask = np.ones((h_target, w_target), dtype=np.float32)
-#     feather_width = min(feather_width, h_target // 4, w_target // 4)
-#     
-#     if feather_width > 0:
-#         # Create gradient edges
-#         for i in range(feather_width):
-#             alpha = i / feather_width
-#             mask[i, :] *= alpha
-#             mask[-(i+1), :] *= alpha
-#             mask[:, i] *= alpha
-#             mask[:, -(i+1)] *= alpha
-#     
-#     # Apply alpha blending
-#     mask = mask[:, :, np.newaxis]
-#     base_image[y1:y2, x1:x2] = (
-#         face_resized * mask + 
-#         base_image[y1:y2, x1:x2] * (1 - mask)
-#     ).astype(np.uint8)
 
 
-# Global model instances (initialized in lifespan)
 pipe = None
 upscaler_pipeline = None
 face_enhancer = None
@@ -675,7 +587,6 @@ async def lifespan(app: FastAPI):
     
     logger.info("Starting up...")
     
-    # Load models
     load_model_time = time.time()
     try:
         pipe = ZImagePipeline.from_pretrained(
@@ -715,7 +626,6 @@ async def lifespan(app: FastAPI):
             min_detection_confidence=0.5
         )
         
-        # Initialize NSFW safety checker if enabled
         if ENABLE_NSFW_CHECK:
             SAFETY_EXTRACTOR = AutoFeatureExtractor.from_pretrained(
                 SAFETY_NSFW_MODEL,
@@ -734,12 +644,10 @@ async def lifespan(app: FastAPI):
         logger.error(f"Failed to load models: {e}")
         raise
     
-    # Start heartbeat task
     heartbeat_task = asyncio.create_task(periodic_heartbeat())
     
     yield
     
-    # Cleanup
     if heartbeat_task:
         heartbeat_task.cancel()
         try:
@@ -807,7 +715,6 @@ def generate(request: ImageRequest, _auth: bool = Depends(verify_enter_token)):
     
     try:
         with generate_lock:
-            # Generate base image
             logger.info("Generating base image with Z-Image...")
             gen_start = time.time()
             with torch.inference_mode():
@@ -823,7 +730,6 @@ def generate(request: ImageRequest, _auth: bool = Depends(verify_enter_token)):
             image_np = np.array(image)
             logger.info(f"Base generation took {time.time() - gen_start:.2f}s")
             
-            # Check for NSFW content
             if ENABLE_NSFW_CHECK:
                 has_nsfw, concepts = check_nsfw(image_np)
                 if has_nsfw:
@@ -832,14 +738,12 @@ def generate(request: ImageRequest, _auth: bool = Depends(verify_enter_token)):
                 else:
                     logger.info("No NSFW content detected.")
             
-            # Detect faces in base image
             faces = []
             if ENABLE_FACE_RESTORATION:
                 logger.info("Detecting faces in base image...")
                 faces = detect_faces_mediapipe(image_np, face_detector)
                 logger.info(f"Detected {len(faces)} face(s)")
             
-            # Slice into blocks
             logger.info("Slicing image into overlapping blocks...")
             slice_start = time.time()
             blocks, block_positions, orig_dims, padded_dims = slice_into_overlapping_blocks(
@@ -849,11 +753,9 @@ def generate(request: ImageRequest, _auth: bool = Depends(verify_enter_token)):
             upscale_stats["total_blocks"] = len(blocks)
             logger.info(f"Created {len(blocks)} blocks from {orig_dims} image")
             
-            # Detect main subject
             logger.info("Detecting main subject using saliency analysis...")
             subject_blocks = get_subject_aware_blocks(image_np, blocks, block_positions, padded_dims, orig_dims, BLOCK_SIZE, OVERLAP)
             
-            # Analyze flat blocks
             logger.info("Analyzing blocks for very flat areas...")
             flat_blocks = set()
             for idx, block in enumerate(blocks):
@@ -865,12 +767,10 @@ def generate(request: ImageRequest, _auth: bool = Depends(verify_enter_token)):
             logger.info(f"  Very flat background blocks (LANCZOS): {len(flat_blocks)}")
             logger.info(f"  Detail blocks (SDXL): {len(blocks) - len(flat_blocks) - len(subject_blocks)}")
             
-            # Enforce target LANCZOS/SDXL ratio
             sdxl_blocks_final, lanczos_blocks_final = enforce_upscaler_ratio(
                 len(blocks), subject_blocks, flat_blocks, TARGET_LANCZOS_RATIO
             )
             
-            # Upscale blocks
             logger.info(f"Upscaling blocks (max {MAX_CONCURRENT_UPSCALES} concurrent)...")
             upscale_start = time.time()
             
@@ -902,7 +802,6 @@ def generate(request: ImageRequest, _auth: bool = Depends(verify_enter_token)):
             upscale_stats["lanczos_blocks"] = lanczos_count
             logger.info(f"Block upscaling took {time.time() - upscale_start:.2f}s")
             
-            # Stitch blocks
             logger.info("Stitching blocks with feather blending...")
             stitch_start = time.time()
             upscaled_image = stitch_overlapping_blocks(
@@ -912,7 +811,6 @@ def generate(request: ImageRequest, _auth: bool = Depends(verify_enter_token)):
             logger.info(f"Block stitching took {time.time() - stitch_start:.2f}s")
             logger.info(f"Stitched result: {upscaled_image.shape}")
             
-            # Face restoration
             if ENABLE_FACE_RESTORATION and len(faces) > 0:
                 logger.info("Applying face restoration to upscaled image...")
                 face_restore_start = time.time()
@@ -921,7 +819,6 @@ def generate(request: ImageRequest, _auth: bool = Depends(verify_enter_token)):
             else:
                 result = upscaled_image
             
-            # Resize to requested dimensions
             logger.info(f"Resizing to requested dimensions: {request.width}x{request.height}")
             result_pil = Image.fromarray(result.astype(np.uint8))
             result_pil = result_pil.resize((request.width, request.height), Image.Resampling.LANCZOS)
@@ -931,7 +828,6 @@ def generate(request: ImageRequest, _auth: bool = Depends(verify_enter_token)):
             result_pil.save(img_byte_arr, format='JPEG', quality=95)
             img_base64 = base64.b64encode(img_byte_arr.getvalue()).decode('utf-8')
             
-            # Log statistics
             logger.info("\n" + "="*50)
             logger.info("BLOCK UPSCALING STATISTICS")
             logger.info("="*50)

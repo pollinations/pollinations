@@ -216,20 +216,13 @@ export const proxyRoutes = new Hono<Env>()
                 ...errorResponseDescriptions(500),
             },
         }),
-        async (c) => {
-            try {
-                const allowedModels = c.var.auth?.apiKey?.permissions?.models;
-                const models = filterModelsByPermissions(
-                    getTextModelsInfo(),
-                    allowedModels,
-                );
-                return c.json(models);
-            } catch (error) {
-                throw new HTTPException(500, {
-                    message: "Failed to load text models",
-                    cause: error,
-                });
-            }
+        (c) => {
+            const allowedModels = c.var.auth?.apiKey?.permissions?.models;
+            const models = filterModelsByPermissions(
+                getTextModelsInfo(),
+                allowedModels,
+            );
+            return c.json(models);
         },
     )
     // Auth required for all endpoints below (API key only - no session cookies)

@@ -30,16 +30,16 @@ export const APPS_PAGE = {
     },
 };
 
-// Category mapping for display (translatable)
+// Category mapping for display
 export const CATEGORIES = [
-    { id: "creative", label: { text: "Creative", translate: true } },
-    { id: "chat", label: { text: "Chat", translate: true } },
-    { id: "games", label: { text: "Games", translate: true } },
-    { id: "hackandbuild", label: { text: "Dev Tools", translate: true } },
-    { id: "vibecoding", label: { text: "Vibes", translate: true } },
-    { id: "socialbots", label: { text: "Social Bots", translate: true } },
-    { id: "learn", label: { text: "Learn", translate: true } },
-    { id: "featured", label: { text: "Featured", translate: true } },
+    { id: "creative", label: "Creative" },
+    { id: "chat", label: "Chat" },
+    { id: "games", label: "Games" },
+    { id: "hackandbuild", label: "Dev Tools" },
+    { id: "vibecoding", label: "Vibes" },
+    { id: "socialbots", label: "Social Bots" },
+    { id: "learn", label: "Learn" },
+    { id: "featured", label: "Featured" },
 ];
 
 // Path to APPS.md on GitHub (fetched at runtime)

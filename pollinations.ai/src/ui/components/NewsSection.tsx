@@ -24,11 +24,7 @@ export function NewsSection({
 }: NewsSectionProps) {
     const { news, loading } = useNews(COMMUNITY_PAGE.newsFilePath);
 
-    const { translated: translatedNews } = useTranslate(
-        news,
-        (item) => item.content,
-        (item, content) => ({ ...item, content }),
-    );
+    const { translated: translatedNews } = useTranslate(news, "content");
 
     if (loading || news.length === 0) return null;
 

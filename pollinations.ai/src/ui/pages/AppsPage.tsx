@@ -127,8 +127,7 @@ export default function AppsPage() {
     // Translate category labels
     const { translated: translatedCategories } = useTranslate(
         CATEGORIES,
-        (cat) => cat.label.text,
-        (cat, text) => ({ ...cat, label: { ...cat.label, text } }),
+        "label",
     );
 
     // Filter apps by category
@@ -138,11 +137,7 @@ export default function AppsPage() {
 
     // Translate app descriptions
     const { translated: displayApps, isTranslating: isTranslatingApps } =
-        useTranslate(
-            filteredApps,
-            (app) => app.description || "",
-            (app, description) => ({ ...app, description }),
-        );
+        useTranslate(filteredApps, "description");
 
     return (
         <PageContainer>
@@ -181,7 +176,7 @@ export default function AppsPage() {
                             onClick={() => setSelectedCategory(cat.id)}
                             className="px-4 py-2 text-sm"
                         >
-                            {cat.label.text}
+                            {cat.label}
                         </Button>
                     ))}
                 </div>

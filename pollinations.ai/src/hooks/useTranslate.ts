@@ -3,22 +3,19 @@ import { processCopy } from "../copy";
 import { useCopy } from "../ui/contexts/CopyContext";
 
 /**
- * Hook to translate an array of items
+ * Hook to translate an array of items by field name
  *
  * @param items - Array of items to translate
- * @param getText - Function to extract text from an item
- * @param setText - Function to create a new item with translated text
+ * @param field - Name of the string field to translate
  */
-export function useTranslate<T>(
+export function useTranslate<T, K extends keyof T>(
     items: T[],
-    getText: (item: T) => string,
-    setText: (item: T, text: string) => T,
+    field: K,
 ): { translated: T[]; isTranslating: boolean } {
     const { language, variationSeed } = useCopy();
     const [translated, setTranslated] = useState<T[]>(items);
     const [isTranslating, setIsTranslating] = useState(false);
 
-    // biome-ignore lint/correctness/useExhaustiveDependencies: getText/setText are stable by design (same field accessor each render)
     useEffect(() => {
         if (items.length === 0) {
             setTranslated([]);
@@ -35,20 +32,21 @@ export function useTranslate<T>(
 
         const copyItems = items.map((item, i) => ({
             id: `item-${i}`,
-            text: getText(item),
+            text: String(item[field] ?? ""),
             mode: "translate" as const,
         }));
 
         processCopy(copyItems, language, variationSeed)
             .then((processed) => {
-                const result = items.map((item, i) =>
-                    setText(item, processed[i]?.text || getText(item)),
-                );
+                const result = items.map((item, i) => ({
+                    ...item,
+                    [field]: processed[i]?.text || item[field],
+                }));
                 setTranslated(result);
             })
             .catch(() => setTranslated(items))
             .finally(() => setIsTranslating(false));
-    }, [items, language, variationSeed]);
+    }, [items, field, language, variationSeed]);
 
     return { translated, isTranslating };
 }

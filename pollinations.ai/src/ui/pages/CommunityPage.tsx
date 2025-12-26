@@ -28,14 +28,12 @@ export default function CommunityPage() {
 
     const { translated: translatedVotingIssues } = useTranslate(
         COMMUNITY_PAGE.votingIssues as VotingIssue[],
-        (issue) => issue.title,
-        (issue, title) => ({ ...issue, title }),
+        "title",
     );
 
     const { translated: translatedSupporters } = useTranslate(
         COMMUNITY_PAGE.supportersList,
-        (s) => s.description,
-        (s, description) => ({ ...s, description }),
+        "description",
     );
 
     return (

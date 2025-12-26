@@ -12,7 +12,6 @@ import { generateText } from "../../../services/pollinationsAPI";
 import { STYLING_GUIDELINES } from "../designer";
 import type { MacroConfig } from "../../style/simplified-config.types";
 import { macrosToTheme } from "../../style/simplified-to-theme";
-import { THEME_CONFIG } from "../../config";
 
 // ==============================================
 // TYPE DEFINITIONS
@@ -150,14 +149,8 @@ ${userPrompt}
 
 Generate the theme JSON now:`;
 
-    console.log(
-        `🎨 [DESIGNER] → Requesting theme tokens... (model: ${THEME_CONFIG.models.designer})`,
-    );
-    const text = await generateText(
-        fullPrompt,
-        Math.floor(Math.random() * THEME_CONFIG.maxSeed) + 1,
-        THEME_CONFIG.models.designer,
-    );
+    console.log("🎨 [DESIGNER] → Requesting theme tokens...");
+    const text = await generateText(fullPrompt);
     console.log("🎨 [DESIGNER] ← Theme tokens received");
     return parseThemeResponse(text);
 }
@@ -170,14 +163,8 @@ export async function generateFullTheme(
     themeDescription: string,
 ): Promise<FullThemeStyle> {
     const fullPrompt = assembleStylePrompt(themeDescription);
-    console.log(
-        `🎨 [DESIGNER] → Requesting full theme... (model: ${THEME_CONFIG.models.designer})`,
-    );
-    const text = await generateText(
-        fullPrompt,
-        Math.floor(Math.random() * THEME_CONFIG.maxSeed) + 1,
-        THEME_CONFIG.models.designer,
-    );
+    console.log("🎨 [DESIGNER] → Requesting full theme...");
+    const text = await generateText(fullPrompt);
     console.log("🎨 [DESIGNER] ← Full theme received");
     return parseFullThemeResponse(text);
 }

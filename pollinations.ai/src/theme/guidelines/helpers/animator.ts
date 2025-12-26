@@ -1,10 +1,8 @@
 /**
  * Background Generation Helper Functions
- * Combines prompt assembly + API calls for background generation
  */
 
 import { generateText } from "../../../services/pollinationsAPI";
-import { THEME_CONFIG } from "../../config";
 import { BACKGROUND_GUIDELINES } from "../animator";
 
 export async function generateBackground(themePrompt: string): Promise<string> {
@@ -13,14 +11,8 @@ export async function generateBackground(themePrompt: string): Promise<string> {
         themePrompt,
     );
 
-    console.log(
-        `🎬 [ANIMATOR] → Generating WebGL background... (model: ${THEME_CONFIG.models.animator})`,
-    );
-    const html = await generateText(
-        fullPrompt,
-        Math.floor(Math.random() * THEME_CONFIG.maxSeed) + 1,
-        THEME_CONFIG.models.animator,
-    );
+    console.log("🎬 [ANIMATOR] → Generating WebGL background...");
+    const html = await generateText(fullPrompt);
 
     // Clean up markdown code blocks if present
     let cleanHtml = html.trim();

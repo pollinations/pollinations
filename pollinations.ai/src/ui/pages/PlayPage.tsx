@@ -150,13 +150,30 @@ function PlayPage() {
 
                 {/* Content: Play Interface or Feed */}
                 {view === "play" ? (
-                    <PlayGenerator
-                        selectedModel={selectedModel}
-                        prompt={prompt}
-                        onPromptChange={setPrompt}
-                        imageModels={imageModels}
-                        textModels={textModels}
-                    />
+                    <div className="flex flex-col gap-4">
+                        {/* Prompt Input with Placeholder */}
+                        <div className="flex flex-col gap-2">
+                            <textarea
+                                value={prompt}
+                                onChange={(e) => setPrompt(e.target.value)}
+                                placeholder={
+                                    selectedModel.startsWith("flux") ||
+                                    selectedModel.startsWith("dall") ||
+                                    selectedModel.startsWith("midjourney")
+                                        ? pageCopy.imagePlaceholder.text
+                                        : pageCopy.textPlaceholder.text
+                                }
+                                className="min-h-[100px] p-3 border border-border rounded bg-transparent font-bold text-[#fff] focus:outline-none focus:ring-2 focus:ring-primary resize-none"
+                            />
+                        </div>
+                        <PlayGenerator
+                            selectedModel={selectedModel}
+                            prompt={prompt}
+                            onPromptChange={setPrompt}
+                            imageModels={imageModels}
+                            textModels={textModels}
+                        />
+                    </div>
                 ) : feedType === "text" ? (
                     <div className="flex flex-col gap-4">
                         {feedLoading && (

@@ -39,10 +39,6 @@ export const PLAY_PAGE = {
         text: "Text",
     },
 
-    promptLabel: {
-        text: "Prompt",
-    },
-
     imagePlaceholder: {
         text: "Describe the image you want...",
     },
@@ -104,5 +100,9 @@ export const PLAY_PAGE = {
 
     feedConnectionError: {
         text: "Connection error. Retrying...",
+    },
+
+    promptInputLabel: {
+        text: "What do you want to create?",
     },
 };

@@ -51,6 +51,11 @@ export const PLAY_PAGE = {
     loginButton: "Login",
     logoutButton: "Logout",
 
+    // Login CTA
+    loginCtaText: "Login to unlock all models · Get API keys at",
+    loginCtaLink: "enter.pollinations.ai",
+    loggedInCtaText: "🔓 Selected models are now unlocked!",
+
     // Validation
     enterPromptFirst: "First, enter a prompt",
 

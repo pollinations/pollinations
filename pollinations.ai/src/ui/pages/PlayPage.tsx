@@ -40,7 +40,7 @@ function PlayPage() {
             ...imageModels.map((m) => ({ ...m, type: "image" as const })),
             ...textModels.map((m) => ({ ...m, type: "text" as const })),
         ],
-        [imageModels, textModels],
+        [imageModels, textModels]
     );
 
     // Display prompt based on view
@@ -49,57 +49,73 @@ function PlayPage() {
     return (
         <PageContainer>
             <PageCard isTranslating={isTranslating}>
-                {/* Title with toggle and login */}
-                <div className="flex items-start justify-between mb-8">
-                    <div className="flex items-center gap-4">
-                        <Title spacing="none">
-                            {view === "play"
-                                ? pageCopy.createTitle
-                                : pageCopy.watchTitle}
-                        </Title>
-                        <button
-                            type="button"
-                            onClick={() =>
-                                setView(view === "play" ? "feed" : "play")
-                            }
-                            className="font-body text-sm text-text-body-tertiary hover:text-text-body-main transition-colors"
-                        >
-                            {view === "play"
-                                ? pageCopy.toggleWatchOthers
-                                : pageCopy.toggleBackToPlay}
-                        </button>
-                    </div>
-                    {/* Login/Logout Button */}
-                    <div className="flex items-center gap-2 mt-4">
-                        {isLoggedIn && (
-                            <span className="font-mono text-xs text-text-body-tertiary bg-input-background px-2 py-1 rounded">
-                                {apiKey.slice(0, 12)}...
-                            </span>
-                        )}
-                        <Button
-                            type="button"
-                            onClick={isLoggedIn ? logout : login}
-                            variant={isLoggedIn ? "secondary" : "primary"}
-                            size="sm"
-                            className={
-                                isLoggedIn
-                                    ? ""
-                                    : "animate-shimmer bg-[length:200%_100%] bg-gradient-to-r from-button-secondary-bg via-white/20 to-button-secondary-bg border-border-highlight text-text-body-main hover:bg-button-primary-bg hover:text-text-on-color hover:border-border-highlight hover:shadow-shadow-highlight-md"
-                            }
-                        >
-                            {isLoggedIn
-                                ? pageCopy.logoutButton
-                                : pageCopy.loginButton}
-                        </Button>
-                    </div>
+                {/* Title with toggle */}
+                <div className="flex items-center gap-4 mb-8">
+                    <Title spacing="none">
+                        {view === "play"
+                            ? pageCopy.createTitle
+                            : pageCopy.watchTitle}
+                    </Title>
+                    <button
+                        type="button"
+                        onClick={() =>
+                            setView(view === "play" ? "feed" : "play")
+                        }
+                        className="font-body text-sm text-text-body-tertiary hover:text-text-body-main transition-colors"
+                    >
+                        {view === "play"
+                            ? pageCopy.toggleWatchOthers
+                            : pageCopy.toggleBackToPlay}
+                    </button>
                 </div>
 
                 {/* Description */}
-                <Body className="mb-8">
+                <Body className="mb-4">
                     {view === "play"
                         ? pageCopy.createDescription
                         : pageCopy.feedDescription}
                 </Body>
+
+                {/* Login CTA */}
+                {!isLoggedIn ? (
+                    <div className="flex items-center gap-4 p-4 mb-8 bg-surface-card rounded-sub-card border-l-4 border-border-highlight">
+                        <div className="flex-1">
+                            <p className="font-body text-sm text-text-body-secondary">
+                                {pageCopy.loginCtaText}{" "}
+                                <span className="text-text-brand font-medium">
+                                    {pageCopy.loginCtaLink}
+                                </span>
+                            </p>
+                        </div>
+                        <Button
+                            type="button"
+                            onClick={login}
+                            variant="primary"
+                            size="sm"
+                        >
+                            {pageCopy.loginButton}
+                        </Button>
+                    </div>
+                ) : (
+                    <div className="flex items-center gap-6 p-5 mb-8 bg-surface-card rounded-sub-card border-l-4 border-border-brand">
+                        <div className="flex-1 flex items-center gap-4 flex-wrap">
+                            <p className="font-headline text-sm font-black text-text-body-main">
+                                {pageCopy.loggedInCtaText}
+                            </p>
+                            <span className="font-mono text-xs bg-input-background text-text-brand px-3 py-1.5 rounded border border-border-main">
+                                🔑 {apiKey.slice(0, 14)}...
+                            </span>
+                        </div>
+                        <Button
+                            type="button"
+                            onClick={logout}
+                            variant="secondary"
+                            size="sm"
+                        >
+                            {pageCopy.logoutButton}
+                        </Button>
+                    </div>
+                )}
 
                 {/* Model Selector - Independent of view state */}
                 <ModelSelector

@@ -2,8 +2,8 @@
 // TYPES
 // ==============================================
 
-import type { SemanticTokenId } from "./semantic-ids.types";
 import { TOKENS } from "./design-tokens";
+import type { SemanticTokenId } from "./semantic-ids.types";
 
 // Helpers for validation/normalization
 const HEX_REGEX = /^#?[0-9a-fA-F]{6}$/;

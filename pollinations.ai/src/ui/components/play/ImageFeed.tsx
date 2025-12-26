@@ -1,5 +1,7 @@
-import { useState, useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
+import { PLAY_PAGE } from "../../../copy/content/play";
 import type { Model } from "../../../hooks/useModelList";
+import { usePageCopy } from "../../../hooks/usePageCopy";
 
 interface ImageFeedProps {
     selectedModel: string;
@@ -35,6 +37,9 @@ export function ImageFeed({
     imageModels,
     textModels,
 }: ImageFeedProps) {
+    // Get translated copy
+    const { copy } = usePageCopy(PLAY_PAGE);
+
     const seenImages = useRef<Set<string>>(new Set());
     const imageQueue = useRef<ImageQueueItem[]>([]);
     const textQueue = useRef<TextQueueItem[]>([]);
@@ -51,7 +56,7 @@ export function ImageFeed({
     // Image feed
     useEffect(() => {
         const eventSource = new EventSource(
-            "https://image.pollinations.ai/feed"
+            "https://image.pollinations.ai/feed",
         );
         eventSource.onmessage = (event) => {
             try {
@@ -77,7 +82,7 @@ export function ImageFeed({
     // Text feed
     useEffect(() => {
         const eventSource = new EventSource(
-            "https://text.pollinations.ai/feed"
+            "https://text.pollinations.ai/feed",
         );
         eventSource.onmessage = (event) => {
             try {
@@ -88,7 +93,8 @@ export function ImageFeed({
 
                     if (!selectedModel || modelId === selectedModel) {
                         const userMessage = data.parameters?.messages?.find(
-                            (msg: any) => msg?.role === "user"
+                            (msg: { role?: string; content?: string }) =>
+                                msg?.role === "user",
                         );
                         const prompt =
                             userMessage?.content || data.prompt || "No prompt";
@@ -113,7 +119,7 @@ export function ImageFeed({
     useEffect(() => {
         const interval = setInterval(() => {
             const selectedModelData = [...imageModels, ...textModels].find(
-                (m) => m.id === selectedModel
+                (m) => m.id === selectedModel,
             );
             if (!selectedModelData) return;
 
@@ -148,12 +154,13 @@ export function ImageFeed({
         return () => clearInterval(interval);
     }, [selectedModel, imageModels, textModels]);
 
-    // Clear on channel change
+    // Clear on channel change - selectedModel intentionally triggers this effect
     useEffect(() => {
         imageQueue.current = [];
         textQueue.current = [];
         seenImages.current.clear();
         setCurrentDisplay(null);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [selectedModel]);
 
     return (
@@ -162,10 +169,10 @@ export function ImageFeed({
             <div className="relative min-h-[32rem] max-h-[32rem] flex items-center justify-center overflow-hidden">
                 {!currentDisplay ? (
                     <div className="text-center py-24 text-text-caption font-body">
-                        <p>Waiting for content...</p>
+                        <p>{copy.waitingForContent}</p>
                         {selectedModel && (
                             <p className="text-xs mt-2">
-                                Listening to {selectedModel}
+                                {copy.listeningTo} {selectedModel}
                             </p>
                         )}
                     </div>

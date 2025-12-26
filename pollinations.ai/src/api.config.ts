@@ -21,7 +21,7 @@ export const API = {
 
 export const DEFAULTS = {
     IMAGE_MODEL: "flux",
-    TEXT_MODEL: "openai-large",
+    TEXT_MODEL: "gemini",
     IMAGE_WIDTH: 400,
     IMAGE_HEIGHT: 400,
     SEED: 42,

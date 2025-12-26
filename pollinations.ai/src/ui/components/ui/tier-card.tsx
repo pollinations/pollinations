@@ -1,5 +1,5 @@
-import * as React from "react";
 import { cva, type VariantProps } from "class-variance-authority";
+import * as React from "react";
 import { cn } from "../../../utils";
 
 // ============================================
@@ -29,7 +29,7 @@ const tierCardVariants = cva(
         defaultVariants: {
             tier: "spore",
         },
-    }
+    },
 );
 
 const emojiVariants = cva(
@@ -46,7 +46,7 @@ const emojiVariants = cva(
         defaultVariants: {
             tier: "spore",
         },
-    }
+    },
 );
 
 const tierNameVariants = cva(
@@ -63,7 +63,7 @@ const tierNameVariants = cva(
         defaultVariants: {
             tier: "spore",
         },
-    }
+    },
 );
 
 interface TierCardProps
@@ -108,6 +108,6 @@ export const TierCard = React.forwardRef<HTMLDivElement, TierCardProps>(
                 </div>
             </div>
         );
-    }
+    },
 );
 TierCard.displayName = "TierCard";

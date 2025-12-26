@@ -1,5 +1,5 @@
-import * as React from "react";
 import { cva, type VariantProps } from "class-variance-authority";
+import * as React from "react";
 import { cn } from "../../../utils";
 
 // ============================================
@@ -15,7 +15,7 @@ import { cn } from "../../../utils";
 // ============================================
 
 const featureItemVariants = cva(
-    "flex items-start gap-3 font-body text-sm text-text-body-secondary leading-relaxed"
+    "flex items-start gap-3 font-body text-sm text-text-body-secondary leading-relaxed",
 );
 
 const iconVariants = cva(
@@ -32,7 +32,7 @@ const iconVariants = cva(
         defaultVariants: {
             variant: "brand",
         },
-    }
+    },
 );
 
 interface FeatureItemProps
@@ -57,6 +57,6 @@ export const FeatureItem = React.forwardRef<HTMLLIElement, FeatureItemProps>(
                 <span className="flex-1">{children}</span>
             </li>
         );
-    }
+    },
 );
 FeatureItem.displayName = "FeatureItem";

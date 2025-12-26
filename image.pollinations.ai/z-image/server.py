@@ -32,7 +32,8 @@ from utility import (
     enforce_upscaler_ratio,
     restore_faces_in_upscaled_image,
     upscale_block_wrapper ,
-    blend_block_seams
+    blend_block_seams,
+    download_model
     )
 from utility import UPSCALE_FACTOR, MAX_CONCURRENT_UPSCALES, generate_lock, upscale_stats
 from transformers import AutoFeatureExtractor
@@ -451,4 +452,8 @@ async def health():
 if __name__ == "__main__":
     import uvicorn
     port = int(os.getenv("PORT", "10002"))
+    if os.listdir(MODEL_CACHE):
+        logger.info("Model cache directory is not empty.")
+    else:
+        download_model()
     uvicorn.run(app, host="0.0.0.0", port=port)

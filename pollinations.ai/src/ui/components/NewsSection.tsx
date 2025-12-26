@@ -1,6 +1,9 @@
+import { useEffect, useState } from "react";
 import ReactMarkdown from "react-markdown";
+import { processCopy } from "../../copy";
 import { useNews } from "../../hooks/useNews";
 import { COMMUNITY_PAGE } from "../../theme";
+import { useCopy } from "../contexts/CopyContext";
 import { Heading } from "./ui/typography";
 
 interface NewsSectionProps {
@@ -22,10 +25,66 @@ export function NewsSection({
     title = "What's New",
 }: NewsSectionProps) {
     const { news, loading } = useNews(COMMUNITY_PAGE.newsFilePath);
+    const { language, variationSeed } = useCopy();
+    const [translatedNews, setTranslatedNews] = useState<typeof news>([]);
+
+    // Translate news when language changes or news loads
+    useEffect(() => {
+        if (loading || news.length === 0) return;
+
+        // If English, use original
+        if (language === "en") {
+            setTranslatedNews(news);
+            return;
+        }
+
+        const controller = new AbortController();
+
+        async function translateNews() {
+            try {
+                // Create items for translation
+                const items = news.map((item, i) => ({
+                    id: `news-${i}`,
+                    text: item.content,
+                    mode: "translate" as const,
+                }));
+
+                console.log(
+                    `📰 [NEWS] Translating ${items.length} items to ${language}...`,
+                );
+
+                const processed = await processCopy(
+                    items,
+                    language,
+                    variationSeed,
+                    controller.signal,
+                );
+
+                // Apply translations back
+                const translated = news.map((item, i) => ({
+                    ...item,
+                    content: processed[i]?.text || item.content,
+                }));
+
+                setTranslatedNews(translated);
+                console.log(`✅ [NEWS] Translation complete`);
+            } catch (err) {
+                if (err instanceof Error && err.name !== "AbortError") {
+                    console.error("❌ [NEWS] Translation failed:", err);
+                    setTranslatedNews(news); // Fallback to original
+                }
+            }
+        }
+
+        translateNews();
+
+        return () => controller.abort();
+    }, [news, language, variationSeed, loading]);
 
     if (loading || news.length === 0) return null;
 
-    const displayNews = limit ? news.slice(0, limit) : news;
+    const newsToShow = translatedNews.length > 0 ? translatedNews : news;
+    const displayNews = limit ? newsToShow.slice(0, limit) : newsToShow;
 
     return (
         <div className={compact ? "mb-8" : "mb-12"}>
@@ -37,7 +96,7 @@ export function NewsSection({
                     // Remove date from content for display
                     const contentWithoutDate = item.content.replace(
                         /\*\*\d{4}-\d{2}-\d{2}\*\*:?\s*/,
-                        ""
+                        "",
                     );
 
                     return (
@@ -78,12 +137,12 @@ export function NewsSection({
                                             ...props
                                         }: any) => {
                                             const match = /language-(\w+)/.exec(
-                                                className || ""
+                                                className || "",
                                             );
                                             const isInline =
                                                 !match &&
                                                 !String(children).includes(
-                                                    "\n"
+                                                    "\n",
                                                 );
                                             return isInline ? (
                                                 <code

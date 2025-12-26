@@ -6,6 +6,9 @@
 import { generateText } from "../../services/pollinationsAPI";
 import { COPY_GUIDELINES } from "./guidelines";
 
+// Simple promise memoization - deduplicates concurrent identical requests
+const pendingRequests = new Map<string, Promise<CopyItem[]>>();
+
 interface CopyItem {
     id: string;
     text: string;
@@ -64,6 +67,7 @@ export function extractCopyItems(root: Record<string, unknown>): {
 
 /**
  * Process copy items - translates with natural, idiomatic rephrasing
+ * Deduplicates concurrent identical requests by memoizing the promise
  *
  * @param items - Copy items to process
  * @param targetLanguage - Target language code (e.g., "en", "zh", "es")
@@ -81,8 +85,19 @@ export async function processCopy(
         return items;
     }
 
-    // Single unified prompt for all items
-    const prompt = `${COPY_GUIDELINES}
+    // Create cache key from items + language
+    const cacheKey = `${targetLanguage}:${JSON.stringify(items.map((i) => i.id))}`;
+
+    // Return existing promise if request is already in flight
+    const pending = pendingRequests.get(cacheKey);
+    if (pending) {
+        console.log(`📝 [COPY] Deduplicating request for ${targetLanguage}`);
+        return pending;
+    }
+
+    // Create and cache the promise
+    const promise = (async () => {
+        const prompt = `${COPY_GUIDELINES}
 
 TARGET_LANGUAGE: "${targetLanguage}"
 
@@ -91,16 +106,23 @@ ${JSON.stringify(items, null, 2)}
 
 Process all items now:`;
 
-    console.log(
-        `📝 [COPY] Processing ${items.length} items → ${targetLanguage}`,
-    );
+        console.log(
+            `📝 [COPY] Processing ${items.length} items → ${targetLanguage}`,
+        );
 
-    const response = await generateText(prompt);
+        const response = await generateText(prompt);
+        const result = parseJsonResponse(response, items);
+        console.log(`✅ [COPY] Done`);
 
-    const result = parseJsonResponse(response, items);
-    console.log(`✅ [COPY] Done`);
+        return result;
+    })();
 
-    return result;
+    pendingRequests.set(cacheKey, promise);
+
+    // Clean up after completion (success or failure)
+    promise.finally(() => pendingRequests.delete(cacheKey));
+
+    return promise;
 }
 
 /**

@@ -70,7 +70,7 @@ function getPageKey(pathname: string): string {
 export function CopyProvider({ children }: { children: ReactNode }) {
     const location = useLocation();
     const [languageOverride, setLanguageOverride] = useState<"auto" | "en">(
-        "auto",
+        "auto"
     );
     const [isProcessing, setIsProcessing] = useState(false);
     const [processedCopy, setProcessedCopy] = useState<Record<
@@ -120,7 +120,7 @@ export function CopyProvider({ children }: { children: ReactNode }) {
                 }
 
                 console.log(
-                    `📝 [COPY] Processing ${currentPage}: ${items.length} items (lang=${language}, seed=${variationSeed})`,
+                    `📝 [COPY] Processing ${currentPage}: ${items.length} items (lang=${language}, seed=${variationSeed})`
                 );
 
                 // Process via LLM
@@ -128,7 +128,7 @@ export function CopyProvider({ children }: { children: ReactNode }) {
                     items,
                     language,
                     variationSeed,
-                    controller.signal,
+                    controller.signal
                 );
 
                 // Apply results back to cloned copy
@@ -139,12 +139,15 @@ export function CopyProvider({ children }: { children: ReactNode }) {
 
                 console.log(`✅ [COPY] ${currentPage} complete`);
             } catch (err) {
-                if (err instanceof Error && err.name !== "AbortError") {
-                    console.error(`❌ [COPY] ${currentPage} failed:`, err);
+                if (err instanceof Error && err.name === "AbortError") {
+                    // Request was aborted (page changed), don't touch isProcessing
+                    // A new translation is starting which will set it to true
+                    return;
                 }
-            } finally {
-                setIsProcessing(false);
+                console.error(`❌ [COPY] ${currentPage} failed:`, err);
             }
+            // Only set to false on success or real error, not on abort
+            setIsProcessing(false);
         };
 
         runProcessing();

@@ -1,8 +1,8 @@
 import { useMemo, useState } from "react";
 import { APPS_PAGE } from "../../copy/content/apps";
 import { LINKS } from "../../copy/content/socialLinks";
-import type { App } from "../../lib/parseApps";
-import { allApps, CATEGORIES } from "../../lib/parseApps";
+import type { App } from "../../apps/parseApps";
+import { allApps, CATEGORIES } from "../../apps/parseApps";
 import { ExternalLinkIcon } from "../assets/ExternalLinkIcon";
 import { GithubIcon } from "../assets/SocialIcons";
 import { Button } from "../components/ui/button";

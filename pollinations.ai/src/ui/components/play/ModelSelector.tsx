@@ -1,7 +1,9 @@
 import { memo } from "react";
 import { Button } from "../ui/button";
 import { PLAY_PAGE } from "../../../theme";
-import { GATED_MODEL_TOOLTIP } from "../../../config/allowedModels";
+
+const GATED_MODEL_TOOLTIP =
+    "To test this model, log in to enter.pollinations.ai";
 
 /**
  * ModelSelector Component
@@ -75,10 +77,10 @@ export const ModelSelector = memo(function ModelSelector({
                     const modelType = hasVideoOutput
                         ? "video"
                         : hasAudioOutput
-                          ? "audio"
-                          : isImage
-                            ? "image"
-                            : "text";
+                        ? "audio"
+                        : isImage
+                        ? "image"
+                        : "text";
                     const isActive = selectedModel === m.id;
                     const allowedSet =
                         m.type === "image"
@@ -89,10 +91,10 @@ export const ModelSelector = memo(function ModelSelector({
                     const borderColorClass = hasVideoOutput
                         ? "border-indicator-video"
                         : hasAudioOutput
-                          ? "border-indicator-audio"
-                          : isImage
-                            ? "border-indicator-image"
-                            : "border-indicator-text";
+                        ? "border-indicator-audio"
+                        : isImage
+                        ? "border-indicator-image"
+                        : "border-indicator-text";
 
                     return (
                         <div key={m.id} className="relative group">

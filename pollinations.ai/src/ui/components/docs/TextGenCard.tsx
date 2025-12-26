@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import { API_BASE, API_KEY } from "../../../api.config";
-import { ALLOWED_TEXT_MODELS } from "../../../config/allowedModels";
 import { DOCS_PAGE } from "../../../theme";
 import { fetchWithRetry } from "../../../utils/fetchWithRetry";
 import { Button } from "../ui/button";
@@ -12,12 +11,35 @@ import { Heading, Label } from "../ui/typography";
  */
 export function TextGenCard() {
     const [selectedPrompt, setSelectedPrompt] = useState(
-        DOCS_PAGE.textPrompts[0],
+        DOCS_PAGE.textPrompts[0]
     );
     const [selectedModel, setSelectedModel] = useState("openai-fast");
     const [params, setParams] = useState<Set<string>>(new Set());
     const [response, setResponse] = useState("");
     const [isLoading, setIsLoading] = useState(false);
+    const [models, setModels] = useState<string[]>([]);
+
+    // Fetch available models from API
+    useEffect(() => {
+        const fetchModels = async () => {
+            try {
+                const response = await fetch(`${API_BASE}/text/models`, {
+                    headers: { Authorization: `Bearer ${API_KEY}` },
+                });
+                const data = await response.json();
+                const modelIds = data.map((m: { name?: string } | string) =>
+                    typeof m === "string" ? m : m.name || ""
+                );
+                setModels(modelIds);
+                if (modelIds.length > 0 && !modelIds.includes("openai-fast")) {
+                    setSelectedModel(modelIds[0]);
+                }
+            } catch (err) {
+                console.error("Failed to fetch text models:", err);
+            }
+        };
+        fetchModels();
+    }, []);
 
     const toggleParam = (param: string) => {
         const newParams = new Set(params);
@@ -121,7 +143,7 @@ export function TextGenCard() {
                     <div>
                         <Label>{DOCS_PAGE.modelLabel.text}</Label>
                         <div className="flex flex-wrap gap-2">
-                            {ALLOWED_TEXT_MODELS.slice(0, 6).map((model) => (
+                            {models.slice(0, 6).map((model) => (
                                 <button
                                     key={model}
                                     type="button"
@@ -159,7 +181,7 @@ export function TextGenCard() {
                                         }`}
                                         title={
                                             DOCS_PAGE.textParameters.find(
-                                                (p) => p.key === key,
+                                                (p) => p.key === key
                                             )?.description
                                         }
                                     >

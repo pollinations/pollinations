@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import { API_BASE, API_KEY } from "../../../api.config";
-import { ALLOWED_IMAGE_MODELS } from "../../../config/allowedModels";
 import { DOCS_PAGE } from "../../../theme";
 import { fetchWithRetry } from "../../../utils/fetchWithRetry";
 import { Button } from "../ui/button";
@@ -12,12 +11,35 @@ import { Heading, Label } from "../ui/typography";
  */
 export function ImageGenCard() {
     const [selectedPrompt, setSelectedPrompt] = useState(
-        DOCS_PAGE.imagePrompts[0],
+        DOCS_PAGE.imagePrompts[0]
     );
     const [selectedModel, setSelectedModel] = useState("flux");
     const [params, setParams] = useState<Set<string>>(new Set());
     const [imageUrl, setImageUrl] = useState("");
     const [isLoading, setIsLoading] = useState(false);
+    const [models, setModels] = useState<string[]>([]);
+
+    // Fetch available models from API
+    useEffect(() => {
+        const fetchModels = async () => {
+            try {
+                const response = await fetch(`${API_BASE}/image/models`, {
+                    headers: { Authorization: `Bearer ${API_KEY}` },
+                });
+                const data = await response.json();
+                const modelIds = data.map((m: { name?: string } | string) =>
+                    typeof m === "string" ? m : m.name || ""
+                );
+                setModels(modelIds);
+                if (modelIds.length > 0 && !modelIds.includes("flux")) {
+                    setSelectedModel(modelIds[0]);
+                }
+            } catch (err) {
+                console.error("Failed to fetch image models:", err);
+            }
+        };
+        fetchModels();
+    }, []);
 
     const toggleParam = (param: string) => {
         const newParams = new Set(params);
@@ -128,7 +150,7 @@ export function ImageGenCard() {
                     <div>
                         <Label>{DOCS_PAGE.modelSelectLabel.text}</Label>
                         <div className="flex flex-wrap gap-2">
-                            {ALLOWED_IMAGE_MODELS.map((model) => (
+                            {models.map((model) => (
                                 <button
                                     key={model}
                                     type="button"
@@ -163,7 +185,7 @@ export function ImageGenCard() {
                                         }`}
                                         title={
                                             DOCS_PAGE.imageParameters.find(
-                                                (p) => p.key === key,
+                                                (p) => p.key === key
                                             )?.description
                                         }
                                     >

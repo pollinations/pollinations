@@ -547,26 +547,19 @@ export const CreateChatCompletionStreamResponseSchema = z.object({
         .optional(),
 });
 
-const ModelDescriptionSchema = z
+const OpenAIModelSchema = z
     .object({
-        name: z.string(),
-        description: z.string(),
-        tier: z.enum(["anonymous", "seed", "flower", "nectar"]),
-        community: z.boolean(),
-        aliases: z.array(z.string()).optional(),
-        input_modalities: z.array(z.enum(["text", "image", "audio"])),
-        output_modalities: z.array(z.enum(["text", "image", "audio"])),
-        tools: z.boolean(),
-        vision: z.boolean(),
-        audio: z.boolean(),
-        maxInputChars: z.number().optional(),
-        reasoning: z.boolean().optional(),
-        voices: z.array(z.string()).optional(),
-        uncensored: z.boolean().optional(),
-        supportsSystemMessages: z.boolean().optional(),
+        id: z.string(),
+        object: z.literal("model"),
+        created: z.number(),
     })
-    .meta({ description: "Model description and capabilities" });
+    .meta({ description: "OpenAI-compatible model object" });
 
-export const GetModelsResponseSchema = z.array(ModelDescriptionSchema).meta({
-    description: "Array of model descriptions for each available model.",
-});
+export const GetModelsResponseSchema = z
+    .object({
+        object: z.literal("list"),
+        data: z.array(OpenAIModelSchema),
+    })
+    .meta({
+        description: "OpenAI-compatible list of available models.",
+    });

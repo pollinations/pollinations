@@ -1,5 +1,6 @@
 import { SELF } from "cloudflare:test";
 import { test, expect } from "vitest";
+import { test as fixtureTest } from "../fixtures.ts";
 
 // Test public endpoints that should be accessible without authentication
 // These endpoints should work with CORS from any origin (e.g., pollinations.ai frontend)
@@ -87,3 +88,52 @@ test("OPTIONS preflight request works for /image/models", async () => {
     expect(response.headers.get("access-control-allow-origin")).toBe("*");
     await response.text(); // consume response
 });
+
+// Test model filtering by API key permissions
+// Uses restrictedApiKey fixture which is limited to ["openai-fast", "flux"]
+fixtureTest(
+    "GET /v1/models with restricted API key returns only allowed models",
+    async ({ restrictedApiKey }) => {
+        const response = await SELF.fetch(
+            `http://localhost:3000/api/generate/v1/models`,
+            {
+                method: "GET",
+                headers: {
+                    Authorization: `Bearer ${restrictedApiKey}`,
+                },
+            },
+        );
+        expect(response.status).toBe(200);
+
+        const data = (await response.json()) as {
+            data: { id: string }[];
+        };
+        const modelIds = data.data.map((m) => m.id);
+
+        expect(modelIds).toContain("openai-fast");
+        expect(modelIds).not.toContain("openai");
+        expect(modelIds).not.toContain("mistral");
+    },
+);
+
+fixtureTest(
+    "GET /image/models with restricted API key returns only allowed models",
+    async ({ restrictedApiKey }) => {
+        const response = await SELF.fetch(
+            `http://localhost:3000/api/generate/image/models`,
+            {
+                method: "GET",
+                headers: {
+                    Authorization: `Bearer ${restrictedApiKey}`,
+                },
+            },
+        );
+        expect(response.status).toBe(200);
+
+        const data = (await response.json()) as { name: string }[];
+        const modelNames = data.map((m) => m.name);
+
+        expect(modelNames).toContain("flux");
+        expect(modelNames).not.toContain("turbo");
+    },
+);

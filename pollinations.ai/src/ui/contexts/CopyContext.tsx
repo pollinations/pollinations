@@ -12,12 +12,7 @@
 import type { ReactNode } from "react";
 import { createContext, useContext, useEffect, useState } from "react";
 import { useLocation } from "react-router-dom";
-import {
-    applyTranslations,
-    extractCopyItems,
-    getVariationSeed,
-    processCopy,
-} from "../../copy";
+import { applyTranslations, extractCopyItems, processCopy } from "../../copy";
 import { APPS_PAGE } from "../../copy/content/apps";
 import { COMMUNITY_PAGE } from "../../copy/content/community";
 import { DOCS_PAGE } from "../../copy/content/docs";
@@ -78,8 +73,8 @@ export function CopyProvider({ children }: { children: ReactNode }) {
         unknown
     > | null>(null);
 
-    // Pick variation seed once on mount
-    const [variationSeed] = useState(() => getVariationSeed());
+    // Fixed seed for caching - variation can be re-added later
+    const variationSeed = 1;
 
     // Calculate effective language
     const language = languageOverride === "en" ? "en" : getBrowserLanguage();
@@ -119,7 +114,7 @@ export function CopyProvider({ children }: { children: ReactNode }) {
             })
             .catch(console.error)
             .finally(() => setIsProcessing(false));
-    }, [currentPage, language, variationSeed]);
+    }, [currentPage, language]);
 
     return (
         <CopyContext.Provider

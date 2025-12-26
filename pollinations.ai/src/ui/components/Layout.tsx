@@ -114,6 +114,13 @@ function Layout() {
                                         </NavLink>
                                     ))}
                                 </div>
+                                {/* Translation Indicator - Mobile */}
+                                {isProcessing && (
+                                    <span className="inline-flex items-center gap-1.5 px-2 py-0.5 mt-1 rounded-full bg-black/70 backdrop-blur-sm border border-white/20 text-[10px] text-white/70">
+                                        <span className="w-1.5 h-1.5 rounded-full bg-text-brand animate-pulse" />
+                                        Translating
+                                    </span>
+                                )}
                             </div>
                         </div>
 

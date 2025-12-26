@@ -1,10 +1,7 @@
 // CommunityPage content configuration
 
 export const COMMUNITY_PAGE = {
-    title: {
-        text: "Contribute",
-        translate: true,
-    },
+    title: "Contribute",
 
     subtitle: {
         text: "We're crafting a haven where developers, creators, and AI enthusiasts collaborate and bloom together.",
@@ -12,28 +9,19 @@ export const COMMUNITY_PAGE = {
     },
 
     // News section
-    newsTitle: {
-        text: "What's New",
-        translate: true,
-    },
+    newsTitle: "What's New",
 
     newsFilePath:
         "https://raw.githubusercontent.com/pollinations/pollinations/production/NEWS/transformed/highlights.md",
 
-    discordTitle: {
-        text: "💬 Discord",
-        translate: true,
-    },
+    discordTitle: "💬 Discord",
 
     discordSubtitle: {
         text: "Chat with builders, get help, share what you're working on. We're friendly!",
         transform: true,
     },
 
-    githubTitle: {
-        text: "🛠️ GitHub",
-        translate: true,
-    },
+    githubTitle: "🛠️ GitHub",
 
     githubSubtitle: {
         text: "Contribute code, report bugs, submit your app to the showcase, or just star us!",
@@ -41,30 +29,11 @@ export const COMMUNITY_PAGE = {
     },
 
     // Buttons
-    joinDiscordButton: {
-        text: "Join Discord",
-        translate: true,
-    },
-
-    pollenBetaButton: {
-        text: "🧪 #pollen-beta",
-        translate: true,
-    },
-
-    starContributeButton: {
-        text: "⭐ Star & Contribute",
-        translate: true,
-    },
-
-    submitAppButton: {
-        text: "🚀 Submit App",
-        translate: true,
-    },
-
-    contributeButton: {
-        text: "Contribute",
-        translate: true,
-    },
+    joinDiscordButton: "Join Discord",
+    pollenBetaButton: "🧪 #pollen-beta",
+    starContributeButton: "⭐ Star & Contribute",
+    submitAppButton: "🚀 Submit App",
+    contributeButton: "Contribute",
 
     // Voting section
     votingTitle: {
@@ -99,10 +68,7 @@ export const COMMUNITY_PAGE = {
         },
     ],
 
-    supportersTitle: {
-        text: "Supporters",
-        translate: true,
-    },
+    supportersTitle: "Supporters",
 
     supportersSubtitle: {
         text: "We're grateful to our supporters for their contributions to the platform.",
@@ -181,28 +147,11 @@ export const COMMUNITY_PAGE = {
     supporterLogoModel: "nanobanana",
 
     // Top Contributors section
-    topContributorsTitle: {
-        text: "Most Active Contributors",
-        translate: true,
-    },
-    topContributorsDescription: {
-        text: "Meet the most active contributors to the pollinations.ai",
-        translate: true,
-    },
-    githubRepositoryLink: {
-        text: "GitHub repository",
-        translate: true,
-    },
-    overThePastYear: {
-        text: "over the past year.",
-        translate: true,
-    },
-    commitsLabel: {
-        text: "commits",
-        translate: true,
-    },
-    commitLabel: {
-        text: "commit",
-        translate: true,
-    },
+    topContributorsTitle: "Most Active Contributors",
+    topContributorsDescription:
+        "Meet the most active contributors to the pollinations.ai",
+    githubRepositoryLink: "GitHub repository",
+    overThePastYear: "over the past year.",
+    commitsLabel: "commits",
+    commitLabel: "commit",
 };

@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { API_BASE } from "../../../api.config";
+import { getText } from "../../../copy";
 import { PLAY_PAGE } from "../../../copy/content/play";
 import type { Model } from "../../../hooks/useModelList";
 import { useCopy } from "../../contexts/CopyContext";
@@ -34,7 +35,9 @@ const extractErrorMessage = async (response: Response): Promise<string> => {
             }
         }
         return (
-            data?.message || data?.error || PLAY_PAGE.somethingWentWrong.text
+            data?.message ||
+            data?.error ||
+            getText(PLAY_PAGE.somethingWentWrong)
         );
     } catch {
         return `Error ${response.status}: ${response.statusText}`;
@@ -79,12 +82,12 @@ export function PlayGenerator({
 
     // Check if current model has audio output
     const isAudioModel = [...imageModels, ...textModels].some(
-        (m) => m.id === selectedModel && m.hasAudioOutput
+        (m) => m.id === selectedModel && m.hasAudioOutput,
     );
 
     // Check if current model supports image input modality
     const currentModelData = [...imageModels, ...textModels].find(
-        (m) => m.id === selectedModel
+        (m) => m.id === selectedModel,
     );
     const supportsImageInput = currentModelData?.hasImageInput || false;
 
@@ -116,7 +119,7 @@ export function PlayGenerator({
 
                 const response = await fetch(
                     `${API_BASE}/image/${encodeURIComponent(prompt)}?${params}`,
-                    { headers: { Authorization: `Bearer ${apiKey}` } }
+                    { headers: { Authorization: `Bearer ${apiKey}` } },
                 );
 
                 if (!response.ok) {
@@ -136,7 +139,7 @@ export function PlayGenerator({
                 setError(
                     err instanceof Error
                         ? err.message
-                        : copy.somethingWentWrong.text
+                        : getText(copy.somethingWentWrong),
                 );
                 setResult(null);
                 setIsLoading(false);
@@ -174,7 +177,7 @@ export function PlayGenerator({
                                 },
                             ],
                         }),
-                    }
+                    },
                 );
 
                 if (!response.ok) {
@@ -187,7 +190,8 @@ export function PlayGenerator({
 
                 const data = await response.json();
                 const text =
-                    data.choices?.[0]?.message?.content || copy.noResponse.text;
+                    data.choices?.[0]?.message?.content ||
+                    getText(copy.noResponse);
                 setResult(text);
                 setIsLoading(false);
             } catch (err) {
@@ -195,7 +199,7 @@ export function PlayGenerator({
                 setError(
                     err instanceof Error
                         ? err.message
-                        : copy.somethingWentWrong.text
+                        : getText(copy.somethingWentWrong),
                 );
                 setResult(null);
                 setIsLoading(false);
@@ -234,8 +238,8 @@ export function PlayGenerator({
                                         onClick={() =>
                                             setImageUrls(
                                                 imageUrls.filter(
-                                                    (_, i) => i !== index
-                                                )
+                                                    (_, i) => i !== index,
+                                                ),
                                             )
                                         }
                                         className="absolute -top-1 -right-1 w-5 h-5 bg-charcoal border border-border-main rounded-full flex items-center justify-center text-text-body-main hover:bg-button-secondary-bg transition-colors"
@@ -260,7 +264,7 @@ export function PlayGenerator({
                                     addImageUrl();
                                 }
                             }}
-                            placeholder={copy.imageUrlPlaceholder.text}
+                            placeholder={getText(copy.imageUrlPlaceholder)}
                             className="flex-1 p-3 bg-input-background text-text-body-main font-body focus:outline-none focus:bg-input-background hover:bg-input-background transition-colors placeholder:text-text-caption rounded-input"
                             disabled={imageUrls.length >= 4}
                         />
@@ -294,7 +298,7 @@ export function PlayGenerator({
                                 htmlFor="image-width"
                                 className="block font-headline text-text-body-main mb-2 uppercase text-xs tracking-wider font-black"
                             >
-                                {copy.widthLabel.text}
+                                {getText(copy.widthLabel)}
                             </label>
                             <input
                                 id="image-width"
@@ -312,7 +316,7 @@ export function PlayGenerator({
                                 htmlFor="image-height"
                                 className="block font-headline text-text-body-main mb-2 uppercase text-xs tracking-wider font-black"
                             >
-                                {copy.heightLabel.text}
+                                {getText(copy.heightLabel)}
                             </label>
                             <input
                                 id="image-height"
@@ -331,10 +335,10 @@ export function PlayGenerator({
                                     htmlFor="image-seed"
                                     className="block font-headline text-text-body-main mb-2 uppercase text-xs tracking-wider font-black cursor-help"
                                 >
-                                    {copy.seedLabel.text}
+                                    {getText(copy.seedLabel)}
                                 </label>
                                 <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-charcoal text-text-body-main text-xs rounded-input shadow-lg border border-border-main opacity-0 group-hover/seed:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-50">
-                                    {copy.seedTooltip.text}
+                                    {getText(copy.seedTooltip)}
                                     <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-charcoal" />
                                 </div>
                             </div>
@@ -346,7 +350,7 @@ export function PlayGenerator({
                                 onChange={(e) =>
                                     setSeed(Number(e.target.value))
                                 }
-                                placeholder={copy.seedPlaceholder.text}
+                                placeholder={getText(copy.seedPlaceholder)}
                                 className="w-full p-3 bg-input-background text-text-body-main font-body focus:outline-none focus:bg-input-background hover:bg-input-background transition-colors placeholder:text-text-caption rounded-input"
                             />
                         </div>
@@ -356,10 +360,10 @@ export function PlayGenerator({
                                     htmlFor="enhance-prompt"
                                     className="block font-headline text-text-body-main mb-2 uppercase text-xs tracking-wider font-black cursor-help"
                                 >
-                                    {copy.enhanceLabel.text}
+                                    {getText(copy.enhanceLabel)}
                                 </label>
                                 <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-charcoal text-text-body-main text-xs rounded-input shadow-lg border border-border-main opacity-0 group-hover/enhance:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-50">
-                                    {copy.enhanceTooltip.text}
+                                    {getText(copy.enhanceTooltip)}
                                     <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-charcoal" />
                                 </div>
                             </div>
@@ -415,19 +419,19 @@ export function PlayGenerator({
                                 <span className="w-1.5 h-1.5 bg-current rounded-full animate-bounce [animation-delay:-0.15s]" />
                                 <span className="w-1.5 h-1.5 bg-current rounded-full animate-bounce" />
                             </span>
-                            {copy.generatingText.text}
+                            {getText(copy.generatingText)}
                         </span>
                     ) : isAudioModel ? (
-                        copy.generateAudioButton.text
+                        getText(copy.generateAudioButton)
                     ) : isImageModel ? (
-                        copy.generateImageButton.text
+                        getText(copy.generateImageButton)
                     ) : (
-                        copy.generateTextButton.text
+                        getText(copy.generateTextButton)
                     )}
                 </Button>
                 {!prompt && !isLoading && (
                     <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-charcoal text-text-body-main text-xs rounded-input shadow-lg border border-border-main opacity-0 group-hover/generate:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-50">
-                        {copy.enterPromptFirst.text}
+                        {getText(copy.enterPromptFirst)}
                         <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-charcoal" />
                     </div>
                 )}

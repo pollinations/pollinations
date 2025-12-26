@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { getText } from "../../copy";
 import { DOCS_PAGE } from "../../copy/content/docs";
 import { CopyIcon } from "../assets/CopyIcon";
 import { ExternalLinkIcon } from "../assets/ExternalLinkIcon";
@@ -34,12 +35,12 @@ function DocsPage() {
         <PageContainer>
             <PageCard>
                 {/* Title */}
-                <Title>{pageCopy.title.text}</Title>
+                <Title>{getText(pageCopy.title)}</Title>
 
                 {/* Intro */}
-                <Body>{pageCopy.intro.text}</Body>
+                <Body>{getText(pageCopy.intro)}</Body>
                 <Body spacing="none" className="mb-8">
-                    {pageCopy.apiReference.text}
+                    {getText(pageCopy.apiReference)}
                 </Body>
                 <div className="flex flex-wrap gap-3 mb-12">
                     <Button
@@ -50,7 +51,7 @@ function DocsPage() {
                         variant="secondary"
                         size="lg"
                     >
-                        {pageCopy.fullApiDocsButton.text}
+                        {getText(pageCopy.fullApiDocsButton)}
                         <ExternalLinkIcon className="w-4 h-4 text-text-body-main" />
                     </Button>
                     <Button
@@ -63,11 +64,11 @@ function DocsPage() {
                             setTimeout(() => setAgentPromptCopied(false), 2000);
                         }}
                     >
-                        {pageCopy.agentPromptButton.text}
+                        {getText(pageCopy.agentPromptButton)}
                         <CopyIcon />
                         {agentPromptCopied && (
                             <span className="absolute -top-5 left-0 font-headline text-xs font-black text-text-brand uppercase tracking-wider">
-                                {pageCopy.copiedLabel.text}
+                                {getText(pageCopy.copiedLabel)}
                             </span>
                         )}
                     </Button>

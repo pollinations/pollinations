@@ -1,10 +1,7 @@
 // DocsPage content configuration
 
 export const DOCS_PAGE = {
-    title: {
-        text: "Integrate",
-        translate: true,
-    },
+    title: "Integrate",
 
     intro: {
         text: "Our API is simple, powerful, and elegant. Single endpoint for text, images, and audio—this is where your vision takes flight.",
@@ -17,60 +14,26 @@ export const DOCS_PAGE = {
     },
 
     // Top buttons
-    fullApiDocsButton: {
-        text: "Full API Docs",
-        translate: true,
-    },
-
-    agentPromptButton: {
-        text: "Agent Prompt",
-        translate: true,
-    },
-
-    copiedLabel: {
-        text: "Copied!",
-        translate: true,
-    },
+    fullApiDocsButton: "Full API Docs",
+    agentPromptButton: "Agent Prompt",
+    copiedLabel: "Copied!",
 
     // ImageGenCard
-    imageGenerationTitle: {
-        text: "Image Generation",
-        translate: true,
-    },
+    imageGenerationTitle: "Image Generation",
+    pickPromptLabel: "Pick a prompt",
+    modelSelectLabel: "Model",
+    parametersLabel: "Parameters",
+    generatingLabel: "Generating...",
+    copyUrlButton: "Copy URL",
 
-    pickPromptLabel: {
-        text: "Pick a prompt",
-        translate: true,
-    },
-
-    modelSelectLabel: {
-        text: "Model",
-        translate: true,
-    },
-
-    parametersLabel: {
-        text: "Parameters",
-        translate: true,
-    },
-
-    generatingLabel: {
-        text: "Generating...",
-        translate: true,
-    },
-
-    copyUrlButton: {
-        text: "Copy URL",
-        translate: true,
-    },
-
-    // Image prompts array (translatable)
+    // Image prompts array
     imagePrompts: [
-        { text: "a blooming flower in golden hour", translate: true },
-        { text: "bees pollinating wildflowers", translate: true },
-        { text: "organic mycelium network patterns", translate: true },
-        { text: "harmonious forest ecosystem", translate: true },
-        { text: "symbiotic nature interactions", translate: true },
-        { text: "flowing river through biosphere", translate: true },
+        "a blooming flower in golden hour",
+        "bees pollinating wildflowers",
+        "organic mycelium network patterns",
+        "harmonious forest ecosystem",
+        "symbiotic nature interactions",
+        "flowing river through biosphere",
     ],
 
     // Image parameters (from API docs)
@@ -96,32 +59,17 @@ export const DOCS_PAGE = {
     ],
 
     // TextGenCard
-    textGenerationTitle: {
-        text: "Text Generation",
-        translate: true,
-    },
+    textGenerationTitle: "Text Generation",
+    modelLabel: "Model",
+    defaultModelLabel: "Default: openai",
+    optionalLabel: "Optional",
 
-    modelLabel: {
-        text: "Model",
-        translate: true,
-    },
-
-    defaultModelLabel: {
-        text: "Default: openai",
-        translate: true,
-    },
-
-    optionalLabel: {
-        text: "Optional",
-        translate: true,
-    },
-
-    // Text prompts array (translatable)
+    // Text prompts array
     textPrompts: [
-        { text: "explain pollinations.ai", translate: true },
-        { text: "write a poem about nature", translate: true },
-        { text: "describe ecosystem harmony", translate: true },
-        { text: "explain symbiosis", translate: true },
+        "explain pollinations.ai",
+        "write a poem about nature",
+        "describe ecosystem harmony",
+        "explain symbiosis",
     ],
 
     // Text parameters (from API docs)
@@ -154,109 +102,31 @@ export const DOCS_PAGE = {
     ],
 
     // ModelDiscoveryCard
-    modelDiscoveryTitle: {
-        text: "Model Discovery",
-        translate: true,
-    },
-
-    selectTypeLabel: {
-        text: "Select a type",
-        translate: true,
-    },
-
-    imageTypeLabel: {
-        text: "Image",
-        translate: true,
-    },
-
-    textTypeLabel: {
-        text: "Text",
-        translate: true,
-    },
-
-    textOpenAITypeLabel: {
-        text: "Text (OpenAI)",
-        translate: true,
-    },
-
-    loadingModelsLabel: {
-        text: "Loading models...",
-        translate: true,
-    },
+    modelDiscoveryTitle: "Model Discovery",
+    selectTypeLabel: "Select a type",
+    imageTypeLabel: "Image",
+    textTypeLabel: "Text",
+    textOpenAITypeLabel: "Text (OpenAI)",
+    loadingModelsLabel: "Loading models...",
 
     // AuthCard
-    authenticationTitle: {
-        text: "Authentication",
-        translate: true,
-    },
-
-    keyTypesLabel: {
-        text: "Key Types",
-        translate: true,
-    },
-
-    publishableLabel: {
-        text: "Publishable",
-        translate: true,
-    },
-
-    publishableFeature1: {
-        text: "Safe for client-side code",
-        translate: true,
-    },
-
-    publishableFeature2: {
-        text: "Rate limited: 3 req/burst, 1/15sec refill",
-        translate: true,
-    },
-
-    publishableFeature3: {
-        text: "Best for: demos, prototypes, public tools",
-        translate: true,
-    },
-
-    secretLabel: {
-        text: "Secret",
-        translate: true,
-    },
-
-    secretFeature1: {
-        text: "Server-side only",
-        translate: true,
-    },
-
-    secretFeature2: {
-        text: "Never expose publicly",
-        translate: true,
-    },
-
-    secretFeature3: {
-        text: "No rate limits, can spend Pollen",
-        translate: true,
-    },
-
-    getYourKeyLabel: {
-        text: "Get Your Key",
-        translate: true,
-    },
-
-    usageExamplesLabel: {
-        text: "Usage Examples",
-        translate: true,
-    },
-
-    serverSideDescription: {
-        text: "Server-side (Recommended): Use secret key in Authorization header",
-        translate: true,
-    },
-
-    clientSideDescription: {
-        text: "Client-side (Public): Use publishable key in query parameter",
-        translate: true,
-    },
+    authenticationTitle: "Authentication",
+    keyTypesLabel: "Key Types",
+    publishableLabel: "Publishable",
+    publishableFeature1: "Safe for client-side code",
+    publishableFeature2: "Rate limited: 3 req/burst, 1/15sec refill",
+    publishableFeature3: "Best for: demos, prototypes, public tools",
+    secretLabel: "Secret",
+    secretFeature1: "Server-side only",
+    secretFeature2: "Never expose publicly",
+    secretFeature3: "No rate limits, can spend Pollen",
+    getYourKeyLabel: "Get Your Key",
+    usageExamplesLabel: "Usage Examples",
+    serverSideDescription:
+        "Server-side (Recommended): Use secret key in Authorization header",
+    clientSideDescription:
+        "Client-side (Public): Use publishable key in query parameter",
 
     // API base URL for display
-    apiBaseUrl: {
-        text: "gen.pollinations.ai",
-    },
+    apiBaseUrl: "gen.pollinations.ai",
 };

@@ -1,10 +1,7 @@
 // AppsPage content configuration
 
 export const APPS_PAGE = {
-    title: {
-        text: "Ecosystem",
-        translate: true,
-    },
+    title: "Ecosystem",
 
     subtitle: {
         text: "Paradise-built apps, tools, and experiments—pollinations.ai-powered. Browse, try, ship.",
@@ -12,22 +9,10 @@ export const APPS_PAGE = {
     },
 
     // Submit app CTA
-    submitCtaTitle: {
-        text: "🚀 Built something cool?",
-        translate: true,
-    },
-    submitCtaDescription: {
-        text: "Get featured in the showcase and earn Pollen!",
-        translate: true,
-    },
-    submitCtaButton: {
-        text: "✨ Submit App",
-        translate: true,
-    },
-    noAppsMessage: {
-        text: "No apps found in this category yet.",
-        translate: true,
-    },
+    submitCtaTitle: "🚀 Built something cool?",
+    submitCtaDescription: "Get featured in the showcase and earn Pollen!",
+    submitCtaButton: "✨ Submit App",
+    noAppsMessage: "No apps found in this category yet.",
 };
 
 // Category mapping for display

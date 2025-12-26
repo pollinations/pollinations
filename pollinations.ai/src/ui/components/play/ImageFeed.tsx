@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { getText } from "../../../copy";
 import { PLAY_PAGE } from "../../../copy/content/play";
 import type { Model } from "../../../hooks/useModelList";
 import { useCopy } from "../../contexts/CopyContext";
@@ -59,7 +60,7 @@ export function ImageFeed({
     // Image feed
     useEffect(() => {
         const eventSource = new EventSource(
-            "https://image.pollinations.ai/feed"
+            "https://image.pollinations.ai/feed",
         );
         eventSource.onmessage = (event) => {
             try {
@@ -85,7 +86,7 @@ export function ImageFeed({
     // Text feed
     useEffect(() => {
         const eventSource = new EventSource(
-            "https://text.pollinations.ai/feed"
+            "https://text.pollinations.ai/feed",
         );
         eventSource.onmessage = (event) => {
             try {
@@ -97,7 +98,7 @@ export function ImageFeed({
                     if (!selectedModel || modelId === selectedModel) {
                         const userMessage = data.parameters?.messages?.find(
                             (msg: { role?: string; content?: string }) =>
-                                msg?.role === "user"
+                                msg?.role === "user",
                         );
                         const prompt =
                             userMessage?.content || data.prompt || "No prompt";
@@ -122,7 +123,7 @@ export function ImageFeed({
     useEffect(() => {
         const interval = setInterval(() => {
             const selectedModelData = [...imageModels, ...textModels].find(
-                (m) => m.id === selectedModel
+                (m) => m.id === selectedModel,
             );
             if (!selectedModelData) return;
 
@@ -172,10 +173,10 @@ export function ImageFeed({
             <div className="relative min-h-[32rem] max-h-[32rem] flex items-center justify-center overflow-hidden">
                 {!currentDisplay ? (
                     <div className="text-center py-24 text-text-caption font-body">
-                        <p>{copy.waitingForContent.text}</p>
+                        <p>{getText(copy.waitingForContent)}</p>
                         {selectedModel && (
                             <p className="text-xs mt-2">
-                                {copy.listeningTo.text} {selectedModel}
+                                {getText(copy.listeningTo)} {selectedModel}
                             </p>
                         )}
                     </div>

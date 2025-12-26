@@ -18,7 +18,11 @@ interface CopyItem {
 
 /**
  * Extract all processable text from copy object
- * Finds items with translate: true OR transform: true
+ *
+ * Supported formats:
+ * - String: "text" → translate mode (default)
+ * - Object with transform: { text: "...", transform: true } → transform mode
+ * - Object with translate (legacy): { text: "...", translate: true } → translate mode
  */
 export function extractCopyItems(root: Record<string, unknown>): {
     items: CopyItem[];
@@ -27,34 +31,40 @@ export function extractCopyItems(root: Record<string, unknown>): {
     const items: CopyItem[] = [];
     const pointers: Record<string, (newText: string) => void> = {};
 
-    function traverse(obj: unknown, path: string[]) {
+    function traverse(
+        obj: unknown,
+        path: string[],
+        parent?: Record<string, unknown>,
+        parentKey?: string,
+    ) {
+        // Handle direct strings - these are translate items
+        if (typeof obj === "string" && parent && parentKey) {
+            const id = path.join(".");
+            items.push({ id, text: obj, mode: "translate" });
+            pointers[id] = (newText: string) => {
+                parent[parentKey] = newText;
+            };
+            return;
+        }
+
         if (!obj || typeof obj !== "object") return;
 
         const node = obj as Record<string, unknown>;
 
-        // Check for translate or transform flag
+        // Check for object with text property (transform or legacy translate)
         if (typeof node.text === "string") {
-            const mode =
-                node.transform === true
-                    ? "transform"
-                    : node.translate === true
-                      ? "translate"
-                      : null;
-
-            if (mode) {
-                const id = path.join(".");
-                items.push({ id, text: node.text, mode });
-                pointers[id] = (newText: string) => {
-                    node.text = newText;
-                };
-            }
+            const mode = node.transform === true ? "transform" : "translate";
+            const id = path.join(".");
+            items.push({ id, text: node.text, mode });
+            pointers[id] = (newText: string) => {
+                node.text = newText;
+            };
+            return; // Don't traverse into text objects
         }
 
         // Recursively check children
         for (const key of Object.keys(node)) {
-            if (key !== "translate" && key !== "transform" && key !== "text") {
-                traverse(node[key], [...path, key]);
-            }
+            traverse(node[key], [...path, key], node, key);
         }
     }
 

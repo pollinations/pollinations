@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { getText } from "../../copy";
 import { APPS_PAGE, appsFilePath, CATEGORIES } from "../../copy/content/apps";
 import { LINKS } from "../../copy/content/socialLinks";
 import { type App, useApps } from "../../hooks/useApps";
@@ -142,15 +143,15 @@ export default function AppsPage() {
     return (
         <PageContainer>
             <PageCard>
-                <Title>{pageCopy.title.text}</Title>
-                <Body spacing="comfortable">{pageCopy.subtitle.text}</Body>
+                <Title>{getText(pageCopy.title)}</Title>
+                <Body spacing="comfortable">{getText(pageCopy.subtitle)}</Body>
                 <div className="flex items-center gap-4 p-4 mb-10 bg-surface-card rounded-sub-card border-l-4 border-border-highlight">
                     <div className="flex-1">
                         <p className="font-headline text-sm font-black text-text-body-main mb-1">
-                            {pageCopy.submitCtaTitle.text}
+                            {getText(pageCopy.submitCtaTitle)}
                         </p>
                         <p className="font-body text-xs text-text-body-secondary">
-                            {pageCopy.submitCtaDescription.text}
+                            {getText(pageCopy.submitCtaDescription)}
                         </p>
                     </div>
                     <Button
@@ -161,7 +162,7 @@ export default function AppsPage() {
                         variant="primary"
                         size="default"
                     >
-                        {pageCopy.submitCtaButton.text}
+                        {getText(pageCopy.submitCtaButton)}
                         <ExternalLinkIcon className="w-3 h-3 stroke-text-highlight" />
                     </Button>
                 </div>
@@ -202,7 +203,7 @@ export default function AppsPage() {
                 {displayApps.length === 0 && (
                     <div className="text-center py-12">
                         <Body className="text-text-body-main">
-                            {pageCopy.noAppsMessage.text}
+                            {getText(pageCopy.noAppsMessage)}
                         </Body>
                     </div>
                 )}

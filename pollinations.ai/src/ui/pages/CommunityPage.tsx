@@ -1,3 +1,4 @@
+import { getText } from "../../copy";
 import { COMMUNITY_PAGE } from "../../copy/content/community";
 import { LINKS, SOCIAL_LINKS } from "../../copy/content/socialLinks";
 import { useTranslate } from "../../hooks/useTranslate";
@@ -39,9 +40,9 @@ export default function CommunityPage() {
     return (
         <PageContainer>
             <PageCard>
-                <Title>{pageCopy.title.text}</Title>
+                <Title>{getText(pageCopy.title)}</Title>
                 <Body spacing="none" className="mb-8">
-                    {pageCopy.subtitle.text}
+                    {getText(pageCopy.subtitle)}
                 </Body>
 
                 {/* Discord & GitHub Cards - Bold brutalist blocks */}
@@ -49,10 +50,10 @@ export default function CommunityPage() {
                     {/* Discord Card */}
                     <SubCard>
                         <Heading variant="lime" as="h2">
-                            {pageCopy.discordTitle.text}
+                            {getText(pageCopy.discordTitle)}
                         </Heading>
                         <div className="font-body text-sm text-text-body-secondary mb-6">
-                            {pageCopy.discordSubtitle.text}
+                            {getText(pageCopy.discordSubtitle)}
                         </div>
                         <div className="flex flex-col sm:flex-row gap-2">
                             <Button
@@ -63,7 +64,7 @@ export default function CommunityPage() {
                                 variant="primary"
                                 size="default"
                             >
-                                {pageCopy.joinDiscordButton.text}
+                                {getText(pageCopy.joinDiscordButton)}
                                 <ExternalLinkIcon className="w-3 h-3 stroke-text-highlight" />
                             </Button>
                             <Button
@@ -74,7 +75,7 @@ export default function CommunityPage() {
                                 variant="secondary"
                                 size="default"
                             >
-                                {pageCopy.pollenBetaButton.text}
+                                {getText(pageCopy.pollenBetaButton)}
                                 <ExternalLinkIcon className="w-3 h-3 text-text-body-main" />
                             </Button>
                         </div>
@@ -83,10 +84,10 @@ export default function CommunityPage() {
                     {/* GitHub Card */}
                     <SubCard>
                         <Heading variant="rose" as="h2">
-                            {pageCopy.githubTitle.text}
+                            {getText(pageCopy.githubTitle)}
                         </Heading>
                         <div className="font-body text-sm text-text-body-secondary mb-6">
-                            {pageCopy.githubSubtitle.text}
+                            {getText(pageCopy.githubSubtitle)}
                         </div>
                         <div className="flex flex-wrap gap-2">
                             <Button
@@ -97,7 +98,7 @@ export default function CommunityPage() {
                                 variant="primary"
                                 size="default"
                             >
-                                {pageCopy.starContributeButton.text}
+                                {getText(pageCopy.starContributeButton)}
                                 <ExternalLinkIcon className="w-3 h-3 stroke-text-highlight" />
                             </Button>
                             <Button
@@ -108,7 +109,7 @@ export default function CommunityPage() {
                                 variant="secondary"
                                 size="default"
                             >
-                                {pageCopy.submitAppButton.text}
+                                {getText(pageCopy.submitAppButton)}
                                 <ExternalLinkIcon className="w-3 h-3 text-text-body-main" />
                             </Button>
                         </div>
@@ -121,10 +122,10 @@ export default function CommunityPage() {
                 {/* Voting Section */}
                 <div className="mb-12">
                     <Heading variant="section">
-                        {pageCopy.votingTitle?.text || "Have Your Say"}
+                        {getText(pageCopy.votingTitle) || "Have Your Say"}
                     </Heading>
                     <Body size="sm" spacing="comfortable">
-                        {pageCopy.votingSubtitle?.text ||
+                        {getText(pageCopy.votingSubtitle) ||
                             "We build what the community wants. Vote on what matters to you:"}
                     </Body>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
@@ -161,15 +162,15 @@ export default function CommunityPage() {
                 <TopContributors />
 
                 {/* News Section */}
-                <NewsSection limit={15} title={pageCopy.newsTitle?.text} />
+                <NewsSection limit={15} title={getText(pageCopy.newsTitle)} />
 
                 {/* Supporters Section */}
                 <div>
                     <Heading variant="section">
-                        {pageCopy.supportersTitle.text}
+                        {getText(pageCopy.supportersTitle)}
                     </Heading>
                     <Body size="sm" spacing="comfortable">
-                        {pageCopy.supportersSubtitle.text}
+                        {getText(pageCopy.supportersSubtitle)}
                     </Body>
                     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
                         {translatedSupporters.map((supporter) => (

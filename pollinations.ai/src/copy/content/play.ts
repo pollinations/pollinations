@@ -2,194 +2,65 @@
 
 export const PLAY_PAGE = {
     // Page titles and navigation
-    createTitle: {
-        text: "Create",
-        translate: true,
-    },
-
-    watchTitle: {
-        text: "Watch",
-        translate: true,
-    },
-
-    createDescription: {
-        text: "Test our API, play with different models, and see what you can create. This is a fun demo playground—not our main product, just a place to explore and experiment.",
-        translate: true,
-    },
-
-    feedDescription: {
-        text: "Watch the global pulse of our network in real-time. See what the community is creating right now through our APIs.",
-        translate: true,
-    },
-
-    toggleWatchOthers: {
-        text: "Watch what others are making",
-        translate: true,
-    },
-
-    toggleBackToPlay: {
-        text: "Back to Play",
-        translate: true,
-    },
+    createTitle: "Create",
+    watchTitle: "Watch",
+    createDescription:
+        "Test our API, play with different models, and see what you can create. This is a fun demo playground—not our main product, just a place to explore and experiment.",
+    feedDescription:
+        "Watch the global pulse of our network in real-time. See what the community is creating right now through our APIs.",
+    toggleWatchOthers: "Watch what others are making",
+    toggleBackToPlay: "Back to Play",
 
     // PlayGenerator UI labels
-    modelsLabel: {
-        text: "Models",
-        translate: true,
-    },
-
-    imageLabel: {
-        text: "Image",
-        translate: true,
-    },
-
-    textLabel: {
-        text: "Text",
-        translate: true,
-    },
-
-    promptLabel: {
-        text: "Prompt",
-        translate: true,
-    },
-
-    imagePlaceholder: {
-        text: "Describe the image you want...",
-        translate: true,
-    },
-
-    textPlaceholder: {
-        text: "Enter your question or prompt...",
-        translate: true,
-    },
-
-    addImagesLabel: {
-        text: "Add Images (Optional)",
-        translate: true,
-    },
-
-    upToFourLabel: {
-        text: "up to 4",
-        translate: true,
-    },
+    modelsLabel: "Models",
+    imageLabel: "Image",
+    textLabel: "Text",
+    promptLabel: "Prompt",
+    imagePlaceholder: "Describe the image you want...",
+    textPlaceholder: "Enter your question or prompt...",
+    addImagesLabel: "Add Images (Optional)",
+    upToFourLabel: "up to 4",
 
     // Image parameter labels
-    widthLabel: {
-        text: "Width",
-        translate: true,
-    },
-
-    heightLabel: {
-        text: "Height",
-        translate: true,
-    },
-
-    seedLabel: {
-        text: "Seed",
-        translate: true,
-    },
-
-    seedPlaceholder: {
-        text: "0 = random",
-        translate: true,
-    },
-
-    enhanceLabel: {
-        text: "Enhance",
-        translate: true,
-    },
-
-    logoLabel: {
-        text: "Logo",
-        translate: true,
-    },
+    widthLabel: "Width",
+    heightLabel: "Height",
+    seedLabel: "Seed",
+    seedPlaceholder: "0 = random",
+    enhanceLabel: "Enhance",
+    logoLabel: "Logo",
 
     // Button states
-    generatingText: {
-        text: "Generating...",
-        translate: true,
-    },
-
-    generateImageButton: {
-        text: "Generate Image",
-        translate: true,
-    },
-
-    generateTextButton: {
-        text: "Generate Text",
-        translate: true,
-    },
-
-    generateAudioButton: {
-        text: "Generate Audio",
-        translate: true,
-    },
+    generatingText: "Generating...",
+    generateImageButton: "Generate Image",
+    generateTextButton: "Generate Text",
+    generateAudioButton: "Generate Audio",
 
     // Tooltips
-    seedTooltip: {
-        text: "Same seed + same prompt = same image",
-        translate: true,
-    },
-    enhanceTooltip: {
-        text: "AI improves your prompt for better results",
-        translate: true,
-    },
+    seedTooltip: "Same seed + same prompt = same image",
+    enhanceTooltip: "AI improves your prompt for better results",
 
     // Model selector
-    audioLabel: {
-        text: "Audio",
-        translate: true,
-    },
-    videoLabel: {
-        text: "Video",
-        translate: true,
-    },
+    audioLabel: "Audio",
+    videoLabel: "Video",
 
     // Image feed
-    waitingForContent: {
-        text: "Waiting for content...",
-        translate: true,
-    },
-    listeningTo: {
-        text: "Listening to",
-        translate: true,
-    },
+    waitingForContent: "Waiting for content...",
+    listeningTo: "Listening to",
 
     // Auth
-    loginButton: {
-        text: "Login",
-        translate: true,
-    },
-    logoutButton: {
-        text: "Logout",
-        translate: true,
-    },
+    loginButton: "Login",
+    logoutButton: "Logout",
 
     // Validation
-    enterPromptFirst: {
-        text: "First, enter a prompt",
-        translate: true,
-    },
+    enterPromptFirst: "First, enter a prompt",
 
     // Gated model tooltip
-    gatedModelTooltip: {
-        text: "To test this model, log in to enter.pollinations.ai",
-        translate: true,
-    },
+    gatedModelTooltip: "To test this model, log in to enter.pollinations.ai",
 
     // Reference images
-    imageUrlPlaceholder: {
-        text: "Image URL",
-        translate: true,
-    },
+    imageUrlPlaceholder: "Image URL",
 
     // Error messages
-    somethingWentWrong: {
-        text: "Something went wrong",
-        translate: true,
-    },
-    noResponse: {
-        text: "No response",
-        translate: true,
-    },
+    somethingWentWrong: "Something went wrong",
+    noResponse: "No response",
 };

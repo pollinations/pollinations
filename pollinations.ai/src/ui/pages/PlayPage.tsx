@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { getText } from "../../copy";
 import { PLAY_PAGE } from "../../copy/content/play";
 import { useAuth } from "../../hooks/useAuth";
 import { useModelList } from "../../hooks/useModelList";
@@ -43,7 +44,7 @@ function PlayPage() {
             ...imageModels.map((m) => ({ ...m, type: "image" as const })),
             ...textModels.map((m) => ({ ...m, type: "text" as const })),
         ],
-        [imageModels, textModels]
+        [imageModels, textModels],
     );
 
     // Display prompt based on view
@@ -57,8 +58,8 @@ function PlayPage() {
                     <div className="flex items-center gap-4">
                         <Title spacing="none">
                             {view === "play"
-                                ? pageCopy.createTitle.text
-                                : pageCopy.watchTitle.text}
+                                ? getText(pageCopy.createTitle)
+                                : getText(pageCopy.watchTitle)}
                         </Title>
                         <button
                             type="button"
@@ -68,8 +69,8 @@ function PlayPage() {
                             className="font-body text-sm text-text-body-tertiary hover:text-text-body-main transition-colors"
                         >
                             {view === "play"
-                                ? pageCopy.toggleWatchOthers.text
-                                : pageCopy.toggleBackToPlay.text}
+                                ? getText(pageCopy.toggleWatchOthers)
+                                : getText(pageCopy.toggleBackToPlay)}
                         </button>
                     </div>
                     {/* Login/Logout Button */}
@@ -86,8 +87,8 @@ function PlayPage() {
                             size="sm"
                         >
                             {isLoggedIn
-                                ? pageCopy.logoutButton.text
-                                : pageCopy.loginButton.text}
+                                ? getText(pageCopy.logoutButton)
+                                : getText(pageCopy.loginButton)}
                         </Button>
                     </div>
                 </div>
@@ -95,8 +96,8 @@ function PlayPage() {
                 {/* Description */}
                 <Body className="mb-8">
                     {view === "play"
-                        ? pageCopy.createDescription.text
-                        : pageCopy.feedDescription.text}
+                        ? getText(pageCopy.createDescription)
+                        : getText(pageCopy.feedDescription)}
                 </Body>
 
                 {/* Model Selector - Independent of view state */}
@@ -114,14 +115,14 @@ function PlayPage() {
                         htmlFor="prompt-input"
                         className="block font-headline text-text-body-main mb-2 uppercase text-xs tracking-wider font-black"
                     >
-                        {pageCopy.promptLabel.text}
+                        {getText(pageCopy.promptLabel)}
                     </label>
                     {view === "play" ? (
                         <textarea
                             id="prompt-input"
                             value={prompt}
                             onChange={(e) => setPrompt(e.target.value)}
-                            placeholder={PLAY_PAGE.imagePlaceholder.text}
+                            placeholder={getText(PLAY_PAGE.imagePlaceholder)}
                             className="w-full h-[7.5rem] p-4 bg-input-background text-text-body-main font-body resize-none focus:outline-none focus:bg-input-background hover:bg-input-background transition-colors scrollbar-hide placeholder:text-text-body-tertiary"
                         />
                     ) : (

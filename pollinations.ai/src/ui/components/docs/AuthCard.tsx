@@ -1,7 +1,7 @@
 import { COPY_CONSTANTS } from "../../../copy/constants";
 import { DOCS_PAGE } from "../../../copy/content/docs";
+import { usePageCopy } from "../../../hooks/usePageCopy";
 import { ExternalLinkIcon } from "../../assets/ExternalLinkIcon";
-import { useCopy } from "../../contexts/CopyContext";
 import { Heading, Label } from "../ui/typography";
 
 /**
@@ -9,9 +9,8 @@ import { Heading, Label } from "../ui/typography";
  * Displays API key types and usage examples for the Docs page
  */
 export function AuthCard() {
-    // Get translated copy (flat strings only)
-    const { processedCopy } = useCopy();
-    const copy = { ...DOCS_PAGE, ...processedCopy } as typeof DOCS_PAGE;
+    // Get translated copy
+    const { copy } = usePageCopy(DOCS_PAGE);
 
     return (
         <div>

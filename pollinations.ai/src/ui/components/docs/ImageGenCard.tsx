@@ -3,8 +3,8 @@ import { API_BASE, API_KEY } from "../../../api.config";
 import { COPY_CONSTANTS } from "../../../copy/constants";
 import { DOCS_PAGE } from "../../../copy/content/docs";
 import { EXAMPLE_PROMPTS } from "../../../copy/examples";
+import { usePageCopy } from "../../../hooks/usePageCopy";
 import { fetchWithRetry } from "../../../utils/fetchWithRetry";
-import { useCopy } from "../../contexts/CopyContext";
 import { Button } from "../ui/button";
 import { Heading, Label } from "../ui/typography";
 
@@ -13,9 +13,8 @@ import { Heading, Label } from "../ui/typography";
  * Interactive demo for the image generation API
  */
 export function ImageGenCard() {
-    // Get translated copy (flat strings only)
-    const { processedCopy } = useCopy();
-    const copy = { ...DOCS_PAGE, ...processedCopy } as typeof DOCS_PAGE;
+    // Get translated copy
+    const { copy } = usePageCopy(DOCS_PAGE);
 
     // Example prompts (not translated)
     const imagePrompts = EXAMPLE_PROMPTS.image;

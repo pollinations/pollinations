@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { COMMUNITY_PAGE } from "../../copy/content/community";
-import { useCopy } from "../contexts/CopyContext";
+import { usePageCopy } from "../../hooks/usePageCopy";
 import { Divider } from "./ui/divider";
 import { Body, Heading } from "./ui/typography";
 
@@ -12,12 +12,8 @@ interface Contributor {
 }
 
 export function TopContributors() {
-    // Get translated copy (flat strings only)
-    const { processedCopy } = useCopy();
-    const copy = {
-        ...COMMUNITY_PAGE,
-        ...processedCopy,
-    } as typeof COMMUNITY_PAGE;
+    // Get translated copy
+    const { copy } = usePageCopy(COMMUNITY_PAGE);
 
     const [contributors, setContributors] = useState<Contributor[]>([]);
     const [loadingContributors, setLoadingContributors] = useState(true);

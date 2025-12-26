@@ -1,6 +1,7 @@
 import { COPY_CONSTANTS } from "../../copy/constants";
 import { COMMUNITY_PAGE } from "../../copy/content/community";
 import { LINKS, SOCIAL_LINKS } from "../../copy/content/socialLinks";
+import { usePageCopy } from "../../hooks/usePageCopy";
 import { useTranslate } from "../../hooks/useTranslate";
 import { ExternalLinkIcon } from "../assets/ExternalLinkIcon";
 import { ImageGenerator } from "../components/ImageGenerator";
@@ -12,7 +13,6 @@ import { PageCard } from "../components/ui/page-card";
 import { PageContainer } from "../components/ui/page-container";
 import { SubCard } from "../components/ui/sub-card";
 import { Body, Heading, Title } from "../components/ui/typography";
-import { useCopy } from "../contexts/CopyContext";
 
 interface VotingIssue {
     emoji: string;
@@ -22,11 +22,7 @@ interface VotingIssue {
 }
 
 export default function CommunityPage() {
-    const { processedCopy } = useCopy();
-    const pageCopy = {
-        ...COMMUNITY_PAGE,
-        ...processedCopy,
-    } as typeof COMMUNITY_PAGE;
+    const { copy: pageCopy, isTranslating } = usePageCopy(COMMUNITY_PAGE);
 
     const { translated: translatedVotingIssues } = useTranslate(
         COMMUNITY_PAGE.votingIssues as VotingIssue[],
@@ -40,7 +36,7 @@ export default function CommunityPage() {
 
     return (
         <PageContainer>
-            <PageCard>
+            <PageCard isTranslating={isTranslating}>
                 <Title>{pageCopy.title}</Title>
                 <Body spacing="none" className="mb-8">
                     {pageCopy.subtitle}

@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { COPY_CONSTANTS } from "../../../copy/constants";
 import { DOCS_PAGE } from "../../../copy/content/docs";
-import { useCopy } from "../../contexts/CopyContext";
+import { usePageCopy } from "../../../hooks/usePageCopy";
 import { Button } from "../ui/button";
 import { Heading, Label } from "../ui/typography";
 
@@ -10,9 +10,8 @@ import { Heading, Label } from "../ui/typography";
  * Displays available models from different endpoints
  */
 export function ModelDiscoveryCard() {
-    // Get translated copy (flat strings only)
-    const { processedCopy } = useCopy();
-    const copy = { ...DOCS_PAGE, ...processedCopy } as typeof DOCS_PAGE;
+    // Get translated copy
+    const { copy } = usePageCopy(DOCS_PAGE);
 
     const apiBase = `https://${COPY_CONSTANTS.apiBaseUrl}`;
     const modelEndpoints = {

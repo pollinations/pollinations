@@ -3,6 +3,7 @@ import { COPY_CONSTANTS } from "../../copy/constants";
 import { APPS_PAGE, CATEGORIES } from "../../copy/content/apps";
 import { LINKS } from "../../copy/content/socialLinks";
 import { type App, useApps } from "../../hooks/useApps";
+import { usePageCopy } from "../../hooks/usePageCopy";
 import { useTranslate } from "../../hooks/useTranslate";
 import { ExternalLinkIcon } from "../assets/ExternalLinkIcon";
 import { GithubIcon } from "../assets/SocialIcons";
@@ -11,7 +12,6 @@ import { PageCard } from "../components/ui/page-card";
 import { PageContainer } from "../components/ui/page-container";
 import { SubCard } from "../components/ui/sub-card";
 import { Body, Title } from "../components/ui/typography";
-import { useCopy } from "../contexts/CopyContext";
 
 // Helper to extract GitHub username from author field
 function getGitHubUsername(author: string) {
@@ -119,9 +119,8 @@ export default function AppsPage() {
     // Fetch apps from GitHub
     const { apps: allApps } = useApps(COPY_CONSTANTS.appsFilePath);
 
-    // Use processed copy if available, merge with static
-    const { processedCopy } = useCopy();
-    const pageCopy = { ...APPS_PAGE, ...processedCopy } as typeof APPS_PAGE;
+    // Get translated copy
+    const { copy: pageCopy, isTranslating } = usePageCopy(APPS_PAGE);
 
     // Translate category labels
     const { translated: translatedCategories } = useTranslate(
@@ -142,7 +141,7 @@ export default function AppsPage() {
 
     return (
         <PageContainer>
-            <PageCard>
+            <PageCard isTranslating={isTranslating}>
                 <Title>{pageCopy.title}</Title>
                 <Body spacing="comfortable">{pageCopy.subtitle}</Body>
                 <div className="flex items-center gap-4 p-4 mb-10 bg-surface-card rounded-sub-card border-l-4 border-border-highlight">

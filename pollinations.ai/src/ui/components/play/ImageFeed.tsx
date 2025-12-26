@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { PLAY_PAGE } from "../../../copy/content/play";
 import type { Model } from "../../../hooks/useModelList";
-import { useCopy } from "../../contexts/CopyContext";
+import { usePageCopy } from "../../../hooks/usePageCopy";
 
 interface ImageFeedProps {
     selectedModel: string;
@@ -37,9 +37,8 @@ export function ImageFeed({
     imageModels,
     textModels,
 }: ImageFeedProps) {
-    // Get translated copy (flat strings only)
-    const { processedCopy } = useCopy();
-    const copy = { ...PLAY_PAGE, ...processedCopy } as typeof PLAY_PAGE;
+    // Get translated copy
+    const { copy } = usePageCopy(PLAY_PAGE);
 
     const seenImages = useRef<Set<string>>(new Set());
     const imageQueue = useRef<ImageQueueItem[]>([]);

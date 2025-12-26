@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { API_BASE } from "../../../api.config";
 import { PLAY_PAGE } from "../../../copy/content/play";
 import type { Model } from "../../../hooks/useModelList";
-import { useCopy } from "../../contexts/CopyContext";
+import { usePageCopy } from "../../../hooks/usePageCopy";
 import { Button } from "../ui/button";
 
 interface PlayGeneratorProps {
@@ -46,9 +46,8 @@ export function PlayGenerator({
     textModels,
     apiKey,
 }: PlayGeneratorProps) {
-    // Get translated copy (flat strings only)
-    const { processedCopy } = useCopy();
-    const copy = { ...PLAY_PAGE, ...processedCopy } as typeof PLAY_PAGE;
+    // Get translated copy
+    const { copy } = usePageCopy(PLAY_PAGE);
 
     const [result, setResult] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(false);

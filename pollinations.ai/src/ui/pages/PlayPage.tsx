@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { PLAY_PAGE } from "../../copy/content/play";
 import { useAuth } from "../../hooks/useAuth";
 import { useModelList } from "../../hooks/useModelList";
+import { usePageCopy } from "../../hooks/usePageCopy";
 import { ImageFeed } from "../components/play/ImageFeed";
 import { ModelSelector } from "../components/play/ModelSelector";
 import { PlayGenerator } from "../components/play/PlayGenerator";
@@ -9,7 +10,6 @@ import { Button } from "../components/ui/button";
 import { PageCard } from "../components/ui/page-card";
 import { PageContainer } from "../components/ui/page-container";
 import { Body, Title } from "../components/ui/typography";
-import { useCopy } from "../contexts/CopyContext";
 
 /**
  * PlayPage - Main playground page
@@ -30,10 +30,9 @@ function PlayPage() {
         allowedImageModelIds,
         allowedTextModelIds,
     } = useModelList(apiKey);
-    const { processedCopy } = useCopy();
 
-    // Use processed copy if available, merge with static
-    const pageCopy = { ...PLAY_PAGE, ...processedCopy } as typeof PLAY_PAGE;
+    // Get translated copy
+    const { copy: pageCopy, isTranslating } = usePageCopy(PLAY_PAGE);
 
     // Memoize combined models array
     const allModels = useMemo(
@@ -49,7 +48,7 @@ function PlayPage() {
 
     return (
         <PageContainer>
-            <PageCard>
+            <PageCard isTranslating={isTranslating}>
                 {/* Title with toggle and login */}
                 <div className="flex items-start justify-between mb-8">
                     <div className="flex items-center gap-4">

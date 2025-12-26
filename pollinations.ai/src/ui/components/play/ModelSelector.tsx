@@ -1,7 +1,7 @@
 import { memo } from "react";
 import { PLAY_PAGE } from "../../../copy/content/play";
 import type { Model } from "../../../hooks/useModelList";
-import { useCopy } from "../../contexts/CopyContext";
+import { usePageCopy } from "../../../hooks/usePageCopy";
 import { Button } from "../ui/button";
 
 interface ModelSelectorProps {
@@ -27,9 +27,8 @@ export const ModelSelector = memo(function ModelSelector({
     allowedImageModelIds,
     allowedTextModelIds,
 }: ModelSelectorProps) {
-    // Get translated copy (flat strings only)
-    const { processedCopy } = useCopy();
-    const copy = { ...PLAY_PAGE, ...processedCopy } as typeof PLAY_PAGE;
+    // Get translated copy
+    const { copy } = usePageCopy(PLAY_PAGE);
 
     return (
         <div className="mb-6">

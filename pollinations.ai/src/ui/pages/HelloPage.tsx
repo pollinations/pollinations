@@ -1,5 +1,6 @@
 import { HELLO_PAGE } from "../../copy/content/hello";
 import { LINKS } from "../../copy/content/socialLinks";
+import { usePageCopy } from "../../hooks/usePageCopy";
 import { ExternalLinkIcon } from "../assets/ExternalLinkIcon";
 import { NewsSection } from "../components/NewsSection";
 import { Badge } from "../components/ui/badge";
@@ -12,16 +13,13 @@ import { RoadmapItem } from "../components/ui/roadmap-item";
 import { SubCard } from "../components/ui/sub-card";
 import { TierCard } from "../components/ui/tier-card";
 import { Body, Heading, Title } from "../components/ui/typography";
-import { useCopy } from "../contexts/CopyContext";
 
 function HelloPage() {
-    const { processedCopy } = useCopy();
-    // Use processed copy if available, merge with static
-    const pageCopy = { ...HELLO_PAGE, ...processedCopy } as typeof HELLO_PAGE;
+    const { copy: pageCopy, isTranslating } = usePageCopy(HELLO_PAGE);
 
     return (
         <PageContainer>
-            <PageCard>
+            <PageCard isTranslating={isTranslating}>
                 {/* Hero */}
                 <Title>{pageCopy.heroTitle}</Title>
                 <div className="mb-12">

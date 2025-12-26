@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { DOCS_PAGE } from "../../copy/content/docs";
+import { usePageCopy } from "../../hooks/usePageCopy";
 import { CopyIcon } from "../assets/CopyIcon";
 import { ExternalLinkIcon } from "../assets/ExternalLinkIcon";
 import { AuthCard } from "../components/docs/AuthCard";
@@ -11,11 +12,9 @@ import { Divider } from "../components/ui/divider";
 import { PageCard } from "../components/ui/page-card";
 import { PageContainer } from "../components/ui/page-container";
 import { Body, Title } from "../components/ui/typography";
-import { useCopy } from "../contexts/CopyContext";
 
 function DocsPage() {
-    const { processedCopy } = useCopy();
-    const pageCopy = { ...DOCS_PAGE, ...processedCopy } as typeof DOCS_PAGE;
+    const { copy: pageCopy, isTranslating } = usePageCopy(DOCS_PAGE);
     const [agentPromptCopied, setAgentPromptCopied] = useState(false);
     const [agentPrompt, setAgentPrompt] = useState("");
 
@@ -30,7 +29,7 @@ function DocsPage() {
 
     return (
         <PageContainer>
-            <PageCard>
+            <PageCard isTranslating={isTranslating}>
                 {/* Title */}
                 <Title>{pageCopy.title}</Title>
 

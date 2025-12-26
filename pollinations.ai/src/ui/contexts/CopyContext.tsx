@@ -12,7 +12,11 @@
 import type { ReactNode } from "react";
 import { createContext, useContext, useEffect, useState } from "react";
 import { useLocation } from "react-router-dom";
-import { applyTranslations, extractCopyItems, processCopy } from "../../copy";
+import {
+    applyTranslations,
+    extractCopyItems,
+    processCopy,
+} from "../../copy/translation/process";
 import { APPS_PAGE } from "../../copy/content/apps";
 import { COMMUNITY_PAGE } from "../../copy/content/community";
 import { DOCS_PAGE } from "../../copy/content/docs";

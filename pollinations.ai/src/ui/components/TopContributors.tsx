@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import { getText } from "../../copy";
 import { COMMUNITY_PAGE } from "../../copy/content/community";
 import { useCopy } from "../contexts/CopyContext";
 import { Divider } from "./ui/divider";
@@ -132,19 +131,19 @@ export function TopContributors() {
             `}</style>
             <div className="mb-12">
                 <Heading variant="section">
-                    {getText(copy.topContributorsTitle)}
+                    {copy.topContributorsTitle}
                 </Heading>
                 <Body size="sm" spacing="comfortable">
-                    {getText(copy.topContributorsDescription)}{" "}
+                    {copy.topContributorsDescription}{" "}
                     <a
                         href="https://github.com/pollinations/pollinations"
                         target="_blank"
                         rel="noopener noreferrer"
                         className="underline hover:opacity-80"
                     >
-                        {getText(copy.githubRepositoryLink)}
+                        {copy.githubRepositoryLink}
                     </a>{" "}
-                    {getText(copy.overThePastYear)}
+                    {copy.overThePastYear}
                 </Body>
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
                     {contributors.map((contributor, index) => {
@@ -184,8 +183,8 @@ export function TopContributors() {
                                 <p className="font-body text-[10px] text-text-body-tertiary">
                                     {contributor.contributions}{" "}
                                     {contributor.contributions === 1
-                                        ? getText(copy.commitLabel)
-                                        : getText(copy.commitsLabel)}
+                                        ? copy.commitLabel
+                                        : copy.commitsLabel}
                                 </p>
                             </a>
                         );

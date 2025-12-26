@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import { getText } from "../../copy";
 import { DOCS_PAGE } from "../../copy/content/docs";
 import { CopyIcon } from "../assets/CopyIcon";
 import { ExternalLinkIcon } from "../assets/ExternalLinkIcon";
@@ -35,12 +34,12 @@ function DocsPage() {
         <PageContainer>
             <PageCard>
                 {/* Title */}
-                <Title>{getText(pageCopy.title)}</Title>
+                <Title>{pageCopy.title}</Title>
 
                 {/* Intro */}
-                <Body>{getText(pageCopy.intro)}</Body>
+                <Body>{pageCopy.intro}</Body>
                 <Body spacing="none" className="mb-8">
-                    {getText(pageCopy.apiReference)}
+                    {pageCopy.apiReference}
                 </Body>
                 <div className="flex flex-wrap gap-3 mb-12">
                     <Button
@@ -51,7 +50,7 @@ function DocsPage() {
                         variant="secondary"
                         size="lg"
                     >
-                        {getText(pageCopy.fullApiDocsButton)}
+                        {pageCopy.fullApiDocsButton}
                         <ExternalLinkIcon className="w-4 h-4 text-text-body-main" />
                     </Button>
                     <Button
@@ -64,11 +63,11 @@ function DocsPage() {
                             setTimeout(() => setAgentPromptCopied(false), 2000);
                         }}
                     >
-                        {getText(pageCopy.agentPromptButton)}
+                        {pageCopy.agentPromptButton}
                         <CopyIcon />
                         {agentPromptCopied && (
                             <span className="absolute -top-5 left-0 font-headline text-xs font-black text-text-brand uppercase tracking-wider">
-                                {getText(pageCopy.copiedLabel)}
+                                {pageCopy.copiedLabel}
                             </span>
                         )}
                     </Button>

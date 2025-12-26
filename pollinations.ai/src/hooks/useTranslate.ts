@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { processCopy } from "../copy";
+import { processCopy } from "../copy/translation/process";
 import { useCopy } from "../ui/contexts/CopyContext";
 
 /**

@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState } from "react";
-import { getText } from "../../../copy";
 import { PLAY_PAGE } from "../../../copy/content/play";
 import type { Model } from "../../../hooks/useModelList";
 import { useCopy } from "../../contexts/CopyContext";
@@ -173,10 +172,10 @@ export function ImageFeed({
             <div className="relative min-h-[32rem] max-h-[32rem] flex items-center justify-center overflow-hidden">
                 {!currentDisplay ? (
                     <div className="text-center py-24 text-text-caption font-body">
-                        <p>{getText(copy.waitingForContent)}</p>
+                        <p>{copy.waitingForContent}</p>
                         {selectedModel && (
                             <p className="text-xs mt-2">
-                                {getText(copy.listeningTo)} {selectedModel}
+                                {copy.listeningTo} {selectedModel}
                             </p>
                         )}
                     </div>

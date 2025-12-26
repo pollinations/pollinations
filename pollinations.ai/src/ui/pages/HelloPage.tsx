@@ -1,4 +1,3 @@
-import { getText } from "../../copy";
 import { HELLO_PAGE } from "../../copy/content/hello";
 import { LINKS } from "../../copy/content/socialLinks";
 import { ExternalLinkIcon } from "../assets/ExternalLinkIcon";
@@ -26,10 +25,10 @@ function HelloPage() {
         <PageContainer>
             <PageCard>
                 {/* Hero */}
-                <Title>{getText(pageCopy.heroTitle)}</Title>
+                <Title>{pageCopy.heroTitle}</Title>
                 <div className="mb-12">
-                    <Body>{getText(pageCopy.heroIntro)}</Body>
-                    <Body spacing="none">{getText(pageCopy.heroTagline)}</Body>
+                    <Body>{pageCopy.heroIntro}</Body>
+                    <Body spacing="none">{pageCopy.heroTagline}</Body>
                 </div>
 
                 {/* CTAs */}
@@ -42,7 +41,7 @@ function HelloPage() {
                         variant="primary"
                         size="lg"
                     >
-                        {getText(pageCopy.startCreatingButton)}
+                        {pageCopy.startCreatingButton}
                         <ExternalLinkIcon className="w-4 h-4 stroke-text-highlight" />
                     </Button>
                     <Button
@@ -53,7 +52,7 @@ function HelloPage() {
                         variant="secondary"
                         size="lg"
                     >
-                        {getText(pageCopy.getApiKeyButton)}
+                        {pageCopy.getApiKeyButton}
                         <ExternalLinkIcon className="w-4 h-4 text-text-body-main" />
                     </Button>
                 </div>
@@ -61,24 +60,18 @@ function HelloPage() {
                 <Divider />
 
                 {/* What's New - Compact news feed */}
-                <NewsSection
-                    limit={5}
-                    compact
-                    title={getText(pageCopy.whatsNewTitle)}
-                />
+                <NewsSection limit={5} compact title={pageCopy.whatsNewTitle} />
 
                 <Divider />
 
                 {/* What Pollinations Is */}
                 <div className="mb-12">
-                    <Heading variant="section">
-                        {getText(pageCopy.whatIsTitle)}
-                    </Heading>
+                    <Heading variant="section">{pageCopy.whatIsTitle}</Heading>
                     <Body spacing="comfortable">
-                        {getText(pageCopy.whatIsDescription)}
+                        {pageCopy.whatIsDescription}
                     </Body>
                     <Body size="sm" spacing="none">
-                        {getText(pageCopy.whatIsTagline)}
+                        {pageCopy.whatIsTagline}
                     </Body>
                 </div>
 
@@ -87,10 +80,10 @@ function HelloPage() {
                 {/* Pollen */}
                 <div className="mb-12">
                     <Heading variant="section" spacing="comfortable">
-                        {getText(pageCopy.pollenTitle)}
+                        {pageCopy.pollenTitle}
                     </Heading>
                     <Body spacing="comfortable">
-                        {getText(pageCopy.pollenDescription)}
+                        {pageCopy.pollenDescription}
                     </Body>
 
                     {/* Two main paths: Buy and Earn */}
@@ -98,17 +91,17 @@ function HelloPage() {
                         {/* 1. Buy Pollen */}
                         <SubCard>
                             <Heading variant="lime" as="h3">
-                                {getText(pageCopy.buyCardTitle)}
+                                {pageCopy.buyCardTitle}
                             </Heading>
                             <Body size="sm" spacing="tight">
-                                {getText(pageCopy.buyCardDescription)}
+                                {pageCopy.buyCardDescription}
                             </Body>
                             <Body
                                 size="xs"
                                 spacing="comfortable"
                                 className="text-text-highlight font-bold"
                             >
-                                {getText(pageCopy.buyCardPromo)}
+                                {pageCopy.buyCardPromo}
                             </Body>
                             <Button
                                 as="a"
@@ -118,7 +111,7 @@ function HelloPage() {
                                 variant="secondary"
                                 size="sm"
                             >
-                                {getText(pageCopy.viewPricingButton)}
+                                {pageCopy.viewPricingButton}
                                 <ExternalLinkIcon className="w-3 h-3 text-text-body-main" />
                             </Button>
                         </SubCard>
@@ -127,14 +120,14 @@ function HelloPage() {
                         <SubCard>
                             <div className="flex items-baseline gap-2 mb-2">
                                 <Heading variant="rose" as="h3" spacing="tight">
-                                    {getText(pageCopy.earnCardTitle)}
+                                    {pageCopy.earnCardTitle}
                                 </Heading>
                                 <Badge variant="highlight">
-                                    {getText(pageCopy.newBadge)}
+                                    {pageCopy.newBadge}
                                 </Badge>
                             </div>
                             <Body size="sm" spacing="comfortable">
-                                {getText(pageCopy.earnCardDescription)}
+                                {pageCopy.earnCardDescription}
                             </Body>
                             <div className="flex flex-wrap gap-2">
                                 <Button
@@ -172,43 +165,35 @@ function HelloPage() {
                                 as="h3"
                                 spacing="comfortable"
                             >
-                                {getText(pageCopy.tiersSubtitle)}
+                                {pageCopy.tiersSubtitle}
                             </Heading>
                             <Body size="sm" spacing="comfortable">
-                                {getText(pageCopy.tiersDescription)}
+                                {pageCopy.tiersDescription}
                             </Body>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                                 <TierCard
                                     tier="spore"
                                     emoji="🦠"
-                                    title={getText(pageCopy.tierSporeTitle)}
-                                    description={getText(
-                                        pageCopy.tierSporeDescription,
-                                    )}
+                                    title={pageCopy.tierSporeTitle}
+                                    description={pageCopy.tierSporeDescription}
                                 />
                                 <TierCard
                                     tier="seed"
                                     emoji="🌱"
-                                    title={getText(pageCopy.tierSeedTitle)}
-                                    description={getText(
-                                        pageCopy.tierSeedDescription,
-                                    )}
+                                    title={pageCopy.tierSeedTitle}
+                                    description={pageCopy.tierSeedDescription}
                                 />
                                 <TierCard
                                     tier="flower"
                                     emoji="🌸"
-                                    title={getText(pageCopy.tierFlowerTitle)}
-                                    description={getText(
-                                        pageCopy.tierFlowerDescription,
-                                    )}
+                                    title={pageCopy.tierFlowerTitle}
+                                    description={pageCopy.tierFlowerDescription}
                                 />
                                 <TierCard
                                     tier="nectar"
                                     emoji="🍯"
-                                    title={getText(pageCopy.tierNectarTitle)}
-                                    description={getText(
-                                        pageCopy.tierNectarDescription,
-                                    )}
+                                    title={pageCopy.tierNectarTitle}
+                                    description={pageCopy.tierNectarDescription}
                                 />
                             </div>
                             {/* Tiers CTA */}
@@ -221,7 +206,7 @@ function HelloPage() {
                                     variant="secondary"
                                     size="default"
                                 >
-                                    {getText(pageCopy.exploreTiersButton)}
+                                    {pageCopy.exploreTiersButton}
                                     <ExternalLinkIcon className="w-3 h-3 text-text-body-main" />
                                 </Button>
                             </div>
@@ -234,26 +219,24 @@ function HelloPage() {
                 {/* Why Developers Choose Pollinations */}
                 <div className="mb-12">
                     <Heading variant="section">
-                        {getText(pageCopy.whyChooseTitle)}
+                        {pageCopy.whyChooseTitle}
                     </Heading>
-                    <Body spacing="comfortable">
-                        {getText(pageCopy.whyChooseIntro)}
-                    </Body>
+                    <Body spacing="comfortable">{pageCopy.whyChooseIntro}</Body>
                     <ul className="space-y-3">
                         <FeatureItem variant="brand" icon="✨">
-                            {getText(pageCopy.whyChooseFeature1)}
+                            {pageCopy.whyChooseFeature1}
                         </FeatureItem>
                         <FeatureItem variant="brand" icon="🔗">
-                            {getText(pageCopy.whyChooseFeature2)}
+                            {pageCopy.whyChooseFeature2}
                         </FeatureItem>
                         <FeatureItem variant="brand" icon="💰">
-                            {getText(pageCopy.whyChooseFeature3)}
+                            {pageCopy.whyChooseFeature3}
                         </FeatureItem>
                         <FeatureItem variant="brand" icon="👥">
-                            {getText(pageCopy.whyChooseFeature4)}
+                            {pageCopy.whyChooseFeature4}
                         </FeatureItem>
                         <FeatureItem variant="brand" icon="📖">
-                            {getText(pageCopy.whyChooseFeature5)}
+                            {pageCopy.whyChooseFeature5}
                         </FeatureItem>
                     </ul>
                 </div>
@@ -262,24 +245,20 @@ function HelloPage() {
 
                 {/* What You Can Build */}
                 <div className="mb-12">
-                    <Heading variant="section">
-                        {getText(pageCopy.buildTitle)}
-                    </Heading>
-                    <Body spacing="comfortable">
-                        {getText(pageCopy.buildIntro)}
-                    </Body>
+                    <Heading variant="section">{pageCopy.buildTitle}</Heading>
+                    <Body spacing="comfortable">{pageCopy.buildIntro}</Body>
                     <ul className="space-y-3">
                         <FeatureItem variant="highlight" icon="🤖">
-                            {getText(pageCopy.buildFeature1)}
+                            {pageCopy.buildFeature1}
                         </FeatureItem>
                         <FeatureItem variant="highlight" icon="🎨">
-                            {getText(pageCopy.buildFeature2)}
+                            {pageCopy.buildFeature2}
                         </FeatureItem>
                         <FeatureItem variant="highlight" icon="⚡">
-                            {getText(pageCopy.buildFeature3)}
+                            {pageCopy.buildFeature3}
                         </FeatureItem>
                         <FeatureItem variant="highlight" icon="🎬">
-                            {getText(pageCopy.buildFeature4)}
+                            {pageCopy.buildFeature4}
                         </FeatureItem>
                     </ul>
                     <div className="mt-6">
@@ -289,7 +268,7 @@ function HelloPage() {
                             variant="secondary"
                             size="default"
                         >
-                            {getText(pageCopy.seeAppsButton)}
+                            {pageCopy.seeAppsButton}
                         </Button>
                     </div>
                 </div>
@@ -299,10 +278,10 @@ function HelloPage() {
                 {/* Built With Community */}
                 <div className="mb-12">
                     <Heading variant="section">
-                        {getText(pageCopy.communityTitle)}
+                        {pageCopy.communityTitle}
                     </Heading>
                     <Body spacing="comfortable">
-                        {getText(pageCopy.communityDescription)}
+                        {pageCopy.communityDescription}
                     </Body>
                     <Button
                         as="a"
@@ -310,7 +289,7 @@ function HelloPage() {
                         variant="secondary"
                         size="default"
                     >
-                        {getText(pageCopy.joinCommunityButton)}
+                        {pageCopy.joinCommunityButton}
                     </Button>
                 </div>
 
@@ -318,40 +297,28 @@ function HelloPage() {
 
                 {/* Roadmap */}
                 <div className="mb-12">
-                    <Heading variant="section">
-                        {getText(pageCopy.roadmapTitle)}
-                    </Heading>
-                    <Body spacing="comfortable">
-                        {getText(pageCopy.roadmapIntro)}
-                    </Body>
+                    <Heading variant="section">{pageCopy.roadmapTitle}</Heading>
+                    <Body spacing="comfortable">{pageCopy.roadmapIntro}</Body>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <RoadmapItem
                             icon="🔐"
-                            title={getText(pageCopy.roadmapItem1Title)}
-                            description={getText(
-                                pageCopy.roadmapItem1Description,
-                            )}
+                            title={pageCopy.roadmapItem1Title}
+                            description={pageCopy.roadmapItem1Description}
                         />
                         <RoadmapItem
                             icon="💳"
-                            title={getText(pageCopy.roadmapItem2Title)}
-                            description={getText(
-                                pageCopy.roadmapItem2Description,
-                            )}
+                            title={pageCopy.roadmapItem2Title}
+                            description={pageCopy.roadmapItem2Description}
                         />
                         <RoadmapItem
                             icon="🚀"
-                            title={getText(pageCopy.roadmapItem3Title)}
-                            description={getText(
-                                pageCopy.roadmapItem3Description,
-                            )}
+                            title={pageCopy.roadmapItem3Title}
+                            description={pageCopy.roadmapItem3Description}
                         />
                         <RoadmapItem
                             icon="🎬"
-                            title={getText(pageCopy.roadmapItem4Title)}
-                            description={getText(
-                                pageCopy.roadmapItem4Description,
-                            )}
+                            title={pageCopy.roadmapItem4Title}
+                            description={pageCopy.roadmapItem4Description}
                         />
                     </div>
                 </div>
@@ -361,11 +328,9 @@ function HelloPage() {
                 {/* Final CTA */}
                 <div>
                     <Heading variant="section" spacing="comfortable">
-                        {getText(pageCopy.ctaTitle)}
+                        {pageCopy.ctaTitle}
                     </Heading>
-                    <Body spacing="comfortable">
-                        {getText(pageCopy.ctaDescription)}
-                    </Body>
+                    <Body spacing="comfortable">{pageCopy.ctaDescription}</Body>
                     <div className="flex flex-wrap gap-3">
                         <Button
                             as="a"
@@ -375,7 +340,7 @@ function HelloPage() {
                             variant="primary"
                             size="lg"
                         >
-                            {getText(pageCopy.getApiKeyButton)}
+                            {pageCopy.getApiKeyButton}
                             <ExternalLinkIcon className="w-4 h-4 stroke-text-highlight" />
                         </Button>
                         <Button
@@ -384,7 +349,7 @@ function HelloPage() {
                             variant="secondary"
                             size="lg"
                         >
-                            {getText(pageCopy.readTheDocsButton)}
+                            {pageCopy.readTheDocsButton}
                             <ExternalLinkIcon className="w-4 h-4 text-text-body-main" />
                         </Button>
                     </div>

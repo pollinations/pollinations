@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import { API_BASE, API_KEY } from "../../../api.config";
-import { getText } from "../../../copy";
 import { DOCS_PAGE } from "../../../copy/content/docs";
 import { fetchWithRetry } from "../../../utils/fetchWithRetry";
 import { useCopy } from "../../contexts/CopyContext";
@@ -21,8 +20,8 @@ export function TextGenCard() {
     // Track by index, get text from copy
     const [selectedPromptIndex, setSelectedPromptIndex] = useState(0);
     const selectedPrompt =
-        getText(copy.textPrompts[selectedPromptIndex]) ||
-        getText(DOCS_PAGE.textPrompts[0]);
+        copy.textPrompts[selectedPromptIndex] ||
+        DOCS_PAGE.textPrompts[0];
 
     const [selectedModel, setSelectedModel] = useState("openai-fast");
     const [params, setParams] = useState<Set<string>>(new Set());
@@ -122,7 +121,7 @@ export function TextGenCard() {
     return (
         <div>
             <Heading variant="section">
-                {getText(copy.textGenerationTitle)}
+                {copy.textGenerationTitle}
             </Heading>
 
             {/* Prompts/Parameters and Response - Side by Side */}
@@ -131,11 +130,11 @@ export function TextGenCard() {
                 <div className="space-y-4">
                     {/* Prompt Selection */}
                     <div>
-                        <Label>{getText(copy.pickPromptLabel)}</Label>
+                        <Label>{copy.pickPromptLabel}</Label>
                         <div className="flex flex-wrap gap-2">
                             {copy.textPrompts.map((prompt, index) => (
                                 <button
-                                    key={getText(prompt)}
+                                    key={prompt}
                                     type="button"
                                     onClick={() =>
                                         setSelectedPromptIndex(index)
@@ -146,7 +145,7 @@ export function TextGenCard() {
                                             : "bg-input-background border-border-main hover:border-border-brand text-text-body-main"
                                     }`}
                                 >
-                                    {getText(prompt)}
+                                    {prompt}
                                 </button>
                             ))}
                         </div>
@@ -154,7 +153,7 @@ export function TextGenCard() {
 
                     {/* Model Selection */}
                     <div>
-                        <Label>{getText(copy.modelLabel)}</Label>
+                        <Label>{copy.modelLabel}</Label>
                         <div className="flex flex-wrap gap-2">
                             {models.slice(0, 6).map((model) => (
                                 <button
@@ -172,13 +171,13 @@ export function TextGenCard() {
                             ))}
                         </div>
                         <p className="font-body text-xs text-text-caption mt-2">
-                            {getText(copy.defaultModelLabel)}
+                            {copy.defaultModelLabel}
                         </p>
                     </div>
 
                     {/* Parameters */}
                     <div>
-                        <Label>{getText(copy.parametersLabel)}</Label>
+                        <Label>{copy.parametersLabel}</Label>
                         <div className="flex flex-wrap gap-2">
                             {copy.textParameters.map(({ key, value }) => {
                                 const param = `${key}=${value}`;
@@ -210,7 +209,7 @@ export function TextGenCard() {
                 <div className="bg-surface-card p-3 min-h-[200px] max-h-[200px] overflow-hidden">
                     {isLoading ? (
                         <p className="text-text-caption font-body text-xs">
-                            {getText(copy.generatingLabel)}
+                            {copy.generatingLabel}
                         </p>
                     ) : (
                         <p className="font-body text-text-body-main text-xs leading-relaxed whitespace-pre-wrap overflow-y-auto h-full pr-2 scrollbar-hide">
@@ -223,7 +222,7 @@ export function TextGenCard() {
             {/* URL Display */}
             <div className="mb-4 p-3 bg-input-background font-mono text-xs text-text-body-main break-all">
                 <span className="text-text-caption">
-                    https://{getText(copy.apiBaseUrl)}/text/
+                    https://{copy.apiBaseUrl}/text/
                 </span>
                 <span className="bg-indicator-text px-1 font-black text-text-inverse">
                     {selectedPrompt}
@@ -253,7 +252,7 @@ export function TextGenCard() {
                 variant="copy"
                 size={null}
             >
-                {getText(copy.copyUrlButton)}
+                {copy.copyUrlButton}
             </Button>
         </div>
     );

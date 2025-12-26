@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import { API_BASE, API_KEY } from "../../../api.config";
-import { getText } from "../../../copy";
 import { DOCS_PAGE } from "../../../copy/content/docs";
 import { fetchWithRetry } from "../../../utils/fetchWithRetry";
 import { useCopy } from "../../contexts/CopyContext";
@@ -21,8 +20,8 @@ export function ImageGenCard() {
     // Track by index, get text from copy
     const [selectedPromptIndex, setSelectedPromptIndex] = useState(0);
     const selectedPrompt =
-        getText(copy.imagePrompts[selectedPromptIndex]) ||
-        getText(DOCS_PAGE.imagePrompts[0]);
+        copy.imagePrompts[selectedPromptIndex] ||
+        DOCS_PAGE.imagePrompts[0];
 
     const [selectedModel, setSelectedModel] = useState("flux");
     const [params, setParams] = useState<Set<string>>(new Set());
@@ -129,7 +128,7 @@ export function ImageGenCard() {
     return (
         <div>
             <Heading variant="section">
-                {getText(copy.imageGenerationTitle)}
+                {copy.imageGenerationTitle}
             </Heading>
 
             {/* Prompts/Parameters and Image Preview - Side by Side */}
@@ -138,11 +137,11 @@ export function ImageGenCard() {
                 <div className="space-y-4">
                     {/* Prompt Selection */}
                     <div>
-                        <Label>{getText(copy.pickPromptLabel)}</Label>
+                        <Label>{copy.pickPromptLabel}</Label>
                         <div className="flex flex-wrap gap-2">
                             {copy.imagePrompts.map((prompt, index) => (
                                 <button
-                                    key={getText(prompt)}
+                                    key={prompt}
                                     type="button"
                                     onClick={() =>
                                         setSelectedPromptIndex(index)
@@ -153,7 +152,7 @@ export function ImageGenCard() {
                                             : "bg-input-background border-border-main hover:border-border-brand text-text-body-main"
                                     }`}
                                 >
-                                    {getText(prompt)}
+                                    {prompt}
                                 </button>
                             ))}
                         </div>
@@ -161,7 +160,7 @@ export function ImageGenCard() {
 
                     {/* Model Selection */}
                     <div>
-                        <Label>{getText(copy.modelSelectLabel)}</Label>
+                        <Label>{copy.modelSelectLabel}</Label>
                         <div className="flex flex-wrap gap-2">
                             {models.map((model) => (
                                 <button
@@ -182,7 +181,7 @@ export function ImageGenCard() {
 
                     {/* Parameters */}
                     <div>
-                        <Label>{getText(copy.parametersLabel)}</Label>
+                        <Label>{copy.parametersLabel}</Label>
                         <div className="flex flex-wrap gap-2">
                             {copy.imageParameters.map(({ key, value }) => {
                                 const param = `${key}=${value}`;
@@ -214,7 +213,7 @@ export function ImageGenCard() {
                 <div className="bg-input-background flex items-center justify-center min-h-[240px] max-w-[300px] max-h-[300px] overflow-hidden">
                     {isLoading ? (
                         <p className="text-text-caption text-xs">
-                            {getText(copy.generatingLabel)}
+                            {copy.generatingLabel}
                         </p>
                     ) : imageUrl ? (
                         <img
@@ -229,7 +228,7 @@ export function ImageGenCard() {
             {/* URL Display */}
             <div className="mb-4 p-3 bg-input-background font-mono text-xs text-text-body-main break-all">
                 <span className="text-text-caption">
-                    https://{getText(copy.apiBaseUrl)}/image/
+                    https://{copy.apiBaseUrl}/image/
                 </span>
                 <span className="bg-indicator-text px-1 font-black text-text-inverse">
                     {selectedPrompt}
@@ -259,7 +258,7 @@ export function ImageGenCard() {
                 variant="copy"
                 size={null}
             >
-                {getText(copy.copyUrlButton)}
+                {copy.copyUrlButton}
             </Button>
         </div>
     );

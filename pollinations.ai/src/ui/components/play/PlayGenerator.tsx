@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import { API_BASE } from "../../../api.config";
-import { getText } from "../../../copy";
 import { PLAY_PAGE } from "../../../copy/content/play";
 import type { Model } from "../../../hooks/useModelList";
 import { useCopy } from "../../contexts/CopyContext";
@@ -37,7 +36,7 @@ const extractErrorMessage = async (response: Response): Promise<string> => {
         return (
             data?.message ||
             data?.error ||
-            getText(PLAY_PAGE.somethingWentWrong)
+            PLAY_PAGE.somethingWentWrong
         );
     } catch {
         return `Error ${response.status}: ${response.statusText}`;
@@ -139,7 +138,7 @@ export function PlayGenerator({
                 setError(
                     err instanceof Error
                         ? err.message
-                        : getText(copy.somethingWentWrong),
+                        : copy.somethingWentWrong,
                 );
                 setResult(null);
                 setIsLoading(false);
@@ -191,7 +190,7 @@ export function PlayGenerator({
                 const data = await response.json();
                 const text =
                     data.choices?.[0]?.message?.content ||
-                    getText(copy.noResponse);
+                    copy.noResponse;
                 setResult(text);
                 setIsLoading(false);
             } catch (err) {
@@ -199,7 +198,7 @@ export function PlayGenerator({
                 setError(
                     err instanceof Error
                         ? err.message
-                        : getText(copy.somethingWentWrong),
+                        : copy.somethingWentWrong,
                 );
                 setResult(null);
                 setIsLoading(false);
@@ -264,7 +263,7 @@ export function PlayGenerator({
                                     addImageUrl();
                                 }
                             }}
-                            placeholder={getText(copy.imageUrlPlaceholder)}
+                            placeholder={copy.imageUrlPlaceholder}
                             className="flex-1 p-3 bg-input-background text-text-body-main font-body focus:outline-none focus:bg-input-background hover:bg-input-background transition-colors placeholder:text-text-caption rounded-input"
                             disabled={imageUrls.length >= 4}
                         />
@@ -298,7 +297,7 @@ export function PlayGenerator({
                                 htmlFor="image-width"
                                 className="block font-headline text-text-body-main mb-2 uppercase text-xs tracking-wider font-black"
                             >
-                                {getText(copy.widthLabel)}
+                                {copy.widthLabel}
                             </label>
                             <input
                                 id="image-width"
@@ -316,7 +315,7 @@ export function PlayGenerator({
                                 htmlFor="image-height"
                                 className="block font-headline text-text-body-main mb-2 uppercase text-xs tracking-wider font-black"
                             >
-                                {getText(copy.heightLabel)}
+                                {copy.heightLabel}
                             </label>
                             <input
                                 id="image-height"
@@ -335,10 +334,10 @@ export function PlayGenerator({
                                     htmlFor="image-seed"
                                     className="block font-headline text-text-body-main mb-2 uppercase text-xs tracking-wider font-black cursor-help"
                                 >
-                                    {getText(copy.seedLabel)}
+                                    {copy.seedLabel}
                                 </label>
                                 <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-charcoal text-text-body-main text-xs rounded-input shadow-lg border border-border-main opacity-0 group-hover/seed:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-50">
-                                    {getText(copy.seedTooltip)}
+                                    {copy.seedTooltip}
                                     <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-charcoal" />
                                 </div>
                             </div>
@@ -350,7 +349,7 @@ export function PlayGenerator({
                                 onChange={(e) =>
                                     setSeed(Number(e.target.value))
                                 }
-                                placeholder={getText(copy.seedPlaceholder)}
+                                placeholder={copy.seedPlaceholder}
                                 className="w-full p-3 bg-input-background text-text-body-main font-body focus:outline-none focus:bg-input-background hover:bg-input-background transition-colors placeholder:text-text-caption rounded-input"
                             />
                         </div>
@@ -360,10 +359,10 @@ export function PlayGenerator({
                                     htmlFor="enhance-prompt"
                                     className="block font-headline text-text-body-main mb-2 uppercase text-xs tracking-wider font-black cursor-help"
                                 >
-                                    {getText(copy.enhanceLabel)}
+                                    {copy.enhanceLabel}
                                 </label>
                                 <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-charcoal text-text-body-main text-xs rounded-input shadow-lg border border-border-main opacity-0 group-hover/enhance:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-50">
-                                    {getText(copy.enhanceTooltip)}
+                                    {copy.enhanceTooltip}
                                     <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-charcoal" />
                                 </div>
                             </div>
@@ -419,19 +418,19 @@ export function PlayGenerator({
                                 <span className="w-1.5 h-1.5 bg-current rounded-full animate-bounce [animation-delay:-0.15s]" />
                                 <span className="w-1.5 h-1.5 bg-current rounded-full animate-bounce" />
                             </span>
-                            {getText(copy.generatingText)}
+                            {copy.generatingText}
                         </span>
                     ) : isAudioModel ? (
-                        getText(copy.generateAudioButton)
+                        copy.generateAudioButton
                     ) : isImageModel ? (
-                        getText(copy.generateImageButton)
+                        copy.generateImageButton
                     ) : (
-                        getText(copy.generateTextButton)
+                        copy.generateTextButton
                     )}
                 </Button>
                 {!prompt && !isLoading && (
                     <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-charcoal text-text-body-main text-xs rounded-input shadow-lg border border-border-main opacity-0 group-hover/generate:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-50">
-                        {getText(copy.enterPromptFirst)}
+                        {copy.enterPromptFirst}
                         <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-charcoal" />
                     </div>
                 )}

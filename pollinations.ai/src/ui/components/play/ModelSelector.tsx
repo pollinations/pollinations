@@ -1,5 +1,4 @@
 import { memo } from "react";
-import { getText } from "../../../copy";
 import { PLAY_PAGE } from "../../../copy/content/play";
 import type { Model } from "../../../hooks/useModelList";
 import { useCopy } from "../../contexts/CopyContext";
@@ -39,31 +38,31 @@ export const ModelSelector = memo(function ModelSelector({
             {showLegend && (
                 <div className="flex items-center gap-4 mb-3">
                     <div className="font-headline text-text-body-main uppercase text-xs tracking-wider font-black">
-                        {getText(copy.modelsLabel)}
+                        {copy.modelsLabel}
                     </div>
                     <div className="flex items-center gap-3 text-[10px] font-headline uppercase tracking-wider font-black">
                         <div className="flex items-center gap-1">
                             <div className="w-3 h-3 bg-indicator-image" />
                             <span className="text-text-caption">
-                                {getText(copy.imageLabel)}
+                                {copy.imageLabel}
                             </span>
                         </div>
                         <div className="flex items-center gap-1">
                             <div className="w-3 h-3 bg-indicator-text" />
                             <span className="text-text-caption">
-                                {getText(copy.textLabel)}
+                                {copy.textLabel}
                             </span>
                         </div>
                         <div className="flex items-center gap-1">
                             <div className="w-3 h-3 bg-indicator-audio" />
                             <span className="text-text-caption">
-                                {getText(copy.audioLabel)}
+                                {copy.audioLabel}
                             </span>
                         </div>
                         <div className="flex items-center gap-1">
                             <div className="w-3 h-3 bg-indicator-video" />
                             <span className="text-text-caption">
-                                {getText(copy.videoLabel)}
+                                {copy.videoLabel}
                             </span>
                         </div>
                     </div>
@@ -118,7 +117,7 @@ export const ModelSelector = memo(function ModelSelector({
                             </Button>
                             {!isAllowed && (
                                 <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-charcoal text-text-body-main text-xs rounded-input shadow-lg border border-border-main opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-50">
-                                    {getText(copy.gatedModelTooltip)}
+                                    {copy.gatedModelTooltip}
                                     <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-charcoal" />
                                 </div>
                             )}

@@ -33,7 +33,3 @@ INPUT FORMAT:
 
 OUTPUT FORMAT:
 [{ "id": "...", "text": "processed text", "mode": "translate|transform" }, ...]`;
-
-// Legacy exports for backwards compatibility
-export const TRANSLATION_GUIDELINES = COPY_GUIDELINES;
-export const TRANSFORM_GUIDELINES = COPY_GUIDELINES;

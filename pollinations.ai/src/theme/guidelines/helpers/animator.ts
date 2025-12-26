@@ -7,10 +7,7 @@ import { generateText } from "../../../services/pollinationsAPI";
 import { THEME_CONFIG } from "../../config";
 import { BACKGROUND_GUIDELINES } from "../animator";
 
-export async function generateBackground(
-    themePrompt: string,
-    signal?: AbortSignal,
-): Promise<string> {
+export async function generateBackground(themePrompt: string): Promise<string> {
     const fullPrompt = BACKGROUND_GUIDELINES.replace(
         "{THEME_PROMPT}",
         themePrompt,
@@ -23,7 +20,6 @@ export async function generateBackground(
         fullPrompt,
         Math.floor(Math.random() * THEME_CONFIG.maxSeed) + 1,
         THEME_CONFIG.models.animator,
-        signal,
     );
 
     // Clean up markdown code blocks if present

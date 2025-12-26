@@ -70,22 +70,17 @@ export function extractCopyItems(root: Record<string, unknown>): {
     return { items, pointers };
 }
 
-// Legacy alias for backwards compatibility
-export const extractTranslatableText = extractCopyItems;
-
 /**
  * Process copy items - handles both translation and transformation
  *
  * @param items - Copy items to process
  * @param targetLanguage - Target language code (e.g., "en", "zh", "es")
  * @param variationSeed - Seed 1-5 for transform variation (affects caching)
- * @param signal - Optional abort signal
  */
 export async function processCopy(
     items: CopyItem[],
     targetLanguage: string,
     variationSeed: number = 1,
-    signal?: AbortSignal,
 ): Promise<CopyItem[]> {
     if (items.length === 0) {
         return items;
@@ -119,7 +114,6 @@ Process all items now:`;
         prompt,
         variationSeed,
         COPY_CONFIG.model,
-        signal,
     );
 
     const result = parseJsonResponse(response, items);
@@ -143,9 +137,6 @@ function parseJsonResponse(response: string, fallback: CopyItem[]): CopyItem[] {
         return fallback;
     }
 }
-
-// Legacy alias
-export const translateCopy = processCopy;
 
 /**
  * Apply translated items back to copy object

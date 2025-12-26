@@ -28,7 +28,6 @@ export interface SupporterLogoOptions {
  */
 export async function generateSupporterLogo(
     options: SupporterLogoOptions,
-    signal?: AbortSignal,
 ): Promise<string> {
     const {
         supporterInfo,
@@ -42,17 +41,13 @@ export async function generateSupporterLogo(
     const prompt = assembleLogoPrompt(supporterInfo, themeDescription);
 
     // Generate the logo image
-    const logoUrl = await generateImage(
-        prompt,
-        {
-            width,
-            height,
-            seed,
-            model: THEME_CONFIG.models.illustrator,
-            nologo: true,
-        },
-        signal,
-    );
+    const logoUrl = await generateImage(prompt, {
+        width,
+        height,
+        seed,
+        model: THEME_CONFIG.models.illustrator,
+        nologo: true,
+    });
 
     return logoUrl;
 }

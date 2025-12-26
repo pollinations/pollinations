@@ -142,7 +142,6 @@ export function parseFullThemeResponse(text: string): FullThemeStyle {
  */
 export async function generateTheme(
     userPrompt: string,
-    signal?: AbortSignal,
 ): Promise<ThemeDictionary> {
     const fullPrompt = `${STYLING_GUIDELINES}
 
@@ -158,7 +157,6 @@ Generate the theme JSON now:`;
         fullPrompt,
         Math.floor(Math.random() * THEME_CONFIG.maxSeed) + 1,
         THEME_CONFIG.models.designer,
-        signal,
     );
     console.log("🎨 [DESIGNER] ← Theme tokens received");
     return parseThemeResponse(text);
@@ -170,7 +168,6 @@ Generate the theme JSON now:`;
  */
 export async function generateFullTheme(
     themeDescription: string,
-    signal?: AbortSignal,
 ): Promise<FullThemeStyle> {
     const fullPrompt = assembleStylePrompt(themeDescription);
     console.log(
@@ -180,7 +177,6 @@ export async function generateFullTheme(
         fullPrompt,
         Math.floor(Math.random() * THEME_CONFIG.maxSeed) + 1,
         THEME_CONFIG.models.designer,
-        signal,
     );
     console.log("🎨 [DESIGNER] ← Full theme received");
     return parseFullThemeResponse(text);

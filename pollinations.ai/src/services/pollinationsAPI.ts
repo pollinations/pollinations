@@ -9,7 +9,6 @@ export async function generateText(
     prompt: string,
     seed?: number | number[],
     model?: string,
-    signal?: AbortSignal,
 ): Promise<string> {
     const response = await fetchWithRetry(API.TEXT_GENERATION, {
         method: "POST",
@@ -22,7 +21,6 @@ export async function generateText(
             model: model || DEFAULTS.TEXT_MODEL,
             seed: seed,
         }),
-        signal,
     });
 
     const data = await response.json();
@@ -43,7 +41,6 @@ export async function generateImage(
         model?: string;
         nologo?: boolean;
     } = {},
-    signal?: AbortSignal,
 ): Promise<string> {
     const {
         width = DEFAULTS.IMAGE_WIDTH,
@@ -65,7 +62,6 @@ export async function generateImage(
 
     const response = await fetchWithRetry(url, {
         headers: { Authorization: `Bearer ${API_KEY}` },
-        signal,
     });
 
     const blob = await response.blob();

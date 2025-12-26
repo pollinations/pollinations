@@ -137,8 +137,10 @@ export default function AppsPage() {
     }, [allApps, selectedCategory]);
 
     // Translate app descriptions
-    const { translated: displayApps, isTranslating: isTranslatingApps } =
-        useTranslate(filteredApps, "description");
+    const { translated: displayApps } = useTranslate(
+        filteredApps,
+        "description",
+    );
 
     return (
         <PageContainer>
@@ -183,20 +185,10 @@ export default function AppsPage() {
                 </div>
 
                 {/* App Grid */}
-                <div className="relative">
-                    {isTranslatingApps && (
-                        <div className="absolute top-0 right-0 z-10">
-                            <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-black/70 backdrop-blur-sm border border-white/20 text-[10px] text-white/70">
-                                <span className="w-1.5 h-1.5 rounded-full bg-text-brand animate-pulse" />
-                                Translating
-                            </span>
-                        </div>
-                    )}
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
-                        {displayApps.map((app, index) => (
-                            <AppCard key={`${app.name}-${index}`} app={app} />
-                        ))}
-                    </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
+                    {displayApps.map((app, index) => (
+                        <AppCard key={`${app.name}-${index}`} app={app} />
+                    ))}
                 </div>
 
                 {/* No Results */}

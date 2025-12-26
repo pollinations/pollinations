@@ -380,13 +380,13 @@ def blend_block_seams(result: np.ndarray, blocks: list[np.ndarray],
                       block_positions: list[tuple],
                       block_size: int = BLOCK_SIZE,
                       scale_factor: int = 4,
-                      blend_width: int = 8) -> np.ndarray:
+                      blend_width: int = 16) -> np.ndarray:
     """
-    Blend seams between adjacent blocks to smooth transitions.
-    Uses Gaussian blur on seam regions for smooth blending.
+    Aggressively blend seams between adjacent blocks using multi-pass Gaussian blur.
+    Eliminates visible transitions between SDXL and LANCZOS upscaled blocks.
     """
-    upscaled_block_size = block_size * scale_factor
     result = result.copy().astype(np.float32)
+    is_color = len(result.shape) == 3
     
     y_positions = sorted(set(y for y, x in block_positions))
     x_positions = sorted(set(x for y, x in block_positions))
@@ -395,33 +395,43 @@ def blend_block_seams(result: np.ndarray, blocks: list[np.ndarray],
     for y_orig in y_positions[:-1]:
         y_seam = (y_orig + 1) * scale_factor
         if y_seam - blend_width > 0 and y_seam + blend_width < result.shape[0]:
-            # Create blend region around seam
-            seam_region = result[y_seam-blend_width:y_seam+blend_width, :].copy()
+            y_start = y_seam - blend_width
+            y_end = y_seam + blend_width
             
-            # Apply Gaussian blur for smooth blending
-            if len(seam_region.shape) == 3:
+            # Extract seam region and apply multi-pass Gaussian blur
+            seam_region = result[y_start:y_end, :].copy()
+            
+            if is_color:
                 for c in range(seam_region.shape[2]):
-                    seam_region[:, :, c] = gaussian_filter(seam_region[:, :, c], sigma=1.5)
+                    # Multiple blur passes for smooth transitions
+                    seam_region[:, :, c] = gaussian_filter(seam_region[:, :, c], sigma=3.0)
+                    seam_region[:, :, c] = gaussian_filter(seam_region[:, :, c], sigma=2.0)
             else:
-                seam_region = gaussian_filter(seam_region, sigma=1.5)
+                seam_region = gaussian_filter(seam_region, sigma=3.0)
+                seam_region = gaussian_filter(seam_region, sigma=2.0)
             
-            result[y_seam-blend_width:y_seam+blend_width, :] = seam_region
+            result[y_start:y_end, :] = seam_region
     
     # Blend vertical seams
     for x_orig in x_positions[:-1]:
         x_seam = (x_orig + 1) * scale_factor
         if x_seam - blend_width > 0 and x_seam + blend_width < result.shape[1]:
-            # Create blend region around seam
-            seam_region = result[:, x_seam-blend_width:x_seam+blend_width].copy()
+            x_start = x_seam - blend_width
+            x_end = x_seam + blend_width
             
-            # Apply Gaussian blur for smooth blending
-            if len(seam_region.shape) == 3:
+            # Extract seam region and apply multi-pass Gaussian blur
+            seam_region = result[:, x_start:x_end].copy()
+            
+            if is_color:
                 for c in range(seam_region.shape[2]):
-                    seam_region[:, :, c] = gaussian_filter(seam_region[:, :, c], sigma=1.5)
+                    # Multiple blur passes for smooth transitions
+                    seam_region[:, :, c] = gaussian_filter(seam_region[:, :, c], sigma=3.0)
+                    seam_region[:, :, c] = gaussian_filter(seam_region[:, :, c], sigma=2.0)
             else:
-                seam_region = gaussian_filter(seam_region, sigma=1.5)
+                seam_region = gaussian_filter(seam_region, sigma=3.0)
+                seam_region = gaussian_filter(seam_region, sigma=2.0)
             
-            result[:, x_seam-blend_width:x_seam+blend_width] = seam_region
+            result[:, x_start:x_end] = seam_region
     
     return np.clip(result, 0, 255).astype(np.uint8)
 

@@ -8,7 +8,6 @@
  */
 
 import { generateText } from "../../services/pollinationsAPI";
-import { COPY_CONFIG } from "../config";
 import { COPY_GUIDELINES } from "./guidelines";
 
 interface CopyItem {
@@ -103,11 +102,7 @@ Process all items now:`;
         `📝 [COPY] Processing ${items.length} items (${translateCount} translate, ${transformCount} transform) → ${targetLanguage}, seed ${variationSeed}`,
     );
 
-    const response = await generateText(
-        prompt,
-        variationSeed,
-        COPY_CONFIG.model,
-    );
+    const response = await generateText(prompt, variationSeed, "gemini");
 
     const result = parseJsonResponse(response, items);
     console.log(`✅ [COPY] Done`);

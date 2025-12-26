@@ -6,12 +6,29 @@
 import { generateText } from "../../services/pollinationsAPI";
 import { COPY_GUIDELINES } from "./guidelines";
 
-// Simple promise memoization - deduplicates concurrent identical requests
-const pendingRequests = new Map<string, Promise<CopyItem[]>>();
-
 interface CopyItem {
     id: string;
     text: string;
+}
+
+/**
+ * Wraps an async function to deduplicate concurrent calls with the same key.
+ * While a promise is pending, subsequent calls with the same key return the same promise.
+ */
+function memoizeAsync<T, Args extends unknown[]>(
+    fn: (...args: Args) => Promise<T>,
+    keyFn: (...args: Args) => string,
+): (...args: Args) => Promise<T> {
+    const pending = new Map<string, Promise<T>>();
+    return (...args: Args) => {
+        const key = keyFn(...args);
+        const existing = pending.get(key);
+        if (existing) return existing;
+
+        const promise = fn(...args).finally(() => pending.delete(key));
+        pending.set(key, promise);
+        return promise;
+    };
 }
 
 /**
@@ -67,37 +84,12 @@ export function extractCopyItems(root: Record<string, unknown>): {
 
 /**
  * Process copy items - translates with natural, idiomatic rephrasing
- * Deduplicates concurrent identical requests by memoizing the promise
- *
- * @param items - Copy items to process
- * @param targetLanguage - Target language code (e.g., "en", "zh", "es")
  */
-export async function processCopy(
+async function translateCopy(
     items: CopyItem[],
     targetLanguage: string,
 ): Promise<CopyItem[]> {
-    if (items.length === 0) {
-        return items;
-    }
-
-    // Skip processing if English (nothing to translate)
-    if (targetLanguage === "en") {
-        return items;
-    }
-
-    // Create cache key from items + language
-    const cacheKey = `${targetLanguage}:${JSON.stringify(items.map((i) => i.id))}`;
-
-    // Return existing promise if request is already in flight
-    const pending = pendingRequests.get(cacheKey);
-    if (pending) {
-        console.log(`📝 [COPY] Deduplicating request for ${targetLanguage}`);
-        return pending;
-    }
-
-    // Create and cache the promise
-    const promise = (async () => {
-        const prompt = `${COPY_GUIDELINES}
+    const prompt = `${COPY_GUIDELINES}
 
 TARGET_LANGUAGE: "${targetLanguage}"
 
@@ -106,23 +98,35 @@ ${JSON.stringify(items, null, 2)}
 
 Process all items now:`;
 
-        console.log(
-            `📝 [COPY] Processing ${items.length} items → ${targetLanguage}`,
-        );
+    console.log(
+        `📝 [COPY] Processing ${items.length} items → ${targetLanguage}`,
+    );
 
-        const response = await generateText(prompt);
-        const result = parseJsonResponse(response, items);
-        console.log(`✅ [COPY] Done`);
+    const response = await generateText(prompt);
+    const result = parseJsonResponse(response, items);
+    console.log(`✅ [COPY] Done`);
 
-        return result;
-    })();
+    return result;
+}
 
-    pendingRequests.set(cacheKey, promise);
+// Memoized version - deduplicates concurrent identical requests
+const memoizedTranslate = memoizeAsync(
+    translateCopy,
+    (items, lang) => `${lang}:${items.map((i) => i.id).join(",")}`,
+);
 
-    // Clean up after completion (success or failure)
-    promise.finally(() => pendingRequests.delete(cacheKey));
-
-    return promise;
+/**
+ * Process copy items - translates with natural, idiomatic rephrasing
+ * Deduplicates concurrent identical requests automatically
+ */
+export async function processCopy(
+    items: CopyItem[],
+    targetLanguage: string,
+): Promise<CopyItem[]> {
+    if (items.length === 0 || targetLanguage === "en") {
+        return items;
+    }
+    return memoizedTranslate(items, targetLanguage);
 }
 
 /**

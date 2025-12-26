@@ -19,7 +19,7 @@ export const PLAY_PAGE = {
     },
 
     toggleWatchOthers: {
-        text: "Watch what others are making",
+        text: "Watch Feed",
     },
 
     toggleBackToPlay: {
@@ -37,10 +37,6 @@ export const PLAY_PAGE = {
 
     textLabel: {
         text: "Text",
-    },
-
-    promptLabel: {
-        text: "Prompt",
     },
 
     imagePlaceholder: {
@@ -95,5 +91,18 @@ export const PLAY_PAGE = {
 
     generateTextButton: {
         text: "Generate Text",
+    },
+
+    // Text Feed labels
+    feedConnecting: {
+        text: "Connecting to feed...",
+    },
+
+    feedConnectionError: {
+        text: "Connection error. Retrying...",
+    },
+
+    promptInputLabel: {
+        text: "What do you want to create?",
     },
 };

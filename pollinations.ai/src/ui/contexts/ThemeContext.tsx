@@ -1,3 +1,5 @@
+// @ts-check
+/** @type {React.FC} */
 import {
     createContext,
     useContext,

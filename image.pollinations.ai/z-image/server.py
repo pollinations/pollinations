@@ -331,6 +331,11 @@ def generate(request: ImageRequest, _auth: bool = Depends(verify_enter_token)):
             upscale_stats["total_blocks"] = len(blocks)
             logger.info(f"Created {len(blocks)} blocks + {len(edge_regions)} edge regions from {image_np.shape[:2]} image")
             
+            # Calculate global brightness statistics for normalization
+            from utility import calculate_global_stats
+            global_mean, global_std = calculate_global_stats(blocks)
+            logger.info(f"Global brightness stats - Mean: {global_mean:.2f}, Std: {global_std:.2f}")
+            
             logger.info("Detecting main subject using saliency analysis...")
             subject_blocks = get_subject_aware_blocks_no_padding(image_np, blocks, block_positions, BLOCK_SIZE)
             

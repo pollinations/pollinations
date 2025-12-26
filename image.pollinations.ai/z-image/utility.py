@@ -361,16 +361,20 @@ def upscale_block_simple(block_np: np.ndarray, scale_factor: int = UPSCALE_FACTO
     return np.array(upscaled_pil)
 
 
-def upscale_block_wrapper(idx: int, block: np.ndarray, upscaler_pipeline, use_simple: bool = False) -> tuple[int, np.ndarray, bool]:
+def upscale_block_wrapper(idx: int, block: np.ndarray, upscaler_pipeline, use_simple: bool = False, global_mean: float = None, global_std: float = None) -> tuple[int, np.ndarray, bool]:
     try:
         if use_simple:
             logger.info(f"Block {idx}: Using simple LANCZOS upscaling (flat/smooth block)")
             upscaled = upscale_block_simple(block)
-            return (idx, upscaled, True)
         else:
             logger.info(f"Block {idx}: Using SD X4 upscaler")
             upscaled = upscale_block_sdxl(block, upscaler_pipeline)
-            return (idx, upscaled, False)
+        
+        # Normalize block brightness to match global statistics
+        if global_mean is not None and global_std is not None:
+            upscaled = normalize_block_brightness(upscaled, target_mean=global_mean, target_std=global_std)
+        
+        return (idx, upscaled, use_simple)
     except Exception as e:
         logger.error(f"Block {idx} upscaling failed: {e}")
         raise
@@ -561,3 +565,31 @@ def replace_numpy_with_python(obj):
     elif isinstance(obj, np.generic):
         obj = obj.item()
     return obj
+
+def normalize_block_brightness(block_np, target_mean=None, target_std=None):
+
+    block_float = block_np.astype(np.float32)
+    
+    # Calculate current statistics
+    current_mean = np.mean(block_float)
+    current_std = np.std(block_float)
+    
+    # Use provided targets or calculate reasonable defaults
+    if target_mean is None:
+        target_mean = 128.0  # Neutral mid-gray
+    if target_std is None:
+        target_std = current_std  # Keep original contrast
+    
+    # Normalize: (x - mean) / std * target_std + target_mean
+    if current_std > 0:
+        normalized = (block_float - current_mean) / current_std * target_std + target_mean
+    else:
+        normalized = block_float
+    
+    # Clip to valid range and convert back
+    return np.clip(normalized, 0, 255).astype(np.uint8)
+
+
+def calculate_global_stats(blocks):
+    all_pixels = np.concatenate([block.flatten() for block in blocks])
+    return np.mean(all_pixels), np.std(all_pixels)

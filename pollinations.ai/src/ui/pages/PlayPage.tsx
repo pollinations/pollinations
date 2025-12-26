@@ -38,6 +38,15 @@ function PlayPage() {
 
 
 
+    // --- Text Feed State ---
+    // Fetched from SSE stream at text.polli/feed
+    const [textFeedPrompt, setTextFeedPrompt] = useState(
+        'You are an expert algorithmic trading engine. Analyze this market data and respond with ONLY a valid JSON object.\n\nData: {"symbol":"ETHUSD","price":"2963.80","ema9":"2962.95","ema21":"2963.87","rsi":"47.14","macd_hist":"0.1837","bb_position":"INSIDE","context":"15m Trend is DOWN"}\n\nRules: BUY if EMA9>EMA21 and RSI 40-60. SELL if EMA9<EMA21 and RSI 40-60. HOLD otherwise.\n\nFormat: {"action":"BUY/SELL/HOLD","confidence":0-100,"reasoning":"brief","riskLevel":"LOW/MEDIUM/HIGH","trend":"UPTREND/DOWNTREND/SIDEWAYS","phase":"IMPULSE/PULLBACK/CONSOLIDATION"}'
+    );
+    const [textFeedResponse, setTextFeedResponse] = useState(
+        '{"action":"SELL","confidence":75,"reasoning":"EMA9<EMA21 and RSI within 40-60 satisfy SELL; 15m trend is DOWN, supporting downside bias; MACD_hist positive suggests a mild pullback within the downtrend.","riskLevel":"MEDIUM","trend":"DOWNTREND","phase":"PULLBACK"}'
+    );
+
     return (
         <PageContainer>
             <PageCard>
@@ -99,7 +108,6 @@ function PlayPage() {
                     </div>
                 )}
 
-
                 {/* Content: Play Interface or Feed */}
                 {view === "play" ? (
                     <PlayGenerator
@@ -109,6 +117,25 @@ function PlayPage() {
                         imageModels={imageModels}
                         textModels={textModels}
                     />
+                ) : feedType === "text" ? (
+                    <div className="flex flex-col gap-4">
+                        {/* Top: Prompt */}
+                        <div className="bg-muted p-4 rounded text-xs">
+                            <span className="block mb-2 font-bold text-[#ffc]">Prompt:</span>
+                            <div className="whitespace-pre-wrap break-words max-h-48 overflow-y-auto text-[#fff]">
+                                {textFeedPrompt.slice(0, 500)}
+                                {textFeedPrompt.length > 500 ? '...' : ''}
+                            </div>
+                        </div>
+                        {/* Bottom: Response */}
+                        <div className="bg-muted p-4 rounded text-xs">
+                            <span className="block mb-2 font-bold text-[#ffc]">Response:</span>
+                            <div className="whitespace-pre-wrap break-words max-h-48 overflow-y-auto text-[#fff]">
+                                {textFeedResponse.slice(0, 500)}
+                                {textFeedResponse.length > 500 ? '...' : ''}
+                            </div>
+                        </div>
+                    </div>
                 ) : (
                     <ImageFeed
                         selectedModel={selectedModel}

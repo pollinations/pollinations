@@ -71,7 +71,7 @@ function AuthorizeComponent() {
         try {
             // Create a temporary API key with 30-day expiry using better-auth's built-in endpoint
             const result = await authClient.apiKey.create({
-                name: `Temporary key for ${redirectHostname}`,
+                name: `${redirectHostname}`,
                 expiresIn: DEFAULT_EXPIRY_SECONDS,
                 prefix: "sk",
                 metadata: {

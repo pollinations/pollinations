@@ -3,7 +3,7 @@ import { Button } from "../ui/button";
 import type { Model } from "../../../hooks/useModelList";
 
 import { PLAY_PAGE } from "../../../theme";
-import { API_BASE, API_KEY } from "../../../api.config";
+import { API_BASE } from "../../../api.config";
 
 interface PlayGeneratorProps {
     selectedModel: string;
@@ -11,6 +11,7 @@ interface PlayGeneratorProps {
     onPromptChange?: (prompt: string) => void;
     imageModels: Model[];
     textModels: Model[];
+    apiKey: string;
 }
 
 /**
@@ -43,6 +44,7 @@ export function PlayGenerator({
     prompt,
     imageModels,
     textModels,
+    apiKey,
 }: PlayGeneratorProps) {
     const [result, setResult] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(false);
@@ -106,7 +108,7 @@ export function PlayGenerator({
 
                 const response = await fetch(
                     `${API_BASE}/image/${encodeURIComponent(prompt)}?${params}`,
-                    { headers: { Authorization: `Bearer ${API_KEY}` } },
+                    { headers: { Authorization: `Bearer ${apiKey}` } },
                 );
 
                 if (!response.ok) {
@@ -151,7 +153,7 @@ export function PlayGenerator({
                         method: "POST",
                         headers: {
                             "Content-Type": "application/json",
-                            Authorization: `Bearer ${API_KEY}`,
+                            Authorization: `Bearer ${apiKey}`,
                         },
                         body: JSON.stringify({
                             model: selectedModel,

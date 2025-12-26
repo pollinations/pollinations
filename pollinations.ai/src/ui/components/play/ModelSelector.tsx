@@ -1,10 +1,7 @@
 import { memo } from "react";
 import { Button } from "../ui/button";
 import { PLAY_PAGE } from "../../../theme";
-import {
-    isModelAllowed,
-    GATED_MODEL_TOOLTIP,
-} from "../../../config/allowedModels";
+import { GATED_MODEL_TOOLTIP } from "../../../config/allowedModels";
 
 /**
  * ModelSelector Component
@@ -12,13 +9,15 @@ import {
  * Shows image/text/audio models with color indicators
  * Memoized to prevent unnecessary re-renders
  */
-import { Model } from "../../../hooks/useModelList";
+import type { Model } from "../../../hooks/useModelList";
 
 interface ModelSelectorProps {
     models: Model[];
     selectedModel: string;
     onSelectModel: (id: string) => void;
     showLegend?: boolean;
+    allowedImageModelIds: Set<string>;
+    allowedTextModelIds: Set<string>;
 }
 
 /**
@@ -32,6 +31,8 @@ export const ModelSelector = memo(function ModelSelector({
     selectedModel,
     onSelectModel,
     showLegend = true,
+    allowedImageModelIds,
+    allowedTextModelIds,
 }: ModelSelectorProps) {
     return (
         <div className="mb-6">
@@ -74,20 +75,24 @@ export const ModelSelector = memo(function ModelSelector({
                     const modelType = hasVideoOutput
                         ? "video"
                         : hasAudioOutput
-                        ? "audio"
-                        : isImage
-                        ? "image"
-                        : "text";
+                          ? "audio"
+                          : isImage
+                            ? "image"
+                            : "text";
                     const isActive = selectedModel === m.id;
-                    const isAllowed = isModelAllowed(m.id, m.type);
+                    const allowedSet =
+                        m.type === "image"
+                            ? allowedImageModelIds
+                            : allowedTextModelIds;
+                    const isAllowed = allowedSet.has(m.id);
 
                     const borderColorClass = hasVideoOutput
                         ? "border-indicator-video"
                         : hasAudioOutput
-                        ? "border-indicator-audio"
-                        : isImage
-                        ? "border-indicator-image"
-                        : "border-indicator-text";
+                          ? "border-indicator-audio"
+                          : isImage
+                            ? "border-indicator-image"
+                            : "border-indicator-text";
 
                     return (
                         <div key={m.id} className="relative group">

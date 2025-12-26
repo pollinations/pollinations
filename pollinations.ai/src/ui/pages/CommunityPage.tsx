@@ -21,7 +21,9 @@ interface VotingIssue {
 
 export default function CommunityPage() {
     const { processedCopy } = useCopy();
-    const pageCopy = (processedCopy as typeof COMMUNITY_PAGE) || COMMUNITY_PAGE;
+    const pageCopy = (
+        processedCopy?.newsFilePath ? processedCopy : COMMUNITY_PAGE
+    ) as typeof COMMUNITY_PAGE;
 
     return (
         <PageContainer>
@@ -138,7 +140,7 @@ export default function CommunityPage() {
                                         </p>
                                     </div>
                                 </a>
-                            ),
+                            )
                         )}
                     </div>
                 </div>

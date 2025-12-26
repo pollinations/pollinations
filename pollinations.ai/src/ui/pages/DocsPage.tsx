@@ -15,13 +15,15 @@ import { useCopy } from "../contexts/CopyContext";
 
 function DocsPage() {
     const { processedCopy } = useCopy();
-    const pageCopy = (processedCopy as typeof DOCS_PAGE) || DOCS_PAGE;
+    const pageCopy = (
+        processedCopy?.intro ? processedCopy : DOCS_PAGE
+    ) as typeof DOCS_PAGE;
     const [agentPromptCopied, setAgentPromptCopied] = useState(false);
     const [agentPrompt, setAgentPrompt] = useState("");
 
     useEffect(() => {
         fetch(
-            "https://raw.githubusercontent.com/pollinations/pollinations/production/APIDOCS.md",
+            "https://raw.githubusercontent.com/pollinations/pollinations/production/APIDOCS.md"
         )
             .then((res) => res.text())
             .then(setAgentPrompt)

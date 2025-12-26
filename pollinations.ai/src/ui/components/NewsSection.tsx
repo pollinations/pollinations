@@ -50,14 +50,14 @@ export function NewsSection({
                 }));
 
                 console.log(
-                    `📰 [NEWS] Translating ${items.length} items to ${language}...`,
+                    `📰 [NEWS] Translating ${items.length} items to ${language}...`
                 );
 
                 const processed = await processCopy(
                     items,
                     language,
                     variationSeed,
-                    controller.signal,
+                    controller.signal
                 );
 
                 // Apply translations back
@@ -96,7 +96,7 @@ export function NewsSection({
                     // Remove date from content for display
                     const contentWithoutDate = item.content.replace(
                         /\*\*\d{4}-\d{2}-\d{2}\*\*:?\s*/,
-                        "",
+                        ""
                     );
 
                     return (
@@ -135,19 +135,15 @@ export function NewsSection({
                                             className,
                                             children,
                                             ...props
-                                        }: {
-                                            node?: unknown;
-                                            className?: string;
-                                            children?: React.ReactNode;
-                                            [key: string]: unknown;
-                                        }) => {
+                                        }: // biome-ignore lint/suspicious/noExplicitAny: ReactMarkdown props
+                                        any) => {
                                             const match = /language-(\w+)/.exec(
-                                                className || "",
+                                                className || ""
                                             );
                                             const isInline =
                                                 !match &&
                                                 !String(children).includes(
-                                                    "\n",
+                                                    "\n"
                                                 );
                                             return isInline ? (
                                                 <code

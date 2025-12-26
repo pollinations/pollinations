@@ -33,7 +33,9 @@ function PlayPage() {
     const { processedCopy } = useCopy();
 
     // Use processed copy if available, fall back to static
-    const pageCopy = (processedCopy as typeof PLAY_PAGE) || PLAY_PAGE;
+    const pageCopy = (
+        processedCopy?.createTitle ? processedCopy : PLAY_PAGE
+    ) as typeof PLAY_PAGE;
 
     // Memoize combined models array
     const allModels = useMemo(

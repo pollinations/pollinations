@@ -117,7 +117,9 @@ export default function AppsPage() {
 
     // Use processed copy if available, fall back to static
     const { processedCopy } = useCopy();
-    const pageCopy = (processedCopy as typeof APPS_PAGE) || APPS_PAGE;
+    const pageCopy = (
+        processedCopy?.subtitle ? processedCopy : APPS_PAGE
+    ) as typeof APPS_PAGE;
 
     // Filter apps by category
     const filteredApps = useMemo(() => {

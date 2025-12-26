@@ -7,6 +7,7 @@ interface ImageFeedProps {
     onFeedPromptChange: (prompt: string) => void;
     imageModels: Model[];
     textModels: Model[];
+    feedType?: "image" | "text";
 }
 
 interface FeedItem {
@@ -35,6 +36,7 @@ export function ImageFeed({
     onFeedPromptChange,
     imageModels,
     textModels,
+    feedType = "image",
 }: ImageFeedProps) {
     const seenImages = useRef<Set<string>>(new Set());
     const imageQueue = useRef<ImageQueueItem[]>([]);
@@ -44,7 +46,7 @@ export function ImageFeed({
     const MAX_FEED_ITEMS = 30;
     
     const [currentDisplay, setCurrentDisplay] = useState<FeedItem | null>(null);
-    const [viewMode, setViewMode] = useState<"single" | "grid">("single"); 
+    const [viewMode, setViewMode] = useState<"single" | "grid">("single");
     const [feedHistory, setFeedHistory] = useState<FeedItem[]>([]);
 
     // Update parent with current feed prompt
@@ -56,6 +58,8 @@ export function ImageFeed({
 
     // Image feed
     useEffect(() => {
+        if (feedType !== "image") return;
+
         const eventSource = new EventSource(
             "https://image.pollinations.ai/feed"
         );
@@ -78,10 +82,12 @@ export function ImageFeed({
             }
         };
         return () => eventSource.close();
-    }, [selectedModel]);
+    }, [selectedModel, feedType]);
 
     // Text feed
     useEffect(() => {
+        if (feedType !== "text") return;
+
         const eventSource = new EventSource(
             "https://text.pollinations.ai/feed"
         );
@@ -113,7 +119,7 @@ export function ImageFeed({
             }
         };
         return () => eventSource.close();
-    }, [selectedModel]);
+    }, [selectedModel, feedType]);
 
     // Update display and feed history
     useEffect(() => {
@@ -123,7 +129,9 @@ export function ImageFeed({
             );
             if (!selectedModelData) return;
 
+            // Filter by feedType - only show selected feed type
             if (
+                feedType === "image" &&
                 selectedModelData.type === "image" &&
                 imageQueue.current.length > 0
             ) {
@@ -145,6 +153,7 @@ export function ImageFeed({
                     setFeedHistory([...feedItems.current]);
                 }
             } else if (
+                feedType === "text" &&
                 selectedModelData.type === "text" &&
                 textQueue.current.length > 0
             ) {
@@ -168,7 +177,7 @@ export function ImageFeed({
             }
         }, 1000);
         return () => clearInterval(interval);
-    }, [selectedModel, imageModels, textModels]);
+    }, [selectedModel, imageModels, textModels, feedType]);
 
     // Clear on channel change
     useEffect(() => {
@@ -202,7 +211,88 @@ export function ImageFeed({
         </div>
     );
 
-    // Single view mode
+    // TEXT FEED VIEW - Alternative layout for text content
+    if (feedType === "text") {
+        return (
+            <div className="w-full flex flex-col gap-4" style={{ maxHeight: "calc(100vh - 280px)" }}>
+                <div className="flex gap-6" style={{ height: "calc(100vh - 340px)" }}>
+                    {/* Text Feed History - Left side */}
+                    <div className="flex-1 bg-surface-elevated rounded-sub-card overflow-hidden flex flex-col border border-border-subtle">
+                        <div className="p-4 border-b border-border-subtle">
+                            <p className="font-headline text-xs uppercase tracking-wider font-black text-text-body-main">
+                                Feed
+                            </p>
+                        </div>
+                        <div className="flex-1 overflow-y-auto scrollbar-hide">
+                            {feedHistory.length === 0 ? (
+                                <div className="flex items-center justify-center h-full text-center py-12 text-text-caption font-body">
+                                    <div>
+                                        <p>Waiting for text responses...</p>
+                                        {selectedModel && (
+                                            <p className="text-xs mt-2">
+                                                Listening to {selectedModel}
+                                            </p>
+                                        )}
+                                    </div>
+                                </div>
+                            ) : (
+                                <div className="space-y-2 p-3">
+                                    {feedHistory.map((item, index) => (
+                                        <div
+                                            key={`${item.prompt}-${index}`}
+                                            onClick={() => setCurrentDisplay(item)}
+                                            className={`p-3 rounded-sub-card cursor-pointer transition-all ${
+                                                currentDisplay?.prompt === item.prompt
+                                                    ? "bg-surface-brand text-text-body-main border-l-4 border-border-brand"
+                                                    : "bg-surface-brand/20 text-text-body-secondary hover:bg-surface-brand/30"
+                                            }`}
+                                        >
+                                            <p className="font-body text-xs line-clamp-2 break-words">
+                                                {item.prompt}
+                                            </p>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                    </div>
+
+                    {/* Prompt and Response Display - Right side */}
+                    <div className="flex-[1.5] flex flex-col gap-4">
+                        {!currentDisplay ? (
+                            <div className="flex-1 bg-surface-elevated rounded-sub-card flex items-center justify-center text-center text-text-caption font-body">
+                                <p>Select a prompt from the feed to view response</p>
+                            </div>
+                        ) : (
+                            <>
+                                {/* Prompt Section */}
+                                <div className="flex-1 bg-surface-elevated rounded-sub-card p-6 overflow-auto scrollbar-hide border-l-4 border-border-highlight">
+                                    <p className="font-headline text-xs uppercase tracking-wider font-black text-text-body-main mb-3">
+                                        Prompt
+                                    </p>
+                                    <p className="font-body text-sm text-text-body-secondary leading-relaxed break-words">
+                                        {currentDisplay?.prompt || "No prompt available"}
+                                    </p>
+                                </div>
+
+                                {/* Response Section */}
+                                <div className="flex-1 bg-surface-elevated rounded-sub-card p-6 overflow-auto scrollbar-hide border-l-4 border-border-brand">
+                                    <p className="font-headline text-xs uppercase tracking-wider font-black text-text-body-main mb-3">
+                                        Response
+                                    </p>
+                                    <p className="font-body text-sm text-text-body-main leading-relaxed whitespace-pre-wrap break-words">
+                                        {currentDisplay?.content || "No response available"}
+                                    </p>
+                                </div>
+                            </>
+                        )}
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
+    // IMAGE FEED VIEW - Original layout for images
     if (viewMode === "single") {
         return (
             <div className="w-full flex flex-col gap-4" style={{ maxHeight: "calc(100vh - 280px)" }}>
@@ -237,10 +327,26 @@ export function ImageFeed({
                                 />
                             </a>
                         ) : (
-                            <div className="w-full h-full p-6 overflow-auto scrollbar-hide">
-                                <p className="font-body text-text-body-main text-sm leading-relaxed whitespace-pre-wrap">
-                                    {currentDisplay.content}
-                                </p>
+                            <div className="w-full h-full flex flex-col gap-4 p-6 overflow-auto scrollbar-hide">
+                                {/* Prompt Section */}
+                                <div className="bg-surface-brand/5 rounded-sub-card p-4 border-l-4 border-border-highlight">
+                                    <p className="font-headline text-xs uppercase tracking-wider font-black text-text-body-main mb-2">
+                                        Prompt
+                                    </p>
+                                    <p className="font-body text-sm text-text-body-secondary leading-relaxed break-words">
+                                        {currentDisplay?.prompt || "No prompt available"}
+                                    </p>
+                                </div>
+
+                                {/* Response Section */}
+                                <div className="flex-1 bg-surface-brand/3 rounded-sub-card p-4 border-l-4 border-border-brand overflow-auto">
+                                    <p className="font-headline text-xs uppercase tracking-wider font-black text-text-body-main mb-2">
+                                        Response
+                                    </p>
+                                    <p className="font-body text-sm text-text-body-main leading-relaxed whitespace-pre-wrap break-words">
+                                        {currentDisplay?.content || "No response available"}
+                                    </p>
+                                </div>
                             </div>
                         )}
                     </div>
@@ -330,10 +436,20 @@ export function ImageFeed({
                                         </div>
                                     </>
                                 ) : (
-                                    <div className="p-4 min-h-[150px] flex items-center">
-                                        <p className="font-body text-xs text-text-body-secondary line-clamp-6">
-                                            {item.content}
-                                        </p>
+                                    <div className="p-4 min-h-[150px] flex flex-col gap-3">
+                                        <div>
+                                            <p className="font-headline text-xs uppercase tracking-wider font-black text-text-body-main mb-1">
+                                                Prompt
+                                            </p>
+                                            <p className="font-body text-xs text-text-body-secondary line-clamp-2">
+                                                {item.prompt}
+                                            </p>
+                                        </div>
+                                        <div className="border-t border-border-subtle pt-3">
+                                            <p className="font-body text-xs text-text-body-secondary line-clamp-4">
+                                                {item.content}
+                                            </p>
+                                        </div>
                                     </div>
                                 )}
                             </div>

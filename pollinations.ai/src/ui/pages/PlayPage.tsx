@@ -8,6 +8,8 @@ import { PlayGenerator } from "../components/play/PlayGenerator";
 import { ModelSelector } from "../components/play/ModelSelector";
 import { useModelList } from "../../hooks/useModelList";
 import { useTheme } from "../contexts/ThemeContext";
+import { ImageIcon } from "../assets/ImageIcon";
+import { TextIcon } from "../assets/TextIcon";
 
 /**
  * PlayPage - Main playground page
@@ -16,6 +18,7 @@ import { useTheme } from "../contexts/ThemeContext";
  */
 function PlayPage() {
     const [view, setView] = useState("play"); // "play" or "feed"
+    const [feedType, setFeedType] = useState<"image" | "text">("image"); // Feed type toggle
     const [selectedModel, setSelectedModel] = useState("flux"); // Shared model state
     const [prompt, setPrompt] = useState(""); // Shared prompt state
     const { imageModels, textModels } = useModelList();
@@ -65,13 +68,35 @@ function PlayPage() {
                         : pageCopy.feedDescription.text}
                 </Body>
 
-
                 {view === "play" && (
                     <ModelSelector
                         models={allModels}
                         selectedModel={selectedModel}
                         onSelectModel={setSelectedModel}
                     />
+                )}
+
+                {view === "feed" && (
+                    <div className="flex gap-2 mb-6">
+                        <Button
+                            variant="toggle"
+                            data-active={feedType === "image"}
+                            onClick={() => setFeedType("image")}
+                            title="Image Feed"
+                            className="p-2"
+                        >
+                            <ImageIcon className="w-5 h-5" />
+                        </Button>
+                        <Button
+                            variant="toggle"
+                            data-active={feedType === "text"}
+                            onClick={() => setFeedType("text")}
+                            title="Text Feed"
+                            className="p-2"
+                        >
+                            <TextIcon className="w-5 h-5" />
+                        </Button>
+                    </div>
                 )}
 
 
@@ -90,6 +115,7 @@ function PlayPage() {
                         onFeedPromptChange={() => {}}
                         imageModels={imageModels}
                         textModels={textModels}
+                        feedType={feedType}
                     />
                 )}
             </PageCard>

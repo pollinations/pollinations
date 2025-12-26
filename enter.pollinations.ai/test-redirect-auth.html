@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Redirect Auth Test App</title>
+    <title>Polli Login Tester</title>
     <style>
         * { box-sizing: border-box; }
         body {
@@ -44,7 +44,12 @@
         }
         .success { color: #4ade80; }
         .error { color: #f87171; }
+        .pending { color: #9ca3af; }
         .info { color: #60a5fa; font-size: 14px; }
+        input:disabled, button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
         pre {
             background: #0f3460;
             padding: 12px;
@@ -64,29 +69,31 @@
     </style>
 </head>
 <body>
-    <h1>🔐 Redirect Auth Test</h1>
+    <h1>🌸 Polli Login Tester</h1>
     
     <div class="card">
-        <h3>Step 1: Get API Key</h3>
-        <p class="info">Click to redirect to enter.pollinations.ai for authorization</p>
-        <button id="authBtn" onclick="startAuth()">Authorize with Pollinations</button>
+        <h3>1. Connect your account</h3>
+        <p class="info">Tap to sign in with your Pollinations account</p>
+        <button id="authBtn" onclick="startAuth()">Sign in with Polli</button>
     </div>
 
-    <div class="card" id="keyCard" style="display: none;">
-        <h3 class="success">✅ API Key Received!</h3>
-        <div class="api-key" id="apiKeyDisplay"></div>
-        <p class="info" id="expiryInfo"></p>
+    <div class="card" id="keyCard">
+        <h3 id="keyTitle" class="pending">🔑 Your magic key</h3>
+        <div class="api-key" id="apiKeyDisplay">waiting for you to sign in~</div>
+        <p class="info" id="expiryInfo">sign in to get your temporary access pass</p>
     </div>
 
-    <div class="card" id="testCard" style="display: none;">
-        <h3>Step 2: Test the API Key</h3>
-        <input type="text" id="prompt" placeholder="Enter a prompt..." value="a cute robot waving hello">
-        <button onclick="testImageGen()">Generate Image</button>
-        <div id="result" style="margin-top: 16px;"></div>
+    <div class="card" id="testCard">
+        <h3>2. Make some art!</h3>
+        <input type="text" id="prompt" placeholder="describe something cool..." value="a cute robot waving hello" disabled>
+        <button id="generateBtn" onclick="testImageGen()" disabled>Create Image</button>
+        <div id="result" style="margin-top: 16px;">
+            <p class="info" style="opacity: 0.5;">sign in first to unlock image creation ✨</p>
+        </div>
     </div>
 
     <div class="card" id="errorCard" style="display: none;">
-        <h3 class="error">❌ Error</h3>
+        <h3 class="error">😅 something went wrong</h3>
         <p id="errorMsg"></p>
     </div>
 
@@ -129,16 +136,22 @@
         }
 
         function showApiKey(key) {
-            document.getElementById('keyCard').style.display = 'block';
-            document.getElementById('testCard').style.display = 'block';
+            // Update key card
+            document.getElementById('keyTitle').className = 'success';
+            document.getElementById('keyTitle').textContent = '✅ you\'re in!';
             document.getElementById('apiKeyDisplay').textContent = key;
-            document.getElementById('expiryInfo').textContent = 'This key expires in 6 hours';
-            document.getElementById('authBtn').textContent = 'Re-authorize';
+            document.getElementById('expiryInfo').textContent = 'valid for 6 hours - have fun!';
+            document.getElementById('authBtn').textContent = 'Sign in again';
+            
+            // Enable test card elements
+            document.getElementById('prompt').disabled = false;
+            document.getElementById('generateBtn').disabled = false;
+            document.getElementById('result').innerHTML = '';
         }
 
         function showError(msg) {
             document.getElementById('errorCard').style.display = 'block';
-            document.getElementById('errorMsg').textContent = msg;
+            document.getElementById('errorMsg').textContent = 'oops: ' + msg;
         }
 
         async function testImageGen() {
@@ -149,7 +162,7 @@
 
             const prompt = document.getElementById('prompt').value;
             const resultDiv = document.getElementById('result');
-            resultDiv.innerHTML = '<p class="info">Generating image...</p>';
+            resultDiv.innerHTML = '<p class="info">creating your image... ✨</p>';
 
             try {
                 // Use the API key to generate an image via local dev server
@@ -167,10 +180,10 @@
                 
                 resultDiv.innerHTML = `
                     <img src="${url}" style="max-width: 100%; border-radius: 8px; margin-top: 12px;">
-                    <p class="success" style="margin-top: 8px;">✅ Image generated successfully!</p>
+                    <p class="success" style="margin-top: 8px;">✨ nice! your image is ready</p>
                 `;
             } catch (e) {
-                resultDiv.innerHTML = `<p class="error">Error: ${e.message}</p>`;
+                resultDiv.innerHTML = `<p class="error">hmm that didn't work: ${e.message}</p>`;
             }
         }
     </script>

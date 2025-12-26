@@ -24,7 +24,3 @@ export const CATEGORIES = [
     { id: "learn", label: "Learn" },
     { id: "featured", label: "Featured" },
 ];
-
-// Path to APPS.md on GitHub (fetched at runtime)
-export const appsFilePath =
-    "https://raw.githubusercontent.com/pollinations/pollinations/main/apps/APPS.md";

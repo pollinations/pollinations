@@ -1,5 +1,5 @@
 import ReactMarkdown from "react-markdown";
-import { COMMUNITY_PAGE } from "../../copy/content/community";
+import { COPY_CONSTANTS } from "../../copy/constants";
 import { useNews } from "../../hooks/useNews";
 import { useTranslate } from "../../hooks/useTranslate";
 import { Heading } from "./ui/typography";
@@ -22,7 +22,7 @@ export function NewsSection({
     compact = false,
     title = "What's New",
 }: NewsSectionProps) {
-    const { news, loading } = useNews(COMMUNITY_PAGE.newsFilePath);
+    const { news, loading } = useNews(COPY_CONSTANTS.newsFilePath);
 
     const { translated: translatedNews } = useTranslate(news, "content");
 

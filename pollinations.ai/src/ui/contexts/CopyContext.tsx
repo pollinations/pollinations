@@ -1,26 +1,21 @@
 /**
  * Copy Context
- * Manages per-page copy processing with language detection and variation
+ * Manages per-page copy translation with language detection
  *
  * Flow:
  * 1. Detects current page from URL
- * 2. Processes only that page's copy via LLM
- * 3. Shows progress on translate button
- * 4. Resets when page changes
+ * 2. Extracts flat strings from page copy
+ * 3. Translates via LLM (arrays handled by useTranslate in components)
+ * 4. Rebuilds copy object with translated strings
  */
 
 import type { ReactNode } from "react";
 import { createContext, useContext, useEffect, useState } from "react";
 import { useLocation } from "react-router-dom";
-import {
-    applyTranslations,
-    extractCopyItems,
-    processCopy,
-} from "../../copy/translation/process";
+import { processCopy } from "../../copy/translation/process";
 import { APPS_PAGE } from "../../copy/content/apps";
 import { COMMUNITY_PAGE } from "../../copy/content/community";
 import { DOCS_PAGE } from "../../copy/content/docs";
-// Import page-specific copy
 import { HELLO_PAGE } from "../../copy/content/hello";
 import { PLAY_PAGE } from "../../copy/content/play";
 
@@ -98,9 +93,10 @@ export function CopyProvider({ children }: { children: ReactNode }) {
         setIsProcessing(true);
         setProcessedCopy(pageCopy); // Show original while processing
 
-        // Deep clone the page's copy
-        const copyClone = JSON.parse(JSON.stringify(pageCopy));
-        const { items, pointers } = extractCopyItems(copyClone);
+        // Extract flat strings only (arrays handled by useTranslate in components)
+        const items = Object.entries(pageCopy)
+            .filter(([_, v]) => typeof v === "string")
+            .map(([id, text]) => ({ id, text: text as string }));
 
         if (items.length === 0) {
             setIsProcessing(false);
@@ -108,9 +104,13 @@ export function CopyProvider({ children }: { children: ReactNode }) {
         }
 
         processCopy(items, language)
-            .then((processed) => {
-                applyTranslations(processed, pointers);
-                setProcessedCopy(copyClone);
+            .then((translated) => {
+                // Rebuild copy with translated strings
+                const result = { ...pageCopy };
+                for (const { id, text } of translated) {
+                    result[id] = text;
+                }
+                setProcessedCopy(result);
             })
             .catch(console.error)
             .finally(() => setIsProcessing(false));

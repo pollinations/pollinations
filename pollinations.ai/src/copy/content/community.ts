@@ -9,9 +9,6 @@ export const COMMUNITY_PAGE = {
     // News section
     newsTitle: "What's New",
 
-    newsFilePath:
-        "https://raw.githubusercontent.com/pollinations/pollinations/production/NEWS/transformed/highlights.md",
-
     discordTitle: "💬 Discord",
 
     discordSubtitle:
@@ -126,12 +123,6 @@ export const COMMUNITY_PAGE = {
                 "AI-optimized cloud infrastructure with NVIDIA GPU clusters",
         },
     ],
-
-    // Logo generation settings
-    supporterLogoPrompt:
-        "Brutalist logo design with bold geometric shapes, heavy lines, stark contrast, raw minimalist aesthetic, transparent background (no background), flat design style. Company:",
-    supporterLogoSeed: 1,
-    supporterLogoModel: "nanobanana",
 
     // Top Contributors section
     topContributorsTitle: "Most Active Contributors",

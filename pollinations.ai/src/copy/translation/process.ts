@@ -13,58 +13,7 @@ interface CopyItem {
 }
 
 /**
- * Extract all processable text from copy object
- * All strings are extracted for translation
- */
-export function extractCopyItems(root: Record<string, unknown>): {
-    items: CopyItem[];
-    pointers: Record<string, (newText: string) => void>;
-} {
-    const items: CopyItem[] = [];
-    const pointers: Record<string, (newText: string) => void> = {};
-
-    function traverse(
-        obj: unknown,
-        path: string[],
-        parent?: Record<string, unknown>,
-        parentKey?: string,
-    ) {
-        // Handle direct strings
-        if (typeof obj === "string" && parent && parentKey) {
-            const id = path.join(".");
-            items.push({ id, text: obj });
-            pointers[id] = (newText: string) => {
-                parent[parentKey] = newText;
-            };
-            return;
-        }
-
-        if (!obj || typeof obj !== "object") return;
-
-        const node = obj as Record<string, unknown>;
-
-        // Check for object with text property (legacy format)
-        if (typeof node.text === "string") {
-            const id = path.join(".");
-            items.push({ id, text: node.text });
-            pointers[id] = (newText: string) => {
-                node.text = newText;
-            };
-            return; // Don't traverse into text objects
-        }
-
-        // Recursively check children
-        for (const key of Object.keys(node)) {
-            traverse(node[key], [...path, key], node, key);
-        }
-    }
-
-    traverse(root, []);
-    return { items, pointers };
-}
-
-/**
- * Process copy items - translates with natural, idiomatic rephrasing
+ * Translate copy items with natural, idiomatic rephrasing
  */
 async function translateCopy(
     items: CopyItem[],
@@ -123,20 +72,5 @@ function parseJsonResponse(response: string, fallback: CopyItem[]): CopyItem[] {
     } catch (err) {
         console.error("❌ [COPY] Failed to parse response:", err);
         return fallback;
-    }
-}
-
-/**
- * Apply translated items back to copy object
- */
-export function applyTranslations(
-    translatedItems: CopyItem[],
-    pointers: Record<string, (newText: string) => void>,
-): void {
-    for (const item of translatedItems) {
-        const pointer = pointers[item.id];
-        if (pointer) {
-            pointer(item.text);
-        }
     }
 }

@@ -16,10 +16,8 @@ import { useCopy } from "../contexts/CopyContext";
 
 function HelloPage() {
     const { processedCopy } = useCopy();
-    // Use processed copy if available, fall back to static
-    const pageCopy = (
-        processedCopy?.heroTitle ? processedCopy : HELLO_PAGE
-    ) as typeof HELLO_PAGE;
+    // Use processed copy if available, merge with static
+    const pageCopy = { ...HELLO_PAGE, ...processedCopy } as typeof HELLO_PAGE;
 
     return (
         <PageContainer>

@@ -21,16 +21,6 @@ export const DOCS_PAGE = {
     generatingLabel: "Generating...",
     copyUrlButton: "Copy URL",
 
-    // Image prompts array
-    imagePrompts: [
-        "a blooming flower in golden hour",
-        "bees pollinating wildflowers",
-        "organic mycelium network patterns",
-        "harmonious forest ecosystem",
-        "symbiotic nature interactions",
-        "flowing river through biosphere",
-    ],
-
     // Image parameters (from API docs)
     imageParameters: [
         { key: "width", value: "1024", description: "Image width in pixels" },
@@ -58,14 +48,6 @@ export const DOCS_PAGE = {
     modelLabel: "Model",
     defaultModelLabel: "Default: openai",
     optionalLabel: "Optional",
-
-    // Text prompts array
-    textPrompts: [
-        "explain pollinations.ai",
-        "write a poem about nature",
-        "describe ecosystem harmony",
-        "explain symbiosis",
-    ],
 
     // Text parameters (from API docs)
     textParameters: [
@@ -121,7 +103,4 @@ export const DOCS_PAGE = {
         "Server-side (Recommended): Use secret key in Authorization header",
     clientSideDescription:
         "Client-side (Public): Use publishable key in query parameter",
-
-    // API base URL for display
-    apiBaseUrl: "gen.pollinations.ai",
 };

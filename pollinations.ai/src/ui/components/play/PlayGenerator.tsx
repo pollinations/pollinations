@@ -33,11 +33,7 @@ const extractErrorMessage = async (response: Response): Promise<string> => {
                 return data.error.message;
             }
         }
-        return (
-            data?.message ||
-            data?.error ||
-            PLAY_PAGE.somethingWentWrong
-        );
+        return data?.message || data?.error || PLAY_PAGE.somethingWentWrong;
     } catch {
         return `Error ${response.status}: ${response.statusText}`;
     }
@@ -50,11 +46,9 @@ export function PlayGenerator({
     textModels,
     apiKey,
 }: PlayGeneratorProps) {
-    // Get translated copy
+    // Get translated copy (flat strings only)
     const { processedCopy } = useCopy();
-    const copy = (
-        processedCopy?.seedTooltip ? processedCopy : PLAY_PAGE
-    ) as typeof PLAY_PAGE;
+    const copy = { ...PLAY_PAGE, ...processedCopy } as typeof PLAY_PAGE;
 
     const [result, setResult] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(false);
@@ -189,8 +183,7 @@ export function PlayGenerator({
 
                 const data = await response.json();
                 const text =
-                    data.choices?.[0]?.message?.content ||
-                    copy.noResponse;
+                    data.choices?.[0]?.message?.content || copy.noResponse;
                 setResult(text);
                 setIsLoading(false);
             } catch (err) {

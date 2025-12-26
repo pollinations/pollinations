@@ -15,9 +15,7 @@ import { useCopy } from "../contexts/CopyContext";
 
 function DocsPage() {
     const { processedCopy } = useCopy();
-    const pageCopy = (
-        processedCopy?.intro ? processedCopy : DOCS_PAGE
-    ) as typeof DOCS_PAGE;
+    const pageCopy = { ...DOCS_PAGE, ...processedCopy } as typeof DOCS_PAGE;
     const [agentPromptCopied, setAgentPromptCopied] = useState(false);
     const [agentPrompt, setAgentPrompt] = useState("");
 

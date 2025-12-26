@@ -16,15 +16,18 @@ export function useTranslate<T, K extends keyof T>(
     const [translated, setTranslated] = useState<T[]>(items);
     const [isTranslating, setIsTranslating] = useState(false);
 
+    // Keep translated in sync with items when items change (show original immediately)
+    useEffect(() => {
+        setTranslated(items);
+    }, [items]);
+
     useEffect(() => {
         if (items.length === 0) {
-            setTranslated([]);
             return;
         }
 
-        // If English, use original
+        // If English, use original (already set above)
         if (language === "en") {
-            setTranslated(items);
             return;
         }
 

@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
-import { APPS_PAGE, appsFilePath, CATEGORIES } from "../../copy/content/apps";
+import { COPY_CONSTANTS } from "../../copy/constants";
+import { APPS_PAGE, CATEGORIES } from "../../copy/content/apps";
 import { LINKS } from "../../copy/content/socialLinks";
 import { type App, useApps } from "../../hooks/useApps";
 import { useTranslate } from "../../hooks/useTranslate";
@@ -116,13 +117,11 @@ export default function AppsPage() {
     const [selectedCategory, setSelectedCategory] = useState("creative");
 
     // Fetch apps from GitHub
-    const { apps: allApps } = useApps(appsFilePath);
+    const { apps: allApps } = useApps(COPY_CONSTANTS.appsFilePath);
 
-    // Use processed copy if available, fall back to static
+    // Use processed copy if available, merge with static
     const { processedCopy } = useCopy();
-    const pageCopy = (
-        processedCopy?.subtitle ? processedCopy : APPS_PAGE
-    ) as typeof APPS_PAGE;
+    const pageCopy = { ...APPS_PAGE, ...processedCopy } as typeof APPS_PAGE;
 
     // Translate category labels
     const { translated: translatedCategories } = useTranslate(

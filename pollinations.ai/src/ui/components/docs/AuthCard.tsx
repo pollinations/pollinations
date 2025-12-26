@@ -1,3 +1,4 @@
+import { COPY_CONSTANTS } from "../../../copy/constants";
 import { DOCS_PAGE } from "../../../copy/content/docs";
 import { ExternalLinkIcon } from "../../assets/ExternalLinkIcon";
 import { useCopy } from "../../contexts/CopyContext";
@@ -8,11 +9,9 @@ import { Heading, Label } from "../ui/typography";
  * Displays API key types and usage examples for the Docs page
  */
 export function AuthCard() {
-    // Get translated copy
+    // Get translated copy (flat strings only)
     const { processedCopy } = useCopy();
-    const copy = (
-        processedCopy?.authenticationTitle ? processedCopy : DOCS_PAGE
-    ) as typeof DOCS_PAGE;
+    const copy = { ...DOCS_PAGE, ...processedCopy } as typeof DOCS_PAGE;
 
     return (
         <div>
@@ -128,7 +127,7 @@ export function AuthCard() {
                                 {"// Add to URL"}
                             </div>
                             <div className="mt-2">
-                                {`https://${copy.apiBaseUrl}/...`}
+                                {`https://${COPY_CONSTANTS.apiBaseUrl}/...`}
                             </div>
                             <div className="pl-4">
                                 <span className="text-text-on-color/80">

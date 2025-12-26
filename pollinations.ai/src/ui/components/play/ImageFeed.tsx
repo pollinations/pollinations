@@ -37,11 +37,9 @@ export function ImageFeed({
     imageModels,
     textModels,
 }: ImageFeedProps) {
-    // Get translated copy
+    // Get translated copy (flat strings only)
     const { processedCopy } = useCopy();
-    const copy = (
-        processedCopy?.waitingForContent ? processedCopy : PLAY_PAGE
-    ) as typeof PLAY_PAGE;
+    const copy = { ...PLAY_PAGE, ...processedCopy } as typeof PLAY_PAGE;
 
     const seenImages = useRef<Set<string>>(new Set());
     const imageQueue = useRef<ImageQueueItem[]>([]);

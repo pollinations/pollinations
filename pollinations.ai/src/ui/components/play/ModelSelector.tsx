@@ -27,11 +27,9 @@ export const ModelSelector = memo(function ModelSelector({
     allowedImageModelIds,
     allowedTextModelIds,
 }: ModelSelectorProps) {
-    // Get translated copy
+    // Get translated copy (flat strings only)
     const { processedCopy } = useCopy();
-    const copy = (
-        processedCopy?.modelsLabel ? processedCopy : PLAY_PAGE
-    ) as typeof PLAY_PAGE;
+    const copy = { ...PLAY_PAGE, ...processedCopy } as typeof PLAY_PAGE;
 
     return (
         <div className="mb-6">

@@ -12,11 +12,12 @@ interface Contributor {
 }
 
 export function TopContributors() {
-    // Get translated copy
+    // Get translated copy (flat strings only)
     const { processedCopy } = useCopy();
-    const copy = (
-        processedCopy?.topContributorsTitle ? processedCopy : COMMUNITY_PAGE
-    ) as typeof COMMUNITY_PAGE;
+    const copy = {
+        ...COMMUNITY_PAGE,
+        ...processedCopy,
+    } as typeof COMMUNITY_PAGE;
 
     const [contributors, setContributors] = useState<Contributor[]>([]);
     const [loadingContributors, setLoadingContributors] = useState(true);
@@ -130,9 +131,7 @@ export function TopContributors() {
                 }
             `}</style>
             <div className="mb-12">
-                <Heading variant="section">
-                    {copy.topContributorsTitle}
-                </Heading>
+                <Heading variant="section">{copy.topContributorsTitle}</Heading>
                 <Body size="sm" spacing="comfortable">
                     {copy.topContributorsDescription}{" "}
                     <a

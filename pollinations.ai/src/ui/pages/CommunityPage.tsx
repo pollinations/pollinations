@@ -1,3 +1,4 @@
+import { COPY_CONSTANTS } from "../../copy/constants";
 import { COMMUNITY_PAGE } from "../../copy/content/community";
 import { LINKS, SOCIAL_LINKS } from "../../copy/content/socialLinks";
 import { useTranslate } from "../../hooks/useTranslate";
@@ -22,9 +23,10 @@ interface VotingIssue {
 
 export default function CommunityPage() {
     const { processedCopy } = useCopy();
-    const pageCopy = (
-        processedCopy?.newsFilePath ? processedCopy : COMMUNITY_PAGE
-    ) as typeof COMMUNITY_PAGE;
+    const pageCopy = {
+        ...COMMUNITY_PAGE,
+        ...processedCopy,
+    } as typeof COMMUNITY_PAGE;
 
     const { translated: translatedVotingIssues } = useTranslate(
         COMMUNITY_PAGE.votingIssues as VotingIssue[],
@@ -172,36 +174,43 @@ export default function CommunityPage() {
                         {pageCopy.supportersSubtitle}
                     </Body>
                     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-                        {translatedSupporters.map((supporter) => (
-                            <a
-                                key={supporter.name}
-                                href={supporter.url}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="group flex flex-col items-center text-center hover:opacity-70 transition-opacity"
-                            >
-                                <div className="w-16 h-16 mb-2 overflow-hidden">
-                                    <ImageGenerator
-                                        key={`${supporter.name}-logo`}
-                                        prompt={`${COMMUNITY_PAGE.supporterLogoPrompt} ${supporter.name}. ${supporter.description}`}
-                                        width={200}
-                                        height={200}
-                                        seed={COMMUNITY_PAGE.supporterLogoSeed}
-                                        model={
-                                            COMMUNITY_PAGE.supporterLogoModel
-                                        }
-                                        alt={supporter.name}
-                                        className="w-full h-full object-contain"
-                                    />
-                                </div>
-                                <p className="font-headline text-xs font-black text-text-body-main mb-1 leading-tight">
-                                    {supporter.name}
-                                </p>
-                                <p className="font-body text-[10px] text-text-body-tertiary leading-tight line-clamp-2">
-                                    {supporter.description}
-                                </p>
-                            </a>
-                        ))}
+                        {translatedSupporters.map((supporter, index) => {
+                            // Use original English description for logo prompt (keeps images consistent)
+                            const originalSupporter =
+                                COMMUNITY_PAGE.supportersList[index];
+                            return (
+                                <a
+                                    key={supporter.name}
+                                    href={supporter.url}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="group flex flex-col items-center text-center hover:opacity-70 transition-opacity"
+                                >
+                                    <div className="w-16 h-16 mb-2 overflow-hidden">
+                                        <ImageGenerator
+                                            key={`${supporter.name}-logo`}
+                                            prompt={`${COPY_CONSTANTS.supporterLogoPrompt} ${originalSupporter.name}. ${originalSupporter.description}`}
+                                            width={200}
+                                            height={200}
+                                            seed={
+                                                COPY_CONSTANTS.supporterLogoSeed
+                                            }
+                                            model={
+                                                COPY_CONSTANTS.supporterLogoModel
+                                            }
+                                            alt={supporter.name}
+                                            className="w-full h-full object-contain"
+                                        />
+                                    </div>
+                                    <p className="font-headline text-xs font-black text-text-body-main mb-1 leading-tight">
+                                        {supporter.name}
+                                    </p>
+                                    <p className="font-body text-[10px] text-text-body-tertiary leading-tight line-clamp-2">
+                                        {supporter.description}
+                                    </p>
+                                </a>
+                            );
+                        })}
                     </div>
                 </div>
             </PageCard>

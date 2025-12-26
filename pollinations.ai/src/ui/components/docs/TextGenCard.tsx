@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import { API_BASE, API_KEY } from "../../../api.config";
+import { COPY_CONSTANTS } from "../../../copy/constants";
 import { DOCS_PAGE } from "../../../copy/content/docs";
+import { EXAMPLE_PROMPTS } from "../../../copy/examples";
 import { fetchWithRetry } from "../../../utils/fetchWithRetry";
 import { useCopy } from "../../contexts/CopyContext";
 import { Button } from "../ui/button";
@@ -11,17 +13,16 @@ import { Heading, Label } from "../ui/typography";
  * Interactive demo for the text generation API
  */
 export function TextGenCard() {
-    // Get translated copy
+    // Get translated copy (flat strings only)
     const { processedCopy } = useCopy();
-    const copy = (
-        processedCopy?.textPrompts ? processedCopy : DOCS_PAGE
-    ) as typeof DOCS_PAGE;
+    const copy = { ...DOCS_PAGE, ...processedCopy } as typeof DOCS_PAGE;
 
-    // Track by index, get text from copy
+    // Example prompts (not translated)
+    const textPrompts = EXAMPLE_PROMPTS.text;
+
+    // Track by index
     const [selectedPromptIndex, setSelectedPromptIndex] = useState(0);
-    const selectedPrompt =
-        copy.textPrompts[selectedPromptIndex] ||
-        DOCS_PAGE.textPrompts[0];
+    const selectedPrompt = textPrompts[selectedPromptIndex] || textPrompts[0];
 
     const [selectedModel, setSelectedModel] = useState("openai-fast");
     const [params, setParams] = useState<Set<string>>(new Set());
@@ -120,9 +121,7 @@ export function TextGenCard() {
 
     return (
         <div>
-            <Heading variant="section">
-                {copy.textGenerationTitle}
-            </Heading>
+            <Heading variant="section">{copy.textGenerationTitle}</Heading>
 
             {/* Prompts/Parameters and Response - Side by Side */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
@@ -132,22 +131,24 @@ export function TextGenCard() {
                     <div>
                         <Label>{copy.pickPromptLabel}</Label>
                         <div className="flex flex-wrap gap-2">
-                            {copy.textPrompts.map((prompt, index) => (
-                                <button
-                                    key={prompt}
-                                    type="button"
-                                    onClick={() =>
-                                        setSelectedPromptIndex(index)
-                                    }
-                                    className={`px-3 py-1.5 font-mono text-xs border-2 transition-all cursor-pointer ${
-                                        selectedPromptIndex === index
-                                            ? "bg-indicator-text border-border-brand font-black shadow-shadow-brand-sm text-text-inverse"
-                                            : "bg-input-background border-border-main hover:border-border-brand text-text-body-main"
-                                    }`}
-                                >
-                                    {prompt}
-                                </button>
-                            ))}
+                            {textPrompts.map(
+                                (prompt: string, index: number) => (
+                                    <button
+                                        key={prompt}
+                                        type="button"
+                                        onClick={() =>
+                                            setSelectedPromptIndex(index)
+                                        }
+                                        className={`px-3 py-1.5 font-mono text-xs border-2 transition-all cursor-pointer ${
+                                            selectedPromptIndex === index
+                                                ? "bg-indicator-text border-border-brand font-black shadow-shadow-brand-sm text-text-inverse"
+                                                : "bg-input-background border-border-main hover:border-border-brand text-text-body-main"
+                                        }`}
+                                    >
+                                        {prompt}
+                                    </button>
+                                ),
+                            )}
                         </div>
                     </div>
 
@@ -222,7 +223,7 @@ export function TextGenCard() {
             {/* URL Display */}
             <div className="mb-4 p-3 bg-input-background font-mono text-xs text-text-body-main break-all">
                 <span className="text-text-caption">
-                    https://{copy.apiBaseUrl}/text/
+                    https://{COPY_CONSTANTS.apiBaseUrl}/text/
                 </span>
                 <span className="bg-indicator-text px-1 font-black text-text-inverse">
                     {selectedPrompt}

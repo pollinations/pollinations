@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { COPY_CONSTANTS } from "../../../copy/constants";
 import { DOCS_PAGE } from "../../../copy/content/docs";
 import { useCopy } from "../../contexts/CopyContext";
 import { Button } from "../ui/button";
@@ -9,13 +10,11 @@ import { Heading, Label } from "../ui/typography";
  * Displays available models from different endpoints
  */
 export function ModelDiscoveryCard() {
-    // Get translated copy
+    // Get translated copy (flat strings only)
     const { processedCopy } = useCopy();
-    const copy = (
-        processedCopy?.modelDiscoveryTitle ? processedCopy : DOCS_PAGE
-    ) as typeof DOCS_PAGE;
+    const copy = { ...DOCS_PAGE, ...processedCopy } as typeof DOCS_PAGE;
 
-    const apiBase = `https://${copy.apiBaseUrl}`;
+    const apiBase = `https://${COPY_CONSTANTS.apiBaseUrl}`;
     const modelEndpoints = {
         image: {
             label: copy.imageTypeLabel,
@@ -60,9 +59,7 @@ export function ModelDiscoveryCard() {
 
     return (
         <div>
-            <Heading variant="section">
-                {copy.modelDiscoveryTitle}
-            </Heading>
+            <Heading variant="section">{copy.modelDiscoveryTitle}</Heading>
 
             {/* Model Type Selection and Output - Side by Side */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
@@ -98,7 +95,7 @@ export function ModelDiscoveryCard() {
                     {/* URL Display */}
                     <div className="p-3 bg-input-background font-mono text-xs text-text-body-main break-all">
                         <span className="text-text-caption">
-                            https://{copy.apiBaseUrl}
+                            https://{COPY_CONSTANTS.apiBaseUrl}
                         </span>
                         <span className="bg-indicator-text px-1 font-black text-text-inverse">
                             {currentEndpoint.path}

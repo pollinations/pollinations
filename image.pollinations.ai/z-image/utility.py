@@ -370,14 +370,60 @@ def upscale_block_wrapper(idx: int, block: np.ndarray, upscaler_pipeline, use_si
             logger.info(f"Block {idx}: Using SD X4 upscaler")
             upscaled = upscale_block_sdxl(block, upscaler_pipeline)
         
-        # Normalize block brightness to match global statistics
-        if global_mean is not None and global_std is not None:
-            upscaled = normalize_block_brightness(upscaled, target_mean=global_mean, target_std=global_std)
-        
         return (idx, upscaled, use_simple)
     except Exception as e:
         logger.error(f"Block {idx} upscaling failed: {e}")
         raise
+
+
+def blend_block_seams(result: np.ndarray, blocks: list[np.ndarray], 
+                      block_positions: list[tuple],
+                      block_size: int = BLOCK_SIZE,
+                      scale_factor: int = 4,
+                      blend_width: int = 8) -> np.ndarray:
+    """
+    Blend seams between adjacent blocks to smooth transitions.
+    Uses Gaussian blur on seam regions for smooth blending.
+    """
+    upscaled_block_size = block_size * scale_factor
+    result = result.copy().astype(np.float32)
+    
+    y_positions = sorted(set(y for y, x in block_positions))
+    x_positions = sorted(set(x for y, x in block_positions))
+    
+    # Blend horizontal seams
+    for y_orig in y_positions[:-1]:
+        y_seam = (y_orig + 1) * scale_factor
+        if y_seam - blend_width > 0 and y_seam + blend_width < result.shape[0]:
+            # Create blend region around seam
+            seam_region = result[y_seam-blend_width:y_seam+blend_width, :].copy()
+            
+            # Apply Gaussian blur for smooth blending
+            if len(seam_region.shape) == 3:
+                for c in range(seam_region.shape[2]):
+                    seam_region[:, :, c] = gaussian_filter(seam_region[:, :, c], sigma=1.5)
+            else:
+                seam_region = gaussian_filter(seam_region, sigma=1.5)
+            
+            result[y_seam-blend_width:y_seam+blend_width, :] = seam_region
+    
+    # Blend vertical seams
+    for x_orig in x_positions[:-1]:
+        x_seam = (x_orig + 1) * scale_factor
+        if x_seam - blend_width > 0 and x_seam + blend_width < result.shape[1]:
+            # Create blend region around seam
+            seam_region = result[:, x_seam-blend_width:x_seam+blend_width].copy()
+            
+            # Apply Gaussian blur for smooth blending
+            if len(seam_region.shape) == 3:
+                for c in range(seam_region.shape[2]):
+                    seam_region[:, :, c] = gaussian_filter(seam_region[:, :, c], sigma=1.5)
+            else:
+                seam_region = gaussian_filter(seam_region, sigma=1.5)
+            
+            result[:, x_seam-blend_width:x_seam+blend_width] = seam_region
+    
+    return np.clip(result, 0, 255).astype(np.uint8)
 
 
 def detect_faces_mediapipe(image_np, face_detector):

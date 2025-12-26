@@ -31,7 +31,8 @@ from utility import (
     is_flat_or_smooth_block,
     enforce_upscaler_ratio,
     restore_faces_in_upscaled_image,
-    upscale_block_wrapper 
+    upscale_block_wrapper ,
+    blend_block_seams
     )
 from utility import UPSCALE_FACTOR, MAX_CONCURRENT_UPSCALES, generate_lock, upscale_stats
 from transformers import AutoFeatureExtractor
@@ -391,6 +392,10 @@ def generate(request: ImageRequest, _auth: bool = Depends(verify_enter_token)):
                 upscaled_blocks, block_positions, edge_regions, 
                 image_np.shape[:2], BLOCK_SIZE, UPSCALE_FACTOR
             )
+
+            # Blend seams to smooth block transitions
+            logger.info("Blending block seams...")
+            upscaled_image = blend_block_seams(upscaled_image, upscaled_blocks, block_positions, BLOCK_SIZE, UPSCALE_FACTOR)
             logger.info(f"Block stitching took {time.time() - stitch_start:.2f}s")
             logger.info(f"Stitched result: {upscaled_image.shape}")
             

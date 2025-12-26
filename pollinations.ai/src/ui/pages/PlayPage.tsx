@@ -24,7 +24,12 @@ function PlayPage() {
 
     // Auth state - dynamic API key based on login status
     const { apiKey, isLoggedIn, login, logout } = useAuth();
-    const { imageModels, textModels } = useModelList(apiKey);
+    const {
+        imageModels,
+        textModels,
+        allowedImageModelIds,
+        allowedTextModelIds,
+    } = useModelList(apiKey);
 
     // Get page copy from preset
     const { presetCopy } = useTheme();
@@ -95,7 +100,8 @@ function PlayPage() {
                     models={allModels}
                     selectedModel={selectedModel}
                     onSelectModel={setSelectedModel}
-                    isLoggedIn={isLoggedIn}
+                    allowedImageModelIds={allowedImageModelIds}
+                    allowedTextModelIds={allowedTextModelIds}
                 />
 
                 {/* Prompt - Independent of view state */}

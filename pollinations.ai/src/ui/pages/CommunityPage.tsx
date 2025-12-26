@@ -1,3 +1,5 @@
+import { useEffect, useState } from "react";
+import { processCopy } from "../../copy";
 import { COMMUNITY_PAGE } from "../../copy/content/community";
 import { LINKS, SOCIAL_LINKS } from "../../copy/content/socialLinks";
 import { ExternalLinkIcon } from "../assets/ExternalLinkIcon";
@@ -19,11 +21,112 @@ interface VotingIssue {
     votes: number;
 }
 
+interface Supporter {
+    name: string;
+    url: string;
+    description: string;
+}
+
 export default function CommunityPage() {
-    const { processedCopy } = useCopy();
+    const { processedCopy, language, variationSeed } = useCopy();
     const pageCopy = (
         processedCopy?.newsFilePath ? processedCopy : COMMUNITY_PAGE
     ) as typeof COMMUNITY_PAGE;
+
+    const [translatedSupporters, setTranslatedSupporters] = useState<
+        Supporter[]
+    >(COMMUNITY_PAGE.supportersList);
+    const [translatedVotingIssues, setTranslatedVotingIssues] = useState<
+        VotingIssue[]
+    >(COMMUNITY_PAGE.votingIssues as VotingIssue[]);
+
+    // Translate voting issue titles when language changes
+    useEffect(() => {
+        if (language === "en") {
+            setTranslatedVotingIssues(
+                COMMUNITY_PAGE.votingIssues as VotingIssue[],
+            );
+            return;
+        }
+
+        const controller = new AbortController();
+
+        async function translateVotingIssues() {
+            try {
+                const items = (
+                    COMMUNITY_PAGE.votingIssues as VotingIssue[]
+                ).map((issue, i) => ({
+                    id: `issue-${i}`,
+                    text: issue.title,
+                    mode: "translate" as const,
+                }));
+
+                const processed = await processCopy(
+                    items,
+                    language,
+                    variationSeed,
+                    controller.signal,
+                );
+
+                const translated = (
+                    COMMUNITY_PAGE.votingIssues as VotingIssue[]
+                ).map((issue, i) => ({
+                    ...issue,
+                    title: processed[i]?.text || issue.title,
+                }));
+
+                setTranslatedVotingIssues(translated);
+            } catch (err) {
+                if (err instanceof Error && err.name === "AbortError") return;
+                console.error("Error translating voting issues:", err);
+            }
+        }
+
+        translateVotingIssues();
+        return () => controller.abort();
+    }, [language, variationSeed]);
+
+    // Translate supporter descriptions when language changes
+    useEffect(() => {
+        if (language === "en") {
+            setTranslatedSupporters(COMMUNITY_PAGE.supportersList);
+            return;
+        }
+
+        const controller = new AbortController();
+
+        async function translateSupporters() {
+            try {
+                const items = COMMUNITY_PAGE.supportersList.map((s, i) => ({
+                    id: `supporter-${i}`,
+                    text: s.description,
+                    mode: "translate" as const,
+                }));
+
+                const processed = await processCopy(
+                    items,
+                    language,
+                    variationSeed,
+                    controller.signal,
+                );
+
+                const translated = COMMUNITY_PAGE.supportersList.map(
+                    (s, i) => ({
+                        ...s,
+                        description: processed[i]?.text || s.description,
+                    }),
+                );
+
+                setTranslatedSupporters(translated);
+            } catch (err) {
+                if (err instanceof Error && err.name === "AbortError") return;
+                console.error("Error translating supporters:", err);
+            }
+        }
+
+        translateSupporters();
+        return () => controller.abort();
+    }, [language, variationSeed]);
 
     return (
         <PageContainer>
@@ -63,7 +166,7 @@ export default function CommunityPage() {
                                 variant="secondary"
                                 size="default"
                             >
-                                🧪 #pollen-beta
+                                {pageCopy.pollenBetaButton.text}
                                 <ExternalLinkIcon className="w-3 h-3 text-text-body-main" />
                             </Button>
                         </div>
@@ -86,7 +189,7 @@ export default function CommunityPage() {
                                 variant="primary"
                                 size="default"
                             >
-                                ⭐ Star & Contribute
+                                {pageCopy.starContributeButton.text}
                                 <ExternalLinkIcon className="w-3 h-3 stroke-text-highlight" />
                             </Button>
                             <Button
@@ -97,7 +200,7 @@ export default function CommunityPage() {
                                 variant="secondary"
                                 size="default"
                             >
-                                🚀 Submit App
+                                {pageCopy.submitAppButton.text}
                                 <ExternalLinkIcon className="w-3 h-3 text-text-body-main" />
                             </Button>
                         </div>
@@ -117,31 +220,29 @@ export default function CommunityPage() {
                             "We build what the community wants. Vote on what matters to you:"}
                     </Body>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                        {(COMMUNITY_PAGE.votingIssues as VotingIssue[])?.map(
-                            (issue) => (
-                                <a
-                                    key={issue.url}
-                                    href={issue.url}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="block bg-input-background p-4 rounded-sub-card border-l-4 border-border-brand hover:border-border-highlight transition-colors"
-                                >
-                                    <div className="flex flex-col gap-2">
-                                        <div className="flex items-center justify-between">
-                                            <span className="text-2xl">
-                                                {issue.emoji}
-                                            </span>
-                                            <span className="font-mono text-xs text-text-caption">
-                                                👍 {issue.votes}
-                                            </span>
-                                        </div>
-                                        <p className="font-headline text-sm font-black text-text-body-main">
-                                            {issue.title}
-                                        </p>
+                        {translatedVotingIssues.map((issue) => (
+                            <a
+                                key={issue.url}
+                                href={issue.url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="block bg-input-background p-4 rounded-sub-card border-l-4 border-border-brand hover:border-border-highlight transition-colors"
+                            >
+                                <div className="flex flex-col gap-2">
+                                    <div className="flex items-center justify-between">
+                                        <span className="text-2xl">
+                                            {issue.emoji}
+                                        </span>
+                                        <span className="font-mono text-xs text-text-caption">
+                                            👍 {issue.votes}
+                                        </span>
                                     </div>
-                                </a>
-                            )
-                        )}
+                                    <p className="font-headline text-sm font-black text-text-body-main">
+                                        {issue.title}
+                                    </p>
+                                </div>
+                            </a>
+                        ))}
                     </div>
                 </div>
 
@@ -163,7 +264,7 @@ export default function CommunityPage() {
                         {pageCopy.supportersSubtitle.text}
                     </Body>
                     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-                        {COMMUNITY_PAGE.supportersList.map((supporter) => (
+                        {translatedSupporters.map((supporter) => (
                             <a
                                 key={supporter.name}
                                 href={supporter.url}

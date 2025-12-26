@@ -46,6 +46,21 @@ export const COMMUNITY_PAGE = {
         translate: true,
     },
 
+    pollenBetaButton: {
+        text: "🧪 #pollen-beta",
+        translate: true,
+    },
+
+    starContributeButton: {
+        text: "⭐ Star & Contribute",
+        translate: true,
+    },
+
+    submitAppButton: {
+        text: "🚀 Submit App",
+        translate: true,
+    },
+
     contributeButton: {
         text: "Contribute",
         translate: true,
@@ -164,6 +179,32 @@ export const COMMUNITY_PAGE = {
         "Brutalist logo design with bold geometric shapes, heavy lines, stark contrast, raw minimalist aesthetic, transparent background (no background), flat design style. Company:",
     supporterLogoSeed: 1,
     supporterLogoModel: "nanobanana",
+
+    // Top Contributors section
+    topContributorsTitle: {
+        text: "Most Active Contributors",
+        translate: true,
+    },
+    topContributorsDescription: {
+        text: "Meet the most active contributors to the pollinations.ai",
+        translate: true,
+    },
+    githubRepositoryLink: {
+        text: "GitHub repository",
+        translate: true,
+    },
+    overThePastYear: {
+        text: "over the past year.",
+        translate: true,
+    },
+    commitsLabel: {
+        text: "commits",
+        translate: true,
+    },
+    commitLabel: {
+        text: "commit",
+        translate: true,
+    },
 };
 
 // Translation config for news items

@@ -318,4 +318,22 @@ export const HELLO_PAGE = {
         text: "See Featured Apps",
         translate: true,
     },
+
+    // Badges
+    newBadge: {
+        text: "New",
+        translate: true,
+    },
+
+    // Section titles
+    whatsNewTitle: {
+        text: "What's New",
+        translate: true,
+    },
+
+    // Buttons
+    readTheDocsButton: {
+        text: "Read the Docs",
+        translate: true,
+    },
 };

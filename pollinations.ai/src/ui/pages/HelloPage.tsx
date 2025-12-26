@@ -60,7 +60,11 @@ function HelloPage() {
                 <Divider />
 
                 {/* What's New - Compact news feed */}
-                <NewsSection limit={5} compact title="What's New" />
+                <NewsSection
+                    limit={5}
+                    compact
+                    title={pageCopy.whatsNewTitle.text}
+                />
 
                 <Divider />
 
@@ -124,7 +128,9 @@ function HelloPage() {
                                 <Heading variant="rose" as="h3" spacing="tight">
                                     {pageCopy.earnCardTitle.text}
                                 </Heading>
-                                <Badge variant="highlight">New</Badge>
+                                <Badge variant="highlight">
+                                    {pageCopy.newBadge.text}
+                                </Badge>
                             </div>
                             <Body size="sm" spacing="comfortable">
                                 {pageCopy.earnCardDescription.text}
@@ -369,7 +375,7 @@ function HelloPage() {
                             variant="secondary"
                             size="lg"
                         >
-                            Read the Docs
+                            {pageCopy.readTheDocsButton.text}
                             <ExternalLinkIcon className="w-4 h-4 text-text-body-main" />
                         </Button>
                     </div>

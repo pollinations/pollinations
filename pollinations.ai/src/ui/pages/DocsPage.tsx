@@ -23,7 +23,7 @@ function DocsPage() {
 
     useEffect(() => {
         fetch(
-            "https://raw.githubusercontent.com/pollinations/pollinations/production/APIDOCS.md"
+            "https://raw.githubusercontent.com/pollinations/pollinations/production/APIDOCS.md",
         )
             .then((res) => res.text())
             .then(setAgentPrompt)

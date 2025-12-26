@@ -2,8 +2,8 @@ import { useEffect, useMemo, useState } from "react";
 import { processCopy } from "../../copy";
 import {
     APPS_PAGE,
-    appsFilePath,
     APPS_TRANSLATION_CONFIG,
+    appsFilePath,
     CATEGORIES,
 } from "../../copy/content/apps";
 import { LINKS } from "../../copy/content/socialLinks";
@@ -121,6 +121,8 @@ export default function AppsPage() {
     const [selectedCategory, setSelectedCategory] = useState("creative");
     const [translatedApps, setTranslatedApps] = useState<App[]>([]);
     const [isTranslatingApps, setIsTranslatingApps] = useState(false);
+    const [translatedCategories, setTranslatedCategories] =
+        useState(CATEGORIES);
 
     // Fetch apps from GitHub
     const { apps: allApps } = useApps(appsFilePath);
@@ -130,6 +132,49 @@ export default function AppsPage() {
     const pageCopy = (
         processedCopy?.subtitle ? processedCopy : APPS_PAGE
     ) as typeof APPS_PAGE;
+
+    // Translate category labels when language changes
+    useEffect(() => {
+        if (language === "en") {
+            setTranslatedCategories(CATEGORIES);
+            return;
+        }
+
+        const controller = new AbortController();
+
+        async function translateCategories() {
+            try {
+                const items = CATEGORIES.map((cat, i) => ({
+                    id: `cat-${i}`,
+                    text: cat.label.text,
+                    mode: "translate" as const,
+                }));
+
+                const processed = await processCopy(
+                    items,
+                    language,
+                    variationSeed,
+                    controller.signal,
+                );
+
+                const translated = CATEGORIES.map((cat, i) => ({
+                    ...cat,
+                    label: {
+                        ...cat.label,
+                        text: processed[i]?.text || cat.label.text,
+                    },
+                }));
+
+                setTranslatedCategories(translated);
+            } catch (err) {
+                if (err instanceof Error && err.name === "AbortError") return;
+                console.error("Error translating categories:", err);
+            }
+        }
+
+        translateCategories();
+        return () => controller.abort();
+    }, [language, variationSeed]);
 
     // Filter apps by category
     const filteredApps = useMemo(() => {
@@ -167,14 +212,14 @@ export default function AppsPage() {
                 }
 
                 console.log(
-                    `📱 [APPS] Translating ${items.length} descriptions to ${language}...`
+                    `📱 [APPS] Translating ${items.length} descriptions to ${language}...`,
                 );
 
                 const processed = await processCopy(
                     items,
                     language,
                     variationSeed,
-                    controller.signal
+                    controller.signal,
                 );
 
                 // Apply translations back
@@ -218,10 +263,10 @@ export default function AppsPage() {
                 <div className="flex items-center gap-4 p-4 mb-10 bg-surface-card rounded-sub-card border-l-4 border-border-highlight">
                     <div className="flex-1">
                         <p className="font-headline text-sm font-black text-text-body-main mb-1">
-                            🚀 Built something cool?
+                            {pageCopy.submitCtaTitle.text}
                         </p>
                         <p className="font-body text-xs text-text-body-secondary">
-                            Get featured in the showcase and earn Pollen!
+                            {pageCopy.submitCtaDescription.text}
                         </p>
                     </div>
                     <Button
@@ -232,14 +277,14 @@ export default function AppsPage() {
                         variant="primary"
                         size="default"
                     >
-                        ✨ Submit App
+                        {pageCopy.submitCtaButton.text}
                         <ExternalLinkIcon className="w-3 h-3 stroke-text-highlight" />
                     </Button>
                 </div>
 
                 {/* Category Filters */}
                 <div className="flex flex-wrap gap-2 mb-8">
-                    {CATEGORIES.map((cat) => (
+                    {translatedCategories.map((cat) => (
                         <Button
                             key={cat.id}
                             variant="toggle"
@@ -247,7 +292,7 @@ export default function AppsPage() {
                             onClick={() => setSelectedCategory(cat.id)}
                             className="px-4 py-2 text-sm"
                         >
-                            {cat.label}
+                            {cat.label.text}
                         </Button>
                     ))}
                 </div>
@@ -273,7 +318,7 @@ export default function AppsPage() {
                 {displayApps.length === 0 && (
                     <div className="text-center py-12">
                         <Body className="text-text-body-main">
-                            No apps found in this category yet.
+                            {pageCopy.noAppsMessage.text}
                         </Body>
                     </div>
                 )}

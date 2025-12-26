@@ -63,14 +63,14 @@ export const DOCS_PAGE = {
         translate: true,
     },
 
-    // Image prompts array
+    // Image prompts array (translatable)
     imagePrompts: [
-        "a blooming flower in golden hour",
-        "bees pollinating wildflowers",
-        "organic mycelium network patterns",
-        "harmonious forest ecosystem",
-        "symbiotic nature interactions",
-        "flowing river through biosphere",
+        { text: "a blooming flower in golden hour", translate: true },
+        { text: "bees pollinating wildflowers", translate: true },
+        { text: "organic mycelium network patterns", translate: true },
+        { text: "harmonious forest ecosystem", translate: true },
+        { text: "symbiotic nature interactions", translate: true },
+        { text: "flowing river through biosphere", translate: true },
     ],
 
     // Image parameters (from API docs)
@@ -121,12 +121,12 @@ export const DOCS_PAGE = {
         translate: true,
     },
 
-    // Text prompts array
+    // Text prompts array (translatable)
     textPrompts: [
-        "explain pollinations.ai",
-        "write a poem about nature",
-        "describe ecosystem harmony",
-        "explain symbiosis",
+        { text: "explain pollinations.ai", translate: true },
+        { text: "write a poem about nature", translate: true },
+        { text: "describe ecosystem harmony", translate: true },
+        { text: "explain symbiosis", translate: true },
     ],
 
     // Text parameters (from API docs)

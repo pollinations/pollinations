@@ -119,4 +119,77 @@ export const PLAY_PAGE = {
         text: "Generate Text",
         translate: true,
     },
+
+    generateAudioButton: {
+        text: "Generate Audio",
+        translate: true,
+    },
+
+    // Tooltips
+    seedTooltip: {
+        text: "Same seed + same prompt = same image",
+        translate: true,
+    },
+    enhanceTooltip: {
+        text: "AI improves your prompt for better results",
+        translate: true,
+    },
+
+    // Model selector
+    audioLabel: {
+        text: "Audio",
+        translate: true,
+    },
+    videoLabel: {
+        text: "Video",
+        translate: true,
+    },
+
+    // Image feed
+    waitingForContent: {
+        text: "Waiting for content...",
+        translate: true,
+    },
+    listeningTo: {
+        text: "Listening to",
+        translate: true,
+    },
+
+    // Auth
+    loginButton: {
+        text: "Login",
+        translate: true,
+    },
+    logoutButton: {
+        text: "Logout",
+        translate: true,
+    },
+
+    // Validation
+    enterPromptFirst: {
+        text: "First, enter a prompt",
+        translate: true,
+    },
+
+    // Gated model tooltip
+    gatedModelTooltip: {
+        text: "To test this model, log in to enter.pollinations.ai",
+        translate: true,
+    },
+
+    // Reference images
+    imageUrlPlaceholder: {
+        text: "Image URL",
+        translate: true,
+    },
+
+    // Error messages
+    somethingWentWrong: {
+        text: "Something went wrong",
+        translate: true,
+    },
+    noResponse: {
+        text: "No response",
+        translate: true,
+    },
 };

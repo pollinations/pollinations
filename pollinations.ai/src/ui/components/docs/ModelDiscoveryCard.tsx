@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
-import { DOCS_PAGE } from "../../../theme";
+import { DOCS_PAGE } from "../../../copy/content/docs";
+import { useCopy } from "../../contexts/CopyContext";
 import { Button } from "../ui/button";
 import { Heading, Label } from "../ui/typography";
 
@@ -8,20 +9,26 @@ import { Heading, Label } from "../ui/typography";
  * Displays available models from different endpoints
  */
 export function ModelDiscoveryCard() {
-    const apiBase = `https://${DOCS_PAGE.apiBaseUrl.text}`;
+    // Get translated copy
+    const { processedCopy } = useCopy();
+    const copy = (
+        processedCopy?.modelDiscoveryTitle ? processedCopy : DOCS_PAGE
+    ) as typeof DOCS_PAGE;
+
+    const apiBase = `https://${copy.apiBaseUrl.text}`;
     const modelEndpoints = {
         image: {
-            label: DOCS_PAGE.imageTypeLabel.text,
+            label: copy.imageTypeLabel.text,
             url: `${apiBase}/image/models`,
             path: "/image/models",
         },
         text: {
-            label: DOCS_PAGE.textTypeLabel.text,
+            label: copy.textTypeLabel.text,
             url: `${apiBase}/text/models`,
             path: "/text/models",
         },
         openai: {
-            label: DOCS_PAGE.textOpenAITypeLabel.text,
+            label: copy.textOpenAITypeLabel.text,
             url: `${apiBase}/v1/models`,
             path: "/v1/models",
         },
@@ -29,7 +36,7 @@ export function ModelDiscoveryCard() {
 
     const [selectedModel, setSelectedModel] =
         useState<keyof typeof modelEndpoints>("image");
-    const [modelsData, setModelsData] = useState<any>(null);
+    const [modelsData, setModelsData] = useState<unknown>(null);
     const [isLoading, setIsLoading] = useState(false);
     const currentEndpoint = modelEndpoints[selectedModel];
 
@@ -53,9 +60,7 @@ export function ModelDiscoveryCard() {
 
     return (
         <div>
-            <Heading variant="section">
-                {DOCS_PAGE.modelDiscoveryTitle.text}
-            </Heading>
+            <Heading variant="section">{copy.modelDiscoveryTitle.text}</Heading>
 
             {/* Model Type Selection and Output - Side by Side */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
@@ -63,7 +68,7 @@ export function ModelDiscoveryCard() {
                 <div className="space-y-4">
                     {/* Model Type Selection */}
                     <div>
-                        <Label>{DOCS_PAGE.selectTypeLabel.text}</Label>
+                        <Label>{copy.selectTypeLabel.text}</Label>
                         <div className="flex flex-wrap gap-2">
                             {Object.entries(modelEndpoints).map(
                                 ([key, { label }]) => (
@@ -72,7 +77,7 @@ export function ModelDiscoveryCard() {
                                         type="button"
                                         onClick={() =>
                                             setSelectedModel(
-                                                key as keyof typeof modelEndpoints,
+                                                key as keyof typeof modelEndpoints
                                             )
                                         }
                                         className={`px-3 py-1.5 font-mono text-xs border-2 transition-all cursor-pointer ${
@@ -83,7 +88,7 @@ export function ModelDiscoveryCard() {
                                     >
                                         {label}
                                     </button>
-                                ),
+                                )
                             )}
                         </div>
                     </div>
@@ -91,7 +96,7 @@ export function ModelDiscoveryCard() {
                     {/* URL Display */}
                     <div className="p-3 bg-input-background font-mono text-xs text-text-body-main break-all">
                         <span className="text-text-caption">
-                            https://{DOCS_PAGE.apiBaseUrl.text}
+                            https://{copy.apiBaseUrl.text}
                         </span>
                         <span className="bg-indicator-text px-1 font-black text-text-inverse">
                             {currentEndpoint.path}
@@ -107,7 +112,7 @@ export function ModelDiscoveryCard() {
                         variant="copy"
                         size={null}
                     >
-                        {DOCS_PAGE.copyUrlButton.text}
+                        {copy.copyUrlButton.text}
                     </Button>
                 </div>
 
@@ -115,7 +120,7 @@ export function ModelDiscoveryCard() {
                 <div className="bg-surface-card p-3 font-mono text-xs text-text-body-main h-48 overflow-auto scrollbar-hide">
                     {isLoading ? (
                         <div className="text-text-caption">
-                            {DOCS_PAGE.loadingModelsLabel.text}
+                            {copy.loadingModelsLabel.text}
                         </div>
                     ) : modelsData ? (
                         <pre className="whitespace-pre-wrap break-words">

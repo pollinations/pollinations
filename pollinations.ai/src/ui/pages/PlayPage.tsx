@@ -85,7 +85,9 @@ function PlayPage() {
                             variant="secondary"
                             size="sm"
                         >
-                            {isLoggedIn ? "Logout" : "Login"}
+                            {isLoggedIn
+                                ? pageCopy.logoutButton.text
+                                : pageCopy.loginButton.text}
                         </Button>
                     </div>
                 </div>
@@ -108,11 +110,15 @@ function PlayPage() {
 
                 {/* Prompt - Independent of view state */}
                 <div className="mb-6">
-                    <label className="block font-headline text-text-body-main mb-2 uppercase text-xs tracking-wider font-black">
+                    <label
+                        htmlFor="prompt-input"
+                        className="block font-headline text-text-body-main mb-2 uppercase text-xs tracking-wider font-black"
+                    >
                         {pageCopy.promptLabel.text}
                     </label>
                     {view === "play" ? (
                         <textarea
+                            id="prompt-input"
                             value={prompt}
                             onChange={(e) => setPrompt(e.target.value)}
                             placeholder={PLAY_PAGE.imagePlaceholder.text}

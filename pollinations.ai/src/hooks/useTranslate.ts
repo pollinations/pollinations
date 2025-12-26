@@ -2,9 +2,6 @@ import { useEffect, useState } from "react";
 import { processCopy } from "../copy";
 import { useCopy } from "../ui/contexts/CopyContext";
 
-// Fixed seed for translate mode - enables caching (no variation needed for literal translation)
-const TRANSLATE_SEED = 1;
-
 /**
  * Hook to translate an array of items by field name
  *
@@ -39,7 +36,7 @@ export function useTranslate<T, K extends keyof T>(
             mode: "translate" as const,
         }));
 
-        processCopy(copyItems, language, TRANSLATE_SEED)
+        processCopy(copyItems, language)
             .then((processed) => {
                 const result = items.map((item, i) => ({
                     ...item,

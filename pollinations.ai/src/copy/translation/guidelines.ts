@@ -1,6 +1,5 @@
 /**
  * Copy Processing Guidelines
- * Single unified guideline handles both translate and transform modes
  */
 
 export const COPY_GUIDELINES = `You are a native-speaking copywriter translating for pollinations.ai.
@@ -22,11 +21,6 @@ RULES:
 4. Keep technical terms in English if commonly used that way (API, SDK, etc.).
 5. The translation must flow naturally - if a direct translation sounds awkward, rewrite it idiomatically.
 6. Match the casual, friendly, developer-focused tone of the original.
-
-VARIATION_SEED (for transform items only):
-- Seed 1: Closest to original, minimal creative changes
-- Seed 3: Moderate rephrasing  
-- Seed 5: Most creative, fresh perspective
 
 INPUT FORMAT:
 [{ "id": "...", "text": "...", "mode": "translate|transform" }, ...]

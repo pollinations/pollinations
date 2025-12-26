@@ -34,7 +34,6 @@ const PAGE_COPY: Record<string, Record<string, unknown>> = {
 interface CopyContextValue {
     language: string;
     languageOverride: "auto" | "en";
-    variationSeed: number;
     isProcessing: boolean;
     currentPage: string;
     processedCopy: Record<string, unknown> | null;
@@ -73,9 +72,6 @@ export function CopyProvider({ children }: { children: ReactNode }) {
         unknown
     > | null>(null);
 
-    // Fixed seed for caching - variation can be re-added later
-    const variationSeed = 1;
-
     // Calculate effective language
     const language = languageOverride === "en" ? "en" : getBrowserLanguage();
 
@@ -107,7 +103,7 @@ export function CopyProvider({ children }: { children: ReactNode }) {
             return;
         }
 
-        processCopy(items, language, variationSeed)
+        processCopy(items, language)
             .then((processed) => {
                 applyTranslations(processed, pointers);
                 setProcessedCopy(copyClone);
@@ -121,7 +117,6 @@ export function CopyProvider({ children }: { children: ReactNode }) {
             value={{
                 language,
                 languageOverride,
-                variationSeed,
                 isProcessing,
                 currentPage,
                 processedCopy,

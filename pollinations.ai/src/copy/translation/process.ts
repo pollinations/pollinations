@@ -67,12 +67,10 @@ export function extractCopyItems(root: Record<string, unknown>): {
  *
  * @param items - Copy items to process
  * @param targetLanguage - Target language code (e.g., "en", "zh", "es")
- * @param variationSeed - Seed 1-5 for transform variation (affects caching)
  */
 export async function processCopy(
     items: CopyItem[],
     targetLanguage: string,
-    variationSeed: number = 1,
 ): Promise<CopyItem[]> {
     if (items.length === 0) {
         return items;
@@ -91,7 +89,6 @@ export async function processCopy(
     const prompt = `${COPY_GUIDELINES}
 
 TARGET_LANGUAGE: "${targetLanguage}"
-VARIATION_SEED: ${variationSeed}
 
 INPUT JSON:
 ${JSON.stringify(items, null, 2)}
@@ -99,10 +96,10 @@ ${JSON.stringify(items, null, 2)}
 Process all items now:`;
 
     console.log(
-        `📝 [COPY] Processing ${items.length} items (${translateCount} translate, ${transformCount} transform) → ${targetLanguage}, seed ${variationSeed}`,
+        `📝 [COPY] Processing ${items.length} items (${translateCount} translate, ${transformCount} transform) → ${targetLanguage}`,
     );
 
-    const response = await generateText(prompt, variationSeed);
+    const response = await generateText(prompt);
 
     const result = parseJsonResponse(response, items);
     console.log(`✅ [COPY] Done`);

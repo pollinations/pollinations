@@ -1,6 +1,6 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { processCopy } from "../copy/translation/process";
-import { getBrowserLanguage } from "../ui/contexts/CopyContext";
+import { getBrowserLanguage } from "../utils";
 
 /**
  * Hook to translate an array of items by field name

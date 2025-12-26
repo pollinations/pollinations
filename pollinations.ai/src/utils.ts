@@ -6,6 +6,14 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 /**
+ * Get browser language code (e.g., "en", "zh", "es")
+ */
+export function getBrowserLanguage(): string {
+    const lang = navigator.language.split("-")[0];
+    return lang || "en";
+}
+
+/**
  * Wraps an async function to deduplicate concurrent calls with the same key.
  * While a promise is pending, subsequent calls with the same key return the same promise.
  */

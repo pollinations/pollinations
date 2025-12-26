@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { processCopy } from "../copy/translation/process";
-import { getBrowserLanguage } from "../ui/contexts/CopyContext";
+import { getBrowserLanguage } from "../utils";
 
 /**
  * Hook to translate a page's copy based on current language

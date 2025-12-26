@@ -3,9 +3,9 @@
  * Combines prompt assembly + API calls for background generation
  */
 
-import { BACKGROUND_GUIDELINES } from "../animator";
 import { generateText } from "../../../services/pollinationsAPI";
-import { THEME_MODELS } from "../../models";
+import { THEME_CONFIG } from "../../config";
+import { BACKGROUND_GUIDELINES } from "../animator";
 
 export async function generateBackground(
     themePrompt: string,
@@ -17,12 +17,12 @@ export async function generateBackground(
     );
 
     console.log(
-        `🎬 [ANIMATOR] → Generating WebGL background... (model: ${THEME_MODELS.animator})`,
+        `🎬 [ANIMATOR] → Generating WebGL background... (model: ${THEME_CONFIG.models.animator})`,
     );
     const html = await generateText(
         fullPrompt,
-        42,
-        THEME_MODELS.animator,
+        Math.floor(Math.random() * THEME_CONFIG.maxSeed) + 1,
+        THEME_CONFIG.models.animator,
         signal,
     );
 

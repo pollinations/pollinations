@@ -1,18 +1,16 @@
-// Re-export all content APIs
-export * from "./copy/hello";
-export * from "./copy/docs";
-export * from "./copy/community";
-export * from "./copy/play";
-export * from "./copy/apps";
+// Re-export all content APIs from new location
 
-// Re-export AI generation utilities
-// Note: Prompts (edited frequently) at top level, helpers (stable logic) in subfolder
-export * from "./guidelines/copywriter";
-export * from "./guidelines/designer";
-export * from "./guidelines/illustrator";
+export * from "../copy/content/apps";
+export * from "../copy/content/community";
+export * from "../copy/content/docs";
+export * from "../copy/content/hello";
+export * from "../copy/content/play";
+export * from "./buildPrompts";
 export * from "./guidelines/animator";
-export * from "./guidelines/helpers/copywriter";
+// Re-export AI generation utilities
+// Note: Copy/translation has moved to /src/copy/
+export * from "./guidelines/designer";
+export * from "./guidelines/helpers/animator";
 export * from "./guidelines/helpers/designer";
 export * from "./guidelines/helpers/illustrator";
-export * from "./guidelines/helpers/animator";
-export * from "./buildPrompts";
+export * from "./guidelines/illustrator";

@@ -3,9 +3,9 @@
  * Pure logic - logo generation function
  */
 
-import { assembleLogoPrompt } from "../../buildPrompts";
 import { generateImage } from "../../../services/pollinationsAPI";
-import { THEME_MODELS } from "../../models";
+import { assembleLogoPrompt } from "../../buildPrompts";
+import { THEME_CONFIG } from "../../config";
 
 // ==============================================
 // TYPE DEFINITIONS
@@ -35,7 +35,7 @@ export async function generateSupporterLogo(
         themeDescription,
         width = 128,
         height = 128,
-        seed = 42,
+        seed = Math.floor(Math.random() * THEME_CONFIG.maxSeed) + 1,
     } = options;
 
     // Assemble the prompt using the drawing guidelines
@@ -48,7 +48,7 @@ export async function generateSupporterLogo(
             width,
             height,
             seed,
-            model: THEME_MODELS.illustrator,
+            model: THEME_CONFIG.models.illustrator,
             nologo: true,
         },
         signal,

@@ -9,7 +9,6 @@ interface ImageGeneratorProps
     height?: number;
     seed?: number;
     model?: string;
-    nologo?: boolean;
     alt?: string;
     className?: string;
 }
@@ -20,14 +19,13 @@ export function ImageGenerator({
     height = DEFAULTS.IMAGE_HEIGHT,
     seed = DEFAULTS.SEED,
     model = DEFAULTS.IMAGE_MODEL,
-    nologo = true,
     alt = "Generated image",
     className = "",
     ...props
 }: ImageGeneratorProps) {
     const [imageUrl, setImageUrl] = useState<string | null>(null);
     const [loading, setLoading] = useState(false);
-    const [error, setError] = useState<any>(null);
+    const [error, setError] = useState<Error | null>(null);
 
     useEffect(() => {
         if (!prompt) return;
@@ -35,11 +33,11 @@ export function ImageGenerator({
         setLoading(true);
         setError(null);
 
-        generateImage(prompt, { width, height, seed, model, nologo })
+        generateImage(prompt, { width, height, seed, model })
             .then(setImageUrl)
             .catch(setError)
             .finally(() => setLoading(false));
-    }, [prompt, width, height, seed, model, nologo]);
+    }, [prompt, width, height, seed, model]);
 
     if (loading) {
         return (

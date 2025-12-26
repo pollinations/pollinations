@@ -34,6 +34,5 @@ export async function generateSupporterLogo(
         height,
         seed,
         model: "nanobanana",
-        nologo: true,
     });
 }

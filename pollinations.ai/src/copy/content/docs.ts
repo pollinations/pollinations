@@ -87,11 +87,6 @@ export const DOCS_PAGE = {
             value: "true",
             description: "Let AI improve your prompt",
         },
-        {
-            key: "nologo",
-            value: "true",
-            description: "Remove pollinations.ai watermark",
-        },
         { key: "safe", value: "true", description: "Enable safety filters" },
         {
             key: "private",

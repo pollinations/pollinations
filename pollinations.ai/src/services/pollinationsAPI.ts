@@ -39,7 +39,6 @@ export async function generateImage(
         height?: number;
         seed?: number;
         model?: string;
-        nologo?: boolean;
     } = {},
 ): Promise<string> {
     const {
@@ -47,7 +46,6 @@ export async function generateImage(
         height = DEFAULTS.IMAGE_HEIGHT,
         seed = DEFAULTS.SEED,
         model = DEFAULTS.IMAGE_MODEL,
-        nologo = true,
     } = options;
 
     const baseUrl = `${API.IMAGE_GENERATION}/${encodeURIComponent(prompt)}`;
@@ -56,7 +54,6 @@ export async function generateImage(
         width: width?.toString() || "",
         height: height?.toString() || "",
         seed: seed?.toString() || "",
-        nologo: nologo.toString(),
     });
     const url = `${baseUrl}?${params.toString()}`;
 

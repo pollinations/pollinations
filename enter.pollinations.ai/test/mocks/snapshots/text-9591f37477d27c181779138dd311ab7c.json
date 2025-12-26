@@ -1,0 +1,83 @@
+{
+  "request": {
+    "url": "http://ec2-3-80-56-235.compute-1.amazonaws.com:16385/openai",
+    "method": "POST",
+    "body": {
+      "type": "json",
+      "data": {
+        "model": "claude",
+        "messages": [
+          {
+            "role": "user",
+            "content": [
+              {
+                "type": "text",
+                "text": "Describe this image in one word."
+              },
+              {
+                "type": "image_url",
+                "image_url": {
+                  "url": "https://picsum.photos/id/237/200/300"
+                }
+              }
+            ]
+          }
+        ],
+        "max_tokens": 50
+      }
+    },
+    "params": {}
+  },
+  "response": {
+    "status": 200,
+    "statusText": "OK",
+    "headers": {
+      "access-control-allow-origin": "*",
+      "connection": "keep-alive",
+      "content-length": "442",
+      "content-type": "application/json; charset=utf-8",
+      "date": "Tue, 23 Dec 2025 14:29:39 GMT",
+      "etag": "W/\"1ba-ROafGE/L8nedQoULfjZ3qFk6rMw\"",
+      "keep-alive": "timeout=5",
+      "x-model-used": "us.anthropic.claude-sonnet-4-5-20250929-v1:0",
+      "x-powered-by": "Express",
+      "x-usage-completion-text-tokens": "6",
+      "x-usage-prompt-text-tokens": "376",
+      "x-usage-total-tokens": "382"
+    },
+    "body": {
+      "type": "json",
+      "data": {
+        "id": "pllns_b977683cb8c1b4a70e1035e23ba05aca",
+        "object": "chat.completion",
+        "created": 1766500179,
+        "model": "us.anthropic.claude-sonnet-4-5-20250929-v1:0",
+        "provider": "bedrock",
+        "choices": [
+          {
+            "index": 0,
+            "message": {
+              "role": "assistant",
+              "content": "Adorable",
+              "content_blocks": [
+                {
+                  "type": "text",
+                  "text": "Adorable"
+                }
+              ]
+            },
+            "finish_reason": "end_turn"
+          }
+        ],
+        "usage": {
+          "prompt_tokens": 376,
+          "completion_tokens": 6,
+          "total_tokens": 382,
+          "prompt_tokens_details": {
+            "cached_tokens": 0
+          }
+        }
+      }
+    }
+  }
+}

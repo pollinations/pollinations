@@ -120,6 +120,10 @@ describe("POST /generate/v1/chat/completions (authenticated)", async () => {
                 expect(event.tokenCountCompletionText).toBeGreaterThan(0);
                 expect(event.totalCost).toBeGreaterThan(0);
                 expect(event.totalPrice).toBeGreaterThanOrEqual(0);
+                // Regression test: selectedMeterSlug must be captured AFTER next()
+                // If this is null, balanceTracking was captured before the balance check middleware ran
+                expect(event.selectedMeterSlug).toBeDefined();
+                expect(event.selectedMeterSlug).not.toBeNull();
             });
         },
     );
@@ -172,6 +176,9 @@ describe("POST /generate/v1/chat/completions (streaming)", async () => {
                 expect(event.tokenCountCompletionText).toBeGreaterThan(0);
                 expect(event.totalCost).toBeGreaterThan(0);
                 expect(event.totalPrice).toBeGreaterThanOrEqual(0);
+                // Regression test: selectedMeterSlug must be captured AFTER next()
+                expect(event.selectedMeterSlug).toBeDefined();
+                expect(event.selectedMeterSlug).not.toBeNull();
             });
         },
     );
@@ -218,6 +225,9 @@ describe("GET /text/:prompt", async () => {
                 expect(event.tokenCountCompletionText).toBeGreaterThan(0);
                 expect(event.totalCost).toBeGreaterThan(0);
                 expect(event.totalPrice).toBeGreaterThanOrEqual(0);
+                // Regression test: selectedMeterSlug must be captured AFTER next()
+                expect(event.selectedMeterSlug).toBeDefined();
+                expect(event.selectedMeterSlug).not.toBeNull();
             });
         },
     );
@@ -373,7 +383,7 @@ test(
                                 {
                                     type: "image_url",
                                     image_url: {
-                                        url: "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a7/Camponotus_flavomarginatus_ant.jpg/320px-Camponotus_flavomarginatus_ant.jpg",
+                                        url: "https://picsum.photos/id/237/200/300",
                                     },
                                 },
                             ],
@@ -878,3 +888,62 @@ describe("Model gating by API key permissions", async () => {
         },
     );
 });
+
+// Gemini tool schema sanitization test (Issue: Portkey Gateway #1473)
+// Tests that exclusiveMinimum/exclusiveMaximum are stripped before sending to Vertex AI
+test(
+    "Gemini should accept tools with exclusiveMinimum/exclusiveMaximum (sanitized)",
+    { timeout: 60000 },
+    async ({ apiKey, mocks }) => {
+        await mocks.enable("polar", "tinybird", "vcr");
+        const response = await SELF.fetch(
+            `http://localhost:3000/api/generate/v1/chat/completions`,
+            {
+                method: "POST",
+                headers: {
+                    "content-type": "application/json",
+                    "authorization": `Bearer ${apiKey}`,
+                },
+                body: JSON.stringify({
+                    model: "gemini",
+                    messages: [
+                        {
+                            role: "user",
+                            content: "What is 25% of 80? Use the calculator.",
+                        },
+                    ],
+                    tools: [
+                        {
+                            type: "function",
+                            function: {
+                                name: "calculator",
+                                description: "Calculate a percentage",
+                                parameters: {
+                                    type: "object",
+                                    properties: {
+                                        value: {
+                                            type: "number",
+                                            exclusiveMinimum: 0,
+                                            exclusiveMaximum: 1000,
+                                        },
+                                        percentage: {
+                                            type: "number",
+                                            minimum: 0,
+                                            maximum: 100,
+                                        },
+                                    },
+                                    required: ["value", "percentage"],
+                                },
+                            },
+                        },
+                    ],
+                    tool_choice: "auto",
+                    seed: testSeed(),
+                }),
+            },
+        );
+        // Should succeed - exclusiveMinimum/exclusiveMaximum are sanitized by text service
+        expect(response.status).toBe(200);
+        await response.text();
+    },
+);

@@ -186,22 +186,17 @@ export const TEXT_SERVICES = {
         isSpecialized: false,
     },
     "deepseek": {
-        aliases: [
-            "deepseek-v3",
-            "deepseek-v3.1",
-            "deepseek-reasoning",
-            "deepseek-r1-0528",
-        ],
-        modelId: "DeepSeek-V3.1",
+        aliases: ["deepseek-v3", "deepseek-reasoning"],
+        modelId: "deepseek-v3.2",
         provider: "azure",
         cost: [
             {
                 date: COST_START_DATE,
-                promptTextTokens: perMillion(1.25),
-                completionTextTokens: perMillion(5.0),
+                promptTextTokens: perMillion(0.58),
+                completionTextTokens: perMillion(1.68),
             },
         ],
-        description: "DeepSeek V3.1 - Advanced Reasoning & Coding",
+        description: "DeepSeek V3.2 - Efficient Reasoning & Agentic AI",
         inputModalities: ["text"],
         outputModalities: ["text"],
         tools: true,

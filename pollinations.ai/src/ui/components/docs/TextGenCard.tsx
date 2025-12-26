@@ -4,6 +4,7 @@ import { Button } from "../ui/button";
 import { DOCS_PAGE } from "../../../theme";
 import { API_BASE, API_KEY } from "../../../api.config";
 import { ALLOWED_TEXT_MODELS } from "../../../config/allowedModels";
+import { fetchWithRetry } from "../../../utils/fetchWithRetry";
 
 /**
  * Text Generation Card Component
@@ -70,14 +71,14 @@ export function TextGenCard() {
             setIsLoading(true);
             try {
                 const url = buildTextUrl();
-                const res = await fetch(url, {
+                const res = await fetchWithRetry(url, {
                     headers: { Authorization: `Bearer ${API_KEY}` },
                 });
                 const text = await res.text();
                 setResponse(text);
-                setIsLoading(false);
             } catch (error) {
                 console.error("Text fetch error:", error);
+            } finally {
                 setIsLoading(false);
             }
         };

@@ -206,8 +206,3 @@ export const COMMUNITY_PAGE = {
         translate: true,
     },
 };
-
-// Translation config for news items
-export const NEWS_TRANSLATION_CONFIG = {
-    content: "translate",
-} as const;

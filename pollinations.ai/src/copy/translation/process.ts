@@ -18,13 +18,6 @@ interface CopyItem {
 }
 
 /**
- * Get a random variation seed (1 to maxSeed)
- */
-export function getVariationSeed(): number {
-    return Math.floor(Math.random() * COPY_CONFIG.maxSeed) + 1;
-}
-
-/**
  * Extract all processable text from copy object
  * Finds items with translate: true OR transform: true
  */

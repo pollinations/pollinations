@@ -45,8 +45,3 @@ export const CATEGORIES = [
 // Path to APPS.md on GitHub (fetched at runtime)
 export const appsFilePath =
     "https://raw.githubusercontent.com/pollinations/pollinations/main/apps/APPS.md";
-
-// Translation config for app fields
-export const APPS_TRANSLATION_CONFIG = {
-    description: "translate",
-} as const;

@@ -9,6 +9,5 @@ export { COPY_GUIDELINES } from "./translation/guidelines";
 export {
     applyTranslations,
     extractCopyItems,
-    getVariationSeed,
     processCopy,
 } from "./translation/process";

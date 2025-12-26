@@ -1,13 +1,8 @@
-import { useEffect, useMemo, useState } from "react";
-import { processCopy } from "../../copy";
-import {
-    APPS_PAGE,
-    APPS_TRANSLATION_CONFIG,
-    appsFilePath,
-    CATEGORIES,
-} from "../../copy/content/apps";
+import { useMemo, useState } from "react";
+import { APPS_PAGE, appsFilePath, CATEGORIES } from "../../copy/content/apps";
 import { LINKS } from "../../copy/content/socialLinks";
 import { type App, useApps } from "../../hooks/useApps";
+import { useTranslate } from "../../hooks/useTranslate";
 import { ExternalLinkIcon } from "../assets/ExternalLinkIcon";
 import { GithubIcon } from "../assets/SocialIcons";
 import { Button } from "../components/ui/button";
@@ -119,98 +114,35 @@ function AppCard({ app }: AppCardProps) {
 
 export default function AppsPage() {
     const [selectedCategory, setSelectedCategory] = useState("creative");
-    const [translatedApps, setTranslatedApps] = useState<App[]>([]);
-    const [isTranslatingApps, setIsTranslatingApps] = useState(false);
-    const [translatedCategories, setTranslatedCategories] =
-        useState(CATEGORIES);
 
     // Fetch apps from GitHub
     const { apps: allApps } = useApps(appsFilePath);
 
     // Use processed copy if available, fall back to static
-    const { processedCopy, language, variationSeed } = useCopy();
+    const { processedCopy } = useCopy();
     const pageCopy = (
         processedCopy?.subtitle ? processedCopy : APPS_PAGE
     ) as typeof APPS_PAGE;
 
-    // Translate category labels when language changes
-    useEffect(() => {
-        if (language === "en") {
-            setTranslatedCategories(CATEGORIES);
-            return;
-        }
-
-        const items = CATEGORIES.map((cat, i) => ({
-            id: `cat-${i}`,
-            text: cat.label.text,
-            mode: "translate" as const,
-        }));
-
-        processCopy(items, language, variationSeed)
-            .then((processed) => {
-                const translated = CATEGORIES.map((cat, i) => ({
-                    ...cat,
-                    label: {
-                        ...cat.label,
-                        text: processed[i]?.text || cat.label.text,
-                    },
-                }));
-                setTranslatedCategories(translated);
-            })
-            .catch(console.error);
-    }, [language, variationSeed]);
+    // Translate category labels
+    const { translated: translatedCategories } = useTranslate(
+        CATEGORIES,
+        (cat) => cat.label.text,
+        (cat, text) => ({ ...cat, label: { ...cat.label, text } }),
+    );
 
     // Filter apps by category
     const filteredApps = useMemo(() => {
         return allApps.filter((app: App) => app.category === selectedCategory);
     }, [allApps, selectedCategory]);
 
-    // Translate app descriptions when category or language changes
-    useEffect(() => {
-        if (filteredApps.length === 0) return;
-
-        // If English, use original
-        if (language === "en") {
-            setTranslatedApps(filteredApps);
-            return;
-        }
-
-        const items = filteredApps
-            .filter((app) => app.description)
-            .map((app, i) => ({
-                id: `app-${i}`,
-                text: app.description,
-                mode: APPS_TRANSLATION_CONFIG.description,
-            }));
-
-        if (items.length === 0) {
-            setTranslatedApps(filteredApps);
-            return;
-        }
-
-        setIsTranslatingApps(true);
-
-        processCopy(items, language, variationSeed)
-            .then((processed) => {
-                let processedIndex = 0;
-                const translated = filteredApps.map((app) => {
-                    if (app.description) {
-                        const translatedDesc =
-                            processed[processedIndex]?.text || app.description;
-                        processedIndex++;
-                        return { ...app, description: translatedDesc };
-                    }
-                    return app;
-                });
-                setTranslatedApps(translated);
-            })
-            .catch(() => setTranslatedApps(filteredApps))
-            .finally(() => setIsTranslatingApps(false));
-    }, [filteredApps, language, variationSeed]);
-
-    // Use translated apps if available, otherwise original
-    const displayApps =
-        translatedApps.length > 0 ? translatedApps : filteredApps;
+    // Translate app descriptions
+    const { translated: displayApps, isTranslating: isTranslatingApps } =
+        useTranslate(
+            filteredApps,
+            (app) => app.description || "",
+            (app, description) => ({ ...app, description }),
+        );
 
     return (
         <PageContainer>

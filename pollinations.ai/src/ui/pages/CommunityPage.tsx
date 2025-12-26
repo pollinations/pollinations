@@ -1,7 +1,6 @@
-import { useEffect, useState } from "react";
-import { processCopy } from "../../copy";
 import { COMMUNITY_PAGE } from "../../copy/content/community";
 import { LINKS, SOCIAL_LINKS } from "../../copy/content/socialLinks";
+import { useTranslate } from "../../hooks/useTranslate";
 import { ExternalLinkIcon } from "../assets/ExternalLinkIcon";
 import { ImageGenerator } from "../components/ImageGenerator";
 import { NewsSection } from "../components/NewsSection";
@@ -21,80 +20,23 @@ interface VotingIssue {
     votes: number;
 }
 
-interface Supporter {
-    name: string;
-    url: string;
-    description: string;
-}
-
 export default function CommunityPage() {
-    const { processedCopy, language, variationSeed } = useCopy();
+    const { processedCopy } = useCopy();
     const pageCopy = (
         processedCopy?.newsFilePath ? processedCopy : COMMUNITY_PAGE
     ) as typeof COMMUNITY_PAGE;
 
-    const [translatedSupporters, setTranslatedSupporters] = useState<
-        Supporter[]
-    >(COMMUNITY_PAGE.supportersList);
-    const [translatedVotingIssues, setTranslatedVotingIssues] = useState<
-        VotingIssue[]
-    >(COMMUNITY_PAGE.votingIssues as VotingIssue[]);
+    const { translated: translatedVotingIssues } = useTranslate(
+        COMMUNITY_PAGE.votingIssues as VotingIssue[],
+        (issue) => issue.title,
+        (issue, title) => ({ ...issue, title }),
+    );
 
-    // Translate voting issue titles when language changes
-    useEffect(() => {
-        if (language === "en") {
-            setTranslatedVotingIssues(
-                COMMUNITY_PAGE.votingIssues as VotingIssue[],
-            );
-            return;
-        }
-
-        const items = (COMMUNITY_PAGE.votingIssues as VotingIssue[]).map(
-            (issue, i) => ({
-                id: `issue-${i}`,
-                text: issue.title,
-                mode: "translate" as const,
-            }),
-        );
-
-        processCopy(items, language, variationSeed)
-            .then((processed) => {
-                const translated = (
-                    COMMUNITY_PAGE.votingIssues as VotingIssue[]
-                ).map((issue, i) => ({
-                    ...issue,
-                    title: processed[i]?.text || issue.title,
-                }));
-                setTranslatedVotingIssues(translated);
-            })
-            .catch(console.error);
-    }, [language, variationSeed]);
-
-    // Translate supporter descriptions when language changes
-    useEffect(() => {
-        if (language === "en") {
-            setTranslatedSupporters(COMMUNITY_PAGE.supportersList);
-            return;
-        }
-
-        const items = COMMUNITY_PAGE.supportersList.map((s, i) => ({
-            id: `supporter-${i}`,
-            text: s.description,
-            mode: "translate" as const,
-        }));
-
-        processCopy(items, language, variationSeed)
-            .then((processed) => {
-                const translated = COMMUNITY_PAGE.supportersList.map(
-                    (s, i) => ({
-                        ...s,
-                        description: processed[i]?.text || s.description,
-                    }),
-                );
-                setTranslatedSupporters(translated);
-            })
-            .catch(console.error);
-    }, [language, variationSeed]);
+    const { translated: translatedSupporters } = useTranslate(
+        COMMUNITY_PAGE.supportersList,
+        (s) => s.description,
+        (s, description) => ({ ...s, description }),
+    );
 
     return (
         <PageContainer>

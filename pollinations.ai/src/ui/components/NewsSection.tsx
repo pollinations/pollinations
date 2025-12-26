@@ -1,12 +1,7 @@
-import { useEffect, useState } from "react";
 import ReactMarkdown from "react-markdown";
-import { processCopy } from "../../copy";
-import {
-    COMMUNITY_PAGE,
-    NEWS_TRANSLATION_CONFIG,
-} from "../../copy/content/community";
+import { COMMUNITY_PAGE } from "../../copy/content/community";
 import { useNews } from "../../hooks/useNews";
-import { useCopy } from "../contexts/CopyContext";
+import { useTranslate } from "../../hooks/useTranslate";
 import { Heading } from "./ui/typography";
 
 interface NewsSectionProps {
@@ -28,40 +23,16 @@ export function NewsSection({
     title = "What's New",
 }: NewsSectionProps) {
     const { news, loading } = useNews(COMMUNITY_PAGE.newsFilePath);
-    const { language, variationSeed } = useCopy();
-    const [translatedNews, setTranslatedNews] = useState<typeof news>([]);
 
-    // Translate news when language changes or news loads
-    useEffect(() => {
-        if (loading || news.length === 0) return;
-
-        // If English, use original
-        if (language === "en") {
-            setTranslatedNews(news);
-            return;
-        }
-
-        const items = news.map((item, i) => ({
-            id: `news-${i}`,
-            text: item.content,
-            mode: NEWS_TRANSLATION_CONFIG.content,
-        }));
-
-        processCopy(items, language, variationSeed)
-            .then((processed) => {
-                const translated = news.map((item, i) => ({
-                    ...item,
-                    content: processed[i]?.text || item.content,
-                }));
-                setTranslatedNews(translated);
-            })
-            .catch(() => setTranslatedNews(news)); // Fallback to original
-    }, [news, language, variationSeed, loading]);
+    const { translated: translatedNews } = useTranslate(
+        news,
+        (item) => item.content,
+        (item, content) => ({ ...item, content }),
+    );
 
     if (loading || news.length === 0) return null;
 
-    const newsToShow = translatedNews.length > 0 ? translatedNews : news;
-    const displayNews = limit ? newsToShow.slice(0, limit) : newsToShow;
+    const displayNews = limit ? translatedNews.slice(0, limit) : translatedNews;
 
     return (
         <div className={compact ? "mb-8" : "mb-12"}>

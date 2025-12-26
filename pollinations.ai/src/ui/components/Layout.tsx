@@ -1,13 +1,15 @@
+import { GlobeIcon } from "lucide-react";
+import { useCallback, useState } from "react";
 import { NavLink, Outlet } from "react-router-dom";
-import { useState, useCallback } from "react";
-import { Logo } from "./Logo";
-import { Button } from "./ui/button";
+import { SOCIAL_LINKS } from "../../copy/content/socialLinks";
 import { ExternalLinkIcon } from "../assets/ExternalLinkIcon";
-import { SOCIAL_LINKS } from "../../theme/copy/socialLinks";
-import { AIPromptInput } from "./theme/AIPromptInput";
-import { BackgroundRenderer } from "./BackgroundRenderer";
+import { useCopy } from "../contexts/CopyContext";
 import { useTheme } from "../contexts/ThemeContext";
+import { BackgroundRenderer } from "./BackgroundRenderer";
 import { BetaBanner } from "./BetaBanner";
+import { Logo } from "./Logo";
+import { AIPromptInput } from "./theme/AIPromptInput";
+import { Button } from "./ui/button";
 
 const tabs = [
     { path: "/", label: "Hello" },
@@ -27,6 +29,8 @@ function Layout() {
     const [isPromptOpen, setIsPromptOpen] = useState(false);
     const [isBannerVisible, setIsBannerVisible] = useState(false);
     const { backgroundHtml } = useTheme();
+    const { languageOverride, setLanguageOverride, isProcessing } = useCopy();
+    const isAutoMode = languageOverride === "auto";
 
     const handleBannerVisibilityChange = useCallback((visible: boolean) => {
         setIsBannerVisible(visible);
@@ -157,7 +161,7 @@ function Layout() {
                                             .filter(
                                                 ([key]) =>
                                                     key === "discord" ||
-                                                    key === "github"
+                                                    key === "github",
                                             )
                                             .map(
                                                 ([
@@ -177,23 +181,69 @@ function Layout() {
                                                     >
                                                         <Icon className="w-full h-full" />
                                                     </Button>
-                                                )
+                                                ),
                                             )}
 
-                                        {/* Enter Button */}
-                                        <Button
-                                            as="a"
-                                            href="https://enter.pollinations.ai"
-                                            target="_blank"
-                                            rel="noopener noreferrer"
-                                            variant="iconText"
-                                            size={null}
-                                        >
-                                            <span className="font-headline text-xs font-black uppercase tracking-wider text-text-brand">
-                                                Enter
-                                            </span>
-                                            <ExternalLinkIcon className="w-4 h-4 text-text-brand" />
-                                        </Button>
+                                        {/* Enter + Language Toggle Stack */}
+                                        <div className="flex flex-col items-end gap-0.5">
+                                            {/* Enter Button */}
+                                            <Button
+                                                as="a"
+                                                href="https://enter.pollinations.ai"
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                variant="iconText"
+                                                size={null}
+                                            >
+                                                <span className="font-headline text-xs font-black uppercase tracking-wider text-text-brand">
+                                                    Enter
+                                                </span>
+                                                <ExternalLinkIcon className="w-4 h-4 text-text-brand" />
+                                            </Button>
+
+                                            {/* Language Toggle */}
+                                            <Button
+                                                type="button"
+                                                onClick={() =>
+                                                    setLanguageOverride(
+                                                        isAutoMode
+                                                            ? "en"
+                                                            : "auto",
+                                                    )
+                                                }
+                                                variant="iconText"
+                                                size={null}
+                                                className="px-0 py-0 h-auto"
+                                                title={
+                                                    isProcessing
+                                                        ? "Translating..."
+                                                        : isAutoMode
+                                                          ? "Switch to English only"
+                                                          : "Switch to auto-detect language"
+                                                }
+                                            >
+                                                <GlobeIcon
+                                                    className={`w-3 h-3 ${
+                                                        isProcessing
+                                                            ? "animate-spin text-text-brand"
+                                                            : "text-text-body-main"
+                                                    }`}
+                                                />
+                                                <span
+                                                    className={`font-headline text-[10px] font-black uppercase tracking-wider ${
+                                                        isProcessing
+                                                            ? "text-text-brand"
+                                                            : "text-text-body-main"
+                                                    }`}
+                                                >
+                                                    {isProcessing
+                                                        ? "..."
+                                                        : isAutoMode
+                                                          ? "Auto"
+                                                          : "EN"}
+                                                </span>
+                                            </Button>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -214,10 +264,10 @@ function Layout() {
                             isBannerVisible && isPromptOpen
                                 ? "calc(44px + 4rem)"
                                 : isBannerVisible
-                                ? "44px"
-                                : isPromptOpen
-                                ? "4rem"
-                                : "0px",
+                                  ? "44px"
+                                  : isPromptOpen
+                                    ? "4rem"
+                                    : "0px",
                     } as React.CSSProperties
                 }
             >
@@ -266,7 +316,7 @@ function Layout() {
                                         .filter(
                                             ([key]) =>
                                                 key !== "github" &&
-                                                key !== "discord"
+                                                key !== "discord",
                                         )
                                         .map(
                                             ([
@@ -286,7 +336,7 @@ function Layout() {
                                                 >
                                                     <Icon className="w-full h-full" />
                                                 </Button>
-                                            )
+                                            ),
                                         )}
                                 </div>
                             </div>
@@ -319,12 +369,12 @@ function Layout() {
                                     type="button"
                                     onClick={() => {
                                         navigator.clipboard.writeText(
-                                            "hello@pollinations.ai"
+                                            "hello@pollinations.ai",
                                         );
                                         setEmailCopied(true);
                                         setTimeout(
                                             () => setEmailCopied(false),
-                                            2000
+                                            2000,
                                         );
                                     }}
                                     variant="iconText"
@@ -401,12 +451,12 @@ function Layout() {
                                     type="button"
                                     onClick={() => {
                                         navigator.clipboard.writeText(
-                                            "hello@pollinations.ai"
+                                            "hello@pollinations.ai",
                                         );
                                         setEmailCopied(true);
                                         setTimeout(
                                             () => setEmailCopied(false),
-                                            2000
+                                            2000,
                                         );
                                     }}
                                     variant="iconText"
@@ -458,7 +508,7 @@ function Layout() {
                                         .filter(
                                             ([key]) =>
                                                 key !== "github" &&
-                                                key !== "discord"
+                                                key !== "discord",
                                         )
                                         .map(
                                             ([
@@ -478,7 +528,7 @@ function Layout() {
                                                 >
                                                     <Icon className="w-full h-full" />
                                                 </Button>
-                                            )
+                                            ),
                                         )}
                                 </div>
                                 {/* Enter Button */}

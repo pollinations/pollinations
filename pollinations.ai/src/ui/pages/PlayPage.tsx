@@ -44,7 +44,7 @@ function PlayPage() {
             ...imageModels.map((m) => ({ ...m, type: "image" as const })),
             ...textModels.map((m) => ({ ...m, type: "text" as const })),
         ],
-        [imageModels, textModels],
+        [imageModels, textModels]
     );
 
     // Display prompt based on view
@@ -54,7 +54,7 @@ function PlayPage() {
         <PageContainer>
             <PageCard>
                 {/* Title with toggle and login */}
-                <div className="flex items-center justify-between mb-8">
+                <div className="flex items-start justify-between mb-8">
                     <div className="flex items-center gap-4">
                         <Title spacing="none">
                             {view === "play"
@@ -74,7 +74,7 @@ function PlayPage() {
                         </button>
                     </div>
                     {/* Login/Logout Button */}
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 mt-4">
                         {isLoggedIn && (
                             <span className="font-mono text-xs text-text-body-tertiary bg-input-background px-2 py-1 rounded">
                                 {apiKey.slice(0, 12)}...
@@ -83,8 +83,13 @@ function PlayPage() {
                         <Button
                             type="button"
                             onClick={isLoggedIn ? logout : login}
-                            variant="secondary"
+                            variant={isLoggedIn ? "secondary" : "primary"}
                             size="sm"
+                            className={
+                                isLoggedIn
+                                    ? ""
+                                    : "animate-shimmer bg-[length:200%_100%] bg-gradient-to-r from-button-secondary-bg via-white/20 to-button-secondary-bg border-border-highlight text-text-body-main hover:bg-button-primary-bg hover:text-text-on-color hover:border-border-highlight hover:shadow-shadow-highlight-md"
+                            }
                         >
                             {isLoggedIn
                                 ? getText(pageCopy.logoutButton)

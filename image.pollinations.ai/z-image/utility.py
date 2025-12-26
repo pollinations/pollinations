@@ -291,13 +291,20 @@ def stitch_non_overlapping_blocks(blocks: list[np.ndarray],
         y = y_orig * scale_factor
         x = x_orig * scale_factor
         
+        
         # Ensure block is correct size
         if block.shape[0] != upscaled_block_size or block.shape[1] != upscaled_block_size:
             block_pil = Image.fromarray(block.astype(np.uint8))
             block_pil = block_pil.resize((upscaled_block_size, upscaled_block_size), Image.Resampling.LANCZOS)
             block = np.array(block_pil)
-        
-        result[y:y+upscaled_block_size, x:x+upscaled_block_size] = block
+
+        # Validate bounds before placement
+        y_end = min(y + upscaled_block_size, out_h)
+        x_end = min(x + upscaled_block_size, out_w)
+        block_h = y_end - y
+        block_w = x_end - x
+
+        result[y:y_end, x:x_end] = block[:block_h, :block_w]
     
     # Upscale and place edge regions using Lanczos
     for edge in edge_regions:

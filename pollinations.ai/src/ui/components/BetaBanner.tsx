@@ -2,17 +2,24 @@ import { useState, useEffect } from "react";
 
 const STORAGE_KEY = "pollinations-beta-banner-dismissed";
 
-export function BetaBanner() {
+interface BetaBannerProps {
+    onVisibilityChange?: (visible: boolean) => void;
+}
+
+export function BetaBanner({ onVisibilityChange }: BetaBannerProps) {
     const [isVisible, setIsVisible] = useState(false);
 
     useEffect(() => {
         const dismissed = localStorage.getItem(STORAGE_KEY) === "true";
-        setIsVisible(!dismissed);
-    }, []);
+        const visible = !dismissed;
+        setIsVisible(visible);
+        onVisibilityChange?.(visible);
+    }, [onVisibilityChange]);
 
     const handleDismiss = () => {
         localStorage.setItem(STORAGE_KEY, "true");
         setIsVisible(false);
+        onVisibilityChange?.(false);
     };
 
     if (!isVisible) return null;

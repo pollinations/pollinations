@@ -4,6 +4,7 @@ import { Button } from "../ui/button";
 import { DOCS_PAGE } from "../../../theme";
 import { API_BASE, API_KEY } from "../../../api.config";
 import { ALLOWED_IMAGE_MODELS } from "../../../config/allowedModels";
+import { fetchWithRetry } from "../../../utils/fetchWithRetry";
 
 /**
  * Image Generation Card Component
@@ -67,20 +68,15 @@ export function ImageGenCard() {
             setIsLoading(true);
             try {
                 const url = buildImageUrl();
-                const response = await fetch(url, {
+                const response = await fetchWithRetry(url, {
                     headers: { Authorization: `Bearer ${API_KEY}` },
                 });
-                if (!response.ok) {
-                    throw new Error(
-                        `HTTP ${response.status}: ${response.statusText}`
-                    );
-                }
                 const blob = await response.blob();
                 const imageURL = URL.createObjectURL(blob);
                 setImageUrl(imageURL);
-                setIsLoading(false);
             } catch (error) {
                 console.error("Image fetch error:", error);
+            } finally {
                 setIsLoading(false);
             }
         };

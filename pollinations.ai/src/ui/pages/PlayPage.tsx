@@ -160,6 +160,37 @@ function PlayPage() {
                 </Body>
 
                 {view === "play" && (
+                    <div className="flex gap-3 mb-6">
+                        <div className="flex-1 bg-gradient-to-br from-purple-500/20 to-blue-500/20 border border-purple-500/30 p-4 rounded backdrop-blur-sm hover:border-purple-500/50 transition-all duration-300">
+                            <div className="flex items-center gap-3">
+                                <ImageIcon className="w-6 h-6 text-purple-400 flex-shrink-0" />
+                                <div className="flex-1">
+                                    <div className="text-2xl font-bold text-purple-300 tabular-nums">
+                                        {imageRequestsPerMin.toLocaleString()}
+                                    </div>
+                                    <div className="text-xs text-purple-400/70">
+                                        req/min
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div className="flex-1 bg-gradient-to-br from-purple-500/20 to-blue-500/20 border border-purple-500/30 p-4 rounded backdrop-blur-sm hover:border-purple-500/50 transition-all duration-300">
+                            <div className="flex items-center gap-3">
+                                <TextIcon className="w-6 h-6 text-purple-400 flex-shrink-0" />
+                                <div className="flex-1">
+                                    <div className="text-2xl font-bold text-purple-300 tabular-nums">
+                                        {textRequestsPerMin.toLocaleString()}
+                                    </div>
+                                    <div className="text-xs text-purple-400/70">
+                                        req/min
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {view === "play" && (
                     <ModelSelector
                         models={allModels}
                         selectedModel={selectedModel}
@@ -192,35 +223,6 @@ function PlayPage() {
 
                 {view === "play" ? (
                     <div className="flex flex-col gap-4">
-                        <div className="flex gap-3">
-                            <div className="flex-1 bg-gradient-to-br from-purple-500/20 to-blue-500/20 border border-purple-500/30 p-4 rounded backdrop-blur-sm hover:border-purple-500/50 transition-all duration-300">
-                                <div className="flex items-center gap-3">
-                                    <ImageIcon className="w-6 h-6 text-purple-400 flex-shrink-0" />
-                                    <div className="flex-1">
-                                        <div className="text-2xl font-bold text-purple-300 tabular-nums">
-                                            {imageRequestsPerMin.toLocaleString()}
-                                        </div>
-                                        <div className="text-xs text-purple-400/70">
-                                            req/min
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            <div className="flex-1 bg-gradient-to-br from-purple-500/20 to-blue-500/20 border border-purple-500/30 p-4 rounded backdrop-blur-sm hover:border-purple-500/50 transition-all duration-300">
-                                <div className="flex items-center gap-3">
-                                    <TextIcon className="w-6 h-6 text-purple-400 flex-shrink-0" />
-                                    <div className="flex-1">
-                                        <div className="text-2xl font-bold text-purple-300 tabular-nums">
-                                            {textRequestsPerMin.toLocaleString()}
-                                        </div>
-                                        <div className="text-xs text-purple-400/70">
-                                            req/min
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
                         <div className="flex flex-col gap-2">
                             <textarea
                                 value={prompt}

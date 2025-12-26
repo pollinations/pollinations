@@ -55,7 +55,8 @@ export const PLAY_PAGE = {
     enterPromptFirst: "First, enter a prompt",
 
     // Gated model tooltip
-    gatedModelTooltip: "To test this model, log in to enter.pollinations.ai",
+    gatedModelTooltip:
+        "Login to unlock · Get API keys at enter.pollinations.ai",
 
     // Reference images
     imageUrlPlaceholder: "Image URL",

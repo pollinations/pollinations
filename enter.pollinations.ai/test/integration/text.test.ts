@@ -889,6 +889,109 @@ describe("Model gating by API key permissions", async () => {
     );
 });
 
+// Gemini thinking mode tests (PR #6455)
+// Tests that thinking parameter is accepted and processed correctly
+describe("Gemini thinking mode", async () => {
+    test(
+        "Gemini should accept thinking: { type: 'disabled' } parameter",
+        { timeout: 60000 },
+        async ({ apiKey, mocks }) => {
+            await mocks.enable("polar", "tinybird", "vcr");
+            const response = await SELF.fetch(
+                `http://localhost:3000/api/generate/v1/chat/completions`,
+                {
+                    method: "POST",
+                    headers: {
+                        "content-type": "application/json",
+                        "authorization": `Bearer ${apiKey}`,
+                    },
+                    body: JSON.stringify({
+                        model: "gemini-fast", // Gemini 2.5 model
+                        messages: [
+                            {
+                                role: "user",
+                                content:
+                                    "What is 2+2? Reply with just the number.",
+                            },
+                        ],
+                        thinking: { type: "disabled" },
+                        seed: testSeed(),
+                    }),
+                },
+            );
+            expect(response.status).toBe(200);
+            const data = await response.json();
+            expect((data as any).choices[0].message.content).toBeTruthy();
+        },
+    );
+
+    test(
+        "Gemini should accept thinking_budget: 0 parameter to disable thinking",
+        { timeout: 60000 },
+        async ({ apiKey, mocks }) => {
+            await mocks.enable("polar", "tinybird", "vcr");
+            const response = await SELF.fetch(
+                `http://localhost:3000/api/generate/v1/chat/completions`,
+                {
+                    method: "POST",
+                    headers: {
+                        "content-type": "application/json",
+                        "authorization": `Bearer ${apiKey}`,
+                    },
+                    body: JSON.stringify({
+                        model: "gemini-fast",
+                        messages: [
+                            {
+                                role: "user",
+                                content:
+                                    "What is 3+3? Reply with just the number.",
+                            },
+                        ],
+                        thinking_budget: 0,
+                        seed: testSeed(),
+                    }),
+                },
+            );
+            expect(response.status).toBe(200);
+            const data = await response.json();
+            expect((data as any).choices[0].message.content).toBeTruthy();
+        },
+    );
+
+    test(
+        "Gemini 3 Flash should accept reasoning_effort parameter",
+        { timeout: 60000 },
+        async ({ apiKey, mocks }) => {
+            await mocks.enable("polar", "tinybird", "vcr");
+            const response = await SELF.fetch(
+                `http://localhost:3000/api/generate/v1/chat/completions`,
+                {
+                    method: "POST",
+                    headers: {
+                        "content-type": "application/json",
+                        "authorization": `Bearer ${apiKey}`,
+                    },
+                    body: JSON.stringify({
+                        model: "gemini", // Gemini 3 Flash
+                        messages: [
+                            {
+                                role: "user",
+                                content:
+                                    "What is 4+4? Reply with just the number.",
+                            },
+                        ],
+                        reasoning_effort: "low",
+                        seed: testSeed(),
+                    }),
+                },
+            );
+            expect(response.status).toBe(200);
+            const data = await response.json();
+            expect((data as any).choices[0].message.content).toBeTruthy();
+        },
+    );
+});
+
 // Gemini tool schema sanitization test (Issue: Portkey Gateway #1473)
 // Tests that exclusiveMinimum/exclusiveMaximum are stripped before sending to Vertex AI
 test(

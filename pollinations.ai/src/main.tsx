@@ -1,7 +1,6 @@
 import { createRoot } from "react-dom/client";
 import { BrowserRouter } from "react-router-dom";
 import App from "./App";
-import { CopyProvider } from "./ui/contexts/CopyContext";
 import { ThemeProvider } from "./ui/contexts/ThemeContext";
 import "./styles.css";
 
@@ -17,9 +16,7 @@ root.render(
                 v7_relativeSplatPath: true,
             }}
         >
-            <CopyProvider>
-                <App />
-            </CopyProvider>
+            <App />
         </BrowserRouter>
-    </ThemeProvider>
+    </ThemeProvider>,
 );

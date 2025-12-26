@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { processCopy } from "../copy/translation/process";
-import { useCopy } from "../ui/contexts/CopyContext";
+import { getBrowserLanguage } from "../ui/contexts/CopyContext";
 
 /**
  * Hook to translate a page's copy based on current language
@@ -12,7 +12,7 @@ import { useCopy } from "../ui/contexts/CopyContext";
 export function usePageCopy<T extends Record<string, unknown>>(
     staticCopy: T,
 ): { copy: T; isTranslating: boolean } {
-    const { language } = useCopy();
+    const language = getBrowserLanguage();
     const [translatedCopy, setTranslatedCopy] = useState<T>(staticCopy);
     const [isTranslating, setIsTranslating] = useState(false);
 

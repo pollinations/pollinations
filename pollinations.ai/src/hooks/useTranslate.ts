@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { processCopy } from "../copy/translation/process";
-import { useCopy } from "../ui/contexts/CopyContext";
+import { getBrowserLanguage } from "../ui/contexts/CopyContext";
 
 /**
  * Hook to translate an array of items by field name
@@ -12,7 +12,7 @@ export function useTranslate<T, K extends keyof T>(
     items: T[],
     field: K,
 ): { translated: T[]; isTranslating: boolean } {
-    const { language } = useCopy();
+    const language = getBrowserLanguage();
     const [translated, setTranslated] = useState<T[]>(items);
     const [isTranslating, setIsTranslating] = useState(false);
 

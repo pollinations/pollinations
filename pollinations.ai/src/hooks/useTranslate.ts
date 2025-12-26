@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { processCopy } from "../copy/translation/process";
 import { useCopy } from "../ui/contexts/CopyContext";
 
@@ -16,10 +16,14 @@ export function useTranslate<T, K extends keyof T>(
     const [translated, setTranslated] = useState<T[]>(items);
     const [isTranslating, setIsTranslating] = useState(false);
 
+    // Stable key for items to avoid re-runs when array reference changes but content is the same
+    const itemsKey = useMemo(() => JSON.stringify(items), [items]);
+
     // Keep translated in sync with items when items change (show original immediately)
     useEffect(() => {
         setTranslated(items);
-    }, [items]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [itemsKey]);
 
     useEffect(() => {
         if (items.length === 0) {
@@ -48,7 +52,8 @@ export function useTranslate<T, K extends keyof T>(
             })
             .catch(() => setTranslated(items))
             .finally(() => setIsTranslating(false));
-    }, [items, field, language]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [itemsKey, field, language]);
 
     return { translated, isTranslating };
 }

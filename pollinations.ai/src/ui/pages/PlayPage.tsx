@@ -66,14 +66,21 @@ function PlayPage() {
                         </button>
                     </div>
                     {/* Login/Logout Button */}
-                    <Button
-                        type="button"
-                        onClick={isLoggedIn ? logout : login}
-                        variant="secondary"
-                        size="sm"
-                    >
-                        {isLoggedIn ? "Logout" : "Login"}
-                    </Button>
+                    <div className="flex items-center gap-2">
+                        {isLoggedIn && (
+                            <span className="font-mono text-xs text-text-body-tertiary bg-input-background px-2 py-1 rounded">
+                                {apiKey.slice(0, 12)}...
+                            </span>
+                        )}
+                        <Button
+                            type="button"
+                            onClick={isLoggedIn ? logout : login}
+                            variant="secondary"
+                            size="sm"
+                        >
+                            {isLoggedIn ? "Logout" : "Login"}
+                        </Button>
+                    </div>
                 </div>
 
                 {/* Description */}

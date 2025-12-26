@@ -1,0 +1,130 @@
+{
+  "request": {
+    "url": "http://ec2-3-80-56-235.compute-1.amazonaws.com:16385/openai",
+    "method": "POST",
+    "body": {
+      "type": "json",
+      "data": {
+        "model": "openai-fast",
+        "messages": [
+          {
+            "role": "user",
+            "content": "Stream vs non-stream test"
+          }
+        ],
+        "stream": false
+      }
+    },
+    "params": {}
+  },
+  "response": {
+    "status": 200,
+    "statusText": "OK",
+    "headers": {
+      "access-control-allow-origin": "*",
+      "connection": "keep-alive",
+      "content-length": "7670",
+      "content-type": "application/json; charset=utf-8",
+      "date": "Wed, 24 Dec 2025 03:20:49 GMT",
+      "etag": "W/\"1df6-fRAc21XhIRh5k/9PZgnvrIxCgyE\"",
+      "keep-alive": "timeout=5",
+      "x-model-used": "gpt-5-nano-2025-08-07",
+      "x-powered-by": "Express",
+      "x-usage-completion-reasoning-tokens": "768",
+      "x-usage-completion-text-tokens": "1355",
+      "x-usage-prompt-text-tokens": "252",
+      "x-usage-total-tokens": "2375"
+    },
+    "body": {
+      "type": "json",
+      "data": {
+        "choices": [
+          {
+            "content_filter_results": {
+              "hate": {
+                "filtered": false,
+                "severity": "safe"
+              },
+              "protected_material_code": {
+                "detected": false,
+                "filtered": false
+              },
+              "protected_material_text": {
+                "detected": false,
+                "filtered": false
+              },
+              "self_harm": {
+                "filtered": false,
+                "severity": "safe"
+              },
+              "sexual": {
+                "filtered": false,
+                "severity": "safe"
+              },
+              "violence": {
+                "filtered": false,
+                "severity": "safe"
+              }
+            },
+            "finish_reason": "stop",
+            "index": 0,
+            "logprobs": null,
+            "message": {
+              "annotations": [],
+              "content": "Nice topic. Here’s a practical rundown you can use to decide how to approach testing for streaming vs non-streaming paths, plus what to watch out for.\n\nWhat “stream” vs “non-stream” means (quick framing)\n- Streaming: data flows continuously over time. The consumer processes items as they arrive, possibly with backpressure, partial data, and potentially unbounded sequences.\n- Non-stream (batch/request-response): data is sent in discrete messages or requests, with a clear end. Each item/request has a defined result, and there’s typically a finite boundary.\n\nKey differences to remember\n- Timing and completion\n  - Streaming: completion is when the stream ends or is canceled; items may arrive indefinitely. Latency is per-item, but overall behavior depends on streaming semantics.\n  - Non-stream: each request has a defined end; you test for a single result (and perhaps a retry/fallback path).\n- State and ordering\n  - Streaming often requires maintaining order, handling duplicates, and respecting backpressure.\n  - Non-stream tends to be stateless per request, or you test statelessness across isolated calls.\n- Backpressure and flow control\n  - Streaming must model producer/consumer pace, buffering, and what happens when the consumer can’t keep up.\n  - Non-stream typically doesn’t involve backpressure in the same way.\n- Failure modes\n  - Streaming: connection drops, partial data, reconnects, replay, deduplication, idempotence under replays.\n  - Non-stream: failures are usually per-request (timeouts, 4xx/5xx, retries) with simpler retry semantics.\n\nTesting strategies\n\nStreaming tests\n- What you’re validating\n  - Correct framing and parsing of stream items\n  - Ordering guarantees (if promised)\n  - Handling of partial messages and late data\n  - Backpressure behavior and memory usage\n  - Reconnect/recovery and idempotence after resumption\n  - Fault injection: producer/consumer crashes, network glitches\n- Test types to consider\n  - Unit tests for parsers/emitters: confirm that a chunked input yields the expected item, and that boundaries are respected.\n  - Integration tests with a real stream: verify end-to-end delivery, ordering, and error handling under controlled backpressure.\n  - contract tests: ensure the producer/consumer adhere to stream semantics (e.g., no duplicates, exactly-once vs at-least-once guarantees).\n  - Chaos/injector tests: simulate drops, duplicates, delays, jitter, and verify system stability.\n  - Performance/scalability tests: measure latency percentiles under increasing concurrency and backpressure levels.\n- Practical tips\n  - Use time-bounded tests for streaming to avoid flaking on long-running streams.\n  - Test both steady-state behavior and cold-start behavior (start streaming after being idle).\n  - Validate idempotence in the face of retries or replays.\n  - Include end-to-end tests across producers, broker/transport, and consumers.\n  - If you rely on backpressure, test with varying consumer speeds and buffer sizes.\n- Tooling examples (suggestions)\n  - Python: asyncio streams or async iterators; pytest-asyncio for async tests.\n  - Node.js: stream/pipeline tests, readable/writable streams, and backpressure checks.\n  - Java/Kotlin: Reactive Streams, Project Reactor/RxJava with JUnit or TestNG.\n  - Data pipelines: run with a small synthetic workload that mimics real-time data (Poisson/burst patterns) and observe latency/throughput.\n\nNon-stream tests\n- What you’re validating\n  - Correct response for each request, correctness of business logic per invocation\n  - Idempotence and retry semantics where relevant\n  - Performance targets (latency/throughput) for finite requests\n  - Boundary cases (empty inputs, max payloads, invalid inputs)\n- Test types to consider\n  - Unit tests for core logic and pure functions\n  - Integration tests for end-to-end request handling through services/databases\n  - Contract tests with downstream services (APIs, databases)\n  - End-to-end tests with realistic request payloads and error paths\n  - Load/soak tests to verify stability under sustained traffic\n- Practical tips\n  - Use deterministic test data to avoid flaky tests; seed data for repeatability.\n  - Test retry logic and circuit-breaker behavior where applicable.\n  - Validate correctness across typical edge cases (empty data, max size, invalid formats).\n- Tooling examples\n  - Python/pytest for unit and integration tests\n  - Java/JUnit for REST endpoints or RPC calls\n  - Postman/Newman or REST-assured for API-level tests\n  - Mocking frameworks to isolate components (WireMock, MockServer, etc.)\n\nExample scenario mappings\n\n- HTTP streaming (Server-Sent Events, chunked responses)\n  - Streaming tests: verify event boundaries, re-connect and resume logic, correct event ordering, handling of missed events, and memory use under backpressure.\n  - Non-stream tests: if a non-stream alternative exists (single fetch), test the one-shot response, error handling, and retry behavior.\n\n- gRPC streaming\n  - Streaming tests: bidirectional flow with backpressure, sequence guarantees, handling of dropped messages, and cancellation semantics.\n  - Non-stream tests: unary RPC tests for the same business logic, including error paths.\n\n- Data pipeline (kafka-like)\n  - Streaming tests: end-to-end delivery latency, at-least-once vs exactly-once semantics, commit/offset handling, consumer lag under load.\n  - Non-stream tests: separate batch jobs that process a finite dataset; test determinism and correctness.\n\nA quick checklist to use\n- Define semantics: what guarantees does the stream provide (ordering, duplicates, exactly-once)?\n- Identify failure modes to test: disconnects, reconnects, partial data, backpressure, timeouts.\n- Choose representative data patterns: steady, bursty, and idle periods.\n- Include both positive and negative tests: valid streams, malformed frames, invalid states.\n- Instrument and observe: collect metrics for latency, throughput, error rates, backlog, and resource usage.\n- Automate and isolate: keep tests deterministic; mock external systems where possible for repeatability.\n\nIf you share a bit more about your tech stack (HTTP/gRPC/kafka, language, testing framework) and what you’re aiming to prove (latency targets, fault tolerance, backpressure behavior), I can tailor a concrete test plan and example test cases. What environment are you testing in?",
+              "refusal": null,
+              "role": "assistant"
+            }
+          }
+        ],
+        "created": 1766546438,
+        "id": "pllns_1e68dfe9fe353a594cee595e37cb3c11",
+        "model": "gpt-5-nano-2025-08-07",
+        "object": "chat.completion",
+        "prompt_filter_results": [
+          {
+            "prompt_index": 0,
+            "content_filter_results": {
+              "hate": {
+                "filtered": false,
+                "severity": "safe"
+              },
+              "jailbreak": {
+                "detected": false,
+                "filtered": false
+              },
+              "self_harm": {
+                "filtered": false,
+                "severity": "safe"
+              },
+              "sexual": {
+                "filtered": false,
+                "severity": "safe"
+              },
+              "violence": {
+                "filtered": false,
+                "severity": "safe"
+              }
+            }
+          }
+        ],
+        "system_fingerprint": null,
+        "usage": {
+          "completion_tokens": 2123,
+          "completion_tokens_details": {
+            "accepted_prediction_tokens": 0,
+            "audio_tokens": 0,
+            "reasoning_tokens": 768,
+            "rejected_prediction_tokens": 0
+          },
+          "prompt_tokens": 252,
+          "prompt_tokens_details": {
+            "audio_tokens": 0,
+            "cached_tokens": 0
+          },
+          "total_tokens": 2375
+        }
+      }
+    }
+  }
+}

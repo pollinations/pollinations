@@ -1,6 +1,6 @@
-import { Heading, Label } from "../ui/typography";
-import { ExternalLinkIcon } from "../../assets/ExternalLinkIcon";
 import { DOCS_PAGE } from "../../../theme";
+import { ExternalLinkIcon } from "../../assets/ExternalLinkIcon";
+import { Heading, Label } from "../ui/typography";
 
 /**
  * Authentication Card Component

@@ -1,4 +1,4 @@
-import { API, DEFAULTS, API_KEY } from "../api.config";
+import { API, API_KEY, DEFAULTS } from "../api.config";
 import { fetchWithRetry } from "../utils/fetchWithRetry";
 
 /**

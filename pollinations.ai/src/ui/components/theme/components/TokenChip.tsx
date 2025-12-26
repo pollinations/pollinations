@@ -1,4 +1,4 @@
-import React from "react";
+import type React from "react";
 import { getTokenLabel } from "../utils/token-helpers";
 
 interface TokenChipProps {

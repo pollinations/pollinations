@@ -1,6 +1,6 @@
-import { useState, useEffect } from "react";
-import { Heading, Body } from "./ui/typography";
+import { useEffect, useState } from "react";
 import { Divider } from "./ui/divider";
+import { Body, Heading } from "./ui/typography";
 
 interface Contributor {
     login: string;
@@ -17,7 +17,7 @@ export function TopContributors() {
         const fetchTopContributors365 = async () => {
             try {
                 const since = new Date(
-                    Date.now() - 365 * 24 * 60 * 60 * 1000
+                    Date.now() - 365 * 24 * 60 * 60 * 1000,
                 ).toISOString();
 
                 const perPage = 100;
@@ -31,7 +31,7 @@ export function TopContributors() {
                             headers: {
                                 Accept: "application/vnd.github+json",
                             },
-                        }
+                        },
                     );
 
                     const commits = await res.json();

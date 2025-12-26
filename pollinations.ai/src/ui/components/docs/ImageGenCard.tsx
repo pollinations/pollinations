@@ -1,10 +1,10 @@
-import { useState, useEffect } from "react";
-import { Heading, Label } from "../ui/typography";
-import { Button } from "../ui/button";
-import { DOCS_PAGE } from "../../../theme";
+import { useEffect, useState } from "react";
 import { API_BASE, API_KEY } from "../../../api.config";
 import { ALLOWED_IMAGE_MODELS } from "../../../config/allowedModels";
+import { DOCS_PAGE } from "../../../theme";
 import { fetchWithRetry } from "../../../utils/fetchWithRetry";
+import { Button } from "../ui/button";
+import { Heading, Label } from "../ui/typography";
 
 /**
  * Image Generation Card Component
@@ -12,7 +12,7 @@ import { fetchWithRetry } from "../../../utils/fetchWithRetry";
  */
 export function ImageGenCard() {
     const [selectedPrompt, setSelectedPrompt] = useState(
-        DOCS_PAGE.imagePrompts[0]
+        DOCS_PAGE.imagePrompts[0],
     );
     const [selectedModel, setSelectedModel] = useState("flux");
     const [params, setParams] = useState<Set<string>>(new Set());
@@ -163,7 +163,7 @@ export function ImageGenCard() {
                                         }`}
                                         title={
                                             DOCS_PAGE.imageParameters.find(
-                                                (p) => p.key === key
+                                                (p) => p.key === key,
                                             )?.description
                                         }
                                     >

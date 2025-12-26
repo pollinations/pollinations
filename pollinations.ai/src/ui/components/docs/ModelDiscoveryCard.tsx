@@ -1,7 +1,7 @@
-import { useState, useEffect } from "react";
-import { Heading, Label } from "../ui/typography";
-import { Button } from "../ui/button";
+import { useEffect, useState } from "react";
 import { DOCS_PAGE } from "../../../theme";
+import { Button } from "../ui/button";
+import { Heading, Label } from "../ui/typography";
 
 /**
  * Model Discovery Card Component
@@ -72,7 +72,7 @@ export function ModelDiscoveryCard() {
                                         type="button"
                                         onClick={() =>
                                             setSelectedModel(
-                                                key as keyof typeof modelEndpoints
+                                                key as keyof typeof modelEndpoints,
                                             )
                                         }
                                         className={`px-3 py-1.5 font-mono text-xs border-2 transition-all cursor-pointer ${
@@ -83,7 +83,7 @@ export function ModelDiscoveryCard() {
                                     >
                                         {label}
                                     </button>
-                                )
+                                ),
                             )}
                         </div>
                     </div>

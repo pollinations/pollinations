@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { Model } from "../../../hooks/useModelList";
 
 interface ImageFeedProps {
@@ -51,7 +51,7 @@ export function ImageFeed({
     // Image feed
     useEffect(() => {
         const eventSource = new EventSource(
-            "https://image.pollinations.ai/feed"
+            "https://image.pollinations.ai/feed",
         );
         eventSource.onmessage = (event) => {
             try {
@@ -77,7 +77,7 @@ export function ImageFeed({
     // Text feed
     useEffect(() => {
         const eventSource = new EventSource(
-            "https://text.pollinations.ai/feed"
+            "https://text.pollinations.ai/feed",
         );
         eventSource.onmessage = (event) => {
             try {
@@ -88,7 +88,7 @@ export function ImageFeed({
 
                     if (!selectedModel || modelId === selectedModel) {
                         const userMessage = data.parameters?.messages?.find(
-                            (msg: any) => msg?.role === "user"
+                            (msg: any) => msg?.role === "user",
                         );
                         const prompt =
                             userMessage?.content || data.prompt || "No prompt";
@@ -113,7 +113,7 @@ export function ImageFeed({
     useEffect(() => {
         const interval = setInterval(() => {
             const selectedModelData = [...imageModels, ...textModels].find(
-                (m) => m.id === selectedModel
+                (m) => m.id === selectedModel,
             );
             if (!selectedModelData) return;
 

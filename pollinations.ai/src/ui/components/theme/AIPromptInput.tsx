@@ -1,11 +1,9 @@
-import { useState, useEffect, useRef } from "react";
-import { useTheme } from "../../contexts/ThemeContext";
-import { generateTheme } from "../../../theme/guidelines/helpers/designer";
-import { generateCopy } from "../../../theme/guidelines/helpers/copywriter";
-import { ALL_COPY } from "../../../theme/copy/index";
-import { dictionaryToTheme } from "../../../theme/style/theme-processor";
+import { DownloadIcon, SendIcon, SparklesIcon } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 import { generateBackground } from "../../../theme/guidelines/helpers/animator";
-import { SparklesIcon, SendIcon, DownloadIcon } from "lucide-react";
+import { generateTheme } from "../../../theme/guidelines/helpers/designer";
+import { dictionaryToTheme } from "../../../theme/style/theme-processor";
+import { useTheme } from "../../contexts/ThemeContext";
 import { Button } from "../ui/button";
 
 interface AIPromptInputProps {
@@ -24,13 +22,8 @@ export function AIPromptInput({ isOpen }: AIPromptInputProps) {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<Error | null>(null);
     const inputRef = useRef<HTMLInputElement>(null);
-    const {
-        setTheme,
-        themeDefinition,
-        themePrompt,
-        presetCopy,
-        backgroundHtml,
-    } = useTheme();
+    const { setTheme, themeDefinition, themePrompt, backgroundHtml } =
+        useTheme();
 
     // Generate theme, copy, and background when activePrompt changes
     useEffect(() => {
@@ -40,37 +33,25 @@ export function AIPromptInput({ isOpen }: AIPromptInputProps) {
         setLoading(true);
         setError(null);
 
-        // Check for mobile
-        const isMobile = window.matchMedia("(max-width: 768px)").matches;
-
         const runGeneration = async () => {
             try {
                 // Run sequentially - API has built-in retry with rate limit handling
-                console.log("🎨 [GENERATING] Step 1/3: Theme...");
+                console.log("🎨 [GENERATING] Step 1/2: Theme...");
                 const theme = await generateTheme(
                     activePrompt,
-                    controller.signal
+                    controller.signal,
                 );
                 if (controller.signal.aborted) return;
 
-                console.log("📝 [GENERATING] Step 2/3: Copy...");
-                const copyResult = await generateCopy(
-                    activePrompt,
-                    isMobile,
-                    ALL_COPY,
-                    "en",
-                    controller.signal
-                );
-                if (controller.signal.aborted) return;
-
-                console.log("🎬 [GENERATING] Step 3/3: Background...");
+                console.log("🎬 [GENERATING] Step 2/2: Background...");
                 const bgHtml = await generateBackground(
                     activePrompt,
-                    controller.signal
+                    controller.signal,
                 );
                 if (controller.signal.aborted) return;
 
-                setTheme(theme, activePrompt, copyResult.full, bgHtml);
+                // Theme generation no longer includes copy - copy/translation is separate
+                setTheme(theme, activePrompt, bgHtml);
 
                 setActivePrompt(null);
                 console.log("✅ [PRESET READY]");
@@ -120,35 +101,16 @@ export function AIPromptInput({ isOpen }: AIPromptInputProps) {
             .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
             .join("");
 
-        // Flatten presetCopy for export (extract flat values from nested structure)
-        const flatCopy: Record<string, string> = {};
-        const extractFlat = (obj: Record<string, unknown>, prefix = "") => {
-            for (const [key, value] of Object.entries(obj)) {
-                if (typeof value === "string") {
-                    flatCopy[prefix ? `${prefix}.${key}` : key] = value;
-                } else if (typeof value === "object" && value !== null) {
-                    extractFlat(
-                        value as Record<string, unknown>,
-                        prefix ? `${prefix}.${key}` : key
-                    );
-                }
-            }
-        };
-        extractFlat(presetCopy as unknown as Record<string, unknown>);
-
+        // Note: Copy is now static in /src/copy/content/ - not part of theme presets
         const fileContent = `import { LLMThemeResponse, processTheme } from "../style/theme-processor";
-import type { ThemeCopy } from "../buildPrompts";
 
 export const ${capitalizedName}Theme: LLMThemeResponse = ${JSON.stringify(
             themeInSlotFormat,
             null,
-            2
+            2,
         )};
 
 export const ${capitalizedName}CssVariables = processTheme(${capitalizedName}Theme).cssVariables;
-
-// Copy from: "${themePrompt || "custom"}"
-export const ${capitalizedName}Copy = ${JSON.stringify(flatCopy, null, 2)};
 
 // Background HTML (raw template literal)
 export const ${capitalizedName}BackgroundHtml = ${
@@ -170,7 +132,7 @@ export const ${capitalizedName}BackgroundHtml = ${
         URL.revokeObjectURL(url);
 
         console.log(
-            `✅ Downloaded ${presetName}.ts with current settings - Add to /src/theme/presets/`
+            `✅ Downloaded ${presetName}.ts with current settings - Add to /src/theme/presets/`,
         );
     };
 

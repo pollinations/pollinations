@@ -1,6 +1,6 @@
-import { useState, useEffect } from "react";
-import { generateImage } from "../../services/pollinationsAPI";
+import { useEffect, useState } from "react";
 import { DEFAULTS } from "../../api.config";
+import { generateImage } from "../../services/pollinationsAPI";
 
 interface ImageGeneratorProps
     extends React.ImgHTMLAttributes<HTMLImageElement> {
@@ -39,7 +39,7 @@ export function ImageGenerator({
         generateImage(
             prompt,
             { width, height, seed, model, nologo },
-            controller.signal
+            controller.signal,
         )
             .then((url) => {
                 if (!controller.signal.aborted) {

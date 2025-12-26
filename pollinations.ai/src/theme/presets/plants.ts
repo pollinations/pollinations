@@ -1,4 +1,4 @@
-import { LLMThemeResponse, processTheme } from "../style/theme-processor";
+import { type LLMThemeResponse, processTheme } from "../style/theme-processor";
 
 export const PlantsAndTreesTheme: LLMThemeResponse = {
     "slots": {

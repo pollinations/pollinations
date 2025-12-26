@@ -1,5 +1,5 @@
-import * as React from "react";
 import { cva } from "class-variance-authority";
+import * as React from "react";
 import { cn } from "../../../utils";
 
 // ============================================
@@ -28,10 +28,10 @@ const titleVariants = cva(
         defaultVariants: {
             spacing: "default",
         },
-    }
+    },
 );
 
-import { VariantProps } from "class-variance-authority";
+import type { VariantProps } from "class-variance-authority";
 
 // ... (keep variants definitions)
 
@@ -50,7 +50,7 @@ export const Title = React.forwardRef<HTMLHeadingElement, TitleProps>(
                 {...props}
             />
         );
-    }
+    },
 );
 Title.displayName = "Title";
 
@@ -103,7 +103,7 @@ const headingVariants = cva(
             variant: "section",
             spacing: "default",
         },
-    }
+    },
 );
 
 interface HeadingProps
@@ -121,7 +121,7 @@ export const Heading = React.forwardRef<HTMLHeadingElement, HeadingProps>(
                 {...props}
             />
         );
-    }
+    },
 );
 Heading.displayName = "Heading";
 
@@ -182,7 +182,7 @@ export const Body = React.forwardRef<HTMLParagraphElement, BodyProps>(
                 {...props}
             />
         );
-    }
+    },
 );
 Body.displayName = "Body";
 
@@ -224,7 +224,7 @@ const labelVariants = cva(
             spacing: "default",
             display: "block",
         },
-    }
+    },
 );
 
 interface LabelProps
@@ -242,6 +242,6 @@ export const Label = React.forwardRef<HTMLLabelElement, LabelProps>(
                 {...props}
             />
         );
-    }
+    },
 );
 Label.displayName = "Label";

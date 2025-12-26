@@ -27,21 +27,22 @@ interface PageContainerProps extends React.HTMLAttributes<HTMLDivElement> {
     noPaddingBottom?: boolean;
 }
 
-export const PageContainer = React.forwardRef<HTMLDivElement, PageContainerProps>(
-    ({ className, noPaddingBottom = false, children, ...props }, ref) => {
-        return (
-            <div
-                ref={ref}
-                className={cn(
-                    "w-full px-4",
-                    !noPaddingBottom && "pb-12",
-                    className
-                )}
-                {...props}
-            >
-                <div className="max-w-4xl mx-auto">{children}</div>
-            </div>
-        );
-    }
-);
+export const PageContainer = React.forwardRef<
+    HTMLDivElement,
+    PageContainerProps
+>(({ className, noPaddingBottom = false, children, ...props }, ref) => {
+    return (
+        <div
+            ref={ref}
+            className={cn(
+                "w-full px-4",
+                !noPaddingBottom && "pb-12",
+                className,
+            )}
+            {...props}
+        >
+            <div className="max-w-4xl mx-auto">{children}</div>
+        </div>
+    );
+});
 PageContainer.displayName = "PageContainer";

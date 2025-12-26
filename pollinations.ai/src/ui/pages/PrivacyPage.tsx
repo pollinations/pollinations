@@ -8,7 +8,7 @@ function PrivacyPage() {
             .then((response) => response.text())
             .then((text) => setContent(text))
             .catch((error) =>
-                console.error("Error loading privacy policy:", error)
+                console.error("Error loading privacy policy:", error),
             );
     }, []);
 
@@ -30,17 +30,17 @@ function PrivacyPage() {
                                     // Headings
                                     if (line.startsWith("# ")) {
                                         return `<h1 class="font-headline text-4xl md:text-5xl font-black text-text-body-main uppercase tracking-widest mb-8 border-l-8 border-border-brand pl-4">${line.slice(
-                                            2
+                                            2,
                                         )}</h1>`;
                                     }
                                     if (line.startsWith("## ")) {
                                         return `<h2 class="font-headline text-2xl md:text-3xl font-black text-text-body-main uppercase tracking-widest mt-12 mb-6 border-l-4 border-border-strong pl-4">${line.slice(
-                                            3
+                                            3,
                                         )}</h2>`;
                                     }
                                     if (line.startsWith("### ")) {
                                         return `<h3 class="font-headline text-xl md:text-2xl font-black text-text-body-main uppercase tracking-wider mt-8 mb-4">${line.slice(
-                                            4
+                                            4,
                                         )}</h3>`;
                                     }
                                     // Links
@@ -52,14 +52,14 @@ function PrivacyPage() {
                                             /\[([^\]]+)\]\(([^)]+)\)/g;
                                         line = line.replace(
                                             linkRegex,
-                                            '<a href="$2" class="text-text-body-main underline hover:text-text-brand font-bold transition-colors" target="_blank" rel="noopener noreferrer">$1</a>'
+                                            '<a href="$2" class="text-text-body-main underline hover:text-text-brand font-bold transition-colors" target="_blank" rel="noopener noreferrer">$1</a>',
                                         );
                                     }
                                     // Bold
                                     if (line.includes("**")) {
                                         line = line.replace(
                                             /\*\*([^*]+)\*\*/g,
-                                            '<strong class="font-bold text-text-body-main">$1</strong>'
+                                            '<strong class="font-bold text-text-body-main">$1</strong>',
                                         );
                                     }
                                     // Horizontal rule

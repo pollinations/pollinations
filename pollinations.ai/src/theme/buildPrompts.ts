@@ -2,43 +2,18 @@
  * PROMPT ASSEMBLER
  * Central system for combining guidelines + inputs → full prompts
  * Pure assembly - no API calls, only string building
- * Implements prompt assembly for COPY, STYLE, and LOGO pipelines
+ * Implements prompt assembly for STYLE and LOGO pipelines
+ * Note: Copy/translation has been moved to /src/copy/
  */
 
 import { STYLING_GUIDELINES } from "./guidelines/designer";
 import { DRAWING_GUIDELINES } from "./guidelines/illustrator";
-import { WRITING_GUIDELINES } from "./guidelines/copywriter";
-import type { ThemeCopy } from "./guidelines/helpers/copywriter";
-
-// Re-export types for convenience
-export type { ThemeCopy };
 
 // ==============================================
 // PROMPT ASSEMBLY FUNCTIONS
 // Pure functions that combine guidelines + data → prompt strings
 // No API calls - caller is responsible for sending to AI
 // ==============================================
-
-/**
- * GEN COPY Pipeline
- * Assembles prompts for copy generation based on theme
- */
-export function assembleCopyPrompt(
-    themeVibe: string,
-    jobs: Array<{ id: string; text: string; limit: number }>,
-    targetLanguage = "en",
-): string {
-    return `${WRITING_GUIDELINES}
-
-RUNTIME CONTEXT:
-- THEME_VIBE: "${themeVibe}"
-- TARGET_LANGUAGE: "${targetLanguage}"
-
-INPUT JSON:
-${JSON.stringify(jobs, null, 2)}
-
-Generate the JSON Object now:`;
-}
 
 /**
  * GEN STYLE Pipeline

@@ -1,10 +1,10 @@
-import { useState, useEffect } from "react";
-import { Heading, Label } from "../ui/typography";
-import { Button } from "../ui/button";
-import { DOCS_PAGE } from "../../../theme";
+import { useEffect, useState } from "react";
 import { API_BASE, API_KEY } from "../../../api.config";
 import { ALLOWED_TEXT_MODELS } from "../../../config/allowedModels";
+import { DOCS_PAGE } from "../../../theme";
 import { fetchWithRetry } from "../../../utils/fetchWithRetry";
+import { Button } from "../ui/button";
+import { Heading, Label } from "../ui/typography";
 
 /**
  * Text Generation Card Component
@@ -12,7 +12,7 @@ import { fetchWithRetry } from "../../../utils/fetchWithRetry";
  */
 export function TextGenCard() {
     const [selectedPrompt, setSelectedPrompt] = useState(
-        DOCS_PAGE.textPrompts[0]
+        DOCS_PAGE.textPrompts[0],
     );
     const [selectedModel, setSelectedModel] = useState("openai-fast");
     const [params, setParams] = useState<Set<string>>(new Set());
@@ -159,7 +159,7 @@ export function TextGenCard() {
                                         }`}
                                         title={
                                             DOCS_PAGE.textParameters.find(
-                                                (p) => p.key === key
+                                                (p) => p.key === key,
                                             )?.description
                                         }
                                     >

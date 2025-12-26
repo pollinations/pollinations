@@ -11,10 +11,7 @@ export {
 } from "./translation/process";
 
 /**
- * Get text from a copy field (handles both string and object formats)
- *
- * Usage:
- *   getText(pageCopy.title) // works for both "Title" and { text: "Title", transform: true }
+ * Get text from a copy field (handles both string and legacy object formats)
  */
 export function getText(field: string | { text: string } | undefined): string {
     if (typeof field === "string") return field;

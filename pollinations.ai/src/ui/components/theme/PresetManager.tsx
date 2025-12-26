@@ -1,5 +1,5 @@
 import { X } from "lucide-react";
-import type { ThemeState, RadiusState, FontState } from "./types";
+import type { FontState, RadiusState, ThemeState } from "./types";
 
 interface PresetManagerProps {
     selectedPresetId: string;

@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 
 export function useFooterVisibility(threshold = 100) {
     const [showFooter, setShowFooter] = useState(false);

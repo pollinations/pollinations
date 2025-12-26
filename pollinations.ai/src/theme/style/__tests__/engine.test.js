@@ -1,12 +1,12 @@
-import { test } from "node:test";
 import assert from "node:assert/strict";
+import { readFileSync as fsReadFileSync } from "node:fs";
 import { readFile } from "node:fs/promises";
-import { transpileModule, ModuleKind, ScriptTarget } from "typescript";
-import vm from "node:vm";
 import Module from "node:module";
 import path from "node:path";
+import { test } from "node:test";
 import { fileURLToPath } from "node:url";
-import { readFileSync as fsReadFileSync } from "node:fs";
+import vm from "node:vm";
+import { ModuleKind, ScriptTarget, transpileModule } from "typescript";
 
 // Basic TS loader for nested requires inside transpiled modules
 Module._extensions[".ts"] = (mod, filename) => {

@@ -8,8 +8,9 @@ export function CloseIcon({ className = "w-4 h-4", stroke = "currentColor" }) {
             fill="none"
             strokeWidth="3"
             viewBox="0 0 16 16"
-            aria-label="Close"
+            aria-labelledby="closeIconTitle"
         >
+            <title id="closeIconTitle">Close</title>
             <path
                 d="M2 2L14 14M14 2L2 14"
                 strokeLinecap="square"

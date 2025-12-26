@@ -1,6 +1,6 @@
-import type { LLMThemeResponse, ThemeSlot } from "./theme-processor";
-import type { MacroConfig } from "./simplified-config.types";
 import type { SemanticTokenId } from "./semantic-ids.types";
+import type { MacroConfig } from "./simplified-config.types";
+import type { LLMThemeResponse, ThemeSlot } from "./theme-processor";
 
 export function macrosToTheme(config: MacroConfig): LLMThemeResponse {
     const colorMap: Record<string, string[]> = {};

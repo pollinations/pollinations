@@ -49,41 +49,25 @@ export default function CommunityPage() {
             return;
         }
 
-        const controller = new AbortController();
+        const items = (COMMUNITY_PAGE.votingIssues as VotingIssue[]).map(
+            (issue, i) => ({
+                id: `issue-${i}`,
+                text: issue.title,
+                mode: "translate" as const,
+            }),
+        );
 
-        async function translateVotingIssues() {
-            try {
-                const items = (
-                    COMMUNITY_PAGE.votingIssues as VotingIssue[]
-                ).map((issue, i) => ({
-                    id: `issue-${i}`,
-                    text: issue.title,
-                    mode: "translate" as const,
-                }));
-
-                const processed = await processCopy(
-                    items,
-                    language,
-                    variationSeed,
-                    controller.signal,
-                );
-
+        processCopy(items, language, variationSeed)
+            .then((processed) => {
                 const translated = (
                     COMMUNITY_PAGE.votingIssues as VotingIssue[]
                 ).map((issue, i) => ({
                     ...issue,
                     title: processed[i]?.text || issue.title,
                 }));
-
                 setTranslatedVotingIssues(translated);
-            } catch (err) {
-                if (err instanceof Error && err.name === "AbortError") return;
-                console.error("Error translating voting issues:", err);
-            }
-        }
-
-        translateVotingIssues();
-        return () => controller.abort();
+            })
+            .catch(console.error);
     }, [language, variationSeed]);
 
     // Translate supporter descriptions when language changes
@@ -93,39 +77,23 @@ export default function CommunityPage() {
             return;
         }
 
-        const controller = new AbortController();
+        const items = COMMUNITY_PAGE.supportersList.map((s, i) => ({
+            id: `supporter-${i}`,
+            text: s.description,
+            mode: "translate" as const,
+        }));
 
-        async function translateSupporters() {
-            try {
-                const items = COMMUNITY_PAGE.supportersList.map((s, i) => ({
-                    id: `supporter-${i}`,
-                    text: s.description,
-                    mode: "translate" as const,
-                }));
-
-                const processed = await processCopy(
-                    items,
-                    language,
-                    variationSeed,
-                    controller.signal,
-                );
-
+        processCopy(items, language, variationSeed)
+            .then((processed) => {
                 const translated = COMMUNITY_PAGE.supportersList.map(
                     (s, i) => ({
                         ...s,
                         description: processed[i]?.text || s.description,
                     }),
                 );
-
                 setTranslatedSupporters(translated);
-            } catch (err) {
-                if (err instanceof Error && err.name === "AbortError") return;
-                console.error("Error translating supporters:", err);
-            }
-        }
-
-        translateSupporters();
-        return () => controller.abort();
+            })
+            .catch(console.error);
     }, [language, variationSeed]);
 
     return (

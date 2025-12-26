@@ -32,32 +32,13 @@ export function ImageGenerator({
     useEffect(() => {
         if (!prompt) return;
 
-        const controller = new AbortController();
         setLoading(true);
         setError(null);
 
-        generateImage(
-            prompt,
-            { width, height, seed, model, nologo },
-            controller.signal,
-        )
-            .then((url) => {
-                if (!controller.signal.aborted) {
-                    setImageUrl(url);
-                }
-            })
-            .catch((err) => {
-                if (err.name !== "AbortError" && !controller.signal.aborted) {
-                    setError(err);
-                }
-            })
-            .finally(() => {
-                if (!controller.signal.aborted) {
-                    setLoading(false);
-                }
-            });
-
-        return () => controller.abort();
+        generateImage(prompt, { width, height, seed, model, nologo })
+            .then(setImageUrl)
+            .catch(setError)
+            .finally(() => setLoading(false));
     }, [prompt, width, height, seed, model, nologo]);
 
     if (loading) {

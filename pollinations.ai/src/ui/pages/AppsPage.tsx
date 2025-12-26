@@ -140,23 +140,14 @@ export default function AppsPage() {
             return;
         }
 
-        const controller = new AbortController();
+        const items = CATEGORIES.map((cat, i) => ({
+            id: `cat-${i}`,
+            text: cat.label.text,
+            mode: "translate" as const,
+        }));
 
-        async function translateCategories() {
-            try {
-                const items = CATEGORIES.map((cat, i) => ({
-                    id: `cat-${i}`,
-                    text: cat.label.text,
-                    mode: "translate" as const,
-                }));
-
-                const processed = await processCopy(
-                    items,
-                    language,
-                    variationSeed,
-                    controller.signal,
-                );
-
+        processCopy(items, language, variationSeed)
+            .then((processed) => {
                 const translated = CATEGORIES.map((cat, i) => ({
                     ...cat,
                     label: {
@@ -164,16 +155,9 @@ export default function AppsPage() {
                         text: processed[i]?.text || cat.label.text,
                     },
                 }));
-
                 setTranslatedCategories(translated);
-            } catch (err) {
-                if (err instanceof Error && err.name === "AbortError") return;
-                console.error("Error translating categories:", err);
-            }
-        }
-
-        translateCategories();
-        return () => controller.abort();
+            })
+            .catch(console.error);
     }, [language, variationSeed]);
 
     // Filter apps by category
@@ -191,38 +175,23 @@ export default function AppsPage() {
             return;
         }
 
-        const controller = new AbortController();
+        const items = filteredApps
+            .filter((app) => app.description)
+            .map((app, i) => ({
+                id: `app-${i}`,
+                text: app.description,
+                mode: APPS_TRANSLATION_CONFIG.description,
+            }));
 
-        async function translateApps() {
-            setIsTranslatingApps(true);
-            try {
-                // Create items for translation
-                const items = filteredApps
-                    .filter((app) => app.description)
-                    .map((app, i) => ({
-                        id: `app-${i}`,
-                        text: app.description,
-                        mode: APPS_TRANSLATION_CONFIG.description,
-                    }));
+        if (items.length === 0) {
+            setTranslatedApps(filteredApps);
+            return;
+        }
 
-                if (items.length === 0) {
-                    setTranslatedApps(filteredApps);
-                    setIsTranslatingApps(false);
-                    return;
-                }
+        setIsTranslatingApps(true);
 
-                console.log(
-                    `📱 [APPS] Translating ${items.length} descriptions to ${language}...`,
-                );
-
-                const processed = await processCopy(
-                    items,
-                    language,
-                    variationSeed,
-                    controller.signal,
-                );
-
-                // Apply translations back
+        processCopy(items, language, variationSeed)
+            .then((processed) => {
                 let processedIndex = 0;
                 const translated = filteredApps.map((app) => {
                     if (app.description) {
@@ -233,22 +202,10 @@ export default function AppsPage() {
                     }
                     return app;
                 });
-
                 setTranslatedApps(translated);
-                console.log(`✅ [APPS] Translation complete`);
-            } catch (err) {
-                if (err instanceof Error && err.name === "AbortError") {
-                    return;
-                }
-                console.error("❌ [APPS] Translation failed:", err);
-                setTranslatedApps(filteredApps);
-            }
-            setIsTranslatingApps(false);
-        }
-
-        translateApps();
-
-        return () => controller.abort();
+            })
+            .catch(() => setTranslatedApps(filteredApps))
+            .finally(() => setIsTranslatingApps(false));
     }, [filteredApps, language, variationSeed]);
 
     // Use translated apps if available, otherwise original

@@ -2,6 +2,9 @@ import { useEffect, useState } from "react";
 import { processCopy } from "../copy";
 import { useCopy } from "../ui/contexts/CopyContext";
 
+// Fixed seed for translate mode - enables caching (no variation needed for literal translation)
+const TRANSLATE_SEED = 1;
+
 /**
  * Hook to translate an array of items by field name
  *
@@ -12,7 +15,7 @@ export function useTranslate<T, K extends keyof T>(
     items: T[],
     field: K,
 ): { translated: T[]; isTranslating: boolean } {
-    const { language, variationSeed } = useCopy();
+    const { language } = useCopy();
     const [translated, setTranslated] = useState<T[]>(items);
     const [isTranslating, setIsTranslating] = useState(false);
 
@@ -36,7 +39,7 @@ export function useTranslate<T, K extends keyof T>(
             mode: "translate" as const,
         }));
 
-        processCopy(copyItems, language, variationSeed)
+        processCopy(copyItems, language, TRANSLATE_SEED)
             .then((processed) => {
                 const result = items.map((item, i) => ({
                     ...item,
@@ -46,7 +49,7 @@ export function useTranslate<T, K extends keyof T>(
             })
             .catch(() => setTranslated(items))
             .finally(() => setIsTranslating(false));
-    }, [items, field, language, variationSeed]);
+    }, [items, field, language]);
 
     return { translated, isTranslating };
 }

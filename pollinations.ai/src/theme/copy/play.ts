@@ -96,4 +96,13 @@ export const PLAY_PAGE = {
     generateTextButton: {
         text: "Generate Text",
     },
+
+    // Text Feed labels
+    feedConnecting: {
+        text: "Connecting to feed...",
+    },
+
+    feedConnectionError: {
+        text: "Connection error. Retrying...",
+    },
 };

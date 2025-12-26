@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { Title, Body } from "../components/ui/typography";
 import { PageCard } from "../components/ui/page-card";
 import { PageContainer } from "../components/ui/page-container";
@@ -39,13 +39,53 @@ function PlayPage() {
 
 
     // --- Text Feed State ---
-    // Fetched from SSE stream at text.polli/feed
-    const [textFeedPrompt, setTextFeedPrompt] = useState(
-        'You are an expert algorithmic trading engine. Analyze this market data and respond with ONLY a valid JSON object.\n\nData: {"symbol":"ETHUSD","price":"2963.80","ema9":"2962.95","ema21":"2963.87","rsi":"47.14","macd_hist":"0.1837","bb_position":"INSIDE","context":"15m Trend is DOWN"}\n\nRules: BUY if EMA9>EMA21 and RSI 40-60. SELL if EMA9<EMA21 and RSI 40-60. HOLD otherwise.\n\nFormat: {"action":"BUY/SELL/HOLD","confidence":0-100,"reasoning":"brief","riskLevel":"LOW/MEDIUM/HIGH","trend":"UPTREND/DOWNTREND/SIDEWAYS","phase":"IMPULSE/PULLBACK/CONSOLIDATION"}'
-    );
-    const [textFeedResponse, setTextFeedResponse] = useState(
-        '{"action":"SELL","confidence":75,"reasoning":"EMA9<EMA21 and RSI within 40-60 satisfy SELL; 15m trend is DOWN, supporting downside bias; MACD_hist positive suggests a mild pullback within the downtrend.","riskLevel":"MEDIUM","trend":"DOWNTREND","phase":"PULLBACK"}'
-    );
+    // Fetched from SSE stream at https://text.pollinations.ai/feed
+    const [textFeedPrompt, setTextFeedPrompt] = useState("");
+    const [textFeedResponse, setTextFeedResponse] = useState("");
+    const [feedLoading, setFeedLoading] = useState(false);
+    const [feedError, setFeedError] = useState<string | null>(null);
+
+    // SSE connection for text feed
+    useEffect(() => {
+        if (view !== "feed" || feedType !== "text") {
+            return;
+        }
+
+        setFeedLoading(true);
+        setFeedError(null);
+
+        const eventSource = new EventSource(
+            "https://text.pollinations.ai/feed"
+        );
+
+        eventSource.onmessage = (event) => {
+            try {
+                const data = JSON.parse(event.data);
+
+                // Extract prompt from parameters.messages[0].content
+                const prompt = data.parameters?.messages?.[0]?.content || "";
+                setTextFeedPrompt(prompt);
+
+                // Extract response - it's a JSON string that needs parsing
+                const responseStr = data.response;
+                setTextFeedResponse(responseStr);
+
+                setFeedLoading(false);
+            } catch (err) {
+                console.error("Error parsing SSE data:", err);
+                setFeedError("Failed to parse feed data");
+            }
+        };
+
+        eventSource.onerror = () => {
+            setFeedError("Connection error. Retrying...");
+            eventSource.close();
+        };
+
+        return () => {
+            eventSource.close();
+        };
+    }, [view, feedType]);
 
     return (
         <PageContainer>
@@ -119,22 +159,40 @@ function PlayPage() {
                     />
                 ) : feedType === "text" ? (
                     <div className="flex flex-col gap-4">
-                        {/* Top: Prompt */}
-                        <div className="bg-muted p-4 rounded text-xs">
-                            <span className="block mb-2 font-bold text-[#ffc]">Prompt:</span>
-                            <div className="whitespace-pre-wrap break-words max-h-48 overflow-y-auto text-[#fff]">
-                                {textFeedPrompt.slice(0, 500)}
-                                {textFeedPrompt.length > 500 ? '...' : ''}
+                        {feedLoading && (
+                            <div className="text-center text-sm text-muted-foreground py-4">
+                                Connecting to feed...
                             </div>
-                        </div>
-                        {/* Bottom: Response */}
-                        <div className="bg-muted p-4 rounded text-xs">
-                            <span className="block mb-2 font-bold text-[#ffc]">Response:</span>
-                            <div className="whitespace-pre-wrap break-words max-h-48 overflow-y-auto text-[#fff]">
-                                {textFeedResponse.slice(0, 500)}
-                                {textFeedResponse.length > 500 ? '...' : ''}
+                        )}
+                        {feedError && (
+                            <div className="text-center text-sm text-red-500 py-4">
+                                {feedError}
                             </div>
-                        </div>
+                        )}
+                        {!feedLoading && textFeedPrompt && (
+                            <>
+                                {/* Top: Prompt */}
+                                <div className="bg-muted p-4 rounded text-xs max-h-[100px]">
+                                    <span className="block mb-2 font-bold text-[#ffc]">
+                                        Prompt:
+                                    </span>
+                                    <div className="whitespace-pre-wrap break-words max-h-48 overflow-y-auto text-[#fff]">
+                                        {textFeedPrompt.slice(0, 100)}
+                                        {textFeedPrompt.length > 100 ? "..." : ""}
+                                    </div>
+                                </div>
+                                {/* Bottom: Response */}
+                                <div className="bg-muted p-4 rounded text-xs max-h-[100px]">
+                                    <span className="block mb-2 font-bold text-[#ffc]">
+                                        Response:
+                                    </span>
+                                    <div className="whitespace-pre-wrap break-words max-h-48 overflow-y-auto text-[#fff]">
+                                        {textFeedResponse.slice(0, 100)}
+                                        {textFeedResponse.length > 100 ? "..." : ""}
+                                    </div>
+                                </div>
+                            </>
+                        )}
                     </div>
                 ) : (
                     <ImageFeed

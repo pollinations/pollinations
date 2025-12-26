@@ -381,15 +381,46 @@ def blend_block_seams(result: np.ndarray, blocks: list[np.ndarray],
                       block_size: int = BLOCK_SIZE,
                       scale_factor: int = 4,
                       blend_width: int = 16) -> np.ndarray:
-    """
-    Aggressively blend seams between adjacent blocks using multi-pass Gaussian blur.
-    Eliminates visible transitions between SDXL and LANCZOS upscaled blocks.
-    """
     result = result.copy().astype(np.float32)
     is_color = len(result.shape) == 3
     
     y_positions = sorted(set(y for y, x in block_positions))
     x_positions = sorted(set(x for y, x in block_positions))
+    
+    def calculate_local_contrast(region):
+        """Calculate contrast in a region for adaptive blending."""
+        if is_color:
+            gray = np.mean(region, axis=2)
+        else:
+            gray = region
+        
+        local_std = np.std(gray)
+        local_mean = np.mean(gray)
+        
+        # Contrast ratio: higher = more detailed, lower = flatter
+        contrast = local_std / (local_mean + 1e-6)
+        return contrast, local_mean
+    
+    def adaptive_blur_sigma(contrast, brightness):
+        """Determine blur strength based on local characteristics."""
+        # Dark areas (brightness < 80): stronger blur to hide seams
+        # Bright areas (brightness > 180): weaker blur to preserve detail
+        # Mid-tones: moderate blur
+        
+        if brightness < 80:  # Dark areas - more aggressive blending
+            base_sigma = 2.5
+        elif brightness > 180:  # Bright/vibrant areas - gentle blending
+            base_sigma = 0.8
+        else:  # Mid-tones
+            base_sigma = 1.5
+        
+        # Adjust by contrast: high contrast = less blur
+        if contrast > 0.4:  # High detail
+            return base_sigma * 0.6
+        elif contrast < 0.1:  # Smooth areas
+            return base_sigma * 1.8
+        else:
+            return base_sigma
     
     # Blend horizontal seams
     for y_orig in y_positions[:-1]:
@@ -398,17 +429,17 @@ def blend_block_seams(result: np.ndarray, blocks: list[np.ndarray],
             y_start = y_seam - blend_width
             y_end = y_seam + blend_width
             
-            # Extract seam region and apply multi-pass Gaussian blur
             seam_region = result[y_start:y_end, :].copy()
+            
+            # Calculate adaptive blur parameters
+            contrast, brightness = calculate_local_contrast(seam_region)
+            sigma = adaptive_blur_sigma(contrast, brightness)
             
             if is_color:
                 for c in range(seam_region.shape[2]):
-                    # Multiple blur passes for smooth transitions
-                    seam_region[:, :, c] = gaussian_filter(seam_region[:, :, c], sigma=3.0)
-                    seam_region[:, :, c] = gaussian_filter(seam_region[:, :, c], sigma=2.0)
+                    seam_region[:, :, c] = gaussian_filter(seam_region[:, :, c], sigma=sigma)
             else:
-                seam_region = gaussian_filter(seam_region, sigma=3.0)
-                seam_region = gaussian_filter(seam_region, sigma=2.0)
+                seam_region = gaussian_filter(seam_region, sigma=sigma)
             
             result[y_start:y_end, :] = seam_region
     
@@ -419,17 +450,17 @@ def blend_block_seams(result: np.ndarray, blocks: list[np.ndarray],
             x_start = x_seam - blend_width
             x_end = x_seam + blend_width
             
-            # Extract seam region and apply multi-pass Gaussian blur
             seam_region = result[:, x_start:x_end].copy()
+            
+            # Calculate adaptive blur parameters
+            contrast, brightness = calculate_local_contrast(seam_region)
+            sigma = adaptive_blur_sigma(contrast, brightness)
             
             if is_color:
                 for c in range(seam_region.shape[2]):
-                    # Multiple blur passes for smooth transitions
-                    seam_region[:, :, c] = gaussian_filter(seam_region[:, :, c], sigma=3.0)
-                    seam_region[:, :, c] = gaussian_filter(seam_region[:, :, c], sigma=2.0)
+                    seam_region[:, :, c] = gaussian_filter(seam_region[:, :, c], sigma=sigma)
             else:
-                seam_region = gaussian_filter(seam_region, sigma=3.0)
-                seam_region = gaussian_filter(seam_region, sigma=2.0)
+                seam_region = gaussian_filter(seam_region, sigma=sigma)
             
             result[:, x_start:x_end] = seam_region
     

@@ -8,6 +8,8 @@ import { PlayGenerator } from "../components/play/PlayGenerator";
 import { ModelSelector } from "../components/play/ModelSelector";
 import { useModelList } from "../../hooks/useModelList";
 import { useTheme } from "../contexts/ThemeContext";
+import { useAuth } from "../../hooks/useAuth";
+import { Button } from "../components/ui/button";
 
 /**
  * PlayPage - Main playground page
@@ -19,7 +21,15 @@ function PlayPage() {
     const [selectedModel, setSelectedModel] = useState("flux"); // Shared model state
     const [prompt, setPrompt] = useState(""); // Shared prompt state
     const [currentFeedPrompt, setCurrentFeedPrompt] = useState(""); // Prompt from feed
-    const { imageModels, textModels } = useModelList();
+
+    // Auth state - dynamic API key based on login status
+    const { apiKey, isLoggedIn, login, logout } = useAuth();
+    const {
+        imageModels,
+        textModels,
+        allowedImageModelIds,
+        allowedTextModelIds,
+    } = useModelList(apiKey);
 
     // Get page copy from preset
     const { presetCopy } = useTheme();
@@ -31,7 +41,7 @@ function PlayPage() {
             ...imageModels.map((m) => ({ ...m, type: "image" as const })),
             ...textModels.map((m) => ({ ...m, type: "text" as const })),
         ],
-        [imageModels, textModels]
+        [imageModels, textModels],
     );
 
     // Display prompt based on view
@@ -40,24 +50,42 @@ function PlayPage() {
     return (
         <PageContainer>
             <PageCard>
-                {/* Title with toggle */}
-                <div className="flex items-center gap-4 mb-8">
-                    <Title spacing="none">
-                        {view === "play"
-                            ? pageCopy.createTitle.text
-                            : pageCopy.watchTitle.text}
-                    </Title>
-                    <button
-                        type="button"
-                        onClick={() =>
-                            setView(view === "play" ? "feed" : "play")
-                        }
-                        className="font-body text-sm text-text-body-tertiary hover:text-text-body-main transition-colors"
-                    >
-                        {view === "play"
-                            ? pageCopy.toggleWatchOthers.text
-                            : pageCopy.toggleBackToPlay.text}
-                    </button>
+                {/* Title with toggle and login */}
+                <div className="flex items-center justify-between mb-8">
+                    <div className="flex items-center gap-4">
+                        <Title spacing="none">
+                            {view === "play"
+                                ? pageCopy.createTitle.text
+                                : pageCopy.watchTitle.text}
+                        </Title>
+                        <button
+                            type="button"
+                            onClick={() =>
+                                setView(view === "play" ? "feed" : "play")
+                            }
+                            className="font-body text-sm text-text-body-tertiary hover:text-text-body-main transition-colors"
+                        >
+                            {view === "play"
+                                ? pageCopy.toggleWatchOthers.text
+                                : pageCopy.toggleBackToPlay.text}
+                        </button>
+                    </div>
+                    {/* Login/Logout Button */}
+                    <div className="flex items-center gap-2">
+                        {isLoggedIn && (
+                            <span className="font-mono text-xs text-text-body-tertiary bg-input-background px-2 py-1 rounded">
+                                {apiKey.slice(0, 12)}...
+                            </span>
+                        )}
+                        <Button
+                            type="button"
+                            onClick={isLoggedIn ? logout : login}
+                            variant="secondary"
+                            size="sm"
+                        >
+                            {isLoggedIn ? "Logout" : "Login"}
+                        </Button>
+                    </div>
                 </div>
 
                 {/* Description */}
@@ -72,6 +100,8 @@ function PlayPage() {
                     models={allModels}
                     selectedModel={selectedModel}
                     onSelectModel={setSelectedModel}
+                    allowedImageModelIds={allowedImageModelIds}
+                    allowedTextModelIds={allowedTextModelIds}
                 />
 
                 {/* Prompt - Independent of view state */}
@@ -101,6 +131,7 @@ function PlayPage() {
                         onPromptChange={setPrompt}
                         imageModels={imageModels}
                         textModels={textModels}
+                        apiKey={apiKey}
                     />
                 ) : (
                     <ImageFeed

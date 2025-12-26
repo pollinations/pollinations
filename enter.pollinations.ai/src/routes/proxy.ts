@@ -8,6 +8,7 @@ import { track, type TrackEnv } from "@/middleware/track.ts";
 import { resolveModel } from "@/middleware/model.ts";
 import { frontendKeyRateLimit } from "@/middleware/rate-limit-durable.ts";
 import { imageCache } from "@/middleware/image-cache.ts";
+import { textCache } from "@/middleware/text-cache.ts";
 import { edgeRateLimit } from "@/middleware/rate-limit-edge.ts";
 import { requestDeduplication } from "@/middleware/requestDeduplication.ts";
 import { describeRoute, resolver as baseResolver } from "hono-openapi";
@@ -99,14 +100,31 @@ const chatCompletionHandlers = factory.createHandlers(
     },
 );
 
+// Helper to filter models by API key permissions
+function filterModelsByPermissions<T extends { name: string }>(
+    models: T[],
+    allowedModels: string[] | undefined,
+): T[] {
+    if (!allowedModels || allowedModels.length === 0) return models;
+    return models.filter((m) => allowedModels.includes(m.name));
+}
+
 export const proxyRoutes = new Hono<Env>()
     // Edge rate limiter: first line of defense (10 req/s per IP)
     .use("*", edgeRateLimit)
+    // Optional auth for models endpoints - doesn't require auth but uses it if provided
+    .use("/v1/models", auth({ allowApiKey: true, allowSessionCookie: false }))
+    .use(
+        "/image/models",
+        auth({ allowApiKey: true, allowSessionCookie: false }),
+    )
+    .use("/text/models", auth({ allowApiKey: true, allowSessionCookie: false }))
     .get(
         "/v1/models",
         describeRoute({
             tags: ["gen.pollinations.ai"],
-            description: "Get available text models (OpenAI-compatible).",
+            description:
+                "Get available text models (OpenAI-compatible). If an API key with model restrictions is provided, only allowed models are returned.",
             responses: {
                 200: {
                     description: "Success",
@@ -120,8 +138,19 @@ export const proxyRoutes = new Hono<Env>()
             },
         }),
         async (c) => {
-            return await proxy(`${c.env.TEXT_SERVICE_URL}/openai/models`, {
-                headers: proxyHeaders(c),
+            const allowedModels = c.var.auth?.apiKey?.permissions?.models;
+            const models = filterModelsByPermissions(
+                getTextModelsInfo(),
+                allowedModels,
+            );
+            const now = Date.now();
+            return c.json({
+                object: "list" as const,
+                data: models.map((m) => ({
+                    id: m.name,
+                    object: "model" as const,
+                    created: now,
+                })),
             });
         },
     )
@@ -130,7 +159,7 @@ export const proxyRoutes = new Hono<Env>()
         describeRoute({
             tags: ["gen.pollinations.ai"],
             description:
-                "Get a list of available image generation models with pricing, capabilities, and metadata. Use this endpoint to discover which models are available and their costs before making generation requests. Response includes `aliases` (alternative names you can use), pricing per image, and supported modalities.",
+                "Get a list of available image generation models with pricing, capabilities, and metadata. If an API key with model restrictions is provided, only allowed models are returned.",
             responses: {
                 200: {
                     description: "Success",
@@ -150,7 +179,11 @@ export const proxyRoutes = new Hono<Env>()
         }),
         async (c) => {
             try {
-                const models = getImageModelsInfo();
+                const allowedModels = c.var.auth?.apiKey?.permissions?.models;
+                const models = filterModelsByPermissions(
+                    getImageModelsInfo(),
+                    allowedModels,
+                );
                 return c.json(models);
             } catch (error) {
                 throw new HTTPException(500, {
@@ -165,7 +198,7 @@ export const proxyRoutes = new Hono<Env>()
         describeRoute({
             tags: ["gen.pollinations.ai"],
             description:
-                "Get a list of available text generation models with pricing, capabilities, and metadata. Use this endpoint to discover which models are available and their costs before making generation requests. Response includes `aliases` (alternative names you can use), token pricing, supported modalities (text, image, audio), and capabilities (tools, reasoning).",
+                "Get a list of available text generation models with pricing, capabilities, and metadata. If an API key with model restrictions is provided, only allowed models are returned.",
             responses: {
                 200: {
                     description: "Success",
@@ -183,16 +216,13 @@ export const proxyRoutes = new Hono<Env>()
                 ...errorResponseDescriptions(500),
             },
         }),
-        async (c) => {
-            try {
-                const models = getTextModelsInfo();
-                return c.json(models);
-            } catch (error) {
-                throw new HTTPException(500, {
-                    message: "Failed to load text models",
-                    cause: error,
-                });
-            }
+        (c) => {
+            const allowedModels = c.var.auth?.apiKey?.permissions?.models;
+            const models = filterModelsByPermissions(
+                getTextModelsInfo(),
+                allowedModels,
+            );
+            return c.json(models);
         },
     )
     // Auth required for all endpoints below (API key only - no session cookies)
@@ -203,6 +233,7 @@ export const proxyRoutes = new Hono<Env>()
     .use(requestDeduplication)
     .post(
         "/v1/chat/completions",
+        textCache,
         describeRoute({
             tags: ["gen.pollinations.ai"],
             description: [
@@ -235,16 +266,9 @@ export const proxyRoutes = new Hono<Env>()
         }),
         ...chatCompletionHandlers,
     )
-    // Undocumented /openai alias for backward compatibility (deprecated)
-    .post(
-        "/openai",
-        describeRoute({
-            hide: true, // Hide from OpenAPI docs completely
-        }),
-        ...chatCompletionHandlers,
-    )
     .get(
         "/text/:prompt",
+        textCache,
         describeRoute({
             tags: ["gen.pollinations.ai"],
             description: [

@@ -70,7 +70,7 @@ function getPageKey(pathname: string): string {
 export function CopyProvider({ children }: { children: ReactNode }) {
     const location = useLocation();
     const [languageOverride, setLanguageOverride] = useState<"auto" | "en">(
-        "auto"
+        "auto",
     );
     const [isProcessing, setIsProcessing] = useState(false);
     const [processedCopy, setProcessedCopy] = useState<Record<
@@ -100,59 +100,25 @@ export function CopyProvider({ children }: { children: ReactNode }) {
             return;
         }
 
-        const controller = new AbortController();
+        setIsProcessing(true);
+        setProcessedCopy(pageCopy); // Show original while processing
 
-        const runProcessing = async () => {
-            setIsProcessing(true);
-            // Reset to original while processing
-            setProcessedCopy(pageCopy);
+        // Deep clone the page's copy
+        const copyClone = JSON.parse(JSON.stringify(pageCopy));
+        const { items, pointers } = extractCopyItems(copyClone);
 
-            try {
-                // Deep clone the page's copy
-                const copyClone = JSON.parse(JSON.stringify(pageCopy));
-
-                // Extract items and pointers
-                const { items, pointers } = extractCopyItems(copyClone);
-
-                if (items.length === 0) {
-                    setIsProcessing(false);
-                    return;
-                }
-
-                console.log(
-                    `📝 [COPY] Processing ${currentPage}: ${items.length} items (lang=${language}, seed=${variationSeed})`
-                );
-
-                // Process via LLM
-                const processed = await processCopy(
-                    items,
-                    language,
-                    variationSeed,
-                    controller.signal
-                );
-
-                // Apply results back to cloned copy
-                applyTranslations(processed, pointers);
-
-                // Update state with processed copy
-                setProcessedCopy(copyClone);
-
-                console.log(`✅ [COPY] ${currentPage} complete`);
-            } catch (err) {
-                if (err instanceof Error && err.name === "AbortError") {
-                    // Request was aborted (page changed), don't touch isProcessing
-                    // A new translation is starting which will set it to true
-                    return;
-                }
-                console.error(`❌ [COPY] ${currentPage} failed:`, err);
-            }
-            // Only set to false on success or real error, not on abort
+        if (items.length === 0) {
             setIsProcessing(false);
-        };
+            return;
+        }
 
-        runProcessing();
-
-        return () => controller.abort();
+        processCopy(items, language, variationSeed)
+            .then((processed) => {
+                applyTranslations(processed, pointers);
+                setProcessedCopy(copyClone);
+            })
+            .catch(console.error)
+            .finally(() => setIsProcessing(false));
     }, [currentPage, language, variationSeed]);
 
     return (

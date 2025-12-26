@@ -28,6 +28,7 @@ import { PLAY_PAGE } from "../../copy/content/play";
 // Map routes to their copy content
 const PAGE_COPY: Record<string, Record<string, unknown>> = {
     "/": HELLO_PAGE,
+    "/play": PLAY_PAGE,
     "/create": PLAY_PAGE,
     "/feed": PLAY_PAGE,
     "/docs": DOCS_PAGE,

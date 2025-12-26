@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import { processCopy } from "../../copy";
+import { COMMUNITY_PAGE } from "../../copy/content/community";
 import { useNews } from "../../hooks/useNews";
-import { COMMUNITY_PAGE } from "../../theme";
 import { useCopy } from "../contexts/CopyContext";
 import { Heading } from "./ui/typography";
 
@@ -135,7 +135,12 @@ export function NewsSection({
                                             className,
                                             children,
                                             ...props
-                                        }: any) => {
+                                        }: {
+                                            node?: unknown;
+                                            className?: string;
+                                            children?: React.ReactNode;
+                                            [key: string]: unknown;
+                                        }) => {
                                             const match = /language-(\w+)/.exec(
                                                 className || "",
                                             );

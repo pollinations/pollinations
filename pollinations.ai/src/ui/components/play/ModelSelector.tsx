@@ -19,6 +19,7 @@ interface ModelSelectorProps {
     selectedModel: string;
     onSelectModel: (id: string) => void;
     showLegend?: boolean;
+    isLoggedIn?: boolean;
 }
 
 /**
@@ -32,6 +33,7 @@ export const ModelSelector = memo(function ModelSelector({
     selectedModel,
     onSelectModel,
     showLegend = true,
+    isLoggedIn = false,
 }: ModelSelectorProps) {
     return (
         <div className="mb-6">
@@ -74,20 +76,20 @@ export const ModelSelector = memo(function ModelSelector({
                     const modelType = hasVideoOutput
                         ? "video"
                         : hasAudioOutput
-                        ? "audio"
-                        : isImage
-                        ? "image"
-                        : "text";
+                          ? "audio"
+                          : isImage
+                            ? "image"
+                            : "text";
                     const isActive = selectedModel === m.id;
-                    const isAllowed = isModelAllowed(m.id, m.type);
+                    const isAllowed = isModelAllowed(m.id, m.type, isLoggedIn);
 
                     const borderColorClass = hasVideoOutput
                         ? "border-indicator-video"
                         : hasAudioOutput
-                        ? "border-indicator-audio"
-                        : isImage
-                        ? "border-indicator-image"
-                        : "border-indicator-text";
+                          ? "border-indicator-audio"
+                          : isImage
+                            ? "border-indicator-image"
+                            : "border-indicator-text";
 
                     return (
                         <div key={m.id} className="relative group">

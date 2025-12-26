@@ -4,7 +4,7 @@ import { CloseIcon } from "../../assets/CloseIcon";
 import type { Model } from "../../../hooks/useModelList";
 
 import { PLAY_PAGE } from "../../../theme";
-import { API_BASE, API_KEY } from "../../../api.config";
+import { API_BASE } from "../../../api.config";
 
 interface PlayGeneratorProps {
     selectedModel: string;
@@ -12,6 +12,7 @@ interface PlayGeneratorProps {
     onPromptChange?: (prompt: string) => void;
     imageModels: Model[];
     textModels: Model[];
+    apiKey: string;
 }
 
 /**
@@ -34,6 +35,7 @@ export function PlayGenerator({
     prompt,
     imageModels,
     textModels,
+    apiKey,
 }: PlayGeneratorProps) {
     const [result, setResult] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(false);
@@ -60,12 +62,12 @@ export function PlayGenerator({
 
     // Check if current model has audio output
     const isAudioModel = [...imageModels, ...textModels].some(
-        (m) => m.id === selectedModel && m.hasAudioOutput
+        (m) => m.id === selectedModel && m.hasAudioOutput,
     );
 
     // Check if current model supports image input modality
     const currentModelData = [...imageModels, ...textModels].find(
-        (m) => m.id === selectedModel
+        (m) => m.id === selectedModel,
     );
     const supportsImageInput = currentModelData?.hasImageInput || false;
 
@@ -86,7 +88,7 @@ export function PlayGenerator({
 
                 const response = await fetch(
                     `${API_BASE}/image/${encodeURIComponent(prompt)}?${params}`,
-                    { headers: { Authorization: `Bearer ${API_KEY}` } }
+                    { headers: { Authorization: `Bearer ${apiKey}` } },
                 );
 
                 if (!response.ok) {
@@ -134,7 +136,7 @@ export function PlayGenerator({
                         method: "POST",
                         headers: {
                             "Content-Type": "application/json",
-                            Authorization: `Bearer ${API_KEY}`,
+                            Authorization: `Bearer ${apiKey}`,
                         },
                         body: JSON.stringify({
                             model: selectedModel,
@@ -145,7 +147,7 @@ export function PlayGenerator({
                                 },
                             ],
                         }),
-                    }
+                    },
                 );
 
                 if (!response.ok) {
@@ -211,7 +213,7 @@ export function PlayGenerator({
                                                     ];
                                                     newImages.splice(index, 1);
                                                     setUploadedImages(
-                                                        newImages
+                                                        newImages,
                                                     );
                                                 }}
                                                 variant="remove"
@@ -247,12 +249,12 @@ export function PlayGenerator({
                                                                         [
                                                                             ...uploadedImages,
                                                                             reader.result,
-                                                                        ]
+                                                                        ],
                                                                     );
                                                                 }
                                                             };
                                                         reader.readAsDataURL(
-                                                            file
+                                                            file,
                                                         );
                                                     }
                                                 }}

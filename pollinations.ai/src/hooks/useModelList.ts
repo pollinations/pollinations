@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { API_BASE, API_KEY } from "../api.config";
+import { API_BASE } from "../api.config";
 
 const IMAGE_MODELS_URL = `${API_BASE}/image/models`;
 const TEXT_MODELS_URL = `${API_BASE}/text/models`;
@@ -19,26 +19,31 @@ interface UseModelListReturn {
     imageModels: Model[];
     textModels: Model[];
     isLoading: boolean;
-    error: any;
+    error: Error | null;
     allModels: Model[];
 }
 
 /**
  * Custom hook to fetch and manage available models from the API
  * Returns formatted lists of image and text models
+ * @param apiKey - API key to use for authentication (from useAuth hook)
  */
-export function useModelList(): UseModelListReturn {
+export function useModelList(apiKey: string): UseModelListReturn {
     const [imageModels, setImageModels] = useState<Model[]>([]);
     const [textModels, setTextModels] = useState<Model[]>([]);
     const [isLoading, setIsLoading] = useState<boolean>(true);
-    const [error, setError] = useState<any>(null);
+    const [error, setError] = useState<Error | null>(null);
 
     useEffect(() => {
         const fetchModels = async () => {
             try {
                 const [imageRes, textRes] = await Promise.all([
-                    fetch(IMAGE_MODELS_URL, { headers: { Authorization: `Bearer ${API_KEY}` } }),
-                    fetch(TEXT_MODELS_URL, { headers: { Authorization: `Bearer ${API_KEY}` } }),
+                    fetch(IMAGE_MODELS_URL, {
+                        headers: { Authorization: `Bearer ${apiKey}` },
+                    }),
+                    fetch(TEXT_MODELS_URL, {
+                        headers: { Authorization: `Bearer ${apiKey}` },
+                    }),
                 ]);
 
                 const imageList = await imageRes.json();
@@ -88,13 +93,13 @@ export function useModelList(): UseModelListReturn {
                 setIsLoading(false);
             } catch (err) {
                 console.error("Failed to fetch models:", err);
-                setError(err);
+                setError(err instanceof Error ? err : new Error(String(err)));
                 setIsLoading(false);
             }
         };
 
         fetchModels();
-    }, []);
+    }, [apiKey]);
 
     return {
         imageModels,

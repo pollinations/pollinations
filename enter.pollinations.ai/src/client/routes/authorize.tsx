@@ -4,8 +4,8 @@ import { Button } from "../components/button.tsx";
 import { ModelPermissions } from "../components/model-permissions.tsx";
 import { authClient } from "../auth.ts";
 
-// 6 hours in seconds
-const DEFAULT_EXPIRY_SECONDS = 6 * 60 * 60;
+// 30 days in seconds
+const DEFAULT_EXPIRY_SECONDS = 30 * 24 * 60 * 60;
 
 export const Route = createFileRoute("/authorize")({
     component: AuthorizeComponent,
@@ -69,7 +69,7 @@ function AuthorizeComponent() {
         setError(null);
 
         try {
-            // Create a temporary API key with 6h expiry using better-auth's built-in endpoint
+            // Create a temporary API key with 30-day expiry using better-auth's built-in endpoint
             const result = await authClient.apiKey.create({
                 name: `Temporary key for ${redirectHostname}`,
                 expiresIn: DEFAULT_EXPIRY_SECONDS,
@@ -120,12 +120,6 @@ function AuthorizeComponent() {
         // Go back to dashboard
         navigate({ to: "/" });
     };
-
-    const expiryTime = new Date(Date.now() + DEFAULT_EXPIRY_SECONDS * 1000);
-    const expiryString = expiryTime.toLocaleTimeString([], {
-        hour: "2-digit",
-        minute: "2-digit",
-    });
 
     // Show loading while checking session
     if (isPending) {
@@ -258,7 +252,7 @@ function AuthorizeComponent() {
                         <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 mb-6">
                             <p className="text-amber-800 text-sm">
                                 ⏱️ <strong>Temporary access:</strong> This key
-                                expires in 6 hours (at {expiryString})
+                                expires in 30 days
                             </p>
                         </div>
 

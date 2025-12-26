@@ -8,18 +8,17 @@ import { useCopy } from "../ui/contexts/CopyContext";
  * @param items - Array of items to translate
  * @param getText - Function to extract text from an item
  * @param setText - Function to create a new item with translated text
- * @param mode - "translate" for literal, "transform" for creative
  */
 export function useTranslate<T>(
     items: T[],
     getText: (item: T) => string,
     setText: (item: T, text: string) => T,
-    mode: "translate" | "transform" = "translate",
 ): { translated: T[]; isTranslating: boolean } {
     const { language, variationSeed } = useCopy();
     const [translated, setTranslated] = useState<T[]>(items);
     const [isTranslating, setIsTranslating] = useState(false);
 
+    // biome-ignore lint/correctness/useExhaustiveDependencies: getText/setText are stable by design (same field accessor each render)
     useEffect(() => {
         if (items.length === 0) {
             setTranslated([]);
@@ -37,7 +36,7 @@ export function useTranslate<T>(
         const copyItems = items.map((item, i) => ({
             id: `item-${i}`,
             text: getText(item),
-            mode,
+            mode: "translate" as const,
         }));
 
         processCopy(copyItems, language, variationSeed)
@@ -49,7 +48,7 @@ export function useTranslate<T>(
             })
             .catch(() => setTranslated(items))
             .finally(() => setIsTranslating(false));
-    }, [items, language, variationSeed, getText, setText, mode]);
+    }, [items, language, variationSeed]);
 
     return { translated, isTranslating };
 }

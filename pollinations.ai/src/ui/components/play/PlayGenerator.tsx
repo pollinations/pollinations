@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
 import { Button } from "../ui/button";
-import { CloseIcon } from "../../assets/CloseIcon";
 import type { Model } from "../../../hooks/useModelList";
 
 import { PLAY_PAGE } from "../../../theme";
@@ -21,13 +20,23 @@ interface PlayGeneratorProps {
  * Handles prompt input, parameters, and generation
  * Model selection is managed by parent PlayPage
  */
-// Error messages for different error types
-const ERROR_MESSAGES = {
-    RATE_LIMIT: "⏳ Rate limit reached. Please wait a moment and try again.",
-    FORBIDDEN:
-        "🔒 Access denied. You may need to log in to enter.pollinations.ai for this model.",
-    GENERIC:
-        "⚠️ Something went wrong. Please try again or choose a different model.",
+// Helper to extract error message from API response
+const extractErrorMessage = async (response: Response): Promise<string> => {
+    try {
+        const data = await response.json();
+        // Handle nested error structure: { error: { message: "{...}" } }
+        if (data?.error?.message) {
+            try {
+                const nested = JSON.parse(data.error.message);
+                return nested?.message || data.error.message;
+            } catch {
+                return data.error.message;
+            }
+        }
+        return data?.message || data?.error || "Something went wrong";
+    } catch {
+        return `Error ${response.status}: ${response.statusText}`;
+    }
 };
 
 export function PlayGenerator({
@@ -40,7 +49,6 @@ export function PlayGenerator({
     const [result, setResult] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
-    const [uploadedImages, setUploadedImages] = useState<string[]>([]);
 
     // Cleanup blob URLs when result changes
     useEffect(() => {
@@ -56,7 +64,8 @@ export function PlayGenerator({
     const [height, setHeight] = useState(1024);
     const [seed, setSeed] = useState(0);
     const [enhance, setEnhance] = useState(false);
-    const [nologo, setNologo] = useState(true);
+    const [imageUrls, setImageUrls] = useState<string[]>([]);
+    const [imageUrlInput, setImageUrlInput] = useState("");
 
     const isImageModel = imageModels.some((m) => m.id === selectedModel);
 
@@ -71,6 +80,13 @@ export function PlayGenerator({
     );
     const supportsImageInput = currentModelData?.hasImageInput || false;
 
+    const addImageUrl = () => {
+        if (imageUrlInput.trim() && imageUrls.length < 4) {
+            setImageUrls([...imageUrls, imageUrlInput.trim()]);
+            setImageUrlInput("");
+        }
+    };
+
     const handleGenerate = async () => {
         setIsLoading(true);
         setError(null);
@@ -83,8 +99,12 @@ export function PlayGenerator({
                     height: height.toString(),
                     seed: seed.toString(),
                     enhance: enhance.toString(),
-                    nologo: nologo.toString(),
                 });
+
+                // Add reference images for image-to-image generation (pipe-separated)
+                if (imageUrls.length > 0) {
+                    params.set("image", imageUrls.join("|"));
+                }
 
                 const response = await fetch(
                     `${API_BASE}/image/${encodeURIComponent(prompt)}?${params}`,
@@ -92,13 +112,8 @@ export function PlayGenerator({
                 );
 
                 if (!response.ok) {
-                    if (response.status === 429) {
-                        setError(ERROR_MESSAGES.RATE_LIMIT);
-                    } else if (response.status === 403) {
-                        setError(ERROR_MESSAGES.FORBIDDEN);
-                    } else {
-                        setError(ERROR_MESSAGES.GENERIC);
-                    }
+                    const errorMsg = await extractErrorMessage(response);
+                    setError(errorMsg);
                     setResult(null);
                     setIsLoading(false);
                     return;
@@ -110,22 +125,24 @@ export function PlayGenerator({
                 setIsLoading(false);
             } catch (err) {
                 console.error("Image generation error:", err);
-                setError(ERROR_MESSAGES.GENERIC);
+                setError(
+                    err instanceof Error ? err.message : "Something went wrong",
+                );
                 setResult(null);
                 setIsLoading(false);
             }
         } else {
             try {
                 const content =
-                    uploadedImages.length > 0
+                    imageUrls.length > 0
                         ? [
                               {
                                   type: "text",
                                   text: prompt,
                               },
-                              ...uploadedImages.map((img) => ({
+                              ...imageUrls.map((url: string) => ({
                                   type: "image_url",
-                                  image_url: { url: img },
+                                  image_url: { url },
                               })),
                           ]
                         : prompt;
@@ -151,13 +168,8 @@ export function PlayGenerator({
                 );
 
                 if (!response.ok) {
-                    if (response.status === 429) {
-                        setError(ERROR_MESSAGES.RATE_LIMIT);
-                    } else if (response.status === 403) {
-                        setError(ERROR_MESSAGES.FORBIDDEN);
-                    } else {
-                        setError(ERROR_MESSAGES.GENERIC);
-                    }
+                    const errorMsg = await extractErrorMessage(response);
+                    setError(errorMsg);
                     setResult(null);
                     setIsLoading(false);
                     return;
@@ -170,7 +182,9 @@ export function PlayGenerator({
                 setIsLoading(false);
             } catch (err) {
                 console.error("Text generation error:", err);
-                setError(ERROR_MESSAGES.GENERIC);
+                setError(
+                    err instanceof Error ? err.message : "Something went wrong",
+                );
                 setResult(null);
                 setIsLoading(false);
             }
@@ -179,94 +193,75 @@ export function PlayGenerator({
 
     return (
         <>
-            {/* Image Upload (only for models with image input modality) */}
+            {/* Reference Images (only for models with image input modality) */}
             {supportsImageInput && (
                 <div className="mb-6">
                     <div className="flex items-baseline gap-2 mb-2">
-                        <label className="font-headline text-text-body-main uppercase text-xs tracking-wider font-black">
-                            {PLAY_PAGE.addImagesLabel.text}
+                        <label
+                            htmlFor="image-url"
+                            className="font-headline text-text-body-main uppercase text-xs tracking-wider font-black"
+                        >
+                            Reference images
                         </label>
                         <span className="font-body text-[10px] text-text-caption">
-                            {PLAY_PAGE.upToFourLabel.text}
+                            {imageUrls.length}/4 images
                         </span>
                     </div>
-                    <div className="grid grid-cols-4 gap-1 max-w-xs">
-                        {[...Array(4)].map((_, index) => {
-                            const hasImage = uploadedImages[index];
-                            return (
-                                <div
-                                    key={`upload-${index}`}
-                                    className="relative aspect-square"
-                                >
-                                    {hasImage ? (
-                                        <>
-                                            <img
-                                                src={hasImage}
-                                                alt={`Upload ${index + 1}`}
-                                                className="w-full h-full object-cover border-2 border-border-strong rounded-input"
-                                            />
-                                            <Button
-                                                type="button"
-                                                onClick={() => {
-                                                    const newImages = [
-                                                        ...uploadedImages,
-                                                    ];
-                                                    newImages.splice(index, 1);
-                                                    setUploadedImages(
-                                                        newImages,
-                                                    );
-                                                }}
-                                                variant="remove"
-                                                size={null}
-                                            >
-                                                <CloseIcon
-                                                    className="w-4 h-4"
-                                                    stroke="var(--text-primary)"
-                                                />
-                                            </Button>
-                                        </>
-                                    ) : (
-                                        <label className="w-full h-full bg-input-background border-2 border-border-main hover:border-border-highlight hover:bg-input-background transition-colors flex items-center justify-center cursor-pointer rounded-input">
-                                            <input
-                                                id="image-upload"
-                                                name="image-upload"
-                                                type="file"
-                                                accept="image/*"
-                                                className="hidden"
-                                                onChange={(e) => {
-                                                    const file =
-                                                        e.target.files?.[0];
-                                                    if (file) {
-                                                        const reader =
-                                                            new FileReader();
-                                                        reader.onloadend =
-                                                            () => {
-                                                                if (
-                                                                    typeof reader.result ===
-                                                                    "string"
-                                                                ) {
-                                                                    setUploadedImages(
-                                                                        [
-                                                                            ...uploadedImages,
-                                                                            reader.result,
-                                                                        ],
-                                                                    );
-                                                                }
-                                                            };
-                                                        reader.readAsDataURL(
-                                                            file,
-                                                        );
-                                                    }
-                                                }}
-                                            />
-                                            <span className="font-headline text-2xl font-black text-text-on-color">
-                                                +
-                                            </span>
-                                        </label>
-                                    )}
+                    {/* Thumbnails of added images */}
+                    {imageUrls.length > 0 && (
+                        <div className="flex gap-2 mb-2 flex-wrap">
+                            {imageUrls.map((url, index) => (
+                                <div key={index} className="relative">
+                                    <img
+                                        src={url}
+                                        alt={`Reference ${index + 1}`}
+                                        className="w-16 h-16 object-cover rounded-input border-2 border-border-strong"
+                                    />
+                                    <button
+                                        type="button"
+                                        onClick={() =>
+                                            setImageUrls(
+                                                imageUrls.filter(
+                                                    (_, i) => i !== index,
+                                                ),
+                                            )
+                                        }
+                                        className="absolute -top-1 -right-1 w-5 h-5 bg-charcoal border border-border-main rounded-full flex items-center justify-center text-text-body-main hover:bg-button-secondary-bg transition-colors"
+                                    >
+                                        ×
+                                    </button>
                                 </div>
-                            );
-                        })}
+                            ))}
+                        </div>
+                    )}
+                    {/* URL input with add button */}
+                    <div className="flex gap-2">
+                        <input
+                            id="image-url"
+                            name="image-url"
+                            type="text"
+                            value={imageUrlInput}
+                            onChange={(e) => setImageUrlInput(e.target.value)}
+                            onKeyDown={(e) => {
+                                if (e.key === "Enter") {
+                                    e.preventDefault();
+                                    addImageUrl();
+                                }
+                            }}
+                            placeholder="Image URL"
+                            className="flex-1 p-3 bg-input-background text-text-body-main font-body focus:outline-none focus:bg-input-background hover:bg-input-background transition-colors placeholder:text-text-caption rounded-input"
+                            disabled={imageUrls.length >= 4}
+                        />
+                        <button
+                            type="button"
+                            onClick={addImageUrl}
+                            disabled={
+                                !imageUrlInput.trim() || imageUrls.length >= 4
+                            }
+                            className="px-4 bg-button-secondary-bg text-text-body-main font-headline font-black text-xl rounded-input hover:bg-button-secondary-bg-hover transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                            +
+                        </button>
                     </div>
                 </div>
             )}
@@ -364,41 +359,6 @@ export function PlayGenerator({
                                     checked={enhance}
                                     onChange={(e) =>
                                         setEnhance(e.target.checked)
-                                    }
-                                    className="sr-only peer"
-                                />
-                                <div className="w-6 h-6 border-4 border-border-brand bg-input-background peer-checked:bg-button-secondary-bg transition-colors group-hover:border-border-brand rounded-input" />
-                                <svg
-                                    className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-4 h-4 text-text-body-main opacity-0 peer-checked:opacity-100 transition-opacity pointer-events-none"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    viewBox="0 0 24 24"
-                                    aria-label="Checkmark"
-                                >
-                                    <path
-                                        strokeLinecap="square"
-                                        strokeLinejoin="miter"
-                                        strokeWidth="4"
-                                        d="M5 13l4 4L19 7"
-                                    />
-                                </svg>
-                            </label>
-                        </div>
-                        <div>
-                            <label
-                                htmlFor="remove-logo"
-                                className="block font-headline text-text-body-main mb-2 uppercase text-xs tracking-wider font-black"
-                            >
-                                {PLAY_PAGE.logoLabel.text}
-                            </label>
-                            <label className="relative flex items-center justify-center h-[52px] bg-input-background hover:bg-input-background transition-colors cursor-pointer select-none group">
-                                <input
-                                    id="remove-logo"
-                                    name="remove-logo"
-                                    type="checkbox"
-                                    checked={nologo}
-                                    onChange={(e) =>
-                                        setNologo(e.target.checked)
                                     }
                                     className="sr-only peer"
                                 />

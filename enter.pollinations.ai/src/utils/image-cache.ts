@@ -135,48 +135,16 @@ export async function cacheResponse<TEnv extends ImageCacheEnv>(
         // Store the image in R2 using the cache key directly
         const imageBuffer = await c.res.clone().arrayBuffer();
 
-        // Get client information from request
-        const clientIp = c.req.header("cf-connecting-ip") || "";
-
-        // Get additional client information
-        const userAgent = c.req.header("user-agent") || "";
-        const referer =
-            c.req.header("referer") || c.req.header("referrer") || "";
-        const acceptLanguage = c.req.header("accept-language") || "";
-        const requestId = c.get("requestId");
-
-        // Get request-specific information
-        const method = c.req.method || "GET";
-        const requestTime = new Date().toISOString();
-
-        // Create metadata object with content type and original URL
+        // Create minimal metadata - only what's needed to serve the cached response
         const httpMetadata: R2HTTPMetadata = {
             contentType: c.res.headers.get("content-type") || "image/jpeg",
-            contentEncoding: c.res.headers.get("content-encoding") || undefined,
-            contentDisposition:
-                c.res.headers.get("content-disposition") || undefined,
-            contentLanguage: c.res.headers.get("content-language") || undefined,
-            cacheControl: c.res.headers.get("cache-control") || undefined,
         };
 
         const metadata = {
             httpMetadata: removeUnset(httpMetadata),
-            customMetadata: removeUnset({
-                // Essential metadata
-                originalUrl: (c.req.url || "").substring(0, 2048),
+            customMetadata: {
                 cachedAt: new Date().toISOString(),
-                clientIp: clientIp,
-
-                // Client information (with length limits)
-                userAgent: userAgent.substring(0, 256),
-                referer: referer.substring(0, 256),
-                acceptLanguage: acceptLanguage.substring(0, 64),
-
-                // Request-specific information
-                method,
-                requestTime,
-                requestId,
-            }),
+            },
         };
 
         // Store the object with metadata

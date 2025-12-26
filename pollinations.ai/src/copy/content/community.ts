@@ -165,3 +165,8 @@ export const COMMUNITY_PAGE = {
     supporterLogoSeed: 1,
     supporterLogoModel: "nanobanana",
 };
+
+// Translation config for news items
+export const NEWS_TRANSLATION_CONFIG = {
+    content: "translate",
+} as const;

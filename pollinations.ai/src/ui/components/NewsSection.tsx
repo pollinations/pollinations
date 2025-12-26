@@ -1,7 +1,10 @@
 import { useEffect, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import { processCopy } from "../../copy";
-import { COMMUNITY_PAGE } from "../../copy/content/community";
+import {
+    COMMUNITY_PAGE,
+    NEWS_TRANSLATION_CONFIG,
+} from "../../copy/content/community";
 import { useNews } from "../../hooks/useNews";
 import { useCopy } from "../contexts/CopyContext";
 import { Heading } from "./ui/typography";
@@ -46,7 +49,7 @@ export function NewsSection({
                 const items = news.map((item, i) => ({
                     id: `news-${i}`,
                     text: item.content,
-                    mode: "translate" as const,
+                    mode: NEWS_TRANSLATION_CONFIG.content,
                 }));
 
                 console.log(

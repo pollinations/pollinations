@@ -1,8 +1,13 @@
-import { useMemo, useState } from "react";
-import { APPS_PAGE } from "../../copy/content/apps";
+import { useEffect, useMemo, useState } from "react";
+import { processCopy } from "../../copy";
+import {
+    APPS_PAGE,
+    appsFilePath,
+    APPS_TRANSLATION_CONFIG,
+    CATEGORIES,
+} from "../../copy/content/apps";
 import { LINKS } from "../../copy/content/socialLinks";
-import type { App } from "../../apps/parseApps";
-import { allApps, CATEGORIES } from "../../apps/parseApps";
+import { type App, useApps } from "../../hooks/useApps";
 import { ExternalLinkIcon } from "../assets/ExternalLinkIcon";
 import { GithubIcon } from "../assets/SocialIcons";
 import { Button } from "../components/ui/button";
@@ -114,17 +119,96 @@ function AppCard({ app }: AppCardProps) {
 
 export default function AppsPage() {
     const [selectedCategory, setSelectedCategory] = useState("creative");
+    const [translatedApps, setTranslatedApps] = useState<App[]>([]);
+    const [isTranslatingApps, setIsTranslatingApps] = useState(false);
+
+    // Fetch apps from GitHub
+    const { apps: allApps } = useApps(appsFilePath);
 
     // Use processed copy if available, fall back to static
-    const { processedCopy } = useCopy();
+    const { processedCopy, language, variationSeed } = useCopy();
     const pageCopy = (
         processedCopy?.subtitle ? processedCopy : APPS_PAGE
     ) as typeof APPS_PAGE;
 
     // Filter apps by category
     const filteredApps = useMemo(() => {
-        return allApps.filter((app) => app.category === selectedCategory);
-    }, [selectedCategory]);
+        return allApps.filter((app: App) => app.category === selectedCategory);
+    }, [allApps, selectedCategory]);
+
+    // Translate app descriptions when category or language changes
+    useEffect(() => {
+        if (filteredApps.length === 0) return;
+
+        // If English, use original
+        if (language === "en") {
+            setTranslatedApps(filteredApps);
+            return;
+        }
+
+        const controller = new AbortController();
+
+        async function translateApps() {
+            setIsTranslatingApps(true);
+            try {
+                // Create items for translation
+                const items = filteredApps
+                    .filter((app) => app.description)
+                    .map((app, i) => ({
+                        id: `app-${i}`,
+                        text: app.description,
+                        mode: APPS_TRANSLATION_CONFIG.description,
+                    }));
+
+                if (items.length === 0) {
+                    setTranslatedApps(filteredApps);
+                    setIsTranslatingApps(false);
+                    return;
+                }
+
+                console.log(
+                    `📱 [APPS] Translating ${items.length} descriptions to ${language}...`
+                );
+
+                const processed = await processCopy(
+                    items,
+                    language,
+                    variationSeed,
+                    controller.signal
+                );
+
+                // Apply translations back
+                let processedIndex = 0;
+                const translated = filteredApps.map((app) => {
+                    if (app.description) {
+                        const translatedDesc =
+                            processed[processedIndex]?.text || app.description;
+                        processedIndex++;
+                        return { ...app, description: translatedDesc };
+                    }
+                    return app;
+                });
+
+                setTranslatedApps(translated);
+                console.log(`✅ [APPS] Translation complete`);
+            } catch (err) {
+                if (err instanceof Error && err.name === "AbortError") {
+                    return;
+                }
+                console.error("❌ [APPS] Translation failed:", err);
+                setTranslatedApps(filteredApps);
+            }
+            setIsTranslatingApps(false);
+        }
+
+        translateApps();
+
+        return () => controller.abort();
+    }, [filteredApps, language, variationSeed]);
+
+    // Use translated apps if available, otherwise original
+    const displayApps =
+        translatedApps.length > 0 ? translatedApps : filteredApps;
 
     return (
         <PageContainer>
@@ -169,14 +253,24 @@ export default function AppsPage() {
                 </div>
 
                 {/* App Grid */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
-                    {filteredApps.map((app, index) => (
-                        <AppCard key={`${app.name}-${index}`} app={app} />
-                    ))}
+                <div className="relative">
+                    {isTranslatingApps && (
+                        <div className="absolute top-0 right-0 z-10">
+                            <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-black/70 backdrop-blur-sm border border-white/20 text-[10px] text-white/70">
+                                <span className="w-1.5 h-1.5 rounded-full bg-text-brand animate-pulse" />
+                                Translating
+                            </span>
+                        </div>
+                    )}
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
+                        {displayApps.map((app, index) => (
+                            <AppCard key={`${app.name}-${index}`} app={app} />
+                        ))}
+                    </div>
                 </div>
 
                 {/* No Results */}
-                {filteredApps.length === 0 && (
+                {displayApps.length === 0 && (
                     <div className="text-center py-12">
                         <Body className="text-text-body-main">
                             No apps found in this category yet.

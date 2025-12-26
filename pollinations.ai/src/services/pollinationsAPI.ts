@@ -8,7 +8,7 @@ import { fetchWithRetry } from "../utils/fetchWithRetry";
 export async function generateText(
     prompt: string,
     seed?: number | number[],
-    model?: string,
+    model = "gemini",
 ): Promise<string> {
     const response = await fetchWithRetry(API.TEXT_GENERATION, {
         method: "POST",
@@ -18,8 +18,8 @@ export async function generateText(
         },
         body: JSON.stringify({
             messages: [{ role: "user", content: prompt }],
-            model: model || DEFAULTS.TEXT_MODEL,
-            seed: seed,
+            model,
+            seed,
         }),
     });
 

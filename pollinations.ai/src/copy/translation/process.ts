@@ -102,7 +102,7 @@ Process all items now:`;
         `📝 [COPY] Processing ${items.length} items (${translateCount} translate, ${transformCount} transform) → ${targetLanguage}, seed ${variationSeed}`,
     );
 
-    const response = await generateText(prompt, variationSeed, "gemini");
+    const response = await generateText(prompt, variationSeed);
 
     const result = parseJsonResponse(response, items);
     console.log(`✅ [COPY] Done`);

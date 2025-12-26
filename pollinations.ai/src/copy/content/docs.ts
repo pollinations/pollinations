@@ -3,15 +3,10 @@
 export const DOCS_PAGE = {
     title: "Integrate",
 
-    intro: {
-        text: "Our API is simple, powerful, and elegant. Single endpoint for text, images, and audio—this is where your vision takes flight.",
-        transform: true,
-    },
+    intro: "Our API is simple, powerful, and elegant. Single endpoint for text, images, and audio—this is where your vision takes flight.",
 
-    apiReference: {
-        text: "Dive into our full API docs for detailed information. AI agents can use our optimized prompt for seamless integration.",
-        transform: true,
-    },
+    apiReference:
+        "Dive into our full API docs for detailed information. AI agents can use our optimized prompt for seamless integration.",
 
     // Top buttons
     fullApiDocsButton: "Full API Docs",

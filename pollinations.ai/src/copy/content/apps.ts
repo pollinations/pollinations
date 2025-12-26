@@ -3,10 +3,8 @@
 export const APPS_PAGE = {
     title: "Ecosystem",
 
-    subtitle: {
-        text: "Paradise-built apps, tools, and experiments—pollinations.ai-powered. Browse, try, ship.",
-        transform: true,
-    },
+    subtitle:
+        "Paradise-built apps, tools, and experiments—pollinations.ai-powered. Browse, try, ship.",
 
     // Submit app CTA
     submitCtaTitle: "🚀 Built something cool?",

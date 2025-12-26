@@ -1,10 +1,6 @@
 /**
  * Copy Processing Service
- * Handles translation and creative rephrasing of copy content
- *
- * Modes:
- * - translate: true → literal translation only
- * - transform: true → creative rephrasing with variation
+ * Handles translation of copy content with natural, idiomatic rephrasing
  */
 
 import { generateText } from "../../services/pollinationsAPI";
@@ -13,16 +9,11 @@ import { COPY_GUIDELINES } from "./guidelines";
 interface CopyItem {
     id: string;
     text: string;
-    mode: "translate" | "transform";
 }
 
 /**
  * Extract all processable text from copy object
- *
- * Supported formats:
- * - String: "text" → translate mode (default)
- * - Object with transform: { text: "...", transform: true } → transform mode
- * - Object with translate (legacy): { text: "...", translate: true } → translate mode
+ * All strings are extracted for translation
  */
 export function extractCopyItems(root: Record<string, unknown>): {
     items: CopyItem[];
@@ -37,10 +28,10 @@ export function extractCopyItems(root: Record<string, unknown>): {
         parent?: Record<string, unknown>,
         parentKey?: string,
     ) {
-        // Handle direct strings - these are translate items
+        // Handle direct strings
         if (typeof obj === "string" && parent && parentKey) {
             const id = path.join(".");
-            items.push({ id, text: obj, mode: "translate" });
+            items.push({ id, text: obj });
             pointers[id] = (newText: string) => {
                 parent[parentKey] = newText;
             };
@@ -51,11 +42,10 @@ export function extractCopyItems(root: Record<string, unknown>): {
 
         const node = obj as Record<string, unknown>;
 
-        // Check for object with text property (transform or legacy translate)
+        // Check for object with text property (legacy format)
         if (typeof node.text === "string") {
-            const mode = node.transform === true ? "transform" : "translate";
             const id = path.join(".");
-            items.push({ id, text: node.text, mode });
+            items.push({ id, text: node.text });
             pointers[id] = (newText: string) => {
                 node.text = newText;
             };
@@ -73,7 +63,7 @@ export function extractCopyItems(root: Record<string, unknown>): {
 }
 
 /**
- * Process copy items - handles both translation and transformation
+ * Process copy items - translates with natural, idiomatic rephrasing
  *
  * @param items - Copy items to process
  * @param targetLanguage - Target language code (e.g., "en", "zh", "es")
@@ -86,12 +76,8 @@ export async function processCopy(
         return items;
     }
 
-    // Count items by mode for logging
-    const translateCount = items.filter((i) => i.mode === "translate").length;
-    const transformCount = items.filter((i) => i.mode === "transform").length;
-
-    // Skip processing if English and no transform items (nothing to do)
-    if (targetLanguage === "en" && transformCount === 0) {
+    // Skip processing if English (nothing to translate)
+    if (targetLanguage === "en") {
         return items;
     }
 
@@ -106,7 +92,7 @@ ${JSON.stringify(items, null, 2)}
 Process all items now:`;
 
     console.log(
-        `📝 [COPY] Processing ${items.length} items (${translateCount} translate, ${transformCount} transform) → ${targetLanguage}`,
+        `📝 [COPY] Processing ${items.length} items → ${targetLanguage}`,
     );
 
     const response = await generateText(prompt);

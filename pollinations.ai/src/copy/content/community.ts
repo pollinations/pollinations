@@ -3,10 +3,8 @@
 export const COMMUNITY_PAGE = {
     title: "Contribute",
 
-    subtitle: {
-        text: "We're crafting a haven where developers, creators, and AI enthusiasts collaborate and bloom together.",
-        transform: true,
-    },
+    subtitle:
+        "We're crafting a haven where developers, creators, and AI enthusiasts collaborate and bloom together.",
 
     // News section
     newsTitle: "What's New",
@@ -16,17 +14,13 @@ export const COMMUNITY_PAGE = {
 
     discordTitle: "💬 Discord",
 
-    discordSubtitle: {
-        text: "Chat with builders, get help, share what you're working on. We're friendly!",
-        transform: true,
-    },
+    discordSubtitle:
+        "Chat with builders, get help, share what you're working on. We're friendly!",
 
     githubTitle: "🛠️ GitHub",
 
-    githubSubtitle: {
-        text: "Contribute code, report bugs, submit your app to the showcase, or just star us!",
-        transform: true,
-    },
+    githubSubtitle:
+        "Contribute code, report bugs, submit your app to the showcase, or just star us!",
 
     // Buttons
     joinDiscordButton: "Join Discord",
@@ -36,15 +30,10 @@ export const COMMUNITY_PAGE = {
     contributeButton: "Contribute",
 
     // Voting section
-    votingTitle: {
-        text: "Have Your Say",
-        transform: true,
-    },
+    votingTitle: "Have Your Say",
 
-    votingSubtitle: {
-        text: "We build what the community wants. Vote on what matters to you:",
-        transform: true,
-    },
+    votingSubtitle:
+        "We build what the community wants. Vote on what matters to you:",
 
     // Vote counts are approximate and need manual updates
     votingIssues: [
@@ -70,10 +59,8 @@ export const COMMUNITY_PAGE = {
 
     supportersTitle: "Supporters",
 
-    supportersSubtitle: {
-        text: "We're grateful to our supporters for their contributions to the platform.",
-        transform: true,
-    },
+    supportersSubtitle:
+        "We're grateful to our supporters for their contributions to the platform.",
 
     // Supporters data
     supportersList: [

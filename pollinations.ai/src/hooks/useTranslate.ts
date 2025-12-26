@@ -33,7 +33,6 @@ export function useTranslate<T, K extends keyof T>(
         const copyItems = items.map((item, i) => ({
             id: `item-${i}`,
             text: String(item[field] ?? ""),
-            mode: "translate" as const,
         }));
 
         processCopy(copyItems, language)

@@ -2,10 +2,7 @@
 
 export const HELLO_PAGE = {
     // Hero Section
-    heroTitle: {
-        text: "Open-source AI for people who make things.",
-        transform: true,
-    },
+    heroTitle: "Open-source AI for people who make things.",
     heroIntro:
         "A community-driven platform where developers, artists, and tinkerers build together. No gatekeeping, no corporate nonsense — just good tools and good people.",
     heroTagline:
@@ -66,78 +63,42 @@ export const HELLO_PAGE = {
         "Interactive media and new modalities (video, audio, and more — coming soon)",
 
     // Why Choose Section
-    whyChooseTitle: {
-        text: "Why Developers Choose pollinations.ai",
-        transform: true,
-    },
-    whyChooseIntro: {
-        text: "You get a platform that cares about aesthetics and ergonomics as much as raw capability.",
-        transform: true,
-    },
-    whyChooseFeature1: {
-        text: "Beautiful Dev Experience — clean APIs, thoughtful defaults, and friendly docs.",
-        transform: true,
-    },
-    whyChooseFeature2: {
-        text: "Unified API — work with multiple models and modalities through one place.",
-        transform: true,
-    },
-    whyChooseFeature3: {
-        text: "No BS Pricing — Pollen is simple and transparent. You always know what you're paying.",
-        transform: true,
-    },
-    whyChooseFeature4: {
-        text: "Community-Driven — the roadmap comes from Discord conversations, not boardrooms.",
-        transform: true,
-    },
-    whyChooseFeature5: {
-        text: "Fully Open Source — every line of code is on GitHub. Fork it, read it, improve it.",
-        transform: true,
-    },
+    whyChooseTitle: "Why Developers Choose pollinations.ai",
+    whyChooseIntro:
+        "You get a platform that cares about aesthetics and ergonomics as much as raw capability.",
+    whyChooseFeature1:
+        "Beautiful Dev Experience — clean APIs, thoughtful defaults, and friendly docs.",
+    whyChooseFeature2:
+        "Unified API — work with multiple models and modalities through one place.",
+    whyChooseFeature3:
+        "No BS Pricing — Pollen is simple and transparent. You always know what you're paying.",
+    whyChooseFeature4:
+        "Community-Driven — the roadmap comes from Discord conversations, not boardrooms.",
+    whyChooseFeature5:
+        "Fully Open Source — every line of code is on GitHub. Fork it, read it, improve it.",
 
     // Community Section
-    communityTitle: {
-        text: "Built Together",
-        transform: true,
-    },
-    communityDescription: {
-        text: "Students, indie devs, artists, researchers, hobbyists — all building weird and wonderful things together. Jump into Discord, browse the GitHub, see what people are making. This is a place where people actually help each other.",
-        transform: true,
-    },
+    communityTitle: "Built Together",
+    communityDescription:
+        "Students, indie devs, artists, researchers, hobbyists — all building weird and wonderful things together. Jump into Discord, browse the GitHub, see what people are making. This is a place where people actually help each other.",
 
     // Roadmap Section
     roadmapTitle: "What's Next",
     roadmapIntro: "Here's what we're working on:",
     roadmapItem1Title: "Frontend Auth",
-    roadmapItem1Description: {
-        text: "Call the API from the browser — no backend needed.",
-        transform: true,
-    },
+    roadmapItem1Description:
+        "Call the API from the browser — no backend needed.",
     roadmapItem2Title: "User Pollen",
-    roadmapItem2Description: {
-        text: "Your users bring their own Pollen. You build, they pay for what they use.",
-        transform: true,
-    },
+    roadmapItem2Description:
+        "Your users bring their own Pollen. You build, they pay for what they use.",
     roadmapItem3Title: "App Hosting & Discovery",
-    roadmapItem3Description: {
-        text: "Ship your app and make it easy to find.",
-        transform: true,
-    },
+    roadmapItem3Description: "Ship your app and make it easy to find.",
     roadmapItem4Title: "More Models, More Modalities",
-    roadmapItem4Description: {
-        text: "Video, real-time, and whatever comes next.",
-        transform: true,
-    },
+    roadmapItem4Description: "Video, real-time, and whatever comes next.",
 
     // CTA Section
-    ctaTitle: {
-        text: "Ready to Create?",
-        transform: true,
-    },
-    ctaDescription: {
-        text: "Start building with tools that feel good to use.",
-        transform: true,
-    },
+    ctaTitle: "Ready to Create?",
+    ctaDescription: "Start building with tools that feel good to use.",
 
     // CTA Buttons
     getApiKeyButton: "Get Your API Key",

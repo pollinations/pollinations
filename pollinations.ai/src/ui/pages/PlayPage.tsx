@@ -8,6 +8,7 @@ import { PlayGenerator } from "../components/play/PlayGenerator";
 import { ModelSelector } from "../components/play/ModelSelector";
 import { useModelList } from "../../hooks/useModelList";
 import { useTheme } from "../contexts/ThemeContext";
+import { useAuth } from "../../hooks/useAuth";
 import { ImageIcon } from "../assets/ImageIcon";
 import { TextIcon } from "../assets/TextIcon";
 
@@ -24,19 +25,32 @@ interface ModelHealth {
     last_request_at: string;
 }
 
-/**
- * PlayPage - Main playground page
- * Allows switching between Create (generation) and Watch (feed) views
- * Model selection is at the top level, independent of view state
- */
 function PlayPage() {
     const [view, setView] = useState("play");
     const [feedType, setFeedType] = useState<"image" | "text">("image");
     const [selectedModel, setSelectedModel] = useState("flux");
     const [prompt, setPrompt] = useState("");
-    const { imageModels, textModels } = useModelList();
-    const { presetCopy } = useTheme();
+    const { apiKey } = useAuth();
+    const { imageModels, textModels, allowedImageModelIds, allowedTextModelIds } = useModelList(apiKey || "");
+    const { presetCopy, themeDefinition } = useTheme();
     const pageCopy = presetCopy.PLAY_PAGE;
+
+    const getThemeColor = (tokenId: string): string => {
+        const cssVar = `--${tokenId.replace(/\./g, "-")}`;
+        const value = getComputedStyle(document.documentElement).getPropertyValue(cssVar).trim();
+        return `rgb(${value})`;
+    };
+
+    const themeColors = useMemo(() => {
+        return {
+            bgFrom: getThemeColor("background.element1"),
+            bgTo: getThemeColor("background.element2"),
+            border: getThemeColor("border.brand"),
+            icon: getThemeColor("indicator.text"),
+            number: getThemeColor("text.highlight"),
+            label: getThemeColor("text.secondary"),
+        };
+    }, [themeDefinition]);
 
     const allModels = useMemo(
         () => [
@@ -161,27 +175,57 @@ function PlayPage() {
 
                 {view === "play" && (
                     <div className="flex gap-3 mb-6">
-                        <div className="flex-1 bg-gradient-to-br from-purple-500/20 to-blue-500/20 border border-purple-500/30 p-4 rounded backdrop-blur-sm hover:border-purple-500/50 transition-all duration-300">
+                        <div
+                            className="flex-1 bg-gradient-to-br border p-4 rounded backdrop-blur-sm hover:border-opacity-50 transition-all duration-300"
+                            style={{
+                                background: `linear-gradient(135deg, ${themeColors.bgFrom} 20%, ${themeColors.bgTo} 100%)`,
+                                borderColor: themeColors.border,
+                            }}
+                        >
                             <div className="flex items-center gap-3">
-                                <ImageIcon className="w-6 h-6 text-purple-400 flex-shrink-0" />
+                                <ImageIcon
+                                    className="w-6 h-6 flex-shrink-0"
+                                    stroke={themeColors.icon}
+                                />
                                 <div className="flex-1">
-                                    <div className="text-2xl font-bold text-purple-300 tabular-nums">
+                                    <div
+                                        className="text-2xl font-bold tabular-nums"
+                                        style={{ color: themeColors.number }}
+                                    >
                                         {imageRequestsPerMin.toLocaleString()}
                                     </div>
-                                    <div className="text-xs text-purple-400/70">
+                                    <div
+                                        className="text-xs"
+                                        style={{ color: themeColors.label }}
+                                    >
                                         req/min
                                     </div>
                                 </div>
                             </div>
                         </div>
-                        <div className="flex-1 bg-gradient-to-br from-purple-500/20 to-blue-500/20 border border-purple-500/30 p-4 rounded backdrop-blur-sm hover:border-purple-500/50 transition-all duration-300">
+                        <div
+                            className="flex-1 bg-gradient-to-br border p-4 rounded backdrop-blur-sm hover:border-opacity-50 transition-all duration-300"
+                            style={{
+                                background: `linear-gradient(135deg, ${themeColors.bgFrom} 20%, ${themeColors.bgTo} 100%)`,
+                                borderColor: themeColors.border,
+                            }}
+                        >
                             <div className="flex items-center gap-3">
-                                <TextIcon className="w-6 h-6 text-purple-400 flex-shrink-0" />
+                                <TextIcon
+                                    className="w-6 h-6 flex-shrink-0"
+                                    stroke={themeColors.icon}
+                                />
                                 <div className="flex-1">
-                                    <div className="text-2xl font-bold text-purple-300 tabular-nums">
+                                    <div
+                                        className="text-2xl font-bold tabular-nums"
+                                        style={{ color: themeColors.number }}
+                                    >
                                         {textRequestsPerMin.toLocaleString()}
                                     </div>
-                                    <div className="text-xs text-purple-400/70">
+                                    <div
+                                        className="text-xs"
+                                        style={{ color: themeColors.label }}
+                                    >
                                         req/min
                                     </div>
                                 </div>
@@ -195,6 +239,8 @@ function PlayPage() {
                         models={allModels}
                         selectedModel={selectedModel}
                         onSelectModel={setSelectedModel}
+                        allowedImageModelIds={allowedImageModelIds}
+                        allowedTextModelIds={allowedTextModelIds}
                     />
                 )}
 
@@ -243,6 +289,7 @@ function PlayPage() {
                             onPromptChange={setPrompt}
                             imageModels={imageModels}
                             textModels={textModels}
+                            apiKey={apiKey || ""}
                         />
                     </div>
                 ) : feedType === "text" ? (

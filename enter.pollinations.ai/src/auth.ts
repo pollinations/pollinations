@@ -27,7 +27,6 @@ export function createAuth(env: Cloudflare.Env) {
     const db = drizzle(env.DB);
 
     const PUBLISHABLE_KEY_PREFIX = "pk";
-    const SECRET_KEY_PREFIX = "sk";
 
     const apiKeyPlugin = apiKey({
         storage: "secondary-storage",
@@ -55,6 +54,10 @@ export function createAuth(env: Cloudflare.Env) {
                 (byte) => chars[byte % chars.length],
             ).join("");
             return options.prefix ? `${options.prefix}_${key}` : key;
+        },
+        keyExpiration: {
+            minExpiresIn: 1 / 24, // Allow keys as short as 1 hour (value is in DAYS)
+            maxExpiresIn: 365, // Max 1 year
         },
         rateLimit: {
             enabled: true,

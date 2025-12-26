@@ -25,52 +25,23 @@ export function AIPromptInput({ isOpen }: AIPromptInputProps) {
     const { setTheme, themeDefinition, themePrompt, backgroundHtml } =
         useTheme();
 
-    // Generate theme, copy, and background when activePrompt changes
+    // Generate theme and background when activePrompt changes
     useEffect(() => {
         if (!activePrompt) return;
 
-        const controller = new AbortController();
         setLoading(true);
         setError(null);
 
-        const runGeneration = async () => {
-            try {
-                // Run sequentially - API has built-in retry with rate limit handling
-                console.log("🎨 [GENERATING] Step 1/2: Theme...");
-                const theme = await generateTheme(
-                    activePrompt,
-                    controller.signal,
-                );
-                if (controller.signal.aborted) return;
-
-                console.log("🎬 [GENERATING] Step 2/2: Background...");
-                const bgHtml = await generateBackground(
-                    activePrompt,
-                    controller.signal,
-                );
-                if (controller.signal.aborted) return;
-
-                // Theme generation no longer includes copy - copy/translation is separate
+        Promise.all([
+            generateTheme(activePrompt),
+            generateBackground(activePrompt),
+        ])
+            .then(([theme, bgHtml]) => {
                 setTheme(theme, activePrompt, bgHtml);
-
                 setActivePrompt(null);
-                console.log("✅ [PRESET READY]");
-                setLoading(false);
-            } catch (err) {
-                if (
-                    err instanceof Error &&
-                    err.name !== "AbortError" &&
-                    !controller.signal.aborted
-                ) {
-                    setError(err);
-                    setLoading(false);
-                }
-            }
-        };
-
-        runGeneration();
-
-        return () => controller.abort();
+            })
+            .catch(setError)
+            .finally(() => setLoading(false));
     }, [activePrompt, setTheme]);
 
     // Focus input when opened

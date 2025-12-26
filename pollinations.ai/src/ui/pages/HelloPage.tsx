@@ -1,21 +1,23 @@
-import { Button } from "../components/ui/button";
+import { HELLO_PAGE } from "../../copy/content/hello";
+import { LINKS } from "../../copy/content/socialLinks";
 import { ExternalLinkIcon } from "../assets/ExternalLinkIcon";
-import { Title, Heading, Body } from "../components/ui/typography";
+import { NewsSection } from "../components/NewsSection";
+import { Badge } from "../components/ui/badge";
+import { Button } from "../components/ui/button";
 import { Divider } from "../components/ui/divider";
+import { FeatureItem } from "../components/ui/feature-item";
 import { PageCard } from "../components/ui/page-card";
 import { PageContainer } from "../components/ui/page-container";
-import { SubCard } from "../components/ui/sub-card";
-import { Badge } from "../components/ui/badge";
-import { TierCard } from "../components/ui/tier-card";
-import { FeatureItem } from "../components/ui/feature-item";
 import { RoadmapItem } from "../components/ui/roadmap-item";
-import { useTheme } from "../contexts/ThemeContext";
-import { NewsSection } from "../components/NewsSection";
-import { LINKS } from "../../theme/copy/socialLinks";
+import { SubCard } from "../components/ui/sub-card";
+import { TierCard } from "../components/ui/tier-card";
+import { Body, Heading, Title } from "../components/ui/typography";
+import { useCopy } from "../contexts/CopyContext";
 
 function HelloPage() {
-    const { presetCopy } = useTheme();
-    const pageCopy = presetCopy.HELLO_PAGE;
+    const { processedCopy } = useCopy();
+    // Use processed copy if available, fall back to static
+    const pageCopy = (processedCopy as typeof HELLO_PAGE) || HELLO_PAGE;
 
     return (
         <PageContainer>

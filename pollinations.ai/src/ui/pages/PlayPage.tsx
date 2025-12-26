@@ -1,15 +1,15 @@
-import { useState, useMemo } from "react";
-import { Title, Body } from "../components/ui/typography";
+import { useMemo, useState } from "react";
+import { PLAY_PAGE } from "../../copy/content/play";
+import { useAuth } from "../../hooks/useAuth";
+import { useModelList } from "../../hooks/useModelList";
+import { ImageFeed } from "../components/play/ImageFeed";
+import { ModelSelector } from "../components/play/ModelSelector";
+import { PlayGenerator } from "../components/play/PlayGenerator";
+import { Button } from "../components/ui/button";
 import { PageCard } from "../components/ui/page-card";
 import { PageContainer } from "../components/ui/page-container";
-import { PLAY_PAGE } from "../../theme";
-import { ImageFeed } from "../components/play/ImageFeed";
-import { PlayGenerator } from "../components/play/PlayGenerator";
-import { ModelSelector } from "../components/play/ModelSelector";
-import { useModelList } from "../../hooks/useModelList";
-import { useTheme } from "../contexts/ThemeContext";
-import { useAuth } from "../../hooks/useAuth";
-import { Button } from "../components/ui/button";
+import { Body, Title } from "../components/ui/typography";
+import { useCopy } from "../contexts/CopyContext";
 
 /**
  * PlayPage - Main playground page
@@ -30,10 +30,10 @@ function PlayPage() {
         allowedImageModelIds,
         allowedTextModelIds,
     } = useModelList(apiKey);
+    const { processedCopy } = useCopy();
 
-    // Get page copy from preset
-    const { presetCopy } = useTheme();
-    const pageCopy = presetCopy.PLAY_PAGE;
+    // Use processed copy if available, fall back to static
+    const pageCopy = (processedCopy as typeof PLAY_PAGE) || PLAY_PAGE;
 
     // Memoize combined models array
     const allModels = useMemo(
@@ -41,7 +41,7 @@ function PlayPage() {
             ...imageModels.map((m) => ({ ...m, type: "image" as const })),
             ...textModels.map((m) => ({ ...m, type: "text" as const })),
         ],
-        [imageModels, textModels],
+        [imageModels, textModels]
     );
 
     // Display prompt based on view

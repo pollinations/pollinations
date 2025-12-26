@@ -1,16 +1,16 @@
-import { useTheme } from "../contexts/ThemeContext";
-import { COMMUNITY_PAGE } from "../../theme";
-import { ImageGenerator } from "../components/ImageGenerator";
-import { SOCIAL_LINKS, LINKS } from "../../theme/copy/socialLinks";
-import { Button } from "../components/ui/button";
+import { COMMUNITY_PAGE } from "../../copy/content/community";
+import { LINKS, SOCIAL_LINKS } from "../../copy/content/socialLinks";
 import { ExternalLinkIcon } from "../assets/ExternalLinkIcon";
-import { Title, Heading, Body } from "../components/ui/typography";
+import { ImageGenerator } from "../components/ImageGenerator";
+import { NewsSection } from "../components/NewsSection";
+import { TopContributors } from "../components/TopContributors";
+import { Button } from "../components/ui/button";
 import { Divider } from "../components/ui/divider";
 import { PageCard } from "../components/ui/page-card";
 import { PageContainer } from "../components/ui/page-container";
 import { SubCard } from "../components/ui/sub-card";
-import { NewsSection } from "../components/NewsSection";
-import { TopContributors } from "../components/TopContributors";
+import { Body, Heading, Title } from "../components/ui/typography";
+import { useCopy } from "../contexts/CopyContext";
 
 interface VotingIssue {
     emoji: string;
@@ -20,8 +20,8 @@ interface VotingIssue {
 }
 
 export default function CommunityPage() {
-    const { presetCopy } = useTheme();
-    const pageCopy = presetCopy.COMMUNITY_PAGE;
+    const { processedCopy } = useCopy();
+    const pageCopy = (processedCopy as typeof COMMUNITY_PAGE) || COMMUNITY_PAGE;
 
     return (
         <PageContainer>
@@ -138,7 +138,7 @@ export default function CommunityPage() {
                                         </p>
                                     </div>
                                 </a>
-                            )
+                            ),
                         )}
                     </div>
                 </div>

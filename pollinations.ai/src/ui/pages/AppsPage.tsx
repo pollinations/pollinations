@@ -1,16 +1,16 @@
-import { useState, useMemo } from "react";
-import { Title, Body } from "../components/ui/typography";
+import { useMemo, useState } from "react";
+import { APPS_PAGE } from "../../copy/content/apps";
+import { LINKS } from "../../copy/content/socialLinks";
+import type { App } from "../../lib/parseApps";
+import { allApps, CATEGORIES } from "../../lib/parseApps";
+import { ExternalLinkIcon } from "../assets/ExternalLinkIcon";
+import { GithubIcon } from "../assets/SocialIcons";
 import { Button } from "../components/ui/button";
 import { PageCard } from "../components/ui/page-card";
 import { PageContainer } from "../components/ui/page-container";
 import { SubCard } from "../components/ui/sub-card";
-import { ExternalLinkIcon } from "../assets/ExternalLinkIcon";
-import { GithubIcon } from "../assets/SocialIcons";
-import { useTheme } from "../contexts/ThemeContext";
-import { LINKS } from "../../theme/copy/socialLinks";
-import { allApps, CATEGORIES } from "../../lib/parseApps";
-
-import type { App } from "../../lib/parseApps";
+import { Body, Title } from "../components/ui/typography";
+import { useCopy } from "../contexts/CopyContext";
 
 // Helper to extract GitHub username from author field
 function getGitHubUsername(author: string) {
@@ -115,9 +115,9 @@ function AppCard({ app }: AppCardProps) {
 export default function AppsPage() {
     const [selectedCategory, setSelectedCategory] = useState("creative");
 
-    // Get page copy from preset
-    const { presetCopy } = useTheme();
-    const pageCopy = presetCopy.APPS_PAGE;
+    // Use processed copy if available, fall back to static
+    const { processedCopy } = useCopy();
+    const pageCopy = (processedCopy as typeof APPS_PAGE) || APPS_PAGE;
 
     // Filter apps by category
     const filteredApps = useMemo(() => {

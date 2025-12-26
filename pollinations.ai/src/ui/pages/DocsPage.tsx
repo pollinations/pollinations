@@ -1,26 +1,27 @@
-import { useState, useEffect } from "react";
-import { useTheme } from "../contexts/ThemeContext";
+import { useEffect, useState } from "react";
+import { DOCS_PAGE } from "../../copy/content/docs";
 import { CopyIcon } from "../assets/CopyIcon";
 import { ExternalLinkIcon } from "../assets/ExternalLinkIcon";
+import { AuthCard } from "../components/docs/AuthCard";
+import { ImageGenCard } from "../components/docs/ImageGenCard";
+import { ModelDiscoveryCard } from "../components/docs/ModelDiscoveryCard";
+import { TextGenCard } from "../components/docs/TextGenCard";
 import { Button } from "../components/ui/button";
-import { Title, Body } from "../components/ui/typography";
 import { Divider } from "../components/ui/divider";
 import { PageCard } from "../components/ui/page-card";
 import { PageContainer } from "../components/ui/page-container";
-import { AuthCard } from "../components/docs/AuthCard";
-import { ImageGenCard } from "../components/docs/ImageGenCard";
-import { TextGenCard } from "../components/docs/TextGenCard";
-import { ModelDiscoveryCard } from "../components/docs/ModelDiscoveryCard";
+import { Body, Title } from "../components/ui/typography";
+import { useCopy } from "../contexts/CopyContext";
 
 function DocsPage() {
-    const { presetCopy } = useTheme();
-    const pageCopy = presetCopy.DOCS_PAGE;
+    const { processedCopy } = useCopy();
+    const pageCopy = (processedCopy as typeof DOCS_PAGE) || DOCS_PAGE;
     const [agentPromptCopied, setAgentPromptCopied] = useState(false);
     const [agentPrompt, setAgentPrompt] = useState("");
 
     useEffect(() => {
         fetch(
-            "https://raw.githubusercontent.com/pollinations/pollinations/production/APIDOCS.md"
+            "https://raw.githubusercontent.com/pollinations/pollinations/production/APIDOCS.md",
         )
             .then((res) => res.text())
             .then(setAgentPrompt)

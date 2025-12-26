@@ -71,7 +71,7 @@ def gen_raw(prompt, seed, steps=9):
             f.write(image.tobytes())
         print(f"Time taken for the upscale generation: {time.time() - time_start:.2f}s")
 if __name__ == "__main__":
-    prompt = "a candle in a dark room, photo realistic, high detail, 16:9"
+    prompt = "a soft lighting portrait photo of a happy young woman with long hair, wearing a white blouse, sitting in a modern cafe with large windows, high resolution, 16:9 aspect ratio"
     seed = 42
     
     try:

@@ -1,4 +1,3 @@
-import { GlobeIcon } from "lucide-react";
 import { useCallback, useState } from "react";
 import { NavLink, Outlet } from "react-router-dom";
 import { SOCIAL_LINKS } from "../../copy/content/socialLinks";
@@ -29,8 +28,7 @@ function Layout() {
     const [isPromptOpen, setIsPromptOpen] = useState(false);
     const [isBannerVisible, setIsBannerVisible] = useState(false);
     const { backgroundHtml } = useTheme();
-    const { languageOverride, setLanguageOverride, isProcessing } = useCopy();
-    const isAutoMode = languageOverride === "auto";
+    const { isProcessing } = useCopy();
 
     const handleBannerVisibilityChange = useCallback((visible: boolean) => {
         setIsBannerVisible(visible);
@@ -134,117 +132,87 @@ function Layout() {
                                 </div>
 
                                 {/* Navigation Tabs + Social Links - Right side */}
-                                <div className="flex gap-3 items-center overflow-x-auto overflow-y-visible scrollbar-hide pb-2">
-                                    {/* Navigation Tabs */}
-                                    {tabs.map((tab) => (
-                                        <NavLink
-                                            key={tab.path}
-                                            to={tab.path}
-                                            end={tab.path === "/"}
-                                            className="no-underline"
-                                        >
-                                            {({ isActive }) => (
-                                                <Button
-                                                    variant="nav"
-                                                    size={null}
-                                                    data-active={isActive}
-                                                >
-                                                    {tab.label}
-                                                </Button>
-                                            )}
-                                        </NavLink>
-                                    ))}
-
-                                    {/* Social Media Links + Enter Button */}
-                                    <div className="flex gap-2 items-center">
-                                        {Object.entries(SOCIAL_LINKS)
-                                            .filter(
-                                                ([key]) =>
-                                                    key === "discord" ||
-                                                    key === "github",
-                                            )
-                                            .map(
-                                                ([
-                                                    key,
-                                                    { url, icon: Icon, label },
-                                                ]) => (
+                                <div className="flex flex-col items-start">
+                                    <div className="flex gap-3 items-center overflow-x-auto overflow-y-visible scrollbar-hide pb-1">
+                                        {/* Navigation Tabs */}
+                                        {tabs.map((tab) => (
+                                            <NavLink
+                                                key={tab.path}
+                                                to={tab.path}
+                                                end={tab.path === "/"}
+                                                className="no-underline"
+                                            >
+                                                {({ isActive }) => (
                                                     <Button
-                                                        key={key}
-                                                        as="a"
-                                                        href={url}
-                                                        target="_blank"
-                                                        rel="noopener noreferrer"
-                                                        title={label}
-                                                        variant="icon"
+                                                        variant="nav"
                                                         size={null}
-                                                        className="text-text-body-main"
+                                                        data-active={isActive}
                                                     >
-                                                        <Icon className="w-full h-full" />
+                                                        {tab.label}
                                                     </Button>
-                                                ),
-                                            )}
+                                                )}
+                                            </NavLink>
+                                        ))}
 
-                                        {/* Enter + Language Toggle Stack */}
-                                        <div className="flex flex-col items-end gap-0.5">
-                                            {/* Enter Button */}
-                                            <Button
-                                                as="a"
-                                                href="https://enter.pollinations.ai"
-                                                target="_blank"
-                                                rel="noopener noreferrer"
-                                                variant="iconText"
-                                                size={null}
-                                            >
-                                                <span className="font-headline text-xs font-black uppercase tracking-wider text-text-brand">
-                                                    Enter
-                                                </span>
-                                                <ExternalLinkIcon className="w-4 h-4 text-text-brand" />
-                                            </Button>
-
-                                            {/* Language Toggle */}
-                                            <Button
-                                                type="button"
-                                                onClick={() =>
-                                                    setLanguageOverride(
-                                                        isAutoMode
-                                                            ? "en"
-                                                            : "auto",
+                                        {/* Social Media Links + Enter Button */}
+                                        <div className="flex gap-2 items-center">
+                                            {Object.entries(SOCIAL_LINKS)
+                                                .filter(
+                                                    ([key]) =>
+                                                        key === "discord" ||
+                                                        key === "github"
+                                                )
+                                                .map(
+                                                    ([
+                                                        key,
+                                                        {
+                                                            url,
+                                                            icon: Icon,
+                                                            label,
+                                                        },
+                                                    ]) => (
+                                                        <Button
+                                                            key={key}
+                                                            as="a"
+                                                            href={url}
+                                                            target="_blank"
+                                                            rel="noopener noreferrer"
+                                                            title={label}
+                                                            variant="icon"
+                                                            size={null}
+                                                            className="text-text-body-main"
+                                                        >
+                                                            <Icon className="w-full h-full" />
+                                                        </Button>
                                                     )
-                                                }
-                                                variant="iconText"
-                                                size={null}
-                                                className="px-0 py-0 h-auto"
-                                                title={
-                                                    isProcessing
-                                                        ? "Translating..."
-                                                        : isAutoMode
-                                                          ? "Switch to English only"
-                                                          : "Switch to auto-detect language"
-                                                }
-                                            >
-                                                <GlobeIcon
-                                                    className={`w-3 h-3 ${
-                                                        isProcessing
-                                                            ? "animate-spin text-text-brand"
-                                                            : "text-text-body-main"
-                                                    }`}
-                                                />
-                                                <span
-                                                    className={`font-headline text-[10px] font-black uppercase tracking-wider ${
-                                                        isProcessing
-                                                            ? "text-text-brand"
-                                                            : "text-text-body-main"
-                                                    }`}
+                                                )}
+
+                                            {/* Enter + Language Toggle Stack */}
+                                            <div className="flex flex-col items-end gap-0.5">
+                                                {/* Enter Button */}
+                                                <Button
+                                                    as="a"
+                                                    href="https://enter.pollinations.ai"
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    variant="iconText"
+                                                    size={null}
                                                 >
-                                                    {isProcessing
-                                                        ? "..."
-                                                        : isAutoMode
-                                                          ? "Auto"
-                                                          : "EN"}
-                                                </span>
-                                            </Button>
+                                                    <span className="font-headline text-xs font-black uppercase tracking-wider text-text-brand">
+                                                        Enter
+                                                    </span>
+                                                    <ExternalLinkIcon className="w-4 h-4 text-text-brand" />
+                                                </Button>
+                                            </div>
                                         </div>
                                     </div>
+                                    {/* Translation Indicator */}
+                                    {isProcessing && (
+                                        <span className="inline-flex items-center gap-1.5 px-2 py-0.5 mt-2 rounded-full bg-black/70 backdrop-blur-sm border border-white/20 text-[10px] text-white/70">
+                                            <span className="w-1.5 h-1.5 rounded-full bg-text-brand animate-pulse" />
+                                            Translating
+                                        </span>
+                                    )}
                                 </div>
                             </div>
                         </div>
@@ -264,10 +232,10 @@ function Layout() {
                             isBannerVisible && isPromptOpen
                                 ? "calc(44px + 4rem)"
                                 : isBannerVisible
-                                  ? "44px"
-                                  : isPromptOpen
-                                    ? "4rem"
-                                    : "0px",
+                                ? "44px"
+                                : isPromptOpen
+                                ? "4rem"
+                                : "0px",
                     } as React.CSSProperties
                 }
             >
@@ -316,7 +284,7 @@ function Layout() {
                                         .filter(
                                             ([key]) =>
                                                 key !== "github" &&
-                                                key !== "discord",
+                                                key !== "discord"
                                         )
                                         .map(
                                             ([
@@ -336,7 +304,7 @@ function Layout() {
                                                 >
                                                     <Icon className="w-full h-full" />
                                                 </Button>
-                                            ),
+                                            )
                                         )}
                                 </div>
                             </div>
@@ -369,12 +337,12 @@ function Layout() {
                                     type="button"
                                     onClick={() => {
                                         navigator.clipboard.writeText(
-                                            "hello@pollinations.ai",
+                                            "hello@pollinations.ai"
                                         );
                                         setEmailCopied(true);
                                         setTimeout(
                                             () => setEmailCopied(false),
-                                            2000,
+                                            2000
                                         );
                                     }}
                                     variant="iconText"
@@ -451,12 +419,12 @@ function Layout() {
                                     type="button"
                                     onClick={() => {
                                         navigator.clipboard.writeText(
-                                            "hello@pollinations.ai",
+                                            "hello@pollinations.ai"
                                         );
                                         setEmailCopied(true);
                                         setTimeout(
                                             () => setEmailCopied(false),
-                                            2000,
+                                            2000
                                         );
                                     }}
                                     variant="iconText"
@@ -508,7 +476,7 @@ function Layout() {
                                         .filter(
                                             ([key]) =>
                                                 key !== "github" &&
-                                                key !== "discord",
+                                                key !== "discord"
                                         )
                                         .map(
                                             ([
@@ -528,7 +496,7 @@ function Layout() {
                                                 >
                                                     <Icon className="w-full h-full" />
                                                 </Button>
-                                            ),
+                                            )
                                         )}
                                 </div>
                                 {/* Enter Button */}

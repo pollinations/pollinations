@@ -35,6 +35,9 @@ export function AuthCard() {
                                         <p className="font-headline text-xs font-black text-text-body-main uppercase mb-2">
                                             {copy.publishableLabel}
                                         </p>
+                                        <p className="text-xs text-amber-600 font-bold mb-2">
+                                            {copy.publishableAlphaWarning}
+                                        </p>
                                         <ul className="text-xs text-text-body-secondary space-y-1">
                                             <li>{copy.publishableFeature1}</li>
                                             <li>{copy.publishableFeature2}</li>
@@ -133,7 +136,13 @@ export function AuthCard() {
                                     {"?key="}
                                 </span>
                                 <span className="text-text-on-color">
-                                    {"pk_..."}
+                                    {"pk_... "}
+                                </span>
+                                <span className="text-text-on-color/50">
+                                    {"or"}
+                                </span>
+                                <span className="text-text-on-color">
+                                    {" sk_..."}
                                 </span>
                             </div>
                         </div>

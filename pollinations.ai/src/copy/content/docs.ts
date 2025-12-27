@@ -90,6 +90,7 @@ export const DOCS_PAGE = {
     authenticationTitle: "Authentication",
     keyTypesLabel: "Key Types",
     publishableLabel: "Publishable",
+    publishableAlphaWarning: "⚠️ Alpha – not production-ready",
     publishableFeature1: "Safe for client-side code",
     publishableFeature2: "Rate limited: 3 req/burst, 1/15sec refill",
     publishableFeature3: "Best for: demos, prototypes, public tools",
@@ -102,5 +103,5 @@ export const DOCS_PAGE = {
     serverSideDescription:
         "Server-side (Recommended): Use secret key in Authorization header",
     clientSideDescription:
-        "Client-side (Public): Use publishable key in query parameter",
+        "Query parameter: Both pk_ and sk_ keys work with ?key=",
 };

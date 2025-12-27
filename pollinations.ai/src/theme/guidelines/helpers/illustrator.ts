@@ -1,15 +1,9 @@
 /**
  * Drawing Helper Functions for GEN SUPPORTER LOGO Pipeline
- * Pure logic - logo generation function
  */
 
-import { assembleLogoPrompt } from "../../buildPrompts";
 import { generateImage } from "../../../services/pollinationsAPI";
-import { THEME_MODELS } from "../../models";
-
-// ==============================================
-// TYPE DEFINITIONS
-// ==============================================
+import { assembleLogoPrompt } from "../../buildPrompts";
 
 export interface SupporterLogoOptions {
     supporterInfo: string;
@@ -19,40 +13,26 @@ export interface SupporterLogoOptions {
     seed?: number;
 }
 
-// ==============================================
-// LOGO GENERATION HELPER
-// ==============================================
-
 /**
  * Generate a supporter logo using drawing guidelines
  */
 export async function generateSupporterLogo(
     options: SupporterLogoOptions,
-    signal?: AbortSignal,
 ): Promise<string> {
     const {
         supporterInfo,
         themeDescription,
         width = 128,
         height = 128,
-        seed = 42,
+        seed = 1,
     } = options;
 
-    // Assemble the prompt using the drawing guidelines
     const prompt = assembleLogoPrompt(supporterInfo, themeDescription);
 
-    // Generate the logo image
-    const logoUrl = await generateImage(
-        prompt,
-        {
-            width,
-            height,
-            seed,
-            model: THEME_MODELS.illustrator,
-            nologo: true,
-        },
-        signal,
-    );
-
-    return logoUrl;
+    return generateImage(prompt, {
+        width,
+        height,
+        seed,
+        model: "nanobanana",
+    });
 }

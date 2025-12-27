@@ -12,7 +12,6 @@ import { generateText } from "../../../services/pollinationsAPI";
 import { STYLING_GUIDELINES } from "../designer";
 import type { MacroConfig } from "../../style/simplified-config.types";
 import { macrosToTheme } from "../../style/simplified-to-theme";
-import { THEME_MODELS } from "../../models";
 
 // ==============================================
 // TYPE DEFINITIONS
@@ -70,7 +69,9 @@ export function parseThemeResponse(text: string): ThemeDictionary {
     const slots = parsed.colors?.slots || parsed.slots;
 
     if (slots) {
+        // biome-ignore lint/suspicious/noExplicitAny: Legacy theme format handling
         const normalizedSlots: Record<string, any> = {};
+        // biome-ignore lint/suspicious/noExplicitAny: Legacy theme format handling
         Object.entries(slots).forEach(([slotId, slot]: [string, any]) => {
             normalizedSlots[slotId] = {
                 hex: slot.hex,
@@ -87,7 +88,9 @@ export function parseThemeResponse(text: string): ThemeDictionary {
     }
 
     // Legacy dictionary format: { "#hex": ["token.a", "token.b"] }
+    // biome-ignore lint/suspicious/noExplicitAny: Legacy theme format handling
     const legacySlots: Record<string, any> = {};
+    // biome-ignore lint/suspicious/noExplicitAny: Legacy theme format handling
     Object.entries(parsed as Record<string, any>).forEach(
         ([hex, ids], index) => {
             legacySlots[`slot_${index}`] = {
@@ -122,7 +125,8 @@ export function parseFullThemeResponse(text: string): FullThemeStyle {
     return {
         colors: themeDictionary.colors,
         borderRadius: themeDictionary.borderRadius,
-        fonts: themeDictionary.fonts as any, // Cast to match expected structure if needed
+        // biome-ignore lint/suspicious/noExplicitAny: Type casting for legacy format
+        fonts: themeDictionary.fonts as any,
         opacity: themeDictionary.opacity,
         spacing: undefined, // We dropped spacing from the macro prompt for now
     };
@@ -137,7 +141,6 @@ export function parseFullThemeResponse(text: string): FullThemeStyle {
  */
 export async function generateTheme(
     userPrompt: string,
-    signal?: AbortSignal,
 ): Promise<ThemeDictionary> {
     const fullPrompt = `${STYLING_GUIDELINES}
 
@@ -146,15 +149,8 @@ ${userPrompt}
 
 Generate the theme JSON now:`;
 
-    console.log(
-        `🎨 [DESIGNER] → Requesting theme tokens... (model: ${THEME_MODELS.designer})`,
-    );
-    const text = await generateText(
-        fullPrompt,
-        42,
-        THEME_MODELS.designer,
-        signal,
-    );
+    console.log("🎨 [DESIGNER] → Requesting theme tokens...");
+    const text = await generateText(fullPrompt);
     console.log("🎨 [DESIGNER] ← Theme tokens received");
     return parseThemeResponse(text);
 }
@@ -165,18 +161,10 @@ Generate the theme JSON now:`;
  */
 export async function generateFullTheme(
     themeDescription: string,
-    signal?: AbortSignal,
 ): Promise<FullThemeStyle> {
     const fullPrompt = assembleStylePrompt(themeDescription);
-    console.log(
-        `🎨 [DESIGNER] → Requesting full theme... (model: ${THEME_MODELS.designer})`,
-    );
-    const text = await generateText(
-        fullPrompt,
-        42,
-        THEME_MODELS.designer,
-        signal,
-    );
+    console.log("🎨 [DESIGNER] → Requesting full theme...");
+    const text = await generateText(fullPrompt);
     console.log("🎨 [DESIGNER] ← Full theme received");
     return parseFullThemeResponse(text);
 }

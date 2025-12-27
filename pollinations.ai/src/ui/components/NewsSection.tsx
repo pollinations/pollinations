@@ -1,6 +1,7 @@
 import ReactMarkdown from "react-markdown";
+import { COPY_CONSTANTS } from "../../copy/constants";
 import { useNews } from "../../hooks/useNews";
-import { COMMUNITY_PAGE } from "../../theme";
+import { useTranslate } from "../../hooks/useTranslate";
 import { Heading } from "./ui/typography";
 
 interface NewsSectionProps {
@@ -21,11 +22,13 @@ export function NewsSection({
     compact = false,
     title = "What's New",
 }: NewsSectionProps) {
-    const { news, loading } = useNews(COMMUNITY_PAGE.newsFilePath);
+    const { news, loading } = useNews(COPY_CONSTANTS.newsFilePath);
+
+    const { translated: translatedNews } = useTranslate(news, "content");
 
     if (loading || news.length === 0) return null;
 
-    const displayNews = limit ? news.slice(0, limit) : news;
+    const displayNews = limit ? translatedNews.slice(0, limit) : translatedNews;
 
     return (
         <div className={compact ? "mb-8" : "mb-12"}>
@@ -37,7 +40,7 @@ export function NewsSection({
                     // Remove date from content for display
                     const contentWithoutDate = item.content.replace(
                         /\*\*\d{4}-\d{2}-\d{2}\*\*:?\s*/,
-                        ""
+                        "",
                     );
 
                     return (
@@ -76,14 +79,15 @@ export function NewsSection({
                                             className,
                                             children,
                                             ...props
-                                        }: any) => {
+                                        }: // biome-ignore lint/suspicious/noExplicitAny: ReactMarkdown props
+                                        any) => {
                                             const match = /language-(\w+)/.exec(
-                                                className || ""
+                                                className || "",
                                             );
                                             const isInline =
                                                 !match &&
                                                 !String(children).includes(
-                                                    "\n"
+                                                    "\n",
                                                 );
                                             return isInline ? (
                                                 <code

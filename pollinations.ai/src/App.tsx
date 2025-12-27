@@ -1,10 +1,9 @@
-import { Routes, Route, Navigate } from "react-router-dom";
-import { Suspense, lazy } from "react";
+import { lazy, Suspense } from "react";
+import { Navigate, Route, Routes } from "react-router-dom";
 import ErrorBoundary from "./ui/components/ErrorBoundary";
+import { FontLoader } from "./ui/components/FontLoader";
 import Layout from "./ui/components/Layout";
 import { PresetEditor } from "./ui/components/theme";
-
-import { FontLoader } from "./ui/components/FontLoader";
 
 // Lazy load pages
 const HelloPage = lazy(() => import("./ui/pages/HelloPage"));

@@ -139,12 +139,13 @@ export const IMAGE_SERVICES = {
         provider: "azure",
         cost: [
             // Azure GPT Image 1.5 (via AI Foundry)
+            // Official pricing: https://techcommunity.microsoft.com/blog/azure-ai-foundry-blog/introducing-openai%E2%80%99s-gpt-image-1-5-in-microsoft-foundry/4478139
             {
                 date: COST_START_DATE,
-                promptTextTokens: perMillion(8), // $8.00 per 1M input tokens
-                promptCachedTokens: perMillion(2), // $2.00 per 1M cached input tokens
-                promptImageTokens: perMillion(8), // $8.00 per 1M image input tokens
-                completionImageTokens: perMillion(32), // $32.00 per 1M output tokens
+                promptTextTokens: perMillion(8), // $8.00 per 1M input tokens (Azure)
+                promptCachedTokens: perMillion(2), // $2.00 per 1M cached input tokens (Azure)
+                promptImageTokens: perMillion(8), // $8.00 per 1M image input tokens (Azure)
+                completionImageTokens: perMillion(32), // $32.00 per 1M output tokens (Azure)
             },
         ],
         description: "GPT Image 1.5 - OpenAI's advanced image generation model",

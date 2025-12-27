@@ -1,4 +1,4 @@
-import { API, DEFAULTS, API_KEY } from "../api.config";
+import { API, API_KEY, DEFAULTS } from "../api.config";
 import { fetchWithRetry } from "../utils/fetchWithRetry";
 
 /**
@@ -8,8 +8,7 @@ import { fetchWithRetry } from "../utils/fetchWithRetry";
 export async function generateText(
     prompt: string,
     seed?: number | number[],
-    model?: string,
-    signal?: AbortSignal,
+    model = "gemini",
 ): Promise<string> {
     const response = await fetchWithRetry(API.TEXT_GENERATION, {
         method: "POST",
@@ -19,10 +18,9 @@ export async function generateText(
         },
         body: JSON.stringify({
             messages: [{ role: "user", content: prompt }],
-            model: model || DEFAULTS.TEXT_MODEL,
-            seed: seed,
+            model,
+            seed,
         }),
-        signal,
     });
 
     const data = await response.json();
@@ -41,16 +39,13 @@ export async function generateImage(
         height?: number;
         seed?: number;
         model?: string;
-        nologo?: boolean;
     } = {},
-    signal?: AbortSignal,
 ): Promise<string> {
     const {
         width = DEFAULTS.IMAGE_WIDTH,
         height = DEFAULTS.IMAGE_HEIGHT,
         seed = DEFAULTS.SEED,
         model = DEFAULTS.IMAGE_MODEL,
-        nologo = true,
     } = options;
 
     const baseUrl = `${API.IMAGE_GENERATION}/${encodeURIComponent(prompt)}`;
@@ -59,13 +54,11 @@ export async function generateImage(
         width: width?.toString() || "",
         height: height?.toString() || "",
         seed: seed?.toString() || "",
-        nologo: nologo.toString(),
     });
     const url = `${baseUrl}?${params.toString()}`;
 
     const response = await fetchWithRetry(url, {
         headers: { Authorization: `Bearer ${API_KEY}` },
-        signal,
     });
 
     const blob = await response.blob();

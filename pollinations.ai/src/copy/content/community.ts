@@ -1,58 +1,36 @@
 // CommunityPage content configuration
 
 export const COMMUNITY_PAGE = {
-    title: {
-        text: "Contribute",
-    },
+    title: "Contribute",
 
-    subtitle: {
-        text: "We're crafting a haven where developers, creators, and AI enthusiasts collaborate and bloom together.",
-        transform: true,
-    },
+    subtitle:
+        "We're crafting a haven where developers, creators, and AI enthusiasts collaborate and bloom together.",
 
     // News section
-    newsTitle: {
-        text: "What's New",
-    },
+    newsTitle: "What's New",
 
-    newsFilePath:
-        "https://raw.githubusercontent.com/pollinations/pollinations/production/NEWS/transformed/highlights.md",
+    discordTitle: "💬 Discord",
 
-    discordTitle: {
-        text: "💬 Discord",
-    },
+    discordSubtitle:
+        "Chat with builders, get help, share what you're working on. We're friendly!",
 
-    discordSubtitle: {
-        text: "Chat with builders, get help, share what you're working on. We're friendly!",
-        transform: true,
-    },
+    githubTitle: "🛠️ GitHub",
 
-    githubTitle: {
-        text: "🛠️ GitHub",
-    },
-
-    githubSubtitle: {
-        text: "Contribute code, report bugs, submit your app to the showcase, or just star us!",
-        transform: true,
-    },
+    githubSubtitle:
+        "Contribute code, report bugs, submit your app to the showcase, or just star us!",
 
     // Buttons
-    joinDiscordButton: {
-        text: "Join Discord",
-    },
-
-    contributeButton: {
-        text: "Contribute",
-    },
+    joinDiscordButton: "Join Discord",
+    pollenBetaButton: "🧪 #pollen-beta",
+    starContributeButton: "⭐ Star & Contribute",
+    submitAppButton: "🚀 Submit App",
+    contributeButton: "Contribute",
 
     // Voting section
-    votingTitle: {
-        text: "Have Your Say",
-    },
+    votingTitle: "Have Your Say",
 
-    votingSubtitle: {
-        text: "We build what the community wants. Vote on what matters to you:",
-    },
+    votingSubtitle:
+        "We build what the community wants. Vote on what matters to you:",
 
     // Vote counts are approximate and need manual updates
     votingIssues: [
@@ -76,14 +54,10 @@ export const COMMUNITY_PAGE = {
         },
     ],
 
-    supportersTitle: {
-        text: "Supporters",
-    },
+    supportersTitle: "Supporters",
 
-    supportersSubtitle: {
-        text: "We're grateful to our supporters for their contributions to the platform.",
-        transform: true,
-    },
+    supportersSubtitle:
+        "We're grateful to our supporters for their contributions to the platform.",
 
     // Supporters data
     supportersList: [
@@ -150,9 +124,12 @@ export const COMMUNITY_PAGE = {
         },
     ],
 
-    // Logo generation settings
-    supporterLogoPrompt:
-        "Brutalist logo design with bold geometric shapes, heavy lines, stark contrast, raw minimalist aesthetic, transparent background (no background), flat design style. Company:",
-    supporterLogoSeed: 1,
-    supporterLogoModel: "nanobanana",
+    // Top Contributors section
+    topContributorsTitle: "Most Active Contributors",
+    topContributorsDescription:
+        "Meet the most active contributors to the pollinations.ai",
+    githubRepositoryLink: "GitHub repository",
+    overThePastYear: "over the past year.",
+    commitsLabel: "commits",
+    commitLabel: "commit",
 };

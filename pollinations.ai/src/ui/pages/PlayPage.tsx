@@ -1,15 +1,15 @@
-import { useState, useMemo } from "react";
-import { Title, Body } from "../components/ui/typography";
+import { useMemo, useState } from "react";
+import { PLAY_PAGE } from "../../copy/content/play";
+import { useAuth } from "../../hooks/useAuth";
+import { useModelList } from "../../hooks/useModelList";
+import { usePageCopy } from "../../hooks/usePageCopy";
+import { ImageFeed } from "../components/play/ImageFeed";
+import { ModelSelector } from "../components/play/ModelSelector";
+import { PlayGenerator } from "../components/play/PlayGenerator";
+import { Button } from "../components/ui/button";
 import { PageCard } from "../components/ui/page-card";
 import { PageContainer } from "../components/ui/page-container";
-import { PLAY_PAGE } from "../../theme";
-import { ImageFeed } from "../components/play/ImageFeed";
-import { PlayGenerator } from "../components/play/PlayGenerator";
-import { ModelSelector } from "../components/play/ModelSelector";
-import { useModelList } from "../../hooks/useModelList";
-import { useTheme } from "../contexts/ThemeContext";
-import { useAuth } from "../../hooks/useAuth";
-import { Button } from "../components/ui/button";
+import { Body, Title } from "../components/ui/typography";
 
 /**
  * PlayPage - Main playground page
@@ -31,9 +31,8 @@ function PlayPage() {
         allowedTextModelIds,
     } = useModelList(apiKey);
 
-    // Get page copy from preset
-    const { presetCopy } = useTheme();
-    const pageCopy = presetCopy.PLAY_PAGE;
+    // Get translated copy
+    const { copy: pageCopy, isTranslating } = usePageCopy(PLAY_PAGE);
 
     // Memoize combined models array
     const allModels = useMemo(
@@ -41,7 +40,7 @@ function PlayPage() {
             ...imageModels.map((m) => ({ ...m, type: "image" as const })),
             ...textModels.map((m) => ({ ...m, type: "text" as const })),
         ],
-        [imageModels, textModels],
+        [imageModels, textModels]
     );
 
     // Display prompt based on view
@@ -49,51 +48,74 @@ function PlayPage() {
 
     return (
         <PageContainer>
-            <PageCard>
-                {/* Title with toggle and login */}
-                <div className="flex items-center justify-between mb-8">
-                    <div className="flex items-center gap-4">
-                        <Title spacing="none">
-                            {view === "play"
-                                ? pageCopy.createTitle.text
-                                : pageCopy.watchTitle.text}
-                        </Title>
-                        <button
-                            type="button"
-                            onClick={() =>
-                                setView(view === "play" ? "feed" : "play")
-                            }
-                            className="font-body text-sm text-text-body-tertiary hover:text-text-body-main transition-colors"
-                        >
-                            {view === "play"
-                                ? pageCopy.toggleWatchOthers.text
-                                : pageCopy.toggleBackToPlay.text}
-                        </button>
-                    </div>
-                    {/* Login/Logout Button */}
-                    <div className="flex items-center gap-2">
-                        {isLoggedIn && (
-                            <span className="font-mono text-xs text-text-body-tertiary bg-input-background px-2 py-1 rounded">
-                                {apiKey.slice(0, 12)}...
-                            </span>
-                        )}
-                        <Button
-                            type="button"
-                            onClick={isLoggedIn ? logout : login}
-                            variant="secondary"
-                            size="sm"
-                        >
-                            {isLoggedIn ? "Logout" : "Login"}
-                        </Button>
-                    </div>
+            <PageCard isTranslating={isTranslating}>
+                {/* Title with toggle */}
+                <div className="flex items-center gap-4 mb-8">
+                    <Title spacing="none">
+                        {view === "play"
+                            ? pageCopy.createTitle
+                            : pageCopy.watchTitle}
+                    </Title>
+                    <button
+                        type="button"
+                        onClick={() =>
+                            setView(view === "play" ? "feed" : "play")
+                        }
+                        className="font-body text-sm text-text-body-tertiary hover:text-text-body-main transition-colors"
+                    >
+                        {view === "play"
+                            ? pageCopy.toggleWatchOthers
+                            : pageCopy.toggleBackToPlay}
+                    </button>
                 </div>
 
                 {/* Description */}
-                <Body className="mb-8">
+                <Body className="mb-4">
                     {view === "play"
-                        ? pageCopy.createDescription.text
-                        : pageCopy.feedDescription.text}
+                        ? pageCopy.createDescription
+                        : pageCopy.feedDescription}
                 </Body>
+
+                {/* Login CTA */}
+                {!isLoggedIn ? (
+                    <div className="flex items-center gap-4 p-4 mb-8 bg-surface-card rounded-sub-card border-l-4 border-border-highlight">
+                        <div className="flex-1">
+                            <p className="font-body text-sm text-text-body-secondary">
+                                {pageCopy.loginCtaText}{" "}
+                                <span className="text-text-brand font-medium">
+                                    {pageCopy.loginCtaLink}
+                                </span>
+                            </p>
+                        </div>
+                        <Button
+                            type="button"
+                            onClick={login}
+                            variant="primary"
+                            size="sm"
+                        >
+                            {pageCopy.loginButton}
+                        </Button>
+                    </div>
+                ) : (
+                    <div className="flex items-center gap-6 p-5 mb-8 bg-surface-card rounded-sub-card border-l-4 border-border-brand">
+                        <div className="flex-1 flex items-center gap-4 flex-wrap">
+                            <p className="font-headline text-sm font-black text-text-body-main">
+                                {pageCopy.loggedInCtaText}
+                            </p>
+                            <span className="font-mono text-xs bg-input-background text-text-brand px-3 py-1.5 rounded border border-border-main">
+                                🔑 {apiKey.slice(0, 14)}...
+                            </span>
+                        </div>
+                        <Button
+                            type="button"
+                            onClick={logout}
+                            variant="secondary"
+                            size="sm"
+                        >
+                            {pageCopy.logoutButton}
+                        </Button>
+                    </div>
+                )}
 
                 {/* Model Selector - Independent of view state */}
                 <ModelSelector
@@ -106,14 +128,18 @@ function PlayPage() {
 
                 {/* Prompt - Independent of view state */}
                 <div className="mb-6">
-                    <label className="block font-headline text-text-body-main mb-2 uppercase text-xs tracking-wider font-black">
-                        {pageCopy.promptLabel.text}
+                    <label
+                        htmlFor="prompt-input"
+                        className="block font-headline text-text-body-main mb-2 uppercase text-xs tracking-wider font-black"
+                    >
+                        {pageCopy.promptLabel}
                     </label>
                     {view === "play" ? (
                         <textarea
+                            id="prompt-input"
                             value={prompt}
                             onChange={(e) => setPrompt(e.target.value)}
-                            placeholder={PLAY_PAGE.imagePlaceholder.text}
+                            placeholder={PLAY_PAGE.imagePlaceholder}
                             className="w-full h-[7.5rem] p-4 bg-input-background text-text-body-main font-body resize-none focus:outline-none focus:bg-input-background hover:bg-input-background transition-colors scrollbar-hide placeholder:text-text-body-tertiary"
                         />
                     ) : (

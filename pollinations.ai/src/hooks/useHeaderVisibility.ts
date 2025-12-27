@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 
 export function useHeaderVisibility(threshold = 10) {
     const [showHeader, setShowHeader] = useState(true);

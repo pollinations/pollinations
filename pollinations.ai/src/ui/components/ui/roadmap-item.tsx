@@ -21,7 +21,7 @@ export const RoadmapItem = React.forwardRef<HTMLDivElement, RoadmapItemProps>(
                 ref={ref}
                 className={cn(
                     "flex items-start gap-4 p-4 rounded-sub-card bg-surface-card border-l-4 border-border-highlight",
-                    className
+                    className,
                 )}
                 {...props}
             >
@@ -40,6 +40,6 @@ export const RoadmapItem = React.forwardRef<HTMLDivElement, RoadmapItemProps>(
                 </div>
             </div>
         );
-    }
+    },
 );
 RoadmapItem.displayName = "RoadmapItem";

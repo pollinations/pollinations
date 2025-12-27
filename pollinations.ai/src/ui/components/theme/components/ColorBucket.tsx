@@ -1,7 +1,7 @@
 import React from "react";
 import type { ColorBucketData } from "../types";
-import { TokenChip } from "./TokenChip";
 import { rgbaToHex } from "../utils/color-utils";
+import { TokenChip } from "./TokenChip";
 
 interface ColorBucketProps {
     bucketId: string;

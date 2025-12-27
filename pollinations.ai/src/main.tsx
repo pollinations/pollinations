@@ -4,7 +4,9 @@ import App from "./App";
 import { ThemeProvider } from "./ui/contexts/ThemeContext";
 import "./styles.css";
 
-const root = createRoot(document.getElementById("root")!);
+const rootElement = document.getElementById("root");
+if (!rootElement) throw new Error("Root element not found");
+const root = createRoot(rootElement);
 
 root.render(
     <ThemeProvider>
@@ -16,5 +18,5 @@ root.render(
         >
             <App />
         </BrowserRouter>
-    </ThemeProvider>
+    </ThemeProvider>,
 );

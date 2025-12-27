@@ -1,10 +1,9 @@
+import { useEffect, useState } from "react";
+
 /**
- * Parse apps from apps/APPS.md markdown table (symlinked)
+ * Hook to fetch and parse APPS.md file
+ * Returns array of apps parsed from markdown table
  */
-
-// Import raw markdown content (copied from apps/APPS.md at build time)
-import appsMarkdown from "./APPS.md?raw";
-
 export interface App {
     emoji: string;
     name: string;
@@ -20,18 +19,15 @@ export interface App {
     date: string;
 }
 
-// Category mapping for display (must match lowercase categories in APPS.md)
-export const CATEGORIES = [
-    { id: "creative", label: "Creative" },
-    { id: "chat", label: "Chat" },
-    { id: "games", label: "Games" },
-    { id: "hackandbuild", label: "Dev Tools" },
-    { id: "vibecoding", label: "Vibes" },
-    { id: "socialbots", label: "Social Bots" },
-    { id: "learn", label: "Learn" },
-    { id: "featured", label: "Featured" },
-];
+interface UseAppsReturn {
+    apps: App[];
+    loading: boolean;
+    error: Error | null;
+}
 
+/**
+ * Parse apps from markdown table
+ */
 function parseAppsMarkdown(markdown: string): App[] {
     const lines = markdown.split("\n");
     const apps: App[] = [];
@@ -44,12 +40,9 @@ function parseAppsMarkdown(markdown: string): App[] {
         .filter((l) => l.startsWith("|"));
 
     for (const row of dataRows) {
-        // Don't filter(Boolean) - we need empty columns too
         const cols = row.split("|").map((c) => c.trim());
-        // Remove first and last empty strings from split
-        cols.shift(); // remove empty before first |
-        cols.pop(); // remove empty after last |
-        // Format: Emoji | Name | Description | Language | Category | GitHub | Repo | Stars | Discord | Other | Submitted
+        cols.shift();
+        cols.pop();
         if (cols.length < 11) continue;
 
         const nameMatch = cols[1].match(/\[([^\]]+)\]\(([^)]+)\)/);
@@ -83,5 +76,44 @@ function parseAppsMarkdown(markdown: string): App[] {
     return apps;
 }
 
-// Parse at build time (fast, bundled)
-export const allApps = parseAppsMarkdown(appsMarkdown);
+/**
+ * Hook to fetch and parse APPS.md file
+ * Returns array of apps parsed from markdown table
+ */
+export function useApps(filePath: string): UseAppsReturn {
+    const [apps, setApps] = useState<App[]>([]);
+    const [loading, setLoading] = useState<boolean>(true);
+    const [error, setError] = useState<Error | null>(null);
+
+    useEffect(() => {
+        if (!filePath) {
+            setLoading(false);
+            return;
+        }
+
+        async function fetchApps() {
+            try {
+                const response = await fetch(filePath);
+                if (!response.ok) {
+                    throw new Error(
+                        `Failed to fetch apps: ${response.statusText}`,
+                    );
+                }
+
+                const text = await response.text();
+                const parsedApps = parseAppsMarkdown(text);
+
+                setApps(parsedApps);
+                setLoading(false);
+            } catch (err) {
+                console.error("Error loading apps:", err);
+                setError(err instanceof Error ? err : new Error(String(err)));
+                setLoading(false);
+            }
+        }
+
+        fetchApps();
+    }, [filePath]);
+
+    return { apps, loading, error };
+}

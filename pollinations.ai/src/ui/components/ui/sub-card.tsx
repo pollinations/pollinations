@@ -1,5 +1,5 @@
+import { cva, type VariantProps } from "class-variance-authority";
 import * as React from "react";
-import { cva, VariantProps } from "class-variance-authority";
 import { cn } from "../../../utils";
 
 // ============================================
@@ -50,6 +50,6 @@ export const SubCard = React.forwardRef<HTMLDivElement, SubCardProps>(
                 {children}
             </div>
         );
-    }
+    },
 );
 SubCard.displayName = "SubCard";

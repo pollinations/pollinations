@@ -140,6 +140,32 @@ export default {
                 input: "var(--radius-input)",
                 "sub-card": "var(--radius-subcard)",
             },
+            animation: {
+                "pulse-subtle": "pulse-subtle 1.5s ease-in-out infinite",
+                shimmer: "shimmer 2.5s ease-in-out infinite",
+            },
+            keyframes: {
+                "pulse-subtle": {
+                    "0%, 100%": {
+                        opacity: "1",
+                        transform: "scale(1)",
+                        boxShadow: "0 0 0 0 var(--border-highlight)",
+                    },
+                    "50%": {
+                        opacity: "0.9",
+                        transform: "scale(1.03)",
+                        boxShadow: "0 0 8px 2px var(--border-highlight)",
+                    },
+                },
+                shimmer: {
+                    "0%": {
+                        backgroundPosition: "-200% 0",
+                    },
+                    "100%": {
+                        backgroundPosition: "200% 0",
+                    },
+                },
+            },
         },
     },
     plugins: [

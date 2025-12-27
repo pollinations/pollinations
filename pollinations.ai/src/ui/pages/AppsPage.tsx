@@ -1,16 +1,17 @@
-import { useState, useMemo } from "react";
-import { Title, Body } from "../components/ui/typography";
+import { useMemo, useState } from "react";
+import { COPY_CONSTANTS } from "../../copy/constants";
+import { APPS_PAGE, CATEGORIES } from "../../copy/content/apps";
+import { LINKS } from "../../copy/content/socialLinks";
+import { type App, useApps } from "../../hooks/useApps";
+import { usePageCopy } from "../../hooks/usePageCopy";
+import { useTranslate } from "../../hooks/useTranslate";
+import { ExternalLinkIcon } from "../assets/ExternalLinkIcon";
+import { GithubIcon } from "../assets/SocialIcons";
 import { Button } from "../components/ui/button";
 import { PageCard } from "../components/ui/page-card";
 import { PageContainer } from "../components/ui/page-container";
 import { SubCard } from "../components/ui/sub-card";
-import { ExternalLinkIcon } from "../assets/ExternalLinkIcon";
-import { GithubIcon } from "../assets/SocialIcons";
-import { useTheme } from "../contexts/ThemeContext";
-import { LINKS } from "../../theme/copy/socialLinks";
-import { allApps, CATEGORIES } from "../../lib/parseApps";
-
-import type { App } from "../../lib/parseApps";
+import { Body, Title } from "../components/ui/typography";
 
 // Helper to extract GitHub username from author field
 function getGitHubUsername(author: string) {
@@ -115,27 +116,41 @@ function AppCard({ app }: AppCardProps) {
 export default function AppsPage() {
     const [selectedCategory, setSelectedCategory] = useState("creative");
 
-    // Get page copy from preset
-    const { presetCopy } = useTheme();
-    const pageCopy = presetCopy.APPS_PAGE;
+    // Fetch apps from GitHub
+    const { apps: allApps } = useApps(COPY_CONSTANTS.appsFilePath);
+
+    // Get translated copy
+    const { copy: pageCopy, isTranslating } = usePageCopy(APPS_PAGE);
+
+    // Translate category labels
+    const { translated: translatedCategories } = useTranslate(
+        CATEGORIES,
+        "label",
+    );
 
     // Filter apps by category
     const filteredApps = useMemo(() => {
-        return allApps.filter((app) => app.category === selectedCategory);
-    }, [selectedCategory]);
+        return allApps.filter((app: App) => app.category === selectedCategory);
+    }, [allApps, selectedCategory]);
+
+    // Translate app descriptions
+    const { translated: displayApps } = useTranslate(
+        filteredApps,
+        "description",
+    );
 
     return (
         <PageContainer>
-            <PageCard>
-                <Title>{pageCopy.title.text}</Title>
-                <Body spacing="comfortable">{pageCopy.subtitle.text}</Body>
+            <PageCard isTranslating={isTranslating}>
+                <Title>{pageCopy.title}</Title>
+                <Body spacing="comfortable">{pageCopy.subtitle}</Body>
                 <div className="flex items-center gap-4 p-4 mb-10 bg-surface-card rounded-sub-card border-l-4 border-border-highlight">
                     <div className="flex-1">
                         <p className="font-headline text-sm font-black text-text-body-main mb-1">
-                            🚀 Built something cool?
+                            {pageCopy.submitCtaTitle}
                         </p>
                         <p className="font-body text-xs text-text-body-secondary">
-                            Get featured in the showcase and earn Pollen!
+                            {pageCopy.submitCtaDescription}
                         </p>
                     </div>
                     <Button
@@ -146,14 +161,14 @@ export default function AppsPage() {
                         variant="primary"
                         size="default"
                     >
-                        ✨ Submit App
+                        {pageCopy.submitCtaButton}
                         <ExternalLinkIcon className="w-3 h-3 stroke-text-highlight" />
                     </Button>
                 </div>
 
                 {/* Category Filters */}
                 <div className="flex flex-wrap gap-2 mb-8">
-                    {CATEGORIES.map((cat) => (
+                    {translatedCategories.map((cat) => (
                         <Button
                             key={cat.id}
                             variant="toggle"
@@ -168,16 +183,16 @@ export default function AppsPage() {
 
                 {/* App Grid */}
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
-                    {filteredApps.map((app, index) => (
+                    {displayApps.map((app, index) => (
                         <AppCard key={`${app.name}-${index}`} app={app} />
                     ))}
                 </div>
 
                 {/* No Results */}
-                {filteredApps.length === 0 && (
+                {displayApps.length === 0 && (
                     <div className="text-center py-12">
                         <Body className="text-text-body-main">
-                            No apps found in this category yet.
+                            {pageCopy.noAppsMessage}
                         </Body>
                     </div>
                 )}

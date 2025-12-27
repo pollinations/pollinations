@@ -1,4 +1,4 @@
-import { LLMThemeResponse, processTheme } from "../style/theme-processor";
+import { type LLMThemeResponse, processTheme } from "../style/theme-processor";
 
 export const AHyperAbstractStormOfCuteBiologicalFormsInConstantTransformationSwirlingPastelVorticesFilledWithMutatingRoundCreaturesFractalPollenBurstsLiquidSoftShapesSplittingMergingBendingAndBloomingEverythingPulsesTwistsStretchesRicochetsGentlyAndCollidesInSurrealChoreographyColorsExplodeInShiftingGradientsOfNeonPastelElectricPeachCosmicLavenderHotMintPlasmaYellowPearlescentPinkCreaturesAreBarelyDefinableMorphingPuffSpheresWithEyesElasticPetalLimbsFuzzyOrbsThatRippleLikeJellyPollenThreadsThatBraidAndUnbraidInMidairMotionIsSlowButOverwhelminglyComplexSpiralsLoopsCascadesSoftEruptionsTheEntireSceneFeelsLikeAnOtherworldlyBiologicalRaveIntenseDreamyChildlikeChaoticAndImpossiblyCute3dDeepParallaxShimmeringParticlesInfiniteSeamlessLoopTheme: LLMThemeResponse =
     {
@@ -351,7 +351,8 @@ export const AHyperAbstractStormOfCuteBiologicalFormsInConstantTransformationSwi
         "PLAY_PAGE.generateImageButton.text": "Generate Image",
         "PLAY_PAGE.generateTextButton.text": "Generate Text",
         "SOCIAL_LINKS.discord.label": "Discord",
-        "SOCIAL_LINKS.discord.url": "https://discord.gg/pollinations-ai-885844321461485618",
+        "SOCIAL_LINKS.discord.url":
+            "https://discord.gg/pollinations-ai-885844321461485618",
         "SOCIAL_LINKS.discord.width": "32px",
         "SOCIAL_LINKS.discord.height": "32px",
         "SOCIAL_LINKS.github.label": "GitHub",

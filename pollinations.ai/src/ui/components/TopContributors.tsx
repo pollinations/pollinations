@@ -1,6 +1,8 @@
-import { useState, useEffect } from "react";
-import { Heading, Body } from "./ui/typography";
+import { useEffect, useState } from "react";
+import { COMMUNITY_PAGE } from "../../copy/content/community";
+import { usePageCopy } from "../../hooks/usePageCopy";
 import { Divider } from "./ui/divider";
+import { Body, Heading } from "./ui/typography";
 
 interface Contributor {
     login: string;
@@ -10,6 +12,9 @@ interface Contributor {
 }
 
 export function TopContributors() {
+    // Get translated copy
+    const { copy } = usePageCopy(COMMUNITY_PAGE);
+
     const [contributors, setContributors] = useState<Contributor[]>([]);
     const [loadingContributors, setLoadingContributors] = useState(true);
 
@@ -17,12 +22,12 @@ export function TopContributors() {
         const fetchTopContributors365 = async () => {
             try {
                 const since = new Date(
-                    Date.now() - 365 * 24 * 60 * 60 * 1000
+                    Date.now() - 365 * 24 * 60 * 60 * 1000,
                 ).toISOString();
 
                 const perPage = 100;
                 let page = 1;
-                const contributorMap = new Map<string, any>();
+                const contributorMap = new Map<string, Contributor>();
 
                 while (page <= 5) {
                     const res = await fetch(
@@ -31,7 +36,7 @@ export function TopContributors() {
                             headers: {
                                 Accept: "application/vnd.github+json",
                             },
-                        }
+                        },
                     );
 
                     const commits = await res.json();
@@ -57,7 +62,8 @@ export function TopContributors() {
                             });
                         }
 
-                        contributorMap.get(login).contributions += 1;
+                        const contributor = contributorMap.get(login);
+                        if (contributor) contributor.contributions += 1;
                     }
 
                     page++;
@@ -121,18 +127,18 @@ export function TopContributors() {
                 }
             `}</style>
             <div className="mb-12">
-                <Heading variant="section">Most Active Contributors</Heading>
+                <Heading variant="section">{copy.topContributorsTitle}</Heading>
                 <Body size="sm" spacing="comfortable">
-                    Meet the most active contributors to the pollinations.ai{" "}
+                    {copy.topContributorsDescription}{" "}
                     <a
                         href="https://github.com/pollinations/pollinations"
                         target="_blank"
                         rel="noopener noreferrer"
                         className="underline hover:opacity-80"
                     >
-                        GitHub repository
+                        {copy.githubRepositoryLink}
                     </a>{" "}
-                    over the past year.
+                    {copy.overThePastYear}
                 </Body>
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
                     {contributors.map((contributor, index) => {
@@ -172,8 +178,8 @@ export function TopContributors() {
                                 <p className="font-body text-[10px] text-text-body-tertiary">
                                     {contributor.contributions}{" "}
                                     {contributor.contributions === 1
-                                        ? "commit"
-                                        : "commits"}
+                                        ? copy.commitLabel
+                                        : copy.commitsLabel}
                                 </p>
                             </a>
                         );

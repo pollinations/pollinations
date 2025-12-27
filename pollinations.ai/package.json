@@ -4,9 +4,7 @@
     "private": true,
     "type": "module",
     "scripts": {
-        "predev": "cp ../apps/APPS.md src/lib/APPS.md",
         "dev": "vite",
-        "prebuild": "cp ../apps/APPS.md src/lib/APPS.md",
         "build": "tsc && vite build",
         "preview": "vite preview"
     },

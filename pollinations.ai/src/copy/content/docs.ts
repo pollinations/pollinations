@@ -89,9 +89,9 @@ export const DOCS_PAGE = {
     // AuthCard
     authenticationTitle: "Authentication",
     keyTypesLabel: "Key Types",
-    publishableLabel: "Publishable",
-    publishableFeature1: "Safe for client-side code",
-    publishableFeature2: "Rate limited: 3 req/burst, 1/15sec refill",
+    publishableLabel: "Publishable (Alpha)",
+    publishableFeature1: "⚠️ Alpha – not production-ready",
+    publishableFeature2: "Rate limited: 1 pollen/hour per IP+key",
     publishableFeature3: "Best for: demos, prototypes, public tools",
     secretLabel: "Secret",
     secretFeature1: "Server-side only",
@@ -101,6 +101,5 @@ export const DOCS_PAGE = {
     usageExamplesLabel: "Usage Examples",
     serverSideDescription:
         "Server-side (Recommended): Use secret key in Authorization header",
-    clientSideDescription:
-        "Client-side (Public): Use publishable key in query parameter",
+    clientSideDescription: "Query parameter: Add key to URL",
 };

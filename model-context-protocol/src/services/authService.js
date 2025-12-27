@@ -34,7 +34,7 @@ async function setApiKey(params) {
             maskedKey,
             message: `API key set successfully. Type: ${keyType}`,
             info: keyType === "publishable"
-                ? "Publishable keys are rate-limited (3 req/burst, 1/15sec refill)"
+                ? "Publishable keys are rate-limited (1 pollen/hour per IP+key)"
                 : "Secret keys have no rate limits and can spend Pollen",
         }, true),
     ]);
@@ -60,7 +60,7 @@ async function getKeyInfo(params) {
             keyType,
             maskedKey,
             info: keyType === "publishable"
-                ? "Publishable keys are rate-limited (3 req/burst, 1/15sec refill)"
+                ? "Publishable keys are rate-limited (1 pollen/hour per IP+key)"
                 : "Secret keys have no rate limits and can spend Pollen",
         }, true),
     ]);

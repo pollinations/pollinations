@@ -22,6 +22,8 @@ export const Route = createFileRoute("/")({
     beforeLoad: getUserOrRedirect,
     loader: async ({ context }) => {
         // Parallelize independent API calls for faster loading
+        // Use our clean /api/api-keys endpoint instead of authClient.apiKey.list()
+        // to get properly parsed metadata including turnstile settings
         const [customer, tierData, apiKeysResult, pendingSpendResult] =
             await Promise.all([
                 apiClient.polar.customer.state
@@ -30,12 +32,20 @@ export const Route = createFileRoute("/")({
                 apiClient.tiers.view
                     .$get()
                     .then((r) => (r.ok ? r.json() : null)),
-                authClient.apiKey.list(),
+                fetch("/api/api-keys", { credentials: "include" }).then((r) =>
+                    r.ok
+                        ? (r.json() as Promise<{ keys: unknown[] }>)
+                        : { keys: [] },
+                ),
                 apiClient.polar.customer["pending-spend"]
                     .$get()
                     .then((r) => (r.ok ? r.json() : null)),
             ]);
-        const apiKeys = apiKeysResult.data || [];
+
+        // API keys are already properly parsed by the server
+        const apiKeys = (apiKeysResult as { keys: unknown[] }).keys || [];
+        console.log("[LOADER] API keys from clean endpoint:", apiKeys);
+
         const pendingSpend = pendingSpendResult?.pendingSpend || 0;
 
         return {
@@ -102,16 +112,42 @@ function RouteComponent() {
 
         const apiKey = createResult.data;
 
-        // For publishable keys, store the plaintext key in metadata for easy retrieval
+        // For publishable keys, store the plaintext key in metadata and save turnstile settings
+        // NOTE: We use our own /metadata endpoint instead of authClient.apiKey.update()
+        // because better-auth's serializeApiKey has a bug that corrupts string metadata
         if (isPublishable) {
-            await authClient.apiKey.update({
-                keyId: apiKey.id,
-                metadata: {
+            await fetch(`/api/api-keys/${apiKey.id}/metadata`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                credentials: "include",
+                body: JSON.stringify({
                     description: formState.description,
                     keyType,
                     plaintextKey: apiKey.key,
-                },
+                }),
             });
+
+            // Save turnstile settings if provided
+            if (formState.turnstile) {
+                console.log(
+                    "[CREATE KEY] Saving turnstile settings:",
+                    formState.turnstile,
+                );
+                const turnstileResponse = await fetch(
+                    `/api/api-keys/${apiKey.id}/turnstile`,
+                    {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        credentials: "include",
+                        body: JSON.stringify(formState.turnstile),
+                    },
+                );
+                console.log(
+                    "[CREATE KEY] Turnstile save response:",
+                    turnstileResponse.status,
+                    await turnstileResponse.clone().text(),
+                );
+            }
         }
 
         // Step 2: Set permissions if restricted (allowedModels is not null)
@@ -258,6 +294,7 @@ function RouteComponent() {
                     apiKeys={apiKeys}
                     onCreate={handleCreateApiKey}
                     onDelete={handleDeleteApiKey}
+                    onRefresh={() => router.invalidate()}
                 />
                 <FAQ />
                 <Pricing />

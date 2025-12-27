@@ -273,8 +273,7 @@ export const PlantsAndTreesCopy = {
     "DOCS_PAGE.keyTypesLabel.text": "Key Types",
     "DOCS_PAGE.publishableLabel.text": "Publishable",
     "DOCS_PAGE.publishableFeature1.text": "Safe for client-side code",
-    "DOCS_PAGE.publishableFeature2.text":
-        "Rate limited: 3 req/burst, 1/15sec refill",
+    "DOCS_PAGE.publishableFeature2.text": "1 pollen/hour per IP+key",
     "DOCS_PAGE.publishableFeature3.text":
         "Best for: demos, prototypes, public tools",
     "DOCS_PAGE.secretLabel.text": "Secret",

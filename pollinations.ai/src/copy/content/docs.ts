@@ -91,7 +91,7 @@ export const DOCS_PAGE = {
     keyTypesLabel: "Key Types",
     publishableLabel: "Publishable (Alpha)",
     publishableFeature1: "⚠️ Alpha – not production-ready",
-    publishableFeature2: "Rate limited: 3 req/burst, 1/15sec refill",
+    publishableFeature2: "Rate limited: 1 pollen/hour per IP+key",
     publishableFeature3: "Best for: demos, prototypes, public tools",
     secretLabel: "Secret",
     secretFeature1: "Server-side only",

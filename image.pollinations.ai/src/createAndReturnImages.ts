@@ -618,32 +618,17 @@ const callAzureGPTImageWithEndpoint = async (
     }
 
     // Map safeParams to Azure API parameters
-    // GPT Image 1.5 only supports specific sizes: 1024x1024, 1024x1536, 1536x1024, auto
-    // Use "auto" if dimensions are at default (1021x1021 - prime number), otherwise snap to nearest valid size
-    const isDefaultSize =
-        safeParams.width === 1021 && safeParams.height === 1021;
-
-    // Snap to valid GPT Image sizes to avoid API errors
-    // Valid sizes: 1024x1024 (1:1), 1024x1536 (2:3), 1536x1024 (3:2)
+    // GPT Image 1.5 only supports: 1024x1024 (1:1), 1024x1536 (2:3), 1536x1024 (3:2)
     // Select the size with the closest aspect ratio to the input
-    const getValidGptImageSize = (width: number, height: number): string => {
-        const inputRatio = width / height;
-        const sizes = [
-            { size: "1024x1024", ratio: 1 },
-            { size: "1536x1024", ratio: 1.5 },
-            { size: "1024x1536", ratio: 1 / 1.5 },
-        ];
-        const closest = sizes.reduce((a, b) =>
-            Math.abs(a.ratio - inputRatio) < Math.abs(b.ratio - inputRatio)
-                ? a
-                : b,
-        );
-        return closest.size;
-    };
-
-    const size = isDefaultSize
-        ? "auto"
-        : getValidGptImageSize(safeParams.width, safeParams.height);
+    const inputRatio = safeParams.width / safeParams.height;
+    const sizes = [
+        { size: "1024x1024", ratio: 1 },
+        { size: "1536x1024", ratio: 1.5 },
+        { size: "1024x1536", ratio: 1 / 1.5 },
+    ];
+    const size = sizes.reduce((a, b) =>
+        Math.abs(a.ratio - inputRatio) < Math.abs(b.ratio - inputRatio) ? a : b,
+    ).size;
 
     // Use requested quality - enter.pollinations.ai handles tier-based access control
     const quality = safeParams.quality === "high" ? "high" : "medium";

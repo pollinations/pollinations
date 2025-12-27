@@ -41,6 +41,11 @@ const logCloudflare = debug("pollinations:cloudflare");
 
 // Constants
 const TARGET_PIXEL_COUNT = 1024 * 1024; // 1 megapixel
+// Max pixels for GPT Image input to control token costs
+// GPT Image 1.5 calculates input tokens as: (width × height) / 750
+// At 1536x1536 = 2.36M pixels = ~3,145 input tokens (reasonable cost)
+// At 4K (3840x2160) = 8.3M pixels = ~11,000 input tokens (expensive!)
+const GPT_IMAGE_MAX_INPUT_PIXELS = 1536 * 1536; // ~2.36 megapixels
 
 // Performance tracking variables
 const totalStartTime = Date.now();
@@ -91,6 +96,54 @@ export function calculateScaledDimensions(
     const scaledHeight = Math.round(height * scalingFactor);
 
     return { scaledWidth, scaledHeight, scalingFactor };
+}
+
+/**
+ * Resizes an input image buffer for GPT Image editing to reduce token costs.
+ * GPT Image 1.5 calculates input tokens as: (width × height) / 750
+ * Large images can result in very high token costs (e.g., 4K = ~11,000 tokens)
+ *
+ * @param buffer - The input image buffer
+ * @returns Resized buffer (PNG format) if image exceeds max pixels, otherwise original
+ */
+async function resizeInputImageForGptImage(buffer: Buffer): Promise<Buffer> {
+    try {
+        const metadata = await sharp(buffer).metadata();
+        const width = metadata.width || 0;
+        const height = metadata.height || 0;
+        const currentPixels = width * height;
+
+        if (currentPixels <= GPT_IMAGE_MAX_INPUT_PIXELS) {
+            logCloudflare(
+                `Input image ${width}x${height} (${currentPixels} pixels) within limit, no resize needed`,
+            );
+            return buffer;
+        }
+
+        // Calculate new dimensions maintaining aspect ratio
+        const scalingFactor = Math.sqrt(
+            GPT_IMAGE_MAX_INPUT_PIXELS / currentPixels,
+        );
+        const newWidth = Math.round(width * scalingFactor);
+        const newHeight = Math.round(height * scalingFactor);
+
+        logCloudflare(
+            `Resizing input image from ${width}x${height} to ${newWidth}x${newHeight} to reduce token costs`,
+        );
+        logCloudflare(
+            `Token reduction: ~${Math.round(currentPixels / 750)} → ~${Math.round((newWidth * newHeight) / 750)} tokens`,
+        );
+
+        const resizedBuffer = await sharp(buffer)
+            .resize(newWidth, newHeight, { fit: "inside" })
+            .png() // Use PNG for lossless quality
+            .toBuffer();
+
+        return resizedBuffer;
+    } catch (error) {
+        logError("Failed to resize input image, using original:", error);
+        return buffer;
+    }
 }
 
 async function fetchFromTurboServer(params: object) {
@@ -565,12 +618,23 @@ const callAzureGPTImageWithEndpoint = async (
     }
 
     // Map safeParams to Azure API parameters
-    // Use "auto" if dimensions are at default (1021x1021 - prime number), otherwise use user-specified dimensions
+    // GPT Image 1.5 only supports specific sizes: 1024x1024, 1024x1536, 1536x1024, auto
+    // Use "auto" if dimensions are at default (1021x1021 - prime number), otherwise snap to nearest valid size
     const isDefaultSize =
         safeParams.width === 1021 && safeParams.height === 1021;
+
+    // Snap to valid GPT Image sizes to avoid API errors
+    // Valid sizes: 1024x1024, 1024x1536, 1536x1024
+    const getValidGptImageSize = (width: number, height: number): string => {
+        const aspectRatio = width / height;
+        if (aspectRatio > 1.2) return "1536x1024"; // Landscape
+        if (aspectRatio < 0.8) return "1024x1536"; // Portrait
+        return "1024x1024"; // Square or near-square
+    };
+
     const size = isDefaultSize
         ? "auto"
-        : `${safeParams.width}x${safeParams.height}`;
+        : getValidGptImageSize(safeParams.width, safeParams.height);
 
     // Use requested quality - enter.pollinations.ai handles tier-based access control
     const quality = safeParams.quality === "high" ? "high" : "medium";
@@ -652,7 +716,12 @@ const callAzureGPTImageWithEndpoint = async (
                     }
 
                     const imageArrayBuffer = await imageResponse.arrayBuffer();
-                    const buffer = Buffer.from(imageArrayBuffer);
+                    const originalBuffer = Buffer.from(imageArrayBuffer);
+
+                    // Resize large input images to reduce token costs
+                    // GPT Image 1.5 calculates input tokens as: (width × height) / 750
+                    const buffer =
+                        await resizeInputImageForGptImage(originalBuffer);
 
                     // Only check safety after we've successfully fetched the image
                     logCloudflare(
@@ -770,10 +839,17 @@ const callAzureGPTImageWithEndpoint = async (
 
     // Extract token usage from Azure OpenAI response
     // Azure returns usage in format: { prompt_tokens, completion_tokens, total_tokens }
+    // Log full usage breakdown for debugging high token counts
+    logCloudflare(
+        `GPT Image full usage: prompt_tokens=${data.usage?.prompt_tokens}, completion_tokens=${data.usage?.completion_tokens}, total_tokens=${data.usage?.total_tokens}`,
+    );
+
     const outputTokens =
         data.usage?.completion_tokens || data.usage?.total_tokens || 1;
 
-    logCloudflare(`GPT Image token usage: ${outputTokens} completion tokens`);
+    logCloudflare(
+        `GPT Image token usage: ${outputTokens} completion tokens (used for billing)`,
+    );
 
     // Azure doesn't provide content safety information directly, so we'll set defaults
     // In a production environment, you might want to use a separate content moderation service

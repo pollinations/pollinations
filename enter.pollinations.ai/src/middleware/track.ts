@@ -310,6 +310,27 @@ async function trackResponse(
             isBilledUsage: false,
         };
     }
+
+    // For image generation, verify the response is actually an image
+    // Don't bill if the response is JSON/text (error response with HTTP 200)
+    if (eventType === "generate.image") {
+        const contentType = response.headers.get("content-type") || "";
+        if (
+            !contentType.startsWith("image/") &&
+            !contentType.startsWith("video/")
+        ) {
+            log.warn(
+                "Image generation returned non-image content-type: {contentType}",
+                { contentType },
+            );
+            return {
+                responseOk: response.ok,
+                responseStatus: response.status,
+                cacheData: cacheInfo,
+                isBilledUsage: false,
+            };
+        }
+    }
     const { modelUsage, contentFilterResults } =
         await extractUsageAndContentFilterResults(
             eventType,

@@ -229,7 +229,7 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                 {apiKeys.length ? (
                     <div className="bg-blue-50/30 rounded-2xl p-8 border border-blue-300 overflow-hidden">
                         <div className="overflow-x-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
-                            <div className="grid grid-cols-[auto_1fr_auto_auto_auto_auto_auto_auto_auto] gap-x-4 gap-y-4 min-w-max">
+                            <div className="grid grid-cols-[auto_1fr_auto_auto_auto_auto_auto_auto] gap-x-4 gap-y-4 min-w-max">
                                 <span className="font-bold text-pink-400 text-sm">
                                     Type
                                 </span>
@@ -240,10 +240,7 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                                     Key
                                 </span>
                                 <span className="font-bold text-pink-400 text-sm">
-                                    Created
-                                </span>
-                                <span className="font-bold text-pink-400 text-sm">
-                                    Last Used
+                                    Activity
                                 </span>
                                 <span className="font-bold text-pink-400 text-sm">
                                     Expires
@@ -317,30 +314,33 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                                                     )}
                                                 </Cell>
                                                 <Cell>
-                                                    <span className="text-xs text-gray-600 whitespace-nowrap">
-                                                        {formatDistanceToNowStrict(
-                                                            apiKey.createdAt,
-                                                            {
-                                                                addSuffix: false,
-                                                                locale: shortLocale,
-                                                            },
-                                                        )}
-                                                    </span>
-                                                </Cell>
-                                                <Cell>
-                                                    <span className="text-xs text-gray-500 whitespace-nowrap">
-                                                        {apiKey.lastRequest
-                                                            ? formatDistanceToNowStrict(
-                                                                  new Date(
-                                                                      apiKey.lastRequest,
-                                                                  ),
-                                                                  {
-                                                                      addSuffix: false,
-                                                                      locale: shortLocale,
-                                                                  },
-                                                              )
-                                                            : "Never"}
-                                                    </span>
+                                                    <div className="text-xs whitespace-nowrap">
+                                                        <span className="text-gray-600">
+                                                            {formatDistanceToNowStrict(
+                                                                apiKey.createdAt,
+                                                                {
+                                                                    addSuffix: false,
+                                                                    locale: shortLocale,
+                                                                },
+                                                            )}
+                                                        </span>
+                                                        <span className="text-gray-400 mx-1">
+                                                            /
+                                                        </span>
+                                                        <span className="text-gray-500">
+                                                            {apiKey.lastRequest
+                                                                ? formatDistanceToNowStrict(
+                                                                      new Date(
+                                                                          apiKey.lastRequest,
+                                                                      ),
+                                                                      {
+                                                                          addSuffix: false,
+                                                                          locale: shortLocale,
+                                                                      },
+                                                                  )
+                                                                : "—"}
+                                                        </span>
+                                                    </div>
                                                 </Cell>
                                                 <Cell>
                                                     <ExpirationBadge

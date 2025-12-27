@@ -11,6 +11,7 @@ import { imageCache } from "@/middleware/image-cache.ts";
 import { textCache } from "@/middleware/text-cache.ts";
 import { edgeRateLimit } from "@/middleware/rate-limit-edge.ts";
 import { requestDeduplication } from "@/middleware/requestDeduplication.ts";
+import { turnstile } from "@/middleware/turnstile.ts";
 import { describeRoute, resolver as baseResolver } from "hono-openapi";
 import type { StandardSchemaV1 } from "hono-openapi";
 
@@ -227,6 +228,8 @@ export const proxyRoutes = new Hono<Env>()
     )
     // Auth required for all endpoints below (API key only - no session cookies)
     .use(auth({ allowApiKey: true, allowSessionCookie: false }))
+    // Turnstile bot protection: verify tokens for API keys that opt-in
+    .use(turnstile())
     .use(frontendKeyRateLimit)
     .use(polar)
     // Request deduplication: prevents duplicate concurrent requests by sharing promises

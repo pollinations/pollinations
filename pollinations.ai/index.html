@@ -38,6 +38,77 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     
     <title>pollinations.ai</title>
+    
+    <!-- Cloudflare Turnstile - Managed mode bot protection -->
+    <link rel="preconnect" href="https://challenges.cloudflare.com">
+    <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+    <script>
+      // Pollinations Turnstile integration - auto-injects X-Turnstile-Token header
+      (function() {
+        // Use test key for localhost, production key for deployed
+        const SITEKEY = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+          ? '1x00000000000000000000AA'  // Test key - always passes
+          : '0x4AAAAAACJSvY_Ve3iBZzQA'; // Production key
+        let token = null;
+        let widgetId = null;
+        
+        function initTurnstile() {
+          if (!window.turnstile) {
+            setTimeout(initTurnstile, 100);
+            return;
+          }
+          
+          const div = document.createElement('div');
+          div.style.cssText = 'position:fixed;bottom:20px;right:20px;z-index:9999;';
+          document.body.appendChild(div);
+          
+          widgetId = window.turnstile.render(div, {
+            sitekey: SITEKEY,
+            size: 'normal',
+            callback: (tok) => {
+              token = tok;
+              console.log('🔐 Turnstile verified');
+            },
+            'expired-callback': () => {
+              token = null;
+              window.turnstile.reset(widgetId);
+            },
+            'timeout-callback': () => {
+              token = null;
+              window.turnstile.reset(widgetId);
+            },
+            'error-callback': (err) => {
+              console.warn('Turnstile error:', err);
+              token = null;
+            }
+          });
+        }
+        
+        document.addEventListener('DOMContentLoaded', initTurnstile);
+        
+        // Intercept fetch to add token header for pollinations.ai API calls
+        const originalFetch = window.fetch;
+        window.fetch = async (url, opts = {}) => {
+          const urlStr = String(url);
+          if (token && (urlStr.includes('pollinations.ai') || urlStr.startsWith('/api'))) {
+            opts.headers = opts.headers || {};
+            if (opts.headers instanceof Headers) {
+              opts.headers.set('X-Turnstile-Token', token);
+            } else {
+              opts.headers['X-Turnstile-Token'] = token;
+            }
+          }
+          return originalFetch(url, opts);
+        };
+        
+        // Expose for manual use
+        window.pollinationsTurnstile = {
+          getToken: () => token,
+          isReady: () => !!token,
+          reset: () => widgetId && window.turnstile.reset(widgetId)
+        };
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>

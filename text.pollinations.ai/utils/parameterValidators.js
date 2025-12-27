@@ -86,6 +86,26 @@ export const validateJsonMode = (data) => {
  * @returns {Object} Validated parameters
  */
 export const validateTextGenerationParams = (data) => {
+    // Handle thinking_budget from multiple sources:
+    // 1. Direct thinking_budget parameter
+    // 2. Anthropic/OpenAI-style thinking object: { type: "enabled"|"disabled", budget_tokens: N }
+    let thinking_budget = validateInt(data.thinking_budget);
+
+    if (
+        thinking_budget === undefined &&
+        data.thinking &&
+        typeof data.thinking === "object"
+    ) {
+        if (
+            data.thinking.type === "enabled" &&
+            data.thinking.budget_tokens !== undefined
+        ) {
+            thinking_budget = validateInt(data.thinking.budget_tokens);
+        } else if (data.thinking.type === "disabled") {
+            thinking_budget = 0;
+        }
+    }
+
     return {
         temperature: validateFloat(data.temperature),
         top_p: validateFloat(data.top_p),
@@ -98,7 +118,7 @@ export const validateTextGenerationParams = (data) => {
         model: validateString(data.model), // No default - gateway must provide valid model
         voice: validateString(data.voice, "alloy"),
         reasoning_effort: validateString(data.reasoning_effort),
-        thinking_budget: validateInt(data.thinking_budget),
+        thinking_budget: thinking_budget,
         jsonMode: validateJsonMode(data),
     };
 };

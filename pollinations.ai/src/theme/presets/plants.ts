@@ -271,8 +271,8 @@ export const PlantsAndTreesCopy = {
     "DOCS_PAGE.loadingModelsLabel.text": "Loading models...",
     "DOCS_PAGE.authenticationTitle.text": "Authentication",
     "DOCS_PAGE.keyTypesLabel.text": "Key Types",
-    "DOCS_PAGE.publishableLabel.text": "Publishable",
-    "DOCS_PAGE.publishableFeature1.text": "Safe for client-side code",
+    "DOCS_PAGE.publishableLabel.text": "Publishable (Alpha)",
+    "DOCS_PAGE.publishableFeature1.text": "⚠️ Alpha – not production-ready",
     "DOCS_PAGE.publishableFeature2.text": "1 pollen/hour per IP+key",
     "DOCS_PAGE.publishableFeature3.text":
         "Best for: demos, prototypes, public tools",

@@ -65,6 +65,23 @@ export const requestDeduplication = createMiddleware<Env>(async (c, next) => {
         return await next();
     }
 
+    // Skip deduplication for streaming requests
+    // Streaming responses cannot be buffered into ArrayBuffer without breaking SSE
+    if (method === "POST") {
+        try {
+            const clonedReq = c.req.raw.clone();
+            const body = (await clonedReq.json()) as { stream?: boolean };
+            if (body?.stream === true) {
+                log.debug(
+                    "[DEDUP] Skipping deduplication for streaming request",
+                );
+                return await next();
+            }
+        } catch {
+            // If body parsing fails, continue with deduplication
+        }
+    }
+
     // Create deduplication key from URL + method + body
     const key = await createRequestKey(c);
 

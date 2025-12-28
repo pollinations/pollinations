@@ -1,19 +1,11 @@
 import { newsList } from "./newsList";
 
-import team1 from "../assets/team/Thomas.webp";
-import team2 from "../assets/team/Elliot.webp";
-import team3 from "../assets/team/Laurent.jpeg";
-import team4 from "../assets/team/Nico.jpeg";
-import team5 from "../assets/team/Portrait_XO.webp";
-import team6 from "../assets/team/Kalam.webp";
-import { rephrase } from "./llmTransforms";
-
 // 1) Base building blocks
 export const context = `The text appears on the website Pollinations.AI. Pollinations.AI is an open-source generative AI startup based in Berlin that allows creating different types of media using AI models.`;
 
 // 4) Use combos throughout
 export const HERO_INTRO =
-    "Introduce our open-source platform that provides easy-to-use text and image generation APIs. It requires no sign-ups or API keys, prioritizing user privacy and anonymity. 20 words maximum.";
+    "Introduce our community-built, open-source platform. We build in the open. 500+ projects already use us. 20 words maximum.";
 
 export const HERO_CTO = "Talk to us, reach out.";
 
@@ -53,12 +45,12 @@ export const IMAGE_FEED_LOGO_WATERMARK =
 
 export const INTEGRATE_TITLE = "Integrate";
 export const INTEGRATE_SUBTITLE =
-    "Discover how to seamlessly integrate our free image and text generation API into your projects.";
+    "Built by developers, for developers. Discover how to integrate our image and text generation APIs into your projects.";
 
 export const INTEGRATE_GITHUB_LINK = "APIDOCS.md";
 export const PROJECT_TITLE = "Projects";
 export const PROJECT_SUBTITLE =
-    " Here are some of the various implementations that our API is currently powering.";
+    "500+ projects built by our community. Here are some favorites.";
 
 export const PROJECT_CTO_1 =
     "Ask if the user has created a project that integrates Pollinations.AI and would like it to be featured in this section. Keep in short, one sentence";
@@ -71,7 +63,7 @@ export const PROJECT_LOGO_STYLE =
 
 export const COMMUNITY_TITLE = "Contribute";
 export const COMMUNITY_SUBTITLE =
-    "Introduce our community-driven approach. We're building a platform where developers, creators, and AI enthusiasts can collaborate and innovate.";
+    "We build in the open—code, decisions, roadmap all public. 500+ projects and counting. Join developers and creators shaping accessible AI.";
 
 export const COMMUNITY_DISCORD_SUBTITLE =
     "Introduce our Discord channel, make it just a few words. In a single very short sentence.";
@@ -85,20 +77,7 @@ export const COMMUNITY_GITHUB_CTO = "GitHub";
 export const ASCII_APP_TOOLTIP =
     "Incite the users to try out our ASCII art generator!";
 
-export const TEAM_TITLE = "Our Team";
-
-// Helper for team name formatting
-const formatTeamName = (name) =>
-    combine(rephrase)(`Write only the text '${name}' in bold and all caps`);
-
-export const TEAM_MEMBERS = [
-    { name: "Thomas Haferlach", function: "Lead visionary", image: team1 },
-    { name: "Elliot Fouchy", function: "Lead Production", image: team2 },
-    { name: "Laurent", function: "Developer", image: team3 },
-    { name: "Nico", function: "Designer", image: team4 },
-    { name: "Portrait XO", function: "Artist", image: team5 },
-    { name: "Kalam", function: "Researcher", image: team6 },
-];
+// Team section removed - will be re-implemented later
 
 export const SUPPORTER_TITLE = "Supporters";
 export const SUPPORTER_SUBTITLE = `We're grateful to our supporters for their contributions to our platform.`;
@@ -107,11 +86,9 @@ export const SUPPORTER_LOGO_STYLE =
     "Company logo based on its description. The logo contrasts very much with the background. Colors and style of the company are used. The background is white but the logos are colorful and large. Be imaginative!";
 
 export const FOOTER_TERMS_CONDITIONS_LINK = "Terms & Conditions";
-export const FOOTER_TERMS_CONDITIONS =
-    "Welcome to Pollinations.AI services empower harness AI technology creation interaction digital media. consent terms review attentively Acceptance Terms accessing Pollinations.AI confirm understanding agreement Terms Privacy Policy disagree advised not to use services offers AI - powered tools digital media retain ownership responsibility content encourage review licenses open - source models Content utilized commercial purposes legality ethical standards Pollinations.AI store user - content personal data stored user privacy information User Conduct Pollinations.AI ethically legally agree not Engage illegal activities violate local laws Infringe third - party rights intellectual property Disseminate malicious software data access probe services Prohibition of Unauthorized Materials services generate Celebrity Deepfakes Creating materials celebrities politicians public figures prohibited Child Sexual Abuse Material CSAM forbidden produce CSAM content under 18 years applies to fictional real - life subjects Intellectual Property content using Pollinations.AI crucial respect licenses open - source models content used for commercial purposes advise checking licenses for restrictions Pollinations.AI GmbH claims no intellectual property rights content Modification amend terms services after accept revised terms Governing Law subject to laws Germany conflict of laws principles Privacy Policy paramount outlines practices collection use protection sharing information Information collect details collect Discord IDs Usage Information anonymously track services experience without Cookies Tracking Technologies collect information deliver maintain refine services communication notices safeguard security integrity legal requirements. Sharing not for sale. share data with third parties service providers defend rights safety. Safeguards protect against unauthorized access changes destruction. Changes Privacy Policy update policy occasionally. GDPR and Data Processing Terms: Pollinations.AI is fully compliant with the General Data Protection Regulation (GDPR). Our API processes data transiently without storing personal data. Analytics data, such as referrer URLs collected via GA4, is anonymized and aggregated solely for service improvement. Data is encrypted in transit, and no personal data is retained. A Data Processing Agreement (DPA) outlining our GDPR compliance is available upon request. Data subject requests are managed in accordance with GDPR standards. For any inquiries, please contact hello@pollinations.ai - Use a beautifully structured markwon format";
 
 export const FOOTER_CLOSE = "Close";
-export const FOOTER_INFO_1 = "© 2025 pollinations.ai";
+export const FOOTER_INFO_1 = "- pollinations.ai - 2025";
 export const FOOTER_INFO_2 = "Open source AI innovation from Berlin";
 
 export const ASCII_ART_PROMPT = (width, height) =>

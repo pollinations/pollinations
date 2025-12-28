@@ -16,7 +16,8 @@ const progressColors = [
 ];
 
 // Simple hash function to get consistent color for each ID
-function getColorForId(id: string): StyleFunction {
+function getColorForId(id: string | undefined): StyleFunction {
+    if (!id) return progressColors[0]; // Default color if id is undefined
     const hash = id.split("").reduce((acc, char) => {
         return char.charCodeAt(0) + ((acc << 5) - acc);
     }, 0);
@@ -50,8 +51,15 @@ export class ProgressManager {
                 // barCompleteChar: 'X',
                 // barIncompleteChar: ' ',
                 barsize: 20,
-                noTTYOutput: true,
+                noTTYOutput: false, // Disable progress output to logs - reduces disk usage from ~197 MB/min to ~20-40 MB/min
                 notTTYSchedule: 100,
+                // Additional optimizations to consider:
+                // 1. Reduce debug logging frequency (currently logs every update)
+                // 2. Implement log sampling (only log 1-5% of requests for monitoring)
+                // 3. Use structured logging with levels (ERROR, WARN, INFO, DEBUG)
+                // 4. Send metrics to monitoring system instead of logs (Prometheus, DataDog)
+                // 5. Implement proper log rotation (logrotate with size limits)
+                // 6. Only log major milestones (start, 50%, complete, error) not every update
             },
             Presets.shades_classic,
         );

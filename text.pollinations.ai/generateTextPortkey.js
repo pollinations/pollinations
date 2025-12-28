@@ -17,8 +17,8 @@ const errorLog = debug("pollinations:portkey:error");
 
 // Default options
 const DEFAULT_OPTIONS = {
-	model: "openai-fast",
-	jsonMode: false,
+    model: "openai-fast",
+    jsonMode: false,
 };
 
 /**
@@ -28,106 +28,129 @@ const DEFAULT_OPTIONS = {
  * @returns {Object} - OpenAI-compatible response
  */
 
-
 /**
  * Configuration object for the Portkey client
  */
 const clientConfig = {
-	// Use Portkey API Gateway URL from .env with fallback to localhost
-	endpoint: () =>
-		`${process.env.PORTKEY_GATEWAY_URL || "http://localhost:8787"}/v1/chat/completions`,
+    // Use Portkey API Gateway URL from .env with fallback to localhost
+    endpoint: () =>
+        `${process.env.PORTKEY_GATEWAY_URL || "http://localhost:8787"}/v1/chat/completions`,
 
-	// Auth header configuration
-	authHeaderName: "Authorization",
-	authHeaderValue: () => {
-		// Use the actual Portkey API key from environment variables
-		return `Bearer ${process.env.PORTKEY_API_KEY}`;
-	},
+    // Auth header configuration
+    authHeaderName: "Authorization",
+    authHeaderValue: () => {
+        // Use the actual Portkey API key from environment variables
+        return `Bearer ${process.env.PORTKEY_API_KEY}`;
+    },
 
-	// Additional headers will be dynamically set in transformRequest
-	additionalHeaders: {},
+    // Additional headers will be dynamically set in transformRequest
+    additionalHeaders: {},
 
-
-
-	// Default options
-	defaultOptions: DEFAULT_OPTIONS,
+    // Default options
+    defaultOptions: DEFAULT_OPTIONS,
 };
 
 /**
  * Generates text using a local Portkey gateway with Azure OpenAI models
  */
 export async function generateTextPortkey(messages, options = {}) {
-	// Create a copy of options to avoid mutating the original
-	let processedOptions = { ...options };
-	
-	// Apply model transform if it exists
-	let processedMessages = messages;
-	
-	if (processedOptions.model) {
-		const modelDef = findModelByName(processedOptions.model);
-		if (modelDef?.transform) {
-			try {
-				const transformed = modelDef.transform(messages, processedOptions);
-				const { messages: transformedMessages, options: transformedOptions } = transformed;
-				processedMessages = transformedMessages;
-				
-				// Merge transformed options
-				processedOptions = { ...processedOptions, ...transformedOptions };
-			} catch (error) {
-				errorLog("Error applying transform:", error);
-				throw error;
-			}
-		}
-	}
-	
-	// Apply transformations sequentially
-	if (processedOptions.model) {
-		try {
-			// 1. Resolve model configuration
-			let result = resolveModelConfig(processedMessages, processedOptions);
-			processedMessages = result.messages;
-			processedOptions = result.options;
-			log("After resolveModelConfig:", !!processedOptions.modelDef, !!processedOptions.modelConfig);
+    // Create a copy of options to avoid mutating the original
+    let processedOptions = { ...options };
 
-			// 2. Generate headers
-			result = await generateHeaders(processedMessages, processedOptions);
-			processedMessages = result.messages;
-			processedOptions = result.options;
-			log("After generateHeaders:", !!processedOptions.modelDef, !!processedOptions.modelConfig);
+    // Apply model transform if it exists
+    let processedMessages = messages;
 
-			// 3. Sanitize messages
-			result = sanitizeMessages(processedMessages, processedOptions);
-			processedMessages = result.messages;
-			processedOptions = result.options;
-			log("After sanitizeMessages:", !!processedOptions.modelDef, !!processedOptions.modelConfig);
+    if (processedOptions.model) {
+        const modelDef = findModelByName(processedOptions.model);
+        if (modelDef?.transform) {
+            try {
+                const transformed = modelDef.transform(
+                    messages,
+                    processedOptions,
+                );
+                const {
+                    messages: transformedMessages,
+                    options: transformedOptions,
+                } = transformed;
+                processedMessages = transformedMessages;
 
-			// 4. Check limits
-			result = checkLimits(processedMessages, processedOptions);
-			processedMessages = result.messages;
-			processedOptions = result.options;
+                // Merge transformed options
+                processedOptions = {
+                    ...processedOptions,
+                    ...transformedOptions,
+                };
+            } catch (error) {
+                errorLog("Error applying transform:", error);
+                throw error;
+            }
+        }
+    }
 
-			// 5. Process parameters
-			result = processParameters(processedMessages, processedOptions);
-			processedMessages = result.messages;
-			processedOptions = result.options;
+    // Apply transformations sequentially
+    if (processedOptions.model) {
+        try {
+            // 1. Resolve model configuration
+            let result = resolveModelConfig(
+                processedMessages,
+                processedOptions,
+            );
+            processedMessages = result.messages;
+            processedOptions = result.options;
+            log(
+                "After resolveModelConfig:",
+                !!processedOptions.modelDef,
+                !!processedOptions.modelConfig,
+            );
 
-		} catch (error) {
-			errorLog("Error in request transformation:", error);
-			throw error;
-		}
-	}
-	
-	// Create a fresh config with clean headers for this request
-	const requestConfig = {
-		...clientConfig,
-		additionalHeaders: processedOptions.additionalHeaders || {}
-	};
-	
-	// Remove from options since it's now in config
-	if (processedOptions.additionalHeaders) {
-		delete processedOptions.additionalHeaders;
-	}
-	
-	return await genericOpenAIClient(processedMessages, processedOptions, requestConfig);
+            // 2. Generate headers
+            result = await generateHeaders(processedMessages, processedOptions);
+            processedMessages = result.messages;
+            processedOptions = result.options;
+            log(
+                "After generateHeaders:",
+                !!processedOptions.modelDef,
+                !!processedOptions.modelConfig,
+            );
+
+            // 3. Sanitize messages
+            result = sanitizeMessages(processedMessages, processedOptions);
+            processedMessages = result.messages;
+            processedOptions = result.options;
+            log(
+                "After sanitizeMessages:",
+                !!processedOptions.modelDef,
+                !!processedOptions.modelConfig,
+            );
+
+            // 4. Check limits
+            result = checkLimits(processedMessages, processedOptions);
+            processedMessages = result.messages;
+            processedOptions = result.options;
+
+            // 5. Process parameters
+            result = processParameters(processedMessages, processedOptions);
+            processedMessages = result.messages;
+            processedOptions = result.options;
+        } catch (error) {
+            errorLog("Error in request transformation:", error);
+            throw error;
+        }
+    }
+
+    // Create a fresh config with clean headers for this request
+    const requestConfig = {
+        ...clientConfig,
+        additionalHeaders: processedOptions.additionalHeaders || {},
+    };
+
+    // Remove from options since it's now in config
+    if (processedOptions.additionalHeaders) {
+        delete processedOptions.additionalHeaders;
+    }
+
+    return await genericOpenAIClient(
+        processedMessages,
+        processedOptions,
+        requestConfig,
+    );
 }
-

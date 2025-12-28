@@ -1,0 +1,112 @@
+name: Deploy to enter-services
+
+on:
+  push:
+    branches:
+      - staging
+      - feature/encrypt-gptimage-env
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup SOPS
+        uses: nhedger/setup-sops@v2
+
+      - name: Decrypt .env files with SOPS
+        env:
+          SOPS_AGE_KEY: ${{ secrets.SOPS_AGE_KEY }}
+        run: |
+          # Decrypt .encrypted.env files to .env
+          if [ -f "text.pollinations.ai/.encrypted.env" ]; then
+            sops -d text.pollinations.ai/.encrypted.env > text.pollinations.ai/.env
+            echo "✅ Decrypted text.pollinations.ai/.env"
+          fi
+          
+          if [ -f "image.pollinations.ai/.encrypted.env" ]; then
+            sops -d image.pollinations.ai/.encrypted.env > image.pollinations.ai/.env
+            echo "✅ Decrypted image.pollinations.ai/.env"
+          fi
+
+      - name: Copy decrypted .env files to server
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.ENTER_SERVICES_HOST }}
+          username: ${{ secrets.ENTER_SERVICES_USER }}
+          key: ${{ secrets.ENTER_SERVICES_SSH_KEY }}
+          fingerprint: ${{ secrets.ENTER_SERVICES_FINGERPRINT }}
+          source: "text.pollinations.ai/.env,image.pollinations.ai/.env"
+          target: "/home/ubuntu/pollinations/"
+          strip_components: 0
+
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ secrets.ENTER_SERVICES_HOST }}
+          username: ${{ secrets.ENTER_SERVICES_USER }}
+          key: ${{ secrets.ENTER_SERVICES_SSH_KEY }}
+          fingerprint: ${{ secrets.ENTER_SERVICES_FINGERPRINT }}
+          script: |
+            set -e
+            
+            echo "🚀 Starting deployment to enter-services..."
+            
+            # Navigate to repo
+            cd /home/ubuntu/pollinations
+            
+            # Pull latest changes
+            echo "📥 Pulling latest changes..."
+            git pull origin staging
+            
+            # Update text service
+            echo "📝 Updating text.pollinations.ai..."
+            cd text.pollinations.ai
+            pnpm install --frozen-lockfile || pnpm install
+            echo "✅ Text service dependencies installed"
+            
+            # Update image service
+            echo "🖼️  Updating image.pollinations.ai..."
+            cd ../image.pollinations.ai
+            pnpm install --frozen-lockfile || pnpm install
+            echo "✅ Image service dependencies installed"
+            
+            # Restart systemd services
+            echo "🔄 Restarting systemd services..."
+            sudo systemctl restart text-pollinations.service image-pollinations.service
+            
+            # Wait for services to be ready
+            echo "⏳ Waiting for services to start..."
+            sleep 10
+            
+            # Verify services are running
+            echo "✅ Verifying service status..."
+            sudo systemctl is-active text-pollinations.service || exit 1
+            sudo systemctl is-active image-pollinations.service || exit 1
+            
+            # Health check endpoints
+            echo "🏥 Running health checks..."
+            sleep 2  # Give services a moment to fully initialize
+            
+            # Check text service health
+            TEXT_HEALTH=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:16385/models || echo "000")
+            if [ "$TEXT_HEALTH" != "200" ]; then
+              echo "❌ Text service health check failed (HTTP $TEXT_HEALTH)"
+              exit 1
+            fi
+            echo "✅ Text service responding (HTTP 200)"
+            
+            # Check image service health
+            IMAGE_HEALTH=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:16384/models || echo "000")
+            if [ "$IMAGE_HEALTH" != "200" ]; then
+              echo "❌ Image service health check failed (HTTP $IMAGE_HEALTH)"
+              exit 1
+            fi
+            echo "✅ Image service responding (HTTP 200)"
+            
+            echo "🎉 Deployment complete!"
+            echo "📊 Service Status:"
+            sudo systemctl status text-pollinations.service image-pollinations.service --no-pager | grep -E "Active:|running"

@@ -1,0 +1,167 @@
+.canvas-code-generator {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.8);
+  display: flex;
+  flex-direction: column;
+  z-index: 1000;
+  color: var(--text-primary);
+}
+
+.canvas-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem;
+  background-color: var(--bg-secondary);
+  border-bottom: 1px solid var(--border-color);
+}
+
+.canvas-header h2 {
+  margin: 0;
+  font-size: 1.5rem;
+}
+
+.close-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--text-primary);
+  padding: 0.5rem;
+  border-radius: 4px;
+  transition: background-color 0.2s;
+}
+
+.close-btn:hover {
+  background-color: var(--bg-hover);
+}
+
+.canvas-controls {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem;
+  background-color: var(--bg-tertiary);
+  border-bottom: 1px solid var(--border-color);
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.control-group {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.control-group label {
+  font-weight: 500;
+}
+
+.control-group input[type="color"] {
+  width: 40px;
+  height: 40px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.control-group input[type="range"] {
+  width: 100px;
+}
+
+.control-group button {
+  padding: 0.5rem 1rem;
+  background-color: var(--accent-gradient);
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: opacity 0.2s;
+}
+
+.control-group button:hover {
+  opacity: 0.9;
+}
+
+.control-group button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.generate-btn {
+  background-color: var(--accent-gradient) !important;
+}
+
+.canvas-container {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 1rem;
+  overflow: auto;
+}
+
+.drawing-canvas {
+  background-color: white;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  cursor: crosshair;
+}
+
+.code-output {
+  padding: 1rem;
+  background-color: var(--bg-secondary);
+  border-top: 1px solid var(--border-color);
+  max-height: 300px;
+  overflow: auto;
+}
+
+.code-output h3 {
+  margin-top: 0;
+  margin-bottom: 0.5rem;
+}
+
+.code-block {
+  background-color: var(--bg-tertiary);
+  padding: 1rem;
+  border-radius: 4px;
+  overflow-x: auto;
+  max-height: 200px;
+  margin-bottom: 1rem;
+}
+
+.copy-btn {
+  padding: 0.5rem 1rem;
+  background-color: var(--accent-gradient);
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: opacity 0.2s;
+}
+
+.copy-btn:hover {
+  opacity: 0.9;
+}
+
+@media (max-width: 768px) {
+  .canvas-controls {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .control-group {
+    justify-content: space-between;
+  }
+  
+  .drawing-canvas {
+    width: 100%;
+    max-width: 100%;
+  }
+}

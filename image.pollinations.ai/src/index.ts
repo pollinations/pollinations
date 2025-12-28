@@ -7,6 +7,7 @@ import {
     addAuthDebugHeaders,
     createAuthDebugResponse,
     handleAuthentication,
+    isEnterRequest,
 } from "../../shared/auth-utils.js";
 import { extractToken, getIp } from "../../shared/extractFromRequest.js";
 import { sendImageTelemetry } from "./utils/telemetry.js";
@@ -14,8 +15,10 @@ import { buildTrackingHeaders } from "./utils/trackingHeaders.js";
 
 // Import shared utilities
 import { enqueue } from "../../shared/ipQueue.js";
+import { canAccessService } from "../../shared/registry/registry.ts";
 import { countFluxJobs, handleRegisterEndpoint } from "./availableServers.js";
 import { cacheImagePromise } from "./cacheGeneratedImages.js";
+import { IMAGE_CONFIG } from "./models.js";
 import {
     type AuthResult,
     createAndReturnImageCached,
@@ -34,7 +37,7 @@ import { sleep } from "./util.ts";
 
 // Queue configuration for image service
 const QUEUE_CONFIG = {
-    interval: 15000, // 15 seconds between requests per IP (no auth)
+    interval: 60000, // 60 seconds between requests per IP (no auth)
     cap: 1, // Max 1 concurrent request per IP
 };
 
@@ -226,6 +229,9 @@ const imageGen = async ({
         // Create user info object for passing to generation functions
         const userInfo = authResult;
 
+        // Check if request is from enter.pollinations.ai
+        const fromEnter = isEnterRequest(req);
+
         // Pass the complete user info object instead of individual properties
         const { buffer, ...maturity } = await createAndReturnImageCached(
             generationPrompt,
@@ -236,6 +242,7 @@ const imageGen = async ({
             requestId,
             wasTransformedForBadDomain,
             userInfo,
+            fromEnter,
         );
 
         progress.updateBar(requestId, 50, "Generation", "Starting generation");
@@ -436,41 +443,58 @@ const checkCacheAndGenerate = async (
                 let queueConfig = null;
                 
                 // Model-specific queue configs with hourly limits
+                // NOTE: ipQueue.js handles enter.pollinations.ai bypass automatically
                 const modelName = safeParams.model as string;
                 if (modelName === "nanobanana") {
-                    // Check hourly limit for nanobanana
-                    const ip = getIp(req);
-                    const { allowed, remaining, resetIn } = checkHourlyLimit(ip);
+                    // Check hourly limit for nanobanana (skip for enter.pollinations.ai requests)
+                    const fromEnter = isEnterRequest(req);
+                    let remaining = HOURLY_LIMIT;
                     
-                    if (!allowed) {
-                        const minutesLeft = Math.ceil(resetIn / 60000);
-                        throw new Error(
-                            `Hourly limit reached for ${modelName}. You can generate ${remaining} more images. Limit resets in ${minutesLeft} minutes.`
-                        );
+                    if (!fromEnter) {
+                        const ip = getIp(req);
+                        const { allowed, remaining: rem, resetIn } = checkHourlyLimit(ip);
+                        remaining = rem;
+                        
+                        if (!allowed) {
+                            const minutesLeft = Math.ceil(resetIn / 60000);
+                            throw new Error(
+                                `Hourly limit reached for ${modelName}. You can generate ${remaining} more images. Limit resets in ${minutesLeft} minutes.`
+                            );
+                        }
                     }
                     
                     // 90 second interval, 10 images per hour max
                     queueConfig = { interval: 90000 }; // 90 second interval
-                    logAuth(`${modelName} model - 90 second interval, ${remaining}/${HOURLY_LIMIT} images remaining this hour`);
-                } else if (modelName === "seedream") {
-                    // Check hourly limit for seedream
-                    const ip = getIp(req);
-                    const { allowed, remaining, resetIn } = checkHourlyLimit(ip);
-                    
-                    if (!allowed) {
-                        const minutesLeft = Math.ceil(resetIn / 60000);
-                        throw new Error(
-                            `Hourly limit reached for ${modelName}. You can generate ${remaining} more images. Limit resets in ${minutesLeft} minutes.`
-                        );
+                    logAuth(`${modelName} model - 90 second interval, ${remaining}/${HOURLY_LIMIT} images remaining this hour${fromEnter ? ' (enter request - no hourly limit)' : ''}`);
+                } else if (modelName === "kontext") {
+                    // Kontext model is only available on enter.pollinations.ai
+                    const fromEnter = isEnterRequest(req);
+                    if (!fromEnter) {
+                        throw new Error("Kontext model is only available on enter.pollinations.ai. Visit https://enter.pollinations.ai to get started.");
                     }
-                    
-                    // 6 minute interval, 10 images per hour max
-                    queueConfig = { interval: 360000 }; // 6 minute interval
-                    logAuth(`${modelName} model - 6 minute interval, ${remaining}/${HOURLY_LIMIT} images remaining this hour`);
+                    // 30 second interval with tier-based cap from model config
+                    const cap = IMAGE_CONFIG.kontext.tierCaps?.[authResult.tier] || 1;
+                    queueConfig = { 
+                        interval: 30000,
+                        cap,
+                        forceCap: true
+                    };
+                    logAuth(`${modelName} model - 30 second interval, cap=${cap} for tier ${authResult.tier}`);
+                } else if (modelName === "gptimage") {
+                    // GPTImage model - tier-based limits
+                    // Nectar tier: 60s interval, cap=3 | Other tiers: 150s interval, cap=1
+                    if (authResult.tier === "nectar") {
+                        queueConfig = { interval: 60000, cap: 3, forceCap: true };
+                        logAuth("GPTImage model (nectar tier) - 60 second interval, cap=3 (forced)");
+                    } else {
+                        queueConfig = { interval: 150000, cap: 1, forceCap: true };
+                        logAuth("GPTImage model - 150 second interval, cap=1 (forced)");
+                    }
                 } else if (hasValidToken) {
-                    // Token authentication for other models - 7s minimum interval with tier-based caps
-                    queueConfig = { interval: 7000 }; // cap will be set by ipQueue based on tier
-                    logAuth("Token authenticated - using 7s minimum interval with tier-based concurrency");
+                    // Token authentication for other models - 30s interval, cap=1
+                    // For higher concurrency, use enter.pollinations.ai
+                    queueConfig = { interval: 30000, cap: 1, forceCap: true };
+                    logAuth("Token authenticated - 30s interval, cap=1. For higher concurrency use enter.pollinations.ai");
                 } else {
                     // Use default queue config for other models with no token
                     queueConfig = QUEUE_CONFIG;
@@ -494,7 +518,7 @@ const checkCacheAndGenerate = async (
                         progress.setProcessing(requestId);
                         return generateImage();
                     },
-                    { ...queueConfig, forceQueue: true, maxQueueSize: 5, model: safeParams.model },
+                    { ...queueConfig, forceQueue: true },
                 );
 
                 return result;
@@ -530,11 +554,19 @@ const checkCacheAndGenerate = async (
         // Add authentication debug headers using shared utility
         addAuthDebugHeaders(headers, authResult.debugInfo);
 
+        // Debug: Log trackingData before building headers
+        logApi("=== TRACKING DATA BEFORE HEADERS ===");
+        logApi("bufferAndMaturity.trackingData:", JSON.stringify(bufferAndMaturity.trackingData, null, 2));
+        logApi("====================================");
+
         // Add tracking headers for enter service (GitHub issue #4170)
         const trackingHeaders = buildTrackingHeaders(
             safeParams.model,
             bufferAndMaturity.trackingData
         );
+        logApi("=== BUILT TRACKING HEADERS ===");
+        logApi("trackingHeaders:", JSON.stringify(trackingHeaders, null, 2));
+        logApi("===============================");
         Object.assign(headers, trackingHeaders);
 
         res.writeHead(200, headers);
@@ -644,7 +676,13 @@ const server = http.createServer((req, res) => {
             Expires: "0",
         });
         
-        res.end(JSON.stringify(Object.keys(MODELS)));
+        // Filter out nectar-tier models from public /models list
+        // Users don't need to authenticate to see the list, so we only show accessible models
+        const publicModels = Object.entries(MODELS)
+            .filter(([_, config]) => config.tier !== "nectar")
+            .map(([name, _]) => name);
+        
+        res.end(JSON.stringify(publicModels));
         return;
     }
 
@@ -700,6 +738,11 @@ const port = process.env.PORT || 16384;
 server.listen(port, () => {
     console.log(`🌸 Image server listening on port ${port}`);
     console.log(`🔗 Test URL: http://localhost:${port}/prompt/pollinations`);
+    
+    // Validate ENTER_TOKEN configuration
+    if (!process.env.ENTER_TOKEN) {
+        logAuth('⚠️  ENTER_TOKEN not set - enter.pollinations.ai bypass disabled');
+    }
     
     // Debug environment info
     const debugEnv = process.env.DEBUG;

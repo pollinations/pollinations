@@ -400,6 +400,19 @@ _Add your bot ideas here! 👆_
 
 _Add your game integration ideas here! 👆_
 
+
+### AI Blog Title Generator
+**What it does:** Suggests creative and SEO-friendly blof titles based on content keywords  
+**User story:** As a blogger, I want catchy titles so that my articles attract more readers  
+**APIs needed:** Text  
+**Key features:**
+- Input article summary or keywords
+- AI generates multiple catchy title options
+- SEO score and keyword optimization tips
+- Copy or download title suggestions
+**Difficulty:**Beginner 
+**Bonus points:** Auto generate blog intro paragraph or meta description 
+
 ## 📝 How to Add Your Idea
 
 ### Submit a PR (Preferred)

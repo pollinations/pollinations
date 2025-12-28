@@ -1,5 +1,6 @@
 /** biome-ignore-all lint/suspicious/noUnknownAtRules: tailwind handles it */
 @import "tailwindcss";
+@plugin "@tailwindcss/typography";
 
 @font-face {
     font-family: "LCT Mogi";
@@ -58,9 +59,9 @@
 }
 
 @theme {
-    --font-heading: "Maven Pro", ui-sans-serif, sans-serif;
-    --font-subheading: "Mako", ui-sans-serif, sans-serif;
-    --font-body: "Duru Sans", ui-sans-serif, sans-serif;
+    --font-heading: "LCT Mogi", ui-sans-serif, sans-serif;
+    --font-subheading: "Fraunces", ui-serif, serif;
+    --font-body: "Uncut Sans", ui-sans-serif, sans-serif;
     --text-base: 16px;
 }
 

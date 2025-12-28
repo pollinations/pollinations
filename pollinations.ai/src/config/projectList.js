@@ -8,9 +8,15 @@ import { hackAndBuildProjects } from "./projects/hackAndBuild.js";
 import { chatProjects } from "./projects/chat.js";
 import { socialBotsProjects } from "./projects/socialBots.js";
 import { learnProjects } from "./projects/learn.js";
+import { featuredApps } from "./projects/featured.js";
 
 // New categories based on GitHub issue #2275
 export const categories = [
+    {
+        title: "Featured Apps 📱",
+        key: "featured",
+        description: "Frontend-only apps built with Pollinations AI",
+    },
     {
         title: "Vibe Coding ✨",
         key: "vibeCoding",
@@ -52,6 +58,7 @@ export const categories = [
 
 // Consolidated projects object with imported categories
 export const projects = {
+    featured: featuredApps,
     vibeCoding: vibeCodingProjects,
     creative: creativeProjects,
     games: gamesProjects,
@@ -111,6 +118,7 @@ const sortProjectsByOrderAndStars = (projects) => {
  */
 const organizeProjects = (sourceProjects) => {
     const result = {
+        featured: [],
         vibeCoding: [],
         creative: [],
         games: [],
@@ -181,6 +189,7 @@ const organizeProjects = (sourceProjects) => {
 
 // Create a source object with all imported project arrays
 const allProjects = {
+    featured: featuredApps,
     vibeCoding: vibeCodingProjects,
     creative: creativeProjects,
     games: gamesProjects,

@@ -37,43 +37,45 @@ function formatLogline(vs: FormattedValues): string {
         .join(" ");
 }
 
-await configure({
-    sinks: {
-        console: getConsoleSink({
-            formatter: getAnsiColorFormatter({
-                level: "FULL",
-                value: formatValue,
-                format: formatLogline,
+let configured = false;
+
+async function ensureConfigured(env: CloudflareBindings) {
+    if (configured) return;
+    const logLevel = env.LOG_LEVEL || "info";
+    await configure({
+        sinks: {
+            console: getConsoleSink({
+                formatter: getAnsiColorFormatter({
+                    level: "FULL",
+                    value: formatValue,
+                    format: formatLogline,
+                }),
             }),
-        }),
-    },
-    loggers: [
-        {
-            category: ["logtape", "meta"],
-            sinks: ["console"],
-            lowestLevel: "warning",
         },
-        {
-            category: ["hono"],
-            sinks: ["console"],
-            lowestLevel: "trace",
-        },
-        {
-            category: ["hono", "auth"],
-            sinks: ["console"],
-            lowestLevel: "trace",
-        },
-        {
-            category: ["test", "mock"],
-            sinks: ["console"],
-            lowestLevel: "trace",
-        },
-    ],
-    contextLocalStorage: new AsyncLocalStorage(),
-    reset: true,
-});
+        loggers: [
+            {
+                category: ["logtape", "meta"],
+                sinks: ["console"],
+                lowestLevel: "warning",
+            },
+            {
+                category: ["hono"],
+                sinks: ["console"],
+                lowestLevel: logLevel,
+            },
+            {
+                category: ["test", "mock"],
+                sinks: ["console"],
+                lowestLevel: logLevel,
+            },
+        ],
+        contextLocalStorage: new AsyncLocalStorage(),
+        reset: true,
+    });
+}
 
 export const logger = createMiddleware<Env>(async (c, next) => {
+    await ensureConfigured(c.env);
     const log = getLogger(["hono"]);
     c.set("log", log);
 

@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { ENTER_BASE_URL } from "./enterApi";
 
 /**
  * Hook to fetch available models from the Pollinations API
@@ -17,8 +18,8 @@ export const useModels = (modelType = "text") => {
                 setLoading(true);
                 const endpoint =
                     modelType === "text"
-                        ? "https://text.pollinations.ai/models"
-                        : "https://image.pollinations.ai/models";
+                        ? `${ENTER_BASE_URL}/generate/text/models`
+                        : `${ENTER_BASE_URL}/generate/image/models`;
 
                 const response = await fetch(endpoint);
 
@@ -29,32 +30,25 @@ export const useModels = (modelType = "text") => {
                 const data = await response.json();
 
                 if (modelType === "text") {
-                    // Process text models
-                    let processedModels = [];
-
-                    if (Array.isArray(data)) {
-                        // Process all models
-                        processedModels = data.map((model) => ({
+                    // Process text models - API returns array of model objects
+                    const processedModels = (Array.isArray(data) ? data : [])
+                        .map((model) => ({
                             id: model.name,
                             name: model.description
                                 ? `${model.name} - ${model.description}`
                                 : model.name,
                             details: model,
-                        }));
-                    }
-
-                    // Sort models alphabetically
-                    processedModels.sort((a, b) =>
-                        a.name.localeCompare(b.name),
-                    );
+                        }))
+                        .sort((a, b) => a.name.localeCompare(b.name));
 
                     setModels(processedModels);
                 } else {
-                    // Process image models
+                    // Process image models - API returns array of model objects
                     if (Array.isArray(data)) {
-                        const imageModels = data.map((modelId) => ({
-                            id: modelId,
-                            name: modelId,
+                        const imageModels = data.map((model) => ({
+                            id: model.name,
+                            name: model.description || model.name,
+                            details: model,
                         }));
                         setModels(imageModels);
                     } else {

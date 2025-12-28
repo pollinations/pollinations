@@ -414,7 +414,7 @@ export function extractReferralLinkInfo(content) {
     // Regular expression to find referral links in the content
     // Format: [text](https://pollinations.ai/redirect/[id])
     const referralLinkRegex =
-        /\[([^\]]+)\]\((https:\/\/pollinations\.ai\/redirect\/([a-zA-Z0-9]+))[^\)]*\)/g;
+        /\[([^\]]+)\]\((https:\/\/pollinations\.ai\/redirect\/([a-zA-Z0-9]+))[^)]*\)/g;
 
     let match;
     while ((match = referralLinkRegex.exec(content)) !== null) {

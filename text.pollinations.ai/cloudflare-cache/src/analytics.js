@@ -26,7 +26,8 @@ export async function sendToAnalytics(request, name, params = {}, env) {
         }
 
         // Extract measurement ID and API secret from environment
-        const measurementId = env?.GA_MEASUREMENT_ID || process.env.GA_MEASUREMENT_ID;
+        const measurementId =
+            env?.GA_MEASUREMENT_ID || process.env.GA_MEASUREMENT_ID;
         const apiSecret = env?.GA_API_SECRET || process.env.GA_API_SECRET;
 
         if (!measurementId || !apiSecret) {

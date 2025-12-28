@@ -17,7 +17,7 @@ import SectionTitle from "../components/SectionTitle";
 import { LLMTextManipulator } from "../components/LLMTextManipulator";
 import { ImageContext } from "../utils/ImageContext";
 import { GeneralButton } from "../components/GeneralButton";
-import { ICONS } from "../assets/icons/icons";
+import { ICONS } from "../icons/icons";
 import { ReactSVG } from "react-svg";
 import { trackEvent } from "../config/analytics.js";
 
@@ -31,7 +31,7 @@ export const Integration = () => {
             category: "integrate",
         });
         window.open(
-            "https://github.com/pollinations/pollinations/blob/master/APIDOCS.md",
+            "https://github.com/pollinations/pollinations/blob/main/APIDOCS.md",
             "_blank",
         );
     };

@@ -14,8 +14,7 @@ type Server = {
     errors: number;
 };
 
-type ServerMap = typeof SERVERS;
-type ServerType = keyof ServerMap;
+type ServerType = string;
 
 type ServerInfo = {
     type: ServerType;
@@ -27,11 +26,11 @@ type ServerInfo = {
     requestsPerSecond: string;
 };
 
-// Server storage by type
-const SERVERS = {
-    flux: [] as Server[],
-    translate: [] as Server[],
-    turbo: [] as Server[],
+// Server storage by type - dynamic, allows any type to register
+const SERVERS: Record<string, Server[]> = {
+    flux: [],
+    translate: [],
+    turbo: [],
 };
 
 const SERVER_TIMEOUT = 45000; // 45 seconds
@@ -88,13 +87,15 @@ setInterval(decayErrors, 60 * 1000); // Every 1 minute
 setInterval(() => console.table(serverQueueInfo(SERVERS)), 10000);
 
 /**
- * Returns the total number of jobs for a specific type
+ * Returns the total load (pending + queued jobs) for a specific type
+ * Only counts active servers (with recent heartbeats)
  * @param {ServerType} type - The type of service (default: 'flux')
- * @returns {number} Total number of jobs (size + pending) across all queues
+ * @returns {number} Total load across all active servers (pending + queued)
  */
 export const countJobs = (type: ServerType = "flux"): number => {
     const servers = SERVERS[type] || [];
-    return servers.reduce((total, server) => {
+    const activeServers = filterActiveServers(servers);
+    return activeServers.reduce((total, server) => {
         return total + server.queue.size + server.queue.pending;
     }, 0);
 };
@@ -108,12 +109,10 @@ export const countFluxJobs = () => countJobs("flux");
  * @param {string} type - The type of service (default: 'flux')
  */
 export const registerServer = (url: string, type: ServerType = "flux") => {
-    // Only allow predefined types, fall back to 'flux' for unknown types
+    // Allow any type to register - create the array if it doesn't exist
     if (!Object.hasOwn(SERVERS, type)) {
-        logServer(
-            `Warning: Unknown server type "${type}", defaulting to "flux"`,
-        );
-        type = "flux";
+        logServer(`Creating new server type: "${type}"`);
+        SERVERS[type] = [];
     }
 
     const servers = SERVERS[type];

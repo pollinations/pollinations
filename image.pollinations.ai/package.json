@@ -8,7 +8,8 @@
         "test": "vitest run",
         "test:watch": "vitest",
         "test:coverage": "vitest run --coverage",
-        "start": "tsx src/index.js"
+        "start": "tsx src/index.ts",
+        "dev": "DEBUG=pollinations:* npm start"
     },
     "keywords": [],
     "author": "",
@@ -52,7 +53,9 @@
         "tempfile": "^5.0.0",
         "tinyld": "^1.3.4",
         "urldecode": "^1.0.1",
-        "zod": "^4.0.5"
+        "zod": "^4.0.5",
+        "tsx": "^4.20.3",
+        "typescript": "^5.8.3"
     },
     "devDependencies": {
         "@fast-check/vitest": "^0.2.2",
@@ -64,8 +67,6 @@
         "express": "^4.21.2",
         "fast-check": "^4.2.0",
         "supertest": "^6.3.3",
-        "tsx": "^4.20.3",
-        "typescript": "^5.8.3",
         "vitest": "^3.2.4"
     },
     "directories": {

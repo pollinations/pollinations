@@ -236,6 +236,11 @@ web_modules/
 .env.local
 .env.production
 
+# Plaintext backup files (DO NOT COMMIT)
+*.plaintext.DO-NOT-COMMIT
+.env.plaintext.DO-NOT-COMMIT
+.dev.vars.plaintext.DO-NOT-COMMIT
+
 # parcel-bundler cache (https://parceljs.org/)
 .cache
 .parcel-cache
@@ -324,3 +329,9 @@ gateway/
 
 # Kiro AI agent files
 .kiro/
+
+# Secret files
+.secrets
+.github/act-secrets.env
+
+.secrets

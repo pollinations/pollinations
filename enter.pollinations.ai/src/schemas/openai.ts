@@ -1,7 +1,7 @@
 // AI generated based on `https://github.com/Portkey-AI/openapi/blob/master/openapi.yaml` and adaped
 
 import { z } from "zod";
-import { getServices } from "../../../shared/registry/registry.ts";
+import { getTextServices } from "../../../shared/registry/registry.ts";
 
 const FunctionParametersSchema = z.record(z.string(), z.any());
 
@@ -177,8 +177,8 @@ const ThinkingSchema = z
     .optional();
 
 export const CreateChatCompletionRequestSchema = z.object({
-    messages: z.array(ChatCompletionRequestMessageSchema).min(1),
-    model: z.enum(getServices()),
+    messages: z.array(ChatCompletionRequestMessageSchema),
+    model: z.enum(getTextServices()).optional(),
     frequency_penalty: z
         .number()
         .min(-2)
@@ -243,18 +243,23 @@ const ChatCompletionMessageContentBlockSchema = z.union([
 
 const ChatCompletionResponseMessageSchema = z.object({
     content: z.string().nullable(),
-    tool_calls: ChatCompletionMessageToolCallsSchema.optional(),
+    tool_calls: ChatCompletionMessageToolCallsSchema.nullish(),
     role: z.literal("assistant"),
     function_call: z
         .object({
             arguments: z.string(),
             name: z.string(),
         })
-        .optional(),
-    content_blocks: z
-        .array(ChatCompletionMessageContentBlockSchema)
-        .nullable()
-        .optional(),
+        .nullish(),
+    content_blocks: z.array(ChatCompletionMessageContentBlockSchema).nullish(),
+    audio: z
+        .object({
+            transcript: z.string(),
+            data: z.string(), // base64 encoded audio
+            id: z.string().optional(),
+            expires_at: z.number().int().optional(),
+        })
+        .nullish(),
 });
 
 const ChatCompletionTokenTopLogprobSchema = z.object({
@@ -276,27 +281,42 @@ const ChatCompletionChoiceLogprobsSchema = z
     })
     .nullable();
 
-const CompletionUsageSchema = z.object({
+export const CompletionUsageSchema = z.object({
     completion_tokens: z.number().int().nonnegative(),
     completion_tokens_details: z
         .object({
-            accepted_prediction_tokens: z.number().int().nonnegative(),
-            audio_tokens: z.number().int().nonnegative(),
-            reasoning_tokens: z.number().int().nonnegative(),
-            rejected_prediction_tokens: z.number().int().nonnegative(),
+            accepted_prediction_tokens: z
+                .number()
+                .int()
+                .nonnegative()
+                .optional(),
+            audio_tokens: z.number().int().nonnegative().optional(),
+            reasoning_tokens: z.number().int().nonnegative().optional(),
+            rejected_prediction_tokens: z
+                .number()
+                .int()
+                .nonnegative()
+                .optional(),
         })
-        .optional(),
+        .nullish(),
     prompt_tokens: z.number().int().nonnegative(),
     prompt_tokens_details: z
         .object({
-            audio_tokens: z.number().int().nonnegative(),
-            cached_tokens: z.number().int().nonnegative(),
+            audio_tokens: z.number().int().nonnegative().optional(),
+            cached_tokens: z.number().int().nonnegative().optional(),
         })
-        .optional(),
+        .nullish(),
     total_tokens: z.number().int().nonnegative(),
 });
 
-const ContentFilterSeveritySchema = z.enum(["safe", "low", "medium", "high"]);
+export type CompletionUsage = z.infer<typeof CompletionUsageSchema>;
+
+export const ContentFilterSeveritySchema = z.enum([
+    "safe",
+    "low",
+    "medium",
+    "high",
+]);
 
 const ContentFilterResultSchema = z
     .object({
@@ -353,17 +373,17 @@ const CompletionChoiceSchema = z.object({
     ]),
     index: z.number().int().nonnegative(),
     message: ChatCompletionResponseMessageSchema,
-    logprobs: ChatCompletionChoiceLogprobsSchema.optional(),
-    content_filter_results: ContentFilterResultSchema,
+    logprobs: ChatCompletionChoiceLogprobsSchema.nullish(),
+    content_filter_results: ContentFilterResultSchema.nullish(),
 });
 
 export const CreateChatCompletionResponseSchema = z.object({
     id: z.string(),
     choices: z.array(CompletionChoiceSchema),
-    prompt_filter_results: PromptFilterResultSchema,
+    prompt_filter_results: PromptFilterResultSchema.nullish(),
     created: z.number().int(),
     model: z.string(),
-    system_fingerprint: z.string().optional(),
+    system_fingerprint: z.string().nullish(),
     object: z.literal("chat.completion"),
     usage: CompletionUsageSchema,
     user_tier: UserTierSchema.optional(),
@@ -418,7 +438,7 @@ export const CreateChatCompletionStreamResponseSchema = z.object({
     ),
     created: z.number().int(),
     model: z.string(),
-    system_fingerprint: z.string().optional(),
+    system_fingerprint: z.string().nullish(),
     object: z.literal("chat.completion.chunk"),
     usage: z
         .object({

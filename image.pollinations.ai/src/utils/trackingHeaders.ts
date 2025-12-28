@@ -1,10 +1,11 @@
 /**
  * Utility for building tracking headers for the enter service
- * Implements GitHub issue #4170 requirements
+ * Implements GitHub issue #4170 and #4638 requirements
  */
 
 import debug from "debug";
-import type { IMAGE_SERVICES } from "../../../shared/registry/image";
+import type { IMAGE_SERVICES } from "../../../shared/registry/image.ts";
+import { buildUsageHeaders, createImageTokenUsage } from "../../../shared/registry/usage-headers.js";
 
 const log = debug("pollinations:tracking-headers");
 
@@ -12,14 +13,10 @@ const log = debug("pollinations:tracking-headers");
 type ValidServiceName = keyof typeof IMAGE_SERVICES;
 
 export interface TrackingUsageData {
-    // Vertex AI / Gemini usage format
-    candidatesTokenCount?: number;
+    // Unified usage format for all image models
+    completionImageTokens?: number;
     promptTokenCount?: number;
     totalTokenCount?: number;
-    candidatesTokensDetails?: Array<{
-        modality: string;
-        tokenCount: number;
-    }>;
 }
 
 export interface ContentSafetyFlags {
@@ -45,24 +42,18 @@ export function buildTrackingHeaders(
     model: ValidServiceName,
     trackingData?: TrackingData
 ): Record<string, string> {
-    const headers: Record<string, string> = {};
-
-    // Core tracking headers
-    headers['x-model-used'] = trackingData?.actualModel || model;
-    // Note: x-user-tier removed - enter service now gets tier from user table
+    // Determine token count (works for both unit-based and token-based pricing)
+    // Unit-based models return 1, token-based models return actual count
+    const completionTokens = trackingData?.usage?.completionImageTokens || 1;
+    log(`=== TRACKING HEADERS FOR ${model} ===`);
+    log(`Raw trackingData.usage:`, JSON.stringify(trackingData?.usage, null, 2));
+    log(`Extracted completionImageTokens: ${completionTokens}`);
+    log(`===================================`);
     
-    // Token counting logic
-    let completionTokens = 1; // Default for unit-based pricing models
-    
-    if (model === 'nanobanana' && trackingData?.usage?.candidatesTokenCount) {
-        // For nanobanana, use total candidates tokens (image + text)
-        completionTokens = trackingData.usage.candidatesTokenCount;
-        log(`Nanobanana token count: ${completionTokens} (from candidatesTokenCount)`);
-    } else {
-        log(`Using default token count: ${completionTokens} for model: ${model}`);
-    }
-    
-    headers['x-completion-image-tokens'] = String(completionTokens);
+    // Use shared utility to build headers
+    const modelUsed = trackingData?.actualModel || model;
+    const usage = createImageTokenUsage(completionTokens);
+    const headers = buildUsageHeaders(modelUsed, usage);
 
     log('Built tracking headers:', Object.keys(headers));
     return headers;
@@ -75,10 +66,7 @@ export function buildTrackingHeaders(
  * @returns Token count for billing
  */
 export function extractTokenCount(model: ValidServiceName, usage?: TrackingUsageData): number {
-    if (model === 'nanobanana' && usage?.candidatesTokenCount) {
-        return usage.candidatesTokenCount;
-    }
-    return 1; // Default for unit-based pricing
+    return usage?.completionImageTokens || 1;
 }
 
 /**

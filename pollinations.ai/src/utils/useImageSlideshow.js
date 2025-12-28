@@ -127,15 +127,102 @@ export function useImageEditor({ stop, image }) {
     };
 }
 
-const loadImage = async (newImage) => {
-    return new Promise((resolve, reject) => {
-        const img = new Image();
-        img.src = newImage.imageURL;
-        img.onload = () =>
-            resolve({
-                ...newImage,
-                loaded: true,
-            });
-        img.onerror = (error) => reject(error);
-    });
+const loadImage = async (newImage, retryCount = 0) => {
+    const MAX_RETRIES = 3;
+
+    try {
+        const response = await fetch(newImage.imageURL);
+
+        // Check if response is an error
+        if (!response.ok) {
+            // Try to parse error as JSON
+            const contentType = response.headers.get("content-type");
+            if (contentType && contentType.includes("application/json")) {
+                const errorData = await response.json();
+
+                // Check for rate limit (429) and retry if we have retries left
+                if (response.status === 429 && retryCount < MAX_RETRIES) {
+                    const retryAfter = errorData.retryAfterSeconds || 5;
+                    // Cap retry wait to 30 seconds max
+                    const waitTime = Math.min(retryAfter, 30) * 1000;
+                    console.log(
+                        `Rate limited, retrying in ${waitTime / 1000}s (attempt ${retryCount + 1}/${MAX_RETRIES})`,
+                    );
+                    await new Promise((resolve) =>
+                        setTimeout(resolve, waitTime),
+                    );
+                    return loadImage(newImage, retryCount + 1);
+                }
+
+                const error = new Error(
+                    errorData.error?.message ||
+                        errorData.error ||
+                        `HTTP ${response.status}`,
+                );
+                error.apiMessage =
+                    errorData.error?.message || errorData.message;
+                error.errorCode = errorData.error?.code || errorData.code;
+                throw error;
+            } else {
+                // Non-JSON 429 response - retry anyway
+                if (response.status === 429 && retryCount < MAX_RETRIES) {
+                    const waitTime = 5000; // Default 5 seconds
+                    console.log(
+                        `Rate limited, retrying in ${waitTime / 1000}s (attempt ${retryCount + 1}/${MAX_RETRIES})`,
+                    );
+                    await new Promise((resolve) =>
+                        setTimeout(resolve, waitTime),
+                    );
+                    return loadImage(newImage, retryCount + 1);
+                }
+
+                const errorText = await response.text();
+                throw new Error(errorText || `HTTP ${response.status}`);
+            }
+        }
+
+        // Check if response is JSON (error) or image
+        const contentType = response.headers.get("content-type");
+        if (contentType && contentType.includes("application/json")) {
+            const data = await response.json();
+            if (data.error) {
+                const error = new Error(data.error?.message || data.error);
+                error.apiMessage = data.error?.message || data.message;
+                error.errorCode = data.error?.code || data.code;
+                throw error;
+            }
+        }
+
+        // If we got here, it's a valid image
+        // Create blob URL to avoid double-fetch when rendering <img>
+        const blob = await response.blob();
+        const blobUrl = URL.createObjectURL(blob);
+
+        return new Promise((resolve, reject) => {
+            const img = new Image();
+            img.src = blobUrl;
+            img.onload = () => {
+                // Return the blob URL as imageURL to prevent another network request
+                resolve({
+                    ...newImage,
+                    imageURL: blobUrl,
+                    originalURL: newImage.imageURL,
+                    loaded: true,
+                });
+            };
+            img.onerror = (error) => {
+                URL.revokeObjectURL(blobUrl);
+                reject(error);
+            };
+        });
+    } catch (error) {
+        // Return the image with error info so it can be displayed
+        return {
+            ...newImage,
+            loaded: true,
+            error: error.message,
+            message: error.apiMessage,
+            errorCode: error.errorCode,
+        };
+    }
 };

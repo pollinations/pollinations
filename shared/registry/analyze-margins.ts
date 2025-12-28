@@ -1,11 +1,13 @@
-import { TEXT_COSTS, TEXT_SERVICES } from "./text.ts";
-import { IMAGE_COSTS, IMAGE_SERVICES } from "./image.ts";
+import { TEXT_COSTS } from "./text.ts";
+import { IMAGE_COSTS } from "./image.ts";
+import { getServices, getServiceDefinition } from "./registry.ts";
 
 console.log("=== TEXT SERVICE MARGIN ANALYSIS ===\n");
 
-for (const [serviceId, service] of Object.entries(TEXT_SERVICES)) {
+for (const serviceId of getServices()) {
+  const service = getServiceDefinition(serviceId);
   const modelId = service.modelId;
-  const model = TEXT_COSTS[modelId];
+  const model = TEXT_COSTS[modelId as keyof typeof TEXT_COSTS];
   
   if (!model) {
     console.log(`${serviceId}: ERROR - Model ${modelId} not found`);
@@ -33,9 +35,16 @@ for (const [serviceId, service] of Object.entries(TEXT_SERVICES)) {
 
 console.log("\n=== IMAGE SERVICE MARGIN ANALYSIS ===\n");
 
-for (const [serviceId, service] of Object.entries(IMAGE_SERVICES)) {
+// Filter to only image services (those with modelId in IMAGE_COSTS)
+const imageServices = getServices().filter(serviceId => {
+  const service = getServiceDefinition(serviceId);
+  return service.modelId in IMAGE_COSTS;
+});
+
+for (const serviceId of imageServices) {
+  const service = getServiceDefinition(serviceId);
   const modelId = service.modelId;
-  const model = IMAGE_COSTS[modelId];
+  const model = IMAGE_COSTS[modelId as keyof typeof IMAGE_COSTS];
   
   if (!model) {
     console.log(`${serviceId}: ERROR - Model ${modelId} not found`);

@@ -34,7 +34,7 @@ import { Box } from "@mui/material";
 import { GeneralButton } from "../components/GeneralButton.jsx";
 import { CustomTooltip } from "../components/CustomTooltip.jsx";
 import { LLMTextManipulator } from "../components/LLMTextManipulator.jsx";
-import { ICONS } from "../assets/icons/icons.js"; // Import ICONS
+import { ICONS } from "../icons/icons.js"; // Import ICONS
 import { useTheme, useMediaQuery } from "@mui/material";
 import { SectionBG } from "../config/global";
 import { trackEvent } from "../config/analytics.js"; // Import trackEvent
@@ -50,7 +50,7 @@ const Community = () => {
             action: "click_discord",
             category: "community",
         });
-        window.open("https://discord.gg/k9F7SyTgqn", "_blank");
+        window.open("https://discord.gg/pollinations-ai-885844321461485618", "_blank");
     };
 
     const handleGithubButtonClick = (e) => {

@@ -1,10 +1,7 @@
 import { omit, safeRound } from "../utils";
-import {
-    TEXT_COSTS,
-    TEXT_SERVICES,
-} from "./text";
+import { TEXT_COSTS, TEXT_SERVICES } from "./text";
 import { IMAGE_COSTS, IMAGE_SERVICES } from "./image";
-import { EventType } from "./types";
+import { EventType, UserTier } from "./types";
 
 const PRECISION = 8;
 
@@ -48,8 +45,9 @@ export type ModelRegistry = Record<string, ModelDefinition>;
 export type ServiceDefinition<T extends ModelRegistry> = {
     aliases: string[];
     modelId: keyof T;
-    price: PriceDefinition[];
+    free?: boolean; // Optional flag for free models (defaults to false)
     provider?: string; // Optional provider identifier (e.g., "azure-openai", "aws-bedrock")
+    tier?: UserTier; // Optional tier level (defaults to "anonymous")
 };
 
 export type ServiceRegistry<T extends ModelRegistry> = Record<
@@ -73,8 +71,7 @@ const SERVICES = {
     ...IMAGE_SERVICES,
 } as const satisfies ServiceRegistry<typeof MODELS>;
 
-export type ModelId<TP extends ModelRegistry = typeof MODELS> =
-    keyof TP;
+export type ModelId<TP extends ModelRegistry = typeof MODELS> = keyof TP;
 
 export type ServiceId<
     TP extends ModelRegistry = typeof MODELS,
@@ -126,15 +123,52 @@ export const MODEL_REGISTRY = Object.fromEntries(
     ]),
 );
 
+// Internal type for SERVICE_REGISTRY entries (includes computed price field)
+type ServiceRegistryEntry<T extends ModelRegistry> = ServiceDefinition<T> & {
+    price: PriceDefinition[];
+};
+
+// Generate SERVICE_REGISTRY with computed prices from costs
 export const SERVICE_REGISTRY = Object.fromEntries(
-    Object.entries(SERVICES).map(([name, service]) => [
-        name,
-        {
-            ...service,
-            price: sortDefinitions(service.price as UsageConversionDefinition[]),
-        },
-    ]),
-);
+    Object.entries(SERVICES).map(([name, service]) => {
+        // Type assertion to ServiceDefinition to access optional free property
+        const typedService = service as ServiceDefinition<typeof MODELS>;
+        const modelCost = MODELS[typedService.modelId as keyof typeof MODELS];
+        if (!modelCost) {
+            throw new Error(
+                `Model cost not found for service "${name}" with modelId "${String(typedService.modelId)}"`,
+            );
+        }
+
+        // Generate price from cost based on free flag
+        const isFree = typedService.free ?? false;
+        const price = modelCost.map((costDef) => {
+            if (isFree) {
+                // Free model: all prices are 0
+                const zeroPriceDef: UsageConversionDefinition = {
+                    date: costDef.date,
+                };
+                Object.keys(costDef).forEach((key) => {
+                    if (key !== "date") {
+                        zeroPriceDef[key as UsageType] = 0;
+                    }
+                });
+                return zeroPriceDef;
+            } else {
+                // Paid model: price = cost (multiplier 1.0)
+                return { ...costDef };
+            }
+        });
+
+        return [
+            name,
+            {
+                ...service,
+                price: sortDefinitions(price),
+            } as ServiceRegistryEntry<typeof MODELS>,
+        ];
+    }),
+) as Record<string, ServiceRegistryEntry<typeof MODELS>>;
 
 // Build alias lookup map: alias -> serviceId
 export const ALIAS_MAP = Object.fromEntries(
@@ -157,13 +191,15 @@ export function resolveServiceId(
         return eventType === "generate.text" ? "openai" : "flux";
     }
     // Check if it's a direct service ID or an alias
-    const resolved = SERVICE_REGISTRY[serviceId] ? serviceId : ALIAS_MAP[serviceId];
+    const resolved = SERVICE_REGISTRY[serviceId]
+        ? serviceId
+        : ALIAS_MAP[serviceId];
     if (resolved) {
         return resolved as ServiceId;
     }
     // Throw error for invalid service/alias
     throw new Error(
-        `Invalid service or alias: "${serviceId}". Must be a valid service name or alias.`
+        `Invalid service or alias: "${serviceId}". Must be a valid service name or alias.`,
     );
 }
 
@@ -205,12 +241,34 @@ export function getServices(): ServiceId[] {
 }
 
 /**
+ * Get text service IDs
+ */
+export function getTextServices(): ServiceId[] {
+    return Object.keys(TEXT_SERVICES) as ServiceId[];
+}
+
+/**
+ * Get text service IDs
+ */
+export function getImageServices(): ServiceId[] {
+    return Object.keys(IMAGE_SERVICES) as ServiceId[];
+}
+
+/**
  * Get service definition by ID
  */
 export function getServiceDefinition(
     serviceId: ServiceId,
-): ServiceDefinition<typeof MODELS> {
+): ServiceRegistryEntry<typeof MODELS> {
     return SERVICE_REGISTRY[serviceId];
+}
+
+/**
+ * Get aliases for a service
+ */
+export function getServiceAliases(serviceId: ServiceId): string[] {
+    const service = SERVICE_REGISTRY[serviceId];
+    return service?.aliases || [];
 }
 
 /**
@@ -260,10 +318,7 @@ export function getActivePriceDefinition(
 /**
  * Calculate cost for a model based on token usage
  */
-export function calculateCost(
-    modelId: ModelId,
-    usage: TokenUsage,
-): UsageCost {
+export function calculateCost(modelId: ModelId, usage: TokenUsage): UsageCost {
     const costDefinition = getActiveCostDefinition(modelId);
     if (!costDefinition)
         throw new Error(
@@ -325,27 +380,19 @@ export function calculateMargins(serviceId: ServiceId): ServiceMargins {
         );
     return {
         [modelId]: Object.fromEntries(
-            Object.keys(omit(costDefinition, "date")).map(
-                (usageType) => {
-                    const usageCost =
-                        costDefinition[usageType as UsageType];
-                    const usagePrice =
-                        priceDefinition[usageType as UsageType];
-                    if (!usageCost || !usagePrice) {
-                        throw new Error(
-                            `Failed to find usage cost or price for model: ${modelId.toString()}`,
-                        );
-                    }
-                    return [
-                        usageType,
-                        usagePrice - usageCost,
-                    ];
-                },
-            ),
+            Object.keys(omit(costDefinition, "date")).map((usageType) => {
+                const usageCost = costDefinition[usageType as UsageType];
+                const usagePrice = priceDefinition[usageType as UsageType];
+                if (!usageCost || !usagePrice) {
+                    throw new Error(
+                        `Failed to find usage cost or price for model: ${modelId.toString()}`,
+                    );
+                }
+                return [usageType, usagePrice - usageCost];
+            }),
         ),
     };
 }
-
 
 /**
  * Get provider for a model ID by looking it up in the combined services registry
@@ -361,4 +408,40 @@ export function getProviderByModelId(modelId: string): string | null {
         }
     }
     return null;
+}
+
+/**
+ * Get the required tier for a service
+ * @param serviceId - The service ID
+ * @returns Required tier level
+ */
+export function getRequiredTier(serviceId: ServiceId): UserTier {
+    const service = getServiceDefinition(serviceId);
+    if (!service) {
+        throw new Error(`Service not found: ${serviceId.toString()}`);
+    }
+    return service.tier ?? "anonymous";
+}
+
+/**
+ * Check if a user tier can access a service
+ * Tiers are hierarchical: anonymous < seed < flower < nectar
+ * @param serviceId - The service ID to check
+ * @param userTier - The user's tier level
+ * @returns True if user has sufficient access
+ */
+export function canAccessService(
+    serviceId: ServiceId,
+    userTier: UserTier,
+): boolean {
+    const requiredTier = getRequiredTier(serviceId);
+    const tierOrder: UserTier[] = ["anonymous", "seed", "flower", "nectar"];
+    const userLevel = tierOrder.indexOf(userTier);
+    const requiredLevel = tierOrder.indexOf(requiredTier);
+
+    if (userLevel === -1 || requiredLevel === -1) {
+        return false;
+    }
+
+    return userLevel >= requiredLevel;
 }

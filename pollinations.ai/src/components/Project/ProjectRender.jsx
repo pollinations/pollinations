@@ -9,9 +9,10 @@ import useRandomSeed from "../../hooks/useRandomSeed";
 import { usePollinationsImage } from "@pollinations/react";
 import { PROJECT_LOGO_STYLE } from "../../config/copywrite";
 import { shortTechnical } from "../../config/llmTransforms";
-import { ICONS } from "../../assets/icons/icons";
+import { ICONS } from "../../icons/icons";
 import { trackEvent } from "../../config/analytics";
 import { SectionSubContainer } from "../SectionContainer";
+import { UI_ASSETS_API_KEY } from "../../utils/enterApi";
 
 /**
  * Renders the list of projects for the selected category
@@ -39,7 +40,7 @@ const ProjectsRender = ({ projectList, classes }) => {
                                     flexWrap: "nowrap",
                                     alignContent: "center",
                                     justifyContent: "space-between",
-                                    alignItems: "center",
+                                    alignItems: isMobile ? "center" : "flex-start",
                                     width: "100%",
                                 }}
                                 className={classes.gridItem}
@@ -543,6 +544,7 @@ const ProjectImage = ({ name, PROJECT_LOGO_SIZE, description, url }) => {
         height: PROJECT_LOGO_SIZE * 4,
         nologo: true,
         seed,
+        apiKey: UI_ASSETS_API_KEY,
     });
 
     const handleImageClick = () => {

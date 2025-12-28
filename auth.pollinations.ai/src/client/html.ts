@@ -20,27 +20,47 @@ export const generateHTML = () => `<!DOCTYPE html>
     <div class="container">
         <h1 class="emoji-title">
             <span class="brand">
-                <img src="https://raw.githubusercontent.com/pollinations/pollinations/master/assets/pollinations_ai_logo_black.svg" alt="Pollinations Logo" class="title-logo" />
+                <img src="https://raw.githubusercontent.com/pollinations/pollinations/refs/heads/master/assets/logo.svg" alt="pollinations.ai" class="title-logo" />
                 Pollinations.AI
             </span>
             <span class="auth-title">🐝 Auth 🌸</span>
         </h1>
         
-        <!-- Intro section with tagline (visible only when logged out) -->
-        <div id="intro-text">
-            <div style="font-size: 1.25em; color: #222; margin-top: 8px;">
-                <span style="background: #fffbe7; border-radius: 6px; padding: 2px 8px;">
-                    <b>Sign in</b> to unlock <span style="color: #ffb300; font-weight: bold;">all models &amp; features</span>
-                </span>
+        <!-- Migration Notice -->
+        <div id="intro-text" style="margin-top: 20px; padding: 28px; background: linear-gradient(135deg, #fef9e7 0%, #fff8e1 100%); border: 3px solid #f59e0b; border-radius: 16px; box-shadow: 0 4px 20px rgba(245, 158, 11, 0.15);">
+            
+            <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 16px;">
+                <span style="font-size: 2rem;">⚠️</span>
+                <h2 style="margin: 0; color: #d97706; font-size: 1.5em; font-weight: 700;">
+                    Please Migrate — Retiring January 2026
+                </h2>
             </div>
-            <div style="margin-top: 10px; font-size: 1.1em; color: #444;">
-                <span style="display: inline-block; background: #ffe3fa; border-radius: 6px; padding: 2px 10px;">
-                    <b>Free</b> &nbsp;|&nbsp; <b>Anonymous</b> 
-                </span>
-            </div>
-            <div style="margin-top: 12px; font-size: 1.05em; color: #7a3cff;">
-                <i>Gen-AI API for everyone <span style="font-size:1.2em;">🌟</span></i>
-            </div>
+            
+            <p style="margin: 0 0 16px 0; color: #1f2937; font-size: 1.05em; line-height: 1.6;">
+                This legacy service is being <strong>retired in January 2026</strong>. Please migrate your apps to <strong>enter.pollinations.ai</strong>.
+            </p>
+            
+            <p style="margin: 0 0 12px 0; color: #374151; font-size: 1em; line-height: 1.6;">
+                The new platform offers:
+            </p>
+            
+            <ul style="margin: 0 0 16px 0; padding-left: 24px; color: #374151; font-size: 1em; line-height: 1.8;">
+                <li>New models & improved reliability</li>
+                <li>Updated dashboard & API keys</li>
+                <li>Pollen wallet & sponsorship tiers</li>
+            </ul>
+            
+            <p style="margin: 0 0 20px 0; color: #4b5563; font-size: 0.95em; line-height: 1.6;">
+                Your existing tokens continue to work for now. We'll announce any changes in advance — but please migrate soon to avoid disruption.
+            </p>
+            
+            <a href="https://enter.pollinations.ai" target="_blank" style="display: inline-block; background: linear-gradient(135deg, #10b981, #059669); color: white; padding: 14px 36px; border-radius: 30px; text-decoration: none; font-weight: bold; font-size: 1.1em; box-shadow: 0 6px 20px rgba(16, 185, 129, 0.35);">
+                → Migrate Now
+            </a>
+            
+            <p style="margin: 20px 0 0 0; color: #6b7280; font-size: 0.9em; font-style: italic;">
+                Login below to view your existing tokens and domains.
+            </p>
         </div>
 
         <!-- 🔐 Authentication -->

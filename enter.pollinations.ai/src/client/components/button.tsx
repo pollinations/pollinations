@@ -48,10 +48,12 @@ const shapes = {
     rect: "rounded-none",
 };
 
-const buttonClasses = ({ color, weight, size, shape, className }: BaseButtonProps) =>
+const buttonClasses = ({ color, weight, size, shape, className, disabled }: BaseButtonProps & { disabled?: boolean }) =>
     cn(
         "rounded-full self-center placeholder-green-950 font-medium box-border",
-        "hover:filter hover:brightness-105 cursor-pointer",
+        disabled
+            ? "opacity-50 cursor-not-allowed"
+            : "hover:filter hover:brightness-105 cursor-pointer",
         colors[color || "green"][weight || "strong"],
         weight === "outline" ? outlineSizes[size || "medium"] : sizes[size || "medium"],
         shapes[shape || "pill"],
@@ -64,6 +66,7 @@ type BaseButtonProps = {
     size?: keyof typeof sizes;
     shape?: keyof typeof shapes;
     className?: string;
+    disabled?: boolean;
 };
 
 type ButtonElement =
@@ -92,13 +95,15 @@ export function Button<T extends React.ElementType>({
     size,
     shape,
     className,
+    disabled,
     ...buttonProps
 }: ButtonProps<T>) {
     const Component = as || "button";
 
     return (
         <Component
-            className={buttonClasses({ color, weight, size, shape, className })}
+            className={buttonClasses({ color, weight, size, shape, className, disabled })}
+            disabled={disabled}
             {...buttonProps}
         >
             {children}

@@ -2,53 +2,79 @@
 
 ## What is Pollen?
 
-Pollen is our prepaid credit system. $1 = 1 Pollen (beta). You spend it on API calls. Free models cost 0 Pollen — we just track usage for stats.
+Pollen is our prepaid credit system. **$1 ≈ 1 Pollen** (pricing may evolve). You spend it to make API calls to paid models. Free models always cost 0 Pollen.
 
 ## How do I get Pollen?
 
-Two ways:
-- **Buy packs** with your credit card — goes straight to your wallet, never expires
-- **Redeem sponsorship coupons** — temporary Pollen that gets used first, expires 24h after you claim it
+There are three ways to add Pollen to your balance:
+1.  **Buy It:** Purchase Pollen packs directly with a credit card. This Pollen goes into your wallet and never expires. (Want other payment options? [Vote here](https://github.com/pollinations/pollinations/issues/4826)!)
+2.  **Get Daily Pollen:** During and after beta, registered developers receive daily Pollen grants to support experimentation based on their tier *(seed, flower, or nectar)*.
+3.  **Earn It:** Complete one-time community rewards, like starring our GitHub repo or helping solve a technical issue.
 
 ## What payment methods do you accept?
 
-Credit cards for now. We're looking into crypto and other options for people in countries with payment restrictions.
+Currently, we accept credit cards. We're actively exploring other payment methods based on community feedback.
+
+**Want other payment options?** Vote on what you'd like to see next in our [payment methods voting issue](https://github.com/pollinations/pollinations/issues/4826) — crypto, PayPal, Alipay, and more!
 
 ## Is there a monthly subscription?
 
 Not yet, but we're considering it based on community feedback. Check out the [voting issue](https://github.com/pollinations/pollinations/issues/2202) to share your thoughts or join our [Discord](https://discord.gg/pollinations) for updates.
 
-## Can I try it without signing up or paying?
+## Can I try it without signing up?
 
-Yep! Just hit the API — no signup needed. Free models work instantly, no Pollen required.
+Yep! You can use our API with **Anonymous access** — no signup, account, or payment needed. You can call all free models, subject to standard rate limits.
 
 ## What changes when I register?
 
-You keep the free models (with rate limits) and unlock paid models (no rate limits, just costs Pollen). Plus you get daily free Pollen grants.
+Registering itself gives you an account. The real power is unlocked when you **create and use an API key**. Registering is the necessary first step to do that.
 
-## How do daily grants work?
+- **Using a Front-End Key:** Designed for client-side apps (bound to your domain). Medium rate limits. Access to all models — free models cost 0 Pollen, paid models spend Pollen.
+- **Using a Server-to-Server Key:** For backend apps. No platform rate limits. Access to all models — free models cost 0 Pollen, paid models spend Pollen.
 
-Every day at 00:00 UTC, registered users get free Pollen. It's spent before your purchased balance.
+If you register but do not use a key, your rate limits will be the same as an anonymous user.
 
-We have three tiers: **Seed** (default), **Flower**, and **Nectar**. Higher tiers get more daily Pollen. You can request an upgrade in your dashboard.
+## How do daily Pollen grants work?
+
+Registered developers receive daily Pollen grants to support experimentation based on their tier. 
+Pollen grants are always spent before your purchased Pollen balance, and it expires each day.
 
 ## How much Pollen do models use?
 
-Each model uses different amounts of Pollen based on what it costs us to run. We'll have a Pollen cost page launching soon where you can see what each model uses. Free models always cost 0 Pollen.
+Each model uses different amounts of Pollen based on what it costs us to run. Here's what you can generate per Pollen (remember: **1 Pollen = $1**):
 
-## Will free models always be free?
+**Image Models:**
+- **flux**: ∞ images per Pollen (always free!)
+- **turbo**: ~333 images per Pollen
+- **kontext**: ~200 images per Pollen
+- **gptimage**: ~77 images per Pollen
+- **nanobanana**: ~50 images per Pollen
 
-Yes! Free models remain free forever for all users. We're committed to keeping AI accessible. Paid options only apply to premium models that offer additional capabilities.
+**Text Models:**
+- **Fast models**: 100,000+ responses per Pollen
+- **Advanced models**: ~1,000 responses per Pollen
 
-## How does my wallet work?
+## What can I create with 10 Pollen?
 
-One wallet for all your apps. Top up anytime, use it anywhere.
+With just 10 Pollen (≈$10), you can generate:
+- **500 nanobanana images** — high-quality AI art perfect for professional projects
+- **3,300 turbo images** — rapid prototyping and quick iterations
+- **2,000 kontext images** — balanced quality for most use cases
+- **770 gptimage images** — GPT-powered visual generation
+- **100,000+ fast text responses** — chatbot conversations, content generation
+- **10,000 advanced text responses** — complex reasoning and analysis
+- **Unlimited flux images** — completely free, always!
 
-## What's coming next?
+## How does my Pollen wallet work?
 
-- **In-app purchases** (early 2026) — let your users buy Pollen in your app, you get a bonus
-- **More models** — video, real-time audio, expanding the catalog
-- **Ads plugin** (2026) — earn Pollen when users see ads
-- **Quests** — earn Pollen by starring projects, building cool stuff, etc.
+You get one central Pollen wallet for all your applications. Top it up anytime and use it across the entire Pollinations ecosystem.
+
+## What's coming?
+
+- **Secure front-end spending:** We are building a solution to allow client-side apps to spend Pollen securely, which will power features like in-app purchases.
+- **In-app purchases** — let your users buy Pollen in your app, you get a bonus.
+- **Ads plugin** — earn Pollen when users see ads.
+- **More models:** Expect video, real-time audio, and an ever-expanding catalog.
+- **Quests:** Earn Pollen by completing community bounties and contributing to projects.
 
 (Plans may change based on what the community needs)

@@ -4,11 +4,12 @@
  * @returns {string} - The constructed image URL.
  */
 import { modelSupportsImageInput } from "../config/imageModels";
+import { ENTER_BASE_URL, PLAYGROUND_IMAGE_API_KEY } from "./enterApi";
 
 export function getImageURL(newImage) {
-    let imageURL = `https://pollinations.ai/p/${encodeURIComponent(newImage.prompt)}`;
     const queryParams = [];
 
+    if (newImage.model) queryParams.push(`model=${newImage.model}`);
     if (newImage.width && newImage.width !== 1024 && newImage.width !== "1024")
         queryParams.push(`width=${newImage.width}`);
     if (
@@ -21,7 +22,6 @@ export function getImageURL(newImage) {
         queryParams.push(`seed=${newImage.seed}`);
     if (newImage.enhance) queryParams.push(`enhance=${newImage.enhance}`);
     if (newImage.nologo) queryParams.push(`nologo=${newImage.nologo}`);
-    if (newImage.model) queryParams.push(`model=${newImage.model}`);
 
     if (newImage.image) {
         const imagesArray = Array.isArray(newImage.image)
@@ -41,8 +41,9 @@ export function getImageURL(newImage) {
         }
     }
 
-    if (queryParams.length > 0) {
-        imageURL += "?" + queryParams.join("&");
-    }
+    // Add API key
+    queryParams.push(`key=${PLAYGROUND_IMAGE_API_KEY}`);
+
+    const imageURL = `${ENTER_BASE_URL}/generate/image/${encodeURIComponent(newImage.prompt)}?${queryParams.join("&")}`;
     return imageURL;
 }

@@ -17,6 +17,7 @@ export interface VectorStore<TMetadata> {
         vector: number[],
         bucket: string,
     ) => Promise<VectorStoreMatch<TMetadata>[]>;
+    deleteById: (id: string) => Promise<boolean>;
 }
 
 export type VectorMetadata = {
@@ -87,9 +88,25 @@ export function createVectorizeStore<
         }
     };
 
+    const deleteById = async (id: string): Promise<boolean> => {
+        try {
+            await vectorize.deleteByIds([id]);
+            console.log("[VECTORIZE] Deleted embedding:", id);
+            return true;
+        } catch (error) {
+            console.error("[VECTORIZE] Failed to delete embedding:", {
+                id,
+                message: error.message,
+                stack: error.stack,
+            });
+            return false;
+        }
+    };
+
     return {
         storeEmbedding,
         findNearest,
+        deleteById,
     };
 }
 

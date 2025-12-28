@@ -108,9 +108,9 @@ async function _checkReferrerInDb(referrer) {
 	}
 }
 
-// Memoized version with 30 second TTL
+// Memoized version with 5 minute TTL
 export const checkReferrerInDb = memoizee(_checkReferrerInDb, {
-	maxAge: 30000, // 30 seconds
+	maxAge: 300000, // 5 minutes (was 30 seconds)
 	promise: true, // Handle async functions properly
 });
 
@@ -183,9 +183,9 @@ async function _validateApiTokenDb(token) {
 	}
 }
 
-// Memoized version with 30 second TTL
+// Memoized version with 5 minute TTL
 export const validateApiTokenDb = memoizee(_validateApiTokenDb, {
-	maxAge: 30000, // 30 seconds
+	maxAge: 300000, // 5 minutes (was 30 seconds)
 	promise: true, // Handle async functions properly
 });
 
@@ -376,6 +376,22 @@ export async function shouldBypassQueue(req) {
 		tier: "anonymous",
 		debugInfo,
 	};
+}
+
+/**
+ * Check if request is from enter.pollinations.ai
+ * @param {Object} req - Request object
+ * @returns {boolean} True if request has valid enter token
+ */
+export function isEnterRequest(req) {
+	const enterToken = req.headers?.['x-enter-token'] || req.headers?.get?.('x-enter-token');
+	const validEnterToken = process.env.ENTER_TOKEN;
+	
+	if (!enterToken || !validEnterToken) {
+		return false;
+	}
+	
+	return enterToken === validEnterToken;
 }
 
 /**

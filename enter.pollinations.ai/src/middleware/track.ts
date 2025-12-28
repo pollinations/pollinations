@@ -1,20 +1,19 @@
 import { processEvents, storeEvents } from "@/events.ts";
-import { 
+import {
     resolveServiceId,
     isFreeService,
     getActivePriceDefinition,
-    getModelDefinition,
     calculateCost,
     calculatePrice,
     ServiceId,
-    ModelId
+    ModelId,
 } from "@shared/registry/registry.ts";
+import { parseUsageHeaders } from "@shared/registry/usage-headers.ts";
 import {
-    ModelUsage,
-    OpenAIResponse,
-    openaiResponseSchema,
-    transformOpenAIUsage,
-} from "@/usage.ts";
+    ContentFilterSeveritySchema,
+    CreateChatCompletionResponseSchema,
+    type CreateChatCompletionResponse,
+} from "@/schemas/openai.ts";
 import { generateRandomId } from "@/util.ts";
 import { createMiddleware } from "hono/factory";
 import type { LoggerVariables } from "./logger.ts";
@@ -29,9 +28,16 @@ import type {
     EventType,
     GenerationEventContentFilterParams,
 } from "@/db/schema/event.ts";
-import type { AuthVariables } from "@/middleware/authenticate.ts";
+import type { AuthVariables } from "@/middleware/auth.ts";
 import { PolarVariables } from "./polar.ts";
 import { z } from "zod";
+import { TokenUsage } from "../../../shared/registry/registry.js";
+import { removeUnset } from "@/util.ts";
+
+export type ModelUsage = {
+    model: ModelId;
+    usage: TokenUsage;
+};
 
 export type TrackVariables = {
     track: {
@@ -68,44 +74,37 @@ export const track = (eventType: EventType) =>
         await next();
 
         const referrerInfo = extractReferrerInfo(c);
-        const cacheInfo = extractCacheInfo(c);
-        const tokenPrice = getActivePriceDefinition(
-            resolvedModelRequested,
-        );
+        const cacheInfo = extractCacheHeaders(c);
+        const tokenPrice = getActivePriceDefinition(resolvedModelRequested);
         if (!tokenPrice) {
             throw new Error(
                 `Failed to get price definition for model: ${resolvedModelRequested}`,
             );
         }
-        let openaiResponse, modelUsage, cost, price;
+        let modelUsage, cost, price;
         if (c.res.ok) {
-            if (eventType === "generate.text") {
-                const body = await c.res.clone().json();
-                openaiResponse = openaiResponseSchema.parse(body);
-            }
             if (!cacheInfo.cacheHit) {
-                modelUsage = extractUsage(
-                    eventType,
-                    modelRequested,
-                    c,
-                    openaiResponse,
-                );
-                
-                // Validate model ID exists in registry before calculating cost
-                if (!getModelDefinition(modelUsage.model as ModelId)) {
-                    throw new Error(
-                        `Model '${modelUsage.model}' not found in registry. This indicates a bug - the model returned by the LLM is not configured for billing.`
-                    );
-                }
-                
+                modelUsage = extractUsage(c);
+                validateUsage(modelUsage, isFreeUsage);
+
+                log.debug("[COST] Model usage extracted: {modelUsage}", {
+                    modelUsage,
+                });
+
                 cost = calculateCost(
                     modelUsage.model as ModelId,
                     modelUsage.usage,
                 );
+
                 price = calculatePrice(
                     resolvedModelRequested as ServiceId,
                     modelUsage.usage,
                 );
+
+                log.debug("[COST] Calculated cost: {cost}, price: {price}", {
+                    cost,
+                    price,
+                });
             } else {
                 log.info(
                     "Response was served from {cacheType} cache, skipping cost/price calculation",
@@ -141,7 +140,7 @@ export const track = (eventType: EventType) =>
 
             ...priceToEventParams(tokenPrice),
             ...usageToEventParams(modelUsage?.usage),
-            ...extractContentFilterResults(eventType, openaiResponse),
+            ...extractContentFilterResults(c.res.headers),
 
             totalCost: cost?.totalCost || 0,
             totalPrice: price?.totalPrice || 0,
@@ -180,40 +179,30 @@ async function extractModelRequested(
     return null;
 }
 
-function extractUsage(
-    eventType: EventType,
-    modelRequested: string | null,
-    c: Context<TrackEnv>,
-    response?: OpenAIResponse,
-): ModelUsage {
-    if (eventType === "generate.image") {
-        // Read actual token count from x-completion-image-tokens header
-        const tokenCountHeader = c.res.headers.get("x-completion-image-tokens");
-        const completionImageTokens = tokenCountHeader 
-            ? parseInt(tokenCountHeader, 10) 
-            : 1;
-        
-        // Read actual model used from x-model-used header
-        const modelUsedHeader = c.res.headers.get("x-model-used");
-        const model = (modelUsedHeader || modelRequested || "flux") as ModelId;
-        
-        return {
-            model,
-            usage: {
-                unit: "TOKENS",
-                completionImageTokens,
-            },
-        };
+function extractUsage(c: Context<TrackEnv>): ModelUsage {
+    const log = c.get("log");
+    const usage = parseUsageHeaders(c.res.headers);
+    const modelUsed = c.res.headers.get("x-model-used");
+    if (!modelUsed) {
+        throw new Error(
+            "Failed to determine model: x-model-used header was missing",
+        );
     }
-    if (response) {
-        return {
-            model: response?.model as ModelId,
-            usage: transformOpenAIUsage(response.usage),
-        };
+    log.debug("[COST] Extracted headers: model: {model}, usage: {usage}", {
+        model: modelUsed,
+        usage,
+    });
+    return {
+        model: modelUsed as ModelId,
+        usage,
+    };
+}
+
+function validateUsage(usage: ModelUsage, isFreeUsage: boolean) {
+    const includedUsageTypes = Object.keys(usage.usage);
+    if (!isFreeUsage && includedUsageTypes.length === 0) {
+        throw new Error("No usage headers where present for a non-free model");
     }
-    throw new Error(
-        "Failed to extract usage: generate.text event without valid response object",
-    );
 }
 
 function extractUserTier(c: Context<TrackEnv>): string | undefined {
@@ -221,13 +210,17 @@ function extractUserTier(c: Context<TrackEnv>): string | undefined {
 }
 
 function extractContentFilterResults(
-    eventType: EventType,
-    response?: OpenAIResponse,
+    headers: Headers | Record<string, string>,
 ): GenerationEventContentFilterParams {
-    if (eventType === "generate.text" && response) {
-        return contentFilterResultsToEventParams(response);
+    const plainHeaders =
+        headers instanceof Headers
+            ? Object.fromEntries(headers.entries())
+            : headers;
+    const parseResult =
+        ContentFilterResultHeadersSchema.safeParse(plainHeaders);
+    if (parseResult.success) {
+        return parseResult.data;
     }
-    // TODO: use x-moderation headers for image generations once implemented
     return {};
 }
 
@@ -239,7 +232,7 @@ type CacheInfo = {
     cacheSemanticThreshold?: number;
 };
 
-function extractCacheInfo(c: Context<TrackEnv>): CacheInfo {
+function extractCacheHeaders(c: Context<TrackEnv>): CacheInfo {
     return {
         cacheHit: c.res.headers.get("x-cache") === "HIT",
         cacheKey: c.res.headers.get("x-cache-key") || undefined,
@@ -273,3 +266,54 @@ function safeUrl(url: string): URL | null {
         return null;
     }
 }
+
+// biome-ignore format: custom formatting
+const ContentFilterResultHeadersSchema = z
+    .object({
+        "x-moderation-prompt-hate-severity": 
+            ContentFilterSeveritySchema.optional().catch(undefined),
+        "x-moderation-prompt-self-harm-severity": 
+            ContentFilterSeveritySchema.optional().catch(undefined),
+        "x-moderation-prompt-sexual-severity": 
+            ContentFilterSeveritySchema.optional().catch(undefined),
+        "x-moderation-prompt-violence-severity": 
+            ContentFilterSeveritySchema.optional().catch(undefined),
+        "x-moderation-prompt-jailbreak-detected": 
+            z.boolean().optional().catch(undefined),
+        "x-moderation-completion-hate-severity": 
+            ContentFilterSeveritySchema.optional().catch(undefined),
+        "x-moderation-completion-self-harm-severity":
+            ContentFilterSeveritySchema.optional().catch(undefined),
+        "x-moderation-completion-sexual-severity": 
+            ContentFilterSeveritySchema.optional().catch(undefined),
+        "x-moderation-completion-violence-severity":
+            ContentFilterSeveritySchema.optional().catch(undefined),
+        "x-moderation-completion-protected-material-text-detected": 
+            z.boolean().optional().catch(undefined),
+        "x-moderation-completion-protected-material-code-detected": 
+            z.boolean().optional().catch(undefined),
+    })
+    .transform((headers) => removeUnset({
+        moderationPromptHateSeverity:
+            headers["x-moderation-prompt-hate-severity"],
+        moderationPromptSelfHarmSeverity:
+            headers["x-moderation-prompt-self-harm-severity"],
+        moderationPromptSexualSeverity:
+            headers["x-moderation-prompt-sexual-severity"],
+        moderationPromptViolenceSeverity:
+            headers["x-moderation-prompt-violence-severity"],
+        moderationPromptJailbreakDetected:
+            headers["x-moderation-prompt-jailbreak-detected"],
+        moderationCompletionHateSeverity:
+            headers["x-moderation-completion-hate-severity"],
+        moderationCompletionSelfHarmSeverity:
+            headers["x-moderation-completion-self-harm-severity"],
+        moderationCompletionSexualSeverity:
+            headers["x-moderation-completion-sexual-severity"],
+        moderationCompletionViolenceSeverity:
+            headers["x-moderation-completion-violence-severity"],
+        moderationCompletionProtectedMaterialTextDetected:
+            headers["x-moderation-completion-protected-material-text-detected"],
+        moderationCompletionProtectedMaterialCodeDetected:
+            headers["x-moderation-completion-protected-material-code-detected"],
+    }));

@@ -4,7 +4,7 @@ import {
     type BetterAuthPlugin,
     betterAuth,
     type GenericEndpointContext,
-    type User,
+    type User as GenericUser,
 } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { APIError } from "better-auth/api";
@@ -22,6 +22,16 @@ export function createAuth(env: Cloudflare.Env) {
 
     const apiKeyPlugin = apiKey({
         enableMetadata: true,
+        defaultPrefix: 'pk', // Default prefix for publishable keys
+        defaultKeyLength: 22, // Minimum key length for validation (pk_ = 22 chars, sk_ = 64 chars)
+        customKeyGenerator: (options: { length: number; prefix: string | undefined; }) => {
+            // Publishable keys (pk_) are SHORT (22 chars), Secret keys (sk_) are LONG (64 chars)
+            const keyLength = options.prefix === 'pk' ? 22 : 64;
+            const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+            const randomBytes = crypto.getRandomValues(new Uint8Array(keyLength));
+            const key = Array.from(randomBytes, byte => chars[byte % chars.length]).join('');
+            return options.prefix ? `${options.prefix}_${key}` : key;
+        },
         permissions: {
             defaultPermissions: {
                 "tier": ["flower"],
@@ -81,7 +91,8 @@ export function createAuth(env: Cloudflare.Env) {
 }
 
 export type Auth = ReturnType<typeof createAuth>;
-export type Session = Auth["$Infer"]["Session"];
+export type Session = Auth["$Infer"]["Session"]["session"];
+export type User = Auth["$Infer"]["Session"]["user"];
 
 function polarPlugin(polar: Polar): BetterAuthPlugin {
     return {
@@ -147,7 +158,7 @@ function onBeforeUserCreate(polar: Polar) {
 }
 
 function onAfterUserCreate(polar: Polar) {
-    return async (user: User, ctx?: GenericEndpointContext) => {
+    return async (user: GenericUser, ctx?: GenericEndpointContext) => {
         if (!ctx) return;
         try {
             const { result } = await polar.customers.list({
@@ -173,7 +184,7 @@ function onAfterUserCreate(polar: Polar) {
 }
 
 function onUserUpdate(polar: Polar) {
-    return async (user: User, ctx?: GenericEndpointContext) => {
+    return async (user: GenericUser, ctx?: GenericEndpointContext) => {
         if (!ctx) return;
         try {
             await polar.customers.updateExternal({
@@ -191,3 +202,4 @@ function onUserUpdate(polar: Polar) {
         }
     };
 }
+

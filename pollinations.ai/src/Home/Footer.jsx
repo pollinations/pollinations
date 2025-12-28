@@ -19,7 +19,6 @@ import { useState } from "react";
 
 const Footer = () => {
     const theme = useTheme();
-    const isXs = useMediaQuery(theme.breakpoints.only("xs"));
     const isMdDown = useMediaQuery(theme.breakpoints.down("md"));
     const [copied, setCopied] = useState(false);
 
@@ -96,7 +95,10 @@ const Footer = () => {
                         height="100%"
                         sx={{ fontSize: "1.5em", fontFamily: Fonts.title }}
                     >
-                        <StyledLink to="/terms" onClick={handleTermsLinkClick}>
+                        <StyledLink 
+                            to="/terms" 
+                            onClick={handleTermsLinkClick}
+                        >
                             <LLMTextManipulator
                                 text={FOOTER_TERMS_CONDITIONS_LINK}
                                 transforms={[noLink]}
@@ -108,7 +110,7 @@ const Footer = () => {
                             fontSize: "1.2em",
                             fontFamily: Fonts.title,
                             width: "100%",
-                            textAlign: isXs ? "center" : "right",
+                            textAlign: isMdDown ? "center" : "right",
                             marginTop: "0.5em",
                         }}
                     >

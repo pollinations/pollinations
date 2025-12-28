@@ -16,7 +16,7 @@ const SocialLinksContainer = styled("div")(({ gap }) => ({
 
 const LinkItem = styled(Link, {
     // Prevent forwarding isHovered to the DOM
-    shouldForwardProp: (prop) => prop !== "isHovered",
+    shouldForwardProp: (prop) => !["isHovered", "invert"].includes(prop),
 })(({ isHovered }) => ({
     display: "flex",
     justifyContent: "center",
@@ -33,7 +33,7 @@ const LinkItem = styled(Link, {
 // Replacing the <img> with a Styled ReactSVG to control the svg fill dynamically
 const StyledReactSVG = styled(ReactSVG, {
     shouldForwardProp: (prop) => !["isHovered", "invert"].includes(prop),
-})(({ isHovered, invert }) => ({
+})(({ isHovered }) => ({
     "& svg": {
         fill: isHovered ? Colors.offwhite : Colors.offblack,
         transition: "fill 0.6s ease",
@@ -65,19 +65,10 @@ export const SocialLinks = ({ gap, location, invert }) => {
                         target="_blank"
                         title={platform}
                         isHovered={isHovered}
+                        invert={invert}
                         onMouseEnter={() => setHoveredIndex(index)}
                         onMouseLeave={() => setHoveredIndex(null)}
                         onClick={() => handleLinkClick(platform)}
-                        sx={
-                            invert
-                                ? {
-                                      border: `1px solid ${Colors.offwhite}`,
-                                      backgroundColor: isHovered
-                                          ? Colors.offblack
-                                          : "transparent",
-                                  }
-                                : {}
-                        }
                     >
                         <StyledReactSVG
                             src={icon}

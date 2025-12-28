@@ -63,6 +63,7 @@ const ErrorResponseSchema = z.discriminatedUnion("status", [
 type ErrorResponse = z.infer<typeof ErrorResponseSchema>;
 
 export const handleError: ErrorHandler<Env> = (err, c) => {
+    const log = c.get("log");
     const timestamp = new Date().toISOString();
     const isDevelopment = c.env.ENVIRONMENT === "development";
 
@@ -74,6 +75,7 @@ export const handleError: ErrorHandler<Env> = (err, c) => {
             timestamp,
             isDevelopment,
         );
+        log.trace("HttpException: {error}", { error: err });
         return c.json(response, status);
     }
 
@@ -85,6 +87,7 @@ export const handleError: ErrorHandler<Env> = (err, c) => {
             timestamp,
             isDevelopment,
         );
+        log.trace("APIError: {error}", { error: err });
         return c.json(response, status);
     }
 
@@ -96,6 +99,7 @@ export const handleError: ErrorHandler<Env> = (err, c) => {
             timestamp,
             isDevelopment,
         );
+        log.trace("ValidationError: {error}", { error: err });
         return c.json(response, status);
     }
 
@@ -117,6 +121,7 @@ export const handleError: ErrorHandler<Env> = (err, c) => {
         timestamp,
         isDevelopment,
     );
+    log.trace("InternalError: {error}", { error: err });
     return c.json(response, status);
 };
 
@@ -213,7 +218,7 @@ export type ErrorStatusCode = (typeof KNOWN_ERROR_STATUS_CODES)[number];
 export function getDefaultErrorMessage(status: number): string {
     const messages: Record<number, string> = {
         400: "Something was wrong with the input data.",
-        401: "Please sign in first and provide session cookie or x-api-key header.",
+        401: "You need to authenticate by providing a session cookie or Authorization header (Bearer token).",
         403: "Access denied! You don't have the required permissions.",
         404: "Oh no, there's nothing here.",
         405: "That HTTP method isn't supported here. Please check the API docs.",

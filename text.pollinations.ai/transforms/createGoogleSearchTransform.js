@@ -12,10 +12,12 @@ import { addTools } from "./pipe.js";
  */
 export function createGoogleSearchTransform() {
     // Use the correct format for Vertex AI Google Search
-    return addTools([{
-        type: "function",
-        function: {
-            name: "google_search"
-        }
-    }]);
+    return addTools([
+        {
+            type: "function",
+            function: {
+                name: "google_search",
+            },
+        },
+    ]);
 }

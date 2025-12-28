@@ -20,9 +20,17 @@ export function processParameters(messages, options) {
     const updatedOptions = { ...options };
 
     // Apply model-specific sampling parameter defaults
-    const samplingParams = ["temperature", "top_p", "presence_penalty", "frequency_penalty"];
+    const samplingParams = [
+        "temperature",
+        "top_p",
+        "presence_penalty",
+        "frequency_penalty",
+    ];
     samplingParams.forEach((param) => {
-        if (updatedOptions[param] === undefined && config[param] !== undefined) {
+        if (
+            updatedOptions[param] === undefined &&
+            config[param] !== undefined
+        ) {
             log(`Setting ${param} to model default value: ${config[param]}`);
             updatedOptions[param] = config[param];
         }
@@ -31,10 +39,12 @@ export function processParameters(messages, options) {
     // Apply parameter filtering if defined
     if (modelConfig.allowedParameters) {
         const allowedParams = modelConfig.allowedParameters;
-        log(`Applying parameter filter for model ${requestedModel}, allowing only: ${allowedParams.join(", ")}`);
+        log(
+            `Applying parameter filter for model ${requestedModel}, allowing only: ${allowedParams.join(", ")}`,
+        );
 
         const filteredOptions = {};
-        
+
         // Only include allowed parameters
         for (const param of allowedParams) {
             if (updatedOptions[param] !== undefined) {
@@ -44,7 +54,8 @@ export function processParameters(messages, options) {
 
         // Preserve internal properties
         if (updatedOptions.additionalHeaders) {
-            filteredOptions.additionalHeaders = updatedOptions.additionalHeaders;
+            filteredOptions.additionalHeaders =
+                updatedOptions.additionalHeaders;
         }
         if (updatedOptions.modelConfig) {
             filteredOptions.modelConfig = updatedOptions.modelConfig;

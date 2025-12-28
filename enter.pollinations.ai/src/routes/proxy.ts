@@ -1,19 +1,19 @@
 import { Context, Hono } from "hono";
 import { proxy } from "hono/proxy";
-import { authenticate } from "@/middleware/authenticate";
+import { cors } from "hono/cors";
+import { auth } from "@/middleware/auth.ts";
+import type { User } from "@/auth.ts";
 import { polar } from "@/middleware/polar.ts";
 import type { Env } from "../env.ts";
-import { track, type TrackVariables } from "@/middleware/track.ts";
-import type { AuthVariables } from "@/middleware/authenticate.ts";
-import type { PolarVariables } from "@/middleware/polar.ts";
+import { track } from "@/middleware/track.ts";
 import { removeUnset } from "@/util.ts";
-import type { Session } from "@/auth.ts";
+import { frontendKeyRateLimit } from "@/middleware/frontendRateLimit.ts";
 import { describeRoute, resolver } from "hono-openapi";
 import { validator } from "@/middleware/validator.ts";
-import { alias } from "@/middleware/alias.ts";
 import {
     CreateChatCompletionResponseSchema,
     CreateChatCompletionRequestSchema,
+    CreateChatCompletionResponse,
     GetModelsResponseSchema,
 } from "@/schemas/openai.ts";
 import {
@@ -24,6 +24,12 @@ import {
 } from "@/error.ts";
 import { GenerateImageRequestQueryParamsSchema } from "@/schemas/image.ts";
 import { z } from "zod";
+import { HTTPException } from "hono/http-exception";
+import {
+    parseUsageHeaders,
+    USAGE_TYPE_HEADERS,
+} from "../../../shared/registry/usage-headers.ts";
+import { ContentfulStatusCode } from "hono/utils/http-status";
 
 const errorResponseDescriptions = Object.fromEntries(
     KNOWN_ERROR_STATUS_CODES.map((status) => [
@@ -48,6 +54,14 @@ function errorResponses(...codes: ErrorStatusCode[]) {
 }
 
 export const proxyRoutes = new Hono<Env>()
+    .use(
+        "*",
+        cors({
+            origin: "*",
+            allowHeaders: ["authorization", "content-type"],
+            allowMethods: ["GET", "POST", "OPTIONS"],
+        }),
+    )
     .get(
         "/openai/models",
         describeRoute({
@@ -65,16 +79,19 @@ export const proxyRoutes = new Hono<Env>()
             },
         }),
         async (c) => {
-            const targetUrl = proxyUrl(c, "https://text.pollinations.ai");
-            return await proxy(targetUrl, {
+            const textServiceUrl =
+                c.env.TEXT_SERVICE_URL || "https://text.pollinations.ai";
+            return await proxy(`${textServiceUrl}/openai/models`, {
                 ...c.req,
                 headers: proxyHeaders(c),
             });
         },
     )
-    .use(authenticate)
+    .use(auth({ allowApiKey: true, allowSessionCookie: true }))
+    // TODO: Temporarily disabled due to timestamp issues with client tokens
+    // .use(frontendKeyRateLimit)
     .use(polar)
-    .use(alias({ "/openai/chat/completions": "/openai" }))
+    // .use(alias({ "/openai/chat/completions": "/openai" }))
     .post(
         "/openai",
         track("generate.text"),
@@ -82,7 +99,16 @@ export const proxyRoutes = new Hono<Env>()
             description: [
                 "OpenAI compatible endpoint for text generation.",
                 "Also available under `/openai/chat/completions`.",
-            ].join(" "),
+                "",
+                "**Authentication (Secret Keys Only):**",
+                "",
+                "Include your API key in the `Authorization` header as a Bearer token:",
+                "",
+                "`Authorization: Bearer YOUR_API_KEY`",
+                "",
+                "API keys can be created from your dashboard at enter.pollinations.ai.",
+                "Secret keys provide the best rate limits and can spend Pollen.",
+            ].join("\n"),
             responses: {
                 200: {
                     description: "Success",
@@ -99,56 +125,125 @@ export const proxyRoutes = new Hono<Env>()
         }),
         validator("json", CreateChatCompletionRequestSchema),
         async (c) => {
-            await authorizeRequest(c.var);
-            const targetUrl = proxyUrl(
-                c,
-                "https://text.pollinations.ai/openai",
-            );
+            await c.var.auth.requireAuthorization({
+                allowAnonymous:
+                    c.var.track.isFreeUsage && c.env.ALLOW_ANONYMOUS_USAGE,
+            });
+            await checkBalanceForPaidModel(c);
+            
+            const textServiceUrl =
+                c.env.TEXT_SERVICE_URL || "https://text.pollinations.ai";
+            const targetUrl = proxyUrl(c, `${textServiceUrl}/openai`);
+            const requestBody = await c.req.json();
             const response = await proxy(targetUrl, {
                 method: c.req.method,
                 headers: {
                     ...proxyHeaders(c),
                     ...generationHeaders(c.env.ENTER_TOKEN, c.var.auth.user),
                 },
-                body: JSON.stringify(await c.req.json()),
+                body: JSON.stringify(requestBody),
             });
-            return response;
+            if (!response.ok || !response.body) {
+                throw new HTTPException(
+                    response.status as ContentfulStatusCode,
+                );
+            }
+            const responseJson = await response.clone().json();
+            const parsedResponse =
+                CreateChatCompletionResponseSchema.parse(responseJson);
+            const contentFilterHeaders =
+                contentFilterResultsToHeaders(parsedResponse);
+            return new Response(response.body, {
+                headers: {
+                    ...Object.fromEntries(response.headers),
+                    ...contentFilterHeaders,
+                },
+            });
         },
     )
-    // TODO: fix usage tracking for /generate/text
-    //
-    // .get(
-    //     "/text/:prompt",
-    //     describeRoute({
-    //         description: "Generates text from text prompts.",
-    //     }),
-    //     track("generate.text"),
-    //     async (c) => {
-    //         await authorizeRequest(c.var);
-    //         const targetUrl =
-    //             "https://text.pollinations.ai/openai/chat/completions";
-    //         const requestBody = {
-    //             model: c.req.query("model") || "openai",
-    //             messages: [{ role: "user", content: c.req.param("prompt") }],
-    //         };
-    //         const response = await fetch(targetUrl, {
-    //             method: "POST",
-    //             headers: {
-    //                 ...proxyHeaders(c),
-    //                 ...generationHeaders(c.env.ENTER_TOKEN, c.var.auth.user),
-    //             },
-    //             body: JSON.stringify(requestBody),
-    //         });
-    //         console.log(response);
-    //         const parsedResponse = openaiResponseSchema.parse(
-    //             await response.json(),
-    //         );
-    //         return c.text(
-    //             parsedResponse.choices[0].message?.content || "",
-    //             200,
-    //         );
-    //     },
-    // )
+    .get(
+        "/text/models",
+        describeRoute({
+            description: "Get available text models.",
+            responses: {
+                200: {
+                    description: "Success",
+                    content: {
+                        "application/json": {
+                            schema: resolver(
+                                z.array(z.string()).meta({
+                                    description: "List of available models",
+                                }),
+                            ),
+                        },
+                    },
+                },
+                ...errorResponses(500),
+            },
+        }),
+        async (c) => {
+            const textServiceUrl =
+                c.env.TEXT_SERVICE_URL || "https://text.pollinations.ai";
+            return await proxy(`${textServiceUrl}/models`);
+        },
+    )
+    .get(
+        "/text/:prompt",
+        describeRoute({
+            description: [
+                "Generates text from text prompts.",
+                "",
+                "**Authentication:**",
+                "",
+                "Include your API key either:",
+                "- In the `Authorization` header as a Bearer token: `Authorization: Bearer YOUR_API_KEY`",
+                "- As a query parameter: `?key=YOUR_API_KEY`",
+                "",
+                "API keys can be created from your dashboard at enter.pollinations.ai.",
+            ].join("\n"),
+        }),
+        track("generate.text"),
+        async (c) => {
+            await c.var.auth.requireAuthorization({
+                allowAnonymous: true,
+            });
+            const textServiceUrl =
+                c.env.TEXT_SERVICE_URL || "https://text.pollinations.ai";
+            const targetUrl = proxyUrl(c, `${textServiceUrl}/openai`);
+            const requestBody = {
+                model: c.req.query("model") || "openai",
+                messages: [{ role: "user", content: c.req.param("prompt") }],
+            };
+            const response = await fetch(targetUrl, {
+                method: "POST",
+                headers: {
+                    "content-type": "application/json",
+                    ...proxyHeaders(c),
+                    ...generationHeaders(c.env.ENTER_TOKEN, c.var.auth.user),
+                },
+                body: JSON.stringify(requestBody),
+            });
+            const responseJson = await response.json();
+            const parsedResponse =
+                CreateChatCompletionResponseSchema.parse(responseJson);
+            const contentFilterHeaders =
+                contentFilterResultsToHeaders(parsedResponse);
+            const message = parsedResponse.choices[0].message.content;
+            if (!message) {
+                throw new HTTPException(500, {
+                    message: "Provider didn't return any messages",
+                });
+            }
+            return c.text(
+                parsedResponse.choices[0].message?.content || "",
+                200,
+                {
+                    ...Object.fromEntries(response.headers),
+                    ...contentFilterHeaders,
+                },
+            );
+        },
+    )
     .get(
         "/image/models",
         describeRoute({
@@ -169,54 +264,80 @@ export const proxyRoutes = new Hono<Env>()
                 ...errorResponses(400, 401, 500),
             },
         }),
-        async () => {
-            return await proxy("https://image.pollinations.ai/models");
+        async (c) => {
+            return await proxy(`${c.env.IMAGE_SERVICE_URL}/models`);
         },
     )
     .get(
         "/image/:prompt",
         track("generate.image"),
         describeRoute({
-            description: "Generate and image from a text prompt.",
+            description: [
+                "Generate an image from a text prompt.",
+                "",
+                "**Authentication (Secret Keys Only):**",
+                "",
+                "Include your API key either:",
+                "- In the `Authorization` header as a Bearer token: `Authorization: Bearer YOUR_API_KEY`",
+                "- As a query parameter: `?key=YOUR_API_KEY`",
+                "",
+                "API keys can be created from your dashboard at enter.pollinations.ai.",
+            ].join("\n"),
         }),
         validator("query", GenerateImageRequestQueryParamsSchema),
         async (c) => {
-            await authorizeRequest(c.var);
-            const targetUrl = proxyUrl(
-                c,
-                "https://image.pollinations.ai/prompt",
-            );
+            await c.var.auth.requireAuthorization({
+                allowAnonymous:
+                    c.var.track.isFreeUsage && c.env.ALLOW_ANONYMOUS_USAGE,
+            });
+            await checkBalanceForPaidModel(c);
+            
+            const targetUrl = proxyUrl(c, `${c.env.IMAGE_SERVICE_URL}/prompt`);
             targetUrl.pathname = joinPaths(
                 targetUrl.pathname,
                 c.req.param("prompt"),
             );
-            const response = await proxy(targetUrl, {
-                ...c.req,
-                headers: {
-                    ...proxyHeaders(c),
-                    ...generationHeaders(c.env.ENTER_TOKEN, c.var.auth.user),
-                },
+            
+            const genHeaders = generationHeaders(c.env.ENTER_TOKEN, c.var.auth.user);
+            const proxyRequestHeaders = {
+                ...proxyHeaders(c),
+                ...genHeaders,
+            };
+            
+            c.get("log")?.debug("[PROXY] Image generation headers: {headers}", {
+                headers: genHeaders,
             });
+            c.get("log")?.debug("[PROXY] Proxying to: {url}", {
+                url: targetUrl.toString(),
+            });
+            
+            const response = await proxy(targetUrl.toString(), {
+                method: c.req.method,
+                headers: proxyRequestHeaders,
+                body: c.req.raw.body,
+            });
+            
+            if (!response.ok) {
+                const responseText = await response.text();
+                c.get("log")?.warn("[PROXY] Error {status}: {body}", {
+                    status: response.status,
+                    body: responseText,
+                });
+                // Return the response with the body we just read
+                return new Response(responseText, {
+                    status: response.status,
+                    statusText: response.statusText,
+                    headers: response.headers,
+                });
+            }
+            
             return response;
         },
     );
 
-async function authorizeRequest({
-    auth,
-    polar,
-    track,
-}: AuthVariables & PolarVariables & TrackVariables) {
-    if (!track.isFreeUsage) {
-        const { user } = auth.requireActiveSession(
-            "You need to be signed-in to use this model.",
-        );
-        await polar.requirePositiveBalance(user.id);
-    }
-}
-
 function generationHeaders(
     enterToken: string,
-    user?: Session["user"],
+    user?: User,
 ): Record<string, string> {
     return removeUnset({
         "x-enter-token": enterToken,
@@ -244,11 +365,71 @@ function proxyUrl(
 ): URL {
     const incomingUrl = new URL(c.req.url);
     const targetUrl = new URL(targetBaseUrl);
-    targetUrl.port = targetPort;
-    targetUrl.search = incomingUrl.search;
+    // Only override port if explicitly provided
+    if (targetPort) {
+        targetUrl.port = targetPort;
+    }
+    // Copy query parameters but exclude the 'key' parameter (used for enter.pollinations.ai auth only)
+    const searchParams = new URLSearchParams(incomingUrl.search);
+    searchParams.delete("key");
+    targetUrl.search = searchParams.toString();
     return targetUrl;
 }
 
 function joinPaths(...paths: string[]): string {
     return paths.join("/").replace(/\/+/g, "/").replace(/\/$/, "") || "/";
+}
+
+export function contentFilterResultsToHeaders(
+    response: CreateChatCompletionResponse,
+): Record<string, string> {
+    const promptFilterResults =
+        response.prompt_filter_results?.[0]?.content_filter_results;
+    const completionFilterResults =
+        response.choices?.[0]?.content_filter_results;
+    const mapToString = (value: unknown) => (value ? String(value) : undefined);
+    return removeUnset({
+        "x-moderation-prompt-hate-severity": mapToString(
+            promptFilterResults?.hate?.severity,
+        ),
+        "x-moderation-prompt-self-harm-severity": mapToString(
+            promptFilterResults?.self_harm?.severity,
+        ),
+        "x-moderation-prompt-sexual-severity": mapToString(
+            promptFilterResults?.sexual?.severity,
+        ),
+        "x-moderation-prompt-violence-severity": mapToString(
+            promptFilterResults?.violence?.severity,
+        ),
+        "x-moderation-prompt-jailbreak-detected": mapToString(
+            promptFilterResults?.jailbreak?.detected,
+        ),
+        "x-moderation-completion-hate-severity": mapToString(
+            completionFilterResults?.hate?.severity,
+        ),
+        "x-moderation-completion-self-harm-severity": mapToString(
+            completionFilterResults?.self_harm?.severity,
+        ),
+        "x-moderation-completion-sexual-severity": mapToString(
+            completionFilterResults?.sexual?.severity,
+        ),
+        "x-moderation-completion-violence-severity": mapToString(
+            completionFilterResults?.violence?.severity,
+        ),
+        "x-moderation-completion-protected-material-text-detected": mapToString(
+            completionFilterResults?.protected_material_text?.detected,
+        ),
+        "x-moderation-completion-protected-material-code-detected": mapToString(
+            completionFilterResults?.protected_material_code?.detected,
+        ),
+    });
+}
+
+async function checkBalanceForPaidModel(c: Context<Env & import("@/middleware/auth.ts").AuthEnv & import("@/middleware/polar.ts").PolarEnv & import("@/middleware/track.ts").TrackEnv>) {
+    if (!c.var.track.isFreeUsage && c.var.auth.user?.id) {
+        await c.var.polar.requirePositiveBalance(
+            c.var.auth.user.id,
+            "Insufficient pollen balance to use this model"
+        );
+    }
 }

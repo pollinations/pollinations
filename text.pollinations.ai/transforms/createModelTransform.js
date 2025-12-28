@@ -11,6 +11,6 @@
 export function createModelOverride(targetModel) {
     return (messages, options) => ({
         messages,
-        options: { ...options, model: targetModel }
+        options: { ...options, model: targetModel },
     });
 }

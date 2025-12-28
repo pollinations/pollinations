@@ -162,7 +162,7 @@ export const callSeedreamAPI = async (
                 actualModel: 'seedream',
                 // Seedream uses unit-based pricing (1 token per image)
                 usage: {
-                    candidatesTokenCount: 1,
+                    completionImageTokens: 1,
                     totalTokenCount: 1
                 }
             }

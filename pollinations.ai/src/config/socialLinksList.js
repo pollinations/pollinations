@@ -1,10 +1,10 @@
-import { ICONS } from "../assets/icons/icons.js";
+import { ICONS } from "../icons/icons.js";
 
 export const SOCIAL_LINKS = {
     discord: {
         label: "Discord",
         icon: ICONS.discord,
-        url: "https://discord.gg/k9F7SyTgqn",
+        url: "https://discord.gg/pollinations-ai-885844321461485618",
         width: "32px",
         height: "32px",
     },
@@ -15,7 +15,13 @@ export const SOCIAL_LINKS = {
         width: "25px",
         height: "25px",
     },
-
+    linkedin: {
+        label: "LinkedIn",
+        icon: ICONS.linkedin,
+        url: "https://www.linkedin.com/company/pollinations-ai",
+        width: "22px",
+        height: "22px",
+    },
     instagram: {
         label: "Instagram",
         icon: ICONS.instagram,
@@ -23,13 +29,13 @@ export const SOCIAL_LINKS = {
         width: "22px",
         height: "22px",
     },
-    // x: {
-    //   label: 'X',
-    //   icon: ICONS.x,
-    //   url: 'https://twitter.com/pollinations_ai',
-    //   width: "20px",
-    //   height: "20px",
-    // },
+    x: {
+      label: 'X',
+      icon: ICONS.x,
+      url: 'https://twitter.com/pollinations_ai',
+      width: "20px",
+      height: "20px",
+    },
     tiktok: {
         label: "Tiktok",
         icon: ICONS.tiktok,

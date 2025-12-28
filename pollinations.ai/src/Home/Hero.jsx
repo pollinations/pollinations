@@ -15,7 +15,7 @@ import {
 } from "../config/copywrite";
 import { emojify, rephrase, noLink } from "../config/llmTransforms";
 import Grid from "@mui/material/Grid2";
-import { ICONS } from "../assets/icons/icons";
+import { ICONS } from "../icons/icons";
 import { useMediaQuery } from "@mui/material";
 import { useTheme } from "@mui/material/styles";
 import { trackEvent } from "../config/analytics.js";
@@ -28,7 +28,7 @@ const handleDiscordButtonClick = (e) => {
         action: "click_discord",
         category: "hero",
     });
-    window.open("https://discord.gg/k9F7SyTgqn", "_blank");
+    window.open("https://discord.gg/pollinations-ai-885844321461485618", "_blank");
 };
 
 const handleGithubButtonClick = (e) => {

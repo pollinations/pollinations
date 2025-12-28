@@ -3,48 +3,51 @@ import type {
     ServiceRegistry,
     UsageConversionDefinition,
 } from "./registry";
-import { ZERO_PRICE, PRICING_START_DATE, fromDPMT } from "./price-helpers";
+import { ZERO_PRICE, PRICING_START_DATE, perMillion } from "./price-helpers";
 
 export const IMAGE_COSTS = {
     "flux": [
-        // Estimated
         {
             date: PRICING_START_DATE,
-            completionImageTokens: fromDPMT(3000),
+            completionImageTokens: 0.00012, // $0.0088¢ per image (GPU cluster cost - September avg)
         },
     ],
     "kontext": [
-        // Estimated
         {
             date: PRICING_START_DATE,
-            completionImageTokens: fromDPMT(4000),
+            completionImageTokens: 0.04, // $0.04 per image (Azure pricing)
         },
     ],
     "turbo": [
-        // Estimated
         {
             date: PRICING_START_DATE,
-            completionImageTokens: fromDPMT(2000),
+            completionImageTokens: 0.0003, 
         },
     ],
-    // "nanobanana": [
-    //     {
-    //         date: PRICING_START_DATE,
-    //         completionImageTokens: fromDPMT(30000),
-    //     },
-    // ],
-    // "seedream": [
-    //     // Estimated
-    //     {
-    //         date: PRICING_START_DATE,
-    //         completionImageTokens: fromDPMT(30000),
-    //     },
-    // ],
-    "gptimage": [
-        // Azure GPT Image model
+    "nanobanana": [
+        // Gemini 2.5 Flash Image via Vertex AI (currently disabled)
         {
             date: PRICING_START_DATE,
-            completionImageTokens: fromDPMT(10000),
+            promptTextTokens: perMillion(0.30), // $0.30 per 1M input tokens
+            promptImageTokens: perMillion(0.30), // $0.30 per 1M input tokens
+            completionImageTokens: perMillion(30), // $30 per 1M tokens × 1290 tokens/image = $0.039 per image
+        },
+    ],
+    "seedream": [
+        // ByteDance ARK Seedream 4.0
+        {
+            date: PRICING_START_DATE,
+            completionImageTokens: 0.03, // $0.03 per image (3 cents)
+        },
+    ],
+    "gptimage": [
+        // Azure gpt-image-1-mini
+        {
+            date: PRICING_START_DATE,
+            promptTextTokens: perMillion(2.0), // $2.00 per 1M text input tokens
+            promptCachedTokens: perMillion(0.20), // $0.20 per 1M cached text input tokens
+            promptImageTokens: perMillion(2.50), // $2.50 per 1M image input tokens
+            completionImageTokens: perMillion(8), // $8.00 per 1M output tokens
         },
     ],
 } as const satisfies ModelRegistry;
@@ -53,39 +56,41 @@ export const IMAGE_SERVICES = {
     "flux": {
         aliases: [],
         modelId: "flux",
-        price: [ZERO_PRICE],
-        provider: "pollinations",
+        free: true,
+        provider: "io.net",
+        tier: "seed",
     },
     "kontext": {
         aliases: [],
         modelId: "kontext",
-        price: IMAGE_COSTS["kontext"],
-        provider: "bpaigen",
+        provider: "azure",
+        tier: "nectar",
     },
     "turbo": {
         aliases: [],
         modelId: "turbo",
-        price: IMAGE_COSTS["turbo"],
-        provider: "pollinations",
+        provider: "scaleway",
+        tier: "seed",
     },
-    // "nanobanana": {
-    //     aliases: [],
-    //     modelId: "nanobanana",
-    //     // price: IMAGE_COSTS["nanobanana"],
-    //     provider: "vertex-ai",
-    // },
-    // "seedream": {
-    //     aliases: [],
-    //     modelId: "seedream",
-    //     // price: IMAGE_COSTS["seedream"],
-    //     provider: "bytedance-ark",
-    // },
-    "gptimage": {
-        aliases: ["gpt-image", "gpt-image-1-mini"],
-        modelId: "gptimage",
-        price: IMAGE_COSTS["gptimage"],
-        provider: "azure-openai",
+    nanobanana: {
+        aliases: [],
+        modelId: "nanobanana",
+        provider: "vertex-ai",
+        tier: "nectar",
     },
+    seedream: {
+        aliases: [],
+        modelId: "seedream",
+        provider: "bytedance-ark",
+        tier: "nectar",
+    },
+    // Disabled - available via enter.pollinations.ai
+    // "gptimage": {
+    //     aliases: ["gpt-image", "gpt-image-1-mini"],
+    //     modelId: "gptimage",
+    //     provider: "azure-openai",
+    //     tier: "seed",
+    // },
 } as const satisfies ServiceRegistry<typeof IMAGE_COSTS>;
 
 

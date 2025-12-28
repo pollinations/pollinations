@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react";
+import { PLAYGROUND_TEXT_API_KEY, ENTER_BASE_URL } from "./enterApi";
 
 /**
  * Hook for text editor functionality
@@ -16,68 +17,13 @@ export const useTextEditor = ({ stop, entry }) => {
         setCurrentEntry(entry);
     }, [entry]);
 
-    // Helper function to convert parameters to URL for GET request
-    const createGetUrl = (parameters) => {
-        if (
-            !parameters ||
-            !parameters.messages ||
-            !parameters.messages.length
-        ) {
-            return null;
-        }
-
-        // Extract the user prompt from messages
-        const userMessage = parameters.messages.find(
-            (msg) => msg?.role === "user",
-        );
-        let prompt = userMessage?.content || "";
-
-        // Debug log to see what prompt is being used
-        console.log("Creating URL with prompt:", prompt);
-
-        // Ensure prompt isn't empty - use a placeholder if it is
-        if (!prompt.trim()) {
-            prompt = "Hello";
-            console.log("Empty prompt detected, using placeholder:", prompt);
-        }
-
-        // Encode the prompt for URL
-        const encodedPrompt = encodeURIComponent(prompt);
-
-        // Start building the URL
-        let url = `https://text.pollinations.ai/${encodedPrompt}`;
-
-        // Add query parameters - only include model, force json=false
-        const queryParams = [];
-
-        // Only keep model parameter
-        if (parameters.model)
-            queryParams.push(`model=${encodeURIComponent(parameters.model)}`);
-
-        // Force json=false
-        queryParams.push("json=false");
-
-        // Append query parameters to URL if any exist
-        if (queryParams.length > 0) {
-            url += "?" + queryParams.join("&");
-        }
-
-        return url;
-    };
-
-    // Generate text via API (now using GET)
+    // Generate text via API (using POST with OpenAI format)
     const updateText = useCallback(
         async (parameters) => {
             // Skip if no parameters or already loading
             if (!parameters || isLoading) return;
 
-            // Debug log parameters to verify what's being passed
             console.log("updateText called with parameters:", parameters);
-            console.log(
-                "User message:",
-                parameters.messages?.find((msg) => msg?.role === "user")
-                    ?.content,
-            );
 
             setIsLoading(true);
 
@@ -85,80 +31,90 @@ export const useTextEditor = ({ stop, entry }) => {
             if (stop) stop(true);
 
             try {
-                // Create GET URL from parameters
-                const url = createGetUrl(parameters);
+                const url = `${ENTER_BASE_URL}/generate/openai`;
 
-                if (!url) {
-                    throw new Error(
-                        "Invalid parameters: missing prompt or messages",
-                    );
-                }
+                const body = {
+                    model: parameters.model || "openai",
+                    messages: parameters.messages || [
+                        {
+                            role: "system",
+                            content: "You are a helpful assistant.",
+                        },
+                        { role: "user", content: "" },
+                    ],
+                    temperature: parameters.temperature || 0.7,
+                    max_tokens: parameters.max_tokens || 1000,
+                };
 
-                // No CORS proxy - use direct URL for all environments
                 console.log("Fetching from URL:", url);
+                console.log("Request body:", body);
 
-                // Make GET request with timeout
                 const controller = new AbortController();
-                const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
+                const timeoutId = setTimeout(() => controller.abort(), 30000);
 
-                // Make GET request
                 const response = await fetch(url, {
-                    method: "GET",
+                    method: "POST",
                     headers: {
-                        Accept: "text/plain, application/json",
+                        "Content-Type": "application/json",
+                        "Authorization": `Bearer ${PLAYGROUND_TEXT_API_KEY}`,
                     },
+                    body: JSON.stringify(body),
                     signal: controller.signal,
-                    // Add some standard fetch options to help browsers
-                    cache: "no-store",
-                    credentials: "omit",
-                    redirect: "follow",
-                    mode: "cors",
                 });
 
-                // Clear the timeout
                 clearTimeout(timeoutId);
 
                 if (!response.ok) {
-                    const errorText = await response.text();
-                    throw new Error(
-                        `HTTP error! status: ${response.status}, message: ${errorText || "No error details"}`,
-                    );
+                    // Try to parse as JSON to get error details
+                    const contentType = response.headers.get("content-type");
+                    if (
+                        contentType &&
+                        contentType.includes("application/json")
+                    ) {
+                        const errorData = await response.json();
+                        const error = new Error(
+                            errorData.error?.message ||
+                                errorData.error ||
+                                `HTTP ${response.status}`,
+                        );
+                        error.errorCode =
+                            errorData.error?.code || errorData.code;
+                        throw error;
+                    } else {
+                        const errorText = await response.text();
+                        throw new Error(
+                            `HTTP error! status: ${response.status}, message: ${errorText || "No error details"}`,
+                        );
+                    }
                 }
 
-                // Parse the response - since we're forcing json=false, we'll always get plain text
-                const responseText = await response.text();
+                const data = await response.json();
+                const responseText = data.choices?.[0]?.message?.content || "";
 
-                // Create entry from API response
                 const newEntry = {
                     response: responseText,
-                    referrer: "pollinations.ai", // Default referrer
+                    referrer: "pollinations.ai",
                     parameters: {
                         ...parameters,
                         type: "chat",
-                        method: "GET", // Mark that this was a GET request
-                        url: url, // Store the URL for debugging
+                        method: "POST",
                     },
                 };
 
-                // Mark that we've generated our own entry
                 hasGeneratedEntry.current = true;
                 setCurrentEntry(newEntry);
             } catch (error) {
                 console.warn("Error generating text:", error.message);
 
-                // If it's a fetch error, also log the URL for debugging
-                if (error.message && error.message.includes("fetch")) {
-                    console.warn("URL that failed:", url);
-                }
-
-                // Set a fallback entry with error message
                 const errorEntry = {
                     response: `Error: ${error.message}. Please try again.`,
                     referrer: "pollinations.ai",
+                    error: error.message,
+                    errorCode: error.errorCode,
                     parameters: {
                         ...parameters,
                         type: "chat",
-                        method: "GET",
+                        method: "POST",
                         error: error.message,
                     },
                 };

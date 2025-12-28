@@ -100,12 +100,10 @@ export default {
             }
 
             if (url.pathname.startsWith("/media/")) {
-                // Attempt to fetch the requested media file from the repository's media directory
-                // In production these can be served by a proper asset pipeline / KV binding.
-                const assetUrl = `https://raw.githubusercontent.com/pollinations/auth.pollinations.ai/main${url.pathname}`;
+                // Serve media files from GitHub
+                const assetUrl = `https://raw.githubusercontent.com/pollinations/pollinations/main${url.pathname.replace('/media/', '/auth.pollinations.ai/media/')}`;
                 const assetResponse = await fetch(assetUrl);
                 if (assetResponse.ok) {
-                    // Clone headers to ensure proper CORS
                     const newHeaders = new Headers(assetResponse.headers);
                     corsHeaders &&
                         Object.entries(corsHeaders).forEach(([k, v]) =>
@@ -373,8 +371,18 @@ async function handleCallback(
         redirectTo.searchParams.set("username", user.username);
 
         return Response.redirect(redirectTo.toString(), 302);
-    } catch (error) {
+    } catch (error: any) {
         console.error("Authentication failed:", error);
+        
+        // Handle blocked new registrations
+        if (error?.message === "NEW_REGISTRATIONS_DISABLED") {
+            // Redirect to enter.pollinations.ai with a message
+            const redirectTo = new URL(savedState.redirect_uri);
+            redirectTo.searchParams.set("error", "new_registrations_disabled");
+            redirectTo.searchParams.set("message", "New registrations are disabled. Please use enter.pollinations.ai for new accounts.");
+            return Response.redirect(redirectTo.toString(), 302);
+        }
+        
         return createErrorResponse(500, "Authentication failed", corsHeaders);
     }
 }
@@ -681,7 +689,7 @@ async function handleValidateToken(
             headers: {
                 ...corsHeaders,
                 "Content-Type": "application/json",
-                "Cache-Control": "public, max-age=60", // 60 second TTL
+                "Cache-Control": "public, max-age=300", // 5 minute TTL (was 60 seconds)
             },
         });
 
@@ -929,6 +937,7 @@ export async function handleValidateReferrer(
                     headers: {
                         ...corsHeaders,
                         "Content-Type": "application/json",
+                        "Cache-Control": "public, max-age=300", // 5 minute cache
                     },
                 },
             );
@@ -943,6 +952,7 @@ export async function handleValidateReferrer(
                     headers: {
                         ...corsHeaders,
                         "Content-Type": "application/json",
+                        "Cache-Control": "public, max-age=300", // 5 minute cache
                     },
                 },
             );

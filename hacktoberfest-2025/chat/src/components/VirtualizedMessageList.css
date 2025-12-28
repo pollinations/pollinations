@@ -1,0 +1,146 @@
+.virtualized-message-list {
+  width: 100%;
+  overflow-y: auto;
+}
+
+.message-row {
+  display: flex;
+  margin-bottom: 1rem;
+  padding: 0 1rem;
+}
+
+.message-avatar {
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 12px;
+}
+
+.message-avatar.user {
+  background-color: var(--accent-gradient);
+}
+
+.message-avatar.assistant {
+  background-color: var(--bg-tertiary);
+}
+
+.message-avatar svg {
+  width: 18px;
+  height: 18px;
+}
+
+.message-bubble {
+  flex: 1;
+  border-radius: 8px;
+  padding: 12px 16px;
+  position: relative;
+  max-width: 80%;
+  word-wrap: break-word;
+}
+
+.message-bubble.user {
+  background-color: var(--accent-gradient);
+  color: white;
+  margin-left: auto;
+}
+
+.message-bubble.assistant {
+  background-color: var(--bg-tertiary);
+  color: var(--text-primary);
+}
+
+.message-content {
+  line-height: 1.5;
+}
+
+.message-content pre {
+  background-color: var(--bg-secondary);
+  border-radius: 4px;
+  padding: 12px;
+  overflow-x: auto;
+  margin: 8px 0;
+}
+
+.message-content code {
+  font-family: 'Fira Code', 'Consolas', monospace;
+  font-size: 0.875rem;
+}
+
+.message-content blockquote {
+  border-left: 3px solid var(--accent-gradient);
+  padding-left: 12px;
+  margin: 8px 0;
+  color: var(--text-secondary);
+}
+
+.message-image {
+  max-width: 100%;
+  margin-bottom: 8px;
+}
+
+.message-image img {
+  max-width: 100%;
+  border-radius: 4px;
+}
+
+.message-timestamp {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  margin-top: 4px;
+  text-align: right;
+}
+
+.message-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+  justify-content: flex-end;
+}
+
+.message-action-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.2s, color 0.2s;
+}
+
+.message-action-btn:hover {
+  background-color: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+.message-action-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.message-action-btn svg {
+  width: 16px;
+  height: 16px;
+}
+
+.streaming::after {
+  content: "▍";
+  animation: blink 1s infinite;
+  margin-left: 2px;
+}
+
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+.error {
+  border-left: 3px solid var(--accent-red);
+  padding-left: 12px;
+}

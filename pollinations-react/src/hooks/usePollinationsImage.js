@@ -1,4 +1,4 @@
-import React, { useMemo } from "react";
+import { useMemo } from "react";
 
 /**
  * Custom hook to generate a Pollinations image URL based on the given prompt and options.

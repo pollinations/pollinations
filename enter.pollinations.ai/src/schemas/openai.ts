@@ -317,7 +317,9 @@ export const CreateChatCompletionRequestSchema = z.object({
     stream: z.boolean().nullable().optional().default(false),
     stream_options: ChatCompletionStreamOptionsSchema,
     thinking: ThinkingSchema,
-    reasoning_effort: z.enum(["low", "medium", "high"]).optional(),
+    reasoning_effort: z
+        .enum(["none", "minimal", "low", "medium", "high", "xhigh"])
+        .optional(),
     thinking_budget: z.number().int().min(0).optional(),
     temperature: z.number().min(0).max(2).nullable().optional().default(1),
     top_p: z.number().min(0).max(1).nullable().optional().default(1),

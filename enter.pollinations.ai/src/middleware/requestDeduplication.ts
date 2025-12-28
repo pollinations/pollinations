@@ -70,8 +70,10 @@ export const requestDeduplication = createMiddleware<Env>(async (c, next) => {
     if (method === "POST") {
         try {
             const clonedReq = c.req.raw.clone();
-            const body = (await clonedReq.json()) as { stream?: boolean };
-            if (body?.stream === true) {
+            const body = (await clonedReq.json()) as {
+                stream?: boolean | string;
+            };
+            if (body?.stream === true || body?.stream === "true") {
                 log.debug(
                     "[DEDUP] Skipping deduplication for streaming request",
                 );

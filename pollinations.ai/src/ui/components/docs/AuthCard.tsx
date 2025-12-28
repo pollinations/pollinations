@@ -133,7 +133,7 @@ export function AuthCard() {
                                     {"?key="}
                                 </span>
                                 <span className="text-text-on-color">
-                                    {"pk_..."}
+                                    {"YOUR_KEY"}
                                 </span>
                             </div>
                         </div>

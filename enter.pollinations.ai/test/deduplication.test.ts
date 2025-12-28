@@ -242,3 +242,69 @@ test(
         );
     },
 );
+
+test(
+    "Streaming requests bypass deduplication (not buffered)",
+    { timeout: 60000 },
+    async ({ apiKey, mocks }) => {
+        await mocks.enable("polar", "tinybird", "vcr");
+
+        const testIp = `192.0.104.${Date.now() % 254}`;
+
+        const response = await SELF.fetch(textEndpoint, {
+            method: "POST",
+            headers: {
+                "content-type": "application/json",
+                "authorization": `Bearer ${apiKey}`,
+                "cf-connecting-ip": testIp,
+            },
+            body: JSON.stringify({
+                model: "openai-fast",
+                messages: [
+                    {
+                        role: "user",
+                        content: "Write a 100 word essay about computers.",
+                    },
+                ],
+                stream: true,
+            }),
+        });
+
+        expect(response.status).toBe(200);
+        expect(response.headers.get("content-type")).toContain(
+            "text/event-stream",
+        );
+
+        // Read stream and measure timing
+        const reader = response.body?.getReader();
+        expect(reader).toBeDefined();
+
+        const chunkTimes: number[] = [];
+        const startTime = Date.now();
+
+        if (reader) {
+            const decoder = new TextDecoder();
+            while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
+                chunkTimes.push(Date.now() - startTime);
+                decoder.decode(value, { stream: true });
+            }
+        }
+
+        // Verify we got multiple chunks spread over time
+        expect(chunkTimes.length).toBeGreaterThan(1);
+
+        const duration = chunkTimes[chunkTimes.length - 1] - chunkTimes[0];
+        log.info(`✓ Streaming: ${chunkTimes.length} chunks over ${duration}ms`);
+
+        // Key assertion: streaming should NOT be deduplicated (no X-Cache header)
+        const cacheHeader = response.headers.get("X-Cache");
+        const cacheType = response.headers.get("X-Cache-Type");
+        expect(cacheType).not.toBe("DEDUP");
+
+        log.info(
+            `✓ Streaming bypassed deduplication: X-Cache=${cacheHeader}, X-Cache-Type=${cacheType}`,
+        );
+    },
+);

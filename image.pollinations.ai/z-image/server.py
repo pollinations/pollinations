@@ -10,6 +10,8 @@ import requests
 import numpy as np
 from PIL import Image
 from diffusers import ZImagePipeline
+from nunchaku import NunchakuZImageTransformer2DModel
+from nunchaku.utils import get_precision
 # UPSCALING DISABLED - commented out for direct resolution generation
 # from basicsr.archs.rrdbnet_arch import RRDBNet
 # from realesrgan import RealESRGANer
@@ -86,6 +88,9 @@ async def periodic_heartbeat():
 
 MODEL_ID = "Tongyi-MAI/Z-Image-Turbo"
 MODEL_CACHE = "model_cache"
+# Nunchaku quantized model settings (4-bit INT4, ~3.5x smaller, ~3x faster)
+NUNCHAKU_PRECISION = "int4"  # int4 for pre-50 series GPUs, fp4 for 50 series
+NUNCHAKU_RANK = 128  # 32=faster, 128=balanced, 256=best quality
 # UPSCALING DISABLED - commented out upscaler model paths
 # UPSCALER_MODEL_x2 = "model_cache/RealESRGAN_x2plus.pth"
 # FACE_ENHANCER_MODEL = "model_cache/GFPGANv1.4.pth"
@@ -260,8 +265,16 @@ async def lifespan(app: FastAPI):
     # Load models
     load_model_time = time.time()
     try:
+        # Load Nunchaku quantized transformer (4-bit, ~3.5x smaller VRAM)
+        precision = get_precision()  # Auto-detect int4 or fp4 based on GPU
+        logger.info(f"Loading Nunchaku Z-Image transformer (precision={precision}, rank={NUNCHAKU_RANK})")
+        transformer = NunchakuZImageTransformer2DModel.from_pretrained(
+            f"nunchaku-tech/nunchaku-z-image-turbo/svdq-{precision}_r{NUNCHAKU_RANK}-z-image-turbo.safetensors"
+        )
+        
         pipe = ZImagePipeline.from_pretrained(
             MODEL_ID,
+            transformer=transformer,  # Use quantized transformer
             torch_dtype=torch.bfloat16,
             cache_dir=MODEL_CACHE,
             low_cpu_mem_usage=False,  # Faster loading
@@ -356,12 +369,12 @@ def is_safety_checker_enabled() -> bool:
 
 
 def verify_enter_token(x_enter_token: str = Header(None, alias="x-enter-token")):
-    expected_token = os.getenv("ENTER_TOKEN")
+    expected_token = os.getenv("PLN_ENTER_TOKEN")
     if not expected_token:
-        logger.warning("ENTER_TOKEN not configured - allowing request")
+        logger.warning("PLN_ENTER_TOKEN not configured - allowing request")
         return True
     if x_enter_token != expected_token:
-        logger.warning("Invalid or missing ENTER_TOKEN")
+        logger.warning("Invalid or missing PLN_ENTER_TOKEN")
         raise HTTPException(status_code=403, detail="Unauthorized")
     return True
 

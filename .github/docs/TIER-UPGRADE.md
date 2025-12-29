@@ -5,7 +5,7 @@
 The app submission process starts with the issue template at `.github/ISSUE_TEMPLATE/tier-app-submission.yml`:
 
 - **Form fields**: App name, description, URL, GitHub repo, Discord, category, language
-- **Categories**: Chat 💬, Creative 🎨, Games 🎲, Hack & Build 🛠️, Learn 📚, Social Bots 🤖, Vibe Coding ✨
+- **Categories**: chat, creative, games, hackAndBuild, learn, socialBots, vibeCoding
 - **Auto-label**: `tier:review` applied on creation
 
 ## Workflows
@@ -15,7 +15,7 @@ The app submission process starts with the issue template at `.github/ISSUE_TEMP
   - `tier-create-app-pr` - Fetch stars, AI-format (emoji + description), prepend to `apps/APPS.md`, create PR
   - `tier-close-issue-on-pr` - Close linked issue when PR is merged/closed
 - **tier-upgrade-on-merge.yml** - When PR with `tier:review` label merges, upgrades labels (`tier:review` → `tier:flower` → `tier:done`) and user to Flower tier in D1 + Polar.
-- **tier-recheck-registration.yml** - When user comments on issue/PR with `tier:info-needed`, re-checks registration.
+- **tier-check-registration.yml** - When PR author comments on PR with `tier:info-needed`, re-checks registration and upgrades tier on merge.
 
 ## Scripts
 
@@ -31,10 +31,10 @@ The app submission process starts with the issue template at `.github/ISSUE_TEMP
 
 ### Enter Scripts (`enter.pollinations.ai/scripts/`)
 
-| Script                | Purpose                              | Usage                                                                                 |
-| --------------------- | ------------------------------------ | ------------------------------------------------------------------------------------- |
-| `tier-update-user.ts` | Update single user tier (D1 + Polar) | `npx tsx scripts/tier-update-user.ts update-tier --github-username "x" --tier flower` |
-| `tier-sync/`          | Bulk sync D1 ↔ Polar                 | See `enter.pollinations.ai/scripts/README.md`                                         |
+| Script                | Purpose                              | Usage                                                                                |
+| --------------------- | ------------------------------------ | ------------------------------------------------------------------------------------ |
+| `tier-update-user.ts` | Update single user tier (D1 + Polar) | `npx tsx scripts/tier-update-user.ts update-tier --githubUsername "x" --tier flower` |
+| `tier-sync/`          | Bulk sync D1 ↔ Polar                 | See `enter.pollinations.ai/scripts/README.md`                                        |
 
 **tier-sync workflow** (D1 is source of truth):
 
@@ -62,9 +62,8 @@ flowchart TD
         A2 --> A3[tier-app-submission.yml]
         A3 --> A4{Registered?}
         A4 -->|No| A5[tier:info-needed + comment]
-        A5 --> A6[User comments]
-        A6 --> A7[tier-recheck-registration.yml]
-        A7 --> A4
+        A5 --> A6[User comments or edits issue]
+        A6 --> A3
         A4 -->|Yes| A8[Fetch stars + AI format]
         A8 --> A9[Prepend to apps/APPS.md]
         A9 --> A10[Create PR automatically]

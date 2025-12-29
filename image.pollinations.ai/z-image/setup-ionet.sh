@@ -5,9 +5,18 @@
 
 set -e
 
+# Required parameters
+if [ -z "$GPU0_PUBLIC_PORT" ] || [ -z "$GPU1_PUBLIC_PORT" ]; then
+    echo "ERROR: GPU0_PUBLIC_PORT and GPU1_PUBLIC_PORT must be set"
+    echo "Usage: GPU0_PUBLIC_PORT=24602 GPU1_PUBLIC_PORT=25962 bash setup-ionet.sh"
+    exit 1
+fi
+
 PUBLIC_IP="${PUBLIC_IP:-52.205.25.210}"
 PLN_ENTER_TOKEN="${PLN_ENTER_TOKEN:-cZOpvvV4xpbOe1IOYrN0R2a3zxHEAcLntneihfU3f2Y3Pfy5}"
 BRANCH="${BRANCH:-feat/zimage-ionet-deployment}"
+
+echo "Config: GPU0=$GPU0_PUBLIC_PORT GPU1=$GPU1_PUBLIC_PORT IP=$PUBLIC_IP"
 
 log() { echo "[$(date '+%H:%M:%S')] $1"; }
 

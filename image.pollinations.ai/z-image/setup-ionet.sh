@@ -14,66 +14,64 @@ fi
 
 PUBLIC_IP="${PUBLIC_IP:-52.205.25.210}"
 PLN_ENTER_TOKEN="${PLN_ENTER_TOKEN:-cZOpvvV4xpbOe1IOYrN0R2a3zxHEAcLntneihfU3f2Y3Pfy5}"
-BRANCH="${BRANCH:-feat/zimage-ionet-deployment}"
-
-echo "Config: GPU0=$GPU0_PUBLIC_PORT GPU1=$GPU1_PUBLIC_PORT IP=$PUBLIC_IP"
+BRANCH="${BRANCH:-main}"
+SPAN_MODEL_ID="1PCYo-4R6MgM-cXAsTuMO-tH4tEcO8A8P"
 
 log() { echo "[$(date '+%H:%M:%S')] $1"; }
 
-log "Starting Z-Image setup..."
+log "=== Z-Image IO.net Setup ==="
+log "GPU0: $GPU0_PUBLIC_PORT | GPU1: $GPU1_PUBLIC_PORT | IP: $PUBLIC_IP"
 
-# Clone or update repo
-if [ -d "$HOME/pollinations" ]; then
-    log "Updating repo..."
-    cd $HOME/pollinations
+# 1. System dependencies
+log "Installing system dependencies..."
+if ! dpkg -l | grep -q python3.12-venv 2>/dev/null; then
+    sudo apt-get update -qq
+    sudo apt-get install -y python3.12-venv python3.12-dev
+fi
+
+# 2. Clone or update repo
+log "Setting up repository..."
+cd $HOME
+if [ -d "pollinations" ]; then
+    cd pollinations
     git fetch origin
-    git stash || true
+    git stash 2>/dev/null || true
     git checkout $BRANCH
-    git pull origin $BRANCH
+    git reset --hard origin/$BRANCH
 else
-    log "Cloning repo..."
-    cd $HOME
     git clone https://github.com/pollinations/pollinations.git
     cd pollinations
     git checkout $BRANCH
 fi
 
-cd $HOME/pollinations/image.pollinations.ai/z-image
+WORKDIR="$HOME/pollinations/image.pollinations.ai/z-image"
+cd $WORKDIR
 
-# Install python venv if needed
-if ! dpkg -l | grep -q python3.12-venv 2>/dev/null; then
-    log "Installing python3.12-venv..."
-    sudo apt-get update -qq
-    sudo apt-get install -y python3.12-venv python3.12-dev
-fi
-
-# Create venv if needed
+# 3. Python environment
+log "Setting up Python environment..."
 if [ ! -d "venv" ]; then
-    log "Creating venv..."
     python3.12 -m venv venv
 fi
-
 source venv/bin/activate
-
-# Install dependencies
-log "Installing PyTorch..."
 pip install -q --upgrade pip
+
+# 4. Install dependencies (PyTorch first, then rest)
+log "Installing PyTorch with CUDA..."
 pip install -q torch torchvision --index-url https://download.pytorch.org/whl/cu124
 
-log "Installing requirements..."
+log "Installing other dependencies..."
 pip install -q -r requirements.txt
-pip install -q spandrel gdown
 
-# Download SPAN model
+# 5. Download SPAN upscaler model
 mkdir -p model_cache/span
-if [ ! -f "model_cache/span/2x-NomosUni_span_multijpg.pth" ]; then
-    log "Downloading SPAN model..."
-    gdown '1PCYo-4R6MgM-cXAsTuMO-tH4tEcO8A8P' -O model_cache/span/2x-NomosUni_span_multijpg.pth
+SPAN_MODEL="model_cache/span/2x-NomosUni_span_multijpg.pth"
+if [ ! -f "$SPAN_MODEL" ] || [ $(stat -c%s "$SPAN_MODEL" 2>/dev/null || echo 0) -lt 1000000 ]; then
+    log "Downloading SPAN 2x upscaler model..."
+    pip install -q gdown
+    gdown "$SPAN_MODEL_ID" -O "$SPAN_MODEL"
 fi
 
-WORKDIR=$(pwd)
-
-# Create systemd services
+# 6. Create systemd services
 log "Creating systemd services..."
 
 sudo tee /etc/systemd/system/zimage-gpu0.service > /dev/null << EOF
@@ -122,25 +120,38 @@ RestartSec=10
 WantedBy=multi-user.target
 EOF
 
+# 7. Start services
+log "Starting services..."
 sudo systemctl daemon-reload
-
-# Stop any existing processes
-log "Stopping existing processes..."
-pkill -f 'python server.py' || true
+pkill -f 'python server.py' 2>/dev/null || true
 sudo systemctl stop zimage-gpu0 zimage-gpu1 2>/dev/null || true
 sleep 2
-
-# Start services
-log "Starting services..."
-sudo systemctl start zimage-gpu0
-sudo systemctl start zimage-gpu1
 sudo systemctl enable zimage-gpu0 zimage-gpu1
+sudo systemctl start zimage-gpu0 zimage-gpu1
 
-sleep 5
-log "Status:"
-sudo systemctl status zimage-gpu0 --no-pager -l | head -10
-sudo systemctl status zimage-gpu1 --no-pager -l | head -10
+# 8. Wait for startup and verify
+log "Waiting for services to start..."
+sleep 10
+for i in {1..30}; do
+    if curl -s -m 2 http://localhost:10000/health > /dev/null 2>&1; then
+        log "GPU0 is healthy!"
+        break
+    fi
+    sleep 2
+done
 
-log "Setup complete! Endpoints:"
+for i in {1..30}; do
+    if curl -s -m 2 http://localhost:10001/health > /dev/null 2>&1; then
+        log "GPU1 is healthy!"
+        break
+    fi
+    sleep 2
+done
+
+log "=== Setup Complete ==="
+log "Endpoints:"
 log "  GPU0: http://$PUBLIC_IP:$GPU0_PUBLIC_PORT"
 log "  GPU1: http://$PUBLIC_IP:$GPU1_PUBLIC_PORT"
+log ""
+log "Check status: sudo systemctl status zimage-gpu0 zimage-gpu1"
+log "View logs: sudo journalctl -u zimage-gpu0 -f"

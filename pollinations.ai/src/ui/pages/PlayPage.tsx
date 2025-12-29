@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo } from "react";
 import { Title, Body } from "../components/ui/typography";
 import { PageCard } from "../components/ui/page-card";
 import { PageContainer } from "../components/ui/page-container";
@@ -9,141 +9,28 @@ import { ModelSelector } from "../components/play/ModelSelector";
 import { useModelList } from "../../hooks/useModelList";
 import { useTheme } from "../contexts/ThemeContext";
 import { useAuth } from "../../hooks/useAuth";
-import { ImageIcon } from "../assets/ImageIcon";
-import { TextIcon } from "../assets/TextIcon";
-
-interface ModelHealth {
-    model: string;
-    event_type: string;
-    provider: string;
-    total_requests: number;
-    status_2xx: number;
-    total_errors: number;
-    latency_p50_ms: number;
-    latency_p95_ms: number;
-    avg_latency_ms: number;
-    last_request_at: string;
-}
 
 function PlayPage() {
     const [view, setView] = useState("play");
-    const [feedType, setFeedType] = useState<"image" | "text">("image");
     const [selectedModel, setSelectedModel] = useState("flux");
     const [prompt, setPrompt] = useState("");
     const { apiKey } = useAuth();
-    const { imageModels, textModels, allowedImageModelIds, allowedTextModelIds } = useModelList(apiKey || "");
-    const { presetCopy, themeDefinition } = useTheme();
+    const {
+        imageModels,
+        textModels,
+        allowedImageModelIds,
+        allowedTextModelIds,
+    } = useModelList(apiKey || "");
+    const { presetCopy } = useTheme();
     const pageCopy = presetCopy.PLAY_PAGE;
-
-    const getThemeColor = (tokenId: string): string => {
-        const cssVar = `--${tokenId.replace(/\./g, "-")}`;
-        const value = getComputedStyle(document.documentElement).getPropertyValue(cssVar).trim();
-        return `rgb(${value})`;
-    };
-
-    const themeColors = useMemo(() => {
-        return {
-            bgFrom: getThemeColor("background.element1"),
-            bgTo: getThemeColor("background.element2"),
-            border: getThemeColor("border.brand"),
-            icon: getThemeColor("indicator.text"),
-            number: getThemeColor("text.highlight"),
-            label: getThemeColor("text.secondary"),
-        };
-    }, [themeDefinition]);
 
     const allModels = useMemo(
         () => [
             ...imageModels.map((m) => ({ ...m, type: "image" as const })),
             ...textModels.map((m) => ({ ...m, type: "text" as const })),
         ],
-        [imageModels, textModels]
+        [imageModels, textModels],
     );
-
-    const [imageRequestsPerMin, setImageRequestsPerMin] = useState(0);
-    const [textRequestsPerMin, setTextRequestsPerMin] = useState(0);
-    const [textFeedPrompt, setTextFeedPrompt] = useState("");
-    const [textFeedResponse, setTextFeedResponse] = useState("");
-    const [feedLoading, setFeedLoading] = useState(false);
-    const [feedError, setFeedError] = useState<string | null>(null);
-
-    useEffect(() => {
-        const fetchModelStats = async () => {
-            try {
-                const response = await fetch(
-                    "https://api.europe-west2.gcp.tinybird.co/v0/pipes/model_health.json?token=p.eyJ1IjogImFjYTYzZjc5LThjNTYtNDhlNC05NWJjLWEyYmFjMTY0NmJkMyIsICJpZCI6ICJmZTRjODM1Ni1iOTYwLTQ0ZTYtODE1Mi1kY2UwYjc0YzExNjQiLCAiaG9zdCI6ICJnY3AtZXVyb3BlLXdlc3QyIn0.Wc49vYoVYI_xd4JSsH_Fe8mJk7Oc9hx0IIldwc1a44g"
-                );
-                const data = await response.json();
-
-                if (data.data && Array.isArray(data.data)) {
-                    const imageModelsData = data.data.filter(
-                        (m: ModelHealth) => m.event_type === "generate.image"
-                    );
-                    const textModelsData = data.data.filter(
-                        (m: ModelHealth) => m.event_type === "generate.text"
-                    );
-
-                    const totalImageRequests = imageModelsData.reduce(
-                        (sum: number, m: ModelHealth) => sum + m.total_requests,
-                        0
-                    );
-                    const totalTextRequests = textModelsData.reduce(
-                        (sum: number, m: ModelHealth) => sum + m.total_requests,
-                        0
-                    );
-
-                    setImageRequestsPerMin(Math.round(totalImageRequests / 5));
-                    setTextRequestsPerMin(Math.round(totalTextRequests / 5));
-                }
-            } catch (err) {
-                console.error("Error fetching model stats:", err);
-            }
-        };
-
-        fetchModelStats();
-        const interval = setInterval(fetchModelStats, 3000);
-
-        return () => clearInterval(interval);
-    }, []);
-
-    useEffect(() => {
-        if (view !== "feed" || feedType !== "text") {
-            return;
-        }
-
-        setFeedLoading(true);
-        setFeedError(null);
-
-        const eventSource = new EventSource(
-            "https://text.pollinations.ai/feed"
-        );
-
-        eventSource.onmessage = (event) => {
-            try {
-                const data = JSON.parse(event.data);
-
-                const prompt = data.parameters?.messages?.[0]?.content || "";
-                setTextFeedPrompt(prompt);
-
-                const responseStr = data.response;
-                setTextFeedResponse(responseStr);
-
-                setFeedLoading(false);
-            } catch (err) {
-                console.error("Error parsing SSE data:", err);
-                setFeedError("Failed to parse feed data");
-            }
-        };
-
-        eventSource.onerror = () => {
-            setFeedError("Connection error. Retrying...");
-            eventSource.close();
-        };
-
-        return () => {
-            eventSource.close();
-        };
-    }, [view, feedType]);
 
     return (
         <PageContainer>
@@ -174,67 +61,6 @@ function PlayPage() {
                 </Body>
 
                 {view === "play" && (
-                    <div className="flex gap-3 mb-6">
-                        <div
-                            className="flex-1 bg-gradient-to-br border p-4 rounded backdrop-blur-sm hover:border-opacity-50 transition-all duration-300"
-                            style={{
-                                background: `linear-gradient(135deg, ${themeColors.bgFrom} 20%, ${themeColors.bgTo} 100%)`,
-                                borderColor: themeColors.border,
-                            }}
-                        >
-                            <div className="flex items-center gap-3">
-                                <ImageIcon
-                                    className="w-6 h-6 flex-shrink-0"
-                                    stroke={themeColors.icon}
-                                />
-                                <div className="flex-1">
-                                    <div
-                                        className="text-2xl font-bold tabular-nums"
-                                        style={{ color: themeColors.number }}
-                                    >
-                                        {imageRequestsPerMin.toLocaleString()}
-                                    </div>
-                                    <div
-                                        className="text-xs"
-                                        style={{ color: themeColors.label }}
-                                    >
-                                        req/min
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <div
-                            className="flex-1 bg-gradient-to-br border p-4 rounded backdrop-blur-sm hover:border-opacity-50 transition-all duration-300"
-                            style={{
-                                background: `linear-gradient(135deg, ${themeColors.bgFrom} 20%, ${themeColors.bgTo} 100%)`,
-                                borderColor: themeColors.border,
-                            }}
-                        >
-                            <div className="flex items-center gap-3">
-                                <TextIcon
-                                    className="w-6 h-6 flex-shrink-0"
-                                    stroke={themeColors.icon}
-                                />
-                                <div className="flex-1">
-                                    <div
-                                        className="text-2xl font-bold tabular-nums"
-                                        style={{ color: themeColors.number }}
-                                    >
-                                        {textRequestsPerMin.toLocaleString()}
-                                    </div>
-                                    <div
-                                        className="text-xs"
-                                        style={{ color: themeColors.label }}
-                                    >
-                                        req/min
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                )}
-
-                {view === "play" && (
                     <ModelSelector
                         models={allModels}
                         selectedModel={selectedModel}
@@ -242,29 +68,6 @@ function PlayPage() {
                         allowedImageModelIds={allowedImageModelIds}
                         allowedTextModelIds={allowedTextModelIds}
                     />
-                )}
-
-                {view === "feed" && (
-                    <div className="flex gap-2 mb-6">
-                        <Button
-                            variant="toggle"
-                            data-active={feedType === "image"}
-                            onClick={() => setFeedType("image")}
-                            title="Image Feed"
-                            className="p-2"
-                        >
-                            <ImageIcon className="w-5 h-5" />
-                        </Button>
-                        <Button
-                            variant="toggle"
-                            data-active={feedType === "text"}
-                            onClick={() => setFeedType("text")}
-                            title="Text Feed"
-                            className="p-2"
-                        >
-                            <TextIcon className="w-5 h-5" />
-                        </Button>
-                    </div>
                 )}
 
                 {view === "play" ? (
@@ -292,49 +95,8 @@ function PlayPage() {
                             apiKey={apiKey || ""}
                         />
                     </div>
-                ) : feedType === "text" ? (
-                    <div className="flex flex-col gap-4">
-                        {feedLoading && (
-                            <div className="text-center text-sm text-muted-foreground py-4">
-                                Connecting to feed...
-                            </div>
-                        )}
-                        {feedError && (
-                            <div className="text-center text-sm text-red-500 py-4">
-                                {feedError}
-                            </div>
-                        )}
-                        {!feedLoading && textFeedPrompt && (
-                            <>
-                                <div className="bg-muted p-4 rounded text-xs max-h-[100px]">
-                                    <span className="block mb-2 font-bold text-[#ffc]">
-                                        Prompt:
-                                    </span>
-                                    <div className="whitespace-pre-wrap break-words max-h-48 overflow-y-auto text-[#fff]">
-                                        {textFeedPrompt.slice(0, 100)}
-                                        {textFeedPrompt.length > 100 ? "..." : ""}
-                                    </div>
-                                </div>
-                                <div className="bg-muted p-4 rounded text-xs max-h-[100px]">
-                                    <span className="block mb-2 font-bold text-[#ffc]">
-                                        Response:
-                                    </span>
-                                    <div className="whitespace-pre-wrap break-words max-h-48 overflow-y-auto text-[#fff]">
-                                        {textFeedResponse.slice(0, 100)}
-                                        {textFeedResponse.length > 100 ? "..." : ""}
-                                    </div>
-                                </div>
-                            </>
-                        )}
-                    </div>
                 ) : (
-                    <ImageFeed
-                        selectedModel={selectedModel}
-                        onFeedPromptChange={() => {}}
-                        imageModels={imageModels}
-                        textModels={textModels}
-                        feedType={feedType}
-                    />
+                    <ImageFeed onFeedPromptChange={() => {}} />
                 )}
             </PageCard>
         </PageContainer>

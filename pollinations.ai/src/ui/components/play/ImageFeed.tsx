@@ -1,195 +1,131 @@
-import { useEffect, useRef, useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { PLAY_PAGE } from "../../../copy/content/play";
-import type { Model } from "../../../hooks/useModelList";
 import { usePageCopy } from "../../../hooks/usePageCopy";
 
 interface ImageFeedProps {
-    selectedModel: string;
-    onFeedPromptChange: (prompt: string) => void;
-    imageModels: Model[];
-    textModels: Model[];
+  onFeedPromptChange: (prompt: string) => void;
 }
 
 interface FeedItem {
-    type: "image" | "text";
-    content: string;
-    prompt: string;
-    model: string;
+  content: string;
+  prompt: string;
+  model: string;
 }
 
 interface ImageQueueItem {
-    imageURL: string;
-    prompt: string;
-    model: string;
-    status?: string;
+  imageURL: string;
+  prompt: string;
+  model: string;
+  status?: string;
 }
 
-interface TextQueueItem {
-    type: "text";
-    model: string;
-    response: string;
-    prompt: string;
-}
+export function ImageFeed({ onFeedPromptChange }: ImageFeedProps) {
+  const { copy } = usePageCopy(PLAY_PAGE);
+  const seenImages = useRef<Set<string>>(new Set());
+  const imageQueue = useRef<ImageQueueItem[]>([]);
+  const MAX_QUEUE_SIZE = 10;
 
-export function ImageFeed({
-    selectedModel,
-    onFeedPromptChange,
-    imageModels,
-    textModels,
-}: ImageFeedProps) {
-    // Get translated copy
-    const { copy } = usePageCopy(PLAY_PAGE);
+  const [currentDisplay, setCurrentDisplay] = useState<FeedItem | null>(null);
 
-    const seenImages = useRef<Set<string>>(new Set());
-    const imageQueue = useRef<ImageQueueItem[]>([]);
-    const textQueue = useRef<TextQueueItem[]>([]);
-    const MAX_QUEUE_SIZE = 10;
-    const [currentDisplay, setCurrentDisplay] = useState<FeedItem | null>(null);
+  // Update parent with current feed prompt
+  useEffect(() => {
+    if (currentDisplay?.prompt) {
+      onFeedPromptChange(currentDisplay.prompt);
+    }
+  }, [currentDisplay, onFeedPromptChange]);
 
-    // Update parent with current feed prompt
-    useEffect(() => {
-        if (currentDisplay?.prompt) {
-            onFeedPromptChange(currentDisplay.prompt);
+  // Image feed - listen to all models
+  useEffect(() => {
+    const eventSource = new EventSource("https://image.pollinations.ai/feed");
+    eventSource.onmessage = (event) => {
+      try {
+        const data = JSON.parse(event.data);
+        if (data.imageURL && data.status === "end_generating") {
+          if (
+            !seenImages.current.has(data.imageURL) &&
+            imageQueue.current.length < MAX_QUEUE_SIZE
+          ) {
+            seenImages.current.add(data.imageURL);
+            imageQueue.current.push(data);
+          }
         }
-    }, [currentDisplay, onFeedPromptChange]);
+      } catch (error) {
+        console.error("Image feed error:", error);
+      }
+    };
+    return () => eventSource.close();
+  }, []);
 
-    // Image feed
-    useEffect(() => {
-        const eventSource = new EventSource(
-            "https://image.pollinations.ai/feed",
-        );
-        eventSource.onmessage = (event) => {
-            try {
-                const data = JSON.parse(event.data);
-                if (data.imageURL && data.status === "end_generating") {
-                    if (!selectedModel || data.model === selectedModel) {
-                        if (
-                            !seenImages.current.has(data.imageURL) &&
-                            imageQueue.current.length < MAX_QUEUE_SIZE
-                        ) {
-                            seenImages.current.add(data.imageURL);
-                            imageQueue.current.push(data);
-                        }
-                    }
-                }
-            } catch (error) {
-                console.error("Image feed error:", error);
-            }
-        };
-        return () => eventSource.close();
-    }, [selectedModel]);
+  // Update display
+  useEffect(() => {
+    const interval = setInterval(() => {
+      if (imageQueue.current.length > 0) {
+        const item = imageQueue.current.shift();
+        if (item) {
+          setCurrentDisplay({
+            content: item.imageURL,
+            prompt: item.prompt || copy.noPromptFallback,
+            model: item.model,
+          });
+        }
+      }
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [copy.noPromptFallback]);
 
-    // Text feed
-    useEffect(() => {
-        const eventSource = new EventSource(
-            "https://text.pollinations.ai/feed",
-        );
-        eventSource.onmessage = (event) => {
-            try {
-                const data = JSON.parse(event.data);
-                if (data.response) {
-                    const modelId =
-                        data.parameters?.model || data.model || "unknown";
-
-                    if (!selectedModel || modelId === selectedModel) {
-                        const userMessage = data.parameters?.messages?.find(
-                            (msg: { role?: string; content?: string }) =>
-                                msg?.role === "user",
-                        );
-                        const prompt =
-                            userMessage?.content || data.prompt || "No prompt";
-                        if (textQueue.current.length < MAX_QUEUE_SIZE) {
-                            textQueue.current.push({
-                                type: "text",
-                                model: modelId,
-                                response: data.response,
-                                prompt: prompt,
-                            });
-                        }
-                    }
-                }
-            } catch (error) {
-                console.error("Text feed error:", error);
-            }
-        };
-        return () => eventSource.close();
-    }, [selectedModel]);
-
-    // Update display
-    useEffect(() => {
-        const interval = setInterval(() => {
-            const selectedModelData = [...imageModels, ...textModels].find(
-                (m) => m.id === selectedModel,
-            );
-            if (!selectedModelData) return;
-
-            if (
-                selectedModelData.type === "image" &&
-                imageQueue.current.length > 0
-            ) {
-                const item = imageQueue.current.shift();
-                if (item) {
-                    setCurrentDisplay({
-                        type: "image",
-                        content: item.imageURL,
-                        prompt: item.prompt || "No prompt",
-                        model: item.model,
-                    });
-                }
-            } else if (
-                selectedModelData.type === "text" &&
-                textQueue.current.length > 0
-            ) {
-                const item = textQueue.current.shift();
-                if (item) {
-                    setCurrentDisplay({
-                        type: "text",
-                        content: item.response,
-                        prompt: item.prompt,
-                        model: item.model,
-                    });
-                }
-            }
-        }, 1000);
-        return () => clearInterval(interval);
-    }, [selectedModel, imageModels, textModels]);
-
-    // Clear on channel change - selectedModel intentionally triggers this effect
-    useEffect(() => {
-        imageQueue.current = [];
-        textQueue.current = [];
-        seenImages.current.clear();
-        setCurrentDisplay(null);
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [selectedModel]);
-
-    return (
-        <div className="w-full">
-            {/* Display */}
-            <div className="relative min-h-[32rem] max-h-[32rem] flex items-center justify-center overflow-hidden">
-                {!currentDisplay ? (
-                    <div className="text-center py-24 text-text-caption font-body">
-                        <p>{copy.waitingForContent}</p>
-                        {selectedModel && (
-                            <p className="text-xs mt-2">
-                                {copy.listeningTo} {selectedModel}
-                            </p>
-                        )}
-                    </div>
-                ) : currentDisplay.type === "image" ? (
-                    <img
-                        src={currentDisplay.content}
-                        alt={currentDisplay.prompt}
-                        className="w-full h-full max-h-[32rem] object-contain"
-                    />
-                ) : (
-                    <div className="w-full p-8 overflow-auto max-h-[32rem] scrollbar-hide">
-                        <p className="font-body text-text-body-main text-lg leading-relaxed whitespace-pre-wrap">
-                            {currentDisplay.content}
-                        </p>
-                    </div>
-                )}
+  return (
+    <div
+      className="w-full flex flex-col gap-4"
+      style={{ maxHeight: "calc(100vh - 280px)" }}
+    >
+      <div
+        className="flex flex-col md:flex-row gap-4 md:gap-6 overflow-hidden"
+        style={{ height: "calc(100vh - 320px)" }}
+      >
+        {/* Main display - full width on mobile, 2/3 on desktop */}
+        <div className="flex-1 md:flex-[2] relative bg-surface-elevated rounded-sub-card overflow-hidden flex items-center justify-center min-h-0">
+          {!currentDisplay ? (
+            <div className="flex items-center justify-center h-full text-center py-24 text-text-caption font-body">
+              <p>{copy.waitingForImages}</p>
             </div>
+          ) : (
+            <a
+              href={currentDisplay.content}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="w-full h-full overflow-hidden hover:opacity-90 transition-opacity"
+            >
+              <img
+                src={currentDisplay.content}
+                alt={currentDisplay.prompt}
+                className="w-full h-full object-cover"
+              />
+            </a>
+          )}
         </div>
-    );
+
+        {/* Prompt info - below image on mobile, sidebar on desktop */}
+        <div className="shrink-0 md:flex-1 bg-surface-elevated rounded-sub-card p-4 md:p-6 md:overflow-auto scrollbar-hide">
+          <div className="flex flex-col md:space-y-4">
+            <div>
+              <p className="font-headline text-xs uppercase tracking-wider font-black text-text-body-main mb-2">
+                {copy.feedPromptLabel}
+              </p>
+              <p className="font-body text-sm text-text-body-secondary break-words overflow-y-auto overflow-x-hidden scrollbar-hide h-[6.5rem] md:h-auto">
+                {currentDisplay?.prompt || copy.noPromptAvailable}
+              </p>
+            </div>
+            <div className="mt-3 md:mt-0">
+              <p className="font-headline text-xs uppercase tracking-wider font-black text-text-body-main mb-1">
+                {copy.feedModelLabel}
+              </p>
+              <p className="font-mono text-xs text-text-body-secondary truncate">
+                {currentDisplay?.model || copy.noModelFallback}
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
 }

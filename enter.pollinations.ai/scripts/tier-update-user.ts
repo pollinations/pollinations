@@ -14,6 +14,7 @@
 
 import { command, run, string, boolean } from "@drizzle-team/brocli";
 import { execSync } from "node:child_process";
+import { Polar } from "@polar-sh/sdk";
 
 type TierName = "spore" | "seed" | "flower" | "nectar" | "router";
 type Environment = "staging" | "production";
@@ -105,49 +106,99 @@ function updateD1Tier(
     }
 }
 
-/**
- * Update or create Polar subscription for a user.
- * Calls the existing manage-polar.ts script to avoid code duplication.
- * Returns true if successful or skipped (no token), false on error.
- */
-// Email validation: standard email format, no shell metacharacters
-function sanitizeEmail(email: string): string {
-    // Only allow standard email characters
-    const sanitized = email.replace(/[^a-zA-Z0-9.@_+-]/g, "");
-    if (sanitized !== email) {
-        console.warn(`⚠️  Sanitized email: "${email}" → "${sanitized}"`);
-    }
-    if (!sanitized.includes("@") || sanitized.length > 254) {
-        throw new Error(`Invalid email format: "${email}"`);
-    }
-    return sanitized;
-}
+// Production tier product IDs (must match manage-polar.ts)
+const TIER_PRODUCT_IDS = {
+    production: {
+        spore: "01a31c1a-7af7-4958-9b73-c10e2fac5f70",
+        seed: "fe32ee28-c7c4-4e7a-87fa-6ffc062e3658",
+        flower: "dfb4c4f6-2004-4205-a358-b1f7bb3b310e",
+        nectar: "066f91a4-8ed1-4329-b5f7-3f71e992ed28",
+        router: "0286ea62-540f-4b19-954f-b8edb9095c43",
+    },
+    staging: {
+        spore: "19fa1660-a90c-453d-8132-4d228cc7db39",
+        seed: "c6f94c1b-c119-4e59-9f18-59391c8afee3",
+        flower: "18bdd5c4-dcb3-4a15-8ca6-1c0b45f76b84",
+        nectar: "a438764a-c486-4ff4-8f85-e66199c6b26f",
+        router: "9256189e-ad01-4608-8102-4ebfc4b506e0",
+    },
+} as const;
 
-function updatePolarSubscription(
+/**
+ * Update Polar subscription for a user using SDK directly.
+ * Returns { success, error?, polarTier? }
+ */
+async function updatePolarSubscription(
     env: Environment,
     email: string,
     tier: TierName,
-): boolean {
+): Promise<{ success: boolean; error?: string; polarTier?: string }> {
     if (!process.env.POLAR_ACCESS_TOKEN) {
         console.warn("⚠️  POLAR_ACCESS_TOKEN not set - skipping Polar update");
-        return true; // Not an error, just skipped
+        return { success: true }; // Not an error, just skipped
     }
 
-    const safeEmail = sanitizeEmail(email);
-    const cmd = `npx tsx scripts/manage-polar.ts user update-tier --email "${safeEmail}" --tier ${tier} --env ${env}`;
+    const polar = new Polar({
+        accessToken: process.env.POLAR_ACCESS_TOKEN,
+        server: env === "production" ? "production" : "sandbox",
+    });
+
+    const targetProductId = TIER_PRODUCT_IDS[env][tier];
+
     try {
-        execSync(cmd, {
-            cwd: process.cwd(),
-            encoding: "utf-8",
-            stdio: ["pipe", "inherit", "inherit"], // Show output
+        // Find customer by email
+        const customerResponse = await polar.customers.list({
+            email: email.toLowerCase(),
+            limit: 1,
         });
-        return true;
+        const customer = customerResponse.result.items[0];
+        if (!customer) {
+            return {
+                success: false,
+                error: `No Polar customer found for ${email}`,
+            };
+        }
+
+        // Find active subscription
+        const subsResponse = await polar.subscriptions.list({
+            customerId: customer.id,
+            active: true,
+            limit: 1,
+        });
+        const subscription = subsResponse.result.items[0];
+
+        if (subscription) {
+            // Already on target tier?
+            if (subscription.productId === targetProductId) {
+                console.log(`   Polar: Already on ${tier} tier`);
+                return { success: true, polarTier: tier };
+            }
+
+            // Update existing subscription
+            console.log(`   Polar: Updating subscription to ${tier}...`);
+            await polar.subscriptions.update({
+                id: subscription.id,
+                subscriptionUpdate: {
+                    productId: targetProductId,
+                    prorationBehavior: "prorate",
+                },
+            });
+            console.log(`   ✅ Polar subscription updated to ${tier}`);
+            return { success: true, polarTier: tier };
+        } else {
+            // No subscription - create one
+            console.log(`   Polar: Creating new ${tier} subscription...`);
+            await polar.subscriptions.create({
+                productId: targetProductId,
+                customerId: customer.id,
+            });
+            console.log(`   ✅ Polar subscription created: ${tier}`);
+            return { success: true, polarTier: tier };
+        }
     } catch (error) {
-        // manage-polar.ts exits with 1 if no subscription found - that's expected for new users
-        console.error(
-            `Polar update failed: ${error instanceof Error ? error.message : String(error)}`,
-        );
-        return false;
+        const msg = error instanceof Error ? error.message : String(error);
+        console.error(`   ❌ Polar update failed: ${msg}`);
+        return { success: false, error: msg };
     }
 }
 
@@ -228,15 +279,15 @@ const updateTierCommand = command({
 
             // Step 3: Update Polar subscription (if token available)
             console.log(`\n🌸 Updating Polar subscription...`);
-            const polarUpdated = updatePolarSubscription(
+            const polarResult = await updatePolarSubscription(
                 env,
                 user.email,
                 targetTier,
             );
-            if (!polarUpdated) {
+            if (!polarResult.success) {
                 // Not fatal - user may not have a Polar subscription yet
                 console.warn(
-                    `⚠️  Polar update failed (user may need to activate at enter.pollinations.ai)`,
+                    `⚠️  Polar update failed: ${polarResult.error || "unknown error"}`,
                 );
             }
         } else {
@@ -276,36 +327,53 @@ const checkUserCommand = command({
 });
 
 /**
- * Get Polar subscription tier for a user by email.
+ * Get Polar subscription tier for a user by email using SDK directly.
  * Returns the tier name or null if no active subscription.
  */
-function getPolarTier(env: Environment, email: string): string | null {
+async function getPolarTier(
+    env: Environment,
+    email: string,
+): Promise<string | null> {
     if (!process.env.POLAR_ACCESS_TOKEN) {
         console.warn("⚠️  POLAR_ACCESS_TOKEN not set - cannot check Polar tier");
         return null;
     }
 
-    const safeEmail = sanitizeEmail(email);
-    const cmd = `npx tsx scripts/manage-polar.ts user update-tier --email "${safeEmail}" --tier spore --env ${env} --dry-run 2>&1`;
+    const polar = new Polar({
+        accessToken: process.env.POLAR_ACCESS_TOKEN,
+        server: env === "production" ? "production" : "sandbox",
+    });
 
     try {
-        const result = execSync(cmd, {
-            cwd: process.cwd(),
-            encoding: "utf-8",
-            stdio: ["pipe", "pipe", "pipe"],
+        // Find customer by email
+        const customerResponse = await polar.customers.list({
+            email: email.toLowerCase(),
+            limit: 1,
         });
-
-        // Parse the output to find current tier
-        // manage-polar.ts outputs "Current tier: X" in dry-run mode
-        const tierMatch = result.match(/Current tier:\s*(\w+)/i);
-        if (tierMatch) {
-            return tierMatch[1].toLowerCase();
+        const customer = customerResponse.result.items[0];
+        if (!customer) {
+            return null;
         }
 
-        // Alternative: look for subscription product info
-        const productMatch = result.match(/product.*?:tier:(\w+)/i);
-        if (productMatch) {
-            return productMatch[1].toLowerCase();
+        // Find active subscription
+        const subsResponse = await polar.subscriptions.list({
+            customerId: customer.id,
+            active: true,
+            limit: 1,
+        });
+        const subscription = subsResponse.result.items[0];
+
+        if (!subscription) {
+            return null;
+        }
+
+        // Map product ID back to tier name
+        const productId = subscription.productId;
+        const tierMap = TIER_PRODUCT_IDS[env];
+        for (const [tierName, id] of Object.entries(tierMap)) {
+            if (id === productId) {
+                return tierName;
+            }
         }
 
         return null;
@@ -346,7 +414,7 @@ const verifyTierCommand = command({
         console.log(`   D1 tier: ${d1Tier}`);
 
         // Step 2: Check Polar
-        const polarTier = getPolarTier(env, user.email);
+        const polarTier = await getPolarTier(env, user.email);
         console.log(`   Polar tier: ${polarTier || "unknown"}`);
 
         // Step 3: Verify both match expected

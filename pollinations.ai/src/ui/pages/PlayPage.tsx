@@ -1,14 +1,15 @@
-import { useState, useMemo } from "react";
-import { Title, Body } from "../components/ui/typography";
+import { useMemo, useState } from "react";
+import { PLAY_PAGE } from "../../copy/content/play";
+import { useAuth } from "../../hooks/useAuth";
+import { useModelList } from "../../hooks/useModelList";
+import { usePageCopy } from "../../hooks/usePageCopy";
+import { ImageFeed } from "../components/play/ImageFeed";
+import { ModelSelector } from "../components/play/ModelSelector";
+import { PlayGenerator } from "../components/play/PlayGenerator";
+import { Button } from "../components/ui/button";
 import { PageCard } from "../components/ui/page-card";
 import { PageContainer } from "../components/ui/page-container";
-import { Button } from "../components/ui/button";
-import { ImageFeed } from "../components/play/ImageFeed";
-import { PlayGenerator } from "../components/play/PlayGenerator";
-import { ModelSelector } from "../components/play/ModelSelector";
-import { useModelList } from "../../hooks/useModelList";
-import { useTheme } from "../contexts/ThemeContext";
-import { useAuth } from "../../hooks/useAuth";
+import { Body, Title } from "../components/ui/typography";
 
 function PlayPage() {
     const [view, setView] = useState("play");
@@ -20,9 +21,10 @@ function PlayPage() {
         textModels,
         allowedImageModelIds,
         allowedTextModelIds,
-    } = useModelList(apiKey || "");
-    const { presetCopy } = useTheme();
-    const pageCopy = presetCopy.PLAY_PAGE;
+    } = useModelList(apiKey);
+
+    // Get translated copy
+    const { copy: pageCopy, isTranslating } = usePageCopy(PLAY_PAGE);
 
     const allModels = useMemo(
         () => [
@@ -34,12 +36,13 @@ function PlayPage() {
 
     return (
         <PageContainer>
-            <PageCard>
-                <div className="flex items-center justify-between gap-4 mb-8">
+            <PageCard isTranslating={isTranslating}>
+                {/* Title with toggle */}
+                <div className="flex items-center gap-4 mb-8">
                     <Title spacing="none">
                         {view === "play"
-                            ? pageCopy.createTitle.text
-                            : pageCopy.watchTitle.text}
+                            ? pageCopy.createTitle
+                            : pageCopy.watchTitle}
                     </Title>
                     <Button
                         variant="secondary"
@@ -49,15 +52,16 @@ function PlayPage() {
                         }
                     >
                         {view === "play"
-                            ? pageCopy.toggleWatchOthers.text
-                            : pageCopy.toggleBackToPlay.text}
+                            ? pageCopy.toggleWatchOthers
+                            : pageCopy.toggleBackToPlay}
                     </Button>
                 </div>
 
-                <Body className="mb-8">
+                {/* Description */}
+                <Body className="mb-4">
                     {view === "play"
-                        ? pageCopy.createDescription.text
-                        : pageCopy.feedDescription.text}
+                        ? pageCopy.createDescription
+                        : pageCopy.feedDescription}
                 </Body>
 
                 {view === "play" && (
@@ -76,13 +80,7 @@ function PlayPage() {
                             <textarea
                                 value={prompt}
                                 onChange={(e) => setPrompt(e.target.value)}
-                                placeholder={
-                                    selectedModel.startsWith("flux") ||
-                                    selectedModel.startsWith("dall") ||
-                                    selectedModel.startsWith("midjourney")
-                                        ? pageCopy.imagePlaceholder.text
-                                        : pageCopy.textPlaceholder.text
-                                }
+                                placeholder={pageCopy.imagePlaceholder}
                                 className="min-h-[100px] p-3 border border-border rounded bg-transparent font-bold text-[#fff] focus:outline-none focus:ring-2 focus:ring-primary resize-none"
                             />
                         </div>

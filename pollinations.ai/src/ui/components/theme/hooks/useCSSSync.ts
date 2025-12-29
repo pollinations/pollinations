@@ -1,19 +1,21 @@
 import { useEffect } from "react";
-import type { ThemeState, RadiusState, FontState, OpacityState } from "../types";
-import { tokenToCssVar, hexToRgb } from "../utils/color-utils";
+import type {
+    FontState,
+    OpacityState,
+    RadiusState,
+    ThemeState,
+} from "../types";
+import { hexToRgb, tokenToCssVar } from "../utils/color-utils";
 
 export function useColorSync(theme: ThemeState) {
     useEffect(() => {
         Object.values(theme).forEach((bucket) => {
             // Convert hex to RGB format for CSS variables
             const rgbValue = hexToRgb(bucket.color);
-            
+
             bucket.tokens.forEach((tokenId) => {
                 const cssVar = tokenToCssVar(tokenId);
-                document.documentElement.style.setProperty(
-                    cssVar,
-                    rgbValue,
-                );
+                document.documentElement.style.setProperty(cssVar, rgbValue);
             });
         });
     }, [theme]);

@@ -1,23 +1,28 @@
-import { Heading, Label } from "../ui/typography";
+import { COPY_CONSTANTS } from "../../../copy/constants";
+import { DOCS_PAGE } from "../../../copy/content/docs";
+import { usePageCopy } from "../../../hooks/usePageCopy";
 import { ExternalLinkIcon } from "../../assets/ExternalLinkIcon";
-import { DOCS_PAGE } from "../../../theme";
+import { Heading, Label } from "../ui/typography";
 
 /**
  * Authentication Card Component
  * Displays API key types and usage examples for the Docs page
  */
 export function AuthCard() {
+    // Get translated copy
+    const { copy } = usePageCopy(DOCS_PAGE);
+
     return (
         <div>
             <Heading variant="section" spacing="comfortable">
-                {DOCS_PAGE.authenticationTitle.text}
+                {copy.authenticationTitle}
             </Heading>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {/* Left: Key Types + Get Your Key */}
                 <div className="space-y-4">
                     <div>
                         <Label spacing="comfortable">
-                            {DOCS_PAGE.keyTypesLabel.text}
+                            {copy.keyTypesLabel}
                         </Label>
                         <div className="space-y-3">
                             {/* Publishable Key */}
@@ -28,29 +33,13 @@ export function AuthCard() {
                                     </span>
                                     <div>
                                         <p className="font-headline text-xs font-black text-text-body-main uppercase mb-2">
-                                            {DOCS_PAGE.publishableLabel.text}
+                                            {copy.publishableLabel}
                                         </p>
                                         <ul className="text-xs text-text-body-secondary space-y-1">
-                                            <li>
-                                                {
-                                                    DOCS_PAGE
-                                                        .publishableFeature1
-                                                        .text
-                                                }
-                                            </li>
-                                            <li>
-                                                {
-                                                    DOCS_PAGE
-                                                        .publishableFeature2
-                                                        .text
-                                                }
-                                            </li>
+                                            <li>{copy.publishableFeature1}</li>
+                                            <li>{copy.publishableFeature2}</li>
                                             <li className="text-text-brand font-bold">
-                                                {
-                                                    DOCS_PAGE
-                                                        .publishableFeature3
-                                                        .text
-                                                }
+                                                {copy.publishableFeature3}
                                             </li>
                                         </ul>
                                     </div>
@@ -65,18 +54,12 @@ export function AuthCard() {
                                     </span>
                                     <div>
                                         <p className="font-headline text-xs font-black text-text-body-main uppercase mb-2">
-                                            {DOCS_PAGE.secretLabel.text}
+                                            {copy.secretLabel}
                                         </p>
                                         <ul className="text-xs text-text-body-secondary space-y-1">
-                                            <li>
-                                                {DOCS_PAGE.secretFeature1.text}
-                                            </li>
-                                            <li>
-                                                {DOCS_PAGE.secretFeature2.text}
-                                            </li>
-                                            <li>
-                                                {DOCS_PAGE.secretFeature3.text}
-                                            </li>
+                                            <li>{copy.secretFeature1}</li>
+                                            <li>{copy.secretFeature2}</li>
+                                            <li>{copy.secretFeature3}</li>
                                         </ul>
                                     </div>
                                 </div>
@@ -91,7 +74,7 @@ export function AuthCard() {
                         className="inline-block bg-button-primary-bg border-r-4 border-b-4 border-border-highlight shadow-shadow-highlight-md px-6 py-4 hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-shadow-highlight-sm transition-all"
                     >
                         <p className="font-headline text-xs font-black uppercase tracking-wider text-text-on-color mb-2">
-                            {DOCS_PAGE.getYourKeyLabel.text}
+                            {copy.getYourKeyLabel}
                         </p>
                         <div className="flex items-center gap-2">
                             <p className="font-mono text-sm font-black text-text-on-color/70">
@@ -105,13 +88,13 @@ export function AuthCard() {
                 {/* Right: Usage Examples */}
                 <div>
                     <Label spacing="comfortable">
-                        {DOCS_PAGE.usageExamplesLabel.text}
+                        {copy.usageExamplesLabel}
                     </Label>
 
                     {/* Header Method */}
                     <div className="mb-4">
                         <p className="font-body text-xs text-text-body-secondary mb-2">
-                            {DOCS_PAGE.serverSideDescription.text}
+                            {copy.serverSideDescription}
                         </p>
                         <div className="font-mono text-xs bg-button-primary-bg text-text-on-color p-4 border-r-4 border-b-4 border-border-main">
                             <div className="text-text-on-color/50">
@@ -136,21 +119,21 @@ export function AuthCard() {
                     {/* Query Method */}
                     <div>
                         <p className="font-body text-xs text-text-body-secondary mb-2">
-                            {DOCS_PAGE.clientSideDescription.text}
+                            {copy.clientSideDescription}
                         </p>
                         <div className="font-mono text-xs bg-button-primary-bg text-text-on-color p-4 border-r-4 border-b-4 border-border-main">
                             <div className="text-text-on-color/50">
                                 {"// Add to URL"}
                             </div>
                             <div className="mt-2">
-                                {`https://${DOCS_PAGE.apiBaseUrl.text}/...`}
+                                {`https://${COPY_CONSTANTS.apiBaseUrl}/...`}
                             </div>
                             <div className="pl-4">
                                 <span className="text-text-on-color/80">
                                     {"?key="}
                                 </span>
                                 <span className="text-text-on-color">
-                                    {"pk_..."}
+                                    {"YOUR_KEY"}
                                 </span>
                             </div>
                         </div>

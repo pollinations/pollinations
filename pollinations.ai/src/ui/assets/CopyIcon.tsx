@@ -8,8 +8,9 @@ export function CopyIcon({ className = "w-4 h-4", stroke = "currentColor" }) {
             fill="none"
             strokeWidth="2"
             viewBox="0 0 16 16"
-            aria-label="Copy"
+            aria-labelledby="copyIconTitle"
         >
+            <title id="copyIconTitle">Copy</title>
             <rect
                 x="5"
                 y="5"

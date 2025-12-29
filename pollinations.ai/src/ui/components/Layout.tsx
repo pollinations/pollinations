@@ -1,13 +1,13 @@
+import { useCallback, useState } from "react";
 import { NavLink, Outlet } from "react-router-dom";
-import { useState, useCallback } from "react";
-import { Logo } from "./Logo";
-import { Button } from "./ui/button";
+import { SOCIAL_LINKS } from "../../copy/content/socialLinks";
 import { ExternalLinkIcon } from "../assets/ExternalLinkIcon";
-import { SOCIAL_LINKS } from "../../theme/copy/socialLinks";
-import { AIPromptInput } from "./theme/AIPromptInput";
-import { BackgroundRenderer } from "./BackgroundRenderer";
 import { useTheme } from "../contexts/ThemeContext";
+import { BackgroundRenderer } from "./BackgroundRenderer";
 import { BetaBanner } from "./BetaBanner";
+import { Logo } from "./Logo";
+import { AIPromptInput } from "./theme/AIPromptInput";
+import { Button } from "./ui/button";
 
 const tabs = [
     { path: "/", label: "Hello" },
@@ -130,70 +130,79 @@ function Layout() {
                                 </div>
 
                                 {/* Navigation Tabs + Social Links - Right side */}
-                                <div className="flex gap-3 items-center overflow-x-auto overflow-y-visible scrollbar-hide pb-2">
-                                    {/* Navigation Tabs */}
-                                    {tabs.map((tab) => (
-                                        <NavLink
-                                            key={tab.path}
-                                            to={tab.path}
-                                            end={tab.path === "/"}
-                                            className="no-underline"
-                                        >
-                                            {({ isActive }) => (
-                                                <Button
-                                                    variant="nav"
-                                                    size={null}
-                                                    data-active={isActive}
-                                                >
-                                                    {tab.label}
-                                                </Button>
-                                            )}
-                                        </NavLink>
-                                    ))}
-
-                                    {/* Social Media Links + Enter Button */}
-                                    <div className="flex gap-2 items-center">
-                                        {Object.entries(SOCIAL_LINKS)
-                                            .filter(
-                                                ([key]) =>
-                                                    key === "discord" ||
-                                                    key === "github"
-                                            )
-                                            .map(
-                                                ([
-                                                    key,
-                                                    { url, icon: Icon, label },
-                                                ]) => (
+                                <div className="flex flex-col items-start">
+                                    <div className="flex gap-3 items-center overflow-x-auto overflow-y-visible scrollbar-hide pb-1">
+                                        {/* Navigation Tabs */}
+                                        {tabs.map((tab) => (
+                                            <NavLink
+                                                key={tab.path}
+                                                to={tab.path}
+                                                end={tab.path === "/"}
+                                                className="no-underline"
+                                            >
+                                                {({ isActive }) => (
                                                     <Button
-                                                        key={key}
-                                                        as="a"
-                                                        href={url}
-                                                        target="_blank"
-                                                        rel="noopener noreferrer"
-                                                        title={label}
-                                                        variant="icon"
+                                                        variant="nav"
                                                         size={null}
-                                                        className="text-text-body-main"
+                                                        data-active={isActive}
                                                     >
-                                                        <Icon className="w-full h-full" />
+                                                        {tab.label}
                                                     </Button>
-                                                )
-                                            )}
+                                                )}
+                                            </NavLink>
+                                        ))}
 
-                                        {/* Enter Button */}
-                                        <Button
-                                            as="a"
-                                            href="https://enter.pollinations.ai"
-                                            target="_blank"
-                                            rel="noopener noreferrer"
-                                            variant="iconText"
-                                            size={null}
-                                        >
-                                            <span className="font-headline text-xs font-black uppercase tracking-wider text-text-brand">
-                                                Enter
-                                            </span>
-                                            <ExternalLinkIcon className="w-4 h-4 text-text-brand" />
-                                        </Button>
+                                        {/* Social Media Links + Enter Button */}
+                                        <div className="flex gap-2 items-center">
+                                            {Object.entries(SOCIAL_LINKS)
+                                                .filter(
+                                                    ([key]) =>
+                                                        key === "discord" ||
+                                                        key === "github"
+                                                )
+                                                .map(
+                                                    ([
+                                                        key,
+                                                        {
+                                                            url,
+                                                            icon: Icon,
+                                                            label,
+                                                        },
+                                                    ]) => (
+                                                        <Button
+                                                            key={key}
+                                                            as="a"
+                                                            href={url}
+                                                            target="_blank"
+                                                            rel="noopener noreferrer"
+                                                            title={label}
+                                                            variant="icon"
+                                                            size={null}
+                                                            className="text-text-body-main"
+                                                        >
+                                                            <Icon className="w-full h-full" />
+                                                        </Button>
+                                                    )
+                                                )}
+
+                                            {/* Enter + Language Toggle Stack */}
+                                            <div className="flex flex-col items-end gap-0.5">
+                                                {/* Enter Button */}
+                                                <Button
+                                                    as="a"
+                                                    href="https://enter.pollinations.ai"
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    variant="iconText"
+                                                    size={null}
+                                                >
+                                                    <span className="font-headline text-xs font-black uppercase tracking-wider text-text-brand">
+                                                        Enter
+                                                    </span>
+                                                    <ExternalLinkIcon className="w-4 h-4 text-text-brand" />
+                                                </Button>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                             </div>

@@ -1,34 +1,34 @@
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
+import { DEFAULT_PRESET, PRESETS } from "../../../theme/presets";
 import { themeToDictionary } from "../../../theme/style";
-import { PRESETS, DEFAULT_PRESET } from "../../../theme/presets";
 import { useTheme } from "../../contexts/ThemeContext";
-import type { ThemeState, RadiusState, FontState, OpacityState } from "./types";
-import {
-    convertToThemeState,
-    convertRadiusToState,
-    convertFontsToState,
-    convertOpacityToState,
-    convertStateToThemeDictionary,
-} from "./utils/state-converters";
-import { useKeyboardShortcut } from "./hooks/useKeyboardShortcut";
-import {
-    useColorSync,
-    useRadiusSync,
-    useFontSync,
-    useOpacitySync,
-} from "./hooks/useCSSSync";
-import {
-    useDragAndDrop,
-    colorTokenFilter,
-    radiusTokenFilter,
-    fontTokenFilter,
-    opacityTokenFilter,
-} from "./hooks/useDragAndDrop";
 import { ColorBucket } from "./components/ColorBucket";
-import { RadiusBucket } from "./components/RadiusBucket";
 import { FontBucket } from "./components/FontBucket";
 import { OpacityBucket } from "./components/OpacityBucket";
+import { RadiusBucket } from "./components/RadiusBucket";
+import {
+    useColorSync,
+    useFontSync,
+    useOpacitySync,
+    useRadiusSync,
+} from "./hooks/useCSSSync";
+import {
+    colorTokenFilter,
+    fontTokenFilter,
+    opacityTokenFilter,
+    radiusTokenFilter,
+    useDragAndDrop,
+} from "./hooks/useDragAndDrop";
+import { useKeyboardShortcut } from "./hooks/useKeyboardShortcut";
 import { PresetManager } from "./PresetManager";
+import type { FontState, OpacityState, RadiusState, ThemeState } from "./types";
+import {
+    convertFontsToState,
+    convertOpacityToState,
+    convertRadiusToState,
+    convertStateToThemeDictionary,
+    convertToThemeState,
+} from "./utils/state-converters";
 
 export function PresetEditor() {
     const [isOpen, setIsOpen] = useState(false);
@@ -40,19 +40,19 @@ export function PresetEditor() {
 
     // State
     const [theme, setTheme] = useState<ThemeState>(() =>
-        convertToThemeState(themeDefinition)
+        convertToThemeState(themeDefinition),
     );
     const [radius, setRadius] = useState<RadiusState>(() =>
-        convertRadiusToState(themeDefinition.borderRadius || {})
+        convertRadiusToState(themeDefinition.borderRadius || {}),
     );
     const [fonts, setFonts] = useState<FontState>(() =>
-        convertFontsToState(themeDefinition.fonts || {})
+        convertFontsToState(themeDefinition.fonts || {}),
     );
     const [opacity, setOpacity] = useState<OpacityState>(() =>
-        convertOpacityToState(themeDefinition.opacity || {})
+        convertOpacityToState(themeDefinition.opacity || {}),
     );
     const [selectedPresetId, setSelectedPresetId] = useState(
-        themePrompt || DEFAULT_PRESET.id
+        themePrompt || DEFAULT_PRESET.id,
     );
 
     // Track if change is from context to avoid circular updates
@@ -80,7 +80,7 @@ export function PresetEditor() {
             theme,
             radius,
             fonts,
-            opacity
+            opacity,
         );
         // Only update theme definition, preserve prompt/copy/background
         setContextTheme(updatedTheme);
@@ -174,13 +174,8 @@ export function PresetEditor() {
             setFonts(convertFontsToState(dict.fonts || {}));
             setOpacity(convertOpacityToState(dict.opacity || {}));
             setSelectedPresetId(presetId);
-            // Update context to sync themePrompt and background
-            setContextTheme(
-                dict,
-                preset.id,
-                preset.copy,
-                preset.backgroundHtml
-            );
+            // Update context to sync themePrompt and background (copy is now static)
+            setContextTheme(dict, preset.id, preset.backgroundHtml);
         }
     };
 

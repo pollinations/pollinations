@@ -6,6 +6,7 @@ import {
 } from "./transforms/createSystemPromptTransform.js";
 import { pipe } from "./transforms/pipe.js";
 import { createGeminiToolsTransform } from "./transforms/createGeminiToolsTransform.ts";
+import { createGeminiThinkingTransform } from "./transforms/createGeminiThinkingTransform.ts";
 import { sanitizeToolSchemas } from "./transforms/sanitizeToolSchemas.js";
 
 // Import persona prompts
@@ -93,6 +94,7 @@ const models: ModelDefinition[] = [
             createSystemPromptTransform(BASE_PROMPTS.conversational),
             sanitizeToolSchemas(),
             createGeminiToolsTransform(["code_execution", "url_context"]),
+            createGeminiThinkingTransform("v3-flash"),
         ),
     },
     {
@@ -102,6 +104,7 @@ const models: ModelDefinition[] = [
             createSystemPromptTransform(BASE_PROMPTS.conversational),
             sanitizeToolSchemas(),
             createGeminiToolsTransform(["code_execution", "url_context"]),
+            createGeminiThinkingTransform("v2.5"),
         ),
     },
     {
@@ -110,6 +113,7 @@ const models: ModelDefinition[] = [
         transform: pipe(
             sanitizeToolSchemas(),
             createGeminiToolsTransform(["google_search"]),
+            createGeminiThinkingTransform("v2.5"),
         ),
     },
     {
@@ -144,6 +148,7 @@ const models: ModelDefinition[] = [
             createSystemPromptTransform(BASE_PROMPTS.conversational),
             sanitizeToolSchemas(),
             createGeminiToolsTransform(["code_execution", "url_context"]),
+            createGeminiThinkingTransform("v3-pro"),
         ),
     },
     {

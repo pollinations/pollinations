@@ -1,10 +1,10 @@
-import React from "react";
-import type { FontBucketData } from "../types";
-import { TokenChip } from "./TokenChip";
+import type React from "react";
 import {
     FONT_LIBRARY,
     type FontDefinition,
 } from "../../../../theme/style/font-catalog";
+import type { FontBucketData } from "../types";
+import { TokenChip } from "./TokenChip";
 
 interface FontBucketProps {
     bucketId: string;
@@ -22,13 +22,16 @@ export function FontBucket({
     onDragOver,
 }: FontBucketProps) {
     // Group fonts by category
-    const fontsByCategory = Object.values(FONT_LIBRARY).reduce((acc, font) => {
-        if (!acc[font.category]) {
-            acc[font.category] = [];
-        }
-        acc[font.category].push(font);
-        return acc;
-    }, {} as Record<string, FontDefinition[]>);
+    const fontsByCategory = Object.values(FONT_LIBRARY).reduce(
+        (acc, font) => {
+            if (!acc[font.category]) {
+                acc[font.category] = [];
+            }
+            acc[font.category].push(font);
+            return acc;
+        },
+        {} as Record<string, FontDefinition[]>,
+    );
 
     const categories = [
         "classic",
@@ -39,7 +42,7 @@ export function FontBucket({
         "handwriting",
     ];
     const isInLibrary = Object.values(FONT_LIBRARY).some(
-        (f) => f.family === bucket.value
+        (f) => f.family === bucket.value,
     );
 
     return (

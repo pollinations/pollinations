@@ -1,9 +1,9 @@
 import { useCallback } from "react";
 import {
-    isRadiusToken,
-    isFontToken,
     isColorToken,
+    isFontToken,
     isOpacityToken,
+    isRadiusToken,
 } from "../utils/token-helpers";
 
 type BucketState<T> = Record<string, { tokens: string[] } & T>;

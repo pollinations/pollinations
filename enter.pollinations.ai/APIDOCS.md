@@ -56,7 +56,7 @@ curl 'https://gen.pollinations.ai/v1/chat/completions' \
 
 **Two key types:**
 
-- **Publishable Keys (`pk_`):** Client-side safe, IP rate-limited (3 req/burst, 1/15sec refill)
+- **Publishable Keys (`pk_`):** Client-side safe, IP rate-limited (1 pollen/hour per IP+key)
 - **Secret Keys (`sk_`):** Server-side only, no rate limits, can spend Pollen
 
 **Auth methods:**

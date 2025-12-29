@@ -1,0 +1,59 @@
+{
+  "date": "2025-12-26",
+  "generated_at": "2025-12-26T16:09:40.286507+00:00",
+  "post_type": "carousel",
+  "content_type": "pixel_art",
+  "linked_images": false,
+  "strategy_reasoning": "We're visualizing technical updates (auth flows, repo cleanup) through the lens of cozy retro gaming mechanics (inventory management, unlocking levels, tidying up). This makes dry backend updates feel rewarding and nostalgic, fitting our 'cozy developer' brand identity.",
+  "story_arc": "",
+  "images": [
+    {
+      "url": "https://gen.pollinations.ai/image/Cozy%208-bit%20pixel%20art%20scene.%20A%20cute%2C%20chunky%20pixel%20bee%20character%20hovering%20next%20to%20a%20glowing%2C%20magical%20wooden%20door%20with%20a%20%27LOGIN%27%20sign.%20Soft%20lime%20green%20%28%23ecf874%29%20and%20lavender%20gradient%20background.%20Warm%2C%20golden%20hour%20lighting.%20Retro%20gaming%20vibes%20like%20Stardew%20Valley.%20Wholesome%20and%20inviting.%20High%20quality%20pixel%20art.?model=nanobanana&width=2048&height=2048&quality=hd&nologo=true&private=true&nofeed=true&seed=1467340653",
+      "prompt": "Cozy 8-bit pixel art scene. A cute, chunky pixel bee character hovering next to a glowing, magical wooden door with a 'LOGIN' sign. Soft lime green (#ecf874) and lavender gradient background. Warm, golden hour lighting. Retro gaming vibes like Stardew Valley. Wholesome and inviting. High quality pixel art.",
+      "description": "Visualizing the new Login Flow as unlocking a cozy new area."
+    },
+    {
+      "url": "https://gen.pollinations.ai/image/Retro%20game%20inventory%20UI%20screen%20in%20pixel%20art%20style.%20A%20grid%20of%20item%20slots.%20One%20slot%20holds%20a%20glowing%20golden%20key%20labeled%20%27TEMP%20KEY%27.%20Another%20slot%20holds%20a%20scroll%20labeled%20%27AUTH%27.%20Soft%20pastel%20background%20with%20lime%20green%20%28%23ecf874%29%20borders.%20Clean%2C%20chunky%20pixels%20like%20the%20game%20Unpacking.%20Nostalgic%20and%20organized.?model=nanobanana&width=2048&height=2048&quality=hd&nologo=true&private=true&nofeed=true&seed=841608574",
+      "prompt": "Retro game inventory UI screen in pixel art style. A grid of item slots. One slot holds a glowing golden key labeled 'TEMP KEY'. Another slot holds a scroll labeled 'AUTH'. Soft pastel background with lime green (#ecf874) borders. Clean, chunky pixels like the game Unpacking. Nostalgic and organized.",
+      "description": "Representing the new Redirect Auth and Temp API Keys as collecting items in a game."
+    },
+    {
+      "url": "https://gen.pollinations.ai/image/Cozy%20pixel%20art%20animation%20frame.%20A%20tiny%208-bit%20gardener%20character%20sweeping%20away%20stray%20grey%20pixel%20leaves%20%28representing%20unused%20files%29%20from%20a%20lush%20green%20digital%20garden.%20The%20garden%20is%20neat%20and%20organized.%20Soft%20mint%20and%20peach%20gradient%20sky.%20Warm%2C%20lo-fi%20aesthetic.%20Peaceful%20and%20satisfying.?model=nanobanana&width=2048&height=2048&quality=hd&nologo=true&private=true&nofeed=true&seed=1623849888",
+      "prompt": "Cozy pixel art animation frame. A tiny 8-bit gardener character sweeping away stray grey pixel leaves (representing unused files) from a lush green digital garden. The garden is neat and organized. Soft mint and peach gradient sky. Warm, lo-fi aesthetic. Peaceful and satisfying.",
+      "description": "Visualizing the Mono-repo cleanup as tending to a digital garden."
+    },
+    {
+      "url": "https://gen.pollinations.ai/image/Close%20up%20pixel%20art%20of%20an%20open%20wizard%27s%20book%20on%20a%20wooden%20desk.%20The%20pages%20show%20%27DOCS%27%20and%20%27MODELS%27%20written%20in%20pixel%20font.%20Magical%20sparkles%20rising%20from%20the%20book.%20Warm%20candlelight%20nearby.%20Soft%20lime%20green%20%28%23ecf874%29%20glow.%20Cozy%20study%20vibes%20like%20a%20retro%20RPG%20save%20point.?model=nanobanana&width=2048&height=2048&quality=hd&nologo=true&private=true&nofeed=true&seed=1928950310",
+      "prompt": "Close up pixel art of an open wizard's book on a wooden desk. The pages show 'DOCS' and 'MODELS' written in pixel font. Magical sparkles rising from the book. Warm candlelight nearby. Soft lime green (#ecf874) glow. Cozy study vibes like a retro RPG save point.",
+      "description": "Highlighting the improved Automation Docs and Model Filtering."
+    }
+  ],
+  "caption": "New loot just dropped in the inventory! 🎒🗝️\n\nWe’ve been tidying up the garden and crafting new keys for you. Here’s the patch notes for this week:\n\n🗝️ Login Flow is LIVE on the playground! \n📜 New Redirect Auth flow with temp API keys (secure & easy)\n🧹 Big spring cleaning in the repo (bye bye stray files)\n✨ Smarter model filtering & leveled-up docs\n\nBuilding with heart means keeping the code cozy and clean. Go explore! 🌸\n\nLink in bio to start creating.\n\n#pollinations #opensource #pixelart #indiedev #retrogaming #cozyvibes #8bit #aiart #buildinpublic",
+  "hashtags": [
+    "#pollinations",
+    "#opensource",
+    "#pixelart",
+    "#indiedev",
+    "#retrogaming",
+    "#cozyvibes",
+    "#8bit",
+    "#aiart",
+    "#buildinpublic"
+  ],
+  "alt_text": "Carousel of cozy 8-bit pixel art images. 1. A pixel bee opening a door. 2. A retro game inventory screen with keys. 3. A gardener sweeping a pixel garden. 4. A magical book glowing with lime green light. All in soft pastel colors.",
+  "pr_references": [
+    "#6437",
+    "#6467",
+    "#6410",
+    "#6464",
+    "#6463",
+    "#6462",
+    "#6461",
+    "#6397",
+    "#6460",
+    "#6459",
+    "#6458",
+    "#6457",
+    "#5682"
+  ]
+}

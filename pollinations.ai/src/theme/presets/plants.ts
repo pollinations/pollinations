@@ -1,4 +1,4 @@
-import { LLMThemeResponse, processTheme } from "../style/theme-processor";
+import { type LLMThemeResponse, processTheme } from "../style/theme-processor";
 
 export const PlantsAndTreesTheme: LLMThemeResponse = {
     "slots": {
@@ -233,10 +233,7 @@ export const PlantsAndTreesCopy = {
     "DOCS_PAGE.imageParameters.3.key": "enhance",
     "DOCS_PAGE.imageParameters.3.value": "true",
     "DOCS_PAGE.imageParameters.3.description": "Let AI improve your prompt",
-    "DOCS_PAGE.imageParameters.4.key": "nologo",
-    "DOCS_PAGE.imageParameters.4.value": "true",
-    "DOCS_PAGE.imageParameters.4.description": "Remove Pollinations watermark",
-    "DOCS_PAGE.imageParameters.5.key": "safe",
+    "DOCS_PAGE.imageParameters.4.key": "safe",
     "DOCS_PAGE.imageParameters.5.value": "true",
     "DOCS_PAGE.imageParameters.5.description": "Enable safety filters",
     "DOCS_PAGE.imageParameters.6.key": "private",
@@ -274,10 +271,9 @@ export const PlantsAndTreesCopy = {
     "DOCS_PAGE.loadingModelsLabel.text": "Loading models...",
     "DOCS_PAGE.authenticationTitle.text": "Authentication",
     "DOCS_PAGE.keyTypesLabel.text": "Key Types",
-    "DOCS_PAGE.publishableLabel.text": "Publishable",
-    "DOCS_PAGE.publishableFeature1.text": "Safe for client-side code",
-    "DOCS_PAGE.publishableFeature2.text":
-        "Rate limited: 3 req/burst, 1/15sec refill",
+    "DOCS_PAGE.publishableLabel.text": "Publishable (Alpha)",
+    "DOCS_PAGE.publishableFeature1.text": "⚠️ Alpha – not production-ready",
+    "DOCS_PAGE.publishableFeature2.text": "1 pollen/hour per IP+key",
     "DOCS_PAGE.publishableFeature3.text":
         "Best for: demos, prototypes, public tools",
     "DOCS_PAGE.secretLabel.text": "Secret",

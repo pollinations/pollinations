@@ -1,9 +1,9 @@
+import { useEffect, useMemo, useState } from "react";
 import { useTheme } from "../contexts/ThemeContext";
-import { useMemo, useEffect, useState } from "react";
 
 export function BackgroundRenderer() {
     const { backgroundHtml, themeDefinition } = useTheme();
-    
+
     // Store current colors in state to trigger re-renders when they change via MutationObserver
     const [currentColors, setCurrentColors] = useState<{
         base: string;
@@ -17,8 +17,8 @@ export function BackgroundRenderer() {
         if (!themeDefinition) return;
 
         const getColor = (ids: string[]) => {
-            const colorEntry = Object.values(themeDefinition.colors).find((c) => 
-                c.ids.some(id => ids.includes(id))
+            const colorEntry = Object.values(themeDefinition.colors).find((c) =>
+                c.ids.some((id) => ids.includes(id)),
             );
             return colorEntry?.hex || "#000000";
         };
@@ -37,7 +37,9 @@ export function BackgroundRenderer() {
 
         const updateColorsFromCSS = () => {
             const getCssColor = (varName: string, fallbackHex: string) => {
-                const style = document.documentElement.style.getPropertyValue(varName).trim();
+                const style = document.documentElement.style
+                    .getPropertyValue(varName)
+                    .trim();
                 if (!style) return fallbackHex;
 
                 // Parse "255 255 255" format
@@ -46,21 +48,34 @@ export function BackgroundRenderer() {
                     const r = parseInt(parts[0]);
                     const g = parseInt(parts[1]);
                     const b = parseInt(parts[2]);
-                    if (!Number.isNaN(r) && !Number.isNaN(g) && !Number.isNaN(b)) {
+                    if (
+                        !Number.isNaN(r) &&
+                        !Number.isNaN(g) &&
+                        !Number.isNaN(b)
+                    ) {
                         return `#${r.toString(16).padStart(2, "0")}${g.toString(16).padStart(2, "0")}${b.toString(16).padStart(2, "0")}`;
                     }
                 }
                 return fallbackHex;
             };
 
-            setCurrentColors(prev => {
+            setCurrentColors((prev) => {
                 if (!prev) return null;
-                
+
                 const newColors = {
                     base: getCssColor("--background-base", prev.base),
-                    element1: getCssColor("--background-element1", prev.element1),
-                    element2: getCssColor("--background-element2", prev.element2),
-                    particle: getCssColor("--background-particle", prev.particle),
+                    element1: getCssColor(
+                        "--background-element1",
+                        prev.element1,
+                    ),
+                    element2: getCssColor(
+                        "--background-element2",
+                        prev.element2,
+                    ),
+                    particle: getCssColor(
+                        "--background-particle",
+                        prev.particle,
+                    ),
                 };
 
                 // Only update if changed
@@ -78,7 +93,7 @@ export function BackgroundRenderer() {
 
         const observer = new MutationObserver((mutations) => {
             const hasStyleChange = mutations.some(
-                (m) => m.type === "attributes" && m.attributeName === "style"
+                (m) => m.type === "attributes" && m.attributeName === "style",
             );
 
             if (hasStyleChange) {

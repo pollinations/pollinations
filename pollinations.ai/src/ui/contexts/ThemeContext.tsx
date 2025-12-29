@@ -1,45 +1,33 @@
-// @ts-check
-/** @type {React.FC} */
+import type { ReactNode } from "react";
 import {
     createContext,
-    useContext,
-    useState,
     useCallback,
+    useContext,
     useEffect,
+    useState,
 } from "react";
-import type { ReactNode } from "react";
 import { PRESETS } from "../../theme/presets";
 import {
-    processTheme,
-    themeToDictionary,
     dictionaryToTheme,
+    processTheme,
     type ThemeDictionary,
+    themeToDictionary,
 } from "../../theme/style/theme-processor";
-import type { ThemeCopy } from "../../theme/buildPrompts";
 
-// All presets must have copy defined - randomly select one
+// Randomly select a preset for initial theme (visual only - no copy)
 const initialPreset = PRESETS[Math.floor(Math.random() * PRESETS.length)];
 
-if (!initialPreset.copy) {
-    throw new Error(
-        `Preset "${initialPreset.id}" is missing copy. All presets must have copy defined.`
-    );
-}
-
 const DefaultThemeDefinition = themeToDictionary(initialPreset.theme);
-const DefaultThemeCopy = initialPreset.copy;
 const DefaultBackgroundHtml = initialPreset.backgroundHtml || null;
 
 interface ThemeContextValue {
     themeDefinition: ThemeDictionary;
     themePrompt: string | null;
-    presetCopy: ThemeCopy;
     backgroundHtml: string | null;
     setTheme: (
         newTheme: ThemeDictionary,
         prompt?: string,
-        copy?: ThemeCopy,
-        backgroundHtml?: string
+        backgroundHtml?: string,
     ) => void;
     resetTheme: () => void;
 }
@@ -48,14 +36,13 @@ const ThemeContext = createContext<ThemeContextValue | undefined>(undefined);
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
     const [themeDefinition, setThemeDefinition] = useState<ThemeDictionary>(
-        DefaultThemeDefinition
+        DefaultThemeDefinition,
     );
     const [themePrompt, setThemePrompt] = useState<string | null>(
-        initialPreset.id
+        initialPreset.id,
     );
-    const [presetCopy, setPresetCopy] = useState<ThemeCopy>(DefaultThemeCopy);
     const [backgroundHtml, setBackgroundHtml] = useState<string | null>(
-        DefaultBackgroundHtml
+        DefaultBackgroundHtml,
     );
 
     // Apply initial theme CSS variables on mount
@@ -72,14 +59,10 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
         (
             newTheme: ThemeDictionary,
             prompt?: string,
-            copy?: ThemeCopy,
-            newBackgroundHtml?: string
+            newBackgroundHtml?: string,
         ) => {
             setThemeDefinition(newTheme);
             if (prompt) setThemePrompt(prompt);
-            if (copy) {
-                setPresetCopy(copy);
-            }
             if (newBackgroundHtml !== undefined) {
                 setBackgroundHtml(newBackgroundHtml);
             }
@@ -92,16 +75,11 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
                 root.style.setProperty(key, value);
             });
         },
-        []
+        [],
     );
 
     const resetTheme = useCallback(() => {
-        setTheme(
-            DefaultThemeDefinition,
-            initialPreset.id,
-            DefaultThemeCopy,
-            ""
-        );
+        setTheme(DefaultThemeDefinition, initialPreset.id, "");
     }, [setTheme]);
 
     return (
@@ -109,7 +87,6 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
             value={{
                 themeDefinition,
                 themePrompt,
-                presetCopy,
                 backgroundHtml,
                 setTheme,
                 resetTheme,

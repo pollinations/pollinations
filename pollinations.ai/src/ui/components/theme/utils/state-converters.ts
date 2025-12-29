@@ -1,9 +1,9 @@
 import type { ThemeDictionary } from "../../../../theme/style";
 import type {
-    ThemeState,
-    RadiusState,
     FontState,
     OpacityState,
+    RadiusState,
+    ThemeState,
 } from "../types";
 
 // Convert dictionary format to bucket format

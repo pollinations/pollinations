@@ -503,6 +503,10 @@ function proxyUrl(
     // Copy query parameters but exclude the 'key' parameter (used for enter.pollinations.ai auth only)
     const searchParams = new URLSearchParams(incomingUrl.search);
     searchParams.delete("key");
+    // Replace model with resolved model (handles aliases like flux -> zimage)
+    if (c.var.model?.resolved && searchParams.has("model")) {
+        searchParams.set("model", c.var.model.resolved);
+    }
     targetUrl.search = searchParams.toString();
     return targetUrl;
 }

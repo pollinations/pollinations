@@ -3,7 +3,7 @@
     "version": "1.0.0",
     "private": true,
     "scripts": {
-        "decrypt": "sops decrypt .env --output-type dotenv > .dev.vars",
+        "decrypt": "sops -d --output-type dotenv secrets/env.json > .dev.vars",
         "dev": "npm run decrypt && wrangler dev",
         "deploy": "wrangler deploy",
         "secret:set": "wrangler secret put DISCORD_WEBHOOK_URL"

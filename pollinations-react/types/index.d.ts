@@ -23,4 +23,13 @@ declare module "@pollinations/react" {
         prompt: string,
         options: { seed: number; model: string; systemPrompt?: string },
     ): string;
+
+    export function usePollinationsAudio(
+        text: string,
+        options?: {
+            voice?: string;
+            model?: string;
+            seed?: number;
+        },
+    ): string | null;
 }

@@ -23,6 +23,7 @@ import {
     ContentFilterResult,
     ContentFilterResultSchema,
     ContentFilterSeveritySchema,
+    CreateChatCompletionStreamResponseSchema,
 } from "@/schemas/openai.ts";
 import { generateRandomId } from "@/util.ts";
 import { createMiddleware } from "hono/factory";
@@ -69,6 +70,7 @@ type RequestTrackingData = {
     modelPriceDefinition: PriceDefinition;
     streamRequested: boolean;
     referrerData: ReferrerData;
+    promptTokensEstimated?: number;
 };
 
 type ResponseTrackingData = {
@@ -284,6 +286,25 @@ async function trackRequest(
     const streamRequested = await extractStreamRequested(request);
     const referrerData = extractReferrerHeader(request);
 
+    let promptTokensEstimated = 0;
+    try {
+        // We can safely read JSON here because it was already validated and cached by Hono
+        const body = await request.json();
+        if (body.messages && Array.isArray(body.messages)) {
+            const content = body.messages
+                .map((m: any) =>
+                    typeof m.content === "string"
+                        ? m.content
+                        : JSON.stringify(m.content),
+                )
+                .join("");
+            // Estimate tokens: roughly 4 characters per token
+            promptTokensEstimated = Math.ceil(content.length / 4);
+        }
+    } catch (e) {
+        // Ignore errors if body is not JSON or not available
+    }
+
     return {
         modelRequested,
         resolvedModelRequested,
@@ -291,6 +312,7 @@ async function trackRequest(
         modelPriceDefinition,
         streamRequested,
         referrerData,
+        promptTokensEstimated,
     };
 }
 
@@ -571,61 +593,72 @@ function extractUsageAndContentFilterResultsHeaders(response: Response): {
 
 async function extractUsageAndContentFilterResultsStream(
     events: AsyncIterable<unknown>,
+    promptTokensEstimated = 0,
 ): Promise<{
     modelUsage: ModelUsage | null;
     contentFilterResults: GenerationEventContentFilterParams;
 }> {
     const log = getLogger(["hono", "track", "stream"]);
-    const EventSchema = z.object({
-        model: z.string(),
-        usage: CompletionUsageSchema.nullish(),
-        choices: z.array(
-            z.object({
-                content_filter_results: ContentFilterResultSchema.nullish(),
-            }),
-        ),
-        prompt_filter_results: z
-            .array(
-                z.object({
-                    content_filter_results: ContentFilterResultSchema,
-                }),
-            )
-            .nullish(),
-    });
+    const EventSchema = CreateChatCompletionStreamResponseSchema;
 
     let model = undefined;
     let usage: CompletionUsage | undefined = undefined;
     let promptFilterResults: ContentFilterResult = {};
     let completionFilterResults: ContentFilterResult = {};
 
-    for await (const event of events) {
-        const parseResult = EventSchema.safeParse(event);
+    let accumulatedContent = "";
+    let accumulatedReasoningContent = "";
 
-        const incomingPromptFilterResults =
-            parseResult.data?.prompt_filter_results?.map(
-                (entry) => entry.content_filter_results,
-            ) || [];
-
-        promptFilterResults = mergeContentFilterResults([
-            ...incomingPromptFilterResults,
-            promptFilterResults,
-        ]);
-
-        const incomingCompletionFilterResults =
-            parseResult.data?.choices[0]?.content_filter_results;
-
-        completionFilterResults = mergeContentFilterResults([
-            incomingCompletionFilterResults || {},
-            completionFilterResults,
-        ]);
-
-        if (parseResult.data?.usage) {
-            if (usage) {
-                log.warn("Multiple usage objects found in event stream");
+    try {
+        for await (const event of events) {
+            const parseResult = EventSchema.safeParse(event);
+            if (!parseResult.success) {
+                continue;
             }
-            usage = parseResult.data?.usage;
-            model = parseResult.data?.model;
+
+            const eventData = parseResult.data;
+            const choice = eventData.choices?.[0];
+
+            if (choice?.delta?.content) {
+                accumulatedContent += choice.delta.content;
+            }
+            if (choice?.delta?.reasoning_content) {
+                accumulatedReasoningContent += choice.delta.reasoning_content;
+            }
+
+            const incomingPromptFilterResults =
+                eventData.prompt_filter_results?.map(
+                    (entry: any) => entry.content_filter_results,
+                ) || [];
+
+            promptFilterResults = mergeContentFilterResults([
+                ...incomingPromptFilterResults,
+                promptFilterResults,
+            ]);
+
+            const incomingCompletionFilterResults =
+                choice?.content_filter_results;
+
+            completionFilterResults = mergeContentFilterResults([
+                incomingCompletionFilterResults || {},
+                completionFilterResults,
+            ]);
+
+            if (eventData.usage) {
+                if (usage) {
+                    log.warn("Multiple usage objects found in event stream");
+                }
+                usage = eventData.usage;
+            }
+
+            if (eventData.model) {
+                model = eventData.model;
+            }
         }
+    } catch (e) {
+        log.warn("Stream interrupted or failed to parse: {error}", {
+            error: e,
+        });
     }
 
     const contentFilterResults = contentFilterResultsToEventParams({
@@ -634,11 +667,29 @@ async function extractUsageAndContentFilterResultsStream(
     });
 
     if (!model || !usage) {
-        log.error("No usage object found in event stream");
-        return {
-            modelUsage: null,
-            contentFilterResults,
-        };
+        if (accumulatedContent || accumulatedReasoningContent) {
+            log.warn(
+                "Usage missing but content found (stream likely interrupted), estimating usage",
+            );
+            // Estimate tokens: roughly 4 characters per token
+            const estimatedCompletionTokens = Math.ceil(
+                (accumulatedContent.length + accumulatedReasoningContent.length) /
+                    4,
+            );
+            usage = {
+                prompt_tokens: promptTokensEstimated,
+                completion_tokens: estimatedCompletionTokens,
+                total_tokens: promptTokensEstimated + estimatedCompletionTokens,
+            };
+            // Fallback model if not seen in stream
+            model = model || "unknown";
+        } else {
+            log.error("No usage object or content found in event stream");
+            return {
+                modelUsage: null,
+                contentFilterResults,
+            };
+        }
     }
 
     return {
@@ -664,7 +715,10 @@ async function extractUsageAndContentFilterResults(
         response.body instanceof ReadableStream
     ) {
         const eventStream = extractResponseStream(response);
-        return await extractUsageAndContentFilterResultsStream(eventStream);
+        return await extractUsageAndContentFilterResultsStream(
+            eventStream,
+            requestTracking.promptTokensEstimated,
+        );
     }
     return extractUsageAndContentFilterResultsHeaders(response);
 }

@@ -534,8 +534,10 @@ export const CreateChatCompletionStreamResponseSchema = z.object({
             // Accept any string - backends may return various values
             finish_reason: z.string().nullable().optional(),
             index: z.number().int().nonnegative(),
+            content_filter_results: ContentFilterResultSchema.nullish(),
         }),
     ),
+    prompt_filter_results: PromptFilterResultSchema.nullish(),
     created: z.number().int(),
     model: z.string(),
     system_fingerprint: z.string().nullish(),

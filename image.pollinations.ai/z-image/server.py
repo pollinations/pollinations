@@ -93,7 +93,7 @@ SAFETY_NSFW_MODEL = "CompVis/stable-diffusion-safety-checker"
 # UPSCALING DISABLED - commented out upscaling constants
 # UPSCALE_FACTOR = 2
 # MIN_GEN_PIXELS = 512 * 512  # Upscale when generating at 512x512 or larger (final size >= 1024x1024)
-MAX_FINAL_PIXELS = 1280 * 1280  # ~1.64M pixels
+MAX_PIXELS = 768 * 768  # Max total pixels for generation
 
 generate_lock = threading.Lock()
 
@@ -115,14 +115,14 @@ def calculate_generation_dimensions(requested_width: int, requested_height: int)
     
     UPSCALING DISABLED - now generates directly at requested resolution.
     Returns: (gen_w, gen_h, final_w, final_h, should_upscale)
-    - Cap final size to MAX_FINAL_SIZE (preserving aspect ratio)
+    - Cap total pixels to MAX_PIXELS (preserving aspect ratio)
     - Generate at requested resolution (no upscaling)
     """
-    # Cap final dimensions by total pixel count, preserving aspect ratio
+    # Cap total pixels to MAX_PIXELS, preserving aspect ratio
     final_w, final_h = requested_width, requested_height
-    current_pixels = final_w * final_h
-    if current_pixels > MAX_FINAL_PIXELS:
-        scale = math.sqrt(MAX_FINAL_PIXELS / current_pixels)
+    total_pixels = final_w * final_h
+    if total_pixels > MAX_PIXELS:
+        scale = math.sqrt(MAX_PIXELS / total_pixels)
         final_w = int(final_w * scale)
         final_h = int(final_h * scale)
     

@@ -142,8 +142,8 @@ jobs:
           APP_URL=$(echo "$PROJECT_JSON" | jq -r '.url')
           APP_REPO=$(echo "$PROJECT_JSON" | jq -r '.repo // empty')
           
-          # Normalize for comparison
-          NORMALIZED_NAME=$(echo "$APP_NAME" | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9 ]//g' | xargs)
+          # Normalize for comparison (avoid xargs which chokes on quotes)
+          NORMALIZED_NAME=$(echo "$APP_NAME" | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9 ]//g' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
           
           DUPLICATE_FOUND=""
           SIMILAR_APPS=""
@@ -186,9 +186,9 @@ jobs:
             # Markdown table format: | Emoji | Name | Description | Language | Category | GitHub | Repo | Stars | Discord | Other | Submitted |
             PREV_APPS_TEXT=""
             while IFS='|' read -r emoji name desc lang cat github repo stars discord other submitted; do
-            github=$(echo "$github" | xargs)
-            name=$(echo "$name" | xargs)
-            desc=$(echo "$desc" | xargs)
+            github=$(echo "$github" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
+            name=$(echo "$name" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
+            desc=$(echo "$desc" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
             
             if [ "$github" = "@$GITHUB_USERNAME" ]; then
                 clean_name=$(echo "$name" | sed 's/\[//g; s/\].*//g')

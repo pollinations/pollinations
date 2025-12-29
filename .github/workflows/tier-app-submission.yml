@@ -24,9 +24,14 @@ jobs:
   # Job 1: Parse issue and validate user registration
   tier-parse-issue:
     if: |
-      github.event_name == 'workflow_dispatch' ||
+      (github.event_name == 'workflow_dispatch' ||
       contains(github.event.issue.labels.*.name, 'tier:review') ||
-      (github.event_name == 'issue_comment' && contains(github.event.issue.labels.*.name, 'tier:info-needed'))
+      (github.event_name == 'issue_comment' && 
+       contains(github.event.issue.labels.*.name, 'tier:info-needed') &&
+       github.event.comment.user.type != 'Bot')) &&
+      !contains(github.event.issue.labels.*.name, 'tier:done') &&
+      !contains(github.event.issue.labels.*.name, 'tier:flower') &&
+      github.event.issue.state == 'open'
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -515,34 +520,3 @@ jobs:
               body: `🎉 Thanks @${{ needs.tier-parse-issue.outputs.issue_author }}! PR created to add **${{ needs.tier-parse-issue.outputs.name }}** to **${{ needs.tier-parse-issue.outputs.category }}**.\n\nA maintainer will review shortly. Issue closes automatically when PR merges.`
             });
 
-  # Job 3: Close issue when PR is closed
-  tier-close-issue-on-pr:
-    if: github.event_name == 'pull_request' && github.event.action == 'closed'
-    runs-on: ubuntu-latest
-    permissions:
-      issues: write
-
-    steps:
-      - name: Extract and close issue
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const body = context.payload.pull_request.body || '';
-            const match = body.match(/Fixes #(\d+)/);
-            if (!match) return;
-            
-            const issueNumber = parseInt(match[1]);
-            const wasMerged = context.payload.pull_request.merged;
-            
-            await github.rest.issues.createComment({
-              owner: context.repo.owner, repo: context.repo.repo,
-              issue_number: issueNumber,
-              body: wasMerged ? '✅ PR merged! App has been added.' : '❌ PR closed without merging.'
-            });
-            
-            await github.rest.issues.update({
-              owner: context.repo.owner, repo: context.repo.repo,
-              issue_number: issueNumber,
-              state: 'closed',
-              state_reason: wasMerged ? 'completed' : 'not_planned'
-            });

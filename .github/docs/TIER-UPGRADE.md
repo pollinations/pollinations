@@ -10,12 +10,42 @@ The app submission process starts with the issue template at `.github/ISSUE_TEMP
 
 ## Workflows
 
-- **tier-app-submission.yml** - AI-powered app submission pipeline. Split into 3 jobs:
-  - `tier-parse-issue` - Parse submission with AI, validate, check Enter registration
-  - `tier-create-app-pr` - Fetch stars, AI-format (emoji + description), prepend to `apps/APPS.md`, create PR
-  - `tier-close-issue-on-pr` - Close linked issue when PR is merged/closed
-- **tier-upgrade-on-merge.yml** - When PR with `tier:review` label merges, upgrades labels (`tier:review` → `tier:flower` → `tier:done`) and user to Flower tier in D1 + Polar.
-- **tier-check-registration.yml** - When PR author comments on PR with `tier:info-needed`, re-checks registration and upgrades tier on merge.
+### tier-app-submission.yml
+
+AI-powered app submission pipeline. Split into 2 jobs:
+
+**Job 1: `tier-parse-issue`** (runs on issue open/edit/comment)
+
+1. Parse submission with AI
+2. **Check for duplicates** (URL, repo, name+user, semantic similarity)
+3. Check Enter registration
+4. If duplicate → reject + close issue (NO PR created)
+5. If not registered → request registration
+6. Set `valid=true` only if: no duplicate AND registered
+
+**Job 2: `tier-create-app-pr`** (runs only if valid=true)
+
+- Fetch GitHub stars
+- AI-generate emoji + description
+- Prepend to `apps/APPS.md`
+- Create PR with `tier:review` label
+
+**Skips if**: issue has `tier:done`/`tier:flower` label, issue is closed, or comment is from bot.
+
+### tier-upgrade-on-merge.yml
+
+Handles ALL post-merge actions for both **apps** and **code** contributions:
+
+1. `tier:review` → `tier:flower`
+2. Upgrade D1 + Polar to flower tier
+3. Verify tier in both systems
+4. **Celebrate on PR** (always - apps + code)
+5. **Celebrate on issue + close** (apps only)
+6. `tier:flower` → `tier:done`
+
+### tier-check-registration.yml
+
+When PR author comments on PR with `tier:info-needed`, re-checks registration.
 
 ## Scripts
 
@@ -57,28 +87,39 @@ The app submission process starts with the issue template at `.github/ISSUE_TEMP
 ```mermaid
 %%{init: {'theme': 'dark'}}%%
 flowchart TD
-    subgraph APP["App Submission"]
+    subgraph APP["App Submission (tier-app-submission.yml)"]
         A1[User opens issue] --> A2[tier:review label]
-        A2 --> A3[tier-app-submission.yml]
-        A3 --> A4{Registered?}
-        A4 -->|No| A5[tier:info-needed + comment]
-        A5 --> A6[User comments or edits issue]
+        A2 --> A3{Duplicate?}
+        A3 -->|Yes| A3a[tier:duplicate + close]
+        A3 -->|No| A4{Registered?}
+        A4 -->|No| A5[tier:info-needed]
+        A5 --> A6[User comments/edits]
         A6 --> A3
-        A4 -->|Yes| A8[Fetch stars + AI format]
-        A8 --> A9[Prepend to apps/APPS.md]
-        A9 --> A10[Create PR automatically]
+        A4 -->|Yes| A8[Create PR with tier:review]
     end
 
-    A10 --> C[Maintainer reviews]
+    subgraph CODE["Code Contribution"]
+        B1[User opens PR] --> B2[tier:review label added]
+    end
 
-    C --> D{Approve?}
-    D -->|Yes| E[Merge PR]
+    A8 --> C[Maintainer reviews]
+    B2 --> C
+
+    C --> D{Approve & Merge?}
     D -->|No| F[Close without merge]
 
-    E --> G[tier-upgrade-on-merge.yml]
-    G --> G1[tier:review → tier:flower]
-    G1 --> I{User registered?}
-    I -->|Yes| J[Upgrade D1 + Polar]
-    J --> K[tier:done + celebration comment]
-    I -->|No| L[tier:info-needed + reminder]
+    subgraph MERGE["Post-Merge (tier-upgrade-on-merge.yml)"]
+        D -->|Yes| E[PR Merged]
+        E --> G1[tier:review → tier:flower]
+        G1 --> G2[Upgrade D1 + Polar]
+        G2 --> G3{Verified?}
+        G3 -->|Yes| G4[🎉 Celebrate on PR]
+        G4 --> G5{App?}
+        G5 -->|Yes| G6[🎉 Celebrate on issue + close]
+        G5 -->|No| G7[Done]
+        G6 --> G7
+        G3 -->|No| G8[tier:info-needed]
+    end
+
+    G7 --> H[tier:done]
 ```

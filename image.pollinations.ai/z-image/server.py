@@ -86,6 +86,7 @@ SAFETY_NSFW_MODEL = "CompVis/stable-diffusion-safety-checker"
 UPSCALE_FACTOR = 2
 MAX_GEN_PIXELS = 1280 * 1280  # Generate natively up to this size
 MAX_FINAL_PIXELS = 2560 * 2560  # Max output size with upscaling
+ENABLE_SPAN_UPSCALER = True  # Feature flag for SPAN upscaling
 
 generate_lock = threading.Lock()
 
@@ -185,12 +186,15 @@ async def lifespan(app: FastAPI):
             low_cpu_mem_usage=False,  # Faster loading
         ).to("cuda")
         
-        # Load SPAN 2x upscaler using Spandrel
-        logger.info(f"Loading SPAN upscaler from {SPAN_MODEL_PATH}")
-        upscaler = ModelLoader().load_from_file(SPAN_MODEL_PATH)
-        assert isinstance(upscaler, ImageModelDescriptor), f"Expected ImageModelDescriptor, got {type(upscaler)}"
-        upscaler.cuda().eval()
-        logger.info(f"SPAN upscaler loaded: scale={upscaler.scale}x")
+        # Load SPAN 2x upscaler using Spandrel (if enabled)
+        if ENABLE_SPAN_UPSCALER:
+            logger.info(f"Loading SPAN upscaler from {SPAN_MODEL_PATH}")
+            upscaler = ModelLoader().load_from_file(SPAN_MODEL_PATH)
+            assert isinstance(upscaler, ImageModelDescriptor), f"Expected ImageModelDescriptor, got {type(upscaler)}"
+            upscaler.cuda().eval()
+            logger.info(f"SPAN upscaler loaded: scale={upscaler.scale}x")
+        else:
+            logger.info("SPAN upscaler disabled")
         
         # Initialize NSFW safety checker
         if not is_safety_checker_enabled():
@@ -319,8 +323,8 @@ def generate(request: ImageRequest, _auth: bool = Depends(verify_enter_token)):
                 logger.warning(f"NSFW detected - bad_concepts: {concepts.get('bad_concepts', [])}, concept_scores: {concepts.get('concept_scores', {})}")
                 raise HTTPException(status_code=400, detail="NSFW content detected")
             
-            # Upscale with SPAN if needed
-            if should_upscale:
+            # Upscale with SPAN if needed and enabled
+            if should_upscale and ENABLE_SPAN_UPSCALER:
                 logger.info(f"Upscaling {gen_w}x{gen_h} -> {gen_w*UPSCALE_FACTOR}x{gen_h*UPSCALE_FACTOR} with SPAN")
                 result = upscale_with_span(image_np)
             else:

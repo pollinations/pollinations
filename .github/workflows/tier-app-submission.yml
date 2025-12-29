@@ -257,16 +257,20 @@ jobs:
           GITHUB_USERNAME: ${{ steps.issue.outputs.author }}
         run: |
           npm install -g wrangler
-          SAFE_USERNAME=$(echo "$GITHUB_USERNAME" | tr -cd 'a-zA-Z0-9-' | head -c 39)
-          [ -z "$SAFE_USERNAME" ] && echo "exists=false" >> $GITHUB_OUTPUT && exit 0
-          
           cd enter.pollinations.ai
-          RESULT=$(npx wrangler d1 execute DB --remote --env production \
-            --command "SELECT id FROM user WHERE LOWER(github_username) = LOWER('$SAFE_USERNAME') LIMIT 1;" \
-            --json 2>/dev/null || echo '[]')
+          npm install
           
-          USER_COUNT=$(echo "$RESULT" | jq -r '.[0].results | length // 0' 2>/dev/null || echo "0")
-          [ "$USER_COUNT" -gt 0 ] && echo "exists=true" >> $GITHUB_OUTPUT || echo "exists=false" >> $GITHUB_OUTPUT
+          echo "Checking registration for $GITHUB_USERNAME..."
+          
+          if npx tsx scripts/tier-update-user.ts check-user \
+            --githubUsername "$GITHUB_USERNAME" \
+            --env production 2>&1 | grep -q "EXISTS"; then
+            echo "exists=true" >> $GITHUB_OUTPUT
+            echo "✅ User $GITHUB_USERNAME is registered"
+          else
+            echo "exists=false" >> $GITHUB_OUTPUT
+            echo "❌ User $GITHUB_USERNAME is not registered"
+          fi
 
       - name: Reject hard duplicate
         if: steps.duplicate-check.outputs.match_type == 'url_exact' || steps.duplicate-check.outputs.match_type == 'repo_exact' || steps.duplicate-check.outputs.match_type == 'name_user_exact' || steps.duplicate-check.outputs.match_type == 'semantic_hard'

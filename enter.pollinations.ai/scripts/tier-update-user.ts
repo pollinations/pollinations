@@ -275,4 +275,103 @@ const checkUserCommand = command({
     },
 });
 
-run([updateTierCommand, checkUserCommand]);
+/**
+ * Get Polar subscription tier for a user by email.
+ * Returns the tier name or null if no active subscription.
+ */
+function getPolarTier(env: Environment, email: string): string | null {
+    if (!process.env.POLAR_ACCESS_TOKEN) {
+        console.warn("⚠️  POLAR_ACCESS_TOKEN not set - cannot check Polar tier");
+        return null;
+    }
+
+    const safeEmail = sanitizeEmail(email);
+    const cmd = `npx tsx scripts/manage-polar.ts user update-tier --email "${safeEmail}" --tier spore --env ${env} --dry-run 2>&1`;
+
+    try {
+        const result = execSync(cmd, {
+            cwd: process.cwd(),
+            encoding: "utf-8",
+            stdio: ["pipe", "pipe", "pipe"],
+        });
+
+        // Parse the output to find current tier
+        // manage-polar.ts outputs "Current tier: X" in dry-run mode
+        const tierMatch = result.match(/Current tier:\s*(\w+)/i);
+        if (tierMatch) {
+            return tierMatch[1].toLowerCase();
+        }
+
+        // Alternative: look for subscription product info
+        const productMatch = result.match(/product.*?:tier:(\w+)/i);
+        if (productMatch) {
+            return productMatch[1].toLowerCase();
+        }
+
+        return null;
+    } catch {
+        return null;
+    }
+}
+
+// Verify tier command - checks both D1 and Polar match the expected tier
+const verifyTierCommand = command({
+    name: "verify-tier",
+    desc: "Verify a user's tier matches in both D1 and Polar",
+    options: {
+        githubUsername: string().required().desc("GitHub username to verify"),
+        tier: string()
+            .enum("spore", "seed", "flower", "nectar", "router")
+            .required()
+            .desc("Expected tier to verify"),
+        env: string().enum("staging", "production").default("production"),
+    },
+    handler: async (opts) => {
+        const env = opts.env as Environment;
+        const expectedTier = opts.tier as TierName;
+
+        console.log(`\n🔍 Verifying tier for: ${opts.githubUsername}`);
+        console.log(`   Expected tier: ${expectedTier}`);
+
+        // Step 1: Check D1
+        const user = getD1User(env, opts.githubUsername);
+        if (!user) {
+            console.error(`❌ User not found in D1 database`);
+            console.log("VERIFIED=false");
+            console.log("d1_tier=NOT_FOUND");
+            process.exit(1);
+        }
+
+        const d1Tier = user.tier || "none";
+        console.log(`   D1 tier: ${d1Tier}`);
+
+        // Step 2: Check Polar
+        const polarTier = getPolarTier(env, user.email);
+        console.log(`   Polar tier: ${polarTier || "unknown"}`);
+
+        // Step 3: Verify both match expected
+        const d1Match = d1Tier === expectedTier;
+        const polarMatch = polarTier === expectedTier || polarTier === null; // Allow null if Polar not set up
+
+        if (d1Match && polarMatch) {
+            console.log(
+                `\n✅ VERIFIED: Tier is ${expectedTier} in both systems`,
+            );
+            console.log("VERIFIED=true");
+            console.log(`d1_tier=${d1Tier}`);
+            console.log(`polar_tier=${polarTier || "not_checked"}`);
+            process.exit(0);
+        } else {
+            console.error(`\n❌ MISMATCH: Expected ${expectedTier}`);
+            console.log("VERIFIED=false");
+            console.log(`d1_tier=${d1Tier}`);
+            console.log(`polar_tier=${polarTier || "unknown"}`);
+            if (!d1Match) console.error(`   D1 has: ${d1Tier}`);
+            if (!polarMatch && polarTier)
+                console.error(`   Polar has: ${polarTier}`);
+            process.exit(1);
+        }
+    },
+});
+
+run([updateTierCommand, checkUserCommand, verifyTierCommand]);

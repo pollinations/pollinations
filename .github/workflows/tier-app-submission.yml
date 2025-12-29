@@ -86,7 +86,14 @@ jobs:
             core.setOutput('number', issue.number);
             core.setOutput('author', issue.user.login);
             core.setOutput('author_id', issue.user.id);
-            core.setOutput('body', issue.body || '');
+            
+            // If triggered by comment, append comment body to issue body for parsing
+            let body = issue.body || '';
+            if (context.eventName === 'issue_comment' && context.payload.comment) {
+              const commentBody = context.payload.comment.body || '';
+              body += '\n\n--- User correction ---\n' + commentBody;
+            }
+            core.setOutput('body', body);
 
       - name: Parse submission with AI
         id: parse

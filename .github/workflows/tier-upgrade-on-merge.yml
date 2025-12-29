@@ -23,7 +23,7 @@ jobs:
       pull-requests: write
 
     steps:
-      - name: Generate Pollinations AI Token
+      - name: Generate pollinations.ai Token
         id: pollinations-ai
         uses: actions/create-github-app-token@v1
         with:

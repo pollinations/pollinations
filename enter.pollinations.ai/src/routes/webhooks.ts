@@ -229,12 +229,13 @@ async function validateAndSyncSubscriptionTier(
     const productMap = await getTierProductMapCached(polar, env.KV);
 
     // Find what tier this subscription's product corresponds to
-    const subscriptionTier = Object.entries(productMap)
+    const subscriptionTierRaw = Object.entries(productMap)
         .filter(([_, product]) => product.id === subscriptionProductId)
-        .map(([slug]) => slug.split(":").pop() as TierName)
+        .map(([slug]) => slug.split(":").pop())
         .at(0);
 
-    if (!subscriptionTier) {
+    // Validate it's a known tier (type safety)
+    if (!subscriptionTierRaw || !isValidTier(subscriptionTierRaw)) {
         // Product is not a tier product (might be a pack), ignore
         log.debug(
             "Subscription product {productId} is not a tier product, skipping validation",
@@ -244,6 +245,8 @@ async function validateAndSyncSubscriptionTier(
         );
         return;
     }
+
+    const subscriptionTier: TierName = subscriptionTierRaw;
 
     // Look up the user's tier from D1 (source of truth)
     const db = drizzle(env.DB);

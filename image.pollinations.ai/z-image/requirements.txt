@@ -1,26 +1,14 @@
-# Core dependencies for Z-Image server (upscaling disabled)
+# Core dependencies for Z-Image server
 # torch and torchvision should be installed separately with CUDA support
-
-# Diffusers with ZImagePipeline support
-diffusers @ git+https://github.com/huggingface/diffusers@6156cf8f22ebc61f66ebf60d8bf415cb3015fcc3
-
-# FastAPI server
-fastapi
-uvicorn
-pydantic
-
-# ML/AI
+diffusers
 accelerate
 transformers
 safetensors
 huggingface-hub
-
-# Async HTTP for heartbeat
+fastapi
+uvicorn
+pydantic
 aiohttp
-
-# Image processing
 pillow
-numpy
-
-# Safety checker
 requests
+spandrel

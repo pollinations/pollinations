@@ -214,64 +214,68 @@ jobs:
               }
               
               if (result.success === true) {
-                // Post success message - ONLY after verification passed
-                const successMessage = result.type === 'app'
-                  ? `## 🎉 App Approved & Verified!\n\nYour app has been added to the [pollinations.ai showcase](https://pollinations.ai)!\n\n### 🌸 Flower Tier Activated!\n\n@${result.user}, you've been upgraded to **Flower tier** which grants you **10 pollen per day**!\n\n⏰ **How it works:** Your pollen balance refills every 24 hours. Unused pollen does not roll over.\n\nCheck your balance at [enter.pollinations.ai](https://enter.pollinations.ai)\n\nThank you for contributing to pollinations.ai! 🌻`
-                  : `## 🎉 Contribution Merged & Verified!\n\nThank you for your contribution to pollinations.ai!\n\n### 🌸 Flower Tier Activated!\n\n@${result.user}, you've been upgraded to **Flower tier** which grants you **10 pollen per day**!\n\n⏰ **How it works:** Your pollen balance refills every 24 hours. Unused pollen does not roll over.\n\nCheck your balance at [enter.pollinations.ai](https://enter.pollinations.ai) 🌻`;
+                // === CELEBRATE ON PR (always - for both apps and code) ===
+                const prMessage = result.type === 'app'
+                  ? `## 🎉 App Added & Verified!\n\nThis PR added **@${result.user}**'s app to the [pollinations.ai showcase](https://pollinations.ai).\n\n### 🌸 Flower Tier Activated!\n\nUser upgraded to **Flower tier** (10 pollen/day).\n\nSee issue #${targetNumber} for full details.`
+                  : `## 🎉 Contribution Merged & Verified!\n\nThank you **@${result.user}** for your contribution to pollinations.ai!\n\n### 🌸 Flower Tier Activated!\n\nYou've been upgraded to **Flower tier** which grants you **10 pollen per day**!\n\n⏰ **How it works:** Your pollen balance refills every 24 hours. Unused pollen does not roll over.\n\nCheck your balance at [enter.pollinations.ai](https://enter.pollinations.ai) 🌻`;
                 
                 await github.rest.issues.createComment({
                   owner: context.repo.owner,
                   repo: context.repo.repo,
-                  issue_number: targetNumber,
-                  body: successMessage
+                  issue_number: prNumber,
+                  body: prMessage
                 });
                 
-                // Update labels: remove tier:flower, add tier:done
+                // Update PR labels: tier:flower → tier:done
                 try {
                   await github.rest.issues.removeLabel({
-                    owner: context.repo.owner,
-                    repo: context.repo.repo,
-                    issue_number: targetNumber,
-                    name: 'tier:flower'
+                    owner: context.repo.owner, repo: context.repo.repo,
+                    issue_number: prNumber, name: 'tier:flower'
                   });
                 } catch (e) { /* label might not exist */ }
                 
                 await github.rest.issues.addLabels({
-                  owner: context.repo.owner,
-                  repo: context.repo.repo,
-                  issue_number: targetNumber,
-                  labels: ['tier:done']
+                  owner: context.repo.owner, repo: context.repo.repo,
+                  issue_number: prNumber, labels: ['tier:done']
                 });
                 
-                // Also post celebration and update labels on PR if celebrating on issue
+                // === CELEBRATE ON ISSUE + CLOSE (apps only) ===
                 if (isIssue) {
-                  // Post celebration on PR too
-                  const prMessage = `## 🎉 App Added!\n\nThis PR added **${result.user}**'s app to the showcase. User has been upgraded to 🌸 **Flower tier** (10 pollen/day).\n\nSee issue #${targetNumber} for details.`;
+                  const issueMessage = `## 🎉 App Approved & Verified!\n\nYour app has been added to the [pollinations.ai showcase](https://pollinations.ai)!\n\n### 🌸 Flower Tier Activated!\n\n@${result.user}, you've been upgraded to **Flower tier** which grants you **10 pollen per day**!\n\n⏰ **How it works:** Your pollen balance refills every 24 hours. Unused pollen does not roll over.\n\nCheck your balance at [enter.pollinations.ai](https://enter.pollinations.ai)\n\nThank you for contributing to pollinations.ai! 🌻`;
+                  
                   await github.rest.issues.createComment({
                     owner: context.repo.owner,
                     repo: context.repo.repo,
-                    issue_number: prNumber,
-                    body: prMessage
+                    issue_number: targetNumber,
+                    body: issueMessage
                   });
                   
+                  // Update issue labels: tier:flower → tier:done
                   try {
                     await github.rest.issues.removeLabel({
-                      owner: context.repo.owner,
-                      repo: context.repo.repo,
-                      issue_number: prNumber,
-                      name: 'tier:flower'
+                      owner: context.repo.owner, repo: context.repo.repo,
+                      issue_number: targetNumber, name: 'tier:flower'
                     });
                   } catch (e) { /* label might not exist */ }
                   
                   await github.rest.issues.addLabels({
+                    owner: context.repo.owner, repo: context.repo.repo,
+                    issue_number: targetNumber, labels: ['tier:done']
+                  });
+                  
+                  // Close the issue
+                  await github.rest.issues.update({
                     owner: context.repo.owner,
                     repo: context.repo.repo,
-                    issue_number: prNumber,
-                    labels: ['tier:done']
+                    issue_number: targetNumber,
+                    state: 'closed',
+                    state_reason: 'completed'
                   });
+                  
+                  console.log(`✅ Upgraded ${result.user}, posted celebrations, closed issue #${targetNumber}`);
+                } else {
+                  console.log(`✅ Upgraded ${result.user} and posted celebration on PR`);
                 }
-                
-                console.log(`✅ Upgraded ${result.user} and posted celebration`);
               } else {
                 // User not registered
                 const failMessage = `### ⚠️ Action Required: Claim Your Flower Tier\n\n@${result.user}, your contribution has been merged but we couldn't find your account to upgrade your tier.\n\n**To claim your 🌸 Flower tier (10 pollen/day):**\n1. Sign up at [enter.pollinations.ai](https://enter.pollinations.ai) using GitHub\n2. Reply to this ${isIssue ? 'issue' : 'PR'} once you've signed up\n\nWe'll upgrade your tier once you're registered. Thanks for contributing! 🌻`;

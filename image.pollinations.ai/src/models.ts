@@ -23,12 +23,6 @@ type ImageModelsConfig = {
 };
 
 export const IMAGE_CONFIG = {
-    flux: {
-        type: "pollinations",
-        enhance: true,
-        defaultSideLength: 768,
-    },
-
     // Azure Flux Kontext - general purpose model
     kontext: {
         type: "kontext",
@@ -117,7 +111,8 @@ export const IMAGE_CONFIG = {
         defaultResolution: "720p",
     },
 
-    // Z-Image-Turbo - Fast 6B parameter image generation (AWS)
+    // Z-Image - Fast 6B parameter image generation with SPAN 2x upscaling (IO.net)
+    // Default model - "flux" is an alias that resolves to zimage
     zimage: {
         type: "zimage",
         enhance: false,

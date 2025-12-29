@@ -87,13 +87,13 @@ async def periodic_heartbeat():
 MODEL_ID = "Tongyi-MAI/Z-Image-Turbo"
 MODEL_CACHE = "model_cache"
 # UPSCALING DISABLED - commented out upscaler model paths
-# UPSCALER_MODEL_x2 = "model_cache/RealESRGAN_x2plus.pth"
+# UPSCALER_MODEL_x2 = "model_cache/RealESRGAN_xfsafe2plus.pth"
 # FACE_ENHANCER_MODEL = "model_cache/GFPGANv1.4.pth"
 SAFETY_NSFW_MODEL = "CompVis/stable-diffusion-safety-checker"
 # UPSCALING DISABLED - commented out upscaling constants
 # UPSCALE_FACTOR = 2
 # MIN_GEN_PIXELS = 512 * 512  # Upscale when generating at 512x512 or larger (final size >= 1024x1024)
-MAX_FINAL_SIZE = 2048
+MAX_FINAL_PIXELS = 1280 * 1280  # ~1.64M pixels
 
 generate_lock = threading.Lock()
 
@@ -102,7 +102,6 @@ class ImageRequest(BaseModel):
     prompts: list[str] = Field(default=["a photo of an astronaut riding a horse on mars"], min_length=1)
     width: int = Field(default=1024, le=4096)
     height: int = Field(default=1024, le=4096)
-    steps: int = Field(default=9, le=50)
     seed: int | None = None
 
 
@@ -119,10 +118,11 @@ def calculate_generation_dimensions(requested_width: int, requested_height: int)
     - Cap final size to MAX_FINAL_SIZE (preserving aspect ratio)
     - Generate at requested resolution (no upscaling)
     """
-    # Cap final dimensions to MAX_FINAL_SIZE, preserving aspect ratio
+    # Cap final dimensions by total pixel count, preserving aspect ratio
     final_w, final_h = requested_width, requested_height
-    if final_w > MAX_FINAL_SIZE or final_h > MAX_FINAL_SIZE:
-        scale = min(MAX_FINAL_SIZE / final_w, MAX_FINAL_SIZE / final_h)
+    current_pixels = final_w * final_h
+    if current_pixels > MAX_FINAL_PIXELS:
+        scale = math.sqrt(MAX_FINAL_PIXELS / current_pixels)
         final_w = int(final_w * scale)
         final_h = int(final_h * scale)
     
@@ -414,7 +414,7 @@ def generate(request: ImageRequest, _auth: bool = Depends(verify_enter_token)):
                     generator=generator,
                     width=gen_w,
                     height=gen_h,
-                    num_inference_steps=request.steps,
+                    num_inference_steps=9,
                     guidance_scale=0.0,
                 )
             image = output.images[0]

@@ -23,7 +23,7 @@ jobs:
       pull-requests: write
 
     steps:
-      - name: Generate Pollinations AI Token
+      - name: Generate pollinations.ai Token
         id: pollinations-ai
         uses: actions/create-github-app-token@v1
         with:
@@ -147,8 +147,7 @@ jobs:
             OUTPUT=$(npx tsx scripts/tier-update-user.ts update-tier \
               --githubUsername "$USERNAME" \
               --tier flower \
-              --env production \
-              --apply 2>&1) || true
+              --env production 2>&1) || true
             
             echo "$OUTPUT"
             
@@ -158,8 +157,24 @@ jobs:
               RESULTS=$(echo "$RESULTS" | jq --arg user "$USERNAME" --arg num "$TARGET_NUMBER" --arg on "$CELEBRATE_ON" --arg type "$TYPE" \
                 '. + [{"user": $user, "targetNumber": $num, "celebrateOn": $on, "type": $type, "success": "skipped"}]')
             elif echo "$OUTPUT" | grep -q "Tier update complete"; then
-              RESULTS=$(echo "$RESULTS" | jq --arg user "$USERNAME" --arg num "$TARGET_NUMBER" --arg on "$CELEBRATE_ON" --arg type "$TYPE" \
-                '. + [{"user": $user, "targetNumber": $num, "celebrateOn": $on, "type": $type, "success": true}]')
+              # Verify the tier was actually set correctly in both D1 and Polar
+              echo "🔍 Verifying tier upgrade for $USERNAME..."
+              VERIFY_OUTPUT=$(npx tsx scripts/tier-update-user.ts verify-tier \
+                --githubUsername "$USERNAME" \
+                --tier flower \
+                --env production 2>&1) || true
+              
+              echo "$VERIFY_OUTPUT"
+              
+              if echo "$VERIFY_OUTPUT" | grep -q "VERIFIED=true"; then
+                echo "✅ Tier verified for $USERNAME"
+                RESULTS=$(echo "$RESULTS" | jq --arg user "$USERNAME" --arg num "$TARGET_NUMBER" --arg on "$CELEBRATE_ON" --arg type "$TYPE" \
+                  '. + [{"user": $user, "targetNumber": $num, "celebrateOn": $on, "type": $type, "success": true}]')
+              else
+                echo "⚠️ Tier verification failed for $USERNAME"
+                RESULTS=$(echo "$RESULTS" | jq --arg user "$USERNAME" --arg num "$TARGET_NUMBER" --arg on "$CELEBRATE_ON" --arg type "$TYPE" \
+                  '. + [{"user": $user, "targetNumber": $num, "celebrateOn": $on, "type": $type, "success": "unverified"}]')
+              fi
             else
               RESULTS=$(echo "$RESULTS" | jq --arg user "$USERNAME" --arg num "$TARGET_NUMBER" --arg on "$CELEBRATE_ON" --arg type "$TYPE" \
                 '. + [{"user": $user, "targetNumber": $num, "celebrateOn": $on, "type": $type, "success": false}]')
@@ -192,11 +207,17 @@ jobs:
                 continue;
               }
               
+              // Handle unverified case - upgrade happened but couldn't verify
+              if (result.success === 'unverified') {
+                console.log(`⚠️ ${result.user} upgrade unverified - not posting celebration`);
+                continue;
+              }
+              
               if (result.success === true) {
-                // Post success message
+                // Post success message - ONLY after verification passed
                 const successMessage = result.type === 'app'
-                  ? `## 🎉 App Approved!\n\nYour app has been added to the [pollinations.ai showcase](https://pollinations.ai)!\n\n### 🌸 Flower Tier Activated!\n\n@${result.user}, you've been upgraded to **Flower tier** which grants you **10 pollen per day**!\n\n⏰ **How it works:** Your pollen balance refills every 24 hours. Unused pollen does not roll over.\n\nCheck your balance at [enter.pollinations.ai](https://enter.pollinations.ai)\n\nThank you for contributing to Pollinations! 🌻`
-                  : `## 🎉 Contribution Merged!\n\nThank you for your contribution to Pollinations!\n\n### 🌸 Flower Tier Activated!\n\n@${result.user}, you've been upgraded to **Flower tier** which grants you **10 pollen per day**!\n\n⏰ **How it works:** Your pollen balance refills every 24 hours. Unused pollen does not roll over.\n\nCheck your balance at [enter.pollinations.ai](https://enter.pollinations.ai) 🌻`;
+                  ? `## 🎉 App Approved & Verified!\n\nYour app has been added to the [pollinations.ai showcase](https://pollinations.ai)!\n\n### 🌸 Flower Tier Activated!\n\n@${result.user}, you've been upgraded to **Flower tier** which grants you **10 pollen per day**!\n\n⏰ **How it works:** Your pollen balance refills every 24 hours. Unused pollen does not roll over.\n\nCheck your balance at [enter.pollinations.ai](https://enter.pollinations.ai)\n\nThank you for contributing to pollinations.ai! 🌻`
+                  : `## 🎉 Contribution Merged & Verified!\n\nThank you for your contribution to pollinations.ai!\n\n### 🌸 Flower Tier Activated!\n\n@${result.user}, you've been upgraded to **Flower tier** which grants you **10 pollen per day**!\n\n⏰ **How it works:** Your pollen balance refills every 24 hours. Unused pollen does not roll over.\n\nCheck your balance at [enter.pollinations.ai](https://enter.pollinations.ai) 🌻`;
                 
                 await github.rest.issues.createComment({
                   owner: context.repo.owner,

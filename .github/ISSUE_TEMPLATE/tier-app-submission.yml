@@ -58,15 +58,14 @@ body:
     attributes:
       label: App Category
       description: Select the category under which your app should be listed
-      default: 0
       options:
-        - Chat 💬
-        - Creative 🎨
-        - Games 🎲
-        - Hack & Build 🛠️
-        - Learn 📚
-        - Social Bots 🤖
-        - Vibe Coding ✨
+        - chat
+        - creative
+        - games
+        - hackAndBuild
+        - learn
+        - socialBots
+        - vibeCoding
     validations:
       required: true
 

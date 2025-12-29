@@ -3,6 +3,8 @@ name: Tier App Submission
 on:
   issues:
     types: [opened, edited, reopened]
+  issue_comment:
+    types: [created]
   pull_request:
     types: [closed]
     branches:
@@ -22,8 +24,14 @@ jobs:
   # Job 1: Parse issue and validate user registration
   tier-parse-issue:
     if: |
-      github.event_name == 'workflow_dispatch' ||
-      contains(github.event.issue.labels.*.name, 'tier:review')
+      (github.event_name == 'workflow_dispatch' ||
+      contains(github.event.issue.labels.*.name, 'tier:review') ||
+      (github.event_name == 'issue_comment' && 
+       contains(github.event.issue.labels.*.name, 'tier:info-needed') &&
+       github.event.comment.user.type != 'Bot')) &&
+      !contains(github.event.issue.labels.*.name, 'tier:done') &&
+      !contains(github.event.issue.labels.*.name, 'tier:flower') &&
+      github.event.issue.state == 'open'
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -83,7 +91,16 @@ jobs:
             core.setOutput('number', issue.number);
             core.setOutput('author', issue.user.login);
             core.setOutput('author_id', issue.user.id);
-            core.setOutput('body', issue.body || '');
+            
+            // If triggered by comment (from a user, not a bot), append comment body
+            let body = issue.body || '';
+            if (context.eventName === 'issue_comment' && context.payload.comment) {
+              if (context.payload.comment.user?.type !== 'Bot') {
+                const commentBody = context.payload.comment.body || '';
+                body += '\n\n--- User correction ---\n' + commentBody;
+              }
+            }
+            core.setOutput('body', body);
 
       - name: Parse submission with AI
         id: parse
@@ -142,8 +159,8 @@ jobs:
           APP_URL=$(echo "$PROJECT_JSON" | jq -r '.url')
           APP_REPO=$(echo "$PROJECT_JSON" | jq -r '.repo // empty')
           
-          # Normalize for comparison
-          NORMALIZED_NAME=$(echo "$APP_NAME" | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9 ]//g' | xargs)
+          # Normalize for comparison (avoid xargs which chokes on quotes)
+          NORMALIZED_NAME=$(echo "$APP_NAME" | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9 ]//g' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
           
           DUPLICATE_FOUND=""
           SIMILAR_APPS=""
@@ -186,9 +203,9 @@ jobs:
             # Markdown table format: | Emoji | Name | Description | Language | Category | GitHub | Repo | Stars | Discord | Other | Submitted |
             PREV_APPS_TEXT=""
             while IFS='|' read -r emoji name desc lang cat github repo stars discord other submitted; do
-            github=$(echo "$github" | xargs)
-            name=$(echo "$name" | xargs)
-            desc=$(echo "$desc" | xargs)
+            github=$(echo "$github" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
+            name=$(echo "$name" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
+            desc=$(echo "$desc" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
             
             if [ "$github" = "@$GITHUB_USERNAME" ]; then
                 clean_name=$(echo "$name" | sed 's/\[//g; s/\].*//g')
@@ -257,16 +274,20 @@ jobs:
           GITHUB_USERNAME: ${{ steps.issue.outputs.author }}
         run: |
           npm install -g wrangler
-          SAFE_USERNAME=$(echo "$GITHUB_USERNAME" | tr -cd 'a-zA-Z0-9-' | head -c 39)
-          [ -z "$SAFE_USERNAME" ] && echo "exists=false" >> $GITHUB_OUTPUT && exit 0
-          
           cd enter.pollinations.ai
-          RESULT=$(npx wrangler d1 execute DB --remote --env production \
-            --command "SELECT id FROM user WHERE LOWER(github_username) = LOWER('$SAFE_USERNAME') LIMIT 1;" \
-            --json 2>/dev/null || echo '[]')
+          npm install
           
-          USER_COUNT=$(echo "$RESULT" | jq -r '.[0].results | length // 0' 2>/dev/null || echo "0")
-          [ "$USER_COUNT" -gt 0 ] && echo "exists=true" >> $GITHUB_OUTPUT || echo "exists=false" >> $GITHUB_OUTPUT
+          echo "Checking registration for $GITHUB_USERNAME..."
+          
+          if npx tsx scripts/tier-update-user.ts check-user \
+            --githubUsername "$GITHUB_USERNAME" \
+            --env production 2>&1 | grep -q "EXISTS"; then
+            echo "exists=true" >> $GITHUB_OUTPUT
+            echo "✅ User $GITHUB_USERNAME is registered"
+          else
+            echo "exists=false" >> $GITHUB_OUTPUT
+            echo "❌ User $GITHUB_USERNAME is not registered"
+          fi
 
       - name: Reject hard duplicate
         if: steps.duplicate-check.outputs.match_type == 'url_exact' || steps.duplicate-check.outputs.match_type == 'repo_exact' || steps.duplicate-check.outputs.match_type == 'name_user_exact' || steps.duplicate-check.outputs.match_type == 'semantic_hard'
@@ -499,34 +520,3 @@ jobs:
               body: `🎉 Thanks @${{ needs.tier-parse-issue.outputs.issue_author }}! PR created to add **${{ needs.tier-parse-issue.outputs.name }}** to **${{ needs.tier-parse-issue.outputs.category }}**.\n\nA maintainer will review shortly. Issue closes automatically when PR merges.`
             });
 
-  # Job 3: Close issue when PR is closed
-  tier-close-issue-on-pr:
-    if: github.event_name == 'pull_request' && github.event.action == 'closed'
-    runs-on: ubuntu-latest
-    permissions:
-      issues: write
-
-    steps:
-      - name: Extract and close issue
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const body = context.payload.pull_request.body || '';
-            const match = body.match(/Fixes #(\d+)/);
-            if (!match) return;
-            
-            const issueNumber = parseInt(match[1]);
-            const wasMerged = context.payload.pull_request.merged;
-            
-            await github.rest.issues.createComment({
-              owner: context.repo.owner, repo: context.repo.repo,
-              issue_number: issueNumber,
-              body: wasMerged ? '✅ PR merged! App has been added.' : '❌ PR closed without merging.'
-            });
-            
-            await github.rest.issues.update({
-              owner: context.repo.owner, repo: context.repo.repo,
-              issue_number: issueNumber,
-              state: 'closed',
-              state_reason: wasMerged ? 'completed' : 'not_planned'
-            });

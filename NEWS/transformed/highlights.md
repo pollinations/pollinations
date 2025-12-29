@@ -1,3 +1,7 @@
+- **2025-12-29** – **🚀 New Model: gptimage-large** Access GPT Image 1.5 for high-fidelity generations via the API. [API Docs](https://enter.pollinations.ai/api/docs)
+- **2025-12-29** – **🤖 DeepSeek V3.2** Upgraded to the latest DeepSeek V3.2 for smarter, faster chat responses. [Try it](https://hello.pollinations.ai)
+- **2025-12-29** – **🎥 Veo Image-to-Video** Turn images into videos using the updated `veo` model capabilities. [API Docs](https://enter.pollinations.ai/api/docs)
+- **2025-12-29** – **📱 New Creative Apps** Try **IDPhotoGen** (ID photos) and **PromptPi!** (prompt engineering) in our showcase. [See Apps](https://github.com/pollinations/pollinations/blob/master/apps/APPS.md)
 - **2025-12-22** – **🚀 New Models** Default `gemini` is now **Gemini 3 Flash**, plus added **Perplexity Sonar Reasoning Pro**. [API Docs](https://enter.pollinations.ai/api/docs)
 - **2025-12-22** – **🎥 Veo Video Upgrades** Added **Image-to-Video** and **Frame Interpolation** (start/end frames) support for the `veo` model.
 - **2025-12-22** – **🔗 MCP Server v2.0** Major update adding video generation, analysis, and web search tools. [MCP Protocol](https://mcp.sequa.ai/v1/pollinations/contribute)

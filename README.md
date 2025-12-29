@@ -6,6 +6,8 @@
 
 | Name | Description | Author |
 |------|-------------|--------|
+| [Insight Engine](https://erbharatmalhotra.github.io/insight-engine/) | Experimental frontend app that turns a single idea into refined text insights and AI-generated visuals | @ErBharatMalhotra |
+| [IDPhotoGen](https://id-photo-gen.thangoffer91.workers.dev) | Create professional ID photos in 30 seconds with AI | @thangoffer91 |
 | [AquaMind](https://aquamind.app) | AI-powered aquarium management and fish care assistant | @aquamind |
 | [Word Wagon](https://wordwagon.app) | AI-powered vocabulary learning app with spaced repetition | @wordwagon |
 | [nusanexus](https://nusanexus.com) | AI-powered chat platform for Indonesian users | @nusanexus |
@@ -14,15 +16,13 @@
 | [PromptPi!](https://chromewebstore.google.com/detail/promptpi-image-to-prompt/dmcckiclfondnkgncnajmdcblimekgbk) | Reverse-engineer images into pro AI prompts with batch & multi-model support | @dreamm160 |
 | [AI Logo and Business Name Generators](https://bilgu.com/tools/ai-generated-names) | Pollinations-powered AI logo + business name generators | @m4jor101 |
 | [IA Bob Goods - Coloring Book Generator](https://ia.gmtec.tec.br) | AI tool to generate kids' coloring books with stories, line art & PDFs | @adeniltogracheki |
-| [DOPPYai](https://doppyai.ir) | AI mobile app that generates high-quality images from text prompts | @hosi1996 |
-| [n8n-grok](https://perchance.org/n8n-style) | Node-based image gen: prompt+styles, sampler, I2P, drag layout save/load | @aikhusus2025-ctrl |
 
 [View all apps →](apps/APPS.md)
 ## 🚀 New Unified API — Now Live
 
-We've launched **https://gen.pollinations.ai** — a single endpoint for all your AI generation needs. Text, images, audio, video — all in one place.
+We've launched **https://gen.pollinations.ai** — a single endpoint for all your AI generation needs: text, images, audio, video — all in one place.
 
-### What's new
+### What's New
 
 -   **Unified endpoint** — no more juggling between image.pollinations.ai and text.pollinations.ai
 -   **Pollen credits** — simple pay-as-you-go system ($1 ≈ 1 Pollen)
@@ -33,23 +33,23 @@ We've launched **https://gen.pollinations.ai** — a single endpoint for all you
 
 ## 🆕 Latest News
 
+- **2025-12-29** – **🚀 New Model: gptimage-large** Access GPT Image 1.5 for high-fidelity generations via the API. [API Docs](https://enter.pollinations.ai/api/docs)
+- **2025-12-29** – **🤖 DeepSeek V3.2** Upgraded to the latest DeepSeek V3.2 for smarter, faster chat responses. [Try it](https://hello.pollinations.ai)
+- **2025-12-29** – **🎥 Veo Image-to-Video** Turn images into videos using the updated `veo` model capabilities. [API Docs](https://enter.pollinations.ai/api/docs)
+- **2025-12-29** – **📱 New Creative Apps** Try **IDPhotoGen** (ID photos) and **PromptPi!** (prompt engineering) in our showcase. [See Apps](https://github.com/pollinations/pollinations/blob/master/apps/APPS.md)
 - **2025-12-22** – **🚀 New Models** Default `gemini` is now **Gemini 3 Flash**, plus added **Perplexity Sonar Reasoning Pro**. [API Docs](https://enter.pollinations.ai/api/docs)
 - **2025-12-22** – **🎥 Veo Video Upgrades** Added **Image-to-Video** and **Frame Interpolation** (start/end frames) support for the `veo` model.
 - **2025-12-22** – **🔗 MCP Server v2.0** Major update adding video generation, analysis, and web search tools. [MCP Protocol](https://mcp.sequa.ai/v1/pollinations/contribute)
 - **2025-12-22** – **🎵 New Voices** Added 7 new voices (Coral, Verse, Sage, etc.) to the `openai-audio` model.
 - **2025-12-15** – **🚀 GPT-5.2 & Gemini Tools** Upgraded `openai-large` to GPT-5.2 and enabled Google Search & Code Execution by default for Gemini models.
 - **2025-12-15** – **🎨 Face-Aware Upscaling** Enhanced image generation with GFPGAN face restoration and MediaPipe detection for sharper portraits.
-- **2025-12-15** – **✨ New Website Experience** Complete rebuild of [hello.pollinations.ai](https://hello.pollinations.ai) with AI-powered theming and dynamic 3D backgrounds.
-- **2025-12-15** – **🚫 No More Watermarks** Removed the Pollinations logo from all generated images—outputs are now clean by default.
-- **2025-12-07** – **🎥 Video Generation** Create videos from text or images using **Veo** and **Seedance** models via API or [Chat](https://hello.pollinations.ai).
-- **2025-12-07** – **✨ Seedream 4.5** Upgraded image generation to **Seedream 4.5** supporting stunning 2K resolution.
 ---
 
 [![pollinations.ai Logo](https://pollinations.ai/p/3D_wireframe_blueprint_of_the_conceptual_isometric_world_of_Pollinations_AI_a_surreal_hyperrealistic_digital_garden_Elements_emerge_partially_from_all_sides?width=3000&height=1000&seed=-1)](https://pollinations.ai/p/3D_wireframe_blueprint_of_the_conceptual_isometric_world_of_Pollinations_AI_a_surreal_hyperrealistic_digital_garden_Elements_emerge_partially_from_all_sides?width=3000&height=1000&seed=-1)
 
 ## 🌟 Introduction
 
-[pollinations.ai](https://pollinations.ai) is an open-source gen AI platform based in Berlin, powering 500+ community projects with accessible text and image generation APIs. We build in the open and keep AI accessible to everyone—thanks to our amazing supporters.
+[pollinations.ai](https://pollinations.ai) is an open-source generative AI platform based in Berlin, powering 500+ community projects with accessible text and image generation APIs. We build in the open and keep AI accessible to everyone—thanks to our amazing supporters.
 
 ## 🚀 Key Features
 
@@ -281,7 +281,7 @@ We're committed to developing AI technology that serves humanity while respectin
 
 We believe in community-driven development. You can contribute to pollinations.ai in several ways:
 
-1. **Coding Assistant**: The easiest way to contribute! Just [create a GitHub issue](https://github.com/pollinations/pollinations/issues/new) describing the feature you'd like to see implemented. The [MentatBot AI assistant](https://mentat.ai/) will analyze and implement it directly! No coding required - just describe what you want.
+1. **Coding Assistant**: The easiest way to contribute! Just [create a GitHub issue](https://github.com/pollinations/pollinations/issues/new) describing the feature you’d like to see implemented. The [MentatBot AI assistant](https://mentat.ai/) will analyze and implement it directly! No coding required - just describe what you want.
 
 2. **Project Submissions**: Have you built something with pollinations.ai? [Use our project submission template](https://github.com/pollinations/pollinations/issues/new?template=project-submission.yml) (labeled as **APPS**) to share it with the community and get it featured in our README.
 

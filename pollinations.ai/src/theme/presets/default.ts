@@ -345,7 +345,7 @@ export const AVastDeepOceanSceneFilledWithDriftingBioluminescentLifeSoftDarkness
             "Test our API, play with different models, and see what you can create. This is a fun demo playground—not our main product, just a place to explore and experiment.",
         "PLAY_PAGE.feedDescription.text":
             "Watch the global pulse of our network in real-time. See what the community is creating right now through our APIs.",
-        "PLAY_PAGE.toggleWatchOthers.text": "Watch what others are making",
+        "PLAY_PAGE.toggleWatchOthers.text": "Watch Feed",
         "PLAY_PAGE.toggleBackToPlay.text": "Back to Play",
         "PLAY_PAGE.modelsLabel.text": "Models",
         "PLAY_PAGE.imageLabel.text": "Image",

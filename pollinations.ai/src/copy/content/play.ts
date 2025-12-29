@@ -44,8 +44,14 @@ export const PLAY_PAGE = {
     videoLabel: "Video",
 
     // Image feed
+    waitingForImages: "Waiting for images...",
     waitingForContent: "Waiting for content...",
     listeningTo: "Listening to",
+    feedPromptLabel: "Prompt",
+    feedModelLabel: "Model",
+    noPromptAvailable: "No prompt available",
+    noPromptFallback: "No prompt",
+    noModelFallback: "-",
 
     // Auth
     loginButton: "Login",

@@ -11,6 +11,7 @@ interface CacheOptions<TArgs extends any[]> {
 interface CacheEntry<T> {
     value: T;
     ttl: number;
+    cachedAt: number; // timestamp when cached
 }
 
 /**
@@ -29,6 +30,10 @@ export function cached<TArgs extends any[], TReturn>(
         const cacheKey = await keyGenerator(...args);
         let cachedData: CacheEntry<TReturn> | null = null;
 
+        // For staleOnError, we keep data in KV much longer than the freshness TTL
+        // so stale data is available for fallback when the upstream fails
+        const storageTtl = staleOnError ? Math.max(ttl * 12, 3600) : ttl; // 12x TTL or 1 hour min
+
         try {
             log.trace("Fetching from cache: {key}", { key: cacheKey });
             cachedData = (await kv.get(
@@ -36,10 +41,13 @@ export function cached<TArgs extends any[], TReturn>(
                 "json",
             )) as CacheEntry<TReturn> | null;
             if (cachedData) {
-                const ttlChanged = cachedData.ttl !== ttl;
-                if (!ttlChanged) {
+                const now = Date.now();
+                const age = now - (cachedData.cachedAt || 0);
+                const isFresh = age < ttl * 1000;
+                if (isFresh && cachedData.ttl === ttl) {
                     return cachedData.value;
                 }
+                // Data is stale or TTL changed, but keep cachedData for staleOnError fallback
             }
         } catch (error) {
             log.warn("Failed to read from cache: {error}", { error });
@@ -55,9 +63,10 @@ export function cached<TArgs extends any[], TReturn>(
                 const cacheEntry: CacheEntry<TReturn> = {
                     value: result,
                     ttl: ttl,
+                    cachedAt: Date.now(),
                 };
                 await kv.put(cacheKey, JSON.stringify(cacheEntry), {
-                    expirationTtl: ttl,
+                    expirationTtl: storageTtl,
                 });
             } catch (error) {
                 log.warn("Failed to write to cache: {error}", { error });
@@ -66,11 +75,16 @@ export function cached<TArgs extends any[], TReturn>(
             return result;
         } catch (error) {
             // On error, return stale cached data if available and staleOnError is enabled
-            if (staleOnError && cachedData) {
-                log.warn("Function failed, returning stale cache: {key}", {
+            if (staleOnError) {
+                if (cachedData) {
+                    log.warn("Function failed, returning stale cache: {key}", {
+                        key: cacheKey,
+                    });
+                    return cachedData.value;
+                }
+                log.warn("Function failed, no stale cache available: {key}", {
                     key: cacheKey,
                 });
-                return cachedData.value;
             }
             throw error;
         }

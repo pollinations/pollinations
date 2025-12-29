@@ -26,9 +26,12 @@ jobs:
     if: |
       (github.event_name == 'workflow_dispatch' ||
       contains(github.event.issue.labels.*.name, 'tier:review') ||
-      (github.event_name == 'issue_comment' && contains(github.event.issue.labels.*.name, 'tier:info-needed'))) &&
+      (github.event_name == 'issue_comment' && 
+       contains(github.event.issue.labels.*.name, 'tier:info-needed') &&
+       github.event.comment.user.type != 'Bot')) &&
       !contains(github.event.issue.labels.*.name, 'tier:done') &&
-      !contains(github.event.issue.labels.*.name, 'tier:flower')
+      !contains(github.event.issue.labels.*.name, 'tier:flower') &&
+      github.event.issue.state == 'open'
     runs-on: ubuntu-latest
     permissions:
       contents: read

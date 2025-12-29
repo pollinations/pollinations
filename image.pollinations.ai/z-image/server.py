@@ -414,7 +414,7 @@ def generate(request: ImageRequest, _auth: bool = Depends(verify_enter_token)):
                     generator=generator,
                     width=gen_w,
                     height=gen_h,
-                    num_inference_steps=9,
+                    num_inference_steps=9,  # Always use 9 steps for best quality
                     guidance_scale=0.0,
                 )
             image = output.images[0]

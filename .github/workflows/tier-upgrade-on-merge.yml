@@ -243,8 +243,17 @@ jobs:
                   labels: ['tier:done']
                 });
                 
-                // Also update PR labels if celebrating on issue
+                // Also post celebration and update labels on PR if celebrating on issue
                 if (isIssue) {
+                  // Post celebration on PR too
+                  const prMessage = `## 🎉 App Added!\n\nThis PR added **${result.user}**'s app to the showcase. User has been upgraded to 🌸 **Flower tier** (10 pollen/day).\n\nSee issue #${targetNumber} for details.`;
+                  await github.rest.issues.createComment({
+                    owner: context.repo.owner,
+                    repo: context.repo.repo,
+                    issue_number: prNumber,
+                    body: prMessage
+                  });
+                  
                   try {
                     await github.rest.issues.removeLabel({
                       owner: context.repo.owner,

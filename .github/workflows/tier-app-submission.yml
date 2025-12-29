@@ -24,9 +24,11 @@ jobs:
   # Job 1: Parse issue and validate user registration
   tier-parse-issue:
     if: |
-      github.event_name == 'workflow_dispatch' ||
+      (github.event_name == 'workflow_dispatch' ||
       contains(github.event.issue.labels.*.name, 'tier:review') ||
-      (github.event_name == 'issue_comment' && contains(github.event.issue.labels.*.name, 'tier:info-needed'))
+      (github.event_name == 'issue_comment' && contains(github.event.issue.labels.*.name, 'tier:info-needed'))) &&
+      !contains(github.event.issue.labels.*.name, 'tier:done') &&
+      !contains(github.event.issue.labels.*.name, 'tier:flower')
     runs-on: ubuntu-latest
     permissions:
       contents: read

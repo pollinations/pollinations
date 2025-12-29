@@ -41,6 +41,34 @@ The usePollinationsText hook allows you to generate text from Pollinations' API 
 - `model` (string, default: 'openai'): The model to use for text generation. Options: 'openai', 'mistral'.
 - `systemPrompt` (string, optional): A system prompt to set the behavior of the AI.
 
+### usePollinationsAudio
+
+The usePollinationsAudio hook allows you to generate text-to-speech audio URLs from Pollinations' API.
+
+    import React from 'react';
+    import { usePollinationsAudio } from '@pollinations/react';
+
+    const SpeechComponent = () => {
+      const audioUrl = usePollinationsAudio('Hello, welcome to Pollinations!', {
+        voice: 'nova',
+        seed: 42
+      });
+
+      return (
+        <div>
+          {audioUrl ? <audio controls src={audioUrl} /> : <p>Loading...</p>}
+        </div>
+      );
+    };
+
+    export default SpeechComponent;
+
+#### Options
+
+- `voice` (string, default: 'nova'): The voice to use. Options: 'alloy', 'echo', 'fable', 'onyx', 'nova', 'shimmer'.
+- `model` (string, default: 'openai-audio'): The model to use for audio generation.
+- `seed` (number, default: 42): The seed for consistent audio generation.
+
 ### usePollinationsImage
 
 The usePollinationsImage hook allows you to generate image URLs from Pollinations' API and use them directly in your React components.
@@ -53,7 +81,7 @@ The usePollinationsImage hook allows you to generate image URLs from Pollination
         width: 800,
         height: 600,
         seed: 42,
-        model: 'turbo',
+        model: 'flux',
         nologo: true,
         enhance: false
       });
@@ -71,7 +99,7 @@ The usePollinationsImage hook allows you to generate image URLs from Pollination
 
 - `width` (number, default: 1024): The width of the generated image.
 - `height` (number, default: 1024): The height of the generated image.
-- `model` (string, default: 'turbo'): The model to use for image generation.
+- `model` (string, default: 'flux'): The model to use for image generation.
 - `seed` (number, default: -1): The seed for random image generation. If -1, a random seed will be used.
 - `nologo` (boolean, default: true): Whether to generate the image without a logo.
 - `enhance` (boolean, default: false): Whether to enhance the generated image.

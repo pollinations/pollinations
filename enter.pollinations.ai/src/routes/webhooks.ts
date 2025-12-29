@@ -16,10 +16,10 @@ import {
     getTierProductMapCached,
     type TierName,
 } from "@/utils/polar.ts";
-import { WebhookSubscriptionRevokedPayload } from "@polar-sh/sdk/models/components/webhooksubscriptionrevokedpayload.js";
-import { WebhookSubscriptionCanceledPayload } from "@polar-sh/sdk/models/components/webhooksubscriptioncanceledpayload.js";
-import { WebhookSubscriptionUpdatedPayload } from "@polar-sh/sdk/models/components/webhooksubscriptionupdatedpayload.js";
-import { WebhookSubscriptionCreatedPayload } from "@polar-sh/sdk/models/components/webhooksubscriptioncreatedpayload.js";
+import type { WebhookSubscriptionRevokedPayload } from "@polar-sh/sdk/models/components/webhooksubscriptionrevokedpayload.js";
+import type { WebhookSubscriptionCanceledPayload } from "@polar-sh/sdk/models/components/webhooksubscriptioncanceledpayload.js";
+import type { WebhookSubscriptionUpdatedPayload } from "@polar-sh/sdk/models/components/webhooksubscriptionupdatedpayload.js";
+import type { WebhookSubscriptionCreatedPayload } from "@polar-sh/sdk/models/components/webhooksubscriptioncreatedpayload.js";
 
 const log = getLogger(["hono", "webhooks"]);
 
@@ -45,11 +45,11 @@ export const webhooksRoutes = new Hono<Env>().post("/polar", async (c) => {
                 break;
 
             case "subscription.updated":
-                await handleSubscriptionUpdated(payload);
+                await handleSubscriptionUpdated(c.env, payload);
                 break;
 
             case "subscription.created":
-                await handleSubscriptionCreated(payload);
+                await handleSubscriptionCreated(c.env, payload);
                 break;
 
             default:
@@ -152,6 +152,7 @@ async function handleSubscriptionCanceled(
 }
 
 async function handleSubscriptionUpdated(
+    env: Cloudflare.Env,
     payload: WebhookSubscriptionUpdatedPayload,
 ): Promise<void> {
     const externalId = payload.data.customer.externalId;
@@ -162,12 +163,20 @@ async function handleSubscriptionUpdated(
         return;
     }
 
-    log.debug("Subscription updated for user {userId}", {
+    log.info("Subscription updated for user {userId}", {
         userId: externalId,
     });
+
+    // Validate subscription tier against D1 (source of truth)
+    await validateAndSyncSubscriptionTier(
+        env,
+        externalId,
+        payload.data.productId,
+    );
 }
 
 async function handleSubscriptionCreated(
+    env: Cloudflare.Env,
     payload: WebhookSubscriptionCreatedPayload,
 ): Promise<void> {
     const externalId = payload.data.customer.externalId;
@@ -178,7 +187,105 @@ async function handleSubscriptionCreated(
         return;
     }
 
-    log.debug("Subscription created for user {userId}", {
-        userId: externalId,
+    log.info(
+        "Subscription created for user {userId} with product {productId}",
+        {
+            userId: externalId,
+            productId: payload.data.productId,
+        },
+    );
+
+    // Validate subscription tier against D1 (source of truth)
+    await validateAndSyncSubscriptionTier(
+        env,
+        externalId,
+        payload.data.productId,
+    );
+}
+
+/**
+ * Validates that a subscription's tier matches the user's D1 tier.
+ * If they don't match, syncs the Polar subscription to match D1.
+ * This prevents unauthorized tier escalation (e.g., users getting Router tier).
+ */
+async function validateAndSyncSubscriptionTier(
+    env: Cloudflare.Env,
+    userId: string,
+    subscriptionProductId: string,
+): Promise<void> {
+    if (!env.POLAR_ACCESS_TOKEN) {
+        log.error(
+            "Cannot validate subscription: POLAR_ACCESS_TOKEN not configured",
+        );
+        return;
+    }
+
+    const polar = new Polar({
+        accessToken: env.POLAR_ACCESS_TOKEN,
+        server: env.POLAR_SERVER === "production" ? "production" : "sandbox",
     });
+
+    // Get product map to determine tier from product ID
+    const productMap = await getTierProductMapCached(polar, env.KV);
+
+    // Find what tier this subscription's product corresponds to
+    const subscriptionTier = Object.entries(productMap)
+        .filter(([_, product]) => product.id === subscriptionProductId)
+        .map(([slug]) => slug.split(":").pop() as TierName)
+        .at(0);
+
+    if (!subscriptionTier) {
+        // Product is not a tier product (might be a pack), ignore
+        log.debug(
+            "Subscription product {productId} is not a tier product, skipping validation",
+            {
+                productId: subscriptionProductId,
+            },
+        );
+        return;
+    }
+
+    // Look up the user's tier from D1 (source of truth)
+    const db = drizzle(env.DB);
+    const users = await db
+        .select({ tier: userTable.tier })
+        .from(userTable)
+        .where(eq(userTable.id, userId))
+        .limit(1);
+
+    const d1Tier = users[0]?.tier;
+    const targetTier: TierName = isValidTier(d1Tier) ? d1Tier : "spore";
+
+    // Check if subscription tier matches D1 tier
+    if (subscriptionTier === targetTier) {
+        log.debug("Subscription tier {tier} matches D1 for user {userId}", {
+            tier: subscriptionTier,
+            userId,
+        });
+        return;
+    }
+
+    // MISMATCH: Subscription tier doesn't match D1 - correct it
+    log.warn(
+        "Subscription tier mismatch for user {userId}: Polar has {polarTier}, D1 has {d1Tier}. Syncing to D1 tier.",
+        {
+            userId,
+            polarTier: subscriptionTier,
+            d1Tier: targetTier,
+        },
+    );
+
+    const result = await syncUserTier(polar, userId, targetTier, productMap);
+
+    if (result.success) {
+        log.info("Corrected subscription for user {userId} to tier {tier}", {
+            userId,
+            tier: targetTier,
+        });
+    } else {
+        log.error("Failed to correct subscription for user {userId}: {error}", {
+            userId,
+            error: result.error,
+        });
+    }
 }

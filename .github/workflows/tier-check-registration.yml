@@ -102,7 +102,22 @@ jobs:
             echo "✅ User already at flower tier or higher - skipping"
             echo "success=skipped" >> $GITHUB_OUTPUT
           elif echo "$OUTPUT" | grep -q "Tier update complete"; then
-            echo "success=true" >> $GITHUB_OUTPUT
+            # Verify the tier was actually set correctly in both D1 and Polar
+            echo "🔍 Verifying tier upgrade for $GITHUB_USERNAME..."
+            VERIFY_OUTPUT=$(npx tsx scripts/tier-update-user.ts verify-tier \
+              --githubUsername "$GITHUB_USERNAME" \
+              --tier flower \
+              --env production 2>&1) || true
+            
+            echo "$VERIFY_OUTPUT"
+            
+            if echo "$VERIFY_OUTPUT" | grep -q "VERIFIED=true"; then
+              echo "✅ Tier verified for $GITHUB_USERNAME"
+              echo "success=true" >> $GITHUB_OUTPUT
+            else
+              echo "⚠️ Tier verification failed for $GITHUB_USERNAME"
+              echo "success=unverified" >> $GITHUB_OUTPUT
+            fi
           else
             echo "success=false" >> $GITHUB_OUTPUT
           fi
@@ -138,13 +153,20 @@ jobs:
               return;
             }
             
+            // Handle unverified case - upgrade happened but couldn't verify
+            const unverified = upgradeResult === 'unverified';
+            if (unverified) {
+              console.log(`⚠️ ${username} upgrade unverified - not posting celebration`);
+              return;
+            }
+            
             if (registered && upgraded) {
-              // Success! Update labels and celebrate
+              // Success! Update labels and celebrate - ONLY after verification passed
               await github.rest.issues.createComment({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
                 issue_number: prNumber,
-                body: `### 🌸 Flower Tier Activated!\n\n@${username}, you've been upgraded to **Flower tier** which grants you **10 pollen per day**!\n\n⏰ **How it works:** Your pollen balance refills every 24 hours. Unused pollen does not roll over.\n\nCheck your balance at [enter.pollinations.ai](https://enter.pollinations.ai) 🌻`
+                body: `### 🌸 Flower Tier Activated & Verified!\n\n@${username}, you've been upgraded to **Flower tier** which grants you **10 pollen per day**!\n\n⏰ **How it works:** Your pollen balance refills every 24 hours. Unused pollen does not roll over.\n\nCheck your balance at [enter.pollinations.ai](https://enter.pollinations.ai) 🌻`
               });
               
               // Update labels

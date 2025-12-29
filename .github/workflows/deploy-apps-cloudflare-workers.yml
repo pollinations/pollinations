@@ -1,0 +1,37 @@
+name: Deploy Cloudflare Workers from apps/
+
+on:
+  push:
+    branches:
+      - production
+    paths:
+      - 'apps/grafana-discord-proxy/**'
+      - '.github/workflows/deploy-apps-cloudflare-workers.yml'
+  workflow_dispatch:
+    inputs:
+      worker:
+        description: 'Worker to deploy (e.g., grafana-discord-proxy)'
+        required: true
+        default: 'grafana-discord-proxy'
+
+jobs:
+  deploy-grafana-discord-proxy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        run: npm install
+        working-directory: ./apps/grafana-discord-proxy
+
+      - name: Deploy to Cloudflare
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        run: npx wrangler deploy
+        working-directory: ./apps/grafana-discord-proxy

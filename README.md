@@ -28,9 +28,9 @@
 [View all apps →](apps/APPS.md)
 ## 🚀 New Unified API — Now Live
 
-We've launched **https://gen.pollinations.ai** — a single endpoint for all your AI generation needs. Text, images, audio, video — all in one place.
+We've launched **https://gen.pollinations.ai** — a single endpoint for all your AI generation needs: text, images, audio, video — all in one place.
 
-### What's new
+### What's New
 
 -   **Unified endpoint** — no more juggling between image.pollinations.ai and text.pollinations.ai
 -   **Pollen credits** — simple pay-as-you-go system ($1 ≈ 1 Pollen)
@@ -57,7 +57,7 @@ We've launched **https://gen.pollinations.ai** — a single endpoint for all you
 
 ## 🌟 Introduction
 
-[pollinations.ai](https://pollinations.ai) is an open-source gen AI platform based in Berlin, powering 500+ community projects with accessible text and image generation APIs. We build in the open and keep AI accessible to everyone—thanks to our amazing supporters.
+[pollinations.ai](https://pollinations.ai) is an open-source generative AI platform based in Berlin, powering 500+ community projects with accessible text and image generation APIs. We build in the open and keep AI accessible to everyone—thanks to our amazing supporters.
 
 ## 🚀 Key Features
 
@@ -289,7 +289,7 @@ We're committed to developing AI technology that serves humanity while respectin
 
 We believe in community-driven development. You can contribute to pollinations.ai in several ways:
 
-1. **Coding Assistant**: The easiest way to contribute! Just [create a GitHub issue](https://github.com/pollinations/pollinations/issues/new) describing the feature you'd like to see implemented. The [MentatBot AI assistant](https://mentat.ai/) will analyze and implement it directly! No coding required - just describe what you want.
+1. **Coding Assistant**: The easiest way to contribute! Just [create a GitHub issue](https://github.com/pollinations/pollinations/issues/new) describing the feature you’d like to see implemented. The [MentatBot AI assistant](https://mentat.ai/) will analyze and implement it directly! No coding required - just describe what you want.
 
 2. **Project Submissions**: Have you built something with pollinations.ai? [Use our project submission template](https://github.com/pollinations/pollinations/issues/new?template=project-submission.yml) (labeled as **APPS**) to share it with the community and get it featured in our README.
 

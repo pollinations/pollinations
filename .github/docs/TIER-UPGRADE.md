@@ -4,20 +4,22 @@
 
 The app submission process starts with the issue template at `.github/ISSUE_TEMPLATE/tier-app-submission.yml`:
 
--   **Form fields**: App name, description, URL, GitHub repo, Discord, category, language
--   **Categories**: Chat 💬, Creative 🎨, Games 🎲, Hack & Build 🛠️, Learn 📚, Social Bots 🤖, Vibe Coding ✨
--   **Auto-label**: `tier:review` applied on creation
+- **Form fields**: App name, description, URL, GitHub repo, Discord, category, language
+- **Categories**: Chat 💬, Creative 🎨, Games 🎲, Hack & Build 🛠️, Learn 📚, Social Bots 🤖, Vibe Coding ✨
+- **Auto-label**: `tier:review` applied on creation
 
 ## Workflows
 
--   **tier-app-submission.yml** - AI-powered app submission pipeline. Split into 3 jobs:
-    -   `tier-parse-issue` - Parse submission with AI, validate, check Enter registration
-    -   `tier-create-app-pr` - Fetch stars, AI-format (emoji + description), prepend to `apps/APPS.md`, create PR
-    -   `tier-close-issue-on-pr` - Close linked issue when PR is merged/closed
--   **tier-upgrade-on-merge.yml** - When PR with `tier:review` label merges, upgrades labels (`tier:review` → `tier:flower` → `tier:done`) and user to Flower tier in D1 + Polar.
--   **tier-recheck-registration.yml** - When user comments on issue/PR with `tier:info-needed`, re-checks registration.
+- **tier-app-submission.yml** - AI-powered app submission pipeline. Split into 3 jobs:
+  - `tier-parse-issue` - Parse submission with AI, validate, check Enter registration
+  - `tier-create-app-pr` - Fetch stars, AI-format (emoji + description), prepend to `apps/APPS.md`, create PR
+  - `tier-close-issue-on-pr` - Close linked issue when PR is merged/closed
+- **tier-upgrade-on-merge.yml** - When PR with `tier:review` label merges, upgrades labels (`tier:review` → `tier:flower` → `tier:done`) and user to Flower tier in D1 + Polar.
+- **tier-recheck-registration.yml** - When user comments on issue/PR with `tier:info-needed`, re-checks registration.
 
 ## Scripts
+
+### GitHub Scripts (`.github/scripts/`)
 
 | Script                       | Purpose                         | Usage                                                     |
 | ---------------------------- | ------------------------------- | --------------------------------------------------------- |
@@ -26,6 +28,19 @@ The app submission process starts with the issue template at `.github/ISSUE_TEMP
 | `tier-apps-check-links.js`   | Check for broken app links      | `node .github/scripts/tier-apps-check-links.js [options]` |
 
 **tier-apps-check-links.js options**: `--timeout=<ms>`, `--category=<name>`, `--verbose`, `--update`, `--report`
+
+### Enter Scripts (`enter.pollinations.ai/scripts/`)
+
+| Script                | Purpose                              | Usage                                                                                 |
+| --------------------- | ------------------------------------ | ------------------------------------------------------------------------------------- |
+| `tier-update-user.ts` | Update single user tier (D1 + Polar) | `npx tsx scripts/tier-update-user.ts update-tier --github-username "x" --tier flower` |
+| `tier-sync/`          | Bulk sync D1 ↔ Polar                 | See `enter.pollinations.ai/scripts/README.md`                                         |
+
+**tier-sync workflow** (D1 is source of truth):
+
+1. `fetch-polar-data.ts` - Fetch all Polar subscriptions → `polar-data.json`
+2. `compare-tiers.ts` - Compare with D1 → `mismatches.json`
+3. `apply-fixes.ts` - Apply fixes to Polar
 
 ## Tier Hierarchy
 

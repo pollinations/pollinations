@@ -81,11 +81,11 @@ async def periodic_heartbeat():
 
 MODEL_ID = "Tongyi-MAI/Z-Image-Turbo"
 MODEL_CACHE = "model_cache"
-SPAN_MODEL_PATH = "model_cache/span/spanx2_ch48.pth"
+SPAN_MODEL_PATH = "model_cache/span/2x-NomosUni_span_multijpg.pth"
 SAFETY_NSFW_MODEL = "CompVis/stable-diffusion-safety-checker"
 UPSCALE_FACTOR = 2
-MAX_GEN_PIXELS = 1280 * 1280  # Generate natively up to this size
-MAX_FINAL_PIXELS = 2560 * 2560  # Max output size with upscaling
+MAX_GEN_PIXELS = 768 * 768  # Generate natively up to this size (limited for IO.net deployment)
+MAX_FINAL_PIXELS = 768 * 768 * 4  # Max output size with 2x upscaling
 ENABLE_SPAN_UPSCALER = True  # Feature flag for SPAN upscaling
 
 generate_lock = threading.Lock()
@@ -110,11 +110,11 @@ def calculate_generation_dimensions(requested_width: int, requested_height: int)
     - Cap final size to MAX_FINAL_PIXELS (preserving aspect ratio)
     - If request > MAX_GEN_PIXELS: generate at half resolution, then upscale 2x
     """
-    # Cap final dimensions by total pixel count, preserving aspect ratio
+    # Cap final pixels to MAX_FINAL_PIXELS, preserving aspect ratio
     final_w, final_h = requested_width, requested_height
-    current_pixels = final_w * final_h
-    if current_pixels > MAX_FINAL_PIXELS:
-        scale = math.sqrt(MAX_FINAL_PIXELS / current_pixels)
+    total_pixels = final_w * final_h
+    if total_pixels > MAX_FINAL_PIXELS:
+        scale = math.sqrt(MAX_FINAL_PIXELS / total_pixels)
         final_w = int(final_w * scale)
         final_h = int(final_h * scale)
     
@@ -311,7 +311,7 @@ def generate(request: ImageRequest, _auth: bool = Depends(verify_enter_token)):
                     generator=generator,
                     width=gen_w,
                     height=gen_h,
-                    num_inference_steps=9,
+                    num_inference_steps=9,  # Always use 9 steps for best quality
                     guidance_scale=0.0,
                 )
             image = output.images[0]

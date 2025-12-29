@@ -1,4 +1,4 @@
-# hello.pollinations.ai
+# pollinations.ai
 
 A themeable frontend for pollinations.ai with a built-in theme creator.
 

@@ -65,14 +65,32 @@ export const polar = createMiddleware<PolarEnv>(async (c, next) => {
 
     const getCustomerMeters = cached(
         async (userId: string): Promise<CustomerMeter[]> => {
+            log.debug(
+                "Fetching customer meters from Polar API for user {userId}",
+                { userId },
+            );
             try {
                 const response = await client.customerMeters.list({
                     externalCustomerId: userId,
                     limit: 100,
                 });
-                console.log(response.result.items);
+                log.debug("Got {count} customer meters for user {userId}", {
+                    count: response.result.items.length,
+                    userId,
+                });
                 return response.result.items;
             } catch (error) {
+                log.error(
+                    "Failed to get customer meters for user {userId}: {error}",
+                    {
+                        userId,
+                        error:
+                            error instanceof Error
+                                ? error.message
+                                : String(error),
+                        cause: error instanceof Error ? error.cause : undefined,
+                    },
+                );
                 throw new Error("Failed to get customer meters.", {
                     cause: error,
                 });

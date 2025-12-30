@@ -23,7 +23,7 @@ Or visit the live demo: [link here]
 
 ## How It Works
 
-Uses Pollinations API to [explain what you're doing with it].
+Uses pollinations.ai API to [explain what you're doing with it].
 
 ```javascript
 // Example API call from your code
@@ -36,4 +36,4 @@ fetch("https://gen.pollinations.ai/image/cool-cat");
 
 ---
 
-Made with Pollinations AI 🐝
+Made with pollinations.ai 🐝

@@ -1,6 +1,6 @@
-# Pollinations.ai Text Generation Service
+# pollinations.ai Text Generation Service
 
-Backend service powering text generation for Pollinations.AI, accessed via **https://gen.pollinations.ai**.
+Backend service powering text generation for pollinations.ai, accessed via **https://gen.pollinations.ai**.
 
 📚 **[API Documentation](../APIDOCS.md)** | 🔑 **[Get API Key](https://enter.pollinations.ai)**
 

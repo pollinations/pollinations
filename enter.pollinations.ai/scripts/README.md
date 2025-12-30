@@ -1,25 +1,5 @@
 # Scripts
 
-## Tier Sync (D1 ↔ Polar)
-
-Sync subscription tiers between D1 (source of truth) and Polar.
-
-```bash
-cd enter.pollinations.ai
-
-# 1. Fetch Polar data
-POLAR_ACCESS_TOKEN=token npx tsx scripts/tier-sync/fetch-polar-data.ts
-
-# 2. Compare with D1
-npx tsx scripts/tier-sync/compare-tiers.ts
-
-# 3. Apply fixes
-POLAR_ACCESS_TOKEN=token npx tsx scripts/tier-sync/apply-fixes.ts
-
-# 4. Cleanup duplicate subscriptions (if any found in step 1)
-POLAR_ACCESS_TOKEN=token npx tsx scripts/tier-sync/cleanup-duplicates.ts
-```
-
 ## Single User Update
 
 Update one user's tier (used by GitHub Actions):

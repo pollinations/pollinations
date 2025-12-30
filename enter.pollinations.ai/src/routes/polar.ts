@@ -36,8 +36,22 @@ export function productUrlParamToSlug(slug: string): string {
 }
 
 export const polarRoutes = new Hono<Env>()
-    .use("*", auth({ allowApiKey: false, allowSessionCookie: true }))
     .use("*", polar)
+    .get(
+        "/customer/balance",
+        auth({ allowApiKey: true, allowSessionCookie: true }),
+        describeRoute({
+            tags: ["Auth"],
+            description:
+                "Get the current balance, pending spend, and effective balance for the user.",
+        }),
+        async (c) => {
+            const user = c.var.auth.requireUser();
+            const result = await c.var.polar.getBalances(user.id);
+            return c.json(result);
+        },
+    )
+    .use("*", auth({ allowApiKey: false, allowSessionCookie: true }))
     .get(
         "/customer/state",
         describeRoute({

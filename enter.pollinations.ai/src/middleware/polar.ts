@@ -1,16 +1,14 @@
 import { cached } from "@/cache";
-import { Polar } from "@polar-sh/sdk";
-import { createMiddleware } from "hono/factory";
-import { LoggerVariables } from "@/middleware/logger.ts";
+import { getPendingSpend } from "@/events.ts";
 import type { AuthVariables } from "@/middleware/auth.ts";
+import { LoggerVariables } from "@/middleware/logger.ts";
+import { Polar } from "@polar-sh/sdk";
+import { CustomerMeter } from "@polar-sh/sdk/models/components/customermeter.js";
 import { CustomerState } from "@polar-sh/sdk/models/components/customerstate.js";
+import { drizzle } from "drizzle-orm/d1";
+import { createMiddleware } from "hono/factory";
 import { HTTPException } from "hono/http-exception";
 import { z } from "zod";
-import { CustomerMeter } from "@polar-sh/sdk/models/components/customermeter.js";
-import { getPendingSpend } from "@/events.ts";
-import { drizzle } from "drizzle-orm/d1";
-import { event } from "@/db/schema/event.ts";
-import { and, eq, gte, sql } from "drizzle-orm";
 
 type BalanceCheckResult = {
     selectedMeterId: string;
@@ -22,6 +20,11 @@ export type PolarVariables = {
     polar: {
         client: Polar;
         getCustomerState: (userId: string) => Promise<CustomerState>;
+        getBalances: (userId: string) => Promise<{
+            effectiveBalance: number;
+            currentBalance: number;
+            pendingSpend: number;
+        }>;
         requirePositiveBalance: (
             userId: string,
             message?: string,
@@ -105,27 +108,22 @@ export const polar = createMiddleware<PolarEnv>(async (c, next) => {
         },
     );
 
-    const getAdjustedSimplifiedMeters = async (userId: string) => {
+    const getBalances = async (userId: string) => {
         const customerMeters = await getCustomerMeters(userId);
         const activeMeters = getSimplifiedMatchingMeters(customerMeters);
-        const sortedMeters = sortMetersByDescendingPriority(activeMeters);
         const pendingSpend = await getPendingSpend(drizzle(c.env.DB), userId);
 
-        const { adjustedMeters } = sortedMeters.reduce(
-            (acc, meter) => {
-                const deduction = Math.min(meter.balance, acc.remainingSpend);
-                acc.remainingSpend -= deduction;
-                acc.adjustedMeters.push({
-                    ...meter,
-                    balance: meter.balance - deduction,
-                });
-                return acc;
-            },
-            {
-                remainingSpend: pendingSpend,
-                adjustedMeters: [] as typeof sortedMeters,
-            },
+        const currentBalance = activeMeters.reduce(
+            (acc, meter) => acc + meter.balance,
+            0,
         );
+        const effectiveBalance = currentBalance - pendingSpend;
+
+        return {
+            effectiveBalance,
+            currentBalance,
+            pendingSpend,
+        };
     };
 
     const requirePositiveBalance = async (userId: string, message?: string) => {
@@ -177,6 +175,7 @@ export const polar = createMiddleware<PolarEnv>(async (c, next) => {
     c.set("polar", {
         client,
         getCustomerState,
+        getBalances,
         requirePositiveBalance,
     });
 

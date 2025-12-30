@@ -16,10 +16,14 @@ type ModelRowProps = {
     model: ModelPrice;
 };
 
+// Temporary promo models (ends Dec 31, 2025)
+const PROMO_MODELS = ["seedream", "seedream-pro"];
+
 export const ModelRow: FC<ModelRowProps> = ({ model }) => {
     const modelDescription = getModelDescription(model.name);
     const genPerPollen = calculatePerPollen(model);
     const [showTooltip, setShowTooltip] = useState(false);
+    const isPromo = PROMO_MODELS.includes(model.name);
     const handleMouseEnter = () => setShowTooltip(true);
     const handleMouseLeave = () => setShowTooltip(false);
     const handleClick = (e: React.MouseEvent) => {
@@ -75,6 +79,11 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
             <td className="py-2 px-2 text-sm font-mono text-gray-700 whitespace-nowrap relative group">
                 <div className="flex items-center gap-2">
                     {model.name}
+                    {isPromo && (
+                        <span className="text-[10px] text-white bg-red-500 px-1.5 py-0.5 rounded-full font-bold animate-pulse">
+                            99% OFF
+                        </span>
+                    )}
                     {showDescriptionInfo && (
                         <button
                             type="button"
@@ -136,7 +145,7 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
             <td className="py-2 px-2 text-sm">
                 <div className="flex justify-center">
                     <span
-                        className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gradient-to-r from-yellow-100 to-orange-100 text-orange-900 border border-orange-200 ${model.type === "image" ? "uppercase" : ""}`}
+                        className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${isPromo ? "bg-gradient-to-r from-red-100 to-red-200 text-red-700 border border-red-300" : "bg-gradient-to-r from-yellow-100 to-orange-100 text-orange-900 border border-orange-200"} ${model.type === "image" ? "uppercase" : ""}`}
                     >
                         {genPerPollen}
                     </span>

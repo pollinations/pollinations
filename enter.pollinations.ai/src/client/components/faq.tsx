@@ -4,6 +4,7 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import faqMarkdown from "../../../POLLEN_FAQ.md?raw";
 import { Button } from "./button.tsx";
+import { PollenExamples } from "./pricing/PollenExamples.tsx";
 
 type FAQItem = {
   question: string;
@@ -105,6 +106,9 @@ export const FAQ: FC = () => {
                   <ReactMarkdown remarkPlugins={[remarkGfm]}>
                     {item.answer}
                   </ReactMarkdown>
+                  {item.question === "What can I create with Pollen?" && (
+                    <PollenExamples />
+                  )}
                 </div>
               )}
             </div>

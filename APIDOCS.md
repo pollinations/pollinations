@@ -1,9 +1,9 @@
-# Pollinations.AI API
+# pollinations.ai API
 
 - **OpenAPI Version:** `3.1.0`
 - **API Version:** `0.3.0`
 
-Documentation for `gen.pollinations.ai` - the Pollinations.AI API gateway.
+Documentation for `gen.pollinations.ai` - the pollinations.ai API gateway.
 
 [📝 Edit docs](https://github.com/pollinations/pollinations/edit/master/enter.pollinations.ai/src/routes/docs.ts)
 
@@ -171,23 +171,15 @@ Get available text models (OpenAI-compatible).
     "description": "",
     "tier": "anonymous",
     "community": true,
-    "aliases": [
-      ""
-    ],
-    "input_modalities": [
-      "text"
-    ],
-    "output_modalities": [
-      "text"
-    ],
+    "aliases": [""],
+    "input_modalities": ["text"],
+    "output_modalities": ["text"],
     "tools": true,
     "vision": true,
     "audio": true,
     "maxInputChars": 1,
     "reasoning": true,
-    "voices": [
-      ""
-    ],
+    "voices": [""],
     "uncensored": true,
     "supportsSystemMessages": true
   }
@@ -372,9 +364,7 @@ Get a list of available image generation models with pricing, capabilities, and 
 [
   {
     "name": "",
-    "aliases": [
-      ""
-    ],
+    "aliases": [""],
     "pricing": {
       "input_token_price": 1,
       "output_token_price": 1,
@@ -385,18 +375,12 @@ Get a list of available image generation models with pricing, capabilities, and 
       "currency": "pollen"
     },
     "description": "",
-    "input_modalities": [
-      ""
-    ],
-    "output_modalities": [
-      ""
-    ],
+    "input_modalities": [""],
+    "output_modalities": [""],
     "tools": true,
     "reasoning": true,
     "context_window": 1,
-    "voices": [
-      ""
-    ],
+    "voices": [""],
     "is_specialized": true
   }
 ]
@@ -580,9 +564,7 @@ Get a list of available text generation models with pricing, capabilities, and m
 [
   {
     "name": "",
-    "aliases": [
-      ""
-    ],
+    "aliases": [""],
     "pricing": {
       "input_token_price": 1,
       "output_token_price": 1,
@@ -593,18 +575,12 @@ Get a list of available text generation models with pricing, capabilities, and m
       "currency": "pollen"
     },
     "description": "",
-    "input_modalities": [
-      ""
-    ],
-    "output_modalities": [
-      ""
-    ],
+    "input_modalities": [""],
+    "output_modalities": [""],
     "tools": true,
     "reasoning": true,
     "context_window": 1,
-    "voices": [
-      ""
-    ],
+    "voices": [""],
     "is_specialized": true
   }
 ]
@@ -1019,9 +995,7 @@ API keys can be created from your dashboard at enter.pollinations.ai. Secret key
     }
   ],
   "model": "openai",
-  "modalities": [
-    "text"
-  ],
+  "modalities": ["text"],
   "audio": {
     "voice": "alloy",
     "format": "wav"
@@ -1247,9 +1221,7 @@ API keys can be created from your dashboard at enter.pollinations.ai. Secret key
           {
             "token": "",
             "logprob": 1,
-            "bytes": [
-              "[Max Depth Exceeded]"
-            ],
+            "bytes": ["[Max Depth Exceeded]"],
             "top_logprobs": [
               {
                 "token": "[Max Depth Exceeded]",
@@ -1347,9 +1319,7 @@ API keys can be created from your dashboard at enter.pollinations.ai. Secret key
     "total_tokens": 0
   },
   "user_tier": "anonymous",
-  "citations": [
-    ""
-  ]
+  "citations": [""]
 }
 ```
 
@@ -1426,13 +1396,9 @@ API keys can be created from your dashboard at enter.pollinations.ai. Secret key
     "details": {
       "name": "",
       "stack": "",
-      "formErrors": [
-        ""
-      ],
+      "formErrors": [""],
       "fieldErrors": {
-        "propertyName*": [
-          ""
-        ]
+        "propertyName*": [""]
       }
     },
     "requestId": "",
@@ -1739,13 +1705,9 @@ API keys can be created from your dashboard at enter.pollinations.ai.
     "details": {
       "name": "",
       "stack": "",
-      "formErrors": [
-        ""
-      ],
+      "formErrors": [""],
       "fieldErrors": {
-        "propertyName*": [
-          ""
-        ]
+        "propertyName*": [""]
       }
     },
     "requestId": "",

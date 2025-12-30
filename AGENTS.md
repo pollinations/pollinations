@@ -1,4 +1,4 @@
-# Agent Guidelines for Pollinations.AI
+# Agent Guidelines for pollinations.ai
 
 ## App Submission Handling
 
@@ -44,7 +44,7 @@ App submissions are now **fully automated** via the `tier-app-submission.yml` wo
 
 ## Discord Configuration
 
-**Pollinations Discord Server:**
+**pollinations.ai Discord Server:**
 
 - **Guild ID**: `885844321461485618`
 - **Server**: https://discord.gg/pollinations-ai-885844321461485618
@@ -79,7 +79,7 @@ All API requests go through `gen.pollinations.ai`, which routes to the `enter.po
 
 ## Model Context Protocol (MCP)
 
-The `model-context-protocol/` directory contains a Model Context Protocol server that allows AI agents to directly generate images, text, and audio using the Pollinations API.
+The `model-context-protocol/` directory contains a Model Context Protocol server that allows AI agents to directly generate images, text, and audio using the pollinations.ai API.
 
 For detailed implementation notes, design principles, and troubleshooting, see:
 

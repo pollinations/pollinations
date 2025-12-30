@@ -16,128 +16,125 @@
  */
 
 // Main client class
-export { Pollinations } from './client.js';
+export { Pollinations } from "./client.js";
 
 // Helper functions
 export {
-  configure,
-  imageUrl,
-  generateImage,
-  videoUrl,
-  generateVideo,
-  generateText,
-  generateTextStream,
-  chat,
-  chatStream,
-  generateAudio,
-  getTextModels,
-  getImageModels,
-  getModels,
-  conversation,
-} from './helpers.js';
+    configure,
+    imageUrl,
+    generateImage,
+    videoUrl,
+    generateVideo,
+    generateText,
+    generateTextStream,
+    chat,
+    chatStream,
+    generateAudio,
+    getTextModels,
+    getImageModels,
+    getModels,
+    conversation,
+} from "./helpers.js";
 
 // Extra utilities
 export {
-  // Extended response types with helpers
-  type ImageResponseExt,
-  type VideoResponseExt,
-  type ChatResponseExt,
+    // Extended response types with helpers
+    type ImageResponseExt,
+    type VideoResponseExt,
+    type ChatResponseExt,
 
-  // Batch generation (multiple different prompts)
-  generateImages,
-  generateVideos,
+    // Batch generation (multiple different prompts)
+    generateImages,
+    generateVideos,
 
-  // Conversation class
-  Conversation,
+    // Conversation class
+    Conversation,
 
-  // Browser helpers
-  showImage,
-  displayImage,
+    // Browser helpers
+    showImage,
+    displayImage,
 
-  // Token estimation
-  estimateTokens,
-  estimateMessageTokens,
+    // Token estimation
+    estimateTokens,
+    estimateMessageTokens,
 
-  // Progress tracking
-  generateImageWithProgress,
-  type AwaitOptions,
+    // Progress tracking
+    generateImageWithProgress,
+    type AwaitOptions,
 
-  // Response wrappers (for advanced use)
-  wrapImageResponse,
-  wrapVideoResponse,
-  wrapChatResponse,
-} from './extras.js';
+    // Response wrappers (for advanced use)
+    wrapImageResponse,
+    wrapVideoResponse,
+    wrapChatResponse,
+} from "./extras.js";
 
 // Export all types
 export type {
-  // Config
-  PollinationsConfig,
+    // Config
+    PollinationsConfig,
+    RequestOptions,
 
-  // Image
-  ImageModel,
-  ImageQuality,
-  ImageGenerateOptions,
-  ImageResponse,
+    // Image
+    ImageModel,
+    ImageQuality,
+    ImageGenerateOptions,
+    ImageResponse,
 
-  // Video
-  VideoModel,
-  VideoGenerateOptions,
-  VideoResponse,
+    // Video
+    VideoModel,
+    VideoGenerateOptions,
+    VideoResponse,
 
-  // Text
-  TextModel,
-  MessageRole,
-  TextContentPart,
-  ImageContentPart,
-  VideoContentPart,
-  AudioContentPart,
-  FileContentPart,
-  MessageContentPart,
-  MessageContent,
-  Message,
-  TextGenerateOptions,
-  ResponseFormat,
-  JsonSchema,
-  Tool,
-  FunctionDefinition,
-  BuiltInToolType,
-  ThinkingOptions,
-  ChatOptions,
-  ToolCall,
-  CompletionUsage,
-  ChatChoice,
-  ChatResponse,
-  ChatStreamChunk,
+    // Text
+    TextModel,
+    MessageRole,
+    TextContentPart,
+    ImageContentPart,
+    VideoContentPart,
+    AudioContentPart,
+    FileContentPart,
+    MessageContentPart,
+    MessageContent,
+    Message,
+    TextGenerateOptions,
+    ResponseFormat,
+    JsonSchema,
+    Tool,
+    FunctionDefinition,
+    BuiltInToolType,
+    ThinkingOptions,
+    ChatOptions,
+    ToolCall,
+    CompletionUsage,
+    ChatChoice,
+    ChatResponse,
+    ChatStreamChunk,
 
-  // Audio
-  AudioVoice,
-  AudioFormat,
-  AudioGenerateOptions,
-  AudioResponse,
+    // Audio
+    AudioVoice,
+    AudioFormat,
+    AudioGenerateOptions,
+    AudioResponse,
 
-  // Models
-  ModelTier,
-  ModelInfo,
+    // Models
+    ModelTier,
+    ModelInfo,
 
-  // Errors
-  PollinationsErrorDetails,
-} from './types.js';
+    // Errors
+    PollinationsErrorDetails,
+} from "./types.js";
 
 // Export the error class
-export { PollinationsError } from './types.js';
+export { PollinationsError } from "./types.js";
 
 // Feed subscriptions (real-time SSE streams)
 export {
-  subscribeToImageFeed,
-  subscribeToTextFeed,
-  imageFeed,
-  textFeed,
-  type FeedSubscription,
-} from './feed.js';
+    subscribeToImageFeed,
+    subscribeToTextFeed,
+    imageFeed,
+    textFeed,
+    type FeedSubscription,
+} from "./feed.js";
 
 // Feed types
-export type {
-  ImageFeedEvent,
-  TextFeedEvent,
-  FeedOptions,
-} from './types.js';
+export type { ImageFeedEvent, TextFeedEvent, FeedOptions } from "./types.js";

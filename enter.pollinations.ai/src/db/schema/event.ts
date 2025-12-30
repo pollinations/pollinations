@@ -239,7 +239,7 @@ export const event = sqliteTable(
         ),
 
         // For getPendingSpend: WHERE userId = ? AND createdAt >= ?
-        // Covers the 10-minute window query for pending spend calculation
+        // Covers the 30-minute window query for pending spend calculation
         index("idx_event_user_created").on(table.userId, table.createdAt),
     ],
 );

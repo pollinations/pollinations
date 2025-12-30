@@ -16,6 +16,7 @@
 | `tier:info-needed` | Awaiting registration or more info              | `tier-app-submission.yml` / `tier-upgrade-on-merge.yml` |
 | `tier:flower`      | Approved for Flower tier                        | `tier-upgrade-on-merge.yml` (auto on merge)             |
 | `tier:done`        | Tier upgrade completed                          | `tier-upgrade-on-merge.yml`                             |
+| `tier:rejected`    | Submission rejected (reason in comment)         | `tier-app-submission.yml`                               |
 
 ## PR Labels
 

@@ -12,7 +12,17 @@ const MODEL_ENDPOINTS = {
     text: "https://enter.pollinations.ai/api/generate/text/models",
 };
 
-const POLL_INTERVAL = 15000; // 15 seconds (reduced from 30s for faster trend detection)
+// Tinybird pipes for different aggregation windows
+const TINYBIRD_PIPES = {
+    "60m": "model_health_60m",
+    "5m": "model_health",
+};
+
+// Poll intervals based on aggregation window
+const POLL_INTERVALS = {
+    "60m": 60000, // 1 minute for stable 60m view
+    "5m": 15000, // 15 seconds for live 5m view
+};
 const SPARKLINE_POINTS = 20; // Keep 20 data points for sparklines (~5 min at 15s intervals)
 const TREND_SAMPLES = 8; // Compare current to 8 samples ago (~2 min baseline)
 const MIN_TREND_SAMPLES = 4; // Need at least 1 min of data before showing trends
@@ -54,10 +64,11 @@ function computeTrend(currentMetrics, samples) {
     return { p95Change, err5xxChange, volumeChange };
 }
 
-export function useModelMonitor() {
+export function useModelMonitor(aggregationWindow = "60m") {
+    const pollInterval =
+        POLL_INTERVALS[aggregationWindow] || POLL_INTERVALS["60m"];
     const [models, setModels] = useState([]);
     const [healthStats, setHealthStats] = useState([]);
-    const [isPolling, setIsPolling] = useState(true);
     const [lastUpdated, setLastUpdated] = useState(null);
     const [error, setError] = useState(null);
     const [endpointStatus, setEndpointStatus] = useState({
@@ -119,7 +130,9 @@ export function useModelMonitor() {
         }
 
         try {
-            const url = `${TINYBIRD_HOST}/v0/pipes/model_health.json?token=${TINYBIRD_TOKEN}`;
+            const pipeName =
+                TINYBIRD_PIPES[aggregationWindow] || TINYBIRD_PIPES["60m"];
+            const url = `${TINYBIRD_HOST}/v0/pipes/${pipeName}.json?token=${TINYBIRD_TOKEN}`;
             const response = await fetch(url);
 
             if (!response.ok) {
@@ -134,7 +147,7 @@ export function useModelMonitor() {
             console.error("Failed to fetch health stats:", err);
             setError("Failed to fetch health stats from Tinybird");
         }
-    }, []);
+    }, [aggregationWindow]);
 
     // Separate gateway stats (undefined model = auth/validation failures before model resolution)
     const gatewayStats = healthStats.filter((s) => s.model === "undefined");
@@ -231,10 +244,6 @@ export function useModelMonitor() {
         fetchHealthStats();
     }, [fetchModels, fetchHealthStats]);
 
-    const togglePolling = useCallback(() => {
-        setIsPolling((prev) => !prev);
-    }, []);
-
     // Initial fetch
     useEffect(() => {
         refresh();
@@ -245,33 +254,30 @@ export function useModelMonitor() {
         };
     }, [refresh]);
 
-    // Polling
+    // Polling - always active
     useEffect(() => {
         if (intervalRef.current) {
             clearInterval(intervalRef.current);
         }
 
-        if (isPolling) {
-            intervalRef.current = setInterval(refresh, POLL_INTERVAL);
-        }
+        intervalRef.current = setInterval(refresh, pollInterval);
 
         return () => {
             if (intervalRef.current) {
                 clearInterval(intervalRef.current);
             }
         };
-    }, [isPolling, refresh]);
+    }, [refresh, pollInterval]);
 
     return {
         models: allModels,
         gatewayStats, // Pre-model auth/validation failures
-        isPolling,
-        togglePolling,
         refresh,
-        pollInterval: POLL_INTERVAL,
+        pollInterval,
         lastUpdated,
         error,
         tinybirdConfigured,
         endpointStatus,
+        aggregationWindow, // Current window for UI display
     };
 }

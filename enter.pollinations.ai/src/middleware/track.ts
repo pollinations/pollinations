@@ -32,6 +32,8 @@ import {
     usageToEventParams,
 } from "@/db/schema/event.ts";
 import { drizzle } from "drizzle-orm/d1";
+import { eq, sql } from "drizzle-orm";
+import { user as userTable } from "@/db/schema/better-auth.ts";
 import { HonoRequest } from "hono";
 import type {
     ApiKeyType,
@@ -240,6 +242,25 @@ export const track = (eventType: EventType) =>
                 } else {
                     // No pending event was inserted, store a new event
                     await storeEvents(db, c.var.log, [finalEvent]);
+                }
+
+                // Decrement local pollen balance after billable requests
+                if (
+                    responseTracking.isBilledUsage &&
+                    responseTracking.price?.totalPrice &&
+                    userTracking.userId
+                ) {
+                    const priceToDeduct = responseTracking.price.totalPrice;
+                    await db
+                        .update(userTable)
+                        .set({
+                            pollenBalance: sql`${userTable.pollenBalance} - ${priceToDeduct}`,
+                        })
+                        .where(eq(userTable.id, userTracking.userId));
+                    log.debug("Decremented {price} pollen from user {userId}", {
+                        price: priceToDeduct,
+                        userId: userTracking.userId,
+                    });
                 }
 
                 // process events immediately in development/testing

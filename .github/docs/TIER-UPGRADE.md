@@ -17,11 +17,24 @@ AI-powered app submission pipeline. Split into 2 jobs:
 **Job 1: `tier-parse-issue`** (runs on issue open/edit/comment)
 
 1. Parse submission with AI
-2. **Check for duplicates** (URL, repo, name+user, semantic similarity)
+2. **Check for duplicates** (see Duplicate Detection below)
 3. Check Enter registration
-4. If duplicate → reject + close issue (NO PR created)
+4. If duplicate → `tier:rejected` + close issue (NO PR created)
 5. If not registered → request registration
 6. Set `valid=true` only if: no duplicate AND registered
+
+### Duplicate Detection
+
+The workflow checks for duplicates to prevent tier abuse. Handled by `tier-check-duplicate.js`:
+
+| Match Type        | What's Checked                             | Action     | Example                           |
+| ----------------- | ------------------------------------------ | ---------- | --------------------------------- |
+| `url_exact`       | App URL already exists                     | **Reject** | Same URL in APPS.md               |
+| `repo_exact`      | GitHub repo already registered             | **Reject** | Same repo submitted twice         |
+| `name_user_exact` | Same user + same app name                  | **Reject** | User resubmitting same app        |
+| `semantic_hard`   | AI similarity >80% to user's previous apps | **Reject** | Rebranded version of existing app |
+
+**On rejection:** Issue gets `tier:rejected` label, comment explains reason, issue is closed.
 
 **Job 2: `tier-create-app-pr`** (runs only if valid=true)
 
@@ -55,6 +68,7 @@ When PR author comments on PR with `tier:info-needed`, re-checks registration.
 | ---------------------------- | ------------------------------- | --------------------------------------------------------- |
 | `tier-apps-prepend.js`       | Prepend new app to APPS.md      | `NEW_ROW="..." node .github/scripts/tier-apps-prepend.js` |
 | `tier-apps-update-readme.js` | Update README with last 10 apps | `node .github/scripts/tier-apps-update-readme.js`         |
+| `tier-check-duplicate.js`    | Check for duplicate submissions | Called by workflow (handles special chars safely)         |
 | `tier-apps-check-links.js`   | Check for broken app links      | `node .github/scripts/tier-apps-check-links.js [options]` |
 
 **tier-apps-check-links.js options**: `--timeout=<ms>`, `--category=<name>`, `--verbose`, `--update`, `--report`
@@ -90,7 +104,7 @@ flowchart TD
     subgraph APP["App Submission (tier-app-submission.yml)"]
         A1[User opens issue] --> A2[tier:review label]
         A2 --> A3{Duplicate?}
-        A3 -->|Yes| A3a[tier:duplicate + close]
+        A3 -->|Yes| A3a[tier:rejected + close]
         A3 -->|No| A4{Registered?}
         A4 -->|No| A5[tier:info-needed]
         A5 --> A6[User comments/edits]

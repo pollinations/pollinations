@@ -20,6 +20,9 @@ import { WebhookSubscriptionRevokedPayload } from "@polar-sh/sdk/models/componen
 import { WebhookSubscriptionCanceledPayload } from "@polar-sh/sdk/models/components/webhooksubscriptioncanceledpayload.js";
 import { WebhookSubscriptionUpdatedPayload } from "@polar-sh/sdk/models/components/webhooksubscriptionupdatedpayload.js";
 import { WebhookSubscriptionCreatedPayload } from "@polar-sh/sdk/models/components/webhooksubscriptioncreatedpayload.js";
+import { WebhookBenefitGrantCycledPayload } from "@polar-sh/sdk/models/components/webhookbenefitgrantcycledpayload.js";
+import { WebhookOrderPaidPayload } from "@polar-sh/sdk/models/components/webhookorderpaidpayload.js";
+import { sql } from "drizzle-orm";
 
 const log = getLogger(["hono", "webhooks"]);
 
@@ -50,6 +53,14 @@ export const webhooksRoutes = new Hono<Env>().post("/polar", async (c) => {
 
             case "subscription.created":
                 await handleSubscriptionCreated(payload);
+                break;
+
+            case "benefit_grant.cycled":
+                await handleBenefitGrantCycled(c.env, payload);
+                break;
+
+            case "order.paid":
+                await handleOrderPaid(c.env, payload);
                 break;
 
             default:
@@ -179,6 +190,91 @@ async function handleSubscriptionCreated(
     }
 
     log.debug("Subscription created for user {userId}", {
+        userId: externalId,
+    });
+}
+
+async function handleBenefitGrantCycled(
+    env: Cloudflare.Env,
+    payload: WebhookBenefitGrantCycledPayload,
+): Promise<void> {
+    const externalId = payload.data.customer.externalId;
+    if (!externalId) {
+        log.warn(
+            "Received benefit_grant.cycled webhook without external customer id",
+        );
+        return;
+    }
+
+    // Type guard: only meter_credit grants have lastCreditedUnits
+    const properties = payload.data.properties as {
+        lastCreditedUnits?: number;
+    };
+    const units = properties.lastCreditedUnits;
+    if (!units || units <= 0) {
+        log.debug(
+            "benefit_grant.cycled for user {userId} has no units to credit",
+            { userId: externalId },
+        );
+        return;
+    }
+
+    const db = drizzle(env.DB);
+    await db
+        .update(userTable)
+        .set({
+            pollenBalance: sql`COALESCE(${userTable.pollenBalance}, 0) + ${units}`,
+        })
+        .where(eq(userTable.id, externalId));
+
+    log.info(
+        "Credited {units} pollen to user {userId} via benefit_grant.cycled",
+        { units, userId: externalId },
+    );
+}
+
+async function handleOrderPaid(
+    env: Cloudflare.Env,
+    payload: WebhookOrderPaidPayload,
+): Promise<void> {
+    const externalId = payload.data.customer.externalId;
+    if (!externalId) {
+        log.warn("Received order.paid webhook without external customer id");
+        return;
+    }
+
+    const order = payload.data;
+    const product = order.product as {
+        benefits?: Array<{ type: string; properties?: { units?: number } }>;
+    } | null;
+    if (!product) {
+        log.debug("order.paid for user {userId} has no product", {
+            userId: externalId,
+        });
+        return;
+    }
+
+    // Find meter_credit benefit on the product
+    const benefit = product.benefits?.find((b) => b.type === "meter_credit");
+
+    const units = benefit?.properties?.units;
+    if (!units || units <= 0) {
+        log.debug("order.paid for user {userId} has no pollen credits", {
+            userId: externalId,
+        });
+        return;
+    }
+
+    const db = drizzle(env.DB);
+    await db
+        .update(userTable)
+        .set({
+            pollenBalance: sql`COALESCE(${userTable.pollenBalance}, 0) + ${units}`,
+        })
+        .where(eq(userTable.id, externalId));
+
+    log.info("Credited {units} pollen to user {userId} via order.paid", {
+        units,
         userId: externalId,
     });
 }

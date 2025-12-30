@@ -5,9 +5,7 @@ import { LoggerVariables } from "@/middleware/logger.ts";
 import type { AuthVariables } from "@/middleware/auth.ts";
 import { CustomerState } from "@polar-sh/sdk/models/components/customerstate.js";
 import { HTTPException } from "hono/http-exception";
-import { z } from "zod";
 import { CustomerMeter } from "@polar-sh/sdk/models/components/customermeter.js";
-import { getPendingSpend } from "@/events.ts";
 import { drizzle } from "drizzle-orm/d1";
 import { user as userTable } from "@/db/schema/better-auth.ts";
 import { eq } from "drizzle-orm";
@@ -115,29 +113,6 @@ export const polar = createMiddleware<PolarEnv>(async (c, next) => {
         },
     );
 
-    const getAdjustedSimplifiedMeters = async (userId: string) => {
-        const customerMeters = await getCustomerMeters(userId);
-        const activeMeters = getSimplifiedMatchingMeters(customerMeters);
-        const sortedMeters = sortMetersByDescendingPriority(activeMeters);
-        const pendingSpend = await getPendingSpend(drizzle(c.env.DB), userId);
-
-        const { adjustedMeters } = sortedMeters.reduce(
-            (acc, meter) => {
-                const deduction = Math.min(meter.balance, acc.remainingSpend);
-                acc.remainingSpend -= deduction;
-                acc.adjustedMeters.push({
-                    ...meter,
-                    balance: meter.balance - deduction,
-                });
-                return acc;
-            },
-            {
-                remainingSpend: pendingSpend,
-                adjustedMeters: [] as typeof sortedMeters,
-            },
-        );
-    };
-
     const requirePositiveBalance = async (userId: string, message?: string) => {
         const db = drizzle(c.env.DB);
 
@@ -148,10 +123,16 @@ export const polar = createMiddleware<PolarEnv>(async (c, next) => {
             .where(eq(userTable.id, userId))
             .limit(1);
 
-        let localBalance = users[0]?.pollenBalance;
+        if (!users[0]) {
+            throw new HTTPException(403, {
+                message: "User not found",
+            });
+        }
+
+        let localBalance = users[0].pollenBalance;
 
         // Lazy initialization: if null, fetch from Polar and store
-        if (localBalance === null || localBalance === undefined) {
+        if (localBalance == null) {
             log.info(
                 "Initializing local balance for user {userId} from Polar",
                 { userId },
@@ -208,41 +189,8 @@ export const polar = createMiddleware<PolarEnv>(async (c, next) => {
     await next();
 });
 
-const MeterMetadataSchema = z.object({
-    slug: z.string(),
-    priority: z.number(),
-});
-
-type MeterMetadata = z.infer<typeof MeterMetadataSchema>;
-
 type SimplifiedCustomerMeter = {
     meterId: string;
     balance: number;
-    metadata: MeterMetadata;
+    metadata: { slug: string; priority: number };
 };
-
-function getSimplifiedMatchingMeters(
-    customerMeters: CustomerMeter[],
-): SimplifiedCustomerMeter[] {
-    return customerMeters.flatMap((customerMeter) => {
-        const metadata = MeterMetadataSchema.safeParse(
-            customerMeter.meter?.metadata,
-        ).data;
-        if (!metadata) return [];
-        return [
-            {
-                meterId: customerMeter.meter.id,
-                balance: customerMeter.balance,
-                metadata,
-            },
-        ];
-    });
-}
-
-function sortMetersByDescendingPriority(
-    simplifiedMeters: SimplifiedCustomerMeter[],
-): SimplifiedCustomerMeter[] {
-    return simplifiedMeters.sort(
-        (a, b) => b.metadata.priority - a.metadata.priority,
-    );
-}

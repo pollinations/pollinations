@@ -9,7 +9,7 @@ import memoize from "lodash.memoize";
  *
  * @param {string} prompt - The user's input prompt for text generation.
  * @param {Object} options - Configuration options for text generation.
- * @param {number} [options.seed=-1] - Seed for deterministic text generation. -1 for random.
+ * @param {number} [options.seed=42] - Seed for deterministic text generation.
  * @param {string} [options.systemPrompt] - Optional system prompt to guide the text generation.
  * @param {boolean} [options.jsonMode=false] - Whether to parse the response as JSON.
  * @param {boolean} [options.loadNull=false] - Whether to reset the text state to null before fetching new data.

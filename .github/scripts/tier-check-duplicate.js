@@ -14,7 +14,7 @@
  *
  * Output (to GITHUB_OUTPUT):
  *   duplicate_found - file where duplicate was found (empty if none)
- *   match_type - type of match: url_exact, repo_exact, name_user_exact, semantic_hard, semantic_soft
+ *   match_type - type of match: url_exact, repo_exact, name_user_exact
  *   similarity_score - semantic similarity score (0-100)
  *   similarity_reason - explanation of similarity
  *   user_previous_apps - JSON array of user's previous app submissions

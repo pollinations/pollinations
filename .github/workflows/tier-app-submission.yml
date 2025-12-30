@@ -163,18 +163,19 @@ jobs:
           PROJECT_JSON: ${{ steps.parse.outputs.project_json }}
           USER_PREVIOUS_APPS: ${{ steps.duplicate-check-exact.outputs.user_previous_apps }}
         run: |
+          # Use jq for safe escaping of special characters
           APP_NAME=$(echo "$PROJECT_JSON" | jq -r '.name')
           APP_DESC=$(echo "$PROJECT_JSON" | jq -r '.description')
           
-          # Build comparison message for semantic check
-          COMPARISON_MSG=$(printf 'Current submission:\nName: %s\nDescription: %s\n\nUser previous submissions:\n%s\n\nScore similarity 0-100 based on purpose, category, target use case, and core functionality.' "$APP_NAME" "$APP_DESC" "$USER_PREVIOUS_APPS")
-          
+          # Build comparison message using jq to safely handle special chars
           PAYLOAD=$(jq -n \
-            --arg comparison "$COMPARISON_MSG" '{
+            --arg name "$APP_NAME" \
+            --arg desc "$APP_DESC" \
+            --arg prev "$USER_PREVIOUS_APPS" '{
               model: "openai",
               messages: [
                 { role: "system", content: "Compare app submissions semantically. Return JSON: similarity (0-100 integer), reason (brief explanation). Consider: purpose, target audience, core functionality, category." },
-                { role: "user", content: $comparison }
+                { role: "user", content: ("Current submission:\nName: " + $name + "\nDescription: " + $desc + "\n\nUser previous submissions:\n" + $prev + "\n\nScore similarity 0-100 based on purpose, category, target use case, and core functionality.") }
               ],
               response_format: { type: "json_object" }
             }')
@@ -260,7 +261,7 @@ jobs:
             if (matchType === 'url_exact') reason = 'Same URL already exists in our showcase';
             else if (matchType === 'repo_exact') reason = 'Same repository already registered by you';
             else if (matchType === 'name_user_exact') reason = 'You have already submitted this app with the same name';
-            else if (matchType === 'semantic_hard') reason = 'This is 90%+ semantically similar to your previous submission';
+            else if (matchType === 'semantic_hard') reason = 'This is >80% semantically similar to your previous submission';
             
             await github.rest.issues.createComment({
               owner: context.repo.owner, repo: context.repo.repo,

@@ -1,0 +1,14 @@
+# Core dependencies for SANA-Sprint server
+# torch and torchvision should be installed separately with CUDA support
+diffusers>=0.32.0
+accelerate
+transformers
+safetensors
+huggingface-hub
+fastapi
+uvicorn
+pydantic
+aiohttp
+pillow
+requests
+sentencepiece

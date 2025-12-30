@@ -1,17 +1,18 @@
 #!/usr/bin/env npx tsx
 /**
- * Apply fixes to Polar subscriptions based on mismatches.json
+ * Fix polar-tier-mismatch issues
+ *
+ * Updates Polar subscriptions to match D1 tier.
  *
  * Usage:
- *   npx tsx scripts/tier-sync/apply-fixes.ts
+ *   npx tsx scripts/manage-users/fix-polar-tier-mismatch.ts
  *
  * Input:
- *   scripts/tier-sync/data/mismatches.json (run compare-tiers.ts first)
+ *   scripts/manage-users/data/polar-tier-mismatch.json (run compare-d1-polar-users.ts first)
  *
  * Actions:
- *   - tier_mismatch: Update existing Polar subscription to D1 tier
- *   - missing_in_polar: Create new Polar subscription (requires customer to exist)
- *   - duplicate_polar: Flag only (manual cleanup needed)
+ *   - For each user with "polar-tier-mismatch" issue:
+ *     Update existing Polar subscription to match D1 tier
  *
  * Requires:
  *   - POLAR_ACCESS_TOKEN environment variable
@@ -132,7 +133,7 @@ async function main() {
     // Load mismatches
     if (!existsSync(MISMATCHES_PATH)) {
         console.error(`\n❌ Mismatches file not found: ${MISMATCHES_PATH}`);
-        console.error("   Run compare-tiers.ts first!");
+        console.error("   Run compare-d1-polar-users.ts first!");
         process.exit(1);
     }
 

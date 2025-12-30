@@ -1,16 +1,16 @@
 #!/usr/bin/env npx tsx
 /// <reference types="node" />
 /**
- * Cleanup duplicate Polar subscriptions
+ * Fix polar-duplicate-subscription issues
  *
  * Some customers have multiple active subscriptions due to historical bugs.
  * This script identifies them and allows interactive cleanup.
  *
  * Usage:
- *   npx tsx scripts/tier-sync/cleanup-duplicates.ts
+ *   npx tsx scripts/manage-users/fix-polar-duplicate-subscription.ts [--dry-run]
  *
  * Input:
- *   scripts/tier-sync/data/polar-data.json (run fetch-polar-data.ts first)
+ *   scripts/manage-users/data/polar-duplicate-subscription.json (run compare-d1-polar-users.ts first)
  *
  * Logic:
  *   - Keep the subscription with the HIGHEST tier
@@ -121,9 +121,16 @@ interface DuplicateGroup {
 const POLAR_DATA_PATH = new URL("./data/polar-data.json", import.meta.url)
     .pathname;
 
+// Parse command line arguments
+const DRY_RUN = process.argv.includes("--dry-run");
+
 async function main() {
     console.log("=".repeat(60));
-    console.log("  CLEANUP DUPLICATE SUBSCRIPTIONS");
+    console.log(
+        DRY_RUN
+            ? "  CLEANUP DUPLICATE SUBSCRIPTIONS (DRY RUN)"
+            : "  CLEANUP DUPLICATE SUBSCRIPTIONS",
+    );
     console.log("=".repeat(60));
 
     // Load Polar data
@@ -229,6 +236,13 @@ async function main() {
     console.log(`  Subscriptions to REVOKE: ${totalRevoke}`);
     console.log("-".repeat(60));
 
+    // Dry run mode - exit early
+    if (DRY_RUN) {
+        console.log("\n🧪 DRY RUN MODE - No changes will be made");
+        console.log("   Remove --dry-run to execute changes\n");
+        return;
+    }
+
     // Confirm
     const mode = await promptUser(
         `\nHow do you want to proceed?\n  [a] Revoke all duplicates automatically\n  [i] Interactive (confirm each customer)\n  [n] Cancel\nChoice: `,
@@ -308,7 +322,7 @@ async function main() {
 
     if (revoked > 0) {
         console.log("\n⚠️  Remember to re-fetch Polar data to verify changes:");
-        console.log("   npx tsx scripts/tier-sync/fetch-polar-data.ts");
+        console.log("   npx tsx scripts/manage-users/fetch-polar-data.ts");
     }
 }
 

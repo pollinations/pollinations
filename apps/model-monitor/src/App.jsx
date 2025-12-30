@@ -642,7 +642,7 @@ function App() {
           <div>
             <div className="flex items-center gap-3">
               <h1 className="text-lg font-bold text-gray-900 tracking-tight">
-                Model Monitor
+                pollinations.ai model monitor
               </h1>
               {isLiveMode && (
                 <span

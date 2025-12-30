@@ -43,32 +43,9 @@ You receive a daily Pollen grant based on your tier. Daily Pollen is spent befor
 
 ## What can I create with Pollen?
 
-Think of Pollen like buying in bulk — the more efficient the model, the more you get! (**$1 ≈ 1 Pollen**)
-
-**🎨 Image Generation:**
-
-- **Flux** — 8,300 images per Pollen (ultra-efficient for bulk!)
-- **Turbo** — 3,300 images per Pollen (fast generation)
-- **GPTImage** — 125 images per Pollen (vision-capable, higher quality)
-- **Seedream** — 33 images per Pollen (premium quality)
-- **Kontext** — 25 images per Pollen (advanced editing)
-
-**💬 Text Generation** _(~600 token conversations)_:
-
-- **Mistral Small** — 5,900 conversations per Pollen (super efficient)
-- **GPT-5 Nano** — 5,300 conversations per Pollen (vision-capable!)
-- **Gemini 2.5 Flash** — 3,800 conversations per Pollen (fast & smart)
-- **DeepSeek V3.1** — 445 conversations per Pollen (advanced reasoning)
-- **Claude Sonnet 4.5** — 150 conversations per Pollen (top-tier quality)
-
-**💡 Real-World Examples:**
-
-- **1 Pollen** = 8,000+ Flux images OR 5,900 Mistral chats
-- **10 Pollen ($10)** = 83,000 Flux images OR 59,000 Mistral chats — enough to power an app for months!
+Think of Pollen like buying in bulk — the more efficient the model, the more you get!
 
 **Pro tip:** Mix efficient models for high-volume tasks with premium models when quality matters most.
-
-_For exact token-based pricing, check your [dashboard](https://enter.pollinations.ai)._
 
 ## How does my Pollen wallet work?
 

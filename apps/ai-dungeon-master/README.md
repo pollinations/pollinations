@@ -2,7 +2,7 @@
 
 **An immersive text-based RPG powered by AI-generated storytelling, dynamic image generation, and interactive gameplay. Experience solo D&D adventures with an intelligent AI dungeon master that creates unique stories, characters, and visuals in real-time.**
 
-![AI Dungeon Master](https://gen.pollinations.ai/image/fantasy-rpg-dungeon-master-medieval-castle-digital-art-atmospheric?width=800&height=400&model=flux)
+![AI Dungeon Master](https://image.pollinations.ai/prompt/fantasy-rpg-dungeon-master-medieval-castle-digital-art-atmospheric?width=800&height=400&model=flux)
 
 ## 🌟 **Project Overview**
 
@@ -330,11 +330,11 @@ const response = await fetch("/v1/chat/completions", {
 ### **Dynamic Image Generation**
 
 ```javascript
-// GET /image/{encoded_prompt}
-const imageUrl = `https://gen.pollinations.ai/image/${encodeURIComponent(imagePrompt)}?width=1024&height=768&model=flux`;
+// GET /api/image/prompt/{encoded_prompt}
+const imageUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(imagePrompt)}?width=1024&height=768&model=flux`;
 
 // Example prompt: fantasy rpg scene, ancient temple, digital art, atmospheric
-https://gen.pollinations.ai/image/fantasy%20rpg%20scene%20ancient%20temple%20digital%20art%20atmospheric?width=1024&height=768&model=flux
+https://image.pollinations.ai/prompt/fantasy%20rpg%20scene%20ancient%20temple%20digital%20art%20atmospheric?width=1024&height=768&model=flux
 ```
 
 ### **Error Handling & Fallbacks**

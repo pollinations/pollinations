@@ -1,5 +1,7 @@
 # 🎨 Pollinations API Cheatsheet
 
+> 🔧 **Internal testing only** — For production API usage, use [`gen.pollinations.ai`](https://gen.pollinations.ai). This cheatsheet tests the Enter gateway directly for debugging purposes.
+
 > Quick reference for testing image and text models via **enter.pollinations.ai**
 
 > ⚠️ **Note**: The current endpoint structure (`/api/generate/image/*`, `/api/generate/v1/*`, `/api/generate/text/*`) is transitional and will be simplified in future releases.
@@ -9,15 +11,18 @@
 ## 📍 Quick Reference
 
 ### Endpoints
+
 - **Image:** `GET /api/generate/image/{prompt}?model=flux`
 - **Text (OpenAI):** `POST /api/generate/v1/chat/completions` with JSON body
 - **Text (Simple):** `GET /api/generate/text/{prompt}?model=openai`
 
 ### Authentication
+
 - Header: `Authorization: Bearer YOUR_API_KEY`
 - Query: `?key=YOUR_API_KEY`
 
 ### Model Discovery
+
 - **Image models:** `/api/generate/image/models`
 - **Text models:** `/api/generate/v1/models`
 
@@ -34,7 +39,6 @@
    - Safe for client-side code (React, Vue, etc.)
    - Pollen-based rate limiting: 1 pollen/hour refill per IP+key
    - Access to all models
-   
 2. **🔒 Secret Key** (starts with `sk_`)
    - Only shown once - copy immediately!
    - For server-side apps only
@@ -72,25 +76,30 @@ curl "$BASE_URL/generate/image/test2?model=flux&width=512&height=512&seed=123" \
 # Alternative: Use query parameter for auth
 curl "$BASE_URL/generate/image/test3?model=flux&key=$TOKEN"
 ```
+
 **GPT Image**
+
 ```bash
 curl "$BASE_URL/generate/image/test1?model=gptimage&width=512&height=512" \
   -H "Authorization: Bearer $TOKEN"
 ```
 
 **Turbo**
+
 ```bash
 curl "$BASE_URL/generate/image/test2?model=turbo&width=1024&height=1024" \
   -H "Authorization: Bearer $TOKEN"
 ```
 
 **Kontext**
+
 ```bash
 curl "$BASE_URL/generate/image/test3?model=kontext&width=512&height=512" \
   -H "Authorization: Bearer $TOKEN"
 ```
 
-**Seedream** ⚠️ *Requires minimum 960x960 pixels*
+**Seedream** ⚠️ _Requires minimum 960x960 pixels_
+
 ```bash
 curl "$BASE_URL/generate/image/test4?model=seedream&width=1024&height=1024" \
   -H "Authorization: Bearer $TOKEN"
@@ -422,6 +431,7 @@ echo "✅ Done!"
 ## Common Issues
 
 ### 401 Unauthorized
+
 - **All models require authentication** - no anonymous access
 - Check your token is correct (starts with `pk_` or `sk_`)
 - Verify token exists in database
@@ -429,6 +439,7 @@ echo "✅ Done!"
 - For paid models, ensure you're using a **Secret Key** (`sk_`), not Publishable Key
 
 ### 403 Forbidden
+
 - **Insufficient pollen balance** - paid models require pollen
   - Check your pollen balance at https://enter.pollinations.ai
   - Add pollen to your account to use paid models
@@ -436,6 +447,7 @@ echo "✅ Done!"
 - Note: Image models have NO tier requirements, only pollen balance
 
 ### 500 Internal Server Error
+
 - **Most common**: Too many requests too quickly - add delays between requests
 - Backend image service might be temporarily overloaded
 - Try single requests first, then batch with 2+ second delays
@@ -443,6 +455,7 @@ echo "✅ Done!"
 - If persistent, backend service might be down
 
 ### Empty Response
+
 - Model might be rate-limited
 - Cache might have returned empty result
 - Check response headers with `-I` flag
@@ -483,6 +496,7 @@ curl "$BASE_URL/generate/v1/chat/completions" \
 ```
 
 **Important Notes:**
+
 - ⚠️ **Only test models that appear in the discovery endpoint**
 - **Image models**: NO tier requirements, only pollen balance matters for paid models
 - **Text models**: May have tier requirements, check model details
@@ -524,13 +538,13 @@ curl "$BASE_URL/generate/v1/chat/completions" \
 
 ### Tier Levels
 
-| Tier | Emoji | Pollen/Day | Criteria |
-|------|-------|------------|----------|
-| spore | 🍄 | 5 | Default (new accounts) |
-| seed | 🌱 | 10 | GitHub engagement |
-| flower | 🌸 | 15 | Contributed code/project |
-| nectar | 🍯 | 20 | Strategic partners |
-| router | 🔌 | 100 | Infrastructure partners |
+| Tier   | Emoji | Pollen/Day | Criteria                 |
+| ------ | ----- | ---------- | ------------------------ |
+| spore  | 🍄    | 5          | Default (new accounts)   |
+| seed   | 🌱    | 10         | GitHub engagement        |
+| flower | 🌸    | 15         | Contributed code/project |
+| nectar | 🍯    | 20         | Strategic partners       |
+| router | 🔌    | 100        | Infrastructure partners  |
 
 ### Quick Tier Update
 
@@ -553,15 +567,17 @@ npx tsx scripts/manage-polar.ts user update-tier --email USER@EMAIL.COM --tier f
 ### Evaluate User for Upgrade
 
 **Flower tier** (any ONE qualifies):
+
 - Has commits: `gh api 'search/commits?q=repo:pollinations/pollinations+author:USERNAME' --jq '.total_count'`
 - Has project: `grep -ri "author.*USERNAME" pollinations.ai/src/config/projects/`
 
 **Seed tier** (any ONE qualifies):
+
 - Issue involvement: `gh api 'search/issues?q=repo:pollinations/pollinations+involves:USERNAME' --jq '.total_count'`
 - Starred repo: `.claude/skills/tier-management/fetch-stargazers.sh USERNAME`
 
 ### Notes
 
 - **DB tier** = what user CAN activate
-- **Polar subscription** = what user HAS activated  
+- **Polar subscription** = what user HAS activated
 - If no Polar subscription, user must click "Activate" at enter.pollinations.ai

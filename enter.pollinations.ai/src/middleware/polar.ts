@@ -57,7 +57,7 @@ export const polar = createMiddleware<PolarEnv>(async (c, next) => {
         },
         {
             log,
-            ttl: 300, // 5 minutes - safe with local pending spend tracking
+            ttl: 300, // 5 minutes - only used for subscription/tier lookups, not balance checks
             kv: c.env.KV,
             keyGenerator: (userId) => `polar:customer:state:${userId}`,
         },
@@ -98,7 +98,7 @@ export const polar = createMiddleware<PolarEnv>(async (c, next) => {
         },
         {
             log,
-            ttl: 480, // 8 minutes - safe with local pending spend tracking
+            ttl: 1500, // 25 minutes - safe with local pending spend tracking (30 min window)
             kv: c.env.KV,
             keyGenerator: (userId) => `polar:customer:meters:${userId}`,
             staleOnError: true, // Return stale cache on Polar API rate limit (429)

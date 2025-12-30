@@ -566,7 +566,7 @@ export async function getPendingSpend(
     db: DrizzleD1Database,
     userId: string,
 ): Promise<number> {
-    const maxPendingSpendWindowMs = 30 * 60 * 1000; // 30 minutes
+    const maxPendingSpendWindowMs = 3 * 60 * 1000; // 3 minutes
     const windowStart = new Date(Date.now() - maxPendingSpendWindowMs);
     const result = await db
         .select({

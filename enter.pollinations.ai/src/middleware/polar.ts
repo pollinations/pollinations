@@ -123,13 +123,7 @@ export const polar = createMiddleware<PolarEnv>(async (c, next) => {
             .where(eq(userTable.id, userId))
             .limit(1);
 
-        if (!users[0]) {
-            throw new HTTPException(403, {
-                message: "User not found",
-            });
-        }
-
-        let localBalance = users[0].pollenBalance;
+        let localBalance = users[0]?.pollenBalance;
 
         // Lazy initialization: if null, fetch from Polar and store
         if (localBalance == null) {

@@ -540,25 +540,33 @@ def generate_image(prompt: str, token: str, index: int, reference_url: str = Non
         # Each attempt gets a fresh random seed
         seed = random.randint(0, MAX_SEED)
 
-        # Params with key (for authenticated request)
-        params = {
-            "model": IMAGE_MODEL,
-            "width": IMAGE_WIDTH,
-            "height": IMAGE_HEIGHT,
-            "quality": "hd",
-            "nologo": "true",
-            "private": "true",
-            "nofeed": "true",
-            "seed": seed,
-            "key": token
-        }
+        # Build query string manually with proper ordering and encoding
+        # API requires: image= param LAST for I2I, properly URL-encoded
+        query_params = [
+            ("model", IMAGE_MODEL),
+            ("width", str(IMAGE_WIDTH)),
+            ("height", str(IMAGE_HEIGHT)),
+            ("quality", "hd"),
+            ("nologo", "true"),
+            ("private", "true"),
+            ("nofeed", "true"),
+            ("seed", str(seed)),
+        ]
 
-        # Add reference image for I2I (must be fully URL-encoded)
+        # Add reference image for I2I (must be LAST in query string, fully URL-encoded)
         if reference_url:
             # Strip key= param from reference URL if present (auth goes on outer URL only)
             clean_ref = re.sub(r'[&?]key=[^&]*', '', reference_url)
-            # Encode the full URL so nested params don't break outer URL parsing
-            params["image"] = quote(clean_ref, safe='')
+            # URL-encode the entire reference URL including its query parameters
+            encoded_ref = quote(clean_ref, safe='')
+            query_params.append(("image", encoded_ref))
+
+        # Add auth key LAST (after image param if present)
+        query_params.append(("key", token))
+
+        # Build full URL with proper parameter ordering
+        query_string = "&".join(f"{k}={v}" for k, v in query_params)
+        full_url = f"{base_url}?{query_string}"
 
         if attempt == 0:
             print(f"  Using seed: {seed}")
@@ -569,7 +577,7 @@ def generate_image(prompt: str, token: str, index: int, reference_url: str = Non
             time.sleep(backoff_delay)
 
         try:
-            response = requests.get(base_url, params=params, timeout=300)
+            response = requests.get(full_url, timeout=300)
 
             if response.status_code == 200:
                 content_type = response.headers.get('content-type', '')
@@ -595,9 +603,24 @@ def generate_image(prompt: str, token: str, index: int, reference_url: str = Non
                     img_format = "JPEG" if is_jpeg else ("PNG" if is_png else "WebP")
                     print(f"  Image {index + 1} generated successfully ({img_format}, {len(image_bytes):,} bytes)")
 
-                    # Build public URL without key for I2I reference
-                    public_params = {k: v for k, v in params.items() if k != "key"}
-                    public_url = base_url + "?" + "&".join(f"{k}={v}" for k, v in public_params.items())
+                    # Build public URL without key for I2I reference (use same param order)
+                    public_params = [
+                        ("model", IMAGE_MODEL),
+                        ("width", str(IMAGE_WIDTH)),
+                        ("height", str(IMAGE_HEIGHT)),
+                        ("quality", "hd"),
+                        ("nologo", "true"),
+                        ("private", "true"),
+                        ("nofeed", "true"),
+                        ("seed", str(seed)),
+                    ]
+                    # Add image param LAST if it was used
+                    if reference_url:
+                        clean_ref = re.sub(r'[&?]key=[^&]*', '', reference_url)
+                        encoded_ref = quote(clean_ref, safe='')
+                        public_params.append(("image", encoded_ref))
+
+                    public_url = base_url + "?" + "&".join(f"{k}={v}" for k, v in public_params)
 
                     return image_bytes, public_url
                 else:

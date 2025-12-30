@@ -5,12 +5,10 @@ import { LoggerVariables } from "@/middleware/logger.ts";
 import type { AuthVariables } from "@/middleware/auth.ts";
 import { CustomerState } from "@polar-sh/sdk/models/components/customerstate.js";
 import { HTTPException } from "hono/http-exception";
-import { z } from "zod";
 import { CustomerMeter } from "@polar-sh/sdk/models/components/customermeter.js";
-import { getPendingSpend } from "@/events.ts";
 import { drizzle } from "drizzle-orm/d1";
-import { event } from "@/db/schema/event.ts";
-import { and, eq, gte, sql } from "drizzle-orm";
+import { user as userTable } from "@/db/schema/better-auth.ts";
+import { eq } from "drizzle-orm";
 
 type BalanceCheckResult = {
     selectedMeterId: string;
@@ -45,10 +43,18 @@ export const polar = createMiddleware<PolarEnv>(async (c, next) => {
 
     const getCustomerState = cached(
         async (userId: string): Promise<CustomerState> => {
+            log.info("[POLAR API] getCustomerState for user {userId}", {
+                userId,
+            });
             try {
-                return await client.customers.getStateExternal({
+                const result = await client.customers.getStateExternal({
                     externalId: userId,
                 });
+                log.info(
+                    "[POLAR API] getCustomerState SUCCESS for user {userId}",
+                    { userId },
+                );
+                return result;
             } catch (error) {
                 throw new Error("Failed to get customer state.", {
                     cause: error,
@@ -65,19 +71,21 @@ export const polar = createMiddleware<PolarEnv>(async (c, next) => {
 
     const getCustomerMeters = cached(
         async (userId: string): Promise<CustomerMeter[]> => {
-            log.debug(
-                "Fetching customer meters from Polar API for user {userId}",
-                { userId },
-            );
+            log.info("[POLAR API] getCustomerMeters for user {userId}", {
+                userId,
+            });
             try {
                 const response = await client.customerMeters.list({
                     externalCustomerId: userId,
                     limit: 100,
                 });
-                log.debug("Got {count} customer meters for user {userId}", {
-                    count: response.result.items.length,
-                    userId,
-                });
+                log.info(
+                    "[POLAR API] getCustomerMeters SUCCESS - {count} meters for user {userId}",
+                    {
+                        count: response.result.items.length,
+                        userId,
+                    },
+                );
                 return response.result.items;
             } catch (error) {
                 log.error(
@@ -105,70 +113,81 @@ export const polar = createMiddleware<PolarEnv>(async (c, next) => {
         },
     );
 
-    const getAdjustedSimplifiedMeters = async (userId: string) => {
-        const customerMeters = await getCustomerMeters(userId);
-        const activeMeters = getSimplifiedMatchingMeters(customerMeters);
-        const sortedMeters = sortMetersByDescendingPriority(activeMeters);
-        const pendingSpend = await getPendingSpend(drizzle(c.env.DB), userId);
-
-        const { adjustedMeters } = sortedMeters.reduce(
-            (acc, meter) => {
-                const deduction = Math.min(meter.balance, acc.remainingSpend);
-                acc.remainingSpend -= deduction;
-                acc.adjustedMeters.push({
-                    ...meter,
-                    balance: meter.balance - deduction,
-                });
-                return acc;
-            },
-            {
-                remainingSpend: pendingSpend,
-                adjustedMeters: [] as typeof sortedMeters,
-            },
-        );
-    };
-
     const requirePositiveBalance = async (userId: string, message?: string) => {
-        const customerMeters = await getCustomerMeters(userId);
-        const activeMeters = getSimplifiedMatchingMeters(customerMeters);
-        const sortedMeters = sortMetersByDescendingPriority(activeMeters);
+        const db = drizzle(c.env.DB);
 
-        // Get recent local spend to account for Polar processing delay
-        const pendingSpend = await getPendingSpend(drizzle(c.env.DB), userId);
+        // Check local D1 balance first
+        const users = await db
+            .select({ pollenBalance: userTable.pollenBalance })
+            .from(userTable)
+            .where(eq(userTable.id, userId))
+            .limit(1);
 
-        if (pendingSpend > 0) {
-            log.debug("Pending spend from D1: {pendingSpend}", {
-                pendingSpend,
+        let localBalance = users[0]?.pollenBalance;
+
+        // Lazy initialization: if null, fetch from Polar and store
+        // On error (e.g. rate limit), fail the request - don't continue without balance
+        if (localBalance == null) {
+            log.info(
+                "Initializing local balance for user {userId} from Polar",
+                { userId },
+            );
+            let customerMeters: CustomerMeter[];
+            try {
+                customerMeters = await getCustomerMeters(userId);
+            } catch (error) {
+                log.error(
+                    "Failed to initialize balance for user {userId}, cannot proceed",
+                    {
+                        userId,
+                        error:
+                            error instanceof Error
+                                ? error.message
+                                : String(error),
+                    },
+                );
+                throw new HTTPException(503, {
+                    message:
+                        "Unable to verify balance. Please try again shortly.",
+                });
+            }
+            const totalBalance = customerMeters.reduce(
+                (sum, meter) => sum + meter.balance,
+                0,
+            );
+            await db
+                .update(userTable)
+                .set({ pollenBalance: totalBalance })
+                .where(eq(userTable.id, userId));
+            localBalance = totalBalance;
+            log.info("Initialized local balance for user {userId}: {balance}", {
+                userId,
+                balance: totalBalance,
             });
         }
 
-        // Adjust meter balances by subtracting recent spend.
-        // Note: We deduct from highest-priority meters first, which may not match
-        // actual meter usage. This is intentionally conservative - it may briefly
-        // over-restrict, but prevents negative balances. Accuracy restores when
-        // Polar syncs and cache refreshes.
-        let remainingSpend = pendingSpend;
-        const adjustedMeters = sortedMeters.map((meter) => {
-            const deduction = Math.min(meter.balance, remainingSpend);
-            remainingSpend -= deduction;
-            return {
-                ...meter,
-                balance: meter.balance - deduction,
-            };
+        log.debug("Local pollen balance for user {userId}: {balance}", {
+            userId,
+            balance: localBalance,
         });
 
-        for (const meter of adjustedMeters) {
-            if (meter.balance > 0) {
-                c.var.polar.balanceCheckResult = {
-                    selectedMeterId: meter.meterId,
-                    selectedMeterSlug: meter.metadata.slug,
-                    meters: adjustedMeters,
-                };
-                return;
-            }
+        if (localBalance > 0) {
+            // Set a simplified balance result for tracking
+            c.var.polar.balanceCheckResult = {
+                selectedMeterId: "local",
+                selectedMeterSlug: "local:combined",
+                meters: [
+                    {
+                        meterId: "local",
+                        balance: localBalance,
+                        metadata: { slug: "local:combined", priority: 0 },
+                    },
+                ],
+            };
+            return;
         }
 
-        // no meter with positive balance was found
+        // no positive balance
         throw new HTTPException(403, {
             message: message || "Your pollen balance is too low.",
         });
@@ -183,41 +202,8 @@ export const polar = createMiddleware<PolarEnv>(async (c, next) => {
     await next();
 });
 
-const MeterMetadataSchema = z.object({
-    slug: z.string(),
-    priority: z.number(),
-});
-
-type MeterMetadata = z.infer<typeof MeterMetadataSchema>;
-
 type SimplifiedCustomerMeter = {
     meterId: string;
     balance: number;
-    metadata: MeterMetadata;
+    metadata: { slug: string; priority: number };
 };
-
-function getSimplifiedMatchingMeters(
-    customerMeters: CustomerMeter[],
-): SimplifiedCustomerMeter[] {
-    return customerMeters.flatMap((customerMeter) => {
-        const metadata = MeterMetadataSchema.safeParse(
-            customerMeter.meter?.metadata,
-        ).data;
-        if (!metadata) return [];
-        return [
-            {
-                meterId: customerMeter.meter.id,
-                balance: customerMeter.balance,
-                metadata,
-            },
-        ];
-    });
-}
-
-function sortMetersByDescendingPriority(
-    simplifiedMeters: SimplifiedCustomerMeter[],
-): SimplifiedCustomerMeter[] {
-    return simplifiedMeters.sort(
-        (a, b) => b.metadata.priority - a.metadata.priority,
-    );
-}

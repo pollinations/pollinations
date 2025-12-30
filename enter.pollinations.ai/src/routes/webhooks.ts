@@ -259,9 +259,14 @@ async function handleOrderPaid(
 
     const units = benefit?.properties?.units;
     if (!units || units <= 0) {
-        log.debug("order.paid for user {userId} has no pollen credits", {
-            userId: externalId,
-        });
+        log.warn(
+            "order.paid for user {userId} has no pollen credits (product: {productId}, benefits: {benefitCount})",
+            {
+                userId: externalId,
+                productId: order.productId,
+                benefitCount: product.benefits?.length ?? 0,
+            },
+        );
         return;
     }
 

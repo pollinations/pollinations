@@ -3,10 +3,10 @@
  * Fetch all Polar subscription data and save to local JSON file.
  *
  * Usage:
- *   npx tsx scripts/tier-sync/fetch-polar-data.ts
+ *   npx tsx scripts/manage-users/fetch-polar-data.ts
  *
  * Output:
- *   scripts/tier-sync/data/polar-data.json
+ *   scripts/manage-users/data/polar-data.json
  *
  * Requires:
  *   - POLAR_ACCESS_TOKEN environment variable

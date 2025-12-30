@@ -1,6 +1,6 @@
 # 🌸 Pollinations Generative React Hooks 🌸
 
-A simple way to generate images, text and markdown using the Pollinations API in your React projects.
+A simple way to generate images, text, audio and markdown using the Pollinations API in your React projects.
 
 ## 🚀 Quick Start
 
@@ -37,7 +37,7 @@ The usePollinationsText hook allows you to generate text from Pollinations' API 
 
 #### Options
 
-- `seed` (number, default: -1): The seed for random text generation. If -1, a random seed will be used.
+- `seed` (number, default: 42): Seed for reproducible generation. Use the same seed to get identical results.
 - `model` (string, default: 'openai'): The model to use for text generation. Options: 'openai', 'mistral'.
 - `systemPrompt` (string, optional): A system prompt to set the behavior of the AI.
 
@@ -100,7 +100,7 @@ The usePollinationsImage hook allows you to generate image URLs from Pollination
 - `width` (number, default: 1024): The width of the generated image.
 - `height` (number, default: 1024): The height of the generated image.
 - `model` (string, default: 'flux'): The model to use for image generation.
-- `seed` (number, default: -1): The seed for random image generation. If -1, a random seed will be used.
+- `seed` (number, default: 42): Seed for reproducible generation. Use the same seed to get identical results.
 - `nologo` (boolean, default: true): Whether to generate the image without a logo.
 - `enhance` (boolean, default: false): Whether to enhance the generated image.
 

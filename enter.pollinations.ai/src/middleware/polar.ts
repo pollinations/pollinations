@@ -106,10 +106,9 @@ export const polar = createMiddleware<PolarEnv>(async (c, next) => {
         },
         {
             log,
-            ttl: 1500, // 25 minutes - safe with local pending spend tracking (30 min window)
+            ttl: 120, // 2 minutes - local D1 balance is source of truth, this is only for lazy init
             kv: c.env.KV,
             keyGenerator: (userId) => `polar:customer:meters:${userId}`,
-            staleOnError: true, // Return stale cache on Polar API rate limit (429)
         },
     );
 

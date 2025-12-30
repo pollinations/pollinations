@@ -126,12 +126,31 @@ export const polar = createMiddleware<PolarEnv>(async (c, next) => {
         let localBalance = users[0]?.pollenBalance;
 
         // Lazy initialization: if null, fetch from Polar and store
+        // On error (e.g. rate limit), fail the request - don't continue without balance
         if (localBalance == null) {
             log.info(
                 "Initializing local balance for user {userId} from Polar",
                 { userId },
             );
-            const customerMeters = await getCustomerMeters(userId);
+            let customerMeters: CustomerMeter[];
+            try {
+                customerMeters = await getCustomerMeters(userId);
+            } catch (error) {
+                log.error(
+                    "Failed to initialize balance for user {userId}, cannot proceed",
+                    {
+                        userId,
+                        error:
+                            error instanceof Error
+                                ? error.message
+                                : String(error),
+                    },
+                );
+                throw new HTTPException(503, {
+                    message:
+                        "Unable to verify balance. Please try again shortly.",
+                });
+            }
             const totalBalance = customerMeters.reduce(
                 (sum, meter) => sum + meter.balance,
                 0,

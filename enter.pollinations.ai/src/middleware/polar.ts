@@ -24,6 +24,7 @@ export type PolarVariables = {
             userId: string,
             message?: string,
         ) => Promise<void>;
+        getBalance: (userId: string) => Promise<{ tierBalance: number; packBalance: number }>;
         balanceCheckResult?: BalanceCheckResult;
     };
 };
@@ -112,74 +113,75 @@ export const polar = createMiddleware<PolarEnv>(async (c, next) => {
         },
     );
 
-    const requirePositiveBalance = async (userId: string, message?: string) => {
+    // Get balance with lazy init from Polar if not set
+    const getBalance = async (userId: string): Promise<{ tierBalance: number; packBalance: number }> => {
         const db = drizzle(c.env.DB);
-
-        // Check local D1 balance first
         const users = await db
-            .select({ pollenBalance: userTable.pollenBalance })
+            .select({
+                tierBalance: userTable.tierBalance,
+                packBalance: userTable.packBalance,
+            })
             .from(userTable)
             .where(eq(userTable.id, userId))
             .limit(1);
 
-        let localBalance = users[0]?.pollenBalance;
+        let tierBalance = users[0]?.tierBalance;
+        let packBalance = users[0]?.packBalance;
 
-        // Lazy initialization: if null, fetch from Polar and store
-        // On error (e.g. rate limit), fail the request - don't continue without balance
-        if (localBalance == null) {
-            log.info(
-                "Initializing local balance for user {userId} from Polar",
-                { userId },
-            );
-            let customerMeters: CustomerMeter[];
-            try {
-                customerMeters = await getCustomerMeters(userId);
-            } catch (error) {
-                log.error(
-                    "Failed to initialize balance for user {userId}, cannot proceed",
-                    {
-                        userId,
-                        error:
-                            error instanceof Error
-                                ? error.message
-                                : String(error),
-                    },
-                );
-                throw new HTTPException(503, {
-                    message:
-                        "Unable to verify balance. Please try again shortly.",
-                });
-            }
-            const totalBalance = customerMeters.reduce(
-                (sum, meter) => sum + meter.balance,
-                0,
-            );
-            await db
-                .update(userTable)
-                .set({ pollenBalance: totalBalance })
-                .where(eq(userTable.id, userId));
-            localBalance = totalBalance;
-            log.info("Initialized local balance for user {userId}: {balance}", {
-                userId,
-                balance: totalBalance,
-            });
+        // Lazy init: if both null, fetch from Polar
+        if (tierBalance == null && packBalance == null) {
+            log.info("Initializing local balances for user {userId} from Polar", { userId });
+            const customerMeters = await getCustomerMeters(userId);
+            const tierMeter = customerMeters.find((m) => m.meter.name.toLowerCase().includes("tier"));
+            const packMeter = customerMeters.find((m) => m.meter.name.toLowerCase().includes("pack"));
+            tierBalance = tierMeter?.balance ?? 0;
+            packBalance = packMeter?.balance ?? 0;
+            await db.update(userTable).set({ tierBalance, packBalance }).where(eq(userTable.id, userId));
+            log.info("Initialized balances for user {userId}: tier={tierBalance}, pack={packBalance}", { userId, tierBalance, packBalance });
         }
 
-        log.debug("Local pollen balance for user {userId}: {balance}", {
-            userId,
-            balance: localBalance,
-        });
+        return { tierBalance: tierBalance ?? 0, packBalance: packBalance ?? 0 };
+    };
 
-        if (localBalance > 0) {
+    const requirePositiveBalance = async (userId: string, message?: string) => {
+        let balances: { tierBalance: number; packBalance: number };
+        try {
+            balances = await getBalance(userId);
+        } catch (error) {
+            log.error("Failed to get balance for user {userId}", {
+                userId,
+                error: error instanceof Error ? error.message : String(error),
+            });
+            throw new HTTPException(503, { message: "Unable to verify balance. Please try again shortly." });
+        }
+
+        const totalBalance = balances.tierBalance + balances.packBalance;
+
+        log.debug(
+            "Local pollen balance for user {userId}: tier={tierBalance}, pack={packBalance}, total={totalBalance}",
+            {
+                userId,
+                tierBalance: balances.tierBalance,
+                packBalance: balances.packBalance,
+                totalBalance,
+            },
+        );
+
+        if (totalBalance > 0) {
             // Set a simplified balance result for tracking
             c.var.polar.balanceCheckResult = {
                 selectedMeterId: "local",
                 selectedMeterSlug: "local:combined",
                 meters: [
                     {
-                        meterId: "local",
-                        balance: localBalance,
-                        metadata: { slug: "local:combined", priority: 0 },
+                        meterId: "local:tier",
+                        balance: balances.tierBalance,
+                        metadata: { slug: "local:tier", priority: 0 },
+                    },
+                    {
+                        meterId: "local:pack",
+                        balance: balances.packBalance,
+                        metadata: { slug: "local:pack", priority: 1 },
                     },
                 ],
             };
@@ -196,6 +198,7 @@ export const polar = createMiddleware<PolarEnv>(async (c, next) => {
         client,
         getCustomerState,
         requirePositiveBalance,
+        getBalance,
     });
 
     await next();

@@ -259,8 +259,11 @@ async function handleOrderPaid(
 
     const units = benefit?.properties?.units;
     if (!units || units <= 0) {
-        log.warn(
-            "order.paid for user {userId} has no pollen credits (product: {productId}, benefits: {benefitCount})",
+        // Subscription products (Spore, Seed, Flower, Nectar) don't include benefits
+        // in order.paid - pollen is credited via benefit_grant.cycled instead.
+        // Only log debug for these, not warn.
+        log.debug(
+            "order.paid for user {userId} has no direct pollen credits (product: {productId}, benefits: {benefitCount}) - likely a subscription",
             {
                 userId: externalId,
                 productId: order.productId,

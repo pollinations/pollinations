@@ -220,15 +220,20 @@ async function handleBenefitGrantCycled(
     }
 
     const db = drizzle(env.DB);
+    const now = Math.floor(Date.now() / 1000);
+
+    // SET tier_balance to the grant amount (not add) - tier meter resets on each cycle
+    // Also record when this grant happened for future migration to self-managed grants
     await db
         .update(userTable)
         .set({
-            pollenBalance: sql`COALESCE(${userTable.pollenBalance}, 0) + ${units}`,
+            tierBalance: units,
+            lastTierGrant: now,
         })
         .where(eq(userTable.id, externalId));
 
     log.info(
-        "Credited {units} pollen to user {userId} via benefit_grant.cycled",
+        "Set tier_balance to {units} for user {userId} via benefit_grant.cycled",
         { units, userId: externalId },
     );
 }
@@ -273,15 +278,16 @@ async function handleOrderPaid(
         return;
     }
 
+    // ADD to pack_balance (cumulative, one-time purchases)
     const db = drizzle(env.DB);
     await db
         .update(userTable)
         .set({
-            pollenBalance: sql`COALESCE(${userTable.pollenBalance}, 0) + ${units}`,
+            packBalance: sql`COALESCE(${userTable.packBalance}, 0) + ${units}`,
         })
         .where(eq(userTable.id, externalId));
 
-    log.info("Credited {units} pollen to user {userId} via order.paid", {
+    log.info("Added {units} to pack_balance for user {userId} via order.paid", {
         units,
         userId: externalId,
     });

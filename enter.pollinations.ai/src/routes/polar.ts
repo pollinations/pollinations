@@ -91,19 +91,27 @@ export const polarRoutes = new Hono<Env>()
         describeRoute({
             tags: ["Auth"],
             description:
-                "Get the local D1 pollen balance for the current user.",
+                "Get the local D1 pollen balance for the current user (with lazy init from Polar).",
             hide: ({ c }) => c?.env.ENVIRONMENT !== "development",
         }),
         async (c) => {
             const user = c.var.auth.requireUser();
+            // Use getBalance which includes lazy init from Polar if not set
+            const { tierBalance, packBalance } = await c.var.polar.getBalance(user.id);
             const db = drizzle(c.env.DB);
             const users = await db
-                .select({ pollenBalance: userTable.pollenBalance })
+                .select({ lastTierGrant: userTable.lastTierGrant })
                 .from(userTable)
                 .where(eq(userTable.id, user.id))
                 .limit(1);
-            const balance = users[0]?.pollenBalance ?? null;
-            return c.json({ balance });
+            const lastTierGrant = users[0]?.lastTierGrant ?? null;
+            
+            return c.json({
+                tierBalance,
+                packBalance,
+                totalBalance: tierBalance + packBalance,
+                lastTierGrant,
+            });
         },
     )
     .get(

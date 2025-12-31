@@ -43,7 +43,8 @@ export const Route = createFileRoute("/")({
         ]);
         const apiKeys = apiKeysResult.data || [];
         const pendingSpend = pendingSpendResult?.pendingSpend || 0;
-        const d1Balance = d1BalanceResult?.balance ?? null;
+        const tierBalance = d1BalanceResult?.tierBalance ?? 0;
+        const packBalance = d1BalanceResult?.packBalance ?? 0;
 
         return {
             user: context.user,
@@ -51,25 +52,16 @@ export const Route = createFileRoute("/")({
             apiKeys,
             tierData,
             pendingSpend,
-            d1Balance,
+            tierBalance,
+            packBalance,
         };
     },
 });
 
 function RouteComponent() {
     const router = useRouter();
-    const { user, customer, apiKeys, tierData, pendingSpend, d1Balance } =
+    const { user, customer, apiKeys, tierData, pendingSpend, tierBalance, packBalance } =
         Route.useLoaderData();
-    const balances = {
-        pack:
-            customer?.activeMeters.find(
-                (m) => m.meterId === config.pollenPackMeterId,
-            )?.balance || 0,
-        tier:
-            customer?.activeMeters.find(
-                (m) => m.meterId === config.pollenTierMeterId,
-            )?.balance || 0,
-    };
 
     const [isSigningOut, setIsSigningOut] = useState(false);
 
@@ -246,12 +238,9 @@ function RouteComponent() {
                         </div>
                     </div>
                     <PollenBalance
-                        balances={balances}
-                        dailyPollen={
-                            tierData?.active.subscriptionDetails?.dailyPollen
-                        }
+                        tierBalance={tierBalance}
+                        packBalance={packBalance}
                         pendingSpend={pendingSpend}
-                        d1Balance={d1Balance}
                     />
                 </div>
                 {tierData && (

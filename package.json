@@ -2,12 +2,18 @@
   "name": "pollinations-monorepo",
   "private": true,
   "scripts": {
-    "install:all": "npm install --prefix enter.pollinations.ai && npm install --prefix text.pollinations.ai && npm install --prefix image.pollinations.ai",
-    "dev": "concurrently --kill-others-on-fail --prefix '[{name}]' --names 'enter,text,image' -c 'auto' 'npm run dev --prefix enter.pollinations.ai' 'npm run dev --prefix text.pollinations.ai' 'npm run dev --prefix image.pollinations.ai'",
-    "dev:enter": "npm run dev --prefix enter.pollinations.ai",
-    "dev:text": "npm run dev --prefix text.pollinations.ai",
-    "dev:image": "npm run dev --prefix image.pollinations.ai"
+    "dev": "concurrently --kill-others-on-fail --prefix '[{name}]' --names 'enter,text,image' -c 'auto' 'npm run dev --workspace=enter.pollinations.ai' 'npm run dev --workspace=text.pollinations.ai' 'npm run dev --workspace=image.pollinations.ai'",
+    "dev:enter": "npm run dev --workspace=enter.pollinations.ai",
+    "dev:text": "npm run dev --workspace=text.pollinations.ai",
+    "dev:image": "npm run dev --workspace=image.pollinations.ai"
   },
+  "workspaces": [
+    "enter.pollinations.ai",
+    "text.pollinations.ai",
+    "image.pollinations.ai",
+    "pollinations-react",
+    "apps/*"
+  ],
   "devDependencies": {
     "@biomejs/biome": "^2.3.10",
     "concurrently": "^9.2.1"

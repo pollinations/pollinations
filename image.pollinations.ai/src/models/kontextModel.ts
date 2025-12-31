@@ -1,7 +1,7 @@
 import debug from "debug";
-import { withTimeoutSignal } from "../util.ts";
-import type { ImageParams } from "../params.ts";
 import type { ImageGenerationResult } from "../createAndReturnImages.ts";
+import type { ImageParams } from "../params.ts";
+import { withTimeoutSignal } from "../util.ts";
 
 // Logger
 const logOps = debug("pollinations:kontext:ops");
@@ -56,7 +56,8 @@ export const callKontextAPI = async (
 
         // Add Bearer token if SCALEWAY_KONTEXT_KEY is available
         if (process.env.SCALEWAY_KONTEXT_KEY) {
-            headers["Authorization"] = `Bearer ${process.env.SCALEWAY_KONTEXT_KEY}`;
+            headers["Authorization"] =
+                `Bearer ${process.env.SCALEWAY_KONTEXT_KEY}`;
         }
 
         const response = await withTimeoutSignal(
@@ -86,12 +87,12 @@ export const callKontextAPI = async (
             isMature: false,
             isChild: false,
             trackingData: {
-                actualModel: 'kontext',
+                actualModel: "kontext",
                 usage: {
                     completionImageTokens: 1,
-                    totalTokenCount: 1
-                }
-            }
+                    totalTokenCount: 1,
+                },
+            },
         };
     } catch (error) {
         logError("Error calling Kontext API:", error);

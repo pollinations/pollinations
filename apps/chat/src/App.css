@@ -1,76 +1,76 @@
 /* Main App Layout */
 .app {
-  display: flex;
-  height: 100vh;
-  overflow: hidden;
-  position: relative;
+    display: flex;
+    height: 100vh;
+    overflow: hidden;
+    position: relative;
 }
 
 .sidebar-overlay {
-  display: none;
+    display: none;
 }
 
 @media (max-width: 1024px) {
-  .sidebar-overlay.active {
-    display: block;
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(0, 0, 0, 0.5);
-    backdrop-filter: blur(4px);
-    -webkit-backdrop-filter: blur(4px);
-    z-index: 99;
-    animation: fadeIn 0.3s ease-out;
-  }
+    .sidebar-overlay.active {
+        display: block;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.5);
+        backdrop-filter: blur(4px);
+        -webkit-backdrop-filter: blur(4px);
+        z-index: 99;
+        animation: fadeIn 0.3s ease-out;
+    }
 }
 
 @keyframes fadeIn {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
 }
 
 .chat-container {
-  display: flex;
-  flex-direction: column;
-  height: 100vh;
-  flex: 1;
-  margin-left: 72px;
-  transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    flex: 1;
+    margin-left: 72px;
+    transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 /* Mobile responsive */
 @media (max-width: 768px) {
-  .chat-container {
-    margin-left: 0; /* No margin on mobile since sidebar is overlay */
-    width: 100%;
-  }
-  
-  body.sidebar-expanded-mobile .chat-container {
-    filter: blur(8px);
-    pointer-events: none;
-  }
-  
-  /* Better touch targets on mobile */
-  button {
-    min-height: 44px;
-    min-width: 44px;
-  }
-  
-  /* Prevent text selection during gestures */
-  .sidebar,
-  .chat-header {
-    -webkit-user-select: none;
-    user-select: none;
-  }
-  
-  /* Smooth scrolling for mobile */
-  .messages-area {
-    -webkit-overflow-scrolling: touch;
-  }
+    .chat-container {
+        margin-left: 0; /* No margin on mobile since sidebar is overlay */
+        width: 100%;
+    }
+
+    body.sidebar-expanded-mobile .chat-container {
+        filter: blur(8px);
+        pointer-events: none;
+    }
+
+    /* Better touch targets on mobile */
+    button {
+        min-height: 44px;
+        min-width: 44px;
+    }
+
+    /* Prevent text selection during gestures */
+    .sidebar,
+    .chat-header {
+        -webkit-user-select: none;
+        user-select: none;
+    }
+
+    /* Smooth scrolling for mobile */
+    .messages-area {
+        -webkit-overflow-scrolling: touch;
+    }
 }

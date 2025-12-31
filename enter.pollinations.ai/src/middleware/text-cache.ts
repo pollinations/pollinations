@@ -5,13 +5,13 @@
  */
 
 import { createMiddleware } from "hono/factory";
+import type { RequestIdVariables } from "hono/request-id";
+import type { LoggerVariables } from "@/middleware/logger.ts";
 import {
+    createCaptureStream,
     generateCacheKey,
     getCachedResponse,
-    createCaptureStream,
 } from "@/utils/text-cache.ts";
-import type { LoggerVariables } from "@/middleware/logger.ts";
-import type { RequestIdVariables } from "hono/request-id";
 
 type TextCacheEnv = {
     Bindings: CloudflareBindings;
@@ -58,7 +58,7 @@ export const textCache = createMiddleware<TextCacheEnv>(async (c, next) => {
     // Generate cache key
     const cacheKey = await generateCacheKey(c.req.raw, bodyText);
     log.debug("[TEXT-CACHE] Cache key: {key}", {
-        key: cacheKey.substring(0, 16) + "...",
+        key: `${cacheKey.substring(0, 16)}...`,
     });
 
     // Try to get from cache

@@ -1,4 +1,4 @@
-import { Transform } from "stream";
+import { Transform } from "node:stream";
 
 /**
  * Creates a Transform stream that converts SSE JSON events using a mapper function.
@@ -11,7 +11,7 @@ export function createSseStreamConverter(mapper) {
     return new Transform({
         readableObjectMode: false,
         writableObjectMode: false,
-        transform(chunk, encoding, callback) {
+        transform(chunk, _encoding, callback) {
             buffer += chunk.toString();
             const eventRegex = /(^|\n)data:(.*?)(?=\n\n|$)/gs;
             let match;
@@ -28,14 +28,14 @@ export function createSseStreamConverter(mapper) {
                 let parsed;
                 try {
                     parsed = JSON.parse(dataLine);
-                } catch (e) {
+                } catch (_e) {
                     // If not valid JSON, skip this event
                     continue;
                 }
                 let mapped;
                 try {
                     mapped = mapper(parsed);
-                } catch (e) {
+                } catch (_e) {
                     // If mapper throws, skip this event
                     continue;
                 }
@@ -57,7 +57,7 @@ export function createSseStreamConverter(mapper) {
                         const parsed = JSON.parse(dataLine);
                         const mapped = mapper(parsed);
                         this.push(`data: ${JSON.stringify(mapped)}\n\n`);
-                    } catch (e) {
+                    } catch (_e) {
                         // Ignore errors on flush
                     }
                 }

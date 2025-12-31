@@ -1,6 +1,6 @@
-import { affiliatesData } from "./affiliate_prompt.js";
-import { generateTextPortkey } from "../generateTextPortkey.js";
 import debug from "debug";
+import { generateTextPortkey } from "../generateTextPortkey.js";
+import { affiliatesData } from "./affiliate_prompt.js";
 
 // Base URL for affiliate redirects
 export const REDIRECT_BASE_URL = "https://pollinations.ai/redirect/";
@@ -260,7 +260,7 @@ export async function generateAffiliateAd(
     affiliateId,
     content = "",
     messages = [],
-    markerFound = false,
+    _markerFound = false,
 ) {
     if (!affiliateId) {
         log("No affiliate ID provided for ad generation");

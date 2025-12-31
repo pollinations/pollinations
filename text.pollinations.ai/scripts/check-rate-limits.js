@@ -13,7 +13,7 @@
 
 import { getRateLimitStats } from "../logging/rateLimitLogger.js";
 
-const hours = parseInt(process.argv[2]) || 1;
+const hours = parseInt(process.argv[2], 10) || 1;
 
 console.log(`\n🔍 Rate Limit Analysis - Last ${hours} hour(s)\n`);
 

@@ -4,31 +4,30 @@ import {
     env,
     waitOnExecutionContext,
 } from "cloudflare:test";
-import { test } from "./fixtures.ts";
-import worker from "@/index.ts";
-import { processEvents, storeEvents, getPendingSpend } from "@/events.ts";
-import { exponentialBackoffDelay } from "@/util.ts";
 import {
-    event,
-    EventStatus,
-    priceToEventParams,
-    usageToEventParams,
-    type InsertGenerationEvent,
-} from "@/db/schema/event.ts";
-import { generateRandomId } from "@/util.ts";
-import {
-    ModelId,
-    ServiceId,
-    TokenUsage,
-    resolveServiceId,
-    getServiceDefinition,
-    getActivePriceDefinition,
     calculateCost,
     calculatePrice,
+    getActivePriceDefinition,
+    getServiceDefinition,
+    type ModelId,
+    resolveServiceId,
+    type ServiceId,
+    type TokenUsage,
 } from "@shared/registry/registry.ts";
-import { drizzle } from "drizzle-orm/d1";
 import { eq } from "drizzle-orm";
+import { drizzle } from "drizzle-orm/d1";
 import { expect } from "vitest";
+import {
+    type EventStatus,
+    event,
+    type InsertGenerationEvent,
+    priceToEventParams,
+    usageToEventParams,
+} from "@/db/schema/event.ts";
+import { getPendingSpend, processEvents, storeEvents } from "@/events.ts";
+import worker from "@/index.ts";
+import { exponentialBackoffDelay, generateRandomId } from "@/util.ts";
+import { test } from "./fixtures.ts";
 
 function createTextGenerationEvent({
     modelRequested,
@@ -59,7 +58,7 @@ function createTextGenerationEvent({
     const cost = calculateCost(modelUsed as ModelId, usage);
     const price = calculatePrice(resolvedModelRequested, usage);
 
-    let eventId = [
+    const eventId = [
         simulateTinybirdError ? `simulate_tinybird_error` : "",
         simulatePolarError ? `simulate_polar_error` : "",
         generateRandomId(),

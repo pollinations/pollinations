@@ -1,10 +1,10 @@
-import debug from "debug";
 import sleep from "await-sleep";
+import debug from "debug";
+import type { VideoGenerationResult } from "../createAndReturnVideos.ts";
 import { HttpError } from "../httpError.ts";
-import { downloadImageAsBase64 } from "../utils/imageDownload.ts";
 import type { ImageParams } from "../params.ts";
 import type { ProgressManager } from "../progressBar.ts";
-import type { VideoGenerationResult } from "../createAndReturnVideos.ts";
+import { downloadImageAsBase64 } from "../utils/imageDownload.ts";
 
 // Logger
 const logOps = debug("pollinations:seedance:ops");
@@ -109,8 +109,8 @@ async function generateSeedanceVideo(
     const durationSeconds = safeParams.duration || 2;
     const resolution = "720p";
     // Map aspectRatio to Seedance format: "16:9" -> "16_9", "9:16" -> "9_16"
-    const aspectRatio = safeParams.aspectRatio 
-        ? safeParams.aspectRatio.replace(":", "_") 
+    const aspectRatio = safeParams.aspectRatio
+        ? safeParams.aspectRatio.replace(":", "_")
         : "16_9"; // Default to 16:9
 
     // Select model based on whether we have an input image

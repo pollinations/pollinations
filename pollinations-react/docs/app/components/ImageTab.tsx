@@ -1,5 +1,9 @@
-import React, { useState } from "react";
 import { usePollinationsImage } from "@pollinations/react";
+import { Copy } from "lucide-react";
+import { useState } from "react";
+import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
+import { oneDark } from "react-syntax-highlighter/dist/esm/styles/prism";
+import { Button } from "@/components/ui/button";
 import {
     Card,
     CardContent,
@@ -7,9 +11,8 @@ import {
     CardHeader,
     CardTitle,
 } from "@/components/ui/card";
-import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
 import {
     Select,
     SelectContent,
@@ -17,11 +20,8 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select";
-import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
-import { oneDark } from "react-syntax-highlighter/dist/esm/styles/prism";
-import { Copy } from "lucide-react";
-import { useFetchModels } from "../hooks/useFetchModels";
 import { Textarea } from "@/components/ui/textarea";
+import { useFetchModels } from "../hooks/useFetchModels";
 
 export default function ImageGenerationForm() {
     const { imageModels } = useFetchModels();
@@ -59,7 +59,7 @@ export default function ImageGenerationForm() {
     };
 
     const getImageCode = (): string => {
-        const imageUrlWithParams = `https://image.pollinations.ai/prompt/${encodeURIComponent(imagePrompt)}?width=${imageWidth}&height=${imageHeight}&seed=${imageSeed}&model=${selectedImageModel}&nologo=true`;
+        const _imageUrlWithParams = `https://image.pollinations.ai/prompt/${encodeURIComponent(imagePrompt)}?width=${imageWidth}&height=${imageHeight}&seed=${imageSeed}&model=${selectedImageModel}&nologo=true`;
 
         return `
 import React from 'react';

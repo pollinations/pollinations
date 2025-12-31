@@ -1,9 +1,9 @@
 #!/usr/bin/env tsx
 
-import { createMarkdownFromOpenApi } from "@scalar/openapi-to-markdown";
 import { writeFileSync } from "node:fs";
-import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
+import { createMarkdownFromOpenApi } from "@scalar/openapi-to-markdown";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const OUTPUT_PATH = join(__dirname, "..", "APIDOCS.md");

@@ -1,4 +1,5 @@
 import debug from "debug";
+
 const log = debug("pollinations:portkey-utils");
 const errorLog = debug("pollinations:portkey-utils:error");
 
@@ -97,7 +98,7 @@ async function generatePortkeyHeaders(config) {
     for (const [key, value] of Object.entries(config)) {
         // Skip internal properties
         if (key === "removeSeed" || key === "authKey") continue;
-        
+
         // Add as individual header with x-portkey- prefix
         headers[`x-portkey-${key}`] = value;
     }
@@ -108,6 +109,9 @@ async function generatePortkeyHeaders(config) {
     }
 
     log("Generated Portkey headers:", Object.keys(headers));
-    log("strictOpenAiCompliance header value:", headers["x-portkey-strict-open-ai-compliance"]);
+    log(
+        "strictOpenAiCompliance header value:",
+        headers["x-portkey-strict-open-ai-compliance"],
+    );
     return headers;
 }

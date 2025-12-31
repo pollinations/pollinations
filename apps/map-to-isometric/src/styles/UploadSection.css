@@ -1,169 +1,169 @@
 .upload-section {
-  margin-bottom: 40px;
+    margin-bottom: 40px;
 }
 
 .upload-box {
-  text-align: center;
-  padding: 50px 30px;
-  border: 3px dashed #667eea;
-  border-radius: 20px;
-  margin-bottom: 30px;
-  background: linear-gradient(135deg, #f8f9ff 0%, #f0f2ff 100%);
-  transition: all 0.4s ease;
-  cursor: pointer;
+    text-align: center;
+    padding: 50px 30px;
+    border: 3px dashed #667eea;
+    border-radius: 20px;
+    margin-bottom: 30px;
+    background: linear-gradient(135deg, #f8f9ff 0%, #f0f2ff 100%);
+    transition: all 0.4s ease;
+    cursor: pointer;
 }
 
 .upload-box:hover {
-  border-color: #5568d3;
-  background: linear-gradient(135deg, #f0f2ff 0%, #e8eaff 100%);
-  transform: translateY(-3px);
-  box-shadow: 0 10px 30px rgba(102, 126, 234, 0.2);
+    border-color: #5568d3;
+    background: linear-gradient(135deg, #f0f2ff 0%, #e8eaff 100%);
+    transform: translateY(-3px);
+    box-shadow: 0 10px 30px rgba(102, 126, 234, 0.2);
 }
 
 .upload-button {
-  display: inline-block;
-  padding: 18px 45px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: #ffffff !important;
-  border-radius: 15px;
-  cursor: pointer;
-  font-size: 1.15rem;
-  font-weight: 600;
-  transition: all 0.3s ease;
-  box-shadow: 0 8px 20px rgba(102, 126, 234, 0.3);
-  border: none;
+    display: inline-block;
+    padding: 18px 45px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: #ffffff;
+    border-radius: 15px;
+    cursor: pointer;
+    font-size: 1.15rem;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    box-shadow: 0 8px 20px rgba(102, 126, 234, 0.3);
+    border: none;
 }
 
 .upload-button:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 12px 30px rgba(102, 126, 234, 0.5);
-  background: linear-gradient(135deg, #5568d3 0%, #6a3f8f 100%);
+    transform: translateY(-3px);
+    box-shadow: 0 12px 30px rgba(102, 126, 234, 0.5);
+    background: linear-gradient(135deg, #5568d3 0%, #6a3f8f 100%);
 }
 
 .upload-section .hint {
-  margin-top: 18px;
-  color: #666666;
-  font-size: 0.95rem;
-  font-weight: 500;
+    margin-top: 18px;
+    color: #666666;
+    font-size: 0.95rem;
+    font-weight: 500;
 }
 
 .upload-section .tip {
-  margin-top: 12px;
-  color: #888888;
-  font-size: 0.85rem;
-  font-style: italic;
+    margin-top: 12px;
+    color: #888888;
+    font-size: 0.85rem;
+    font-style: italic;
 }
 
 .preview-box {
-  margin: 35px 0;
-  padding: 30px;
-  background: linear-gradient(135deg, #f8f9ff 0%, #ffffff 100%);
-  border-radius: 20px;
-  border: 2px solid #e0e5ff;
-  animation: fadeIn 0.5s ease;
+    margin: 35px 0;
+    padding: 30px;
+    background: linear-gradient(135deg, #f8f9ff 0%, #ffffff 100%);
+    border-radius: 20px;
+    border: 2px solid #e0e5ff;
+    animation: fadeIn 0.5s ease;
 }
 
 @keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
 .preview-box h3 {
-  margin-bottom: 20px;
-  color: #333333;
-  font-size: 1.4rem;
-  font-weight: 700;
-  text-align: center;
+    margin-bottom: 20px;
+    color: #333333;
+    font-size: 1.4rem;
+    font-weight: 700;
+    text-align: center;
 }
 
 .preview-image {
-  width: 100%;
-  max-width: 650px;
-  height: auto;
-  border-radius: 15px;
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
-  display: block;
-  margin: 0 auto;
-  transition: transform 0.3s ease;
+    width: 100%;
+    max-width: 650px;
+    height: auto;
+    border-radius: 15px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+    display: block;
+    margin: 0 auto;
+    transition: transform 0.3s ease;
 }
 
 .preview-image:hover {
-  transform: scale(1.02);
+    transform: scale(1.02);
 }
 
 .info-text {
-  margin-top: 18px;
-  color: #666666;
-  font-size: 0.95rem;
-  text-align: center;
-  padding: 12px 20px;
-  background: #e8f4f8;
-  border-radius: 10px;
-  border-left: 4px solid #667eea;
-  font-weight: 500;
+    margin-top: 18px;
+    color: #666666;
+    font-size: 0.95rem;
+    text-align: center;
+    padding: 12px 20px;
+    background: #e8f4f8;
+    border-radius: 10px;
+    border-left: 4px solid #667eea;
+    font-weight: 500;
 }
 
 /* Location Input Styles */
 .location-input {
-  margin-top: 20px;
-  padding: 20px;
-  background: #f0f2ff;
-  border-radius: 12px;
-  border: 2px solid #e0e5ff;
+    margin-top: 20px;
+    padding: 20px;
+    background: #f0f2ff;
+    border-radius: 12px;
+    border: 2px solid #e0e5ff;
 }
 
 .location-input label {
-  display: block;
-  margin-bottom: 10px;
-  color: #333333;
-  font-weight: 600;
-  font-size: 1rem;
+    display: block;
+    margin-bottom: 10px;
+    color: #333333;
+    font-weight: 600;
+    font-size: 1rem;
 }
 
 .hint-text {
-  display: block;
-  font-size: 0.85rem;
-  color: #666666;
-  font-weight: 400;
-  margin-top: 5px;
+    display: block;
+    font-size: 0.85rem;
+    color: #666666;
+    font-weight: 400;
+    margin-top: 5px;
 }
 
 .location-input-field {
-  width: 100%;
-  padding: 12px 15px;
-  border: 2px solid #dddddd;
-  border-radius: 8px;
-  font-size: 1rem;
-  font-family: inherit;
-  transition: all 0.3s ease;
-  background: #ffffff;
-  color: #333333;
+    width: 100%;
+    padding: 12px 15px;
+    border: 2px solid #dddddd;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-family: inherit;
+    transition: all 0.3s ease;
+    background: #ffffff;
+    color: #333333;
 }
 
 .location-input-field:focus {
-  outline: none;
-  border-color: #667eea;
-  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    outline: none;
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
 }
 
 .location-input-field::placeholder {
-  color: #999999;
-  font-style: italic;
+    color: #999999;
+    font-style: italic;
 }
 
 @media (max-width: 768px) {
-  .upload-box {
-    padding: 35px 20px;
-  }
-  
-  .upload-button {
-    padding: 15px 30px;
-    font-size: 1rem;
-  }
+    .upload-box {
+        padding: 35px 20px;
+    }
+
+    .upload-button {
+        padding: 15px 30px;
+        font-size: 1rem;
+    }
 }

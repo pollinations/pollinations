@@ -4,17 +4,18 @@
  */
 
 import debug from "debug";
-import type { ImageParams } from "./params.ts";
-import type { ProgressManager } from "./progressBar.ts";
-import {
-    callVeoAPI,
-    type VideoGenerationResult,
-} from "./models/veoVideoModel.ts";
 import {
     callSeedanceAPI,
     callSeedanceProAPI,
 } from "./models/seedanceVideoModel.ts";
+import {
+    callVeoAPI,
+    type VideoGenerationResult,
+} from "./models/veoVideoModel.ts";
+import type { ImageParams } from "./params.ts";
+import type { ProgressManager } from "./progressBar.ts";
 export type { VideoGenerationResult };
+
 import { incrementModelCounter } from "./modelCounter.ts";
 
 const logOps = debug("pollinations:video:ops");

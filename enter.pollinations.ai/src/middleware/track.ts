@@ -1,63 +1,61 @@
-import { processEvents, storeEvents, updateEvent } from "@/events.ts";
-import { getModelStats, getEstimatedPrice } from "@/utils/model-stats.ts";
+import { getLogger } from "@logtape/logtape";
 import {
-    getActivePriceDefinition,
     calculateCost,
     calculatePrice,
-    ServiceId,
-    ModelId,
-    UsageCost,
-    UsagePrice,
-    PriceDefinition,
+    getActivePriceDefinition,
     getServiceDefinition,
+    type ModelId,
+    type PriceDefinition,
+    type ServiceId,
+    type UsageCost,
+    type UsagePrice,
 } from "@shared/registry/registry.ts";
-import type { ModelVariables } from "./model.ts";
 import {
     openaiUsageToTokenUsage,
     parseUsageHeaders,
 } from "@shared/registry/usage-headers.ts";
-import { routePath } from "hono/route";
-import {
-    CompletionUsage,
-    CompletionUsageSchema,
-    ContentFilterResult,
-    ContentFilterResultSchema,
-    ContentFilterSeveritySchema,
-} from "@/schemas/openai.ts";
-import { generateRandomId } from "@/util.ts";
+import { eq, sql } from "drizzle-orm";
+import { drizzle } from "drizzle-orm/d1";
+import { EventSourceParserStream } from "eventsource-parser/stream";
+import type { HonoRequest } from "hono";
 import { createMiddleware } from "hono/factory";
+import { routePath } from "hono/route";
+import { z } from "zod";
+import { mergeContentFilterResults } from "@/content-filter.ts";
+import { user as userTable } from "@/db/schema/better-auth.ts";
+import type {
+    ApiKeyType,
+    EventType,
+    GenerationEventContentFilterParams,
+    InsertGenerationEvent,
+} from "@/db/schema/event.ts";
 import {
     contentFilterResultsToEventParams,
     priceToEventParams,
     usageToEventParams,
 } from "@/db/schema/event.ts";
-import { drizzle } from "drizzle-orm/d1";
-import { eq, sql } from "drizzle-orm";
-import { user as userTable } from "@/db/schema/better-auth.ts";
-import { HonoRequest } from "hono";
-import type {
-    ApiKeyType,
-    EstimateGenerationEvent,
-    EventType,
-    GenerationEventContentFilterParams,
-    InsertGenerationEvent,
-} from "@/db/schema/event.ts";
-import type { AuthVariables } from "@/middleware/auth.ts";
-import { PolarVariables } from "./polar.ts";
-import { z } from "zod";
-import { TokenUsage } from "../../../shared/registry/registry.js";
-import { removeUnset } from "@/util.ts";
-import { EventSourceParserStream } from "eventsource-parser/stream";
-import { mergeContentFilterResults } from "@/content-filter.ts";
+import type { ErrorVariables } from "@/env.ts";
 import {
     getDefaultErrorMessage,
     getErrorCode,
     UpstreamError,
 } from "@/error.ts";
+import { processEvents, storeEvents, updateEvent } from "@/events.ts";
+import type { AuthVariables } from "@/middleware/auth.ts";
+import {
+    type CompletionUsage,
+    CompletionUsageSchema,
+    type ContentFilterResult,
+    ContentFilterResultSchema,
+    ContentFilterSeveritySchema,
+} from "@/schemas/openai.ts";
+import { generateRandomId, removeUnset } from "@/util.ts";
+import { getEstimatedPrice, getModelStats } from "@/utils/model-stats.ts";
+import type { TokenUsage } from "../../../shared/registry/registry.js";
 import type { LoggerVariables } from "./logger.ts";
-import type { ErrorVariables } from "@/env.ts";
+import type { ModelVariables } from "./model.ts";
+import type { PolarVariables } from "./polar.ts";
 import type { FrontendKeyRateLimitVariables } from "./rate-limit-durable.ts";
-import { getLogger } from "@logtape/logtape";
 
 export type ModelUsage = {
     model: ModelId;
@@ -264,10 +262,13 @@ export const track = (eventType: EventType) =>
                         .limit(1);
 
                     const tierBalance = currentUser[0]?.tierBalance ?? 0;
-                    const packBalance = currentUser[0]?.packBalance ?? 0;
+                    const _packBalance = currentUser[0]?.packBalance ?? 0;
 
                     // Decrement tier first, then pack
-                    const fromTier = Math.min(priceToDeduct, Math.max(0, tierBalance));
+                    const fromTier = Math.min(
+                        priceToDeduct,
+                        Math.max(0, tierBalance),
+                    );
                     const fromPack = priceToDeduct - fromTier;
 
                     await db
@@ -640,8 +641,8 @@ async function extractUsageAndContentFilterResultsStream(
             .nullish(),
     });
 
-    let model = undefined;
-    let usage: CompletionUsage | undefined = undefined;
+    let model;
+    let usage: CompletionUsage | undefined;
     let promptFilterResults: ContentFilterResult = {};
     let completionFilterResults: ContentFilterResult = {};
 

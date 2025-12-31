@@ -1,4 +1,4 @@
-import { Logger } from "@logtape/logtape";
+import type { Logger } from "@logtape/logtape";
 
 interface CacheOptions<TArgs extends any[]> {
     log: Logger;
@@ -67,7 +67,7 @@ export function cached<TArgs extends any[], TReturn>(
 /**
  * Creates a hash from function arguments for use as cache key (fallback)
  */
-async function hashArgs(args: any[]): Promise<string> {
+async function _hashArgs(args: any[]): Promise<string> {
     const argsString = JSON.stringify(args, (_, value) => {
         if (typeof value === "function") {
             return value.toString();

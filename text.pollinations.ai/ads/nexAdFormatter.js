@@ -8,7 +8,7 @@ const errorLog = debug("pollinations:nexad:formatter:error");
  * @param {string} url - nex.ad URL
  * @returns {string|null} - Event ID or null
  */
-function extractNexAdEventId(url) {
+function _extractNexAdEventId(url) {
     // Match URLs like https://api-prod.nex-ad.com/ad/event/iGRSbWGo
     const match = url.match(/api-prod\.nex-ad\.com\/ad\/event\/([a-zA-Z0-9]+)/);
     return match ? match[1] : null;

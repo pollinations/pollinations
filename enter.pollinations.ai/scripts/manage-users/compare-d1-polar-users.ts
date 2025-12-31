@@ -18,9 +18,9 @@
  *   - Flags anomalies: users in Polar but not in D1
  */
 
-import { exec } from "child_process";
-import { promisify } from "util";
-import { readFileSync, writeFileSync, existsSync } from "fs";
+import { exec } from "node:child_process";
+import { existsSync, readFileSync, writeFileSync } from "node:fs";
+import { promisify } from "node:util";
 
 const execAsync = promisify(exec);
 
@@ -215,7 +215,7 @@ async function main() {
         if (!polarByEmail.has(email)) {
             polarByEmail.set(email, []);
         }
-        polarByEmail.get(email)!.push(sub);
+        polarByEmail.get(email)?.push(sub);
     }
 
     // Fetch D1 users
@@ -577,7 +577,7 @@ async function main() {
         result.summary.issues["d1-user-missing"] +
         result.summary.issues["d1-tier-missing"];
 
-    console.log("\n" + "=".repeat(60));
+    console.log(`\n${"=".repeat(60)}`);
     if (totalIssues === 0) {
         console.log("✅ D1 and Polar are in sync!");
     } else {

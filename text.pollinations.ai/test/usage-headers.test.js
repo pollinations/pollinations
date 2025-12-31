@@ -1,5 +1,5 @@
-import { describe, it, expect, beforeAll } from "vitest";
 import fetch from "node-fetch";
+import { beforeAll, describe, expect, it } from "vitest";
 
 const BASE_URL = process.env.TEST_BASE_URL || "http://localhost:16385";
 const PLN_ENTER_TOKEN =

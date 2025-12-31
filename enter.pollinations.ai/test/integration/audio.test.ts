@@ -1,6 +1,6 @@
 import { SELF } from "cloudflare:test";
-import { test } from "../fixtures.ts";
 import { describe, expect } from "vitest";
+import { test } from "../fixtures.ts";
 
 describe("GET /text/:prompt (audio)", () => {
     test(

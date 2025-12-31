@@ -8,20 +8,14 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import player from "play-sound";
-
+import { audioTools } from "./services/audioService.js";
+import { authTools } from "./services/authService.js";
 // Import tools from services
 import { imageTools } from "./services/imageService.js";
 import { textTools } from "./services/textService.js";
-import { audioTools } from "./services/audioService.js";
-import { authTools } from "./services/authService.js";
 
 // Combine all tools
-const allTools = [
-    ...imageTools,
-    ...textTools,
-    ...audioTools,
-    ...authTools,
-];
+const allTools = [...imageTools, ...textTools, ...audioTools, ...authTools];
 
 /**
  * Server instructions shown to MCP clients
@@ -100,7 +94,7 @@ export async function startMcpServer() {
                 capabilities: {
                     tools: {},
                 },
-            }
+            },
         );
 
         // Register all tools
@@ -108,12 +102,17 @@ export async function startMcpServer() {
             try {
                 // Tool format: [name, description, inputSchema, handler]
                 if (!Array.isArray(tool) || tool.length < 4) {
-                    throw new Error(`Invalid tool format for ${tool[0] || 'unknown'}`);
+                    throw new Error(
+                        `Invalid tool format for ${tool[0] || "unknown"}`,
+                    );
                 }
                 const [name, description, inputSchema, handler] = tool;
                 server.tool(name, description, inputSchema, handler);
             } catch (error) {
-                console.error(`Failed to register tool ${tool[0]}:`, error.message);
+                console.error(
+                    `Failed to register tool ${tool[0]}:`,
+                    error.message,
+                );
             }
         });
 

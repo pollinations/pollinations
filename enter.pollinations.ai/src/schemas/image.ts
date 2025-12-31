@@ -1,4 +1,4 @@
-import { IMAGE_SERVICES, DEFAULT_IMAGE_MODEL } from "@shared/registry/image.ts";
+import { DEFAULT_IMAGE_MODEL, IMAGE_SERVICES } from "@shared/registry/image.ts";
 import { z } from "zod";
 
 const QUALITIES = ["low", "medium", "high", "hd"] as const;

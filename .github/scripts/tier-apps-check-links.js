@@ -13,9 +13,9 @@
  *   --report          Generate BROKEN_APPS.md report
  */
 
-const fs = require("fs");
-const https = require("https");
-const http = require("http");
+const fs = require("node:fs");
+const https = require("node:https");
+const http = require("node:http");
 
 const APPS_FILE = "apps/APPS.md";
 const REPORT_FILE = "apps/BROKEN_APPS.md";
@@ -34,11 +34,11 @@ const colors = {
 // Parse command line arguments
 const args = process.argv.slice(2);
 const verbose = args.includes("--verbose");
-const shouldUpdate = args.includes("--update");
+const _shouldUpdate = args.includes("--update");
 const shouldReport = args.includes("--report");
 const timeoutArg = args.find((a) => a.startsWith("--timeout="));
 const timeout = timeoutArg
-    ? parseInt(timeoutArg.split("=")[1])
+    ? parseInt(timeoutArg.split("=")[1], 10)
     : DEFAULT_TIMEOUT;
 const categoryArg = args.find((a) => a.startsWith("--category="));
 const filterCategory = categoryArg

@@ -1686,17 +1686,15 @@ const templatesAndPrompts = [
 
 // calculate and export prompts array which is a list of all prompts (substituting into the templates)
 
-export const prompts = templatesAndPrompts
-    .map((templateAndPrompt) => {
-        return templateAndPrompt.prompts.map((prompt) => {
-            return {
-                searchPrompt: templateAndPrompt.template.replace(
-                    "{prompt}",
-                    prompt,
-                ),
-                template: templateAndPrompt.template,
-                prompt: prompt,
-            };
-        });
-    })
-    .flat();
+export const prompts = templatesAndPrompts.flatMap((templateAndPrompt) => {
+    return templateAndPrompt.prompts.map((prompt) => {
+        return {
+            searchPrompt: templateAndPrompt.template.replace(
+                "{prompt}",
+                prompt,
+            ),
+            template: templateAndPrompt.template,
+            prompt: prompt,
+        };
+    });
+});

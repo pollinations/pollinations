@@ -11,9 +11,12 @@ export function SceneArea({ imageUrl, text }: SceneAreaProps) {
     const [imageLoaded, setImageLoaded] = useState(false);
 
     // Fallback image URL for when main image fails
-    const fallbackImageUrl = "/api/image/prompt/fantasy%20rpg%20medieval%20castle%20atmospheric%20digital%20art?width=1024&height=768&model=flux&seed=fallback";
+    const fallbackImageUrl =
+        "/api/image/prompt/fantasy%20rpg%20medieval%20castle%20atmospheric%20digital%20art?width=1024&height=768&model=flux&seed=fallback";
 
-    const displayImageUrl = imageError ? fallbackImageUrl : (imageUrl || fallbackImageUrl);
+    const displayImageUrl = imageError
+        ? fallbackImageUrl
+        : imageUrl || fallbackImageUrl;
 
     return (
         <motion.div
@@ -26,13 +29,13 @@ export function SceneArea({ imageUrl, text }: SceneAreaProps) {
             <img
                 src={imageUrl}
                 alt=""
-                style={{ display: 'none' }}
+                style={{ display: "none" }}
                 onLoad={() => {
                     setImageLoaded(true);
                     setImageError(false);
                 }}
                 onError={() => {
-                    console.warn('Scene image failed to load:', imageUrl);
+                    console.warn("Scene image failed to load:", imageUrl);
                     setImageError(true);
                     setImageLoaded(true);
                 }}
@@ -69,7 +72,9 @@ export function SceneArea({ imageUrl, text }: SceneAreaProps) {
                 className="absolute bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-[#2c1e12] to-transparent"
             >
                 <div className="bg-[#3a2817]/95 rounded p-4 border border-[#d4a76a]/50 backdrop-blur-sm max-h-40 overflow-y-auto">
-                    <p className="text-[#f5e6d3] leading-relaxed whitespace-pre-wrap">{text}</p>
+                    <p className="text-[#f5e6d3] leading-relaxed whitespace-pre-wrap">
+                        {text}
+                    </p>
                 </div>
             </motion.div>
         </motion.div>

@@ -1,17 +1,9 @@
 import debug from "debug";
+import { affiliatesData } from "../../shared/affiliates.js";
 import { generateAffiliateAd } from "./adLlmMapper.js";
 import { logAdInteraction } from "./adLogger.js";
-import { affiliatesData } from "../../shared/affiliates.js";
+import { sendAdSkippedAnalytics, shouldProceedWithAd } from "./adUtils.js";
 import { shouldShowAds } from "./shouldShowAds.js";
-import { shouldProceedWithAd, sendAdSkippedAnalytics } from "./adUtils.js";
-// NEXAD DISABLED: Removed nexad imports
-// import { fetchNexAd, createNexAdRequest } from "./nexAdClient.js";
-// import {
-//     formatNexAd,
-//     extractTrackingData,
-//     trackImpression,
-// } from "./nexAdFormatter.js";
-import { incrementUserMetric } from "../../shared/userMetrics.js";
 
 const log = debug("pollinations:adfilter");
 const errorLog = debug("pollinations:adfilter:error");
@@ -40,8 +32,8 @@ export async function generateAdForContent(
 
     try {
         // Authentication removed - ads are globally disabled anyway
-        let authResult = null;
-        let authenticatedUserId = null;
+        const authResult = null;
+        const authenticatedUserId = null;
 
         // Check if we should show ads - pass auth result to avoid duplicate authentication
         const { shouldShowAd, markerFound, forceAd } = await shouldShowAds(
@@ -50,7 +42,7 @@ export async function generateAdForContent(
             req,
             authResult,
         );
-        const shouldForceAd = markerFound || forceAd;
+        const _shouldForceAd = markerFound || forceAd;
 
         // Determine if we should proceed with ad generation
         if (

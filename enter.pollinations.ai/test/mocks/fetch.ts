@@ -1,6 +1,6 @@
+import { getLogger } from "@logtape/logtape";
 import type { Hono } from "hono";
 import { vi } from "vitest";
-import { getLogger } from "@logtape/logtape";
 
 const originalFetch = globalThis.fetch;
 const activeRequests = new Set<Promise<any>>();

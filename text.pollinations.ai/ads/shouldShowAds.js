@@ -1,6 +1,6 @@
 import { getRequestData } from "../requestUtils.js";
 import { REDIRECT_BASE_URL } from "./adLlmMapper.js";
-import { REQUIRE_MARKDOWN, markdownRegex } from "./adUtils.js";
+import { markdownRegex, REQUIRE_MARKDOWN } from "./adUtils.js";
 
 // Global flag to completely disable ad system
 const ADS_GLOBALLY_DISABLED = true;
@@ -37,7 +37,11 @@ export async function shouldShowAds(
 ) {
     // Early return if ads are globally disabled
     if (ADS_GLOBALLY_DISABLED) {
-        return { shouldShowAd: false, markerFound: false, globallyDisabled: true };
+        return {
+            shouldShowAd: false,
+            markerFound: false,
+            globallyDisabled: true,
+        };
     }
 
     log(
@@ -108,8 +112,7 @@ export async function shouldShowAds(
 
     // Special handling for bad domains in referrer
     if (
-        requestData &&
-        requestData.referrer &&
+        requestData?.referrer &&
         requestData.referrer !== "unknown" &&
         BAD_DOMAINS.length > 0
     ) {
@@ -134,8 +137,7 @@ export async function shouldShowAds(
 
     // Skip ad processing if referrer is from roblox or image.pollinations.ai
     if (
-        requestData &&
-        requestData.referrer &&
+        requestData?.referrer &&
         requestData.referrer !== "unknown" &&
         (requestData.referrer?.includes("v1_rblx_access") ||
             requestData.referrer?.includes("image.pollinations.ai"))

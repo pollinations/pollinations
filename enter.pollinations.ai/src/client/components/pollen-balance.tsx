@@ -10,8 +10,10 @@ export const PollenBalance: FC<PollenBalanceProps> = ({
     packBalance,
 }) => {
     const totalPollen = Math.max(0, tierBalance + packBalance);
-    const freePercentage = totalPollen > 0 ? (tierBalance / totalPollen) * 100 : 0;
-    const packPercentage = totalPollen > 0 ? (packBalance / totalPollen) * 100 : 0;
+    const freePercentage =
+        totalPollen > 0 ? (tierBalance / totalPollen) * 100 : 0;
+    const packPercentage =
+        totalPollen > 0 ? (packBalance / totalPollen) * 100 : 0;
 
     return (
         <div className="bg-violet-50/30 rounded-2xl p-4 sm:p-8 border border-violet-300">

@@ -8,7 +8,7 @@
         "dev": "npm run decrypt-vars && DEBUG=pollinations:* npx tsx startServer.js",
         "type-check": "tsc --noEmit",
         "validate-configs": "tsx configs/validateConfigKeys.ts",
-        "test": "echo \"Error: no test specified\" && exit 1",
+        "test": "vitest run",
         "deploy:portkey": "bash scripts/deploy-portkey.sh"
     },
     "keywords": [],
@@ -33,8 +33,8 @@
         "openai": "^4.58.2",
         "p-queue": "^8.0.1",
         "puppeteer": "^23.6.0",
-        "turndown": "^7.2.0",
         "tsx": "^4.20.3",
+        "turndown": "^7.2.0",
         "typescript": "^5.8.3"
     },
     "devDependencies": {
@@ -44,6 +44,7 @@
         "nodemon": "^3.1.10",
         "nyc": "^17.1.0",
         "sinon": "^20.0.0",
-        "supertest": "^7.0.0"
+        "supertest": "^7.0.0",
+        "vitest": "^4.0.16"
     }
 }

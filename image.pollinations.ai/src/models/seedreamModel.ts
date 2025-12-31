@@ -1,11 +1,11 @@
 import debug from "debug";
-import { withTimeoutSignal } from "../util.ts";
+import type { ImageGenerationResult } from "../createAndReturnImages.ts";
 import { HttpError } from "../httpError.ts";
-import { downloadImageAsBase64 } from "../utils/imageDownload.ts";
 import { getScaledDimensions } from "../models.ts";
 import type { ImageParams } from "../params.ts";
-import type { ImageGenerationResult } from "../createAndReturnImages.ts";
 import type { ProgressManager } from "../progressBar.ts";
+import { withTimeoutSignal } from "../util.ts";
+import { downloadImageAsBase64 } from "../utils/imageDownload.ts";
 
 // Logger
 const logOps = debug("pollinations:seedream:ops");
@@ -223,7 +223,7 @@ async function generateWithSeedream(
 
                 // Download and detect MIME type from magic bytes
                 const { base64, mimeType } = await withTimeoutSignal(
-                    (signal) => downloadImageAsBase64(imageUrl),
+                    (_signal) => downloadImageAsBase64(imageUrl),
                     30000, // 30 second timeout
                 );
 

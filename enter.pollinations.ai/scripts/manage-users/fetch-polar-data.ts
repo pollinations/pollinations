@@ -1,4 +1,5 @@
 #!/usr/bin/env npx tsx
+
 /**
  * Fetch all Polar subscription data and save to local JSON file.
  *
@@ -12,9 +13,9 @@
  *   - POLAR_ACCESS_TOKEN environment variable
  */
 
-import { Polar } from "@polar-sh/sdk";
-import { writeFileSync, mkdirSync, existsSync } from "node:fs";
+import { existsSync, mkdirSync, writeFileSync } from "node:fs";
 import { dirname } from "node:path";
+import { Polar } from "@polar-sh/sdk";
 
 // Tier definitions
 const TIERS = ["spore", "seed", "flower", "nectar"] as const;
@@ -154,7 +155,7 @@ async function main() {
     // Write file
     writeFileSync(OUTPUT_PATH, JSON.stringify(output, null, 2));
 
-    console.log("\n" + "=".repeat(60));
+    console.log(`\n${"=".repeat(60)}`);
     console.log("DONE:");
     console.log(`  Total tier subscriptions: ${subscriptions.length}`);
     console.log(

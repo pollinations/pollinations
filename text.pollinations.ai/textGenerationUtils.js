@@ -1,8 +1,8 @@
 import debug from "debug";
 // Import the new cleaning utilities
 import {
-    cleanUndefined as newCleanUndefined,
     cleanNullAndUndefined as newCleanNullAndUndefined,
+    cleanUndefined as newCleanUndefined,
 } from "./utils/objectCleaners.js";
 
 const log = debug("pollinations:utils");
@@ -50,7 +50,7 @@ export function convertSystemToUserMessages(messages) {
         if (msg.role === "system") {
             log(
                 "Converting system message to user message:",
-                msg.content.substring(0, 50) + "...",
+                `${msg.content.substring(0, 50)}...`,
             );
             return {
                 ...msg,

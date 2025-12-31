@@ -1,110 +1,110 @@
 .prompt-section {
-  margin: 40px 0;
-  padding: 30px;
-  background: linear-gradient(135deg, #f8f9ff 0%, #f0f2ff 100%);
-  border-radius: 20px;
-  border: 2px solid #e0e5ff;
-  box-shadow: 0 5px 20px rgba(0, 0, 0, 0.05);
+    margin: 40px 0;
+    padding: 30px;
+    background: linear-gradient(135deg, #f8f9ff 0%, #f0f2ff 100%);
+    border-radius: 20px;
+    border: 2px solid #e0e5ff;
+    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.05);
 }
 
 .prompt-section label {
-  display: block;
-  margin-bottom: 15px;
-  font-weight: 700;
-  color: #333333;
-  font-size: 1.15rem;
+    display: block;
+    margin-bottom: 15px;
+    font-weight: 700;
+    color: #333333;
+    font-size: 1.15rem;
 }
 
 .prompt-section textarea {
-  width: 100%;
-  padding: 18px;
-  border: 2px solid #dddddd;
-  border-radius: 12px;
-  font-size: 1rem;
-  resize: vertical;
-  margin-bottom: 20px;
-  font-family: inherit;
-  transition: all 0.3s ease;
-  min-height: 90px;
-  line-height: 1.6;
-  background: #ffffff;
-  color: #333333;
+    width: 100%;
+    padding: 18px;
+    border: 2px solid #dddddd;
+    border-radius: 12px;
+    font-size: 1rem;
+    resize: vertical;
+    margin-bottom: 20px;
+    font-family: inherit;
+    transition: all 0.3s ease;
+    min-height: 90px;
+    line-height: 1.6;
+    background: #ffffff;
+    color: #333333;
 }
 
 .prompt-section textarea:focus {
-  outline: none;
-  border-color: #667eea;
-  box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1);
-  background: #fefeff;
+    outline: none;
+    border-color: #667eea;
+    box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1);
+    background: #fefeff;
 }
 
 .prompt-section textarea:disabled {
-  background: #f5f5f5;
-  cursor: not-allowed;
+    background: #f5f5f5;
+    cursor: not-allowed;
 }
 
 .generate-button {
-  width: 100%;
-  padding: 18px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: #ffffff !important;
-  border: none;
-  border-radius: 15px;
-  font-size: 1.15rem;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  font-weight: 700;
-  box-shadow: 0 8px 20px rgba(102, 126, 234, 0.3);
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
+    width: 100%;
+    padding: 18px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: #ffffff;
+    border: none;
+    border-radius: 15px;
+    font-size: 1.15rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-weight: 700;
+    box-shadow: 0 8px 20px rgba(102, 126, 234, 0.3);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
 }
 
 .generate-button:hover:not(:disabled) {
-  transform: translateY(-3px);
-  box-shadow: 0 12px 30px rgba(102, 126, 234, 0.5);
-  background: linear-gradient(135deg, #5568d3 0%, #6a3f8f 100%);
+    transform: translateY(-3px);
+    box-shadow: 0 12px 30px rgba(102, 126, 234, 0.5);
+    background: linear-gradient(135deg, #5568d3 0%, #6a3f8f 100%);
 }
 
 .generate-button:disabled {
-  background: linear-gradient(135deg, #cccccc 0%, #aaaaaa 100%);
-  cursor: not-allowed;
-  transform: none;
-  box-shadow: none;
+    background: linear-gradient(135deg, #cccccc 0%, #aaaaaa 100%);
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
 }
 
 .error-message {
-  color: #e74c3c;
-  background: linear-gradient(135deg, #ffeaea 0%, #ffe5e5 100%);
-  padding: 15px 20px;
-  border-radius: 12px;
-  margin-top: 15px;
-  text-align: center;
-  font-weight: 600;
-  border: 2px solid #ffcccc;
-  box-shadow: 0 4px 12px rgba(231, 76, 60, 0.15);
+    color: #e74c3c;
+    background: linear-gradient(135deg, #ffeaea 0%, #ffe5e5 100%);
+    padding: 15px 20px;
+    border-radius: 12px;
+    margin-top: 15px;
+    text-align: center;
+    font-weight: 600;
+    border: 2px solid #ffcccc;
+    box-shadow: 0 4px 12px rgba(231, 76, 60, 0.15);
 }
 
 .api-info {
-  margin-top: 15px;
-  padding: 12px;
-  background: #e8f4f8;
-  border-radius: 8px;
-  border-left: 4px solid #17a2b8;
+    margin-top: 15px;
+    padding: 12px;
+    background: #e8f4f8;
+    border-radius: 8px;
+    border-left: 4px solid #17a2b8;
 }
 
 .api-info p {
-  margin: 5px 0;
-  color: #555555;
-  font-size: 0.9rem;
+    margin: 5px 0;
+    color: #555555;
+    font-size: 0.9rem;
 }
 
 @media (max-width: 768px) {
-  .prompt-section {
-    padding: 25px 20px;
-  }
-  
-  .generate-button {
-    font-size: 1rem;
-    padding: 15px;
-  }
+    .prompt-section {
+        padding: 25px 20px;
+    }
+
+    .generate-button {
+        font-size: 1rem;
+        padding: 15px;
+    }
 }

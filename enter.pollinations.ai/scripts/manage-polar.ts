@@ -1,6 +1,6 @@
-import { Polar } from "@polar-sh/sdk";
-import { command, number, run, string, boolean } from "@drizzle-team/brocli";
 import { inspect } from "node:util";
+import { boolean, command, number, run, string } from "@drizzle-team/brocli";
+import { Polar } from "@polar-sh/sdk";
 import { applyColor, applyStyle } from "../src/util.ts";
 
 const VERSION = "v1";
@@ -559,7 +559,7 @@ const subscriptionList = command({
     },
 });
 
-const subscriptionUpdate = command({
+const _subscriptionUpdate = command({
     name: "update",
     options: {
         subscriptionId: string().required(),
@@ -660,7 +660,7 @@ const customerMigrate = command({
             email: opts.email,
             limit: 100,
         });
-        let createdCustomers: any[] = [];
+        const createdCustomers: any[] = [];
         for await (const page of paginator) {
             for (const customer of page.result.items) {
                 if (customer.deletedAt) {
@@ -926,7 +926,9 @@ const webhookSync = command({
 
         if (existingEndpoint) {
             console.log(`Found existing endpoint: ${existingEndpoint.id}`);
-            console.log(`Current events: ${existingEndpoint.events.join(", ")}`);
+            console.log(
+                `Current events: ${existingEndpoint.events.join(", ")}`,
+            );
 
             // Check for missing events
             const missingEvents = REQUIRED_WEBHOOK_EVENTS.filter(
@@ -941,17 +943,25 @@ const webhookSync = command({
 
             if (missingEvents.length > 0) {
                 console.log(
-                    applyColor("red", `Missing events: ${missingEvents.join(", ")}`),
+                    applyColor(
+                        "red",
+                        `Missing events: ${missingEvents.join(", ")}`,
+                    ),
                 );
             }
             if (extraEvents.length > 0) {
                 console.log(
-                    applyColor("yellow", `Extra events: ${extraEvents.join(", ")}`),
+                    applyColor(
+                        "yellow",
+                        `Extra events: ${extraEvents.join(", ")}`,
+                    ),
                 );
             }
 
             if (missingEvents.length === 0 && extraEvents.length === 0) {
-                console.log(applyColor("green", "✓ Webhook configuration is correct"));
+                console.log(
+                    applyColor("green", "✓ Webhook configuration is correct"),
+                );
                 return;
             }
 
@@ -964,15 +974,23 @@ const webhookSync = command({
                     },
                 });
                 console.log(
-                    applyColor("green", `✓ Updated webhook with events: ${updated.events.join(", ")}`),
+                    applyColor(
+                        "green",
+                        `✓ Updated webhook with events: ${updated.events.join(", ")}`,
+                    ),
                 );
             } else {
                 console.log(
-                    applyColor("yellow", "Run with --apply to update the webhook"),
+                    applyColor(
+                        "yellow",
+                        "Run with --apply to update the webhook",
+                    ),
                 );
             }
         } else {
-            console.log(applyColor("red", "No webhook endpoint found for this URL"));
+            console.log(
+                applyColor("red", "No webhook endpoint found for this URL"),
+            );
             console.log(
                 "Create one in the Polar dashboard or implement create command",
             );

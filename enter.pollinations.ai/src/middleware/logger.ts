@@ -1,4 +1,4 @@
-import { getLogger, Logger, withContext } from "@logtape/logtape";
+import { getLogger, type Logger, withContext } from "@logtape/logtape";
 import { createMiddleware } from "hono/factory";
 import { ensureConfigured } from "@/logger";
 

@@ -1,9 +1,9 @@
-import { serve } from "@hono/node-server";
-import { Hono } from "hono";
 import fs from "node:fs/promises";
 import path from "node:path";
-import type { TestProject } from "vitest/node";
+import { serve } from "@hono/node-server";
 import { getLogger } from "@logtape/logtape";
+import { Hono } from "hono";
+import type { TestProject } from "vitest/node";
 
 const SNAPSHOTS_DIR = path.join(process.cwd(), "test", "mocks", "snapshots");
 
@@ -38,7 +38,7 @@ export async function setup({ provide }: TestProject) {
                     "utf-8",
                 );
                 return c.json({ success: true }, 200);
-            } catch (error) {
+            } catch (_error) {
                 return c.json({ error: "Failed to write snapshot" }, 500);
             }
         });

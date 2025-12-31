@@ -1,4 +1,3 @@
-
-const LINK = ""
-const TITLE = ""
-export {LINK, TITLE};
+const LINK = "";
+const TITLE = "";
+export { LINK, TITLE };

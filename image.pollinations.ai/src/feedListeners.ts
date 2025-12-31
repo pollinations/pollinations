@@ -37,7 +37,8 @@ export const registerFeedListener = async (
 
     // Check if the password query parameter matches the PLN_FEED_PASSWORD
     const isAuthenticated =
-        parsedUrl.searchParams.get("password") === process.env.PLN_FEED_PASSWORD;
+        parsedUrl.searchParams.get("password") ===
+        process.env.PLN_FEED_PASSWORD;
 
     if (isAuthenticated) {
         logAuth("Authenticated feed access granted");
@@ -55,7 +56,7 @@ export const registerFeedListener = async (
     });
 
     const pastResults =
-        parseInt(parsedUrl.searchParams.get("past_results")) || 20;
+        parseInt(parsedUrl.searchParams.get("past_results"), 10) || 20;
 
     const statesToSend = lastStates.slice(-pastResults);
 

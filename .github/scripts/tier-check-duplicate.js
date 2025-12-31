@@ -20,7 +20,7 @@
  *   user_previous_apps - JSON array of user's previous app submissions
  */
 
-const fs = require("fs");
+const fs = require("node:fs");
 
 // Parse environment variables
 const projectJson = process.env.PROJECT_JSON;

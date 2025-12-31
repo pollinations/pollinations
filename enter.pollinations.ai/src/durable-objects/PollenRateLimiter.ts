@@ -30,7 +30,8 @@ export class PollenRateLimiter extends DurableObject {
         // Load state from storage - blockConcurrencyWhile ensures no requests
         // are delivered until initialization completes, preventing race conditions
         ctx.blockConcurrencyWhile(async () => {
-            this.nextAllowedTime = (await ctx.storage.get("nextAllowedTime")) ?? 0;
+            this.nextAllowedTime =
+                (await ctx.storage.get("nextAllowedTime")) ?? 0;
             this.log.debug("Loaded state: nextAllowedTime={nextAllowedTime}", {
                 nextAllowedTime: this.nextAllowedTime,
             });
@@ -74,10 +75,10 @@ export class PollenRateLimiter extends DurableObject {
         const waitTime = Math.ceil(cost / this.refillRate);
         this.nextAllowedTime = now + waitTime;
 
-        this.log.debug(
-            "Consumed {cost} pollen, next allowed in {waitMs}ms",
-            { cost, waitMs: waitTime },
-        );
+        this.log.debug("Consumed {cost} pollen, next allowed in {waitMs}ms", {
+            cost,
+            waitMs: waitTime,
+        });
 
         await this.ctx.storage.put("nextAllowedTime", this.nextAllowedTime);
     }

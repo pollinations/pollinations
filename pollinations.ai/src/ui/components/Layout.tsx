@@ -158,7 +158,7 @@ function Layout() {
                                                 .filter(
                                                     ([key]) =>
                                                         key === "discord" ||
-                                                        key === "github"
+                                                        key === "github",
                                                 )
                                                 .map(
                                                     ([
@@ -182,7 +182,7 @@ function Layout() {
                                                         >
                                                             <Icon className="w-full h-full" />
                                                         </Button>
-                                                    )
+                                                    ),
                                                 )}
 
                                             {/* Enter + Language Toggle Stack */}
@@ -223,10 +223,10 @@ function Layout() {
                             isBannerVisible && isPromptOpen
                                 ? "calc(44px + 4rem)"
                                 : isBannerVisible
-                                ? "44px"
-                                : isPromptOpen
-                                ? "4rem"
-                                : "0px",
+                                  ? "44px"
+                                  : isPromptOpen
+                                    ? "4rem"
+                                    : "0px",
                     } as React.CSSProperties
                 }
             >
@@ -275,7 +275,7 @@ function Layout() {
                                         .filter(
                                             ([key]) =>
                                                 key !== "github" &&
-                                                key !== "discord"
+                                                key !== "discord",
                                         )
                                         .map(
                                             ([
@@ -295,7 +295,7 @@ function Layout() {
                                                 >
                                                     <Icon className="w-full h-full" />
                                                 </Button>
-                                            )
+                                            ),
                                         )}
                                 </div>
                             </div>
@@ -328,12 +328,12 @@ function Layout() {
                                     type="button"
                                     onClick={() => {
                                         navigator.clipboard.writeText(
-                                            "hello@pollinations.ai"
+                                            "hello@pollinations.ai",
                                         );
                                         setEmailCopied(true);
                                         setTimeout(
                                             () => setEmailCopied(false),
-                                            2000
+                                            2000,
                                         );
                                     }}
                                     variant="iconText"
@@ -410,12 +410,12 @@ function Layout() {
                                     type="button"
                                     onClick={() => {
                                         navigator.clipboard.writeText(
-                                            "hello@pollinations.ai"
+                                            "hello@pollinations.ai",
                                         );
                                         setEmailCopied(true);
                                         setTimeout(
                                             () => setEmailCopied(false),
-                                            2000
+                                            2000,
                                         );
                                     }}
                                     variant="iconText"
@@ -467,7 +467,7 @@ function Layout() {
                                         .filter(
                                             ([key]) =>
                                                 key !== "github" &&
-                                                key !== "discord"
+                                                key !== "discord",
                                         )
                                         .map(
                                             ([
@@ -487,7 +487,7 @@ function Layout() {
                                                 >
                                                     <Icon className="w-full h-full" />
                                                 </Button>
-                                            )
+                                            ),
                                         )}
                                 </div>
                                 {/* Enter Button */}

@@ -1,4 +1,3 @@
-import { writeFileSync } from "fs";
 import Table from "cli-table3";
 import debug from "debug";
 import { generalImageQueue } from "./generalImageQueue";
@@ -6,7 +5,7 @@ import { generalImageQueue } from "./generalImageQueue";
 const logStats = debug("pollinations:stats");
 
 // Initialize an object to track images requested and returned per bucket key
-export let bucketKeyStats = {};
+export const bucketKeyStats = {};
 export let requestTimestamps = []; // Array to store timestamps of image requests
 
 export let imageReturnTimestamps = []; // Array to store timestamps of returned images
@@ -65,15 +64,15 @@ export const printQueueStatus = () => {
     logStats(imageTable.toString());
 
     // construct simple string tables for file writing
-    const fileBatchTableHeaders = batchHead.join(",");
-    const fileBatchTable = batchTable.map((row) => row.join(",")).join("\n");
-    const fileImageTableHeaders = imageHead.join(",");
-    const fileImageTable = imageTable.map((row) => row.join(",")).join("\n");
+    const _fileBatchTableHeaders = batchHead.join(",");
+    const _fileBatchTable = batchTable.map((row) => row.join(",")).join("\n");
+    const _fileImageTableHeaders = imageHead.join(",");
+    const _fileImageTable = imageTable.map((row) => row.join(",")).join("\n");
 
     // Write tables to a file
     // writeFileSync('tableLogs.txt', `${fileBatchTableHeaders}\n${fileBatchTable}\n${fileImageTableHeaders}\n${fileImageTable}`);
 };
-let jobCounts = [];
+const jobCounts = [];
 
 export const countJobs = (average = false) => {
     const currentCount = currentJobs.reduce((acc, batch) => {

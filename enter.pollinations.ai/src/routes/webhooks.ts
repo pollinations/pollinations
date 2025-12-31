@@ -1,28 +1,27 @@
-import { Hono } from "hono";
-import { HTTPException } from "hono/http-exception";
 import { getLogger } from "@logtape/logtape";
-import { drizzle } from "drizzle-orm/d1";
-import { eq } from "drizzle-orm";
 import { Polar } from "@polar-sh/sdk";
+import type { WebhookBenefitGrantCycledPayload } from "@polar-sh/sdk/models/components/webhookbenefitgrantcycledpayload.js";
+import type { WebhookOrderPaidPayload } from "@polar-sh/sdk/models/components/webhookorderpaidpayload.js";
+import type { WebhookSubscriptionCanceledPayload } from "@polar-sh/sdk/models/components/webhooksubscriptioncanceledpayload.js";
+import type { WebhookSubscriptionCreatedPayload } from "@polar-sh/sdk/models/components/webhooksubscriptioncreatedpayload.js";
+import type { WebhookSubscriptionRevokedPayload } from "@polar-sh/sdk/models/components/webhooksubscriptionrevokedpayload.js";
+import type { WebhookSubscriptionUpdatedPayload } from "@polar-sh/sdk/models/components/webhooksubscriptionupdatedpayload.js";
 import {
     validateEvent,
     WebhookVerificationError,
 } from "@polar-sh/sdk/webhooks";
-import type { Env } from "../env.ts";
-import { user as userTable } from "../db/schema/better-auth.ts";
-import { syncUserTier } from "../tier-sync.ts";
+import { eq, sql } from "drizzle-orm";
+import { drizzle } from "drizzle-orm/d1";
+import { Hono } from "hono";
+import { HTTPException } from "hono/http-exception";
 import {
-    isValidTier,
     getTierProductMapCached,
+    isValidTier,
     type TierName,
 } from "@/utils/polar.ts";
-import { WebhookSubscriptionRevokedPayload } from "@polar-sh/sdk/models/components/webhooksubscriptionrevokedpayload.js";
-import { WebhookSubscriptionCanceledPayload } from "@polar-sh/sdk/models/components/webhooksubscriptioncanceledpayload.js";
-import { WebhookSubscriptionUpdatedPayload } from "@polar-sh/sdk/models/components/webhooksubscriptionupdatedpayload.js";
-import { WebhookSubscriptionCreatedPayload } from "@polar-sh/sdk/models/components/webhooksubscriptioncreatedpayload.js";
-import { WebhookBenefitGrantCycledPayload } from "@polar-sh/sdk/models/components/webhookbenefitgrantcycledpayload.js";
-import { WebhookOrderPaidPayload } from "@polar-sh/sdk/models/components/webhookorderpaidpayload.js";
-import { sql } from "drizzle-orm";
+import { user as userTable } from "../db/schema/better-auth.ts";
+import type { Env } from "../env.ts";
+import { syncUserTier } from "../tier-sync.ts";
 
 const log = getLogger(["hono", "webhooks"]);
 

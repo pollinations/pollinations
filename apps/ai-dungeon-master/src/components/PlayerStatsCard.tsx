@@ -1,7 +1,12 @@
-import { Progress } from "./ui/progress";
+import { Heart, Sparkles, User } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "./ui/tooltip";
-import { User, Heart, Sparkles } from "lucide-react";
+import { Progress } from "./ui/progress";
+import {
+    Tooltip,
+    TooltipContent,
+    TooltipProvider,
+    TooltipTrigger,
+} from "./ui/tooltip";
 
 interface PlayerStatsCardProps {
     character: {
@@ -43,9 +48,12 @@ export function PlayerStatsCard({ character }: PlayerStatsCardProps) {
                             <Tooltip>
                                 <TooltipTrigger asChild>
                                     <div className="cursor-help">
-                                        <h3 className="text-[#d4a76a]">{character.name}</h3>
+                                        <h3 className="text-[#d4a76a]">
+                                            {character.name}
+                                        </h3>
                                         <p className="text-sm text-[#b8a389]">
-                                            Level {character.level} {character.class}
+                                            Level {character.level}{" "}
+                                            {character.class}
                                         </p>
                                     </div>
                                 </TooltipTrigger>
@@ -61,7 +69,9 @@ export function PlayerStatsCard({ character }: PlayerStatsCardProps) {
                             <Heart className="w-4 h-4 text-[#8b0000]" />
                             <div className="flex-1">
                                 <div className="flex justify-between mb-1">
-                                    <span className="text-xs text-[#f5e6d3]">HP</span>
+                                    <span className="text-xs text-[#f5e6d3]">
+                                        HP
+                                    </span>
                                     <span className="text-xs text-[#f5e6d3]">
                                         {character.hp}/{character.maxHp}
                                     </span>
@@ -69,9 +79,11 @@ export function PlayerStatsCard({ character }: PlayerStatsCardProps) {
                                 <Progress
                                     value={hpPercentage}
                                     className="h-2 bg-[#2c1e12]"
-                                    style={{
-                                        __progressBackground: '#8b0000',
-                                    } as any}
+                                    style={
+                                        {
+                                            __progressBackground: "#8b0000",
+                                        } as any
+                                    }
                                 />
                             </div>
                         </div>
@@ -80,7 +92,9 @@ export function PlayerStatsCard({ character }: PlayerStatsCardProps) {
                             <Sparkles className="w-4 h-4 text-[#4169e1]" />
                             <div className="flex-1">
                                 <div className="flex justify-between mb-1">
-                                    <span className="text-xs text-[#f5e6d3]">Mana</span>
+                                    <span className="text-xs text-[#f5e6d3]">
+                                        Mana
+                                    </span>
                                     <span className="text-xs text-[#f5e6d3]">
                                         {character.mana}/{character.maxMana}
                                     </span>
@@ -88,9 +102,11 @@ export function PlayerStatsCard({ character }: PlayerStatsCardProps) {
                                 <Progress
                                     value={manaPercentage}
                                     className="h-2 bg-[#2c1e12]"
-                                    style={{
-                                        __progressBackground: '#4169e1',
-                                    } as any}
+                                    style={
+                                        {
+                                            __progressBackground: "#4169e1",
+                                        } as any
+                                    }
                                 />
                             </div>
                         </div>

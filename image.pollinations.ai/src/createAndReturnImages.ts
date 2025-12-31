@@ -1,8 +1,6 @@
 import debug from "debug";
-import { HttpError } from "./httpError.ts";
 import dotenv from "dotenv";
 import { fileTypeFromBuffer } from "file-type";
-
 // Import shared authentication utilities
 import sharp from "sharp";
 import {
@@ -10,26 +8,25 @@ import {
     fetchFromLeastBusyServer,
     getNextTurboServerUrl,
 } from "./availableServers.ts";
+import { HttpError } from "./httpError.ts";
+import { incrementModelCounter } from "./modelCounter.ts";
+import { callAzureFluxKontext } from "./models/azureFluxKontextModel.js";
+// Import model handlers
+import { callSeedreamAPI, callSeedreamProAPI } from "./models/seedreamModel.ts";
+import type { ImageParams } from "./params.ts";
+import type { ProgressManager } from "./progressBar.ts";
 import { sanitizeString } from "./translateIfNecessary.ts";
 import {
     analyzeImageSafety,
     analyzeTextSafety,
     type ContentSafetyFlags,
 } from "./utils/azureContentSafety.ts";
-import type { TrackingData } from "./utils/trackingHeaders.ts";
-
 // Import GPT Image logging utilities
 import { logGptImageError, logGptImagePrompt } from "./utils/gptImageLogger.ts";
+import type { TrackingData } from "./utils/trackingHeaders.ts";
 // Import Vertex AI Gemini image generator
 import { callVertexAIGemini } from "./vertexAIImageGenerator.js";
 import { writeExifMetadata } from "./writeExifMetadata.ts";
-import type { ImageParams } from "./params.ts";
-import type { ProgressManager } from "./progressBar.ts";
-
-// Import model handlers
-import { callSeedreamAPI, callSeedreamProAPI } from "./models/seedreamModel.ts";
-import { callAzureFluxKontext } from "./models/azureFluxKontextModel.js";
-import { incrementModelCounter } from "./modelCounter.ts";
 
 dotenv.config();
 
@@ -441,7 +438,7 @@ async function callCloudflareModel(
  * @param {ImageParams} safeParams - The parameters for image generation
  * @returns {Promise<ImageGenerationResult>}
  */
-async function callCloudflareFlux(
+async function _callCloudflareFlux(
     prompt: string,
     safeParams: ImageParams,
 ): Promise<ImageGenerationResult> {
@@ -459,7 +456,7 @@ async function callCloudflareFlux(
  * @param {ImageParams} safeParams - The parameters for image generation
  * @returns {Promise<ImageGenerationResult>}
  */
-async function callCloudflareSDXL(
+async function _callCloudflareSDXL(
     prompt: string,
     safeParams: ImageParams,
 ): Promise<ImageGenerationResult> {
@@ -476,7 +473,7 @@ async function callCloudflareSDXL(
  * @param {ImageParams} safeParams - The parameters for image generation
  * @returns {Promise<ImageGenerationResult>}
  */
-async function callCloudflareDreamshaper(
+async function _callCloudflareDreamshaper(
     prompt: string,
     safeParams: ImageParams,
 ): Promise<ImageGenerationResult> {
@@ -737,7 +734,7 @@ const callAzureGPTImageWithEndpoint = async (
                     }
 
                     // Determine file extension and MIME type from Content-Type header
-                    let contentType =
+                    const contentType =
                         imageResponse.headers.get("content-type") || "";
                     let extension = ".png"; // Default extension
                     let mimeType = "image/png"; // Default MIME type
@@ -929,79 +926,72 @@ const generateImage = async (
                 ? `authenticated=${userInfo.authenticated}, tokenAuth=${userInfo.tokenAuth}, referrerAuth=${userInfo.referrerAuth}, reason=${userInfo.reason}, userId=${userInfo.userId || "none"}`
                 : "No userInfo provided",
         );
+        // For gptimage models, always throw errors instead of falling back
+        progress.updateBar(
+            requestId,
+            30,
+            "Processing",
+            "Checking prompt safety...",
+        );
 
-        // All requests assumed to come from enter.pollinations.ai - tier checks bypassed
-        {
-            // For gptimage models, always throw errors instead of falling back
-            progress.updateBar(
-                requestId,
-                30,
-                "Processing",
-                "Checking prompt safety...",
+        try {
+            // Check prompt safety with Azure Content Safety
+            const promptSafetyResult = await analyzeTextSafety(prompt);
+
+            // Log the prompt with safety analysis results
+            await logGptImagePrompt(
+                prompt,
+                safeParams,
+                userInfo,
+                promptSafetyResult,
             );
 
-            try {
-                // Check prompt safety with Azure Content Safety
-                const promptSafetyResult = await analyzeTextSafety(prompt);
+            if (!promptSafetyResult.safe) {
+                const errorMessage = `Prompt contains unsafe content: ${promptSafetyResult.formattedViolations}`;
+                logError("Azure Content Safety rejected prompt:", errorMessage);
+                progress.updateBar(
+                    requestId,
+                    100,
+                    "Error",
+                    "Prompt contains unsafe content",
+                );
 
-                // Log the prompt with safety analysis results
-                await logGptImagePrompt(
+                // Log the error with safety analysis results
+                const error = new HttpError(errorMessage, 400);
+                await logGptImageError(
                     prompt,
                     safeParams,
                     userInfo,
+                    error,
                     promptSafetyResult,
                 );
 
-                if (!promptSafetyResult.safe) {
-                    const errorMessage = `Prompt contains unsafe content: ${promptSafetyResult.formattedViolations}`;
-                    logError(
-                        "Azure Content Safety rejected prompt:",
-                        errorMessage,
-                    );
-                    progress.updateBar(
-                        requestId,
-                        100,
-                        "Error",
-                        "Prompt contains unsafe content",
-                    );
-
-                    // Log the error with safety analysis results
-                    const error = new HttpError(errorMessage, 400);
-                    await logGptImageError(
-                        prompt,
-                        safeParams,
-                        userInfo,
-                        error,
-                        promptSafetyResult,
-                    );
-
-                    throw error;
-                }
-
-                progress.updateBar(
-                    requestId,
-                    35,
-                    "Processing",
-                    `Trying Azure GPT Image (${gptConfig.modelName})...`,
-                );
-                return await callAzureGPTImage(
-                    prompt,
-                    safeParams,
-                    userInfo,
-                    safeParams.model,
-                );
-            } catch (error) {
-                // Log the error but don't fall back - propagate it to the caller
-                logError(
-                    "Azure GPT Image generation or safety check failed:",
-                    error.message,
-                );
-
-                await logGptImageError(prompt, safeParams, userInfo, error);
-
-                progress.updateBar(requestId, 100, "Error", error.message);
                 throw error;
             }
+
+            progress.updateBar(
+                requestId,
+                35,
+                "Processing",
+                `Trying Azure GPT Image (${gptConfig.modelName})...`,
+            );
+            return await callAzureGPTImage(
+                prompt,
+                safeParams,
+                userInfo,
+                safeParams.model,
+            );
+        } catch (error) {
+            // Log the error but don't fall back - propagate it to the caller
+            logError(
+                "Azure GPT Image generation or safety check failed:",
+                error.message,
+            );
+
+            await logGptImageError(prompt, safeParams, userInfo, error);
+
+            progress.updateBar(requestId, 100, "Error", error.message);
+            throw error;
         }
     }
 
@@ -1154,13 +1144,7 @@ const generateImage = async (
         );
         return await callComfyUI(prompt, safeParams, concurrentRequests);
     }
-
-    try {
-        return await callComfyUI(prompt, safeParams, concurrentRequests);
-    } catch (_error) {
-        // Cloudflare Flux fallback disabled
-        throw _error;
-    }
+    return await callComfyUI(prompt, safeParams, concurrentRequests);
 };
 
 // GPT Image logging functions have been moved to utils/gptImageLogger.js

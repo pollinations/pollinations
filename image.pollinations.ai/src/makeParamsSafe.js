@@ -41,7 +41,7 @@ export const makeParamsSafe = ({
 
     // Validate video-specific parameters
     const validDurations = [4, 6, 8];
-    duration = parseInt(duration);
+    duration = parseInt(duration, 10);
     if (!validDurations.includes(duration)) {
         duration = 4; // Default to cheapest: 4 seconds
     }
@@ -65,16 +65,16 @@ export const makeParamsSafe = ({
     const defaultSideLength = MODELS[model].defaultSideLength ?? 1024;
 
     // Use provided dimensions or default - no scaling/limiting
-    width = Number.isInteger(parseInt(width))
-        ? parseInt(width)
+    width = Number.isInteger(parseInt(width, 10))
+        ? parseInt(width, 10)
         : defaultSideLength;
-    height = Number.isInteger(parseInt(height))
-        ? parseInt(height)
+    height = Number.isInteger(parseInt(height, 10))
+        ? parseInt(height, 10)
         : defaultSideLength;
 
     // Ensure seed is a valid integer within the allowed range
     const maxSeedValue = 1844674407370955;
-    seed = Number.isInteger(parseInt(seed)) ? parseInt(seed) : 42;
+    seed = Number.isInteger(parseInt(seed, 10)) ? parseInt(seed, 10) : 42;
 
     if (seed < 0 || seed > maxSeedValue) {
         seed = 42;

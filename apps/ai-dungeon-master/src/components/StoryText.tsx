@@ -14,12 +14,16 @@ export function StoryText({ text, isLoading = false }: StoryTextProps) {
             transition={{ duration: 0.6 }}
             className="bg-[#3a2817] rounded-lg p-6 border-2 border-[#d4a76a] shadow-xl"
         >
-            <h3 className="text-[#d4a76a] text-lg font-semibold mb-4 font-serif">Adventure Story</h3>
+            <h3 className="text-[#d4a76a] text-lg font-semibold mb-4 font-serif">
+                Adventure Story
+            </h3>
 
             <ScrollArea className="h-40 w-full rounded border border-[#5a4332] bg-[#2c1e12]/50 p-4">
                 {isLoading ? (
                     <div className="flex items-center justify-center h-full">
-                        <div className="text-[#b8a389] italic">The tale unfolds...</div>
+                        <div className="text-[#b8a389] italic">
+                            The tale unfolds...
+                        </div>
                     </div>
                 ) : (
                     <motion.div

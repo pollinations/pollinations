@@ -12,6 +12,7 @@
     "text.pollinations.ai",
     "image.pollinations.ai",
     "pollinations-react",
+    "pollinations.ai",
     "apps/*"
   ],
   "devDependencies": {

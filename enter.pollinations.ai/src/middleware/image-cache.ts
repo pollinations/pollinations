@@ -5,13 +5,13 @@
  */
 
 import { createMiddleware } from "hono/factory";
+import type { RequestIdVariables } from "hono/request-id";
+import type { LoggerVariables } from "@/middleware/logger.ts";
 import {
+    cacheResponse,
     generateCacheKey,
     setHttpMetadataHeaders,
-    cacheResponse,
 } from "@/utils/image-cache.ts";
-import type { LoggerVariables } from "@/middleware/logger.ts";
-import { RequestIdVariables } from "hono/request-id";
 
 type ImageCacheEnv = {
     Bindings: CloudflareBindings;

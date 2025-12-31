@@ -1,8 +1,8 @@
 import { SELF } from "cloudflare:test";
-import { test } from "../fixtures.ts";
+import { expect } from "vitest";
 import { productSlugToUrlParam } from "@/routes/polar.ts";
 import { packProductSlugs } from "@/utils/polar.ts";
-import { expect } from "vitest";
+import { test } from "../fixtures.ts";
 
 const base = "http://localhost:3000/api/polar";
 const customerRoutes = [

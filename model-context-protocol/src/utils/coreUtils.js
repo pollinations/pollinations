@@ -65,7 +65,9 @@ export function createAudioContent(data, mimeType) {
  */
 export function buildUrl(path, params = {}, includeAuth = false) {
     const url = new URL(path, API_BASE_URL);
-    const allParams = includeAuth ? { ...params, ...getAuthQueryParam() } : params;
+    const allParams = includeAuth
+        ? { ...params, ...getAuthQueryParam() }
+        : params;
     Object.entries(allParams).forEach(([key, value]) => {
         if (value !== undefined && value !== null) {
             url.searchParams.set(key, String(value));
@@ -82,7 +84,12 @@ export function buildUrl(path, params = {}, includeAuth = false) {
 export function buildShareableUrl(path, params = {}) {
     const url = new URL(path, API_BASE_URL);
     Object.entries(params).forEach(([key, value]) => {
-        if (value !== undefined && value !== null && key !== "key" && key !== "token") {
+        if (
+            value !== undefined &&
+            value !== null &&
+            key !== "key" &&
+            key !== "token"
+        ) {
             url.searchParams.set(key, String(value));
         }
     });
@@ -139,7 +146,8 @@ export async function fetchBinaryWithAuth(url, options = {}) {
         throw new Error(parseApiError(response.status, errorText));
     }
     const buffer = await response.arrayBuffer();
-    const contentType = response.headers.get("content-type") || "application/octet-stream";
+    const contentType =
+        response.headers.get("content-type") || "application/octet-stream";
     return { buffer, contentType };
 }
 
@@ -156,9 +164,7 @@ export function arrayBufferToBase64(buffer) {
  * @returns {Object} - MCP response with error message
  */
 export function createErrorResponse(error) {
-    return createMCPResponse([
-        createTextContent(`Error: ${error.message}`),
-    ]);
+    return createMCPResponse([createTextContent(`Error: ${error.message}`)]);
 }
 
 /**
@@ -170,14 +176,16 @@ export function parseApiError(status, errorText) {
     let parsed = null;
     try {
         parsed = JSON.parse(errorText);
-    } catch {
-    }
-    const errorMessage = parsed?.error?.message || parsed?.message || parsed?.error || errorText;
+    } catch {}
+    const errorMessage =
+        parsed?.error?.message || parsed?.message || parsed?.error || errorText;
     switch (status) {
         case 400:
-            if (errorMessage.toLowerCase().includes("content moderation") ||
+            if (
+                errorMessage.toLowerCase().includes("content moderation") ||
                 errorMessage.toLowerCase().includes("safety") ||
-                errorMessage.toLowerCase().includes("blocked")) {
+                errorMessage.toLowerCase().includes("blocked")
+            ) {
                 return `Content blocked by safety filters. Try rephrasing your prompt or disable 'safe' mode if appropriate.`;
             }
             if (errorMessage.toLowerCase().includes("invalid model")) {
@@ -191,8 +199,10 @@ export function parseApiError(status, errorText) {
         case 404:
             return `Resource not found. The requested endpoint or model may not exist.`;
         case 429:
-            return `Rate limited. You're making too many requests. ` +
-                `If using pk_ (publishable) key, consider upgrading to sk_ (secret) key for higher limits.`;
+            return (
+                `Rate limited. You're making too many requests. ` +
+                `If using pk_ (publishable) key, consider upgrading to sk_ (secret) key for higher limits.`
+            );
         case 500:
             return `Server error: ${errorMessage}. Please try again later.`;
         case 502:

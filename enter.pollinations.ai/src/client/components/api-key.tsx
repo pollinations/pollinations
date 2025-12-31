@@ -1,6 +1,6 @@
 import { Dialog } from "@ark-ui/react/dialog";
 import { Field } from "@ark-ui/react/field";
-import { formatDistanceToNowStrict, type FormatDistanceToken } from "date-fns";
+import { type FormatDistanceToken, formatDistanceToNowStrict } from "date-fns";
 
 const shortFormatDistance: Record<FormatDistanceToken, string> = {
     lessThanXSeconds: "{{count}}s",
@@ -25,16 +25,16 @@ const shortLocale = {
     formatDistance: (token: FormatDistanceToken, count: number) =>
         shortFormatDistance[token].replace("{{count}}", String(count)),
 };
+
 import type { FC } from "react";
-import { useState, useEffect } from "react";
-import { cn } from "@/util.ts";
-import { Button } from "../components/button.tsx";
-import { Fragment } from "react";
+import { Fragment, useEffect, useState } from "react";
 import {
-    uniqueNamesGenerator,
     adjectives,
     animals,
+    uniqueNamesGenerator,
 } from "unique-names-generator";
+import { cn } from "@/util.ts";
+import { Button } from "../components/button.tsx";
 import { ModelPermissions } from "./model-permissions.tsx";
 
 type ApiKey = {
@@ -728,7 +728,7 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
     const resetForm = () => {
         setCreatedKey(null);
         setFormData({
-            name: "backend-" + generateFunName(),
+            name: `backend-${generateFunName()}`,
             description: "",
             keyType: "secret",
             allowedModels: null,
@@ -737,7 +737,7 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
 
     useEffect(() => {
         if (!isOpen) resetForm();
-    }, [isOpen]);
+    }, [isOpen, resetForm]);
 
     return (
         <Dialog.Root open={isOpen} onOpenChange={({ open }) => setIsOpen(open)}>

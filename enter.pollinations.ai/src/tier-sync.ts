@@ -1,11 +1,11 @@
 import { getLogger } from "@logtape/logtape";
 import type { Polar } from "@polar-sh/sdk";
-import { exponentialBackoffDelay } from "./util.ts";
 import {
-    TierName,
-    TierProductMap,
+    type TierName,
+    type TierProductMap,
     tierProductSlugFromName,
 } from "@/utils/polar.ts";
+import { exponentialBackoffDelay } from "./util.ts";
 
 const log = getLogger(["hono", "tier-sync"]);
 

@@ -9,11 +9,11 @@ export class HttpError extends Error {
 
     constructor(message: string, status: number = 500, details?: any) {
         super(message);
-        this.name = 'HttpError';
+        this.name = "HttpError";
         this.status = status;
         this.details = details;
-        
-        // Maintains proper stack trace for where our error was thrown (only available on V8)ew 
+
+        // Maintains proper stack trace for where our error was thrown (only available on V8)ew
         if (Error.captureStackTrace) {
             Error.captureStackTrace(this, HttpError);
         }

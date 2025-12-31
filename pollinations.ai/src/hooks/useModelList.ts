@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { API_BASE } from "../api.config";
 
 const IMAGE_MODELS_URL = `${API_BASE}/image/models`;
@@ -126,7 +126,7 @@ export function useModelList(apiKey: string): UseModelListReturn {
         };
 
         fetchModels();
-    }, [apiKey]);
+    }, [apiKey, formatModels]);
 
     return {
         imageModels,

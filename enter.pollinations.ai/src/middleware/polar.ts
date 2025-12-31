@@ -1,14 +1,14 @@
-import { cached } from "@/cache";
 import { Polar } from "@polar-sh/sdk";
-import { createMiddleware } from "hono/factory";
-import { LoggerVariables } from "@/middleware/logger.ts";
-import type { AuthVariables } from "@/middleware/auth.ts";
-import { CustomerState } from "@polar-sh/sdk/models/components/customerstate.js";
-import { HTTPException } from "hono/http-exception";
-import { CustomerMeter } from "@polar-sh/sdk/models/components/customermeter.js";
-import { drizzle } from "drizzle-orm/d1";
-import { user as userTable } from "@/db/schema/better-auth.ts";
+import type { CustomerMeter } from "@polar-sh/sdk/models/components/customermeter.js";
+import type { CustomerState } from "@polar-sh/sdk/models/components/customerstate.js";
 import { eq } from "drizzle-orm";
+import { drizzle } from "drizzle-orm/d1";
+import { createMiddleware } from "hono/factory";
+import { HTTPException } from "hono/http-exception";
+import { cached } from "@/cache";
+import { user as userTable } from "@/db/schema/better-auth.ts";
+import type { AuthVariables } from "@/middleware/auth.ts";
+import type { LoggerVariables } from "@/middleware/logger.ts";
 
 type BalanceCheckResult = {
     selectedMeterId: string;
@@ -24,7 +24,9 @@ export type PolarVariables = {
             userId: string,
             message?: string,
         ) => Promise<void>;
-        getBalance: (userId: string) => Promise<{ tierBalance: number; packBalance: number }>;
+        getBalance: (
+            userId: string,
+        ) => Promise<{ tierBalance: number; packBalance: number }>;
         balanceCheckResult?: BalanceCheckResult;
     };
 };
@@ -114,7 +116,9 @@ export const polar = createMiddleware<PolarEnv>(async (c, next) => {
     );
 
     // Get balance with lazy init from Polar if not set
-    const getBalance = async (userId: string): Promise<{ tierBalance: number; packBalance: number }> => {
+    const getBalance = async (
+        userId: string,
+    ): Promise<{ tierBalance: number; packBalance: number }> => {
         const db = drizzle(c.env.DB);
         const users = await db
             .select({
@@ -130,14 +134,27 @@ export const polar = createMiddleware<PolarEnv>(async (c, next) => {
 
         // Lazy init: if both null, fetch from Polar
         if (tierBalance == null && packBalance == null) {
-            log.info("Initializing local balances for user {userId} from Polar", { userId });
+            log.info(
+                "Initializing local balances for user {userId} from Polar",
+                { userId },
+            );
             const customerMeters = await getCustomerMeters(userId);
-            const tierMeter = customerMeters.find((m) => m.meter.name.toLowerCase().includes("tier"));
-            const packMeter = customerMeters.find((m) => m.meter.name.toLowerCase().includes("pack"));
+            const tierMeter = customerMeters.find((m) =>
+                m.meter.name.toLowerCase().includes("tier"),
+            );
+            const packMeter = customerMeters.find((m) =>
+                m.meter.name.toLowerCase().includes("pack"),
+            );
             tierBalance = tierMeter?.balance ?? 0;
             packBalance = packMeter?.balance ?? 0;
-            await db.update(userTable).set({ tierBalance, packBalance }).where(eq(userTable.id, userId));
-            log.info("Initialized balances for user {userId}: tier={tierBalance}, pack={packBalance}", { userId, tierBalance, packBalance });
+            await db
+                .update(userTable)
+                .set({ tierBalance, packBalance })
+                .where(eq(userTable.id, userId));
+            log.info(
+                "Initialized balances for user {userId}: tier={tierBalance}, pack={packBalance}",
+                { userId, tierBalance, packBalance },
+            );
         }
 
         return { tierBalance: tierBalance ?? 0, packBalance: packBalance ?? 0 };
@@ -152,7 +169,9 @@ export const polar = createMiddleware<PolarEnv>(async (c, next) => {
                 userId,
                 error: error instanceof Error ? error.message : String(error),
             });
-            throw new HTTPException(503, { message: "Unable to verify balance. Please try again shortly." });
+            throw new HTTPException(503, {
+                message: "Unable to verify balance. Please try again shortly.",
+            });
         }
 
         const totalBalance = balances.tierBalance + balances.packBalance;

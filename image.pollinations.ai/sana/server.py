@@ -185,6 +185,7 @@ def generate(request: ImageRequest, _auth: bool = Depends(verify_enter_token)):
     logger.info(f"Requested: {request.width}x{request.height} -> Generation: {gen_w}x{gen_h}")
     
     try:
+        gen_start = time.time()
         with generate_lock:
             with torch.inference_mode():
                 output = pipe(
@@ -195,6 +196,8 @@ def generate(request: ImageRequest, _auth: bool = Depends(verify_enter_token)):
                     num_inference_steps=NUM_INFERENCE_STEPS,
                 )
             image = output.images[0]
+        gen_time = time.time() - gen_start
+        logger.info(f"Generation time: {gen_time:.3f}s for {gen_w}x{gen_h}")
         
         # Encode image
         img_byte_arr = io.BytesIO()

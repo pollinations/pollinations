@@ -860,6 +860,126 @@ const tierMigrate = command({
     },
 });
 
+// Required webhook events for D1 balance tracking
+const REQUIRED_WEBHOOK_EVENTS = [
+    "subscription.created",
+    "subscription.updated",
+    "subscription.canceled",
+    "subscription.revoked",
+    "subscription.active",
+    "subscription.uncanceled",
+    "benefit_grant.cycled", // Daily pollen grants
+    "order.paid", // Pollen pack purchases
+] as const;
+
+const WEBHOOK_URLS = {
+    production: "https://enter.pollinations.ai/api/webhooks/polar",
+    staging: "https://enter-staging.pollinations.ai/api/webhooks/polar",
+} as const;
+
+const webhookList = command({
+    name: "list",
+    options: {
+        env: string().enum("staging", "production").default("staging"),
+    },
+    handler: async (opts) => {
+        const polar = createPolarClient(opts.env);
+        const endpoints = await polar.webhooks.listWebhookEndpoints({});
+        for await (const page of endpoints) {
+            for (const ep of page.result.items) {
+                console.log(`ID: ${ep.id}`);
+                console.log(`URL: ${ep.url}`);
+                console.log(`Events: ${ep.events.join(", ")}`);
+                console.log();
+            }
+        }
+    },
+});
+
+const webhookSync = command({
+    name: "sync",
+    desc: "Ensure webhook endpoint exists with all required events",
+    options: {
+        env: string().enum("staging", "production").default("staging"),
+        apply: boolean().default(false),
+    },
+    handler: async (opts) => {
+        const polar = createPolarClient(opts.env);
+        const expectedUrl = WEBHOOK_URLS[opts.env];
+
+        console.log(`Checking webhook configuration for ${opts.env}...`);
+        console.log(`Expected URL: ${expectedUrl}`);
+        console.log(`Required events: ${REQUIRED_WEBHOOK_EVENTS.join(", ")}`);
+        console.log();
+
+        // Find existing endpoint
+        let existingEndpoint: any = null;
+        const endpoints = await polar.webhooks.listWebhookEndpoints({});
+        for await (const page of endpoints) {
+            for (const ep of page.result.items) {
+                if (ep.url === expectedUrl) {
+                    existingEndpoint = ep;
+                    break;
+                }
+            }
+        }
+
+        if (existingEndpoint) {
+            console.log(`Found existing endpoint: ${existingEndpoint.id}`);
+            console.log(`Current events: ${existingEndpoint.events.join(", ")}`);
+
+            // Check for missing events
+            const missingEvents = REQUIRED_WEBHOOK_EVENTS.filter(
+                (e) => !existingEndpoint.events.includes(e),
+            );
+            const extraEvents = existingEndpoint.events.filter(
+                (e: string) =>
+                    !REQUIRED_WEBHOOK_EVENTS.includes(
+                        e as (typeof REQUIRED_WEBHOOK_EVENTS)[number],
+                    ),
+            );
+
+            if (missingEvents.length > 0) {
+                console.log(
+                    applyColor("red", `Missing events: ${missingEvents.join(", ")}`),
+                );
+            }
+            if (extraEvents.length > 0) {
+                console.log(
+                    applyColor("yellow", `Extra events: ${extraEvents.join(", ")}`),
+                );
+            }
+
+            if (missingEvents.length === 0 && extraEvents.length === 0) {
+                console.log(applyColor("green", "✓ Webhook configuration is correct"));
+                return;
+            }
+
+            if (opts.apply) {
+                console.log("Updating webhook endpoint...");
+                const updated = await polar.webhooks.updateWebhookEndpoint({
+                    id: existingEndpoint.id,
+                    webhookEndpointUpdate: {
+                        events: [...REQUIRED_WEBHOOK_EVENTS],
+                    },
+                });
+                console.log(
+                    applyColor("green", `✓ Updated webhook with events: ${updated.events.join(", ")}`),
+                );
+            } else {
+                console.log(
+                    applyColor("yellow", "Run with --apply to update the webhook"),
+                );
+            }
+        } else {
+            console.log(applyColor("red", "No webhook endpoint found for this URL"));
+            console.log(
+                "Create one in the Polar dashboard or implement create command",
+            );
+        }
+    },
+});
+
 const commands = [
     command({
         name: "meter",
@@ -881,6 +1001,10 @@ const commands = [
     command({
         name: "user",
         subcommands: [userUpdateTier],
+    }),
+    command({
+        name: "webhook",
+        subcommands: [webhookList, webhookSync],
     }),
 ];
 

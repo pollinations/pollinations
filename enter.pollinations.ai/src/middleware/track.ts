@@ -245,22 +245,48 @@ export const track = (eventType: EventType) =>
                 }
 
                 // Decrement local pollen balance after billable requests
+                // Strategy: decrement from tier_balance first, then pack_balance
                 if (
                     responseTracking.isBilledUsage &&
                     responseTracking.price?.totalPrice &&
                     userTracking.userId
                 ) {
                     const priceToDeduct = responseTracking.price.totalPrice;
+
+                    // Get current balances to determine how to split the deduction
+                    const currentUser = await db
+                        .select({
+                            tierBalance: userTable.tierBalance,
+                            packBalance: userTable.packBalance,
+                        })
+                        .from(userTable)
+                        .where(eq(userTable.id, userTracking.userId))
+                        .limit(1);
+
+                    const tierBalance = currentUser[0]?.tierBalance ?? 0;
+                    const packBalance = currentUser[0]?.packBalance ?? 0;
+
+                    // Decrement tier first, then pack
+                    const fromTier = Math.min(priceToDeduct, Math.max(0, tierBalance));
+                    const fromPack = priceToDeduct - fromTier;
+
                     await db
                         .update(userTable)
                         .set({
-                            pollenBalance: sql`${userTable.pollenBalance} - ${priceToDeduct}`,
+                            tierBalance: sql`${userTable.tierBalance} - ${fromTier}`,
+                            packBalance: sql`${userTable.packBalance} - ${fromPack}`,
                         })
                         .where(eq(userTable.id, userTracking.userId));
-                    log.debug("Decremented {price} pollen from user {userId}", {
-                        price: priceToDeduct,
-                        userId: userTracking.userId,
-                    });
+
+                    log.debug(
+                        "Decremented {price} pollen from user {userId} (tier: -{fromTier}, pack: -{fromPack})",
+                        {
+                            price: priceToDeduct,
+                            userId: userTracking.userId,
+                            fromTier,
+                            fromPack,
+                        },
+                    );
                 }
 
                 // process events immediately in development/testing

@@ -26,7 +26,6 @@ export const Route = createFileRoute("/")({
             customer,
             tierData,
             apiKeysResult,
-            pendingSpendResult,
             d1BalanceResult,
         ] = await Promise.all([
             apiClient.polar.customer.state
@@ -34,15 +33,11 @@ export const Route = createFileRoute("/")({
                 .then((r) => (r.ok ? r.json() : null)),
             apiClient.tiers.view.$get().then((r) => (r.ok ? r.json() : null)),
             authClient.apiKey.list(),
-            apiClient.polar.customer["pending-spend"]
-                .$get()
-                .then((r) => (r.ok ? r.json() : null)),
             apiClient.polar.customer["d1-balance"]
                 .$get()
                 .then((r) => (r.ok ? r.json() : null)),
         ]);
         const apiKeys = apiKeysResult.data || [];
-        const pendingSpend = pendingSpendResult?.pendingSpend || 0;
         const tierBalance = d1BalanceResult?.tierBalance ?? 0;
         const packBalance = d1BalanceResult?.packBalance ?? 0;
 
@@ -51,7 +46,6 @@ export const Route = createFileRoute("/")({
             customer,
             apiKeys,
             tierData,
-            pendingSpend,
             tierBalance,
             packBalance,
         };
@@ -60,7 +54,7 @@ export const Route = createFileRoute("/")({
 
 function RouteComponent() {
     const router = useRouter();
-    const { user, customer, apiKeys, tierData, pendingSpend, tierBalance, packBalance } =
+    const { user, customer, apiKeys, tierData, tierBalance, packBalance } =
         Route.useLoaderData();
 
     const [isSigningOut, setIsSigningOut] = useState(false);
@@ -240,7 +234,6 @@ function RouteComponent() {
                     <PollenBalance
                         tierBalance={tierBalance}
                         packBalance={packBalance}
-                        pendingSpend={pendingSpend}
                     />
                 </div>
                 {tierData && (

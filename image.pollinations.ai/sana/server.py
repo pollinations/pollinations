@@ -49,7 +49,7 @@ async def send_heartbeat():
         try:
             port = int(os.getenv("PUBLIC_PORT", os.getenv("PORT", "10003")))
             url = f"http://{public_ip}:{port}"
-            service_type = os.getenv("SERVICE_TYPE", "sana")
+            service_type = os.getenv("SERVICE_TYPE", "zimage")
             async with aiohttp.ClientSession() as session:
                 async with session.post(
                     'https://image.pollinations.ai/register',

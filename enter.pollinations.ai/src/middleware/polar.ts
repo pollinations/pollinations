@@ -128,16 +128,30 @@ export const polar = createMiddleware<PolarEnv>(async (c, next) => {
         let tierBalance = users[0]?.tierBalance;
         let packBalance = users[0]?.packBalance;
 
-        // Lazy init: if both null, fetch from Polar
-        if (tierBalance == null && packBalance == null) {
-            log.info("Initializing local balances for user {userId} from Polar", { userId });
+        // Lazy init: if both null OR both zero, check Polar for higher balance
+        const wasNull = tierBalance == null && packBalance == null;
+        const wasZero = tierBalance === 0 && packBalance === 0;
+        const needsInit = wasNull || wasZero;
+        
+        if (needsInit) {
+            log.info("Checking Polar balances for user {userId} (D1: tier={tierBalance}, pack={packBalance})", { userId, tierBalance, packBalance });
             const customerMeters = await getCustomerMeters(userId);
             const tierMeter = customerMeters.find((m) => m.meter.name.toLowerCase().includes("tier"));
             const packMeter = customerMeters.find((m) => m.meter.name.toLowerCase().includes("pack"));
-            tierBalance = tierMeter?.balance ?? 0;
-            packBalance = packMeter?.balance ?? 0;
-            await db.update(userTable).set({ tierBalance, packBalance }).where(eq(userTable.id, userId));
-            log.info("Initialized balances for user {userId}: tier={tierBalance}, pack={packBalance}", { userId, tierBalance, packBalance });
+            const polarTier = tierMeter?.balance ?? 0;
+            const polarPack = packMeter?.balance ?? 0;
+            
+            // Only update D1 if Polar has positive balance
+            // Don't write 0 to D1 for new users (NULL) - let webhooks handle initial grant
+            if (polarTier + polarPack > 0) {
+                tierBalance = polarTier;
+                packBalance = polarPack;
+                await db.update(userTable).set({ tierBalance, packBalance }).where(eq(userTable.id, userId));
+                log.info("Synced balances from Polar for user {userId}: tier={tierBalance}, pack={packBalance}", { userId, tierBalance, packBalance });
+            } else if (wasNull) {
+                // New user with no Polar balance yet - keep NULL, don't write 0
+                log.debug("New user {userId} has no Polar balance yet, keeping NULL", { userId });
+            }
         }
 
         return { tierBalance: tierBalance ?? 0, packBalance: packBalance ?? 0 };

@@ -7,23 +7,25 @@ type PollenBalanceProps = {
     };
     dailyPollen?: number;
     pendingSpend?: number;
+    d1Balance?: number | null;
 };
 
 export const PollenBalance: FC<PollenBalanceProps> = ({
     balances,
     dailyPollen = 15,
     pendingSpend = 0,
+    d1Balance,
 }) => {
-    // Use real balances
+    // Use real balances from Polar for the bar breakdown
     const freePollen = balances.tier; // Free pollen from tier
     const packPollen = balances.pack; // Pack pollen
-    const totalPollen = freePollen + packPollen; // Total available
+    const polarTotal = freePollen + packPollen; // Total from Polar (for bar)
+    // Use D1 balance for main display if available, otherwise fall back to Polar
+    const totalPollen = d1Balance ?? polarTotal;
 
-    // Calculate percentages for the segmented gauge
-    const freePercentage =
-        totalPollen > 0 ? (freePollen / totalPollen) * 100 : 0;
-    const packPercentage =
-        totalPollen > 0 ? (packPollen / totalPollen) * 100 : 0;
+    // Calculate percentages for the segmented gauge (using Polar totals for the bar)
+    const freePercentage = polarTotal > 0 ? (freePollen / polarTotal) * 100 : 0;
+    const packPercentage = polarTotal > 0 ? (packPollen / polarTotal) * 100 : 0;
 
     return (
         <div className="bg-violet-50/30 rounded-2xl p-4 sm:p-8 border border-violet-300">

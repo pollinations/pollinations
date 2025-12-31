@@ -20,8 +20,8 @@ export const PollenBalance: FC<PollenBalanceProps> = ({
     const freePollen = balances.tier; // Free pollen from tier
     const packPollen = balances.pack; // Pack pollen
     const polarTotal = freePollen + packPollen; // Total from Polar (for bar)
-    // Use D1 balance for main display if available, otherwise fall back to Polar
-    const totalPollen = d1Balance ?? polarTotal;
+    // Use D1 balance for main display if available, otherwise fall back to Polar (clamp to 0 if negative)
+    const totalPollen = Math.max(0, d1Balance ?? polarTotal);
 
     // Calculate percentages for the segmented gauge (using Polar totals for the bar)
     const freePercentage = polarTotal > 0 ? (freePollen / polarTotal) * 100 : 0;

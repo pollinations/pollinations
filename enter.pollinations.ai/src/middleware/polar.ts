@@ -24,7 +24,9 @@ export type PolarVariables = {
             userId: string,
             message?: string,
         ) => Promise<void>;
-        getBalance: (userId: string) => Promise<{ tierBalance: number; packBalance: number }>;
+        getBalance: (
+            userId: string,
+        ) => Promise<{ tierBalance: number; packBalance: number }>;
         balanceCheckResult?: BalanceCheckResult;
     };
 };
@@ -114,7 +116,9 @@ export const polar = createMiddleware<PolarEnv>(async (c, next) => {
     );
 
     // Get balance with lazy init from Polar if not set
-    const getBalance = async (userId: string): Promise<{ tierBalance: number; packBalance: number }> => {
+    const getBalance = async (
+        userId: string,
+    ): Promise<{ tierBalance: number; packBalance: number }> => {
         const db = drizzle(c.env.DB);
         const users = await db
             .select({
@@ -128,29 +132,47 @@ export const polar = createMiddleware<PolarEnv>(async (c, next) => {
         let tierBalance = users[0]?.tierBalance;
         let packBalance = users[0]?.packBalance;
 
-        // Lazy init: if both null OR both zero, check Polar for higher balance
-        const wasNull = tierBalance == null && packBalance == null;
-        const wasZero = tierBalance === 0 && packBalance === 0;
-        const needsInit = wasNull || wasZero;
-        
+        // Lazy init: check Polar if either balance is null OR both are zero
+        // This handles: new users (both null), users with only tier set (pack null),
+        // and users who got 0 written before fix
+        const hasNullBalance = tierBalance == null || packBalance == null;
+        const hasBothZero = tierBalance === 0 && packBalance === 0;
+        const needsInit = hasNullBalance || hasBothZero;
+
         if (needsInit) {
-            log.info("Checking Polar balances for user {userId} (D1: tier={tierBalance}, pack={packBalance})", { userId, tierBalance, packBalance });
+            log.info(
+                "Checking Polar balances for user {userId} (D1: tier={tierBalance}, pack={packBalance})",
+                { userId, tierBalance, packBalance },
+            );
             const customerMeters = await getCustomerMeters(userId);
-            const tierMeter = customerMeters.find((m) => m.meter.name.toLowerCase().includes("tier"));
-            const packMeter = customerMeters.find((m) => m.meter.name.toLowerCase().includes("pack"));
+            const tierMeter = customerMeters.find((m) =>
+                m.meter.name.toLowerCase().includes("tier"),
+            );
+            const packMeter = customerMeters.find((m) =>
+                m.meter.name.toLowerCase().includes("pack"),
+            );
             const polarTier = tierMeter?.balance ?? 0;
             const polarPack = packMeter?.balance ?? 0;
-            
+
             // Only update D1 if Polar has positive balance
             // Don't write 0 to D1 for new users (NULL) - let webhooks handle initial grant
             if (polarTier + polarPack > 0) {
                 tierBalance = polarTier;
                 packBalance = polarPack;
-                await db.update(userTable).set({ tierBalance, packBalance }).where(eq(userTable.id, userId));
-                log.info("Synced balances from Polar for user {userId}: tier={tierBalance}, pack={packBalance}", { userId, tierBalance, packBalance });
+                await db
+                    .update(userTable)
+                    .set({ tierBalance, packBalance })
+                    .where(eq(userTable.id, userId));
+                log.info(
+                    "Synced balances from Polar for user {userId}: tier={tierBalance}, pack={packBalance}",
+                    { userId, tierBalance, packBalance },
+                );
             } else if (wasNull) {
                 // New user with no Polar balance yet - keep NULL, don't write 0
-                log.debug("New user {userId} has no Polar balance yet, keeping NULL", { userId });
+                log.debug(
+                    "New user {userId} has no Polar balance yet, keeping NULL",
+                    { userId },
+                );
             }
         }
 
@@ -166,7 +188,9 @@ export const polar = createMiddleware<PolarEnv>(async (c, next) => {
                 userId,
                 error: error instanceof Error ? error.message : String(error),
             });
-            throw new HTTPException(503, { message: "Unable to verify balance. Please try again shortly." });
+            throw new HTTPException(503, {
+                message: "Unable to verify balance. Please try again shortly.",
+            });
         }
 
         const totalBalance = balances.tierBalance + balances.packBalance;

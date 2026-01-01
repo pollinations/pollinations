@@ -33,4 +33,4 @@ jobs:
           IS_PULL_REQUEST: ${{ github.event.pull_request != null }}
           REPO_OWNER: ${{ github.repository_owner }}
           REPO_NAME: ${{ github.event.repository.name }}
-        run: python .github/scripts/organize_issues.py
+        run: python .github/scripts/project-manager.py

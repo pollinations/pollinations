@@ -5,13 +5,14 @@ from typing import Optional
 
 GITHUB_TOKEN = os.getenv("GITHUB_TOKEN")
 GITHUB_EVENT = json.loads(os.getenv("GITHUB_EVENT", "{}"))
-ISSUE_NUMBER = os.getenv("ISSUE_NUMBER")
-IS_PULL_REQUEST = os.getenv("IS_PULL_REQUEST") == "true"
-REPO_OWNER = os.getenv("REPO_OWNER")
-REPO_NAME = os.getenv("REPO_NAME")
-ISSUE_TITLE = os.getenv("ISSUE_TITLE", "")
-ISSUE_BODY = os.getenv("ISSUE_BODY", "")
-ISSUE_AUTHOR = os.getenv("ISSUE_AUTHOR", "")
+REPO_OWNER = os.getenv("REPO_OWNER", "pollinations")
+REPO_NAME = os.getenv("REPO_NAME", "pollinations")
+
+IS_PULL_REQUEST = "pull_request" in GITHUB_EVENT
+ISSUE_NUMBER = GITHUB_EVENT.get("pull_request", {}).get("number") if IS_PULL_REQUEST else GITHUB_EVENT.get("issue", {}).get("number")
+ISSUE_TITLE = GITHUB_EVENT.get("pull_request", {}).get("title") or GITHUB_EVENT.get("issue", {}).get("title", "")
+ISSUE_BODY = GITHUB_EVENT.get("pull_request", {}).get("body") or GITHUB_EVENT.get("issue", {}).get("body", "")
+ISSUE_AUTHOR = GITHUB_EVENT.get("pull_request", {}).get("user", {}).get("login") or GITHUB_EVENT.get("issue", {}).get("user", {}).get("login", "")
 
 API_BASE = f"https://api.github.com/repos/{REPO_OWNER}/{REPO_NAME}"
 GITHUB_HEADERS = {
@@ -149,12 +150,12 @@ def get_project_id(project_name: str) -> Optional[str]:
             return proj["id"]
     return None
 
-def add_to_project(issue_num: int, project_id: str):
+def add_to_project(project_id: str):
     card_resp = requests.post(
         f"https://api.github.com/projects/{project_id}/cards",
         headers={**GITHUB_HEADERS, "Accept": "application/vnd.github.inertia-preview+json"},
         json={
-            "content_id": issue_num,
+            "content_id": int(ISSUE_NUMBER),
             "content_type": "PullRequest" if IS_PULL_REQUEST else "Issue"
         }
     )
@@ -193,7 +194,7 @@ def main():
     
     project_id = get_project_id(project_name)
     if project_id:
-        add_to_project(int(ISSUE_NUMBER), project_id)
+        add_to_project(project_id)
     
     if labels:
         update_labels(labels)

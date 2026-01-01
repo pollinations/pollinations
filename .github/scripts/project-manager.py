@@ -54,7 +54,9 @@ Dev Priority:
 - Low: Nice-to-have features, documentation, minor enhancements
 
 News Priority:
-- Always High for news/release PRs
+- High: Major releases, critical updates, important announcements, security updates
+- Medium: Regular updates, feature announcements, workflow improvements
+- Low: Minor updates, documentation changes, social media posts
 
 Labels (choose all that apply):
 - BUG: Bug reports, errors, issues

@@ -33,4 +33,7 @@ jobs:
           IS_PULL_REQUEST: ${{ github.event.pull_request != null }}
           REPO_OWNER: ${{ github.repository_owner }}
           REPO_NAME: ${{ github.event.repository.name }}
+          ISSUE_TITLE: ${{ github.event.issue.title || github.event.pull_request.title }}
+          ISSUE_BODY: ${{ github.event.issue.body || github.event.pull_request.body }}
+          ISSUE_AUTHOR: ${{ github.event.issue.user.login || github.event.pull_request.user.login }}
         run: python .github/scripts/project-manager.py

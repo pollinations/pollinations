@@ -9,12 +9,17 @@ ISSUE_NUMBER = os.getenv("ISSUE_NUMBER")
 IS_PULL_REQUEST = os.getenv("IS_PULL_REQUEST") == "true"
 REPO_OWNER = os.getenv("REPO_OWNER")
 REPO_NAME = os.getenv("REPO_NAME")
+ISSUE_TITLE = os.getenv("ISSUE_TITLE", "")
+ISSUE_BODY = os.getenv("ISSUE_BODY", "")
+ISSUE_AUTHOR = os.getenv("ISSUE_AUTHOR", "")
 
 API_BASE = f"https://api.github.com/repos/{REPO_OWNER}/{REPO_NAME}"
-HEADERS = {
+GITHUB_HEADERS = {
     "Authorization": f"token {GITHUB_TOKEN}",
     "Accept": "application/vnd.github.v3+json"
 }
+
+POLLINATIONS_API = "https://gen.pollinations.ai/v1/chat/completions"
 
 PROJECT_NAMES = {
     "support": "Support",
@@ -22,15 +27,118 @@ PROJECT_NAMES = {
     "news": "News"
 }
 
-def get_issue_or_pr():
-    if IS_PULL_REQUEST:
-        return GITHUB_EVENT.get("pull_request", {})
-    return GITHUB_EVENT.get("issue", {})
+VALID_LABELS = {
+    "BUG", "FEATURE", "HELP", "POLLEN", "VOTING", "QUEST", "NEWS", "EXTERNAL",
+    "TRACKING", "TIER-SEED", "TIER-FLOWER", "TIER-INCOMPLETE", "TIER-REVIEW", "TIER-COMPLETE", "TIER-REJECTED"
+}
+
+def classify_with_ai() -> dict:
+    system_prompt = """You are a GitHub issue and PR classifier for the Pollinations open-source project. Your task is to automatically organize issues and pull requests.
+
+CLASSIFICATION RULES:
+
+Projects:
+- support: User support issues, bug reports, help requests, pollen/reward questions, voting/feedback, technical assistance
+- dev: Feature requests, implementation tasks, code improvements, development work, new features
+- news: PR submissions announcing updates, releases, changelog entries, newsworthy changes
+
+Support Priority:
+- Urgent: Critical bugs, service-breaking issues, security issues, user completely blocked
+- High: Important bugs, pollen/reward related, crash reports, blocking issues
+- Medium: Regular bugs, help questions, feature feedback
+- Low: Discussions, ideas, minor issues
+
+Dev Priority:
+- High: Critical features, security improvements, critical fixes
+- Medium: Regular features, general improvements, optimizations
+- Low: Nice-to-have features, documentation, minor enhancements
+
+News Priority:
+- Always High for news/release PRs
+
+Labels (choose all that apply):
+- BUG: Bug reports, errors, issues
+- FEATURE: Feature requests, new implementations
+- HELP: Help requests, questions, how-to
+- POLLEN: Pollen, rewards, tokens, community incentives
+- VOTING: Polls, voting, feedback, opinions
+- QUEST: Development quests, tasks
+- NEWS: News and releases
+- EXTERNAL: External contributions, third-party PRs
+- TRACKING: Tracking issues
+
+Status:
+- For support/news: "To do"
+- For dev: "Backlog" for features, "To do" for bugs
+
+CRITICAL: Return ONLY valid JSON, no markdown, no explanation:
+{"project": "support|dev|news", "priority": "Urgent|High|Medium|Low", "labels": ["LABEL1", "LABEL2"], "status": "To do|Backlog", "reasoning": "one sentence"}"""
+
+    item_type = "Pull Request" if IS_PULL_REQUEST else "Issue"
+    user_prompt = f"""{item_type}:
+Title: {ISSUE_TITLE}
+Author: {ISSUE_AUTHOR}
+Description: {ISSUE_BODY}"""
+
+    payload = {
+        "model": "gemini-fast",
+        "messages": [
+            {
+                "role": "system",
+                "content": system_prompt,
+                "cache_control": {
+                    "type": "ephemeral"
+                }
+            },
+            {
+                "role": "user",
+                "content": user_prompt
+            }
+        ]
+    }
+
+    try:
+        response = requests.post(
+            POLLINATIONS_API,
+            json=payload,
+            timeout=30
+        )
+
+        if response.status_code != 200:
+            print(f"API error: {response.status_code} - {response.text}")
+            return {}
+
+        data = response.json()
+        content = data.get("choices", [{}])[0].get("message", {}).get("content", "").strip()
+
+        if not content:
+            print("Empty response from API")
+            return {}
+
+        try:
+            return json.loads(content)
+        except json.JSONDecodeError as e:
+            try:
+                start = content.find('{')
+                end = content.rfind('}')
+                if start != -1 and end != -1:
+                    result = json.loads(content[start:end+1])
+                    return result
+            except json.JSONDecodeError:
+                pass
+            print(f"JSON parse error: {e}\nContent: {content}")
+            return {}
+    except requests.exceptions.RequestException as e:
+        print(f"Request error: {e}")
+        return {}
+    except Exception as e:
+        print(f"Classification error: {e}")
+        return {}
 
 def get_project_id(project_name: str) -> Optional[str]:
     resp = requests.get(
         f"https://api.github.com/repos/{REPO_OWNER}/{REPO_NAME}/projects",
-        headers=HEADERS
+        headers=GITHUB_HEADERS
     )
     if resp.status_code != 200:
         return None
@@ -43,7 +151,7 @@ def get_project_id(project_name: str) -> Optional[str]:
 def add_to_project(issue_num: int, project_id: str):
     card_resp = requests.post(
         f"https://api.github.com/projects/{project_id}/cards",
-        headers={**HEADERS, "Accept": "application/vnd.github.inertia-preview+json"},
+        headers={**GITHUB_HEADERS, "Accept": "application/vnd.github.inertia-preview+json"},
         json={
             "content_id": issue_num,
             "content_type": "PullRequest" if IS_PULL_REQUEST else "Issue"
@@ -51,68 +159,35 @@ def add_to_project(issue_num: int, project_id: str):
     )
     return card_resp.status_code in [201, 200]
 
-def set_status(project_id: str, card_id: str, status: str):
-    requests.patch(
-        f"https://api.github.com/projects/columns/cards/{card_id}",
-        headers={**HEADERS, "Accept": "application/vnd.github.inertia-preview+json"},
-        json={"note": status}
-    )
-
 def update_labels(labels: list):
     if not labels:
+        return
+    
+    validated_labels = [l for l in labels if l in VALID_LABELS]
+    if not validated_labels:
         return
     
     endpoint = f"{API_BASE}/issues/{ISSUE_NUMBER}/labels"
     requests.post(
         endpoint,
-        headers=HEADERS,
-        json={"labels": labels}
+        headers=GITHUB_HEADERS,
+        json={"labels": validated_labels}
     )
-
-def update_priority(priority: str):
-    requests.patch(
-        f"{API_BASE}/issues/{ISSUE_NUMBER}",
-        headers=HEADERS,
-        json={"state_reason": None}
-    )
-
-def classify_issue() -> tuple[str, str, list, str]:
-    item = get_issue_or_pr()
-    title = item.get("title", "").lower()
-    body = (item.get("body") or "").lower()
-    labels = [l["name"] for l in item.get("labels", [])]
-    
-    content = f"{title} {body}"
-    
-    if IS_PULL_REQUEST:
-        if any(keyword in title for keyword in ["news", "weekly", "update"]):
-            return "news", "To do", ["NEWS"], "High"
-        return "dev", "To do", ["EXTERNAL"], "Medium"
-    
-    if any(word in content for word in ["bug", "broken", "error", "crash", "fail", "issue"]):
-        if "urgent" in content or "critical" in content:
-            return "support", "To do", ["BUG"], "Urgent"
-        return "support", "To do", ["BUG"], "High"
-    
-    if any(word in content for word in ["feature", "add", "implement", "new", "request"]):
-        return "dev", "Backlog", ["FEATURE"], "Medium"
-    
-    if any(word in content for word in ["help", "question", "how", "guide"]):
-        return "support", "To do", ["HELP"], "Medium"
-    
-    if any(word in content for word in ["pollen", "reward", "earn", "token"]):
-        return "support", "To do", ["POLLEN"], "High"
-    
-    if any(word in content for word in ["vote", "poll", "feedback", "opinion"]):
-        return "support", "To do", ["VOTING"], "Medium"
-    
-    return "dev", "Backlog", ["QUEST"], "Low"
 
 def main():
-    project_key, status, labels, priority = classify_issue()
+    classification = classify_with_ai()
+    
+    if not classification:
+        print("Failed to classify with AI")
+        return
+    
+    project_key = classification.get("project", "").lower()
+    labels = classification.get("labels", [])
+    
     project_name = PROJECT_NAMES.get(project_key)
     
     if not project_name:
+        print(f"Invalid project: {project_key}")
         return
     
     project_id = get_project_id(project_name)
@@ -121,6 +196,11 @@ def main():
     
     if labels:
         update_labels(labels)
+    
+    print(f"Classified as {project_name} with priority {classification.get('priority')}")
+    print(f"Labels: {labels}")
+    print(f"Reasoning: {classification.get('reasoning')}")
 
 if __name__ == "__main__":
     main()
+

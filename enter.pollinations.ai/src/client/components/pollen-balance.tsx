@@ -10,8 +10,10 @@ export const PollenBalance: FC<PollenBalanceProps> = ({
     packBalance,
 }) => {
     const totalPollen = Math.max(0, tierBalance + packBalance);
-    const freePercentage = totalPollen > 0 ? (tierBalance / totalPollen) * 100 : 0;
-    const packPercentage = totalPollen > 0 ? (packBalance / totalPollen) * 100 : 0;
+    const freePercentage =
+        totalPollen > 0 ? (tierBalance / totalPollen) * 100 : 0;
+    const packPercentage =
+        totalPollen > 0 ? (packBalance / totalPollen) * 100 : 0;
 
     return (
         <div className="bg-violet-50/30 rounded-2xl p-4 sm:p-8 border border-violet-300">
@@ -96,7 +98,15 @@ export const PollenBalance: FC<PollenBalanceProps> = ({
                 </p>
                 <p className="text-sm font-medium text-violet-900 mt-2">
                     ⏳ After a purchase, please wait 1-2 minutes for your
-                    balance to update.
+                    balance to update.{" "}
+                    <a
+                        href="https://github.com/pollinations/pollinations/issues/new?template=balance-problem.yml"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="underline hover:text-violet-700"
+                    >
+                        Still missing?
+                    </a>
                 </p>
             </div>
         </div>

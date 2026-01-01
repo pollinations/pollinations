@@ -34,9 +34,6 @@ VALID_LABELS = {
 
 def classify_with_ai() -> dict:
     system_prompt = """You are a GitHub issue and PR classifier for the Pollinations open-source project. Your task is to automatically organize issues and pull requests.
-
-CLASSIFICATION RULES:
-
 Projects:
 - support: User support issues, bug reports, help requests, pollen/reward questions, voting/feedback, technical assistance
 - dev: Feature requests, implementation tasks, code improvements, development work, new features
@@ -96,7 +93,9 @@ Description: {ISSUE_BODY}"""
                 "role": "user",
                 "content": user_prompt
             }
-        ]
+        ],
+        "modalities": ["text"],
+        "max_tokens": 1000
     }
 
     try:

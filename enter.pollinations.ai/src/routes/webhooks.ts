@@ -28,17 +28,11 @@ import { sql } from "drizzle-orm";
 
 const log = getLogger(["hono", "webhooks"]);
 
-// Map pollen units to tier name
-function tierFromUnits(units: number): TierName | null {
-    const tierUnitsMap: Record<number, TierName> = {
-        1: "spore",
-        3: "seed",
-        10: "flower",
-        30: "tree",
-        100: "nectar",
-        1000: "router",
-    };
-    return tierUnitsMap[units] ?? null;
+// Extract tier from metadata slug (e.g., "v1:benefit:tier:nectar" -> "nectar")
+// Matches pattern used in tiers.ts for product metadata
+function tierFromMetadataSlug(slug: string | undefined): TierName | null {
+    const tier = slug?.split(":").at(-1);
+    return tier && isValidTier(tier) ? tier : null;
 }
 
 export const webhooksRoutes = new Hono<Env>().post("/polar", async (c) => {
@@ -75,11 +69,19 @@ export const webhooksRoutes = new Hono<Env>().post("/polar", async (c) => {
                 break;
 
             case "benefit_grant.created":
-                await handleBenefitGrantCreated(c.env, payload);
+                await handleBenefitGrant(
+                    c.env,
+                    payload,
+                    "benefit_grant.created",
+                );
                 break;
 
             case "benefit_grant.updated":
-                await handleBenefitGrantUpdated(c.env, payload);
+                await handleBenefitGrant(
+                    c.env,
+                    payload,
+                    "benefit_grant.updated",
+                );
                 break;
 
             case "order.paid":
@@ -254,18 +256,23 @@ async function handleBenefitGrantCycled(
     );
 }
 
-async function handleBenefitGrantCreated(
+// Shared handler for benefit_grant.created and benefit_grant.updated
+async function handleBenefitGrant(
     env: Cloudflare.Env,
-    payload: WebhookBenefitGrantCreatedPayload,
+    payload:
+        | WebhookBenefitGrantCreatedPayload
+        | WebhookBenefitGrantUpdatedPayload,
+    eventType: string,
 ): Promise<void> {
     const externalId = payload.data.customer.externalId;
     if (!externalId) {
-        log.warn("benefit_grant.created without external customer id");
+        log.warn("{event} without external customer id", { event: eventType });
         return;
     }
 
     const benefit = payload.data.benefit as {
         type?: string;
+        metadata?: { slug?: string };
         properties?: { units?: number };
     };
     if (benefit?.type !== "meter_credit") return;
@@ -273,7 +280,7 @@ async function handleBenefitGrantCreated(
     const units = benefit.properties?.units;
     if (!units || units <= 0) return;
 
-    const tier = tierFromUnits(units);
+    const tier = tierFromMetadataSlug(benefit.metadata?.slug);
     const db = drizzle(env.DB);
 
     await db
@@ -285,47 +292,12 @@ async function handleBenefitGrantCreated(
         })
         .where(eq(userTable.id, externalId));
 
-    log.info(
-        "benefit_grant.created: user={userId} tier={tier} balance={units}",
-        { userId: externalId, tier: tier ?? "unknown", units },
-    );
-}
-
-async function handleBenefitGrantUpdated(
-    env: Cloudflare.Env,
-    payload: WebhookBenefitGrantUpdatedPayload,
-): Promise<void> {
-    const externalId = payload.data.customer.externalId;
-    if (!externalId) {
-        log.warn("benefit_grant.updated without external customer id");
-        return;
-    }
-
-    const benefit = payload.data.benefit as {
-        type?: string;
-        properties?: { units?: number };
-    };
-    if (benefit?.type !== "meter_credit") return;
-
-    const units = benefit.properties?.units;
-    if (!units || units <= 0) return;
-
-    const tier = tierFromUnits(units);
-    const db = drizzle(env.DB);
-
-    await db
-        .update(userTable)
-        .set({
-            ...(tier && { tier }),
-            tierBalance: units,
-            lastTierGrant: Math.floor(Date.now() / 1000),
-        })
-        .where(eq(userTable.id, externalId));
-
-    log.info(
-        "benefit_grant.updated: user={userId} tier={tier} balance={units}",
-        { userId: externalId, tier: tier ?? "unknown", units },
-    );
+    log.info("{event}: user={userId} tier={tier} balance={units}", {
+        event: eventType,
+        userId: externalId,
+        tier: tier ?? "unknown",
+        units,
+    });
 }
 
 async function handleOrderPaid(

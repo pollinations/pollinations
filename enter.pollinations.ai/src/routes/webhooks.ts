@@ -22,10 +22,24 @@ import { WebhookSubscriptionUpdatedPayload } from "@polar-sh/sdk/models/componen
 import { WebhookSubscriptionCreatedPayload } from "@polar-sh/sdk/models/components/webhooksubscriptioncreatedpayload.js";
 import { WebhookBenefitGrantCycledPayload } from "@polar-sh/sdk/models/components/webhookbenefitgrantcycledpayload.js";
 import { WebhookBenefitGrantCreatedPayload } from "@polar-sh/sdk/models/components/webhookbenefitgrantcreatedpayload.js";
+import { WebhookBenefitGrantUpdatedPayload } from "@polar-sh/sdk/models/components/webhookbenefitgrantupdatedpayload.js";
 import { WebhookOrderPaidPayload } from "@polar-sh/sdk/models/components/webhookorderpaidpayload.js";
 import { sql } from "drizzle-orm";
 
 const log = getLogger(["hono", "webhooks"]);
+
+// Map pollen units to tier name
+function tierFromUnits(units: number): TierName | null {
+    const tierUnitsMap: Record<number, TierName> = {
+        1: "spore",
+        3: "seed",
+        10: "flower",
+        30: "tree",
+        100: "nectar",
+        1000: "router",
+    };
+    return tierUnitsMap[units] ?? null;
+}
 
 export const webhooksRoutes = new Hono<Env>().post("/polar", async (c) => {
     const webhookSecret = c.env.POLAR_WEBHOOK_SECRET;
@@ -62,6 +76,10 @@ export const webhooksRoutes = new Hono<Env>().post("/polar", async (c) => {
 
             case "benefit_grant.created":
                 await handleBenefitGrantCreated(c.env, payload);
+                break;
+
+            case "benefit_grant.updated":
+                await handleBenefitGrantUpdated(c.env, payload);
                 break;
 
             case "order.paid":
@@ -170,17 +188,10 @@ async function handleSubscriptionCanceled(
 async function handleSubscriptionUpdated(
     payload: WebhookSubscriptionUpdatedPayload,
 ): Promise<void> {
+    // Tier and balance updates are handled by benefit_grant.created/updated webhooks
+    // This handler just logs for debugging
     const externalId = payload.data.customer.externalId;
-    if (!externalId) {
-        log.warn(
-            "Received subscription.updated webhook without external customer id",
-        );
-        return;
-    }
-
-    log.debug("Subscription updated for user {userId}", {
-        userId: externalId,
-    });
+    log.debug("subscription.updated for user {userId}", { userId: externalId });
 }
 
 async function handleSubscriptionCreated(
@@ -249,52 +260,71 @@ async function handleBenefitGrantCreated(
 ): Promise<void> {
     const externalId = payload.data.customer.externalId;
     if (!externalId) {
-        log.warn(
-            "Received benefit_grant.created webhook without external customer id",
-        );
+        log.warn("benefit_grant.created without external customer id");
         return;
     }
 
-    // Only handle meter_credit benefits (tier pollen grants)
-    // The benefit object contains the units to credit, not the grant properties
     const benefit = payload.data.benefit as {
         type?: string;
         properties?: { units?: number };
     };
-
-    if (benefit?.type !== "meter_credit") {
-        log.debug(
-            "benefit_grant.created for user {userId} is not a meter_credit benefit (type: {type})",
-            { userId: externalId, type: benefit?.type },
-        );
-        return;
-    }
+    if (benefit?.type !== "meter_credit") return;
 
     const units = benefit.properties?.units;
-    if (!units || units <= 0) {
-        log.debug(
-            "benefit_grant.created for user {userId} has no units in benefit properties",
-            { userId: externalId },
-        );
-        return;
-    }
+    if (!units || units <= 0) return;
 
+    const tier = tierFromUnits(units);
     const db = drizzle(env.DB);
-    const now = Math.floor(Date.now() / 1000);
 
-    // SET tier_balance to the benefit's units - this handles tier changes (upgrades/downgrades)
-    // When subscription product changes, old benefit is revoked and new one is created
     await db
         .update(userTable)
         .set({
+            ...(tier && { tier }),
             tierBalance: units,
-            lastTierGrant: now,
+            lastTierGrant: Math.floor(Date.now() / 1000),
         })
         .where(eq(userTable.id, externalId));
 
     log.info(
-        "Set tier_balance to {units} for user {userId} via benefit_grant.created",
-        { units, userId: externalId },
+        "benefit_grant.created: user={userId} tier={tier} balance={units}",
+        { userId: externalId, tier: tier ?? "unknown", units },
+    );
+}
+
+async function handleBenefitGrantUpdated(
+    env: Cloudflare.Env,
+    payload: WebhookBenefitGrantUpdatedPayload,
+): Promise<void> {
+    const externalId = payload.data.customer.externalId;
+    if (!externalId) {
+        log.warn("benefit_grant.updated without external customer id");
+        return;
+    }
+
+    const benefit = payload.data.benefit as {
+        type?: string;
+        properties?: { units?: number };
+    };
+    if (benefit?.type !== "meter_credit") return;
+
+    const units = benefit.properties?.units;
+    if (!units || units <= 0) return;
+
+    const tier = tierFromUnits(units);
+    const db = drizzle(env.DB);
+
+    await db
+        .update(userTable)
+        .set({
+            ...(tier && { tier }),
+            tierBalance: units,
+            lastTierGrant: Math.floor(Date.now() / 1000),
+        })
+        .where(eq(userTable.id, externalId));
+
+    log.info(
+        "benefit_grant.updated: user={userId} tier={tier} balance={units}",
+        { userId: externalId, tier: tier ?? "unknown", units },
     );
 }
 

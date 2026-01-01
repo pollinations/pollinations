@@ -21,6 +21,7 @@ import { WebhookSubscriptionCanceledPayload } from "@polar-sh/sdk/models/compone
 import { WebhookSubscriptionUpdatedPayload } from "@polar-sh/sdk/models/components/webhooksubscriptionupdatedpayload.js";
 import { WebhookSubscriptionCreatedPayload } from "@polar-sh/sdk/models/components/webhooksubscriptioncreatedpayload.js";
 import { WebhookBenefitGrantCycledPayload } from "@polar-sh/sdk/models/components/webhookbenefitgrantcycledpayload.js";
+import { WebhookBenefitGrantCreatedPayload } from "@polar-sh/sdk/models/components/webhookbenefitgrantcreatedpayload.js";
 import { WebhookOrderPaidPayload } from "@polar-sh/sdk/models/components/webhookorderpaidpayload.js";
 import { sql } from "drizzle-orm";
 
@@ -57,6 +58,10 @@ export const webhooksRoutes = new Hono<Env>().post("/polar", async (c) => {
 
             case "benefit_grant.cycled":
                 await handleBenefitGrantCycled(c.env, payload);
+                break;
+
+            case "benefit_grant.created":
+                await handleBenefitGrantCreated(c.env, payload);
                 break;
 
             case "order.paid":
@@ -234,6 +239,61 @@ async function handleBenefitGrantCycled(
 
     log.info(
         "Set tier_balance to {units} for user {userId} via benefit_grant.cycled",
+        { units, userId: externalId },
+    );
+}
+
+async function handleBenefitGrantCreated(
+    env: Cloudflare.Env,
+    payload: WebhookBenefitGrantCreatedPayload,
+): Promise<void> {
+    const externalId = payload.data.customer.externalId;
+    if (!externalId) {
+        log.warn(
+            "Received benefit_grant.created webhook without external customer id",
+        );
+        return;
+    }
+
+    // Only handle meter_credit benefits (tier pollen grants)
+    // The benefit object contains the units to credit, not the grant properties
+    const benefit = payload.data.benefit as {
+        type?: string;
+        properties?: { units?: number };
+    };
+
+    if (benefit?.type !== "meter_credit") {
+        log.debug(
+            "benefit_grant.created for user {userId} is not a meter_credit benefit (type: {type})",
+            { userId: externalId, type: benefit?.type },
+        );
+        return;
+    }
+
+    const units = benefit.properties?.units;
+    if (!units || units <= 0) {
+        log.debug(
+            "benefit_grant.created for user {userId} has no units in benefit properties",
+            { userId: externalId },
+        );
+        return;
+    }
+
+    const db = drizzle(env.DB);
+    const now = Math.floor(Date.now() / 1000);
+
+    // SET tier_balance to the benefit's units - this handles tier changes (upgrades/downgrades)
+    // When subscription product changes, old benefit is revoked and new one is created
+    await db
+        .update(userTable)
+        .set({
+            tierBalance: units,
+            lastTierGrant: now,
+        })
+        .where(eq(userTable.id, externalId));
+
+    log.info(
+        "Set tier_balance to {units} for user {userId} via benefit_grant.created",
         { units, userId: externalId },
     );
 }

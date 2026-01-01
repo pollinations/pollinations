@@ -167,10 +167,16 @@ export const polar = createMiddleware<PolarEnv>(async (c, next) => {
                     "Synced balances from Polar for user {userId}: tier={tierBalance}, pack={packBalance}",
                     { userId, tierBalance, packBalance },
                 );
-            } else if (wasNull) {
-                // New user with no Polar balance yet - keep NULL, don't write 0
+            } else if (hasNullBalance) {
+                // User has NULL balance(s) but Polar also has 0 - keep NULL, let webhooks handle initial grant
                 log.debug(
-                    "New user {userId} has no Polar balance yet, keeping NULL",
+                    "User {userId} has no Polar balance yet, keeping D1 as-is",
+                    { userId },
+                );
+            } else if (hasBothZero) {
+                // User has 0/0 in D1 and Polar also has 0 - genuine zero balance
+                log.debug(
+                    "User {userId} has zero balance in both D1 and Polar",
                     { userId },
                 );
             }

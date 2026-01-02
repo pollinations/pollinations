@@ -22,71 +22,41 @@ GITHUB_HEADERS = {
 }
 
 POLLINATIONS_API = "https://gen.pollinations.ai/v1/chat/completions"
+CONFIG_PATH = os.path.join(os.path.dirname(__file__), "project-manager-config.json")
+with open(CONFIG_PATH, "r") as f:
+    CONFIG = json.load(f)
 
-PROJECT_NAMES = {
-    "support": "Support",
-    "dev": "Dev", 
-    "news": "News"
-}
-
-VALID_LABELS = {
-    "BUG", "FEATURE", "HELP", "POLLEN", "VOTING", "QUEST", "NEWS", "EXTERNAL",
-    "TRACKING", "TIER-SEED", "TIER-FLOWER", "TIER-INCOMPLETE", "TIER-REVIEW", "TIER-COMPLETE", "TIER-REJECTED"
-}
-
-INTERNAL_DEVELOPERS = {
-    "eulervoid": ["backend", "api", "infrastructure", "devops", "database"],
-    "voodoohop": ["frontend", "react", "ui", "design", "performance"],
-    "ElliotEtag": ["ai", "ml", "image-generation", "models"],
-    "Circuit-Overtime": ["docs", "tutorials", "guides", "examples"],
-    "Itachi-1824": ["testing", "qa", "automation", "ci/cd"],
-}
+PROJECT_NAMES = {key: proj["name"] for key, proj in CONFIG["projects"].items()}
+VALID_LABELS = set(CONFIG["labels"].keys()) | {"TIER-SEED", "TIER-FLOWER", "TIER-INCOMPLETE", "TIER-REVIEW", "TIER-COMPLETE", "TIER-REJECTED"}
+INTERNAL_DEVELOPERS = CONFIG["team_expertise"]
 
 def classify_with_ai() -> dict:
     dev_expertise = "\n".join([f"- @{dev}: {', '.join(areas)}" for dev, areas in INTERNAL_DEVELOPERS.items()])
+    projects_desc = "\n".join([
+        f"- {key}: {proj['description']}" 
+        for key, proj in CONFIG["projects"].items()
+    ])
+    labels_desc = "\n".join([
+        f"- {label}: {desc}"
+        for label, desc in CONFIG["labels"].items()
+    ]) + "\n- TIER-SEED, TIER-FLOWER, TIER-INCOMPLETE, TIER-REVIEW, TIER-COMPLETE, TIER-REJECTED: Tier-specific labels"
     
     system_prompt = f"""You are a GitHub issue and PR classifier for the Pollinations open-source project. Your task is to automatically organize issues and pull requests.
-
 INTERNAL DEVELOPMENT TEAM:
 {dev_expertise}
+PROJECTS (full criteria in project-manager-config.json):
+{projects_desc}
 
-Projects:
-- support: User support issues, bug reports, help requests, pollen/reward questions, voting/feedback, technical assistance
-- dev: Feature requests, implementation tasks, code improvements, development work, new features
-- news: PR submissions announcing updates, releases, changelog entries, newsworthy changes
+LABELS (full criteria in project-manager-config.json):
+{labels_desc}
 
-Support Priority:
-- Urgent: Critical bugs, service-breaking issues, security issues, user completely blocked
-- High: Important bugs, pollen/reward related, crash reports, blocking issues
-- Medium: Regular bugs, help questions, feature feedback
-- Low: Discussions, ideas, minor issues
-
-Dev Priority:
-- High: Critical features, security improvements, critical fixes
-- Medium: Regular features, general improvements, optimizations
-- Low: Nice-to-have features, documentation, minor enhancements
-
-News Priority:
-- High: Major releases, critical updates, important announcements, security updates
-- Medium: Regular updates, feature announcements, workflow improvements
-- Low: Minor updates, documentation changes, social media posts
-
-Labels (choose all that apply):
-- BUG: Bug reports, errors, issues
-- FEATURE: Feature requests, new implementations
-- HELP: Help requests, questions, how-to
-- POLLEN: Pollen, rewards, tokens, community incentives
-- VOTING: Polls, voting, feedback, opinions
-- QUEST: Development quests, tasks
-- NEWS: News and releases
-- EXTERNAL: External contributions, third-party PRs (not from org members)
-- TRACKING: Tracking issues
-
-Status:
-- For support/news: "To do"
-- For dev: "Backlog" for features, "To do" for bugs
-
-For dev project items, suggest an assignee from the team based on expertise match. If none match well, return null for assignee.
+CLASSIFICATION RULES:
+- Refer to project-manager-config.json for complete priority definitions and assignment rules
+- Support Priority: Urgent (service-breaking), High (blocking bugs), Medium (regular bugs), Low (ideas)
+- Dev Priority: High (critical), Medium (regular), Low (nice-to-have)
+- News Priority: High (major releases), Medium (regular updates), Low (minor)
+- For dev project items, suggest an assignee from the team based on expertise match. If none match well, return null for assignee.
+- For support/news: default status "To do". For dev: "Backlog" for features, "To do" for bugs.
 
 CRITICAL: Return ONLY valid JSON, no markdown, no explanation:
 {{"project": "support|dev|news", "priority": "Urgent|High|Medium|Low", "labels": ["LABEL1", "LABEL2"], "status": "To do|Backlog", "assignee": "username_or_null", "reasoning": "one sentence"}}"""

@@ -1,15 +1,3 @@
-#!/usr/bin/env python3
-"""
-Project Manager - Automatically organizes issues and PRs into GitHub Projects V2.
-
-Logic:
-1. Issue/PR is created
-2. AI analyzes content and determines project (Dev/Support/News)
-3. Only internal org members' issues/PRs go to Dev project
-4. External contributions go to Support (unless news-related)
-5. AI sets priority which is applied to the project item
-"""
-
 import os
 import json
 import requests
@@ -17,7 +5,6 @@ import time
 import random
 from typing import Optional
 
-# Environment variables from workflow
 GITHUB_TOKEN = os.getenv("GITHUB_TOKEN")
 GITHUB_EVENT = json.loads(os.getenv("GITHUB_EVENT", "{}"))
 REPO_OWNER = os.getenv("REPO_OWNER", "pollinations")
@@ -41,7 +28,6 @@ GITHUB_API = "https://api.github.com"
 GITHUB_GRAPHQL = "https://api.github.com/graphql"
 POLLINATIONS_API = "https://gen.pollinations.ai/v1/chat/completions"
 POLLINATIONS_TOKEN = os.getenv("POLLINATIONS_TOKEN")
-DRY_RUN = os.getenv("DRY_RUN", "false").lower() == "true"
 
 GITHUB_HEADERS = {
     "Authorization": f"Bearer {GITHUB_TOKEN}",
@@ -137,8 +123,7 @@ CONFIG = {
         "eulervoid",
         "ElliotEtag",
         "Circuit-Overtime",
-        "Itachi-1824",
-        "ale-rls",
+        "Itachi-1824"
     ],
     "fallback_assignee": "voodoohop",
 }
@@ -317,10 +302,6 @@ def add_to_project(project_id: str) -> Optional[str]:
     }
     """
 
-    if DRY_RUN:
-        print(f"[DRY RUN] Would add to project ID: {project_id}")
-        return "dry-run-item-id"
-
     result = graphql_request(
         mutation, {"projectId": project_id, "contentId": ISSUE_NODE_ID}
     )
@@ -331,10 +312,6 @@ def add_to_project(project_id: str) -> Optional[str]:
 
 def set_project_field(project_id: str, item_id: str, field_id: str, option_id: str):
     """Set a single-select field value on a project item."""
-
-    if DRY_RUN:
-        print(f"[DRY RUN] Would set field {field_id} to option {option_id}")
-        return
 
     mutation = """
     mutation($projectId: ID!, $itemId: ID!, $fieldId: ID!, $optionId: String!) {
@@ -379,10 +356,6 @@ def add_labels(labels: list):
         print("No valid labels to add")
         return
 
-    if DRY_RUN:
-        print(f"[DRY RUN] Would add labels: {valid_labels}")
-        return
-
     try:
         response = requests.post(
             f"{GITHUB_API}/repos/{REPO_OWNER}/{REPO_NAME}/issues/{ISSUE_NUMBER}/labels",
@@ -399,9 +372,6 @@ def add_labels(labels: list):
 
 
 def main():
-    if DRY_RUN:
-        print("🔄 Running in DRY RUN mode - no changes will be made")
-    
     if not ISSUE_NUMBER or not ISSUE_NODE_ID:
         print("No issue/PR found in event")
         return

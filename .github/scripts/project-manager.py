@@ -13,6 +13,8 @@ Logic:
 import os
 import json
 import requests
+import time
+import random
 from typing import Optional
 
 # Environment variables from workflow
@@ -39,6 +41,7 @@ GITHUB_API = "https://api.github.com"
 GITHUB_GRAPHQL = "https://api.github.com/graphql"
 POLLINATIONS_API = "https://gen.pollinations.ai/v1/chat/completions"
 POLLINATIONS_TOKEN = os.getenv("POLLINATIONS_TOKEN")
+DRY_RUN = os.getenv("DRY_RUN", "false").lower() == "true"
 
 GITHUB_HEADERS = {
     "Authorization": f"Bearer {GITHUB_TOKEN}",
@@ -46,6 +49,8 @@ GITHUB_HEADERS = {
 }
 
 # Project configuration with real GitHub Projects V2 IDs
+# NOTE: Field IDs (PVTSSF_*) and option IDs must be updated if project field structure changes.
+# To find IDs: GraphQL query projectV2(number: 20) { fields(first: 20) { nodes { id name options { id name } } } }
 CONFIG = {
     "projects": {
         "dev": {
@@ -171,8 +176,13 @@ RULES:
 4. Set priority based on impact: Urgent (critical/blocking), High (important), Medium (normal), Low (minor)
 
 LABELS (pick 1-3 most relevant, UPPERCASE):
-Dev labels: CORE, BUG, FEATURE, QUEST, TRACKING
-Support labels: SUPPORT, HELP, BUG, FEATURE, BALANCE, BILLING, API
+Dev labels: 
+  - CORE: Touching core infrastructure/APIs (not just new features)
+  - FEATURE: New user-facing functionality or API endpoints
+  - BUG: Bug fixes or regressions
+  - QUEST: Community task eligible for pollen rewards
+  - TRACKING: Meta-issue tracking related items
+Support labels: SUPPORT, HELP, BUG, FEATURE, BALANCE (pollen issues), BILLING, API (usage/integration)
 News labels: NEWS
 External: EXTERNAL (add if author is external)
 
@@ -184,9 +194,6 @@ Return ONLY valid JSON:
 Author: {ISSUE_AUTHOR} ({"internal" if is_internal else "external"})
 Title: {ISSUE_TITLE}
 Body: {ISSUE_BODY[:2000]}"""
-
-    import time
-    import random
 
     for attempt in range(3):
         try:
@@ -271,8 +278,6 @@ def graphql_request(query: str, variables: dict = None) -> dict:
 
             if response.status_code == 403 or response.status_code == 429:
                 # Rate limited - wait and retry
-                import time
-
                 wait_time = 2**attempt
                 print(f"Rate limited, waiting {wait_time}s before retry...")
                 time.sleep(wait_time)
@@ -292,8 +297,6 @@ def graphql_request(query: str, variables: dict = None) -> dict:
         except requests.RequestException as e:
             print(f"GraphQL request error: {e}")
             if attempt < 2:
-                import time
-
                 time.sleep(2**attempt)
                 continue
             return {}
@@ -314,6 +317,10 @@ def add_to_project(project_id: str) -> Optional[str]:
     }
     """
 
+    if DRY_RUN:
+        print(f"[DRY RUN] Would add to project ID: {project_id}")
+        return "dry-run-item-id"
+
     result = graphql_request(
         mutation, {"projectId": project_id, "contentId": ISSUE_NODE_ID}
     )
@@ -324,6 +331,10 @@ def add_to_project(project_id: str) -> Optional[str]:
 
 def set_project_field(project_id: str, item_id: str, field_id: str, option_id: str):
     """Set a single-select field value on a project item."""
+
+    if DRY_RUN:
+        print(f"[DRY RUN] Would set field {field_id} to option {option_id}")
+        return
 
     mutation = """
     mutation($projectId: ID!, $itemId: ID!, $fieldId: ID!, $optionId: String!) {
@@ -359,21 +370,38 @@ def add_labels(labels: list):
     # Filter to valid labels that exist in config (case-insensitive check, preserve original case)
     config_labels_upper = {k.upper() for k in CONFIG["labels"]}
     valid_labels = [l.upper() for l in labels if l.upper() in config_labels_upper]
+    invalid_labels = [l.upper() for l in labels if l.upper() not in config_labels_upper]
+    
+    if invalid_labels:
+        print(f"⚠ Skipping invalid labels: {invalid_labels}")
+    
     if not valid_labels:
+        print("No valid labels to add")
+        return
+
+    if DRY_RUN:
+        print(f"[DRY RUN] Would add labels: {valid_labels}")
         return
 
     try:
-        requests.post(
+        response = requests.post(
             f"{GITHUB_API}/repos/{REPO_OWNER}/{REPO_NAME}/issues/{ISSUE_NUMBER}/labels",
             headers=GITHUB_HEADERS,
             json={"labels": valid_labels},
             timeout=10,
         )
+        if response.status_code != 200:
+            print(f"Failed to add labels: HTTP {response.status_code} - {response.text}")
+        else:
+            print(f"✓ Added labels: {valid_labels}")
     except requests.RequestException as e:
         print(f"Failed to add labels: {e}")
 
 
 def main():
+    if DRY_RUN:
+        print("🔄 Running in DRY RUN mode - no changes will be made")
+    
     if not ISSUE_NUMBER or not ISSUE_NODE_ID:
         print("No issue/PR found in event")
         return

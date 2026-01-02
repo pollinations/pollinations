@@ -43,4 +43,5 @@ jobs:
           REPO_OWNER: ${{ github.repository_owner }}
           REPO_NAME: ${{ github.event.repository.name }}
           POLLINATIONS_TOKEN: ${{ secrets.POLLINATIONS_TOKEN }}
+          DRY_RUN: ${{ vars.PROJECT_MANAGER_DRY_RUN || 'false' }}
         run: python .github/scripts/project-manager.py

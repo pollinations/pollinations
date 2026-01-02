@@ -10,7 +10,6 @@ GITHUB_EVENT = json.loads(os.getenv("GITHUB_EVENT", "{}"))
 REPO_OWNER = "pollinations"
 REPO_NAME = "pollinations"
 
-# Parse event data
 IS_PULL_REQUEST = "pull_request" in GITHUB_EVENT
 ITEM_DATA = (
     GITHUB_EVENT.get("pull_request")
@@ -23,7 +22,6 @@ ISSUE_BODY = ITEM_DATA.get("body", "") or ""
 ISSUE_AUTHOR = ITEM_DATA.get("user", {}).get("login", "")
 ISSUE_NODE_ID = ITEM_DATA.get("node_id", "")
 
-# API setup
 GITHUB_API = "https://api.github.com"
 GITHUB_GRAPHQL = "https://api.github.com/graphql"
 POLLINATIONS_API = "https://gen.pollinations.ai/v1/chat/completions"
@@ -34,9 +32,6 @@ GITHUB_HEADERS = {
     "Accept": "application/vnd.github.v3+json",
 }
 
-# Project configuration with real GitHub Projects V2 IDs
-# NOTE: Field IDs (PVTSSF_*) and option IDs must be updated if project field structure changes.
-# To find IDs: GraphQL query projectV2(number: 20) { fields(first: 20) { nodes { id name options { id name } } } }
 CONFIG = {
     "projects": {
         "dev": {
@@ -98,24 +93,20 @@ CONFIG = {
             },
             "priority_field_id": None,
             "priority_options": {},
-        },
+        }
     },
     "labels": {
-        # Dev labels
         "CORE": "Core development work",
         "BUG": "Something is broken",
         "FEATURE": "New functionality request",
         "QUEST": "Community task - pollen reward if merged",
         "TRACKING": "Meta-issue tracking other items",
-        # Support labels
         "SUPPORT": "Support request",
         "HELP": "User needs assistance",
         "BALANCE": "Pollen balance issue",
         "BILLING": "Payment or subscription issue",
         "API": "API usage or integration issue",
-        # News labels
         "NEWS": "News and announcements",
-        # External
         "EXTERNAL": "External contribution (not from org member)",
     },
     "org_members": [
@@ -130,49 +121,44 @@ CONFIG = {
 
 
 def is_org_member(username: str) -> bool:
-    """Check if user is an org member (from config list or via API)."""
     if username.lower() in [m.lower() for m in CONFIG["org_members"]]:
         return True
 
-    # Fallback: check via GitHub API
     try:
         resp = requests.get(
             f"{GITHUB_API}/orgs/{REPO_OWNER}/members/{username}", headers=GITHUB_HEADERS
         )
-        return resp.status_code == 204  # 204 = is member, 404 = not member
+        return resp.status_code == 204
     except requests.RequestException:
         return False
 
 
 def classify_with_ai(is_internal: bool) -> dict:
-    """Use AI to classify the issue/PR."""
-
     system_prompt = f"""You are a GitHub issue/PR classifier for Pollinations. Analyze and classify into ONE project.
+    PROJECTS:
+    - dev: Core development work, features, refactors, infrastructure, code improvements (INTERNAL ONLY)
+    - support: User help, bug reports, API questions, billing issues, pollen balance questions
+    - news: Release announcements, changelog, social media posts, community updates
 
-PROJECTS:
-- dev: Core development work, features, refactors, infrastructure, code improvements (INTERNAL ONLY)
-- support: User help, bug reports, API questions, billing issues, pollen balance questions
-- news: Release announcements, changelog, social media posts, community updates
+    RULES:
+    1. Author is {"INTERNAL (org member)" if is_internal else "EXTERNAL (community contributor)"}
+    2. {"Internal authors can go to any project based on content" if is_internal else "External authors ALWAYS go to 'support' (dev is internal-only)"}
+    3. Each item goes to exactly ONE project
+    4. Set priority based on impact: Urgent (critical/blocking), High (important), Medium (normal), Low (minor)
 
-RULES:
-1. Author is {"INTERNAL (org member)" if is_internal else "EXTERNAL (community contributor)"}
-2. {"Internal authors can go to any project based on content" if is_internal else "External authors ALWAYS go to 'support' (dev is internal-only)"}
-3. Each item goes to exactly ONE project
-4. Set priority based on impact: Urgent (critical/blocking), High (important), Medium (normal), Low (minor)
+    LABELS (pick 1-3 most relevant, UPPERCASE):
+    Dev labels: 
+    - CORE: Touching core infrastructure/APIs (not just new features)
+    - FEATURE: New user-facing functionality or API endpoints
+    - BUG: Bug fixes or regressions
+    - QUEST: Community task eligible for pollen rewards
+    - TRACKING: Meta-issue tracking related items
+    Support labels: SUPPORT, HELP, BUG, FEATURE, BALANCE (pollen issues), BILLING, API (usage/integration)
+    News labels: NEWS
+    External: EXTERNAL (add if author is external)
 
-LABELS (pick 1-3 most relevant, UPPERCASE):
-Dev labels: 
-  - CORE: Touching core infrastructure/APIs (not just new features)
-  - FEATURE: New user-facing functionality or API endpoints
-  - BUG: Bug fixes or regressions
-  - QUEST: Community task eligible for pollen rewards
-  - TRACKING: Meta-issue tracking related items
-Support labels: SUPPORT, HELP, BUG, FEATURE, BALANCE (pollen issues), BILLING, API (usage/integration)
-News labels: NEWS
-External: EXTERNAL (add if author is external)
-
-Return ONLY valid JSON:
-{{"project": "dev|support|news", "priority": "Urgent|High|Medium|Low", "labels": ["label1"], "reasoning": "brief why"}}"""
+    Return ONLY valid JSON:
+    {{"project": "dev|support|news", "priority": "Urgent|High|Medium|Low", "labels": ["label1"], "reasoning": "brief why"}}"""
 
     item_type = "Pull Request" if IS_PULL_REQUEST else "Issue"
     user_prompt = f"""{item_type} #{ISSUE_NUMBER}
@@ -182,7 +168,7 @@ Body: {ISSUE_BODY[:2000]}"""
 
     for attempt in range(3):
         try:
-            seed = random.randint(0, 2147483647)  # 0 to INT32_MAX
+            seed = random.randint(0, 2147483647)
             headers = (
                 {"Authorization": f"Bearer {POLLINATIONS_TOKEN}"}
                 if POLLINATIONS_TOKEN
@@ -241,7 +227,6 @@ Body: {ISSUE_BODY[:2000]}"""
 
 
 def get_fallback_classification(is_internal: bool) -> dict:
-    """Fallback classification if AI fails."""
     return {
         "project": "dev" if is_internal else "support",
         "priority": "Medium",
@@ -251,7 +236,6 @@ def get_fallback_classification(is_internal: bool) -> dict:
 
 
 def graphql_request(query: str, variables: dict = None) -> dict:
-    """Execute a GraphQL request with retry for rate limits."""
     for attempt in range(3):
         try:
             response = requests.post(
@@ -262,7 +246,6 @@ def graphql_request(query: str, variables: dict = None) -> dict:
             )
 
             if response.status_code == 403 or response.status_code == 429:
-                # Rate limited - wait and retry
                 wait_time = 2**attempt
                 print(f"Rate limited, waiting {wait_time}s before retry...")
                 time.sleep(wait_time)
@@ -290,8 +273,6 @@ def graphql_request(query: str, variables: dict = None) -> dict:
 
 
 def add_to_project(project_id: str) -> Optional[str]:
-    """Add issue/PR to a GitHub Project V2. Returns the project item ID."""
-
     mutation = """
     mutation($projectId: ID!, $contentId: ID!) {
         addProjectV2ItemById(input: {projectId: $projectId, contentId: $contentId}) {
@@ -311,8 +292,6 @@ def add_to_project(project_id: str) -> Optional[str]:
 
 
 def set_project_field(project_id: str, item_id: str, field_id: str, option_id: str):
-    """Set a single-select field value on a project item."""
-
     mutation = """
     mutation($projectId: ID!, $itemId: ID!, $fieldId: ID!, $optionId: String!) {
         updateProjectV2ItemFieldValue(input: {
@@ -340,11 +319,9 @@ def set_project_field(project_id: str, item_id: str, field_id: str, option_id: s
 
 
 def add_labels(labels: list):
-    """Add labels to the issue/PR."""
     if not labels:
         return
 
-    # Filter to valid labels that exist in config (case-insensitive check, preserve original case)
     config_labels_upper = {k.upper() for k in CONFIG["labels"]}
     valid_labels = [l.upper() for l in labels if l.upper() in config_labels_upper]
     invalid_labels = [l.upper() for l in labels if l.upper() not in config_labels_upper]
@@ -387,11 +364,9 @@ def main():
     )
     print(f"Author: {ISSUE_AUTHOR}")
 
-    # Check if author is org member
     is_internal = is_org_member(ISSUE_AUTHOR)
     print(f"Internal member: {is_internal}")
 
-    # Get AI classification
     classification = classify_with_ai(is_internal)
     print(f"Classification: {json.dumps(classification, indent=2)}")
 
@@ -399,7 +374,6 @@ def main():
     priority = classification.get("priority", "Medium")
     labels = classification.get("labels", [])
 
-    # Enforce internal-only rule for dev project
     project_config = CONFIG["projects"].get(project_key)
     if not project_config:
         print(f"Invalid project: {project_key}, defaulting to support")
@@ -413,7 +387,6 @@ def main():
         if "EXTERNAL" not in [l.upper() for l in labels]:
             labels.append("EXTERNAL")
 
-    # Add to project
     print(f"Adding to project: {project_config['name']}")
     item_id = add_to_project(project_config["id"])
 
@@ -423,7 +396,6 @@ def main():
 
     print(f"Added to project, item ID: {item_id}")
 
-    # Set status
     status = project_config.get("default_status")
     status_field_id = project_config.get("status_field_id")
     status_option_id = project_config.get("status_options", {}).get(status)
@@ -434,7 +406,6 @@ def main():
             project_config["id"], item_id, status_field_id, status_option_id
         )
 
-    # Set priority
     priority_field_id = project_config.get("priority_field_id")
     priority_option_id = project_config.get("priority_options", {}).get(priority)
 
@@ -444,7 +415,6 @@ def main():
             project_config["id"], item_id, priority_field_id, priority_option_id
         )
 
-    # Add labels
     if labels:
         print(f"Adding labels: {labels}")
         add_labels(labels)

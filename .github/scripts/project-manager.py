@@ -27,8 +27,8 @@ with open(CONFIG_PATH, "r") as f:
     CONFIG = json.load(f)
 
 PROJECT_NAMES = {key: proj["name"] for key, proj in CONFIG["projects"].items()}
-VALID_LABELS = set(CONFIG["labels"].keys()) | {"TIER-SEED", "TIER-FLOWER", "TIER-INCOMPLETE", "TIER-REVIEW", "TIER-COMPLETE", "TIER-REJECTED"}
-INTERNAL_DEVELOPERS = CONFIG["team_expertise"]
+VALID_LABELS = set(CONFIG["labels"].keys())
+INTERNAL_DEVELOPERS = CONFIG["org_members"]
 
 def classify_with_ai() -> dict:
     dev_expertise = "\n".join([f"- @{dev}: {', '.join(areas)}" for dev, areas in INTERNAL_DEVELOPERS.items()])
@@ -39,33 +39,29 @@ def classify_with_ai() -> dict:
     labels_desc = "\n".join([
         f"- {label}: {desc}"
         for label, desc in CONFIG["labels"].items()
-    ]) + "\n- TIER-SEED, TIER-FLOWER, TIER-INCOMPLETE, TIER-REVIEW, TIER-COMPLETE, TIER-REJECTED: Tier-specific labels"
-    
+    ])
     system_prompt = f"""You are a GitHub issue and PR classifier for the Pollinations open-source project. Your task is to automatically organize issues and pull requests.
-INTERNAL DEVELOPMENT TEAM:
-{dev_expertise}
-PROJECTS (full criteria in project-manager-config.json):
-{projects_desc}
-
-LABELS (full criteria in project-manager-config.json):
-{labels_desc}
-
-CLASSIFICATION RULES:
-- Refer to project-manager-config.json for complete priority definitions and assignment rules
-- Support Priority: Urgent (service-breaking), High (blocking bugs), Medium (regular bugs), Low (ideas)
-- Dev Priority: High (critical), Medium (regular), Low (nice-to-have)
-- News Priority: High (major releases), Medium (regular updates), Low (minor)
-- For dev project items, suggest an assignee from the team based on expertise match. If none match well, return null for assignee.
-- For support/news: default status "To do". For dev: "Backlog" for features, "To do" for bugs.
-
-CRITICAL: Return ONLY valid JSON, no markdown, no explanation:
-{{"project": "support|dev|news", "priority": "Urgent|High|Medium|Low", "labels": ["LABEL1", "LABEL2"], "status": "To do|Backlog", "assignee": "username_or_null", "reasoning": "one sentence"}}"""
+    INTERNAL DEVELOPMENT TEAM:
+    {dev_expertise}
+    PROJECTS (full criteria in project-manager-config.json):
+    {projects_desc}
+    LABELS (full criteria in project-manager-config.json):
+    {labels_desc}
+    CLASSIFICATION RULES:
+    - Refer to project-manager-config.json for complete priority definitions and assignment rules
+    - Support Priority: Urgent (service-breaking), High (blocking bugs), Medium (regular bugs), Low (ideas)
+    - Dev Priority: High (critical), Medium (regular), Low (nice-to-have)
+    - News Priority: High (major releases), Medium (regular updates), Low (minor)
+    - For dev project items, suggest an assignee from the team based on expertise match. If none match well, return null for assignee.
+    - For support/news: default status "To do". For dev: "Backlog" for features, "To do" for bugs.
+    CRITICAL: Return ONLY valid JSON, no markdown, no explanation:
+    {{"project": "support|dev|news", "priority": "Urgent|High|Medium|Low", "labels": ["LABEL1", "LABEL2"], "status": "To do|Backlog", "assignee": "username_or_null", "reasoning": "one sentence"}}"""
 
     item_type = "Pull Request" if IS_PULL_REQUEST else "Issue"
     user_prompt = f"""{item_type}:
-Title: {ISSUE_TITLE}
-Author: {ISSUE_AUTHOR}
-Description: {ISSUE_BODY}"""
+    Title: {ISSUE_TITLE}
+    Author: {ISSUE_AUTHOR}
+    Description: {ISSUE_BODY}"""
 
     payload = {
         "model": "gemini-fast",

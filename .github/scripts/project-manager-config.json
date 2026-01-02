@@ -1,0 +1,89 @@
+{
+  "projects": {
+    "support": {
+      "name": "Support",
+      "description": "User support issues, bug reports, help requests, pollen/reward questions, voting/feedback, technical assistance",
+      "priorities": {
+        "Urgent": "Critical bugs, service-breaking issues, security issues, user completely blocked",
+        "High": "Important bugs, pollen/reward related, crash reports, blocking issues",
+        "Medium": "Regular bugs, help questions, feature feedback",
+        "Low": "Discussions, ideas, minor issues"
+      },
+      "default_status": "To do"
+    },
+    "dev": {
+      "name": "Dev",
+      "description": "Feature requests, implementation tasks, code improvements, development work, new features",
+      "priorities": {
+        "High": "Critical features, security improvements, critical fixes",
+        "Medium": "Regular features, general improvements, optimizations",
+        "Low": "Nice-to-have features, documentation, minor enhancements"
+      },
+      "default_status": "Backlog",
+      "backlog_status": "Backlog",
+      "todo_status": "To do"
+    },
+    "news": {
+      "name": "News",
+      "description": "PR submissions announcing updates, releases, changelog entries, newsworthy changes",
+      "priorities": {
+        "High": "Major releases, critical updates, important announcements, security updates",
+        "Medium": "Regular updates, feature announcements, workflow improvements",
+        "Low": "Minor updates, documentation changes, social media posts"
+      },
+      "default_status": "To do"
+    }
+  },
+  "labels": {
+    "BUG": "Bug reports, errors, issues",
+    "FEATURE": "Feature requests, new implementations",
+    "HELP": "Help requests, questions, how-to",
+    "POLLEN": "Pollen, rewards, tokens, community incentives",
+    "VOTING": "Polls, voting, feedback, opinions",
+    "QUEST": "Development quests, tasks",
+    "NEWS": "News and releases",
+    "EXTERNAL": "External contributions, third-party PRs (not from org members)",
+    "TRACKING": "Tracking issues"
+  },
+  "org_members": {
+    "eulervoid": ["backend", "api", "infrastructure", "devops", "database"],
+    "voodoohop": ["frontend", "react", "ui", "design", "performance"],
+    "ElliotEtag": ["ai", "ml", "image-generation", "models"],
+    "Circuit-Overtime": ["docs", "tutorials", "guides", "examples"],
+    "Itachi-1824": ["testing", "qa", "automation", "ci/cd"]
+  },
+  "classification_rules": {
+    "issue_type_routing": {
+      "security_related": "dev or support (Urgent if breaking)",
+      "feature_request": "dev",
+      "bug_report": "support",
+      "help_question": "support",
+      "pollen_related": "support",
+      "voting_feedback": "support",
+      "pr_submission": "news"
+    },
+    "priority_rules": {
+      "support": {
+        "urgent_keywords": ["critical", "broken", "security", "blocked", "down"],
+        "high_keywords": ["crash", "error", "pollen", "reward", "blocking"],
+        "medium_keywords": ["bug", "help", "feedback", "question"],
+        "low_keywords": ["discussion", "idea", "minor", "suggestion"]
+      },
+      "dev": {
+        "high_keywords": ["critical", "security", "fix", "breaking", "must-have"],
+        "medium_keywords": ["feature", "improvement", "enhancement", "optimization"],
+        "low_keywords": ["nice-to-have", "documentation", "minor", "refactor"]
+      },
+      "news": {
+        "high_keywords": ["release", "major", "critical", "security", "important"],
+        "medium_keywords": ["update", "feature", "announcement", "workflow"],
+        "low_keywords": ["minor", "documentation", "social", "trivial"]
+      }
+    }
+  },
+  "assignment_rules": {
+    "enabled_for_projects": ["dev"],
+    "fallback_assignee": null,
+    "match_threshold": "best expertise match"
+  }
+}

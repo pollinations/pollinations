@@ -52,38 +52,36 @@
     "Circuit-Overtime": ["docs", "tutorials", "guides", "examples"],
     "Itachi-1824": ["testing", "qa", "automation", "ci/cd"]
   },
-  "classification_rules": {
-    "issue_type_routing": {
-      "security_related": "dev or support (Urgent if breaking)",
-      "feature_request": "dev",
-      "bug_report": "support",
-      "help_question": "support",
-      "pollen_related": "support",
-      "voting_feedback": "support",
-      "pr_submission": "news"
+  "classification_guidelines": {
+    "note": "These are guidelines only. Use AI judgment based on context and impact. Each issue/PR must go to EXACTLY ONE project.",
+    "project_assignment": {
+      "support": "User-facing issues: bugs users encounter, support requests, blockers, pollen/reward questions, voting/feedback. Use when user impact is primary concern.",
+      "dev": "Internal development work: feature requests for new capabilities, code improvements, architecture, internal tasks. Use when development effort is primary concern.",
+      "news": "PR submissions that represent releases, updates, or announcements. Use for PRs that introduce versioned changes or major milestones."
     },
-    "priority_rules": {
+    "priority_context": {
       "support": {
-        "urgent_keywords": ["critical", "broken", "security", "blocked", "down"],
-        "high_keywords": ["crash", "error", "pollen", "reward", "blocking"],
-        "medium_keywords": ["bug", "help", "feedback", "question"],
-        "low_keywords": ["discussion", "idea", "minor", "suggestion"]
+        "Urgent": "User completely blocked or unable to use service (service down, critical bug, security breach)",
+        "High": "Significant user impact (crashes, pollen system issues, blocking workflows)",
+        "Medium": "Regular bugs or help questions with moderate impact",
+        "Low": "Minor issues, discussions, feature ideas"
       },
       "dev": {
-        "high_keywords": ["critical", "security", "fix", "breaking", "must-have"],
-        "medium_keywords": ["feature", "improvement", "enhancement", "optimization"],
-        "low_keywords": ["nice-to-have", "documentation", "minor", "refactor"]
+        "High": "Critical system improvements, security fixes, breaking changes needed",
+        "Medium": "Regular features, optimizations, code quality improvements",
+        "Low": "Nice-to-have features, documentation, minor refactoring"
       },
       "news": {
-        "high_keywords": ["release", "major", "critical", "security", "important"],
-        "medium_keywords": ["update", "feature", "announcement", "workflow"],
-        "low_keywords": ["minor", "documentation", "social", "trivial"]
+        "High": "Major releases, critical security updates, significant milestones",
+        "Medium": "Regular updates, feature releases, workflow improvements",
+        "Low": "Minor patches, documentation updates, housekeeping"
       }
-    }
+    },
+    "single_project_rule": "Each issue or PR must be assigned to ONLY ONE project. If it spans multiple areas, prioritize based on primary impact: user-facing → support, development work → dev, release announcement → news."
   },
   "assignment_rules": {
     "enabled_for_projects": ["dev"],
     "fallback_assignee": null,
-    "match_threshold": "best expertise match"
+    "match_threshold": "best expertise match from org_members"
   }
 }

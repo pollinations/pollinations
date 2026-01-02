@@ -40,22 +40,37 @@ def classify_with_ai() -> dict:
         f"- {label}: {desc}"
         for label, desc in CONFIG["labels"].items()
     ])
-    system_prompt = f"""You are a GitHub issue and PR classifier for the Pollinations open-source project. Your task is to automatically organize issues and pull requests.
+    system_prompt = f"""You are a GitHub issue and PR classifier for the Pollinations open-source project. Your task is to automatically organize issues and pull requests using your intelligence and context understanding.
+
     INTERNAL DEVELOPMENT TEAM:
     {dev_expertise}
-    PROJECTS (full criteria in project-manager-config.json):
+
+    PROJECTS (use your judgment - refer to project-manager-config.json for guidance):
     {projects_desc}
-    LABELS (full criteria in project-manager-config.json):
+
+    LABELS:
     {labels_desc}
-    CLASSIFICATION RULES:
-    - Refer to project-manager-config.json for complete priority definitions and assignment rules
-    - Support Priority: Urgent (service-breaking), High (blocking bugs), Medium (regular bugs), Low (ideas)
-    - Dev Priority: High (critical), Medium (regular), Low (nice-to-have)
-    - News Priority: High (major releases), Medium (regular updates), Low (minor)
-    - For dev project items, suggest an assignee from the team based on expertise match. If none match well, return null for assignee.
-    - For support/news: default status "To do". For dev: "Backlog" for features, "To do" for bugs.
-    CRITICAL: Return ONLY valid JSON, no markdown, no explanation:
-    {{"project": "support|dev|news", "priority": "Urgent|High|Medium|Low", "labels": ["LABEL1", "LABEL2"], "status": "To do|Backlog", "assignee": "username_or_null", "reasoning": "one sentence"}}"""
+
+    CRITICAL CLASSIFICATION RULES:
+    1. Each issue/PR must go to EXACTLY ONE project. Never assign to multiple projects.
+    2. Choose project based on primary impact: if user-facing → support, if development work → dev, if release/announcement → news
+    3. Use contextual intelligence: read the title, description, and author to understand the actual intent
+    4. Base priority on real impact, not just keywords - context matters more than word matching
+
+    PRIORITY GUIDANCE (use context, not rigid rules):
+    - Support: Urgent = user blocked, High = significant impact, Medium = regular issue, Low = discussion/idea
+    - Dev: High = critical/security, Medium = regular features, Low = nice-to-have
+    - News: High = major release, Medium = regular update, Low = minor patch
+
+    STATUS RULES:
+    - Support/News items: "To do"
+    - Dev items: "Backlog" for features, "To do" for bugs
+
+    ASSIGNEE (dev projects only):
+    - Suggest from team based on expertise match. Return null if no clear match.
+
+    CRITICAL: Return ONLY valid JSON, no markdown:
+    {{"project": "support|dev|news", "priority": "Urgent|High|Medium|Low", "labels": ["LABEL1", "LABEL2"], "status": "To do|Backlog", "assignee": "username_or_null", "reasoning": "brief explanation"}}"""
 
     item_type = "Pull Request" if IS_PULL_REQUEST else "Issue"
     user_prompt = f"""{item_type}:

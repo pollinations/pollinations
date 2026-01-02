@@ -136,6 +136,7 @@ def is_org_member(username: str) -> bool:
 
 
 def classify_with_ai(is_internal: bool) -> dict:
+    org_members = ", ".join(CONFIG["org_members"])
     system_prompt = f"""You are a GitHub issue/PR classifier for Pollinations. Analyze and classify into ONE project.
     PROJECTS:
     - dev: Core development work, features, refactors, infrastructure, code improvements (INTERNAL ONLY)
@@ -148,8 +149,9 @@ def classify_with_ai(is_internal: bool) -> dict:
     3. Each item goes to exactly ONE project
     4. Set priority based on impact: Urgent (critical/blocking), High (important), Medium (normal), Low (minor)
 
-    LABELS (pick 1-3 most relevant, UPPERCASE):
+    LABELS (pick 1-2 most relevant, UPPERCASE):
     Dev labels: 
+
     - CORE: Touching core infrastructure/APIs (not just new features)
     - FEATURE: New user-facing functionality or API endpoints
     - BUG: Bug fixes or regressions
@@ -159,8 +161,13 @@ def classify_with_ai(is_internal: bool) -> dict:
     News labels: NEWS
     External: EXTERNAL (add if author is external)
 
+    ASSIGNEE SELECTION:
+    Team members: {org_members}
+    Pick the BEST team member from the list above who would be most suitable to handle this issue based on its content and complexity.
+    Use 'voodoohop' as fallback if no clear match.
+
     Return ONLY valid JSON:
-    {{"project": "dev|support|news", "priority": "Urgent|High|Medium|Low", "labels": ["label1"], "reasoning": "brief why"}}"""
+    {{"project": "dev|support|news", "priority": "Urgent|High|Medium|Low", "labels": ["label1"], "assignee": "username", "reasoning": "brief why"}}"""
 
     item_type = "Pull Request" if IS_PULL_REQUEST else "Issue"
     user_prompt = f"""{item_type} #{ISSUE_NUMBER}
@@ -350,6 +357,31 @@ def add_labels(labels: list):
         print(f"Failed to add labels: {e}")
 
 
+def find_best_assignee(classification: dict) -> str:
+    assignee = classification.get("assignee", "").strip()
+    fallback = CONFIG.get("fallback_assignee")
+    if assignee and assignee in CONFIG.get("org_members", []):
+        return assignee
+    
+    return fallback
+
+
+def assign_issue(assignee: str):
+    try:
+        response = requests.patch(
+            f"{GITHUB_API}/repos/{REPO_OWNER}/{REPO_NAME}/issues/{ISSUE_NUMBER}",
+            headers=GITHUB_HEADERS,
+            json={"assignees": [assignee]},
+            timeout=10,
+        )
+        if response.status_code != 200:
+            print(f"Failed to assign: HTTP {response.status_code} - {response.text}")
+        else:
+            print(f"✓ Assigned to @{assignee}")
+    except requests.RequestException as e:
+        print(f"Failed to assign issue: {e}")
+
+
 def main():
     if not ISSUE_NUMBER or not ISSUE_NODE_ID:
         print("No issue/PR found in event")
@@ -414,6 +446,10 @@ def main():
     if labels:
         print(f"Adding labels: {labels}")
         add_labels(labels)
+
+    best_assignee = find_best_assignee(classification)
+    if best_assignee:
+        assign_issue(best_assignee)
 
     print(f"\n✓ Successfully organized into {project_config['name']} project")
     print(f"  Priority: {priority}")

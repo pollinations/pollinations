@@ -1,314 +1,458 @@
+#!/usr/bin/env python3
+"""
+Project Manager - Automatically organizes issues and PRs into GitHub Projects V2.
+
+Logic:
+1. Issue/PR is created
+2. AI analyzes content and determines project (Dev/Support/News)
+3. Only internal org members' issues/PRs go to Dev project
+4. External contributions go to Support (unless news-related)
+5. AI sets priority which is applied to the project item
+"""
+
 import os
 import json
 import requests
 from typing import Optional
 
+# Environment variables from workflow
 GITHUB_TOKEN = os.getenv("GITHUB_TOKEN")
 GITHUB_EVENT = json.loads(os.getenv("GITHUB_EVENT", "{}"))
-REPO_OWNER = "pollinations"
-REPO_NAME = "pollinations"
+REPO_OWNER = os.getenv("REPO_OWNER", "pollinations")
+REPO_NAME = os.getenv("REPO_NAME", "pollinations")
+
+# Parse event data
 IS_PULL_REQUEST = "pull_request" in GITHUB_EVENT
-ISSUE_NUMBER = GITHUB_EVENT.get("pull_request", {}).get("number") if IS_PULL_REQUEST else GITHUB_EVENT.get("issue", {}).get("number")
-ISSUE_TITLE = GITHUB_EVENT.get("pull_request", {}).get("title") or GITHUB_EVENT.get("issue", {}).get("title", "")
-ISSUE_BODY = GITHUB_EVENT.get("pull_request", {}).get("body") or GITHUB_EVENT.get("issue", {}).get("body", "")
-ISSUE_AUTHOR = GITHUB_EVENT.get("pull_request", {}).get("user", {}).get("login") or GITHUB_EVENT.get("issue", {}).get("user", {}).get("login", "")
-ORG_MEMBERS_CACHE = {}
+ITEM_DATA = (
+    GITHUB_EVENT.get("pull_request")
+    if IS_PULL_REQUEST
+    else GITHUB_EVENT.get("issue", {})
+)
+ISSUE_NUMBER = ITEM_DATA.get("number")
+ISSUE_TITLE = ITEM_DATA.get("title", "")
+ISSUE_BODY = ITEM_DATA.get("body", "") or ""
+ISSUE_AUTHOR = ITEM_DATA.get("user", {}).get("login", "")
+ISSUE_NODE_ID = ITEM_DATA.get("node_id", "")
 
-
-API_BASE = f"https://api.github.com/repos/{REPO_OWNER}/{REPO_NAME}"
-GITHUB_HEADERS = {
-    "Authorization": f"token {GITHUB_TOKEN}",
-    "Accept": "application/vnd.github.v3+json"
-}
-
-
-CONFIG = {
-  "projects": {
-    "support": {
-      "name": "Support",
-      "description": "User support issues, bug reports, help requests, pollen/reward questions, voting/feedback, technical assistance",
-      "priorities": {
-        "Urgent": "Critical bugs, service-breaking issues, security issues, user completely blocked",
-        "High": "Important bugs, pollen/reward related, crash reports, blocking issues",
-        "Medium": "Regular bugs, help questions, feature feedback",
-        "Low": "Discussions, ideas, minor issues"
-      },
-      "default_status": "To do"
-    },
-    "dev": {
-      "name": "Dev",
-      "description": "Feature requests, implementation tasks, code improvements, development work, new features",
-      "priorities": {
-        "High": "Critical features, security improvements, critical fixes",
-        "Medium": "Regular features, general improvements, optimizations",
-        "Low": "Nice-to-have features, documentation, minor enhancements"
-      },
-      "default_status": "Backlog",
-      "backlog_status": "Backlog",
-      "todo_status": "To do"
-    },
-    "news": {
-      "name": "News",
-      "description": "PR submissions announcing updates, releases, changelog entries, newsworthy changes",
-      "priorities": {
-        "High": "Major releases, critical updates, important announcements, security updates",
-        "Medium": "Regular updates, feature announcements, workflow improvements",
-        "Low": "Minor updates, documentation changes, social media posts"
-      },
-      "default_status": "To do"
-    }
-  },
-  "labels": {
-    "BUG": "Bug reports, errors, issues",
-    "FEATURE": "Feature requests, new implementations",
-    "HELP": "Help requests, questions, how-to",
-    "POLLEN": "Pollen, rewards, tokens, community incentives",
-    "VOTING": "Polls, voting, feedback, opinions",
-    "QUEST": "Development quests, tasks",
-    "NEWS": "News and releases",
-    "EXTERNAL": "External contributions, third-party PRs (not from org members)",
-    "TRACKING": "Tracking issues"
-  },
-  "org_members": {
-    "eulervoid": ["backend", "api", "infrastructure", "devops", "database"],
-    "voodoohop": ["frontend", "react", "ui", "design", "performance"],
-    "ElliotEtag": ["ai", "ml", "image-generation", "models"],
-    "Circuit-Overtime": ["docs", "tutorials", "guides", "examples"],
-    "Itachi-1824": ["testing", "qa", "automation", "ci/cd"]
-  },
-  "classification_guidelines": {
-    "note": "These are guidelines only. Use AI judgment based on context and impact. Each issue/PR must go to EXACTLY ONE project.",
-    "project_assignment": {
-      "support": "User-facing issues: bugs users encounter, support requests, blockers, pollen/reward questions, voting/feedback. Use when user impact is primary concern.",
-      "dev": "Internal development work: feature requests for new capabilities, code improvements, architecture, internal tasks. Use when development effort is primary concern.",
-      "news": "PR submissions that represent releases, updates, or announcements. Use for PRs that introduce versioned changes or major milestones."
-    },
-    "priority_context": {
-      "support": {
-        "Urgent": "User completely blocked or unable to use service (service down, critical bug, security breach)",
-        "High": "Significant user impact (crashes, pollen system issues, blocking workflows)",
-        "Medium": "Regular bugs or help questions with moderate impact",
-        "Low": "Minor issues, discussions, feature ideas"
-      },
-      "dev": {
-        "High": "Critical system improvements, security fixes, breaking changes needed",
-        "Medium": "Regular features, optimizations, code quality improvements",
-        "Low": "Nice-to-have features, documentation, minor refactoring"
-      },
-      "news": {
-        "High": "Major releases, critical security updates, significant milestones",
-        "Medium": "Regular updates, feature releases, workflow improvements",
-        "Low": "Minor patches, documentation updates, housekeeping"
-      }
-    },
-    "single_project_rule": "Each issue or PR must be assigned to ONLY ONE project. If it spans multiple areas, prioritize based on primary impact: user-facing → support, development work → dev, release announcement → news."
-  },
-  "assignment_rules": {
-    "enabled_for_projects": ["dev"],
-    "fallback_assignee": "voodoohop",
-    "match_threshold": "best expertise match from org_members"
-  }
-}
-
-
+# API setup
+GITHUB_API = "https://api.github.com"
+GITHUB_GRAPHQL = "https://api.github.com/graphql"
 POLLINATIONS_API = "https://gen.pollinations.ai/v1/chat/completions"
+POLLINATIONS_TOKEN = os.getenv("POLLINATIONS_TOKEN")
 
-PROJECT_NAMES = {key: proj["name"] for key, proj in CONFIG["projects"].items()}
-VALID_LABELS = set(CONFIG["labels"].keys())
-INTERNAL_DEVELOPERS = CONFIG["org_members"]
+GITHUB_HEADERS = {
+    "Authorization": f"Bearer {GITHUB_TOKEN}",
+    "Accept": "application/vnd.github.v3+json",
+}
 
-def classify_with_ai() -> dict:
-    dev_expertise = "\n".join([f"- @{dev}: {', '.join(areas)}" for dev, areas in INTERNAL_DEVELOPERS.items()])
-    projects_desc = "\n".join([
-        f"- {key}: {proj['description']}" 
-        for key, proj in CONFIG["projects"].items()
-    ])
-    labels_desc = "\n".join([
-        f"- {label}: {desc}"
-        for label, desc in CONFIG["labels"].items()
-    ])
-    system_prompt = f"""You are a GitHub issue and PR classifier for the Pollinations open-source project. Your task is to automatically organize issues and pull requests using your intelligence and context understanding.
+# Project configuration with real GitHub Projects V2 IDs
+CONFIG = {
+    "projects": {
+        "dev": {
+            "id": "PVT_kwDOBS76fs4AwCAM",
+            "name": "Dev",
+            "number": 20,
+            "description": "Core development, features, refactors, infrastructure - internal only",
+            "internal_only": True,
+            "default_status": "Backlog",
+            "status_field_id": "PVTSSF_lADOBS76fs4AwCAMzgmXaAM",
+            "status_options": {
+                "Backlog": "f75ad846",
+                "To Do": "d89ca0b2",
+                "In Progress": "47fc9ee4",
+                "In Review": "ca6ba6c3",
+                "Done": "98236657",
+            },
+            "priority_field_id": "PVTSSF_lADOBS76fs4AwCAMzg2DKDk",
+            "priority_options": {
+                "Urgent": "0f53228f",
+                "High": "dc7fa85f",
+                "Medium": "15fd4fac",
+                "Low": "7495a981",
+            },
+        },
+        "support": {
+            "id": "PVT_kwDOBS76fs4BLr1H",
+            "name": "Support",
+            "number": 21,
+            "description": "User help, billing, API questions, bug reports from users",
+            "internal_only": False,
+            "default_status": "Review",
+            "status_field_id": "PVTSSF_lADOBS76fs4BLr1Hzg7L1RQ",
+            "status_options": {
+                "Review": "f75ad846",
+                "Done": "98236657",
+                "Discarded": "bc3f7e3a",
+            },
+            "priority_field_id": "PVTSSF_lADOBS76fs4BLr1Hzg7NAkI",
+            "priority_options": {
+                "Urgent": "5b4c403c",
+                "High": "509f6cf1",
+                "Medium": "ce60ee16",
+                "Low": "ca5161be",
+            },
+        },
+        "news": {
+            "id": "PVT_kwDOBS76fs4BLtD8",
+            "name": "News",
+            "number": 22,
+            "description": "News workflows, social media automation, announcements, releases",
+            "internal_only": False,
+            "default_status": "Todo",
+            "status_field_id": "PVTSSF_lADOBS76fs4BLtD8zg7Mrxg",
+            "status_options": {
+                "Todo": "f75ad846",
+                "In Progress": "47fc9ee4",
+                "Done": "98236657",
+            },
+            "priority_field_id": None,
+            "priority_options": {},
+        },
+    },
+    "labels": {
+        # Dev labels
+        "CORE": "Core development work",
+        "BUG": "Something is broken",
+        "FEATURE": "New functionality request",
+        "QUEST": "Community task - pollen reward if merged",
+        "TRACKING": "Meta-issue tracking other items",
+        # Support labels
+        "SUPPORT": "Support request",
+        "HELP": "User needs assistance",
+        "BALANCE": "Pollen balance issue",
+        "BILLING": "Payment or subscription issue",
+        "API": "API usage or integration issue",
+        # News labels
+        "NEWS": "News and announcements",
+        # External
+        "EXTERNAL": "External contribution (not from org member)",
+    },
+    "org_members": [
+        "voodoohop",
+        "eulervoid",
+        "ElliotEtag",
+        "Circuit-Overtime",
+        "Itachi-1824",
+        "ale-rls",
+    ],
+    "fallback_assignee": "voodoohop",
+}
 
-    INTERNAL DEVELOPMENT TEAM:
-    {dev_expertise}
 
-    PROJECTS (use your judgment - refer to project-manager-config.json for guidance):
-    {projects_desc}
+def is_org_member(username: str) -> bool:
+    """Check if user is an org member (from config list or via API)."""
+    if username.lower() in [m.lower() for m in CONFIG["org_members"]]:
+        return True
 
-    LABELS:
-    {labels_desc}
+    # Fallback: check via GitHub API
+    try:
+        resp = requests.get(
+            f"{GITHUB_API}/orgs/{REPO_OWNER}/members/{username}", headers=GITHUB_HEADERS
+        )
+        return resp.status_code == 204  # 204 = is member, 404 = not member
+    except requests.RequestException:
+        return False
 
-    CRITICAL CLASSIFICATION RULES:
-    1. Each issue/PR must go to EXACTLY ONE project. Never assign to multiple projects.
-    2. Choose project based on primary impact: if user-facing → support, if development work → dev, if release/announcement → news
-    3. Use contextual intelligence: read the title, description, and author to understand the actual intent
-    4. Base priority on real impact, not just keywords - context matters more than word matching
 
-    PRIORITY GUIDANCE (use context, not rigid rules):
-    - Support: Urgent = user blocked, High = significant impact, Medium = regular issue, Low = discussion/idea
-    - Dev: High = critical/security, Medium = regular features, Low = nice-to-have
-    - News: High = major release, Medium = regular update, Low = minor patch
+def classify_with_ai(is_internal: bool) -> dict:
+    """Use AI to classify the issue/PR."""
 
-    STATUS RULES:
-    - Support/News items: "To do"
-    - Dev items: "Backlog" for features, "To do" for bugs
+    system_prompt = f"""You are a GitHub issue/PR classifier for Pollinations. Analyze and classify into ONE project.
 
-    ASSIGNEE (dev projects only):
-    - Suggest from team based on expertise match. Return null if no clear match.
+PROJECTS:
+- dev: Core development work, features, refactors, infrastructure, code improvements (INTERNAL ONLY)
+- support: User help, bug reports, API questions, billing issues, pollen balance questions
+- news: Release announcements, changelog, social media posts, community updates
 
-    CRITICAL: Return ONLY valid JSON, no markdown:
-    {{"project": "support|dev|news", "priority": "Urgent|High|Medium|Low", "labels": ["LABEL1", "LABEL2"], "status": "To do|Backlog", "assignee": "username_or_null", "reasoning": "brief explanation"}}"""
+RULES:
+1. Author is {"INTERNAL (org member)" if is_internal else "EXTERNAL (community contributor)"}
+2. {"Internal authors can go to any project based on content" if is_internal else "External authors ALWAYS go to 'support' (dev is internal-only)"}
+3. Each item goes to exactly ONE project
+4. Set priority based on impact: Urgent (critical/blocking), High (important), Medium (normal), Low (minor)
+
+LABELS (pick 1-3 most relevant, UPPERCASE):
+Dev labels: CORE, BUG, FEATURE, QUEST, TRACKING
+Support labels: SUPPORT, HELP, BUG, FEATURE, BALANCE, BILLING, API
+News labels: NEWS
+External: EXTERNAL (add if author is external)
+
+Return ONLY valid JSON:
+{{"project": "dev|support|news", "priority": "Urgent|High|Medium|Low", "labels": ["label1"], "reasoning": "brief why"}}"""
 
     item_type = "Pull Request" if IS_PULL_REQUEST else "Issue"
-    user_prompt = f"""{item_type}:
-    Title: {ISSUE_TITLE}
-    Author: {ISSUE_AUTHOR}
-    Description: {ISSUE_BODY}"""
+    user_prompt = f"""{item_type} #{ISSUE_NUMBER}
+Author: {ISSUE_AUTHOR} ({"internal" if is_internal else "external"})
+Title: {ISSUE_TITLE}
+Body: {ISSUE_BODY[:2000]}"""
 
-    payload = {
-        "model": "gemini-fast",
-        "messages": [
-            {
-                "role": "system",
-                "content": system_prompt,
-                "cache_control": {
-                    "type": "ephemeral"
-                }
-            },
-            {
-                "role": "user",
-                "content": user_prompt
-            }
-        ],
-        "modalities": ["text"],
-        "max_tokens": 1000
+    import time
+    import random
+
+    for attempt in range(3):
+        try:
+            seed = random.randint(0, 2147483647)  # 0 to INT32_MAX
+            headers = (
+                {"Authorization": f"Bearer {POLLINATIONS_TOKEN}"}
+                if POLLINATIONS_TOKEN
+                else {}
+            )
+            response = requests.post(
+                POLLINATIONS_API,
+                headers=headers,
+                json={
+                    "model": "openai",
+                    "seed": seed,
+                    "messages": [
+                        {"role": "system", "content": system_prompt},
+                        {"role": "user", "content": user_prompt},
+                    ],
+                    "max_tokens": 500,
+                    "response_format": {"type": "json_object"},
+                },
+                timeout=300,  # 5 minutes
+            )
+
+            if response.status_code == 429:
+                wait_time = 2**attempt
+                print(
+                    f"Rate limited, waiting {wait_time}s before retry (seed: {seed})..."
+                )
+                time.sleep(wait_time)
+                continue
+
+            if response.status_code != 200:
+                print(
+                    f"AI API error: {response.status_code}, attempt {attempt + 1}/3 (seed: {seed})"
+                )
+                if attempt < 2:
+                    time.sleep(2**attempt)
+                    continue
+                return get_fallback_classification(is_internal)
+
+            content = (
+                response.json()
+                .get("choices", [{}])[0]
+                .get("message", {})
+                .get("content", "")
+            )
+
+            return json.loads(content.strip())
+
+        except (requests.RequestException, json.JSONDecodeError, KeyError) as e:
+            print(f"Classification error: {e}, attempt {attempt + 1}/3")
+            if attempt < 2:
+                time.sleep(2**attempt)
+                continue
+            return get_fallback_classification(is_internal)
+
+    return get_fallback_classification(is_internal)
+
+
+def get_fallback_classification(is_internal: bool) -> dict:
+    """Fallback classification if AI fails."""
+    return {
+        "project": "dev" if is_internal else "support",
+        "priority": "Medium",
+        "labels": ["EXTERNAL"] if not is_internal else [],
+        "reasoning": "Fallback classification",
     }
 
-    try:
-        response = requests.post(
-            POLLINATIONS_API,
-            json=payload,
-            timeout=30
-        )
 
-        if response.status_code != 200:
-            print(f"API error: {response.status_code} - {response.text}")
-            return {}
-
-        data = response.json()
-        content = data.get("choices", [{}])[0].get("message", {}).get("content", "").strip()
-
-        if not content:
-            print("Empty response from API")
-            return {}
-
+def graphql_request(query: str, variables: dict = None) -> dict:
+    """Execute a GraphQL request with retry for rate limits."""
+    for attempt in range(3):
         try:
-            return json.loads(content)
-        except json.JSONDecodeError as e:
-            try:
-                start = content.find('{')
-                end = content.rfind('}')
-                if start != -1 and end != -1:
-                    result = json.loads(content[start:end+1])
-                    return result
-            except json.JSONDecodeError:
-                pass
-            print(f"JSON parse error: {e}\nContent: {content}")
+            response = requests.post(
+                GITHUB_GRAPHQL,
+                headers={**GITHUB_HEADERS, "Content-Type": "application/json"},
+                json={"query": query, "variables": variables or {}},
+                timeout=30,
+            )
+
+            if response.status_code == 403 or response.status_code == 429:
+                # Rate limited - wait and retry
+                import time
+
+                wait_time = 2**attempt
+                print(f"Rate limited, waiting {wait_time}s before retry...")
+                time.sleep(wait_time)
+                continue
+
+            if response.status_code != 200:
+                print(f"GraphQL error: {response.status_code} - {response.text}")
+                return {}
+
+            data = response.json()
+            if "errors" in data:
+                print(f"GraphQL errors: {data['errors']}")
+                return {}
+
+            return data.get("data", {})
+
+        except requests.RequestException as e:
+            print(f"GraphQL request error: {e}")
+            if attempt < 2:
+                import time
+
+                time.sleep(2**attempt)
+                continue
             return {}
-    except requests.exceptions.RequestException as e:
-        print(f"Request error: {e}")
-        return {}
-    except Exception as e:
-        print(f"Classification error: {e}")
-        return {}
 
-def get_project_id(project_name: str) -> Optional[str]:
-    resp = requests.get(
-        f"https://api.github.com/repos/{REPO_OWNER}/{REPO_NAME}/projects",
-        headers=GITHUB_HEADERS
-    )
-    if resp.status_code != 200:
-        return None
-    
-    for proj in resp.json():
-        if proj["name"] == project_name:
-            return proj["id"]
-    return None
+    return {}
 
-def add_to_project(project_id: str):
-    card_resp = requests.post(
-        f"https://api.github.com/projects/{project_id}/cards",
-        headers={**GITHUB_HEADERS, "Accept": "application/vnd.github.inertia-preview+json"},
-        json={
-            "content_id": int(ISSUE_NUMBER),
-            "content_type": "PullRequest" if IS_PULL_REQUEST else "Issue"
+
+def add_to_project(project_id: str) -> Optional[str]:
+    """Add issue/PR to a GitHub Project V2. Returns the project item ID."""
+
+    mutation = """
+    mutation($projectId: ID!, $contentId: ID!) {
+        addProjectV2ItemById(input: {projectId: $projectId, contentId: $contentId}) {
+            item {
+                id
+            }
         }
-    )
-    return card_resp.status_code in [201, 200]
+    }
+    """
 
-def update_labels(labels: list):
+    result = graphql_request(
+        mutation, {"projectId": project_id, "contentId": ISSUE_NODE_ID}
+    )
+
+    item = result.get("addProjectV2ItemById", {}).get("item", {})
+    return item.get("id")
+
+
+def set_project_field(project_id: str, item_id: str, field_id: str, option_id: str):
+    """Set a single-select field value on a project item."""
+
+    mutation = """
+    mutation($projectId: ID!, $itemId: ID!, $fieldId: ID!, $optionId: String!) {
+        updateProjectV2ItemFieldValue(input: {
+            projectId: $projectId
+            itemId: $itemId
+            fieldId: $fieldId
+            value: {singleSelectOptionId: $optionId}
+        }) {
+            projectV2Item {
+                id
+            }
+        }
+    }
+    """
+
+    graphql_request(
+        mutation,
+        {
+            "projectId": project_id,
+            "itemId": item_id,
+            "fieldId": field_id,
+            "optionId": option_id,
+        },
+    )
+
+
+def add_labels(labels: list):
+    """Add labels to the issue/PR."""
     if not labels:
         return
-    
-    validated_labels = [l for l in labels if l in VALID_LABELS]
-    if not validated_labels:
-        return
-    
-    endpoint = f"{API_BASE}/issues/{ISSUE_NUMBER}/labels"
-    requests.post(
-        endpoint,
-        headers=GITHUB_HEADERS,
-        json={"labels": validated_labels}
-    )
 
-def assign_issue(assignee: str):
-    if not assignee or assignee == "null":
+    # Filter to valid labels that exist in config (case-insensitive check, preserve original case)
+    config_labels_upper = {k.upper() for k in CONFIG["labels"]}
+    valid_labels = [l.upper() for l in labels if l.upper() in config_labels_upper]
+    if not valid_labels:
         return
-    
-    endpoint = f"{API_BASE}/issues/{ISSUE_NUMBER}/assignees"
-    requests.post(
-        endpoint,
-        headers=GITHUB_HEADERS,
-        json={"assignees": [assignee]}
-    )
+
+    try:
+        requests.post(
+            f"{GITHUB_API}/repos/{REPO_OWNER}/{REPO_NAME}/issues/{ISSUE_NUMBER}/labels",
+            headers=GITHUB_HEADERS,
+            json={"labels": valid_labels},
+            timeout=10,
+        )
+    except requests.RequestException as e:
+        print(f"Failed to add labels: {e}")
+
 
 def main():
-    if not ISSUE_NUMBER:
-        print("No issue or PR number found")
+    if not ISSUE_NUMBER or not ISSUE_NODE_ID:
+        print("No issue/PR found in event")
         return
-    
-    classification = classify_with_ai()
-    
-    if not classification:
-        print("Failed to classify with AI")
+
+    if not GITHUB_TOKEN:
+        print("No GITHUB_TOKEN provided")
         return
-    
-    project_key = classification.get("project", "").lower()
-    labels = list(classification.get("labels", []))
-    assignee = classification.get("assignee")
-    
-    project_name = PROJECT_NAMES.get(project_key)
-    
-    if not project_name:
-        print(f"Invalid project: {project_key}")
+
+    print(
+        f"Processing {'PR' if IS_PULL_REQUEST else 'Issue'} #{ISSUE_NUMBER}: {ISSUE_TITLE}"
+    )
+    print(f"Author: {ISSUE_AUTHOR}")
+
+    # Check if author is org member
+    is_internal = is_org_member(ISSUE_AUTHOR)
+    print(f"Internal member: {is_internal}")
+
+    # Get AI classification
+    classification = classify_with_ai(is_internal)
+    print(f"Classification: {json.dumps(classification, indent=2)}")
+
+    project_key = classification.get("project", "support").lower()
+    priority = classification.get("priority", "Medium")
+    labels = classification.get("labels", [])
+
+    # Enforce internal-only rule for dev project
+    project_config = CONFIG["projects"].get(project_key)
+    if not project_config:
+        print(f"Invalid project: {project_key}, defaulting to support")
+        project_key = "support"
+        project_config = CONFIG["projects"]["support"]
+
+    if project_config.get("internal_only") and not is_internal:
+        print(f"External user cannot be added to {project_key}, redirecting to support")
+        project_key = "support"
+        project_config = CONFIG["projects"]["support"]
+        if "EXTERNAL" not in [l.upper() for l in labels]:
+            labels.append("EXTERNAL")
+
+    # Add to project
+    print(f"Adding to project: {project_config['name']}")
+    item_id = add_to_project(project_config["id"])
+
+    if not item_id:
+        print("Failed to add to project")
         return
-    
-    project_id = get_project_id(project_name)
-    if project_id:
-        add_to_project(project_id)
-    
+
+    print(f"Added to project, item ID: {item_id}")
+
+    # Set status
+    status = project_config.get("default_status")
+    status_field_id = project_config.get("status_field_id")
+    status_option_id = project_config.get("status_options", {}).get(status)
+
+    if status_field_id and status_option_id:
+        print(f"Setting status: {status}")
+        set_project_field(
+            project_config["id"], item_id, status_field_id, status_option_id
+        )
+
+    # Set priority
+    priority_field_id = project_config.get("priority_field_id")
+    priority_option_id = project_config.get("priority_options", {}).get(priority)
+
+    if priority_field_id and priority_option_id:
+        print(f"Setting priority: {priority}")
+        set_project_field(
+            project_config["id"], item_id, priority_field_id, priority_option_id
+        )
+
+    # Add labels
     if labels:
-        update_labels(labels)
-    
-    if project_key == "dev" and assignee:
-        assign_issue(assignee)
-    
-    print(f"Classified as {project_name} with priority {classification.get('priority')}")
-    print(f"Labels: {labels}")
-    if assignee and assignee != "null":
-        print(f"Assigned to: @{assignee}")
-    print(f"Reasoning: {classification.get('reasoning')}")
+        print(f"Adding labels: {labels}")
+        add_labels(labels)
+
+    print(f"\n✓ Successfully organized into {project_config['name']} project")
+    print(f"  Priority: {priority}")
+    print(f"  Reasoning: {classification.get('reasoning', 'N/A')}")
+
 
 if __name__ == "__main__":
     main()
-

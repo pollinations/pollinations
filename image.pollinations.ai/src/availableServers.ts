@@ -31,6 +31,8 @@ const SERVERS: Record<string, Server[]> = {
     flux: [],
     translate: [],
     turbo: [],
+    zimage: [],
+    sana: [],
 };
 
 const SERVER_TIMEOUT = 45000; // 45 seconds

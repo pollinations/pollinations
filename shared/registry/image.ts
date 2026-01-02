@@ -6,10 +6,16 @@ import type {
 import { ZERO_PRICE, PRICING_START_DATE, perMillion } from "./price-helpers";
 
 export const IMAGE_COSTS = {
-    "flux": [
+    "sana": [
         {
             date: PRICING_START_DATE,
-            completionImageTokens: 0.00012, // $0.0088¢ per image (GPU cluster cost - September avg)
+            completionImageTokens: 0.0002, // ~$0.0002 per image (GPU cost estimate)
+        },
+    ],
+    "zimage": [
+        {
+            date: PRICING_START_DATE,
+            completionImageTokens: 0.0002, // ~$0.0002 per image (GPU cost estimate)
         },
     ],
     "kontext": [
@@ -53,9 +59,16 @@ export const IMAGE_COSTS = {
 } as const satisfies ModelRegistry;
 
 export const IMAGE_SERVICES = {
-    "flux": {
+    "sana": {
         aliases: [],
-        modelId: "flux",
+        modelId: "sana",
+        free: true,
+        provider: "io.net",
+        tier: "seed",
+    },
+    "zimage": {
+        aliases: ["flux", "z-image"],
+        modelId: "zimage",
         free: true,
         provider: "io.net",
         tier: "seed",

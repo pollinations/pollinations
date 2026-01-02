@@ -62,7 +62,10 @@ export const ImageParamsSchema = z
         width: sanitizedSideLength,
         height: sanitizedSideLength,
         seed: sanitizedSeed,
-        model: z.literal(allowedModels).catch("flux"),
+        model: z.preprocess((m) => {
+            const model = String(m || "sana");
+            return model === "flux" || model === "z-image" ? "sana" : model;
+        }, z.literal(allowedModels).catch("sana")),
         enhance: sanitizedBoolean.catch(false),
         nologo: sanitizedBoolean.catch(false),
         negative_prompt: z.coerce.string().catch("worst quality, blurry"),

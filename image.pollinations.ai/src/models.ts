@@ -26,10 +26,16 @@ type ImageModelsConfig = {
 };
 
 export const IMAGE_CONFIG: ImageModelsConfig = {
-    flux: {
+    sana: {
         type: "pollinations",
         enhance: true,
         maxSideLength: 768,
+    },
+
+    zimage: {
+        type: "pollinations",
+        enhance: true,
+        maxSideLength: 512,
     },
 
     // Azure Flux Kontext - general purpose model

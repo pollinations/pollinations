@@ -145,7 +145,7 @@ export async function enqueue(req, fn, { interval = 6000, cap = 1, forceCap = fa
 		log('Using forced cap: %d (override)', cap);
 	}
 
-    const maxQueueSize = cap * 5;
+    const maxQueueSize = cap; // Only allow 1 request at a time for anonymous
 
 	// Check if queue exists for this IP and get its current size
 	const currentQueueSize = queues.get(ip)?.size || 0;

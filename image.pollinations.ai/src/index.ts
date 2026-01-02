@@ -1,5 +1,6 @@
 import type { IncomingMessage, ServerResponse } from "node:http";
 import http from "node:http";
+import fs from "node:fs";
 import { parse } from "node:url";
 import debug from "debug";
 import urldecode from "urldecode";
@@ -7,7 +8,6 @@ import {
     addAuthDebugHeaders,
     createAuthDebugResponse,
     handleAuthentication,
-    isEnterRequest,
 } from "../../shared/auth-utils.js";
 import { extractToken, getIp } from "../../shared/extractFromRequest.js";
 import { sendImageTelemetry } from "./utils/telemetry.js";
@@ -37,7 +37,7 @@ import { sleep } from "./util.ts";
 
 // Queue configuration for image service
 const QUEUE_CONFIG = {
-    interval: 60000, // 60 seconds between requests per IP (no auth)
+    interval: 90000, // 90 seconds between requests per IP (anonymous only)
     cap: 1, // Max 1 concurrent request per IP
 };
 
@@ -229,9 +229,6 @@ const imageGen = async ({
         // Create user info object for passing to generation functions
         const userInfo = authResult;
 
-        // Check if request is from enter.pollinations.ai
-        const fromEnter = isEnterRequest(req);
-
         // Pass the complete user info object instead of individual properties
         const { buffer, ...maturity } = await createAndReturnImageCached(
             generationPrompt,
@@ -242,7 +239,7 @@ const imageGen = async ({
             requestId,
             wasTransformedForBadDomain,
             userInfo,
-            fromEnter,
+            false, // fromEnter - always false, enter uses different service now
         );
 
         progress.updateBar(requestId, 50, "Generation", "Starting generation");
@@ -315,6 +312,12 @@ const imageGen = async ({
             status: "success",
             authResult,
         });
+
+        // Log completed request to file for analysis (IP + prompt + timestamp)
+        const ip = getIp(req);
+        const promptStr = String(originalPrompt || '').slice(0, 200);
+        const logLine = `${new Date().toISOString()}\t${ip}\t${referrer || 'no-referrer'}\t${promptStr}\n`;
+        fs.appendFile('/home/ubuntu/pollinations/image.pollinations.ai/request_log.txt', logLine, () => {});
 
         return { buffer, ...maturity };
     } catch (error) {
@@ -389,6 +392,7 @@ const checkCacheAndGenerate = async (
 
     logApi("Request details:", { originalPrompt, safeParams, referrer });
 
+
     let timingInfo = [];
 
     try {
@@ -439,76 +443,26 @@ const checkCacheAndGenerate = async (
                     return result;
                 };
 
-                // Determine queue configuration based on model first, then authentication
+                // Determine queue configuration based on model
+                // This legacy endpoint only handles anonymous sana/flux requests
+                // All other models and authenticated users should use enter.pollinations.ai
                 let queueConfig = null;
                 
-                // Model-specific queue configs with hourly limits
-                // NOTE: ipQueue.js handles enter.pollinations.ai bypass automatically
                 const modelName = safeParams.model as string;
-                if (modelName === "nanobanana") {
-                    // Check hourly limit for nanobanana (skip for enter.pollinations.ai requests)
-                    const fromEnter = isEnterRequest(req);
-                    let remaining = HOURLY_LIMIT;
-                    
-                    if (!fromEnter) {
-                        const ip = getIp(req);
-                        const { allowed, remaining: rem, resetIn } = checkHourlyLimit(ip);
-                        remaining = rem;
-                        
-                        if (!allowed) {
-                            const minutesLeft = Math.ceil(resetIn / 60000);
-                            throw new Error(
-                                `Hourly limit reached for ${modelName}. You can generate ${remaining} more images. Limit resets in ${minutesLeft} minutes.`
-                            );
-                        }
-                    }
-                    
-                    // 90 second interval, 10 images per hour max
-                    queueConfig = { interval: 90000 }; // 90 second interval
-                    logAuth(`${modelName} model - 90 second interval, ${remaining}/${HOURLY_LIMIT} images remaining this hour${fromEnter ? ' (enter request - no hourly limit)' : ''}`);
-                } else if (modelName === "kontext") {
-                    // Kontext model is only available on enter.pollinations.ai
-                    const fromEnter = isEnterRequest(req);
-                    if (!fromEnter) {
-                        throw new Error("Kontext model is only available on enter.pollinations.ai. Visit https://enter.pollinations.ai to get started.");
-                    }
-                    // 30 second interval with tier-based cap from model config
-                    const cap = IMAGE_CONFIG.kontext.tierCaps?.[authResult.tier] || 1;
-                    queueConfig = { 
-                        interval: 30000,
-                        cap,
-                        forceCap: true
-                    };
-                    logAuth(`${modelName} model - 30 second interval, cap=${cap} for tier ${authResult.tier}`);
-                } else if (modelName === "gptimage") {
-                    // GPTImage model - tier-based limits
-                    // Nectar tier: 60s interval, cap=3 | Other tiers: 150s interval, cap=1
-                    if (authResult.tier === "nectar") {
-                        queueConfig = { interval: 60000, cap: 3, forceCap: true };
-                        logAuth("GPTImage model (nectar tier) - 60 second interval, cap=3 (forced)");
-                    } else {
-                        queueConfig = { interval: 150000, cap: 1, forceCap: true };
-                        logAuth("GPTImage model - 150 second interval, cap=1 (forced)");
-                    }
-                } else if (hasValidToken) {
-                    // Token authentication for other models - 30s interval, cap=1
-                    // For higher concurrency, use enter.pollinations.ai
-                    queueConfig = { interval: 30000, cap: 1, forceCap: true };
-                    logAuth("Token authenticated - 30s interval, cap=1. For higher concurrency use enter.pollinations.ai");
-                } else {
-                    // Use default queue config for other models with no token
-                    queueConfig = QUEUE_CONFIG;
-                    logAuth("Standard queue with delay (no token)");
+                
+                // Block models that are only available on enter.pollinations.ai
+                if (modelName === "nanobanana" || modelName === "kontext" || modelName === "gptimage" || modelName === "seedream") {
+                    throw new Error(`${modelName} model is only available on enter.pollinations.ai. Visit https://enter.pollinations.ai to get started.`);
                 }
                 
-                if (hasValidToken) {
-                    progress.updateBar(
-                        requestId,
-                        20,
-                        "Authenticated",
-                        "Token verified",
-                    );
+                // Block authenticated users (token or referrer) - they should use enter.pollinations.ai
+                if (hasValidToken || authResult.referrerAuth) {
+                    throw new Error("Authenticated users should use enter.pollinations.ai for image generation. This legacy endpoint is for anonymous requests only.");
                 }
+                
+                // Anonymous sana/turbo requests only
+                queueConfig = QUEUE_CONFIG;
+                logAuth(`${modelName} model (anonymous) - 120 second interval, cap=1`);
 
                 // Use the shared queue utility - everyone goes through queue
                 const result = await enqueue(
@@ -593,6 +547,26 @@ const checkCacheAndGenerate = async (
                   : statusCode === 429
                     ? "Too Many Requests"
                     : "Internal Server Error";
+
+        // Return error images instead of JSON - more useful for embedded images
+        // 429 = rate limit image, other errors = generic error image
+        const errorImageName = statusCode === 429 ? "ratelimiterror.jpeg" : "othererror.jpeg";
+        const imagePath = new URL(`../assets/${errorImageName}`, import.meta.url).pathname;
+        try {
+            const imageBuffer = fs.readFileSync(imagePath);
+            res.writeHead(200, {
+                "Content-Type": "image/jpeg",
+                "Content-Length": imageBuffer.length,
+                "X-Error-Type": errorType,
+                "X-Rate-Limited": statusCode === 429 ? "true" : "false",
+                "Cache-Control": "no-cache, no-store, must-revalidate",
+            });
+            res.end(imageBuffer);
+            return;
+        } catch (imgError) {
+            logError("Failed to read error image:", imgError);
+            // Fall through to JSON response if image read fails
+        }
 
         // Extract debug info from error if available
         const errorDebugInfo = error.details?.debugInfo;

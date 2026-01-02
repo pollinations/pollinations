@@ -7,6 +7,7 @@ import sharp from "sharp";
 import { hasSufficientTier } from "../../shared/tier-gating.js";
 import {
     fetchFromLeastBusyFluxServer,
+    fetchFromLeastBusyServer,
     getNextTurboServerUrl,
 } from "./availableServers.ts";
 import {
@@ -165,10 +166,12 @@ export const callComfyUI = async (
 
         // Single attempt - no retry logic
         try {
+            // Route to appropriate server pool based on model
+            // sana is the default, zimage/flux are aliases that route to sana servers
             const fetchFunction =
                 safeParams.model === "turbo"
                     ? fetchFromTurboServer
-                    : fetchFromLeastBusyFluxServer;
+                    : (opts: RequestInit) => fetchFromLeastBusyServer("sana", opts);
             
             // Build headers with optional ENTER_TOKEN for backend authentication
             const headers: Record<string, string> = {
@@ -235,7 +238,7 @@ export const callComfyUI = async (
                 buffer: resizedBuffer, 
                 ...rest,
                 trackingData: {
-                    actualModel: 'flux',
+                    actualModel: 'sana',
                     usage: {
                         completionImageTokens: 1,
                         totalTokenCount: 1
@@ -256,7 +259,7 @@ export const callComfyUI = async (
             buffer: jpegBuffer, 
             ...rest,
             trackingData: {
-                actualModel: 'flux',
+                actualModel: 'sana',
                 usage: {
                     completionImageTokens: 1,
                     totalTokenCount: 1
@@ -1001,17 +1004,9 @@ const generateImage = async (
         }
     }
 
-    if (safeParams.model === "flux") {
-        progress.updateBar(requestId, 25, "Processing", "Using registered servers");
-        return await callComfyUI(prompt, safeParams, concurrentRequests);
-    }
-
-    try {
-        return await callComfyUI(prompt, safeParams, concurrentRequests);
-    } catch (_error) {
-        // Cloudflare Flux fallback disabled
-        throw _error;
-    }
+    // Default: route to sana servers (handles sana, zimage and flux aliases)
+    progress.updateBar(requestId, 25, "Processing", "Using registered servers");
+    return await callComfyUI(prompt, safeParams, concurrentRequests);
 };
 
 // GPT Image logging functions have been moved to utils/gptImageLogger.js

@@ -4,28 +4,87 @@
 
 The app submission process starts with the issue template at `.github/ISSUE_TEMPLATE/tier-app-submission.yml`:
 
--   **Form fields**: App name, description, URL, GitHub repo, Discord, category, language
--   **Categories**: Chat 💬, Creative 🎨, Games 🎲, Hack & Build 🛠️, Learn 📚, Social Bots 🤖, Vibe Coding ✨
--   **Auto-label**: `tier:review` applied on creation
+- **Form fields**: App name, description, URL, GitHub repo, Discord, category, language
+- **Categories**: chat, creative, games, hackAndBuild, learn, socialBots, vibeCoding
+- **Auto-label**: `tier:review` applied on creation
 
 ## Workflows
 
--   **tier-app-submission.yml** - AI-powered app submission pipeline. Split into 3 jobs:
-    -   `tier-parse-issue` - Parse submission with AI, validate, check Enter registration
-    -   `tier-create-app-pr` - Fetch stars, AI-format (emoji + description), prepend to `apps/APPS.md`, create PR
-    -   `tier-close-issue-on-pr` - Close linked issue when PR is merged/closed
--   **tier-upgrade-on-merge.yml** - When PR with `tier:review` label merges, upgrades labels (`tier:review` → `tier:flower` → `tier:done`) and user to Flower tier in D1 + Polar.
--   **tier-recheck-registration.yml** - When user comments on issue/PR with `tier:info-needed`, re-checks registration.
+### tier-app-submission.yml
+
+AI-powered app submission pipeline. Split into 2 jobs:
+
+**Job 1: `tier-parse-issue`** (runs on issue open/edit/comment)
+
+1. Parse submission with AI
+2. **Check for duplicates** (see Duplicate Detection below)
+3. Check Enter registration
+4. If duplicate → `tier:rejected` + close issue (NO PR created)
+5. If not registered → request registration
+6. Set `valid=true` only if: no duplicate AND registered
+
+### Duplicate Detection
+
+The workflow checks for duplicates to prevent tier abuse. Handled by `tier-check-duplicate.js`:
+
+| Match Type        | What's Checked                             | Action     | Example                           |
+| ----------------- | ------------------------------------------ | ---------- | --------------------------------- |
+| `url_exact`       | App URL already exists                     | **Reject** | Same URL in APPS.md               |
+| `repo_exact`      | GitHub repo already registered             | **Reject** | Same repo submitted twice         |
+| `name_user_exact` | Same user + same app name                  | **Reject** | User resubmitting same app        |
+| `semantic_hard`   | AI similarity >80% to user's previous apps | **Reject** | Rebranded version of existing app |
+
+**On rejection:** Issue gets `tier:rejected` label, comment explains reason, issue is closed.
+
+**Job 2: `tier-create-app-pr`** (runs only if valid=true)
+
+- Fetch GitHub stars
+- AI-generate emoji + description
+- Prepend to `apps/APPS.md`
+- Create PR with `tier:review` label
+
+**Skips if**: issue has `tier:done`/`tier:flower` label, issue is closed, or comment is from bot.
+
+### tier-upgrade-on-merge.yml
+
+Handles ALL post-merge actions for both **apps** and **code** contributions:
+
+1. `tier:review` → `tier:flower`
+2. Upgrade D1 + Polar to flower tier
+3. Verify tier in both systems
+4. **Celebrate on PR** (always - apps + code)
+5. **Celebrate on issue + close** (apps only)
+6. `tier:flower` → `tier:done`
+
+### tier-check-registration.yml
+
+When PR author comments on PR with `tier:info-needed`, re-checks registration.
 
 ## Scripts
+
+### GitHub Scripts (`.github/scripts/`)
 
 | Script                       | Purpose                         | Usage                                                     |
 | ---------------------------- | ------------------------------- | --------------------------------------------------------- |
 | `tier-apps-prepend.js`       | Prepend new app to APPS.md      | `NEW_ROW="..." node .github/scripts/tier-apps-prepend.js` |
 | `tier-apps-update-readme.js` | Update README with last 10 apps | `node .github/scripts/tier-apps-update-readme.js`         |
+| `tier-check-duplicate.js`    | Check for duplicate submissions | Called by workflow (handles special chars safely)         |
 | `tier-apps-check-links.js`   | Check for broken app links      | `node .github/scripts/tier-apps-check-links.js [options]` |
 
 **tier-apps-check-links.js options**: `--timeout=<ms>`, `--category=<name>`, `--verbose`, `--update`, `--report`
+
+### Enter Scripts (`enter.pollinations.ai/scripts/`)
+
+| Script                | Purpose                              | Usage                                                                                |
+| --------------------- | ------------------------------------ | ------------------------------------------------------------------------------------ |
+| `tier-update-user.ts` | Update single user tier (D1 + Polar) | `npx tsx scripts/tier-update-user.ts update-tier --githubUsername "x" --tier flower` |
+| `tier-sync/`          | Bulk sync D1 ↔ Polar                 | See `enter.pollinations.ai/scripts/README.md`                                        |
+
+**tier-sync workflow** (D1 is source of truth):
+
+1. `fetch-polar-data.ts` - Fetch all Polar subscriptions → `polar-data.json`
+2. `compare-tiers.ts` - Compare with D1 → `mismatches.json`
+3. `apply-fixes.ts` - Apply fixes to Polar
 
 ## Tier Hierarchy
 
@@ -42,29 +101,39 @@ The app submission process starts with the issue template at `.github/ISSUE_TEMP
 ```mermaid
 %%{init: {'theme': 'dark'}}%%
 flowchart TD
-    subgraph APP["App Submission"]
+    subgraph APP["App Submission (tier-app-submission.yml)"]
         A1[User opens issue] --> A2[tier:review label]
-        A2 --> A3[tier-app-submission.yml]
-        A3 --> A4{Registered?}
-        A4 -->|No| A5[tier:info-needed + comment]
-        A5 --> A6[User comments]
-        A6 --> A7[tier-recheck-registration.yml]
-        A7 --> A4
-        A4 -->|Yes| A8[Fetch stars + AI format]
-        A8 --> A9[Prepend to apps/APPS.md]
-        A9 --> A10[Create PR automatically]
+        A2 --> A3{Duplicate?}
+        A3 -->|Yes| A3a[tier:rejected + close]
+        A3 -->|No| A4{Registered?}
+        A4 -->|No| A5[tier:info-needed]
+        A5 --> A6[User comments/edits]
+        A6 --> A3
+        A4 -->|Yes| A8[Create PR with tier:review]
     end
 
-    A10 --> C[Maintainer reviews]
+    subgraph CODE["Code Contribution"]
+        B1[User opens PR] --> B2[tier:review label added]
+    end
 
-    C --> D{Approve?}
-    D -->|Yes| E[Merge PR]
+    A8 --> C[Maintainer reviews]
+    B2 --> C
+
+    C --> D{Approve & Merge?}
     D -->|No| F[Close without merge]
 
-    E --> G[tier-upgrade-on-merge.yml]
-    G --> G1[tier:review → tier:flower]
-    G1 --> I{User registered?}
-    I -->|Yes| J[Upgrade D1 + Polar]
-    J --> K[tier:done + celebration comment]
-    I -->|No| L[tier:info-needed + reminder]
+    subgraph MERGE["Post-Merge (tier-upgrade-on-merge.yml)"]
+        D -->|Yes| E[PR Merged]
+        E --> G1[tier:review → tier:flower]
+        G1 --> G2[Upgrade D1 + Polar]
+        G2 --> G3{Verified?}
+        G3 -->|Yes| G4[🎉 Celebrate on PR]
+        G4 --> G5{App?}
+        G5 -->|Yes| G6[🎉 Celebrate on issue + close]
+        G5 -->|No| G7[Done]
+        G6 --> G7
+        G3 -->|No| G8[tier:info-needed]
+    end
+
+    G7 --> H[tier:done]
 ```

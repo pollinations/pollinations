@@ -1,29 +1,19 @@
 import type { FC } from "react";
 
 type PollenBalanceProps = {
-    balances: {
-        tier: number;
-        pack: number;
-    };
-    dailyPollen?: number;
-    pendingSpend?: number;
+    tierBalance: number;
+    packBalance: number;
 };
 
 export const PollenBalance: FC<PollenBalanceProps> = ({
-    balances,
-    dailyPollen = 15,
-    pendingSpend = 0,
+    tierBalance,
+    packBalance,
 }) => {
-    // Use real balances
-    const freePollen = balances.tier; // Free pollen from tier
-    const packPollen = balances.pack; // Pack pollen
-    const totalPollen = freePollen + packPollen; // Total available
-
-    // Calculate percentages for the segmented gauge
+    const totalPollen = Math.max(0, tierBalance + packBalance);
     const freePercentage =
-        totalPollen > 0 ? (freePollen / totalPollen) * 100 : 0;
+        totalPollen > 0 ? (tierBalance / totalPollen) * 100 : 0;
     const packPercentage =
-        totalPollen > 0 ? (packPollen / totalPollen) * 100 : 0;
+        totalPollen > 0 ? (packBalance / totalPollen) * 100 : 0;
 
     return (
         <div className="bg-violet-50/30 rounded-2xl p-4 sm:p-8 border border-violet-300">
@@ -33,11 +23,6 @@ export const PollenBalance: FC<PollenBalanceProps> = ({
                     {/* Pollen amount above gauge */}
                     <span className="text-4xl sm:text-5xl md:text-6xl font-bold text-green-950 tabular-nums">
                         {totalPollen.toFixed(2)} pollen
-                        {pendingSpend > 0 && (
-                            <span className="text-lg sm:text-xl text-orange-600 font-normal ml-2">
-                                (-{pendingSpend.toFixed(3)} pending)
-                            </span>
-                        )}
                     </span>
                     {/* Gauge with download button */}
                     <div className="flex items-center gap-2 w-full max-w-[540px]">
@@ -51,7 +36,7 @@ export const PollenBalance: FC<PollenBalanceProps> = ({
                                 {packPercentage > 15 && (
                                     <div className="absolute inset-0 flex items-center justify-center">
                                         <span className="text-purple-900 font-bold text-sm">
-                                            💎 {packPollen.toFixed(1)}
+                                            💎 {packBalance.toFixed(1)}
                                         </span>
                                     </div>
                                 )}
@@ -71,7 +56,7 @@ export const PollenBalance: FC<PollenBalanceProps> = ({
                                             FREE
                                         </span>
                                         <span className="text-gray-900 font-bold text-sm">
-                                            {freePollen.toFixed(1)}
+                                            {tierBalance.toFixed(1)}
                                         </span>
                                     </div>
                                 )}
@@ -113,7 +98,15 @@ export const PollenBalance: FC<PollenBalanceProps> = ({
                 </p>
                 <p className="text-sm font-medium text-violet-900 mt-2">
                     ⏳ After a purchase, please wait 1-2 minutes for your
-                    balance to update.
+                    balance to update.{" "}
+                    <a
+                        href="https://github.com/pollinations/pollinations/issues/new?template=balance-problem.yml"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="underline hover:text-violet-700"
+                    >
+                        Still missing?
+                    </a>
                 </p>
             </div>
         </div>

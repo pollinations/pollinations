@@ -23,7 +23,7 @@ jobs:
       pull-requests: write
 
     steps:
-      - name: Generate Pollinations AI Token
+      - name: Generate pollinations.ai Token
         id: pollinations-ai
         uses: actions/create-github-app-token@v1
         with:
@@ -147,8 +147,7 @@ jobs:
             OUTPUT=$(npx tsx scripts/tier-update-user.ts update-tier \
               --githubUsername "$USERNAME" \
               --tier flower \
-              --env production \
-              --apply 2>&1) || true
+              --env production 2>&1) || true
             
             echo "$OUTPUT"
             
@@ -158,8 +157,24 @@ jobs:
               RESULTS=$(echo "$RESULTS" | jq --arg user "$USERNAME" --arg num "$TARGET_NUMBER" --arg on "$CELEBRATE_ON" --arg type "$TYPE" \
                 '. + [{"user": $user, "targetNumber": $num, "celebrateOn": $on, "type": $type, "success": "skipped"}]')
             elif echo "$OUTPUT" | grep -q "Tier update complete"; then
-              RESULTS=$(echo "$RESULTS" | jq --arg user "$USERNAME" --arg num "$TARGET_NUMBER" --arg on "$CELEBRATE_ON" --arg type "$TYPE" \
-                '. + [{"user": $user, "targetNumber": $num, "celebrateOn": $on, "type": $type, "success": true}]')
+              # Verify the tier was actually set correctly in both D1 and Polar
+              echo "🔍 Verifying tier upgrade for $USERNAME..."
+              VERIFY_OUTPUT=$(npx tsx scripts/tier-update-user.ts verify-tier \
+                --githubUsername "$USERNAME" \
+                --tier flower \
+                --env production 2>&1) || true
+              
+              echo "$VERIFY_OUTPUT"
+              
+              if echo "$VERIFY_OUTPUT" | grep -q "VERIFIED=true"; then
+                echo "✅ Tier verified for $USERNAME"
+                RESULTS=$(echo "$RESULTS" | jq --arg user "$USERNAME" --arg num "$TARGET_NUMBER" --arg on "$CELEBRATE_ON" --arg type "$TYPE" \
+                  '. + [{"user": $user, "targetNumber": $num, "celebrateOn": $on, "type": $type, "success": true}]')
+              else
+                echo "⚠️ Tier verification failed for $USERNAME"
+                RESULTS=$(echo "$RESULTS" | jq --arg user "$USERNAME" --arg num "$TARGET_NUMBER" --arg on "$CELEBRATE_ON" --arg type "$TYPE" \
+                  '. + [{"user": $user, "targetNumber": $num, "celebrateOn": $on, "type": $type, "success": "unverified"}]')
+              fi
             else
               RESULTS=$(echo "$RESULTS" | jq --arg user "$USERNAME" --arg num "$TARGET_NUMBER" --arg on "$CELEBRATE_ON" --arg type "$TYPE" \
                 '. + [{"user": $user, "targetNumber": $num, "celebrateOn": $on, "type": $type, "success": false}]')
@@ -192,56 +207,75 @@ jobs:
                 continue;
               }
               
+              // Handle unverified case - upgrade happened but couldn't verify
+              if (result.success === 'unverified') {
+                console.log(`⚠️ ${result.user} upgrade unverified - not posting celebration`);
+                continue;
+              }
+              
               if (result.success === true) {
-                // Post success message
-                const successMessage = result.type === 'app'
-                  ? `## 🎉 App Approved!\n\nYour app has been added to the [pollinations.ai showcase](https://pollinations.ai)!\n\n### 🌸 Flower Tier Activated!\n\n@${result.user}, you've been upgraded to **Flower tier** which grants you **10 pollen per day**!\n\n⏰ **How it works:** Your pollen balance refills every 24 hours. Unused pollen does not roll over.\n\nCheck your balance at [enter.pollinations.ai](https://enter.pollinations.ai)\n\nThank you for contributing to Pollinations! 🌻`
-                  : `## 🎉 Contribution Merged!\n\nThank you for your contribution to Pollinations!\n\n### 🌸 Flower Tier Activated!\n\n@${result.user}, you've been upgraded to **Flower tier** which grants you **10 pollen per day**!\n\n⏰ **How it works:** Your pollen balance refills every 24 hours. Unused pollen does not roll over.\n\nCheck your balance at [enter.pollinations.ai](https://enter.pollinations.ai) 🌻`;
+                // === CELEBRATE ON PR (always - for both apps and code) ===
+                const prMessage = result.type === 'app'
+                  ? `## 🎉 App Added & Verified!\n\nThis PR added **@${result.user}**'s app to the [pollinations.ai showcase](https://pollinations.ai).\n\n### 🌸 Flower Tier Activated!\n\nUser upgraded to **Flower tier** (10 pollen/day).\n\nSee issue #${targetNumber} for full details.`
+                  : `## 🎉 Contribution Merged & Verified!\n\nThank you **@${result.user}** for your contribution to pollinations.ai!\n\n### 🌸 Flower Tier Activated!\n\nYou've been upgraded to **Flower tier** which grants you **10 pollen per day**!\n\n⏰ **How it works:** Your pollen balance refills every 24 hours. Unused pollen does not roll over.\n\nCheck your balance at [enter.pollinations.ai](https://enter.pollinations.ai) 🌻`;
                 
                 await github.rest.issues.createComment({
                   owner: context.repo.owner,
                   repo: context.repo.repo,
-                  issue_number: targetNumber,
-                  body: successMessage
+                  issue_number: prNumber,
+                  body: prMessage
                 });
                 
-                // Update labels: remove tier:flower, add tier:done
+                // Update PR labels: tier:flower → tier:done
                 try {
                   await github.rest.issues.removeLabel({
-                    owner: context.repo.owner,
-                    repo: context.repo.repo,
-                    issue_number: targetNumber,
-                    name: 'tier:flower'
+                    owner: context.repo.owner, repo: context.repo.repo,
+                    issue_number: prNumber, name: 'tier:flower'
                   });
                 } catch (e) { /* label might not exist */ }
                 
                 await github.rest.issues.addLabels({
-                  owner: context.repo.owner,
-                  repo: context.repo.repo,
-                  issue_number: targetNumber,
-                  labels: ['tier:done']
+                  owner: context.repo.owner, repo: context.repo.repo,
+                  issue_number: prNumber, labels: ['tier:done']
                 });
                 
-                // Also update PR labels if celebrating on issue
+                // === CELEBRATE ON ISSUE + CLOSE (apps only) ===
                 if (isIssue) {
+                  const issueMessage = `## 🎉 App Approved & Verified!\n\nYour app has been added to the [pollinations.ai showcase](https://pollinations.ai)!\n\n### 🌸 Flower Tier Activated!\n\n@${result.user}, you've been upgraded to **Flower tier** which grants you **10 pollen per day**!\n\n⏰ **How it works:** Your pollen balance refills every 24 hours. Unused pollen does not roll over.\n\nCheck your balance at [enter.pollinations.ai](https://enter.pollinations.ai)\n\nThank you for contributing to pollinations.ai! 🌻`;
+                  
+                  await github.rest.issues.createComment({
+                    owner: context.repo.owner,
+                    repo: context.repo.repo,
+                    issue_number: targetNumber,
+                    body: issueMessage
+                  });
+                  
+                  // Update issue labels: tier:flower → tier:done
                   try {
                     await github.rest.issues.removeLabel({
-                      owner: context.repo.owner,
-                      repo: context.repo.repo,
-                      issue_number: prNumber,
-                      name: 'tier:flower'
+                      owner: context.repo.owner, repo: context.repo.repo,
+                      issue_number: targetNumber, name: 'tier:flower'
                     });
                   } catch (e) { /* label might not exist */ }
                   
                   await github.rest.issues.addLabels({
+                    owner: context.repo.owner, repo: context.repo.repo,
+                    issue_number: targetNumber, labels: ['tier:done']
+                  });
+                  
+                  // Close the issue
+                  await github.rest.issues.update({
                     owner: context.repo.owner,
                     repo: context.repo.repo,
-                    issue_number: prNumber,
-                    labels: ['tier:done']
+                    issue_number: targetNumber,
+                    state: 'closed',
+                    state_reason: 'completed'
                   });
+                  
+                  console.log(`✅ Upgraded ${result.user}, posted celebrations, closed issue #${targetNumber}`);
+                } else {
+                  console.log(`✅ Upgraded ${result.user} and posted celebration on PR`);
                 }
-                
-                console.log(`✅ Upgraded ${result.user} and posted celebration`);
               } else {
                 // User not registered
                 const failMessage = `### ⚠️ Action Required: Claim Your Flower Tier\n\n@${result.user}, your contribution has been merged but we couldn't find your account to upgrade your tier.\n\n**To claim your 🌸 Flower tier (10 pollen/day):**\n1. Sign up at [enter.pollinations.ai](https://enter.pollinations.ai) using GitHub\n2. Reply to this ${isIssue ? 'issue' : 'PR'} once you've signed up\n\nWe'll upgrade your tier once you're registered. Thanks for contributing! 🌻`;

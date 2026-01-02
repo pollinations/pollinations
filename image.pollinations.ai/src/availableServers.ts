@@ -298,7 +298,7 @@ export const fetchFromLeastBusyServer = async (
 ): Promise<Response> => {
     const maxRetries = 3; // Try up to 3 different servers
     let lastError: Error | null = null;
-    
+
     for (let attempt = 0; attempt < maxRetries; attempt++) {
         const serverUrl = await getNextServerUrl(type);
         const server = SERVERS[type].find((s) => s.url === serverUrl);
@@ -312,26 +312,37 @@ export const fetchFromLeastBusyServer = async (
                 async () => {
                     server.totalRequests++;
                     try {
-                        const response = await fetch(`${serverUrl}/generate`, options);
+                        const response = await fetch(
+                            `${serverUrl}/generate`,
+                            options,
+                        );
                         if (!response.ok) {
                             server.errors++;
-                            
+
                             // Capture detailed error information
-                            let errorBody = '';
+                            let errorBody = "";
                             try {
                                 errorBody = await response.text();
                             } catch (e) {
-                                errorBody = 'Could not read error response body';
+                                errorBody =
+                                    "Could not read error response body";
                             }
-                            
-                            console.error(`[${type}] Server ${serverUrl} returned ${response.status}:`, {
-                                status: response.status,
-                                statusText: response.statusText,
-                                headers: Object.fromEntries(response.headers.entries()),
-                                body: errorBody.substring(0, 500) // Limit to first 500 chars
-                            });
-                            
-                            throw new Error(`HTTP error! status: ${response.status}, body: ${errorBody.substring(0, 200)}`);
+
+                            console.error(
+                                `[${type}] Server ${serverUrl} returned ${response.status}:`,
+                                {
+                                    status: response.status,
+                                    statusText: response.statusText,
+                                    headers: Object.fromEntries(
+                                        response.headers.entries(),
+                                    ),
+                                    body: errorBody.substring(0, 500), // Limit to first 500 chars
+                                },
+                            );
+
+                            throw new Error(
+                                `HTTP error! status: ${response.status}, body: ${errorBody.substring(0, 200)}`,
+                            );
                         }
                         return response;
                     } catch (error) {
@@ -347,20 +358,22 @@ export const fetchFromLeastBusyServer = async (
             );
         } catch (error) {
             lastError = error as Error;
-            
+
             // Only retry on 500 errors
-            if (error.message && error.message.includes('status: 500')) {
-                console.error(`[${type}] Attempt ${attempt + 1}/${maxRetries} failed with 500 error, trying different server...`);
+            if (error.message && error.message.includes("status: 500")) {
+                console.error(
+                    `[${type}] Attempt ${attempt + 1}/${maxRetries} failed with 500 error, trying different server...`,
+                );
                 continue;
             }
-            
+
             // For non-500 errors, throw immediately
             throw error;
         }
     }
-    
+
     // If we exhausted all retries, throw the last error
-    throw lastError || new Error('All server attempts failed');
+    throw lastError || new Error("All server attempts failed");
 };
 
 // Wrapper for backward compatibility

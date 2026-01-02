@@ -62,7 +62,7 @@ const app = new Hono<Env>()
             credentials: true,
             allowMethods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
             allowHeaders: ["Content-Type", "Authorization"],
-            exposeHeaders: ["Content-Length"],
+            exposeHeaders: ["Content-Length", "Content-Disposition"],
             maxAge: 600,
         }),
     )

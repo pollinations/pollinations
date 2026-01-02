@@ -105,7 +105,7 @@ CONFIG = {
   },
   "assignment_rules": {
     "enabled_for_projects": ["dev"],
-    "fallback_assignee": None,
+    "fallback_assignee": "voodoohop",
     "match_threshold": "best expertise match from org_members"
   }
 }

@@ -422,6 +422,9 @@ async function handleRequest(req, res, requestData) {
     }
 }
 
+// Deprecation notice for error responses
+const DEPRECATION_NOTICE = "NOTE: The Pollinations legacy text API is being deprecated for authenticated users. Please migrate to https://enter.pollinations.ai for better performance and access to all the latest models. Anonymous requests to text.pollinations.ai are NOT affected.";
+
 // Helper function for consistent error responses
 export async function sendErrorResponse(
     res,
@@ -437,6 +440,7 @@ export async function sendErrorResponse(
     const errorResponse = {
         error: error.message || "An error occurred",
         status: responseStatus,
+        deprecation_notice: DEPRECATION_NOTICE,
     };
 
     // Include detailed error information if available, without wrapping

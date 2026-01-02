@@ -122,7 +122,7 @@ CONFIG = {
         "voodoohop": ["dev", "support", "news", "general"],
         "eulervoid": ["backend", "infrastructure", "api", "core", "database"],
         "ElliotEtag": ["frontend", "features", "bug-fixes", "integration"],
-        "Circuit-Overtime": ["support", "community", "billing", "user-help", "documentation"],
+        "Circuit-Overtime": ["backend", "devops", "scaling", "performance", "news"],
         "Itachi-1824": ["community", "quests", "tasks", "coordination", "tracking"],
     },
     "fallback_assignee": "voodoohop",

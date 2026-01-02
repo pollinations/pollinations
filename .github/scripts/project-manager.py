@@ -107,6 +107,7 @@ CONFIG = {
         "BILLING": "Payment or subscription issue",
         "API": "API usage or integration issue",
         "NEWS": "News and announcements",
+        "POLLEN": "Pollen-related feature or reward",
         "EXTERNAL": "External contribution (not from org member)",
     },
     "org_members": [
@@ -351,12 +352,6 @@ def add_labels(labels: list):
 def main():
     if not ISSUE_NUMBER or not ISSUE_NODE_ID:
         print("No issue/PR found in event")
-        return
-    
-    classification = classify_with_ai()
-    
-    if not classification:
-        print("Failed to classify with AI")
         return
 
     print(

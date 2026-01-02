@@ -7,6 +7,7 @@ from typing import Optional
 
 GITHUB_TOKEN = os.getenv("GITHUB_TOKEN")
 GITHUB_EVENT = json.loads(os.getenv("GITHUB_EVENT", "{}"))
+POLLINATIONS_TOKEN = os.getenv("POLLINATIONS_TOKEN")
 REPO_OWNER = "pollinations"
 REPO_NAME = "pollinations"
 
@@ -25,7 +26,7 @@ ISSUE_NODE_ID = ITEM_DATA.get("node_id", "")
 GITHUB_API = "https://api.github.com"
 GITHUB_GRAPHQL = "https://api.github.com/graphql"
 POLLINATIONS_API = "https://gen.pollinations.ai/v1/chat/completions"
-POLLINATIONS_TOKEN = os.getenv("POLLINATIONS_TOKEN")
+
 
 GITHUB_HEADERS = {
     "Authorization": f"Bearer {GITHUB_TOKEN}",
@@ -163,9 +164,9 @@ def classify_with_ai(is_internal: bool) -> dict:
 
     item_type = "Pull Request" if IS_PULL_REQUEST else "Issue"
     user_prompt = f"""{item_type} #{ISSUE_NUMBER}
-Author: {ISSUE_AUTHOR} ({"internal" if is_internal else "external"})
-Title: {ISSUE_TITLE}
-Body: {ISSUE_BODY[:2000]}"""
+    Author: {ISSUE_AUTHOR} ({"internal" if is_internal else "external"})
+    Title: {ISSUE_TITLE}
+    Body: {ISSUE_BODY[:2000]}"""
 
     for attempt in range(3):
         try:

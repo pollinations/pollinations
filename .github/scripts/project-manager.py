@@ -7,8 +7,8 @@ from typing import Optional
 
 GITHUB_TOKEN = os.getenv("GITHUB_TOKEN")
 GITHUB_EVENT = json.loads(os.getenv("GITHUB_EVENT", "{}"))
-REPO_OWNER = os.getenv("REPO_OWNER", "pollinations")
-REPO_NAME = os.getenv("REPO_NAME", "pollinations")
+REPO_OWNER = "pollinations"
+REPO_NAME = "pollinations"
 
 # Parse event data
 IS_PULL_REQUEST = "pull_request" in GITHUB_EVENT

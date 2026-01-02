@@ -21,10 +21,19 @@ import { WebhookSubscriptionCanceledPayload } from "@polar-sh/sdk/models/compone
 import { WebhookSubscriptionUpdatedPayload } from "@polar-sh/sdk/models/components/webhooksubscriptionupdatedpayload.js";
 import { WebhookSubscriptionCreatedPayload } from "@polar-sh/sdk/models/components/webhooksubscriptioncreatedpayload.js";
 import { WebhookBenefitGrantCycledPayload } from "@polar-sh/sdk/models/components/webhookbenefitgrantcycledpayload.js";
+import { WebhookBenefitGrantCreatedPayload } from "@polar-sh/sdk/models/components/webhookbenefitgrantcreatedpayload.js";
+import { WebhookBenefitGrantUpdatedPayload } from "@polar-sh/sdk/models/components/webhookbenefitgrantupdatedpayload.js";
 import { WebhookOrderPaidPayload } from "@polar-sh/sdk/models/components/webhookorderpaidpayload.js";
 import { sql } from "drizzle-orm";
 
 const log = getLogger(["hono", "webhooks"]);
+
+// Extract tier from product metadata slug (e.g., "v1:product:tier:spore" -> "spore")
+function tierFromProductSlug(slug: string | undefined): TierName | null {
+    if (!slug?.includes(":tier:")) return null;
+    const tier = slug.split(":").at(-1);
+    return tier && isValidTier(tier) ? tier : null;
+}
 
 export const webhooksRoutes = new Hono<Env>().post("/polar", async (c) => {
     const webhookSecret = c.env.POLAR_WEBHOOK_SECRET;
@@ -39,7 +48,7 @@ export const webhooksRoutes = new Hono<Env>().post("/polar", async (c) => {
 
     try {
         const payload = validateEvent(rawBody, headers, webhookSecret);
-        log.info("Received Polar webhook: {type}", { type: payload.type });
+        log.info("Received Polar webhook: {payload}", { payload });
 
         switch (payload.type) {
             case "subscription.canceled":
@@ -48,7 +57,7 @@ export const webhooksRoutes = new Hono<Env>().post("/polar", async (c) => {
                 break;
 
             case "subscription.updated":
-                await handleSubscriptionUpdated(payload);
+                await handleSubscriptionUpdated(c.env, payload);
                 break;
 
             case "subscription.created":
@@ -57,6 +66,22 @@ export const webhooksRoutes = new Hono<Env>().post("/polar", async (c) => {
 
             case "benefit_grant.cycled":
                 await handleBenefitGrantCycled(c.env, payload);
+                break;
+
+            case "benefit_grant.created":
+                await handleBenefitGrant(
+                    c.env,
+                    payload,
+                    "benefit_grant.created",
+                );
+                break;
+
+            case "benefit_grant.updated":
+                await handleBenefitGrant(
+                    c.env,
+                    payload,
+                    "benefit_grant.updated",
+                );
                 break;
 
             case "order.paid":
@@ -163,18 +188,37 @@ async function handleSubscriptionCanceled(
 }
 
 async function handleSubscriptionUpdated(
+    env: Cloudflare.Env,
     payload: WebhookSubscriptionUpdatedPayload,
 ): Promise<void> {
     const externalId = payload.data.customer.externalId;
     if (!externalId) {
-        log.warn(
-            "Received subscription.updated webhook without external customer id",
-        );
+        log.warn("subscription.updated without external customer id");
         return;
     }
 
-    log.debug("Subscription updated for user {userId}", {
+    // Extract tier from product.metadata.slug (e.g., "v1:product:tier:seed")
+    const product = payload.data.product as { metadata?: { slug?: string } };
+    const slug = product?.metadata?.slug;
+    const tier = tierFromProductSlug(slug);
+
+    if (!tier) {
+        log.debug("subscription.updated for user {userId} - no tier in slug", {
+            userId: externalId,
+            slug,
+        });
+        return;
+    }
+
+    const db = drizzle(env.DB);
+    await db
+        .update(userTable)
+        .set({ tier })
+        .where(eq(userTable.id, externalId));
+
+    log.info("[POLAR_CREDIT] subscription: user={userId} tier={tier}", {
         userId: externalId,
+        tier,
     });
 }
 
@@ -238,57 +282,83 @@ async function handleBenefitGrantCycled(
     );
 }
 
-async function handleOrderPaid(
+// Shared handler for benefit_grant.created and benefit_grant.updated
+// Routes tier benefits to tierBalance and pack benefits to packBalance
+async function handleBenefitGrant(
     env: Cloudflare.Env,
-    payload: WebhookOrderPaidPayload,
+    payload:
+        | WebhookBenefitGrantCreatedPayload
+        | WebhookBenefitGrantUpdatedPayload,
+    eventType: string,
 ): Promise<void> {
     const externalId = payload.data.customer.externalId;
     if (!externalId) {
-        log.warn("Received order.paid webhook without external customer id");
+        log.warn("{event} without external customer id", { event: eventType });
         return;
     }
 
-    const order = payload.data;
-    const product = order.product as {
-        benefits?: Array<{ type: string; properties?: { units?: number } }>;
-    } | null;
-    if (!product) {
-        log.debug("order.paid for user {userId} has no product", {
-            userId: externalId,
-        });
-        return;
-    }
+    const benefit = payload.data.benefit as {
+        type?: string;
+        properties?: { units?: number };
+    };
 
-    // Find meter_credit benefit on the product
-    const benefit = product.benefits?.find((b) => b.type === "meter_credit");
+    if (benefit?.type !== "meter_credit") return;
 
-    const units = benefit?.properties?.units;
-    if (!units || units <= 0) {
-        // Subscription products (Spore, Seed, Flower, Nectar) don't include benefits
-        // in order.paid - pollen is credited via benefit_grant.cycled instead.
-        // Only log debug for these, not warn.
-        log.debug(
-            "order.paid for user {userId} has no direct pollen credits (product: {productId}, benefits: {benefitCount}) - likely a subscription",
-            {
-                userId: externalId,
-                productId: order.productId,
-                benefitCount: product.benefits?.length ?? 0,
-            },
-        );
-        return;
-    }
+    const units = benefit.properties?.units;
+    if (!units || units <= 0) return;
 
-    // ADD to pack_balance (cumulative, one-time purchases)
+    // Distinguish pack vs tier by checking orderId vs subscriptionId
+    // Pack purchases have orderId set, tier subscriptions have subscriptionId set
+    const orderId = (payload.data as { orderId?: string }).orderId;
+    const subscriptionId = (payload.data as { subscriptionId?: string }).subscriptionId;
+    const isPack = orderId != null;
+
     const db = drizzle(env.DB);
-    await db
-        .update(userTable)
-        .set({
-            packBalance: sql`COALESCE(${userTable.packBalance}, 0) + ${units}`,
-        })
-        .where(eq(userTable.id, externalId));
 
-    log.info("Added {units} to pack_balance for user {userId} via order.paid", {
-        units,
-        userId: externalId,
-    });
+    if (isPack) {
+        // Pack purchase: ADD to pack_balance (cumulative)
+        await db
+            .update(userTable)
+            .set({
+                packBalance: sql`COALESCE(${userTable.packBalance}, 0) + ${units}`,
+            })
+            .where(eq(userTable.id, externalId));
+
+        log.info("[POLAR_CREDIT] pack: user={userId} +{units} orderId={orderId}", {
+            userId: externalId,
+            units,
+            orderId,
+        });
+    } else {
+        // Tier subscription: SET tier_balance (reset each cycle, not cumulative)
+        await db
+            .update(userTable)
+            .set({
+                tierBalance: units,
+                lastTierGrant: Math.floor(Date.now() / 1000),
+            })
+            .where(eq(userTable.id, externalId));
+
+        log.info("[POLAR_CREDIT] tier: user={userId} balance={units} subscriptionId={subscriptionId}", {
+            userId: externalId,
+            units,
+            subscriptionId,
+        });
+    }
+}
+
+async function handleOrderPaid(
+    _env: Cloudflare.Env,
+    payload: WebhookOrderPaidPayload,
+): Promise<void> {
+    // Pack purchases are handled by benefit_grant.created webhook which includes
+    // the full benefit with units. This handler is kept for logging/future use.
+    const externalId = payload.data.customer.externalId;
+    log.debug(
+        "order.paid for user {userId} (packs handled via benefit_grant)",
+        {
+            userId: externalId ?? "unknown",
+            productId: payload.data.productId,
+        },
+    );
 }

@@ -7,6 +7,7 @@
 | Name | Description | Author |
 |------|-------------|--------|
 | [VisionAI](https://superheroghost.github.io/VisionAI/) | A public AI image generator UI for Pollinations AI models. Supports using your o | @Superheroghost |
+| [Pollinations VisionAI](https://superheroghost.github.io/VisionAI/) | Public AI image generator UI for Pollinations models; supports API keys | @Superheroghost |
 | [Donjon.studio](https://donjon.studio/) | AI-generated interactive adventures with evolving stories and images | @PassepartoutFR |
 | [Insight Engine](https://erbharatmalhotra.github.io/insight-engine/) | Experimental frontend app that turns a single idea into refined text insights and AI-generated visuals | @ErBharatMalhotra |
 | [IDPhotoGen](https://id-photo-gen.thangoffer91.workers.dev) | Create professional ID photos in 30 seconds with AI | @thangoffer91 |

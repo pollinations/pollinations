@@ -1,10 +1,8 @@
 import { Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
 import { getLogger } from "@logtape/logtape";
-import { drizzle } from "drizzle-orm/d1";
-import { eq, sql } from "drizzle-orm";
+import { Polar } from "@polar-sh/sdk";
 import type { Env } from "../env.ts";
-import { user as userTable } from "../db/schema/better-auth.ts";
 const log = getLogger(["hono", "webhooks-crypto"]);
 
 // Crypto-only pack names (includes $1 option not available via Polar)
@@ -159,18 +157,37 @@ export const webhooksCryptoRoutes = new Hono<Env>().post(
         const { userId, pack } = orderInfo;
         const pollenAmount = PACK_POLLEN[pack];
 
-        // Credit pollen to user's crypto balance (separate from fiat pack balance)
-        const db = drizzle(c.env.DB);
+        // Credit pollen via Polar Events API (negative value = grant credits)
+        // This adds to the pack meter balance, keeping all balance tracking in Polar
+        const polar = new Polar({
+            accessToken: c.env.POLAR_ACCESS_TOKEN,
+            server: c.env.POLAR_SERVER,
+        });
 
-        await db
-            .update(userTable)
-            .set({
-                cryptoBalance: sql`COALESCE(${userTable.cryptoBalance}, 0) + ${pollenAmount}`,
-            })
-            .where(eq(userTable.id, userId));
+        try {
+            await polar.events.ingest({
+                events: [
+                    {
+                        name: "crypto_credit",
+                        externalCustomerId: userId,
+                        metadata: {
+                            units: -pollenAmount, // Negative = grant credits
+                            pack,
+                            paymentId: String(payload.payment_id),
+                            paymentMethod: "nowpayments",
+                        },
+                    },
+                ],
+            });
+        } catch (error) {
+            log.error("Failed to grant credits via Polar: {error}", { error });
+            throw new HTTPException(500, {
+                message: "Failed to credit pollen to account",
+            });
+        }
 
         log.info(
-            "[CRYPTO_CREDIT] crypto: user={userId} +{pollen} pack={pack} paymentId={paymentId}",
+            "[CRYPTO_CREDIT] polar: user={userId} +{pollen} pack={pack} paymentId={paymentId}",
             {
                 userId,
                 pollen: pollenAmount,

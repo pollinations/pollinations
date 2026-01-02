@@ -38,7 +38,6 @@ export const Route = createFileRoute("/")({
         const apiKeys = apiKeysResult.data || [];
         const tierBalance = d1BalanceResult?.tierBalance ?? 0;
         const packBalance = d1BalanceResult?.packBalance ?? 0;
-        const cryptoBalance = d1BalanceResult?.cryptoBalance ?? 0;
 
         return {
             user: context.user,
@@ -47,22 +46,14 @@ export const Route = createFileRoute("/")({
             tierData,
             tierBalance,
             packBalance,
-            cryptoBalance,
         };
     },
 });
 
 function RouteComponent() {
     const router = useRouter();
-    const {
-        user,
-        customer,
-        apiKeys,
-        tierData,
-        tierBalance,
-        packBalance,
-        cryptoBalance,
-    } = Route.useLoaderData();
+    const { user, customer, apiKeys, tierData, tierBalance, packBalance } =
+        Route.useLoaderData();
 
     const [isSigningOut, setIsSigningOut] = useState(false);
     const [paymentMethod, setPaymentMethod] = useState<"fiat" | "crypto">(
@@ -276,7 +267,6 @@ function RouteComponent() {
                     <PollenBalance
                         tierBalance={tierBalance}
                         packBalance={packBalance}
-                        cryptoBalance={cryptoBalance}
                     />
                 </div>
                 {tierData && (

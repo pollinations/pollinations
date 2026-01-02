@@ -123,7 +123,8 @@ export const semanticCache = createMiddleware<Env>(async (c, next) => {
 
     await next();
 
-    if (c.res?.ok) {
+    // Skip storing if response has X-Error-Type header (error images should not be cached)
+    if (c.res?.ok && !c.res.headers.get("x-error-type")) {
         // Store the embedding with a link to the generated image
         c.executionCtx.waitUntil(
             (async () => {
@@ -140,6 +141,8 @@ export const semanticCache = createMiddleware<Env>(async (c, next) => {
                 );
             })(),
         );
+    } else if (c.res.headers.get("x-error-type")) {
+        console.debug("[SEMANTIC] Skipping cache for error image:", c.res.headers.get("x-error-type"));
     } else {
         console.error("[SEMANTIC] Error: request was not OK");
     }

@@ -8,20 +8,20 @@ compatibility_date = "2025-08-01"
 binding = "IMAGE_BUCKET"
 bucket_name = "pollinations-images"
 
-# Vectorize index for semantic caching
-[[vectorize]]
-binding = "VECTORIZE_INDEX"
-index_name = "pollinations-image-cache-v3"
+# Vectorize index for semantic caching (DISABLED - index was deleted)
+# [[vectorize]]
+# binding = "VECTORIZE_INDEX"
+# index_name = "pollinations-image-cache-v3"
 
-# Workers AI for embeddings
-[ai]
-binding = "AI"
+# Workers AI for embeddings (DISABLED - only needed for semantic cache)
+# [ai]
+# binding = "AI"
 
 # Environment variables
 [vars]
 ORIGIN_HOST = "image-origin.pollinations.ai"
 DEBUG_ANALYTICS = false  # Set to "true" to enable detailed analytics debugging
-SEMANTIC_CACHE_ENABLED = true
+SEMANTIC_CACHE_ENABLED = false
 SEMANTIC_THRESHOLD_SHORT = 0.65
 SEMANTIC_THRESHOLD_LONG = 0.85
 

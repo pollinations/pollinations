@@ -42,13 +42,22 @@ export const exactCache = createMiddleware<Env>(async (c, next) => {
     await next();
 
     // store response image in R2 on the way out
+    // Skip caching if:
+    // - Response is not OK
+    // - Content-type is not an image
+    // - Already a cache hit (semantic)
+    // - X-Error-Type header is present (error images should not be cached)
     if (
         c.res?.ok &&
         c.res.headers.get("content-type")?.includes("image/") &&
         // don't store it if there is a semantic hit
-        !(c.res.headers.get("x-cache") === "HIT")
+        !(c.res.headers.get("x-cache") === "HIT") &&
+        // don't cache error images (they have X-Error-Type header)
+        !c.res.headers.get("x-error-type")
     ) {
         console.debug("[EXACT] Caching image response");
         c.executionCtx.waitUntil(cacheResponse(cacheKey, c));
+    } else if (c.res.headers.get("x-error-type")) {
+        console.debug("[EXACT] Skipping cache for error image:", c.res.headers.get("x-error-type"));
     }
 });

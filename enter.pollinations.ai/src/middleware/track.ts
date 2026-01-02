@@ -257,7 +257,6 @@ export const track = (eventType: EventType) =>
                     const currentUser = await db
                         .select({
                             tierBalance: userTable.tierBalance,
-                            packBalance: userTable.packBalance,
                             cryptoBalance: userTable.cryptoBalance,
                         })
                         .from(userTable)
@@ -266,7 +265,6 @@ export const track = (eventType: EventType) =>
 
                     const tierBalance = currentUser[0]?.tierBalance ?? 0;
                     const cryptoBalance = currentUser[0]?.cryptoBalance ?? 0;
-                    const packBalance = currentUser[0]?.packBalance ?? 0;
 
                     // Decrement in order: tier (free) → crypto → pack
                     const fromTier = Math.min(

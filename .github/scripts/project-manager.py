@@ -249,64 +249,77 @@ def add_to_project(project_id: str):
 def update_labels(labels: list):
     if not labels:
         return
-    
-    validated_labels = [l for l in labels if l in VALID_LABELS]
+    validated_labels = []
+    for l in labels:
+        if l in VALID_LABELS:
+            validated_labels.append(l)
+        else:
+            print(f"[ERROR] Invalid label '{l}' not in allowed set. Skipping.")
     if not validated_labels:
+        print("[ERROR] No valid labels to apply. Skipping label update.")
         return
-    
+
     endpoint = f"{API_BASE}/issues/{ISSUE_NUMBER}/labels"
-    requests.post(
+    resp = requests.post(
         endpoint,
         headers=GITHUB_HEADERS,
         json={"labels": validated_labels}
     )
+    if resp.status_code not in [200, 201]:
+        print(f"[ERROR] Failed to update labels: {resp.status_code} - {resp.text}")
 
 def assign_issue(assignee: str):
-    if not assignee or assignee == "null":
+    if not assignee or assignee in ("null", None, "None", ""):
+        print("[ERROR] No valid assignee provided for dev project. Assignment skipped.")
         return
-    
+
     endpoint = f"{API_BASE}/issues/{ISSUE_NUMBER}/assignees"
-    requests.post(
+    resp = requests.post(
         endpoint,
         headers=GITHUB_HEADERS,
         json={"assignees": [assignee]}
     )
+    if resp.status_code not in [200, 201]:
+        print(f"[ERROR] Failed to assign issue: {resp.status_code} - {resp.text}")
 
 def main():
     if not ISSUE_NUMBER:
         print("No issue or PR number found")
         return
-    
+
     classification = classify_with_ai()
-    
+
     if not classification:
         print("Failed to classify with AI")
         return
-    
+
     project_key = classification.get("project", "").lower()
     labels = list(classification.get("labels", []))
     assignee = classification.get("assignee")
-    
+
     project_name = PROJECT_NAMES.get(project_key)
-    
+
     if not project_name:
         print(f"Invalid project: {project_key}")
         return
-    
+
     project_id = get_project_id(project_name)
     if project_id:
-        add_to_project(project_id)
-    
+        added = add_to_project(project_id)
+        if not added:
+            print(f"[ERROR] Could not add to project {project_name} (ID: {project_id})")
+
     if labels:
         update_labels(labels)
-    
-    if project_key == "dev" and assignee:
-        assign_issue(assignee)
-    
+    if project_key == "dev":
+        if not assignee or assignee in ("null", None, "None", ""):
+            print("[ERROR] No valid assignee for dev project. Assignment skipped.")
+        else:
+            assign_issue(assignee)
+            print(f"Assigned to: @{assignee}")
+
     print(f"Classified as {project_name} with priority {classification.get('priority')}")
     print(f"Labels: {labels}")
-    if assignee and assignee != "null":
-        print(f"Assigned to: @{assignee}")
     print(f"Reasoning: {classification.get('reasoning')}")
 
 if __name__ == "__main__":

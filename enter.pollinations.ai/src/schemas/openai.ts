@@ -307,7 +307,7 @@ export const CreateChatCompletionRequestSchema = z.object({
     seed: z
         .number()
         .int()
-        .min(0)
+        .min(-1)
         .max(Number.MAX_SAFE_INTEGER)
         .nullable()
         .optional(),

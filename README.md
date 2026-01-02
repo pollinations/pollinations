@@ -99,18 +99,21 @@ We've launched **https://gen.pollinations.ai** — a single endpoint for all you
 
 ### MCP Server for AI Assistants
 
-Our MCP (Model Context Protocol) server enables AI assistants like Claude to generate images and audio directly. [Learn more](./model-context-protocol/README.md)
+Our MCP (Model Context Protocol) server enables AI assistants like Claude to generate images, videos, and audio directly. [Learn more](./model-context-protocol/README.md)
 
 #### Configuration
 
-Add this to your MCP client configuration:
+Get your API key at [pollinations.ai](https://pollinations.ai), then add to your MCP client config:
 
 ```json
 {
     "mcpServers": {
         "pollinations": {
             "command": "npx",
-            "args": ["@pollinations/model-context-protocol"]
+            "args": ["@pollinations/model-context-protocol"],
+            "env": {
+                "POLLINATIONS_API_KEY": "pk_your_key_here"
+            }
         }
     }
 }
@@ -211,6 +214,33 @@ We offer React hooks for easy integration. Example usage:
     export default AIGeneratedContent;
 
 Check out our [Pollinations React Hooks](./pollinations-react/README.md) for more details.
+
+### Official SDK
+
+The easiest way to integrate Pollinations into your app:
+
+```bash
+npm install @pollinations/sdk
+```
+
+```javascript
+import { generateImage, generateText } from '@pollinations/sdk';
+
+const image = await generateImage('a robot painting');
+await image.saveToFile('robot.png');
+
+const text = await generateText('write a haiku about coding');
+```
+
+**Browser (no build tools):**
+```html
+<script src="https://cdn.pollinations.ai/sdk.js"></script>
+<script>
+  Pollinations.generateText('hello').then(console.log);
+</script>
+```
+
+Full documentation: [SDK/NPM/README.md](./SDK/NPM/README.md)
 
 ## Architecture
 

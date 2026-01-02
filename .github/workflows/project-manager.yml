@@ -1,10 +1,14 @@
-name: Organize Issues and PRs
+name: Project Manager
 
 on:
   issues:
-    types: [opened, reopened]
-  pull_request:
-    types: [opened, reopened]
+    types: [opened]
+  pull_request_target:
+    types: [opened]
+
+concurrency:
+  group: project-manager-${{ github.event.issue.number || github.event.pull_request.number }}
+  cancel-in-progress: false
 
 jobs:
   organize:
@@ -15,20 +19,28 @@ jobs:
       contents: read
     steps:
       - uses: actions/checkout@v4
-      
-      - name: Set up Python
-        uses: actions/setup-python@v4
+
+      - name: Generate Pollinations AI Token
+        id: pollinations-ai
+        uses: actions/create-github-app-token@v1
         with:
-          python-version: '3.11'
-      
+          app-id: ${{ secrets.POLLY_BOT_APP_ID }}
+          private-key: ${{ secrets.POLLY_BOT_PRIVATE_KEY }}
+          owner: pollinations
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
       - name: Install dependencies
-        run: |
-          pip install requests
-      
+        run: pip install requests
+
       - name: Organize issue or PR
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ steps.pollinations-ai.outputs.token }}
           GITHUB_EVENT: ${{ toJSON(github.event) }}
           REPO_OWNER: ${{ github.repository_owner }}
           REPO_NAME: ${{ github.event.repository.name }}
+          POLLINATIONS_TOKEN: ${{ secrets.POLLINATIONS_TOKEN }}
         run: python .github/scripts/project-manager.py

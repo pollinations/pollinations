@@ -21,10 +21,97 @@ GITHUB_HEADERS = {
     "Accept": "application/vnd.github.v3+json"
 }
 
+
+CONFIG = {
+  "projects": {
+    "support": {
+      "name": "Support",
+      "description": "User support issues, bug reports, help requests, pollen/reward questions, voting/feedback, technical assistance",
+      "priorities": {
+        "Urgent": "Critical bugs, service-breaking issues, security issues, user completely blocked",
+        "High": "Important bugs, pollen/reward related, crash reports, blocking issues",
+        "Medium": "Regular bugs, help questions, feature feedback",
+        "Low": "Discussions, ideas, minor issues"
+      },
+      "default_status": "To do"
+    },
+    "dev": {
+      "name": "Dev",
+      "description": "Feature requests, implementation tasks, code improvements, development work, new features",
+      "priorities": {
+        "High": "Critical features, security improvements, critical fixes",
+        "Medium": "Regular features, general improvements, optimizations",
+        "Low": "Nice-to-have features, documentation, minor enhancements"
+      },
+      "default_status": "Backlog",
+      "backlog_status": "Backlog",
+      "todo_status": "To do"
+    },
+    "news": {
+      "name": "News",
+      "description": "PR submissions announcing updates, releases, changelog entries, newsworthy changes",
+      "priorities": {
+        "High": "Major releases, critical updates, important announcements, security updates",
+        "Medium": "Regular updates, feature announcements, workflow improvements",
+        "Low": "Minor updates, documentation changes, social media posts"
+      },
+      "default_status": "To do"
+    }
+  },
+  "labels": {
+    "BUG": "Bug reports, errors, issues",
+    "FEATURE": "Feature requests, new implementations",
+    "HELP": "Help requests, questions, how-to",
+    "POLLEN": "Pollen, rewards, tokens, community incentives",
+    "VOTING": "Polls, voting, feedback, opinions",
+    "QUEST": "Development quests, tasks",
+    "NEWS": "News and releases",
+    "EXTERNAL": "External contributions, third-party PRs (not from org members)",
+    "TRACKING": "Tracking issues"
+  },
+  "org_members": {
+    "eulervoid": ["backend", "api", "infrastructure", "devops", "database"],
+    "voodoohop": ["frontend", "react", "ui", "design", "performance"],
+    "ElliotEtag": ["ai", "ml", "image-generation", "models"],
+    "Circuit-Overtime": ["docs", "tutorials", "guides", "examples"],
+    "Itachi-1824": ["testing", "qa", "automation", "ci/cd"]
+  },
+  "classification_guidelines": {
+    "note": "These are guidelines only. Use AI judgment based on context and impact. Each issue/PR must go to EXACTLY ONE project.",
+    "project_assignment": {
+      "support": "User-facing issues: bugs users encounter, support requests, blockers, pollen/reward questions, voting/feedback. Use when user impact is primary concern.",
+      "dev": "Internal development work: feature requests for new capabilities, code improvements, architecture, internal tasks. Use when development effort is primary concern.",
+      "news": "PR submissions that represent releases, updates, or announcements. Use for PRs that introduce versioned changes or major milestones."
+    },
+    "priority_context": {
+      "support": {
+        "Urgent": "User completely blocked or unable to use service (service down, critical bug, security breach)",
+        "High": "Significant user impact (crashes, pollen system issues, blocking workflows)",
+        "Medium": "Regular bugs or help questions with moderate impact",
+        "Low": "Minor issues, discussions, feature ideas"
+      },
+      "dev": {
+        "High": "Critical system improvements, security fixes, breaking changes needed",
+        "Medium": "Regular features, optimizations, code quality improvements",
+        "Low": "Nice-to-have features, documentation, minor refactoring"
+      },
+      "news": {
+        "High": "Major releases, critical security updates, significant milestones",
+        "Medium": "Regular updates, feature releases, workflow improvements",
+        "Low": "Minor patches, documentation updates, housekeeping"
+      }
+    },
+    "single_project_rule": "Each issue or PR must be assigned to ONLY ONE project. If it spans multiple areas, prioritize based on primary impact: user-facing → support, development work → dev, release announcement → news."
+  },
+  "assignment_rules": {
+    "enabled_for_projects": ["dev"],
+    "fallback_assignee": None,
+    "match_threshold": "best expertise match from org_members"
+  }
+}
+
+
 POLLINATIONS_API = "https://gen.pollinations.ai/v1/chat/completions"
-CONFIG_PATH = os.path.join(os.path.dirname(__file__), "project-manager-config.json")
-with open(CONFIG_PATH, "r") as f:
-    CONFIG = json.load(f)
 
 PROJECT_NAMES = {key: proj["name"] for key, proj in CONFIG["projects"].items()}
 VALID_LABELS = set(CONFIG["labels"].keys())

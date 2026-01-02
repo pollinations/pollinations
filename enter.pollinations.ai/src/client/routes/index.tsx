@@ -22,40 +22,56 @@ export const Route = createFileRoute("/")({
     beforeLoad: getUserOrRedirect,
     loader: async ({ context }) => {
         // Parallelize independent API calls for faster loading
-        const [
-            customer,
-            tierData,
-            apiKeysResult,
-            d1BalanceResult,
-        ] = await Promise.all([
-            apiClient.polar.customer.state
-                .$get()
-                .then((r) => (r.ok ? r.json() : null)),
-            apiClient.tiers.view.$get().then((r) => (r.ok ? r.json() : null)),
-            authClient.apiKey.list(),
-            apiClient.polar.customer["d1-balance"]
-                .$get()
-                .then((r) => (r.ok ? r.json() : null)),
-        ]);
-        const apiKeys = apiKeysResult.data || [];
-        const tierBalance = d1BalanceResult?.tierBalance ?? 0;
-        const packBalance = d1BalanceResult?.packBalance ?? 0;
+        // Use our clean /api/api-keys endpoint instead of authClient.apiKey.list()
+        // to get properly parsed metadata including turnstile settings
+        const [customer, tierData, apiKeysResult, pendingSpendResult] =
+            await Promise.all([
+                apiClient.polar.customer.state
+                    .$get()
+                    .then((r) => (r.ok ? r.json() : null)),
+                apiClient.tiers.view
+                    .$get()
+                    .then((r) => (r.ok ? r.json() : null)),
+                fetch("/api/api-keys", { credentials: "include" }).then((r) =>
+                    r.ok
+                        ? (r.json() as Promise<{ keys: unknown[] }>)
+                        : { keys: [] },
+                ),
+                apiClient.polar.customer["pending-spend"]
+                    .$get()
+                    .then((r) => (r.ok ? r.json() : null)),
+            ]);
+
+        // API keys are already properly parsed by the server
+        const apiKeys = (apiKeysResult as { keys: unknown[] }).keys || [];
+        console.log("[LOADER] API keys from clean endpoint:", apiKeys);
+
+        const pendingSpend = pendingSpendResult?.pendingSpend || 0;
 
         return {
             user: context.user,
             customer,
             apiKeys,
             tierData,
-            tierBalance,
-            packBalance,
+            pendingSpend,
         };
     },
 });
 
 function RouteComponent() {
     const router = useRouter();
-    const { user, customer, apiKeys, tierData, tierBalance, packBalance } =
+    const { user, customer, apiKeys, tierData, pendingSpend } =
         Route.useLoaderData();
+    const balances = {
+        pack:
+            customer?.activeMeters.find(
+                (m) => m.meterId === config.pollenPackMeterId,
+            )?.balance || 0,
+        tier:
+            customer?.activeMeters.find(
+                (m) => m.meterId === config.pollenTierMeterId,
+            )?.balance || 0,
+    };
 
     const [isSigningOut, setIsSigningOut] = useState(false);
 
@@ -96,16 +112,42 @@ function RouteComponent() {
 
         const apiKey = createResult.data;
 
-        // For publishable keys, store the plaintext key in metadata for easy retrieval
+        // For publishable keys, store the plaintext key in metadata and save turnstile settings
+        // NOTE: We use our own /metadata endpoint instead of authClient.apiKey.update()
+        // because better-auth's serializeApiKey has a bug that corrupts string metadata
         if (isPublishable) {
-            await authClient.apiKey.update({
-                keyId: apiKey.id,
-                metadata: {
+            await fetch(`/api/api-keys/${apiKey.id}/metadata`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                credentials: "include",
+                body: JSON.stringify({
                     description: formState.description,
                     keyType,
                     plaintextKey: apiKey.key,
-                },
+                }),
             });
+
+            // Save turnstile settings if provided
+            if (formState.turnstile) {
+                console.log(
+                    "[CREATE KEY] Saving turnstile settings:",
+                    formState.turnstile,
+                );
+                const turnstileResponse = await fetch(
+                    `/api/api-keys/${apiKey.id}/turnstile`,
+                    {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        credentials: "include",
+                        body: JSON.stringify(formState.turnstile),
+                    },
+                );
+                console.log(
+                    "[CREATE KEY] Turnstile save response:",
+                    turnstileResponse.status,
+                    await turnstileResponse.clone().text(),
+                );
+            }
         }
 
         // Step 2: Set permissions if restricted (allowedModels is not null)
@@ -224,6 +266,7 @@ function RouteComponent() {
                                 href="https://github.com/pollinations/pollinations/issues/4826"
                                 target="_blank"
                                 rel="noopener noreferrer"
+                                className="bg-purple-200! text-purple-900!"
                                 color="purple"
                                 weight="light"
                             >
@@ -232,8 +275,11 @@ function RouteComponent() {
                         </div>
                     </div>
                     <PollenBalance
-                        tierBalance={tierBalance}
-                        packBalance={packBalance}
+                        balances={balances}
+                        dailyPollen={
+                            tierData?.active.subscriptionDetails?.dailyPollen
+                        }
+                        pendingSpend={pendingSpend}
                     />
                 </div>
                 {tierData && (
@@ -248,20 +294,17 @@ function RouteComponent() {
                     apiKeys={apiKeys}
                     onCreate={handleCreateApiKey}
                     onDelete={handleDeleteApiKey}
+                    onRefresh={() => router.invalidate()}
                 />
                 <FAQ />
                 <Pricing />
-                <div className="bg-violet-50/20 border border-violet-200/50 rounded-xl px-6 py-4 mt-4 w-fit mx-auto">
-                    <div className="flex flex-col sm:flex-row justify-center items-center gap-2 sm:gap-3 text-sm text-gray-400">
-                        <span>© 2025 Myceli.AI</span>
-                        <span className="hidden sm:inline">·</span>
-                        <Link
-                            to="/terms"
-                            className="font-medium text-gray-500 hover:text-gray-700 hover:underline transition-colors"
-                        >
-                            Terms & Conditions
-                        </Link>
-                    </div>
+                <div className="text-center py-8">
+                    <Link
+                        to="/terms"
+                        className="text-sm text-gray-500 hover:text-gray-700 transition-colors"
+                    >
+                        Terms & Conditions
+                    </Link>
                 </div>
             </div>
         </div>

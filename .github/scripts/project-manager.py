@@ -118,6 +118,13 @@ CONFIG = {
         "Circuit-Overtime",
         "Itachi-1824"
     ],
+    "member_skills": {
+        "voodoohop": ["dev", "support", "news", "general"],
+        "eulervoid": ["backend", "infrastructure", "api", "core", "database"],
+        "ElliotEtag": ["frontend", "features", "bug-fixes", "integration"],
+        "Circuit-Overtime": ["support", "community", "billing", "user-help", "documentation"],
+        "Itachi-1824": ["community", "quests", "tasks", "coordination", "tracking"],
+    },
     "fallback_assignee": "voodoohop",
 }
 
@@ -137,6 +144,10 @@ def is_org_member(username: str) -> bool:
 
 def classify_with_ai(is_internal: bool) -> dict:
     org_members = ", ".join(CONFIG["org_members"])
+    member_skills = CONFIG.get("member_skills", {})
+    skills_info = "\n".join(
+        [f"  - {member}: {', '.join(skills)}" for member, skills in member_skills.items()]
+    )
     system_prompt = f"""You are a GitHub issue/PR classifier for Pollinations. Analyze and classify into ONE project.
     PROJECTS:
     - dev: Core development work, features, refactors, infrastructure, code improvements (INTERNAL ONLY)
@@ -162,9 +173,11 @@ def classify_with_ai(is_internal: bool) -> dict:
     External: EXTERNAL (add if author is external)
 
     ASSIGNEE SELECTION:
-    Team members: {org_members}
+    Team members and their skills:
+{skills_info}
+    
     Pick the BEST team member from the list above who would be most suitable to handle this issue based on its content and complexity.
-    Use 'voodoohop' as fallback if no clear match.
+    Match the issue requirements with member skills. Use 'voodoohop' as fallback if no clear match.
 
     Return ONLY valid JSON:
     {{"project": "dev|support|news", "priority": "Urgent|High|Medium|Low", "labels": ["label1"], "assignee": "username", "reasoning": "brief why"}}"""

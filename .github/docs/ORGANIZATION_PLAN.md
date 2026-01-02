@@ -10,23 +10,59 @@ We are transitioning from using a single **Dev** project to four dedicated proje
 
 GitHub labels applied to issues and PRs for categorization and filtering.
 
-| Label           | Support Issue | Dev Issue | Dev PR | News PR | Tier Issue | Tier PR |
-| --------------- | ------------- | --------- | ------ | ------- | ---------- | ------- |
-| BUG             | x             | x         |        |         |            |         |
-| FEATURE         | x             | x         |        |         |            |         |
-| HELP            | x             |           |        |         |            |         |
-| POLLEN          | x             |           |        |         |            |         |
-| QUEST           |               | x         |        |         |            |         |
-| TRACKING        |               | x         |        |         |            |         |
-| VOTING          | x             |           |        |         |            |         |
-| NEWS            |               |           |        | x       |            |         |
-| EXTERNAL        |               |           | x      |         |            |         |
-| TIER-SEED       |               |           |        |         | x          | x       |
-| TIER-FLOWER     |               |           |        |         | x          | x       |
-| TIER-INCOMPLETE |               |           |        |         | x          |         |
-| TIER-REVIEW     |               |           |        |         |            | x       |
-| TIER-COMPLETE   |               |           |        |         |            | x       |
-| TIER-REJECTED   |               |           |        |         |            | x       |
+### Dev
+
+| Label    | Issue | PR  | Comments                                         |
+| -------- | ----- | --- | ------------------------------------------------ |
+| CORE     | x     | x   | Applied to all Dev items                         |
+| BUG      | x     |     | Something is broken                              |
+| FEATURE  | x     |     | New functionality request                        |
+| QUEST    | x     |     | Community task - One off Pollen reward if merged |
+| TRACKING | x     |     | Meta-issue tracking other items                  |
+
+### Support
+
+Project
+
+| Label   | Issue | Comments                      |
+| ------- | ----- | ----------------------------- |
+| SUPPORT | x     | Applied to all Support issues |
+
+Type
+
+| Label   | Issue | Comments                  |
+| ------- | ----- | ------------------------- |
+| BUG     | x     | Something is broken       |
+| FEATURE | x     | New functionality request |
+| HELP    | x     | User needs assistance     |
+
+Tag
+
+| Label   | Issue | Comments                       |
+| ------- | ----- | ------------------------------ |
+| BALANCE | x     | Pollen balance issue           |
+| BILLING | x     | Payment or subscription issue  |
+| API     | x     | API usage or integration issue |
+
+### NEWS
+
+| Label | PR  | Comments                |
+| ----- | --- | ----------------------- |
+| NEWS  | x   | Applied to all News PRs |
+
+### Tier
+
+| Label      | Issue | PR  | Comments                  |
+| ---------- | ----- | --- | ------------------------- |
+| TIER       | x     | x   | Applied to all Tier items |
+| SEED       | x     |     | Upgrade request           |
+| CODE       |       | x   | Code contribution         |
+| APP        |       | x   | App contribution          |
+| FLOWER     | x     | x   | Upgrade request           |
+| INCOMPLETE | x     | x   | User action requested     |
+| REVIEW     |       | x   | PR awaiting review        |
+| COMPLETE   |       | x   | PR approved and merged    |
+| REJECTED   |       | x   | PR declined               |
 
 ## Priority
 
@@ -39,7 +75,7 @@ GitHub Projects priority field — a built-in property for ranking importance.
 | Medium   | x             | x         |         |
 | Low      | x             | x         |         |
 
-## Status
+## Status (Issues)
 
 GitHub Projects status field — tracks workflow state across different project views.
 
@@ -56,7 +92,7 @@ GitHub Projects status field — tracks workflow state across different project 
 
 PR state on GitHub — Draft PRs are work-in-progress; Ready for review PRs are awaiting approval.
 
-| Status           | Dev PR | News PR | Tier PR |
-| ---------------- | ------ | ------- | ------- |
-| Draft            | x      |         |         |
-| Ready for review | x      | x       | x       |
+| Status           | Dev PR | News PR | Tier PR | News PR |
+| ---------------- | ------ | ------- | ------- | ------- |
+| Draft            | x      |         |         |         |
+| Ready for review | x      | x       | x       | x       |

@@ -20,6 +20,7 @@ import {
 } from "./requestUtils.js";
 import { logUserRequest } from "./logging/userLogger.js";
 import { logConversation } from "./logging/simpleLogger.js";
+import { sendRedirectConversationResponse } from "./authRedirect.js";
 import {
     checkAndLogMonitoredStrings,
     extractTextFromMessages,
@@ -684,6 +685,14 @@ async function processRequest(req, res, requestData) {
     // Use the new explicit authentication fields
     const isTokenAuthenticated = authResult.tokenAuth;
     const hasReferrer = authResult.referrerAuth;
+
+    // Redirect authenticated users (token or registered referrer) to enter.pollinations.ai
+    // EXCEPT for requests coming from enter.pollinations.ai itself (identified by x-enter-token)
+    const isFromEnter = isEnterRequest(req);
+    if ((isTokenAuthenticated || hasReferrer) && !isFromEnter) {
+        authLog(`Redirecting ${isTokenAuthenticated ? 'token' : 'referrer'}-authenticated user to enter.pollinations.ai (user: ${authResult.username || 'unknown'})`);
+        return await sendRedirectConversationResponse(res, req, requestData, sendContentResponse, sendOpenAIResponse);
+    }
 
     // Determine queue configuration based on authentication
     // Note: ipQueue.js handles tier-based caps and enter.pollinations.ai bypass automatically

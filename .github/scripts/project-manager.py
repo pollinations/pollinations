@@ -93,7 +93,7 @@ CONFIG = {
         "id": "PVT_kwDOBS76fs4BLtD8",
         "name": "News",
         "internal_only": False,
-        "default_status": "Review",
+        "default_status": "Todo",
         "status_field_id": "PVTSSF_lADOBS76fs4BLtD8zg7Mrxg",
         "status_options": {
             "Todo": "f75ad846",     

@@ -26,14 +26,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Generate Pollinations AI Token
-        id: pollinations-ai
-        uses: actions/create-github-app-token@v1
-        with:
-          app-id: ${{ secrets.POLLY_BOT_APP_ID }}
-          private-key: ${{ secrets.POLLY_BOT_PRIVATE_KEY }}
-          owner: pollinations
-
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
@@ -44,8 +36,7 @@ jobs:
 
       - name: Organize issue or PR
         env:
-          GITHUB_TOKEN: ${{ steps.pollinations-ai.outputs.token }}
+          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
           GITHUB_EVENT: ${{ toJSON(github.event) }}
           POLLINATIONS_TOKEN: ${{ secrets.POLLINATIONS_PROJECT_MANAGER }}
-          TEST_MODE: ${{ github.event.inputs.test_mode || 'false' }}
         run: python .github/scripts/project-manager.py

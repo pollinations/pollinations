@@ -45,6 +45,19 @@ export const textCache = createMiddleware<TextCacheEnv>(async (c, next) => {
                 );
                 return next();
             }
+            // Check for seed=-1 (random seed convention used by SillyTavern etc.)
+            // Skip cache when seed=-1 to ensure fresh responses each time
+            try {
+                const bodyObj = JSON.parse(bodyText);
+                if (bodyObj.seed === -1) {
+                    log.debug(
+                        "[TEXT-CACHE] seed=-1 detected, skipping cache for random generation",
+                    );
+                    return next();
+                }
+            } catch {
+                // Not JSON, continue with caching
+            }
         } catch {
             // Body read failed - skip cache to avoid key collision
             // All POST /v1/chat/completions would share same key without body
@@ -53,6 +66,15 @@ export const textCache = createMiddleware<TextCacheEnv>(async (c, next) => {
             );
             return next();
         }
+    }
+
+    // Check for seed=-1 in query params (for GET requests)
+    const seedParam = new URL(c.req.url).searchParams.get("seed");
+    if (seedParam === "-1") {
+        log.debug(
+            "[TEXT-CACHE] seed=-1 in query, skipping cache for random generation",
+        );
+        return next();
     }
 
     // Generate cache key

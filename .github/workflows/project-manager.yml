@@ -39,4 +39,5 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
           GITHUB_EVENT: ${{ toJSON(github.event) }}
           POLLINATIONS_TOKEN: ${{ secrets.POLLINATIONS_PROJECT_MANAGER }}
+          TEST_MODE: ${{ github.event.inputs.test_mode || 'false' }}
         run: python .github/scripts/project-manager.py

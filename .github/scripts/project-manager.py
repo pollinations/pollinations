@@ -8,13 +8,13 @@ from typing import Optional
 GITHUB_TOKEN = os.getenv("GITHUB_TOKEN")
 POLLINATIONS_TOKEN = os.getenv("POLLINATIONS_TOKEN")
 GITHUB_EVENT_JSON = os.getenv("GITHUB_EVENT", "{}")
-TEST_MODE = True
+TEST_MODE = os.getenv("TEST_MODE", "false").lower() == "true"
 try:
     GITHUB_EVENT = json.loads(GITHUB_EVENT_JSON)
 except json.JSONDecodeError:
     GITHUB_EVENT = {}
 REPO_OWNER = "pollinations"
-REPO_NAME = "pollinations" if not TEST_MODE else "pollinations-testflight"
+REPO_NAME = "pollinations-testflight"
 IS_PULL_REQUEST = "pull_request" in GITHUB_EVENT
 ITEM_DATA = (
     GITHUB_EVENT.get("pull_request")

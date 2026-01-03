@@ -1,6 +1,6 @@
-# pollinations.ai Text Generation Service
+# pollinations.ai Image Generation Service
 
-Backend service powering text generation for pollinations.ai, accessed via **https://gen.pollinations.ai**.
+Backend service powering image generation for pollinations.ai, accessed via **https://gen.pollinations.ai**.
 
 📚 **[API Documentation](../APIDOCS.md)** | 🔑 **[Get API Key](https://enter.pollinations.ai)**
 
@@ -9,7 +9,7 @@ Backend service powering text generation for pollinations.ai, accessed via **htt
 ```bash
 # Clone and install
 git clone https://github.com/pollinations/pollinations
-cd pollinations/text.pollinations.ai
+cd pollinations/image.pollinations.ai
 npm install
 
 # Configure environment

@@ -1,10 +1,10 @@
-# 🌸 Pollinations Generative React Hooks 🌸
+# 🌸 pollinations.ai Generative React Hooks 🌸
 
 A simple way to generate images, text, audio and markdown using the Pollinations API in your React projects.
 
 ## 🚀 Quick Start
 
-For interactive example code and documentation, visit [Pollinations React Hooks](https://react-hooks.pollinations.ai).
+For interactive example code and documentation, visit [pollinations.ai React Hooks](https://react-hooks.pollinations.ai).
 
 Install the package:
 
@@ -20,12 +20,12 @@ The usePollinationsText hook allows you to generate text from Pollinations' API 
     import { usePollinationsText } from '@pollinations/react';
 
     const HaikuComponent = () => {
-      const text = usePollinationsText('Write a short haiku about Pollinations.AI', { 
+      const text = usePollinationsText('Write a short haiku about pollinations.ai', {
         seed: 42,
         model: 'mistral',
         systemPrompt: 'You are a poetic AI assistant.'
       });
-      
+
       return (
         <div>
           {text ? <p>{text}</p> : <p>Loading...</p>}
@@ -115,8 +115,8 @@ The usePollinationsChat hook allows you to generate chat responses from Pollinat
       const [input, setInput] = useState('');
       const { sendUserMessage, messages } = usePollinationsChat([
         { role: "system", content: "You are a helpful assistant" }
-      ], { 
-        seed: 42, 
+      ], {
+        seed: 42,
         jsonMode: false,
         model: 'mistral'
       });
@@ -185,4 +185,4 @@ This project is licensed under the MIT License. See the LICENSE file for details
 
 ---
 
-Made with ❤️ by the Pollinations.AI team
+Made with ❤️ by the pollinations.ai team

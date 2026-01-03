@@ -1,4 +1,4 @@
-# Agent Guidelines for Pollinations.AI
+# Agent Guidelines for pollinations.ai
 
 ## App Submission Handling
 
@@ -16,8 +16,8 @@ App submissions are now **fully automated** via the `tier-app-submission.yml` wo
 
 **Manual edits (if needed):**
 
--   Edit `apps/APPS.md` directly
--   Run `node .github/scripts/tier-apps-update-readme.js` to refresh README
+- Edit `apps/APPS.md` directly
+- Run `node .github/scripts/tier-apps-update-readme.js` to refresh README
 
 **Table format in APPS.md:**
 
@@ -29,25 +29,25 @@ App submissions are now **fully automated** via the `tier-app-submission.yml` wo
 
 **Categories:**
 
--   Vibe Coding ✨ (`vibeCoding`): No-code / describe-to-code playgrounds and builders
--   Creative 🎨 (`creative`): Turn prompts into images, video, music, design, slides
--   Games 🎲 (`games`): AI-powered play, interactive fiction, puzzle & agent worlds
--   Hack-&-Build 🛠️ (`hackAndBuild`): SDKs, integration libs, extensions, dashboards, MCP servers
--   Chat 💬 (`chat`): Standalone chat UIs / multi-model playgrounds
--   Social Bots 🤖 (`socialBots`): Discord / Telegram / WhatsApp / Roblox bots & NPCs
--   Learn 📚 (`learn`): Tutorials, guides, style books & educational demos
+- Vibe Coding ✨ (`vibeCoding`): No-code / describe-to-code playgrounds and builders
+- Creative 🎨 (`creative`): Turn prompts into images, video, music, design, slides
+- Games 🎲 (`games`): AI-powered play, interactive fiction, puzzle & agent worlds
+- Hack-&-Build 🛠️ (`hackAndBuild`): SDKs, integration libs, extensions, dashboards, MCP servers
+- Chat 💬 (`chat`): Standalone chat UIs / multi-model playgrounds
+- Social Bots 🤖 (`socialBots`): Discord / Telegram / WhatsApp / Roblox bots & NPCs
+- Learn 📚 (`learn`): Tutorials, guides, style books & educational demos
 
 ## Non-English Apps
 
--   Use ISO language code in the `Language` column (e.g., `zh-CN`, `es`, `pt-BR`, `ja`)
--   No flags in the table - use language codes only
+- Use ISO language code in the `Language` column (e.g., `zh-CN`, `es`, `pt-BR`, `ja`)
+- No flags in the table - use language codes only
 
 ## Discord Configuration
 
-**Pollinations Discord Server:**
+**pollinations.ai Discord Server:**
 
--   **Guild ID**: `885844321461485618`
--   **Server**: https://discord.gg/pollinations-ai-885844321461485618
+- **Guild ID**: `885844321461485618`
+- **Server**: https://discord.gg/pollinations-ai-885844321461485618
 
 Use this guild ID when interacting with Discord MCP tools for announcements, community management, etc.
 
@@ -66,156 +66,137 @@ pollinations/
 └── operations/                # Documentation and operations
 ```
 
-## API Gateway Transition (Important)
+## API Gateway
 
-**We are currently running two API systems simultaneously:**
+**Primary endpoint:** `https://gen.pollinations.ai`
 
-### 🆕 **enter.pollinations.ai** (NEW - Beta)
+All API requests go through `gen.pollinations.ai`, which routes to the `enter.pollinations.ai` gateway for authentication and billing.
 
-Our new centralized authentication and model gateway:
-
--   **Status**: Beta - actively being rolled out
--   **Features**: Unified authentication, pollen-based billing, all models in one place
--   **Authentication**: Publishable keys (`pk_`) and Secret keys (`sk_`)
--   **Endpoints** (transitional - will be simplified):
-    -   `/api/generate/image/*` - Image generation with all models
-    -   `/api/generate/openai` - OpenAI-compatible text/audio endpoints
-    -   `/api/generate/text/*` - Simple text generation
--   **Documentation**: See `enter.pollinations.ai/MODEL-TESTING-CHEATSHEET.md`
--   **Best for**: New integrations, testing, production-ready features
--   **Note**: Current endpoint structure is transitional and will be simplified in future releases
-
-### 🔄 **Legacy APIs** (OLD - Being Phased Out)
-
--   **image.pollinations.ai** - Direct image generation (no auth validation)
--   **text.pollinations.ai** - Direct text generation (no auth validation)
--   **Status**: Image/text services operational but authentication removed; all auth now via enter.pollinations.ai
--   **Migration**: All new features are being built on enter.pollinations.ai
-
-**For Agents**: When working on API-related tasks, clarify whether you're working with:
-
-1. **New system** (enter.pollinations.ai) - preferred for new work
-2. **Legacy system** (image/text.pollinations.ai) - maintenance only
-
-Both systems are currently functional, but new development should target enter.pollinations.ai.
+- **Authentication**: Publishable keys (`pk_`) for frontend, Secret keys (`sk_`) for backend
+- **Billing**: Pollen credits ($1 ≈ 1 Pollen)
+- **Get API keys**: [enter.pollinations.ai](https://enter.pollinations.ai)
+- **Full API docs**: [APIDOCS.md](./APIDOCS.md)
 
 ## Model Context Protocol (MCP)
 
-The `model-context-protocol/` directory contains a Model Context Protocol server that allows AI agents to directly generate images, text, and audio using the Pollinations API.
+The `model-context-protocol/` directory contains a Model Context Protocol server that allows AI agents to directly generate images, text, and audio using the pollinations.ai API.
 
 For detailed implementation notes, design principles, and troubleshooting, see:
 
--   `model-context-protocol/README.md` - Installation and usage
--   `model-context-protocol/AGENTS.md` - Implementation guidelines and debugging
+- `model-context-protocol/README.md` - Installation and usage
+- `model-context-protocol/AGENTS.md` - Implementation guidelines and debugging
 
 ## API Quick Reference
 
 ### Image Generation
 
-```
-GET https://image.pollinations.ai/prompt/{prompt}
-Parameters: model, seed, width, height, nologo, private, enhance, safe
-```
-
-### Text Generation
-
-```
-GET https://text.pollinations.ai/{prompt}
-POST https://text.pollinations.ai/
-Parameters: model, seed, json, system
+```bash
+curl 'https://gen.pollinations.ai/image/{prompt}' -H 'Authorization: Bearer YOUR_API_KEY'
 ```
 
-### Audio Generation
+### Text Generation (OpenAI-compatible)
 
+```bash
+curl 'https://gen.pollinations.ai/v1/chat/completions' \
+  -H 'Authorization: Bearer YOUR_API_KEY' \
+  -H 'Content-Type: application/json' \
+  -d '{"model": "openai", "messages": [{"role": "user", "content": "Hello"}]}'
 ```
-GET https://text.pollinations.ai/{prompt}?model=openai-audio&voice={voice}
-POST https://text.pollinations.ai/
-Body: messages*, model (set to "openai-audio"), voice (optional)
+
+### Simple Text
+
+```bash
+curl 'https://gen.pollinations.ai/text/{prompt}?key=YOUR_API_KEY'
 ```
 
-### Testing & Operations Documentation
+### Model Discovery
 
--   **[Model Testing Cheatsheet](enter.pollinations.ai/AGENTS.md)** - Comprehensive guide for testing all image and text models via enter.pollinations.ai API
--   **[Enter Services Deployment](.claude/skills/enter-services/SKILL.md)** - Deploy and manage text/image services on AWS EC2
+- **Image models**: `https://gen.pollinations.ai/image/models`
+- **Text models**: `https://gen.pollinations.ai/v1/models`
+
+### Documentation
+
+- **[Full API Documentation](./APIDOCS.md)**
+- **[Enter Services Deployment](.claude/skills/enter-services/SKILL.md)** - Deploy and manage services on AWS EC2
 
 ## Development Guidelines
 
 1. Code Style:
 
-    - Use modern JavaScript/TypeScript features
-    - Use ES modules (import/export) - all .js files are treated as ES modules
-    - Follow existing code formatting patterns
-    - Add descriptive comments for complex logic
+   - Use modern JavaScript/TypeScript features
+   - Use ES modules (import/export) - all .js files are treated as ES modules
+   - Follow existing code formatting patterns
+   - Add descriptive comments for complex logic
 
 2. Testing:
 
-    - Add tests for new features in appropriate test directories
-    - Follow existing test patterns in /test directories
-    - **Test with real production code, not mocks** - Tests should validate actual behavior
-    - Avoid creating mock infrastructure - use direct function imports instead
+   - Add tests for new features in appropriate test directories
+   - Follow existing test patterns in /test directories
+   - **Test with real production code, not mocks** - Tests should validate actual behavior
+   - Avoid creating mock infrastructure - use direct function imports instead
 
 3. Documentation:
 
-    - Update API docs for new endpoints
-    - Add JSDoc comments for new functions
-    - Update README.md for user-facing changes
-    - **Avoid creating markdown documentation files while working** unless explicitly requested
-    - If temporary files are needed for testing/debugging, create them in a `temp/` folder clearly labeled as temporary
+   - Update API docs for new endpoints
+   - Add JSDoc comments for new functions
+   - Update README.md for user-facing changes
+   - **Avoid creating markdown documentation files while working** unless explicitly requested
+   - If temporary files are needed for testing/debugging, create them in a `temp/` folder clearly labeled as temporary
 
 4. YAGNI Principle (You Aren't Gonna Need It):
 
-    - **Don't keep code for "potential futures"** - Only implement what's needed now
-    - Remove unused functions, even if they "might be useful someday"
-    - If we need something later, we'll add it when we actually need it
-    - Example: Don't create test utilities or helper functions "just in case"
-    - Keep the codebase minimal and focused on current requirements
+   - **Don't keep code for "potential futures"** - Only implement what's needed now
+   - Remove unused functions, even if they "might be useful someday"
+   - If we need something later, we'll add it when we actually need it
+   - Example: Don't create test utilities or helper functions "just in case"
+   - Keep the codebase minimal and focused on current requirements
 
 5. Architecture Considerations:
 
-    - Frontend changes should be in pollinations.ai/
-    - Image generation in image.pollinations.ai/
-    - Text generation in text.pollinations.ai/
-    - React components in pollinations-react/
-    - AI assistant integrations in model-context-protocol/
+   - Frontend changes should be in pollinations.ai/
+   - Image generation in image.pollinations.ai/
+   - Text generation in text.pollinations.ai/
+   - React components in pollinations-react/
+   - AI assistant integrations in model-context-protocol/
 
 6. Security:
-    - Never expose API keys or secrets
-    - Use environment variables for sensitive data
-    - Implement proper input validation
+   - Never expose API keys or secrets
+   - Use environment variables for sensitive data
+   - Implement proper input validation
 
 ## Common Tasks
 
 1. Adding New Models:
 
-    - Update models list in respective service
-    - Add model configuration
-    - Update API documentation
+   - Update models list in respective service
+   - Add model configuration
+   - Update API documentation
 
 2. Frontend Updates:
 
-    - Follow React best practices
-    - Use existing UI components
-    - Maintain responsive design
+   - Follow React best practices
+   - Use existing UI components
+   - Maintain responsive design
 
 3. API Changes:
 
-    - Maintain backward compatibility
-    - Update documentation
-    - Add appropriate error handling
+   - Maintain backward compatibility
+   - Update documentation
+   - Add appropriate error handling
 
 4. API Documentation Guidelines:
-    - Keep documentation strictly technical and user-focused
-    - Avoid marketing language or promotional content
-    - Link to dynamic endpoints (like /models) rather than hardcoding lists that may change
-    - Don't include internal implementation details or environment variables
-    - Focus on endpoints, parameters, and response formats
-    - For new features, document both simplified endpoints and OpenAI-compatible endpoints
-    - Include minimal, clear code examples that demonstrate basic usage
+   - Keep documentation strictly technical and user-focused
+   - Avoid marketing language or promotional content
+   - Link to dynamic endpoints (like /models) rather than hardcoding lists that may change
+   - Don't include internal implementation details or environment variables
+   - Focus on endpoints, parameters, and response formats
+   - For new features, document both simplified endpoints and OpenAI-compatible endpoints
+   - Include minimal, clear code examples that demonstrate basic usage
 
 # Git Workflow
 
--   If the user asks to send to git or something similar do all these steps:
--   Git status, diff, create branch, commit all, push and write a PR description
+- If the user asks to send to git or something similar do all these steps:
+- Git status, diff, create branch, commit all, push and write a PR description
 
 ## Communication Style
 
@@ -223,16 +204,16 @@ Body: messages*, model (set to "openai-audio"), voice (optional)
 
 **PR Format:**
 
--   Use "- Adds X", "- Fix Y" format
--   3-5 bullets for most PRs
--   Simple titles: "fix:", "feat:", "Add"
--   Reference: `repo:pollinations/pollinations author:eulervoid`
+- Use "- Adds X", "- Fix Y" format
+- 3-5 bullets for most PRs
+- Simple titles: "fix:", "feat:", "Add"
+- Reference: `repo:pollinations/pollinations author:eulervoid`
 
 ## GitHub Labels
 
--   Only use established labels (check with `mcp1_list_issues`)
--   Avoid creating new labels unless part of broader strategy
--   Keep names consistent with existing patterns
+- Only use established labels (check with `mcp1_list_issues`)
+- Avoid creating new labels unless part of broader strategy
+- Keep names consistent with existing patterns
 
 ## Contributor Attribution
 
@@ -245,6 +226,6 @@ Co-authored-by: username <user_id+username@users.noreply.github.com>
 Fixes #issue
 ```
 
--   Use "Fixes #issue" or "Addresses #issue" in PR descriptions
--   Email format: `{username} <{user_id}+{username}@users.noreply.github.com>`
--   Find user_id in issue API response
+- Use "Fixes #issue" or "Addresses #issue" in PR descriptions
+- Email format: `{username} <{user_id}+{username}@users.noreply.github.com>`
+- Find user_id in issue API response

@@ -17,17 +17,17 @@ Or visit the live demo: [link here]
 
 ## Features
 
--   Feature 1
--   Feature 2
--   Feature 3
+- Feature 1
+- Feature 2
+- Feature 3
 
 ## How It Works
 
-Uses Pollinations API to [explain what you're doing with it].
+Uses pollinations.ai API to [explain what you're doing with it].
 
 ```javascript
 // Example API call from your code
-fetch("https://image.pollinations.ai/prompt/cool-cat");
+fetch("https://gen.pollinations.ai/image/cool-cat");
 ```
 
 ## Screenshots
@@ -36,4 +36,4 @@ fetch("https://image.pollinations.ai/prompt/cool-cat");
 
 ---
 
-Made with Pollinations AI 🐝
+Made with pollinations.ai 🐝

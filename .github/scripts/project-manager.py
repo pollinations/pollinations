@@ -99,13 +99,6 @@ CONFIG = {
         "Circuit-Overtime",
         "Itachi-1824"
     ],
-    "member_skills": {
-        "voodoohop": ["dev", "support", "news", "general"],
-        "eulervoid": ["backend", "infrastructure", "api", "core", "database"],
-        "Circuit-Overtime": ["backend", "devops", "scaling", "performance", "news"],
-        "ElliotEtag": ["frontend", "features", "bug-fixes", "integration"],
-        "Itachi-1824": ["community", "quests", "tasks", "coordination", "tracking"]
-    },
 }
 
 def is_org_member(username: str) -> bool:
@@ -166,17 +159,12 @@ def get_fallback_classification(_: bool) -> dict:
         "project": None,
         "priority": None,
         "labels": [],
-        "assignees": [],
         "reasoning": "AI classification failed; skipping automation"
     }
 
 
 
 def classify_with_ai(is_internal: bool) -> dict:
-    member_skills = CONFIG.get("member_skills", {})
-    skills_info = "\n    ".join(
-        [f"- {member}: {', '.join(skills)}" for member, skills in member_skills.items()]
-    )
     system_prompt = f"""
     Return ONLY valid JSON with this exact schema:
 
@@ -184,19 +172,13 @@ def classify_with_ai(is_internal: bool) -> dict:
     "project": "dev|support|news|null",
     "priority": "Urgent|High|Medium|Low",
     "labels": ["BUG","FEATURE","HELP","QUEST","TRACKING","BALANCE","BILLING","API"],
-    "assignees": ["username1", "username2"] or null,
     "reasoning": "string"
     }}
 
-    Team Skills:
-    {skills_info}
-
     Rules:
     - Do NOT invent new labels
-    - Assign 1-2 developers whose COMBINED skills best match the issue
     - dev is internal-only
-    - Only assign from provided team list
-    - Return null if no good match
+    - Use null if unsure
     """
 
     user_prompt = f"""
@@ -228,14 +210,10 @@ def classify_with_ai(is_internal: bool) -> dict:
 
             content = r.json()["choices"][0]["message"]["content"]
             raw = json.loads(content)
-            assignees = raw.get("assignees", [])
-            if not isinstance(assignees, list):
-                assignees = []
             return {
                 "project": raw.get("project"),
                 "priority": raw.get("priority", "Medium"),
                 "labels": raw.get("labels", []) if isinstance(raw.get("labels"), list) else [],
-                "assignees": assignees,
                 "reasoning": raw.get("reasoning", "")
             }
 
@@ -314,19 +292,6 @@ def add_labels(labels: list):
     )
 
 
-def assign_issue(assignees: list):
-    if IS_PULL_REQUEST or not assignees:
-        return
-    # Filter to only valid org members
-    valid = [a for a in assignees if a in CONFIG["org_members"]]
-    if valid:
-        requests.patch(
-            f"{GITHUB_API}/repos/{REPO_OWNER}/{REPO_NAME}/issues/{ISSUE_NUMBER}",
-            headers=GITHUB_HEADERS,
-            json={"assignees": valid},
-            timeout=10,
-        )
-
 
 def main():
     if not ISSUE_NUMBER or not ISSUE_NODE_ID:
@@ -360,10 +325,6 @@ def main():
             priority_option,
         )
     add_labels(labels)
-
-    assignees = classification.get("assignees", [])
-    if assignees:
-        assign_issue(assignees)
 
 if __name__ == "__main__":
     main()

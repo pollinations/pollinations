@@ -304,6 +304,19 @@ async function handleRequest(req, res, requestData) {
             await sendAsOpenAIStream(res, completion, req);
         } else {
             if (req.method === "GET") {
+                // For perplexity models with jsonMode, return custom JSON with content and citations
+                const isPerplexityModel =
+                    requestData.model?.startsWith("perplexity");
+                if (isPerplexityModel && requestData.jsonMode) {
+                    const content =
+                        completion.choices?.[0]?.message?.content || "";
+                    const citations = completion.citations || [];
+                    res.setHeader(
+                        "Content-Type",
+                        "application/json; charset=utf-8",
+                    );
+                    return res.json({ content, citations });
+                }
                 sendContentResponse(res, completion);
             } else if (req.path === "/") {
                 // For POST requests to the root path, also send plain text

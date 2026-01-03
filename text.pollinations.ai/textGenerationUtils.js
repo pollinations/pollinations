@@ -223,12 +223,19 @@ export function normalizeOptions(options = {}, defaults = {}) {
     }
 
     // Handle jsonMode -> response_format conversion
-    if (normalized.jsonMode) {
+    // For perplexity models, don't send response_format (they don't support it)
+    // Instead, keep jsonMode flag so we can format the output ourselves
+    // Note: model name may be mapped (perplexity-fast -> sonar) by this point
+    const isPerplexityModel =
+        normalized.model?.startsWith("perplexity") ||
+        normalized.model?.startsWith("sonar");
+    if (normalized.jsonMode && !isPerplexityModel) {
         if (!normalized.response_format) {
             normalized.response_format = { type: "json_object" };
         }
         delete normalized.jsonMode;
     }
+    // For perplexity models, keep jsonMode flag for output formatting
 
     return normalized;
 }

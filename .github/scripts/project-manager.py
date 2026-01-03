@@ -74,7 +74,7 @@ CONFIG = {
             "id": "PVT_kwDOBS76fs4BLr1H",
             "name": "Support",
             "internal_only": False,
-            "default_status": "To do",
+            "default_status": "Review",
             "status_field_id": "PVTSSF_lADOBS76fs4BLr1Hzg7L1RQ",
             "status_options": {
                 "Review": "f75ad846",

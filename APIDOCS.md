@@ -27,6 +27,15 @@ curl 'https://gen.pollinations.ai/v1/chat/completions' \
   -d '{"model": "openai", "messages": [{"role": "user", "content": "Hello"}]}'
 ```
 
+### Vision (Image Input)
+
+```bash
+curl 'https://gen.pollinations.ai/v1/chat/completions' \
+  -H 'Authorization: Bearer YOUR_API_KEY' \
+  -H 'Content-Type: application/json' \
+  -d '{"model": "openai", "messages": [{"role": "user", "content": [{"type": "text", "text": "Describe this image"}, {"type": "image_url", "image_url": {"url": "https://example.com/image.jpg"}}]}]}'
+```
+
 **Note:** `gemini` model has `code_execution`, `google_search`, `url_context` tools enabled by default. Pass your own `tools` array to override.
 
 ### Simple Text Endpoint
@@ -76,7 +85,7 @@ curl 'https://gen.pollinations.ai/v1/chat/completions' \
 - **Path:** `/v1/models`
 - **Tags:** gen.pollinations.ai
 
-Get available text models (OpenAI-compatible).
+Get available text models (OpenAI-compatible). If an API key with model restrictions is provided, only allowed models are returned.
 
 #### Responses
 
@@ -84,106 +93,41 @@ Get available text models (OpenAI-compatible).
 
 ###### Content-Type: application/json
 
-**Array of:**
-
-- **`audio` (required)**
-
-  `boolean`
-
-- **`community` (required)**
-
-  `boolean`
-
-- **`description` (required)**
-
-  `string`
-
-- **`input_modalities` (required)**
+- **`data` (required)**
 
   `array`
 
   **Items:**
 
-  `string`, possible values: `"text", "image", "audio"`
+  - **`created` (required)**
 
-- **`name` (required)**
+    `number`
 
-  `string`
+  - **`id` (required)**
 
-- **`output_modalities` (required)**
+    `string`
 
-  `array`
+  - **`object` (required)**
 
-  **Items:**
+    `string`
 
-  `string`, possible values: `"text", "image", "audio"`
-
-- **`tier` (required)**
-
-  `string`, possible values: `"anonymous", "seed", "flower", "nectar"`
-
-- **`tools` (required)**
-
-  `boolean`
-
-- **`vision` (required)**
-
-  `boolean`
-
-- **`aliases`**
-
-  `array`
-
-  **Items:**
-
-  `string`
-
-- **`maxInputChars`**
-
-  `number`
-
-- **`reasoning`**
-
-  `boolean`
-
-- **`supportsSystemMessages`**
-
-  `boolean`
-
-- **`uncensored`**
-
-  `boolean`
-
-- **`voices`**
-
-  `array`
-
-  **Items:**
+- **`object` (required)**
 
   `string`
 
 **Example:**
 
 ```json
-[
-  {
-    "name": "",
-    "description": "",
-    "tier": "anonymous",
-    "community": true,
-    "aliases": [""],
-    "input_modalities": ["text"],
-    "output_modalities": ["text"],
-    "tools": true,
-    "vision": true,
-    "audio": true,
-    "maxInputChars": 1,
-    "reasoning": true,
-    "voices": [""],
-    "uncensored": true,
-    "supportsSystemMessages": true
-  }
-]
+{
+  "object": "list",
+  "data": [
+    {
+      "id": "",
+      "object": "model",
+      "created": 1
+    }
+  ]
+}
 ```
 
 ##### Status: 500 Oh snap, something went wrong on our end. We're on it!
@@ -260,7 +204,7 @@ Get available text models (OpenAI-compatible).
 - **Path:** `/image/models`
 - **Tags:** gen.pollinations.ai
 
-Get a list of available image generation models with pricing, capabilities, and metadata. Use this endpoint to discover which models are available and their costs before making generation requests. Response includes `aliases` (alternative names you can use), pricing per image, and supported modalities.
+Get a list of available image generation models with pricing, capabilities, and metadata. If an API key with model restrictions is provided, only allowed models are returned.
 
 #### Responses
 
@@ -285,34 +229,6 @@ Get a list of available image generation models with pricing, capabilities, and 
 - **`pricing` (required)**
 
   `object`
-
-  - **`currency` (required)**
-
-    `string`
-
-  - **`audio_input_price`**
-
-    `number`
-
-  - **`audio_output_price`**
-
-    `number`
-
-  - **`cached_token_price`**
-
-    `number`
-
-  - **`image_price`**
-
-    `number`
-
-  - **`input_token_price`**
-
-    `number`
-
-  - **`output_token_price`**
-
-    `number`
 
 - **`context_window`**
 
@@ -364,23 +280,26 @@ Get a list of available image generation models with pricing, capabilities, and 
 [
   {
     "name": "",
-    "aliases": [""],
+    "aliases": [
+      ""
+    ],
     "pricing": {
-      "input_token_price": 1,
-      "output_token_price": 1,
-      "cached_token_price": 1,
-      "image_price": 1,
-      "audio_input_price": 1,
-      "audio_output_price": 1,
+      "propertyName*": 1,
       "currency": "pollen"
     },
     "description": "",
-    "input_modalities": [""],
-    "output_modalities": [""],
+    "input_modalities": [
+      ""
+    ],
+    "output_modalities": [
+      ""
+    ],
     "tools": true,
     "reasoning": true,
     "context_window": 1,
-    "voices": [""],
+    "voices": [
+      ""
+    ],
     "is_specialized": true
   }
 ]
@@ -460,7 +379,7 @@ Get a list of available image generation models with pricing, capabilities, and 
 - **Path:** `/text/models`
 - **Tags:** gen.pollinations.ai
 
-Get a list of available text generation models with pricing, capabilities, and metadata. Use this endpoint to discover which models are available and their costs before making generation requests. Response includes `aliases` (alternative names you can use), token pricing, supported modalities (text, image, audio), and capabilities (tools, reasoning).
+Get a list of available text generation models with pricing, capabilities, and metadata. If an API key with model restrictions is provided, only allowed models are returned.
 
 #### Responses
 
@@ -485,34 +404,6 @@ Get a list of available text generation models with pricing, capabilities, and m
 - **`pricing` (required)**
 
   `object`
-
-  - **`currency` (required)**
-
-    `string`
-
-  - **`audio_input_price`**
-
-    `number`
-
-  - **`audio_output_price`**
-
-    `number`
-
-  - **`cached_token_price`**
-
-    `number`
-
-  - **`image_price`**
-
-    `number`
-
-  - **`input_token_price`**
-
-    `number`
-
-  - **`output_token_price`**
-
-    `number`
 
 - **`context_window`**
 
@@ -564,23 +455,26 @@ Get a list of available text generation models with pricing, capabilities, and m
 [
   {
     "name": "",
-    "aliases": [""],
+    "aliases": [
+      ""
+    ],
     "pricing": {
-      "input_token_price": 1,
-      "output_token_price": 1,
-      "cached_token_price": 1,
-      "image_price": 1,
-      "audio_input_price": 1,
-      "audio_output_price": 1,
+      "propertyName*": 1,
       "currency": "pollen"
     },
     "description": "",
-    "input_modalities": [""],
-    "output_modalities": [""],
+    "input_modalities": [
+      ""
+    ],
+    "output_modalities": [
+      ""
+    ],
     "tools": true,
     "reasoning": true,
     "context_window": 1,
-    "voices": [""],
+    "voices": [
+      ""
+    ],
     "is_specialized": true
   }
 ]
@@ -890,7 +784,7 @@ API keys can be created from your dashboard at enter.pollinations.ai. Secret key
 
 - **`reasoning_effort`**
 
-  `string`, possible values: `"low", "medium", "high"`
+  `string`, possible values: `"none", "minimal", "low", "medium", "high", "xhigh"`
 
 - **`repetition_penalty`**
 
@@ -995,7 +889,9 @@ API keys can be created from your dashboard at enter.pollinations.ai. Secret key
     }
   ],
   "model": "openai",
-  "modalities": ["text"],
+  "modalities": [
+    "text"
+  ],
   "audio": {
     "voice": "alloy",
     "format": "wav"
@@ -1010,7 +906,7 @@ API keys can be created from your dashboard at enter.pollinations.ai. Secret key
   "response_format": {
     "type": "text"
   },
-  "seed": 0,
+  "seed": -1,
   "stop": "",
   "stream": false,
   "stream_options": {
@@ -1020,7 +916,7 @@ API keys can be created from your dashboard at enter.pollinations.ai. Secret key
     "type": "disabled",
     "budget_tokens": 1
   },
-  "reasoning_effort": "low",
+  "reasoning_effort": "none",
   "thinking_budget": 0,
   "temperature": 1,
   "top_p": 1,
@@ -1221,7 +1117,9 @@ API keys can be created from your dashboard at enter.pollinations.ai. Secret key
           {
             "token": "",
             "logprob": 1,
-            "bytes": ["[Max Depth Exceeded]"],
+            "bytes": [
+              "[Max Depth Exceeded]"
+            ],
             "top_logprobs": [
               {
                 "token": "[Max Depth Exceeded]",
@@ -1319,7 +1217,9 @@ API keys can be created from your dashboard at enter.pollinations.ai. Secret key
     "total_tokens": 0
   },
   "user_tier": "anonymous",
-  "citations": [""]
+  "citations": [
+    ""
+  ]
 }
 ```
 
@@ -1396,9 +1296,13 @@ API keys can be created from your dashboard at enter.pollinations.ai. Secret key
     "details": {
       "name": "",
       "stack": "",
-      "formErrors": [""],
+      "formErrors": [
+        ""
+      ],
       "fieldErrors": {
-        "propertyName*": [""]
+        "propertyName*": [
+          ""
+        ]
       }
     },
     "requestId": "",
@@ -1574,64 +1478,6 @@ API keys can be created from your dashboard at enter.pollinations.ai.
 true
 ```
 
-### GET /image/{prompt}
-
-- **Method:** `GET`
-- **Path:** `/image/{prompt}`
-- **Tags:** gen.pollinations.ai
-
-Generate an image or video from a text prompt.
-
-**Image Models:** `flux` (default), `turbo`, `gptimage`, `kontext`, `seedream`, `nanobanana`, `nanobanana-pro`
-
-**Video Models:** `veo`, `seedance`
-
-- `veo`: Text-to-video only (4-8 seconds)
-- `seedance`: Text-to-video and image-to-video (2-10 seconds)
-
-**Authentication:**
-
-Include your API key either:
-
-- In the `Authorization` header as a Bearer token: `Authorization: Bearer YOUR_API_KEY`
-- As a query parameter: `?key=YOUR_API_KEY`
-
-API keys can be created from your dashboard at enter.pollinations.ai.
-
-#### Responses
-
-##### Status: 200 Success - Returns the generated image or video
-
-###### Content-Type: image/jpeg
-
-`string`, format: `binary`
-
-**Example:**
-
-```json
-{}
-```
-
-###### Content-Type: image/png
-
-`string`, format: `binary`
-
-**Example:**
-
-```json
-{}
-```
-
-###### Content-Type: video/mp4
-
-`string`, format: `binary`
-
-**Example:**
-
-```json
-{}
-```
-
 ##### Status: 400 Something was wrong with the input data, check the details for more info.
 
 ###### Content-Type: application/json
@@ -1705,9 +1551,13 @@ API keys can be created from your dashboard at enter.pollinations.ai.
     "details": {
       "name": "",
       "stack": "",
-      "formErrors": [""],
+      "formErrors": [
+        ""
+      ],
       "fieldErrors": {
-        "propertyName*": [""]
+        "propertyName*": [
+          ""
+        ]
       }
     },
     "requestId": "",
@@ -1851,3 +1701,544 @@ API keys can be created from your dashboard at enter.pollinations.ai.
   }
 }
 ```
+
+### GET /image/{prompt}
+
+- **Method:** `GET`
+- **Path:** `/image/{prompt}`
+- **Tags:** gen.pollinations.ai
+
+Generate an image or video from a text prompt.
+
+**Image Models:** `flux` (default), `turbo`, `gptimage`, `kontext`, `seedream`, `nanobanana`, `nanobanana-pro`
+
+**Video Models:** `veo`, `seedance`
+
+- `veo`: Text-to-video only (4-8 seconds)
+- `seedance`: Text-to-video and image-to-video (2-10 seconds)
+
+**Authentication:**
+
+Include your API key either:
+
+- In the `Authorization` header as a Bearer token: `Authorization: Bearer YOUR_API_KEY`
+- As a query parameter: `?key=YOUR_API_KEY`
+
+API keys can be created from your dashboard at enter.pollinations.ai.
+
+#### Responses
+
+##### Status: 200 Success - Returns the generated image or video
+
+###### Content-Type: image/jpeg
+
+`string`, format: `binary`
+
+**Example:**
+
+```json
+{}
+```
+
+###### Content-Type: image/png
+
+`string`, format: `binary`
+
+**Example:**
+
+```json
+{}
+```
+
+###### Content-Type: video/mp4
+
+`string`, format: `binary`
+
+**Example:**
+
+```json
+{}
+```
+
+##### Status: 400 Something was wrong with the input data, check the details for more info.
+
+###### Content-Type: application/json
+
+- **`error` (required)**
+
+  `object`
+
+  - **`code` (required)**
+
+    `string`
+
+  - **`details` (required)**
+
+    `object`
+
+    - **`fieldErrors` (required)**
+
+      `object`
+
+    - **`formErrors` (required)**
+
+      `array`
+
+      **Items:**
+
+      `string`
+
+    - **`name` (required)**
+
+      `string`
+
+    - **`stack`**
+
+      `string`
+
+  - **`message` (required)**
+
+    `object`
+
+  - **`timestamp` (required)**
+
+    `string`
+
+  - **`cause`**
+
+    `object`
+
+  - **`requestId`**
+
+    `string`
+
+- **`status` (required)**
+
+  `number`
+
+- **`success` (required)**
+
+  `boolean`
+
+**Example:**
+
+```json
+{
+  "status": 400,
+  "success": false,
+  "error": {
+    "code": "BAD_REQUEST",
+    "message": "Something was wrong with the input data, check the details for more info.",
+    "timestamp": "",
+    "details": {
+      "name": "",
+      "stack": "",
+      "formErrors": [
+        ""
+      ],
+      "fieldErrors": {
+        "propertyName*": [
+          ""
+        ]
+      }
+    },
+    "requestId": "",
+    "cause": null
+  }
+}
+```
+
+##### Status: 401 You need to authenticate by providing a session cookie or Authorization header (Bearer token).
+
+###### Content-Type: application/json
+
+- **`error` (required)**
+
+  `object`
+
+  - **`code` (required)**
+
+    `string`
+
+  - **`details` (required)**
+
+    `object`
+
+    - **`name` (required)**
+
+      `string`
+
+    - **`stack`**
+
+      `string`
+
+  - **`message` (required)**
+
+    `object`
+
+  - **`timestamp` (required)**
+
+    `string`
+
+  - **`cause`**
+
+    `object`
+
+  - **`requestId`**
+
+    `string`
+
+- **`status` (required)**
+
+  `number`
+
+- **`success` (required)**
+
+  `boolean`
+
+**Example:**
+
+```json
+{
+  "status": 401,
+  "success": false,
+  "error": {
+    "code": "UNAUTHORIZED",
+    "message": "You need to authenticate by providing a session cookie or Authorization header (Bearer token).",
+    "timestamp": "",
+    "details": {
+      "name": "",
+      "stack": ""
+    },
+    "requestId": "",
+    "cause": null
+  }
+}
+```
+
+##### Status: 500 Oh snap, something went wrong on our end. We're on it!
+
+###### Content-Type: application/json
+
+- **`error` (required)**
+
+  `object`
+
+  - **`code` (required)**
+
+    `string`
+
+  - **`details` (required)**
+
+    `object`
+
+    - **`name` (required)**
+
+      `string`
+
+    - **`stack`**
+
+      `string`
+
+  - **`message` (required)**
+
+    `object`
+
+  - **`timestamp` (required)**
+
+    `string`
+
+  - **`cause`**
+
+    `object`
+
+  - **`requestId`**
+
+    `string`
+
+- **`status` (required)**
+
+  `number`
+
+- **`success` (required)**
+
+  `boolean`
+
+**Example:**
+
+```json
+{
+  "status": 500,
+  "success": false,
+  "error": {
+    "code": "INTERNAL_ERROR",
+    "message": "Oh snap, something went wrong on our end. We're on it!",
+    "timestamp": "",
+    "details": {
+      "name": "",
+      "stack": ""
+    },
+    "requestId": "",
+    "cause": null
+  }
+}
+```
+
+## Schemas
+
+### ErrorDetails
+
+- **Type:**`object`
+
+* **`name` (required)**
+
+  `string`
+
+* **`stack`**
+
+  `string`
+
+**Example:**
+
+```json
+{
+  "name": "",
+  "stack": ""
+}
+```
+
+### CacheControl
+
+- **Type:**`object`
+
+* **`type` (required)**
+
+  `string`, possible values: `"ephemeral"`
+
+**Example:**
+
+```json
+{
+  "type": "ephemeral"
+}
+```
+
+### ContentFilterSeverity
+
+- **Type:**`string`
+
+**Example:**
+
+### ContentFilterResult
+
+- **Type:**`object`
+
+* **`hate`**
+
+  `object`
+
+  - **`filtered` (required)**
+
+    `boolean`
+
+  - **`severity` (required)**
+
+    `string`, possible values: `"safe", "low", "medium", "high"`
+
+* **`jailbreak`**
+
+  `object`
+
+  - **`detected` (required)**
+
+    `boolean`
+
+  - **`filtered` (required)**
+
+    `boolean`
+
+* **`protected_material_code`**
+
+  `object`
+
+  - **`detected` (required)**
+
+    `boolean`
+
+  - **`filtered` (required)**
+
+    `boolean`
+
+* **`protected_material_text`**
+
+  `object`
+
+  - **`detected` (required)**
+
+    `boolean`
+
+  - **`filtered` (required)**
+
+    `boolean`
+
+* **`self_harm`**
+
+  `object`
+
+  - **`filtered` (required)**
+
+    `boolean`
+
+  - **`severity` (required)**
+
+    `string`, possible values: `"safe", "low", "medium", "high"`
+
+* **`sexual`**
+
+  `object`
+
+  - **`filtered` (required)**
+
+    `boolean`
+
+  - **`severity` (required)**
+
+    `string`, possible values: `"safe", "low", "medium", "high"`
+
+* **`violence`**
+
+  `object`
+
+  - **`filtered` (required)**
+
+    `boolean`
+
+  - **`severity` (required)**
+
+    `string`, possible values: `"safe", "low", "medium", "high"`
+
+**Example:**
+
+```json
+{
+  "hate": {
+    "filtered": true,
+    "severity": "safe"
+  },
+  "self_harm": {
+    "filtered": true,
+    "severity": "safe"
+  },
+  "sexual": {
+    "filtered": true,
+    "severity": "safe"
+  },
+  "violence": {
+    "filtered": true,
+    "severity": "safe"
+  },
+  "jailbreak": {
+    "filtered": true,
+    "detected": true
+  },
+  "protected_material_text": {
+    "filtered": true,
+    "detected": true
+  },
+  "protected_material_code": {
+    "filtered": true,
+    "detected": true
+  }
+}
+```
+
+### CompletionUsage
+
+- **Type:**`object`
+
+* **`completion_tokens` (required)**
+
+  `integer`
+
+* **`prompt_tokens` (required)**
+
+  `integer`
+
+* **`total_tokens` (required)**
+
+  `integer`
+
+* **`completion_tokens_details`**
+
+  `object`
+
+* **`prompt_tokens_details`**
+
+  `object`
+
+**Example:**
+
+```json
+{
+  "completion_tokens": 0,
+  "completion_tokens_details": {
+    "accepted_prediction_tokens": 0,
+    "audio_tokens": 0,
+    "reasoning_tokens": 0,
+    "rejected_prediction_tokens": 0
+  },
+  "prompt_tokens": 0,
+  "prompt_tokens_details": {
+    "audio_tokens": 0,
+    "cached_tokens": 0
+  },
+  "total_tokens": 0
+}
+```
+
+### ValidationErrorDetails
+
+- **Type:**`object`
+
+* **`fieldErrors` (required)**
+
+  `object`
+
+* **`formErrors` (required)**
+
+  `array`
+
+  **Items:**
+
+  `string`
+
+* **`name` (required)**
+
+  `string`
+
+* **`stack`**
+
+  `string`
+
+**Example:**
+
+```json
+{
+  "name": "",
+  "stack": "",
+  "formErrors": [
+    ""
+  ],
+  "fieldErrors": {
+    "propertyName*": [
+      ""
+    ]
+  }
+}
+```
+
+### MessageContentPart
+
+- **Type:**
+
+**Example:**

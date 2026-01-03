@@ -7,12 +7,11 @@ from typing import Optional
 
 GITHUB_TOKEN = os.getenv("GITHUB_TOKEN")
 POLLINATIONS_TOKEN = os.getenv("POLLINATIONS_TOKEN")
-GITHUB_EVENT_PATH = os.getenv("GITHUB_EVENT_PATH")
-if not GITHUB_EVENT_PATH or not os.path.exists(GITHUB_EVENT_PATH):
+GITHUB_EVENT_JSON = os.getenv("GITHUB_EVENT", "{}")
+try:
+    GITHUB_EVENT = json.loads(GITHUB_EVENT_JSON)
+except json.JSONDecodeError:
     GITHUB_EVENT = {}
-else:
-    with open(GITHUB_EVENT_PATH, "r") as f:
-        GITHUB_EVENT = json.load(f)
 REPO_OWNER = "pollinations"
 REPO_NAME = "pollinations"
 IS_PULL_REQUEST = "pull_request" in GITHUB_EVENT

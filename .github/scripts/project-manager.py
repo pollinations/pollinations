@@ -49,6 +49,7 @@ CONFIG = {
                 "In Progress": "47fc9ee4",
                 "In Review": "ca6ba6c3",
                 "Done": "98236657",
+                "Discarded": "bc3f7e3a",
             },
             "priority_field_id": "PVTSSF_lADOBS76fs4AwCAMzg2DKDk",
             "priority_options": {
@@ -64,10 +65,11 @@ CONFIG = {
             "number": 21,
             "description": "User help, billing, API questions, bug reports from users",
             "internal_only": False,
-            "default_status": "Review",
+            "default_status": "To do",
             "status_field_id": "PVTSSF_lADOBS76fs4BLr1Hzg7L1RQ",
             "status_options": {
-                "Review": "f75ad846",
+                "To do": "f75ad846",
+                "In progress": "47fc9ee4",
                 "Done": "98236657",
                 "Discarded": "bc3f7e3a",
             },
@@ -85,11 +87,10 @@ CONFIG = {
             "number": 22,
             "description": "News workflows, social media automation, announcements, releases",
             "internal_only": False,
-            "default_status": "Todo",
+            "default_status": "Review",
             "status_field_id": "PVTSSF_lADOBS76fs4BLtD8zg7Mrxg",
             "status_options": {
-                "Todo": "f75ad846",
-                "In Progress": "47fc9ee4",
+                "Review": "f75ad846",
                 "Done": "98236657",
             },
             "priority_field_id": None,
@@ -97,19 +98,22 @@ CONFIG = {
         }
     },
     "labels": {
-        "CORE": "Core development work",
+        # DEV (TOP + TYPE)
+        "DEV": "Applied to all Dev items",
         "BUG": "Something is broken",
         "FEATURE": "New functionality request",
         "QUEST": "Community task - pollen reward if merged",
         "TRACKING": "Meta-issue tracking other items",
-        "SUPPORT": "Support request",
+        
+        # SUPPORT (TOP + TYPE + TAG)
+        "SUPPORT": "Applied to all Support issues",
         "HELP": "User needs assistance",
         "BALANCE": "Pollen balance issue",
         "BILLING": "Payment or subscription issue",
         "API": "API usage or integration issue",
-        "NEWS": "News and announcements",
-        "POLLEN": "Pollen-related feature or reward",
-        "EXTERNAL": "External contribution (not from org member)",
+        
+        # NEWS (TOP only)
+        "NEWS": "Applied to all News PRs",
     },
     "org_members": [
         "voodoohop",
@@ -125,7 +129,6 @@ CONFIG = {
         "Circuit-Overtime": ["backend", "devops", "scaling", "performance", "news"],
         "Itachi-1824": ["community", "quests", "tasks", "coordination", "tracking"],
     },
-    "fallback_assignee": "voodoohop",
 }
 
 
@@ -161,16 +164,9 @@ def classify_with_ai(is_internal: bool) -> dict:
     4. Set priority based on impact: Urgent (critical/blocking), High (important), Medium (normal), Low (minor)
 
     LABELS (pick 1-2 most relevant, UPPERCASE):
-    Dev labels: 
-
-    - CORE: Touching core infrastructure/APIs (not just new features)
-    - FEATURE: New user-facing functionality or API endpoints
-    - BUG: Bug fixes or regressions
-    - QUEST: Community task eligible for pollen rewards
-    - TRACKING: Meta-issue tracking related items
-    Support labels: SUPPORT, HELP, BUG, FEATURE, BALANCE (pollen issues), BILLING, API (usage/integration)
+    Dev labels: DEV, BUG, FEATURE, QUEST, TRACKING
+    Support labels: SUPPORT, HELP, BUG, FEATURE, BALANCE, BILLING, API
     News labels: NEWS
-    External: EXTERNAL (add if author is external)
 
     ASSIGNEE SELECTION:
     Team members and their skills:
@@ -355,6 +351,11 @@ def add_labels(labels: list):
         print("No valid labels to add")
         return
 
+    # Add project-level label (DEV, SUPPORT, or NEWS) if not already present
+    project_key = classification.get("project", "support").upper()
+    if project_key not in valid_labels:
+        valid_labels.append(project_key)
+
     try:
         response = requests.post(
             f"{GITHUB_API}/repos/{REPO_OWNER}/{REPO_NAME}/issues/{ISSUE_NUMBER}/labels",
@@ -370,13 +371,12 @@ def add_labels(labels: list):
         print(f"Failed to add labels: {e}")
 
 
-def find_best_assignee(classification: dict) -> str:
+def find_best_assignee(classification: dict) -> Optional[str]:
     assignee = classification.get("assignee", "").strip()
-    fallback = CONFIG.get("fallback_assignee")
     if assignee and assignee in CONFIG.get("org_members", []):
         return assignee
     
-    return fallback
+    return None
 
 
 def assign_issue(assignee: str):
@@ -425,8 +425,6 @@ def main():
         print(f"External user cannot be added to {project_key}, redirecting to support")
         project_key = "support"
         project_config = CONFIG["projects"]["support"]
-        if "EXTERNAL" not in [l.upper() for l in labels]:
-            labels.append("EXTERNAL")
 
     print(f"Adding to project: {project_config['name']}")
     item_id = add_to_project(project_config["id"])
@@ -462,7 +460,10 @@ def main():
 
     best_assignee = find_best_assignee(classification)
     if best_assignee:
+        print(f"Assigning to @{best_assignee}")
         assign_issue(best_assignee)
+    else:
+        print("No valid assignee found, skipping assignment")
 
     print(f"\n✓ Successfully organized into {project_config['name']} project")
     print(f"  Priority: {priority}")

@@ -25,10 +25,11 @@ jobs:
   tier-parse-issue:
     if: |
       (github.event_name == 'workflow_dispatch' ||
-      contains(github.event.issue.labels.*.name, 'tier:review') ||
+      (github.event_name == 'issues' && contains(github.event.issue.labels.*.name, 'tier:review')) ||
       (github.event_name == 'issue_comment' && 
-       contains(github.event.issue.labels.*.name, 'tier:info-needed') &&
-       github.event.comment.user.type != 'Bot')) &&
+       github.event.comment.user.type != 'Bot' &&
+       (contains(github.event.issue.labels.*.name, 'tier:review') ||
+        contains(github.event.issue.labels.*.name, 'tier:info-needed')))) &&
       !contains(github.event.issue.labels.*.name, 'tier:done') &&
       !contains(github.event.issue.labels.*.name, 'tier:flower') &&
       github.event.issue.state == 'open'
@@ -65,7 +66,7 @@ jobs:
               { name: 'tier:info-needed', color: 'fbca04', description: 'Awaiting registration or info' },
               { name: 'tier:flower', color: '1d76db', description: 'Approved for Flower tier' },
               { name: 'tier:done', color: '6f42c1', description: 'Tier upgrade completed' },
-              { name: 'tier:duplicate', color: 'd73a49', description: 'Rejected as duplicate or tier abuse' }
+              { name: 'tier:rejected', color: 'd73a49', description: 'Submission rejected' }
             ];
             for (const label of labels) {
               try {
@@ -148,122 +149,84 @@ jobs:
             echo "category=$(echo "$PROJECT_JSON" | jq -r '.category')" >> $GITHUB_OUTPUT
           fi
 
-      - name: Check for exact duplicates and semantic similarity
+      - name: Check for exact duplicates (Node.js - handles special chars safely)
         if: steps.parse.outputs.needs_info != 'true'
-        id: duplicate-check
+        id: duplicate-check-exact
         env:
           PROJECT_JSON: ${{ steps.parse.outputs.project_json }}
           GITHUB_USERNAME: ${{ steps.issue.outputs.author }}
+        run: node .github/scripts/tier-check-duplicate.js
+
+      - name: Check semantic similarity (if user has previous apps)
+        if: steps.parse.outputs.needs_info != 'true' && steps.duplicate-check-exact.outputs.duplicate_found == '' && steps.duplicate-check-exact.outputs.user_previous_apps != ''
+        id: semantic-check
+        env:
+          PROJECT_JSON: ${{ steps.parse.outputs.project_json }}
+          USER_PREVIOUS_APPS: ${{ steps.duplicate-check-exact.outputs.user_previous_apps }}
         run: |
+          # Use jq for safe escaping of special characters
           APP_NAME=$(echo "$PROJECT_JSON" | jq -r '.name')
-          APP_URL=$(echo "$PROJECT_JSON" | jq -r '.url')
-          APP_REPO=$(echo "$PROJECT_JSON" | jq -r '.repo // empty')
+          APP_DESC=$(echo "$PROJECT_JSON" | jq -r '.description')
           
-          # Normalize for comparison (avoid xargs which chokes on quotes)
-          NORMALIZED_NAME=$(echo "$APP_NAME" | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9 ]//g' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
+          # Build comparison message using jq to safely handle special chars
+          PAYLOAD=$(jq -n \
+            --arg name "$APP_NAME" \
+            --arg desc "$APP_DESC" \
+            --arg prev "$USER_PREVIOUS_APPS" '{
+              model: "openai",
+              messages: [
+                { role: "system", content: "Compare app submissions semantically. Return JSON: similarity (0-100 integer), reason (brief explanation). Consider: purpose, target audience, core functionality, category." },
+                { role: "user", content: ("Current submission:\nName: " + $name + "\nDescription: " + $desc + "\n\nUser previous submissions:\n" + $prev + "\n\nScore similarity 0-100 based on purpose, category, target use case, and core functionality.") }
+              ],
+              response_format: { type: "json_object" }
+            }')
           
-          DUPLICATE_FOUND=""
-          SIMILAR_APPS=""
-          MATCH_TYPE=""
+          HTTP_CODE=$(curl -s -w "%{http_code}" -o /tmp/similarity.json -X POST "https://gen.pollinations.ai/v1/chat/completions" \
+            -H "Content-Type: application/json" \
+            -H "Authorization: Bearer ${{ secrets.POLLINATIONS_TOKEN }}" \
+            -d "$PAYLOAD")
           
-          # Check all project files for exact matches
-          for file in pollinations.ai/src/config/projects/*.js apps/APPS.md; do
-            [ ! -f "$file" ] && continue
-            
-            # 1. Check for exact URL match (HARD MATCH)
-            if grep -qi "| [^|]*$(printf '%s\n' "$APP_URL" | sed 's/[/&]/\\&/g')" "$file"; then
-              DUPLICATE_FOUND="$file"
-              MATCH_TYPE="url_exact"
-              break
-            fi
-            
-            # 2. Check for exact repo URL match (HARD MATCH)
-            if [ -n "$APP_REPO" ] && grep -qi "$(printf '%s\n' "$APP_REPO" | sed 's/[/&]/\\&/g')" "$file"; then
-              DUPLICATE_FOUND="$file"
-              MATCH_TYPE="repo_exact"
-              break
-            fi
-            
-            # 3. Check for name+user match in markdown table (HARD MATCH)
-            # Format: | emoji | [Name](url) | description | language | category | @author |
-            if grep -qi "| .* | \[.*${APP_NAME}.*\]" "$file" || grep -qi "| .* | ${APP_NAME} |" "$file"; then
-              # Check if this user submitted it by looking for @username in that row
-              if grep "| .* | .*${APP_NAME}.*| .* | .* | .* | @${GITHUB_USERNAME}" "$file" | grep -qi .; then
-                DUPLICATE_FOUND="$file"
-                MATCH_TYPE="name_user_exact"
-                break
-              fi
-            fi
-          done
+          if [ "$HTTP_CODE" = "200" ]; then
+            SIMILARITY=$(cat /tmp/similarity.json | jq -r '.choices[0].message.content | fromjson | .similarity // 0')
+            SIMILARITY_REASON=$(cat /tmp/similarity.json | jq -r '.choices[0].message.content | fromjson | .reason // ""')
+          else
+            SIMILARITY=0
+            SIMILARITY_REASON="API call failed (HTTP $HTTP_CODE)"
+          fi
           
-          # If no exact match, check for semantic similarity in user's previous submissions
-          if [ -z "$DUPLICATE_FOUND" ]; then
-            echo "similarity_score=0" >> $GITHUB_OUTPUT
-            # Extract user's previous apps from APPS.md
-            # Markdown table format: | Emoji | Name | Description | Language | Category | GitHub | Repo | Stars | Discord | Other | Submitted |
-            PREV_APPS_TEXT=""
-            while IFS='|' read -r emoji name desc lang cat github repo stars discord other submitted; do
-            github=$(echo "$github" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
-            name=$(echo "$name" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
-            desc=$(echo "$desc" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
-            
-            if [ "$github" = "@$GITHUB_USERNAME" ]; then
-                clean_name=$(echo "$name" | sed 's/\[//g; s/\].*//g')
-                PREV_APPS_TEXT="${PREV_APPS_TEXT}Name: ${clean_name} | Desc: ${desc}\n"
-            fi
-            done < <(tail -n +3 apps/APPS.md)
-            
-            # Only do semantic check if user has previous apps
-            if [ -n "$PREV_APPS_TEXT" ]; then
-              APP_DESC=$(echo "$PROJECT_JSON" | jq -r '.description')
-              COMPARISON_MSG="Current submission:\nName: $APP_NAME\nDescription: $APP_DESC\n\nUser's previous submissions:\n${PREV_APPS_TEXT}\n\nScore similarity 0-100 based on purpose, category, target use case, and core functionality."
-              
-              PAYLOAD=$(jq -n \
-                --arg comparison "$COMPARISON_MSG" '{
-                  model: "openai",
-                  messages: [
-                    { role: "system", content: "Compare app submissions semantically. Return JSON: similarity (0-100 integer), reason (brief explanation). Consider: purpose, target audience, core functionality, category." },
-                    { role: "user", content: $comparison }
-                  ],
-                  response_format: { type: "json_object" }
-                }')
-              
-              HTTP_CODE=$(curl -s -w "%{http_code}" -o /tmp/similarity.json -X POST "https://gen.pollinations.ai/v1/chat/completions" \
-                -H "Content-Type: application/json" \
-                -H "Authorization: Bearer ${{ secrets.POLLINATIONS_TOKEN }}" \
-                -d "$PAYLOAD")
-              
-              if [ "$HTTP_CODE" = "200" ]; then
-                SIMILARITY=$(cat /tmp/similarity.json | jq -r '.choices[0].message.content | fromjson | .similarity // 0')
-                SIMILARITY_REASON=$(cat /tmp/similarity.json | jq -r '.choices[0].message.content | fromjson | .reason // ""')
-              else
-                SIMILARITY=0
-                SIMILARITY_REASON="API call failed (HTTP $HTTP_CODE)"
-              fi
-              
-              echo "similarity_score=$SIMILARITY" >> $GITHUB_OUTPUT
-              if [ -n "$SIMILARITY_REASON" ]; then
-                echo "similarity_reason=$SIMILARITY_REASON" >> $GITHUB_OUTPUT
-              fi
-              
-              # Validate SIMILARITY is numeric before comparison
-              if ! [[ "$SIMILARITY" =~ ^[0-9]+$ ]]; then
-                SIMILARITY=0
-              fi
-              
-              if [ "$SIMILARITY" -gt 90 ]; then
-                MATCH_TYPE="semantic_hard"
-              elif [ "$SIMILARITY" -gt 75 ]; then
-                MATCH_TYPE="semantic_soft"
-              fi
-            else
-              # No previous apps from this user, skip semantic check
-              echo "similarity_score=0" >> $GITHUB_OUTPUT
-            fi
+          echo "similarity_score=$SIMILARITY" >> $GITHUB_OUTPUT
+          if [ -n "$SIMILARITY_REASON" ]; then
+            echo "similarity_reason=$SIMILARITY_REASON" >> $GITHUB_OUTPUT
+          fi
+          
+          # Validate SIMILARITY is numeric before comparison
+          if ! [[ "$SIMILARITY" =~ ^[0-9]+$ ]]; then
+            SIMILARITY=0
+          fi
+          
+          if [ "$SIMILARITY" -gt 80 ]; then
+            echo "match_type=semantic_hard" >> $GITHUB_OUTPUT
+          else
+            echo "match_type=" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Consolidate duplicate check results
+        if: steps.parse.outputs.needs_info != 'true'
+        id: duplicate-check
+        run: |
+          # Use exact match results first, then semantic
+          DUPLICATE_FOUND="${{ steps.duplicate-check-exact.outputs.duplicate_found }}"
+          MATCH_TYPE="${{ steps.duplicate-check-exact.outputs.match_type }}"
+          
+          # If no exact match, use semantic results
+          if [ -z "$MATCH_TYPE" ]; then
+            MATCH_TYPE="${{ steps.semantic-check.outputs.match_type }}"
           fi
           
           echo "duplicate_found=$DUPLICATE_FOUND" >> $GITHUB_OUTPUT
           echo "match_type=$MATCH_TYPE" >> $GITHUB_OUTPUT
+          echo "similarity_score=${{ steps.semantic-check.outputs.similarity_score || '0' }}" >> $GITHUB_OUTPUT
+          echo "similarity_reason=${{ steps.semantic-check.outputs.similarity_reason || '' }}" >> $GITHUB_OUTPUT
 
       - name: Check Enter registration
         if: steps.parse.outputs.needs_info != 'true'
@@ -299,7 +262,7 @@ jobs:
             if (matchType === 'url_exact') reason = 'Same URL already exists in our showcase';
             else if (matchType === 'repo_exact') reason = 'Same repository already registered by you';
             else if (matchType === 'name_user_exact') reason = 'You have already submitted this app with the same name';
-            else if (matchType === 'semantic_hard') reason = 'This is 90%+ semantically similar to your previous submission';
+            else if (matchType === 'semantic_hard') reason = 'This is >80% semantically similar to your previous submission';
             
             await github.rest.issues.createComment({
               owner: context.repo.owner, repo: context.repo.repo,
@@ -308,7 +271,7 @@ jobs:
             });
             
             try { await github.rest.issues.removeLabel({ owner: context.repo.owner, repo: context.repo.repo, issue_number: ${{ steps.issue.outputs.number }}, name: 'tier:review' }); } catch (e) {}
-            await github.rest.issues.addLabels({ owner: context.repo.owner, repo: context.repo.repo, issue_number: ${{ steps.issue.outputs.number }}, labels: ['tier:duplicate'] });
+            await github.rest.issues.addLabels({ owner: context.repo.owner, repo: context.repo.repo, issue_number: ${{ steps.issue.outputs.number }}, labels: ['tier:rejected'] });
             await github.rest.issues.update({ owner: context.repo.owner, repo: context.repo.repo, issue_number: ${{ steps.issue.outputs.number }}, state: 'closed' });
 
       - name: Handle missing info
@@ -336,17 +299,6 @@ jobs:
             });
             try { await github.rest.issues.removeLabel({ owner: context.repo.owner, repo: context.repo.repo, issue_number: ${{ steps.issue.outputs.number }}, name: 'tier:review' }); } catch (e) {}
             await github.rest.issues.addLabels({ owner: context.repo.owner, repo: context.repo.repo, issue_number: ${{ steps.issue.outputs.number }}, labels: ['tier:info-needed'] });
-
-      - name: Flag soft duplicate (similar but allow)
-        if: steps.duplicate-check.outputs.match_type == 'semantic_soft'
-        uses: actions/github-script@v7
-        with:
-          script: |
-            await github.rest.issues.createComment({
-              owner: context.repo.owner, repo: context.repo.repo,
-              issue_number: ${{ steps.issue.outputs.number }},
-              body: `⚠️ **Similarity Warning (⭐ ${{ steps.duplicate-check.outputs.similarity_score }}%)**\n\n@${{ steps.issue.outputs.author }}, this app is **${{ steps.duplicate-check.outputs.similarity_score }}% similar** to a previous submission.\n\nIf this is a legitimate new iteration/feature, we'll proceed. If not, consider reviewing our [existing apps](https://pollinations.ai).\n\n✅ Proceeding with review...`
-            });
 
       - name: Set validation result
         id: validate

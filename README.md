@@ -6,6 +6,8 @@
 
 | Name                                                                                                            | Description                                                                                            | Author            |
 | --------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------ | ----------------- |
+| [Pollinations VisionAI](https://superheroghost.github.io/VisionAI/)                                             | Public AI image generator UI for Pollinations models; supports API keys                                | @Superheroghost   |
+| [Donjon.studio](https://donjon.studio/)                                                                         | AI-generated interactive adventures with evolving stories and images                                   | @PassepartoutFR   |
 | [Insight Engine](https://erbharatmalhotra.github.io/insight-engine/)                                            | Experimental frontend app that turns a single idea into refined text insights and AI-generated visuals | @ErBharatMalhotra |
 | [IDPhotoGen](https://id-photo-gen.thangoffer91.workers.dev)                                                     | Create professional ID photos in 30 seconds with AI                                                    | @thangoffer91     |
 | [AquaMind](https://aquamind.app)                                                                                | AI-powered aquarium management and fish care assistant                                                 | @aquamind         |
@@ -14,8 +16,6 @@
 | [Nuvole AI Lite](https://nuvoleai.com)                                                                          | Lightweight AI chat app with clean UI and fast responses                                               | @nuvoleai         |
 | [BCA Nepal](https://play.google.com/store/apps/details/BCA_Nepal_BCA_Notes_Course?id=com.bcanepal&hl=en_IN)     | BCA Nepal: Notes, courses, AI chat & PDF AI tools for smarter study                                    | @sushilbalami     |
 | [PromptPi!](https://chromewebstore.google.com/detail/promptpi-image-to-prompt/dmcckiclfondnkgncnajmdcblimekgbk) | Reverse-engineer images into pro AI prompts with batch & multi-model support                           | @dreamm160        |
-| [AI Logo and Business Name Generators](https://bilgu.com/tools/ai-generated-names)                              | Pollinations-powered AI logo + business name generators                                                | @m4jor101         |
-| [IA Bob Goods - Coloring Book Generator](https://ia.gmtec.tec.br)                                               | AI tool to generate kids' coloring books with stories, line art & PDFs                                 | @adeniltogracheki |
 
 [View all apps →](apps/APPS.md)
 
@@ -34,7 +34,6 @@ We've launched **https://gen.pollinations.ai** — a single endpoint for all you
 
 ## 🆕 Latest News
 
-- **2025-12-30** – **🎉 Seedream 99% Off Promo (ends Dec 31)** Generate stunning images with `seedream` (0.03¢) and `seedream-pro` (0.04¢) at almost-free pricing until midnight Dec 31! [Try it](https://enter.pollinations.ai)
 - **2025-12-29** – **🚀 New Model: gptimage-large** Access GPT Image 1.5 for high-fidelity generations via the API. [API Docs](https://enter.pollinations.ai/api/docs)
 - **2025-12-29** – **🤖 DeepSeek V3.2** Upgraded to the latest DeepSeek V3.2 for smarter, faster chat responses. [Try it](https://hello.pollinations.ai)
 - **2025-12-29** – **🎥 Veo Image-to-Video** Turn images into videos using the updated `veo` model capabilities. [API Docs](https://enter.pollinations.ai/api/docs)

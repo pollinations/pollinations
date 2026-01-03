@@ -90,18 +90,19 @@ CONFIG = {
             },
         },
         "news": {
-            "id": "PVT_kwDOBS76fs4BLtD8",
-            "name": "News",
-            "internal_only": False,
-            "default_status": "Review",
-            "status_field_id": "PVTSSF_lADOBS76fs4BLtD8zg7Mrxg",
-            "status_options": {
-                "Review": "f75ad846",
-                "Done": "98236657",
-            },
-            "priority_field_id": None,
-            "priority_options": {},
-        }
+        "id": "PVT_kwDOBS76fs4BLtD8",
+        "name": "News",
+        "internal_only": False,
+        "default_status": "Review",
+        "status_field_id": "PVTSSF_lADOBS76fs4BLtD8zg7Mrxg",
+        "status_options": {
+            "To do": "f75ad846",     
+            "In Progress": "47fc9ee4",
+            "Done": "98236657",
+        },
+        "priority_field_id": None,
+        "priority_options": {},
+    }
     },
     "org_members": [
         "voodoohop",
@@ -199,10 +200,18 @@ Schema (must match exactly):
 
 Rules:
 - Choose ONLY from the allowed enum values.
-- dev is INTERNAL ONLY.
+- dev is INTERNAL ONLY — use only for internal authors.
 - Infrastructure, pipelines, CI/CD, Docker, services → dev (if internal) else support.
 - If ambiguous, choose the closest valid option — never invent a new one.
 - Author type: {"internal" if is_internal else "external"}
+- Priority options:
+  * dev: Urgent, High, Medium, Low
+  * support: Urgent, High, Medium, Low
+  * news: Urgent only
+- Label options depend on project:
+  * dev: BUG, FEATURE, QUEST, TRACKING
+  * support: BUG, FEATURE, HELP, BALANCE, BILLING, API
+  * news: no labels
 """
 
     user_prompt = f"""
@@ -241,10 +250,46 @@ Body: {ISSUE_BODY[:2000]}
             log_debug(f"AI raw response: {content}")
 
             raw = json.loads(content)
+            
+            # Validate project
+            project = raw.get("project", "").lower()
+            if project not in ["dev", "support", "news"]:
+                log_error(f"AI returned invalid project: {project}")
+                return get_fallback_classification(is_internal)
+            
+            # Validate priority per project
+            priority = raw.get("priority", "Medium")
+            valid_priorities = {
+                "dev": {"Urgent", "High", "Medium", "Low"},
+                "support": {"Urgent", "High", "Medium", "Low"},
+                "news": {"Urgent"},
+            }
+            allowed_for_project = valid_priorities.get(project, set())
+            if priority not in allowed_for_project:
+                log_error(f"AI returned invalid priority for {project}: {priority}")
+                priority = list(allowed_for_project)[0] if allowed_for_project else "Medium"
+            
+            # Validate labels for project
+            labels = raw.get("labels", [])
+            if not isinstance(labels, list):
+                labels = []
+            
+            valid_labels_by_project = {
+                "dev": {"BUG", "FEATURE", "QUEST", "TRACKING"},
+                "support": {"BUG", "FEATURE", "HELP", "BALANCE", "BILLING", "API"},
+                "news": set(),
+            }
+            
+            valid_for_project = valid_labels_by_project.get(project, set())
+            filtered_labels = [l.upper() for l in labels if l.upper() in valid_for_project]
+            if len(filtered_labels) < len(labels):
+                invalid = [l for l in labels if l.upper() not in valid_for_project]
+                log_error(f"AI returned invalid labels for {project}: {invalid}")
+            
             classification = {
-                "project": raw.get("project"),
-                "priority": raw.get("priority", "Medium"),
-                "labels": raw.get("labels", []) if isinstance(raw.get("labels"), list) else [],
+                "project": project,
+                "priority": priority,
+                "labels": filtered_labels,
                 "reasoning": raw.get("reasoning", ""),
             }
 
@@ -358,17 +403,18 @@ def main():
         return
     project_key = classification["project"].lower()
     priority = classification.get("priority", "Medium")
-    priority = priority.capitalize()
     log_debug(f"Classified: project={project_key}, priority={priority}")
     project = CONFIG["projects"].get(project_key)
     if not project:
         log_error(f"Unknown project key: {project_key}")
         return
 
+    # Validate internal-only projects
     if project.get("internal_only") and not is_internal:
-        log_debug(f"Project {project_key} is internal-only, reassigning to support")
+        log_debug(f"Project {project_key} is internal-only, but author is external. Reassigning to support.")
         project_key = "support"
         project = CONFIG["projects"]["support"]
+    
     labels = normalize_labels(project_key, classification.get("labels", []))
     log_debug(f"Normalized labels: {labels}")
 

@@ -1,0 +1,130 @@
+{
+  "request": {
+    "url": "http://ec2-3-80-56-235.compute-1.amazonaws.com:16385/openai",
+    "method": "POST",
+    "body": {
+      "type": "json",
+      "data": {
+        "model": "openai-fast",
+        "messages": [
+          {
+            "role": "user",
+            "content": "Seed bypass test"
+          }
+        ],
+        "seed": -1
+      }
+    },
+    "params": {}
+  },
+  "response": {
+    "status": 200,
+    "statusText": "OK",
+    "headers": {
+      "access-control-allow-origin": "*",
+      "connection": "keep-alive",
+      "content-length": "5093",
+      "content-type": "application/json; charset=utf-8",
+      "date": "Sat, 03 Jan 2026 00:23:39 GMT",
+      "etag": "W/\"13e5-t8sCz+yuLDaCkBHnQc0dJjWYEjI\"",
+      "keep-alive": "timeout=5",
+      "x-model-used": "gpt-5-nano-2025-08-07",
+      "x-powered-by": "Express",
+      "x-usage-completion-reasoning-tokens": "1088",
+      "x-usage-completion-text-tokens": "821",
+      "x-usage-prompt-text-tokens": "250",
+      "x-usage-total-tokens": "2159"
+    },
+    "body": {
+      "type": "json",
+      "data": {
+        "choices": [
+          {
+            "content_filter_results": {
+              "hate": {
+                "filtered": false,
+                "severity": "safe"
+              },
+              "protected_material_code": {
+                "filtered": false,
+                "detected": false
+              },
+              "protected_material_text": {
+                "filtered": false,
+                "detected": false
+              },
+              "self_harm": {
+                "filtered": false,
+                "severity": "safe"
+              },
+              "sexual": {
+                "filtered": false,
+                "severity": "safe"
+              },
+              "violence": {
+                "filtered": false,
+                "severity": "safe"
+              }
+            },
+            "finish_reason": "stop",
+            "index": 0,
+            "logprobs": null,
+            "message": {
+              "annotations": [],
+              "content": "Could you share a bit more context? “Seed bypass test” could mean a few different things, and I don’t want to assume the wrong one. Here are the most common interpretations and safe, concrete testing ideas for each:\n\n1) Seed phrase handling in a crypto wallet (BIP-39/BIP-32)\n- What you’d test\n  - Mnemonic validation: valid words from the BIP-39 wordlist, proper checksum, correct language wordlist handling.\n  - Invalid inputs: wrong word, wrong length, extra spaces, mixed case, Unicode normalization issues.\n  - Derivation correctness: given a known mnemonic, deterministic derivation of keys/addresses for a known path (use official test vectors if available).\n  - Backups/restores: seed-derived wallet state survives export/import across platforms; no data leakage in logs.\n  - Security: seed is never stored in plaintext in memory/logs; encryption at rest; secure handling during export/import.\n- Example test ideas\n  - Positive: use a known mnemonic and verify derived seed and first few addresses match expected results.\n  - Negative: feed invalid mnemonic (e.g., wrong word or bad checksum) and assert rejection with a clear error.\n  - Edge: mnemonic with extra spaces, mixed case, or non-normalized input should be rejected or normalized correctly.\n  - Stress: long sequences with repeated words, empty input, or extremely high-entropy seeds.\n- Data/vectors you might use\n  - Official BIP-39 test vectors if available; if not, capture your own from a reference implementation to keep tests deterministic.\n- Security-focused tests\n  - Ensure no seed is emitted in logs or UI, even in error cases.\n  - Verify that export-only flows encrypt the seed and that decryption requires user authorization.\n\n2) Random number generator seeding (cryptographic RNG)\n- What you’d test\n  - Determinism vs non-determinism: seeding with a fixed value yields reproducible outputs; different seeds yield different outputs.\n  - No default seed fallback: ensure the RNG doesn’t fall back to a weak or fixed seed if none is provided.\n  - Thread-safety and reentrancy: concurrent seeds don’t produce correlated outputs.\n  - Seed leakage: no internal state exposed through interfaces, memory dumps, or timing side channels.\n- Example test ideas\n  - With a fixed seed, generate a sequence, re-seed with the same value, and verify the sequence is identical.\n  - Seed with two different values and ensure outputs diverge with high probability.\n  - Stress test: seed with boundary values (zero, max integer, empty) and observe behavior (and reject where appropriate).\n  - Security: run fuzz tests to ensure no accidental leakage through logs, error messages, or API responses.\n- Data/vectors you might use\n  - If you’re implementing your own RNG, include test vectors that cover boundary seeds and typical seeds; compare against a reference implementation if possible.\n\n3) “Seed bypass” as a security test for an interface\n- What you’d test\n  - Whether an API or UI path that should be protected from bypass can actually be exploited (ethically and legally, in a controlled test environment).\n  - Ensure proper authorization checks are enforced for seed-related operations.\n- Example test ideas\n  - Attempt to access seed data via an unintended API or UI path and verify access is denied.\n  - Test role-based access control around seed export/import.\n  - Validate logging and monitoring catch any attempted bypasses.\n\nIf you share more details, I can tailor a concrete plan:\n- What system or language/framework you’re using (e.g., Node.js with ethers, Python with bip-utils, Rust, etc.)\n- Whether you’re validating user-input seeds, testing RNG seeding, or performing security tests\n- Any test framework you prefer (JUnit, pytest, Jest, etc.)\n\nWant me to draft a ready-to-run test plan or sample test cases for your specific stack?",
+              "refusal": null,
+              "role": "assistant"
+            }
+          }
+        ],
+        "created": 1767399807,
+        "id": "pllns_8163239d63495a3502ccb69153281877",
+        "model": "gpt-5-nano-2025-08-07",
+        "object": "chat.completion",
+        "prompt_filter_results": [
+          {
+            "prompt_index": 0,
+            "content_filter_results": {
+              "hate": {
+                "filtered": false,
+                "severity": "safe"
+              },
+              "jailbreak": {
+                "filtered": false,
+                "detected": false
+              },
+              "self_harm": {
+                "filtered": false,
+                "severity": "safe"
+              },
+              "sexual": {
+                "filtered": false,
+                "severity": "safe"
+              },
+              "violence": {
+                "filtered": false,
+                "severity": "safe"
+              }
+            }
+          }
+        ],
+        "system_fingerprint": null,
+        "usage": {
+          "completion_tokens": 1909,
+          "completion_tokens_details": {
+            "accepted_prediction_tokens": 0,
+            "audio_tokens": 0,
+            "reasoning_tokens": 1088,
+            "rejected_prediction_tokens": 0
+          },
+          "prompt_tokens": 250,
+          "prompt_tokens_details": {
+            "audio_tokens": 0,
+            "cached_tokens": 0
+          },
+          "total_tokens": 2159
+        }
+      }
+    }
+  }
+}

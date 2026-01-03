@@ -37,11 +37,14 @@ export const GenerateImageRequestQueryParamsSchema = z.object({
     seed: z.coerce
         .number()
         .int()
-        .min(0)
+        .min(-1)
         .max(MAX_SEED_VALUE)
         .optional()
-        .default(42)
-        .meta({ description: "Random seed for reproducible results" }),
+        .default(0)
+        .meta({
+            description:
+                "Random seed for reproducible results. Use -1 for random.",
+        }),
     enhance: z.coerce
         .boolean()
         .optional()

@@ -8,7 +8,6 @@ import { HttpError } from "./httpError.js";
 import { extractToken, getIp } from "../../shared/extractFromRequest.js";
 import { buildTrackingHeaders } from "./utils/trackingHeaders.js";
 import { countFluxJobs, handleRegisterEndpoint } from "./availableServers.js";
-import { cacheImagePromise } from "./cacheGeneratedImages.js";
 import { getModelCounts } from "./modelCounter.js";
 import { IMAGE_CONFIG } from "./models.js";
 import {
@@ -355,18 +354,12 @@ const checkCacheAndGenerate = async (
             timingInfo = [{ step: "Request received.", timestamp: Date.now() }];
             progress.setProcessing(requestId);
 
-            // Cache video generation same as images
-            const videoResult = await cacheImagePromise(
+            // Generate video directly (no caching)
+            const videoResult = await createAndReturnVideo(
                 originalPrompt,
                 safeParams,
-                async () => {
-                    return createAndReturnVideo(
-                        originalPrompt,
-                        safeParams,
-                        progress,
-                        requestId,
-                    );
-                },
+                progress,
+                requestId,
             );
 
             timingInfo.push({ step: "Video generated", timestamp: Date.now() });
@@ -410,51 +403,38 @@ const checkCacheAndGenerate = async (
             return;
         }
 
-        // Cache the generated image (existing image flow)
-        const bufferAndMaturity = await cacheImagePromise(
+        // Generate image directly (no caching)
+        progress.updateBar(requestId, 10, "Processing", "Generating image");
+        timingInfo = [
+            {
+                step: "Request received.",
+                timestamp: Date.now(),
+            },
+        ];
+
+        // Generate image directly without queue
+        timingInfo.push({
+            step: "Start generating job",
+            timestamp: Date.now(),
+        });
+
+        progress.setProcessing(requestId);
+
+        const bufferAndMaturity = await imageGen({
+            req,
+            timingInfo,
             originalPrompt,
             safeParams,
-            async () => {
-                progress.updateBar(
-                    requestId,
-                    10,
-                    "Processing",
-                    "Generating image",
-                );
-                timingInfo = [
-                    {
-                        step: "Request received.",
-                        timestamp: Date.now(),
-                    },
-                ];
+            referrer,
+            progress,
+            requestId,
+            authResult,
+        });
 
-                // Generate image directly without queue
-                timingInfo.push({
-                    step: "Start generating job",
-                    timestamp: Date.now(),
-                });
-
-                progress.setProcessing(requestId);
-
-                const result = await imageGen({
-                    req,
-                    timingInfo,
-                    originalPrompt,
-                    safeParams,
-                    referrer,
-                    progress,
-                    requestId,
-                    authResult,
-                });
-
-                timingInfo.push({
-                    step: "End generating job",
-                    timestamp: Date.now(),
-                });
-
-                return result;
-            },
-        );
+        timingInfo.push({
+            step: "End generating job",
+            timestamp: Date.now(),
+        });
 
         // Add headers for response
         const headers = {

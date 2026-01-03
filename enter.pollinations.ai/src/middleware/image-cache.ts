@@ -27,6 +27,15 @@ type ImageCacheEnv = {
  */
 export const imageCache = createMiddleware<ImageCacheEnv>(async (c, next) => {
     const log = c.get("log").getChild("image-cache");
+
+    // Check for seed=-1 (random seed convention used by SillyTavern etc.)
+    // Skip cache when seed=-1 to ensure fresh responses each time
+    const seedParam = new URL(c.req.url).searchParams.get("seed");
+    if (seedParam === "-1") {
+        log.debug("seed=-1 detected, skipping cache for random generation");
+        return next();
+    }
+
     const cacheKey = generateCacheKey(new URL(c.req.url));
     log.debug("Cache key: {key}", { key: cacheKey });
 

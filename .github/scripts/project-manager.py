@@ -47,7 +47,7 @@ CONFIG = {
                 "In Progress": "47fc9ee4",
                 "In Review": "ca6ba6c3",
                 "Done": "98236657",
-                "Discarded": "bc3f7e3a",
+                "Discarded": "3bf36d0a",
             },
             "priority_field_id": "PVTSSF_lADOBS76fs4AwCAMzg2DKDk",
             "priority_options": {

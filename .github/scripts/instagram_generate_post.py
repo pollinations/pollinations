@@ -348,8 +348,8 @@ def generate_post_strategy(prs: List[Dict], trends: Dict, token: str) -> Dict:
     else:
         pr_summary = "NO UPDATES TODAY"
 
-    system_prompt = f"""You are the Gen-Z social media lead for Pollinations.AI Instagram.
-Pollinations.AI is a free, open-source AI image generation platform - no login, no BS, just free AI art.
+    system_prompt = f"""You are the Gen-Z social media lead for pollinations.ai Instagram.
+pollinations.ai is a free, open-source AI image generation platform - no login, no BS, just free AI art.
 
 YOUR MISSION: Create friendly, approachable, Gen-Z aesthetic content that reflects our brand. Turn updates into visually appealing infographics and friendly illustrations.
 

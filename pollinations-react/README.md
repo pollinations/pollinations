@@ -20,7 +20,7 @@ The usePollinationsText hook allows you to generate text from Pollinations' API 
     import { usePollinationsText } from '@pollinations/react';
 
     const HaikuComponent = () => {
-      const text = usePollinationsText('Write a short haiku about Pollinations.AI', {
+      const text = usePollinationsText('Write a short haiku about pollinations.ai', {
         seed: 42,
         model: 'mistral',
         systemPrompt: 'You are a poetic AI assistant.'

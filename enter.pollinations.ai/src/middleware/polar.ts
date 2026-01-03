@@ -27,7 +27,6 @@ export type PolarVariables = {
         getBalance: (userId: string) => Promise<{
             tierBalance: number;
             packBalance: number;
-            cryptoBalance: number;
         }>;
         balanceCheckResult?: BalanceCheckResult;
     };
@@ -123,14 +122,12 @@ export const polar = createMiddleware<PolarEnv>(async (c, next) => {
     ): Promise<{
         tierBalance: number;
         packBalance: number;
-        cryptoBalance: number;
     }> => {
         const db = drizzle(c.env.DB);
         const users = await db
             .select({
                 tierBalance: userTable.tierBalance,
                 packBalance: userTable.packBalance,
-                cryptoBalance: userTable.cryptoBalance,
             })
             .from(userTable)
             .where(eq(userTable.id, userId))
@@ -138,7 +135,6 @@ export const polar = createMiddleware<PolarEnv>(async (c, next) => {
 
         let tierBalance = users[0]?.tierBalance;
         let packBalance = users[0]?.packBalance;
-        const cryptoBalance = users[0]?.cryptoBalance ?? 0;
 
         // Lazy init: check Polar if either balance is null OR both are zero
         // This handles: new users (both null), users with only tier set (pack null),
@@ -193,7 +189,6 @@ export const polar = createMiddleware<PolarEnv>(async (c, next) => {
         return {
             tierBalance: tierBalance ?? 0,
             packBalance: packBalance ?? 0,
-            cryptoBalance,
         };
     };
 
@@ -201,7 +196,6 @@ export const polar = createMiddleware<PolarEnv>(async (c, next) => {
         let balances: {
             tierBalance: number;
             packBalance: number;
-            cryptoBalance: number;
         };
         try {
             balances = await getBalance(userId);
@@ -215,18 +209,14 @@ export const polar = createMiddleware<PolarEnv>(async (c, next) => {
             });
         }
 
-        const totalBalance =
-            balances.tierBalance +
-            balances.packBalance +
-            balances.cryptoBalance;
+        const totalBalance = balances.tierBalance + balances.packBalance;
 
         log.debug(
-            "Local pollen balance for user {userId}: tier={tierBalance}, pack={packBalance}, crypto={cryptoBalance}, total={totalBalance}",
+            "Local pollen balance for user {userId}: tier={tierBalance}, pack={packBalance}, total={totalBalance}",
             {
                 userId,
                 tierBalance: balances.tierBalance,
                 packBalance: balances.packBalance,
-                cryptoBalance: balances.cryptoBalance,
                 totalBalance,
             },
         );

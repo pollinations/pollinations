@@ -179,10 +179,12 @@ def classify_with_ai(is_internal: bool) -> dict:
     - Do NOT invent new labels
     - dev is internal-only
     - Use null if unsure
+    - Author type: {"internal" if is_internal else "external"}
     """
 
     user_prompt = f"""
     Author: {ISSUE_AUTHOR}
+    Author Type: {"Internal" if is_internal else "External"}
     Title: {ISSUE_TITLE}
     Body: {ISSUE_BODY[:2000]}
     """

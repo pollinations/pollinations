@@ -19,7 +19,9 @@ const sanitizedBoolean = z
 
 const sanitizedSeed = z.preprocess((v) => {
     const seed = String(v);
-    return Number.isInteger(parseInt(seed)) ? parseInt(seed) : 42;
+    const parsed = Number.isInteger(parseInt(seed)) ? parseInt(seed) : 42;
+    // seed=-1 means "random" - generate a random seed
+    return parsed === -1 ? Math.floor(Math.random() * 1000000) : parsed;
 }, z.int().catch(42));
 
 const sanitizedSideLength = z.preprocess((v) => {

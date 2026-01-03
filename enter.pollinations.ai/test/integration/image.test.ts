@@ -171,6 +171,46 @@ describe("Image Integration Tests", () => {
     );
 
     test(
+        "seed=-1 bypasses cache (random seed convention)",
+        { timeout: 30000 },
+        async ({ apiKey, mocks }) => {
+            await mocks.enable("polar", "tinybird");
+
+            // First request with seed=-1
+            const responseA = await SELF.fetch(
+                `http://localhost:3000/api/generate/image/test-seed-minus1?model=flux&width=256&height=256&seed=-1`,
+                {
+                    method: "GET",
+                    headers: {
+                        "authorization": `Bearer ${apiKey}`,
+                    },
+                },
+            );
+            expect(responseA.status).toBe(200);
+            await responseA.arrayBuffer();
+
+            // seed=-1 should bypass cache (no X-Cache header)
+            expect(responseA.headers.get("X-Cache")).toBeNull();
+
+            // Second identical request with seed=-1 - should also bypass cache
+            const responseB = await SELF.fetch(
+                `http://localhost:3000/api/generate/image/test-seed-minus1?model=flux&width=256&height=256&seed=-1`,
+                {
+                    method: "GET",
+                    headers: {
+                        "authorization": `Bearer ${apiKey}`,
+                    },
+                },
+            );
+            expect(responseB.status).toBe(200);
+            await responseB.arrayBuffer();
+
+            // Should still bypass cache (not HIT)
+            expect(responseB.headers.get("X-Cache")).toBeNull();
+        },
+    );
+
+    test(
         "gptimage-large with reference image returns 200 (img2img edit mode)",
         { timeout: 60000 },
         async ({ apiKey, mocks }) => {

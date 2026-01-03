@@ -336,7 +336,7 @@ def set_project_field(project_id: str, item_id: str, field_id: str, option_id: s
     )
 
 
-def add_labels(labels: list):
+def add_labels(labels: list, classification: dict):
     if not labels:
         return
 
@@ -456,7 +456,7 @@ def main():
 
     if labels:
         print(f"Adding labels: {labels}")
-        add_labels(labels)
+        add_labels(labels, classification)
 
     best_assignee = find_best_assignee(classification)
     if best_assignee:

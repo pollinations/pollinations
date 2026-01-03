@@ -347,7 +347,7 @@ async function callCloudflareModel(
         prompt: truncatedPrompt,
         width: width,
         height: height,
-        seed: safeParams.seed || Math.floor(Math.random() * 1000000),
+        seed: safeParams.seed,
         ...additionalParams,
     };
 

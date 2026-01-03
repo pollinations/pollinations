@@ -76,12 +76,11 @@ TOP
 
 TYPE
 
-| Label  | Issue | PR  | Comments          |
-| ------ | ----- | --- | ----------------- |
-| SEED   | x     |     | Upgrade request   |
-| CODE   |       | x   | Code contribution |
-| APP    | x     | x   | App contribution  |
-| FLOWER | x     | x   | Upgrade request   |
+| Label       | Issue | PR  | Comments                     |
+| ----------- | ----- | --- | ---------------------------- |
+| SEED        | x     |     | Seed upgrade request         |
+| FLOWER-CODE |       | x   | Flower via code contribution |
+| FLOWER-APP  | x     | x   | Flower via app contribution  |
 
 WORKFLOW
 

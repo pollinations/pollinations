@@ -7,40 +7,33 @@ from typing import Optional
 
 GITHUB_TOKEN = os.getenv("GITHUB_TOKEN")
 POLLINATIONS_TOKEN = os.getenv("POLLINATIONS_TOKEN")
-
 GITHUB_EVENT_PATH = os.getenv("GITHUB_EVENT_PATH")
 if not GITHUB_EVENT_PATH or not os.path.exists(GITHUB_EVENT_PATH):
     GITHUB_EVENT = {}
 else:
     with open(GITHUB_EVENT_PATH, "r") as f:
         GITHUB_EVENT = json.load(f)
-
 REPO_OWNER = "pollinations"
 REPO_NAME = "pollinations"
-
 IS_PULL_REQUEST = "pull_request" in GITHUB_EVENT
 ITEM_DATA = (
     GITHUB_EVENT.get("pull_request")
     if IS_PULL_REQUEST
     else GITHUB_EVENT.get("issue", {})
 )
-
 ISSUE_NUMBER = ITEM_DATA.get("number")
 ISSUE_TITLE = ITEM_DATA.get("title", "")
 ISSUE_BODY = ITEM_DATA.get("body", "") or ""
 ISSUE_AUTHOR = ITEM_DATA.get("user", {}).get("login", "")
 ISSUE_NODE_ID = ITEM_DATA.get("node_id", "")
-
 GITHUB_API = "https://api.github.com"
 GITHUB_GRAPHQL = "https://api.github.com/graphql"
 POLLINATIONS_API = "https://gen.pollinations.ai/v1/chat/completions"
-
 GITHUB_HEADERS = {
     "Authorization": f"Bearer {GITHUB_TOKEN}",
     "Accept": "application/vnd.github+json",
     "Content-Type": "application/json",
 }
-
 CONFIG = {
     "projects": {
         "dev": {
@@ -147,16 +140,11 @@ def normalize_labels(project: str, labels: list) -> list:
     rules = HIERARCHY.get(project)
     if not rules:
         return []
-
     incoming = [l.upper() for l in labels]
-
     top = rules["TOP"]
-
     type_label = next((l for l in incoming if l in rules["TYPE"]), None)
     tag_label = next((l for l in incoming if l in rules["TAG"]), None)
-
     final = [top]
-
     if type_label:
         final.append(type_label)
 
@@ -194,7 +182,6 @@ def classify_with_ai(is_internal: bool) -> dict:
     - Use null if unsure
     - dev is internal-only
     """
-
 
     user_prompt = f"""
     Author: {ISSUE_AUTHOR}
@@ -322,13 +309,11 @@ def assign_issue(assignee: str):
 def main():
     if not ISSUE_NUMBER or not ISSUE_NODE_ID:
         return
-
     is_internal = is_org_member(ISSUE_AUTHOR)
     classification = classify_with_ai(is_internal)
 
     if not classification.get("project"):
         return
-
     project_key = classification["project"].lower()
     priority = classification.get("priority", "Medium")
 
@@ -336,18 +321,14 @@ def main():
     if not project:
         return
 
-
     if project.get("internal_only") and not is_internal:
         project_key = "support"
         project = CONFIG["projects"]["support"]
-
     labels = normalize_labels(project_key, classification.get("labels", []))
-
 
     item_id = add_to_project(project["id"])
     if not item_id:
         return
-
     priority_option = project["priority_options"].get(priority)
     if priority_option and project.get("priority_field_id"):
         set_project_field(
@@ -356,14 +337,11 @@ def main():
             project["priority_field_id"],
             priority_option,
         )
-
-
     add_labels(labels)
 
     assignee = classification.get("assignee")
     if assignee in CONFIG["org_members"]:
         assign_issue(assignee)
-
 
 if __name__ == "__main__":
     main()

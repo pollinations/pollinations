@@ -194,7 +194,7 @@ def classify_with_ai(is_internal: bool) -> dict:
                 POLLINATIONS_API,
                 headers={"Authorization": f"Bearer {POLLINATIONS_TOKEN}"},
                 json={
-                    "model": "openai",
+                    "model": "gemini-fast",
                     "messages": [
                         {"role": "system", "content": system_prompt},
                         {"role": "user", "content": user_prompt},

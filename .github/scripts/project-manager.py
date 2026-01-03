@@ -145,6 +145,27 @@ def is_org_member(username: str) -> bool:
         return False
 
 
+
+def normalize_labels(project: str, labels: list) -> list:
+    PROJECT_LABELS = {
+        "dev": {"DEV", "BUG", "FEATURE", "QUEST", "TRACKING"},
+        "support": {"SUPPORT", "BUG", "FEATURE", "HELP", "BALANCE", "BILLING", "API"},
+        "news": {"NEWS"},
+    }
+
+    project = project.lower()
+    allowed = PROJECT_LABELS.get(project, set())
+
+    clean = [l.upper() for l in labels if l.upper() in allowed]
+
+    top = project.upper()
+    if top not in clean:
+        clean.insert(0, top)
+
+    return clean[:2]
+
+
+
 def classify_with_ai(is_internal: bool) -> dict:
     org_members = ", ".join(CONFIG["org_members"])
     member_skills = CONFIG.get("member_skills", {})
@@ -157,11 +178,10 @@ def classify_with_ai(is_internal: bool) -> dict:
     - support: User help, bug reports, API questions, billing issues, pollen balance questions
     - news: Release announcements, changelog, social media posts, community updates
 
-    RULES:
-    1. Author is {"INTERNAL (org member)" if is_internal else "EXTERNAL (community contributor)"}
-    2. {"Internal authors can go to any project based on content" if is_internal else "External authors ALWAYS go to 'support' (dev is internal-only)"}
-    3. Each item goes to exactly ONE project
-    4. Set priority based on impact: Urgent (critical/blocking), High (important), Medium (normal), Low (minor)
+    ROUTING RULES:
+    1. Dev project is internal-only - external contributors must not be routed to dev
+    2. Each item goes to exactly ONE project
+    3. Set priority based on impact: Urgent (critical/blocking), High (important), Medium (normal), Low (minor)
 
     LABELS (pick 1-2 most relevant, UPPERCASE):
     Dev labels: DEV, BUG, FEATURE, QUEST, TRACKING
@@ -244,12 +264,12 @@ def classify_with_ai(is_internal: bool) -> dict:
     return get_fallback_classification(is_internal)
 
 
-def get_fallback_classification(is_internal: bool) -> dict:
+def get_fallback_classification(_: bool) -> dict:
     return {
-        "project": "dev" if is_internal else "support",
-        "priority": "Medium",
-        "labels": ["EXTERNAL"] if not is_internal else [],
-        "reasoning": "Fallback classification",
+        "project": None,
+        "priority": None,
+        "labels": [],
+        "reasoning": "AI classification failed; skipped automation"
     }
 
 
@@ -336,37 +356,28 @@ def set_project_field(project_id: str, item_id: str, field_id: str, option_id: s
     )
 
 
-def add_labels(labels: list, classification: dict):
+def add_labels(labels: list, project: str):
     if not labels:
         return
 
-    config_labels_upper = {k.upper() for k in CONFIG["labels"]}
-    valid_labels = [l.upper() for l in labels if l.upper() in config_labels_upper]
-    invalid_labels = [l.upper() for l in labels if l.upper() not in config_labels_upper]
+    # Normalize labels per project rules
+    clean_labels = normalize_labels(project, labels)
     
-    if invalid_labels:
-        print(f"⚠ Skipping invalid labels: {invalid_labels}")
-    
-    if not valid_labels:
+    if not clean_labels:
         print("No valid labels to add")
         return
-
-    # Add project-level label (DEV, SUPPORT, or NEWS) if not already present
-    project_key = classification.get("project", "support").upper()
-    if project_key not in valid_labels:
-        valid_labels.append(project_key)
 
     try:
         response = requests.post(
             f"{GITHUB_API}/repos/{REPO_OWNER}/{REPO_NAME}/issues/{ISSUE_NUMBER}/labels",
             headers=GITHUB_HEADERS,
-            json={"labels": valid_labels},
+            json={"labels": clean_labels},
             timeout=10,
         )
         if response.status_code != 200:
             print(f"Failed to add labels: HTTP {response.status_code} - {response.text}")
         else:
-            print(f"✓ Added labels: {valid_labels}")
+            print(f"✓ Added labels: {clean_labels}")
     except requests.RequestException as e:
         print(f"Failed to add labels: {e}")
 
@@ -411,9 +422,16 @@ def main():
     classification = classify_with_ai(is_internal)
     print(f"Classification: {json.dumps(classification, indent=2)}")
 
-    project_key = classification.get("project", "support").lower()
+    if not classification.get("project"):
+        print("Skipping project assignment due to fallback classification")
+        return
+
+    project_key = classification.get("project", "").lower()
     priority = classification.get("priority", "Medium")
     labels = classification.get("labels", [])
+    
+    # Normalize labels before processing
+    labels = normalize_labels(project_key, labels)
 
     project_config = CONFIG["projects"].get(project_key)
     if not project_config:
@@ -456,7 +474,7 @@ def main():
 
     if labels:
         print(f"Adding labels: {labels}")
-        add_labels(labels, classification)
+        add_labels(labels, project_key)
 
     best_assignee = find_best_assignee(classification)
     if best_assignee:

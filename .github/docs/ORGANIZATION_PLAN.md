@@ -66,17 +66,31 @@ Tag
 
 ### Tier
 
-| Label      | Issue | PR  | Comments                  |
-| ---------- | ----- | --- | ------------------------- |
-| TIER       | x     | x   | Applied to all Tier items |
-| SEED       | x     |     | Upgrade request           |
-| CODE       |       | x   | Code contribution         |
-| APP        |       | x   | App contribution          |
-| FLOWER     | x     | x   | Upgrade request           |
-| INCOMPLETE | x     | x   | User action requested     |
-| REVIEW     |       | x   | PR awaiting review        |
-| COMPLETE   |       | x   | PR approved and merged    |
-| REJECTED   |       | x   | PR declined               |
+**Hierarchy:** TOP + TYPE + WORKFLOW (e.g., `TIER` + `SEED` + `REVIEW`)
+
+TOP
+
+| Label | Issue | PR  | Comments                  |
+| ----- | ----- | --- | ------------------------- |
+| TIER  | x     | x   | Applied to all Tier items |
+
+TYPE
+
+| Label  | Issue | PR  | Comments          |
+| ------ | ----- | --- | ----------------- |
+| SEED   | x     |     | Upgrade request   |
+| CODE   |       | x   | Code contribution |
+| APP    | x     | x   | App contribution  |
+| FLOWER | x     | x   | Upgrade request   |
+
+WORKFLOW
+
+| Label      | Issue | PR  | Comments               |
+| ---------- | ----- | --- | ---------------------- |
+| INCOMPLETE | x     | x   | User action requested  |
+| REVIEW     |       | x   | PR awaiting review     |
+| COMPLETE   |       | x   | PR approved and merged |
+| REJECTED   |       | x   | PR declined            |
 
 ## Priority
 

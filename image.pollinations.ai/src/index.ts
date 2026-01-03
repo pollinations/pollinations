@@ -21,7 +21,6 @@ import {
     type VideoGenerationResult,
 } from "./createAndReturnVideos.js";
 import { registerFeedListener, sendToFeedListeners } from "./feedListeners.js";
-import { makeParamsSafe } from "./makeParamsSafe.js";
 import { MODELS } from "./models.js";
 import {
     normalizeAndTranslatePrompt,

@@ -8,12 +8,13 @@ from typing import Optional
 GITHUB_TOKEN = os.getenv("GITHUB_TOKEN")
 POLLINATIONS_TOKEN = os.getenv("POLLINATIONS_TOKEN")
 GITHUB_EVENT_JSON = os.getenv("GITHUB_EVENT", "{}")
+TEST_MODE = True
 try:
     GITHUB_EVENT = json.loads(GITHUB_EVENT_JSON)
 except json.JSONDecodeError:
     GITHUB_EVENT = {}
 REPO_OWNER = "pollinations"
-REPO_NAME = "pollinations"
+REPO_NAME = "pollinations" if not TEST_MODE else "pollinations-testflight"
 IS_PULL_REQUEST = "pull_request" in GITHUB_EVENT
 ITEM_DATA = (
     GITHUB_EVENT.get("pull_request")
@@ -33,7 +34,7 @@ GITHUB_HEADERS = {
     "Accept": "application/vnd.github+json",
     "Content-Type": "application/json",
 }
-CONFIG = {
+PROD_CONFIG = {
     "projects": {
         "dev": {
             "id": "PVT_kwDOBS76fs4AwCAM",
@@ -99,6 +100,76 @@ CONFIG = {
         "Itachi-1824"
     ],
 }
+
+TEST_CONFIG = {
+    "projects": {
+        "dev": {
+            "id": "PVT_kwDOBS76fs4BLy4R",
+            "name": "dev_test",
+            "internal_only": True,
+            "default_status": "Backlog",
+            "status_field_id": "PVTSSF_lADOBS76fs4BLy4Rzg7QyPs",
+            "status_options": {
+                "Backlog": "f75ad846",
+                "Blocked": "151d2df4",
+                "To Do": "d89ca0b2",
+                "In Progress": "47fc9ee4",
+                "In Review": "ca6ba6c3",
+                "Done": "98236657",
+                "Discarded": "3bf36d0a",
+            },
+            "priority_field_id": "PVTSSF_lADOBS76fs4BLy4Rzg7QyQo",
+            "priority_options": {
+                "Urgent": "0f53228f",
+                "High": "dc7fa85f",
+                "Medium": "15fd4fac",
+                "Low": "7495a981",
+            },
+        },
+        "support": {
+            "id": "PVT_kwDOBS76fs4BLy35",
+            "name": "support_test",
+            "internal_only": False,
+            "default_status": "To do",
+            "status_field_id": "PVTSSF_lADOBS76fs4BLy35zg7QyPs",
+            "status_options": {
+                "To do": "d89ca0b2",
+                "In progress": "47fc9ee4",
+                "Done": "98236657",
+                "Discarded": "3bf36d0a",
+            },
+            "priority_field_id": "PVTSSF_lADOBS76fs4BLy35zg7QyQo",
+            "priority_options": {
+                "Urgent": "0f53228f",
+                "High": "dc7fa85f",
+                "Medium": "15fd4fac",
+                "Low": "7495a981",
+            },
+        },
+        "news": {
+            "id": "PVT_kwDOBS76fs4BLy4J",
+            "name": "news_test",
+            "internal_only": False,
+            "default_status": "Review",
+            "status_field_id": "PVTSSF_lADOBS76fs4BLy4Jzg7QyPs",
+            "status_options": {
+                "Review": "f75ad846",
+                "Done": "98236657",
+            },
+            "priority_field_id": None,
+            "priority_options": {},
+        }
+    },
+    "org_members": [
+        "voodoohop",
+        "eulervoid",
+        "ElliotEtag",
+        "Circuit-Overtime",
+        "Itachi-1824"
+    ],
+}
+
+CONFIG = TEST_CONFIG if TEST_MODE else PROD_CONFIG
 
 def is_org_member(username: str) -> bool:
     if not username:

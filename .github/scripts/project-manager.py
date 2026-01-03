@@ -151,7 +151,7 @@ def classify_with_ai(is_internal: bool) -> dict:
     skills_info = "\n".join(
         [f"  - {member}: {', '.join(skills)}" for member, skills in member_skills.items()]
     )
-    system_prompt = f"""You are a GitHub issue/PR classifier for Pollinations. Analyze and classify into ONE project.
+    system_prompt = f"""You are a GitHub issue/PR classifier for pollinations.ai. Analyze and classify into ONE project.
     PROJECTS:
     - dev: Core development work, features, refactors, infrastructure, code improvements (INTERNAL ONLY)
     - support: User help, bug reports, API questions, billing issues, pollen balance questions

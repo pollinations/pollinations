@@ -1,0 +1,44 @@
+name: Project Manager
+
+on:
+  issues:
+    types: [opened]
+  pull_request_target:
+    types: [opened]
+
+concurrency:
+  group: project-manager-${{ github.event.issue.number || github.event.pull_request.number }}
+  cancel-in-progress: false
+
+jobs:
+  organize:
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+      pull-requests: write
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Generate Pollinations AI Token
+        id: pollinations-ai
+        uses: actions/create-github-app-token@v1
+        with:
+          app-id: ${{ secrets.POLLY_BOT_APP_ID }}
+          private-key: ${{ secrets.POLLY_BOT_PRIVATE_KEY }}
+          owner: pollinations
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: pip install requests
+
+      - name: Organize issue or PR
+        env:
+          GITHUB_TOKEN: ${{ steps.pollinations-ai.outputs.token }}
+          GITHUB_EVENT: ${{ toJSON(github.event) }}
+          POLLINATIONS_TOKEN: ${{ secrets.POLLINATIONS_PROJECT_MANAGER  }}
+        run: python .github/scripts/project-manager.py

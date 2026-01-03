@@ -178,7 +178,23 @@ def get_fallback_classification(_: bool) -> dict:
 
 
 def classify_with_ai(is_internal: bool) -> dict:
-    system_prompt = "Return ONLY valid JSON."
+    system_prompt = """
+    Return ONLY valid JSON with this exact schema:
+
+    {
+    "project": "dev|support|news|null",
+    "priority": "Urgent|High|Medium|Low",
+    "labels": ["BUG","FEATURE","HELP","QUEST","TRACKING","BALANCE","BILLING","API"],
+    "assignee": "string|null",
+    "reasoning": "string"
+    }
+
+    Rules:
+    - Do NOT invent new labels
+    - Use null if unsure
+    - dev is internal-only
+    """
+
 
     user_prompt = f"""
     Author: {ISSUE_AUTHOR}
@@ -208,7 +224,15 @@ def classify_with_ai(is_internal: bool) -> dict:
                 continue
 
             content = r.json()["choices"][0]["message"]["content"]
-            return json.loads(content)
+            raw = json.loads(content)
+            return {
+                "project": raw.get("project"),
+                "priority": raw.get("priority", "Medium"),
+                "labels": raw.get("labels", []) if isinstance(raw.get("labels"), list) else [],
+                "assignee": raw.get("assignee"),
+                "reasoning": raw.get("reasoning", "")
+            }
+
 
         except Exception:
             time.sleep(2 ** attempt)

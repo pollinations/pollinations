@@ -34,72 +34,6 @@ GITHUB_HEADERS = {
     "Accept": "application/vnd.github+json",
     "Content-Type": "application/json",
 }
-PROD_CONFIG = {
-    "projects": {
-        "dev": {
-            "id": "PVT_kwDOBS76fs4AwCAM",
-            "name": "Dev",
-            "internal_only": True,
-            "default_status": "Backlog",
-            "status_field_id": "PVTSSF_lADOBS76fs4AwCAMzgmXaAM",
-            "status_options": {
-                "Backlog": "f75ad846",
-                "To Do": "d89ca0b2",
-                "In Progress": "47fc9ee4",
-                "In Review": "ca6ba6c3",
-                "Done": "98236657",
-                "Discarded": "bc3f7e3a",
-            },
-            "priority_field_id": "PVTSSF_lADOBS76fs4AwCAMzg2DKDk",
-            "priority_options": {
-                "Urgent": "0f53228f",
-                "High": "dc7fa85f",
-                "Medium": "15fd4fac",
-                "Low": "7495a981",
-            },
-        },
-        "support": {
-            "id": "PVT_kwDOBS76fs4BLr1H",
-            "name": "Support",
-            "internal_only": False,
-            "default_status": "To do",
-            "status_field_id": "PVTSSF_lADOBS76fs4BLr1Hzg7L1RQ",
-            "status_options": {
-                "To do": "f75ad846",
-                "In progress": "47fc9ee4",
-                "Done": "98236657",
-                "Discarded": "bc3f7e3a",
-            },
-            "priority_field_id": "PVTSSF_lADOBS76fs4BLr1Hzg7NAkI",
-            "priority_options": {
-                "Urgent": "5b4c403c",
-                "High": "509f6cf1",
-                "Medium": "ce60ee16",
-                "Low": "ca5161be",
-            },
-        },
-        "news": {
-            "id": "PVT_kwDOBS76fs4BLtD8",
-            "name": "News",
-            "internal_only": False,
-            "default_status": "Review",
-            "status_field_id": "PVTSSF_lADOBS76fs4BLtD8zg7Mrxg",
-            "status_options": {
-                "Review": "f75ad846",
-                "Done": "98236657",
-            },
-            "priority_field_id": None,
-            "priority_options": {},
-        }
-    },
-    "org_members": [
-        "voodoohop",
-        "eulervoid",
-        "ElliotEtag",
-        "Circuit-Overtime",
-        "Itachi-1824"
-    ],
-}
 
 TEST_CONFIG = {
     "projects": {
@@ -169,7 +103,7 @@ TEST_CONFIG = {
     ],
 }
 
-CONFIG = TEST_CONFIG if TEST_MODE else PROD_CONFIG
+CONFIG = TEST_CONFIG 
 
 def is_org_member(username: str) -> bool:
     if not username:

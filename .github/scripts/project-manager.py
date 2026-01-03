@@ -316,7 +316,7 @@ def main():
         return
     project_key = classification["project"].lower()
     priority = classification.get("priority", "Medium")
-
+    priority = priority.capitalize()
     project = CONFIG["projects"].get(project_key)
     if not project:
         return

@@ -55,6 +55,7 @@ CONFIG = {
             "status_field_id": "PVTSSF_lADOBS76fs4AwCAMzgmXaAM",
             "status_options": {
                 "Backlog": "f75ad846",
+                "Blocked": "151d2df4",
                 "To Do": "d89ca0b2",
                 "In Progress": "47fc9ee4",
                 "In Review": "ca6ba6c3",
@@ -76,8 +77,7 @@ CONFIG = {
             "default_status": "To do",
             "status_field_id": "PVTSSF_lADOBS76fs4BLr1Hzg7L1RQ",
             "status_options": {
-                "To do": "f75ad846",
-                "In progress": "47fc9ee4",
+                "Review": "f75ad846",
                 "Done": "98236657",
                 "Discarded": "bc3f7e3a",
             },
@@ -96,7 +96,7 @@ CONFIG = {
         "default_status": "Review",
         "status_field_id": "PVTSSF_lADOBS76fs4BLtD8zg7Mrxg",
         "status_options": {
-            "To do": "f75ad846",     
+            "Todo": "f75ad846",     
             "In Progress": "47fc9ee4",
             "Done": "98236657",
         },

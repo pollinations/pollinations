@@ -1,6 +1,6 @@
 # gen.pollinations.ai
 
-Simplified API gateway for Pollinations.AI, providing clean URLs via Cloudflare Workers service bindings.
+Simplified API gateway for pollinations.ai, providing clean URLs via Cloudflare Workers service bindings.
 
 ## Architecture
 
@@ -16,15 +16,15 @@ Simplified API gateway for Pollinations.AI, providing clean URLs via Cloudflare 
 
 ## URL Mapping
 
-| gen.pollinations.ai | → enter.pollinations.ai |
-|---------------------|-------------------------|
-| `/` | redirect → `/api/docs` |
-| `/docs` | redirect → `/api/docs` |
-| `/models` | → `/api/generate/text/models` |
-| `/image/*` | → `/api/generate/image/*` |
-| `/text/*` | → `/api/generate/text/*` |
-| `/v1/*` | → `/api/generate/v1/*` |
-| `/openai` | → `/api/generate/openai` |
+| gen.pollinations.ai | → enter.pollinations.ai       |
+| ------------------- | ----------------------------- |
+| `/`                 | redirect → `/api/docs`        |
+| `/docs`             | redirect → `/api/docs`        |
+| `/models`           | → `/api/generate/text/models` |
+| `/image/*`          | → `/api/generate/image/*`     |
+| `/text/*`           | → `/api/generate/text/*`      |
+| `/v1/*`             | → `/api/generate/v1/*`        |
+| `/openai`           | → `/api/generate/openai`      |
 
 ## Development
 

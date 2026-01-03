@@ -1,6 +1,6 @@
 # 🎨 ReImagine - Transform Images with AI
 
-[![Powered by Pollinations.AI](https://img.shields.io/badge/Powered%20by-Pollinations.AI-35D89A)](https://pollinations.ai)
+[![Powered by pollinations.ai](https://img.shields.io/badge/Powered%20by-pollinations.ai-35D89A)](https://pollinations.ai)
 [![React Native](https://img.shields.io/badge/React%20Native-61DAFB?logo=react&logoColor=black)](https://reactnative.dev/)
 [![Expo](https://img.shields.io/badge/Expo-000020?logo=expo&logoColor=white)](https://expo.dev/)
 
@@ -8,15 +8,14 @@ ReImagine is a mobile application that lets you transform images using powerful 
 
 ![ReImagine App Banner](./assets/reimagine_icon.png)
 
-
 ## ✨ Features
 
 - **Image Browsing**: Discover trending images from Civitai
 - **Multi-image Selection**: Choose 1-4 images to transform
 - **AI Transformation**: Use Pollinations' AI to transform selected images
 - **Smart Model Selection**:
-    - **Kontext**: For transforming single images
-    - **GPTImage**: For combining 2-4 images
+  - **Kontext**: For transforming single images
+  - **GPTImage**: For combining 2-4 images
 - **Transformation History**: Keep track of all your transformed images
 - **Version Control**: Create multiple versions of your transformations
 - **Dark/Light Mode**: Choose your preferred theme
@@ -37,30 +36,31 @@ ReImagine is built using:
 
 - **React Native & Expo**: For cross-platform mobile development
 - **Pollinations API**: For powerful AI image transformation
-    - Uses `kontext` model for single image transformations
-    - Uses `gptimage` model for multi-image transformations (2-4 images)
+  - Uses `kontext` model for single image transformations
+  - Uses `gptimage` model for multi-image transformations (2-4 images)
 - **Civitai API**: For browsing trending AI-generated images
 - **Async Storage**: For local data persistence
 - **React Navigation**: For seamless app navigation
 
 ## 🖼️ Pollinations Integration
 
-ReImagine leverages the Pollinations.AI API to transform images with AI. The integration allows users to:
+ReImagine leverages the pollinations.ai API to transform images with AI. The integration allows users to:
 
 - Transform images with text prompts
 - Apply different transformation models based on the number of images selected
 - Configure image parameters like dimensions and enhancement settings
 
 Example API endpoint used:
+
 ```
 https://image.pollinations.ai/prompt/[encoded-prompt]/?model=[model]&image=[image-urls]&width=1024&height=1024&nologo=true
 ```
 
 ## 📱 Screenshots
+
 ![ReImagine App Screenshot](./screenshot/Screenshot_2025-10-29-18-19-49-347_host.exp.exponent.jpg)
 ![ReImagine App Screenshot](./screenshot/Screenshot_2025-10-29-18-15-24-195_host.exp.exponent.jpg)
 ![ReImagine App Screenshot](./screenshot/Screenshot_2025-10-29-18-20-10-461_host.exp.exponent.jpg)
-
 
 ## 🧩 Core Components
 
@@ -72,17 +72,20 @@ https://image.pollinations.ai/prompt/[encoded-prompt]/?model=[model]&image=[imag
 ## 🛠️ Installation & Setup
 
 1. Clone the repository
+
    ```bash
    git clone https://github.com/yourusername/reimagine.git
    cd reimagine
    ```
 
 2. Install dependencies
+
    ```bash
    npm install
    ```
 
 3. Create a .env file with the necessary environment variables:
+
    ```
    BANNED_IMAGES_URL=your-banned-images-url
     example : 'https://gist.github.com/ismailazdad/5cbe339966c62a2322f60416c9661b78/raw/banned_images_reim.json'
@@ -99,6 +102,7 @@ https://image.pollinations.ai/prompt/[encoded-prompt]/?model=[model]&image=[imag
    ```
 
 4. Start the development server
+
    ```bash
    npx expo start -c
    ```
@@ -106,9 +110,10 @@ https://image.pollinations.ai/prompt/[encoded-prompt]/?model=[model]&image=[imag
 5. Follow Expo instructions to run on your device or emulator
 
 6. here the link for the apk Android for test :
-[![Android](https://img.shields.io/badge/Android-3DDC84?style=for-the-badge&logo=android&logoColor=white)](https://drive.google.com/file/d/1EFe44mzE8xQA7fIbYHuajXHzY-B2n7AX/view?usp=sharing)
+   [![Android](https://img.shields.io/badge/Android-3DDC84?style=for-the-badge&logo=android&logoColor=white)](https://drive.google.com/file/d/1EFe44mzE8xQA7fIbYHuajXHzY-B2n7AX/view?usp=sharing)
 
 ## 🔮 Future Features
+
 - start tour
 - User accounts and cloud synchronization
 - More transformation models and options
@@ -118,7 +123,7 @@ https://image.pollinations.ai/prompt/[encoded-prompt]/?model=[model]&image=[imag
 
 ## 🙌 Credits
 
-- [Pollinations.AI](https://pollinations.ai) - For the powerful AI image transformation API
+- [pollinations.ai](https://pollinations.ai) - For the powerful AI image transformation API
 - [Civitai](https://civitai.com) - For the source of trending AI-generated images
 - [Expo](https://expo.dev) - For the React Native development framework
 

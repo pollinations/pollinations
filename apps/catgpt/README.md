@@ -1,12 +1,12 @@
 # 🐱 CatGPT Meme Generator
 
-Transform your questions into sassy cat wisdom! A collaboration between [Pollinations.AI](https://pollinations.ai) and [Tanika Godbole](https://www.instagram.com/tanikagodbole/), the original creator of the CatGPT comic.
+Transform your questions into sassy cat wisdom! A collaboration between [pollinations.ai](https://pollinations.ai) and [Tanika Godbole](https://www.instagram.com/tanikagodbole/), the original creator of the CatGPT comic.
 
 ## 🌟 About
 
 CatGPT is an AI-powered meme generator that creates personalized cat comics in response to your questions. Just like the original CatGPT comic, our feline friend responds with lazy, sarcastic wisdom while treating humans as mere servants.
 
-This app emerged from a collaboration with Tanika Godbole, with the idea coming from Dr. Julia Degen. We're using OpenAI's GPT-Image-1 model through Pollinations.AI to democratize access to AI-generated cat wisdom!
+This app emerged from a collaboration with Tanika Godbole, with the idea coming from Dr. Julia Degen. We're using OpenAI's GPT-Image-1 model through pollinations.ai to democratize access to AI-generated cat wisdom!
 
 ### 🎨 Original Inspiration
 
@@ -69,6 +69,7 @@ This app has been migrated from the legacy `image.pollinations.ai` to the new `e
 - **New**: `https://enter.pollinations.ai/api/generate/image/...?model=nanobanana`
 
 **Key Changes**:
+
 - Model remains `nanobanana` (Gemini 2.5 Flash Image - high-quality, pollen-based)
 - Authentication now uses API keys from [enter.pollinations.ai](https://enter.pollinations.ai)
 - Better rate limiting and reliability
@@ -76,17 +77,17 @@ This app has been migrated from the legacy `image.pollinations.ai` to the new `e
 
 ## 💡 The Story
 
-This app started from a LinkedIn post announcing the collaboration between Thomas Haferlach (Pollinations.AI) and Tanika Godbole. The goal is to create a fun, viral meme generator while ensuring fair attribution and revenue sharing with the original creator - something often overlooked in the AI space.
+This app started from a LinkedIn post announcing the collaboration between Thomas Haferlach (pollinations.ai) and Tanika Godbole. The goal is to create a fun, viral meme generator while ensuring fair attribution and revenue sharing with the original creator - something often overlooked in the AI space.
 
 ## 🐾 Support
 
-Keep your cats happy with premium pet food from our sponsor [PuraPep](https://www.purapep.de/) - because even sarcastic cats deserve the best! 
+Keep your cats happy with premium pet food from our sponsor [PuraPep](https://www.purapep.de/) - because even sarcastic cats deserve the best!
 
 ## 🎯 How to Use
 
 1. Visit the [CatGPT Meme Generator](https://pollinations.github.io/catgpt/)
 2. Type your question in the text box
-3. Click "Generate Meme" 
+3. Click "Generate Meme"
 4. Watch as CatGPT responds with feline wisdom!
 5. Download or share your creation
 
@@ -121,13 +122,13 @@ The site should be available within a few minutes!
 ## 🤝 Credits & Collaboration
 
 - **Original CatGPT Creator**: [Tanika Godbole](https://www.instagram.com/tanikagodbole/)
-- **AI Technology**: [Pollinations.AI](https://pollinations.ai)
+- **AI Technology**: [pollinations.ai](https://pollinations.ai)
 - **Idea Credit**: Dr. Julia Degen
 - **Sponsor**: [PuraPep](https://www.purapep.de/) - Premium pet food for happy cats 🐾
 
 ## 📝 License
 
-This app is a collaboration between Pollinations.AI and Tanika Godbole. The CatGPT character and concept are the intellectual property of Tanika Godbole. AI-generated variations are created with permission and include revenue sharing with the original creator.
+This app is a collaboration between pollinations.ai and Tanika Godbole. The CatGPT character and concept are the intellectual property of Tanika Godbole. AI-generated variations are created with permission and include revenue sharing with the original creator.
 
 ## 🌈 Fun Facts
 
@@ -137,4 +138,4 @@ This app is a collaboration between Pollinations.AI and Tanika Godbole. The CatG
 
 ---
 
-Made with 💜 by [Pollinations.AI](https://pollinations.ai) in collaboration with [Tanika Godbole](https://www.instagram.com/tanikagodbole/)
+Made with 💜 by [pollinations.ai](https://pollinations.ai) in collaboration with [Tanika Godbole](https://www.instagram.com/tanikagodbole/)

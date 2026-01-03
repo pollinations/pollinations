@@ -1,14 +1,14 @@
-# Contributing to Pollinations
+# Contributing to pollinations.ai
 
-Thank you for considering contributing to the Pollinations project! We are thrilled to have you join our community and help us enhance this exciting project. Your contributions are vital to improving our project and expanding its capabilities.
+Thank you for considering contributing to the pollinations.ai project! We are thrilled to have you join our community and help us enhance this exciting project. Your contributions are vital to improving our project and expanding its capabilities.
 
 ## How to Contribute
 
-We have multiple projects under the `pollinations` umbrella, and each project has its own set of issues. To make a meaningful contribution:
+We have multiple projects under the `pollinations.ai` umbrella, and each project has its own set of issues. To make a meaningful contribution:
 
 ### 1. Explore Projects and Issues
 
-Before you start, please refer to the main `README.md` file of the `pollinations` repository. It lists all the insights and provides an overview. There are dedicated issues from versatile topics under the repository [Issues](https://github.com/pollinations/pollinations/issues) section.
+Before you start, please refer to the main `README.md` file of the `pollinations.ai` repository. It lists all the insights and provides an overview. There are dedicated issues from versatile topics under the repository [Issues](https://github.com/pollinations/pollinations/issues) section.
 
 Look for issues that interest you and feel free to tackle them!
 
@@ -20,28 +20,28 @@ Once you've selected an issue, take the time to thoroughly understand its requir
 
 We are in profound need of members who can help enhance our documentation. If you possess experience in data science, machine learning, LLMs (Large Language Models), or Stable Diffusion, your insights will be invaluable. You can contribute by:
 
--   Improving existing documentation to be clearer and more comprehensive.
--   Writing new guides or tutorials that explain complex concepts or workflows.
--   Providing practical examples of how to use different features of pollinations.
--   Creating explanations for the underlying data science and ML principles.
+- Improving existing documentation to be clearer and more comprehensive.
+- Writing new guides or tutorials that explain complex concepts or workflows.
+- Providing practical examples of how to use different features of pollinations.ai.
+- Creating explanations for the underlying data science and ML principles.
 
-### 4. Build Apps with Pollinations
+### 4. Build Apps with pollinations.ai
 
 Want to build something cool? Check out our **[apps folder](./apps/README.md)**!
 
 **How it works:**
 
 1. **Propose your app idea** by creating a GitHub issue using the "SubmitApp" template
-2. Describe what you want to build and which Pollinations APIs you'll use
+2. Describe what you want to build and which pollinations.ai APIs you'll use
 3. Get feedback from maintainers
 4. Build your app and submit a PR
 
-Create apps using Pollinations APIs and get them featured. Each app lives in its own folder with clear docs. Perfect for:
+Create apps using pollinations.ai APIs and get them featured. Each app lives in its own folder with clear docs. Perfect for:
 
--   Creative tools (meme generators, art tools)
--   Productivity apps (thumbnail creators, content generators)
--   Fun projects (games, quizzes)
--   Developer tools (API playgrounds, dashboards)
+- Creative tools (meme generators, art tools)
+- Productivity apps (thumbnail creators, content generators)
+- Fun projects (games, quizzes)
+- Developer tools (API playgrounds, dashboards)
 
 See the [apps README](./apps/README.md) for detailed guidelines and templates.
 
@@ -49,12 +49,12 @@ See the [apps README](./apps/README.md) for detailed guidelines and templates.
 
 If you're interested in coding, we enthusiastically welcome contributions in the following areas:
 
--   **Bug Fixes:** Identifying and resolving issues that hinder the project's functionality.
--   **Feature Enhancements:** Adding new capabilities or improving existing ones.
--   **Code Optimization:** Refactoring and improving the efficiency, readability, and maintainability of the codebase.
--   **New Functionalities:** Developing innovative features that expand the project's scope.
+- **Bug Fixes:** Identifying and resolving issues that hinder the project's functionality.
+- **Feature Enhancements:** Adding new capabilities or improving existing ones.
+- **Code Optimization:** Refactoring and improving the efficiency, readability, and maintainability of the codebase.
+- **New Functionalities:** Developing innovative features that expand the project's scope.
 
-### How to earn the "Pollinations Contributor" badge
+### How to earn the "pollinations.ai Contributor" badge
 
 To earn this badge, contributors need to:
 
@@ -97,8 +97,8 @@ Once your pull request is merged, you will automatically be issued the badge!
     ```
 
 7.  **Create a Pull Request (PR)**: Go to the original `pollinations/pollinations` repository on GitHub. You will see an option to create a Pull Request from your recently pushed branch.
-    -   **Crucially:** Link your PR to the original issue it addresses (e.g., "Closes #XYZ" in your PR description).
-    -   Ensure your PR clearly explains the changes you've made and how they resolve the issue.
+    - **Crucially:** Link your PR to the original issue it addresses (e.g., "Closes #XYZ" in your PR description).
+    - Ensure your PR clearly explains the changes you've made and how they resolve the issue.
 
 ## Guidelines
 
@@ -110,4 +110,4 @@ Document Your Changes Well: Add comments to your code where needed to explain ho
 
 Test Your Work: If you can, write and run tests to check that your changes work correctly and do not break anything else.
 
-Thank You! Thank you for contributing! Your help makes the Pollinations project stronger and more useful for the community. Happy coding!
+Thank You! Thank you for contributing! Your help makes the pollinations.ai project stronger and more useful for the community. Happy coding!

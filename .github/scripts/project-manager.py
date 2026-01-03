@@ -200,9 +200,10 @@ def classify_with_ai(is_internal: bool) -> dict:
 
     item_type = "Pull Request" if IS_PULL_REQUEST else "Issue"
     user_prompt = f"""{item_type} #{ISSUE_NUMBER}
-    Author: {ISSUE_AUTHOR} ({"internal" if is_internal else "external"})
+    Author: {ISSUE_AUTHOR}
     Title: {ISSUE_TITLE}
     Body: {ISSUE_BODY[:2000]}"""
+
 
     for attempt in range(3):
         try:
@@ -355,31 +356,20 @@ def set_project_field(project_id: str, item_id: str, field_id: str, option_id: s
         },
     )
 
-
-def add_labels(labels: list, project: str):
+def add_labels(labels: list):
     if not labels:
-        return
-
-    # Normalize labels per project rules
-    clean_labels = normalize_labels(project, labels)
-    
-    if not clean_labels:
-        print("No valid labels to add")
         return
 
     try:
         response = requests.post(
             f"{GITHUB_API}/repos/{REPO_OWNER}/{REPO_NAME}/issues/{ISSUE_NUMBER}/labels",
             headers=GITHUB_HEADERS,
-            json={"labels": clean_labels},
+            json={"labels": labels},
             timeout=10,
         )
-        if response.status_code != 200:
-            print(f"Failed to add labels: HTTP {response.status_code} - {response.text}")
-        else:
-            print(f"✓ Added labels: {clean_labels}")
     except requests.RequestException as e:
         print(f"Failed to add labels: {e}")
+
 
 
 def find_best_assignee(classification: dict) -> Optional[str]:
@@ -474,7 +464,7 @@ def main():
 
     if labels:
         print(f"Adding labels: {labels}")
-        add_labels(labels, project_key)
+        add_labels(labels)
 
     best_assignee = find_best_assignee(classification)
     if best_assignee:

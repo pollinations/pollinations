@@ -10,11 +10,25 @@ We are transitioning from using a single **Dev** project to four dedicated proje
 
 GitHub labels applied to issues and PRs for categorization and filtering.
 
+### Label Hierarchy
+
+| Level | Purpose                                                   | Required                |
+| ----- | --------------------------------------------------------- | ----------------------- |
+| TOP   | Project identifier - applied to ALL items in that project | Always 1                |
+| TYPE  | Issue/PR classification within project                    | At least 1 if available |
+| TAG   | Additional context (Support only)                         | Optional                |
+
+**Per project:**
+
+- **DEV**: TOP + TYPE (e.g., `DEV` + `BUG`)
+- **SUPPORT**: TOP + TYPE + TAG (e.g., `SUPPORT` + `HELP` + `BILLING`)
+- **NEWS**: TOP only (e.g., `NEWS`)
+
 ### Dev
 
 | Label    | Issue | PR  | Comments                                         |
 | -------- | ----- | --- | ------------------------------------------------ |
-| CORE     | x     | x   | Applied to all Dev items                         |
+| DEV      | x     | x   | Applied to all Dev items                         |
 | BUG      | x     |     | Something is broken                              |
 | FEATURE  | x     |     | New functionality request                        |
 | QUEST    | x     |     | Community task - One off Pollen reward if merged |

@@ -212,20 +212,20 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
           </div>
         </div>
         {apiKeys.length ? (
-          <div className="bg-blue-50/30 rounded-2xl p-4 sm:p-6 border border-blue-300 overflow-hidden">
+          <div className="bg-blue-50/30 rounded-2xl p-6 border border-blue-300 overflow-hidden">
             <div
               className="overflow-x-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
               style={{ overflowY: "clip" }}
             >
-              <div className="grid grid-cols-[auto_auto_auto_auto_auto_auto_auto] gap-x-2 sm:gap-x-3 gap-y-2 sm:gap-y-3 text-xs sm:text-sm min-w-max">
-                <span className="font-bold text-pink-400 text-xs">Type</span>
-                <span className="font-bold text-pink-400 text-xs">Name</span>
-                <span className="font-bold text-pink-400 text-xs">Key</span>
-                <span className="font-bold text-pink-400 text-xs">
+              <div className="grid grid-cols-[auto_auto_auto_auto_auto_auto_auto] gap-x-3 gap-y-2 text-sm min-w-max">
+                <span className="font-bold text-pink-400 text-sm">Type</span>
+                <span className="font-bold text-pink-400 text-sm">Name</span>
+                <span className="font-bold text-pink-400 text-sm">Key</span>
+                <span className="font-bold text-pink-400 text-sm">
                   Created / Used
                 </span>
-                <span className="font-bold text-pink-400 text-xs">Expires</span>
-                <span className="font-bold text-pink-400 text-xs">Models</span>
+                <span className="font-bold text-pink-400 text-sm">Expires</span>
+                <span className="font-bold text-pink-400 text-sm">Models</span>
                 <span></span>
                 {[...apiKeys]
                   .sort(

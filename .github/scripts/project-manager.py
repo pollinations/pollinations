@@ -123,46 +123,68 @@ def is_org_member(username: str) -> bool:
     except requests.RequestException:
         return False
 
-
 def normalize_labels(project: str, labels: list) -> list:
-    PROJECT_LABELS = {
-        "dev": {"DEV", "BUG", "FEATURE", "QUEST", "TRACKING"},
-        "support": {"SUPPORT", "BUG", "FEATURE", "HELP", "BALANCE", "BILLING", "API"},
-        "news": {"NEWS"},
+    project = project.lower()
+
+    HIERARCHY = {
+        "dev": {
+            "TOP": "DEV",
+            "TYPE": {"BUG", "FEATURE", "QUEST", "TRACKING"},
+            "TAG": set(),
+        },
+        "support": {
+            "TOP": "SUPPORT",
+            "TYPE": {"BUG", "FEATURE", "HELP"},
+            "TAG": {"BALANCE", "BILLING", "API"},
+        },
+        "news": {
+            "TOP": "NEWS",
+            "TYPE": set(),
+            "TAG": set(),
+        },
     }
 
-    project = project.lower()
-    allowed = PROJECT_LABELS.get(project, set())
+    rules = HIERARCHY.get(project)
+    if not rules:
+        return []
 
-    semantic = [l.upper() for l in labels if l.upper() in allowed]
-    top = project.upper()
+    incoming = [l.upper() for l in labels]
+
+    top = rules["TOP"]
+
+    type_label = next((l for l in incoming if l in rules["TYPE"]), None)
+    tag_label = next((l for l in incoming if l in rules["TAG"]), None)
 
     final = [top]
-    for l in semantic:
-        if l != top and len(final) < 3:
-            final.append(l)
+
+    if type_label:
+        final.append(type_label)
+
+    if tag_label and len(final) < 3:
+        final.append(tag_label)
 
     return final
 
 
 def get_fallback_classification(_: bool) -> dict:
     return {
-        "project": "support",
-        "priority": "Medium",
-        "labels": ["SUPPORT"],
+        "project": None,
+        "priority": None,
+        "labels": [],
         "assignee": None,
-        "reasoning": "AI classification failed; routed to support"
+        "reasoning": "AI classification failed; skipping automation"
     }
+
 
 
 def classify_with_ai(is_internal: bool) -> dict:
     system_prompt = "Return ONLY valid JSON."
 
     user_prompt = f"""
-Author: {ISSUE_AUTHOR}
-Title: {ISSUE_TITLE}
-Body: {ISSUE_BODY[:2000]}
-"""
+    Author: {ISSUE_AUTHOR}
+    Title: {ISSUE_TITLE}
+    Body: {ISSUE_BODY[:2000]}
+    """
 
     for attempt in range(3):
         try:
@@ -280,33 +302,37 @@ def main():
     is_internal = is_org_member(ISSUE_AUTHOR)
     classification = classify_with_ai(is_internal)
 
-    project_key = classification.get("project", "support").lower()
-    priority = classification.get("priority", "Medium")
-    labels = normalize_labels(project_key, classification.get("labels", []))
+    if not classification.get("project"):
+        return
 
-    project = CONFIG["projects"].get(project_key, CONFIG["projects"]["support"])
+    project_key = classification["project"].lower()
+    priority = classification.get("priority", "Medium")
+
+    project = CONFIG["projects"].get(project_key)
+    if not project:
+        return
+
 
     if project.get("internal_only") and not is_internal:
+        project_key = "support"
         project = CONFIG["projects"]["support"]
+
+    labels = normalize_labels(project_key, classification.get("labels", []))
+
 
     item_id = add_to_project(project["id"])
     if not item_id:
         return
 
-    set_project_field(
-        project["id"],
-        item_id,
-        project["status_field_id"],
-        project["status_options"][project["default_status"]],
-    )
-
-    if project.get("priority_field_id"):
+    priority_option = project["priority_options"].get(priority)
+    if priority_option and project.get("priority_field_id"):
         set_project_field(
             project["id"],
             item_id,
             project["priority_field_id"],
-            project["priority_options"].get(priority),
+            priority_option,
         )
+
 
     add_labels(labels)
 

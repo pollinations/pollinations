@@ -1,3 +1,4 @@
+import sys
 import os
 import json
 import requests
@@ -20,6 +21,7 @@ ITEM_DATA = (
     if IS_PULL_REQUEST
     else GITHUB_EVENT.get("issue", {})
 )
+
 ISSUE_NUMBER = ITEM_DATA.get("number")
 ISSUE_TITLE = ITEM_DATA.get("title", "")
 ISSUE_BODY = ITEM_DATA.get("body", "") or ""
@@ -33,6 +35,16 @@ GITHUB_HEADERS = {
     "Accept": "application/vnd.github+json",
     "Content-Type": "application/json",
 }
+
+
+def log_debug(msg: str):
+    print(f"[DEBUG] {msg}", file=sys.stderr)
+
+
+def log_error(msg: str):
+    print(f"[ERROR] {msg}", file=sys.stderr)
+
+
 CONFIG = {
     "projects": {
         "dev": {
@@ -104,6 +116,7 @@ def is_org_member(username: str) -> bool:
     if not username:
         return False
     if username.lower() in [m.lower() for m in CONFIG["org_members"]]:
+        log_debug(f"Found {username} in org_members list")
         return True
     try:
         r = requests.get(
@@ -111,8 +124,11 @@ def is_org_member(username: str) -> bool:
             headers=GITHUB_HEADERS,
             timeout=10,
         )
-        return r.status_code == 204
-    except requests.RequestException:
+        is_member = r.status_code == 204
+        log_debug(f"Checked {username} org membership: {is_member}")
+        return is_member
+    except requests.RequestException as e:
+        log_error(f"Failed to check org membership for {username}: {e}")
         return False
 
 def normalize_labels(project: str, labels: list) -> list:
@@ -163,38 +179,49 @@ def get_fallback_classification(_: bool) -> dict:
 
 
 
+
 def classify_with_ai(is_internal: bool) -> dict:
     system_prompt = f"""
-    Return ONLY valid JSON with this exact schema:
+You are a strict classifier.
 
-    {{
-    "project": "dev|support|news|null",
-    "priority": "Urgent|High|Medium|Low",
-    "labels": ["BUG","FEATURE","HELP","QUEST","TRACKING","BALANCE","BILLING","API"],
-    "reasoning": "string"
-    }}
+Return ONLY valid JSON.
+Do NOT include explanations outside JSON.
+Do NOT invent categories.
 
-    Rules:
-    - Do NOT invent new labels
-    - dev is internal-only
-    - Use null if unsure
-    - Author type: {"internal" if is_internal else "external"}
-    """
+Schema (must match exactly):
+
+{{
+  "project": "dev" | "support" | "news",
+  "priority": "Urgent" | "High" | "Medium" | "Low",
+  "labels": ["BUG","FEATURE","HELP","QUEST","TRACKING","BALANCE","BILLING","API"],
+  "reasoning": "short string"
+}}
+
+Rules:
+- Choose ONLY from the allowed enum values.
+- dev is INTERNAL ONLY.
+- Infrastructure, pipelines, CI/CD, Docker, services → dev (if internal) else support.
+- If ambiguous, choose the closest valid option — never invent a new one.
+- Author type: {"internal" if is_internal else "external"}
+"""
 
     user_prompt = f"""
-    Author: {ISSUE_AUTHOR}
-    Author Type: {"Internal" if is_internal else "External"}
-    Title: {ISSUE_TITLE}
-    Body: {ISSUE_BODY[:2000]}
-    """
+Author: {ISSUE_AUTHOR}
+Author Type: {"Internal" if is_internal else "External"}
+Title: {ISSUE_TITLE}
+Body: {ISSUE_BODY[:2000]}
+"""
 
     for attempt in range(3):
         try:
             r = requests.post(
                 POLLINATIONS_API,
-                headers={"Authorization": f"Bearer {POLLINATIONS_TOKEN}"},
+                headers={
+                    "content-type": "application/json",
+                    "Authorization": f"Bearer {POLLINATIONS_TOKEN}"
+                    },
                 json={
-                    "model": "gemini-fast",
+                    "model": "openai",
                     "messages": [
                         {"role": "system", "content": system_prompt},
                         {"role": "user", "content": user_prompt},
@@ -206,20 +233,26 @@ def classify_with_ai(is_internal: bool) -> dict:
             )
 
             if r.status_code != 200:
+                log_error(f"AI HTTP {r.status_code}: {r.text}")
                 time.sleep(2 ** attempt)
                 continue
 
             content = r.json()["choices"][0]["message"]["content"]
+            log_debug(f"AI raw response: {content}")
+
             raw = json.loads(content)
-            return {
+            classification = {
                 "project": raw.get("project"),
                 "priority": raw.get("priority", "Medium"),
                 "labels": raw.get("labels", []) if isinstance(raw.get("labels"), list) else [],
-                "reasoning": raw.get("reasoning", "")
+                "reasoning": raw.get("reasoning", ""),
             }
 
+            log_debug(f"AI parsed classification: {classification}")
+            return classification
 
-        except Exception:
+        except Exception as e:
+            log_error(f"AI exception: {e}")
             time.sleep(2 ** attempt)
 
     return get_fallback_classification(is_internal)
@@ -258,7 +291,12 @@ def add_to_project(project_id: str) -> Optional[str]:
         "projectId": project_id,
         "contentId": ISSUE_NODE_ID
     })
-    return data.get("addProjectV2ItemById", {}).get("item", {}).get("id")
+    item_id = data.get("addProjectV2ItemById", {}).get("item", {}).get("id")
+    if item_id:
+        log_debug(f"Added to project {project_id}: item_id={item_id}")
+    else:
+        log_error(f"Failed to add to project {project_id}")
+    return item_id
 
 
 def set_project_field(project_id: str, item_id: str, field_id: str, option_id: str):
@@ -274,45 +312,65 @@ def set_project_field(project_id: str, item_id: str, field_id: str, option_id: s
         }
     }
     """
-    graphql_request(mutation, {
+    data = graphql_request(mutation, {
         "projectId": project_id,
         "itemId": item_id,
         "fieldId": field_id,
         "optionId": option_id,
     })
+    if data.get("updateProjectV2ItemFieldValue"):
+        log_debug(f"Set project field: field_id={field_id}, option_id={option_id}")
+    else:
+        log_error(f"Failed to set project field: field_id={field_id}")
 
 
 def add_labels(labels: list):
     if not labels:
+        log_debug("No labels to add")
         return
-    requests.post(
-        f"{GITHUB_API}/repos/{REPO_OWNER}/{REPO_NAME}/issues/{ISSUE_NUMBER}/labels",
-        headers=GITHUB_HEADERS,
-        json={"labels": labels},
-        timeout=10,
-    )
+    try:
+        r = requests.post(
+            f"{GITHUB_API}/repos/{REPO_OWNER}/{REPO_NAME}/issues/{ISSUE_NUMBER}/labels",
+            headers=GITHUB_HEADERS,
+            json={"labels": labels},
+            timeout=10,
+        )
+        if r.status_code == 200:
+            log_debug(f"Added labels: {labels}")
+        else:
+            log_error(f"Failed to add labels: {r.status_code} - {r.text}")
+    except requests.RequestException as e:
+        log_error(f"Exception adding labels: {e}")
 
 
 
 def main():
+    log_debug(f"Processing issue/PR #{ISSUE_NUMBER}: {ISSUE_TITLE}")
     if not ISSUE_NUMBER or not ISSUE_NODE_ID:
+        log_debug("Missing ISSUE_NUMBER or ISSUE_NODE_ID, skipping")
         return
     is_internal = is_org_member(ISSUE_AUTHOR)
+    log_debug(f"Author {ISSUE_AUTHOR} is internal: {is_internal}")
     classification = classify_with_ai(is_internal)
 
     if not classification.get("project"):
+        log_debug("AI did not classify project, skipping")
         return
     project_key = classification["project"].lower()
     priority = classification.get("priority", "Medium")
     priority = priority.capitalize()
+    log_debug(f"Classified: project={project_key}, priority={priority}")
     project = CONFIG["projects"].get(project_key)
     if not project:
+        log_error(f"Unknown project key: {project_key}")
         return
 
     if project.get("internal_only") and not is_internal:
+        log_debug(f"Project {project_key} is internal-only, reassigning to support")
         project_key = "support"
         project = CONFIG["projects"]["support"]
     labels = normalize_labels(project_key, classification.get("labels", []))
+    log_debug(f"Normalized labels: {labels}")
 
     item_id = add_to_project(project["id"])
     if not item_id:

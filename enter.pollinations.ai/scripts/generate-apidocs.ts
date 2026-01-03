@@ -6,7 +6,7 @@ import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const OUTPUT_PATH = join(__dirname, "..", "APIDOCS.md");
+const OUTPUT_PATH = join(__dirname, "..", "..", "APIDOCS.md");
 const OPENAPI_URL =
     process.env.OPENAPI_URL ||
     "https://enter.pollinations.ai/api/docs/open-api/generate-schema";

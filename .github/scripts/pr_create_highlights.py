@@ -145,10 +145,10 @@ Add links naturally in the description using markdown format: [text](url)
 {links_content}
 """
 
-    system_prompt = f"""You are a strict curator for Pollinations.AI highlights.
+    system_prompt = f"""You are a strict curator for pollinations.ai highlights.
 
-## CONTEXT - What is Pollinations.AI?
-Pollinations.AI is a free, open-source AI platform providing:
+## CONTEXT - What is pollinations.ai?
+pollinations.ai is a free, open-source AI platform providing:
 - **Image Generation** - Create images via simple URLs or API calls
 - **Text/Chat API** - Access LLMs like GPT, Claude, Gemini, Llama, Mistral
 - **Audio Generation** - Text-to-speech and music generation
@@ -159,7 +159,7 @@ Our users are creators, developers, and hobbyists who love FREE, easy-to-use AI 
 
 ## WHERE THIS OUTPUT GOES
 The highlights you extract will be displayed **DIRECTLY** (copy-pasted as-is) on:
-1. **Pollinations.AI website** - News/updates section
+1. **pollinations.ai website** - News/updates section
 2. **GitHub README.md** - Latest news section
 
 **IMPORTANT:** These highlights are REPLACED every week with new ones. Old highlights get pushed down and eventually removed. So each week's highlights should stand on their own and showcase that week's best stuff.
@@ -212,7 +212,7 @@ Rules:
 - Typical weeks: 3-4 highlights. Slow weeks: 0-2. Big release weeks: up to 10
 - Trust your instincts on what users would find exciting"""
 
-    user_prompt = f"""Review this Pollinations.AI changelog and extract ONLY highlights worthy of the website and README.
+    user_prompt = f"""Review this pollinations.ai changelog and extract ONLY highlights worthy of the website and README.
 
 **DATE FOR THIS CHANGELOG: {news_date}**
 Use this date for all highlights from this changelog.

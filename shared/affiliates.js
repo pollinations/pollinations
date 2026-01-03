@@ -218,7 +218,7 @@ const affiliates = [
         blockedCountries: ["IR", "KP", "SY", "CU"],
         tags: ["donation", "support"],
         ad_text:
-            "Powered by Pollinations.AI free text APIs. [Support our mission]({url}) to keep AI accessible for everyone.",
+            "Powered by pollinations.ai free text APIs. [Support our mission]({url}) to keep AI accessible for everyone.",
         trackingLink: "https://ko-fi.com/pollinationsai",
         triggerWords: [
             "donation",

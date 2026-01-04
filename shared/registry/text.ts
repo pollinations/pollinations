@@ -428,7 +428,7 @@ export const TEXT_SERVICES = {
     // Legacy models - older versions still accessible
     "gpt-5.1": {
         aliases: ["gpt-5.1-2025-03-15"],
-        modelId: "gpt-4o-2024-11-20", // Azure actual model ID (using latest gpt-4o as placeholder for fictional gpt-5.1)
+        modelId: "gpt-5.1", // Azure actual model ID
         provider: "azure",
         cost: [
             {

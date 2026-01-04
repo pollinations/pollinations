@@ -74,15 +74,23 @@ def main():
     # Step 3: Decode latents to image on GPU 1
     with torch.no_grad():
         # Unpack latents (reverse the packing done in the pipeline)
-        height, width = 768, 768
-        vae_scale_factor = 2 ** (len(vae_decoder.config.block_out_channels) - 1)
-        height = 2 * (int(height) // (vae_scale_factor * 2))
-        width = 2 * (int(width) // (vae_scale_factor * 2))
+        batch_size, num_patches, channels_packed = latents.shape
+        original_channels = channels_packed // 4  # Reverse the 4x packing
         
-        batch_size, num_patches, channels = latents.shape
-        latents_unpacked = latents.view(batch_size, height // 2, width // 2, channels // 4, 2, 2)
+        # Calculate latent spatial dimensions from num_patches
+        # num_patches = (height_latent // 2) * (width_latent // 2)
+        # For square: height_latent // 2 = sqrt(num_patches)
+        latent_size_per_side = int(num_patches ** 0.5)
+        height_latent = latent_size_per_side * 2
+        width_latent = latent_size_per_side * 2
+        
+        print(f"  Latents shape: {latents.shape}")
+        print(f"  Computed latent spatial dims: {height_latent}x{width_latent}")
+        
+        # Unpack: (batch, num_patches, channels_packed) → (batch, channels, height, width)
+        latents_unpacked = latents.view(batch_size, height_latent // 2, width_latent // 2, original_channels, 2, 2)
         latents_unpacked = latents_unpacked.permute(0, 3, 1, 4, 2, 5)
-        latents_unpacked = latents_unpacked.reshape(batch_size, channels // (2 * 2), height, width)
+        latents_unpacked = latents_unpacked.reshape(batch_size, original_channels, height_latent, width_latent)
         
         # Normalize and decode
         latents_unpacked = (latents_unpacked / vae_decoder.config.scaling_factor) + vae_decoder.config.shift_factor

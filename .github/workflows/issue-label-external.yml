@@ -9,6 +9,7 @@ permissions:
 
 jobs:
   label:
+    if: github.repository == 'pollinations/pollinations'
     runs-on: ubuntu-latest
     steps:
       - name: Generate Pollinations AI Token

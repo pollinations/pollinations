@@ -23,6 +23,7 @@ on:
 
 jobs:
   generate-instagram-post:
+    if: github.repository == 'pollinations/pollinations'
     runs-on: ubuntu-latest
     permissions:
       contents: write

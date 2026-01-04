@@ -7,8 +7,8 @@ on:
       - main
 jobs:
   review-merged-pr:
-    # Only run if PR was merged
-    if: github.event.pull_request.merged == true
+    # Only run if PR was merged and in main repo
+    if: github.repository == 'pollinations/pollinations' && github.event.pull_request.merged == true
     runs-on: ubuntu-latest
     permissions:
       contents: read

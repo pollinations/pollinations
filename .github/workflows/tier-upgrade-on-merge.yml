@@ -14,6 +14,7 @@ jobs:
     # Run when PR with tier:review label is merged.
     # The merge is the manual approval - no manual labeling required.
     if: |
+      github.repository == 'pollinations/pollinations' &&
       github.event.pull_request.merged == true &&
       contains(github.event.pull_request.labels.*.name, 'tier:review')
     runs-on: ubuntu-latest

@@ -15,12 +15,12 @@ on:
         type: number
 
 concurrency:
-  group: tier-app-${{ github.event.issue.number || github.event.inputs.issue_number || github.event.pull_request.number || github.run_id }}
+  group: app-submission-${{ github.event.issue.number || github.event.inputs.issue_number || github.event.pull_request.number || github.run_id }}
   cancel-in-progress: false
 
 jobs:
   # Job 1: Parse issue and validate user registration
-  tier-parse-issue:
+  app-parse-issue:
     if: |
       github.event_name != 'pull_request_target' &&
       (contains(github.event.issue.labels.*.name, 'TIER-APP') ||
@@ -324,9 +324,9 @@ jobs:
           fi
 
   # Job 2: Create PR with app entry
-  tier-create-app-pr:
-    needs: tier-parse-issue
-    if: needs.tier-parse-issue.outputs.valid == 'true'
+  app-create-pr:
+    needs: app-parse-issue
+    if: needs.app-parse-issue.outputs.valid == 'true'
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -348,7 +348,7 @@ jobs:
       - name: Fetch GitHub stars
         id: stars
         env:
-          PROJECT_JSON: ${{ needs.tier-parse-issue.outputs.project_json }}
+          PROJECT_JSON: ${{ needs.app-parse-issue.outputs.project_json }}
         run: |
           REPO_URL=$(echo "$PROJECT_JSON" | jq -r '.repo // empty')
           if [ -n "$REPO_URL" ]; then
@@ -362,7 +362,7 @@ jobs:
       - name: Format with AI
         id: format
         env:
-          PROJECT_JSON: ${{ needs.tier-parse-issue.outputs.project_json }}
+          PROJECT_JSON: ${{ needs.app-parse-issue.outputs.project_json }}
         run: |
           NAME=$(echo "$PROJECT_JSON" | jq -r '.name')
           DESC=$(echo "$PROJECT_JSON" | jq -r '.description')
@@ -397,12 +397,12 @@ jobs:
       - name: Create PR
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          PROJECT_JSON: ${{ needs.tier-parse-issue.outputs.project_json }}
-          PROJECT_NAME: ${{ needs.tier-parse-issue.outputs.name }}
-          CATEGORY: ${{ needs.tier-parse-issue.outputs.category }}
-          ISSUE_NUMBER: ${{ needs.tier-parse-issue.outputs.issue_number }}
-          ISSUE_AUTHOR: ${{ needs.tier-parse-issue.outputs.issue_author }}
-          ISSUE_AUTHOR_ID: ${{ needs.tier-parse-issue.outputs.issue_author_id }}
+          PROJECT_JSON: ${{ needs.app-parse-issue.outputs.project_json }}
+          PROJECT_NAME: ${{ needs.app-parse-issue.outputs.name }}
+          CATEGORY: ${{ needs.app-parse-issue.outputs.category }}
+          ISSUE_NUMBER: ${{ needs.app-parse-issue.outputs.issue_number }}
+          ISSUE_AUTHOR: ${{ needs.app-parse-issue.outputs.issue_author }}
+          ISSUE_AUTHOR_ID: ${{ needs.app-parse-issue.outputs.issue_author_id }}
           EMOJI: ${{ steps.format.outputs.emoji }}
           SHORT_DESC: ${{ steps.format.outputs.description }}
           STARS: ${{ steps.stars.outputs.stars }}
@@ -453,8 +453,8 @@ jobs:
             [ -n "$OTHER" ] && PR_BODY="${PR_BODY}$(printf '**Other Contact:** %s  \n' "$OTHER")"
             
             # Add similarity report if applicable
-            SIMILARITY="${{ needs.tier-parse-issue.outputs.similarity_score }}"
-            SIMILARITY_REASON="${{ needs.tier-parse-issue.outputs.similarity_reason }}"
+            SIMILARITY="${{ needs.app-parse-issue.outputs.similarity_score }}"
+            SIMILARITY_REASON="${{ needs.app-parse-issue.outputs.similarity_reason }}"
             if [ -n "$SIMILARITY" ] && [ "$SIMILARITY" != "null" ] && [ "$SIMILARITY" != "0" ]; then
               PR_BODY="${PR_BODY}$(printf '\n\n⚠️ **Similarity Report:** %s%% similar to previous submission(s) from @%s\n' "$SIMILARITY" "$ISSUE_AUTHOR")"
               if [ -n "$SIMILARITY_REASON" ] && [ "$SIMILARITY_REASON" != "null" ]; then
@@ -476,14 +476,14 @@ jobs:
         with:
           script: |
             // Remove TIER-APP or TIER-APP-INCOMPLETE, add TIER-APP-REVIEW
-            const issue = await github.rest.issues.get({ owner: context.repo.owner, repo: context.repo.repo, issue_number: ${{ needs.tier-parse-issue.outputs.issue_number }} });
+            const issue = await github.rest.issues.get({ owner: context.repo.owner, repo: context.repo.repo, issue_number: ${{ needs.app-parse-issue.outputs.issue_number }} });
             const oldLabels = issue.data.labels.map(l => l.name).filter(n => n.startsWith('TIER-APP'));
             for (const label of oldLabels) {
-              try { await github.rest.issues.removeLabel({ owner: context.repo.owner, repo: context.repo.repo, issue_number: ${{ needs.tier-parse-issue.outputs.issue_number }}, name: label }); } catch (e) {}
+              try { await github.rest.issues.removeLabel({ owner: context.repo.owner, repo: context.repo.repo, issue_number: ${{ needs.app-parse-issue.outputs.issue_number }}, name: label }); } catch (e) {}
             }
             await github.rest.issues.addLabels({
               owner: context.repo.owner, repo: context.repo.repo,
-              issue_number: ${{ needs.tier-parse-issue.outputs.issue_number }},
+              issue_number: ${{ needs.app-parse-issue.outputs.issue_number }},
               labels: ['TIER-APP-REVIEW']
             });
 
@@ -493,12 +493,12 @@ jobs:
           script: |
             await github.rest.issues.createComment({
               owner: context.repo.owner, repo: context.repo.repo,
-              issue_number: ${{ needs.tier-parse-issue.outputs.issue_number }},
-              body: `🎉 Thanks @${{ needs.tier-parse-issue.outputs.issue_author }}! PR created to add **${{ needs.tier-parse-issue.outputs.name }}** to **${{ needs.tier-parse-issue.outputs.category }}**.\n\nA maintainer will review shortly. Issue closes automatically when PR merges.`
+              issue_number: ${{ needs.app-parse-issue.outputs.issue_number }},
+              body: `🎉 Thanks @${{ needs.app-parse-issue.outputs.issue_author }}! PR created to add **${{ needs.app-parse-issue.outputs.name }}** to **${{ needs.app-parse-issue.outputs.category }}**.\n\nA maintainer will review shortly. Issue closes automatically when PR merges.`
             });
 
   # Job 3: Handle PR merge/close outcomes
-  tier-handle-pr-outcome:
+  app-handle-outcome:
     if: github.event_name == 'pull_request_target' && github.event.action == 'closed'
     runs-on: ubuntu-latest
     permissions:

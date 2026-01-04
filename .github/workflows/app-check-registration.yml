@@ -5,7 +5,7 @@ on:
     types: [created]
 
 concurrency:
-  group: tier-check-${{ github.event.issue.number }}
+  group: app-check-${{ github.event.issue.number }}
   cancel-in-progress: false
 
 jobs:

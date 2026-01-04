@@ -6,7 +6,7 @@ on:
     branches: [main]
 
 concurrency:
-  group: tier-upgrade-${{ github.event.pull_request.number }}
+  group: app-upgrade-${{ github.event.pull_request.number }}
   cancel-in-progress: false
 
 jobs:

@@ -395,20 +395,6 @@ def main():
         return
     
     existing_labels = get_existing_labels()
-    if classification.get("is_app_submission"):
-        log_debug("AI detected app submission, routing to Tier project")
-        project = CONFIG["projects"].get("tier")
-        if project:
-            item_id = add_to_project(project["id"])
-            if item_id:
-                log_debug("Added to Tier project successfully")
-            else:
-                log_error("Failed to add app submission to Tier project")
-            return
-        else:
-            log_error("Tier project not configured")
-            return
-    
     tier_labels = [l for l in existing_labels if l.startswith("TIER-")]
     if tier_labels:
         log_debug(f"Found TIER labels: {tier_labels}, routing to Tier project")

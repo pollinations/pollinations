@@ -8,12 +8,12 @@ Maps each public model to its provider/account. Last updated: **Dec 2025**
 | --------------------- | ------ | ----- | ----- | ------------------------------------------------------------------------------------------------------------------- |
 | Azure (Myceli)        | 5      | 1     | -     | `openai`, `openai-large`, `openai-audio`, `deepseek`, `grok`, `kontext`                                             |
 | Azure-2 (PointsFlyer) | 2      | 1     | -     | `openai-fast`, `midijourney`, `gptimage`                                                                            |
-| AWS                   | 5      | 1     | -     | `claude-fast`, `claude`, `claude-large`, `chickytutor`, `nova-micro`, `zimage`                                      |
+| AWS                   | 5      | -     | -     | `claude-fast`, `claude`, `claude-large`, `chickytutor`, `nova-micro`                                                |
 | Google                | 5      | 2     | 1     | `gemini`, `gemini-fast`, `gemini-large`, `gemini-search`, `kimi-k2-thinking`, `nanobanana`, `nanobanana-pro`, `veo` |
 | Scaleway              | 2      | 1     | -     | `qwen-coder`, `mistral`, `turbo`                                                                                    |
 | Perplexity            | 2      | -     | -     | `perplexity-fast`, `perplexity-reasoning`                                                                           |
 | ByteDance             | -      | 2     | 2     | `seedream`, `seedream-pro`, `seedance`, `seedance-pro`                                                              |
-| io.net                | -      | 1     | -     | `flux`                                                                                                              |
+| io.net                | -      | 2     | -     | `flux`, `zimage`                                                                                                    |
 | **Total**             | **21** | **9** | **3** |                                                                                                                     |
 
 ---
@@ -46,7 +46,6 @@ Maps each public model to its provider/account. Last updated: **Dec 2025**
 | `claude-large` | text    | `global.anthropic.claude-opus-4-5-20251101-v1:0` | `AWS_*` | API   |
 | `chickytutor`  | text    | `us.anthropic.claude-3-5-haiku-20241022-v1:0`    | `AWS_*` | API   |
 | `nova-micro`   | text    | `amazon.nova-micro-v1:0`                         | `AWS_*` | API   |
-| `zimage`       | image   | `zimage`                                         | `AWS_*` | Fleet |
 
 ## Google (Vertex AI)
 
@@ -87,6 +86,7 @@ Maps each public model to its provider/account. Last updated: **Dec 2025**
 
 ## io.net
 
-| Model  | Service | Underlying modelId | Env Key   | Infra |
-| ------ | ------- | ------------------ | --------- | ----- |
-| `flux` | image   | `flux`             | (workers) | Fleet |
+| Model    | Service | Underlying modelId | Env Key   | Infra |
+| -------- | ------- | ------------------ | --------- | ----- |
+| `flux`   | image   | `flux`             | (workers) | Fleet |
+| `zimage` | image   | `zimage`           | (workers) | Fleet |

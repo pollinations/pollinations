@@ -48,11 +48,11 @@ def main():
     print(f"Running diffusion on {gpu_diffusion}...")
     with torch.no_grad():
         output = pipe(
-            prompt="a bear in the forest, digital art",
-            height=512,
-            width=512,
+            prompt="two cats sitting on a bench in a park",
+            height=768,
+            width=768,
             guidance_scale=4.0,
-            num_inference_steps=20,
+            num_inference_steps=40,
             enable_cfg_renorm=True,
             output_type="latent",  
         )

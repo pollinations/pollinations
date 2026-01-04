@@ -218,6 +218,21 @@ async function handleRequest(req, res, requestData) {
         // Ensure completion has the request ID
         completion.id = requestId;
 
+        // Apply responseTransform if provided by the model transform
+        if (completion._responseTransform) {
+            const transformedCompletion = completion._responseTransform(
+                completion,
+                {
+                    ...completion._transformOptions,
+                    jsonMode: requestData.jsonMode,
+                },
+            );
+            // Preserve internal properties
+            Object.assign(completion, transformedCompletion);
+            delete completion._responseTransform;
+            delete completion._transformOptions;
+        }
+
         // Check if completion contains an error
         if (completion.error) {
             errorLog(
@@ -304,18 +319,13 @@ async function handleRequest(req, res, requestData) {
             await sendAsOpenAIStream(res, completion, req);
         } else {
             if (req.method === "GET") {
-                // For perplexity models with jsonMode, return custom JSON with content and citations
-                const isPerplexityModel =
-                    requestData.model?.startsWith("perplexity");
-                if (isPerplexityModel && requestData.jsonMode) {
-                    const content =
-                        completion.choices?.[0]?.message?.content || "";
-                    const citations = completion.citations || [];
+                // Handle citations response (set by responseTransform for models like Perplexity)
+                if (completion._citationsResponse) {
                     res.setHeader(
                         "Content-Type",
                         "application/json; charset=utf-8",
                     );
-                    return res.json({ content, citations });
+                    return res.json(completion._citationsResponse);
                 }
                 sendContentResponse(res, completion);
             } else if (req.path === "/") {
@@ -564,27 +574,14 @@ export function sendContentResponse(res, completion) {
         }
         // For simple text responses, return just the content as plain text
         // This is the most common case and should be prioritized
+        // Note: Citations are already appended by responseTransform for models that support them
         else if (message.content) {
             res.setHeader("Content-Type", "text/plain; charset=utf-8");
             res.setHeader(
                 "Cache-Control",
                 "public, max-age=31536000, immutable",
             );
-
-            // Append citations if present (e.g., from Perplexity)
-            let content = message.content;
-            if (
-                completion.citations &&
-                Array.isArray(completion.citations) &&
-                completion.citations.length > 0
-            ) {
-                content += "\n\n---\nSources:\n";
-                completion.citations.forEach((url, index) => {
-                    content += `[${index + 1}] ${url}\n`;
-                });
-            }
-
-            return res.send(content);
+            return res.send(message.content);
         }
         // If there's other non-text content, return the message as JSON
         else if (Object.keys(message).length > 0) {

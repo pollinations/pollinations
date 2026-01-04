@@ -8,9 +8,15 @@ export function pipe(...transforms) {
         transforms.reduce(
             (acc, transform) => {
                 const result = transform(acc.messages, acc.options);
-                return { messages: result.messages, options: result.options };
+                return {
+                    messages: result.messages,
+                    options: result.options,
+                    // Preserve responseTransform from the last transform that provides one
+                    responseTransform:
+                        result.responseTransform || acc.responseTransform,
+                };
             },
-            { messages, options },
+            { messages, options, responseTransform: undefined },
         );
 }
 

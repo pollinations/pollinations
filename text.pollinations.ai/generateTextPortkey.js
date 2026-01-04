@@ -71,13 +71,15 @@ export async function generateTextPortkey(messages, options = {}) {
                 const {
                     messages: transformedMessages,
                     options: transformedOptions,
+                    responseTransform,
                 } = transformed;
                 processedMessages = transformedMessages;
 
-                // Merge transformed options
+                // Merge transformed options, including responseTransform if provided
                 processedOptions = {
                     ...processedOptions,
                     ...transformedOptions,
+                    ...(responseTransform && { responseTransform }),
                 };
             } catch (error) {
                 errorLog("Error applying transform:", error);
@@ -157,9 +159,21 @@ export async function generateTextPortkey(messages, options = {}) {
         delete processedOptions.additionalHeaders;
     }
 
-    return await genericOpenAIClient(
+    // Capture responseTransform before removing from options
+    const responseTransform = processedOptions.responseTransform;
+    delete processedOptions.responseTransform;
+
+    const completion = await genericOpenAIClient(
         processedMessages,
         processedOptions,
         requestConfig,
     );
+
+    // Attach responseTransform to completion so it flows back to server.js
+    if (responseTransform) {
+        completion._responseTransform = responseTransform;
+        completion._transformOptions = processedOptions;
+    }
+
+    return completion;
 }

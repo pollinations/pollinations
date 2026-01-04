@@ -8,6 +8,7 @@ import { pipe } from "./transforms/pipe.js";
 import { createGeminiToolsTransform } from "./transforms/createGeminiToolsTransform.ts";
 import { createGeminiThinkingTransform } from "./transforms/createGeminiThinkingTransform.ts";
 import { sanitizeToolSchemas } from "./transforms/sanitizeToolSchemas.js";
+import { createCitationsTransform } from "./transforms/createCitationsTransform.js";
 
 // Import persona prompts
 import midijourneyPrompt from "./personas/midijourney.js";
@@ -129,12 +130,18 @@ const models: ModelDefinition[] = [
     {
         name: "perplexity-fast",
         config: portkeyConfig["sonar"],
-        transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
+        transform: pipe(
+            createSystemPromptTransform(BASE_PROMPTS.conversational),
+            createCitationsTransform(),
+        ),
     },
     {
         name: "perplexity-reasoning",
         config: portkeyConfig["sonar-reasoning-pro"],
-        transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
+        transform: pipe(
+            createSystemPromptTransform(BASE_PROMPTS.conversational),
+            createCitationsTransform(),
+        ),
     },
     {
         name: "kimi-k2-thinking",

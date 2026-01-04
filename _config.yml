@@ -1,0 +1,3 @@
+# Jekyll configuration for GitHub Pages
+# Configure Jekyll to build from the repository root instead of /docs
+source: .

@@ -12,7 +12,7 @@ echo "Deploying SANA to $HOST with $NUM_GPUS GPU(s)..."
 
 # Sync repo
 echo "Syncing repository..."
-ssh $HOST "git clone -b feat/sana-sprint-server https://github.com/pollinations/pollinations.git /root/pollinations 2>/dev/null || (cd /root/pollinations && git fetch origin && git checkout feat/sana-sprint-server && git pull)"
+ssh $HOST "git clone https://github.com/pollinations/pollinations.git /root/pollinations 2>/dev/null || (cd /root/pollinations && git fetch origin && git checkout main && git pull)"
 
 # Setup venv if needed
 echo "Setting up Python environment..."

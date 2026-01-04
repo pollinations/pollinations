@@ -107,10 +107,21 @@ test("getModelDefinition returns undefined for invalid model", async () => {
 // Test alias resolution after PR #5340 refactor
 test("resolveServiceId should resolve multiple aliases for same service", async () => {
     // Test that both aliases resolve to the same service
-    expect(resolveServiceId("gpt-5-nano", "generate.text")).toBe("openai-fast");
-    expect(resolveServiceId("openai-fast", "generate.text")).toBe(
-        "openai-fast",
-    );
+    expect(resolveServiceId("gpt-5-nano")).toBe("openai-fast");
+    expect(resolveServiceId("openai-fast")).toBe("openai-fast");
+});
+
+// Test image model alias resolution
+test("resolveServiceId should resolve image model aliases correctly", async () => {
+    // Test zimage aliases - both z-image and z-image-turbo should resolve to zimage
+    expect(resolveServiceId("z-image")).toBe("zimage");
+    expect(resolveServiceId("z-image-turbo")).toBe("zimage");
+    expect(resolveServiceId("zimage")).toBe("zimage");
+    
+    // Test turbo aliases - both sdxl-turbo and SDXL-turbo should resolve to turbo
+    expect(resolveServiceId("sdxl-turbo")).toBe("turbo");
+    expect(resolveServiceId("SDXL-turbo")).toBe("turbo");
+    expect(resolveServiceId("turbo")).toBe("turbo");
 });
 
 // Tier system tests removed - tier gating now handled by enter.pollinations.ai

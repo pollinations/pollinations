@@ -11,6 +11,7 @@ jobs:
     steps:
       - name: Generate Pollinations AI Token
         id: pollinations-ai
+        if: ${{ secrets.POLLY_BOT_APP_ID != '' }}
         uses: actions/create-github-app-token@v1
         with:
           app-id: ${{ secrets.POLLY_BOT_APP_ID }}
@@ -19,6 +20,7 @@ jobs:
 
       - name: Add to Project
         uses: actions/add-to-project@v1.0.2
+        if: ${{ steps.pollinations-ai.outputs.token != '' }}
         id: add-project
         with:
           project-url: https://github.com/orgs/pollinations/projects/20
@@ -26,6 +28,7 @@ jobs:
 
       - name: Update Status Field
         uses: actions/github-script@v7
+        if: ${{ steps.pollinations-ai.outputs.token != '' && steps.add-project.outputs.itemId != '' }}
         with:
           github-token: ${{ steps.pollinations-ai.outputs.token }}
           script: |

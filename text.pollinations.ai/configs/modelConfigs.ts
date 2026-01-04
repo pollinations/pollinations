@@ -437,5 +437,6 @@ export const portkeyConfig: PortkeyConfigMap = {
     "gpt-oss-20b": () =>
         createOVHModelConfig({
             model: "gpt-oss-20b",
+            "max-tokens": 1500, // Limit output tokens
         }),
 };

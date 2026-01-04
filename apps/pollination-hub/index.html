@@ -1,0 +1,752 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Pollination Hub</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Markdown & Highlight -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/styles/atom-one-dark.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/highlight.min.js"></script>
+
+    <!-- KaTeX -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/contrib/auto-render.min.js"></script>
+
+    <!-- Icons -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+
+    <style>
+        :root { --primary: #3b82f6; --bg-dark: #020617; --bg-card: #111827; }
+        body { height: 100dvh; }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #374151; border-radius: 3px; }
+        .modal-overlay { background-color: rgba(0, 0, 0, 0.8); backdrop-filter: blur(4px); }
+        .sidebar-tab.active { color: white; border-bottom: 2px solid #3b82f6; background: rgba(59, 130, 246, 0.1); }
+        .sidebar-tab { color: #9ca3af; border-bottom: 2px solid transparent; }
+        
+        /* JSON Viewer Styles */
+        .json-key { color: #f87171; }
+        .json-string { color: #4ade80; }
+        .json-number { color: #60a5fa; }
+        .json-boolean { color: #c084fc; }
+        .json-null { color: #9ca3af; }
+        
+        /* Table Styles */
+        .debug-table td { padding: 8px; border-bottom: 1px solid #374151; font-family: monospace; font-size: 0.85rem; }
+        .debug-table tr:last-child td { border-bottom: none; }
+        .debug-table .label { color: #9ca3af; width: 140px; }
+        .debug-table .value { color: #e5e7eb; word-break: break-all; }
+
+        /* Think Block */
+        .think-block { background: #1f293750; border-left: 3px solid #6b7280; padding: 0.5rem 1rem; margin-bottom: 1rem; border-radius: 0 0.5rem 0.5rem 0; font-size: 0.9em; color: #9ca3af; }
+        .think-block summary { cursor: pointer; font-weight: bold; opacity: 0.8; user-select: none; }
+        .think-block summary:hover { opacity: 1; color: #e5e7eb; }
+    </style>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: { extend: { colors: { primary: '#3b82f6', darker: '#020617', card: '#1e293b' } } }
+        }
+    </script>
+</head>
+<body class="bg-darker text-gray-100 flex overflow-hidden font-sans selection:bg-primary/30">
+
+    <!-- SETTINGS MODAL -->
+    <div id="keyModal" class="fixed inset-0 z-[60] hidden flex items-center justify-center modal-overlay opacity-0 transition-opacity duration-300 px-4">
+        <div class="bg-card border border-gray-700 p-6 rounded-2xl shadow-2xl w-full max-w-lg transform scale-95 transition-transform duration-300 flex flex-col max-h-[90dvh]" id="keyModalContent">
+            <div class="flex justify-between items-center mb-4 flex-shrink-0">
+                <h3 class="text-xl font-bold text-white"><i class="fas fa-sliders-h text-primary mr-2"></i>Configuration</h3>
+                <button onclick="toggleKeyModal(false)" class="text-gray-400 hover:text-white"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="overflow-y-auto pr-2 space-y-5 custom-scrollbar flex-1">
+                <div>
+                    <label class="block text-xs font-semibold text-gray-500 mb-1 uppercase tracking-wider">Pollinations API Keys</label>
+                    <p class="text-xs text-gray-400 mb-2">One per line. <a href="https://enter.pollinations.ai/" target="_blank" class="text-primary hover:underline">Get Key</a></p>
+                    <textarea id="apiKeyInput" rows="3" placeholder="pk_..." class="w-full bg-darker border border-gray-700 rounded-lg px-4 py-3 text-sm focus:border-primary focus:ring-1 focus:ring-primary outline-none text-white transition-all font-mono"></textarea>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-gray-500 mb-1 uppercase tracking-wider">System Prompt</label>
+                    <textarea id="systemPromptInput" rows="3" placeholder="You are a helpful AI assistant." class="w-full bg-darker border border-gray-700 rounded-lg px-4 py-3 text-sm focus:border-primary focus:ring-1 focus:ring-primary outline-none text-white transition-all"></textarea>
+                </div>
+            </div>
+            <div class="mt-6 flex-shrink-0 space-y-3">
+                <button onclick="saveSettings()" class="w-full bg-primary hover:bg-blue-600 text-white font-medium py-2.5 rounded-lg transition-colors shadow-lg">Save Configuration</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- DEBUG/DETAILS MODAL -->
+    <div id="debugModal" class="fixed inset-0 z-[70] hidden flex items-center justify-center modal-overlay opacity-0 transition-opacity duration-300 px-4">
+        <div class="bg-[#0f172a] border border-gray-700 rounded-2xl shadow-2xl w-full max-w-3xl h-[85vh] flex flex-col transform scale-95 transition-transform duration-300" id="debugModalContent">
+            <div class="p-4 border-b border-gray-700 flex justify-between items-center bg-gray-900/50 rounded-t-2xl">
+                <div class="flex items-center gap-2">
+                    <i class="fas fa-bug text-green-400"></i>
+                    <h3 class="text-lg font-bold text-white">Message Details</h3>
+                </div>
+                <button onclick="toggleDebugModal(false)" class="text-gray-400 hover:text-white"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="flex border-b border-gray-700 bg-gray-800/50">
+                <button onclick="switchDebugTab('summary')" id="tabDebugSummary" class="flex-1 py-3 text-sm font-medium text-white border-b-2 border-primary bg-gray-700/50">Summary</button>
+                <button onclick="switchDebugTab('raw')" id="tabDebugRaw" class="flex-1 py-3 text-sm font-medium text-gray-400 border-b-2 border-transparent hover:text-white">Raw JSON</button>
+            </div>
+            <div class="flex-1 overflow-y-auto p-0 custom-scrollbar bg-[#0b1120]">
+                <!-- Summary Tab -->
+                <div id="debugViewSummary" class="p-6">
+                    <table class="w-full debug-table">
+                        <tbody id="debugSummaryBody"></tbody>
+                    </table>
+                </div>
+                <!-- Raw Tab -->
+                <div id="debugViewRaw" class="hidden p-4">
+                    <h4 class="text-xs font-bold text-gray-500 uppercase mb-2">Request Body</h4>
+                    <pre class="bg-[#020617] p-4 rounded-lg text-xs font-mono overflow-x-auto border border-gray-800 mb-6"><code id="debugRequestJson"></code></pre>
+                    <h4 class="text-xs font-bold text-gray-500 uppercase mb-2">Response Body</h4>
+                    <pre class="bg-[#020617] p-4 rounded-lg text-xs font-mono overflow-x-auto border border-gray-800"><code id="debugResponseJson"></code></pre>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SIDEBAR -->
+    <aside id="sidebar" class="fixed inset-y-0 left-0 z-50 w-80 bg-gray-900/95 backdrop-blur-xl border-r border-gray-800 transform -translate-x-full md:relative md:translate-x-0 transition-transform duration-300 flex flex-col shadow-2xl h-full">
+        <div class="p-4 border-b border-gray-800 flex justify-between items-center bg-gray-900 flex-shrink-0">
+            <div class="flex items-center gap-3">
+                <div class="w-8 h-8 bg-gradient-to-tr from-blue-600 to-purple-600 rounded-lg flex items-center justify-center shadow-lg"><i class="fas fa-magic text-white text-xs"></i></div>
+                <h1 class="text-lg font-bold text-gray-100">Pollination Hub</h1>
+            </div>
+            <button id="closeSidebar" class="md:hidden text-gray-400 hover:text-white"><i class="fas fa-times"></i></button>
+        </div>
+
+        <div class="flex text-sm font-medium text-center bg-gray-900/50 border-b border-gray-800 flex-shrink-0">
+            <button onclick="switchSidebarTab('history')" id="tabHistory" class="sidebar-tab active flex-1 py-3 transition-colors"><i class="fas fa-history mr-2"></i>History</button>
+            <button onclick="switchSidebarTab('models')" id="tabModels" class="sidebar-tab flex-1 py-3 transition-colors"><i class="fas fa-layer-group mr-2"></i>Models</button>
+        </div>
+
+        <div class="p-3 bg-gray-900/30 flex-shrink-0">
+            <div class="flex bg-black/40 p-1 rounded-xl border border-gray-800">
+                <button onclick="switchMode('text')" id="modeText" class="flex-1 py-2 rounded-lg text-xs font-medium transition-all bg-primary text-white shadow-lg"><i class="fas fa-comment-alt mr-2"></i>Chat</button>
+                <button onclick="switchMode('image')" id="modeImage" class="flex-1 py-2 rounded-lg text-xs font-medium text-gray-400 hover:text-white transition-all"><i class="fas fa-image mr-2"></i>Image</button>
+            </div>
+        </div>
+
+        <div id="viewHistory" class="flex-1 flex flex-col overflow-hidden min-h-0">
+            <div class="px-3 pt-2 flex-shrink-0">
+                <button onclick="startNewChat()" class="w-full bg-gray-800 hover:bg-gray-700 border border-gray-700 text-white rounded-lg px-4 py-2.5 text-sm flex items-center gap-2 transition-all mb-2">
+                    <i class="fas fa-plus text-primary"></i><span>New Conversation</span>
+                </button>
+            </div>
+            <div id="historyList" class="flex-1 overflow-y-auto px-2 space-y-1 pb-2"></div>
+        </div>
+
+        <div id="viewModels" class="hidden flex-1 flex flex-col overflow-hidden min-h-0">
+            <div class="px-3 pt-2 pb-2 flex-shrink-0">
+                <div class="relative">
+                    <i class="fas fa-search absolute left-3 top-2.5 text-gray-500"></i>
+                    <input type="text" id="modelSearch" placeholder="Filter models..." class="w-full bg-black/20 border border-gray-700 rounded-lg py-2 pl-9 pr-3 text-sm focus:outline-none focus:border-primary">
+                </div>
+            </div>
+            <div id="modelListContainer" class="flex-1 overflow-y-auto px-2 space-y-1 pb-4">
+                 <div class="flex justify-center p-8"><i class="fas fa-circle-notch fa-spin text-primary"></i></div>
+            </div>
+        </div>
+
+        <div class="p-3 border-t border-gray-800 bg-black/20 text-xs flex-shrink-0 pb-[env(safe-area-inset-bottom)]">
+            <button onclick="toggleKeyModal(true)" class="w-full flex items-center justify-between p-2 rounded hover:bg-gray-800 transition-colors mb-2 group">
+                <span class="text-gray-400 group-hover:text-white"><i class="fas fa-cog mr-2"></i>Settings</span>
+                <span id="keyCountBadge" class="hidden bg-primary/20 text-primary px-1.5 rounded text-[10px]">0 Keys</span>
+            </button>
+            <div class="flex items-center gap-2 mb-3 px-2">
+                <div id="statusDot" class="w-2 h-2 bg-gray-500 rounded-full"></div>
+                <span id="statusText" class="text-gray-400 font-mono">CHECKING...</span>
+            </div>
+            <div class="border-t border-gray-800 pt-3 text-center">
+                <p class="text-gray-500 font-medium">Copyright © 2025 Hugo Wong.</p>
+                <p class="text-gray-600 text-[10px]">All rights reserved.</p>
+            </div>
+        </div>
+    </aside>
+
+    <!-- MAIN CHAT -->
+    <main class="flex-1 flex flex-col h-full relative w-full bg-gradient-to-b from-darker to-[#050a14] min-w-0">
+        <header class="h-16 border-b border-gray-800/50 bg-gray-900/50 backdrop-blur-md flex items-center justify-between px-4 sticky top-0 z-20 flex-shrink-0">
+            <div class="flex items-center gap-3">
+                <button id="toggleSidebar" class="md:hidden text-gray-400 hover:text-white p-2"><i class="fas fa-bars text-xl"></i></button>
+                <div class="flex items-center gap-2 cursor-pointer hover:opacity-80 transition-opacity" onclick="if(window.innerWidth < 768) document.getElementById('sidebar').classList.remove('-translate-x-full'); switchSidebarTab('models');">
+                    <span id="currentModeIcon" class="text-primary flex-shrink-0"><i class="fas fa-robot"></i></span>
+                    <span id="currentModelDisplay" class="font-bold text-gray-100 tracking-wide truncate">Gemini</span>
+                    <i class="fas fa-chevron-down text-xs text-gray-500 flex-shrink-0"></i>
+                </div>
+            </div>
+            <button onclick="clearAllHistory()" class="hidden sm:block text-gray-500 hover:text-red-400 text-xs transition-colors p-2" title="Clear History"><i class="fas fa-trash-alt"></i></button>
+        </header>
+
+        <div id="chatContainer" class="flex-1 overflow-y-auto p-4 md:p-6 space-y-6 scroll-smooth overscroll-contain">
+            <div id="welcomeState" class="h-full flex flex-col items-center justify-center text-center p-6 opacity-60">
+                <div class="w-20 h-20 bg-gradient-to-tr from-blue-600 to-purple-600 rounded-3xl flex items-center justify-center text-4xl shadow-2xl mb-6"><i class="fas fa-magic text-white"></i></div>
+                <h2 class="text-2xl font-bold text-white mb-2">Create & Chat</h2>
+                <p class="text-gray-400 max-w-md">Select a model and start. Histories are separated by mode.</p>
+                <button onclick="toggleKeyModal(true)" class="mt-4 px-4 py-2 bg-gray-800 hover:bg-gray-700 text-sm rounded-lg text-white border border-gray-700"><i class="fas fa-cog mr-2"></i>Configure Keys</button>
+            </div>
+        </div>
+
+        <div class="border-t border-gray-800 bg-gray-900/80 backdrop-blur-lg flex-shrink-0 sticky bottom-0 z-30 pb-[env(safe-area-inset-bottom)]">
+            <div class="p-4 max-w-4xl mx-auto space-y-3">
+                <div id="imageControls" class="hidden flex flex-wrap gap-2 animate-fade-in">
+                    <select id="aspectRatio" class="bg-gray-800 text-xs text-white border border-gray-700 rounded px-2 py-1 outline-none">
+                        <option value="1:1">Square (1:1)</option>
+                        <option value="16:9">Landscape (16:9)</option>
+                        <option value="9:16">Portrait (9:16)</option>
+                    </select>
+                    <label class="flex items-center gap-2 cursor-pointer bg-gray-800 border border-gray-700 px-3 py-1 rounded text-xs hover:bg-gray-700"><input type="checkbox" id="enhancePrompt" class="accent-primary"><span class="text-gray-300">Magic Enhance</span></label>
+                </div>
+                <form id="chatForm" class="relative flex items-end gap-2 bg-gray-800/50 rounded-xl border border-gray-700 p-2 shadow-xl">
+                    <textarea id="userInput" rows="1" placeholder="Type message..." class="w-full bg-transparent text-white placeholder-gray-500 resize-none border-none focus:ring-0 py-3 px-3 max-h-40 min-h-[44px]" oninput="this.style.height = ''; this.style.height = this.scrollHeight + 'px'" onkeydown="handleEnter(event)"></textarea>
+                    <button type="submit" id="sendBtn" class="bg-gradient-to-r from-primary to-blue-600 text-white rounded-lg w-10 h-10 flex items-center justify-center shadow-lg flex-shrink-0"><i class="fas fa-paper-plane text-sm"></i></button>
+                </form>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // --- CONFIG ---
+        const API_ENDPOINTS = {
+            textModels: "https://gen.pollinations.ai/v1/models",
+            textChat: "https://gen.pollinations.ai/v1/chat/completions",
+            imageModels: "https://gen.pollinations.ai/image/models",
+            imageGen: "https://gen.pollinations.ai/image/" 
+        };
+        const DEFAULT_SYSTEM_PROMPT = "You are a helpful AI assistant. Answer efficiently and accurately.";
+
+        let state = {
+            mode: 'text',
+            textModel: 'gemini',
+            imageModel: 'flux',
+            currentChatId: null,
+            models: { text: [], image: [] },
+            apiKeys: []
+        };
+
+        const els = {
+            sidebar: document.getElementById('sidebar'),
+            chatContainer: document.getElementById('chatContainer'),
+            userInput: document.getElementById('userInput'),
+            modelList: document.getElementById('modelListContainer'),
+            historyList: document.getElementById('historyList'),
+            welcomeState: document.getElementById('welcomeState'),
+            imageControls: document.getElementById('imageControls'),
+            modeText: document.getElementById('modeText'),
+            modeImage: document.getElementById('modeImage'),
+            keyModal: document.getElementById('keyModal'),
+            keyModalContent: document.getElementById('keyModalContent'),
+            apiKeyInput: document.getElementById('apiKeyInput'),
+            debugModal: document.getElementById('debugModal'),
+            debugModalContent: document.getElementById('debugModalContent')
+        };
+
+        // --- INIT ---
+        document.addEventListener('DOMContentLoaded', () => {
+            initData();
+            checkSystemStatus();
+            loadSettings();
+            
+            // Set initial filter based on default mode (text)
+            loadHistoryList(); 
+
+            document.getElementById('toggleSidebar').onclick = () => els.sidebar.classList.remove('-translate-x-full');
+            document.getElementById('closeSidebar').onclick = () => els.sidebar.classList.add('-translate-x-full');
+            document.getElementById('chatForm').onsubmit = (e) => { e.preventDefault(); processMessage(); };
+            document.getElementById('modelSearch').oninput = (e) => renderModelList(e.target.value);
+            
+            setInterval(checkSystemStatus, 60000);
+        });
+
+        // --- SETTINGS ---
+        function loadSettings() {
+            const savedKeys = localStorage.getItem('pollinations_api_keys');
+            if (savedKeys) {
+                state.apiKeys = JSON.parse(savedKeys);
+                els.apiKeyInput.value = state.apiKeys.join('\n');
+                updateKeyBadge();
+            }
+            document.getElementById('systemPromptInput').value = localStorage.getItem('pollinations_system_prompt') || DEFAULT_SYSTEM_PROMPT;
+        }
+
+        function saveSettings() {
+            const keys = els.apiKeyInput.value.trim().split(/[\n,]+/).map(k => k.trim()).filter(k => k);
+            state.apiKeys = keys;
+            localStorage.setItem('pollinations_api_keys', JSON.stringify(keys));
+            localStorage.setItem('pollinations_system_prompt', document.getElementById('systemPromptInput').value.trim() || DEFAULT_SYSTEM_PROMPT);
+            toggleKeyModal(false);
+            updateKeyBadge();
+        }
+
+        function updateKeyBadge() {
+            const count = state.apiKeys.length;
+            const badge = document.getElementById('keyCountBadge');
+            badge.textContent = `${count} Key${count > 1 ? 's' : ''}`;
+            badge.classList.toggle('hidden', count === 0);
+        }
+
+        function toggleKeyModal(show) {
+            if (show) { els.keyModal.classList.remove('hidden'); setTimeout(() => { els.keyModal.classList.remove('opacity-0'); els.keyModalContent.classList.remove('scale-95'); }, 10); loadSettings(); }
+            else { els.keyModal.classList.add('opacity-0'); els.keyModalContent.classList.add('scale-95'); setTimeout(() => els.keyModal.classList.add('hidden'), 300); }
+        }
+
+        function getRotatedKey() { return state.apiKeys.length ? state.apiKeys[Math.floor(Math.random() * state.apiKeys.length)] : ''; }
+
+        // --- DATA & STATUS ---
+        async function initData() {
+            try {
+                const [t, i] = await Promise.all([fetch(API_ENDPOINTS.textModels).then(r=>r.json()), fetch(API_ENDPOINTS.imageModels).then(r=>r.json())]);
+                state.models.text = t.data || [];
+                state.models.image = i.map(m => ({ id: m.name || m, ...m }));
+                renderModelList();
+                updateUI();
+            } catch(e) { console.error(e); }
+        }
+
+        async function checkSystemStatus() {
+            try {
+                const res = await fetch(API_ENDPOINTS.textModels, { method: 'HEAD' });
+                document.getElementById('statusDot').className = res.ok ? "w-2 h-2 bg-green-500 rounded-full shadow-[0_0_8px_rgba(34,197,94,0.6)]" : "w-2 h-2 bg-red-500 rounded-full";
+                document.getElementById('statusText').textContent = res.ok ? "SYSTEM ONLINE" : "OFFLINE";
+                document.getElementById('statusText').className = res.ok ? "text-green-400 font-bold text-[10px] tracking-wider" : "text-red-400 font-bold text-[10px]";
+            } catch { 
+                document.getElementById('statusDot').className = "w-2 h-2 bg-red-500 rounded-full"; 
+                document.getElementById('statusText').textContent = "OFFLINE"; 
+            }
+        }
+
+        // --- HISTORY LOGIC (UPDATED FOR STRICT TYPE SEPARATION) ---
+        function getHistory() { return JSON.parse(localStorage.getItem('pollination_chats') || '[]'); }
+        function saveHistory(chats) { localStorage.setItem('pollination_chats', JSON.stringify(chats)); loadHistoryList(); }
+
+        function startNewChat() {
+            state.currentChatId = null;
+            els.chatContainer.innerHTML = '';
+            els.chatContainer.appendChild(els.welcomeState);
+            els.welcomeState.style.display = 'flex';
+            document.querySelectorAll('.history-item').forEach(el => el.classList.remove('bg-gray-800', 'border-gray-700'));
+            if(window.innerWidth < 768) els.sidebar.classList.add('-translate-x-full');
+        }
+
+        function loadChat(chatId) {
+            const chats = getHistory();
+            const chat = chats.find(c => c.id === chatId);
+            if (!chat) return;
+
+            // Enforce mode switching if loading a chat of different type
+            if (chat.type && chat.type !== state.mode) {
+                switchMode(chat.type);
+            }
+
+            state.currentChatId = chatId;
+            els.chatContainer.innerHTML = '';
+            els.welcomeState.style.display = 'none';
+
+            // Re-render messages with indexing for editing
+            chat.messages.forEach((msg, index) => {
+                if(msg.role === 'user') appendUserMessage(msg.content, false, index);
+                else if(msg.role === 'assistant') appendBotMessage(msg.content, false, msg.meta);
+                else if(msg.role === 'image') appendImageResult(msg.content, msg.meta, false);
+            });
+
+            loadHistoryList();
+            if(window.innerWidth < 768) els.sidebar.classList.add('-translate-x-full');
+            scrollToBottom();
+        }
+
+        function saveMessageToHistory(role, content, meta = {}) {
+            let chats = getHistory();
+            
+            if (!state.currentChatId) {
+                // Create new chat strictly typed to current mode
+                state.currentChatId = Date.now();
+                const title = content.length > 30 ? content.substring(0, 30) + '...' : content;
+                chats.unshift({
+                    id: state.currentChatId,
+                    type: state.mode, // STRICT TYPE: 'text' or 'image'
+                    title: role === 'user' ? title : 'New Chat',
+                    timestamp: Date.now(),
+                    messages: []
+                }); 
+            } else {
+                // Move current to top
+                const index = chats.findIndex(c => c.id === state.currentChatId);
+                if (index > -1) {
+                    const chat = chats.splice(index, 1)[0];
+                    chat.timestamp = Date.now();
+                    // Ensure type exists for legacy chats
+                    if(!chat.type) chat.type = state.mode;
+                    chats.unshift(chat);
+                }
+            }
+
+            if (chats.length > 0) {
+                chats[0].messages.push({ role, content, meta });
+            }
+            saveHistory(chats);
+        }
+
+        function loadHistoryList() {
+            const chats = getHistory();
+            els.historyList.innerHTML = '';
+            
+            // STRICT FILTER: Only show chats matching current mode
+            const filteredChats = chats.filter(c => c.type === state.mode || (!c.type && state.mode === 'text'));
+
+            if (filteredChats.length === 0) {
+                els.historyList.innerHTML = `<div class="text-center p-4 text-gray-500 text-xs">No ${state.mode} history.</div>`;
+                return;
+            }
+
+            filteredChats.forEach(chat => {
+                const isActive = chat.id === state.currentChatId;
+                const div = document.createElement('div');
+                div.className = `history-item w-full text-left px-3 py-3 rounded-lg text-sm mb-1 cursor-pointer flex items-center justify-between group transition-all ${isActive ? 'bg-gray-800 text-white border border-gray-700' : 'text-gray-400 hover:bg-gray-800/50 hover:text-gray-200 border border-transparent'}`;
+                div.onclick = (e) => { if(!e.target.closest('.delete-btn')) loadChat(chat.id); };
+                div.innerHTML = `
+                    <div class="flex items-center gap-3 overflow-hidden">
+                        <i class="fas ${state.mode === 'text' ? 'fa-message' : 'fa-image'} text-xs ${isActive ? 'text-primary' : 'text-gray-600'}"></i>
+                        <span class="truncate">${chat.title || 'Conversation'}</span>
+                    </div>
+                    <button class="delete-btn opacity-0 group-hover:opacity-100 text-gray-500 hover:text-red-400 transition-opacity px-2" onclick="deleteChat(event, ${chat.id})"><i class="fas fa-times"></i></button>
+                `;
+                els.historyList.appendChild(div);
+            });
+        }
+
+        // --- EDIT / DELETE LOGIC ---
+        function deleteChat(e, id) {
+            e.stopPropagation();
+            if(!confirm('Delete this conversation?')) return;
+            let chats = getHistory();
+            chats = chats.filter(c => c.id !== id);
+            localStorage.setItem('pollination_chats', JSON.stringify(chats));
+            if (state.currentChatId === id) startNewChat();
+            loadHistoryList();
+        }
+
+        function editMessage(index) {
+            const chats = getHistory();
+            const chat = chats.find(c => c.id === state.currentChatId);
+            if(!chat || !chat.messages[index]) return;
+
+            const msg = chat.messages[index];
+            if(msg.role !== 'user') return; // Can only edit user messages
+
+            // Populate input
+            els.userInput.value = msg.content;
+            els.userInput.focus();
+            
+            // Remove this message AND all subsequent messages (since context changes)
+            chat.messages = chat.messages.slice(0, index);
+            
+            // Save and reload
+            const chatIndex = chats.findIndex(c => c.id === state.currentChatId);
+            chats[chatIndex] = chat;
+            localStorage.setItem('pollination_chats', JSON.stringify(chats));
+            
+            loadChat(state.currentChatId);
+        }
+
+        // --- MODE SWITCHING ---
+        function switchSidebarTab(tab) {
+            if (tab === 'history') {
+                document.getElementById('viewHistory').classList.remove('hidden');
+                document.getElementById('viewModels').classList.add('hidden');
+                document.getElementById('tabHistory').classList.add('active');
+                document.getElementById('tabModels').classList.remove('active');
+            } else {
+                document.getElementById('viewHistory').classList.add('hidden');
+                document.getElementById('viewModels').classList.remove('hidden');
+                document.getElementById('tabHistory').classList.remove('active');
+                document.getElementById('tabModels').classList.add('active');
+            }
+        }
+
+        function switchMode(mode) {
+            state.mode = mode;
+            // Force new chat UI state when switching modes (don't clear history var, just UI)
+            startNewChat(); 
+            loadHistoryList(); // Reload list to filter by new mode
+
+            if (mode === 'text') {
+                els.modeText.className = "flex-1 py-2 rounded-lg text-xs font-medium transition-all bg-primary text-white shadow-lg";
+                els.modeImage.className = "flex-1 py-2 rounded-lg text-xs font-medium text-gray-400 hover:text-white transition-all";
+                els.imageControls.classList.add('hidden');
+                document.getElementById('currentModeIcon').innerHTML = '<i class="fas fa-comment-alt"></i>';
+                els.userInput.placeholder = "Ask me anything...";
+            } else {
+                els.modeImage.className = "flex-1 py-2 rounded-lg text-xs font-medium transition-all bg-primary text-white shadow-lg";
+                els.modeText.className = "flex-1 py-2 rounded-lg text-xs font-medium text-gray-400 hover:text-white transition-all";
+                els.imageControls.classList.remove('hidden');
+                document.getElementById('currentModeIcon').innerHTML = '<i class="fas fa-paint-brush"></i>';
+                els.userInput.placeholder = "Describe an image...";
+            }
+            updateUI();
+        }
+
+        function renderModelList(filter = "") {
+            const list = state.mode === 'text' ? state.models.text : state.models.image;
+            const current = state.mode === 'text' ? state.textModel : state.imageModel;
+            const filtered = list.filter(m => (m.id || m).toLowerCase().includes(filter.toLowerCase()));
+            els.modelList.innerHTML = filtered.map(m => {
+                const id = m.id || m;
+                return `<button onclick="selectModel('${id}')" class="w-full text-left px-3 py-2.5 rounded-lg text-sm mb-1 transition-all flex items-center justify-between group ${id === current ? 'bg-primary/20 text-primary border border-primary/30' : 'text-gray-400 hover:bg-gray-800 hover:text-white border border-transparent'}"><span class="truncate font-medium">${id}</span>${id === current ? '<i class="fas fa-check text-xs"></i>' : ''}</button>`;
+            }).join('');
+        }
+
+        function selectModel(id) {
+            if (state.mode === 'text') state.textModel = id; else state.imageModel = id;
+            updateUI();
+            renderModelList(document.getElementById('modelSearch').value);
+        }
+
+        function updateUI() {
+            document.getElementById('currentModelDisplay').textContent = state.mode === 'text' ? state.textModel : state.imageModel;
+            renderModelList(document.getElementById('modelSearch').value);
+        }
+
+        function handleEnter(e) { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); processMessage(); } }
+
+        async function processMessage() {
+            const text = els.userInput.value.trim();
+            if (!text) return;
+            els.welcomeState.style.display = 'none';
+            els.userInput.value = '';
+            els.userInput.style.height = 'auto';
+
+            // Find index for the new message (end of array)
+            const chat = getHistory().find(c => c.id === state.currentChatId);
+            const nextIndex = chat ? chat.messages.length : 0;
+
+            appendUserMessage(text, true, nextIndex);
+            saveMessageToHistory('user', text);
+
+            if (state.mode === 'text') await handleTextGeneration(text);
+            else handleImageGeneration(text);
+        }
+
+        // --- GENERATION WITH METADATA ---
+        async function handleTextGeneration(prompt) {
+            const loadingId = appendLoading('text');
+            const apiKey = getRotatedKey();
+            const messages = [{ role: "system", content: localStorage.getItem('pollinations_system_prompt') || DEFAULT_SYSTEM_PROMPT }];
+            
+            // Add context
+            const chat = getHistory().find(c => c.id === state.currentChatId);
+            if(chat) messages.push(...chat.messages.slice(0, -1).slice(-8).map(m => ({ role: m.role, content: m.content })));
+            messages.push({ role: "user", content: prompt });
+
+            const requestBody = { model: state.textModel, messages: messages };
+
+            try {
+                const headers = { 'Content-Type': 'application/json' };
+                if (apiKey) headers['Authorization'] = `Bearer ${apiKey}`;
+
+                const startTime = Date.now();
+                const response = await fetch(API_ENDPOINTS.textChat, { method: 'POST', headers: headers, body: JSON.stringify(requestBody) });
+                const endTime = Date.now();
+
+                if (!response.ok) throw new Error(`API ${response.status}`);
+                const data = await response.json();
+                const reply = data.choices[0].message.content;
+
+                removeElement(loadingId);
+
+                // Construct Metadata
+                const meta = {
+                    apiKey: apiKey ? `${apiKey.substring(0, 5)}...${apiKey.substring(apiKey.length-4)}` : 'None',
+                    fullKey: apiKey, // Store full key for debug view if needed
+                    model: data.model || state.textModel,
+                    latency: `${endTime - startTime}ms`,
+                    tokens: data.usage ? data.usage.total_tokens : 'N/A',
+                    usage: data.usage,
+                    req: requestBody,
+                    res: data
+                };
+
+                appendBotMessage(reply, true, meta);
+                saveMessageToHistory('assistant', reply, meta);
+
+            } catch (err) {
+                removeElement(loadingId);
+                appendErrorMessage(err.message);
+            }
+        }
+
+        function handleImageGeneration(prompt) {
+            const loadingId = appendLoading('image');
+            const apiKey = getRotatedKey();
+            const ratio = document.getElementById('aspectRatio').value;
+            let w = 1024, h = 1024;
+            if (ratio === '16:9') { w = 1280; h = 720; }
+            if (ratio === '9:16') { w = 720; h = 1280; }
+
+            const encodedPrompt = encodeURIComponent(prompt);
+            let url = `${API_ENDPOINTS.imageGen}${encodedPrompt}?model=${state.imageModel}&width=${w}&height=${h}&seed=${Math.floor(Math.random()*1e6)}&enhance=${document.getElementById('enhancePrompt').checked}&nologo=true`;
+            if(apiKey) url += `&key=${apiKey}`;
+
+            removeElement(loadingId);
+            const meta = { model: state.imageModel, width: w, height: h, url: url };
+            appendImageResult(url, meta);
+            saveMessageToHistory('image', url, meta);
+        }
+
+        // --- DEBUG MODAL LOGIC ---
+        function showDebug(meta) {
+            if(!meta || !meta.res) return;
+            
+            // SUMMARY TAB
+            const summaryHTML = `
+                <tr><td class="label">API Key Used</td><td class="value text-primary">${meta.fullKey || 'No Key'}</td></tr>
+                <tr><td class="label">Model ID</td><td class="value">${meta.model}</td></tr>
+                <tr><td class="label">Provider</td><td class="value">${meta.res.provider || 'Pollinations'}</td></tr>
+                <tr><td class="label">Total Tokens</td><td class="value">${meta.tokens}</td></tr>
+                <tr><td class="label">Latency</td><td class="value">${meta.latency}</td></tr>
+                <tr><td class="label">Created</td><td class="value">${new Date(meta.res.created * 1000).toLocaleString()}</td></tr>
+                <tr><td class="label">System Prompt</td><td class="value text-xs">${meta.req.messages[0].content}</td></tr>
+            `;
+            document.getElementById('debugSummaryBody').innerHTML = summaryHTML;
+
+            // RAW JSON TAB
+            document.getElementById('debugRequestJson').innerHTML = syntaxHighlight(meta.req);
+            document.getElementById('debugResponseJson').innerHTML = syntaxHighlight(meta.res);
+
+            toggleDebugModal(true);
+        }
+
+        function syntaxHighlight(json) {
+            if (typeof json != 'string') json = JSON.stringify(json, undefined, 2);
+            json = json.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+            return json.replace(/("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?)/g, function (match) {
+                var cls = 'json-number';
+                if (/^"/.test(match)) {
+                    if (/:$/.test(match)) cls = 'json-key';
+                    else cls = 'json-string';
+                } else if (/true|false/.test(match)) cls = 'json-boolean';
+                else if (/null/.test(match)) cls = 'json-null';
+                return '<span class="' + cls + '">' + match + '</span>';
+            });
+        }
+
+        function toggleDebugModal(show) {
+            const m = els.debugModal, c = els.debugModalContent;
+            if(show) { m.classList.remove('hidden'); setTimeout(() => { m.classList.remove('opacity-0'); c.classList.remove('scale-95'); }, 10); switchDebugTab('summary'); }
+            else { m.classList.add('opacity-0'); c.classList.add('scale-95'); setTimeout(() => m.classList.add('hidden'), 300); }
+        }
+
+        function switchDebugTab(tab) {
+            document.getElementById('debugViewSummary').classList.toggle('hidden', tab !== 'summary');
+            document.getElementById('debugViewRaw').classList.toggle('hidden', tab !== 'raw');
+            document.getElementById('tabDebugSummary').className = tab === 'summary' ? 'flex-1 py-3 text-sm font-medium text-white border-b-2 border-primary bg-gray-700/50' : 'flex-1 py-3 text-sm font-medium text-gray-400 border-b-2 border-transparent hover:text-white';
+            document.getElementById('tabDebugRaw').className = tab === 'raw' ? 'flex-1 py-3 text-sm font-medium text-white border-b-2 border-primary bg-gray-700/50' : 'flex-1 py-3 text-sm font-medium text-gray-400 border-b-2 border-transparent hover:text-white';
+        }
+
+        // --- DOM RENDERERS ---
+        function appendUserMessage(text, scroll=true, index) {
+            const div = document.createElement('div');
+            div.className = "flex justify-end animate-fade-in mb-6 group relative";
+            div.innerHTML = `
+                <div class="absolute right-0 -top-5 opacity-0 group-hover:opacity-100 transition-opacity pr-14">
+                    <button onclick="editMessage(${index})" class="text-xs text-gray-400 hover:text-white bg-gray-800 px-2 py-1 rounded border border-gray-700"><i class="fas fa-pen mr-1"></i>Edit</button>
+                </div>
+                <div class="max-w-[85%] flex flex-row-reverse gap-3">
+                    <div class="w-8 h-8 rounded-full bg-blue-600 flex-shrink-0 flex items-center justify-center"><i class="fas fa-user text-xs text-white"></i></div>
+                    <div class="bg-primary text-white px-4 py-3 rounded-2xl rounded-tr-none shadow-lg text-sm leading-relaxed whitespace-pre-wrap">${text}</div>
+                </div>
+            `;
+            els.chatContainer.appendChild(div);
+            if(scroll) scrollToBottom();
+        }
+
+        function appendBotMessage(text, scroll=true, meta=null) {
+            const div = document.createElement('div');
+            div.className = "flex justify-start animate-fade-in mb-6 group relative";
+            
+            // Meta Info Button
+            let infoBtn = '';
+            if(meta) {
+                // Store meta in window for retrieval (simplified for this context)
+                const metaId = 'meta-' + Date.now() + Math.random();
+                window[metaId] = meta;
+                infoBtn = `
+                <div class="absolute left-0 -top-5 opacity-0 group-hover:opacity-100 transition-opacity pl-14">
+                    <button onclick="showDebug(window['${metaId}'])" class="text-xs text-gray-400 hover:text-primary bg-gray-800 px-2 py-1 rounded border border-gray-700"><i class="fas fa-info-circle mr-1"></i>Info</button>
+                </div>`;
+            }
+
+            let processedText = text.replace(/<think>([\s\S]*?)<\/think>/gi, "<details class='think-block'><summary>Thinking Process</summary>$1</details>");
+            let htmlContent = marked.parse(processedText);
+
+            div.innerHTML = `
+                ${infoBtn}
+                <div class="max-w-[85%] md:max-w-[75%] flex gap-3">
+                    <div class="w-8 h-8 rounded-full bg-gradient-to-br from-green-500 to-emerald-700 flex-shrink-0 flex items-center justify-center"><i class="fas fa-robot text-xs text-white"></i></div>
+                    <div class="bg-card text-gray-200 px-5 py-4 rounded-2xl rounded-tl-none border border-gray-700 shadow-sm prose prose-invert prose-sm max-w-none w-full overflow-hidden">${htmlContent}</div>
+                </div>
+            `;
+            els.chatContainer.appendChild(div);
+            div.querySelectorAll('pre code').forEach(hljs.highlightElement);
+            renderMathInElement(div, { delimiters: [{left: '$$', right: '$$', display: true}, {left: '$', right: '$', display: false}], throwOnError: false });
+            if(scroll) scrollToBottom();
+        }
+
+        function appendImageResult(url, meta, scroll=true) {
+            const div = document.createElement('div');
+            div.className = "flex justify-start animate-fade-in mb-6";
+            const skelId = 'skel-' + Math.random().toString(36).substr(2, 9);
+            div.innerHTML = `
+                <div class="flex gap-3 max-w-full">
+                    <div class="w-8 h-8 rounded-full bg-purple-600 flex-shrink-0 flex items-center justify-center mt-1"><i class="fas fa-paint-brush text-xs text-white"></i></div>
+                    <div class="flex flex-col gap-2">
+                        <div class="relative rounded-xl overflow-hidden border border-gray-700 bg-gray-900 group min-w-[200px] min-h-[200px]">
+                            <div class="image-skeleton absolute inset-0 z-10 pointer-events-none" id="${skelId}"></div>
+                            <img src="${url}" crossOrigin="anonymous" class="max-w-full md:max-w-md rounded-xl block" onload="document.getElementById('${skelId}').remove()" onerror="this.src=''; document.getElementById('${skelId}').remove();">
+                            <div class="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-3">
+                                <button onclick="downloadImage('${url}', this)" class="bg-white text-black px-3 py-1.5 rounded-full text-xs font-bold hover:scale-105"><i class="fas fa-download mr-1"></i> Download</button>
+                            </div>
+                        </div>
+                        <div class="text-xs text-gray-500 font-mono">${meta.model} | ${meta.width}x${meta.height}</div>
+                    </div>
+                </div>
+            `;
+            els.chatContainer.appendChild(div);
+            if(scroll) scrollToBottom();
+        }
+
+        async function downloadImage(url, btn) {
+            const original = btn.innerHTML; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>'; btn.disabled = true;
+            try {
+                const blob = await fetch(url).then(r => r.blob());
+                const a = document.createElement('a'); a.href = window.URL.createObjectURL(blob); a.download = `pollinations-${Date.now()}.jpg`; a.click();
+            } catch { window.open(url, '_blank'); } 
+            finally { btn.innerHTML = original; btn.disabled = false; }
+        }
+
+        function appendLoading(type) {
+            const id = 'l-' + Date.now();
+            const div = document.createElement('div'); div.id = id; div.className = "flex justify-start mb-6";
+            div.innerHTML = `<div class="flex gap-3"><div class="w-8 h-8 rounded-full ${type === 'text' ? 'bg-green-600' : 'bg-purple-600'} flex items-center justify-center"><i class="fas fa-spinner fa-spin text-xs text-white"></i></div><div class="bg-card border border-gray-700 px-4 py-3 rounded-2xl rounded-tl-none flex items-center gap-1"><span class="text-xs text-gray-400 mr-2">${type === 'text' ? 'Thinking' : 'Painting'}</span><div class="w-1.5 h-1.5 bg-gray-400 rounded-full typing-dot"></div><div class="w-1.5 h-1.5 bg-gray-400 rounded-full typing-dot"></div><div class="w-1.5 h-1.5 bg-gray-400 rounded-full typing-dot"></div></div></div>`;
+            els.chatContainer.appendChild(div); scrollToBottom(); return id;
+        }
+
+        function appendErrorMessage(msg) {
+            const div = document.createElement('div'); div.className = "flex justify-center mb-6";
+            div.innerHTML = `<div class="bg-red-900/20 border border-red-800 text-red-300 px-4 py-2 rounded-lg text-sm flex items-center gap-2"><i class="fas fa-exclamation-circle"></i>${msg}</div>`;
+            els.chatContainer.appendChild(div); scrollToBottom();
+        }
+        function removeElement(id) { const el = document.getElementById(id); if (el) el.remove(); }
+        function scrollToBottom() { els.chatContainer.scrollTop = els.chatContainer.scrollHeight; }
+        function clearAllHistory() { if(confirm('Delete ALL history?')) { localStorage.removeItem('pollination_chats'); startNewChat(); loadHistoryList(); } }
+    </script>
+</body>
+</html>

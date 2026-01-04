@@ -111,3 +111,17 @@ export function createPerplexityModelConfig(additionalConfig = {}) {
         ...additionalConfig,
     };
 }
+
+/**
+ * Creates an OVHcloud AI Endpoints model configuration
+ */
+export function createOVHcloudModelConfig(additionalConfig = {}) {
+    return {
+        provider: "openai",
+        "custom-host":
+            "https://qwen-3-coder-30b-a3b-instruct.endpoints.kepler.ai.cloud.ovh.net/api/openai_compat/v1",
+        authKey: process.env.OVHCLOUD_API_KEY,
+        "max-tokens": 8192,
+        ...additionalConfig,
+    };
+}

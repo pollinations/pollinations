@@ -49,10 +49,10 @@ def main():
     with torch.no_grad():
         output = pipe(
             prompt="two cats sitting on a bench in a park",
-            height=768,
-            width=768,
+            height=512,
+            width=512,
             guidance_scale=4.0,
-            num_inference_steps=40,
+            num_inference_steps=30,
             enable_cfg_renorm=True,
             output_type="latent",  
         )

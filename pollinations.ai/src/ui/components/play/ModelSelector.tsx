@@ -91,7 +91,7 @@ export const ModelSelector = memo(function ModelSelector({
                             htmlFor="showLegacyModels"
                             className="text-[10px] font-headline uppercase tracking-wider font-black text-text-caption cursor-pointer"
                         >
-                            {copy.showLegacyModelsLabel}
+                            {copy?.showLegacyModelsLabel || "Show Legacy Models"}
                         </label>
                     </div>
                 </div>

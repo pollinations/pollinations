@@ -267,8 +267,15 @@ jobs:
             exit 0
           fi
           
+          # Basic SSRF protection - only allow http/https, no localhost
+          if ! echo "$APP_URL" | grep -qE '^https?://' || echo "$APP_URL" | grep -qiE '(localhost|127\.|10\.|192\.168\.|172\.(1[6-9]|2[0-9]|3[01])\.)'; then
+            echo "has_credit=unknown" >> $GITHUB_OUTPUT
+            echo "⚠️ Invalid or internal URL: $APP_URL"
+            exit 0
+          fi
+          
           # Fetch the page and check for pollinations mention (case-insensitive)
-          CONTENT=$(curl -sL --max-time 10 "$APP_URL" 2>/dev/null || echo "")
+          CONTENT=$(curl -sL --connect-timeout 5 --max-time 10 "$APP_URL" 2>/dev/null || echo "")
           if [ -z "$CONTENT" ]; then
             echo "has_credit=unknown" >> $GITHUB_OUTPUT
             echo "⚠️ Could not fetch $APP_URL"
@@ -352,9 +359,11 @@ jobs:
       - name: Correct issue title
         if: steps.parse.outputs.name != ''
         uses: actions/github-script@v7
+        env:
+          APP_NAME: ${{ steps.parse.outputs.name }}
         with:
           script: |
-            const appName = `${{ steps.parse.outputs.name }}`;
+            const appName = process.env.APP_NAME;
             const expectedTitle = `[App Submission] ${appName}`;
             const issue = await github.rest.issues.get({
               owner: context.repo.owner,

@@ -387,14 +387,6 @@ def get_existing_labels() -> list:
     return [l.get("name", "").upper() for l in labels if isinstance(l, dict)]
 
 
-def is_app_submission() -> bool:
-    existing_labels = get_existing_labels()
-    app_submission_markers = {"TIER:REVIEW", "APP-SUBMISSION"}
-    for label in existing_labels:
-        if label in app_submission_markers:
-            return True
-    return False
-
 
 def main():
     log_debug(f"Processing issue/PR #{ISSUE_NUMBER}: {ISSUE_TITLE}")
@@ -403,10 +395,8 @@ def main():
         return
     
     existing_labels = get_existing_labels()
-    
-    # App submissions go strictly to TIER project
-    if is_app_submission():
-        log_debug("Detected app submission, routing to Tier project")
+    if classification.get("is_app_submission"):
+        log_debug("AI detected app submission, routing to Tier project")
         project = CONFIG["projects"].get("tier")
         if project:
             item_id = add_to_project(project["id"])

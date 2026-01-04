@@ -196,10 +196,7 @@ Rules:
 - Infrastructure, pipelines, CI/CD, Docker, services → dev (if internal) else support.
 - If ambiguous, choose the closest valid option — never invent a new one.
 - Author type: {"internal" if is_internal else "external"}
-- Priority options:
-  * dev: Urgent, High, Medium, Low
-  * support: Urgent, High, Medium, Low
-  * news: Urgent only
+- Priority: only assign for support project (Urgent, High, Medium, Low). No priority for dev or news.
 - Label options depend on project:
   * dev: DEV-BUG, DEV-FEATURE, DEV-QUEST, DEV-TRACKING
   * support: SUPPORT-HELP, SUPPORT-BUG, SUPPORT-FEATURE, SUPPORT-BILLING, SUPPORT-BALANCE, SUPPORT-API
@@ -462,14 +459,16 @@ def main():
                 status_option,
             )
     
-    priority_option = project["priority_options"].get(priority)
-    if priority_option and project.get("priority_field_id"):
-        set_project_field(
-            project["id"],
-            item_id,
-            project["priority_field_id"],
-            priority_option,
-        )
+    # Only set priority for support project
+    if project_key == "support":
+        priority_option = project["priority_options"].get(priority)
+        if priority_option and project.get("priority_field_id"):
+            set_project_field(
+                project["id"],
+                item_id,
+                project["priority_field_id"],
+                priority_option,
+            )
     add_labels(labels)
 
 if __name__ == "__main__":

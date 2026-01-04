@@ -8,6 +8,7 @@
  *   gen.pollinations.ai/              → redirect to /api/docs
  *   gen.pollinations.ai/docs          → redirect to /api/docs
  *   gen.pollinations.ai/models        → /api/generate/text/models
+ *   gen.pollinations.ai/account/*     → /api/account/* (balance, etc.)
  *   gen.pollinations.ai/image/*       → /api/generate/image/*
  *   gen.pollinations.ai/text/*        → /api/generate/text/*
  *   gen.pollinations.ai/v1/*          → /api/generate/v1/*
@@ -92,6 +93,12 @@ export default {
         // Convenience: /models → /api/generate/text/models (most common use case)
         if (path === "/models") {
             url.pathname = "/api/generate/text/models";
+            return env.ENTER.fetch(new Request(url, request));
+        }
+
+        // Account endpoints: /account/* → /api/account/*
+        if (path.startsWith("/account/") || path === "/account") {
+            url.pathname = "/api" + path;
             return env.ENTER.fetch(new Request(url, request));
         }
 

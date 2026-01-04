@@ -306,6 +306,18 @@ const models: ModelDefinition[] = [
         output_modalities: ["text"],
         tools: true,
     },
+    {
+        name: "gpt-oss",
+        description: "GPT-OSS 20B Reasoning LLM (OVH)",
+        config: portkeyConfig["gpt-oss-20b"],
+        transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
+        reasoning: true,
+        tier: "anonymous",
+        community: false,
+        input_modalities: ["text"],
+        output_modalities: ["text"],
+        tools: true,
+    },
 ];
 
 // Export models with aliases from registry and computed properties

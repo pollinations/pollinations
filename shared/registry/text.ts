@@ -141,6 +141,13 @@ export const TEXT_COSTS = {
             completionTextTokens: perMillion(15.0),
         },
     ],
+    "gpt-oss-20b": [
+        {
+            date: PRICING_START_DATE,
+            promptTextTokens: perMillion(0.044), // €0.04/Mtoken -> $0.044
+            completionTextTokens: perMillion(0.165), // €0.15/Mtoken -> $0.165
+        },
+    ],
 } as const satisfies ModelRegistry;
 export const TEXT_SERVICES = {
     "openai": {
@@ -254,5 +261,10 @@ export const TEXT_SERVICES = {
         modelId: "us.anthropic.claude-haiku-4-5-20251001-v1:0",
         provider: "aws-bedrock",
         tier: "flower",
+    },
+    "gpt-oss": {
+        aliases: ["gpt-oss-20b", "ovh-reasoning"],
+        modelId: "gpt-oss-20b",
+        provider: "ovh",
     },
 } as const satisfies ServiceRegistry<typeof TEXT_COSTS>;

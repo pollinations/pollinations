@@ -17,6 +17,7 @@ import {
     createDeepSeekReasoningConfig,
     createMyceliDeepSeekV31Config,
     createApiNavyModelConfig,
+    createOVHModelConfig,
 } from "./providerConfigs.js";
 import type { TEXT_COSTS } from "../../shared/registry/text.js";
 
@@ -431,5 +432,10 @@ export const portkeyConfig: PortkeyConfigMap = {
     "us.meta.llama3-2-3b-instruct-v1:0": () =>
         createBedrockLambdaModelConfig({
             model: "us.meta.llama3-2-3b-instruct-v1:0",
+        }),
+    // OVH AI Endpoints
+    "gpt-oss-20b": () =>
+        createOVHModelConfig({
+            model: "gpt-oss-20b",
         }),
 };

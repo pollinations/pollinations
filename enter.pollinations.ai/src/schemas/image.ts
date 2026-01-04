@@ -18,7 +18,7 @@ export const GenerateImageRequestQueryParamsSchema = z.object({
         .default(DEFAULT_IMAGE_MODEL)
         .meta({
             description:
-                "AI model. Image: zimage (or flux alias), turbo, gptimage, kontext, seedream, seedream-pro, nanobanana. Video: veo, seedance, seedance-pro",
+                "AI model. Image: flux, zimage, turbo, gptimage, kontext, seedream, seedream-pro, nanobanana. Video: veo, seedance, seedance-pro",
         }),
     width: z.coerce
         .number()

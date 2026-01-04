@@ -18,6 +18,18 @@ export const getModelDescription = (modelName: string): string | undefined => {
     return service?.description;
 };
 
+/**
+ * Get a human-readable display name for a model (e.g., "OpenAI GPT-5 Mini")
+ * Extracts the first part of the description before " - "
+ */
+export const getModelDisplayName = (modelName: string): string | undefined => {
+    const service = getServiceDefinition(modelName as ServiceId);
+    const description = service?.description;
+    if (!description) return undefined;
+    // Extract first part before " - " (e.g., "OpenAI GPT-5 Mini" from "OpenAI GPT-5 Mini - Fast & Balanced")
+    return description.split(" - ")[0];
+};
+
 export const hasReasoning = (modelName: string): boolean => {
     const service = getServiceDefinition(modelName as ServiceId);
     return service?.reasoning === true;

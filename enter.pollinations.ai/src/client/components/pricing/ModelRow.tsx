@@ -7,6 +7,7 @@ import {
     hasSearch,
     hasCodeExecution,
     getModelDescription,
+    getModelDisplayName,
 } from "./model-info.ts";
 import { calculatePerPollen } from "./calculations.ts";
 import { PriceBadge } from "./PriceBadge.tsx";
@@ -18,6 +19,7 @@ type ModelRowProps = {
 
 export const ModelRow: FC<ModelRowProps> = ({ model }) => {
     const modelDescription = getModelDescription(model.name);
+    const modelDisplayName = getModelDisplayName(model.name);
     const genPerPollen = calculatePerPollen(model);
     const [showTooltip, setShowTooltip] = useState(false);
     const handleMouseEnter = () => setShowTooltip(true);
@@ -72,9 +74,17 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
 
     return (
         <tr className="border-b border-gray-200">
-            <td className="py-2 px-2 text-sm font-mono text-gray-700 whitespace-nowrap relative group">
+            <td className="py-2 px-2 text-sm text-gray-700 whitespace-nowrap relative group">
                 <div className="flex items-center gap-2">
-                    {model.name}
+                    <div className="flex flex-col">
+                        <span className="font-mono">{model.name}</span>
+                        {modelDisplayName &&
+                            modelDisplayName !== model.name && (
+                                <span className="text-xs text-gray-500 font-normal">
+                                    {modelDisplayName}
+                                </span>
+                            )}
+                    </div>
                     {showDescriptionInfo && (
                         <button
                             type="button"

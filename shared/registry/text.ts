@@ -539,8 +539,8 @@ export const TEXT_SERVICES = {
         cost: [
             {
                 date: COST_START_DATE,
-                promptTextTokens: perMillion(4.5),
-                completionTextTokens: perMillion(22.5),
+                promptTextTokens: perMillion(15.0),
+                completionTextTokens: perMillion(75.0),
             },
         ],
         description: "Anthropic Claude Opus 4.1 - Previous Generation (Legacy)",
@@ -556,8 +556,8 @@ export const TEXT_SERVICES = {
         cost: [
             {
                 date: COST_START_DATE,
-                promptTextTokens: perMillion(4.0),
-                completionTextTokens: perMillion(20.0),
+                promptTextTokens: perMillion(15.0),
+                completionTextTokens: perMillion(75.0),
             },
         ],
         description: "Anthropic Claude Opus 4 - Previous Generation (Legacy)",
@@ -573,8 +573,8 @@ export const TEXT_SERVICES = {
         cost: [
             {
                 date: COST_START_DATE,
-                promptTextTokens: perMillion(2.5),
-                completionTextTokens: perMillion(12.5),
+                promptTextTokens: perMillion(3.0),
+                completionTextTokens: perMillion(15.0),
             },
         ],
         description: "Anthropic Claude Sonnet 4 - Previous Generation (Legacy)",
@@ -607,8 +607,8 @@ export const TEXT_SERVICES = {
         cost: [
             {
                 date: COST_START_DATE,
-                promptTextTokens: perMillion(2.8),
-                completionTextTokens: perMillion(14.0),
+                promptTextTokens: perMillion(3.0),
+                completionTextTokens: perMillion(15.0),
             },
         ],
         description: "Anthropic Claude 3.7 Sonnet - Previous Generation (Legacy)",

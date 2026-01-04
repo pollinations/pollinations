@@ -22,7 +22,7 @@ export const IMAGE_SERVICES = {
         outputModalities: ["image"],
     },
     "turbo": {
-        aliases: ["z-image-turbo"],
+        aliases: ["sdxl-turbo", "SDXL-turbo"],
         modelId: "turbo",
         provider: "scaleway",
         cost: [
@@ -31,7 +31,7 @@ export const IMAGE_SERVICES = {
                 completionImageTokens: 0.0003,
             },
         ],
-        description: "Turbo - Ultra-fast image generation",
+        description: "Turbo - SDXL-turbo ultra-fast image generation",
         inputModalities: ["text"],
         outputModalities: ["image"],
     },
@@ -139,7 +139,7 @@ export const IMAGE_SERVICES = {
         outputModalities: ["image"],
     },
     "zimage": {
-        aliases: ["z-image"],
+        aliases: ["z-image", "z-image-turbo"],
         modelId: "zimage",
         provider: "io.net",
         cost: [

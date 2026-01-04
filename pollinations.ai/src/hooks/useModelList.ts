@@ -13,6 +13,7 @@ export interface Model {
     hasVideoOutput: boolean;
     inputModalities?: string[];
     outputModalities?: string[];
+    isDeprecated?: boolean;
 }
 
 interface UseModelListReturn {
@@ -42,6 +43,68 @@ export function useModelList(apiKey: string): UseModelListReturn {
     const [isLoading, setIsLoading] = useState<boolean>(true);
     const [error, setError] = useState<Error | null>(null);
 
+    // Helper to determine if a model is deprecated based on naming patterns
+    const isDeprecatedModel = (modelId: string): boolean => {
+        const deprecatedPatterns = [
+            /-v1$/i,           // Ends with -v1
+            /-old$/i,          // Ends with -old
+            /legacy/i,         // Contains "legacy"
+        ];
+        
+        // Known deprecated model IDs (old service IDs that are now aliases + legacy models)
+        const deprecatedModelIds = [
+            // Old service ID aliases
+            "flux",
+            "openai",
+            "openai-fast",
+            "openai-large",
+            "openai-audio",
+            "mistral",
+            "gemini",
+            "gemini-fast",
+            "gemini-large",
+            "gemini-search",
+            "deepseek",
+            "grok",
+            "claude",
+            "claude-fast",
+            "claude-large",
+            "perplexity-fast",
+            "perplexity-reasoning",
+            "qwen",
+            "llama",
+            // Legacy models from previous generations
+            "gpt-5.1",
+            "gpt-5",
+            "gpt-4o",
+            "gpt-4o-mini",
+            "gpt-4-turbo",
+            "gpt-4",
+            "claude-opus-4.1",
+            "claude-opus-4",
+            "claude-sonnet-4",
+            "claude-haiku-4",
+            "claude-4-sonnet",
+            "claude-4-opus",
+            "claude-3.7-sonnet",
+            "claude-3.5-sonnet-v2",
+            "claude-3.5-sonnet",
+            "claude-3-opus",
+            "claude-3-sonnet",
+            "claude-3-haiku",
+            "gemini-2.0-flash",
+            "gemini-1.5-pro",
+            "flux-pro",
+            "flux-dev",
+            "flux-schnell",
+            "dall-e-3",
+            "stable-diffusion-xl",
+        ];
+        
+        return deprecatedPatterns.some(pattern => pattern.test(modelId)) || 
+               deprecatedModelIds.includes(modelId.toLowerCase());
+    };
+
     // Helper to format model response
     const formatModels = (
         list: Array<
@@ -69,6 +132,7 @@ export function useModelList(apiKey: string): UseModelListReturn {
                     obj.output_modalities?.includes("video") || false,
                 inputModalities: obj.input_modalities,
                 outputModalities: obj.output_modalities,
+                isDeprecated: isDeprecatedModel(modelId),
             };
         });
     };

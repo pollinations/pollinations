@@ -4,21 +4,20 @@
 
 ## 🆕 Recent Apps
 
-| Name                                                                                                            | Description                                                                                            | Author            |
-| --------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------ | ----------------- |
-| [Pollinations VisionAI](https://superheroghost.github.io/VisionAI/)                                             | Public AI image generator UI for Pollinations models; supports API keys                                | @Superheroghost   |
-| [Donjon.studio](https://donjon.studio/)                                                                         | AI-generated interactive adventures with evolving stories and images                                   | @PassepartoutFR   |
-| [Insight Engine](https://erbharatmalhotra.github.io/insight-engine/)                                            | Experimental frontend app that turns a single idea into refined text insights and AI-generated visuals | @ErBharatMalhotra |
-| [IDPhotoGen](https://id-photo-gen.thangoffer91.workers.dev)                                                     | Create professional ID photos in 30 seconds with AI                                                    | @thangoffer91     |
-| [AquaMind](https://aquamind.app)                                                                                | AI-powered aquarium management and fish care assistant                                                 | @aquamind         |
-| [Word Wagon](https://wordwagon.app)                                                                             | AI-powered vocabulary learning app with spaced repetition                                              | @wordwagon        |
-| [nusanexus](https://nusanexus.com)                                                                              | AI-powered chat platform for Indonesian users                                                          | @nusanexus        |
-| [Nuvole AI Lite](https://nuvoleai.com)                                                                          | Lightweight AI chat app with clean UI and fast responses                                               | @nuvoleai         |
-| [BCA Nepal](https://play.google.com/store/apps/details/BCA_Nepal_BCA_Notes_Course?id=com.bcanepal&hl=en_IN)     | BCA Nepal: Notes, courses, AI chat & PDF AI tools for smarter study                                    | @sushilbalami     |
-| [PromptPi!](https://chromewebstore.google.com/detail/promptpi-image-to-prompt/dmcckiclfondnkgncnajmdcblimekgbk) | Reverse-engineer images into pro AI prompts with batch & multi-model support                           | @dreamm160        |
+| Name | Description | Author |
+|------|-------------|--------|
+| [WindowNow](https://windownow.pgit.top) | Fullscreen dynamic wallpaper that changes with time, weather & location | @blackmady |
+| [Pollinations VisionAI](https://superheroghost.github.io/VisionAI/) | Public AI image generator UI for Pollinations models; supports API keys | @Superheroghost |
+| [Donjon.studio](https://donjon.studio/) | AI-generated interactive adventures with evolving stories and images | @PassepartoutFR |
+| [Insight Engine](https://erbharatmalhotra.github.io/insight-engine/) | Experimental frontend app that turns a single idea into refined text insights and AI-generated visuals | @ErBharatMalhotra |
+| [IDPhotoGen](https://id-photo-gen.thangoffer91.workers.dev) | Create professional ID photos in 30 seconds with AI | @thangoffer91 |
+| [AquaMind](https://aquamind.app) | AI-powered aquarium management and fish care assistant | @aquamind |
+| [Word Wagon](https://wordwagon.app) | AI-powered vocabulary learning app with spaced repetition | @wordwagon |
+| [nusanexus](https://nusanexus.com) | AI-powered chat platform for Indonesian users | @nusanexus |
+| [Nuvole AI Lite](https://nuvoleai.com) | Lightweight AI chat app with clean UI and fast responses | @nuvoleai |
+| [BCA Nepal](https://play.google.com/store/apps/details/BCA_Nepal_BCA_Notes_Course?id=com.bcanepal&hl=en_IN) | BCA Nepal: Notes, courses, AI chat & PDF AI tools for smarter study | @sushilbalami |
 
 [View all apps →](apps/APPS.md)
-
 ## 🚀 New Unified API — Now Live
 
 We've launched **https://gen.pollinations.ai** — a single endpoint for all your AI generation needs: text, images, audio, video — all in one place.

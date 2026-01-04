@@ -1,4 +1,4 @@
-name: Tier App Submission
+name: App Review Submission
 
 on:
   issues:

@@ -1,4 +1,4 @@
-name: Tier Check Registration
+name: App Check Registration
 
 on:
   issue_comment:

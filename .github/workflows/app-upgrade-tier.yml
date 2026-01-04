@@ -1,4 +1,4 @@
-name: Tier Upgrade on Merge
+name: App Upgrade Tier
 
 on:
   pull_request_target:

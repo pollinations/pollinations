@@ -19,6 +19,7 @@ RUN apt-get update && apt-get install -y \
     python3-pip \
     git \
     wget \
+    curl \
     && rm -rf /var/lib/apt/lists/*
 
 # Set up Python alternatives
@@ -63,10 +64,10 @@ COPY server.py .
 COPY safety_checker/ ./safety_checker/
 
 # Expose port
-EXPOSE 8000
+EXPOSE 8765
 
 # Environment variables (can be overridden at runtime)
-ENV PORT=8000
+ENV PORT=8765
 ENV CUDA_VISIBLE_DEVICES=0
 
 # Health check

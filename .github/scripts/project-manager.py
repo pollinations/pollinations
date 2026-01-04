@@ -183,12 +183,14 @@ Do NOT include explanations outside JSON.
 Do NOT invent categories.
 Schema (must match exactly):
 {{
+  "is_app_submission": true | false,
   "project": "dev" | "support" | "news",
   "priority": "Urgent" | "High" | "Medium" | "Low",
   "labels": ["DEV-BUG","DEV-FEATURE","DEV-QUEST","DEV-TRACKING","SUPPORT-HELP","SUPPORT-BUG","SUPPORT-FEATURE","SUPPORT-BILLING","SUPPORT-BALANCE","SUPPORT-API"],
   "reasoning": "short string"
 }}
 Rules:
+- FIRST: Check if this is an app submission issue (user submitting an app/tool for review). Set is_app_submission to true if it is.
 - Choose ONLY from the allowed enum values.
 - dev is INTERNAL ONLY — use only for internal authors.
 - Infrastructure, pipelines, CI/CD, Docker, services → dev (if internal) else support.
@@ -241,6 +243,8 @@ Body: {ISSUE_BODY[:2000]}
 
             raw = json.loads(content)
             
+            is_app_submission = raw.get("is_app_submission", False)
+            
             project = raw.get("project", "").lower()
             if project not in ["dev", "support", "news"]:
                 log_error(f"AI returned invalid project: {project}")
@@ -279,6 +283,7 @@ Body: {ISSUE_BODY[:2000]}
                 "priority": priority,
                 "labels": filtered_labels,
                 "reasoning": raw.get("reasoning", ""),
+                "is_app_submission": is_app_submission,
             }
 
             log_debug(f"AI parsed classification: {classification}")
@@ -382,6 +387,7 @@ def get_existing_labels() -> list:
     return [l.get("name", "").upper() for l in labels if isinstance(l, dict)]
 
 
+
 def main():
     log_debug(f"Processing issue/PR #{ISSUE_NUMBER}: {ISSUE_TITLE}")
     if not ISSUE_NUMBER or not ISSUE_NODE_ID:
@@ -389,6 +395,20 @@ def main():
         return
     
     existing_labels = get_existing_labels()
+    if classification.get("is_app_submission"):
+        log_debug("AI detected app submission, routing to Tier project")
+        project = CONFIG["projects"].get("tier")
+        if project:
+            item_id = add_to_project(project["id"])
+            if item_id:
+                log_debug("Added to Tier project successfully")
+            else:
+                log_error("Failed to add app submission to Tier project")
+            return
+        else:
+            log_error("Tier project not configured")
+            return
+    
     tier_labels = [l for l in existing_labels if l.startswith("TIER-")]
     if tier_labels:
         log_debug(f"Found TIER labels: {tier_labels}, routing to Tier project")
@@ -406,6 +426,21 @@ def main():
     log_debug(f"Author {ISSUE_AUTHOR} is internal: {is_internal}")
     
     classification = classify_with_ai(is_internal)
+    
+    # Check if AI detected app submission
+    if classification.get("is_app_submission"):
+        log_debug("AI detected app submission, routing to Tier project")
+        project = CONFIG["projects"].get("tier")
+        if project:
+            item_id = add_to_project(project["id"])
+            if item_id:
+                log_debug("Added to Tier project successfully")
+            else:
+                log_error("Failed to add app submission to Tier project")
+            return
+        else:
+            log_error("Tier project not configured")
+            return
 
     if not classification.get("project"):
         log_debug("AI did not classify project, skipping")

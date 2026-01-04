@@ -1,0 +1,77 @@
+{
+  "request": {
+    "url": "http://ec2-3-80-56-235.compute-1.amazonaws.com:16385/openai",
+    "method": "POST",
+    "body": {
+      "type": "json",
+      "data": {
+        "model": "gemini-fast",
+        "messages": [
+          {
+            "role": "user",
+            "content": "Calculate the 10th Fibonacci number using code execution. Reply with just the number."
+          }
+        ],
+        "seed": 42
+      }
+    },
+    "params": {}
+  },
+  "response": {
+    "status": 200,
+    "statusText": "OK",
+    "headers": {
+      "access-control-allow-origin": "*",
+      "connection": "keep-alive",
+      "content-length": "492",
+      "content-type": "application/json; charset=utf-8",
+      "date": "Sun, 04 Jan 2026 12:49:31 GMT",
+      "etag": "W/\"1ec-/s4knGqEsz05q7Bqoqglha/KBj4\"",
+      "keep-alive": "timeout=5",
+      "x-model-used": "gemini-2.5-flash-lite",
+      "x-powered-by": "Express",
+      "x-usage-completion-reasoning-tokens": "108",
+      "x-usage-prompt-text-tokens": "271",
+      "x-usage-total-tokens": "379"
+    },
+    "body": {
+      "type": "json",
+      "data": {
+        "id": "pllns_9619e9461b6da2a39fb075ed86fb0ce6",
+        "object": "chat.completion",
+        "created": 1767530971,
+        "model": "gemini-2.5-flash-lite",
+        "provider": "vertex-ai",
+        "choices": [
+          {
+            "message": {
+              "role": "assistant",
+              "content": "55",
+              "content_blocks": [
+                {
+                  "type": "text",
+                  "text": "55"
+                }
+              ]
+            },
+            "index": 0,
+            "finish_reason": "STOP"
+          }
+        ],
+        "usage": {
+          "prompt_tokens": 271,
+          "completion_tokens": 2,
+          "total_tokens": 381,
+          "completion_tokens_details": {
+            "reasoning_tokens": 108,
+            "audio_tokens": 0
+          },
+          "prompt_tokens_details": {
+            "cached_tokens": 0,
+            "audio_tokens": 0
+          }
+        }
+      }
+    }
+  }
+}

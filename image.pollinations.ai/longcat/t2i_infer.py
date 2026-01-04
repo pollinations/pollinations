@@ -2,28 +2,26 @@ import torch
 from diffusers import LongCatImagePipeline
 
 def main():
-    # Explicit devices
-    device_diffusion = torch.device("cuda:0")
-    device_vae = torch.device("cuda:1")
+    gpu_diffusion = torch.device("cuda:0")
+    gpu_vae = torch.device("cuda:1")
 
-    # Load pipeline without forcing device yet
     pipe = LongCatImagePipeline.from_pretrained(
         "meituan-longcat/LongCat-Image",
         cache_dir="model_cache",
         torch_dtype=torch.bfloat16,
     )
 
-    # Move diffusion components to GPU 0
-    pipe.text_encoder.to(device_diffusion)
-    pipe.transformer.to(device_diffusion)
+    # Stage the modules
+    pipe.text_encoder.to(gpu_diffusion)
+    pipe.transformer.to(gpu_diffusion)
+    pipe.vae.to(gpu_vae)
 
-    # Keep VAE off GPU for now
-    pipe.vae.to("cpu")
-
-    # Disable internal decoding
+    # Disable automatic decoding
     pipe.vae.requires_grad_(False)
 
-    # Run diffusion → get latents only
+    # -----------------------
+    # Step 1: Diffusion (GPU 0)
+    # -----------------------
     with torch.no_grad():
         latents = pipe(
             prompt="a cute beautiful girl",
@@ -33,20 +31,23 @@ def main():
             num_inference_steps=6,
             enable_cfg_renorm=True,
             output_type="latent",   # critical
-        ).images
+        ).latents  # <-- access .latents, not .images
 
-    # Move VAE + latents to GPU 1
-    pipe.vae.to(device_vae)
-    latents = latents.to(device_vae)
+    # -----------------------
+    # Step 2: Move latents to GPU 1
+    # -----------------------
+    latents = latents.to(gpu_vae)
 
-    # Scale latents correctly (required)
+    # Scale latents
     latents = latents / pipe.vae.config.scaling_factor
 
-    # Decode on GPU 1
+    # -----------------------
+    # Step 3: Decode (GPU 1)
+    # -----------------------
     with torch.no_grad():
         image = pipe.vae.decode(latents).sample
 
-    # Postprocess to PIL
+    # Postprocess
     image = pipe.image_processor.postprocess(
         image, output_type="pil"
     )[0]

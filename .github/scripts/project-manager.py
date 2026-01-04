@@ -196,10 +196,7 @@ Rules:
 - Infrastructure, pipelines, CI/CD, Docker, services → dev (if internal) else support.
 - If ambiguous, choose the closest valid option — never invent a new one.
 - Author type: {"internal" if is_internal else "external"}
-- Priority options:
-  * dev: Urgent, High, Medium, Low
-  * support: Urgent, High, Medium, Low
-  * news: Urgent only
+- Priority: only assign for support project (Urgent, High, Medium, Low). No priority for dev or news.
 - Label options depend on project:
   * dev: DEV-BUG, DEV-FEATURE, DEV-QUEST, DEV-TRACKING
   * support: SUPPORT-HELP, SUPPORT-BUG, SUPPORT-FEATURE, SUPPORT-BILLING, SUPPORT-BALANCE, SUPPORT-API
@@ -395,20 +392,6 @@ def main():
         return
     
     existing_labels = get_existing_labels()
-    if classification.get("is_app_submission"):
-        log_debug("AI detected app submission, routing to Tier project")
-        project = CONFIG["projects"].get("tier")
-        if project:
-            item_id = add_to_project(project["id"])
-            if item_id:
-                log_debug("Added to Tier project successfully")
-            else:
-                log_error("Failed to add app submission to Tier project")
-            return
-        else:
-            log_error("Tier project not configured")
-            return
-    
     tier_labels = [l for l in existing_labels if l.startswith("TIER-")]
     if tier_labels:
         log_debug(f"Found TIER labels: {tier_labels}, routing to Tier project")
@@ -420,6 +403,19 @@ def main():
             return
         else:
             log_error("Tier project not configured")
+            return
+    
+    # Skip AI if NEWS label is present - route directly to News project
+    if "NEWS" in existing_labels:
+        log_debug("Found NEWS label, routing to News project (skipping AI)")
+        project = CONFIG["projects"].get("news")
+        if project:
+            item_id = add_to_project(project["id"])
+            if item_id:
+                log_debug("Added to News project successfully")
+            return
+        else:
+            log_error("News project not configured")
             return
     
     is_internal = is_org_member(ISSUE_AUTHOR)
@@ -476,14 +472,16 @@ def main():
                 status_option,
             )
     
-    priority_option = project["priority_options"].get(priority)
-    if priority_option and project.get("priority_field_id"):
-        set_project_field(
-            project["id"],
-            item_id,
-            project["priority_field_id"],
-            priority_option,
-        )
+    # Only set priority for support project
+    if project_key == "support":
+        priority_option = project["priority_options"].get(priority)
+        if priority_option and project.get("priority_field_id"):
+            set_project_field(
+                project["id"],
+                item_id,
+                project["priority_field_id"],
+                priority_option,
+            )
     add_labels(labels)
 
 if __name__ == "__main__":

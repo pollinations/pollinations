@@ -1165,3 +1165,78 @@ test(
         await response.text();
     },
 );
+
+// Response content_blocks schema validation (Issue #6830)
+test("Response schema should accept content_blocks with image_url type", async () => {
+    const { CreateChatCompletionResponseSchema } = await import(
+        "@/schemas/openai.ts"
+    );
+    // Simulate a response with content_blocks containing image_url (from Gemini code_execution)
+    const mockResponse = {
+        id: "test-id",
+        object: "chat.completion" as const,
+        created: Date.now(),
+        model: "gemini",
+        choices: [
+            {
+                index: 0,
+                message: {
+                    role: "assistant" as const,
+                    content: "Here is the plot",
+                    content_blocks: [
+                        { type: "text", text: "Generated plot:" },
+                        {
+                            type: "image_url",
+                            image_url: { url: "data:image/png;base64,abc123" },
+                        },
+                    ],
+                },
+                finish_reason: "stop",
+            },
+        ],
+        usage: {
+            prompt_tokens: 10,
+            completion_tokens: 20,
+            total_tokens: 30,
+        },
+    };
+    const result = CreateChatCompletionResponseSchema.safeParse(mockResponse);
+    expect(result.success).toBe(true);
+});
+
+test("Response schema should accept unknown content_block types via passthrough", async () => {
+    const { CreateChatCompletionResponseSchema } = await import(
+        "@/schemas/openai.ts"
+    );
+    // Simulate a response with an unknown content_block type
+    const mockResponse = {
+        id: "test-id",
+        object: "chat.completion" as const,
+        created: Date.now(),
+        model: "gemini",
+        choices: [
+            {
+                index: 0,
+                message: {
+                    role: "assistant" as const,
+                    content: "Here is the audio",
+                    content_blocks: [
+                        {
+                            type: "audio",
+                            data: "base64audiodata",
+                            format: "wav",
+                        },
+                    ],
+                },
+                finish_reason: "stop",
+            },
+        ],
+        usage: {
+            prompt_tokens: 10,
+            completion_tokens: 20,
+            total_tokens: 30,
+        },
+    };
+    const result = CreateChatCompletionResponseSchema.safeParse(mockResponse);
+    expect(result.success).toBe(true);
+});

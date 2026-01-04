@@ -17,7 +17,7 @@ export const IMAGE_SERVICES = {
                 completionImageTokens: 0.04, // $0.04 per image (Azure pricing)
             },
         ],
-        description: "Kontext - Context-aware image generation",
+        description: "FLUX.1 Kontext - In-context editing & generation",
         inputModalities: ["text", "image"],
         outputModalities: ["image"],
     },

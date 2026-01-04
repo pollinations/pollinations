@@ -73,7 +73,7 @@ export function TextGenCard() {
         }
         const paramString = urlParams.toString();
         if (paramString) {
-            url += "?" + paramString;
+            url += `?${paramString}`;
         }
         return url;
     };
@@ -94,7 +94,7 @@ export function TextGenCard() {
             }
             const paramString = urlParams.toString();
             if (paramString) {
-                url += "?" + paramString;
+                url += `?${paramString}`;
             }
             return url;
         };
@@ -231,18 +231,15 @@ export function TextGenCard() {
                 <span className="bg-indicator-text px-1 font-black text-text-inverse">
                     {selectedModel}
                 </span>
-                {params.size > 0 && (
-                    <>
-                        {Array.from(params).map((param) => (
-                            <span key={param}>
-                                <span className="text-text-caption">&</span>
-                                <span className="bg-indicator-text px-1 font-black text-text-inverse">
-                                    {param}
-                                </span>
+                {params.size > 0 &&
+                    Array.from(params).map((param) => (
+                        <span key={param}>
+                            <span className="text-text-caption">&</span>
+                            <span className="bg-indicator-text px-1 font-black text-text-inverse">
+                                {param}
                             </span>
-                        ))}
-                    </>
-                )}
+                        </span>
+                    ))}
             </div>
 
             {/* Copy Button */}

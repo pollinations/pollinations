@@ -1,20 +1,20 @@
 import { Hono } from "hono";
-import { auth } from "../middleware/auth.ts";
-import { polar, PolarVariables } from "../middleware/polar.ts";
 import { describeRoute, resolver } from "hono-openapi";
-import type { Env } from "../env.ts";
-import {
-    type TierStatus,
-    getTierProductMapCached,
-    getTierProductById,
-    calculateNextPeriodStart,
-    tierNames,
-    TierName,
-} from "@/utils/polar.ts";
-import { User } from "@/auth.ts";
-import { capitalize } from "@/util.ts";
 import { z } from "zod";
+import type { User } from "@/auth.ts";
+import { capitalize } from "@/util.ts";
 import { errorResponseDescriptions } from "@/utils/api-docs.ts";
+import {
+    calculateNextPeriodStart,
+    getTierProductById,
+    getTierProductMapCached,
+    type TierName,
+    type TierStatus,
+    tierNames,
+} from "@/utils/polar.ts";
+import type { Env } from "../env.ts";
+import { auth } from "../middleware/auth.ts";
+import { type PolarVariables, polar } from "../middleware/polar.ts";
 
 const TierSubscriptionDetailsSchema = z.object({
     status: z.literal(["active", "canceled", "trialing", "none"]),

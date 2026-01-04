@@ -2,12 +2,12 @@ import dotenv from "dotenv";
 import googleCloudAuth from "../auth/googleCloudAuth.js";
 import {
     createAzureModelConfig,
-    createScalewayModelConfig,
     createBedrockLambdaModelConfig,
     createBedrockNativeConfig,
     createMyceliDeepSeekV32Config,
     createMyceliGrok4FastConfig,
     createPerplexityModelConfig,
+    createScalewayModelConfig,
 } from "./providerConfigs.js";
 
 dotenv.config();

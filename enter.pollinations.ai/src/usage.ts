@@ -1,4 +1,4 @@
-import { ModelId, TokenUsage } from "@shared/registry/registry.ts";
+import type { ModelId, TokenUsage } from "@shared/registry/registry.ts";
 import type { CompletionUsage } from "@/schemas/openai.ts";
 
 export function transformOpenAIUsage(usage: CompletionUsage): TokenUsage {

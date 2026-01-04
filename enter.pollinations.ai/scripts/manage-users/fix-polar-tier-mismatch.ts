@@ -1,4 +1,5 @@
 #!/usr/bin/env npx tsx
+
 /**
  * Fix polar-tier-mismatch issues
  *
@@ -18,9 +19,9 @@
  *   - POLAR_ACCESS_TOKEN environment variable
  */
 
-import { Polar } from "@polar-sh/sdk";
-import { readFileSync, writeFileSync, existsSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { createInterface } from "node:readline";
+import { Polar } from "@polar-sh/sdk";
 
 // Tier definitions
 const TIERS = ["spore", "seed", "flower", "nectar"] as const;
@@ -168,7 +169,7 @@ async function main() {
     }
 
     // Confirm
-    console.log("\n" + "-".repeat(60));
+    console.log(`\n${"-".repeat(60)}`);
     console.log("TIER MISMATCHES TO FIX:");
     console.log("-".repeat(60));
     for (const m of tierMismatches.slice(0, 10)) {
@@ -257,7 +258,7 @@ async function main() {
     }
 
     // Summary
-    console.log("\n" + "=".repeat(60));
+    console.log(`\n${"=".repeat(60)}`);
     console.log("DONE:");
     console.log(`  Updated: ${updated}`);
     console.log(`  Skipped: ${skipped}`);

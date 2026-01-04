@@ -1,75 +1,76 @@
 .loading-spinner-container {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 1rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
 }
 
 .loading-spinner {
-  position: relative;
-  display: inline-block;
+    position: relative;
+    display: inline-block;
 }
 
 .loading-spinner-ring {
-  position: absolute;
-  width: 100%;
-  height: 100%;
-  border: 2px solid transparent;
-  border-radius: 50%;
-  animation: loading-spinner-animation 1s cubic-bezier(0.5, 0, 0.5, 1) infinite;
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    border: 2px solid transparent;
+    border-radius: 50%;
+    animation: loading-spinner-animation 1s cubic-bezier(0.5, 0, 0.5, 1)
+        infinite;
 }
 
 .loading-spinner-ring:nth-child(1) {
-  animation-delay: -0.45s;
+    animation-delay: -0.45s;
 }
 
 .loading-spinner-ring:nth-child(2) {
-  animation-delay: -0.3s;
+    animation-delay: -0.3s;
 }
 
 .loading-spinner-ring:nth-child(3) {
-  animation-delay: -0.15s;
+    animation-delay: -0.15s;
 }
 
 @keyframes loading-spinner-animation {
-  0% {
-    transform: rotate(0deg);
-  }
-  100% {
-    transform: rotate(360deg);
-  }
+    0% {
+        transform: rotate(0deg);
+    }
+    100% {
+        transform: rotate(360deg);
+    }
 }
 
 .loading-spinner-small {
-  width: 20px;
-  height: 20px;
+    width: 20px;
+    height: 20px;
 }
 
 .loading-spinner-small .loading-spinner-ring {
-  border-top-color: var(--accent-gradient);
+    border-top-color: var(--accent-gradient);
 }
 
 .loading-spinner-medium {
-  width: 40px;
-  height: 40px;
+    width: 40px;
+    height: 40px;
 }
 
 .loading-spinner-medium .loading-spinner-ring {
-  border-top-color: var(--accent-gradient);
+    border-top-color: var(--accent-gradient);
 }
 
 .loading-spinner-large {
-  width: 60px;
-  height: 60px;
+    width: 60px;
+    height: 60px;
 }
 
 .loading-spinner-large .loading-spinner-ring {
-  border-top-color: var(--accent-gradient);
+    border-top-color: var(--accent-gradient);
 }
 
 .loading-message {
-  margin-top: 0.5rem;
-  font-size: 0.875rem;
-  color: var(--text-secondary);
+    margin-top: 0.5rem;
+    font-size: 0.875rem;
+    color: var(--text-secondary);
 }

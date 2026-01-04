@@ -11,7 +11,7 @@
 export const validateFloat = (value) => {
     if (value === undefined || value === null) return undefined;
     const parsed = parseFloat(value);
-    if (isNaN(parsed)) return undefined;
+    if (Number.isNaN(parsed)) return undefined;
     return parsed;
 };
 
@@ -23,7 +23,7 @@ export const validateFloat = (value) => {
 export const validateInt = (value) => {
     if (value === undefined || value === null) return undefined;
     const parsed = parseInt(value, 10);
-    if (isNaN(parsed)) return undefined;
+    if (Number.isNaN(parsed)) return undefined;
     return parsed;
 };
 

@@ -1,26 +1,25 @@
-import express from "express";
+import crypto from "node:crypto";
+import { promises as fs } from "node:fs";
+import path from "node:path";
+import { Transform } from "node:stream";
 import bodyParser from "body-parser";
 import cors from "cors";
-import crypto from "crypto";
 import debug from "debug";
-import { promises as fs } from "fs";
-import path from "path";
 import dotenv from "dotenv";
-import { Transform } from "stream";
-import { availableModels } from "./availableModels.js";
-import { generateTextPortkey } from "./generateTextPortkey.js";
-import { setupFeedEndpoint, sendToFeedListeners } from "./feed.js";
-import { processRequestForAds } from "./ads/initRequestFilter.js";
-import { createStreamingAdWrapper } from "./ads/streamingAdWrapper.js";
-import { getRequestData } from "./requestUtils.js";
-
+import express from "express";
 // Import shared utilities
 import { getIp } from "../shared/extractFromRequest.js";
+import { getServiceDefinition } from "../shared/registry/registry.js";
 import {
     buildUsageHeaders,
     openaiUsageToTokenUsage,
 } from "../shared/registry/usage-headers.js";
-import { getServiceDefinition } from "../shared/registry/registry.js";
+import { processRequestForAds } from "./ads/initRequestFilter.js";
+import { createStreamingAdWrapper } from "./ads/streamingAdWrapper.js";
+import { availableModels } from "./availableModels.js";
+import { sendToFeedListeners, setupFeedEndpoint } from "./feed.js";
+import { generateTextPortkey } from "./generateTextPortkey.js";
+import { getRequestData } from "./requestUtils.js";
 
 // Load environment variables including .env.local overrides
 // Load .env.local first (higher priority), then .env as fallback
@@ -29,12 +28,12 @@ dotenv.config();
 
 // Shared authentication and queue is initialized automatically in ipQueue.js
 
-const BANNED_PHRASES = [];
+const _BANNED_PHRASES = [];
 
 // const blockedIPs = new Set();
 const blockedIPs = new Set();
 
-async function blockIP(ip) {
+async function _blockIP(ip) {
     // Only proceed if IP isn't already blocked
     if (!blockedIPs.has(ip)) {
         blockedIPs.add(ip);
@@ -114,7 +113,7 @@ app.use((req, res, next) => {
     next();
 });
 // New route handler for root path
-app.get("/", (req, res) => {
+app.get("/", (_req, res) => {
     res.redirect(
         301,
         "https://github.com/pollinations/pollinations/blob/main/APIDOCS.md",
@@ -122,7 +121,7 @@ app.get("/", (req, res) => {
 });
 
 // Serve crossdomain.xml for Flash connections
-app.get("/crossdomain.xml", (req, res) => {
+app.get("/crossdomain.xml", (_req, res) => {
     res.setHeader("Content-Type", "application/xml");
     res.send(`<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE cross-domain-policy SYSTEM "http://www.macromedia.com/xml/dtds/cross-domain-policy.dtd">
@@ -134,7 +133,7 @@ app.get("/crossdomain.xml", (req, res) => {
 app.set("trust proxy", true);
 
 // Queue configuration for text service
-const QUEUE_CONFIG = {
+const _QUEUE_CONFIG = {
     interval: 18000, // 18 seconds between requests per IP (no auth)
 };
 
@@ -156,7 +155,7 @@ setupFeedEndpoint(app);
 
 // Helper function to handle both GET and POST requests
 async function handleRequest(req, res, requestData) {
-    const startTime = Date.now();
+    const _startTime = Date.now();
     log(
         "Request: model=%s referrer=%s",
         requestData.model,
@@ -193,10 +192,10 @@ async function handleRequest(req, res, requestData) {
         }
 
         // Capture the originally requested model before any mapping/overrides
-        const requestedModel = requestData.model;
+        const _requestedModel = requestData.model;
 
         // Use request data as-is (no user-specific model mapping)
-        let finalRequestData = requestData;
+        const finalRequestData = requestData;
 
         // Add user info to request data - using authResult directly as a thin proxy
         // Exclude messages from options to prevent overwriting transformed messages
@@ -268,8 +267,7 @@ async function handleRequest(req, res, requestData) {
 
                     // If an ad was generated, append it to the content
                     if (adString) {
-                        completion.choices[0].message.content =
-                            content + "\n\n" + adString;
+                        completion.choices[0].message.content = `${content}\n\n${adString}`;
                     }
                 } catch (error) {
                     errorLog("Error processing content:", error);
@@ -514,7 +512,7 @@ export function sendContentResponse(res, completion) {
     }
 
     // Only handle OpenAI-style responses (with choices array)
-    if (completion.choices && completion.choices[0]) {
+    if (completion.choices?.[0]) {
         const message = completion.choices[0].message;
 
         // If message is a string, send it directly
@@ -538,7 +536,7 @@ export function sendContentResponse(res, completion) {
         }
 
         // If the message contains audio, send the audio data as binary
-        if (message.audio && message.audio.data) {
+        if (message.audio?.data) {
             res.setHeader("Content-Type", "audio/mpeg");
             res.setHeader(
                 "Cache-Control",
@@ -671,10 +669,10 @@ app.post("/", async (req, res) => {
     }
 });
 
-app.get("/openai/models", (req, res) => {
+app.get("/openai/models", (_req, res) => {
     const models = availableModels.map((model) => {
         // Get provider from cost data using the model's config
-        const config =
+        const _config =
             typeof model.config === "function" ? model.config() : model.config;
         return {
             id: model.name,
@@ -718,9 +716,9 @@ app.post("/v1/chat/completions", async (req, res) => {
  * Create a transform stream that captures usage data from SSE chunks
  * and adds HTTP trailers at the end (GitHub issue #4638)
  */
-function createUsageCaptureTransform(res) {
-    let finalUsage = null;
-    let finalModel = null;
+function _createUsageCaptureTransform(_res) {
+    let _finalUsage = null;
+    let _finalModel = null;
 
     return new Transform({
         objectMode: true,
@@ -736,15 +734,15 @@ function createUsageCaptureTransform(res) {
                         if (dataContent && dataContent !== "[DONE]") {
                             const data = JSON.parse(dataContent);
                             if (data.usage) {
-                                finalUsage = data.usage;
+                                _finalUsage = data.usage;
                             }
                             if (data.model) {
-                                finalModel = data.model;
+                                _finalModel = data.model;
                             }
                         }
                     }
                 }
-            } catch (err) {
+            } catch (_err) {
                 // Ignore parse errors
             }
 
@@ -795,9 +793,9 @@ async function sendAsOpenAIStream(res, completion, req = null) {
         // For POST requests, messages will be in the request body
         const messages = req
             ? // Try to get messages from different sources
-              (req.body && req.body.messages) ||
-              (req.requestData && req.requestData.messages) ||
-              (completion.requestData && completion.requestData.messages) ||
+              req.body?.messages ||
+              req.requestData?.messages ||
+              completion.requestData?.messages ||
               []
             : [];
 
@@ -904,7 +902,7 @@ async function generateTextBasedOnModel(messages, options) {
                     role: m.role,
                     content:
                         typeof m.content === "string"
-                            ? m.content.substring(0, 50) + "..."
+                            ? `${m.content.substring(0, 50)}...`
                             : "[non-string content]",
                 })),
             ),

@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeAll } from "vitest";
+import { beforeAll, describe, expect, it } from "vitest";
 
 const BASE_URL = process.env.TEST_BASE_URL || "http://localhost:16384";
 const PLN_ENTER_TOKEN = process.env.PLN_ENTER_TOKEN;

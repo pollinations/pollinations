@@ -1,4 +1,4 @@
-import { memo, useState, useEffect } from "react";
+import { memo, useEffect, useState } from "react";
 import { PLAY_PAGE } from "../../../copy/content/play";
 import type { Model } from "../../../hooks/useModelList";
 import { usePageCopy } from "../../../hooks/usePageCopy";
@@ -29,7 +29,7 @@ export const ModelSelector = memo(function ModelSelector({
 }: ModelSelectorProps) {
     // Get translated copy
     const { copy } = usePageCopy(PLAY_PAGE);
-    
+
     // State for showing legacy models with localStorage persistence
     const [showLegacy, setShowLegacy] = useState<boolean>(() => {
         if (typeof window === "undefined") {
@@ -39,16 +39,16 @@ export const ModelSelector = memo(function ModelSelector({
         const stored = window.localStorage.getItem("showLegacyModels");
         return stored === "true";
     });
-    
+
     // Persist to localStorage when changed
     useEffect(() => {
         localStorage.setItem("showLegacyModels", String(showLegacy));
     }, [showLegacy]);
-    
+
     // Filter models based on showLegacy preference
-    const filteredModels = showLegacy 
-        ? models 
-        : models.filter(m => !m.isDeprecated);
+    const filteredModels = showLegacy
+        ? models
+        : models.filter((m) => !m.isDeprecated);
 
     return (
         <div className="mb-6">
@@ -95,7 +95,8 @@ export const ModelSelector = memo(function ModelSelector({
                             htmlFor="showLegacyModels"
                             className="text-[10px] font-headline uppercase tracking-wider font-black text-text-caption cursor-pointer"
                         >
-                            {copy?.showLegacyModelsLabel || "Show Legacy Models"}
+                            {copy?.showLegacyModelsLabel ||
+                                "Show Legacy Models"}
                         </label>
                     </div>
                 </div>

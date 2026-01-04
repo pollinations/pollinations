@@ -2,7 +2,6 @@
  * Model configuration resolution utilities
  */
 import debug from "debug";
-import { portkeyConfig } from "../configs/modelConfigs.js";
 import { findModelByName } from "../availableModels.js";
 
 const log = debug("pollinations:model-resolver");
@@ -47,7 +46,7 @@ export function resolveModelConfig(messages, options) {
     // User-provided options take precedence over defaults
     // Filter out undefined values from options so they don't overwrite defaults
     const definedOptions = Object.fromEntries(
-        Object.entries(options).filter(([_, v]) => v !== undefined)
+        Object.entries(options).filter(([_, v]) => v !== undefined),
     );
     const result = {
         messages,

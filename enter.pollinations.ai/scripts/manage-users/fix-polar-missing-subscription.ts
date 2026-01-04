@@ -1,4 +1,5 @@
 #!/usr/bin/env npx tsx
+
 /**
  * Fix polar-subscription-missing issues
  *
@@ -23,11 +24,11 @@
  *   - POLAR_ACCESS_TOKEN environment variable
  */
 
+import { exec } from "node:child_process";
+import { existsSync, readFileSync } from "node:fs";
+import { createInterface } from "node:readline";
+import { promisify } from "node:util";
 import { Polar } from "@polar-sh/sdk";
-import { readFileSync, existsSync } from "node:fs";
-import { createInterface } from "readline";
-import { exec } from "child_process";
-import { promisify } from "util";
 
 const execAsync = promisify(exec);
 
@@ -247,7 +248,7 @@ async function main() {
     }
 
     // Show sample
-    console.log("\n" + "-".repeat(60));
+    console.log(`\n${"-".repeat(60)}`);
     console.log("SAMPLE OF USERS TO CREATE SUBSCRIPTIONS FOR:");
     console.log("-".repeat(60));
     for (const m of missingInPolar.slice(0, 10)) {
@@ -409,7 +410,7 @@ async function main() {
     }
 
     // Summary
-    console.log("\n" + "=".repeat(60));
+    console.log(`\n${"=".repeat(60)}`);
     console.log("DONE:");
     console.log(`  Created: ${created}`);
     console.log(

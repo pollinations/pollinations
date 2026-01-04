@@ -11,8 +11,8 @@ const log = debug("pollinations:transforms:sanitizer");
  */
 function sanitizeMessagesWithPlaceholder(
     messages,
-    modelConfig,
-    requestedModel,
+    _modelConfig,
+    _requestedModel,
 ) {
     if (!Array.isArray(messages)) {
         return { messages, replacedCount: 0 };

@@ -1,5 +1,5 @@
-import fs from "fs";
-import path from "path";
+import fs from "node:fs";
+import path from "node:path";
 
 const teachings = `- J. Krishnamurti: How does one break free of habits?
 - J. Krishnamurti: Krishnamurti Text Collection

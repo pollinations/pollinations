@@ -1,5 +1,5 @@
+import type { IncomingHttpHeaders } from "node:http";
 import debug from "debug";
-import { IncomingHttpHeaders } from "node:http";
 
 const logger = debug("pollinations:badDomain");
 const memoizedResults = new Map();

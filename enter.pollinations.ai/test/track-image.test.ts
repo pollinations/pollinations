@@ -1,10 +1,6 @@
+import type { ModelId, TokenUsage } from "@shared/registry/registry.ts";
+import { calculateCost } from "@shared/registry/registry.ts";
 import { expect, test } from "vitest";
-import { calculateCost, calculatePrice } from "@shared/registry/registry.ts";
-import type {
-    TokenUsage,
-    ModelId,
-    ServiceId,
-} from "@shared/registry/registry.ts";
 
 // Test image model cost tracking
 // Tests cost calculation properties without hardcoding specific values

@@ -1,6 +1,6 @@
+import debug from "debug";
 import fetch from "node-fetch";
 import TurndownService from "turndown";
-import debug from "debug";
 
 const turndownService = new TurndownService();
 const log = debug("pollinations:scrape");
@@ -46,7 +46,7 @@ function truncateMarkdown(markdown, maxLength) {
         truncateIndex = maxLength;
     }
 
-    return markdown.substring(0, truncateIndex) + "\n\n... (content truncated)";
+    return `${markdown.substring(0, truncateIndex)}\n\n... (content truncated)`;
 }
 
 export async function performWebScrape({ urls }) {

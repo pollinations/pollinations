@@ -1,5 +1,11 @@
-import React, { useState } from "react";
 import { usePollinationsChat } from "@pollinations/react";
+import { Bird, Copy, Flower, Send } from "lucide-react";
+import type React from "react";
+import { useState } from "react";
+import ReactMarkdown from "react-markdown";
+import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
+import { oneDark } from "react-syntax-highlighter/dist/esm/styles/prism";
+import { Button } from "@/components/ui/button";
 import {
     Card,
     CardContent,
@@ -7,10 +13,8 @@ import {
     CardHeader,
     CardTitle,
 } from "@/components/ui/card";
-import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
 import {
     Select,
     SelectContent,
@@ -18,15 +22,12 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select";
-import { Copy, Send, Flower, Bird } from "lucide-react";
-import ReactMarkdown from "react-markdown";
-import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
-import { oneDark } from "react-syntax-highlighter/dist/esm/styles/prism";
+import { Textarea } from "@/components/ui/textarea";
 import { useFetchModels } from "../hooks/useFetchModels";
 
 export default function ChatComponent() {
     const { textModels } = useFetchModels();
-    const [selectedTextModel, setSelectedTextModel] = useState<string>(
+    const [selectedTextModel, _setSelectedTextModel] = useState<string>(
         textModels[0]?.name || "openai",
     );
     const [chatPrompt, setChatPrompt] = useState("");

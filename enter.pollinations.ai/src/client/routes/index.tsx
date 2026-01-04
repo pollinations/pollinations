@@ -1,42 +1,39 @@
-import { createFileRoute, useRouter, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import { useState } from "react";
 import { productSlugToUrlParam } from "../../routes/polar.ts";
+import { apiClient } from "../api.ts";
+import { authClient, getUserOrRedirect } from "../auth.ts";
 import {
     ApiKeyList,
     type CreateApiKey,
     type CreateApiKeyResponse,
 } from "../components/api-key.tsx";
 import { Button } from "../components/button.tsx";
-import { config } from "../config.ts";
-import { User } from "../components/user.tsx";
-import { PollenBalance } from "../components/pollen-balance.tsx";
-import { TierPanel } from "../components/tier-panel.tsx";
 import { FAQ } from "../components/faq.tsx";
 import { Header } from "../components/header.tsx";
+import { PollenBalance } from "../components/pollen-balance.tsx";
 import { Pricing } from "../components/pricing/index.ts";
-import { apiClient } from "../api.ts";
-import { authClient, getUserOrRedirect } from "../auth.ts";
+import { TierPanel } from "../components/tier-panel.tsx";
+import { User } from "../components/user.tsx";
 
 export const Route = createFileRoute("/")({
     component: RouteComponent,
     beforeLoad: getUserOrRedirect,
     loader: async ({ context }) => {
         // Parallelize independent API calls for faster loading
-        const [
-            customer,
-            tierData,
-            apiKeysResult,
-            d1BalanceResult,
-        ] = await Promise.all([
-            apiClient.polar.customer.state
-                .$get()
-                .then((r) => (r.ok ? r.json() : null)),
-            apiClient.tiers.view.$get().then((r) => (r.ok ? r.json() : null)),
-            authClient.apiKey.list(),
-            apiClient.polar.customer["d1-balance"]
-                .$get()
-                .then((r) => (r.ok ? r.json() : null)),
-        ]);
+        const [customer, tierData, apiKeysResult, d1BalanceResult] =
+            await Promise.all([
+                apiClient.polar.customer.state
+                    .$get()
+                    .then((r) => (r.ok ? r.json() : null)),
+                apiClient.tiers.view
+                    .$get()
+                    .then((r) => (r.ok ? r.json() : null)),
+                authClient.apiKey.list(),
+                apiClient.polar.customer["d1-balance"]
+                    .$get()
+                    .then((r) => (r.ok ? r.json() : null)),
+            ]);
         const apiKeys = apiKeysResult.data || [];
         const tierBalance = d1BalanceResult?.tierBalance ?? 0;
         const packBalance = d1BalanceResult?.packBalance ?? 0;

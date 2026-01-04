@@ -8,106 +8,106 @@
 // You should NOT make any changes in this file as it will be overwritten.
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
-import { Route as rootRouteImport } from './routes/__root'
-import { Route as TermsRouteImport } from './routes/terms'
-import { Route as SignInRouteImport } from './routes/sign-in'
-import { Route as AuthorizeRouteImport } from './routes/authorize'
-import { Route as IndexRouteImport } from './routes/index'
+import { Route as rootRouteImport } from "./routes/__root";
+import { Route as AuthorizeRouteImport } from "./routes/authorize";
+import { Route as IndexRouteImport } from "./routes/index";
+import { Route as SignInRouteImport } from "./routes/sign-in";
+import { Route as TermsRouteImport } from "./routes/terms";
 
 const TermsRoute = TermsRouteImport.update({
-  id: '/terms',
-  path: '/terms',
-  getParentRoute: () => rootRouteImport,
-} as any)
+    id: "/terms",
+    path: "/terms",
+    getParentRoute: () => rootRouteImport,
+} as any);
 const SignInRoute = SignInRouteImport.update({
-  id: '/sign-in',
-  path: '/sign-in',
-  getParentRoute: () => rootRouteImport,
-} as any)
+    id: "/sign-in",
+    path: "/sign-in",
+    getParentRoute: () => rootRouteImport,
+} as any);
 const AuthorizeRoute = AuthorizeRouteImport.update({
-  id: '/authorize',
-  path: '/authorize',
-  getParentRoute: () => rootRouteImport,
-} as any)
+    id: "/authorize",
+    path: "/authorize",
+    getParentRoute: () => rootRouteImport,
+} as any);
 const IndexRoute = IndexRouteImport.update({
-  id: '/',
-  path: '/',
-  getParentRoute: () => rootRouteImport,
-} as any)
+    id: "/",
+    path: "/",
+    getParentRoute: () => rootRouteImport,
+} as any);
 
 export interface FileRoutesByFullPath {
-  '/': typeof IndexRoute
-  '/authorize': typeof AuthorizeRoute
-  '/sign-in': typeof SignInRoute
-  '/terms': typeof TermsRoute
+    "/": typeof IndexRoute;
+    "/authorize": typeof AuthorizeRoute;
+    "/sign-in": typeof SignInRoute;
+    "/terms": typeof TermsRoute;
 }
 export interface FileRoutesByTo {
-  '/': typeof IndexRoute
-  '/authorize': typeof AuthorizeRoute
-  '/sign-in': typeof SignInRoute
-  '/terms': typeof TermsRoute
+    "/": typeof IndexRoute;
+    "/authorize": typeof AuthorizeRoute;
+    "/sign-in": typeof SignInRoute;
+    "/terms": typeof TermsRoute;
 }
 export interface FileRoutesById {
-  __root__: typeof rootRouteImport
-  '/': typeof IndexRoute
-  '/authorize': typeof AuthorizeRoute
-  '/sign-in': typeof SignInRoute
-  '/terms': typeof TermsRoute
+    __root__: typeof rootRouteImport;
+    "/": typeof IndexRoute;
+    "/authorize": typeof AuthorizeRoute;
+    "/sign-in": typeof SignInRoute;
+    "/terms": typeof TermsRoute;
 }
 export interface FileRouteTypes {
-  fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/authorize' | '/sign-in' | '/terms'
-  fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/authorize' | '/sign-in' | '/terms'
-  id: '__root__' | '/' | '/authorize' | '/sign-in' | '/terms'
-  fileRoutesById: FileRoutesById
+    fileRoutesByFullPath: FileRoutesByFullPath;
+    fullPaths: "/" | "/authorize" | "/sign-in" | "/terms";
+    fileRoutesByTo: FileRoutesByTo;
+    to: "/" | "/authorize" | "/sign-in" | "/terms";
+    id: "__root__" | "/" | "/authorize" | "/sign-in" | "/terms";
+    fileRoutesById: FileRoutesById;
 }
 export interface RootRouteChildren {
-  IndexRoute: typeof IndexRoute
-  AuthorizeRoute: typeof AuthorizeRoute
-  SignInRoute: typeof SignInRoute
-  TermsRoute: typeof TermsRoute
+    IndexRoute: typeof IndexRoute;
+    AuthorizeRoute: typeof AuthorizeRoute;
+    SignInRoute: typeof SignInRoute;
+    TermsRoute: typeof TermsRoute;
 }
 
-declare module '@tanstack/react-router' {
-  interface FileRoutesByPath {
-    '/terms': {
-      id: '/terms'
-      path: '/terms'
-      fullPath: '/terms'
-      preLoaderRoute: typeof TermsRouteImport
-      parentRoute: typeof rootRouteImport
+declare module "@tanstack/react-router" {
+    interface FileRoutesByPath {
+        "/terms": {
+            id: "/terms";
+            path: "/terms";
+            fullPath: "/terms";
+            preLoaderRoute: typeof TermsRouteImport;
+            parentRoute: typeof rootRouteImport;
+        };
+        "/sign-in": {
+            id: "/sign-in";
+            path: "/sign-in";
+            fullPath: "/sign-in";
+            preLoaderRoute: typeof SignInRouteImport;
+            parentRoute: typeof rootRouteImport;
+        };
+        "/authorize": {
+            id: "/authorize";
+            path: "/authorize";
+            fullPath: "/authorize";
+            preLoaderRoute: typeof AuthorizeRouteImport;
+            parentRoute: typeof rootRouteImport;
+        };
+        "/": {
+            id: "/";
+            path: "/";
+            fullPath: "/";
+            preLoaderRoute: typeof IndexRouteImport;
+            parentRoute: typeof rootRouteImport;
+        };
     }
-    '/sign-in': {
-      id: '/sign-in'
-      path: '/sign-in'
-      fullPath: '/sign-in'
-      preLoaderRoute: typeof SignInRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/authorize': {
-      id: '/authorize'
-      path: '/authorize'
-      fullPath: '/authorize'
-      preLoaderRoute: typeof AuthorizeRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/': {
-      id: '/'
-      path: '/'
-      fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-  }
 }
 
 const rootRouteChildren: RootRouteChildren = {
-  IndexRoute: IndexRoute,
-  AuthorizeRoute: AuthorizeRoute,
-  SignInRoute: SignInRoute,
-  TermsRoute: TermsRoute,
-}
+    IndexRoute: IndexRoute,
+    AuthorizeRoute: AuthorizeRoute,
+    SignInRoute: SignInRoute,
+    TermsRoute: TermsRoute,
+};
 export const routeTree = rootRouteImport
-  ._addFileChildren(rootRouteChildren)
-  ._addFileTypes<FileRouteTypes>()
+    ._addFileChildren(rootRouteChildren)
+    ._addFileTypes<FileRouteTypes>();

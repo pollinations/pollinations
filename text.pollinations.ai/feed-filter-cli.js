@@ -1,13 +1,13 @@
 #!/usr/bin/env node
 
-import * as EventSource from "eventsource";
+import dns from "node:dns";
+import fs from "node:fs";
+import path from "node:path";
+import { promisify } from "node:util";
+import { Command } from "commander";
 import debug from "debug";
 import dotenv from "dotenv";
-import fs from "fs";
-import path from "path";
-import { Command } from "commander";
-import dns from "dns";
-import { promisify } from "util";
+import * as EventSource from "eventsource";
 
 // Promisify DNS lookup
 const dnsReverse = promisify(dns.reverse);
@@ -66,7 +66,7 @@ const hasHtml = (text) => /<[^>]+>/i.test(text);
 // Helper function to truncate text
 const truncate = (text, maxLength = 300) => {
     if (!text) return "";
-    return text.length > maxLength ? text.slice(0, maxLength) + "..." : text;
+    return text.length > maxLength ? `${text.slice(0, maxLength)}...` : text;
 };
 
 // Helper function to convert messages to markdown
@@ -129,7 +129,7 @@ const resolveIpToHostname = async (ip) => {
     try {
         const hostnames = await dnsReverse(ip);
         return hostnames && hostnames.length > 0 ? hostnames[0] : null;
-    } catch (error) {
+    } catch (_error) {
         // Silently fail if resolution doesn't work
         return null;
     }
@@ -148,11 +148,11 @@ const updateIpTokenUsage = (ip, tokens) => {
 // Helper function to calculate percentage
 const calculatePercentage = (count, total) => {
     if (total === 0) return "0.00%";
-    return ((count / total) * 100).toFixed(2) + "%";
+    return `${((count / total) * 100).toFixed(2)}%`;
 };
 
 // Helper function to sort object by values in descending order
-const sortObjectByValues = (obj) => {
+const _sortObjectByValues = (obj) => {
     return Object.entries(obj)
         .sort((a, b) => b[1] - a[1])
         .reduce((acc, [key, value]) => {
@@ -187,9 +187,9 @@ const matchesFilters = (data, options = {}) => {
     // regardless of other filters
     if (!options.roblox) {
         // Check referrer, model name, and system prompt for Roblox
-        const isRobloxModel =
-            parameters?.model &&
-            parameters.model.toLowerCase().includes("roblox");
+        const isRobloxModel = parameters?.model
+            ?.toLowerCase()
+            .includes("roblox");
 
         if (isRobloxModel) {
             return false;
@@ -474,10 +474,7 @@ const startFeedListener = async (options = {}) => {
                 }
 
                 // Track special referrers
-                if (
-                    parameters?.referrer &&
-                    parameters.referrer.toLowerCase().includes("roblox")
-                ) {
+                if (parameters?.referrer?.toLowerCase().includes("roblox")) {
                     stats.isRoblox++;
                 }
                 if (parameters?.isImagePollinationsReferrer) {

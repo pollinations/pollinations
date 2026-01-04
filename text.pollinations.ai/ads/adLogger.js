@@ -1,5 +1,5 @@
-import fs from "fs";
-import path from "path";
+import fs from "node:fs";
+import path from "node:path";
 import debug from "debug";
 
 const log = debug("pollinations:adlogger");
@@ -78,7 +78,7 @@ export async function logAdInteraction(data) {
         const lastMessages = messages?.slice(-3) || [];
         if (lastMessages.length > 0) {
             logEntry += `### Input Messages\n\n`;
-            lastMessages.forEach((msg, index) => {
+            lastMessages.forEach((msg, _index) => {
                 logEntry += `**${msg.role || "user"}:** ${msg.content || ""}\n\n`;
             });
         }
@@ -87,7 +87,7 @@ export async function logAdInteraction(data) {
         if (content) {
             const truncatedContent =
                 content.length > 500
-                    ? content.substring(0, 500) + "... [truncated]"
+                    ? `${content.substring(0, 500)}... [truncated]`
                     : content;
 
             logEntry += `### Original Content\n\n\`\`\`\n${truncatedContent}\n\`\`\`\n\n`;

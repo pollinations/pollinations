@@ -1,10 +1,10 @@
+import { APIError } from "better-auth";
 import type { ErrorHandler } from "hono";
 import { HTTPException } from "hono/http-exception";
+import type { ContentfulStatusCode } from "hono/utils/http-status";
 import { z } from "zod";
-import { Env } from "./env.ts";
-import { APIError } from "better-auth";
-import { ContentfulStatusCode } from "hono/utils/http-status";
 import { ValidationError } from "@/middleware/validator";
+import type { Env } from "./env.ts";
 
 type UpstreamErrorOptions = {
     res?: Response;
@@ -45,7 +45,7 @@ const ValidationErrorDetailsSchema = z
 export function createErrorResponseSchema(
     status: ContentfulStatusCode,
 ): z.ZodObject {
-    let errorDetailsSchema =
+    const errorDetailsSchema =
         status === 400
             ? ValidationErrorDetailsSchema
             : GenericErrorDetailsSchema;

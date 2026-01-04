@@ -12,8 +12,8 @@
  *   POLAR_ACCESS_TOKEN - Required for Polar subscription updates
  */
 
-import { command, run, string, boolean } from "@drizzle-team/brocli";
 import { execSync } from "node:child_process";
+import { boolean, command, run, string } from "@drizzle-team/brocli";
 import { Polar } from "@polar-sh/sdk";
 
 type TierName = "spore" | "seed" | "flower" | "nectar" | "router";

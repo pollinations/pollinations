@@ -1,6 +1,6 @@
-import { Polar } from "@polar-sh/sdk";
-import { command, number, run, string, boolean } from "@drizzle-team/brocli";
 import { inspect } from "node:util";
+import { boolean, command, number, run, string } from "@drizzle-team/brocli";
+import { Polar } from "@polar-sh/sdk";
 import { applyColor, applyStyle } from "../src/util.ts";
 
 const VERSION = "v1";
@@ -559,7 +559,7 @@ const subscriptionList = command({
     },
 });
 
-const subscriptionUpdate = command({
+const _subscriptionUpdate = command({
     name: "update",
     options: {
         subscriptionId: string().required(),
@@ -660,7 +660,7 @@ const customerMigrate = command({
             email: opts.email,
             limit: 100,
         });
-        let createdCustomers: any[] = [];
+        const createdCustomers: any[] = [];
         for await (const page of paginator) {
             for (const customer of page.result.items) {
                 if (customer.deletedAt) {

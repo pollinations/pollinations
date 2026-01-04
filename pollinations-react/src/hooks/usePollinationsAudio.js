@@ -11,11 +11,7 @@ import { useMemo } from "react";
  * @returns {string} - The URL of the generated audio.
  */
 const usePollinationsAudio = (text, options = {}) => {
-    const {
-        voice = "nova",
-        model = "openai-audio",
-        seed = 42,
-    } = options;
+    const { voice = "nova", model = "openai-audio", seed = 42 } = options;
 
     const audioUrl = useMemo(() => {
         if (!text) return null;

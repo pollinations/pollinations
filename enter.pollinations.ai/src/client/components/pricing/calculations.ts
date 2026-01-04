@@ -2,8 +2,8 @@
  * Pollen calculation utilities
  */
 
-import type { ModelPrice } from "./types.ts";
 import { getModalities, hasReasoning, hasVision } from "./model-info.ts";
+import type { ModelPrice } from "./types.ts";
 
 // ============================================================================
 // WORKLOAD PROFILES

@@ -1,8 +1,8 @@
 #!/usr/bin/env node
+import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
 import sharp from "sharp";
-import { readFileSync, writeFileSync, mkdirSync } from "fs";
-import { dirname, join } from "path";
-import { fileURLToPath } from "url";
 import { APP_CONFIGS, resolveBackground } from "./app-configs.js";
 
 const __filename = fileURLToPath(import.meta.url);

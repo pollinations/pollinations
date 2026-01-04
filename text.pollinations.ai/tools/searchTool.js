@@ -1,6 +1,6 @@
 import axios from "axios";
-import dotenv from "dotenv";
 import debug from "debug";
+import dotenv from "dotenv";
 
 dotenv.config();
 

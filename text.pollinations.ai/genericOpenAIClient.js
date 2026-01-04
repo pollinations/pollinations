@@ -1,15 +1,12 @@
-import fetch from "node-fetch";
 import debug from "debug";
+import fetch from "node-fetch";
+import { createSseStreamConverter } from "./sseStreamConverter.js";
 import {
-    validateAndNormalizeMessages,
     cleanNullAndUndefined,
     generateRequestId,
-    cleanUndefined,
     normalizeOptions,
-    convertSystemToUserMessages,
+    validateAndNormalizeMessages,
 } from "./textGenerationUtils.js";
-
-import { createSseStreamConverter } from "./sseStreamConverter.js";
 
 const log = debug(`pollinations:genericopenai`);
 const errorLog = debug(`pollinations:error`);
@@ -141,7 +138,7 @@ export async function genericOpenAIClient(messages, options = {}, config) {
                 let errorDetails = null;
                 try {
                     errorDetails = JSON.parse(errorText);
-                } catch (e) {
+                } catch (_e) {
                     errorDetails = errorText;
                 }
 
@@ -221,7 +218,7 @@ export async function genericOpenAIClient(messages, options = {}, config) {
             let errorDetails = null;
             try {
                 errorDetails = JSON.parse(errorText);
-            } catch (e) {
+            } catch (_e) {
                 errorDetails = errorText;
             }
 
@@ -248,7 +245,7 @@ export async function genericOpenAIClient(messages, options = {}, config) {
         const data = await response.json();
         log(
             `[${requestId}] Parsed JSON response:`,
-            JSON.stringify(data).substring(0, 500) + "...",
+            `${JSON.stringify(data).substring(0, 500)}...`,
         );
         const completionTime = Date.now() - startTime;
 
@@ -264,8 +261,7 @@ export async function genericOpenAIClient(messages, options = {}, config) {
 
         // Use custom response formatter if provided
         // Pass only choices[0] to formatResponse, reconstruct after
-        const originalChoice =
-            data.choices && data.choices[0] ? data.choices[0] : {};
+        const originalChoice = data.choices?.[0] ? data.choices[0] : {};
         const formattedChoice = formatResponse
             ? formatResponse(originalChoice, requestId, startTime, modelName)
             : originalChoice;

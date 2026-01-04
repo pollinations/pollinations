@@ -6,7 +6,7 @@
  * Usage: node apps_update_readme.js
  */
 
-const fs = require("fs");
+const fs = require("node:fs");
 
 const appsFile = "apps/APPS.md";
 const readmeFile = "README.md";
@@ -32,7 +32,7 @@ const simplifiedRows = last10.map((row) => {
     cols.shift();
     cols.pop();
     // cols: [emoji, name, desc, language, category, github, repo, stars, discord, other, submitted]
-    return "| " + cols[1] + " | " + cols[2] + " | " + cols[5] + " |";
+    return `| ${cols[1]} | ${cols[2]} | ${cols[5]} |`;
 });
 
 const recentAppsSection = `## 🆕 Recent Apps

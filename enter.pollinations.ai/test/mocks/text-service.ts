@@ -1,7 +1,7 @@
 import { Hono } from "hono";
+import { stream } from "hono/streaming";
 import type { MockAPI } from "./fetch.ts";
 import { createHonoMockHandler } from "./fetch.ts";
-import { stream } from "hono/streaming";
 
 export function createMockTextService(): MockAPI<Record<string, never>> {
     const app = new Hono().post("/openai", async (c) => {

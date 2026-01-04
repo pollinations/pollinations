@@ -879,7 +879,7 @@ try {
         affiliatesData,
         redirectMapping,
     };
-} catch (e) {
+} catch (_e) {
     // ES modules - will be handled by the transpiler/bundler
 }
 

@@ -1,8 +1,8 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
+import { authClient } from "../auth.ts";
 import { Button } from "../components/button.tsx";
 import { ModelPermissions } from "../components/model-permissions.tsx";
-import { authClient } from "../auth.ts";
 
 // 30 days in seconds
 const DEFAULT_EXPIRY_SECONDS = 30 * 24 * 60 * 60;

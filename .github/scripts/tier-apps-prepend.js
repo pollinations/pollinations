@@ -9,7 +9,7 @@
  *   NEW_ROW - The markdown table row to prepend
  */
 
-const fs = require("fs");
+const fs = require("node:fs");
 
 const newRow = process.env.NEW_ROW;
 
@@ -19,7 +19,7 @@ if (!newRow) {
 }
 
 const appsFile = "apps/APPS.md";
-let content = fs.readFileSync(appsFile, "utf8");
+const content = fs.readFileSync(appsFile, "utf8");
 const lines = content.split("\n");
 
 // Find the header row (starts with | Emoji)

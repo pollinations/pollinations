@@ -1,21 +1,21 @@
+import type { Logger } from "@logtape/logtape";
 import { Polar } from "@polar-sh/sdk";
-import { eq, sql, and, gte, or, lt } from "drizzle-orm";
+import { and, eq, gte, lt, or, sql } from "drizzle-orm";
 import type { DrizzleD1Database } from "drizzle-orm/d1";
-import { event } from "./db/schema/event.ts";
+import { z } from "zod";
+import {
+    event,
+    type InsertGenerationEvent,
+    type SelectGenerationEvent,
+} from "./db/schema/event.ts";
 import {
     batches,
     capitalize,
     exponentialBackoffDelay,
     generateRandomId,
+    omit,
     removeUnset,
 } from "./util.ts";
-import {
-    InsertGenerationEvent,
-    SelectGenerationEvent,
-} from "./db/schema/event.ts";
-import { omit } from "./util.ts";
-import { z } from "zod";
-import { Logger } from "@logtape/logtape";
 
 const BUFFER_BATCH_SIZE = 1;
 const MAX_DELIVERY_ATTEMPTS = 5;

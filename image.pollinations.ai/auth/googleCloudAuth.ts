@@ -1,6 +1,6 @@
-import fetch from "node-fetch";
 import debug from "debug";
 import jwt from "jsonwebtoken";
+import fetch from "node-fetch";
 
 const log = debug("pollinations:google-auth");
 const errorLog = debug("pollinations:google-auth:error");
@@ -122,7 +122,9 @@ async function refreshGcloudAccessToken(): Promise<string | null> {
  * @param keyData - The parsed service account key data
  * @returns A promise that resolves to the JWT token or null if generation fails
  */
-async function generateJwtToken(keyData: ServiceAccountKey): Promise<string | null> {
+async function generateJwtToken(
+    keyData: ServiceAccountKey,
+): Promise<string | null> {
     try {
         // Validate required fields in keyData
         if (
@@ -141,7 +143,12 @@ async function generateJwtToken(keyData: ServiceAccountKey): Promise<string | nu
             kid: keyData.private_key_id,
         };
         // Log only non-sensitive header fields
-        log("JWT header created with algorithm:", header.alg, "and key ID length:", header.kid.length);
+        log(
+            "JWT header created with algorithm:",
+            header.alg,
+            "and key ID length:",
+            header.kid.length,
+        );
 
         // Current time in seconds
         const now = Math.floor(Date.now() / 1000);
@@ -156,7 +163,13 @@ async function generateJwtToken(keyData: ServiceAccountKey): Promise<string | nu
             scope: "https://www.googleapis.com/auth/cloud-platform",
         };
         // Log only non-sensitive payload fields
-        log("JWT payload created with issuer:", payload.iss, "expires in:", payload.exp - payload.iat, "seconds");
+        log(
+            "JWT payload created with issuer:",
+            payload.iss,
+            "expires in:",
+            payload.exp - payload.iat,
+            "seconds",
+        );
 
         // Sign the JWT with the private key
         log("Signing JWT with private key...");
@@ -174,7 +187,10 @@ async function generateJwtToken(keyData: ServiceAccountKey): Promise<string | nu
 
         return signedJwt;
     } catch (error) {
-        errorLog("Error generating JWT token:", error instanceof Error ? error.message : error);
+        errorLog(
+            "Error generating JWT token:",
+            error instanceof Error ? error.message : error,
+        );
         return null;
     }
 }
@@ -184,7 +200,9 @@ async function generateJwtToken(keyData: ServiceAccountKey): Promise<string | nu
  * @param jwtToken - The JWT token
  * @returns A promise that resolves to the access token or null if exchange fails
  */
-async function exchangeJwtForAccessToken(jwtToken: string): Promise<string | null> {
+async function exchangeJwtForAccessToken(
+    jwtToken: string,
+): Promise<string | null> {
     try {
         // Make a request to the Google OAuth token endpoint
         log("Making request to Google OAuth token endpoint...");
@@ -235,7 +253,10 @@ async function exchangeJwtForAccessToken(jwtToken: string): Promise<string | nul
         log("Token response received with expires_in:", data.expires_in);
         return data.access_token;
     } catch (error) {
-        errorLog("Error exchanging JWT for access token:", error instanceof Error ? error.message : error);
+        errorLog(
+            "Error exchanging JWT for access token:",
+            error instanceof Error ? error.message : error,
+        );
         return null;
     }
 }
@@ -287,13 +308,25 @@ function initGoogleCloudAuth(): AuthInstance {
     try {
         log("Initializing Google Cloud authentication...");
         log("Environment variables:");
-        log("- GOOGLE_PRIVATE_KEY:", process.env.GOOGLE_PRIVATE_KEY ? "[SET]" : "[NOT SET]");
-        log("- GOOGLE_PRIVATE_KEY_ID:", process.env.GOOGLE_PRIVATE_KEY_ID ? "[SET]" : "[NOT SET]");
-        log("- GOOGLE_CLIENT_EMAIL:", process.env.GOOGLE_CLIENT_EMAIL ? "[SET]" : "[NOT SET]");
+        log(
+            "- GOOGLE_PRIVATE_KEY:",
+            process.env.GOOGLE_PRIVATE_KEY ? "[SET]" : "[NOT SET]",
+        );
+        log(
+            "- GOOGLE_PRIVATE_KEY_ID:",
+            process.env.GOOGLE_PRIVATE_KEY_ID ? "[SET]" : "[NOT SET]",
+        );
+        log(
+            "- GOOGLE_CLIENT_EMAIL:",
+            process.env.GOOGLE_CLIENT_EMAIL ? "[SET]" : "[NOT SET]",
+        );
         log("- GOOGLE_PROJECT_ID:", process.env.GOOGLE_PROJECT_ID);
 
         // Check if credentials are available
-        if (!process.env.GOOGLE_PRIVATE_KEY || !process.env.GOOGLE_CLIENT_EMAIL) {
+        if (
+            !process.env.GOOGLE_PRIVATE_KEY ||
+            !process.env.GOOGLE_CLIENT_EMAIL
+        ) {
             log("Google Cloud credentials not set, returning null");
             return {
                 getAccessToken: async () => null,
@@ -366,5 +399,5 @@ export default {
         if (instance.cleanup) {
             instance.cleanup();
         }
-    }
+    },
 };

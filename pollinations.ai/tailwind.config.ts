@@ -1,14 +1,5 @@
-/** @type {import('tailwindcss').Config} */
-/**
- * THEME GUIDE:
- * - To change theme: Edit src/config/colors.js
- * - All colors imported from centralized colors.js
- * - Opacity: Add /90, /80, /50 etc. (e.g., bg-primary/90)
- * - CSS variables available: var(--color-primary), var(--color-background), etc.
- */
-import type { Config } from "tailwindcss";
-import { AVastDeepOceanSceneFilledWithDriftingBioluminescentLifeSoftDarknessWithVolumetricBlueHazeDiverseGlowingOrganismsOfDifferentColorsTurquoiseVioletAmberSoftPinkSizesTinySpecksToLargeFloatingFormsAndShapesJellCssVariables as DefaultCssVariables } from "./src/theme/presets/default";
 import plugin from "tailwindcss/plugin";
+import { AVastDeepOceanSceneFilledWithDriftingBioluminescentLifeSoftDarknessWithVolumetricBlueHazeDiverseGlowingOrganismsOfDifferentColorsTurquoiseVioletAmberSoftPinkSizesTinySpecksToLargeFloatingFormsAndShapesJellCssVariables as DefaultCssVariables } from "./src/theme/presets/default";
 
 // Font family names
 // Font family names

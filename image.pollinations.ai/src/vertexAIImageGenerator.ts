@@ -4,18 +4,17 @@
  */
 
 import debug from "debug";
-import { withTimeoutSignal } from "./util.ts";
-import { HttpError } from "./httpError.ts";
-import { generateImageWithVertexAI } from "./vertexAIClient.ts";
-import { writeExifMetadata } from "./writeExifMetadata.js";
-import { downloadImageAsBase64 } from "./utils/imageDownload.ts";
-import type { ImageParams } from "./params.js";
 import type {
-    ImageGenerationResult,
     AuthResult,
+    ImageGenerationResult,
 } from "./createAndReturnImages.js";
+import { HttpError } from "./httpError.ts";
+import type { ImageParams } from "./params.js";
+import { downloadImageAsBase64 } from "./utils/imageDownload.ts";
 import { generateTransparentImage } from "./utils/transparentImage.ts";
 import type { VertexAIImageData } from "./vertexAIClient.ts";
+import { generateImageWithVertexAI } from "./vertexAIClient.ts";
+import { writeExifMetadata } from "./writeExifMetadata.js";
 
 const log = debug("pollinations:vertex-ai-generator");
 const errorLog = debug("pollinations:vertex-ai-generator:error");
@@ -102,7 +101,7 @@ async function processNanobananaRequest(
 export async function callVertexAIGemini(
     prompt: string,
     safeParams: ImageParams,
-    userInfo: AuthResult,
+    _userInfo: AuthResult,
 ): Promise<ImageGenerationResult> {
     try {
         log("Starting Vertex AI Gemini image generation");
@@ -348,7 +347,7 @@ export async function callVertexAIGemini(
         const errorResponseData = (error as any).responseData || null;
 
         // Extract refusal reason from error response if available
-        const refusalDetails = errorResponseData
+        const _refusalDetails = errorResponseData
             ? {
                   refusalReason:
                       errorResponseData.textResponse ||

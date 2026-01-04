@@ -1,115 +1,119 @@
 .confirmation-modal-backdrop {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background-color: rgba(0, 0, 0, 0.5);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
-  backdrop-filter: blur(4px);
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    backdrop-filter: blur(4px);
 }
 
 .confirmation-modal {
-  background-color: var(--bg-secondary);
-  border-radius: 8px;
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
-  max-width: 400px;
-  width: 90%;
-  overflow: hidden;
-  border: 1px solid var(--border-color);
+    background-color: var(--bg-secondary);
+    border-radius: 8px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+    max-width: 400px;
+    width: 90%;
+    overflow: hidden;
+    border: 1px solid var(--border-color);
 }
 
 .confirmation-modal-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 1rem;
-  border-bottom: 1px solid var(--border-color);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem;
+    border-bottom: 1px solid var(--border-color);
 }
 
 .confirmation-modal-header h3 {
-  margin: 0;
-  font-size: 1.25rem;
-  font-weight: 600;
+    margin: 0;
+    font-size: 1.25rem;
+    font-weight: 600;
 }
 
 .confirmation-modal-close {
-  background: none;
-  border: none;
-  cursor: pointer;
-  padding: 0.25rem;
-  border-radius: 4px;
-  color: var(--text-secondary);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: background-color 0.2s, color 0.2s;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0.25rem;
+    border-radius: 4px;
+    color: var(--text-secondary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition:
+        background-color 0.2s,
+        color 0.2s;
 }
 
 .confirmation-modal-close:hover {
-  background-color: var(--bg-hover);
-  color: var(--text-primary);
+    background-color: var(--bg-hover);
+    color: var(--text-primary);
 }
 
 .confirmation-modal-close svg {
-  width: 20px;
-  height: 20px;
+    width: 20px;
+    height: 20px;
 }
 
 .confirmation-modal-body {
-  padding: 1.5rem;
+    padding: 1.5rem;
 }
 
 .confirmation-modal-body p {
-  margin: 0;
-  color: var(--text-primary);
-  line-height: 1.5;
+    margin: 0;
+    color: var(--text-primary);
+    line-height: 1.5;
 }
 
 .confirmation-modal-footer {
-  display: flex;
-  justify-content: flex-end;
-  gap: 0.75rem;
-  padding: 1rem;
-  border-top: 1px solid var(--border-color);
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.75rem;
+    padding: 1rem;
+    border-top: 1px solid var(--border-color);
 }
 
 .btn-cancel,
 .btn-confirm {
-  padding: 0.5rem 1rem;
-  border-radius: 4px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: background-color 0.2s, color 0.2s;
-  border: none;
+    padding: 0.5rem 1rem;
+    border-radius: 4px;
+    font-weight: 500;
+    cursor: pointer;
+    transition:
+        background-color 0.2s,
+        color 0.2s;
+    border: none;
 }
 
 .btn-cancel {
-  background-color: var(--bg-tertiary);
-  color: var(--text-primary);
+    background-color: var(--bg-tertiary);
+    color: var(--text-primary);
 }
 
 .btn-cancel:hover {
-  background-color: var(--bg-hover);
+    background-color: var(--bg-hover);
 }
 
 .btn-confirm {
-  background-color: var(--accent-gradient);
-  color: white;
+    background-color: var(--accent-gradient);
+    color: white;
 }
 
 .btn-confirm:hover {
-  opacity: 0.9;
+    opacity: 0.9;
 }
 
 .btn-danger {
-  background-color: var(--accent-red);
-  color: white;
+    background-color: var(--accent-red);
+    color: white;
 }
 
 .btn-danger:hover {
-  opacity: 0.9;
+    opacity: 0.9;
 }

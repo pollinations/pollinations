@@ -81,7 +81,7 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
 
     return (
         <tr className="border-b border-gray-200">
-            <td className="py-2 px-2 text-sm text-gray-700 whitespace-nowrap relative group">
+            <td className="py-2 px-2 text-sm text-gray-700 relative group">
                 <div className="flex items-center gap-2">
                     <div className="flex flex-col">
                         <span className="font-medium">

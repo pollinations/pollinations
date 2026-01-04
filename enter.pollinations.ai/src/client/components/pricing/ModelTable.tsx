@@ -52,10 +52,10 @@ export const ModelTable: FC<ModelTableProps> = ({ models, type }) => {
         type === "text" ? "Text" : type === "image" ? "Image" : "Video";
 
     return (
-        <table className="table-fixed w-full min-w-[700px]">
+        <table className="w-full min-w-[700px]">
             <thead>
                 <tr>
-                    <th className="text-left pt-0 pb-1 px-2 whitespace-nowrap w-[220px] text-sm font-bold text-pink-500 align-top">
+                    <th className="text-left pt-0 pb-1 px-2 text-sm font-bold text-pink-500 align-top">
                         <div className="flex items-center gap-2">
                             {tableLabel}
                             {type === "video" && (

@@ -280,7 +280,7 @@ export const TEXT_SERVICES = {
     },
     "claude-haiku-4.5": {
         aliases: ["claude-fast", "claude-haiku"],
-        modelId: "us.anthropic.claude-haiku-4-5-20251001-v1:0",
+        modelId: "anthropic.claude-haiku-4-5-20251001-v1:0",
         provider: "aws",
         cost: [
             {
@@ -297,7 +297,7 @@ export const TEXT_SERVICES = {
     },
     "claude-sonnet-4.5": {
         aliases: ["claude", "claude-sonnet"],
-        modelId: "us.anthropic.claude-sonnet-4-5-20250929-v1:0",
+        modelId: "anthropic.claude-sonnet-4-5-20250929-v1:0",
         provider: "aws",
         cost: [
             {
@@ -314,7 +314,7 @@ export const TEXT_SERVICES = {
     },
     "claude-opus-4.5": {
         aliases: ["claude-large", "claude-opus"],
-        modelId: "global.anthropic.claude-opus-4-5-20251101-v1:0",
+        modelId: "anthropic.claude-opus-4-5-20251101-v1:0",
         provider: "aws",
         cost: [
             {
@@ -532,26 +532,26 @@ export const TEXT_SERVICES = {
         tools: true,
         isSpecialized: false,
     },
-    "claude-4-sonnet": {
-        aliases: ["claude-4-sonnet-20250515"],
-        modelId: "us.anthropic.claude-4-sonnet-20250515-v1:0",
+    "claude-opus-4.1": {
+        aliases: ["claude-4.1-opus"],
+        modelId: "anthropic.claude-opus-4-1-20250805-v1:0",
         provider: "aws",
         cost: [
             {
                 date: COST_START_DATE,
-                promptTextTokens: perMillion(2.5),
-                completionTextTokens: perMillion(12.5),
+                promptTextTokens: perMillion(4.5),
+                completionTextTokens: perMillion(22.5),
             },
         ],
-        description: "Anthropic Claude 4 Sonnet - Previous Generation (Legacy)",
+        description: "Anthropic Claude Opus 4.1 - Previous Generation (Legacy)",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
         tools: true,
         isSpecialized: false,
     },
-    "claude-4-opus": {
-        aliases: ["claude-4-opus-20250320"],
-        modelId: "us.anthropic.claude-4-opus-20250320-v1:0",
+    "claude-opus-4": {
+        aliases: ["claude-4-opus"],
+        modelId: "anthropic.claude-opus-4-20250514-v1:0",
         provider: "aws",
         cost: [
             {
@@ -560,15 +560,83 @@ export const TEXT_SERVICES = {
                 completionTextTokens: perMillion(20.0),
             },
         ],
-        description: "Anthropic Claude 4 Opus - Previous Generation (Legacy)",
+        description: "Anthropic Claude Opus 4 - Previous Generation (Legacy)",
+        inputModalities: ["text", "image"],
+        outputModalities: ["text"],
+        tools: true,
+        isSpecialized: false,
+    },
+    "claude-sonnet-4": {
+        aliases: ["claude-4-sonnet"],
+        modelId: "anthropic.claude-sonnet-4-20250514-v1:0",
+        provider: "aws",
+        cost: [
+            {
+                date: COST_START_DATE,
+                promptTextTokens: perMillion(2.5),
+                completionTextTokens: perMillion(12.5),
+            },
+        ],
+        description: "Anthropic Claude Sonnet 4 - Previous Generation (Legacy)",
+        inputModalities: ["text", "image"],
+        outputModalities: ["text"],
+        tools: true,
+        isSpecialized: false,
+    },
+    "claude-haiku-4": {
+        aliases: ["claude-4-haiku"],
+        modelId: "anthropic.claude-haiku-4-20250514-v1:0",
+        provider: "aws",
+        cost: [
+            {
+                date: COST_START_DATE,
+                promptTextTokens: perMillion(0.8),
+                completionTextTokens: perMillion(4.0),
+            },
+        ],
+        description: "Anthropic Claude Haiku 4 - Previous Generation (Legacy)",
+        inputModalities: ["text", "image"],
+        outputModalities: ["text"],
+        tools: true,
+        isSpecialized: false,
+    },
+    "claude-3.7-sonnet": {
+        aliases: ["claude-3-7-sonnet"],
+        modelId: "anthropic.claude-3-7-sonnet-20250219-v1:0",
+        provider: "aws",
+        cost: [
+            {
+                date: COST_START_DATE,
+                promptTextTokens: perMillion(2.8),
+                completionTextTokens: perMillion(14.0),
+            },
+        ],
+        description: "Anthropic Claude 3.7 Sonnet - Previous Generation (Legacy)",
+        inputModalities: ["text", "image"],
+        outputModalities: ["text"],
+        tools: true,
+        isSpecialized: false,
+    },
+    "claude-3.5-sonnet-v2": {
+        aliases: ["claude-3-5-sonnet-v2"],
+        modelId: "anthropic.claude-3-5-sonnet-20241022-v2:0",
+        provider: "aws",
+        cost: [
+            {
+                date: COST_START_DATE,
+                promptTextTokens: perMillion(3.0),
+                completionTextTokens: perMillion(15.0),
+            },
+        ],
+        description: "Anthropic Claude 3.5 Sonnet v2 - Previous Version (Legacy)",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
         tools: true,
         isSpecialized: false,
     },
     "claude-3.5-sonnet": {
-        aliases: ["claude-3-5-sonnet-20240620"],
-        modelId: "us.anthropic.claude-3-5-sonnet-20240620-v1:0",
+        aliases: ["claude-3-5-sonnet"],
+        modelId: "anthropic.claude-3-5-sonnet-20241022-v1:0",
         provider: "aws",
         cost: [
             {
@@ -584,8 +652,8 @@ export const TEXT_SERVICES = {
         isSpecialized: false,
     },
     "claude-3-opus": {
-        aliases: ["claude-3-opus-20240229"],
-        modelId: "us.anthropic.claude-3-opus-20240229-v1:0",
+        aliases: ["claude-3-opus-20240307"],
+        modelId: "anthropic.claude-3-opus-20240307-v1:0",
         provider: "aws",
         cost: [
             {
@@ -600,9 +668,26 @@ export const TEXT_SERVICES = {
         tools: true,
         isSpecialized: false,
     },
+    "claude-3-sonnet": {
+        aliases: ["claude-3-sonnet-20240307"],
+        modelId: "anthropic.claude-3-sonnet-20240307-v1:0",
+        provider: "aws",
+        cost: [
+            {
+                date: COST_START_DATE,
+                promptTextTokens: perMillion(3.0),
+                completionTextTokens: perMillion(15.0),
+            },
+        ],
+        description: "Anthropic Claude 3 Sonnet - Previous Generation (Legacy)",
+        inputModalities: ["text", "image"],
+        outputModalities: ["text"],
+        tools: true,
+        isSpecialized: false,
+    },
     "claude-3-haiku": {
         aliases: ["claude-3-haiku-20240307"],
-        modelId: "us.anthropic.claude-3-haiku-20240307-v1:0",
+        modelId: "anthropic.claude-3-haiku-20240307-v1:0",
         provider: "aws",
         cost: [
             {
@@ -615,6 +700,57 @@ export const TEXT_SERVICES = {
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
         tools: true,
+        isSpecialized: false,
+    },
+    "claude-2.1": {
+        aliases: ["claude-2-v2.1", "claude-2-v2-1"],
+        modelId: "anthropic.claude-v2:1",
+        provider: "aws",
+        cost: [
+            {
+                date: COST_START_DATE,
+                promptTextTokens: perMillion(8.0),
+                completionTextTokens: perMillion(24.0),
+            },
+        ],
+        description: "Anthropic Claude 2.1 - Previous Generation (Legacy)",
+        inputModalities: ["text"],
+        outputModalities: ["text"],
+        tools: false,
+        isSpecialized: false,
+    },
+    "claude-2": {
+        aliases: ["claude-2-v2"],
+        modelId: "anthropic.claude-v2",
+        provider: "aws",
+        cost: [
+            {
+                date: COST_START_DATE,
+                promptTextTokens: perMillion(8.0),
+                completionTextTokens: perMillion(24.0),
+            },
+        ],
+        description: "Anthropic Claude 2 - Previous Generation (Legacy)",
+        inputModalities: ["text"],
+        outputModalities: ["text"],
+        tools: false,
+        isSpecialized: false,
+    },
+    "claude-instant-1.2": {
+        aliases: ["claude-instant", "claude-instant-v1.2"],
+        modelId: "anthropic.claude-instant-v1",
+        provider: "aws",
+        cost: [
+            {
+                date: COST_START_DATE,
+                promptTextTokens: perMillion(0.8),
+                completionTextTokens: perMillion(2.4),
+            },
+        ],
+        description: "Anthropic Claude Instant 1.2 - Previous Generation (Legacy)",
+        inputModalities: ["text"],
+        outputModalities: ["text"],
+        tools: false,
         isSpecialized: false,
     },
     "gemini-2.0-flash": {

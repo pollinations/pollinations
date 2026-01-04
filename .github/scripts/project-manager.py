@@ -405,6 +405,19 @@ def main():
             log_error("Tier project not configured")
             return
     
+    # Skip AI if NEWS label is present - route directly to News project
+    if "NEWS" in existing_labels:
+        log_debug("Found NEWS label, routing to News project (skipping AI)")
+        project = CONFIG["projects"].get("news")
+        if project:
+            item_id = add_to_project(project["id"])
+            if item_id:
+                log_debug("Added to News project successfully")
+            return
+        else:
+            log_error("News project not configured")
+            return
+    
     is_internal = is_org_member(ISSUE_AUTHOR)
     log_debug(f"Author {ISSUE_AUTHOR} is internal: {is_internal}")
     

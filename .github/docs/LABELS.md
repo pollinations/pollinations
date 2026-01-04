@@ -1,13 +1,5 @@
 # Label System
 
-## Inbox Labels (Triage)
-
-| Label           | Purpose                          | Applied by                                        |
-| --------------- | -------------------------------- | ------------------------------------------------- |
-| `inbox:github`  | External issue needs triage      | `issue-label-external.yml`                        |
-| `inbox:discord` | Issue created from Discord       | `issue-create-from-discord.yml` (via Discord bot) |
-| `inbox:news`    | PR related to weekly news update | `pr-create-weekly-news.yml`                       |
-
 ## Tier Labels (App Submissions)
 
 | Label                 | Purpose                           | Applied by                  |
@@ -43,11 +35,8 @@
 | `SUPPORT-BALANCE` | Pollen balance issue           | `project-manager.py` |
 | `SUPPORT-API`     | API usage or integration issue | `project-manager.py` |
 
-## PR Labels
+## News Labels
 
-| Label              | Purpose                                           | Applied by              |
-| ------------------ | ------------------------------------------------- | ----------------------- |
-| `pr:external`      | Returning external contributor (has flower tier+) | `pr-label-external.yml` |
-| `pr:review-needed` | Needs maintainer review                           | Manual                  |
-| `pr:merge-ready`   | Approved, ready to merge                          | Manual                  |
-| `pr:news`          | PR related to news/social                         | Instagram workflows     |
+| Label  | Purpose                | Applied by                 |
+| ------ | ---------------------- | -------------------------- |
+| `NEWS` | News/social content PR | News & Instagram workflows |

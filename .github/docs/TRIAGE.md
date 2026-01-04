@@ -2,8 +2,6 @@
 
 ## Issue & PR Labeling
 
-- **issue-label-external.yml** - Adds `inbox:github` to external issues. Skips if `inbox:discord` or `app:*` labels exist.
-- **pr-label-external.yml** - Checks user tier in D1: flower+ gets `pr:external`, others get `tier:review`. Skips internal users and bots.
 - **pr-assign-author.yml** - Assigns the PR creator to the PR when opened.
 
 ## AI Agents
@@ -79,34 +77,15 @@ flowchart TD
     U --> V
 ```
 
-### Issue Triage
+### PR Assignment
 
 ```mermaid
 %%{init: {'theme': 'dark'}}%%
 flowchart TD
-    A[Issue opened on GitHub] --> B[issue-label-external.yml]
-    B --> C[inbox:github]
-
-    D[Issue from Discord bot] --> E[issue-create-from-discord.yml]
-    E --> F[inbox:discord]
-```
-
-### PR Triage
-
-```mermaid
-%%{init: {'theme': 'dark'}}%%
-flowchart TD
-    A[PR opened] --> B{Author check}
-    B -->|External| C[pr-label-external.yml]
-    C --> D{Check D1 tier}
-    D -->|flower+| E[pr:external label]
-    D -->|seed/none| F[tier:review label]
-    B -->|Internal/Bot| G[No label]
-
-    A --> H[pr-assign-author.yml]
-    H --> I[Author assigned]
-    I --> J[project-manager.yml]
-    J --> K[Routed to Dev/Support/News]
+    A[PR opened] --> B[pr-assign-author.yml]
+    B --> C[Author assigned]
+    C --> D[project-manager.yml]
+    D --> E[Routed to Dev/Support/News/Tier]
 ```
 
 ### AI Assistant (Polly)

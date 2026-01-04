@@ -145,10 +145,6 @@ def is_org_member(username: str) -> bool:
 def normalize_labels(project: str, labels: list) -> list:
     project = project.lower()
 
-    # Dev: concatenated labels (DEV-BUG, DEV-FEATURE, etc.)
-    # Support: concatenated labels (SUPPORT-HELP, SUPPORT-BUG, etc.)
-    # News: no labels (routed to project only)
-    
     if project == "dev":
         valid_labels = {"DEV-BUG", "DEV-FEATURE", "DEV-QUEST", "DEV-TRACKING"}
         incoming = [l.upper() for l in labels]
@@ -156,7 +152,6 @@ def normalize_labels(project: str, labels: list) -> list:
         return [label] if label else []
     
     if project == "support":
-        # Single concatenated label: SUPPORT-HELP, SUPPORT-BUG, etc.
         valid_labels = {"SUPPORT-HELP", "SUPPORT-BUG", "SUPPORT-FEATURE", 
                        "SUPPORT-BILLING", "SUPPORT-BALANCE", "SUPPORT-API"}
         incoming = [l.upper() for l in labels]
@@ -164,7 +159,7 @@ def normalize_labels(project: str, labels: list) -> list:
         return [label] if label else []
     
     if project == "news":
-        return []  # No labels for news, just routed to project
+        return []
     
     return []
 
@@ -246,13 +241,11 @@ Body: {ISSUE_BODY[:2000]}
 
             raw = json.loads(content)
             
-            # Validate project
             project = raw.get("project", "").lower()
             if project not in ["dev", "support", "news"]:
                 log_error(f"AI returned invalid project: {project}")
                 return get_fallback_classification(is_internal)
             
-            # Validate priority per project
             priority = raw.get("priority", "Medium")
             valid_priorities = {
                 "dev": {"Urgent", "High", "Medium", "Low"},
@@ -264,7 +257,6 @@ Body: {ISSUE_BODY[:2000]}
                 log_error(f"AI returned invalid priority for {project}: {priority}")
                 priority = list(allowed_for_project)[0] if allowed_for_project else "Medium"
             
-            # Validate labels for project
             labels = raw.get("labels", [])
             if not isinstance(labels, list):
                 labels = []
@@ -396,7 +388,6 @@ def main():
         log_debug("Missing ISSUE_NUMBER or ISSUE_NODE_ID, skipping")
         return
     
-    # Check for TIER-* labels - route directly to Tier project without AI
     existing_labels = get_existing_labels()
     tier_labels = [l for l in existing_labels if l.startswith("TIER-")]
     if tier_labels:
@@ -413,24 +404,25 @@ def main():
     
     is_internal = is_org_member(ISSUE_AUTHOR)
     log_debug(f"Author {ISSUE_AUTHOR} is internal: {is_internal}")
+    
     classification = classify_with_ai(is_internal)
 
     if not classification.get("project"):
         log_debug("AI did not classify project, skipping")
         return
+    
     project_key = classification["project"].lower()
+    
+    if project_key == "dev" and not is_internal:
+        log_debug(f"Project 'dev' is internal-only, but author {ISSUE_AUTHOR} is external. Reassigning to support.")
+        project_key = "support"
+    
     priority = classification.get("priority", "Medium")
     log_debug(f"Classified: project={project_key}, priority={priority}")
     project = CONFIG["projects"].get(project_key)
     if not project:
         log_error(f"Unknown project key: {project_key}")
         return
-
-    # Validate internal-only projects
-    if project.get("internal_only") and not is_internal:
-        log_debug(f"Project {project_key} is internal-only, but author is external. Reassigning to support.")
-        project_key = "support"
-        project = CONFIG["projects"]["support"]
     
     labels = normalize_labels(project_key, classification.get("labels", []))
     log_debug(f"Normalized labels: {labels}")
@@ -438,6 +430,17 @@ def main():
     item_id = add_to_project(project["id"])
     if not item_id:
         return
+    
+    if project.get("default_status") and project.get("status_field_id"):
+        status_option = project["status_options"].get(project["default_status"])
+        if status_option:
+            set_project_field(
+                project["id"],
+                item_id,
+                project["status_field_id"],
+                status_option,
+            )
+    
     priority_option = project["priority_options"].get(priority)
     if priority_option and project.get("priority_field_id"):
         set_project_field(

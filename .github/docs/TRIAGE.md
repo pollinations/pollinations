@@ -11,7 +11,7 @@
 
 ## Project Management
 
-- **project-manager.yml** - AI-powered auto-kanban. Classifies issues/PRs and routes to Dev/Support/News projects with priority.
+- **project-manager.yml** - AI-powered auto-kanban. Classifies issues/PRs and routes to Dev/Support/News/Tier projects with priority.
 - **issue-close-discarded.yml** - Auto-closes issues marked "Discarded" in project (hourly).
 - **pr-update-project-status.yml** - Updates PR status in project (In Progress/In Review/Done/Discarded).
 
@@ -24,9 +24,11 @@ Routes issues and PRs to the appropriate project board using AI classification:
 | Dev     | 20  | Internal only | Features, refactors, infrastructure |
 | Support | 21  | Everyone      | User help, bugs, API questions      |
 | News    | 22  | Everyone      | Releases, announcements             |
+| Tier    | 23  | External      | App submissions, code contributions |
 
 **Features:**
 
+- **TIER-\* bypass**: Items with `TIER-*` labels skip AI classification and route directly to Tier project
 - AI classification via `gen.pollinations.ai` with retry + random seed
 - Sets Priority field (Urgent/High/Medium/Low) in project
 - Sets Status field (Backlog/Review/Todo)
@@ -41,7 +43,10 @@ Routes issues and PRs to the appropriate project board using AI classification:
 ```mermaid
 %%{init: {'theme': 'dark'}}%%
 flowchart TD
-    A[Issue/PR Opened] --> B{Check Author}
+    A[Issue/PR Opened] --> AA{Has TIER-* label?}
+    AA -->|Yes| AB[Add to Tier #23]
+    AB --> AC[Done - skip AI]
+    AA -->|No| B{Check Author}
     B --> C[is_org_member?]
     C -->|Config list| D{In list?}
     C -->|API fallback| E{/orgs/members/}

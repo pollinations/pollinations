@@ -283,7 +283,7 @@ jobs:
             echo "⚠️ No pollinations.ai credit found on $APP_URL"
           fi
 
-      - name: Warn missing credit
+      - name: Suggest adding credit
         if: steps.credit-check.outputs.has_credit == 'false'
         uses: actions/github-script@v7
         with:
@@ -291,9 +291,8 @@ jobs:
             await github.rest.issues.createComment({
               owner: context.repo.owner, repo: context.repo.repo,
               issue_number: ${{ steps.issue.outputs.number }},
-              body: `⚠️ @${{ steps.issue.outputs.author }}, we couldn't find a visible credit to **pollinations.ai** on your app.\n\nPlease add a link or mention to [pollinations.ai](https://pollinations.ai) in your app (footer, about page, etc.) and comment here when done.\n\nYou can use our official logos: [logo.svg](https://raw.githubusercontent.com/pollinations/pollinations/main/shared/assets/logo.svg) or [logo-text.svg](https://raw.githubusercontent.com/pollinations/pollinations/main/shared/assets/logo-text.svg)`
+              body: `💡 @${{ steps.issue.outputs.author }}, it would be awesome if you could add a credit to **pollinations.ai** in your app! A small link in the footer or about page helps us grow the community. 🌸\n\nOfficial logos if you'd like to use them:\n- [logo.svg](https://raw.githubusercontent.com/pollinations/pollinations/main/shared/assets/logo.svg)\n- [logo-text.svg](https://raw.githubusercontent.com/pollinations/pollinations/main/shared/assets/logo-text.svg)`
             });
-            // Don't block - just warn. The PR will still be created.
 
       - name: Reject hard duplicate
         if: steps.duplicate-check.outputs.match_type == 'url_exact' || steps.duplicate-check.outputs.match_type == 'repo_exact' || steps.duplicate-check.outputs.match_type == 'name_user_exact' || steps.duplicate-check.outputs.match_type == 'semantic_hard'

@@ -342,8 +342,13 @@ export const CreateChatCompletionRequestSchema = z.object({
 
 const ChatCompletionMessageContentBlockSchema = z.union([
     ChatCompletionRequestMessageContentPartTextSchema,
+    ChatCompletionRequestMessageContentPartImageSchema,
     ChatCompletionMessageContentPartThinkingSchema,
     ChatCompletionMessageContentPartRedactedThinkingSchema,
+    // Allow any other content types for provider-specific extensions (video, audio, file, etc.)
+    z
+        .object({ type: z.string() })
+        .passthrough(),
 ]);
 
 const ChatCompletionResponseMessageSchema = z.object({

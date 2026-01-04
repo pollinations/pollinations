@@ -1,0 +1,18 @@
+# Core dependencies for SANA-Sprint server
+#
+# Install PyTorch with CUDA support first:
+#   pip install torch torchvision --index-url https://download.pytorch.org/whl/cu121
+#
+# Then install the rest:
+diffusers>=0.32.0
+accelerate
+transformers
+safetensors
+huggingface-hub
+fastapi
+uvicorn
+pydantic
+aiohttp
+pillow
+requests
+sentencepiece

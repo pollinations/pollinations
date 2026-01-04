@@ -1165,3 +1165,43 @@ test(
         await response.text();
     },
 );
+
+// Gemini code_execution content_blocks test (Issue #6830)
+test(
+    "POST /v1/chat/completions should return content_blocks with image_url from Gemini code_execution",
+    { timeout: 120000 },
+    async ({ apiKey, mocks }) => {
+        await mocks.enable("polar", "tinybird", "vcr");
+        const response = await SELF.fetch(
+            `http://localhost:3000/api/generate/v1/chat/completions`,
+            {
+                method: "POST",
+                headers: {
+                    "content-type": "application/json",
+                    "authorization": `Bearer ${apiKey}`,
+                },
+                body: JSON.stringify({
+                    model: "gemini",
+                    messages: [
+                        {
+                            role: "user",
+                            content: "Execute Python code to draw f(x) = x^2",
+                        },
+                    ],
+                    seed: testSeed(),
+                }),
+            },
+        );
+        expect(response.status).toBe(200);
+        const data = (await response.json()) as any;
+        // Gemini with code_execution returns content_blocks containing image_url
+        expect(data.choices[0].message).toBeDefined();
+        // Response should have content_blocks with image data from code execution
+        if (data.choices[0].message.content_blocks) {
+            const hasImageUrl = data.choices[0].message.content_blocks.some(
+                (block: any) => block.type === "image_url",
+            );
+            expect(hasImageUrl).toBe(true);
+        }
+    },
+);

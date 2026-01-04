@@ -93,7 +93,7 @@ export const createDocsRoutes = (apiRouter: Hono<Env>) => {
                             '  -d \'{"model": "openai", "messages": [{"role": "user", "content": [{"type": "text", "text": "Describe this image"}, {"type": "image_url", "image_url": {"url": "https://example.com/image.jpg"}}]}]}\'',
                             "```",
                             "",
-                            '**Gemini Tools:** `gemini`, `gemini-fast`, `gemini-large` have `code_execution` enabled by default. `gemini-search` has `google_search` enabled. Pass your own `tools` array to override (e.g., `[{"type": "function", "function": {"name": "google_search"}}]`).',
+                            "**Gemini Tools:** `gemini`, `gemini-large` have `code_execution` enabled (can generate images/plots). `gemini-search` has `google_search` enabled. Responses may include `content_blocks` with `image_url`, `text`, or `thinking` types.",
                             "",
                             "### Simple Text Endpoint",
                             "```bash",

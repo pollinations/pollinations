@@ -1,4 +1,4 @@
-import { memo } from "react";
+import { memo, useState, useEffect } from "react";
 import { PLAY_PAGE } from "../../../copy/content/play";
 import type { Model } from "../../../hooks/useModelList";
 import { usePageCopy } from "../../../hooks/usePageCopy";
@@ -29,6 +29,22 @@ export const ModelSelector = memo(function ModelSelector({
 }: ModelSelectorProps) {
     // Get translated copy
     const { copy } = usePageCopy(PLAY_PAGE);
+    
+    // State for showing legacy models with localStorage persistence
+    const [showLegacy, setShowLegacy] = useState<boolean>(() => {
+        const stored = localStorage.getItem("showLegacyModels");
+        return stored === "true";
+    });
+    
+    // Persist to localStorage when changed
+    useEffect(() => {
+        localStorage.setItem("showLegacyModels", String(showLegacy));
+    }, [showLegacy]);
+    
+    // Filter models based on showLegacy preference
+    const filteredModels = showLegacy 
+        ? models 
+        : models.filter(m => !m.isDeprecated);
 
     return (
         <div className="mb-6">
@@ -63,10 +79,25 @@ export const ModelSelector = memo(function ModelSelector({
                             </span>
                         </div>
                     </div>
+                    <div className="ml-auto flex items-center gap-2">
+                        <input
+                            type="checkbox"
+                            id="showLegacyModels"
+                            checked={showLegacy}
+                            onChange={(e) => setShowLegacy(e.target.checked)}
+                            className="w-4 h-4 rounded border-border-main bg-input-background cursor-pointer"
+                        />
+                        <label
+                            htmlFor="showLegacyModels"
+                            className="text-[10px] font-headline uppercase tracking-wider font-black text-text-caption cursor-pointer"
+                        >
+                            {copy.showLegacyModelsLabel}
+                        </label>
+                    </div>
                 </div>
             )}
             <div className="flex flex-wrap gap-2">
-                {models.map((m) => {
+                {filteredModels.map((m) => {
                     const hasVideoOutput = m.hasVideoOutput;
                     const hasAudioOutput = m.hasAudioOutput;
                     const isImage = m.type === "image";
@@ -107,14 +138,27 @@ export const ModelSelector = memo(function ModelSelector({
                                 className={`border-2 ${borderColorClass} ${
                                     !isAllowed
                                         ? "opacity-40 cursor-not-allowed grayscale"
-                                        : ""
+                                        : m.isDeprecated
+                                          ? "opacity-60"
+                                          : ""
                                 }`}
                             >
                                 {m.name}
+                                {m.isDeprecated && (
+                                    <span className="text-[8px] ml-1 px-1 py-0.5 bg-amber-200 text-amber-900 rounded font-black">
+                                        {copy.legacyBadge}
+                                    </span>
+                                )}
                             </Button>
                             {!isAllowed && (
                                 <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-charcoal text-text-body-main text-xs rounded-input shadow-lg border border-border-main opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-50">
                                     {copy.gatedModelTooltip}
+                                    <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-charcoal" />
+                                </div>
+                            )}
+                            {isAllowed && m.isDeprecated && (
+                                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-charcoal text-text-body-main text-xs rounded-input shadow-lg border border-border-main opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-50">
+                                    {copy.legacyModelTooltip}
                                     <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-charcoal" />
                                 </div>
                             )}

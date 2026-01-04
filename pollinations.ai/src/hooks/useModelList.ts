@@ -13,6 +13,7 @@ export interface Model {
     hasVideoOutput: boolean;
     inputModalities?: string[];
     outputModalities?: string[];
+    isDeprecated?: boolean;
 }
 
 interface UseModelListReturn {
@@ -42,6 +43,29 @@ export function useModelList(apiKey: string): UseModelListReturn {
     const [isLoading, setIsLoading] = useState<boolean>(true);
     const [error, setError] = useState<Error | null>(null);
 
+    // Helper to determine if a model is deprecated based on naming patterns
+    const isDeprecatedModel = (modelId: string): boolean => {
+        const deprecatedPatterns = [
+            /-v1$/i,           // Ends with -v1
+            /-old$/i,          // Ends with -old
+            /legacy/i,         // Contains "legacy"
+            /^flux$/,          // Original flux (replaced by flux-pro, flux-realism, etc.)
+            /^openai$/,        // Generic openai (replaced by specific models)
+        ];
+        
+        // Known deprecated model IDs
+        const deprecatedModelIds = [
+            "flux",
+            "openai",
+            "mistral",
+            "qwen",
+            "llama",
+        ];
+        
+        return deprecatedPatterns.some(pattern => pattern.test(modelId)) || 
+               deprecatedModelIds.includes(modelId.toLowerCase());
+    };
+
     // Helper to format model response
     const formatModels = (
         list: Array<
@@ -69,6 +93,7 @@ export function useModelList(apiKey: string): UseModelListReturn {
                     obj.output_modalities?.includes("video") || false,
                 inputModalities: obj.input_modalities,
                 outputModalities: obj.output_modalities,
+                isDeprecated: isDeprecatedModel(modelId),
             };
         });
     };

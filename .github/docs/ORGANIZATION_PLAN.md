@@ -36,27 +36,16 @@ GitHub labels applied to issues and PRs for categorization and filtering.
 
 ### Support
 
-Project
+**Single concatenated labels** — one label shows full context at a glance.
 
-| Label   | Issue | Comments                      |
-| ------- | ----- | ----------------------------- |
-| SUPPORT | x     | Applied to all Support issues |
-
-Type
-
-| Label   | Issue | Comments                  |
-| ------- | ----- | ------------------------- |
-| BUG     | x     | Something is broken       |
-| FEATURE | x     | New functionality request |
-| HELP    | x     | User needs assistance     |
-
-Tag
-
-| Label   | Issue | Comments                       |
-| ------- | ----- | ------------------------------ |
-| BALANCE | x     | Pollen balance issue           |
-| BILLING | x     | Payment or subscription issue  |
-| API     | x     | API usage or integration issue |
+| Label           | Issue | Comments                       |
+| --------------- | ----- | ------------------------------ |
+| SUPPORT-HELP    | x     | General assistance request     |
+| SUPPORT-BUG     | x     | Something is broken            |
+| SUPPORT-FEATURE | x     | Feature request                |
+| SUPPORT-BILLING | x     | Payment or subscription issue  |
+| SUPPORT-BALANCE | x     | Pollen balance issue           |
+| SUPPORT-API     | x     | API usage or integration issue |
 
 ### NEWS
 

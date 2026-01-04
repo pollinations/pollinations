@@ -20,6 +20,17 @@
 
 **Code Contributions** _(future)_: `TIER-CODE-*` labels planned.
 
+## Support Labels
+
+| Label             | Purpose                        | Applied by           |
+| ----------------- | ------------------------------ | -------------------- |
+| `SUPPORT-HELP`    | General assistance request     | `project-manager.py` |
+| `SUPPORT-BUG`     | Something is broken            | `project-manager.py` |
+| `SUPPORT-FEATURE` | Feature request                | `project-manager.py` |
+| `SUPPORT-BILLING` | Payment or subscription issue  | `project-manager.py` |
+| `SUPPORT-BALANCE` | Pollen balance issue           | `project-manager.py` |
+| `SUPPORT-API`     | API usage or integration issue | `project-manager.py` |
+
 ## PR Labels
 
 | Label              | Purpose                                           | Applied by              |

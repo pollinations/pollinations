@@ -145,39 +145,31 @@ def is_org_member(username: str) -> bool:
 def normalize_labels(project: str, labels: list) -> list:
     project = project.lower()
 
-    HIERARCHY = {
-        "dev": {
-            "TOP": "DEV",
-            "TYPE": {"BUG", "FEATURE", "QUEST", "TRACKING"},
-            "TAG": set(),
-        },
-        "support": {
-            "TOP": "SUPPORT",
-            "TYPE": {"BUG", "FEATURE", "HELP"},
-            "TAG": {"BALANCE", "BILLING", "API"},
-        },
-        "news": {
-            "TOP": "NEWS",
-            "TYPE": set(),
-            "TAG": set(),
-        },
-    }
-
-    rules = HIERARCHY.get(project)
-    if not rules:
-        return []
-    incoming = [l.upper() for l in labels]
-    top = rules["TOP"]
-    type_label = next((l for l in incoming if l in rules["TYPE"]), None)
-    tag_label = next((l for l in incoming if l in rules["TAG"]), None)
-    final = [top]
-    if type_label:
-        final.append(type_label)
-
-    if tag_label and len(final) < 3:
-        final.append(tag_label)
-
-    return final
+    # Dev uses hierarchical labels (DEV + TYPE)
+    # Support uses concatenated labels (SUPPORT-TYPE)
+    # News uses single label (NEWS)
+    
+    if project == "dev":
+        valid_types = {"BUG", "FEATURE", "QUEST", "TRACKING"}
+        incoming = [l.upper() for l in labels]
+        type_label = next((l for l in incoming if l in valid_types), None)
+        final = ["DEV"]
+        if type_label:
+            final.append(type_label)
+        return final
+    
+    if project == "support":
+        # Single concatenated label: SUPPORT-HELP, SUPPORT-BUG, etc.
+        valid_labels = {"SUPPORT-HELP", "SUPPORT-BUG", "SUPPORT-FEATURE", 
+                       "SUPPORT-BILLING", "SUPPORT-BALANCE", "SUPPORT-API"}
+        incoming = [l.upper() for l in labels]
+        label = next((l for l in incoming if l in valid_labels), None)
+        return [label] if label else []
+    
+    if project == "news":
+        return ["NEWS"]
+    
+    return []
 
 
 def get_fallback_classification(_: bool) -> dict:
@@ -201,7 +193,7 @@ Schema (must match exactly):
 {{
   "project": "dev" | "support" | "news",
   "priority": "Urgent" | "High" | "Medium" | "Low",
-  "labels": ["BUG","FEATURE","HELP","QUEST","TRACKING","BALANCE","BILLING","API"],
+  "labels": ["BUG","FEATURE","QUEST","TRACKING","SUPPORT-HELP","SUPPORT-BUG","SUPPORT-FEATURE","SUPPORT-BILLING","SUPPORT-BALANCE","SUPPORT-API"],
   "reasoning": "short string"
 }}
 Rules:
@@ -216,7 +208,7 @@ Rules:
   * news: Urgent only
 - Label options depend on project:
   * dev: BUG, FEATURE, QUEST, TRACKING
-  * support: BUG, FEATURE, HELP, BALANCE, BILLING, API
+  * support: SUPPORT-HELP, SUPPORT-BUG, SUPPORT-FEATURE, SUPPORT-BILLING, SUPPORT-BALANCE, SUPPORT-API
   * news: no labels
 """
 
@@ -282,7 +274,8 @@ Body: {ISSUE_BODY[:2000]}
             
             valid_labels_by_project = {
                 "dev": {"BUG", "FEATURE", "QUEST", "TRACKING"},
-                "support": {"BUG", "FEATURE", "HELP", "BALANCE", "BILLING", "API"},
+                "support": {"SUPPORT-HELP", "SUPPORT-BUG", "SUPPORT-FEATURE", 
+                           "SUPPORT-BILLING", "SUPPORT-BALANCE", "SUPPORT-API"},
                 "news": set(),
             }
             

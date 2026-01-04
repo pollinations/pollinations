@@ -13,12 +13,71 @@
 
 ## Project Management
 
-- **issue-add-to-project.yml** - Adds all new issues to Project #20.
-- **pr-add-to-project.yml** - Adds all new PRs to Project #20.
+- **project-manager.yml** - AI-powered auto-kanban. Classifies issues/PRs and routes to Dev/Support/News projects with priority.
 - **issue-close-discarded.yml** - Auto-closes issues marked "Discarded" in project (hourly).
 - **pr-update-project-status.yml** - Updates PR status in project (In Progress/In Review/Done/Discarded).
 
+### Project Manager (Auto-Kanban)
+
+Routes issues and PRs to the appropriate project board using AI classification:
+
+| Project | #   | Who           | Purpose                             |
+| ------- | --- | ------------- | ----------------------------------- |
+| Dev     | 20  | Internal only | Features, refactors, infrastructure |
+| Support | 21  | Everyone      | User help, bugs, API questions      |
+| News    | 22  | Everyone      | Releases, announcements             |
+
+**Features:**
+
+- AI classification via `gen.pollinations.ai` with retry + random seed
+- Sets Priority field (Urgent/High/Medium/Low) in project
+- Sets Status field (Backlog/Review/Todo)
+- Adds labels (BUG, FEATURE, SUPPORT, EXTERNAL, etc.)
+- Enforces internal-only rule for Dev project
+- Fallback classification if AI fails
+
 ## Flow Diagrams
+
+### Project Manager (Auto-Kanban)
+
+```mermaid
+%%{init: {'theme': 'dark'}}%%
+flowchart TD
+    A[Issue/PR Opened] --> B{Check Author}
+    B --> C[is_org_member?]
+    C -->|Config list| D{In list?}
+    C -->|API fallback| E{/orgs/members/}
+    D -->|Yes| F[INTERNAL]
+    D -->|No| E
+    E -->|204| F
+    E -->|404| G[EXTERNAL]
+
+    F --> H[AI Classification]
+    G --> H
+
+    H --> I[gen.pollinations.ai]
+    I -->|Success| J{Parse Response}
+    I -->|Fail/Retry 3x| K[Fallback Classification]
+    J --> L[project, priority, labels]
+    K --> L
+
+    L --> M{Internal + Dev?}
+    M -->|Yes| N[Add to Dev #20]
+    M -->|No, External| O{News content?}
+    O -->|Yes| P[Add to News #22]
+    O -->|No| Q[Add to Support #21]
+    L -->|Internal + Support| Q
+    L -->|Internal + News| P
+
+    N --> R[Set Status: Backlog]
+    Q --> S[Set Status: Review]
+    P --> T[Set Status: Todo]
+
+    R --> U[Set Priority Field]
+    S --> U
+    T --> V[Done]
+    U --> V
+```
 
 ### Issue Triage
 
@@ -46,8 +105,8 @@ flowchart TD
 
     A --> H[pr-assign-author.yml]
     H --> I[Author assigned]
-    I --> J[pr-add-to-project.yml]
-    J --> K[Added to Project #20]
+    I --> J[project-manager.yml]
+    J --> K[Routed to Dev/Support/News]
 ```
 
 ### AI Assistant (Polly)
@@ -65,9 +124,16 @@ flowchart TD
 
 ## Scripts
 
-| Script                 | Purpose        | AI Model     | Trigger               |
-| ---------------------- | -------------- | ------------ | --------------------- |
-| `pr_comment_review.py` | AI code review | claude-large | Comment `Review=True` |
+| Script                 | Purpose        | AI Model                  | Trigger               |
+| ---------------------- | -------------- | ------------------------- | --------------------- |
+| `project-manager.py`   | Auto-kanban    | openai (via pollinations) | Issue/PR opened       |
+| `pr_comment_review.py` | AI code review | claude-large              | Comment `Review=True` |
+
+**project-manager.py details:**
+
+- Retry: 3 attempts with exponential backoff + random seed
+- Timeout: 5 minutes for AI, 30s for GraphQL
+- Fallback: Internal→Dev, External→Support with EXTERNAL label
 
 **pr_comment_review.py details:**
 

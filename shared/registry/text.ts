@@ -81,17 +81,17 @@ export const TEXT_SERVICES = {
         isSpecialized: false,
     },
     "qwen-coder": {
-        aliases: ["qwen2.5-coder-32b-instruct"],
+        aliases: ["qwen3-coder", "qwen3-coder-30b-a3b-instruct"],
         modelId: "qwen3-coder-30b-a3b-instruct",
-        provider: "scaleway",
+        provider: "ovhcloud",
         cost: [
             {
                 date: COST_START_DATE,
-                promptTextTokens: perMillion(0.9),
-                completionTextTokens: perMillion(0.9),
+                promptTextTokens: perMillion(0.06),
+                completionTextTokens: perMillion(0.22),
             },
         ],
-        description: "Qwen 2.5 Coder 32B - Specialized for Code Generation",
+        description: "Qwen3 Coder 30B - Specialized for Code Generation",
         inputModalities: ["text"],
         outputModalities: ["text"],
         tools: true,

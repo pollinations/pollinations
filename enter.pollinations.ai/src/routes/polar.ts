@@ -97,7 +97,8 @@ export const polarRoutes = new Hono<Env>()
         async (c) => {
             const user = c.var.auth.requireUser();
             // Use getBalance which includes lazy init from Polar if not set
-            const { tierBalance, packBalance } = await c.var.polar.getBalance(user.id);
+            const { tierBalance, packBalance, cryptoBalance } =
+                await c.var.polar.getBalance(user.id);
             const db = drizzle(c.env.DB);
             const users = await db
                 .select({ lastTierGrant: userTable.lastTierGrant })
@@ -105,11 +106,11 @@ export const polarRoutes = new Hono<Env>()
                 .where(eq(userTable.id, user.id))
                 .limit(1);
             const lastTierGrant = users[0]?.lastTierGrant ?? null;
-            
+
             return c.json({
                 tierBalance,
                 packBalance,
-                totalBalance: tierBalance + packBalance,
+                cryptoBalance,
                 lastTierGrant,
             });
         },

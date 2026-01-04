@@ -11,11 +11,11 @@ concurrency:
 
 jobs:
   upgrade-tier:
-    # Run when PR with TIER-APP-REVIEW label is merged.
+    # Run when PR with TIER-APP-REVIEW-PR label is merged.
     # The merge is the manual approval - no manual labeling required.
     if: |
       github.event.pull_request.merged == true &&
-      contains(github.event.pull_request.labels.*.name, 'TIER-APP-REVIEW')
+      contains(github.event.pull_request.labels.*.name, 'TIER-APP-REVIEW-PR')
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -37,13 +37,13 @@ jobs:
           script: |
             const prNumber = context.payload.pull_request.number;
             
-            // Remove TIER-APP-REVIEW, add TIER-APP-COMPLETE
+            // Remove TIER-APP-REVIEW-PR, add TIER-APP-COMPLETE
             try {
               await github.rest.issues.removeLabel({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
                 issue_number: prNumber,
-                name: 'TIER-APP-REVIEW'
+                name: 'TIER-APP-REVIEW-PR'
               });
             } catch (e) { /* label might not exist */ }
             
@@ -54,7 +54,7 @@ jobs:
               labels: ['TIER-APP-COMPLETE']
             });
             
-            console.log(`Updated PR #${prNumber}: TIER-APP-REVIEW → TIER-APP-COMPLETE`);
+            console.log(`Updated PR #${prNumber}: TIER-APP-REVIEW-PR → TIER-APP-COMPLETE`);
 
       - name: Checkout repository
         uses: actions/checkout@v4

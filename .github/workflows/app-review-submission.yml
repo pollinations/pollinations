@@ -65,7 +65,8 @@ jobs:
             const labels = [
               { name: 'TIER-APP', color: '1d76db', description: 'App submission - new' },
               { name: 'TIER-APP-INCOMPLETE', color: 'fbca04', description: 'App submission - needs user action' },
-              { name: 'TIER-APP-REVIEW', color: '0052cc', description: 'App submission - PR awaiting review' },
+              { name: 'TIER-APP-REVIEW', color: '0052cc', description: 'App submission - issue awaiting review' },
+              { name: 'TIER-APP-REVIEW-PR', color: '5319e7', description: 'App submission - PR awaiting review' },
               { name: 'TIER-APP-COMPLETE', color: '0e8a16', description: 'App submission - approved' },
               { name: 'TIER-APP-REJECTED', color: 'd73a49', description: 'App submission - rejected' }
             ];
@@ -466,7 +467,7 @@ jobs:
 
             gh pr create --title "Add $PROJECT_NAME to $CATEGORY" \
               --body "$PR_BODY" \
-              --label "TIER-APP-REVIEW" \
+              --label "TIER-APP-REVIEW-PR" \
               --base main --head "$BRANCH"
           fi
 
@@ -512,9 +513,9 @@ jobs:
           script: |
             const pr = context.payload.pull_request;
             
-            // Check if this is a tier app PR (has TIER-APP-REVIEW label)
+            // Check if this is a tier app PR (has TIER-APP-REVIEW-PR label)
             const prLabels = pr.labels.map(l => l.name);
-            if (!prLabels.includes('TIER-APP-REVIEW')) {
+            if (!prLabels.includes('TIER-APP-REVIEW-PR')) {
               console.log('Not a tier app PR, skipping');
               return;
             }

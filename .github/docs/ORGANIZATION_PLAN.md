@@ -63,7 +63,8 @@ App Submissions (via issue template)
 | ------------------- | ----- | --- | --------------------------------- |
 | TIER-APP            | x     |     | New submission received           |
 | TIER-APP-INCOMPLETE | x     |     | Needs user action (info/register) |
-| TIER-APP-REVIEW     | x     | x   | PR created, awaiting maintainer   |
+| TIER-APP-REVIEW     | x     |     | Issue awaiting maintainer review  |
+| TIER-APP-REVIEW-PR  |       | x   | PR awaiting maintainer review     |
 | TIER-APP-COMPLETE   | x     | x   | Approved and merged               |
 | TIER-APP-REJECTED   | x     | x   | Declined                          |
 

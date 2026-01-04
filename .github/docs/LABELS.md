@@ -14,7 +14,8 @@
 | --------------------- | --------------------------------- | --------------------------- |
 | `TIER-APP`            | New app submission                | Issue template              |
 | `TIER-APP-INCOMPLETE` | Needs user action (info/register) | `app-review-submission.yml` |
-| `TIER-APP-REVIEW`     | PR created, awaiting maintainer   | `app-review-submission.yml` |
+| `TIER-APP-REVIEW`     | Issue awaiting maintainer review  | `app-review-submission.yml` |
+| `TIER-APP-REVIEW-PR`  | PR awaiting maintainer review     | `app-review-submission.yml` |
 | `TIER-APP-COMPLETE`   | Approved and merged               | `app-upgrade-tier.yml`      |
 | `TIER-APP-REJECTED`   | Submission rejected               | `app-review-submission.yml` |
 

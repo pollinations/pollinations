@@ -85,7 +85,7 @@ export const ModelSelector = memo(function ModelSelector({
                             id="showLegacyModels"
                             checked={showLegacy}
                             onChange={(e) => setShowLegacy(e.target.checked)}
-                            className="w-4 h-4 rounded border-border-main bg-input-background cursor-pointer"
+                            className="w-4 h-4 rounded border-border-main bg-input-background cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-500"
                         />
                         <label
                             htmlFor="showLegacyModels"

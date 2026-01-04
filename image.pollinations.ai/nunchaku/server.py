@@ -57,7 +57,7 @@ async def send_heartbeat():
             if public_port:
                 port = int(public_port)
             else:
-                port = int(os.getenv("PORT", "10001"))
+                port = int(os.getenv("PORT", "8765"))
             url = f"http://{public_ip}:{port}"
             service_type = os.getenv("SERVICE_TYPE", "flux")  # Get service type from environment variable
             async with aiohttp.ClientSession() as session:
@@ -242,5 +242,5 @@ async def generate(request: ImageRequest, _auth: bool = Depends(verify_enter_tok
 
 if __name__ == "__main__":
     import uvicorn
-    port = int(os.getenv("PORT", "10001"))
+    port = int(os.getenv("PORT", "8765"))
     uvicorn.run(app, host="0.0.0.0", port=port)

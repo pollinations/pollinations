@@ -4,6 +4,7 @@ import { cors } from "hono/cors";
 import { createAuth } from "./auth.ts";
 import { handleError } from "./error.ts";
 import { processEvents } from "./events.ts";
+import { accountRoutes } from "./routes/account.ts";
 import { polarRoutes } from "./routes/polar.ts";
 import { proxyRoutes } from "./routes/proxy.ts";
 import { tiersRoutes } from "./routes/tiers.ts";
@@ -30,6 +31,7 @@ export const api = new Hono<Env>()
     .route("/usage", usageRoutes)
     .route("/webhooks", webhooksRoutes)
     .route("/admin", adminRoutes)
+    .route("/account", accountRoutes)
     .route("/generate", proxyRoutes);
 
 export type ApiRoutes = typeof api;
@@ -43,6 +45,16 @@ const app = new Hono<Env>()
         cors({
             origin: "*",
             allowMethods: ["GET", "POST", "OPTIONS"],
+            allowHeaders: ["Content-Type", "Authorization"],
+            exposeHeaders: ["Content-Length"],
+            maxAge: 600,
+        }),
+    )
+    .use(
+        "/api/account/*",
+        cors({
+            origin: "*",
+            allowMethods: ["GET", "OPTIONS"],
             allowHeaders: ["Content-Type", "Authorization"],
             exposeHeaders: ["Content-Length"],
             maxAge: 600,

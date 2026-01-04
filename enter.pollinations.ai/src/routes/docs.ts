@@ -1,10 +1,10 @@
-import { Hono } from "hono";
-import { Scalar } from "@scalar/hono-api-reference";
-import { openAPIRouteHandler } from "hono-openapi";
 import type { Env } from "@/env.ts";
+import { Scalar } from "@scalar/hono-api-reference";
+import { Hono } from "hono";
+import { openAPIRouteHandler } from "hono-openapi";
 
 // Transform OpenAPI schema for gen.pollinations.ai:
-// 1. Remove /generate/ prefix from paths
+// 1. Remove /generate/ and /account prefixes from paths (they map to gen.pollinations.ai directly)
 // 2. Add x-tagGroups for Scalar sidebar organization
 function transformOpenAPISchema(
     schema: Record<string, unknown>,
@@ -15,6 +15,7 @@ function transformOpenAPISchema(
     const newPaths: Record<string, unknown> = {};
     for (const [path, value] of Object.entries(paths)) {
         // Strip /generate prefix: /generate/v1/models → /v1/models
+        // Keep /account paths as-is: /account/balance → /account/balance
         const cleanPath = path.replace(/^\/generate/, "");
         newPaths[cleanPath] = value;
     }

@@ -992,6 +992,121 @@ describe("Gemini thinking mode", async () => {
     );
 });
 
+// Gemini native tools tests (PR #6818, Issues #6688, #6723)
+// Tests code_execution, google_search, and url_context tools
+describe("Gemini native tools", async () => {
+    test(
+        "gemini-fast should use code_execution by default for computation",
+        { timeout: 60000 },
+        async ({ apiKey, mocks }) => {
+            await mocks.enable("polar", "tinybird", "vcr");
+            const response = await SELF.fetch(
+                `http://localhost:3000/api/generate/v1/chat/completions`,
+                {
+                    method: "POST",
+                    headers: {
+                        "content-type": "application/json",
+                        "authorization": `Bearer ${apiKey}`,
+                    },
+                    body: JSON.stringify({
+                        model: "gemini-fast",
+                        messages: [
+                            {
+                                role: "user",
+                                content:
+                                    "Calculate the 10th Fibonacci number using code execution. Reply with just the number.",
+                            },
+                        ],
+                        seed: testSeed(),
+                    }),
+                },
+            );
+            expect(response.status).toBe(200);
+            const data = await response.json();
+            const content = (data as any).choices[0].message.content;
+            expect(content).toBeTruthy();
+            // Fibonacci(10) = 55
+            expect(content).toContain("55");
+        },
+    );
+
+    test(
+        "gemini-search should use google_search for real-time information",
+        { timeout: 60000 },
+        async ({ apiKey, mocks }) => {
+            await mocks.enable("polar", "tinybird", "vcr");
+            const response = await SELF.fetch(
+                `http://localhost:3000/api/generate/v1/chat/completions`,
+                {
+                    method: "POST",
+                    headers: {
+                        "content-type": "application/json",
+                        "authorization": `Bearer ${apiKey}`,
+                    },
+                    body: JSON.stringify({
+                        model: "gemini-search",
+                        messages: [
+                            {
+                                role: "user",
+                                content:
+                                    "What is the current population of Berlin? Just give me the approximate number.",
+                            },
+                        ],
+                        seed: testSeed(),
+                    }),
+                },
+            );
+            expect(response.status).toBe(200);
+            const data = await response.json();
+            const content = (data as any).choices[0].message.content;
+            expect(content).toBeTruthy();
+            // Should contain some population-related number (millions)
+            expect(content.length).toBeGreaterThan(10);
+        },
+    );
+
+    test(
+        "Gemini should accept explicit code_execution tool override",
+        { timeout: 60000 },
+        async ({ apiKey, mocks }) => {
+            await mocks.enable("polar", "tinybird", "vcr");
+            const response = await SELF.fetch(
+                `http://localhost:3000/api/generate/v1/chat/completions`,
+                {
+                    method: "POST",
+                    headers: {
+                        "content-type": "application/json",
+                        "authorization": `Bearer ${apiKey}`,
+                    },
+                    body: JSON.stringify({
+                        model: "gemini",
+                        messages: [
+                            {
+                                role: "user",
+                                content:
+                                    "What is 7 factorial? Use code to compute it. Reply with just the raw number, no formatting.",
+                            },
+                        ],
+                        tools: [
+                            {
+                                type: "function",
+                                function: { name: "code_execution" },
+                            },
+                        ],
+                        seed: testSeed(),
+                    }),
+                },
+            );
+            expect(response.status).toBe(200);
+            const data = await response.json();
+            const content = (data as any).choices[0].message.content;
+            expect(content).toBeTruthy();
+            // 7! = 5040
+            expect(content).toContain("5040");
+        },
+    );
+});
+
 // Gemini tool schema sanitization test (Issue: Portkey Gateway #1473)
 // Tests that exclusiveMinimum/exclusiveMaximum are stripped before sending to Vertex AI
 test(

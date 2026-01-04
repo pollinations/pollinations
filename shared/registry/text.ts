@@ -426,6 +426,42 @@ export const TEXT_SERVICES = {
         isSpecialized: false,
     },
     // Legacy models - older versions still accessible
+    "gpt-5.1": {
+        aliases: ["gpt-5.1-2025-03-15"],
+        modelId: "gpt-5.1-2025-03-15",
+        provider: "azure",
+        cost: [
+            {
+                date: COST_START_DATE,
+                promptTextTokens: perMillion(1.0),
+                promptCachedTokens: perMillion(0.1),
+                completionTextTokens: perMillion(8.0),
+            },
+        ],
+        description: "OpenAI GPT-5.1 - Previous Generation (Legacy)",
+        inputModalities: ["text", "image"],
+        outputModalities: ["text"],
+        tools: true,
+        isSpecialized: false,
+    },
+    "gpt-5": {
+        aliases: ["gpt-5-2025-01-20"],
+        modelId: "gpt-5-2025-01-20",
+        provider: "azure",
+        cost: [
+            {
+                date: COST_START_DATE,
+                promptTextTokens: perMillion(0.8),
+                promptCachedTokens: perMillion(0.08),
+                completionTextTokens: perMillion(5.0),
+            },
+        ],
+        description: "OpenAI GPT-5 - Previous Generation (Legacy)",
+        inputModalities: ["text", "image"],
+        outputModalities: ["text"],
+        tools: true,
+        isSpecialized: false,
+    },
     "gpt-4o": {
         aliases: ["gpt-4o-2024-08-06"],
         modelId: "gpt-4o-2024-08-06",
@@ -492,6 +528,40 @@ export const TEXT_SERVICES = {
         ],
         description: "OpenAI GPT-4 - Original (Legacy)",
         inputModalities: ["text"],
+        outputModalities: ["text"],
+        tools: true,
+        isSpecialized: false,
+    },
+    "claude-4-sonnet": {
+        aliases: ["claude-4-sonnet-20250515"],
+        modelId: "us.anthropic.claude-4-sonnet-20250515-v1:0",
+        provider: "aws",
+        cost: [
+            {
+                date: COST_START_DATE,
+                promptTextTokens: perMillion(2.5),
+                completionTextTokens: perMillion(12.5),
+            },
+        ],
+        description: "Anthropic Claude 4 Sonnet - Previous Generation (Legacy)",
+        inputModalities: ["text", "image"],
+        outputModalities: ["text"],
+        tools: true,
+        isSpecialized: false,
+    },
+    "claude-4-opus": {
+        aliases: ["claude-4-opus-20250320"],
+        modelId: "us.anthropic.claude-4-opus-20250320-v1:0",
+        provider: "aws",
+        cost: [
+            {
+                date: COST_START_DATE,
+                promptTextTokens: perMillion(4.0),
+                completionTextTokens: perMillion(20.0),
+            },
+        ],
+        description: "Anthropic Claude 4 Opus - Previous Generation (Legacy)",
+        inputModalities: ["text", "image"],
         outputModalities: ["text"],
         tools: true,
         isSpecialized: false,

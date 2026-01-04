@@ -22,6 +22,13 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
     const modelDisplayName = getModelDisplayName(model.name);
     const genPerPollen = calculatePerPollen(model);
     const [showTooltip, setShowTooltip] = useState(false);
+    const [copied, setCopied] = useState(false);
+
+    const copyModelName = async () => {
+        await navigator.clipboard.writeText(model.name);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 1500);
+    };
     const handleMouseEnter = () => setShowTooltip(true);
     const handleMouseLeave = () => setShowTooltip(false);
     const handleClick = (e: React.MouseEvent) => {
@@ -80,9 +87,14 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
                         <span className="font-medium">
                             {modelDisplayName || model.name}
                         </span>
-                        <span className="text-xs text-gray-500 font-mono">
-                            {model.name}
-                        </span>
+                        <button
+                            type="button"
+                            onClick={copyModelName}
+                            className="text-xs text-gray-500 font-mono hover:text-gray-700 cursor-pointer text-left"
+                            title="Click to copy"
+                        >
+                            {copied ? "✓ copied" : model.name}
+                        </button>
                     </div>
                     {showDescriptionInfo && (
                         <button

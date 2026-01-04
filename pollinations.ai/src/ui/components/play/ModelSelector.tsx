@@ -32,7 +32,11 @@ export const ModelSelector = memo(function ModelSelector({
     
     // State for showing legacy models with localStorage persistence
     const [showLegacy, setShowLegacy] = useState<boolean>(() => {
-        const stored = localStorage.getItem("showLegacyModels");
+        if (typeof window === "undefined") {
+            // During SSR, default to not showing legacy models
+            return false;
+        }
+        const stored = window.localStorage.getItem("showLegacyModels");
         return stored === "true";
     });
     

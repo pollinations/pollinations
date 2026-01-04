@@ -6,7 +6,7 @@ on:
 
 jobs:
   delete-branch:
-    if: github.event.pull_request.merged == true
+    if: github.repository == 'pollinations/pollinations' && github.event.pull_request.merged == true
     runs-on: ubuntu-latest
 
     steps:

@@ -69,6 +69,7 @@ export type ServiceDefinition<TModelId extends string = ModelId> = {
     provider: string;
     cost: CostDefinition[];
     // User-facing metadata
+    displayName?: string;
     description?: string;
     inputModalities?: string[];
     outputModalities?: string[];
@@ -202,6 +203,14 @@ export function getServiceDefinition(
     serviceId: ServiceId,
 ): ServiceRegistryEntry {
     return SERVICE_REGISTRY[serviceId];
+}
+
+/**
+ * Get display name for a service (e.g., "GPT-5 Mini" instead of "openai")
+ */
+export function getServiceDisplayName(serviceId: ServiceId): string {
+    const service = SERVICE_REGISTRY[serviceId];
+    return service?.displayName || serviceId;
 }
 
 /**

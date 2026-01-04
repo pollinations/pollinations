@@ -10,7 +10,7 @@ on:
 jobs:
   create-highlights:
     # Only run if PR was merged (not just closed) and targeted main
-    if: github.event.pull_request.merged == true && github.event.pull_request.base.ref == 'main'
+    if: github.repository == 'pollinations/pollinations' && github.event.pull_request.merged == true && github.event.pull_request.base.ref == 'main'
     runs-on: ubuntu-latest
     permissions:
       contents: write

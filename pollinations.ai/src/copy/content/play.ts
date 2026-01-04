@@ -42,6 +42,10 @@ export const PLAY_PAGE = {
     // Model selector
     audioLabel: "Audio",
     videoLabel: "Video",
+    showLegacyModelsLabel: "Show Legacy Models",
+    legacyModelTooltip:
+        "This is an older version of the model. Newer versions may be available.",
+    legacyBadge: "LEGACY",
 
     // Image feed
     waitingForImages: "Waiting for images...",

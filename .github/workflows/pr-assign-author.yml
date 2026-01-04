@@ -6,6 +6,7 @@ on:
 
 jobs:
   assign-author:
+    if: github.repository == 'pollinations/pollinations'
     runs-on: ubuntu-latest
     permissions:
       issues: write

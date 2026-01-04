@@ -8,15 +8,17 @@
 | `inbox:discord` | Issue created from Discord       | `issue-create-from-discord.yml` (via Discord bot) |
 | `inbox:news`    | PR related to weekly news update | `pr-create-weekly-news.yml`                       |
 
-## Tier Labels (Unified for Apps & PRs)
+## Tier Labels (App Submissions)
 
-| Label              | Purpose                                         | Applied by                                              |
-| ------------------ | ----------------------------------------------- | ------------------------------------------------------- |
-| `tier:review`      | No tier/spore/seed, eligible for Flower upgrade | Issue template / `pr-label-external.yml`                |
-| `tier:info-needed` | Awaiting registration or more info              | `tier-app-submission.yml` / `tier-upgrade-on-merge.yml` |
-| `tier:flower`      | Approved for Flower tier                        | `tier-upgrade-on-merge.yml` (auto on merge)             |
-| `tier:done`        | Tier upgrade completed                          | `tier-upgrade-on-merge.yml`                             |
-| `tier:rejected`    | Submission rejected (reason in comment)         | `tier-app-submission.yml`                               |
+| Label                 | Purpose                           | Applied by                  |
+| --------------------- | --------------------------------- | --------------------------- |
+| `TIER-APP`            | New app submission                | Issue template              |
+| `TIER-APP-INCOMPLETE` | Needs user action (info/register) | `app-review-submission.yml` |
+| `TIER-APP-REVIEW`     | PR created, awaiting maintainer   | `app-review-submission.yml` |
+| `TIER-APP-COMPLETE`   | Approved and merged               | `app-upgrade-tier.yml`      |
+| `TIER-APP-REJECTED`   | Submission rejected               | `app-review-submission.yml` |
+
+**Code Contributions** _(future)_: `TIER-CODE-*` labels planned.
 
 ## PR Labels
 

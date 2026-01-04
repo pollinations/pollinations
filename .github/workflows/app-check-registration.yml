@@ -10,11 +10,11 @@ concurrency:
 
 jobs:
   check-registration:
-    # Only run on PRs (not issues) with tier:info-needed label AND comment is from PR author
+    # Only run on PRs (not issues) with TIER-APP-INCOMPLETE label AND comment is from PR author
     # NO PR MERGE = NO TIER CHANGE - this ensures we only upgrade after merge
     if: |
       github.event.issue.pull_request &&
-      contains(github.event.issue.labels.*.name, 'tier:info-needed') &&
+      contains(github.event.issue.labels.*.name, 'TIER-APP-INCOMPLETE') &&
       github.event.comment.user.login == github.event.issue.user.login
     runs-on: ubuntu-latest
     permissions:
@@ -169,30 +169,16 @@ jobs:
                 body: `### 🌸 Flower Tier Activated & Verified!\n\n@${username}, you've been upgraded to **Flower tier** which grants you **10 pollen per day**!\n\n⏰ **How it works:** Your pollen balance refills every 24 hours. Unused pollen does not roll over.\n\nCheck your balance at [enter.pollinations.ai](https://enter.pollinations.ai) 🌻`
               });
               
-              // Update labels
+              // Update labels - swap to COMPLETE
               try {
-                await github.rest.issues.removeLabel({
-                  owner: context.repo.owner,
-                  repo: context.repo.repo,
-                  issue_number: prNumber,
-                  name: 'tier:info-needed'
-                });
-              } catch (e) { /* label might not exist */ }
-              
-              try {
-                await github.rest.issues.removeLabel({
-                  owner: context.repo.owner,
-                  repo: context.repo.repo,
-                  issue_number: prNumber,
-                  name: 'tier:flower'
-                });
+                await github.rest.issues.removeLabel({ owner: context.repo.owner, repo: context.repo.repo, issue_number: prNumber, name: 'TIER-APP-INCOMPLETE' });
               } catch (e) { /* label might not exist */ }
               
               await github.rest.issues.addLabels({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
                 issue_number: prNumber,
-                labels: ['tier:done']
+                labels: ['TIER-APP-COMPLETE']
               });
               
               console.log(`✅ Upgraded ${username} to Flower tier`);

@@ -66,30 +66,37 @@ Tag
 
 ### Tier
 
-**Hierarchy:** TOP + TYPE + WORKFLOW (e.g., `TIER` + `SEED` + `REVIEW`)
+**Single concatenated labels** — one label shows full state at a glance.
 
-TOP
+App Submissions (via issue template)
 
-| Label | Issue | PR  | Comments                  |
-| ----- | ----- | --- | ------------------------- |
-| TIER  | x     | x   | Applied to all Tier items |
+| Label               | Issue | PR  | Comments                          |
+| ------------------- | ----- | --- | --------------------------------- |
+| TIER-APP            | x     |     | New submission received           |
+| TIER-APP-INCOMPLETE | x     |     | Needs user action (info/register) |
+| TIER-APP-REVIEW     | x     | x   | PR created, awaiting maintainer   |
+| TIER-APP-COMPLETE   | x     | x   | Approved and merged               |
+| TIER-APP-REJECTED   | x     | x   | Declined                          |
 
-TYPE
+Code Contributions _(future)_
 
-| Label       | Issue | PR  | Comments                     |
-| ----------- | ----- | --- | ---------------------------- |
-| SEED        | x     |     | Seed upgrade request         |
-| FLOWER-CODE |       | x   | Flower via code contribution |
-| FLOWER-APP  | x     | x   | Flower via app contribution  |
+| Label              | PR  | Comments            |
+| ------------------ | --- | ------------------- |
+| TIER-CODE          | x   | New contribution    |
+| TIER-CODE-REVIEW   | x   | Awaiting maintainer |
+| TIER-CODE-COMPLETE | x   | Approved and merged |
+| TIER-CODE-REJECTED | x   | Declined            |
 
-WORKFLOW
+_Note: Code contribution labels are planned for future implementation._
 
-| Label      | Issue | PR  | Comments               |
-| ---------- | ----- | --- | ---------------------- |
-| INCOMPLETE | x     | x   | User action requested  |
-| REVIEW     |       | x   | PR awaiting review     |
-| COMPLETE   |       | x   | PR approved and merged |
-| REJECTED   |       | x   | PR declined            |
+**Flow:**
+
+```
+TIER-APP → (valid) → TIER-APP-REVIEW → TIER-APP-COMPLETE
+                                     ↘ TIER-APP-REJECTED
+         → (invalid) → TIER-APP-INCOMPLETE → (user fixes) → re-process
+                     ↘ TIER-APP-REJECTED (duplicate/spam)
+```
 
 ## Priority
 

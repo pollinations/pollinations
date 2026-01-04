@@ -79,7 +79,7 @@ jobs:
               return;
             }
 
-            // Skip app submission PRs (handled by tier-app-submission.yml)
+            // Skip app submission PRs (handled by app-review-submission.yml)
             const branchName = context.payload.pull_request.head.ref;
             if (branchName.startsWith('auto/app-')) {
               console.log(`App submission PR from branch ${branchName}, skipping`);

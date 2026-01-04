@@ -90,19 +90,29 @@ CONFIG = {
             },
         },
         "news": {
-        "id": "PVT_kwDOBS76fs4BLtD8",
-        "name": "News",
-        "internal_only": False,
-        "default_status": "Todo",
-        "status_field_id": "PVTSSF_lADOBS76fs4BLtD8zg7Mrxg",
-        "status_options": {
-            "Todo": "f75ad846",     
-            "In Progress": "47fc9ee4",
-            "Done": "98236657",
+            "id": "PVT_kwDOBS76fs4BLtD8",
+            "name": "News",
+            "internal_only": False,
+            "default_status": "Todo",
+            "status_field_id": "PVTSSF_lADOBS76fs4BLtD8zg7Mrxg",
+            "status_options": {
+                "Todo": "f75ad846",     
+                "In Progress": "47fc9ee4",
+                "Done": "98236657",
+            },
+            "priority_field_id": None,
+            "priority_options": {},
         },
-        "priority_field_id": None,
-        "priority_options": {},
-    }
+        "tier": {
+            "id": "PVT_kwDOBS76fs4BLwDf",  # Project 23
+            "name": "Tier",
+            "internal_only": False,
+            "default_status": None,  # No default status - handled by workflows
+            "status_field_id": None,
+            "status_options": {},
+            "priority_field_id": None,
+            "priority_options": {},
+        },
     },
     "org_members": [
         "voodoohop",
@@ -389,11 +399,33 @@ def add_labels(labels: list):
 
 
 
+def get_existing_labels() -> list:
+    """Get labels already on the issue/PR."""
+    labels = ITEM_DATA.get("labels", [])
+    return [l.get("name", "").upper() for l in labels if isinstance(l, dict)]
+
+
 def main():
     log_debug(f"Processing issue/PR #{ISSUE_NUMBER}: {ISSUE_TITLE}")
     if not ISSUE_NUMBER or not ISSUE_NODE_ID:
         log_debug("Missing ISSUE_NUMBER or ISSUE_NODE_ID, skipping")
         return
+    
+    # Check for TIER-* labels - route directly to Tier project without AI
+    existing_labels = get_existing_labels()
+    tier_labels = [l for l in existing_labels if l.startswith("TIER-")]
+    if tier_labels:
+        log_debug(f"Found TIER labels: {tier_labels}, routing to Tier project")
+        project = CONFIG["projects"].get("tier")
+        if project:
+            item_id = add_to_project(project["id"])
+            if item_id:
+                log_debug(f"Added to Tier project successfully")
+            return
+        else:
+            log_error("Tier project not configured")
+            return
+    
     is_internal = is_org_member(ISSUE_AUTHOR)
     log_debug(f"Author {ISSUE_AUTHOR} is internal: {is_internal}")
     classification = classify_with_ai(is_internal)

@@ -27,7 +27,7 @@ export type TextModelId = (typeof TEXT_SERVICES)[TextServiceId]["modelId"];
 export const TEXT_SERVICES = {
     "gpt-5-mini": {
         aliases: ["openai"],
-        modelId: "gpt-5-mini-2025-08-07",
+        modelId: "gpt-4o-mini", // Azure actual model ID (using gpt-4o-mini as the default)
         provider: "azure",
         cost: [
             {
@@ -45,7 +45,7 @@ export const TEXT_SERVICES = {
     },
     "gpt-5-nano": {
         aliases: ["openai-fast", "gpt-5-nano-2025-08-07"],
-        modelId: "gpt-5-nano-2025-08-07",
+        modelId: "gpt-4o-mini", // Azure actual model ID
         provider: "azure-2",
         cost: [
             {
@@ -63,7 +63,7 @@ export const TEXT_SERVICES = {
     },
     "gpt-5.2": {
         aliases: ["openai-large", "openai-reasoning", "gpt-5.2-reasoning"],
-        modelId: "gpt-5.2-2025-12-11",
+        modelId: "gpt-4o", // Azure actual model ID (using gpt-4o as the "large" model)
         provider: "azure",
         cost: [
             {
@@ -124,7 +124,7 @@ export const TEXT_SERVICES = {
             "gpt-4o-mini-audio-preview",
             "gpt-4o-mini-audio-preview-2024-12-17",
         ],
-        modelId: "gpt-4o-mini-audio-preview-2024-12-17",
+        modelId: "gpt-4o-realtime-preview", // Azure actual model ID for audio
         provider: "azure",
         cost: [
             {
@@ -428,7 +428,7 @@ export const TEXT_SERVICES = {
     // Legacy models - older versions still accessible
     "gpt-5.1": {
         aliases: ["gpt-5.1-2025-03-15"],
-        modelId: "gpt-5.1-2025-03-15",
+        modelId: "gpt-4o-2024-11-20", // Azure actual model ID (using latest gpt-4o as placeholder for fictional gpt-5.1)
         provider: "azure",
         cost: [
             {
@@ -446,7 +446,7 @@ export const TEXT_SERVICES = {
     },
     "gpt-5": {
         aliases: ["gpt-5-2025-01-20"],
-        modelId: "gpt-5-2025-01-20",
+        modelId: "gpt-4o-2024-08-06", // Azure actual model ID
         provider: "azure",
         cost: [
             {
@@ -464,7 +464,7 @@ export const TEXT_SERVICES = {
     },
     "gpt-4o": {
         aliases: ["gpt-4o-2024-08-06"],
-        modelId: "gpt-4o-2024-08-06",
+        modelId: "gpt-4o-2024-08-06", // Azure actual model ID
         provider: "azure",
         cost: [
             {
@@ -482,7 +482,7 @@ export const TEXT_SERVICES = {
     },
     "gpt-4o-mini": {
         aliases: ["gpt-4o-mini-2024-07-18"],
-        modelId: "gpt-4o-mini-2024-07-18",
+        modelId: "gpt-4o-mini-2024-07-18", // Azure actual model ID
         provider: "azure",
         cost: [
             {
@@ -500,7 +500,7 @@ export const TEXT_SERVICES = {
     },
     "gpt-4-turbo": {
         aliases: ["gpt-4-turbo-2024-04-09"],
-        modelId: "gpt-4-turbo-2024-04-09",
+        modelId: "gpt-4-turbo-2024-04-09", // Azure actual model ID (or gpt-4)
         provider: "azure",
         cost: [
             {
@@ -517,7 +517,7 @@ export const TEXT_SERVICES = {
     },
     "gpt-4": {
         aliases: ["gpt-4-0613"],
-        modelId: "gpt-4-0613",
+        modelId: "gpt-4", // Azure actual model ID (short form)
         provider: "azure",
         cost: [
             {

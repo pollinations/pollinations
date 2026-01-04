@@ -30,6 +30,7 @@
 | `DEV-QUEST`    | Community task - One off Pollen reward if merged | `project-manager.py` |
 | `DEV-TRACKING` | Meta-issue tracking other items                  | `project-manager.py` |
 | `DEV-VOTING`   | Community vote on a proposal                     | Manual               |
+| `DEV-PR`       | PR for dev project                               | Manual               |
 
 ## Support Labels
 

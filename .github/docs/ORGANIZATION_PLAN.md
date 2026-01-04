@@ -19,6 +19,7 @@ Internal development work: features, refactors, infrastructure.
 | DEV-QUEST    | Community task - One off Pollen reward if merged |
 | DEV-TRACKING | Meta-issue tracking other items                  |
 | DEV-VOTING   | Community vote on a proposal                     |
+| DEV-PR       | PR for dev project                               |
 
 ### Priority
 

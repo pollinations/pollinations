@@ -21,6 +21,7 @@ on:
 
 jobs:
   cleanup:
+    if: github.repository == 'pollinations/pollinations'
     runs-on: ubuntu-latest
 
     steps:

@@ -13,6 +13,7 @@ jobs:
     # Only run on PRs (not issues) with tier:info-needed label AND comment is from PR author
     # NO PR MERGE = NO TIER CHANGE - this ensures we only upgrade after merge
     if: |
+      github.repository == 'pollinations/pollinations' &&
       github.event.issue.pull_request &&
       contains(github.event.issue.labels.*.name, 'tier:info-needed') &&
       github.event.comment.user.login == github.event.issue.user.login

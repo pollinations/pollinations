@@ -34,6 +34,7 @@
 | `SUPPORT-BILLING` | Payment or subscription issue  | `project-manager.py` |
 | `SUPPORT-BALANCE` | Pollen balance issue           | `project-manager.py` |
 | `SUPPORT-API`     | API usage or integration issue | `project-manager.py` |
+| `SUPPORT-TIER`    | Tier/subscription related      | `project-manager.py` |
 
 ## News Labels
 

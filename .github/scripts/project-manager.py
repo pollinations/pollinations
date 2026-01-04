@@ -153,7 +153,7 @@ def normalize_labels(project: str, labels: list) -> list:
     
     if project == "support":
         valid_labels = {"SUPPORT-HELP", "SUPPORT-BUG", "SUPPORT-FEATURE", 
-                       "SUPPORT-BILLING", "SUPPORT-BALANCE", "SUPPORT-API"}
+                       "SUPPORT-BILLING", "SUPPORT-BALANCE", "SUPPORT-API", "SUPPORT-TIER"}
         incoming = [l.upper() for l in labels]
         label = next((l for l in incoming if l in valid_labels), None)
         return [label] if label else []

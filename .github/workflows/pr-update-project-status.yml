@@ -28,7 +28,7 @@ jobs:
 
       - name: Update Status Field
         uses: actions/github-script@v7
-        if: ${{ steps.pollinations-ai.outputs.token && steps.add-project.outputs.itemId }}
+        if: steps.pollinations-ai.outputs.token != '' && steps.add-project.outputs.itemId != ''
         with:
           github-token: ${{ steps.pollinations-ai.outputs.token }}
           script: |

@@ -51,28 +51,8 @@ export function useModelList(apiKey: string): UseModelListReturn {
             /legacy/i,         // Contains "legacy"
         ];
         
-        // Known deprecated model IDs (old service IDs that are now aliases + legacy models)
+        // Known deprecated model IDs (legacy models from previous generations)
         const deprecatedModelIds = [
-            // Old service ID aliases
-            "flux",
-            "openai",
-            "openai-fast",
-            "openai-large",
-            "openai-audio",
-            "mistral",
-            "gemini",
-            "gemini-fast",
-            "gemini-large",
-            "gemini-search",
-            "deepseek",
-            "grok",
-            "claude",
-            "claude-fast",
-            "claude-large",
-            "perplexity-fast",
-            "perplexity-reasoning",
-            "qwen",
-            "llama",
             // Legacy models from previous generations
             "gpt-5.1",
             "gpt-5",

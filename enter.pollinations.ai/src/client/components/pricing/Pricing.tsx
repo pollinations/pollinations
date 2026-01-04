@@ -49,6 +49,7 @@ export const Pricing: FC = () => {
                 <div>👂 audio input</div>
                 <div>🧠 reasoning</div>
                 <div>🔍 search</div>
+                <div>💻 code execution</div>
               </div>
             </div>
             <div className="bg-white/50 rounded-lg p-4 border border-amber-200">

@@ -51,30 +51,31 @@ interface ModelDefinition {
 }
 
 const models: ModelDefinition[] = [
-    {
-        name: "openai",
-        description: "OpenAI GPT-5 Nano",
-        config: portkeyConfig["gpt-5-nano-2025-08-07"],
-        transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
-        tier: "anonymous",
-        community: false,
-        input_modalities: ["text", "image"],
-        output_modalities: ["text"],
-        tools: true,
-        maxInputChars: 7000,
-    },
-    {
-        name: "openai-fast",
-        description: "OpenAI GPT-4.1 Nano",
-        config: portkeyConfig["gpt-4.1-nano-2025-04-14"],
-        transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
-        tier: "anonymous",
-        community: false,
-        input_modalities: ["text", "image"],
-        output_modalities: ["text"],
-        tools: true,
-        maxInputChars: 5000,
-    },
+    // Temporarily disabled - using OVH GPT-OSS as default
+    // {
+    //     name: "openai",
+    //     description: "OpenAI GPT-5 Nano",
+    //     config: portkeyConfig["gpt-5-nano-2025-08-07"],
+    //     transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
+    //     tier: "anonymous",
+    //     community: false,
+    //     input_modalities: ["text", "image"],
+    //     output_modalities: ["text"],
+    //     tools: true,
+    //     maxInputChars: 7000,
+    // },
+    // {
+    //     name: "openai-fast",
+    //     description: "OpenAI GPT-4.1 Nano",
+    //     config: portkeyConfig["gpt-4.1-nano-2025-04-14"],
+    //     transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
+    //     tier: "anonymous",
+    //     community: false,
+    //     input_modalities: ["text", "image"],
+    //     output_modalities: ["text"],
+    //     tools: true,
+    //     maxInputChars: 5000,
+    // },
     // Temporarily disabled
     // {
     //     name: "openai-large",
@@ -307,7 +308,7 @@ const models: ModelDefinition[] = [
         tools: true,
     },
     {
-        name: "gpt-oss",
+        name: "openai-fast",
         description: "GPT-OSS 20B Reasoning LLM (OVH)",
         config: portkeyConfig["gpt-oss-20b"],
         transform: createSystemPromptTransform(BASE_PROMPTS.conversational),

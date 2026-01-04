@@ -150,17 +150,18 @@ export const TEXT_COSTS = {
     ],
 } as const satisfies ModelRegistry;
 export const TEXT_SERVICES = {
-    "openai": {
-        aliases: ["gpt-5-mini"],
-        modelId: "gpt-5-mini-2025-08-07",
-        provider: "azure-openai",
-    },
-    "openai-fast": {
-        aliases: ["gpt-5-nano"],
-        modelId: "gpt-5-nano-2025-08-07",
-        free: true,
-        provider: "azure-openai",
-    },
+    // Temporarily disabled - using OVH GPT-OSS as default
+    // "openai": {
+    //     aliases: ["gpt-5-mini"],
+    //     modelId: "gpt-5-mini-2025-08-07",
+    //     provider: "azure-openai",
+    // },
+    // "openai-fast": {
+    //     aliases: ["gpt-5-nano"],
+    //     modelId: "gpt-5-nano-2025-08-07",
+    //     free: true,
+    //     provider: "azure-openai",
+    // },
     "openai-large": {
         aliases: ["gpt-5-chat"],
         modelId: "gpt-5-chat-latest",
@@ -262,8 +263,8 @@ export const TEXT_SERVICES = {
         provider: "aws-bedrock",
         tier: "flower",
     },
-    "gpt-oss": {
-        aliases: ["gpt-oss-20b", "ovh-reasoning"],
+    "openai-fast": {
+        aliases: ["openai", "gpt-oss", "gpt-oss-20b", "ovh-reasoning"],
         modelId: "gpt-oss-20b",
         provider: "ovh",
     },

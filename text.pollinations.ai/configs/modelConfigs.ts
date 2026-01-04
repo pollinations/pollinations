@@ -8,6 +8,7 @@ import {
     createMyceliDeepSeekV32Config,
     createMyceliGrok4FastConfig,
     createPerplexityModelConfig,
+    createOVHcloudModelConfig,
 } from "./providerConfigs.js";
 
 dotenv.config();
@@ -156,5 +157,13 @@ export const portkeyConfig: PortkeyConfigMap = {
     "sonar-reasoning-pro": () =>
         createPerplexityModelConfig({
             model: "sonar-reasoning-pro",
+        }),
+
+    // ============================================================================
+    // OVHcloud AI Endpoints - qwen3-coder
+    // ============================================================================
+    "qwen3-coder-30b-a3b-instruct": () =>
+        createOVHcloudModelConfig({
+            model: "Qwen3-Coder-30B-A3B-Instruct",
         }),
 };

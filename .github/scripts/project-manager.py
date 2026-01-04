@@ -104,10 +104,10 @@ CONFIG = {
             "priority_options": {},
         },
         "tier": {
-            "id": "PVT_kwDOBS76fs4BLwDf",  # Project 23
+            "id": "PVT_kwDOBS76fs4BLwDf",  
             "name": "Tier",
             "internal_only": False,
-            "default_status": None,  # No default status - handled by workflows
+            "default_status": None, 
             "status_field_id": None,
             "status_options": {},
             "priority_field_id": None,
@@ -194,20 +194,16 @@ def get_fallback_classification(_: bool) -> dict:
 def classify_with_ai(is_internal: bool) -> dict:
     system_prompt = f"""
 You are a strict classifier.
-
 Return ONLY valid JSON.
 Do NOT include explanations outside JSON.
 Do NOT invent categories.
-
 Schema (must match exactly):
-
 {{
   "project": "dev" | "support" | "news",
   "priority": "Urgent" | "High" | "Medium" | "Low",
   "labels": ["BUG","FEATURE","HELP","QUEST","TRACKING","BALANCE","BILLING","API"],
   "reasoning": "short string"
 }}
-
 Rules:
 - Choose ONLY from the allowed enum values.
 - dev is INTERNAL ONLY — use only for internal authors.
@@ -240,7 +236,7 @@ Body: {ISSUE_BODY[:2000]}
                     "Authorization": f"Bearer {POLLINATIONS_TOKEN}"
                     },
                 json={
-                    "model": "openai",
+                    "model": "openai-large",
                     "messages": [
                         {"role": "system", "content": system_prompt},
                         {"role": "user", "content": user_prompt},
@@ -400,7 +396,6 @@ def add_labels(labels: list):
 
 
 def get_existing_labels() -> list:
-    """Get labels already on the issue/PR."""
     labels = ITEM_DATA.get("labels", [])
     return [l.get("name", "").upper() for l in labels if isinstance(l, dict)]
 

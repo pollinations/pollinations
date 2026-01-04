@@ -1,22 +1,22 @@
+import { getLogger } from "@logtape/logtape";
+import { drizzle } from "drizzle-orm/d1";
 import { Hono } from "hono";
-import { HTTPException } from "hono/http-exception";
 import { cors } from "hono/cors";
+import { HTTPException } from "hono/http-exception";
+import { requestId } from "hono/request-id";
 import { createAuth } from "./auth.ts";
+import type { Env } from "./env.ts";
 import { handleError } from "./error.ts";
 import { processEvents } from "./events.ts";
+import { logger } from "./middleware/logger.ts";
+import { adminRoutes } from "./routes/admin.ts";
+import { apiKeysRoutes } from "./routes/api-keys.ts";
+import { createDocsRoutes } from "./routes/docs.ts";
 import { polarRoutes } from "./routes/polar.ts";
 import { proxyRoutes } from "./routes/proxy.ts";
 import { tiersRoutes } from "./routes/tiers.ts";
 import { usageRoutes } from "./routes/usage.ts";
-import { createDocsRoutes } from "./routes/docs.ts";
-import { apiKeysRoutes } from "./routes/api-keys.ts";
 import { webhooksRoutes } from "./routes/webhooks.ts";
-import { adminRoutes } from "./routes/admin.ts";
-import { requestId } from "hono/request-id";
-import { logger } from "./middleware/logger.ts";
-import { getLogger } from "@logtape/logtape";
-import type { Env } from "./env.ts";
-import { drizzle } from "drizzle-orm/d1";
 
 const authRoutes = new Hono<Env>().on(["GET", "POST"], "*", async (c) => {
     return await createAuth(c.env).handler(c.req.raw);

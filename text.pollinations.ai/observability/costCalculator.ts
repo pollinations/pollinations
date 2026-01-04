@@ -4,7 +4,7 @@ import { getModelDefinition } from "../../shared/registry/registry.js";
 const log = debug("text.pollinations.ai:costCalculator");
 
 // Constant for token cost calculations
-const TOKENS_PER_MILLION = 1000000;
+const _TOKENS_PER_MILLION = 1000000;
 
 /** Cost rates per token type */
 export interface CostRates {

@@ -1,6 +1,6 @@
+import type { IncomingMessage, ServerResponse } from "node:http";
 import debug from "debug";
 import PQueue from "p-queue";
-import { IncomingMessage, ServerResponse } from "node:http";
 
 const logError = debug("pollinations:error");
 const logServer = debug("pollinations:server");
@@ -323,7 +323,7 @@ export const fetchFromLeastBusyServer = async (
                             let errorBody = "";
                             try {
                                 errorBody = await response.text();
-                            } catch (e) {
+                            } catch (_e) {
                                 errorBody =
                                     "Could not read error response body";
                             }
@@ -360,7 +360,7 @@ export const fetchFromLeastBusyServer = async (
             lastError = error as Error;
 
             // Only retry on 500 errors
-            if (error.message && error.message.includes("status: 500")) {
+            if (error.message?.includes("status: 500")) {
                 console.error(
                     `[${type}] Attempt ${attempt + 1}/${maxRetries} failed with 500 error, trying different server...`,
                 );

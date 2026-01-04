@@ -3,9 +3,9 @@
  * Automatically loads both shared and local .env files with proper precedence
  */
 
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 import dotenv from "dotenv";
-import path from "path";
-import { fileURLToPath } from "url";
 
 // Use different variable names to avoid conflicts with global __filename/__dirname
 const currentFilePath = fileURLToPath(import.meta.url);

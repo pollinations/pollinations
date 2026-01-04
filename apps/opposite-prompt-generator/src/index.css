@@ -1,18 +1,29 @@
 /* Tailwind v4 entrypoint */
-@import 'tailwindcss';
-
+@import "tailwindcss";
 
 /* Global tweaks */
 :root {
-  --bg-gradient-dark: linear-gradient(135deg, #1e1b4b 0%, #4c1d95 50%, #9d174d 100%);
-  --bg-gradient-light: linear-gradient(135deg, #eef2ff 0%, #f5f3ff 50%, #ffe4e6 100%);
+    --bg-gradient-dark: linear-gradient(
+        135deg,
+        #1e1b4b 0%,
+        #4c1d95 50%,
+        #9d174d 100%
+    );
+    --bg-gradient-light: linear-gradient(
+        135deg,
+        #eef2ff 0%,
+        #f5f3ff 50%,
+        #ffe4e6 100%
+    );
 }
 
-html, body, #root {
-  height: 100%;
+html,
+body,
+#root {
+    height: 100%;
 }
 
 ::selection {
-  background: rgba(99, 102, 241, 0.35);
-  color: #fff;
+    background: rgba(99, 102, 241, 0.35);
+    color: #fff;
 }

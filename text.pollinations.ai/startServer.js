@@ -10,6 +10,8 @@ app.listen(port, () => {
 
     // Validate PLN_ENTER_TOKEN configuration
     if (!process.env.PLN_ENTER_TOKEN) {
-        log("⚠️  PLN_ENTER_TOKEN not set - enter.pollinations.ai bypass disabled");
+        log(
+            "⚠️  PLN_ENTER_TOKEN not set - enter.pollinations.ai bypass disabled",
+        );
     }
 });

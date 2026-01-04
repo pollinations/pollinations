@@ -21,7 +21,7 @@ export function sendAdSkippedAnalytics(
     req,
     reason,
     isStreaming = false,
-    additionalData = {},
+    _additionalData = {},
 ) {
     if (!req) return;
 

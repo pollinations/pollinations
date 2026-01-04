@@ -2,8 +2,8 @@
 
 import { z } from "zod";
 import {
-    DEFAULT_TEXT_MODEL,
     AUDIO_VOICES,
+    DEFAULT_TEXT_MODEL,
 } from "../../../shared/registry/text.ts";
 
 const FunctionParametersSchema = z.record(z.string(), z.any());

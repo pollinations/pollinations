@@ -108,14 +108,14 @@ export function capitalize(str: string) {
 }
 
 export function safeRound(amount: number, precision: number = 6): number {
-    if (!isFinite(amount) || isNaN(amount)) {
+    if (!Number.isFinite(amount) || Number.isNaN(amount)) {
         return 0;
     }
     // Handle very small amounts (avoid floating point issues)
-    if (Math.abs(amount) < Math.pow(10, -(precision + 2))) {
+    if (Math.abs(amount) < 10 ** -(precision + 2)) {
         return 0;
     }
-    const factor = Math.pow(10, precision);
+    const factor = 10 ** precision;
     return Math.round(amount * factor) / factor;
 }
 
@@ -139,8 +139,8 @@ export function exponentialBackoffDelay(
 
     if (attempt === 0) return 0;
 
-    const base = Math.pow(maxDelay / minDelay, 1 / (maxAttempts - 1));
-    const delay = minDelay * Math.pow(base, attempt - 1);
+    const base = (maxDelay / minDelay) ** (1 / (maxAttempts - 1));
+    const delay = minDelay * base ** (attempt - 1);
 
     if (jitter > 0) {
         const jitterRange = delay * jitter;

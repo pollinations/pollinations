@@ -1,5 +1,5 @@
-import fetch from "node-fetch";
 import debug from "debug";
+import fetch from "node-fetch";
 
 const log = debug("pollinations:google-auth");
 const errorLog = debug("pollinations:google-auth:error");
@@ -22,14 +22,8 @@ async function refreshGcloudAccessToken() {
 
         log("Checking Google Cloud credentials from environment...");
         log("- GOOGLE_PRIVATE_KEY:", privateKey ? "[SET]" : "[NOT SET]");
-        log(
-            "- GOOGLE_PRIVATE_KEY_ID:",
-            privateKeyId ? "[SET]" : "[NOT SET]",
-        );
-        log(
-            "- GOOGLE_CLIENT_EMAIL:",
-            clientEmail ? "[SET]" : "[NOT SET]",
-        );
+        log("- GOOGLE_PRIVATE_KEY_ID:", privateKeyId ? "[SET]" : "[NOT SET]");
+        log("- GOOGLE_CLIENT_EMAIL:", clientEmail ? "[SET]" : "[NOT SET]");
         log("- GOOGLE_PROJECT_ID:", projectId);
 
         if (!privateKey || !privateKeyId || !clientEmail) {

@@ -1,11 +1,11 @@
-import fetch from "node-fetch";
-import { HttpsProxyAgent } from "https-proxy-agent";
+import { exec } from "node:child_process";
+import fs from "node:fs";
+import http from "node:http";
+import path from "node:path";
+import { promisify } from "node:util";
 import sleep from "await-sleep";
-import fs from "fs";
-import path from "path";
-import http from "http";
-import { exec } from "child_process";
-import { promisify } from "util";
+import { HttpsProxyAgent } from "https-proxy-agent";
+import fetch from "node-fetch";
 import tempfile from "tempfile";
 
 const execAsync = promisify(exec);
@@ -153,7 +153,7 @@ async function generateImageRetry(
     width,
     height,
     numInferenceSteps,
-    agent,
+    _agent,
 ) {
     let attempt = 0;
     const endpoints = [
@@ -174,7 +174,7 @@ async function generateImageRetry(
                 numInferenceSteps,
                 endpoint,
             );
-        } catch (error) {
+        } catch (_error) {
             console.error(
                 "Error generating image, retry #:",
                 attempt,

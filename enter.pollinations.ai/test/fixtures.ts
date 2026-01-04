@@ -1,14 +1,14 @@
-import { test as base, expect } from "vitest";
-import { createAuthClient } from "better-auth/client";
-import { apiKeyClient, adminClient } from "better-auth/client/plugins";
 import { SELF } from "cloudflare:test";
-import { createMockPolar } from "./mocks/polar.ts";
-import { createMockGithub } from "./mocks/github.ts";
-import { createMockTinybird } from "./mocks/tinybird.ts";
-import { teardownFetchMock, createFetchMock } from "./mocks/fetch.ts";
 import type { Logger } from "@logtape/logtape";
 import { getLogger } from "@logtape/logtape";
+import { createAuthClient } from "better-auth/client";
+import { adminClient, apiKeyClient } from "better-auth/client/plugins";
+import { test as base, expect } from "vitest";
 import { ensureConfigured } from "@/logger.ts";
+import { createFetchMock, teardownFetchMock } from "./mocks/fetch.ts";
+import { createMockGithub } from "./mocks/github.ts";
+import { createMockPolar } from "./mocks/polar.ts";
+import { createMockTinybird } from "./mocks/tinybird.ts";
 import { createMockVcr } from "./mocks/vcr.ts";
 
 const createAuthClientInstance = () =>

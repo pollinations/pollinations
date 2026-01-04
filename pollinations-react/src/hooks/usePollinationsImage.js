@@ -27,7 +27,7 @@ const usePollinationsImage = (prompt, options = {}) => {
 
     const imageUrl = useMemo(() => {
         const params = new URLSearchParams();
-        
+
         if (model !== "flux") params.set("model", model);
         if (width !== 1024) params.set("width", width.toString());
         if (height !== 1024) params.set("height", height.toString());

@@ -1,5 +1,11 @@
-import React, { useState } from "react";
 import { usePollinationsText } from "@pollinations/react";
+import { Copy } from "lucide-react";
+import type React from "react";
+import { useState } from "react";
+import ReactMarkdown from "react-markdown";
+import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
+import { oneDark } from "react-syntax-highlighter/dist/esm/styles/prism";
+import { Button } from "@/components/ui/button";
 import {
     Card,
     CardContent,
@@ -7,9 +13,8 @@ import {
     CardHeader,
     CardTitle,
 } from "@/components/ui/card";
-import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
 import {
     Select,
     SelectContent,
@@ -17,12 +22,8 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select";
-import ReactMarkdown from "react-markdown";
-import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
-import { oneDark } from "react-syntax-highlighter/dist/esm/styles/prism";
-import { Copy } from "lucide-react";
-import { useFetchModels } from "../hooks/useFetchModels";
 import { Textarea } from "@/components/ui/textarea";
+import { useFetchModels } from "../hooks/useFetchModels";
 
 interface TextModel {
     name: string;

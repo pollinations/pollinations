@@ -1,30 +1,29 @@
-import { Hono } from "hono";
-import { HTTPException } from "hono/http-exception";
 import { getLogger } from "@logtape/logtape";
-import { drizzle } from "drizzle-orm/d1";
-import { eq } from "drizzle-orm";
 import { Polar } from "@polar-sh/sdk";
+import type { WebhookBenefitGrantCreatedPayload } from "@polar-sh/sdk/models/components/webhookbenefitgrantcreatedpayload.js";
+import type { WebhookBenefitGrantCycledPayload } from "@polar-sh/sdk/models/components/webhookbenefitgrantcycledpayload.js";
+import type { WebhookBenefitGrantUpdatedPayload } from "@polar-sh/sdk/models/components/webhookbenefitgrantupdatedpayload.js";
+import type { WebhookOrderPaidPayload } from "@polar-sh/sdk/models/components/webhookorderpaidpayload.js";
+import type { WebhookSubscriptionCanceledPayload } from "@polar-sh/sdk/models/components/webhooksubscriptioncanceledpayload.js";
+import type { WebhookSubscriptionCreatedPayload } from "@polar-sh/sdk/models/components/webhooksubscriptioncreatedpayload.js";
+import type { WebhookSubscriptionRevokedPayload } from "@polar-sh/sdk/models/components/webhooksubscriptionrevokedpayload.js";
+import type { WebhookSubscriptionUpdatedPayload } from "@polar-sh/sdk/models/components/webhooksubscriptionupdatedpayload.js";
 import {
     validateEvent,
     WebhookVerificationError,
 } from "@polar-sh/sdk/webhooks";
-import type { Env } from "../env.ts";
-import { user as userTable } from "../db/schema/better-auth.ts";
-import { syncUserTier } from "../tier-sync.ts";
+import { eq, sql } from "drizzle-orm";
+import { drizzle } from "drizzle-orm/d1";
+import { Hono } from "hono";
+import { HTTPException } from "hono/http-exception";
 import {
-    isValidTier,
     getTierProductMapCached,
+    isValidTier,
     type TierName,
 } from "@/utils/polar.ts";
-import { WebhookSubscriptionRevokedPayload } from "@polar-sh/sdk/models/components/webhooksubscriptionrevokedpayload.js";
-import { WebhookSubscriptionCanceledPayload } from "@polar-sh/sdk/models/components/webhooksubscriptioncanceledpayload.js";
-import { WebhookSubscriptionUpdatedPayload } from "@polar-sh/sdk/models/components/webhooksubscriptionupdatedpayload.js";
-import { WebhookSubscriptionCreatedPayload } from "@polar-sh/sdk/models/components/webhooksubscriptioncreatedpayload.js";
-import { WebhookBenefitGrantCycledPayload } from "@polar-sh/sdk/models/components/webhookbenefitgrantcycledpayload.js";
-import { WebhookBenefitGrantCreatedPayload } from "@polar-sh/sdk/models/components/webhookbenefitgrantcreatedpayload.js";
-import { WebhookBenefitGrantUpdatedPayload } from "@polar-sh/sdk/models/components/webhookbenefitgrantupdatedpayload.js";
-import { WebhookOrderPaidPayload } from "@polar-sh/sdk/models/components/webhookorderpaidpayload.js";
-import { sql } from "drizzle-orm";
+import { user as userTable } from "../db/schema/better-auth.ts";
+import type { Env } from "../env.ts";
+import { syncUserTier } from "../tier-sync.ts";
 
 const log = getLogger(["hono", "webhooks"]);
 
@@ -310,7 +309,8 @@ async function handleBenefitGrant(
     // Distinguish pack vs tier by checking orderId vs subscriptionId
     // Pack purchases have orderId set, tier subscriptions have subscriptionId set
     const orderId = (payload.data as { orderId?: string }).orderId;
-    const subscriptionId = (payload.data as { subscriptionId?: string }).subscriptionId;
+    const subscriptionId = (payload.data as { subscriptionId?: string })
+        .subscriptionId;
     const isPack = orderId != null;
 
     const db = drizzle(env.DB);
@@ -324,11 +324,14 @@ async function handleBenefitGrant(
             })
             .where(eq(userTable.id, externalId));
 
-        log.info("[POLAR_CREDIT] pack: user={userId} +{units} orderId={orderId}", {
-            userId: externalId,
-            units,
-            orderId,
-        });
+        log.info(
+            "[POLAR_CREDIT] pack: user={userId} +{units} orderId={orderId}",
+            {
+                userId: externalId,
+                units,
+                orderId,
+            },
+        );
     } else {
         // Tier subscription: SET tier_balance (reset each cycle, not cumulative)
         await db
@@ -339,11 +342,14 @@ async function handleBenefitGrant(
             })
             .where(eq(userTable.id, externalId));
 
-        log.info("[POLAR_CREDIT] tier: user={userId} balance={units} subscriptionId={subscriptionId}", {
-            userId: externalId,
-            units,
-            subscriptionId,
-        });
+        log.info(
+            "[POLAR_CREDIT] tier: user={userId} balance={units} subscriptionId={subscriptionId}",
+            {
+                userId: externalId,
+                units,
+                subscriptionId,
+            },
+        );
     }
 }
 

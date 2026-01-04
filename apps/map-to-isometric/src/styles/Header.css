@@ -1,58 +1,58 @@
 .header {
-  text-align: center;
-  margin-bottom: 40px;
-  padding: 30px 0;
-  animation: fadeInDown 0.8s ease;
+    text-align: center;
+    margin-bottom: 40px;
+    padding: 30px 0;
+    animation: fadeInDown 0.8s ease;
 }
 
 .header h1 {
-  font-size: 2.8rem;
-  margin-bottom: 15px;
-  color: #ffffff;
-  text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.3);
-  font-weight: 700;
-  letter-spacing: -1px;
+    font-size: 2.8rem;
+    margin-bottom: 15px;
+    color: #ffffff;
+    text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.3);
+    font-weight: 700;
+    letter-spacing: -1px;
 }
 
 .header p {
-  font-size: 1.2rem;
-  color: #ffffff;
-  opacity: 0.95;
-  text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.2);
+    font-size: 1.2rem;
+    color: #ffffff;
+    opacity: 0.95;
+    text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.2);
 }
 
 @keyframes fadeInDown {
-  from {
-    opacity: 0;
-    transform: translateY(-30px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+    from {
+        opacity: 0;
+        transform: translateY(-30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
 @media (max-width: 768px) {
-  .header h1 {
-    font-size: 2rem;
-  }
-  
-  .header p {
-    font-size: 1rem;
-  }
+    .header h1 {
+        font-size: 2rem;
+    }
+
+    .header p {
+        font-size: 1rem;
+    }
 }
 
 @media (max-width: 480px) {
-  .header {
-    padding: 20px 0;
-    margin-bottom: 25px;
-  }
-  
-  .header h1 {
-    font-size: 1.6rem;
-  }
-  
-  .header p {
-    font-size: 0.9rem;
-  }
+    .header {
+        padding: 20px 0;
+        margin-bottom: 25px;
+    }
+
+    .header h1 {
+        font-size: 1.6rem;
+    }
+
+    .header p {
+        font-size: 0.9rem;
+    }
 }

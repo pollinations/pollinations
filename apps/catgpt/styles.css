@@ -1,5 +1,5 @@
 /* Gen-Z Psychedelic Style for CatGPT */
-@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300..700&display=swap');
+@import url("https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300..700&display=swap");
 
 :root {
     --color-primary: #ff61d8;
@@ -20,7 +20,7 @@
 }
 
 body {
-    font-family: 'Space Grotesk', sans-serif;
+    font-family: "Space Grotesk", sans-serif;
     background-color: var(--color-bg);
     color: var(--color-text);
     line-height: 1.6;
@@ -63,8 +63,13 @@ header {
 }
 
 @keyframes gradient-shift {
-    0%, 100% { transform: skew(-15deg) translateX(0); }
-    50% { transform: skew(-15deg) translateX(10px); }
+    0%,
+    100% {
+        transform: skew(-15deg) translateX(0);
+    }
+    50% {
+        transform: skew(-15deg) translateX(10px);
+    }
 }
 
 .emoji-bounce {
@@ -77,8 +82,13 @@ header {
 }
 
 @keyframes bounce {
-    0%, 100% { transform: translateY(0); }
-    50% { transform: translateY(-10px); }
+    0%,
+    100% {
+        transform: translateY(0);
+    }
+    50% {
+        transform: translateY(-10px);
+    }
 }
 
 .tagline {
@@ -299,7 +309,9 @@ header {
     border-radius: 50%;
     background: rgba(255, 255, 255, 0.3);
     transform: translate(-50%, -50%);
-    transition: width 0.6s, height 0.6s;
+    transition:
+        width 0.6s,
+        height 0.6s;
 }
 
 .generate-btn:active::before {
@@ -308,14 +320,14 @@ header {
 }
 
 .generate-btn:disabled {
-    opacity: 0.6 !important;
-    cursor: not-allowed !important;
-    transform: none !important;
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
 }
 
 .generate-btn:disabled:hover {
-    background: var(--gradient-1) !important;
-    transform: none !important;
+    background: var(--gradient-1);
+    transform: none;
 }
 
 .btn-emoji {
@@ -324,8 +336,12 @@ header {
 }
 
 @keyframes rotate {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
+    0% {
+        transform: rotate(0deg);
+    }
+    100% {
+        transform: rotate(360deg);
+    }
 }
 
 /* Loading State */
@@ -348,13 +364,24 @@ header {
 }
 
 @keyframes spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
+    0% {
+        transform: rotate(0deg);
+    }
+    100% {
+        transform: rotate(360deg);
+    }
 }
 
 @keyframes pulse {
-    0%, 100% { opacity: 1; transform: scale(1); }
-    50% { opacity: 0.7; transform: scale(1.02); }
+    0%,
+    100% {
+        opacity: 1;
+        transform: scale(1);
+    }
+    50% {
+        opacity: 0.7;
+        transform: scale(1.02);
+    }
 }
 
 .loading.hidden {

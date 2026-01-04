@@ -611,7 +611,8 @@ export const TEXT_SERVICES = {
                 completionTextTokens: perMillion(15.0),
             },
         ],
-        description: "Anthropic Claude 3.7 Sonnet - Previous Generation (Legacy)",
+        description:
+            "Anthropic Claude 3.7 Sonnet - Previous Generation (Legacy)",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
         tools: true,
@@ -628,7 +629,8 @@ export const TEXT_SERVICES = {
                 completionTextTokens: perMillion(15.0),
             },
         ],
-        description: "Anthropic Claude 3.5 Sonnet v2 - Previous Version (Legacy)",
+        description:
+            "Anthropic Claude 3.5 Sonnet v2 - Previous Version (Legacy)",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
         tools: true,

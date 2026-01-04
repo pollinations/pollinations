@@ -4,34 +4,29 @@ import http from "node:http";
 import { parse } from "node:url";
 import debug from "debug";
 import urldecode from "urldecode";
-import { HttpError } from "./httpError.js";
 import { extractToken, getIp } from "../../shared/extractFromRequest.js";
-import { buildTrackingHeaders } from "./utils/trackingHeaders.js";
 import { countFluxJobs, handleRegisterEndpoint } from "./availableServers.js";
-import { getModelCounts } from "./modelCounter.js";
-import { IMAGE_CONFIG } from "./models.js";
 import {
     type AuthResult,
     createAndReturnImageCached,
     type ImageGenerationResult,
 } from "./createAndReturnImages.js";
-import {
-    createAndReturnVideo,
-    isVideoModel,
-    type VideoGenerationResult,
-} from "./createAndReturnVideos.js";
+import { createAndReturnVideo, isVideoModel } from "./createAndReturnVideos.js";
 import { registerFeedListener, sendToFeedListeners } from "./feedListeners.js";
+import { HttpError } from "./httpError.js";
+import { getModelCounts } from "./modelCounter.js";
 import { MODELS } from "./models.js";
 import {
     normalizeAndTranslatePrompt,
     type TimingStep,
 } from "./normalizeAndTranslatePrompt.js";
-import { ImageParamsSchema, type ImageParams } from "./params.js";
+import { type ImageParams, ImageParamsSchema } from "./params.js";
 import { createProgressTracker, type ProgressManager } from "./progressBar.js";
 import { sleep } from "./util.ts";
+import { buildTrackingHeaders } from "./utils/trackingHeaders.js";
 
 // Queue configuration for image service
-const QUEUE_CONFIG = {
+const _QUEUE_CONFIG = {
     interval: 30000, // 30 seconds between requests per IP (no auth)
     cap: 1, // Max 1 concurrent request per IP
 };
@@ -52,7 +47,7 @@ const HOURLY_LIMIT = 10;
 const HOUR_MS = 60 * 60 * 1000;
 
 // Check and update hourly usage for an IP
-const checkHourlyLimit = (
+const _checkHourlyLimit = (
     ip: string,
 ): { allowed: boolean; remaining: number; resetIn: number } => {
     const now = Date.now();
@@ -148,9 +143,9 @@ const imageGen = async ({
     requestId,
     authResult,
 }: ImageGenParams): Promise<ImageGenerationResult> => {
-    const ip = getIp(req);
+    const _ip = getIp(req);
 
-    const startTime = Date.now();
+    const _startTime = Date.now();
 
     try {
         timingInfo.push({ step: "Start processing", timestamp: Date.now() });
@@ -256,7 +251,7 @@ const imageGen = async ({
             wasPimped,
             nsfw: !!(maturity.isChild || maturity.isMature),
             private: !!safeParams.nofeed,
-            token: extractToken(req) && extractToken(req).slice(0, 2) + "...",
+            token: extractToken(req) && `${extractToken(req).slice(0, 2)}...`,
         };
 
         sendToFeedListeners(feedData, { saveAsLastState: true });
@@ -700,6 +695,6 @@ function relativeTiming(timingInfo: TimingStep[]) {
  * @param {string} prompt - The original prompt.
  * @returns {string} - The sanitized file name.
  */
-const sanitizeFileName = (prompt) => {
+const _sanitizeFileName = (prompt) => {
     return prompt.replace(/[^a-z0-9]/gi, "_").toLowerCase();
 };

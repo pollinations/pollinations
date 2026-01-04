@@ -1,5 +1,5 @@
+import crypto from "node:crypto";
 import debug from "debug";
-import crypto from "crypto";
 import { getIp } from "../../shared/extractFromRequest.js";
 
 const log = debug("pollinations:nexad:client");
@@ -222,6 +222,6 @@ function hashIPAddress(
 }
 
 // Helper function for user ID generation (rarely used now with IP hashing)
-function generateUserId() {
+function _generateUserId() {
     return `user_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 }

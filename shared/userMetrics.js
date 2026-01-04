@@ -7,9 +7,11 @@
  */
 export async function incrementUserMetric(userId, metricKey, incrementBy = 1) {
     // DISABLED: All metrics updates disabled to resolve DB contention (GitHub Issue #3258)
-    console.log(`DISABLED: Skipping ${metricKey} increment for user ${userId} (metrics disabled)`);
+    console.log(
+        `DISABLED: Skipping ${metricKey} increment for user ${userId} (metrics disabled)`,
+    );
     return;
-    
+
     if (!userId) {
         console.log(`No user ID provided. Skipping ${metricKey} increment.`);
         return;

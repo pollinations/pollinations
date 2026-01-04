@@ -110,7 +110,7 @@ export class EnterNotificationService {
 }
 
 // Example usage in a service
-async function exampleUsage() {
+async function _exampleUsage() {
     const authEmailService = new AuthEmailService();
     const imageNotificationService = new ImageNotificationService();
     const enterNotificationService = new EnterNotificationService();

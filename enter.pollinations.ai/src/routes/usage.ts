@@ -1,9 +1,9 @@
 import { Hono } from "hono";
-import { auth } from "../middleware/auth.ts";
-import { validator } from "../middleware/validator.ts";
 import { describeRoute } from "hono-openapi";
 import { z } from "zod";
 import type { Env } from "../env.ts";
+import { auth } from "../middleware/auth.ts";
+import { validator } from "../middleware/validator.ts";
 
 // Query params schema
 const usageQuerySchema = z.object({

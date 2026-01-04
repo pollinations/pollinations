@@ -1,11 +1,11 @@
-import { Transform } from "stream";
+import { Transform } from "node:stream";
 import debug from "debug";
-import { logAdInteraction } from "./adLogger.js";
 
 const log = debug("pollinations:adfilter");
 const errorLog = debug("pollinations:adfilter:error");
-import { generateAdForContent } from "./initRequestFilter.js";
+
 import { sendAdSkippedAnalytics } from "./adUtils.js";
+import { generateAdForContent } from "./initRequestFilter.js";
 
 // Global flag to disable ad system
 const ADS_GLOBALLY_DISABLED = true;
@@ -110,16 +110,12 @@ export async function createStreamingAdWrapper(
                                             // Standard OpenAI format
                                             const choice = data.choices[0];
 
-                                            if (
-                                                choice.delta &&
-                                                choice.delta.content
-                                            ) {
+                                            if (choice.delta?.content) {
                                                 // Streaming format with delta
                                                 collectedContent +=
                                                     choice.delta.content;
                                             } else if (
-                                                choice.message &&
-                                                choice.message.content
+                                                choice.message?.content
                                             ) {
                                                 // Non-streaming format with message
                                                 collectedContent +=
@@ -135,7 +131,7 @@ export async function createStreamingAdWrapper(
                                             // Direct string response
                                             collectedContent += data;
                                         }
-                                    } catch (e) {
+                                    } catch (_e) {
                                         // If not valid JSON, treat as plain text
                                         // This handles cases where the response is not JSON
                                         if (dataContent !== "[DONE]") {
@@ -152,22 +148,18 @@ export async function createStreamingAdWrapper(
                                 try {
                                     // Try to parse as JSON
                                     const data = JSON.parse(plainText);
-                                    if (data.choices && data.choices[0]) {
-                                        if (
-                                            data.choices[0].delta &&
-                                            data.choices[0].delta.content
-                                        ) {
+                                    if (data.choices?.[0]) {
+                                        if (data.choices[0].delta?.content) {
                                             collectedContent +=
                                                 data.choices[0].delta.content;
                                         } else if (
-                                            data.choices[0].message &&
-                                            data.choices[0].message.content
+                                            data.choices[0].message?.content
                                         ) {
                                             collectedContent +=
                                                 data.choices[0].message.content;
                                         }
                                     }
-                                } catch (e) {
+                                } catch (_e) {
                                     // If not JSON, use as plain text
                                     collectedContent += plainText;
                                 }

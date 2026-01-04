@@ -83,7 +83,7 @@ function setupFeedEndpoint(app) {
             });
         } else {
             // For regular clients - add to regular list and exclude private requests
-            connectedClients.set(clientId, (response, parameters, ip) => {
+            connectedClients.set(clientId, (response, parameters, _ip) => {
                 const eventData = {
                     response,
                     parameters,

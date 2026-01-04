@@ -1,14 +1,14 @@
+import Debug from "debug";
 import { z } from "zod";
 import { MODELS } from "./models.js";
-import Debug from "debug";
 
-const log = Debug("pollinations:image.params");
+const _log = Debug("pollinations:image.params");
 
 type ModelName = keyof typeof MODELS;
 
 const allowedModels = Object.keys(MODELS) as Array<keyof typeof MODELS>;
 const validQualities = ["low", "medium", "high", "hd"] as const;
-const maxSeedValue = 1844674407370955;
+const _maxSeedValue = 1844674407370955;
 const MAX_RANDOM_SEED = 4294967296; // 2^32 for random seed generation
 
 const sanitizedBoolean = z
@@ -20,14 +20,16 @@ const sanitizedBoolean = z
 
 const sanitizedSeed = z.preprocess((v) => {
     const seed = String(v);
-    const parsed = Number.isInteger(parseInt(seed)) ? parseInt(seed) : 42;
+    const parsed = Number.isInteger(parseInt(seed, 10))
+        ? parseInt(seed, 10)
+        : 42;
     // seed=-1 means "random" - generate a random seed
     return parsed === -1 ? Math.floor(Math.random() * MAX_RANDOM_SEED) : parsed;
 }, z.int().catch(42));
 
 const sanitizedSideLength = z.preprocess((v) => {
-    return Number.isInteger(parseInt(v as string))
-        ? parseInt(v as string)
+    return Number.isInteger(parseInt(v as string, 10))
+        ? parseInt(v as string, 10)
         : undefined;
 }, z.int().optional());
 

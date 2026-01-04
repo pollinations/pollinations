@@ -108,7 +108,7 @@
 
         // Check for API key in URL fragment on page load
         // Key is passed in fragment (#api_key=...) to prevent leaking to server logs
-        window.onload = function() {
+        window.onload = () => {
             const hash = window.location.hash.substring(1); // Remove #
             const hashParams = new URLSearchParams(hash);
             const key = hashParams.get('api_key');
@@ -130,7 +130,7 @@
             }
         };
 
-        function startAuth() {
+        function _startAuth() {
             const authUrl = `${ENTER_URL}/authorize?redirect_url=${encodeURIComponent(CALLBACK_URL)}`;
             window.location.href = authUrl;
         }
@@ -151,10 +151,10 @@
 
         function showError(msg) {
             document.getElementById('errorCard').style.display = 'block';
-            document.getElementById('errorMsg').textContent = 'oops: ' + msg;
+            document.getElementById('errorMsg').textContent = `oops: ${msg}`;
         }
 
-        async function testImageGen() {
+        async function _testImageGen() {
             if (!apiKey) {
                 showError('No API key available');
                 return;

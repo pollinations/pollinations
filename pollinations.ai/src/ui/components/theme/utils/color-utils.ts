@@ -11,9 +11,9 @@ export const rgbaToHex = (color: string): string => {
         /rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*[\d.]+)?\)/,
     );
     if (rgbaMatch) {
-        const r = parseInt(rgbaMatch[1]);
-        const g = parseInt(rgbaMatch[2]);
-        const b = parseInt(rgbaMatch[3]);
+        const r = parseInt(rgbaMatch[1], 10);
+        const g = parseInt(rgbaMatch[2], 10);
+        const b = parseInt(rgbaMatch[3], 10);
         return `#${r.toString(16).padStart(2, "0")}${g
             .toString(16)
             .padStart(2, "0")}${b.toString(16).padStart(2, "0")}`;

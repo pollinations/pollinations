@@ -35,8 +35,6 @@ export const APP_CONFIGS = {
         },
     },
 
-
-
     hello: {
         name: "hello.pollinations.ai",
         outputDir: "hello.pollinations.ai/public",

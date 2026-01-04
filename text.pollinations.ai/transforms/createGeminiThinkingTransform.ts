@@ -52,8 +52,6 @@ export function createGeminiThinkingTransform(
                         // Gemini 3 Pro: Can't fully disable, use "low" for minimal thinking
                         updatedOptions.reasoning_effort = "low";
                         break;
-                    case "v3-flash":
-                    case "v2.5":
                     default:
                         // Gemini 2.5 and 3 Flash: Use thinking object with budget_tokens: 0
                         updatedOptions.thinking = {

@@ -45,9 +45,9 @@ export function BackgroundRenderer() {
                 // Parse "255 255 255" format
                 const parts = style.split(" ");
                 if (parts.length >= 3) {
-                    const r = parseInt(parts[0]);
-                    const g = parseInt(parts[1]);
-                    const b = parseInt(parts[2]);
+                    const r = parseInt(parts[0], 10);
+                    const g = parseInt(parts[1], 10);
+                    const b = parseInt(parts[2], 10);
                     if (
                         !Number.isNaN(r) &&
                         !Number.isNaN(g) &&

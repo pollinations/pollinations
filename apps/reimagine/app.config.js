@@ -1,5 +1,5 @@
-import 'dotenv/config';
-import appJson from './app.json';
+import "dotenv/config";
+import appJson from "./app.json";
 
 export default ({ config }) => ({
     ...appJson.expo,
@@ -13,5 +13,5 @@ export default ({ config }) => ({
         APP_REFERER: process.env.APP_REFERER,
         COOLDOWN_SECONDS: process.env.COOLDOWN_SECONDS,
         MAX_GENERATIONS_PER_DAY: process.env.MAX_GENERATIONS_PER_DAY,
-    }
+    },
 });

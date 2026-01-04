@@ -137,7 +137,7 @@
                 // console.log(data.choices[0].message.content);
 
             } catch (error) {
-                alert('Error: ' + error.message);
+                alert(`Error: ${error.message}`);
             } finally {
                 button.disabled = false;
                 button.textContent = 'Generate';

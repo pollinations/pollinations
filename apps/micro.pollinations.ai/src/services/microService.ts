@@ -1,39 +1,44 @@
-import { EmailService } from './emailService';
-import type { EmailMessage, EmailServiceResponse, EmailConfig, EmailTemplate } from '../types/index';
+import type {
+    EmailConfig,
+    EmailMessage,
+    EmailServiceResponse,
+    EmailTemplate,
+} from "../types/index";
+import { EmailService } from "./emailService";
 
 export class MicroService {
-  private emailService: EmailService;
+    private emailService: EmailService;
 
-  constructor(emailConfig: EmailConfig) {
-    this.emailService = new EmailService(emailConfig);
-  }
+    constructor(emailConfig: EmailConfig) {
+        this.emailService = new EmailService(emailConfig);
+    }
 
-  // Email utilities
-  async sendMail(message: EmailMessage): Promise<EmailServiceResponse> {
-    return this.emailService.sendMail(message);
-  }
+    // Email utilities
+    async sendMail(message: EmailMessage): Promise<EmailServiceResponse> {
+        return this.emailService.sendMail(message);
+    }
 
-  async sendTemplateMail(
-    template: EmailTemplate,
-    to: string | string[],
-    variables: Record<string, string> = {}
-  ): Promise<EmailServiceResponse> {
-    const message = this.emailService.renderTemplate(template, variables);
-    message.to = to;
-    return this.emailService.sendMail(message);
-  }
+    async sendTemplateMail(
+        template: EmailTemplate,
+        to: string | string[],
+        variables: Record<string, string> = {},
+    ): Promise<EmailServiceResponse> {
+        const message = this.emailService.renderTemplate(template, variables);
+        message.to = to;
+        return this.emailService.sendMail(message);
+    }
 
-  async verifyEmailConnection(): Promise<boolean> {
-    return this.emailService.verifyConnection();
-  }
+    async verifyEmailConnection(): Promise<boolean> {
+        return this.emailService.verifyConnection();
+    }
 
-  // Predefined email templates
-  getTemplates(): Record<string, EmailTemplate> {
-    return {
-      welcome: {
-        name: 'welcome',
-        subject: 'Welcome to {{serviceName}}!',
-        html: `
+    // Predefined email templates
+    getTemplates(): Record<string, EmailTemplate> {
+        return {
+            welcome: {
+                name: "welcome",
+                subject: "Welcome to {{serviceName}}!",
+                html: `
           <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
             <h1 style="color: #333;">Welcome to {{serviceName}}!</h1>
             <p>Hi {{userName}},</p>
@@ -42,13 +47,13 @@ export class MicroService {
             <p>Best regards,<br>The {{serviceName}} Team</p>
           </div>
         `,
-        text: 'Welcome to {{serviceName}}! Hi {{userName}}, thank you for joining us.',
-        variables: ['serviceName', 'userName'],
-      },
-      passwordReset: {
-        name: 'passwordReset',
-        subject: 'Reset your {{serviceName}} password',
-        html: `
+                text: "Welcome to {{serviceName}}! Hi {{userName}}, thank you for joining us.",
+                variables: ["serviceName", "userName"],
+            },
+            passwordReset: {
+                name: "passwordReset",
+                subject: "Reset your {{serviceName}} password",
+                html: `
           <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
             <h1 style="color: #333;">Password Reset Request</h1>
             <p>Hi {{userName}},</p>
@@ -60,58 +65,67 @@ export class MicroService {
             <p>Best regards,<br>The {{serviceName}} Team</p>
           </div>
         `,
-        text: 'Password Reset Request. Click {{resetLink}} to reset your password.',
-        variables: ['userName', 'serviceName', 'resetLink', 'expiryTime'],
-      },
-      notification: {
-        name: 'notification',
-        subject: '{{title}}',
-        html: `
+                text: "Password Reset Request. Click {{resetLink}} to reset your password.",
+                variables: [
+                    "userName",
+                    "serviceName",
+                    "resetLink",
+                    "expiryTime",
+                ],
+            },
+            notification: {
+                name: "notification",
+                subject: "{{title}}",
+                html: `
           <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
             <h1 style="color: #333;">{{title}}</h1>
             <p>{{message}}</p>
             <p>Best regards,<br>{{serviceName}}</p>
           </div>
         `,
-        text: '{{title}} - {{message}}',
-        variables: ['title', 'message', 'serviceName'],
-      },
-    };
-  }
+                text: "{{title}} - {{message}}",
+                variables: ["title", "message", "serviceName"],
+            },
+        };
+    }
 
-  // Utility methods for common email patterns
-  async sendWelcomeEmail(
-    to: string | string[],
-    userName: string,
-    serviceName: string = 'Pollinations AI'
-  ): Promise<EmailServiceResponse> {
-    const template = this.getTemplates().welcome;
-    return this.sendTemplateMail(template, to, { userName, serviceName });
-  }
+    // Utility methods for common email patterns
+    async sendWelcomeEmail(
+        to: string | string[],
+        userName: string,
+        serviceName: string = "Pollinations AI",
+    ): Promise<EmailServiceResponse> {
+        const template = this.getTemplates().welcome;
+        return this.sendTemplateMail(template, to, { userName, serviceName });
+    }
 
-  async sendPasswordResetEmail(
-    to: string | string[],
-    userName: string,
-    resetLink: string,
-    serviceName: string = 'Pollinations AI',
-    expiryTime: string = '24 hours'
-  ): Promise<EmailServiceResponse> {
-    const template = this.getTemplates().passwordReset;
-    return this.sendTemplateMail(template, to, {
-      userName,
-      serviceName,
-      resetLink,
-      expiryTime,
-    });
-  }
+    async sendPasswordResetEmail(
+        to: string | string[],
+        userName: string,
+        resetLink: string,
+        serviceName: string = "Pollinations AI",
+        expiryTime: string = "24 hours",
+    ): Promise<EmailServiceResponse> {
+        const template = this.getTemplates().passwordReset;
+        return this.sendTemplateMail(template, to, {
+            userName,
+            serviceName,
+            resetLink,
+            expiryTime,
+        });
+    }
 
-  async sendNotificationEmail(
-    to: string | string[],
-    title: string,
-    message: string,
-    serviceName: string = 'Pollinations AI'
-  ): Promise<EmailServiceResponse> {
-    const template = this.getTemplates().notification;
-    return this.sendTemplateMail(template, to, { title, message, serviceName });
-  }
+    async sendNotificationEmail(
+        to: string | string[],
+        title: string,
+        message: string,
+        serviceName: string = "Pollinations AI",
+    ): Promise<EmailServiceResponse> {
+        const template = this.getTemplates().notification;
+        return this.sendTemplateMail(template, to, {
+            title,
+            message,
+            serviceName,
+        });
+    }
 }

@@ -1,4 +1,5 @@
 #!/usr/bin/env npx tsx
+
 /// <reference types="node" />
 /**
  * Fix polar-duplicate-subscription issues
@@ -21,9 +22,9 @@
  *   - POLAR_ACCESS_TOKEN environment variable
  */
 
+import { existsSync, readFileSync } from "node:fs";
+import { createInterface } from "node:readline";
 import { Polar } from "@polar-sh/sdk";
-import { readFileSync, existsSync } from "fs";
-import { createInterface } from "readline";
 
 // Tier hierarchy (higher index = higher tier)
 const TIERS = ["spore", "seed", "flower", "nectar"] as const;
@@ -153,7 +154,7 @@ async function main() {
         if (!byEmail.has(email)) {
             byEmail.set(email, []);
         }
-        byEmail.get(email)!.push(sub);
+        byEmail.get(email)?.push(sub);
     }
 
     // Find duplicates
@@ -314,7 +315,7 @@ async function main() {
     }
 
     // Summary
-    console.log("\n" + "=".repeat(60));
+    console.log(`\n${"=".repeat(60)}`);
     console.log("DONE:");
     console.log(`  Revoked: ${revoked}`);
     console.log(`  Skipped: ${skipped}`);

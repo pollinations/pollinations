@@ -1,17 +1,17 @@
+import { getLogger } from "@logtape/logtape";
+import { Polar } from "@polar-sh/sdk";
+import { eq } from "drizzle-orm";
+import { drizzle } from "drizzle-orm/d1";
 import { Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
-import { getLogger } from "@logtape/logtape";
-import { drizzle } from "drizzle-orm/d1";
-import { eq } from "drizzle-orm";
-import { Polar } from "@polar-sh/sdk";
-import type { Env } from "../env.ts";
-import { user as userTable } from "../db/schema/better-auth.ts";
-import { syncUserTier } from "../tier-sync.ts";
 import {
+    getTierProductMapCached,
     isValidTier,
     type TierName,
-    getTierProductMapCached,
 } from "@/utils/polar.ts";
+import { user as userTable } from "../db/schema/better-auth.ts";
+import type { Env } from "../env.ts";
+import { syncUserTier } from "../tier-sync.ts";
 
 const log = getLogger(["hono", "admin"]);
 

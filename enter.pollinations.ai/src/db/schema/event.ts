@@ -1,4 +1,4 @@
-import { PriceDefinition, TokenUsage } from "@shared/registry/registry.ts";
+import type { PriceDefinition, TokenUsage } from "@shared/registry/registry.ts";
 import {
     index,
     integer,

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { API_BASE } from "../api.config";
 
 const IMAGE_MODELS_URL = `${API_BASE}/image/models`;
@@ -46,11 +46,11 @@ export function useModelList(apiKey: string): UseModelListReturn {
     // Helper to determine if a model is deprecated based on naming patterns
     const isDeprecatedModel = (modelId: string): boolean => {
         const deprecatedPatterns = [
-            /-v1$/i,           // Ends with -v1
-            /-old$/i,          // Ends with -old
-            /legacy/i,         // Contains "legacy"
+            /-v1$/i, // Ends with -v1
+            /-old$/i, // Ends with -old
+            /legacy/i, // Contains "legacy"
         ];
-        
+
         // Known deprecated model IDs (legacy models from previous generations)
         const deprecatedModelIds = [
             // Legacy models from previous generations
@@ -80,9 +80,11 @@ export function useModelList(apiKey: string): UseModelListReturn {
             "dall-e-3",
             "stable-diffusion-xl",
         ];
-        
-        return deprecatedPatterns.some(pattern => pattern.test(modelId)) || 
-               deprecatedModelIds.includes(modelId.toLowerCase());
+
+        return (
+            deprecatedPatterns.some((pattern) => pattern.test(modelId)) ||
+            deprecatedModelIds.includes(modelId.toLowerCase())
+        );
     };
 
     // Helper to format model response
@@ -170,7 +172,7 @@ export function useModelList(apiKey: string): UseModelListReturn {
         };
 
         fetchModels();
-    }, [apiKey]);
+    }, [apiKey, formatModels]);
 
     return {
         imageModels,

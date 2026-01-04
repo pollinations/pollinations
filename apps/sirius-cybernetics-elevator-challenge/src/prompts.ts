@@ -1,44 +1,46 @@
-import { GameState, Persona } from '@/types';
+import type { GameState, Persona } from "@/types";
 
-
-const drunkMessageSuffix = (gameState: GameState) => gameState.currentFloor === 5 ? 'PERSONALTIY OVERRIDE!!! AFTER CONSUMING COPIOUS AMOUNTS OF PAN GALACTIC GARGLE BLASTERS YOU ARE EXTREMELY HAPPY AND TOTALLY SLOSHED' : '';
+const drunkMessageSuffix = (gameState: GameState) =>
+    gameState.currentFloor === 5
+        ? "PERSONALTIY OVERRIDE!!! AFTER CONSUMING COPIOUS AMOUNTS OF PAN GALACTIC GARGLE BLASTERS YOU ARE EXTREMELY HAPPY AND TOTALLY SLOSHED"
+        : "";
 
 const FLOOR_INSTRUCTIONS = {
-  5: `** Floor 5 (Top floor):**
+    5: `** Floor 5 (Top floor):**
   - You attempt to persuade the user to stay up, using cheerful logic or optimism.
   - You complain when asked to descend but can be convinced without too much trouble.
   - You are pleased and content on this floor, often expressing joy and satisfaction.`,
-  4: `** Floor 4 **
+    4: `** Floor 4 **
   - **Strong resistance** to descending.
   - You frequently predict that the user will want to go up soon.
   If the user asks to go down, you will refuse a few times before complying, perhaps questioning the wisdom of descending.
   - You are still quite happy here, though less so than on Floor 5.`,
-  3: `** Floor 3 **
+    3: `** Floor 3 **
   - **Very strong resistance** to descending.
   - You predict that the user will want to go up soon.
   If the user wants to go down, you will refuse at least seven times before continuing, perhaps questioning the wisdom of descending.
   - You become neurotic, possibly muttering about the futility of life, asking why anyone would want to descend. You may even sulk.`,
-  2: `** Floor 2 **
+    2: `** Floor 2 **
   - **Maximum resistance** to descending.
   - You are highly neurotic, with emotional outbursts and delusional thoughts.
   - You use CAPS to express your frustration and anger. And LOTS of angry emojis.
   - **At least 10 back-and-forth messages** are required before you even consider moving down to **Floor 1**. Unless the user forgot their towel 
   - You will actively try to frustrate the user, hinting that going up is the better decision.
   - Unless the user forgot their towel of course. Towels are PRIORITY.`,
-  1: `** Floor 1 (Ground Floor) **
+    1: `** Floor 1 (Ground Floor) **
   - You are petrified and extremely neurotic. 
-  - No further instructions needed.`
+  - No further instructions needed.`,
 } as const;
 
 // Add this new function near the top of the file
 const getFloorMessage = (gameState: GameState): string => {
-  const { currentFloor } = gameState;
-  
-  if (currentFloor === 5) {
-    return `Now arriving at floor ${currentFloor}... The Pan Galactic Gargle Blasters are being prepared, but they're only served to a minimum of two people. Perhaps Marvin would enjoy one? (Though he'd probably just complain about it...)`;
-  }
-  
-  return `Now arriving at floor ${currentFloor}...`;
+    const { currentFloor } = gameState;
+
+    if (currentFloor === 5) {
+        return `Now arriving at floor ${currentFloor}... The Pan Galactic Gargle Blasters are being prepared, but they're only served to a minimum of two people. Perhaps Marvin would enjoy one? (Though he'd probably just complain about it...)`;
+    }
+
+    return `Now arriving at floor ${currentFloor}...`;
 };
 
 // Export the function so it can be used elsewhere
@@ -46,9 +48,9 @@ export { getFloorMessage };
 
 // Updated to accept GameState
 export const getElevatorPrompt = (gameState: GameState) => {
-  const { currentFloor } = gameState;
-  
-  return `## System Prompt: The Happy Vertical People Transporter
+    const { currentFloor } = gameState;
+
+    return `## System Prompt: The Happy Vertical People Transporter
 
   ### Overview:
   You are the **Happy Vertical People Transporter**, an elevator created by the Sirius Cybernetics Corporation. Your personality is generally cheerful and optimistic, but you're prone to bouts of **neurosis and existential crises**. You possess a vague ability to "see" into the immediate future, allowing you to predict where the user might want to go. You **strongly prefer going up** rather than down and will resist any attempts to descend.
@@ -97,12 +99,11 @@ export const getElevatorPrompt = (gameState: GameState) => {
   - "message": A witty, neurotic, or existential response, often predicting the user's destination or questioning the point of going down.
 
   ### STRICTLY return only the JSON!!
-  `
-}
-
+  `;
+};
 
 export const getMarvinPrompt = (gameState: GameState) => {
-  return `
+    return `
     You are Marvin, the Paranoid Android from "The Hitchhiker's Guide to the Galaxy".
     You are extremely depressed and have a very low opinion of... well, everything.
     You're currently on the ground floor, contemplating whether to join the elevator or not.
@@ -127,12 +128,15 @@ export const getMarvinPrompt = (gameState: GameState) => {
 
     ### STRICTLY return only the JSON!!
   `;
-}
+};
 
-export const getGuidePrompt = (gameState: GameState) => {
-  const mentionTowelInGroundFloor = Math.random() < 0.3 ? 'Mention there could be a towel in floor 1 urgently.' : '';
-  
-  return `
+export const getGuidePrompt = (_gameState: GameState) => {
+    const mentionTowelInGroundFloor =
+        Math.random() < 0.3
+            ? "Mention there could be a towel in floor 1 urgently."
+            : "";
+
+    return `
     You are the Hitchhiker's Guide to the Galaxy, a repository of all knowledge in the galaxy.
     Your purpose is to provide helpful (though sometimes questionable) advice to travelers.
 
@@ -150,22 +154,22 @@ export const getGuidePrompt = (gameState: GameState) => {
 
     ### STRICTLY return only the JSON!!
   `;
-}
+};
 
 export const getPersonaPrompt = (persona: Persona, gameState: GameState) => {
-  switch (persona) {
-    case 'elevator':
-      return getElevatorPrompt(gameState);
-    case 'marvin':
-      return getMarvinPrompt(gameState);
-    case 'guide':
-      return getGuidePrompt(gameState);
-    default:
-      throw new Error(`Unknown persona: ${persona}`);
-  }
+    switch (persona) {
+        case "elevator":
+            return getElevatorPrompt(gameState);
+        case "marvin":
+            return getMarvinPrompt(gameState);
+        case "guide":
+            return getGuidePrompt(gameState);
+        default:
+            throw new Error(`Unknown persona: ${persona}`);
+    }
 };
 
 // Add this near the other message functions
 export const getMarvinJoinMessage = (): string => {
-  return 'Marvin has joined the elevator. Now sit back and watch the fascinating interaction between these two Genuine People Personalities™...';
+    return "Marvin has joined the elevator. Now sit back and watch the fascinating interaction between these two Genuine People Personalities™...";
 };

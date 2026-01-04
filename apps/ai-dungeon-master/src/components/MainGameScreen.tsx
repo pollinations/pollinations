@@ -1,13 +1,20 @@
-import { useState } from "react";
+import {
+    Backpack,
+    Dices,
+    Loader2,
+    Save,
+    ScrollText,
+    Upload,
+} from "lucide-react";
 import { motion } from "motion/react";
-import { PlayerStatsCard } from "./PlayerStatsCard";
-import { SceneArea } from "./SceneArea";
-import { StoryText } from "./StoryText";
+import { useState } from "react";
 import { ChoicesSection } from "./ChoicesSection";
 import { InventoryGrid, type InventoryItem } from "./InventoryGrid";
 import { InventoryModal } from "./InventoryModal";
+import { PlayerStatsCard } from "./PlayerStatsCard";
+import { SceneArea } from "./SceneArea";
+import { StoryText } from "./StoryText";
 import { Button } from "./ui/button";
-import { Backpack, Dices, Save, Upload, Loader2, ScrollText } from "lucide-react";
 
 interface Character {
     name: string;
@@ -39,7 +46,7 @@ interface Enemy {
 interface GameScene {
     description: string;
     image: string;
-    mood: 'peaceful' | 'tense' | 'combat' | 'mysterious' | 'joyful';
+    mood: "peaceful" | "tense" | "combat" | "mysterious" | "joyful";
     enemy?: Enemy;
 }
 
@@ -50,7 +57,13 @@ interface MainGameScreenProps {
     inventory: InventoryItem[];
     isLoading: boolean;
     onChoice: (choice: GameChoice) => Promise<void>;
-    onCombat: () => Promise<{ playerRoll: number; enemyRoll: number; playerSuccess: boolean; enemyDefeated: boolean; combatResult: string; } | null>;
+    onCombat: () => Promise<{
+        playerRoll: number;
+        enemyRoll: number;
+        playerSuccess: boolean;
+        enemyDefeated: boolean;
+        combatResult: string;
+    } | null>;
     onSave: () => void;
     onAddItem: (item: InventoryItem) => void;
     onViewStoryHistory?: () => void;
@@ -66,7 +79,7 @@ export function MainGameScreen({
     onCombat,
     onSave,
     onAddItem,
-    onViewStoryHistory
+    onViewStoryHistory,
 }: MainGameScreenProps) {
     const [inventoryOpen, setInventoryOpen] = useState(false);
     const [combatOpen, setCombatOpen] = useState(false);
@@ -79,7 +92,7 @@ export function MainGameScreen({
     } | null>(null);
 
     // Convert game choices to the format expected by ChoicesSection
-    const formattedChoices = choices.map(choice => ({
+    const formattedChoices = choices.map((choice) => ({
         id: choice.id.toString(),
         text: choice.text,
         icon: "explore" as const, // Default icon, could be enhanced based on choice type
@@ -89,7 +102,9 @@ export function MainGameScreen({
     const formattedInventory = inventory;
 
     const handleChoiceSelect = async (choiceId: string) => {
-        const selectedChoice = choices.find(choice => choice.id.toString() === choiceId);
+        const selectedChoice = choices.find(
+            (choice) => choice.id.toString() === choiceId,
+        );
         if (selectedChoice && !isLoading) {
             await onChoice(selectedChoice);
         }
@@ -100,7 +115,7 @@ export function MainGameScreen({
             // Create a custom choice object for the custom action
             const customChoice = {
                 id: 999, // Special ID for custom actions
-                text: customText.trim()
+                text: customText.trim(),
             };
             await onChoice(customChoice);
         }
@@ -159,7 +174,9 @@ export function MainGameScreen({
                             {isLoading ? (
                                 <div className="flex items-center justify-center py-8">
                                     <Loader2 className="w-8 h-8 animate-spin text-[#d4a76a]" />
-                                    <span className="ml-2 text-[#f5e6d3]">Loading next adventure...</span>
+                                    <span className="ml-2 text-[#f5e6d3]">
+                                        Loading next adventure...
+                                    </span>
                                 </div>
                             ) : (
                                 <ChoicesSection
@@ -177,7 +194,9 @@ export function MainGameScreen({
                         {/* Quick Inventory */}
                         <div className="bg-[#3a2817] rounded-lg p-4 border-2 border-[#d4a76a]">
                             <div className="flex items-center justify-between mb-4">
-                                <h3 className="text-[#d4a76a]">Inventory ({inventory.length})</h3>
+                                <h3 className="text-[#d4a76a]">
+                                    Inventory ({inventory.length})
+                                </h3>
                                 <Button
                                     onClick={() => setInventoryOpen(true)}
                                     variant="ghost"
@@ -242,13 +261,24 @@ export function MainGameScreen({
             {combatOpen && scene.enemy && (
                 <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
                     <div className="bg-[#2c1e12] border-2 border-[#d4a76a] rounded-lg p-6 max-w-md w-full mx-4">
-                        <h2 className="text-[#d4a76a] text-xl font-bold mb-4">Combat!</h2>
-                        <p className="text-[#f5e6d3] mb-4">You are fighting {scene.enemy.name}!</p>
+                        <h2 className="text-[#d4a76a] text-xl font-bold mb-4">
+                            Combat!
+                        </h2>
+                        <p className="text-[#f5e6d3] mb-4">
+                            You are fighting {scene.enemy.name}!
+                        </p>
                         <div className="flex gap-2">
-                            <Button onClick={handleAttack} className="bg-[#8b4513] hover:bg-[#a0522d]">
+                            <Button
+                                onClick={handleAttack}
+                                className="bg-[#8b4513] hover:bg-[#a0522d]"
+                            >
                                 Attack
                             </Button>
-                            <Button variant="outline" onClick={() => setCombatOpen(false)} className="border-[#d4a76a] text-[#d4a76a]">
+                            <Button
+                                variant="outline"
+                                onClick={() => setCombatOpen(false)}
+                                className="border-[#d4a76a] text-[#d4a76a]"
+                            >
                                 Flee
                             </Button>
                         </div>
@@ -264,14 +294,22 @@ export function MainGameScreen({
                     exit={{ opacity: 0, y: -50 }}
                     className="fixed bottom-4 right-4 bg-[#3a2817] border-2 border-[#d4a76a] rounded-lg p-4 shadow-xl"
                 >
-                    <h4 className="text-[#d4a76a] font-semibold mb-2">Combat Result</h4>
+                    <h4 className="text-[#d4a76a] font-semibold mb-2">
+                        Combat Result
+                    </h4>
                     <p className="text-[#f5e6d3] text-sm">
-                        Player Roll: {combatResult.playerRoll}<br />
-                        Enemy Roll: {combatResult.enemyRoll}<br />
+                        Player Roll: {combatResult.playerRoll}
+                        <br />
+                        Enemy Roll: {combatResult.enemyRoll}
+                        <br />
                         {combatResult.playerSuccess ? (
-                            <span className="text-green-400">Victory! {combatResult.combatResult}</span>
+                            <span className="text-green-400">
+                                Victory! {combatResult.combatResult}
+                            </span>
                         ) : (
-                            <span className="text-red-400">Defeat! {combatResult.combatResult}</span>
+                            <span className="text-red-400">
+                                Defeat! {combatResult.combatResult}
+                            </span>
                         )}
                     </p>
                     <Button

@@ -1,8 +1,5 @@
 // Text Icon Component
-export function TextIcon({
-    className = "w-4 h-4",
-    stroke = "currentColor",
-}) {
+export function TextIcon({ className = "w-4 h-4", stroke = "currentColor" }) {
     return (
         <svg
             className={className}
@@ -12,7 +9,11 @@ export function TextIcon({
             aria-label="Text"
         >
             <rect x="3" y="3" width="18" height="18" rx="2" stroke={stroke} />
-            <path d="M7 9h10M7 13h10M7 17h6" stroke={stroke} strokeLinecap="round" />
+            <path
+                d="M7 9h10M7 13h10M7 17h6"
+                stroke={stroke}
+                strokeLinecap="round"
+            />
         </svg>
     );
 }

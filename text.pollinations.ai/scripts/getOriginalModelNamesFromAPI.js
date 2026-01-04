@@ -22,10 +22,10 @@
  *
  */
 
-import fs from "fs/promises";
-import path from "path";
-import { exec } from "child_process";
-import { promisify } from "util";
+import { exec } from "node:child_process";
+import fs from "node:fs/promises";
+import path from "node:path";
+import { promisify } from "node:util";
 import dotenv from "dotenv";
 
 // Load environment variables from .env file
@@ -90,7 +90,7 @@ async function checkLocalServer() {
         const curlCommand = `curl -s --max-time 30 --connect-timeout 30 ${API_BASE}/models`;
         const { stdout, stderr } = await execAsync(curlCommand);
         return !stderr && stdout.trim() !== "";
-    } catch (error) {
+    } catch (_error) {
         return false;
     }
 }
@@ -116,7 +116,7 @@ async function testModelForOriginalName(modelName, modelMetadata = null) {
         // Detect if this is an audio model that needs special handling
         // Use model metadata if available, otherwise fallback to name-based detection
         let isAudioModel = false;
-        if (modelMetadata && modelMetadata.output_modalities) {
+        if (modelMetadata?.output_modalities) {
             isAudioModel = modelMetadata.output_modalities.includes("audio");
         } else {
             // Fallback to name-based detection
@@ -158,7 +158,7 @@ async function testModelForOriginalName(modelName, modelMetadata = null) {
             -d '${JSON.stringify(requestPayload).replace(/'/g, "'\"'\"'")}'`;
 
         console.log(
-            `  🔧 Debug - Curl command: ${curlCommand.replace(AUTH_TOKEN, AUTH_TOKEN.substring(0, 8) + "...")}`,
+            `  🔧 Debug - Curl command: ${curlCommand.replace(AUTH_TOKEN, `${AUTH_TOKEN.substring(0, 8)}...`)}`,
         );
 
         const { stdout, stderr } = await execAsync(curlCommand);
@@ -352,7 +352,7 @@ async function discoverAllOriginalNames() {
 
     // If server not running, show error and exit
     if (!canTestAPI) {
-        console.log("\n" + "=".repeat(80));
+        console.log(`\n${"=".repeat(80)}`);
         console.log("❌ LOCAL SERVER NOT RUNNING");
         console.log("=".repeat(80));
 
@@ -381,7 +381,7 @@ async function discoverAllOriginalNames() {
         modelMetadataMap.set(model.name, model);
     });
 
-    console.log("\n" + "=".repeat(80));
+    console.log(`\n${"=".repeat(80)}`);
     console.log("TESTING ALL MODELS");
     console.log("=".repeat(80));
 
@@ -416,7 +416,7 @@ async function discoverAllOriginalNames() {
     }
 
     // Generate comprehensive report
-    console.log("\n" + "=".repeat(80));
+    console.log(`\n${"=".repeat(80)}`);
     console.log("DISCOVERY RESULTS");
     console.log("=".repeat(80));
 
@@ -534,7 +534,7 @@ async function discoverAllOriginalNames() {
     // Update the file
     const updateCount = await updateAvailableModelsFile(results);
 
-    console.log("\n" + "=".repeat(80));
+    console.log(`\n${"=".repeat(80)}`);
     console.log("✨ DISCOVERY COMPLETE!");
     console.log("=".repeat(80));
     console.log(
@@ -557,7 +557,7 @@ async function testSingleModel(modelName) {
     // Check if we can test against the local API
     const canTestAPI = await checkLocalServer();
     if (!canTestAPI) {
-        console.log("\n" + "=".repeat(80));
+        console.log(`\n${"=".repeat(80)}`);
         console.log("❌ LOCAL SERVER NOT RUNNING");
         console.log("=".repeat(80));
 
@@ -597,7 +597,7 @@ async function testSingleModel(modelName) {
     console.log(`📝 Description: ${targetModel.description}`);
     console.log(`🏭 Provider: ${targetModel.provider}`);
 
-    console.log("\n" + "=".repeat(80));
+    console.log(`\n${"=".repeat(80)}`);
     console.log(`TESTING MODEL: ${modelName.toUpperCase()}`);
     console.log("=".repeat(80));
 
@@ -605,7 +605,7 @@ async function testSingleModel(modelName) {
     const result = await testModelForOriginalName(modelName, targetModel);
 
     // Display results
-    console.log("\n" + "=".repeat(80));
+    console.log(`\n${"=".repeat(80)}`);
     console.log("SINGLE MODEL TEST RESULTS");
     console.log("=".repeat(80));
 

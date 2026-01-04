@@ -1,7 +1,7 @@
-import { promises as fs } from 'node:fs';
-import { join } from 'node:path';
+import { promises as fs } from "node:fs";
+import { join } from "node:path";
 
-const COUNTER_FILE = join(process.cwd(), 'model-requests.json');
+const COUNTER_FILE = join(process.cwd(), "model-requests.json");
 
 interface ModelCounts {
     [model: string]: number;
@@ -13,7 +13,7 @@ let initialized = false;
 // Load counts from file
 async function loadCounts(): Promise<void> {
     try {
-        const data = await fs.readFile(COUNTER_FILE, 'utf-8');
+        const data = await fs.readFile(COUNTER_FILE, "utf-8");
         counts = JSON.parse(data);
     } catch {
         counts = {};
@@ -29,7 +29,7 @@ async function saveCounts(): Promise<void> {
 // Increment counter for a model
 export async function incrementModelCounter(model: string): Promise<void> {
     if (!initialized) await loadCounts();
-    
+
     counts[model] = (counts[model] || 0) + 1;
     await saveCounts();
 }

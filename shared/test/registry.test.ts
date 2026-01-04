@@ -1,12 +1,12 @@
+import { expect, test } from "vitest";
+import { COST_START_DATE, perMillion } from "../registry/price-helpers.ts";
+import type { TokenUsage } from "../registry/registry.ts";
 import {
-    resolveServiceId,
-    getModelDefinition,
     calculateCost,
     calculatePrice,
+    getModelDefinition,
+    resolveServiceId,
 } from "../registry/registry.ts";
-import { perMillion, COST_START_DATE } from "../registry/price-helpers.ts";
-import { expect, test } from "vitest";
-import type { TokenUsage } from "../registry/registry.ts";
 
 // Test with real services from the registry
 test("calculateCost should return the correct costs", async () => {

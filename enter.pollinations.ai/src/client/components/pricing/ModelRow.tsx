@@ -77,13 +77,12 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
             <td className="py-2 px-2 text-sm text-gray-700 whitespace-nowrap relative group">
                 <div className="flex items-center gap-2">
                     <div className="flex flex-col">
-                        <span className="font-mono">{model.name}</span>
-                        {modelDisplayName &&
-                            modelDisplayName !== model.name && (
-                                <span className="text-xs text-gray-500 font-normal">
-                                    {modelDisplayName}
-                                </span>
-                            )}
+                        <span className="font-medium">
+                            {modelDisplayName || model.name}
+                        </span>
+                        <span className="text-xs text-gray-500 font-mono">
+                            {model.name}
+                        </span>
                     </div>
                     {showDescriptionInfo && (
                         <button

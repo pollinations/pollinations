@@ -702,57 +702,6 @@ export const TEXT_SERVICES = {
         tools: true,
         isSpecialized: false,
     },
-    "claude-2.1": {
-        aliases: ["claude-2-v2.1", "claude-2-v2-1"],
-        modelId: "anthropic.claude-v2:1",
-        provider: "aws",
-        cost: [
-            {
-                date: COST_START_DATE,
-                promptTextTokens: perMillion(8.0),
-                completionTextTokens: perMillion(24.0),
-            },
-        ],
-        description: "Anthropic Claude 2.1 - Previous Generation (Legacy)",
-        inputModalities: ["text"],
-        outputModalities: ["text"],
-        tools: false,
-        isSpecialized: false,
-    },
-    "claude-2": {
-        aliases: ["claude-2-v2"],
-        modelId: "anthropic.claude-v2",
-        provider: "aws",
-        cost: [
-            {
-                date: COST_START_DATE,
-                promptTextTokens: perMillion(8.0),
-                completionTextTokens: perMillion(24.0),
-            },
-        ],
-        description: "Anthropic Claude 2 - Previous Generation (Legacy)",
-        inputModalities: ["text"],
-        outputModalities: ["text"],
-        tools: false,
-        isSpecialized: false,
-    },
-    "claude-instant-1.2": {
-        aliases: ["claude-instant", "claude-instant-v1.2"],
-        modelId: "anthropic.claude-instant-v1",
-        provider: "aws",
-        cost: [
-            {
-                date: COST_START_DATE,
-                promptTextTokens: perMillion(0.8),
-                completionTextTokens: perMillion(2.4),
-            },
-        ],
-        description: "Anthropic Claude Instant 1.2 - Previous Generation (Legacy)",
-        inputModalities: ["text"],
-        outputModalities: ["text"],
-        tools: false,
-        isSpecialized: false,
-    },
     "gemini-2.0-flash": {
         aliases: ["gemini-2-flash-exp"],
         modelId: "gemini-2.0-flash-exp-0111",

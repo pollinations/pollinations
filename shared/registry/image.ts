@@ -205,4 +205,75 @@ export const IMAGE_SERVICES = {
         inputModalities: ["text", "image"],
         outputModalities: ["video"],
     },
+    // Legacy models - older versions still accessible
+    "flux-pro": {
+        aliases: ["flux-1-pro"],
+        modelId: "flux-pro",
+        provider: "replicate",
+        cost: [
+            {
+                date: COST_START_DATE,
+                completionImageTokens: 0.055, // $0.055 per image
+            },
+        ],
+        description: "Flux Pro - Previous Generation (Legacy)",
+        inputModalities: ["text", "image"],
+        outputModalities: ["image"],
+    },
+    "flux-dev": {
+        aliases: ["flux-1-dev"],
+        modelId: "flux-dev",
+        provider: "replicate",
+        cost: [
+            {
+                date: COST_START_DATE,
+                completionImageTokens: 0.025, // $0.025 per image
+            },
+        ],
+        description: "Flux Dev - Previous Generation (Legacy)",
+        inputModalities: ["text", "image"],
+        outputModalities: ["image"],
+    },
+    "flux-schnell": {
+        aliases: ["flux-1-schnell"],
+        modelId: "flux-schnell",
+        provider: "replicate",
+        cost: [
+            {
+                date: COST_START_DATE,
+                completionImageTokens: 0.003, // $0.003 per image
+            },
+        ],
+        description: "Flux Schnell - Previous Generation (Legacy)",
+        inputModalities: ["text"],
+        outputModalities: ["image"],
+    },
+    "dall-e-3": {
+        aliases: ["dalle-3"],
+        modelId: "dall-e-3",
+        provider: "azure",
+        cost: [
+            {
+                date: COST_START_DATE,
+                completionImageTokens: 0.08, // $0.08 per 1024x1024 image
+            },
+        ],
+        description: "OpenAI DALL-E 3 - Previous Generation (Legacy)",
+        inputModalities: ["text"],
+        outputModalities: ["image"],
+    },
+    "stable-diffusion-xl": {
+        aliases: ["sdxl", "sdxl-1.0"],
+        modelId: "stable-diffusion-xl",
+        provider: "replicate",
+        cost: [
+            {
+                date: COST_START_DATE,
+                completionImageTokens: 0.009, // $0.009 per image
+            },
+        ],
+        description: "Stable Diffusion XL - Previous Generation (Legacy)",
+        inputModalities: ["text", "image"],
+        outputModalities: ["image"],
+    },
 } as const satisfies Record<string, ServiceDefinition<string>>;

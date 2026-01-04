@@ -49,17 +49,45 @@ export function useModelList(apiKey: string): UseModelListReturn {
             /-v1$/i,           // Ends with -v1
             /-old$/i,          // Ends with -old
             /legacy/i,         // Contains "legacy"
-            /^flux$/,          // Original flux (replaced by flux-pro, flux-realism, etc.)
-            /^openai$/,        // Generic openai (replaced by specific models)
         ];
         
-        // Known deprecated model IDs
+        // Known deprecated model IDs (old service IDs that are now aliases + legacy models)
         const deprecatedModelIds = [
+            // Old service ID aliases
             "flux",
             "openai",
+            "openai-fast",
+            "openai-large",
+            "openai-audio",
             "mistral",
+            "gemini",
+            "gemini-fast",
+            "gemini-large",
+            "gemini-search",
+            "deepseek",
+            "grok",
+            "claude",
+            "claude-fast",
+            "claude-large",
+            "perplexity-fast",
+            "perplexity-reasoning",
             "qwen",
             "llama",
+            // Legacy models from previous generations
+            "gpt-4o",
+            "gpt-4o-mini",
+            "gpt-4-turbo",
+            "gpt-4",
+            "claude-3.5-sonnet",
+            "claude-3-opus",
+            "claude-3-haiku",
+            "gemini-2.0-flash",
+            "gemini-1.5-pro",
+            "flux-pro",
+            "flux-dev",
+            "flux-schnell",
+            "dall-e-3",
+            "stable-diffusion-xl",
         ];
         
         return deprecatedPatterns.some(pattern => pattern.test(modelId)) || 

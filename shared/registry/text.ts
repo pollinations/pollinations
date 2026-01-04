@@ -20,13 +20,13 @@ export const AUDIO_VOICES = [
 
 export type AudioVoice = (typeof AUDIO_VOICES)[number];
 
-export const DEFAULT_TEXT_MODEL = "openai" as const;
+export const DEFAULT_TEXT_MODEL = "gpt-5-mini" as const;
 export type TextServiceId = keyof typeof TEXT_SERVICES;
 export type TextModelId = (typeof TEXT_SERVICES)[TextServiceId]["modelId"];
 
 export const TEXT_SERVICES = {
-    "openai": {
-        aliases: [],
+    "gpt-5-mini": {
+        aliases: ["openai"],
         modelId: "gpt-5-mini-2025-08-07",
         provider: "azure",
         cost: [
@@ -43,8 +43,8 @@ export const TEXT_SERVICES = {
         tools: true,
         isSpecialized: false,
     },
-    "openai-fast": {
-        aliases: ["gpt-5-nano", "gpt-5-nano-2025-08-07"],
+    "gpt-5-nano": {
+        aliases: ["openai-fast", "gpt-5-nano-2025-08-07"],
         modelId: "gpt-5-nano-2025-08-07",
         provider: "azure-2",
         cost: [
@@ -61,8 +61,8 @@ export const TEXT_SERVICES = {
         tools: true,
         isSpecialized: false,
     },
-    "openai-large": {
-        aliases: ["gpt-5.2", "openai-reasoning", "gpt-5.2-reasoning"],
+    "gpt-5.2": {
+        aliases: ["openai-large", "openai-reasoning", "gpt-5.2-reasoning"],
         modelId: "gpt-5.2-2025-12-11",
         provider: "azure",
         cost: [
@@ -97,9 +97,9 @@ export const TEXT_SERVICES = {
         tools: true,
         isSpecialized: false,
     },
-    "mistral": {
+    "mistral-small": {
         aliases: [
-            "mistral-small",
+            "mistral",
             "mistral-small-3.2",
             "mistral-small-3.2-24b-instruct-2506",
         ],
@@ -118,8 +118,9 @@ export const TEXT_SERVICES = {
         tools: true,
         isSpecialized: false,
     },
-    "openai-audio": {
+    "gpt-4o-mini-audio": {
         aliases: [
+            "openai-audio",
             "gpt-4o-mini-audio-preview",
             "gpt-4o-mini-audio-preview-2024-12-17",
         ],
@@ -141,8 +142,8 @@ export const TEXT_SERVICES = {
         tools: true,
         isSpecialized: false,
     },
-    "gemini": {
-        aliases: ["gemini-3-flash", "gemini-3-flash-preview"],
+    "gemini-3-flash": {
+        aliases: ["gemini", "gemini-3-flash-preview"],
         modelId: "gemini-3-flash-preview",
         provider: "google",
         cost: [
@@ -163,8 +164,8 @@ export const TEXT_SERVICES = {
         codeExecution: true,
         isSpecialized: false,
     },
-    "gemini-fast": {
-        aliases: ["gemini-2.5-flash-lite"],
+    "gemini-2.5-flash-lite": {
+        aliases: ["gemini-fast"],
         modelId: "gemini-2.5-flash-lite",
         provider: "google",
         cost: [
@@ -185,8 +186,8 @@ export const TEXT_SERVICES = {
         codeExecution: true,
         isSpecialized: false,
     },
-    "deepseek": {
-        aliases: ["deepseek-v3", "deepseek-reasoning"],
+    "deepseek-v3": {
+        aliases: ["deepseek", "deepseek-reasoning"],
         modelId: "deepseek-v3.2",
         provider: "azure",
         cost: [
@@ -203,8 +204,8 @@ export const TEXT_SERVICES = {
         reasoning: true,
         isSpecialized: false,
     },
-    "grok": {
-        aliases: ["grok-fast", "grok-4", "grok-4-fast"],
+    "grok-4-fast": {
+        aliases: ["grok", "grok-fast", "grok-4"],
         modelId: "grok-4-fast-non-reasoning",
         provider: "azure",
         cost: [
@@ -221,8 +222,8 @@ export const TEXT_SERVICES = {
         tools: true,
         isSpecialized: false,
     },
-    "gemini-search": {
-        aliases: ["gemini-3-flash-search"],
+    "gemini-3-flash-search": {
+        aliases: ["gemini-search"],
         modelId: "gemini-3-flash-preview",
         provider: "google",
         cost: [
@@ -277,8 +278,8 @@ export const TEXT_SERVICES = {
         tools: true,
         isSpecialized: true,
     },
-    "claude-fast": {
-        aliases: ["claude-haiku-4.5", "claude-haiku"],
+    "claude-haiku-4.5": {
+        aliases: ["claude-fast", "claude-haiku"],
         modelId: "us.anthropic.claude-haiku-4-5-20251001-v1:0",
         provider: "aws",
         cost: [
@@ -294,8 +295,8 @@ export const TEXT_SERVICES = {
         tools: true,
         isSpecialized: false,
     },
-    "claude": {
-        aliases: ["claude-sonnet-4.5", "claude-sonnet"],
+    "claude-sonnet-4.5": {
+        aliases: ["claude", "claude-sonnet"],
         modelId: "us.anthropic.claude-sonnet-4-5-20250929-v1:0",
         provider: "aws",
         cost: [
@@ -311,8 +312,8 @@ export const TEXT_SERVICES = {
         tools: true,
         isSpecialized: false,
     },
-    "claude-large": {
-        aliases: ["claude-opus-4.5", "claude-opus"],
+    "claude-opus-4.5": {
+        aliases: ["claude-large", "claude-opus"],
         modelId: "global.anthropic.claude-opus-4-5-20251101-v1:0",
         provider: "aws",
         cost: [
@@ -328,8 +329,8 @@ export const TEXT_SERVICES = {
         tools: true,
         isSpecialized: false,
     },
-    "perplexity-fast": {
-        aliases: ["sonar"],
+    "sonar": {
+        aliases: ["perplexity-fast"],
         modelId: "sonar",
         provider: "perplexity",
         cost: [
@@ -346,8 +347,8 @@ export const TEXT_SERVICES = {
         search: true,
         isSpecialized: false,
     },
-    "perplexity-reasoning": {
-        aliases: ["sonar-reasoning"],
+    "sonar-reasoning": {
+        aliases: ["perplexity-reasoning"],
         modelId: "sonar-reasoning",
         provider: "perplexity",
         cost: [
@@ -385,8 +386,8 @@ export const TEXT_SERVICES = {
         reasoning: true,
         isSpecialized: false,
     },
-    "gemini-large": {
-        aliases: ["gemini-3-pro", "gemini-3", "gemini-3-pro-preview"],
+    "gemini-3-pro": {
+        aliases: ["gemini-large", "gemini-3", "gemini-3-pro-preview"],
         modelId: "gemini-3-pro-preview",
         provider: "google",
         cost: [
@@ -420,6 +421,164 @@ export const TEXT_SERVICES = {
         ],
         description: "Amazon Nova Micro - Ultra Fast & Ultra Cheap",
         inputModalities: ["text"],
+        outputModalities: ["text"],
+        tools: true,
+        isSpecialized: false,
+    },
+    // Legacy models - older versions still accessible
+    "gpt-4o": {
+        aliases: ["gpt-4o-2024-08-06"],
+        modelId: "gpt-4o-2024-08-06",
+        provider: "azure",
+        cost: [
+            {
+                date: COST_START_DATE,
+                promptTextTokens: perMillion(2.5),
+                promptCachedTokens: perMillion(1.25),
+                completionTextTokens: perMillion(10.0),
+            },
+        ],
+        description: "OpenAI GPT-4o - Previous Generation (Legacy)",
+        inputModalities: ["text", "image"],
+        outputModalities: ["text"],
+        tools: true,
+        isSpecialized: false,
+    },
+    "gpt-4o-mini": {
+        aliases: ["gpt-4o-mini-2024-07-18"],
+        modelId: "gpt-4o-mini-2024-07-18",
+        provider: "azure",
+        cost: [
+            {
+                date: COST_START_DATE,
+                promptTextTokens: perMillion(0.15),
+                promptCachedTokens: perMillion(0.075),
+                completionTextTokens: perMillion(0.6),
+            },
+        ],
+        description: "OpenAI GPT-4o Mini - Previous Generation (Legacy)",
+        inputModalities: ["text", "image"],
+        outputModalities: ["text"],
+        tools: true,
+        isSpecialized: false,
+    },
+    "gpt-4-turbo": {
+        aliases: ["gpt-4-turbo-2024-04-09"],
+        modelId: "gpt-4-turbo-2024-04-09",
+        provider: "azure",
+        cost: [
+            {
+                date: COST_START_DATE,
+                promptTextTokens: perMillion(10.0),
+                completionTextTokens: perMillion(30.0),
+            },
+        ],
+        description: "OpenAI GPT-4 Turbo - Previous Generation (Legacy)",
+        inputModalities: ["text", "image"],
+        outputModalities: ["text"],
+        tools: true,
+        isSpecialized: false,
+    },
+    "gpt-4": {
+        aliases: ["gpt-4-0613"],
+        modelId: "gpt-4-0613",
+        provider: "azure",
+        cost: [
+            {
+                date: COST_START_DATE,
+                promptTextTokens: perMillion(30.0),
+                completionTextTokens: perMillion(60.0),
+            },
+        ],
+        description: "OpenAI GPT-4 - Original (Legacy)",
+        inputModalities: ["text"],
+        outputModalities: ["text"],
+        tools: true,
+        isSpecialized: false,
+    },
+    "claude-3.5-sonnet": {
+        aliases: ["claude-3-5-sonnet-20240620"],
+        modelId: "us.anthropic.claude-3-5-sonnet-20240620-v1:0",
+        provider: "aws",
+        cost: [
+            {
+                date: COST_START_DATE,
+                promptTextTokens: perMillion(3.0),
+                completionTextTokens: perMillion(15.0),
+            },
+        ],
+        description: "Anthropic Claude 3.5 Sonnet - Previous Version (Legacy)",
+        inputModalities: ["text", "image"],
+        outputModalities: ["text"],
+        tools: true,
+        isSpecialized: false,
+    },
+    "claude-3-opus": {
+        aliases: ["claude-3-opus-20240229"],
+        modelId: "us.anthropic.claude-3-opus-20240229-v1:0",
+        provider: "aws",
+        cost: [
+            {
+                date: COST_START_DATE,
+                promptTextTokens: perMillion(15.0),
+                completionTextTokens: perMillion(75.0),
+            },
+        ],
+        description: "Anthropic Claude 3 Opus - Previous Generation (Legacy)",
+        inputModalities: ["text", "image"],
+        outputModalities: ["text"],
+        tools: true,
+        isSpecialized: false,
+    },
+    "claude-3-haiku": {
+        aliases: ["claude-3-haiku-20240307"],
+        modelId: "us.anthropic.claude-3-haiku-20240307-v1:0",
+        provider: "aws",
+        cost: [
+            {
+                date: COST_START_DATE,
+                promptTextTokens: perMillion(0.25),
+                completionTextTokens: perMillion(1.25),
+            },
+        ],
+        description: "Anthropic Claude 3 Haiku - Previous Generation (Legacy)",
+        inputModalities: ["text", "image"],
+        outputModalities: ["text"],
+        tools: true,
+        isSpecialized: false,
+    },
+    "gemini-2.0-flash": {
+        aliases: ["gemini-2-flash-exp"],
+        modelId: "gemini-2.0-flash-exp-0111",
+        provider: "google",
+        cost: [
+            {
+                date: COST_START_DATE,
+                promptTextTokens: perMillion(0.4),
+                promptCachedTokens: perMillion(0.04),
+                completionTextTokens: perMillion(1.6),
+            },
+        ],
+        description: "Google Gemini 2.0 Flash - Previous Generation (Legacy)",
+        inputModalities: ["text", "image"],
+        outputModalities: ["text"],
+        tools: true,
+        isSpecialized: false,
+    },
+    "gemini-1.5-pro": {
+        aliases: ["gemini-pro"],
+        modelId: "gemini-1.5-pro-002",
+        provider: "google",
+        cost: [
+            {
+                date: COST_START_DATE,
+                promptTextTokens: perMillion(1.25),
+                promptCachedTokens: perMillion(0.3125),
+                completionTextTokens: perMillion(5.0),
+            },
+        ],
+        description: "Google Gemini 1.5 Pro - Previous Generation (Legacy)",
+        inputModalities: ["text", "image"],
         outputModalities: ["text"],
         tools: true,
         isSpecialized: false,

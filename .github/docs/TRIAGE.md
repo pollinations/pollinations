@@ -32,7 +32,7 @@ Routes issues and PRs to the appropriate project board using AI classification:
 - AI classification via `gen.pollinations.ai` with retry + random seed
 - Sets Priority field (Urgent/High/Medium/Low) in project
 - Sets Status field (Backlog/Review/Todo)
-- Adds labels (DEV + BUG/FEATURE/QUEST/TRACKING, or SUPPORT-\* concatenated labels)
+- Adds labels (DEV-_ for dev, SUPPORT-_ for support, none for news)
 - Enforces internal-only rule for Dev project
 - Fallback classification if AI fails
 

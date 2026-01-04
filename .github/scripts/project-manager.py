@@ -145,18 +145,15 @@ def is_org_member(username: str) -> bool:
 def normalize_labels(project: str, labels: list) -> list:
     project = project.lower()
 
-    # Dev uses hierarchical labels (DEV + TYPE)
-    # Support uses concatenated labels (SUPPORT-TYPE)
-    # News uses single label (NEWS)
+    # Dev: concatenated labels (DEV-BUG, DEV-FEATURE, etc.)
+    # Support: concatenated labels (SUPPORT-HELP, SUPPORT-BUG, etc.)
+    # News: no labels (routed to project only)
     
     if project == "dev":
-        valid_types = {"BUG", "FEATURE", "QUEST", "TRACKING"}
+        valid_labels = {"DEV-BUG", "DEV-FEATURE", "DEV-QUEST", "DEV-TRACKING"}
         incoming = [l.upper() for l in labels]
-        type_label = next((l for l in incoming if l in valid_types), None)
-        final = ["DEV"]
-        if type_label:
-            final.append(type_label)
-        return final
+        label = next((l for l in incoming if l in valid_labels), None)
+        return [label] if label else []
     
     if project == "support":
         # Single concatenated label: SUPPORT-HELP, SUPPORT-BUG, etc.
@@ -167,7 +164,7 @@ def normalize_labels(project: str, labels: list) -> list:
         return [label] if label else []
     
     if project == "news":
-        return ["NEWS"]
+        return []  # No labels for news, just routed to project
     
     return []
 
@@ -193,7 +190,7 @@ Schema (must match exactly):
 {{
   "project": "dev" | "support" | "news",
   "priority": "Urgent" | "High" | "Medium" | "Low",
-  "labels": ["BUG","FEATURE","QUEST","TRACKING","SUPPORT-HELP","SUPPORT-BUG","SUPPORT-FEATURE","SUPPORT-BILLING","SUPPORT-BALANCE","SUPPORT-API"],
+  "labels": ["DEV-BUG","DEV-FEATURE","DEV-QUEST","DEV-TRACKING","SUPPORT-HELP","SUPPORT-BUG","SUPPORT-FEATURE","SUPPORT-BILLING","SUPPORT-BALANCE","SUPPORT-API"],
   "reasoning": "short string"
 }}
 Rules:
@@ -207,7 +204,7 @@ Rules:
   * support: Urgent, High, Medium, Low
   * news: Urgent only
 - Label options depend on project:
-  * dev: BUG, FEATURE, QUEST, TRACKING
+  * dev: DEV-BUG, DEV-FEATURE, DEV-QUEST, DEV-TRACKING
   * support: SUPPORT-HELP, SUPPORT-BUG, SUPPORT-FEATURE, SUPPORT-BILLING, SUPPORT-BALANCE, SUPPORT-API
   * news: no labels
 """
@@ -273,7 +270,7 @@ Body: {ISSUE_BODY[:2000]}
                 labels = []
             
             valid_labels_by_project = {
-                "dev": {"BUG", "FEATURE", "QUEST", "TRACKING"},
+                "dev": {"DEV-BUG", "DEV-FEATURE", "DEV-QUEST", "DEV-TRACKING"},
                 "support": {"SUPPORT-HELP", "SUPPORT-BUG", "SUPPORT-FEATURE", 
                            "SUPPORT-BILLING", "SUPPORT-BALANCE", "SUPPORT-API"},
                 "news": set(),

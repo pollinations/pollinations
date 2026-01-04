@@ -21,6 +21,15 @@
 
 **Code Contributions** _(future)_: `TIER-CODE-*` labels planned.
 
+## Dev Labels
+
+| Label          | Purpose                                          | Applied by           |
+| -------------- | ------------------------------------------------ | -------------------- |
+| `DEV-BUG`      | Something is broken                              | `project-manager.py` |
+| `DEV-FEATURE`  | New functionality request                        | `project-manager.py` |
+| `DEV-QUEST`    | Community task - One off Pollen reward if merged | `project-manager.py` |
+| `DEV-TRACKING` | Meta-issue tracking other items                  | `project-manager.py` |
+
 ## Support Labels
 
 | Label             | Purpose                        | Applied by           |

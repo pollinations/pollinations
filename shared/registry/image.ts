@@ -138,8 +138,23 @@ export const IMAGE_SERVICES = {
         inputModalities: ["text", "image"],
         outputModalities: ["image"],
     },
+    "flux": {
+        aliases: [],
+        modelId: "flux",
+        provider: "io.net",
+        cost: [
+            // Flux Schnell (nunchaku-quantized) on io.net RTX 4090 cluster
+            {
+                date: COST_START_DATE,
+                completionImageTokens: 0.0002, // ~$0.0002 per image (GPU cost estimate)
+            },
+        ],
+        description: "Flux Schnell - Fast high-quality image generation",
+        inputModalities: ["text"],
+        outputModalities: ["image"],
+    },
     "zimage": {
-        aliases: ["z-image", "z-image-turbo", "flux"],
+        aliases: ["z-image", "z-image-turbo"],
         modelId: "zimage",
         provider: "io.net",
         cost: [

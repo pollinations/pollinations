@@ -112,7 +112,7 @@ export const IMAGE_CONFIG = {
     },
 
     // Z-Image - Fast 6B parameter image generation with SPAN 2x upscaling (IO.net)
-    // Default model - "flux" is an alias that resolves to zimage
+    // Default model
     zimage: {
         type: "zimage",
         enhance: false,

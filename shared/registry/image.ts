@@ -22,7 +22,7 @@ export const IMAGE_SERVICES = {
         outputModalities: ["image"],
     },
     "turbo": {
-        aliases: [],
+        aliases: ["z-image-turbo"],
         modelId: "turbo",
         provider: "scaleway",
         cost: [
@@ -139,7 +139,7 @@ export const IMAGE_SERVICES = {
         outputModalities: ["image"],
     },
     "zimage": {
-        aliases: ["z-image", "z-image-turbo", "flux"],
+        aliases: ["z-image"],
         modelId: "zimage",
         provider: "io.net",
         cost: [

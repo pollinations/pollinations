@@ -90,19 +90,29 @@ CONFIG = {
             },
         },
         "news": {
-        "id": "PVT_kwDOBS76fs4BLtD8",
-        "name": "News",
-        "internal_only": False,
-        "default_status": "Todo",
-        "status_field_id": "PVTSSF_lADOBS76fs4BLtD8zg7Mrxg",
-        "status_options": {
-            "Todo": "f75ad846",     
-            "In Progress": "47fc9ee4",
-            "Done": "98236657",
+            "id": "PVT_kwDOBS76fs4BLtD8",
+            "name": "News",
+            "internal_only": False,
+            "default_status": "Todo",
+            "status_field_id": "PVTSSF_lADOBS76fs4BLtD8zg7Mrxg",
+            "status_options": {
+                "Todo": "f75ad846",     
+                "In Progress": "47fc9ee4",
+                "Done": "98236657",
+            },
+            "priority_field_id": None,
+            "priority_options": {},
         },
-        "priority_field_id": None,
-        "priority_options": {},
-    }
+        "tier": {
+            "id": "PVT_kwDOBS76fs4BLwDf",  
+            "name": "Tier",
+            "internal_only": False,
+            "default_status": None, 
+            "status_field_id": None,
+            "status_options": {},
+            "priority_field_id": None,
+            "priority_options": {},
+        },
     },
     "org_members": [
         "voodoohop",
@@ -135,39 +145,23 @@ def is_org_member(username: str) -> bool:
 def normalize_labels(project: str, labels: list) -> list:
     project = project.lower()
 
-    HIERARCHY = {
-        "dev": {
-            "TOP": "DEV",
-            "TYPE": {"BUG", "FEATURE", "QUEST", "TRACKING"},
-            "TAG": set(),
-        },
-        "support": {
-            "TOP": "SUPPORT",
-            "TYPE": {"BUG", "FEATURE", "HELP"},
-            "TAG": {"BALANCE", "BILLING", "API"},
-        },
-        "news": {
-            "TOP": "NEWS",
-            "TYPE": set(),
-            "TAG": set(),
-        },
-    }
-
-    rules = HIERARCHY.get(project)
-    if not rules:
+    if project == "dev":
+        valid_labels = {"DEV-BUG", "DEV-FEATURE", "DEV-QUEST", "DEV-TRACKING"}
+        incoming = [l.upper() for l in labels]
+        label = next((l for l in incoming if l in valid_labels), None)
+        return [label] if label else []
+    
+    if project == "support":
+        valid_labels = {"SUPPORT-HELP", "SUPPORT-BUG", "SUPPORT-FEATURE", 
+                       "SUPPORT-BILLING", "SUPPORT-BALANCE", "SUPPORT-API", "SUPPORT-TIER"}
+        incoming = [l.upper() for l in labels]
+        label = next((l for l in incoming if l in valid_labels), None)
+        return [label] if label else []
+    
+    if project == "news":
         return []
-    incoming = [l.upper() for l in labels]
-    top = rules["TOP"]
-    type_label = next((l for l in incoming if l in rules["TYPE"]), None)
-    tag_label = next((l for l in incoming if l in rules["TAG"]), None)
-    final = [top]
-    if type_label:
-        final.append(type_label)
-
-    if tag_label and len(final) < 3:
-        final.append(tag_label)
-
-    return final
+    
+    return []
 
 
 def get_fallback_classification(_: bool) -> dict:
@@ -184,20 +178,16 @@ def get_fallback_classification(_: bool) -> dict:
 def classify_with_ai(is_internal: bool) -> dict:
     system_prompt = f"""
 You are a strict classifier.
-
 Return ONLY valid JSON.
 Do NOT include explanations outside JSON.
 Do NOT invent categories.
-
 Schema (must match exactly):
-
 {{
   "project": "dev" | "support" | "news",
   "priority": "Urgent" | "High" | "Medium" | "Low",
-  "labels": ["BUG","FEATURE","HELP","QUEST","TRACKING","BALANCE","BILLING","API"],
+  "labels": ["DEV-BUG","DEV-FEATURE","DEV-QUEST","DEV-TRACKING","SUPPORT-HELP","SUPPORT-BUG","SUPPORT-FEATURE","SUPPORT-BILLING","SUPPORT-BALANCE","SUPPORT-API"],
   "reasoning": "short string"
 }}
-
 Rules:
 - Choose ONLY from the allowed enum values.
 - dev is INTERNAL ONLY — use only for internal authors.
@@ -209,8 +199,8 @@ Rules:
   * support: Urgent, High, Medium, Low
   * news: Urgent only
 - Label options depend on project:
-  * dev: BUG, FEATURE, QUEST, TRACKING
-  * support: BUG, FEATURE, HELP, BALANCE, BILLING, API
+  * dev: DEV-BUG, DEV-FEATURE, DEV-QUEST, DEV-TRACKING
+  * support: SUPPORT-HELP, SUPPORT-BUG, SUPPORT-FEATURE, SUPPORT-BILLING, SUPPORT-BALANCE, SUPPORT-API
   * news: no labels
 """
 
@@ -230,7 +220,7 @@ Body: {ISSUE_BODY[:2000]}
                     "Authorization": f"Bearer {POLLINATIONS_TOKEN}"
                     },
                 json={
-                    "model": "openai",
+                    "model": "openai-large",
                     "messages": [
                         {"role": "system", "content": system_prompt},
                         {"role": "user", "content": user_prompt},
@@ -251,13 +241,11 @@ Body: {ISSUE_BODY[:2000]}
 
             raw = json.loads(content)
             
-            # Validate project
             project = raw.get("project", "").lower()
             if project not in ["dev", "support", "news"]:
                 log_error(f"AI returned invalid project: {project}")
                 return get_fallback_classification(is_internal)
             
-            # Validate priority per project
             priority = raw.get("priority", "Medium")
             valid_priorities = {
                 "dev": {"Urgent", "High", "Medium", "Low"},
@@ -269,14 +257,14 @@ Body: {ISSUE_BODY[:2000]}
                 log_error(f"AI returned invalid priority for {project}: {priority}")
                 priority = list(allowed_for_project)[0] if allowed_for_project else "Medium"
             
-            # Validate labels for project
             labels = raw.get("labels", [])
             if not isinstance(labels, list):
                 labels = []
             
             valid_labels_by_project = {
-                "dev": {"BUG", "FEATURE", "QUEST", "TRACKING"},
-                "support": {"BUG", "FEATURE", "HELP", "BALANCE", "BILLING", "API"},
+                "dev": {"DEV-BUG", "DEV-FEATURE", "DEV-QUEST", "DEV-TRACKING"},
+                "support": {"SUPPORT-HELP", "SUPPORT-BUG", "SUPPORT-FEATURE", 
+                           "SUPPORT-BILLING", "SUPPORT-BALANCE", "SUPPORT-API"},
                 "news": set(),
             }
             
@@ -389,31 +377,52 @@ def add_labels(labels: list):
 
 
 
+def get_existing_labels() -> list:
+    labels = ITEM_DATA.get("labels", [])
+    return [l.get("name", "").upper() for l in labels if isinstance(l, dict)]
+
+
 def main():
     log_debug(f"Processing issue/PR #{ISSUE_NUMBER}: {ISSUE_TITLE}")
     if not ISSUE_NUMBER or not ISSUE_NODE_ID:
         log_debug("Missing ISSUE_NUMBER or ISSUE_NODE_ID, skipping")
         return
+    
+    existing_labels = get_existing_labels()
+    tier_labels = [l for l in existing_labels if l.startswith("TIER-")]
+    if tier_labels:
+        log_debug(f"Found TIER labels: {tier_labels}, routing to Tier project")
+        project = CONFIG["projects"].get("tier")
+        if project:
+            item_id = add_to_project(project["id"])
+            if item_id:
+                log_debug(f"Added to Tier project successfully")
+            return
+        else:
+            log_error("Tier project not configured")
+            return
+    
     is_internal = is_org_member(ISSUE_AUTHOR)
     log_debug(f"Author {ISSUE_AUTHOR} is internal: {is_internal}")
+    
     classification = classify_with_ai(is_internal)
 
     if not classification.get("project"):
         log_debug("AI did not classify project, skipping")
         return
+    
     project_key = classification["project"].lower()
+    
+    if project_key == "dev" and not is_internal:
+        log_debug(f"Project 'dev' is internal-only, but author {ISSUE_AUTHOR} is external. Reassigning to support.")
+        project_key = "support"
+    
     priority = classification.get("priority", "Medium")
     log_debug(f"Classified: project={project_key}, priority={priority}")
     project = CONFIG["projects"].get(project_key)
     if not project:
         log_error(f"Unknown project key: {project_key}")
         return
-
-    # Validate internal-only projects
-    if project.get("internal_only") and not is_internal:
-        log_debug(f"Project {project_key} is internal-only, but author is external. Reassigning to support.")
-        project_key = "support"
-        project = CONFIG["projects"]["support"]
     
     labels = normalize_labels(project_key, classification.get("labels", []))
     log_debug(f"Normalized labels: {labels}")
@@ -421,6 +430,17 @@ def main():
     item_id = add_to_project(project["id"])
     if not item_id:
         return
+    
+    if project.get("default_status") and project.get("status_field_id"):
+        status_option = project["status_options"].get(project["default_status"])
+        if status_option:
+            set_project_field(
+                project["id"],
+                item_id,
+                project["status_field_id"],
+                status_option,
+            )
+    
     priority_option = project["priority_options"].get(priority)
     if priority_option and project.get("priority_field_id"):
         set_project_field(

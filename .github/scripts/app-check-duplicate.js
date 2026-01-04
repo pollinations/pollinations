@@ -6,7 +6,7 @@
  * This script replaces fragile bash string parsing that breaks on special characters
  * (single quotes, double quotes, backticks, dollar signs, etc.)
  *
- * Usage: node tier-check-duplicate.js
+ * Usage: node app-check-duplicate.js
  *
  * Environment variables:
  *   PROJECT_JSON - JSON string with app submission data (name, url, repo, description)

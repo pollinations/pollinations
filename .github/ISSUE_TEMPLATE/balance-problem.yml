@@ -1,7 +1,7 @@
 name: Balance Problem
 description: Pollen not showing after purchase
 title: "Balance: "
-labels: ["BUG"]
+labels: ["SUPPORT-BALANCE"]
 body:
   - type: input
     id: email

@@ -1,125 +1,125 @@
 # Project Organization
 
-This document defines how we organize issues and PRs across GitHub Projects. It covers labels for categorization, priority levels, and workflow statuses.
-
-We are transitioning from using a single **Dev** project to four dedicated projects: **Support**, **Dev**, **News**, and **Tier**.
+This document defines how we organize issues and PRs across GitHub Projects.
 
 **Rule:** Every issue and PR in the pollinations repository must belong to exactly one project — no more, no less.
 
-## Labels
+---
 
-GitHub labels applied to issues and PRs for categorization and filtering.
+## Dev
 
-### Label Hierarchy
+Internal development work: features, refactors, infrastructure.
 
-| Level | Purpose                                                   | Required                |
-| ----- | --------------------------------------------------------- | ----------------------- |
-| TOP   | Project identifier - applied to ALL items in that project | Always 1                |
-| TYPE  | Issue/PR classification within project                    | At least 1 if available |
-| TAG   | Additional context (Support only)                         | Optional                |
+### Labels
 
-**Per project:**
+| Label        | Comments                                         |
+| ------------ | ------------------------------------------------ |
+| DEV-BUG      | Something is broken                              |
+| DEV-FEATURE  | New functionality request                        |
+| DEV-QUEST    | Community task - One off Pollen reward if merged |
+| DEV-TRACKING | Meta-issue tracking other items                  |
+| DEV-VOTING   | Community vote on a proposal                     |
+| DEV-PR       | PR for dev project                               |
 
-- **DEV**: TOP + TYPE (e.g., `DEV` + `BUG`)
-- **SUPPORT**: TOP + TYPE + TAG (e.g., `SUPPORT` + `HELP` + `BILLING`)
-- **NEWS**: TOP only (e.g., `NEWS`)
+### Priority
 
-### Dev
+| Priority | Description                         |
+| -------- | ----------------------------------- |
+| Urgent   | Critical, needs immediate attention |
+| High     | Important, address soon             |
+| Medium   | Normal priority                     |
+| Low      | Nice to have                        |
 
-| Label    | Issue | PR  | Comments                                         |
-| -------- | ----- | --- | ------------------------------------------------ |
-| DEV      | x     | x   | Applied to all Dev items                         |
-| BUG      | x     |     | Something is broken                              |
-| FEATURE  | x     |     | New functionality request                        |
-| QUEST    | x     |     | Community task - One off Pollen reward if merged |
-| TRACKING | x     |     | Meta-issue tracking other items                  |
+### Status
 
-### Support
+| Status      | Description                   |
+| ----------- | ----------------------------- |
+| Backlog     | Not yet prioritized           |
+| To do       | Ready to work on              |
+| In progress | Currently being worked on     |
+| Done        | Completed                     |
+| Discarded   | Won't do / no longer relevant |
 
-Project
+---
 
-| Label   | Issue | Comments                      |
-| ------- | ----- | ----------------------------- |
-| SUPPORT | x     | Applied to all Support issues |
+## Support
 
-Type
+External user issues: help requests, bugs, API questions.
 
-| Label   | Issue | Comments                  |
-| ------- | ----- | ------------------------- |
-| BUG     | x     | Something is broken       |
-| FEATURE | x     | New functionality request |
-| HELP    | x     | User needs assistance     |
+### Labels
 
-Tag
+| Label           | Comments                       |
+| --------------- | ------------------------------ |
+| SUPPORT-HELP    | General assistance request     |
+| SUPPORT-BUG     | Something is broken            |
+| SUPPORT-FEATURE | Feature request                |
+| SUPPORT-BILLING | Payment or subscription issue  |
+| SUPPORT-BALANCE | Pollen balance issue           |
+| SUPPORT-API     | API usage or integration issue |
 
-| Label   | Issue | Comments                       |
-| ------- | ----- | ------------------------------ |
-| BALANCE | x     | Pollen balance issue           |
-| BILLING | x     | Payment or subscription issue  |
-| API     | x     | API usage or integration issue |
+### Priority
 
-### NEWS
+| Priority | Description                         |
+| -------- | ----------------------------------- |
+| Urgent   | Critical, needs immediate attention |
+| High     | Important, address soon             |
+| Medium   | Normal priority                     |
+| Low      | Nice to have                        |
 
-| Label | PR  | Comments                |
-| ----- | --- | ----------------------- |
-| NEWS  | x   | Applied to all News PRs |
+### Status
 
-### Tier
+| Status      | Description                   |
+| ----------- | ----------------------------- |
+| To do       | Ready to work on              |
+| In progress | Currently being worked on     |
+| Done        | Completed                     |
+| Discarded   | Won't do / no longer relevant |
 
-**Hierarchy:** TOP + TYPE + WORKFLOW (e.g., `TIER` + `SEED` + `REVIEW`)
+---
 
-TOP
+## NEWS
 
-| Label | Issue | PR  | Comments                  |
-| ----- | ----- | --- | ------------------------- |
-| TIER  | x     | x   | Applied to all Tier items |
+Releases, announcements, and social content.
 
-TYPE
+### Labels
 
-| Label       | Issue | PR  | Comments                     |
-| ----------- | ----- | --- | ---------------------------- |
-| SEED        | x     |     | Seed upgrade request         |
-| FLOWER-CODE |       | x   | Flower via code contribution |
-| FLOWER-APP  | x     | x   | Flower via app contribution  |
+| Label | Comments                    |
+| ----- | --------------------------- |
+| NEWS  | Applied to news-related PRs |
 
-WORKFLOW
+---
 
-| Label      | Issue | PR  | Comments               |
-| ---------- | ----- | --- | ---------------------- |
-| INCOMPLETE | x     | x   | User action requested  |
-| REVIEW     |       | x   | PR awaiting review     |
-| COMPLETE   |       | x   | PR approved and merged |
-| REJECTED   |       | x   | PR declined            |
+## Tier
 
-## Priority
+App submissions and code contributions from external users.
 
-GitHub Projects priority field — a built-in property for ranking importance.
+### Labels
 
-| Priority | Support Issue | Dev Issue | News PR |
-| -------- | ------------- | --------- | ------- |
-| Urgent   | x             | x         | x       |
-| High     | x             | x         |         |
-| Medium   | x             | x         |         |
-| Low      | x             | x         |         |
+**App Submissions** (via issue template)
 
-## Status (Issues)
+| Label               | Issue | PR  | Comments                          |
+| ------------------- | ----- | --- | --------------------------------- |
+| TIER-APP            | x     |     | New submission received           |
+| TIER-APP-INCOMPLETE | x     |     | Needs user action (info/register) |
+| TIER-APP-REVIEW     | x     |     | Issue awaiting maintainer review  |
+| TIER-APP-REVIEW-PR  |       | x   | PR awaiting maintainer review     |
+| TIER-APP-COMPLETE   | x     | x   | Approved and merged               |
+| TIER-APP-REJECTED   | x     | x   | Declined                          |
 
-GitHub Projects status field — tracks workflow state across different project views.
+**Code Contributions** _(future)_
 
-| Status      | Support Issue | Dev Issue | Tier Issue |
-| ----------- | ------------- | --------- | ---------- |
-| Backlog     |               | x         |            |
-| To do       | x             | x         |            |
-| In progress | x             | x         |            |
-| In review   |               |           | x          |
-| Done        | x             | x         | x          |
-| Discarded   | x             | x         |            |
+| Label               | PR  | Comments               |
+| ------------------- | --- | ---------------------- |
+| TIER-CODE           | x   | New contribution       |
+| TIER-CODE-REVIEW-PR | x   | PR awaiting maintainer |
+| TIER-CODE-COMPLETE  | x   | Approved and merged    |
+| TIER-CODE-REJECTED  | x   | Declined               |
 
-## Status (PRs)
+### Flow
 
-PR state on GitHub — Draft PRs are work-in-progress; Ready for review PRs are awaiting approval.
-
-| Status           | Dev PR | News PR | Tier PR | News PR |
-| ---------------- | ------ | ------- | ------- | ------- |
-| Draft            | x      |         |         |         |
-| Ready for review | x      | x       | x       | x       |
+```
+TIER-APP → (valid) → TIER-APP-REVIEW → TIER-APP-COMPLETE
+                                     ↘ TIER-APP-REJECTED
+         → (invalid) → TIER-APP-INCOMPLETE → (user fixes) → re-process
+                     ↘ TIER-APP-REJECTED (duplicate/spam)
+```

@@ -8,7 +8,7 @@ from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 import torch
 from diffusers import FluxPipeline
-from nunchaku.models import NunchakuFluxTransformer2dModel
+from nunchaku.models.transformer_flux import NunchakuFluxTransformer2dModel
 from safety_checker.censor import check_safety
 import requests
 import logging

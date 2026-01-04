@@ -68,9 +68,9 @@ export const TEXT_SERVICES = {
         cost: [
             {
                 date: COST_START_DATE,
-                promptTextTokens: perMillion(1.75),
-                promptCachedTokens: perMillion(0.175),
-                completionTextTokens: perMillion(14.0),
+                promptTextTokens: perMillion(2.5),
+                promptCachedTokens: perMillion(1.25),
+                completionTextTokens: perMillion(10.0),
             },
         ],
         description: "OpenAI GPT-5.2 - Most Powerful & Intelligent",
@@ -129,13 +129,13 @@ export const TEXT_SERVICES = {
         cost: [
             {
                 date: COST_START_DATE,
-                promptTextTokens: perMillion(0.165),
-                completionTextTokens: perMillion(0.66),
+                promptTextTokens: perMillion(5.0),
+                completionTextTokens: perMillion(20.0),
                 promptAudioTokens: perMillion(11.0),
                 completionAudioTokens: perMillion(22.0),
             },
         ],
-        description: "OpenAI GPT-4o Mini Audio - Voice Input & Output",
+        description: "OpenAI GPT-4o Realtime Audio - Voice Input & Output",
         voices: [...AUDIO_VOICES],
         inputModalities: ["text", "image", "audio"],
         outputModalities: ["audio", "text"],

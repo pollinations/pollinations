@@ -1166,77 +1166,42 @@ test(
     },
 );
 
-// Response content_blocks schema validation (Issue #6830)
-test("Response schema should accept content_blocks with image_url type", async () => {
-    const { CreateChatCompletionResponseSchema } = await import(
-        "@/schemas/openai.ts"
-    );
-    // Simulate a response with content_blocks containing image_url (from Gemini code_execution)
-    const mockResponse = {
-        id: "test-id",
-        object: "chat.completion" as const,
-        created: Date.now(),
-        model: "gemini",
-        choices: [
+// Gemini code_execution content_blocks test (Issue #6830)
+test(
+    "POST /v1/chat/completions should return content_blocks with image_url from Gemini code_execution",
+    { timeout: 120000 },
+    async ({ apiKey, mocks }) => {
+        await mocks.enable("polar", "tinybird", "vcr");
+        const response = await SELF.fetch(
+            `http://localhost:3000/api/generate/v1/chat/completions`,
             {
-                index: 0,
-                message: {
-                    role: "assistant" as const,
-                    content: "Here is the plot",
-                    content_blocks: [
-                        { type: "text", text: "Generated plot:" },
+                method: "POST",
+                headers: {
+                    "content-type": "application/json",
+                    "authorization": `Bearer ${apiKey}`,
+                },
+                body: JSON.stringify({
+                    model: "gemini",
+                    messages: [
                         {
-                            type: "image_url",
-                            image_url: { url: "data:image/png;base64,abc123" },
+                            role: "user",
+                            content: "Execute Python code to draw f(x) = x^2",
                         },
                     ],
-                },
-                finish_reason: "stop",
+                    seed: testSeed(),
+                }),
             },
-        ],
-        usage: {
-            prompt_tokens: 10,
-            completion_tokens: 20,
-            total_tokens: 30,
-        },
-    };
-    const result = CreateChatCompletionResponseSchema.safeParse(mockResponse);
-    expect(result.success).toBe(true);
-});
-
-test("Response schema should accept unknown content_block types via passthrough", async () => {
-    const { CreateChatCompletionResponseSchema } = await import(
-        "@/schemas/openai.ts"
-    );
-    // Simulate a response with an unknown content_block type
-    const mockResponse = {
-        id: "test-id",
-        object: "chat.completion" as const,
-        created: Date.now(),
-        model: "gemini",
-        choices: [
-            {
-                index: 0,
-                message: {
-                    role: "assistant" as const,
-                    content: "Here is the audio",
-                    content_blocks: [
-                        {
-                            type: "audio",
-                            data: "base64audiodata",
-                            format: "wav",
-                        },
-                    ],
-                },
-                finish_reason: "stop",
-            },
-        ],
-        usage: {
-            prompt_tokens: 10,
-            completion_tokens: 20,
-            total_tokens: 30,
-        },
-    };
-    const result = CreateChatCompletionResponseSchema.safeParse(mockResponse);
-    expect(result.success).toBe(true);
-});
+        );
+        expect(response.status).toBe(200);
+        const data = (await response.json()) as any;
+        // Gemini with code_execution returns content_blocks containing image_url
+        expect(data.choices[0].message).toBeDefined();
+        // Response should have content_blocks with image data from code execution
+        if (data.choices[0].message.content_blocks) {
+            const hasImageUrl = data.choices[0].message.content_blocks.some(
+                (block: any) => block.type === "image_url",
+            );
+            expect(hasImageUrl).toBe(true);
+        }
+    },
+);

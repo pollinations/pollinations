@@ -254,6 +254,47 @@ jobs:
             echo "❌ User $GITHUB_USERNAME is not registered"
           fi
 
+      - name: Check for pollinations.ai credit
+        if: steps.parse.outputs.needs_info != 'true'
+        id: credit-check
+        env:
+          PROJECT_JSON: ${{ steps.parse.outputs.project_json }}
+        run: |
+          APP_URL=$(echo "$PROJECT_JSON" | jq -r '.url // empty')
+          if [ -z "$APP_URL" ]; then
+            echo "has_credit=unknown" >> $GITHUB_OUTPUT
+            echo "⚠️ No URL to check"
+            exit 0
+          fi
+          
+          # Fetch the page and check for pollinations mention (case-insensitive)
+          CONTENT=$(curl -sL --max-time 10 "$APP_URL" 2>/dev/null || echo "")
+          if [ -z "$CONTENT" ]; then
+            echo "has_credit=unknown" >> $GITHUB_OUTPUT
+            echo "⚠️ Could not fetch $APP_URL"
+            exit 0
+          fi
+          
+          if echo "$CONTENT" | grep -qi "pollinations"; then
+            echo "has_credit=true" >> $GITHUB_OUTPUT
+            echo "✅ Found pollinations.ai credit on $APP_URL"
+          else
+            echo "has_credit=false" >> $GITHUB_OUTPUT
+            echo "⚠️ No pollinations.ai credit found on $APP_URL"
+          fi
+
+      - name: Warn missing credit
+        if: steps.credit-check.outputs.has_credit == 'false'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.issues.createComment({
+              owner: context.repo.owner, repo: context.repo.repo,
+              issue_number: ${{ steps.issue.outputs.number }},
+              body: `⚠️ @${{ steps.issue.outputs.author }}, we couldn't find a visible credit to **pollinations.ai** on your app.\n\nPlease add a link or mention to [pollinations.ai](https://pollinations.ai) in your app (footer, about page, etc.) and comment here when done.\n\nYou can use our official logos: [logo.svg](https://raw.githubusercontent.com/pollinations/pollinations/main/shared/assets/logo.svg) or [logo-text.svg](https://raw.githubusercontent.com/pollinations/pollinations/main/shared/assets/logo-text.svg)`
+            });
+            // Don't block - just warn. The PR will still be created.
+
       - name: Reject hard duplicate
         if: steps.duplicate-check.outputs.match_type == 'url_exact' || steps.duplicate-check.outputs.match_type == 'repo_exact' || steps.duplicate-check.outputs.match_type == 'name_user_exact' || steps.duplicate-check.outputs.match_type == 'semantic_hard'
         uses: actions/github-script@v7
@@ -308,6 +349,28 @@ jobs:
             // Remove TIER-APP, add TIER-APP-INCOMPLETE
             try { await github.rest.issues.removeLabel({ owner: context.repo.owner, repo: context.repo.repo, issue_number: ${{ steps.issue.outputs.number }}, name: 'TIER-APP' }); } catch (e) {}
             await github.rest.issues.addLabels({ owner: context.repo.owner, repo: context.repo.repo, issue_number: ${{ steps.issue.outputs.number }}, labels: ['TIER-APP-INCOMPLETE'] });
+
+      - name: Correct issue title
+        if: steps.parse.outputs.name != ''
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const appName = `${{ steps.parse.outputs.name }}`;
+            const expectedTitle = `[App Submission] ${appName}`;
+            const issue = await github.rest.issues.get({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: ${{ steps.issue.outputs.number }}
+            });
+            if (issue.data.title !== expectedTitle) {
+              await github.rest.issues.update({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: ${{ steps.issue.outputs.number }},
+                title: expectedTitle
+              });
+              console.log(`Updated title to: ${expectedTitle}`);
+            }
 
       - name: Set validation result
         id: validate
@@ -441,29 +504,48 @@ jobs:
           
           EXISTING_PR=$(gh pr list --head "$BRANCH" --json number -q '.[0].number')
           if [ -z "$EXISTING_PR" ]; then
-            # Build PR body with app details (using printf to avoid YAML parsing issues)
-            # Use double newlines for GitHub markdown paragraph breaks
-            PR_BODY=$(printf '## 🆕 New App: %s\n\n' "$PROJECT_NAME")
-            PR_BODY="${PR_BODY}$(printf '**Category:** %s  \n' "$CATEGORY")"
-            PR_BODY="${PR_BODY}$(printf '**URL:** %s  \n' "$URL")"
-            PR_BODY="${PR_BODY}$(printf '**Description:** %s  \n' "$SHORT_DESC")"
-            [ -n "$REPO" ] && PR_BODY="${PR_BODY}$(printf '**Repo:** %s  \n' "$REPO")"
-            [ -n "$DISCORD" ] && PR_BODY="${PR_BODY}$(printf '**Discord:** %s  \n' "$DISCORD")"
-            [ -n "$LANGUAGE" ] && PR_BODY="${PR_BODY}$(printf '**Language:** %s  \n' "$LANGUAGE")"
-            [ -n "$OTHER" ] && PR_BODY="${PR_BODY}$(printf '**Other Contact:** %s  \n' "$OTHER")"
+            # Build PR body with app details using heredoc for clean formatting
+            PR_BODY="## 🆕 New App: $PROJECT_NAME
+
+| Field | Value |
+|-------|-------|
+| **Category** | \`$CATEGORY\` |
+| **URL** | $URL |
+| **Description** | $SHORT_DESC |"
+
+            [ -n "$REPO" ] && PR_BODY="$PR_BODY
+| **Repo** | $REPO |"
+            [ -n "$DISCORD" ] && PR_BODY="$PR_BODY
+| **Discord** | $DISCORD |"
+            [ -n "$LANGUAGE" ] && PR_BODY="$PR_BODY
+| **Language** | \`$LANGUAGE\` |"
+            [ -n "$OTHER" ] && PR_BODY="$PR_BODY
+| **Other Contact** | $OTHER |"
             
             # Add similarity report if applicable
             SIMILARITY="${{ needs.app-parse-issue.outputs.similarity_score }}"
             SIMILARITY_REASON="${{ needs.app-parse-issue.outputs.similarity_reason }}"
             if [ -n "$SIMILARITY" ] && [ "$SIMILARITY" != "null" ] && [ "$SIMILARITY" != "0" ]; then
-              PR_BODY="${PR_BODY}$(printf '\n\n⚠️ **Similarity Report:** %s%% similar to previous submission(s) from @%s\n' "$SIMILARITY" "$ISSUE_AUTHOR")"
+              PR_BODY="$PR_BODY
+
+---
+
+⚠️ **Similarity Report:** ${SIMILARITY}% similar to previous submission(s) from @$ISSUE_AUTHOR"
               if [ -n "$SIMILARITY_REASON" ] && [ "$SIMILARITY_REASON" != "null" ]; then
-                PR_BODY="${PR_BODY}$(printf '**Reason:** %s\n' "$SIMILARITY_REASON")"
+                PR_BODY="$PR_BODY
+> $SIMILARITY_REASON"
               fi
-              PR_BODY="${PR_BODY}$(printf 'Maintainer: Review if this is legitimate iteration or rebranding.\n')"
+              PR_BODY="$PR_BODY
+
+*Maintainer: Review if this is legitimate iteration or rebranding.*"
             fi
             
-            PR_BODY="${PR_BODY}$(printf '\n---\nCo-authored-by: %s <%s+%s@users.noreply.github.com>\nFixes #%s' "$ISSUE_AUTHOR" "$ISSUE_AUTHOR_ID" "$ISSUE_AUTHOR" "$ISSUE_NUMBER")"
+            PR_BODY="$PR_BODY
+
+---
+
+Co-authored-by: $ISSUE_AUTHOR <${ISSUE_AUTHOR_ID}+${ISSUE_AUTHOR}@users.noreply.github.com>
+Fixes #$ISSUE_NUMBER"
 
             gh pr create --title "Add $PROJECT_NAME to $CATEGORY" \
               --body "$PR_BODY" \
@@ -548,7 +630,7 @@ jobs:
                 owner: context.repo.owner,
                 repo: context.repo.repo,
                 issue_number: issueNumber,
-                body: `✅ **Congratulations!** Your app **${appName}** is now live on [pollinations.ai](https://pollinations.ai)!\n\nThank you for contributing to the Pollinations ecosystem. 🌸`
+                body: `✅ **Congratulations!** Your app **${appName}** is now live on [pollinations.ai](https://pollinations.ai)!\n\nThank you for contributing to the pollinations.ai ecosystem. 🌸`
               });
               
               await github.rest.issues.update({

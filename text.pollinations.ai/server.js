@@ -129,7 +129,7 @@ app.set("trust proxy", true);
 
 // Queue configuration for text service
 const QUEUE_CONFIG = {
-    interval: 18000, // 18 seconds between requests per IP (no auth)
+    interval: 30000, // 30 seconds between requests per IP (no auth)
 };
 
 // Using getIp from shared auth-utils.js

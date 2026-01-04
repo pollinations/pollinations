@@ -11,7 +11,7 @@ jobs:
     steps:
       - name: Generate Pollinations AI Token
         id: pollinations-ai
-        if: ${{ secrets.POLLY_BOT_APP_ID }}
+        if: secrets.POLLY_BOT_APP_ID != ''
         uses: actions/create-github-app-token@v1
         with:
           app-id: ${{ secrets.POLLY_BOT_APP_ID }}

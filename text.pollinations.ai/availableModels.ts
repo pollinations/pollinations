@@ -103,7 +103,6 @@ const models: ModelDefinition[] = [
         transform: pipe(
             createSystemPromptTransform(BASE_PROMPTS.conversational),
             sanitizeToolSchemas(),
-            createGeminiToolsTransform(["code_execution"]),
             createGeminiThinkingTransform("v2.5"),
         ),
     },

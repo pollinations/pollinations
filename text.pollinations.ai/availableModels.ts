@@ -93,7 +93,7 @@ const models: ModelDefinition[] = [
         transform: pipe(
             createSystemPromptTransform(BASE_PROMPTS.conversational),
             sanitizeToolSchemas(),
-            createGeminiToolsTransform(["code_execution", "url_context"]),
+            createGeminiToolsTransform(["code_execution"]),
             createGeminiThinkingTransform("v3-flash"),
         ),
     },
@@ -103,7 +103,7 @@ const models: ModelDefinition[] = [
         transform: pipe(
             createSystemPromptTransform(BASE_PROMPTS.conversational),
             sanitizeToolSchemas(),
-            createGeminiToolsTransform(["code_execution", "url_context"]),
+            createGeminiToolsTransform(["code_execution"]),
             createGeminiThinkingTransform("v2.5"),
         ),
     },
@@ -147,7 +147,7 @@ const models: ModelDefinition[] = [
         transform: pipe(
             createSystemPromptTransform(BASE_PROMPTS.conversational),
             sanitizeToolSchemas(),
-            createGeminiToolsTransform(["code_execution", "url_context"]),
+            createGeminiToolsTransform(["code_execution"]),
             createGeminiThinkingTransform("v3-pro"),
         ),
     },

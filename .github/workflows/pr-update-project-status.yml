@@ -20,7 +20,7 @@ jobs:
 
       - name: Add to Project
         uses: actions/add-to-project@v1.0.2
-        if: ${{ steps.pollinations-ai.outputs.token }}
+        if: ${{ steps.pollinations-ai.outputs.token != '' }}
         id: add-project
         with:
           project-url: https://github.com/orgs/pollinations/projects/20

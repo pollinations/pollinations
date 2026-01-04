@@ -18,6 +18,7 @@ Internal development work: features, refactors, infrastructure.
 | DEV-FEATURE  | New functionality request                        |
 | DEV-QUEST    | Community task - One off Pollen reward if merged |
 | DEV-TRACKING | Meta-issue tracking other items                  |
+| DEV-VOTING   | Community vote on a proposal                     |
 
 ### Priority
 
@@ -106,12 +107,12 @@ App submissions and code contributions from external users.
 
 **Code Contributions** _(future)_
 
-| Label              | PR  | Comments            |
-| ------------------ | --- | ------------------- |
-| TIER-CODE          | x   | New contribution    |
-| TIER-CODE-REVIEW   | x   | Awaiting maintainer |
-| TIER-CODE-COMPLETE | x   | Approved and merged |
-| TIER-CODE-REJECTED | x   | Declined            |
+| Label               | PR  | Comments               |
+| ------------------- | --- | ---------------------- |
+| TIER-CODE           | x   | New contribution       |
+| TIER-CODE-REVIEW-PR | x   | PR awaiting maintainer |
+| TIER-CODE-COMPLETE  | x   | Approved and merged    |
+| TIER-CODE-REJECTED  | x   | Declined               |
 
 ### Flow
 

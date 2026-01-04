@@ -19,7 +19,7 @@
 | `TIER-APP-COMPLETE`   | Approved and merged               | `app-upgrade-tier.yml`      |
 | `TIER-APP-REJECTED`   | Submission rejected               | `app-review-submission.yml` |
 
-**Code Contributions** _(future)_: `TIER-CODE-*` labels planned.
+**Code Contributions** _(future)_: `TIER-CODE`, `TIER-CODE-REVIEW-PR`, `TIER-CODE-COMPLETE`, `TIER-CODE-REJECTED` planned.
 
 ## Dev Labels
 
@@ -29,6 +29,7 @@
 | `DEV-FEATURE`  | New functionality request                        | `project-manager.py` |
 | `DEV-QUEST`    | Community task - One off Pollen reward if merged | `project-manager.py` |
 | `DEV-TRACKING` | Meta-issue tracking other items                  | `project-manager.py` |
+| `DEV-VOTING`   | Community vote on a proposal                     | Manual               |
 
 ## Support Labels
 

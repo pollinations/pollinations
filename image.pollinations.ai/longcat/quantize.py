@@ -1,15 +1,17 @@
 import torch
 from diffusers import LongCatImagePipeline
+from transformers import BitsAndBytesConfig
+from peft import inject_adapter_in_model, LoraConfig
 import time
-import torch.nn as nn
 
 
 class LatentOnlyVAE(torch.nn.Module):
-    def __init__(self, vae):
+    def __init__(self, vae, device):
         super().__init__()
         self.original_vae = vae
         self.config = vae.config
         self._dtype = vae.dtype
+        self.device = device
 
     @property
     def dtype(self):
@@ -28,8 +30,10 @@ class LatentOnlyVAE(torch.nn.Module):
     def encode(self, x):
         return self.original_vae.encode(x)
     
-    def decode(self, z):
-        return self.original_vae.decode(z)
+    def decode(self, z, return_dict=False):
+        z = z.to(self.device).to(self._dtype)
+        self.original_vae = self.original_vae.to(self.device).to(self._dtype)
+        return self.original_vae.decode(z, return_dict=return_dict)
 
 
 class DualGPULongCat:
@@ -42,6 +46,13 @@ class DualGPULongCat:
         print(f"Loading pipeline on {self.gpu_diffusion}...")
         t_start = time.time()
         
+        self.bnb_config = BitsAndBytesConfig(
+            load_in_4bit=True,
+            bnb_4bit_quant_type="nf4",
+            bnb_4bit_use_double_quant=True,
+            bnb_4bit_compute_dtype=torch.float32
+        )
+        
         self.pipe = LongCatImagePipeline.from_pretrained(
             "meituan-longcat/LongCat-Image",
             cache_dir="model_cache",
@@ -51,9 +62,13 @@ class DualGPULongCat:
         self.vae_original = self.pipe.vae
         
         self.pipe.text_encoder.to(self.gpu_diffusion).to(self.dtype)
-        self.pipe.transformer.to(self.gpu_diffusion).to(self.dtype)
         
-        self.pipe.vae = LatentOnlyVAE(self.pipe.vae)
+        self._quantize_transformer()
+        self.pipe.transformer.to(self.gpu_diffusion)
+        
+        self._apply_lora()
+        
+        self.pipe.vae = LatentOnlyVAE(self.pipe.vae, self.gpu_vae)
         
         self._optimize_gpu_diffusion()
         
@@ -61,6 +76,29 @@ class DualGPULongCat:
         print(f"✓ Model loaded in {t_load:.2f}s")
         
         self._log_memory()
+
+    def _quantize_transformer(self):
+        from transformers import AutoModel
+        self.pipe.transformer = AutoModel.from_pretrained(
+            "meituan-longcat/LongCat-Image",
+            subfolder="transformer",
+            cache_dir="model_cache",
+            torch_dtype=self.dtype,
+            quantization_config=self.bnb_config,
+            device_map="cpu",
+        )
+
+    def _apply_lora(self):
+        lora_config = LoraConfig(
+            r=8,
+            lora_alpha=16,
+            target_modules=["to_q", "to_v", "to_k", "to_out"],
+            lora_dropout=0.05,
+            bias="none",
+        )
+        self.pipe.transformer = inject_adapter_in_model(
+            lora_config, self.pipe.transformer
+        )
 
     def _optimize_gpu_diffusion(self):
         print(f"Optimizing {self.gpu_diffusion}...")
@@ -100,7 +138,7 @@ class DualGPULongCat:
         t_start = time.time()
         
         with torch.no_grad():
-            with torch.cuda.amp.autocast(dtype=self.dtype):
+            with torch.amp.autocast('cuda'):
                 output = self.pipe(
                     prompt=prompt,
                     height=height,
@@ -108,9 +146,19 @@ class DualGPULongCat:
                     num_inference_steps=num_inference_steps,
                     guidance_scale=guidance_scale,
                     enable_cfg_renorm=False,
-                    output_type="pil",
+                    output_type="latent",
                 )
-                image = output.images[0]
+                latents = output.images
+                
+        latents = latents.to(self.gpu_vae).to(self.dtype)
+        with torch.no_grad():
+            with torch.amp.autocast('cuda'):
+                vae_output = self.vae_original.decode(latents, return_dict=True)
+                image = vae_output.sample
+                
+        from diffusers.image_processor import VaeImageProcessor
+        processor = VaeImageProcessor()
+        image = processor.postprocess(image, output_type="pil")[0]
         
         elapsed = time.time() - t_start
         print(f"✓ Generation completed in {elapsed:.2f}s")
@@ -144,6 +192,7 @@ class DualGPULongCat:
         print(f"{'='*60}\n")
         
         return images
+
 
 
 def main():

@@ -1,0 +1,85 @@
+{
+  "request": {
+    "url": "http://ec2-3-80-56-235.compute-1.amazonaws.com:16385/openai",
+    "method": "POST",
+    "body": {
+      "type": "json",
+      "data": {
+        "model": "gemini",
+        "messages": [
+          {
+            "role": "user",
+            "content": "What is 7 factorial? Use code to compute it. Reply with just the raw number, no formatting."
+          }
+        ],
+        "tools": [
+          {
+            "type": "function",
+            "function": {
+              "name": "code_execution"
+            }
+          }
+        ],
+        "seed": 42
+      }
+    },
+    "params": {}
+  },
+  "response": {
+    "status": 200,
+    "statusText": "OK",
+    "headers": {
+      "access-control-allow-origin": "*",
+      "connection": "keep-alive",
+      "content-length": "497",
+      "content-type": "application/json; charset=utf-8",
+      "date": "Sun, 04 Jan 2026 12:50:55 GMT",
+      "etag": "W/\"1f1-/IMvKTHYk/vA0xYN4JJ49NUv3m0\"",
+      "keep-alive": "timeout=5",
+      "x-model-used": "gemini-3-flash-preview",
+      "x-powered-by": "Express",
+      "x-usage-completion-reasoning-tokens": "88",
+      "x-usage-prompt-text-tokens": "275",
+      "x-usage-total-tokens": "363"
+    },
+    "body": {
+      "type": "json",
+      "data": {
+        "id": "pllns_9ec03d2853ed7d7c388279aa5d30a2a4",
+        "object": "chat.completion",
+        "created": 1767531055,
+        "model": "gemini-3-flash-preview",
+        "provider": "vertex-ai",
+        "choices": [
+          {
+            "message": {
+              "role": "assistant",
+              "content": "5040",
+              "content_blocks": [
+                {
+                  "type": "text",
+                  "text": "5040"
+                }
+              ]
+            },
+            "index": 0,
+            "finish_reason": "STOP"
+          }
+        ],
+        "usage": {
+          "prompt_tokens": 275,
+          "completion_tokens": 25,
+          "total_tokens": 684,
+          "completion_tokens_details": {
+            "reasoning_tokens": 88,
+            "audio_tokens": 0
+          },
+          "prompt_tokens_details": {
+            "cached_tokens": 0,
+            "audio_tokens": 0
+          }
+        }
+      }
+    }
+  }
+}

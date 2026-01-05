@@ -3,7 +3,7 @@
 /**
  * Check all app links in apps/APPS.md and report broken ones
  *
- * Usage: node .github/scripts/tier-apps-check-links.js [options]
+ * Usage: node .github/scripts/app-check-links.js [options]
  *
  * Options:
  *   --timeout=<ms>    Set timeout in milliseconds (default: 10000)

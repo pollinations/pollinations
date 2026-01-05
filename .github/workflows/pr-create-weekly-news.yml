@@ -38,5 +38,5 @@ jobs:
           GITHUB_TOKEN: ${{ steps.pollinations-ai.outputs.token }}
           POLLINATIONS_TOKEN: ${{ secrets.POLLINATIONS_TOKEN }}
           GITHUB_REPOSITORY: ${{ github.repository }}
-          PR_LABELS: pr:news
+          PR_LABELS: NEWS
         run: python .github/scripts/pr_create_weekly_news.py

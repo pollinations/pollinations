@@ -2,7 +2,7 @@
 
 ## App Submission Handling
 
-App submissions are now **fully automated** via the `tier-app-submission.yml` workflow.
+App submissions are now **fully automated** via the `app-review-submission.yml` workflow.
 
 **Source of truth:** `apps/APPS.md` - A single markdown table with all apps.
 
@@ -17,7 +17,7 @@ App submissions are now **fully automated** via the `tier-app-submission.yml` wo
 **Manual edits (if needed):**
 
 - Edit `apps/APPS.md` directly
-- Run `node .github/scripts/tier-apps-update-readme.js` to refresh README
+- Run `node .github/scripts/app-update-readme.js` to refresh README
 
 **Table format in APPS.md:**
 

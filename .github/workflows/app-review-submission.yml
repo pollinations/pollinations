@@ -1,14 +1,12 @@
-name: Tier App Submission
+name: App Review Submission
 
 on:
   issues:
     types: [opened, edited, reopened]
   issue_comment:
     types: [created]
-  pull_request:
+  pull_request_target:
     types: [closed]
-    branches:
-      - 'auto/app-*'
   workflow_dispatch:
     inputs:
       issue_number:
@@ -17,21 +15,24 @@ on:
         type: number
 
 concurrency:
-  group: tier-app-${{ github.event.issue.number || github.event.inputs.issue_number || github.run_id }}
+  group: app-submission-${{ github.event.issue.number || github.event.inputs.issue_number || github.event.pull_request.number || github.run_id }}
   cancel-in-progress: false
 
 jobs:
   # Job 1: Parse issue and validate user registration
-  tier-parse-issue:
+  app-parse-issue:
     if: |
+      github.event_name != 'pull_request_target' &&
+      (contains(github.event.issue.labels.*.name, 'TIER-APP') ||
+       contains(github.event.issue.labels.*.name, 'TIER-APP-INCOMPLETE')) &&
       (github.event_name == 'workflow_dispatch' ||
-      (github.event_name == 'issues' && contains(github.event.issue.labels.*.name, 'tier:review')) ||
-      (github.event_name == 'issue_comment' && 
-       github.event.comment.user.type != 'Bot' &&
-       (contains(github.event.issue.labels.*.name, 'tier:review') ||
-        contains(github.event.issue.labels.*.name, 'tier:info-needed')))) &&
-      !contains(github.event.issue.labels.*.name, 'tier:done') &&
-      !contains(github.event.issue.labels.*.name, 'tier:flower') &&
+       github.event_name == 'issues' ||
+       (github.event_name == 'issue_comment' && 
+        contains(github.event.issue.labels.*.name, 'TIER-APP-INCOMPLETE') &&
+        github.event.comment.user.type != 'Bot')) &&
+      !contains(github.event.issue.labels.*.name, 'TIER-APP-REVIEW') &&
+      !contains(github.event.issue.labels.*.name, 'TIER-APP-COMPLETE') &&
+      !contains(github.event.issue.labels.*.name, 'TIER-APP-REJECTED') &&
       github.event.issue.state == 'open'
     runs-on: ubuntu-latest
     permissions:
@@ -62,11 +63,12 @@ jobs:
         with:
           script: |
             const labels = [
-              { name: 'tier:review', color: '0e8a16', description: 'Submission under review' },
-              { name: 'tier:info-needed', color: 'fbca04', description: 'Awaiting registration or info' },
-              { name: 'tier:flower', color: '1d76db', description: 'Approved for Flower tier' },
-              { name: 'tier:done', color: '6f42c1', description: 'Tier upgrade completed' },
-              { name: 'tier:rejected', color: 'd73a49', description: 'Submission rejected' }
+              { name: 'TIER-APP', color: '1d76db', description: 'App submission - new' },
+              { name: 'TIER-APP-INCOMPLETE', color: 'fbca04', description: 'App submission - needs user action' },
+              { name: 'TIER-APP-REVIEW', color: '0052cc', description: 'App submission - issue awaiting review' },
+              { name: 'TIER-APP-REVIEW-PR', color: '5319e7', description: 'App submission - PR awaiting review' },
+              { name: 'TIER-APP-COMPLETE', color: '0e8a16', description: 'App submission - approved' },
+              { name: 'TIER-APP-REJECTED', color: 'd73a49', description: 'App submission - rejected' }
             ];
             for (const label of labels) {
               try {
@@ -155,7 +157,7 @@ jobs:
         env:
           PROJECT_JSON: ${{ steps.parse.outputs.project_json }}
           GITHUB_USERNAME: ${{ steps.issue.outputs.author }}
-        run: node .github/scripts/tier-check-duplicate.js
+        run: node .github/scripts/app-check-duplicate.js
 
       - name: Check semantic similarity (if user has previous apps)
         if: steps.parse.outputs.needs_info != 'true' && steps.duplicate-check-exact.outputs.duplicate_found == '' && steps.duplicate-check-exact.outputs.user_previous_apps != ''
@@ -252,6 +254,53 @@ jobs:
             echo "❌ User $GITHUB_USERNAME is not registered"
           fi
 
+      - name: Check for pollinations.ai credit
+        if: steps.parse.outputs.needs_info != 'true'
+        id: credit-check
+        env:
+          PROJECT_JSON: ${{ steps.parse.outputs.project_json }}
+        run: |
+          APP_URL=$(echo "$PROJECT_JSON" | jq -r '.url // empty')
+          if [ -z "$APP_URL" ]; then
+            echo "has_credit=unknown" >> $GITHUB_OUTPUT
+            echo "⚠️ No URL to check"
+            exit 0
+          fi
+          
+          # Basic SSRF protection - only allow http/https, no localhost
+          if ! echo "$APP_URL" | grep -qE '^https?://' || echo "$APP_URL" | grep -qiE '(localhost|127\.|10\.|192\.168\.|172\.(1[6-9]|2[0-9]|3[01])\.)'; then
+            echo "has_credit=unknown" >> $GITHUB_OUTPUT
+            echo "⚠️ Invalid or internal URL: $APP_URL"
+            exit 0
+          fi
+          
+          # Fetch the page and check for pollinations mention (case-insensitive)
+          CONTENT=$(curl -sL --connect-timeout 5 --max-time 10 "$APP_URL" 2>/dev/null || echo "")
+          if [ -z "$CONTENT" ]; then
+            echo "has_credit=unknown" >> $GITHUB_OUTPUT
+            echo "⚠️ Could not fetch $APP_URL"
+            exit 0
+          fi
+          
+          if echo "$CONTENT" | grep -qi "pollinations"; then
+            echo "has_credit=true" >> $GITHUB_OUTPUT
+            echo "✅ Found pollinations.ai credit on $APP_URL"
+          else
+            echo "has_credit=false" >> $GITHUB_OUTPUT
+            echo "⚠️ No pollinations.ai credit found on $APP_URL"
+          fi
+
+      - name: Suggest adding credit
+        if: steps.credit-check.outputs.has_credit == 'false'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.issues.createComment({
+              owner: context.repo.owner, repo: context.repo.repo,
+              issue_number: ${{ steps.issue.outputs.number }},
+              body: `💡 @${{ steps.issue.outputs.author }}, it would be awesome if you could add a credit to **pollinations.ai** in your app! A small link in the footer or about page helps us grow the community. 🌸\n\nOfficial logos if you'd like to use them:\n- [logo.svg](https://raw.githubusercontent.com/pollinations/pollinations/main/shared/assets/logo.svg)\n- [logo-text.svg](https://raw.githubusercontent.com/pollinations/pollinations/main/shared/assets/logo-text.svg)`
+            });
+
       - name: Reject hard duplicate
         if: steps.duplicate-check.outputs.match_type == 'url_exact' || steps.duplicate-check.outputs.match_type == 'repo_exact' || steps.duplicate-check.outputs.match_type == 'name_user_exact' || steps.duplicate-check.outputs.match_type == 'semantic_hard'
         uses: actions/github-script@v7
@@ -270,8 +319,13 @@ jobs:
               body: `❌ **Duplicate Rejected**\n\n@${{ steps.issue.outputs.author }}, this submission was rejected:\n\n**Reason:** ${reason}\n\nThis is **tier abuse prevention**. Please review our [existing apps](https://pollinations.ai) or submit a genuinely different project.`
             });
             
-            try { await github.rest.issues.removeLabel({ owner: context.repo.owner, repo: context.repo.repo, issue_number: ${{ steps.issue.outputs.number }}, name: 'tier:review' }); } catch (e) {}
-            await github.rest.issues.addLabels({ owner: context.repo.owner, repo: context.repo.repo, issue_number: ${{ steps.issue.outputs.number }}, labels: ['tier:rejected'] });
+            // Remove TIER-APP or TIER-APP-INCOMPLETE, add TIER-APP-REJECTED
+            const issue = await github.rest.issues.get({ owner: context.repo.owner, repo: context.repo.repo, issue_number: ${{ steps.issue.outputs.number }} });
+            const oldLabels = issue.data.labels.map(l => l.name).filter(n => n.startsWith('TIER-APP'));
+            for (const label of oldLabels) {
+              try { await github.rest.issues.removeLabel({ owner: context.repo.owner, repo: context.repo.repo, issue_number: ${{ steps.issue.outputs.number }}, name: label }); } catch (e) {}
+            }
+            await github.rest.issues.addLabels({ owner: context.repo.owner, repo: context.repo.repo, issue_number: ${{ steps.issue.outputs.number }}, labels: ['TIER-APP-REJECTED'] });
             await github.rest.issues.update({ owner: context.repo.owner, repo: context.repo.repo, issue_number: ${{ steps.issue.outputs.number }}, state: 'closed' });
 
       - name: Handle missing info
@@ -284,8 +338,9 @@ jobs:
               issue_number: ${{ steps.issue.outputs.number }},
               body: `👋 @${{ steps.issue.outputs.author }}, I couldn't parse your submission: **${{ steps.parse.outputs.error }}**\n\nPlease update your issue with the missing info.`
             });
-            try { await github.rest.issues.removeLabel({ owner: context.repo.owner, repo: context.repo.repo, issue_number: ${{ steps.issue.outputs.number }}, name: 'tier:review' }); } catch (e) {}
-            await github.rest.issues.addLabels({ owner: context.repo.owner, repo: context.repo.repo, issue_number: ${{ steps.issue.outputs.number }}, labels: ['tier:info-needed'] });
+            // Remove TIER-APP, add TIER-APP-INCOMPLETE
+            try { await github.rest.issues.removeLabel({ owner: context.repo.owner, repo: context.repo.repo, issue_number: ${{ steps.issue.outputs.number }}, name: 'TIER-APP' }); } catch (e) {}
+            await github.rest.issues.addLabels({ owner: context.repo.owner, repo: context.repo.repo, issue_number: ${{ steps.issue.outputs.number }}, labels: ['TIER-APP-INCOMPLETE'] });
 
       - name: Handle missing registration
         if: steps.parse.outputs.needs_info != 'true' && steps.check-enter.outputs.exists == 'false'
@@ -297,8 +352,33 @@ jobs:
               issue_number: ${{ steps.issue.outputs.number }},
               body: `👋 @${{ steps.issue.outputs.author }}, thanks for submitting!\n\nPlease **create an account** at [enter.pollinations.ai](https://enter.pollinations.ai) using GitHub login, then comment here. 🌸`
             });
-            try { await github.rest.issues.removeLabel({ owner: context.repo.owner, repo: context.repo.repo, issue_number: ${{ steps.issue.outputs.number }}, name: 'tier:review' }); } catch (e) {}
-            await github.rest.issues.addLabels({ owner: context.repo.owner, repo: context.repo.repo, issue_number: ${{ steps.issue.outputs.number }}, labels: ['tier:info-needed'] });
+            // Remove TIER-APP, add TIER-APP-INCOMPLETE
+            try { await github.rest.issues.removeLabel({ owner: context.repo.owner, repo: context.repo.repo, issue_number: ${{ steps.issue.outputs.number }}, name: 'TIER-APP' }); } catch (e) {}
+            await github.rest.issues.addLabels({ owner: context.repo.owner, repo: context.repo.repo, issue_number: ${{ steps.issue.outputs.number }}, labels: ['TIER-APP-INCOMPLETE'] });
+
+      - name: Correct issue title
+        if: steps.parse.outputs.name != ''
+        uses: actions/github-script@v7
+        env:
+          APP_NAME: ${{ steps.parse.outputs.name }}
+        with:
+          script: |
+            const appName = process.env.APP_NAME;
+            const expectedTitle = `[App Submission] ${appName}`;
+            const issue = await github.rest.issues.get({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: ${{ steps.issue.outputs.number }}
+            });
+            if (issue.data.title !== expectedTitle) {
+              await github.rest.issues.update({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: ${{ steps.issue.outputs.number }},
+                title: expectedTitle
+              });
+              console.log(`Updated title to: ${expectedTitle}`);
+            }
 
       - name: Set validation result
         id: validate
@@ -315,9 +395,9 @@ jobs:
           fi
 
   # Job 2: Create PR with app entry
-  tier-create-app-pr:
-    needs: tier-parse-issue
-    if: needs.tier-parse-issue.outputs.valid == 'true'
+  app-create-pr:
+    needs: app-parse-issue
+    if: needs.app-parse-issue.outputs.valid == 'true'
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -339,7 +419,7 @@ jobs:
       - name: Fetch GitHub stars
         id: stars
         env:
-          PROJECT_JSON: ${{ needs.tier-parse-issue.outputs.project_json }}
+          PROJECT_JSON: ${{ needs.app-parse-issue.outputs.project_json }}
         run: |
           REPO_URL=$(echo "$PROJECT_JSON" | jq -r '.repo // empty')
           if [ -n "$REPO_URL" ]; then
@@ -353,7 +433,7 @@ jobs:
       - name: Format with AI
         id: format
         env:
-          PROJECT_JSON: ${{ needs.tier-parse-issue.outputs.project_json }}
+          PROJECT_JSON: ${{ needs.app-parse-issue.outputs.project_json }}
         run: |
           NAME=$(echo "$PROJECT_JSON" | jq -r '.name')
           DESC=$(echo "$PROJECT_JSON" | jq -r '.description')
@@ -388,12 +468,12 @@ jobs:
       - name: Create PR
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          PROJECT_JSON: ${{ needs.tier-parse-issue.outputs.project_json }}
-          PROJECT_NAME: ${{ needs.tier-parse-issue.outputs.name }}
-          CATEGORY: ${{ needs.tier-parse-issue.outputs.category }}
-          ISSUE_NUMBER: ${{ needs.tier-parse-issue.outputs.issue_number }}
-          ISSUE_AUTHOR: ${{ needs.tier-parse-issue.outputs.issue_author }}
-          ISSUE_AUTHOR_ID: ${{ needs.tier-parse-issue.outputs.issue_author_id }}
+          PROJECT_JSON: ${{ needs.app-parse-issue.outputs.project_json }}
+          PROJECT_NAME: ${{ needs.app-parse-issue.outputs.name }}
+          CATEGORY: ${{ needs.app-parse-issue.outputs.category }}
+          ISSUE_NUMBER: ${{ needs.app-parse-issue.outputs.issue_number }}
+          ISSUE_AUTHOR: ${{ needs.app-parse-issue.outputs.issue_author }}
+          ISSUE_AUTHOR_ID: ${{ needs.app-parse-issue.outputs.issue_author_id }}
           EMOJI: ${{ steps.format.outputs.emoji }}
           SHORT_DESC: ${{ steps.format.outputs.description }}
           STARS: ${{ steps.stars.outputs.stars }}
@@ -418,8 +498,8 @@ jobs:
           
           # Format: Emoji | Name | Description | Language | Category | GitHub | Repo | Stars | Discord | Other | Submitted
           export NEW_ROW="| $EMOJI | $NAME_DISPLAY | $SHORT_DESC | $LANGUAGE | $CATEGORY | @$ISSUE_AUTHOR | $REPO | $STARS_DISPLAY | $DISCORD | $OTHER | $TODAY |"
-          node .github/scripts/tier-apps-prepend.js
-          node .github/scripts/tier-apps-update-readme.js
+          node .github/scripts/app-prepend-row.js
+          node .github/scripts/app-update-readme.js
           
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
@@ -432,35 +512,70 @@ jobs:
           
           EXISTING_PR=$(gh pr list --head "$BRANCH" --json number -q '.[0].number')
           if [ -z "$EXISTING_PR" ]; then
-            # Build PR body with app details (using printf to avoid YAML parsing issues)
-            # Use double newlines for GitHub markdown paragraph breaks
-            PR_BODY=$(printf '## 🆕 New App: %s\n\n' "$PROJECT_NAME")
-            PR_BODY="${PR_BODY}$(printf '**Category:** %s  \n' "$CATEGORY")"
-            PR_BODY="${PR_BODY}$(printf '**URL:** %s  \n' "$URL")"
-            PR_BODY="${PR_BODY}$(printf '**Description:** %s  \n' "$SHORT_DESC")"
-            [ -n "$REPO" ] && PR_BODY="${PR_BODY}$(printf '**Repo:** %s  \n' "$REPO")"
-            [ -n "$DISCORD" ] && PR_BODY="${PR_BODY}$(printf '**Discord:** %s  \n' "$DISCORD")"
-            [ -n "$LANGUAGE" ] && PR_BODY="${PR_BODY}$(printf '**Language:** %s  \n' "$LANGUAGE")"
-            [ -n "$OTHER" ] && PR_BODY="${PR_BODY}$(printf '**Other Contact:** %s  \n' "$OTHER")"
+            # Build PR body with app details using heredoc for clean formatting
+            PR_BODY="## 🆕 New App: $PROJECT_NAME
+
+| Field | Value |
+|-------|-------|
+| **Category** | \`$CATEGORY\` |
+| **URL** | $URL |
+| **Description** | $SHORT_DESC |"
+
+            [ -n "$REPO" ] && PR_BODY="$PR_BODY
+| **Repo** | $REPO |"
+            [ -n "$DISCORD" ] && PR_BODY="$PR_BODY
+| **Discord** | $DISCORD |"
+            [ -n "$LANGUAGE" ] && PR_BODY="$PR_BODY
+| **Language** | \`$LANGUAGE\` |"
+            [ -n "$OTHER" ] && PR_BODY="$PR_BODY
+| **Other Contact** | $OTHER |"
             
             # Add similarity report if applicable
-            SIMILARITY="${{ needs.tier-parse-issue.outputs.similarity_score }}"
-            SIMILARITY_REASON="${{ needs.tier-parse-issue.outputs.similarity_reason }}"
+            SIMILARITY="${{ needs.app-parse-issue.outputs.similarity_score }}"
+            SIMILARITY_REASON="${{ needs.app-parse-issue.outputs.similarity_reason }}"
             if [ -n "$SIMILARITY" ] && [ "$SIMILARITY" != "null" ] && [ "$SIMILARITY" != "0" ]; then
-              PR_BODY="${PR_BODY}$(printf '\n\n⚠️ **Similarity Report:** %s%% similar to previous submission(s) from @%s\n' "$SIMILARITY" "$ISSUE_AUTHOR")"
+              PR_BODY="$PR_BODY
+
+---
+
+⚠️ **Similarity Report:** ${SIMILARITY}% similar to previous submission(s) from @$ISSUE_AUTHOR"
               if [ -n "$SIMILARITY_REASON" ] && [ "$SIMILARITY_REASON" != "null" ]; then
-                PR_BODY="${PR_BODY}$(printf '**Reason:** %s\n' "$SIMILARITY_REASON")"
+                PR_BODY="$PR_BODY
+> $SIMILARITY_REASON"
               fi
-              PR_BODY="${PR_BODY}$(printf 'Maintainer: Review if this is legitimate iteration or rebranding.\n')"
+              PR_BODY="$PR_BODY
+
+*Maintainer: Review if this is legitimate iteration or rebranding.*"
             fi
             
-            PR_BODY="${PR_BODY}$(printf '\n---\nCo-authored-by: %s <%s+%s@users.noreply.github.com>\nFixes #%s' "$ISSUE_AUTHOR" "$ISSUE_AUTHOR_ID" "$ISSUE_AUTHOR" "$ISSUE_NUMBER")"
+            PR_BODY="$PR_BODY
+
+---
+
+Co-authored-by: $ISSUE_AUTHOR <${ISSUE_AUTHOR_ID}+${ISSUE_AUTHOR}@users.noreply.github.com>
+Fixes #$ISSUE_NUMBER"
 
             gh pr create --title "Add $PROJECT_NAME to $CATEGORY" \
               --body "$PR_BODY" \
-              --label "tier:review" \
+              --label "TIER-APP-REVIEW-PR" \
               --base main --head "$BRANCH"
           fi
+
+      - name: Update issue label to REVIEW
+        uses: actions/github-script@v7
+        with:
+          script: |
+            // Remove TIER-APP or TIER-APP-INCOMPLETE, add TIER-APP-REVIEW
+            const issue = await github.rest.issues.get({ owner: context.repo.owner, repo: context.repo.repo, issue_number: ${{ needs.app-parse-issue.outputs.issue_number }} });
+            const oldLabels = issue.data.labels.map(l => l.name).filter(n => n.startsWith('TIER-APP'));
+            for (const label of oldLabels) {
+              try { await github.rest.issues.removeLabel({ owner: context.repo.owner, repo: context.repo.repo, issue_number: ${{ needs.app-parse-issue.outputs.issue_number }}, name: label }); } catch (e) {}
+            }
+            await github.rest.issues.addLabels({
+              owner: context.repo.owner, repo: context.repo.repo,
+              issue_number: ${{ needs.app-parse-issue.outputs.issue_number }},
+              labels: ['TIER-APP-REVIEW']
+            });
 
       - name: Comment on issue
         uses: actions/github-script@v7
@@ -468,7 +583,85 @@ jobs:
           script: |
             await github.rest.issues.createComment({
               owner: context.repo.owner, repo: context.repo.repo,
-              issue_number: ${{ needs.tier-parse-issue.outputs.issue_number }},
-              body: `🎉 Thanks @${{ needs.tier-parse-issue.outputs.issue_author }}! PR created to add **${{ needs.tier-parse-issue.outputs.name }}** to **${{ needs.tier-parse-issue.outputs.category }}**.\n\nA maintainer will review shortly. Issue closes automatically when PR merges.`
+              issue_number: ${{ needs.app-parse-issue.outputs.issue_number }},
+              body: `🎉 Thanks @${{ needs.app-parse-issue.outputs.issue_author }}! PR created to add **${{ needs.app-parse-issue.outputs.name }}** to **${{ needs.app-parse-issue.outputs.category }}**.\n\nA maintainer will review shortly. Issue closes automatically when PR merges.`
             });
 
+  # Job 3: Handle PR merge/close outcomes
+  app-handle-outcome:
+    if: github.event_name == 'pull_request_target' && github.event.action == 'closed'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: write
+      pull-requests: write
+
+    steps:
+      - name: Handle PR outcome
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const pr = context.payload.pull_request;
+            
+            // Check if this is a tier app PR (has TIER-APP-REVIEW-PR label)
+            const prLabels = pr.labels.map(l => l.name);
+            if (!prLabels.includes('TIER-APP-REVIEW-PR')) {
+              console.log('Not a tier app PR, skipping');
+              return;
+            }
+            
+            // Extract issue number from PR body (Fixes #123)
+            const issueMatch = pr.body?.match(/Fixes #(\d+)/i);
+            if (!issueMatch) {
+              console.log('No linked issue found in PR body');
+              return;
+            }
+            
+            const issueNumber = parseInt(issueMatch[1]);
+            const appName = pr.title.replace(/^Add\s+/, '').replace(/\s+to\s+\w+$/, '');
+            
+            // Helper to swap labels
+            const swapLabel = async (newLabel) => {
+              const issue = await github.rest.issues.get({ owner: context.repo.owner, repo: context.repo.repo, issue_number: issueNumber });
+              const oldLabels = issue.data.labels.map(l => l.name).filter(n => n.startsWith('TIER-APP'));
+              for (const label of oldLabels) {
+                try { await github.rest.issues.removeLabel({ owner: context.repo.owner, repo: context.repo.repo, issue_number: issueNumber, name: label }); } catch (e) {}
+              }
+              await github.rest.issues.addLabels({ owner: context.repo.owner, repo: context.repo.repo, issue_number: issueNumber, labels: [newLabel] });
+            };
+            
+            if (pr.merged) {
+              // PR merged → TIER-APP-COMPLETE + success comment
+              await swapLabel('TIER-APP-COMPLETE');
+              
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issueNumber,
+                body: `✅ **Congratulations!** Your app **${appName}** is now live on [pollinations.ai](https://pollinations.ai)!\n\nThank you for contributing to the pollinations.ai ecosystem. 🌸`
+              });
+              
+              await github.rest.issues.update({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issueNumber,
+                state: 'closed'
+              });
+            } else {
+              // PR closed without merge → TIER-APP-REJECTED + comment
+              await swapLabel('TIER-APP-REJECTED');
+              
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issueNumber,
+                body: `❌ **Submission Declined**\n\nYour app submission was not approved. Please check the PR comments for feedback from maintainers.\n\nYou're welcome to submit a new app that addresses any concerns raised.`
+              });
+              
+              await github.rest.issues.update({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issueNumber,
+                state: 'closed'
+              });
+            }

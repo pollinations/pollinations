@@ -225,6 +225,7 @@ async function handleRequest(req, res, requestData) {
                 {
                     ...completion._transformOptions,
                     jsonMode: requestData.jsonMode,
+                    isGetRequest: req.method === "GET",
                 },
             );
             // Preserve internal properties
@@ -319,14 +320,6 @@ async function handleRequest(req, res, requestData) {
             await sendAsOpenAIStream(res, completion, req);
         } else {
             if (req.method === "GET") {
-                // Handle citations response (set by responseTransform for models like Perplexity)
-                if (completion._citationsResponse) {
-                    res.setHeader(
-                        "Content-Type",
-                        "application/json; charset=utf-8",
-                    );
-                    return res.json(completion._citationsResponse);
-                }
                 sendContentResponse(res, completion);
             } else if (req.path === "/") {
                 // For POST requests to the root path, also send plain text

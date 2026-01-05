@@ -23,13 +23,12 @@ export function createCitationsTransform() {
 }
 
 /**
- * Appends citations to the completion response
- * For plain text responses, formats citations as a Sources section
- * For JSON mode, returns structured { content, citations } object
+ * Appends citations to the completion response for plain text GET requests.
+ * For OpenAI-compatible responses, citations pass through as a top-level field.
  *
  * @param {Object} completion - The API completion response
- * @param {Object} options - Request options (includes jsonMode flag)
- * @returns {Object} Modified completion with citations appended
+ * @param {Object} options - Request options (includes isGetRequest flag)
+ * @returns {Object} Modified completion with citations appended to content for GET requests
  */
 function appendCitations(completion, options = {}) {
     // If no citations, return as-is
@@ -41,21 +40,17 @@ function appendCitations(completion, options = {}) {
         return completion;
     }
 
-    const content = completion.choices?.[0]?.message?.content || "";
-    const citations = completion.citations;
-
-    // For JSON mode, mark completion for special JSON response handling
-    if (options.jsonMode) {
-        return {
-            ...completion,
-            _citationsResponse: { content, citations },
-        };
+    // For OpenAI-compatible POST requests, citations already exist as top-level field
+    // Just pass through - no modification needed
+    if (!options.isGetRequest) {
+        return completion;
     }
 
-    // For plain text, append formatted citations to content
+    // For plain text GET requests, append formatted citations to content
+    const content = completion.choices?.[0]?.message?.content || "";
     let formattedContent = content;
     formattedContent += "\n\n---\nSources:\n";
-    citations.forEach((url, index) => {
+    completion.citations.forEach((url, index) => {
         formattedContent += `[${index + 1}] ${url}\n`;
     });
 

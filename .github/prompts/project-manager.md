@@ -27,10 +27,10 @@ Classify this GitHub issue/PR. Return JSON only.
 ### support (pick ONE type + ONE or more services)
 
 **TYPE (exactly 1):**
-`S-BUG`, `S-OUTAGE`, `S-QUESTION`, `S-REQUEST`, `S-DOCS`, `S-INTEGRATION`
+`.BUG`, `.OUTAGE`, `.QUESTION`, `.REQUEST`, `.DOCS`, `.INTEGRATION`
 
 **SERVICE (1 or more):**
-`S-IMAGE`, `S-TEXT`, `S-AUDIO`, `S-VIDEO`, `S-API`, `S-WEB`, `S-CREDITS`, `S-BILLING`, `S-ACCOUNT`
+`IMAGE`, `TEXT`, `AUDIO`, `VIDEO`, `API`, `WEB`, `CREDITS`, `BILLING`, `ACCOUNT`
 
 ### news
 
@@ -47,4 +47,4 @@ none
 2. If author is internal → can route to `dev`
 3. If author is external → route to `support` (never `dev`)
 4. For dev: pick ONE label
-5. For support: pick exactly ONE type label (S-BUG, etc.) + ONE or more service labels (S-IMAGE, etc.)
+5. For support: pick exactly ONE type label (.BUG, etc.) + ONE or more service labels (IMAGE, etc.)

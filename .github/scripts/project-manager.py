@@ -63,6 +63,7 @@ CONFIG = {
                 "Medium": "ce60ee16",
                 "Low": "ca5161be",
             },
+            "opened_field_id": "PVTF_lADOBS76fs4BLr1Hzg7WCHY",
         },
         "news": {
             "id": "PVT_kwDOBS76fs4BLtD8",
@@ -151,10 +152,10 @@ def read_prompt_file() -> str:
 VALID_LABELS = {
     "dev": {"DEV-BUG", "DEV-FEATURE", "DEV-QUEST", "DEV-TRACKING"},
     "support": {
-        # TYPE labels (exactly 1, blue)
-        "S-BUG", "S-OUTAGE", "S-QUESTION", "S-REQUEST", "S-DOCS", "S-INTEGRATION",
+        # TYPE labels (exactly 1, blue) - dot prefix for sorting
+        ".BUG", ".OUTAGE", ".QUESTION", ".REQUEST", ".DOCS", ".INTEGRATION",
         # SERVICE labels (1 or more, violet)
-        "S-IMAGE", "S-TEXT", "S-AUDIO", "S-VIDEO", "S-API", "S-WEB", "S-CREDITS", "S-BILLING", "S-ACCOUNT",
+        "IMAGE", "TEXT", "AUDIO", "VIDEO", "API", "WEB", "CREDITS", "BILLING", "ACCOUNT",
     },
     "news": set()
 }

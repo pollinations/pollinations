@@ -47,4 +47,4 @@ none
 2. If author is internal → can route to `dev`
 3. If author is external → route to `support` (never `dev`)
 4. For dev: pick ONE label
-5. For support: pick exactly ONE `TYPE-*` label + ONE or more `SVC-*` labels
+5. For support: pick exactly ONE type label (S-BUG, etc.) + ONE or more service labels (S-IMAGE, etc.)

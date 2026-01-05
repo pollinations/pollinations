@@ -246,27 +246,21 @@ Body: {ISSUE_BODY[:2000]}
                 log_error(f"AI returned invalid project: {project}")
                 return get_fallback_classification(is_internal)
             
-            priority = raw.get("priority", "Medium")
-            valid_priorities = {
-                "dev": {"Urgent", "High", "Medium", "Low"},
-                "support": {"Urgent", "High", "Medium", "Low"},
-                "news": {"Urgent"},
-            }
-            allowed_for_project = valid_priorities.get(project, set())
-            if priority not in allowed_for_project:
-                log_error(f"AI returned invalid priority for {project}: {priority}")
-                priority = list(allowed_for_project)[0] if allowed_for_project else "Medium"
+            priority = raw.get("priority")
+            # Priority only valid for support project
+            if project == "support":
+                valid_priorities = {"Urgent", "High", "Medium", "Low"}
+                if priority not in valid_priorities:
+                    log_error(f"AI returned invalid priority: {priority}")
+                    priority = "Medium"
+            else:
+                priority = None
             
             labels = raw.get("labels", [])
             if not isinstance(labels, list):
                 labels = []
             
-            valid_labels_by_project = {
-                "dev": {"DEV-BUG", "DEV-FEATURE", "DEV-QUEST", "DEV-TRACKING"},
-                "support": {"SUPPORT-HELP", "SUPPORT-BUG", "SUPPORT-FEATURE", 
-                           "SUPPORT-BILLING", "SUPPORT-BALANCE", "SUPPORT-API"},
-                "news": set(),
-            }
+            valid_labels_by_project = VALID_LABELS
             
             valid_for_project = valid_labels_by_project.get(project, set())
             filtered_labels = [l.upper() for l in labels if l.upper() in valid_for_project]

@@ -19,6 +19,7 @@ import argparse
 import sys
 import os
 import time
+import json
 import requests
 import importlib.util
 
@@ -185,7 +186,6 @@ Body: {(body or "")[:2000]}
             data = r.json()
             content = data.get("choices", [{}])[0].get("message", {}).get("content", "{}")
             
-            import json
             return json.loads(content)
         except Exception as e:
             log_error(f"Classification error: {e}")

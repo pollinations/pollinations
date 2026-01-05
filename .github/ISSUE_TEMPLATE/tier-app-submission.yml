@@ -1,6 +1,6 @@
 name: SubmitApp
 description: Get your app featured on pollinations.ai
-title: "[App Submission] "
+title: "[App Submission] ${{ inputs.app-name }}"
 labels: ["TIER-APP"]
 body:
   - type: markdown
@@ -9,8 +9,22 @@ body:
         # Submit Your App to pollinations.ai
         
         Thanks for submitting your app! Fill out the form below and we'll review it for the [pollinations.ai showcase](https://pollinations.ai).
-        
-        Your GitHub username (from this issue) will be credited as the app author.
+
+        ---
+
+        **✅ Requirements**
+        - Have an account at [enter.pollinations.ai](https://enter.pollinations.ai) (sign up with GitHub)
+        - Your app must use the pollinations.ai API
+
+        &nbsp;
+
+        **💡 Credit pollinations.ai** *(optional but appreciated)*
+        - Link to [pollinations.ai](https://pollinations.ai) in your frontend/README
+        - Official logos: [`logo.svg`](https://raw.githubusercontent.com/pollinations/pollinations/main/shared/assets/logo.svg) / [`logo-text.svg`](https://raw.githubusercontent.com/pollinations/pollinations/main/shared/assets/logo-text.svg)
+
+        ---
+
+        *Your GitHub username will be credited as the app author.*
 
   - type: input
     id: app-name

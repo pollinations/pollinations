@@ -52,7 +52,7 @@ def main():
             height=512,
             width=512,
             guidance_scale=4.0,
-            num_inference_steps=30,
+            num_inference_steps=20,
             enable_cfg_renorm=True,
             output_type="latent",  
         )

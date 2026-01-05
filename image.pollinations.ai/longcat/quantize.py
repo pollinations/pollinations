@@ -6,12 +6,12 @@ import gc
 class SingleGPULongCat:
     def __init__(self):
         self.device = torch.device("cuda:0")
-        self.dtype = torch.float16
+        self.dtype = torch.bfloat16  # CRITICAL: Use bfloat16 instead of float16!
         
         print("Loading LongCat pipeline from cache...")
         print(f"GPU Memory: {torch.cuda.get_device_properties(0).total_memory / 1e9:.2f}GB")
         
-        # Load pipeline
+        # Load pipeline - use torch_dtype not dtype
         self.pipe = DiffusionPipeline.from_pretrained(
             "meituan-longcat/LongCat-Image",
             cache_dir="model_cache",
@@ -41,21 +41,26 @@ class SingleGPULongCat:
         print(f"\nGenerating: '{prompt}'")
         print(f"Resolution: {height}x{width}, Steps: {steps}, Guidance: {guidance}")
         
-        # Set to eval mode
-        self.pipe.eval()
-        
         # Let the pipeline handle everything - use default output
         with torch.amp.autocast(device_type='cuda', dtype=self.dtype):
             # Generate with PIL output directly
-            image = self.pipe(
+            result = self.pipe(
                 prompt=prompt,
                 height=height,
                 width=width,
                 num_inference_steps=steps,
                 guidance_scale=guidance,
                 output_type="pil",  # Let pipeline do the decoding
-                return_dict=False,
-            )[0][0]  # Get first image from batch
+                generator=torch.Generator("cpu").manual_seed(42),  # For reproducibility
+            )
+            
+            # Handle different return types
+            if hasattr(result, 'images'):
+                image = result.images[0]
+            elif isinstance(result, tuple):
+                image = result[0][0] if isinstance(result[0], list) else result[0]
+            else:
+                image = result[0]
         
         # Save image
         image.save(save_path)

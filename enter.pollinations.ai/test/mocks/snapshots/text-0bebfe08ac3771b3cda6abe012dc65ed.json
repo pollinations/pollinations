@@ -1,0 +1,151 @@
+{
+  "request": {
+    "url": "http://ec2-3-80-56-235.compute-1.amazonaws.com:16385/openai",
+    "method": "POST",
+    "body": {
+      "type": "json",
+      "data": {
+        "model": "nova-micro",
+        "messages": [
+          {
+            "role": "user",
+            "content": "Is Berlin the capital of Germany? Reply yes or no."
+          }
+        ],
+        "stream": true,
+        "seed": 42
+      }
+    },
+    "params": {}
+  },
+  "response": {
+    "status": 200,
+    "statusText": "OK",
+    "headers": {
+      "access-control-allow-origin": "*",
+      "cache-control": "no-cache",
+      "connection": "keep-alive",
+      "content-type": "text/event-stream; charset=utf-8",
+      "date": "Mon, 05 Jan 2026 14:42:02 GMT",
+      "transfer-encoding": "chunked",
+      "x-powered-by": "Express"
+    },
+    "body": {
+      "type": "stream",
+      "data": [
+        {
+          "data": "data: {\"id\":\"chatcmpl-92dbd",
+          "delay": 242
+        },
+        {
+          "data": "388\",\"created\":1767624122,\"model\":\"amazon.nova-micro-v1:0\",\"system_fingerprint\":\"fp\",\"choices\":[{\"index\":0,\"finish_reason\":null,\"logprobs\":null,\"delta\":{\"role\":\"assistant\",\"content\":\"\"}}],\"object\":\"chat.completion.chunk\",\"usage\":null}\n\ndata: {\"id\":\"chatcmpl-92dbd388\",\"created\":1767624122,\"model\":\"amazon.nova-micro-v1:0\",\"system_fingerprint\":\"fp\",\"choices\":[{\"index\":0,\"finish_reason\":null,\"logprobs\":null,\"delta\":{\"content\":\"Absolutely\"}}],\"object\":\"chat.completion.chunk\",\"usage\":null}\n\ndata: {\"id\":\"chatcmpl-92dbd388\",\"created\":1767624122,\"model\":\"amazon.nova-micro-v1:0\",\"system_fingerprint\":\"fp\",\"choices\":[{\"index\":0,\"finish_reason\":null,\"logprobs\":null,\"delta\":{\"content\":\",\"}}],\"object\":\"chat.completion.chunk\",\"usage\":null}\n\n",
+          "delay": 1
+        },
+        {
+          "data": "data: {\"id\":\"chatcmpl-92dbd3",
+          "delay": 100
+        },
+        {
+          "data": "88\",\"created\":1767624123,\"model\":\"amazon.nova-micro-v1:0\",\"system_fingerprint\":\"fp\",\"choices\":[{\"index\":0,\"finish_reason\":null,\"logprobs\":null,\"delta\":{\"content\":\" Berlin is\"}}],\"object\":\"chat.completion.chunk\",\"usage\":null}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"id\":\"chatcmpl-92db",
+          "delay": 0
+        },
+        {
+          "data": "d388\",\"created\":1767624123,\"model\":\"amazon.nova-micro-v1:0\",\"system_fingerprint\":\"fp\",\"choices\":[{\"index\":0,\"finish_reason\":null,\"logprobs\":null,\"delta\":{\"content\":\" the\"}}],\"object\":\"chat.completion.chunk\",\"usage\":null}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"id\":\"chatcmpl-92d",
+          "delay": 0
+        },
+        {
+          "data": "bd388\",\"created\":1767624123,\"model\":\"amazon.nova-micro-v1:0\",\"system_fingerprint\":\"fp\",\"choices\":[{\"index\":0,\"finish_reason\":null,\"logprobs\":null,\"delta\":{\"content\":\" capital of Germany. If\"}}],\"object\":\"chat.completion.chunk\",\"usage\":null}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"id\":\"chatcmpl-92db",
+          "delay": 0
+        },
+        {
+          "data": "d388\",\"created\":1767624123,\"model\":\"amazon.nova-micro-v1:0\",\"system_fingerprint\":\"fp\",\"choices\":[{\"index\":0,\"finish_reason\":null,\"logprobs\":null,\"delta\":{\"content\":\" that\"}}],\"object\":\"chat.completion.chunk\",\"usage\":null}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"id\":\"chatcmpl-92db",
+          "delay": 0
+        },
+        {
+          "data": "d388\",\"created\":1767624123,\"model\":\"amazon.nova-micro-v1:0\",\"system_fingerprint\":\"fp\",\"choices\":[{\"index\":0,\"finish_reason\":null,\"logprobs\":null,\"delta\":{\"content\":\" answers\"}}],\"object\":\"chat.completion.chunk\",\"usage\":null}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"id\":\"chatcmpl-92d",
+          "delay": 0
+        },
+        {
+          "data": "bd388\",\"created\":1767624123,\"model\":\"amazon.nova-micro-v1:0\",\"system_fingerprint\":\"fp\",\"choices\":[{\"index\":0,\"finish_reason\":null,\"logprobs\":null,\"delta\":{\"content\":\" your question, there\"}}],\"object\":\"chat.completion.chunk\",\"usage\":null}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"id\":\"chatcmpl-92db",
+          "delay": 0
+        },
+        {
+          "data": "d388\",\"created\":1767624123,\"model\":\"amazon.nova-micro-v1:0\",\"system_fingerprint\":\"fp\",\"choices\":[{\"index\":0,\"finish_reason\":null,\"logprobs\":null,\"delta\":{\"content\":\"'s nothing\"}}],\"object\":\"chat.completion.chunk\",\"usage\":null}\n\n",
+          "delay": 1
+        },
+        {
+          "data": "data: {\"id\":\"chatcmpl-92d",
+          "delay": 0
+        },
+        {
+          "data": "bd388\",\"created\":1767624123,\"model\":\"amazon.nova-micro-v1:0\",\"system_fingerprint\":\"fp\",\"choices\":[{\"index\":0,\"finish_reason\":null,\"logprobs\":null,\"delta\":{\"content\":\" left\"}}],\"object\":\"chat.completion.chunk\",\"usage\":null}\n\ndata: {\"id\":\"chatcmpl-92dbd388\",\"created\":1767624123,\"model\":\"amazon.nova-micro-v1:0\",\"system_fingerprint\":\"fp\",\"choices\":[{\"index\":0,\"finish_reason\":null,\"logprobs\":null,\"delta\":{\"content\":\" to do\"}}],\"object\":\"chat.completion.chunk\",\"usage\":null}\n\ndata: {\"id\":\"chatcmpl-92dbd388\",\"created\":1767624123,\"model\":\"amazon.nova-micro-v1:0\",\"system_fingerprint\":\"fp\",\"choices\":[{\"index\":0,\"finish_reason\":null,\"logprobs\":null,\"delta\":{\"content\":\"! Otherwise\"}}],\"object\":\"chat.completion.chunk\",\"usage\":null}\n\ndata: {\"id\":\"chatcmpl-92dbd388\",\"created\":1767624123,\"model\":\"amazon.nova-micro-v1:0\",\"system_fingerprint\":\"fp\",\"choices\":[{\"index\":0,\"finish_reason\":null,\"logprobs\":null,\"delta\":{\"content\":\", curious\"}}],\"object\":\"chat.completion.chunk\",\"usage\":null}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"id\":\"chatcmpl-92dbd",
+          "delay": 4
+        },
+        {
+          "data": "388\",\"created\":1767624123,\"model\":\"amazon.nova-micro-v1:0\",\"system_fingerprint\":\"fp\",\"choices\":[{\"index\":0,\"finish_reason\":null,\"logprobs\":null,\"delta\":{\"content\":\" about\"}}],\"object\":\"chat.completion.chunk\",\"usage\":null}\n\ndata: {\"id\":\"chatcmpl-92dbd388\",\"created\":1767624123,\"model\":\"amazon.nova-micro-v1:0\",\"system_fingerprint\":\"fp\",\"choices\":[{\"index\":0,\"finish_reason\":null,\"logprobs\":null,\"delta\":{\"content\":\" anything\"}}],\"object\":\"chat.completion.chunk\",\"usage\":null}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"id\":\"chatcmpl-92dbd3",
+          "delay": 9
+        },
+        {
+          "data": "88\",\"created\":1767624123,\"model\":\"amazon.nova-micro-v1:0\",\"system_fingerprint\":\"fp\",\"choices\":[{\"index\":0,\"finish_reason\":null,\"logprobs\":null,\"delta\":{\"content\":\" else going\"}}],\"object\":\"chat.completion.chunk\",\"usage\":null}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"id\":\"chatcmpl-92db",
+          "delay": 0
+        },
+        {
+          "data": "d388\",\"created\":1767624123,\"model\":\"amazon.nova-micro-v1:0\",\"system_fingerprint\":\"fp\",\"choices\":[{\"index\":0,\"finish_reason\":null,\"logprobs\":null,\"delta\":{\"content\":\" on in\"}}],\"object\":\"chat.completion.chunk\",\"usage\":null}\n\n",
+          "delay": 0
+        },
+        {
+          "data": "data: {\"id\":\"chatcmpl-92d",
+          "delay": 0
+        },
+        {
+          "data": "bd388\",\"created\":1767624123,\"model\":\"amazon.nova-micro-v1:0\",\"system_fingerprint\":\"fp\",\"choices\":[{\"index\":0,\"finish_reason\":null,\"logprobs\":null,\"delta\":{\"content\":\" Berlin\"}}],\"object\":\"chat.completion.chunk\",\"usage\":null}\n\ndata: {\"id\":\"chatcmpl-92dbd388\",\"created\":1767624123,\"model\":\"amazon.nova-micro-v1:0\",\"system_fingerprint\":\"fp\",\"choices\":[{\"index\":0,\"finish_reason\":null,\"logprobs\":null,\"delta\":{\"content\":\" or\"}}],\"object\":\"chat.completion.chunk\",\"usage\":null}\n\ndata: {\"id\":\"chatcmpl-92dbd388\",\"created\":1767624123,\"model\":\"amazon.nova-micro-v1:0\",\"system_fingerprint\":\"fp\",\"choices\":[{\"index\":0,\"finish_reason\":null,\"logprobs\":null,\"delta\":{\"content\":\" about\"}}],\"object\":\"chat.completion.chunk\",\"usage\":null}\n\ndata: {\"id\":\"chatcmpl-92dbd388\",\"created\":1767624123,\"model\":\"amazon.nova-micro-v1:0\",\"system_fingerprint\":\"fp\",\"choices\":[{\"index\":0,\"finish_reason\":null,\"logprobs\":null,\"delta\":{\"content\":\" Germany?\"}}],\"object\":\"chat.completion.chunk\",\"usage\":null}\n\ndata: {\"id\":\"chatcmpl-92dbd388\",\"created\":1767624123,\"model\":\"amazon.nova-micro-v1:0\",\"system_fingerprint\":\"fp\",\"choices\":[{\"index\":0,\"finish_reason\":\"stop\",\"logprobs\":null,\"delta\":{}}],\"object\":\"chat.completion.chunk\",\"usage\":null}\n\ndata: {\"id\":\"chatcmpl-92dbd388\",\"created\":1767624123,\"model\":\"amazon.nova-micro-v1:0\",\"system_fingerprint\":\"fp\",\"choices\":[],\"obj",
+          "delay": 0
+        },
+        {
+          "data": "ect\":\"chat.completion.chun",
+          "delay": 0
+        },
+        {
+          "data": "k\",\"usage\":{\"prompt_tokens\":262,\"completion_tokens\":38,\"total_tokens\":300}}\n\ndata: [DONE]\n\n",
+          "delay": 0
+        }
+      ]
+    }
+  }
+}

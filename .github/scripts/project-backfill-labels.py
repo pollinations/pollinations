@@ -3,7 +3,7 @@
 Backfill labels for issues in a GitHub project.
 
 Usage:
-    python backfill-labels.py --project support [--dry-run] [--with-priority]
+    python project-backfill-labels.py --project support [--dry-run] [--with-priority]
     
 Options:
     --project       Project to process: dev, support, news, tier
@@ -48,7 +48,7 @@ POLLINATIONS_TOKEN = os.getenv("POLLINATIONS_TOKEN")
 
 
 def get_project_issues(project_id: str) -> list:
-    """Fetch all open issues in a project."""
+    """Fetch all open issues in a project with their project item IDs."""
     query = """
     query($projectId: ID!, $cursor: String) {
         node(id: $projectId) {
@@ -56,6 +56,7 @@ def get_project_issues(project_id: str) -> list:
                 items(first: 100, after: $cursor) {
                     pageInfo { hasNextPage endCursor }
                     nodes {
+                        id
                         content {
                             ... on Issue {
                                 id
@@ -63,6 +64,7 @@ def get_project_issues(project_id: str) -> list:
                                 title
                                 body
                                 state
+                                createdAt
                                 author { login }
                                 labels(first: 20) {
                                     nodes { name }
@@ -87,6 +89,7 @@ def get_project_issues(project_id: str) -> list:
         for item in items.get("nodes", []):
             content = item.get("content")
             if content and content.get("state") == "OPEN":
+                content["_item_id"] = item.get("id")  # Store project item ID
                 all_issues.append(content)
         
         page_info = items.get("pageInfo", {})
@@ -112,10 +115,21 @@ def remove_project_labels(issue_number: int, project_key: str, dry_run: bool) ->
     current_labels = [l["name"] for l in r.json()]
     
     # Determine which labels to remove based on project
+    support_labels = {
+        # Current TYPE labels (dot prefix)
+        ".BUG", ".OUTAGE", ".QUESTION", ".REQUEST", ".DOCS", ".INTEGRATION",
+        # Current SERVICE labels
+        "IMAGE", "TEXT", "AUDIO", "VIDEO", "API", "WEB", "CREDITS", "BILLING", "ACCOUNT",
+        # Old labels to clean up during migration
+        "BUG", "OUTAGE", "QUESTION", "REQUEST", "DOCS", "INTEGRATION",
+        "S-BUG", "S-OUTAGE", "S-QUESTION", "S-REQUEST", "S-DOCS", "S-INTEGRATION",
+        "S-IMAGE", "S-TEXT", "S-AUDIO", "S-VIDEO", "S-API", "S-WEB", "S-CREDITS", "S-BILLING", "S-ACCOUNT",
+    }
     if project_key == "dev":
         to_remove = [l for l in current_labels if l.startswith("DEV-")]
     elif project_key == "support":
-        to_remove = [l for l in current_labels if l.startswith("S-")]
+        # Match both exact and uppercase (for old labels)
+        to_remove = [l for l in current_labels if l in support_labels or l.upper() in support_labels]
     else:
         to_remove = []
     
@@ -192,6 +206,33 @@ Body: {(body or "")[:2000]}
             time.sleep(2 ** attempt)
     
     return {}
+
+
+def set_date_field(project_id: str, item_id: str, field_id: str, date_value: str):
+    """Set a date field on a project item."""
+    mutation = """
+    mutation($projectId: ID!, $itemId: ID!, $fieldId: ID!, $date: Date!) {
+        updateProjectV2ItemFieldValue(input: {
+            projectId: $projectId,
+            itemId: $itemId,
+            fieldId: $fieldId,
+            value: { date: $date }
+        }) {
+            projectV2Item { id }
+        }
+    }
+    """
+    # Extract just the date part (YYYY-MM-DD) from ISO timestamp
+    date_only = date_value[:10] if date_value else None
+    if not date_only:
+        return
+    data = graphql_request(mutation, {
+        "projectId": project_id,
+        "itemId": item_id,
+        "fieldId": field_id,
+        "date": date_only,
+    })
+    return data.get("updateProjectV2ItemFieldValue", {}).get("projectV2Item", {}).get("id")
 
 
 def add_labels(issue_number: int, labels: list, dry_run: bool):
@@ -272,12 +313,32 @@ def main():
         add_labels(issue_number, labels, args.dry_run)
         
         # Update priority (support only, if requested)
-        if args.with_priority and project_key == "support" and not args.dry_run:
+        if args.with_priority and project_key == "support":
             priority = classification.get("priority")
             priority_option = project.get("priority_options", {}).get(priority)
-            if priority_option and project.get("priority_field_id"):
-                # Need item_id - skip for now, would need additional query
-                log_debug(f"Priority: {priority} (update requires item_id)")
+            item_id = issue.get("_item_id")
+            if priority_option and project.get("priority_field_id") and item_id:
+                if args.dry_run:
+                    log_debug(f"[DRY-RUN] Would set priority to {priority} for #{issue_number}")
+                else:
+                    set_project_field(
+                        project["id"],
+                        item_id,
+                        project["priority_field_id"],
+                        priority_option
+                    )
+                    log_debug(f"Set priority to {priority} for #{issue_number}")
+        
+        # Set Opened date field
+        item_id = issue.get("_item_id")
+        created_at = issue.get("createdAt")
+        opened_field_id = project.get("opened_field_id")
+        if item_id and created_at and opened_field_id:
+            if args.dry_run:
+                log_debug(f"[DRY-RUN] Would set Opened to {created_at[:10]} for #{issue_number}")
+            else:
+                set_date_field(project["id"], item_id, opened_field_id, created_at)
+                log_debug(f"Set Opened to {created_at[:10]} for #{issue_number}")
         
         # Rate limit
         time.sleep(1)

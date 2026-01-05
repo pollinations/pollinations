@@ -557,7 +557,15 @@ export function sendContentResponse(res, completion) {
                 "Cache-Control",
                 "public, max-age=31536000, immutable",
             );
-            return res.send(message.content);
+            // Append citations if present (e.g., from Perplexity)
+            let content = message.content;
+            if (completion.citations?.length > 0) {
+                content += "\n\n---\nSources:\n";
+                completion.citations.forEach((url, index) => {
+                    content += `[${index + 1}] ${url}\n`;
+                });
+            }
+            return res.send(content);
         }
         // If there's other non-text content, return the message as JSON
         else if (Object.keys(message).length > 0) {
@@ -572,7 +580,9 @@ export function sendContentResponse(res, completion) {
     // Fallback for any other response structure
     else {
         errorLog("Unrecognized completion format:", JSON.stringify(completion));
-        return res.send("Response format not recognized");
+        const error = new Error("Unrecognized response format from model");
+        error.status = 500;
+        throw error;
     }
 }
 

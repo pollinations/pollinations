@@ -155,28 +155,28 @@ flowchart TD
 
 **TYPE (pick exactly 1):**
 
-| Label           | Purpose             | Applied by           |
-| --------------- | ------------------- | -------------------- |
-| `S-BUG`         | Something broken    | `project-manager.py` |
-| `S-OUTAGE`      | Service down        | `project-manager.py` |
-| `S-QUESTION`    | How-to/usage        | `project-manager.py` |
-| `S-REQUEST`     | Feature request     | `project-manager.py` |
-| `S-DOCS`        | Documentation issue | `project-manager.py` |
-| `S-INTEGRATION` | SDK/API integration | `project-manager.py` |
+| Label          | Purpose             | Applied by           |
+| -------------- | ------------------- | -------------------- |
+| `.BUG`         | Something broken    | `project-manager.py` |
+| `.OUTAGE`      | Service down        | `project-manager.py` |
+| `.QUESTION`    | How-to/usage        | `project-manager.py` |
+| `.REQUEST`     | Feature request     | `project-manager.py` |
+| `.DOCS`        | Documentation issue | `project-manager.py` |
+| `.INTEGRATION` | SDK/API integration | `project-manager.py` |
 
 **SERVICE (pick 1 or more):**
 
-| Label       | Purpose               | Applied by           |
-| ----------- | --------------------- | -------------------- |
-| `S-IMAGE`   | Image generation      | `project-manager.py` |
-| `S-TEXT`    | Text/chat completion  | `project-manager.py` |
-| `S-AUDIO`   | Audio/TTS             | `project-manager.py` |
-| `S-VIDEO`   | Video generation      | `project-manager.py` |
-| `S-API`     | API/SDK general       | `project-manager.py` |
-| `S-WEB`     | Website/dashboard     | `project-manager.py` |
-| `S-CREDITS` | Pollen balance issues | `project-manager.py` |
-| `S-BILLING` | Payment/credit card   | `project-manager.py` |
-| `S-ACCOUNT` | Account/login/auth    | `project-manager.py` |
+| Label     | Purpose               | Applied by           |
+| --------- | --------------------- | -------------------- |
+| `IMAGE`   | Image generation      | `project-manager.py` |
+| `TEXT`    | Text/chat completion  | `project-manager.py` |
+| `AUDIO`   | Audio/TTS             | `project-manager.py` |
+| `VIDEO`   | Video generation      | `project-manager.py` |
+| `API`     | API/SDK general       | `project-manager.py` |
+| `WEB`     | Website/dashboard     | `project-manager.py` |
+| `CREDITS` | Pollen balance issues | `project-manager.py` |
+| `BILLING` | Payment/credit card   | `project-manager.py` |
+| `ACCOUNT` | Account/login/auth    | `project-manager.py` |
 
 ### News Labels
 

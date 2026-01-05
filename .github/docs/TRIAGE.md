@@ -123,3 +123,63 @@ flowchart TD
 
 - Context: 900k tokens, Max output: 65k tokens
 - Skips: lock files, minified, assets, source maps
+
+---
+
+## Label System
+
+### Tier Labels (App Submissions)
+
+| Label                 | Purpose                           | Applied by                  |
+| --------------------- | --------------------------------- | --------------------------- |
+| `TIER-APP`            | New app submission                | Issue template              |
+| `TIER-APP-INCOMPLETE` | Needs user action (info/register) | `app-review-submission.yml` |
+| `TIER-APP-REVIEW`     | Issue awaiting maintainer review  | `app-review-submission.yml` |
+| `TIER-APP-REVIEW-PR`  | PR awaiting maintainer review     | `app-review-submission.yml` |
+| `TIER-APP-COMPLETE`   | Approved and merged               | `app-upgrade-tier.yml`      |
+| `TIER-APP-REJECTED`   | Submission rejected               | `app-review-submission.yml` |
+
+**Code Contributions** _(future)_: `TIER-CODE`, `TIER-CODE-REVIEW-PR`, `TIER-CODE-COMPLETE`, `TIER-CODE-REJECTED` planned.
+
+### Dev Labels
+
+| Label          | Purpose                                          | Applied by           |
+| -------------- | ------------------------------------------------ | -------------------- |
+| `DEV-BUG`      | Something is broken                              | `project-manager.py` |
+| `DEV-FEATURE`  | New functionality request                        | `project-manager.py` |
+| `DEV-QUEST`    | Community task - One off Pollen reward if merged | `project-manager.py` |
+| `DEV-TRACKING` | Meta-issue tracking other items                  | `project-manager.py` |
+| `DEV-VOTING`   | Community vote on a proposal                     | Manual               |
+
+### Support Labels
+
+**TYPE (pick exactly 1):**
+
+| Label           | Purpose             | Applied by           |
+| --------------- | ------------------- | -------------------- |
+| `S-BUG`         | Something broken    | `project-manager.py` |
+| `S-OUTAGE`      | Service down        | `project-manager.py` |
+| `S-QUESTION`    | How-to/usage        | `project-manager.py` |
+| `S-REQUEST`     | Feature request     | `project-manager.py` |
+| `S-DOCS`        | Documentation issue | `project-manager.py` |
+| `S-INTEGRATION` | SDK/API integration | `project-manager.py` |
+
+**SERVICE (pick 1 or more):**
+
+| Label       | Purpose               | Applied by           |
+| ----------- | --------------------- | -------------------- |
+| `S-IMAGE`   | Image generation      | `project-manager.py` |
+| `S-TEXT`    | Text/chat completion  | `project-manager.py` |
+| `S-AUDIO`   | Audio/TTS             | `project-manager.py` |
+| `S-VIDEO`   | Video generation      | `project-manager.py` |
+| `S-API`     | API/SDK general       | `project-manager.py` |
+| `S-WEB`     | Website/dashboard     | `project-manager.py` |
+| `S-CREDITS` | Pollen balance issues | `project-manager.py` |
+| `S-BILLING` | Payment/credit card   | `project-manager.py` |
+| `S-ACCOUNT` | Account/login/auth    | `project-manager.py` |
+
+### News Labels
+
+| Label  | Purpose                | Applied by                 |
+| ------ | ---------------------- | -------------------------- |
+| `NEWS` | News/social content PR | News & Instagram workflows |

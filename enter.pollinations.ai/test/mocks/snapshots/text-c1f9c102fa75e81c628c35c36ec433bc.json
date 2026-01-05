@@ -47,76 +47,62 @@
     "params": {}
   },
   "response": {
-    "status": 400,
-    "statusText": "Bad Request",
+    "status": 200,
+    "statusText": "OK",
     "headers": {
       "access-control-allow-origin": "*",
       "connection": "keep-alive",
-      "content-length": "1050",
+      "content-length": "812",
       "content-type": "application/json; charset=utf-8",
-      "date": "Wed, 24 Dec 2025 14:32:13 GMT",
-      "etag": "W/\"41a-aUfPEEEkZN6ha9jfvtcmF2laFOM\"",
+      "date": "Mon, 05 Jan 2026 15:07:47 GMT",
+      "etag": "W/\"32c-aG4g2dA3m5vrQoVv/x99PCZVDZk\"",
       "keep-alive": "timeout=5",
-      "x-powered-by": "Express"
+      "x-model-used": "gemini-3-flash-preview",
+      "x-powered-by": "Express",
+      "x-usage-completion-reasoning-tokens": "37",
+      "x-usage-prompt-text-tokens": "279",
+      "x-usage-total-tokens": "316"
     },
     "body": {
       "type": "json",
       "data": {
-        "error": "Bad Request",
-        "message": "400 Bad Request",
-        "requestId": "t2vw9j",
-        "requestParameters": {
-          "messages": [
-            {
-              "role": "user",
-              "content": "What is 25% of 80? Use the calculator."
-            }
-          ],
-          "jsonMode": false,
-          "seed": 42,
-          "model": "gemini",
-          "referrer": null,
-          "isPrivate": true,
-          "voice": "alloy",
-          "tools": [
-            {
-              "type": "function",
-              "function": {
-                "name": "calculator",
-                "description": "Calculate a percentage",
-                "parameters": {
-                  "type": "object",
-                  "properties": {
-                    "value": {
-                      "type": "number",
-                      "exclusiveMinimum": 0,
-                      "exclusiveMaximum": 1000
-                    },
-                    "percentage": {
-                      "type": "number",
-                      "minimum": 0,
-                      "maximum": 100
-                    }
-                  },
-                  "required": [
-                    "value",
-                    "percentage"
-                  ]
+        "id": "pllns_d18c730e56bee0e0d59aaabe3fd5dd9c",
+        "object": "chat.completion",
+        "created": 1767625667,
+        "model": "gemini-3-flash-preview",
+        "provider": "vertex-ai",
+        "choices": [
+          {
+            "message": {
+              "role": "assistant",
+              "tool_calls": [
+                {
+                  "id": "portkey-cb11b49c-5665-4549-97e6-93a58bcffa56",
+                  "type": "function",
+                  "function": {
+                    "name": "calculator",
+                    "arguments": "{\"percentage\":25,\"value\":80}",
+                    "thought_signature": "CosBAY89a1+NjpQSGzwqYK8sVG6xmjtPyBpiENa2bKwJD6dAgVhVI2aOpA91iGLO2R43G4N6FMHr49AYZe5XfZYXLDPZ2UFR4HKnXCNk1dhnqNI3+fafJNCgjhCENKs5kmgc9ldoAAScZT7b03VXFU0d/sae6ASfwyhVRGYP3e2FzPTrBlItF/4TEYjVGA=="
+                  }
                 }
-              }
-            }
-          ],
-          "tool_choice": "auto",
-          "private": true
-        },
-        "details": {
-          "error": {
-            "message": "vertex-ai error: Invalid JSON payload received. Unknown name \"exclusiveMinimum\" at 'tools[0].function_declarations[0].parameters.properties[0].value': Cannot find field.\nInvalid JSON payload received. Unknown name \"exclusiveMaximum\" at 'tools[0].function_declarations[0].parameters.properties[0].value': Cannot find field.",
-            "type": "INVALID_ARGUMENT",
-            "param": null,
-            "code": "400"
+              ]
+            },
+            "index": 0,
+            "finish_reason": "STOP"
+          }
+        ],
+        "usage": {
+          "prompt_tokens": 279,
+          "completion_tokens": 9,
+          "total_tokens": 325,
+          "completion_tokens_details": {
+            "reasoning_tokens": 37,
+            "audio_tokens": 0
           },
-          "provider": "vertex-ai"
+          "prompt_tokens_details": {
+            "cached_tokens": 0,
+            "audio_tokens": 0
+          }
         }
       }
     }

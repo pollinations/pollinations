@@ -8,7 +8,10 @@ export function pipe(...transforms) {
         transforms.reduce(
             (acc, transform) => {
                 const result = transform(acc.messages, acc.options);
-                return { messages: result.messages, options: result.options };
+                return {
+                    messages: result.messages,
+                    options: result.options,
+                };
             },
             { messages, options },
         );

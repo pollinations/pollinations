@@ -26,10 +26,10 @@ Classify this GitHub issue/PR. Return JSON only.
 
 ### support (pick ONE type + ONE or more services)
 
-**TYPE (exactly 1, blue):**
+**TYPE (exactly 1):**
 `S-BUG`, `S-OUTAGE`, `S-QUESTION`, `S-REQUEST`, `S-DOCS`, `S-INTEGRATION`
 
-**SERVICE (1 or more, violet):**
+**SERVICE (1 or more):**
 `S-IMAGE`, `S-TEXT`, `S-AUDIO`, `S-VIDEO`, `S-API`, `S-WEB`, `S-CREDITS`, `S-BILLING`, `S-ACCOUNT`
 
 ### news

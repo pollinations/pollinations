@@ -1,11 +1,12 @@
+import { privateEncrypt } from 'crypto';
 import dotenv from 'dotenv';
 dotenv.config();
 
 const POLLINATIONS_IMAGE_API = 'https://gen.pollinations.ai/image';
 const GITHUB_GRAPHQL_API = 'https://api.github.com/graphql';
 const POLLINATIONS_API = 'https://gen.pollinations.ai/v1/chat/completions';
-const MAX_RETRIES = 3;
-const INITIAL_RETRY_DELAY = 2;
+const MAX_RETRIES = 2;
+const INITIAL_RETRY_DELAY = 5;
 
 function getPreviousDayRange() {
     const now = new Date();
@@ -129,11 +130,15 @@ async function getMergedPRsFromPreviousDay(owner : any = 'pollinations', repo : 
 
             cursor = pageInfo.endCursor;
             pageNum++;
+            if (allPRs.length == 0) {
+                return
+            }
         } catch (error) {
             console.error('Fetch error:', error);
             break;
         }
     }
+
 
     console.log(`Found ${allPRs.length} merged PRs from previous day\n`);
     return { prs: allPRs, dateString };
@@ -184,7 +189,10 @@ Short prompt only. No dates, counts, metadata.`
 
         const data = await response.json();
         const generatedPrompt = (data as any).choices?.[0]?.message?.content?.trim();
-
+        if (!data)
+        {
+            console.log("No data returned from Pollinations API");
+        }
         if (!generatedPrompt) {
             throw new Error('No prompt generated from API');
         }
@@ -251,7 +259,14 @@ Write in pure plain text, no metadata or extra commentary or markdown`;
 
 async function getPRsAndCreatePrompt(githubToken : string, pollactionsToken : string) {
     try {
-        const { prs, dateString } = await getMergedPRsFromPreviousDay('pollinations', 'pollinations', githubToken);
+        const result = await getMergedPRsFromPreviousDay('pollinations', 'pollinations', githubToken);
+        
+        if (!result || !result.prs || result.prs.length === 0) {
+            console.log('ℹ️  No merged PRs found in the previous day. Exiting pipeline.');
+            process.exit(0);
+        }
+        
+        const { prs, dateString } = result;
         const promptData = await createImagePrompt(prs, dateString, pollactionsToken);
         console.log('\n=== Generated Image Prompt ===');
         console.log(promptData.prompt);

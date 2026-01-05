@@ -1,98 +1,132 @@
 import torch
 from diffusers import DiffusionPipeline
-from diffusers.image_processor import VaeImageProcessor
+from diffusers.quantizers import PipelineQuantizationConfig
 import gc
 
-class SingleGPULongCat:
-    def __init__(self):
-        self.device = torch.device("cuda:0")
-        self.dtype = torch.bfloat16  # CRITICAL: Use bfloat16 instead of float16!
-        
-        print("Loading LongCat pipeline from cache...")
-        print(f"GPU Memory: {torch.cuda.get_device_properties(0).total_memory / 1e9:.2f}GB")
-        
-        # Load pipeline - use torch_dtype not dtype
-        self.pipe = DiffusionPipeline.from_pretrained(
-            "meituan-longcat/LongCat-Image",
-            cache_dir="model_cache",
-            torch_dtype=self.dtype
-        )
-        
-        # Move entire pipeline to GPU
-        self.pipe.to(self.device)
-        
-        # Enable memory optimizations
-        self.pipe.enable_attention_slicing(1)
-        
-        # Enable gradient checkpointing to reduce memory
-        if hasattr(self.pipe.transformer, 'enable_gradient_checkpointing'):
-            self.pipe.transformer.enable_gradient_checkpointing()
-        if hasattr(self.pipe.text_encoder, 'enable_gradient_checkpointing'):
-            self.pipe.text_encoder.enable_gradient_checkpointing()
-        
-        self.processor = VaeImageProcessor()
-        
-        print("Pipeline loaded successfully")
-        torch.cuda.empty_cache()
-    
-    @torch.no_grad()
-    def generate(self, prompt, height=512, width=512, steps=20, guidance=4.0, save_path="longcat_output.png"):
-        """Complete generation pipeline"""
-        print(f"\nGenerating: '{prompt}'")
-        print(f"Resolution: {height}x{width}, Steps: {steps}, Guidance: {guidance}")
-        
-        # Let the pipeline handle everything - use default output
-        with torch.amp.autocast(device_type='cuda', dtype=self.dtype):
-            # Generate with PIL output directly
-            result = self.pipe(
-                prompt=prompt,
-                height=height,
-                width=width,
-                num_inference_steps=steps,
-                guidance_scale=guidance,
-                output_type="pil",  # Let pipeline do the decoding
-                generator=torch.Generator("cpu").manual_seed(42),  # For reproducibility
-            )
-            
-            # Handle different return types
-            if hasattr(result, 'images'):
-                image = result.images[0]
-            elif isinstance(result, tuple):
-                image = result[0][0] if isinstance(result[0], list) else result[0]
-            else:
-                image = result[0]
-        
-        # Save image
-        image.save(save_path)
-        print(f"\nImage saved to: {save_path}")
-        
-        # Clear cache
-        torch.cuda.empty_cache()
-        
-        return image
+def get_quantized_longcat_pipeline(
+    model_id="meituan-longcat/LongCat-Image",
+    bits=4,
+    device="cuda:0"
+):
+    """
+    Load a quantized LongCat-Image pipeline.
+    bits: 4 or 8 bits for quantization.
+    """
+    # Determine bitsandbytes backend flag
+    if bits not in (4, 8):
+        raise ValueError(f"Unsupported bits: {bits}; must be 4 or 8")
+
+    # Choose backend string
+    backend = f"bitsandbytes_{bits}bit"  # e.g., bitsandbytes_4bit or bitsandbytes_8bit
+
+    # Build quantization config
+    # bnb_4bit_quant_type = "nf4" is recommended for 4-bit
+    # bnb_4bit_compute_dtype uses bfloat16 to keep compute stable on GPUs that support it
+    quant_kwargs = {}
+    if bits == 4:
+        quant_kwargs = {
+            "load_in_4bit": True,
+            "bnb_4bit_quant_type": "nf4",
+            "bnb_4bit_compute_dtype": torch.bfloat16
+        }
+    else:
+        quant_kwargs = {
+            "load_in_8bit": True
+        }
+
+    quant_config = PipelineQuantizationConfig(
+        quant_backend=backend,
+        quant_kwargs=quant_kwargs,
+        components_to_quantize=["transformer", "text_encoder"]
+    )
+
+    # Load the pipeline with quantization
+    pipe = DiffusionPipeline.from_pretrained(
+        model_id,
+        quantization_config=quant_config,
+        torch_dtype=torch.bfloat16,
+        safety_checker=None
+    )
+
+    # Move to GPU
+    pipe = pipe.to(device)
+
+    # Optionally enable attention slicing for memory
+    pipe.enable_attention_slicing(1)
+
+    return pipe
+
+@torch.no_grad()
+def generate_image(
+    pipe,
+    prompt: str,
+    height: int = 512,
+    width: int = 512,
+    num_inference_steps: int = 20,
+    guidance_scale: float = 4.0,
+    seed: int = 42,
+    save_path: str = "quant_longcat.png"
+):
+    """
+    Generate and save an image using a quantized LongCat pipeline.
+    """
+    generator = torch.Generator(device="cpu").manual_seed(seed)
+
+    # Inference
+    out = pipe(
+        prompt,
+        height=height,
+        width=width,
+        num_inference_steps=num_inference_steps,
+        guidance_scale=guidance_scale,
+        generator=generator,
+        output_type="pil"
+    )
+
+    # Extract image
+    if hasattr(out, "images"):
+        img = out.images[0]
+    elif isinstance(out, tuple):
+        img = out[0][0] if isinstance(out[0], list) else out[0]
+    else:
+        img = out
+
+    # Save
+    img.save(save_path)
+    return img
 
 def main():
-    # Check GPU availability
+    # Ensure CUDA
     if not torch.cuda.is_available():
-        raise RuntimeError("This script requires a CUDA GPU")
-    
-    print(f"GPU: {torch.cuda.get_device_name(0)}")
-    
-    # Initialize pipeline
-    generator = SingleGPULongCat()
-    
-    # Generate image
-    prompt = "two cats sitting on a bench in a park, photorealistic, high quality"
-    image = generator.generate(
-        prompt=prompt,
+        raise RuntimeError("CUDA GPU required")
+
+    print("Loading quantized pipeline...")
+    # Choose 4 or 8 bit
+    bits = 4
+
+    pipe = get_quantized_longcat_pipeline(
+        model_id="meituan-longcat/LongCat-Image",
+        bits=bits,
+        device="cuda:0"
+    )
+
+    prompt = "a photorealistic portrait of two cats on a bench in a park"
+    img = generate_image(
+        pipe,
+        prompt,
         height=512,
         width=512,
-        steps=20,
-        guidance=4.0,
-        save_path="longcat_output.png"
+        num_inference_steps=25,
+        guidance_scale=4.0,
+        save_path=f"longcat_quant_{bits}bit.png"
     )
-    
-    print("\nGeneration complete!")
+
+    print(f"Saved quantized longcat image to longcat_quant_{bits}bit.png")
+
+    # Free memory
+    del pipe
+    torch.cuda.empty_cache()
+    gc.collect()
 
 if __name__ == "__main__":
     main()

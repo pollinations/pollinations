@@ -153,15 +153,30 @@ flowchart TD
 
 ### Support Labels
 
-| Label             | Purpose                        | Applied by           |
-| ----------------- | ------------------------------ | -------------------- |
-| `SUPPORT-HELP`    | General assistance request     | `project-manager.py` |
-| `SUPPORT-BUG`     | Something is broken            | `project-manager.py` |
-| `SUPPORT-FEATURE` | Feature request                | `project-manager.py` |
-| `SUPPORT-BILLING` | Payment or subscription issue  | `project-manager.py` |
-| `SUPPORT-BALANCE` | Pollen balance issue           | `project-manager.py` |
-| `SUPPORT-API`     | API usage or integration issue | `project-manager.py` |
-| `SUPPORT-TIER`    | Tier/subscription related      | `project-manager.py` |
+**TYPE (pick exactly 1):**
+
+| Label           | Purpose             | Applied by           |
+| --------------- | ------------------- | -------------------- |
+| `S-BUG`         | Something broken    | `project-manager.py` |
+| `S-OUTAGE`      | Service down        | `project-manager.py` |
+| `S-QUESTION`    | How-to/usage        | `project-manager.py` |
+| `S-REQUEST`     | Feature request     | `project-manager.py` |
+| `S-DOCS`        | Documentation issue | `project-manager.py` |
+| `S-INTEGRATION` | SDK/API integration | `project-manager.py` |
+
+**SERVICE (pick 1 or more):**
+
+| Label       | Purpose               | Applied by           |
+| ----------- | --------------------- | -------------------- |
+| `S-IMAGE`   | Image generation      | `project-manager.py` |
+| `S-TEXT`    | Text/chat completion  | `project-manager.py` |
+| `S-AUDIO`   | Audio/TTS             | `project-manager.py` |
+| `S-VIDEO`   | Video generation      | `project-manager.py` |
+| `S-API`     | API/SDK general       | `project-manager.py` |
+| `S-WEB`     | Website/dashboard     | `project-manager.py` |
+| `S-CREDITS` | Pollen balance issues | `project-manager.py` |
+| `S-BILLING` | Payment/credit card   | `project-manager.py` |
+| `S-ACCOUNT` | Account/login/auth    | `project-manager.py` |
 
 ### News Labels
 

@@ -157,7 +157,7 @@ def main():
         test_prompts,
         height=768,
         width=768,
-        num_inference_steps=20,
+        num_inference_steps=40,
         guidance_scale=4.0,
     )
 

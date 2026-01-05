@@ -580,7 +580,9 @@ export function sendContentResponse(res, completion) {
     // Fallback for any other response structure
     else {
         errorLog("Unrecognized completion format:", JSON.stringify(completion));
-        return res.send("Response format not recognized");
+        const error = new Error("Unrecognized response format from model");
+        error.status = 500;
+        throw error;
     }
 }
 

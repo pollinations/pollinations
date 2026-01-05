@@ -107,9 +107,9 @@ class DualGPULongCat:
         print(f"  ✓ Latent generation (GPU 0): {t_diffusion:.2f}s")
         
         print(f"Moving latents to {self.gpu_vae} for VAE decode...")
-        latents = latents.to(self.gpu_vae)
+        latents = latents.to(self.gpu_vae).to(self.dtype)
         
-        vae_decoder = self.vae_original.to(self.gpu_vae)
+        vae_decoder = self.vae_original.to(self.gpu_vae).to(self.dtype)
         
         t_start_decode = time.time()
         with torch.no_grad():
@@ -125,6 +125,7 @@ class DualGPULongCat:
             latents_unpacked = latents_unpacked.reshape(batch_size, original_channels, height_latent, width_latent)
             
             latents_unpacked = (latents_unpacked / vae_decoder.config.scaling_factor) + vae_decoder.config.shift_factor
+            latents_unpacked = latents_unpacked.to(self.dtype)
             
             image_tensor = vae_decoder.decode(latents_unpacked, return_dict=False)[0]
         

@@ -176,8 +176,13 @@ def normalize_labels(project: str, labels: list) -> list:
         return [label] if label else []
     
     if project == "support":
-        # Support: allow multiple labels (TYPE + SVC)
-        return [l for l in incoming if l in valid_labels]
+        # Support: exactly 1 TYPE label + multiple SERVICE labels
+        type_labels = {".BUG", ".OUTAGE", ".QUESTION", ".REQUEST", ".DOCS", ".INTEGRATION"}
+        matched = [l for l in incoming if l in valid_labels]
+        # Keep only first TYPE label, all SERVICE labels
+        first_type = next((l for l in matched if l in type_labels), None)
+        service_labels = [l for l in matched if l not in type_labels]
+        return ([first_type] if first_type else []) + service_labels
     
     return []
 

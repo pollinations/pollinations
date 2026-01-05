@@ -121,7 +121,35 @@ CONFIG = {
         "Circuit-Overtime",
         "Itachi-1824"
     ],
+    "discord_to_github": {
+        "elliot8701": "ElliotEtag",
+        "elixpo.asm": "Circuit-Overtime",
+        "elixpo": "Circuit-Overtime",
+        "_dr_misterio_": "Itachi-1824",
+        "thomash": "voodoohop",
+        "eulervoid": "eulervoid",
+    },
 }
+
+def get_real_author() -> str:
+    """Extract real author from Discord bot issues or return GitHub author."""
+    # If author is the Discord bot, try to extract real author from body
+    if ISSUE_AUTHOR and "pollinations-ai" in ISSUE_AUTHOR.lower():
+        import re
+        # Look for "Author: username" pattern in issue body
+        match = re.search(r'\*\*Author:\*\*\s*`?([\w._-]+)`?|Author:\s*`?([\w._-]+)`?', ISSUE_BODY, re.IGNORECASE)
+        if match:
+            discord_user = match.group(1) or match.group(2)
+            log_debug(f"Extracted Discord author: {discord_user}")
+            # Map to GitHub username if known
+            github_user = CONFIG["discord_to_github"].get(discord_user.lower())
+            if github_user:
+                log_debug(f"Mapped Discord user {discord_user} to GitHub user {github_user}")
+                return github_user
+            log_debug(f"No GitHub mapping for Discord user {discord_user}")
+            return discord_user
+    return ISSUE_AUTHOR
+
 
 def is_org_member(username: str) -> bool:
     if not username:
@@ -196,10 +224,7 @@ Rules:
 - Infrastructure, pipelines, CI/CD, Docker, services → dev (if internal) else support.
 - If ambiguous, choose the closest valid option — never invent a new one.
 - Author type: {"internal" if is_internal else "external"}
-- Priority options:
-  * dev: Urgent, High, Medium, Low
-  * support: Urgent, High, Medium, Low
-  * news: Urgent only
+- Priority: only assign for support project (Urgent, High, Medium, Low). No priority for dev or news.
 - Label options depend on project:
   * dev: DEV-BUG, DEV-FEATURE, DEV-QUEST, DEV-TRACKING
   * support: SUPPORT-HELP, SUPPORT-BUG, SUPPORT-FEATURE, SUPPORT-BILLING, SUPPORT-BALANCE, SUPPORT-API
@@ -381,6 +406,25 @@ def add_labels(labels: list):
         log_error(f"Exception adding labels: {e}")
 
 
+def assign_issue(assignee: str):
+    """Assign the issue to a GitHub user."""
+    if not assignee:
+        return
+    try:
+        r = requests.post(
+            f"{GITHUB_API}/repos/{REPO_OWNER}/{REPO_NAME}/issues/{ISSUE_NUMBER}/assignees",
+            headers=GITHUB_HEADERS,
+            json={"assignees": [assignee]},
+            timeout=10,
+        )
+        if r.status_code == 201:
+            log_debug(f"Assigned issue to: {assignee}")
+        else:
+            log_error(f"Failed to assign issue: {r.status_code} - {r.text}")
+    except requests.RequestException as e:
+        log_error(f"Exception assigning issue: {e}")
+
+
 
 def get_existing_labels() -> list:
     labels = ITEM_DATA.get("labels", [])
@@ -395,20 +439,6 @@ def main():
         return
     
     existing_labels = get_existing_labels()
-    if classification.get("is_app_submission"):
-        log_debug("AI detected app submission, routing to Tier project")
-        project = CONFIG["projects"].get("tier")
-        if project:
-            item_id = add_to_project(project["id"])
-            if item_id:
-                log_debug("Added to Tier project successfully")
-            else:
-                log_error("Failed to add app submission to Tier project")
-            return
-        else:
-            log_error("Tier project not configured")
-            return
-    
     tier_labels = [l for l in existing_labels if l.startswith("TIER-")]
     if tier_labels:
         log_debug(f"Found TIER labels: {tier_labels}, routing to Tier project")
@@ -422,8 +452,26 @@ def main():
             log_error("Tier project not configured")
             return
     
-    is_internal = is_org_member(ISSUE_AUTHOR)
-    log_debug(f"Author {ISSUE_AUTHOR} is internal: {is_internal}")
+    # Skip AI if NEWS label is present - route directly to News project
+    if "NEWS" in existing_labels:
+        log_debug("Found NEWS label, routing to News project (skipping AI)")
+        project = CONFIG["projects"].get("news")
+        if project:
+            item_id = add_to_project(project["id"])
+            if item_id:
+                log_debug("Added to News project successfully")
+            return
+        else:
+            log_error("News project not configured")
+            return
+    
+    real_author = get_real_author()
+    is_internal = is_org_member(real_author)
+    log_debug(f"Author {ISSUE_AUTHOR} (real: {real_author}) is internal: {is_internal}")
+    
+    # Auto-assign Discord-created issues to the real author if they're internal
+    if real_author != ISSUE_AUTHOR and is_internal:
+        assign_issue(real_author)
     
     classification = classify_with_ai(is_internal)
     
@@ -476,14 +524,16 @@ def main():
                 status_option,
             )
     
-    priority_option = project["priority_options"].get(priority)
-    if priority_option and project.get("priority_field_id"):
-        set_project_field(
-            project["id"],
-            item_id,
-            project["priority_field_id"],
-            priority_option,
-        )
+    # Only set priority for support project
+    if project_key == "support":
+        priority_option = project["priority_options"].get(priority)
+        if priority_option and project.get("priority_field_id"):
+            set_project_field(
+                project["id"],
+                item_id,
+                project["priority_field_id"],
+                priority_option,
+            )
     add_labels(labels)
 
 if __name__ == "__main__":

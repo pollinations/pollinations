@@ -24,12 +24,12 @@ Classify this GitHub issue/PR. Return JSON only.
 
 `DEV-BUG`, `DEV-FEATURE`, `DEV-QUEST`, `DEV-TRACKING`
 
-### support (pick ONE type + ONE or more services)
+### support
 
-**TYPE (exactly 1):**
+**TYPE (pick exactly 1, never 2 or more):**
 `.BUG`, `.OUTAGE`, `.QUESTION`, `.REQUEST`, `.DOCS`, `.INTEGRATION`
 
-**SERVICE (1 or more):**
+**SERVICE (pick 1 or more):**
 `IMAGE`, `TEXT`, `AUDIO`, `VIDEO`, `API`, `WEB`, `CREDITS`, `BILLING`, `ACCOUNT`
 
 ### news
@@ -47,4 +47,4 @@ none
 2. If author is internal → can route to `dev`
 3. If author is external → route to `support` (never `dev`)
 4. For dev: pick ONE label
-5. For support: pick exactly ONE type label (.BUG, etc.) + ONE or more service labels (IMAGE, etc.)
+5. For support: pick exactly 1 TYPE label (never 2 or more) + 1 or more SERVICE labels

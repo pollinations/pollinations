@@ -1,0 +1,42 @@
+{
+  "date": "2026-01-03",
+  "generated_at": "2026-01-03T16:09:37.288114+00:00",
+  "post_type": "carousel",
+  "content_type": "pixel_art",
+  "linked_images": false,
+  "strategy_reasoning": "We're turning dry technical updates (workflows, documentation, bug fixes) into a cozy narrative about tending a digital garden. The pixel art style aligns with the 'indie dev/builder' nostalgia, making the platform feel welcoming and organized rather than corporate and sterile. The 'random seed' fix is visualized as magical variety, and the workflow updates as tidy organization.",
+  "story_arc": "",
+  "images": [
+    {
+      "url": "https://gen.pollinations.ai/image/Cozy%20pixel%20art%20scene%20of%20a%20tiny%208-bit%20robot%20gardener%20organizing%20crates%20labeled%20%27PR%27%20and%20%27ISSUES%27%20into%20neat%20stacks.%20Soft%20lime%20green%20%28%23ecf874%29%20and%20lavender%20gradient%20background.%20Chunky%20pixels%2C%20warm%20lighting%2C%20lo-fi%20aesthetic.%20Like%20Stardew%20Valley%20inventory%20management%20but%20cute.%20Emotionally%20warm%2C%20nostalgic.%20Text%20in%20pixel%20font%3A%20%27TIDY%20WORKFLOW%27.?model=nanobanana&width=2048&height=2048&quality=hd&nologo=true&private=true&nofeed=true&seed=961721932",
+      "prompt": "Cozy pixel art scene of a tiny 8-bit robot gardener organizing crates labeled 'PR' and 'ISSUES' into neat stacks. Soft lime green (#ecf874) and lavender gradient background. Chunky pixels, warm lighting, lo-fi aesthetic. Like Stardew Valley inventory management but cute. Emotionally warm, nostalgic. Text in pixel font: 'TIDY WORKFLOW'.",
+      "description": "Visualizing the new automated workflow for organizing issues and PRs as a tidy garden task."
+    },
+    {
+      "url": "https://gen.pollinations.ai/image/Retro%208-bit%20pixel%20art%20close-up%20of%20a%20magical%20seed%20packet%20labeled%20%27SEED%20-1%27.%20It%20is%20glowing%20and%20sprouting%20three%20completely%20different%20colorful%20pixel%20flowers%20%28blue%2C%20pink%2C%20yellow%29%20simultaneously.%20Soft%20pastel%20background%20with%20sparkles.%20Retro%20game%20UI%20vibe.%20Lime%20green%20%28%23ecf874%29%20accents.%20Represents%20randomness%20and%20creativity.%20Warm%2C%20inviting.?model=nanobanana&width=2048&height=2048&quality=hd&nologo=true&private=true&nofeed=true&seed=485272557",
+      "prompt": "Retro 8-bit pixel art close-up of a magical seed packet labeled 'SEED -1'. It is glowing and sprouting three completely different colorful pixel flowers (blue, pink, yellow) simultaneously. Soft pastel background with sparkles. Retro game UI vibe. Lime green (#ecf874) accents. Represents randomness and creativity. Warm, inviting.",
+      "description": "Illustrating the 'seed=-1' fix which now correctly generates random outputs, symbolized by diverse blooms."
+    },
+    {
+      "url": "https://gen.pollinations.ai/image/A%20pixel%20art%20wooden%20notice%20board%20in%20a%20peaceful%20digital%20forest.%20Fresh%20papers%20pinned%20to%20it%20saying%20%27NEWS%27%20and%20%27DOCS%27.%20Sunlight%20streaming%20through%20pixelated%20trees.%20Soft%20lime%20green%20%28%23ecf874%29%20grass.%20Cozy%20vibes%20like%20A%20Short%20Hike.%20Wholesome%20and%20informative.?model=nanobanana&width=2048&height=2048&quality=hd&nologo=true&private=true&nofeed=true&seed=1291807200",
+      "prompt": "A pixel art wooden notice board in a peaceful digital forest. Fresh papers pinned to it saying 'NEWS' and 'DOCS'. Sunlight streaming through pixelated trees. Soft lime green (#ecf874) grass. Cozy vibes like A Short Hike. Wholesome and informative.",
+      "description": "Announcing the README news updates and regenerated API docs in a village RPG style."
+    }
+  ],
+  "caption": "Tending the digital garden 🧑‍🌾✨ We’ve been busy pruning and planting to make your build experience cozier.\n\nHere’s what’s blooming in the repo:\n📦 Auto-sorting for Issues & PRs (keeping things tidy!)\n🎲 Fixed `seed=-1` so it actually gives you random magic every time\n📜 Fresh Docs & News updates pinned to the board\n\nBuild something wholesome this weekend. 🌸\n\nLink in bio to the repo! 🔗\n\n#pollinations #opensource #pixelart #gamedev #indiedev #cozyvibes #generativeai #8bit #buildinpublic",
+  "hashtags": [],
+  "alt_text": "A series of cozy 8-bit pixel art images. 1) A cute robot organizing crates in a garden. 2) A magical seed packet sprouting different flowers representing random AI generation. 3) A wooden bulletin board in a pixel forest showing latest news updates. All featuring soft lime green and pastel colors.",
+  "pr_references": [
+    "#6690",
+    "#6755",
+    "#6764",
+    "#6754",
+    "#6752",
+    "#6628",
+    "#6747",
+    "#6746",
+    "#6744",
+    "#6737",
+    "#6732"
+  ]
+}

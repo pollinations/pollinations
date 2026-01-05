@@ -223,16 +223,12 @@ export function normalizeOptions(options = {}, defaults = {}) {
     }
 
     // Handle jsonMode -> response_format conversion
-    // Models with skipResponseFormat=true (e.g., Perplexity) don't support response_format
-    // Instead, keep jsonMode flag so we can format the output ourselves via responseTransform
-    if (normalized.jsonMode && !normalized.skipResponseFormat) {
+    if (normalized.jsonMode) {
         if (!normalized.response_format) {
             normalized.response_format = { type: "json_object" };
         }
         delete normalized.jsonMode;
     }
-    // For models with skipResponseFormat, keep jsonMode flag for output formatting
-    delete normalized.skipResponseFormat;
 
     return normalized;
 }

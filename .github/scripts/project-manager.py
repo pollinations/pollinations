@@ -121,7 +121,35 @@ CONFIG = {
         "Circuit-Overtime",
         "Itachi-1824"
     ],
+    "discord_to_github": {
+        "elliot8701": "ElliotEtag",
+        "elixpo.asm": "Circuit-Overtime",
+        "elixpo": "Circuit-Overtime",
+        "_dr_misterio_": "Itachi-1824",
+        "thomash": "voodoohop",
+        "eulervoid": "eulervoid",
+    },
 }
+
+def get_real_author() -> str:
+    """Extract real author from Discord bot issues or return GitHub author."""
+    # If author is the Discord bot, try to extract real author from body
+    if ISSUE_AUTHOR and "pollinations-ai" in ISSUE_AUTHOR.lower():
+        import re
+        # Look for "Author: username" pattern in issue body
+        match = re.search(r'\*\*Author:\*\*\s*`?([\w._-]+)`?|Author:\s*`?([\w._-]+)`?', ISSUE_BODY, re.IGNORECASE)
+        if match:
+            discord_user = match.group(1) or match.group(2)
+            log_debug(f"Extracted Discord author: {discord_user}")
+            # Map to GitHub username if known
+            github_user = CONFIG["discord_to_github"].get(discord_user.lower())
+            if github_user:
+                log_debug(f"Mapped Discord user {discord_user} to GitHub user {github_user}")
+                return github_user
+            log_debug(f"No GitHub mapping for Discord user {discord_user}")
+            return discord_user
+    return ISSUE_AUTHOR
+
 
 def is_org_member(username: str) -> bool:
     if not username:
@@ -378,6 +406,25 @@ def add_labels(labels: list):
         log_error(f"Exception adding labels: {e}")
 
 
+def assign_issue(assignee: str):
+    """Assign the issue to a GitHub user."""
+    if not assignee:
+        return
+    try:
+        r = requests.post(
+            f"{GITHUB_API}/repos/{REPO_OWNER}/{REPO_NAME}/issues/{ISSUE_NUMBER}/assignees",
+            headers=GITHUB_HEADERS,
+            json={"assignees": [assignee]},
+            timeout=10,
+        )
+        if r.status_code == 201:
+            log_debug(f"Assigned issue to: {assignee}")
+        else:
+            log_error(f"Failed to assign issue: {r.status_code} - {r.text}")
+    except requests.RequestException as e:
+        log_error(f"Exception assigning issue: {e}")
+
+
 
 def get_existing_labels() -> list:
     labels = ITEM_DATA.get("labels", [])
@@ -418,8 +465,13 @@ def main():
             log_error("News project not configured")
             return
     
-    is_internal = is_org_member(ISSUE_AUTHOR)
-    log_debug(f"Author {ISSUE_AUTHOR} is internal: {is_internal}")
+    real_author = get_real_author()
+    is_internal = is_org_member(real_author)
+    log_debug(f"Author {ISSUE_AUTHOR} (real: {real_author}) is internal: {is_internal}")
+    
+    # Auto-assign Discord-created issues to the real author if they're internal
+    if real_author != ISSUE_AUTHOR and is_internal:
+        assign_issue(real_author)
     
     classification = classify_with_ai(is_internal)
     

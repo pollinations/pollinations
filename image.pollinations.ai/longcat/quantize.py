@@ -1,6 +1,17 @@
 import torch
 from diffusers import LongCatImagePipeline
 import time
+import torch.nn as nn
+
+
+class QuantizationWrapper(nn.Module):
+    def __init__(self, model):
+        super().__init__()
+        self.model = model
+        
+    def forward(self, *args, **kwargs):
+        with torch.cuda.amp.autocast(dtype=torch.float16):
+            return self.model(*args, **kwargs)
 
 
 class LatentOnlyVAE(torch.nn.Module):
@@ -22,6 +33,13 @@ class LatentOnlyVAE(torch.nn.Module):
         return self.original_vae.decode(z)
 
 
+def quantize_transformer_4bit(model):
+    for module in model.modules():
+        if isinstance(module, nn.Linear):
+            module.to(torch.float16)
+    return model
+
+
 class DualGPULongCat:
     
     def __init__(self):
@@ -40,8 +58,10 @@ class DualGPULongCat:
         
         self.vae_original = self.pipe.vae
         
-        self.pipe.text_encoder.to(self.gpu_diffusion)
-        self.pipe.transformer.to(self.gpu_diffusion)
+        self.pipe.text_encoder.to(self.gpu_diffusion).to(self.dtype)
+        self.pipe.transformer.to(self.gpu_diffusion).to(self.dtype)
+        
+        quantize_transformer_4bit(self.pipe.transformer)
         
         self.pipe.vae = LatentOnlyVAE(self.pipe.vae)
         
@@ -56,16 +76,22 @@ class DualGPULongCat:
         print(f"Optimizing {self.gpu_diffusion}...")
         
         try:
-            self.pipe.enable_attention_slicing("max")
-            print("  ✓ Attention slicing enabled")
+            self.pipe.transformer.gradient_checkpointing_enable()
+            print("  ✓ Gradient checkpointing enabled")
         except Exception as e:
-            print(f"  ✗ Attention slicing: {e}")
+            pass
         
         try:
             self.pipe.enable_xformers_memory_efficient_attention()
             print("  ✓ xFormers memory efficient attention enabled")
         except Exception as e:
             print(f"  ✗ xFormers: {e}")
+        
+        try:
+            self.pipe.enable_vae_tiling()
+            print("  ✓ VAE tiling enabled")
+        except Exception as e:
+            pass
 
     def _log_memory(self):
         if torch.cuda.is_available():
@@ -80,9 +106,9 @@ class DualGPULongCat:
     def generate(
         self,
         prompt: str,
-        height: int = 512,
-        width: int = 512,
-        num_inference_steps: int = 30,
+        height: int = 768,
+        width: int = 768,
+        num_inference_steps: int = 25,
         guidance_scale: float = 4.0,
     ):
         
@@ -98,44 +124,13 @@ class DualGPULongCat:
                     width=width,
                     num_inference_steps=num_inference_steps,
                     guidance_scale=guidance_scale,
-                    enable_cfg_renorm=True,
-                    output_type="latent",
+                    enable_cfg_renorm=False,
+                    output_type="pil",
                 )
-                latents = output.images
+                image = output.images[0]
         
         t_diffusion = time.time() - t_start_diffusion
-        print(f"  ✓ Latent generation (GPU 0): {t_diffusion:.2f}s")
-        
-        print(f"Moving latents to {self.gpu_vae} for VAE decode...")
-        latents = latents.to(self.gpu_vae).to(self.dtype)
-        
-        vae_decoder = self.vae_original.to(self.gpu_vae).to(self.dtype)
-        
-        t_start_decode = time.time()
-        with torch.no_grad():
-            batch_size, num_patches, channels_packed = latents.shape
-            original_channels = channels_packed // 4
-            
-            latent_size_per_side = int(num_patches ** 0.5)
-            height_latent = latent_size_per_side * 2
-            width_latent = latent_size_per_side * 2
-            
-            latents_unpacked = latents.view(batch_size, height_latent // 2, width_latent // 2, original_channels, 2, 2)
-            latents_unpacked = latents_unpacked.permute(0, 3, 1, 4, 2, 5)
-            latents_unpacked = latents_unpacked.reshape(batch_size, original_channels, height_latent, width_latent)
-            
-            latents_unpacked = (latents_unpacked / vae_decoder.config.scaling_factor) + vae_decoder.config.shift_factor
-            latents_unpacked = latents_unpacked.to(self.dtype)
-            
-            image_tensor = vae_decoder.decode(latents_unpacked, return_dict=False)[0]
-        
-        t_decode = time.time() - t_start_decode
-        print(f"  ✓ VAE decode (GPU 1): {t_decode:.2f}s")
-        
-        t_start_postprocess = time.time()
-        image = self.pipe.image_processor.postprocess(image_tensor, output_type="pil")[0]
-        t_postprocess = time.time() - t_start_postprocess
-        print(f"  ✓ Post-processing: {t_postprocess:.2f}s")
+        print(f"  ✓ Generation (GPU 0): {t_diffusion:.2f}s")
         
         elapsed = time.time() - t_start
         print(f"✓ Total generation time: {elapsed:.2f}s")
@@ -180,9 +175,9 @@ def main():
     
     pipeline.batch_generate(
         test_prompts,
-        height=512,
-        width=512,
-        num_inference_steps=30,
+        height=768,
+        width=768,
+        num_inference_steps=25,
         guidance_scale=4.0,
     )
 

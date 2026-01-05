@@ -295,12 +295,15 @@ def graphql_request(query: str, variables: dict = None) -> dict:
             timeout=30,
         )
         if r.status_code != 200:
+            log_error(f"GraphQL HTTP {r.status_code}: {r.text[:500]}")
             return {}
         data = r.json()
         if "errors" in data:
+            log_error(f"GraphQL errors: {data['errors']}")
             return {}
         return data.get("data", {})
-    except requests.RequestException:
+    except requests.RequestException as e:
+        log_error(f"GraphQL request failed: {e}")
         return {}
 
 

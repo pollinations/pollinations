@@ -1,4 +1,3 @@
-import { privateEncrypt } from 'crypto';
 import dotenv from 'dotenv';
 dotenv.config();
 

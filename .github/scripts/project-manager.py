@@ -70,7 +70,7 @@ CONFIG = {
             "internal_only": False,
         },
         "tier": {
-            "id": "PVT_kwDOBS76fs4BLwDf",  
+            "id": "PVT_kwDOBS76fs4BLtE_",  
             "name": "Tier",
             "internal_only": False,
         },

@@ -169,10 +169,9 @@ export async function generateTextPortkey(messages, options = {}) {
         requestConfig,
     );
 
-    // Attach responseTransform to completion so it flows back to server.js
+    // Apply responseTransform if provided (e.g., for citations)
     if (responseTransform) {
-        completion._responseTransform = responseTransform;
-        completion._transformOptions = processedOptions;
+        return responseTransform(completion, processedOptions);
     }
 
     return completion;

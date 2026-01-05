@@ -218,22 +218,6 @@ async function handleRequest(req, res, requestData) {
         // Ensure completion has the request ID
         completion.id = requestId;
 
-        // Apply responseTransform if provided by the model transform
-        if (completion._responseTransform) {
-            const transformedCompletion = completion._responseTransform(
-                completion,
-                {
-                    ...completion._transformOptions,
-                    jsonMode: requestData.jsonMode,
-                    isGetRequest: req.method === "GET",
-                },
-            );
-            // Preserve internal properties
-            Object.assign(completion, transformedCompletion);
-            delete completion._responseTransform;
-            delete completion._transformOptions;
-        }
-
         // Check if completion contains an error
         if (completion.error) {
             errorLog(
@@ -567,14 +551,21 @@ export function sendContentResponse(res, completion) {
         }
         // For simple text responses, return just the content as plain text
         // This is the most common case and should be prioritized
-        // Note: Citations are already appended by responseTransform for models that support them
         else if (message.content) {
             res.setHeader("Content-Type", "text/plain; charset=utf-8");
             res.setHeader(
                 "Cache-Control",
                 "public, max-age=31536000, immutable",
             );
-            return res.send(message.content);
+            // Append citations if present (e.g., from Perplexity)
+            let content = message.content;
+            if (completion.citations?.length > 0) {
+                content += "\n\n---\nSources:\n";
+                completion.citations.forEach((url, index) => {
+                    content += `[${index + 1}] ${url}\n`;
+                });
+            }
+            return res.send(content);
         }
         // If there's other non-text content, return the message as JSON
         else if (Object.keys(message).length > 0) {

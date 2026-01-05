@@ -4,21 +4,20 @@ import time
 import torch.nn as nn
 
 
-class QuantizationWrapper(nn.Module):
-    def __init__(self, model):
-        super().__init__()
-        self.model = model
-        
-    def forward(self, *args, **kwargs):
-        with torch.cuda.amp.autocast(dtype=torch.float16):
-            return self.model(*args, **kwargs)
-
-
 class LatentOnlyVAE(torch.nn.Module):
     def __init__(self, vae):
         super().__init__()
         self.original_vae = vae
         self.config = vae.config
+        self._dtype = vae.dtype
+
+    @property
+    def dtype(self):
+        return self._dtype
+    
+    @dtype.setter
+    def dtype(self, value):
+        self._dtype = value
 
     def forward(self, latents):
         class Dummy:
@@ -31,13 +30,6 @@ class LatentOnlyVAE(torch.nn.Module):
     
     def decode(self, z):
         return self.original_vae.decode(z)
-
-
-def quantize_transformer_4bit(model):
-    for module in model.modules():
-        if isinstance(module, nn.Linear):
-            module.to(torch.float16)
-    return model
 
 
 class DualGPULongCat:
@@ -60,8 +52,6 @@ class DualGPULongCat:
         
         self.pipe.text_encoder.to(self.gpu_diffusion).to(self.dtype)
         self.pipe.transformer.to(self.gpu_diffusion).to(self.dtype)
-        
-        quantize_transformer_4bit(self.pipe.transformer)
         
         self.pipe.vae = LatentOnlyVAE(self.pipe.vae)
         
@@ -86,12 +76,6 @@ class DualGPULongCat:
             print("  ✓ xFormers memory efficient attention enabled")
         except Exception as e:
             print(f"  ✗ xFormers: {e}")
-        
-        try:
-            self.pipe.enable_vae_tiling()
-            print("  ✓ VAE tiling enabled")
-        except Exception as e:
-            pass
 
     def _log_memory(self):
         if torch.cuda.is_available():
@@ -108,16 +92,15 @@ class DualGPULongCat:
         prompt: str,
         height: int = 768,
         width: int = 768,
-        num_inference_steps: int = 25,
+        num_inference_steps: int = 20,
         guidance_scale: float = 4.0,
     ):
         
         print(f"\nGenerating: {prompt[:60]}...")
         t_start = time.time()
         
-        t_start_diffusion = time.time()
         with torch.no_grad():
-            with torch.amp.autocast('cuda', dtype=self.dtype):
+            with torch.cuda.amp.autocast(dtype=self.dtype):
                 output = self.pipe(
                     prompt=prompt,
                     height=height,
@@ -129,11 +112,8 @@ class DualGPULongCat:
                 )
                 image = output.images[0]
         
-        t_diffusion = time.time() - t_start_diffusion
-        print(f"  ✓ Generation (GPU 0): {t_diffusion:.2f}s")
-        
         elapsed = time.time() - t_start
-        print(f"✓ Total generation time: {elapsed:.2f}s")
+        print(f"✓ Generation completed in {elapsed:.2f}s")
         
         return image
 
@@ -177,7 +157,7 @@ def main():
         test_prompts,
         height=768,
         width=768,
-        num_inference_steps=25,
+        num_inference_steps=20,
         guidance_scale=4.0,
     )
 

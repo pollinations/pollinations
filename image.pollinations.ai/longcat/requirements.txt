@@ -3,4 +3,7 @@ safetensors==0.6.2
 torch==2.6.0
 torchvision==0.21.0
 transformers==4.57.1
+diffusers==0.31.0
+bitsandbytes==0.42.0
+xformers==0.0.27
 openai==2.8.1

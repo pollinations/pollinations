@@ -11,12 +11,9 @@ export function pipe(...transforms) {
                 return {
                     messages: result.messages,
                     options: result.options,
-                    // Preserve responseTransform from the last transform that provides one
-                    responseTransform:
-                        result.responseTransform || acc.responseTransform,
                 };
             },
-            { messages, options, responseTransform: undefined },
+            { messages, options },
         );
 }
 

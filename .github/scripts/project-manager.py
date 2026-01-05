@@ -51,36 +51,11 @@ CONFIG = {
             "id": "PVT_kwDOBS76fs4AwCAM",
             "name": "Dev",
             "internal_only": True,
-            "default_status": "Backlog",
-            "status_field_id": "PVTSSF_lADOBS76fs4AwCAMzgmXaAM",
-            "status_options": {
-                "Backlog": "f75ad846",
-                "Blocked": "151d2df4",
-                "To Do": "d89ca0b2",
-                "In Progress": "47fc9ee4",
-                "In Review": "ca6ba6c3",
-                "Done": "98236657",
-                "Discarded": "3bf36d0a",
-            },
-            "priority_field_id": "PVTSSF_lADOBS76fs4AwCAMzg2DKDk",
-            "priority_options": {
-                "Urgent": "0f53228f",
-                "High": "dc7fa85f",
-                "Medium": "15fd4fac",
-                "Low": "7495a981",
-            },
         },
         "support": {
             "id": "PVT_kwDOBS76fs4BLr1H",
             "name": "Support",
             "internal_only": False,
-            "default_status": "Review",
-            "status_field_id": "PVTSSF_lADOBS76fs4BLr1Hzg7L1RQ",
-            "status_options": {
-                "Review": "f75ad846",
-                "Done": "98236657",
-                "Discarded": "bc3f7e3a",
-            },
             "priority_field_id": "PVTSSF_lADOBS76fs4BLr1Hzg7NAkI",
             "priority_options": {
                 "Urgent": "5b4c403c",
@@ -93,25 +68,11 @@ CONFIG = {
             "id": "PVT_kwDOBS76fs4BLtD8",
             "name": "News",
             "internal_only": False,
-            "default_status": "Todo",
-            "status_field_id": "PVTSSF_lADOBS76fs4BLtD8zg7Mrxg",
-            "status_options": {
-                "Todo": "f75ad846",     
-                "In Progress": "47fc9ee4",
-                "Done": "98236657",
-            },
-            "priority_field_id": None,
-            "priority_options": {},
         },
         "tier": {
             "id": "PVT_kwDOBS76fs4BLwDf",  
             "name": "Tier",
             "internal_only": False,
-            "default_status": None, 
-            "status_field_id": None,
-            "status_options": {},
-            "priority_field_id": None,
-            "priority_options": {},
         },
     },
     "org_members": [
@@ -170,24 +131,52 @@ def is_org_member(username: str) -> bool:
         log_error(f"Failed to check org membership for {username}: {e}")
         return False
 
+def get_script_dir() -> str:
+    """Get the directory where this script is located."""
+    return os.path.dirname(os.path.abspath(__file__))
+
+
+def read_prompt_file() -> str:
+    """Read the AI prompt from prompts/project-manager.md."""
+    prompt_path = os.path.join(get_script_dir(), "..", "prompts", "project-manager.md")
+    try:
+        with open(prompt_path, "r") as f:
+            return f.read()
+    except FileNotFoundError:
+        log_error(f"Prompt file not found at {prompt_path}")
+        return ""
+
+
+# Valid labels per project (kept in sync with prompts/project-manager.md)
+VALID_LABELS = {
+    "dev": {"DEV-BUG", "DEV-FEATURE", "DEV-QUEST", "DEV-TRACKING"},
+    "support": {
+        # TYPE labels (exactly 1, blue)
+        "S-BUG", "S-OUTAGE", "S-QUESTION", "S-REQUEST", "S-DOCS", "S-INTEGRATION",
+        # SERVICE labels (1 or more, violet)
+        "S-IMAGE", "S-TEXT", "S-AUDIO", "S-VIDEO", "S-API", "S-WEB", "S-CREDITS", "S-BILLING", "S-ACCOUNT",
+    },
+    "news": set()
+}
+
+
 def normalize_labels(project: str, labels: list) -> list:
     project = project.lower()
-
+    valid_labels = VALID_LABELS.get(project, set())
+    
+    if not valid_labels:
+        return []
+    
+    incoming = [l.upper() for l in labels]
+    
     if project == "dev":
-        valid_labels = {"DEV-BUG", "DEV-FEATURE", "DEV-QUEST", "DEV-TRACKING"}
-        incoming = [l.upper() for l in labels]
+        # Dev: pick ONE label
         label = next((l for l in incoming if l in valid_labels), None)
         return [label] if label else []
     
     if project == "support":
-        valid_labels = {"SUPPORT-HELP", "SUPPORT-BUG", "SUPPORT-FEATURE", 
-                       "SUPPORT-BILLING", "SUPPORT-BALANCE", "SUPPORT-API", "SUPPORT-TIER"}
-        incoming = [l.upper() for l in labels]
-        label = next((l for l in incoming if l in valid_labels), None)
-        return [label] if label else []
-    
-    if project == "news":
-        return []
+        # Support: allow multiple labels (TYPE + SVC)
+        return [l for l in incoming if l in valid_labels]
     
     return []
 
@@ -204,31 +193,13 @@ def get_fallback_classification(_: bool) -> dict:
 
 
 def classify_with_ai(is_internal: bool) -> dict:
-    system_prompt = f"""
-You are a strict classifier.
-Return ONLY valid JSON.
-Do NOT include explanations outside JSON.
-Do NOT invent categories.
-Schema (must match exactly):
-{{
-  "is_app_submission": true | false,
-  "project": "dev" | "support" | "news",
-  "priority": "Urgent" | "High" | "Medium" | "Low",
-  "labels": ["DEV-BUG","DEV-FEATURE","DEV-QUEST","DEV-TRACKING","SUPPORT-HELP","SUPPORT-BUG","SUPPORT-FEATURE","SUPPORT-BILLING","SUPPORT-BALANCE","SUPPORT-API"],
-  "reasoning": "short string"
-}}
-Rules:
-- FIRST: Check if this is an app submission issue (user submitting an app/tool for review). Set is_app_submission to true if it is.
-- Choose ONLY from the allowed enum values.
-- dev is INTERNAL ONLY — use only for internal authors.
-- Infrastructure, pipelines, CI/CD, Docker, services → dev (if internal) else support.
-- If ambiguous, choose the closest valid option — never invent a new one.
-- Author type: {"internal" if is_internal else "external"}
-- Priority: only assign for support project (Urgent, High, Medium, Low). No priority for dev or news.
-- Label options depend on project:
-  * dev: DEV-BUG, DEV-FEATURE, DEV-QUEST, DEV-TRACKING
-  * support: SUPPORT-HELP, SUPPORT-BUG, SUPPORT-FEATURE, SUPPORT-BILLING, SUPPORT-BALANCE, SUPPORT-API
-  * news: no labels
+    # Read prompt from prompts/project-manager.md
+    base_prompt = read_prompt_file()
+    
+    system_prompt = f"""{base_prompt}
+
+---
+**Context:** Author type is {"internal" if is_internal else "external"}
 """
 
     user_prompt = f"""
@@ -514,19 +485,9 @@ def main():
     if not item_id:
         return
     
-    if project.get("default_status") and project.get("status_field_id"):
-        status_option = project["status_options"].get(project["default_status"])
-        if status_option:
-            set_project_field(
-                project["id"],
-                item_id,
-                project["status_field_id"],
-                status_option,
-            )
-    
     # Only set priority for support project
     if project_key == "support":
-        priority_option = project["priority_options"].get(priority)
+        priority_option = project.get("priority_options", {}).get(priority)
         if priority_option and project.get("priority_field_id"):
             set_project_field(
                 project["id"],

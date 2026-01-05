@@ -1,132 +1,122 @@
+import time
 import torch
-from diffusers import DiffusionPipeline
-from diffusers.quantizers import PipelineQuantizationConfig
-import gc
+import torch.nn as nn
+import bitsandbytes as bnb
 
-def get_quantized_longcat_pipeline(
-    model_id="meituan-longcat/LongCat-Image",
-    bits=4,
-    device="cuda:0"
-):
-    """
-    Load a quantized LongCat-Image pipeline.
-    bits: 4 or 8 bits for quantization.
-    """
-    # Determine bitsandbytes backend flag
-    if bits not in (4, 8):
-        raise ValueError(f"Unsupported bits: {bits}; must be 4 or 8")
+from diffusers import (
+    LongCatImagePipeline,
+    DPMSolverMultistepScheduler,
+)
+from diffusers import DPMSolverSinglestepScheduler
 
-    # Choose backend string
-    backend = f"bitsandbytes_{bits}bit"  # e.g., bitsandbytes_4bit or bitsandbytes_8bit
+torch.backends.cuda.matmul.allow_tf32 = False
+torch.backends.cudnn.allow_tf32 = False
+torch.backends.cudnn.benchmark = True
 
-    # Build quantization config
-    # bnb_4bit_quant_type = "nf4" is recommended for 4-bit
-    # bnb_4bit_compute_dtype uses bfloat16 to keep compute stable on GPUs that support it
-    quant_kwargs = {}
-    if bits == 4:
-        quant_kwargs = {
-            "load_in_4bit": True,
-            "bnb_4bit_quant_type": "nf4",
-            "bnb_4bit_compute_dtype": torch.bfloat16
-        }
-    else:
-        quant_kwargs = {
-            "load_in_8bit": True
-        }
 
-    quant_config = PipelineQuantizationConfig(
-        quant_backend=backend,
-        quant_kwargs=quant_kwargs,
-        components_to_quantize=["transformer", "text_encoder"]
-    )
+class LatentOnlyVAE(nn.Module):
+    def __init__(self, vae):
+        super().__init__()
+        self.original_vae = vae
+        self.config = vae.config
 
-    # Load the pipeline with quantization
-    pipe = DiffusionPipeline.from_pretrained(
-        model_id,
-        quantization_config=quant_config,
-        torch_dtype=torch.bfloat16,
-        safety_checker=None
-    )
+    def forward(self, latents):
+        class Dummy:
+            def __init__(self, sample):
+                self.sample = sample
+        return Dummy(latents)
 
-    # Move to GPU
-    pipe = pipe.to(device)
+    def encode(self, x):
+        return self.original_vae.encode(x)
 
-    # Optionally enable attention slicing for memory
-    pipe.enable_attention_slicing(1)
+    def decode(self, z):
+        return self.original_vae.decode(z)
 
-    return pipe
 
-@torch.no_grad()
-def generate_image(
-    pipe,
-    prompt: str,
-    height: int = 512,
-    width: int = 512,
-    num_inference_steps: int = 20,
-    guidance_scale: float = 4.0,
-    seed: int = 42,
-    save_path: str = "quant_longcat.png"
-):
-    """
-    Generate and save an image using a quantized LongCat pipeline.
-    """
-    generator = torch.Generator(device="cpu").manual_seed(seed)
+def quantize_transformer_int8(module: nn.Module) -> nn.Module:
+    for name, child in list(module.named_children()):
+        if isinstance(child, nn.Linear):
+            int8_layer = bnb.nn.Linear8bitLt(
+                child.in_features,
+                child.out_features,
+                bias=child.bias is not None,
+                has_fp16_weights=True,
+            )
+            int8_layer.weight.data.copy_(child.weight.data)
+            if child.bias is not None:
+                int8_layer.bias.data.copy_(child.bias.data)
+            setattr(module, name, int8_layer)
+        else:
+            quantize_transformer_int8(child)
+    return module
 
-    # Inference
-    out = pipe(
-        prompt,
-        height=height,
-        width=width,
-        num_inference_steps=num_inference_steps,
-        guidance_scale=guidance_scale,
-        generator=generator,
-        output_type="pil"
-    )
-
-    # Extract image
-    if hasattr(out, "images"):
-        img = out.images[0]
-    elif isinstance(out, tuple):
-        img = out[0][0] if isinstance(out[0], list) else out[0]
-    else:
-        img = out
-
-    # Save
-    img.save(save_path)
-    return img
 
 def main():
-    # Ensure CUDA
-    if not torch.cuda.is_available():
-        raise RuntimeError("CUDA GPU required")
+    gpu_diffusion = torch.device("cuda:0")
+    gpu_vae = torch.device("cuda:1")
 
-    print("Loading quantized pipeline...")
-    # Choose 4 or 8 bit
-    bits = 4
-
-    pipe = get_quantized_longcat_pipeline(
-        model_id="meituan-longcat/LongCat-Image",
-        bits=bits,
-        device="cuda:0"
+    t0 = time.time()
+    pipe = LongCatImagePipeline.from_pretrained(
+        "meituan-longcat/LongCat-Image",
+        torch_dtype=torch.float16,
     )
+    print(f"Model load: {time.time() - t0:.2f}s")
 
-    prompt = "a photorealistic portrait of two cats on a bench in a park"
-    img = generate_image(
-        pipe,
-        prompt,
-        height=512,
-        width=512,
-        num_inference_steps=25,
-        guidance_scale=4.0,
-        save_path=f"longcat_quant_{bits}bit.png"
-    )
+    pipe.text_encoder.to(gpu_diffusion, torch.float16)
+    pipe.transformer.to(gpu_diffusion, torch.float16)
 
-    print(f"Saved quantized longcat image to longcat_quant_{bits}bit.png")
+    vae_original = pipe.vae
+    pipe.vae = LatentOnlyVAE(pipe.vae)
 
-    # Free memory
-    del pipe
-    torch.cuda.empty_cache()
-    gc.collect()
+    pipe.enable_xformers_memory_efficient_attention()
+    pipe.enable_attention_slicing("max")
+    pipe.set_progress_bar_config(disable=True)
+
+    torch.cuda.synchronize()
+    t0 = time.time()
+
+    with torch.inference_mode():
+        out = pipe(
+            prompt="two cats sitting on a bench in a park",
+            height=512,
+            width=512,
+            num_inference_steps=40,
+            guidance_scale=4.0,
+            enable_cfg_renorm=False,
+            output_type="latent",
+        )
+        latents = out.images
+
+    torch.cuda.synchronize()
+    print(f"Diffusion: {time.time() - t0:.2f}s")
+
+    latents = latents.to(gpu_vae)
+    vae_decoder = vae_original.to(gpu_vae, torch.float16)
+
+    with torch.inference_mode():
+        b, n, c = latents.shape
+        ch = c // 4
+        s = int(n ** 0.5)
+
+        latents = latents.view(b, s, s, ch, 2, 2)
+        latents = latents.permute(0, 3, 1, 4, 2, 5)
+        latents = latents.reshape(b, ch, s * 2, s * 2)
+
+        latents = (
+            latents / vae_decoder.config.scaling_factor
+            + vae_decoder.config.shift_factor
+        )
+        image_tensor = vae_decoder.decode(
+            latents, return_dict=False
+        )[0]
+
+    image = pipe.image_processor.postprocess(
+        image_tensor, output_type="pil"
+    )[0]
+    image.save("t2i_v100_fast.png")
+
+    print("Saved: t2i_v100_fast.png")
+
 
 if __name__ == "__main__":
     main()

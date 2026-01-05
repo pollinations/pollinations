@@ -347,14 +347,14 @@ export const TEXT_SERVICES = {
         isSpecialized: false,
     },
     "perplexity-reasoning": {
-        aliases: ["sonar-reasoning"],
-        modelId: "sonar-reasoning",
+        aliases: ["sonar-reasoning", "sonar-reasoning-pro"],
+        modelId: "sonar-reasoning-pro",
         provider: "perplexity",
         cost: [
             {
                 date: COST_START_DATE,
-                promptTextTokens: perMillion(1.0),
-                completionTextTokens: perMillion(5.0),
+                promptTextTokens: perMillion(2.0),
+                completionTextTokens: perMillion(8.0),
             },
         ],
         description:

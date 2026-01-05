@@ -157,9 +157,11 @@ export async function generateTextPortkey(messages, options = {}) {
         delete processedOptions.additionalHeaders;
     }
 
-    return await genericOpenAIClient(
+    const completion = await genericOpenAIClient(
         processedMessages,
         processedOptions,
         requestConfig,
     );
+
+    return completion;
 }

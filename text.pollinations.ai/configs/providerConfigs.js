@@ -125,3 +125,16 @@ export function createOVHcloudModelConfig(additionalConfig = {}) {
         ...additionalConfig,
     };
 }
+
+/**
+ * Creates a Fireworks AI model configuration
+ */
+export function createFireworksModelConfig(additionalConfig = {}) {
+    return {
+        provider: "openai",
+        "custom-host": "https://api.fireworks.ai/inference/v1",
+        authKey: process.env.FIREWORKS_API_KEY,
+        "max-tokens": 8192,
+        ...additionalConfig,
+    };
+}

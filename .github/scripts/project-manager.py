@@ -83,33 +83,29 @@ CONFIG = {
         "Circuit-Overtime",
         "Itachi-1824"
     ],
-    "discord_to_github": {
-        "elliot8701": "ElliotEtag",
-        "elixpo.asm": "Circuit-Overtime",
-        "elixpo": "Circuit-Overtime",
-        "_dr_misterio_": "Itachi-1824",
-        "thomash": "voodoohop",
-        "eulervoid": "eulervoid",
+    "discord_uid_to_github": {
+        "304378879705874432": "voodoohop",
+        "884468469452656732": "ElliotEtag",
+        "1085433243102347354": "eulervoid",
+        "859708931478388767": "Itachi-1824",
+        "738661669332320287": "Circuit-Overtime",
     },
 }
 
 def get_real_author() -> str:
     """Extract real author from Discord bot issues or return GitHub author."""
-    # If author is the Discord bot, try to extract real author from body
     if ISSUE_AUTHOR and "pollinations-ai" in ISSUE_AUTHOR.lower():
         import re
-        # Look for "Author: username" pattern in issue body
-        match = re.search(r'\*\*Author:\*\*\s*`?([\w._-]+)`?|Author:\s*`?([\w._-]+)`?', ISSUE_BODY, re.IGNORECASE)
-        if match:
-            discord_user = match.group(1) or match.group(2)
-            log_debug(f"Extracted Discord author: {discord_user}")
-            # Map to GitHub username if known
-            github_user = CONFIG["discord_to_github"].get(discord_user.lower())
+        # Extract UID from format: **Author:** `username` (UID: `123456789`)
+        uid_match = re.search(r'\(UID:\s*`?(\d+)`?\)', ISSUE_BODY)
+        if uid_match:
+            discord_uid = uid_match.group(1)
+            log_debug(f"Extracted Discord UID: {discord_uid}")
+            github_user = CONFIG["discord_uid_to_github"].get(discord_uid)
             if github_user:
-                log_debug(f"Mapped Discord user {discord_user} to GitHub user {github_user}")
+                log_debug(f"Mapped Discord UID {discord_uid} to GitHub user {github_user}")
                 return github_user
-            log_debug(f"No GitHub mapping for Discord user {discord_user}")
-            return discord_user
+            log_debug(f"No GitHub mapping for Discord UID {discord_uid}")
     return ISSUE_AUTHOR
 
 

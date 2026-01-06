@@ -9,6 +9,7 @@ import {
     createMyceliGrok4FastConfig,
     createPerplexityModelConfig,
     createOVHcloudModelConfig,
+    createFireworksModelConfig,
 } from "./providerConfigs.js";
 
 dotenv.config();
@@ -165,5 +166,19 @@ export const portkeyConfig: PortkeyConfigMap = {
     "qwen3-coder-30b-a3b-instruct": () =>
         createOVHcloudModelConfig({
             model: "Qwen3-Coder-30B-A3B-Instruct",
+        }),
+
+    // ============================================================================
+    // Fireworks AI - glm-4.7, minimax-m2.1
+    // ============================================================================
+    "accounts/fireworks/models/glm-4p7": () =>
+        createFireworksModelConfig({
+            model: "accounts/fireworks/models/glm-4p7",
+            "max-tokens": 25344,
+        }),
+    "accounts/fireworks/models/minimax-m2p1": () =>
+        createFireworksModelConfig({
+            model: "accounts/fireworks/models/minimax-m2p1",
+            "max-tokens": 25600,
         }),
 };

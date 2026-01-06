@@ -158,6 +158,16 @@ const models: ModelDefinition[] = [
         config: portkeyConfig["amazon.nova-micro-v1:0"],
         transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
     },
+    {
+        name: "glm",
+        config: portkeyConfig["accounts/fireworks/models/glm-4p7"],
+        transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
+    },
+    {
+        name: "minimax",
+        config: portkeyConfig["accounts/fireworks/models/minimax-m2p1"],
+        transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
+    },
 ];
 
 // Export models - metadata is in registry (single source of truth)

@@ -77,6 +77,11 @@ export function PlayGenerator({
         (m) => m.id === selectedModel && m.hasAudioOutput,
     );
 
+    // Check if current model has video output
+    const isVideoModel = [...imageModels, ...textModels].some(
+        (m) => m.id === selectedModel && m.hasVideoOutput,
+    );
+
     // Check if current model supports image input modality
     const currentModelData = [...imageModels, ...textModels].find(
         (m) => m.id === selectedModel,
@@ -439,12 +444,26 @@ export function PlayGenerator({
             {result && !error && (
                 <div className={isImageModel ? "" : "bg-input-background p-6"}>
                     {isImageModel ? (
-                        <img
-                            src={result}
-                            alt="Generated"
-                            className="w-full h-auto"
-                            onLoad={() => setIsLoading(false)}
-                        />
+                        isVideoModel ? (
+                            <video
+                                src={result}
+                                controls
+                                autoPlay
+                                loop
+                                muted
+                                className="w-full h-auto"
+                                onLoadedData={() => setIsLoading(false)}
+                            >
+                                <track kind="captions" />
+                            </video>
+                        ) : (
+                            <img
+                                src={result}
+                                alt="Generated"
+                                className="w-full h-auto"
+                                onLoad={() => setIsLoading(false)}
+                            />
+                        )
                     ) : (
                         <div className="font-body text-text-body-main whitespace-pre-wrap">
                             {result}

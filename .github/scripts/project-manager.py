@@ -1,6 +1,7 @@
 import sys
 import os
 import json
+import re
 import requests
 import time
 from typing import Optional
@@ -27,6 +28,7 @@ ISSUE_TITLE = ITEM_DATA.get("title", "")
 ISSUE_BODY = ITEM_DATA.get("body", "") or ""
 ISSUE_AUTHOR = ITEM_DATA.get("user", {}).get("login", "")
 ISSUE_NODE_ID = ITEM_DATA.get("node_id", "")
+ISSUE_CREATED_AT = ITEM_DATA.get("created_at", "")
 GITHUB_API = "https://api.github.com"
 GITHUB_GRAPHQL = "https://api.github.com/graphql"
 POLLINATIONS_API = "https://gen.pollinations.ai/v1/chat/completions"
@@ -83,54 +85,37 @@ CONFIG = {
         "Circuit-Overtime",
         "Itachi-1824"
     ],
-    "discord_to_github": {
-        "elliot8701": "ElliotEtag",
-        "elixpo.asm": "Circuit-Overtime",
-        "elixpo": "Circuit-Overtime",
-        "_dr_misterio_": "Itachi-1824",
-        "thomash": "voodoohop",
-        "eulervoid": "eulervoid",
+    "discord_uid_to_github": {
+        "304378879705874432": "voodoohop",
+        "884468469452656732": "ElliotEtag",
+        "1085433243102347354": "eulervoid",
+        "859708931478388767": "Itachi-1824",
+        "738661669332320287": "Circuit-Overtime",
     },
 }
 
 def get_real_author() -> str:
     """Extract real author from Discord bot issues or return GitHub author."""
-    # If author is the Discord bot, try to extract real author from body
     if ISSUE_AUTHOR and "pollinations-ai" in ISSUE_AUTHOR.lower():
-        import re
-        # Look for "Author: username" pattern in issue body
-        match = re.search(r'\*\*Author:\*\*\s*`?([\w._-]+)`?|Author:\s*`?([\w._-]+)`?', ISSUE_BODY, re.IGNORECASE)
-        if match:
-            discord_user = match.group(1) or match.group(2)
-            log_debug(f"Extracted Discord author: {discord_user}")
-            # Map to GitHub username if known
-            github_user = CONFIG["discord_to_github"].get(discord_user.lower())
+        # Extract UID from format: **Author:** `username` (UID: `123456789`)
+        uid_match = re.search(r'\(UID:\s*`?(\d+)`?\)', ISSUE_BODY)
+        if uid_match:
+            discord_uid = uid_match.group(1)
+            log_debug(f"Extracted Discord UID: {discord_uid}")
+            github_user = CONFIG["discord_uid_to_github"].get(discord_uid)
             if github_user:
-                log_debug(f"Mapped Discord user {discord_user} to GitHub user {github_user}")
+                log_debug(f"Mapped Discord UID {discord_uid} to GitHub user {github_user}")
                 return github_user
-            log_debug(f"No GitHub mapping for Discord user {discord_user}")
-            return discord_user
+            log_debug(f"No GitHub mapping for Discord UID {discord_uid}")
     return ISSUE_AUTHOR
 
 
 def is_org_member(username: str) -> bool:
     if not username:
         return False
-    if username.lower() in [m.lower() for m in CONFIG["org_members"]]:
-        log_debug(f"Found {username} in org_members list")
-        return True
-    try:
-        r = requests.get(
-            f"{GITHUB_API}/orgs/{REPO_OWNER}/members/{username}",
-            headers=GITHUB_HEADERS,
-            timeout=10,
-        )
-        is_member = r.status_code == 204
-        log_debug(f"Checked {username} org membership: {is_member}")
-        return is_member
-    except requests.RequestException as e:
-        log_error(f"Failed to check org membership for {username}: {e}")
-        return False
+    is_member = username.lower() in [m.lower() for m in CONFIG["org_members"]]
+    log_debug(f"Checked {username} org membership: {is_member}")
+    return is_member
 
 def get_script_dir() -> str:
     """Get the directory where this script is located."""
@@ -356,6 +341,35 @@ def set_project_field(project_id: str, item_id: str, field_id: str, option_id: s
         log_error(f"Failed to set project field: field_id={field_id}")
 
 
+def set_date_field(project_id: str, item_id: str, field_id: str, date_value: str):
+    """Set a date field on a project item."""
+    mutation = """
+    mutation($projectId: ID!, $itemId: ID!, $fieldId: ID!, $date: Date!) {
+        updateProjectV2ItemFieldValue(input: {
+            projectId: $projectId,
+            itemId: $itemId,
+            fieldId: $fieldId,
+            value: { date: $date }
+        }) {
+            projectV2Item { id }
+        }
+    }
+    """
+    date_only = date_value[:10] if date_value else None
+    if not date_only:
+        return
+    data = graphql_request(mutation, {
+        "projectId": project_id,
+        "itemId": item_id,
+        "fieldId": field_id,
+        "date": date_only,
+    })
+    if data.get("updateProjectV2ItemFieldValue"):
+        log_debug(f"Set date field: field_id={field_id}, date={date_only}")
+    else:
+        log_error(f"Failed to set date field: field_id={field_id}")
+
+
 def add_labels(labels: list):
     if not labels:
         log_debug("No labels to add")
@@ -483,7 +497,7 @@ def main():
     if not item_id:
         return
     
-    # Only set priority for support project
+    # Only set priority and opened date for support project
     if project_key == "support":
         priority_option = project.get("priority_options", {}).get(priority)
         if priority_option and project.get("priority_field_id"):
@@ -492,6 +506,13 @@ def main():
                 item_id,
                 project["priority_field_id"],
                 priority_option,
+            )
+        if project.get("opened_field_id") and ISSUE_CREATED_AT:
+            set_date_field(
+                project["id"],
+                item_id,
+                project["opened_field_id"],
+                ISSUE_CREATED_AT,
             )
     add_labels(labels)
 

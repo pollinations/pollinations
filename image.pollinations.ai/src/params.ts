@@ -8,8 +8,8 @@ type ModelName = keyof typeof MODELS;
 
 const allowedModels = Object.keys(MODELS) as Array<keyof typeof MODELS>;
 const validQualities = ["low", "medium", "high", "hd"] as const;
-const maxSeedValue = 1844674407370955;
-const MAX_RANDOM_SEED = 4294967296; // 2^32 for random seed generation
+// Maximum seed value - use INT32_MAX for compatibility with strict providers like Vertex AI
+const MAX_RANDOM_SEED = 2147483647; // INT32_MAX (2^31 - 1)
 
 const sanitizedBoolean = z
     .union([z.string(), z.boolean()])

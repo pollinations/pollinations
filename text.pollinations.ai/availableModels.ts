@@ -50,7 +50,7 @@ const models: ModelDefinition[] = [
     },
     {
         name: "qwen-coder",
-        config: portkeyConfig["qwen2.5-coder-32b-instruct"],
+        config: portkeyConfig["qwen3-coder-30b-a3b-instruct"],
         transform: createSystemPromptTransform(BASE_PROMPTS.coding),
     },
     {
@@ -93,7 +93,7 @@ const models: ModelDefinition[] = [
         transform: pipe(
             createSystemPromptTransform(BASE_PROMPTS.conversational),
             sanitizeToolSchemas(),
-            createGeminiToolsTransform(["code_execution", "url_context"]),
+            createGeminiToolsTransform(["code_execution"]),
             createGeminiThinkingTransform("v3-flash"),
         ),
     },
@@ -103,7 +103,6 @@ const models: ModelDefinition[] = [
         transform: pipe(
             createSystemPromptTransform(BASE_PROMPTS.conversational),
             sanitizeToolSchemas(),
-            createGeminiToolsTransform(["code_execution", "url_context"]),
             createGeminiThinkingTransform("v2.5"),
         ),
     },
@@ -147,7 +146,7 @@ const models: ModelDefinition[] = [
         transform: pipe(
             createSystemPromptTransform(BASE_PROMPTS.conversational),
             sanitizeToolSchemas(),
-            createGeminiToolsTransform(["code_execution", "url_context"]),
+            createGeminiToolsTransform(["code_execution"]),
             createGeminiThinkingTransform("v3-pro"),
         ),
     },

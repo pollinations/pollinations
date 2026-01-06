@@ -8,7 +8,8 @@ type ModelName = keyof typeof MODELS;
 
 const allowedModels = Object.keys(MODELS) as Array<keyof typeof MODELS>;
 const validQualities = ["low", "medium", "high", "hd"] as const;
-const maxSeedValue = 1844674407370955;
+// Maximum seed value - use INT32_MAX for compatibility with strict providers like Vertex AI
+const MAX_RANDOM_SEED = 2147483647; // INT32_MAX (2^31 - 1)
 
 const sanitizedBoolean = z
     .union([z.string(), z.boolean()])
@@ -21,7 +22,7 @@ const sanitizedSeed = z.preprocess((v) => {
     const seed = String(v);
     const parsed = Number.isInteger(parseInt(seed)) ? parseInt(seed) : 42;
     // seed=-1 means "random" - generate a random seed
-    return parsed === -1 ? Math.floor(Math.random() * 1000000) : parsed;
+    return parsed === -1 ? Math.floor(Math.random() * MAX_RANDOM_SEED) : parsed;
 }, z.int().catch(42));
 
 const sanitizedSideLength = z.preprocess((v) => {

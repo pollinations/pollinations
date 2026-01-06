@@ -2,7 +2,8 @@ import { IMAGE_SERVICES, DEFAULT_IMAGE_MODEL } from "@shared/registry/image.ts";
 import { z } from "zod";
 
 const QUALITIES = ["low", "medium", "high", "hd"] as const;
-const MAX_SEED_VALUE = 1844674407370955;
+// Maximum seed value - use INT32_MAX for compatibility with strict providers like Vertex AI
+const MAX_SEED_VALUE = 2147483647; // INT32_MAX (2^31 - 1)
 
 // Build list of valid model names: service IDs + all aliases
 const VALID_IMAGE_MODELS = [
@@ -18,7 +19,7 @@ export const GenerateImageRequestQueryParamsSchema = z.object({
         .default(DEFAULT_IMAGE_MODEL)
         .meta({
             description:
-                "AI model. Image: zimage (or flux alias), turbo, gptimage, kontext, seedream, seedream-pro, nanobanana. Video: veo, seedance, seedance-pro",
+                "AI model. Image: flux, zimage, turbo, gptimage, kontext, seedream, seedream-pro, nanobanana. Video: veo, seedance, seedance-pro",
         }),
     width: z.coerce
         .number()

@@ -1,6 +1,6 @@
 import type { FC } from "react";
 import { getModelPrices } from "./data.ts";
-import { ModelTable } from "./ModelTable.tsx";
+import { UnifiedModelTable } from "./ModelTable.tsx";
 import { Button } from "../button.tsx";
 
 export const Pricing: FC = () => {
@@ -26,10 +26,17 @@ export const Pricing: FC = () => {
           🤖 Vote on next models
         </Button>
       </div>
-      <div className="bg-amber-50/30 rounded-2xl p-8 border border-amber-300 space-y-8 overflow-x-auto md:overflow-x-visible [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
-        <ModelTable models={imageModels} type="image" />
-        <ModelTable models={videoModels} type="video" />
-        <ModelTable models={textModels} type="text" />
+      <div className="bg-amber-50/30 rounded-2xl p-6 border border-amber-300 space-y-6 overflow-hidden">
+        <div
+          className="overflow-x-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
+          style={{ overflowY: "clip" }}
+        >
+          <UnifiedModelTable
+            imageModels={imageModels}
+            videoModels={videoModels}
+            textModels={textModels}
+          />
+        </div>
 
         <div className="pt-4 space-y-3">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
@@ -42,6 +49,7 @@ export const Pricing: FC = () => {
                 <div>👂 audio input</div>
                 <div>🧠 reasoning</div>
                 <div>🔍 search</div>
+                <div>💻 code execution</div>
               </div>
             </div>
             <div className="bg-white/50 rounded-lg p-4 border border-amber-200">

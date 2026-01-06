@@ -4,8 +4,8 @@ dotenv.config();
 const POLLINATIONS_IMAGE_API = 'https://gen.pollinations.ai/image';
 const GITHUB_GRAPHQL_API = 'https://api.github.com/graphql';
 const POLLINATIONS_API = 'https://gen.pollinations.ai/v1/chat/completions';
-const MAX_RETRIES = 3;
-const INITIAL_RETRY_DELAY = 2;
+const MAX_RETRIES = 2;
+const INITIAL_RETRY_DELAY = 5;
 
 function getPreviousDayRange() {
     const now = new Date();
@@ -129,11 +129,15 @@ async function getMergedPRsFromPreviousDay(owner : any = 'pollinations', repo : 
 
             cursor = pageInfo.endCursor;
             pageNum++;
+            if (allPRs.length == 0) {
+                break;
+            }
         } catch (error) {
             console.error('Fetch error:', error);
             break;
         }
     }
+
 
     console.log(`Found ${allPRs.length} merged PRs from previous day\n`);
     return { prs: allPRs, dateString };
@@ -184,7 +188,10 @@ Short prompt only. No dates, counts, metadata.`
 
         const data = await response.json();
         const generatedPrompt = (data as any).choices?.[0]?.message?.content?.trim();
-
+        if (!data)
+        {
+            console.log("No data returned from Pollinations API");
+        }
         if (!generatedPrompt) {
             throw new Error('No prompt generated from API');
         }
@@ -251,7 +258,14 @@ Write in pure plain text, no metadata or extra commentary or markdown`;
 
 async function getPRsAndCreatePrompt(githubToken : string, pollactionsToken : string) {
     try {
-        const { prs, dateString } = await getMergedPRsFromPreviousDay('pollinations', 'pollinations', githubToken);
+        const result = await getMergedPRsFromPreviousDay('pollinations', 'pollinations', githubToken);
+        
+        if (!result || !result.prs || result.prs.length === 0) {
+            console.log('ℹ️  No merged PRs found in the previous day. Exiting pipeline.');
+            process.exit(0);
+        }
+        
+        const { prs, dateString } = result;
         const promptData = await createImagePrompt(prs, dateString, pollactionsToken);
         console.log('\n=== Generated Image Prompt ===');
         console.log(promptData.prompt);
@@ -356,23 +370,26 @@ throw new Error('Pollinations token not configured. Please set it in app setting
 }
 
 (async () => {
-const promptData = await getPRsAndCreatePrompt(githubToken as string, pollinationsToken as string);
-const imageData = await generateImage(promptData.prompt, pollinationsToken as string);
-const TITLE = await generateTitleFromPRs(promptData.summary, String(promptData.prCount), pollinationsToken as string);
-// const img_url = "https://gen.pollinations.ai/image/Bright%20nature-themed%20comic%20flowchart%20where%20each%20update%20is%20a%20distinct%20natural%20element%3A%20pruned%20branches%20for%20removing%20sops%20decrypt%20from%20the%20start%20script%3B%20blooming%20flowers%20for%20adding%20a%20Reddit%20link%2C%20updating%20the%20submit%20app%20template%2C%20adding%20AI%20Chat%20Studio%20to%20chat%2C%20improving%20the%20hello%20UI%2C%20and%20adjusting%20z-image%20(upscaling%20temporarily%20disabled%2C%20safety%20checker%20off%20by%20default).%20Reorganized%20winding%20paths%20and%20vine-lattices%20show%20refactors%20to%20standardize%20infrastructure%20keys%20and%20clean%20up%20secrets%2C%20while%20nesting%20animals%20depict%20workflow%20infrastructure%3A%20tier%20automation%20that%20gates%20app%20PRs%20on%20Enter%20account%20and%20auto-upgrades%20on%20approval.%20Use%20emerald%2C%20golden%2C%20sky%20blue%2C%20orange%2C%20and%20purple%20with%20dynamic%20wind%20swirls%2C%20floating%20pollen%2C%20flowing%20water%2C%20and%20bee%20flight%20paths%20connecting%20nodes%20in%20a%20lively%20comic%20style.?model=nanobanana&width=1024&height=1024&seed=742956"
-// const TITLE = "Nature-Themed Comic Flowchart Image"
-console.log('Final Results:');
-console.log(`Title: ${TITLE}`);
-console.log(`Image URL: ${imageData.url}`);
-const fs = await import('fs');
-const linkTsPath = new URL('link.ts', import.meta.url);
-const updatedLinkTs = `
+    try {
+        const promptData = await getPRsAndCreatePrompt(githubToken as string, pollinationsToken as string);
+        const imageData = await generateImage(promptData.prompt, pollinationsToken as string);
+        const TITLE = await generateTitleFromPRs(promptData.summary, String(promptData.prCount), pollinationsToken as string);
+        
+        console.log('Final Results:');
+        console.log(`Title: ${TITLE}`);
+        console.log(`Image URL: ${imageData.url}`);
+        const fs = await import('fs');
+        const linkTsPath = new URL('link.ts', import.meta.url);
+        const updatedLinkTs = `
 const LINK = "${imageData.url}";
 const TITLE = "${TITLE}";
 export {LINK, TITLE};
 `;
-
-fs.writeFileSync(linkTsPath, updatedLinkTs, 'utf-8');
-console.log('\n✓ link.ts updated successfully');
+        fs.writeFileSync(linkTsPath, updatedLinkTs, 'utf-8');
+        console.log('\n✓ link.ts updated successfully');
+    } catch (error) {
+        console.error('⚠️ Pipeline failed:', (error as any).message);
+        process.exit(1);
+    }
 })();
 

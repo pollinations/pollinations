@@ -1,0 +1,109 @@
+name: User Upgrade Spore to Seed
+
+on:
+  schedule:
+    - cron: '0 0 * * *'  # Daily at midnight UTC
+  workflow_dispatch:
+
+jobs:
+  # Step 1: Fetch spore users
+  fetch-spore-users:
+    runs-on: ubuntu-latest
+    outputs:
+      users: ${{ steps.fetch.outputs.users }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Fetch spore users
+        id: fetch
+        run: |
+          # TODO: Implement API call to get spore users
+          # Output JSON array of GitHub usernames
+          echo "users=[]" >> $GITHUB_OUTPUT
+
+  # Step 2: Validate users
+  validate-users:
+    runs-on: ubuntu-latest
+    needs: fetch-spore-users
+    if: needs.fetch-spore-users.outputs.users != '[]'
+    outputs:
+      approved_users: ${{ steps.validate.outputs.approved_users }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install aiohttp
+
+      - name: Validate users
+        id: validate
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SPORE_USERS: ${{ needs.fetch-spore-users.outputs.users }}
+        run: |
+          python -c "
+          import asyncio
+          import json
+          import os
+          import sys
+          sys.path.insert(0, '.github/scripts')
+          from user_validate_github_seed import validate_users
+
+          async def main():
+              users = json.loads(os.environ.get('SPORE_USERS', '[]'))
+              if not users:
+                  print('No users to validate')
+                  with open(os.environ['GITHUB_OUTPUT'], 'a') as f:
+                      f.write('approved_users=[]\n')
+                  return
+
+              print(f'Validating {len(users)} users...')
+              print('=' * 50)
+
+              results = await validate_users(users)
+
+              approved = [r for r in results if r.approved]
+              denied = [r for r in results if not r.approved]
+
+              print(f'APPROVED ({len(approved)}):')
+              print('-' * 50)
+              for r in approved:
+                  print(f'  ✓ {r.username}: {r.reason}')
+
+              print()
+              print(f'DENIED ({len(denied)}):')
+              print('-' * 50)
+              for r in denied:
+                  print(f'  ✗ {r.username}: {r.reason}')
+
+              print()
+              print('=' * 50)
+              print(f'TOTAL: {len(approved)} approved, {len(denied)} denied')
+
+              with open(os.environ['GITHUB_OUTPUT'], 'a') as f:
+                  f.write(f'approved_users={json.dumps([r.username for r in approved])}\n')
+
+          asyncio.run(main())
+          "
+
+  # Step 3: Upgrade approved users
+  upgrade-users:
+    runs-on: ubuntu-latest
+    needs: validate-users
+    if: needs.validate-users.outputs.approved_users != '[]'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Upgrade users to Seed
+        env:
+          APPROVED_USERS: ${{ needs.validate-users.outputs.approved_users }}
+        run: |
+          # TODO: Implement API call to upgrade users
+          echo "Users to upgrade: $APPROVED_USERS"

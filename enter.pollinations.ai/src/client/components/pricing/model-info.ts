@@ -55,6 +55,11 @@ export const hasAudioInput = (modelName: string): boolean => {
     return modalities.input.includes("audio");
 };
 
+export const hasAudioOutput = (modelName: string): boolean => {
+    const modalities = getModalities(modelName);
+    return modalities.output.includes("audio");
+};
+
 export const isPersona = (modelName: string): boolean => {
     const service = getServiceDefinition(modelName as ServiceId);
     return service?.persona === true;

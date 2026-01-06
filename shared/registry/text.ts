@@ -460,6 +460,7 @@ export const TEXT_SERVICES = {
         inputModalities: ["text"],
         outputModalities: ["text"],
         tools: true,
+        reasoning: true,
         contextWindow: 200000,
         isSpecialized: false,
     },

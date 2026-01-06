@@ -27,8 +27,8 @@ export const validateInt = (value) => {
     return parsed;
 };
 
-// Maximum seed value supported by most LLM/image providers (32-bit integer)
-const MAX_SEED_VALUE = 4294967296; // 2^32
+// Maximum seed value - use INT32_MAX for compatibility with strict providers like Vertex AI
+const MAX_SEED_VALUE = 2147483647; // INT32_MAX (2^31 - 1)
 
 /**
  * Processes seed value, converting -1 to a random seed (parity with image generation)

@@ -86,7 +86,7 @@ export const TEXT_SERVICES = {
         provider: "ovhcloud",
         cost: [
             {
-                date: COST_START_DATE,
+                date: new Date("2026-01-05").getTime(),
                 promptTextTokens: perMillion(0.06),
                 completionTextTokens: perMillion(0.22),
             },
@@ -430,7 +430,7 @@ export const TEXT_SERVICES = {
         provider: "fireworks",
         cost: [
             {
-                date: COST_START_DATE,
+                date: new Date("2026-01-05").getTime(),
                 promptTextTokens: perMillion(0.6),
                 promptCachedTokens: perMillion(0.3),
                 completionTextTokens: perMillion(2.2),
@@ -450,7 +450,7 @@ export const TEXT_SERVICES = {
         provider: "fireworks",
         cost: [
             {
-                date: COST_START_DATE,
+                date: new Date("2026-01-05").getTime(),
                 promptTextTokens: perMillion(0.3),
                 promptCachedTokens: perMillion(0.15),
                 completionTextTokens: perMillion(1.2),

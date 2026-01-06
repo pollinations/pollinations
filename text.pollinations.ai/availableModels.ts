@@ -8,6 +8,7 @@ import { pipe } from "./transforms/pipe.js";
 import { createGeminiToolsTransform } from "./transforms/createGeminiToolsTransform.ts";
 import { createGeminiThinkingTransform } from "./transforms/createGeminiThinkingTransform.ts";
 import { sanitizeToolSchemas } from "./transforms/sanitizeToolSchemas.js";
+import { removeToolsForJsonResponse } from "./transforms/removeToolsForJsonResponse.ts";
 
 // Import persona prompts
 import midijourneyPrompt from "./personas/midijourney.js";
@@ -94,6 +95,7 @@ const models: ModelDefinition[] = [
             createSystemPromptTransform(BASE_PROMPTS.conversational),
             sanitizeToolSchemas(),
             createGeminiToolsTransform(["code_execution"]),
+            removeToolsForJsonResponse,
             createGeminiThinkingTransform("v3-flash"),
         ),
     },
@@ -147,12 +149,23 @@ const models: ModelDefinition[] = [
             createSystemPromptTransform(BASE_PROMPTS.conversational),
             sanitizeToolSchemas(),
             createGeminiToolsTransform(["code_execution"]),
+            removeToolsForJsonResponse,
             createGeminiThinkingTransform("v3-pro"),
         ),
     },
     {
         name: "nova-micro",
         config: portkeyConfig["amazon.nova-micro-v1:0"],
+        transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
+    },
+    {
+        name: "glm",
+        config: portkeyConfig["accounts/fireworks/models/glm-4p7"],
+        transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
+    },
+    {
+        name: "minimax",
+        config: portkeyConfig["accounts/fireworks/models/minimax-m2p1"],
         transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
     },
 ];

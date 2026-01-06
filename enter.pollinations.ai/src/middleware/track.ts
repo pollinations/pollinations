@@ -257,33 +257,43 @@ export const track = (eventType: EventType) =>
                     const currentUser = await db
                         .select({
                             tierBalance: userTable.tierBalance,
-                            packBalance: userTable.packBalance,
+                            cryptoBalance: userTable.cryptoBalance,
                         })
                         .from(userTable)
                         .where(eq(userTable.id, userTracking.userId))
                         .limit(1);
 
                     const tierBalance = currentUser[0]?.tierBalance ?? 0;
-                    const packBalance = currentUser[0]?.packBalance ?? 0;
+                    const cryptoBalance = currentUser[0]?.cryptoBalance ?? 0;
 
-                    // Decrement tier first, then pack
-                    const fromTier = Math.min(priceToDeduct, Math.max(0, tierBalance));
-                    const fromPack = priceToDeduct - fromTier;
+                    // Decrement in order: tier (free) → crypto → pack
+                    const fromTier = Math.min(
+                        priceToDeduct,
+                        Math.max(0, tierBalance),
+                    );
+                    const remainingAfterTier = priceToDeduct - fromTier;
+                    const fromCrypto = Math.min(
+                        remainingAfterTier,
+                        Math.max(0, cryptoBalance),
+                    );
+                    const fromPack = remainingAfterTier - fromCrypto;
 
                     await db
                         .update(userTable)
                         .set({
                             tierBalance: sql`${userTable.tierBalance} - ${fromTier}`,
+                            cryptoBalance: sql`${userTable.cryptoBalance} - ${fromCrypto}`,
                             packBalance: sql`${userTable.packBalance} - ${fromPack}`,
                         })
                         .where(eq(userTable.id, userTracking.userId));
 
                     log.debug(
-                        "Decremented {price} pollen from user {userId} (tier: -{fromTier}, pack: -{fromPack})",
+                        "Decremented {price} pollen from user {userId} (tier: -{fromTier}, crypto: -{fromCrypto}, pack: -{fromPack})",
                         {
                             price: priceToDeduct,
                             userId: userTracking.userId,
                             fromTier,
+                            fromCrypto,
                             fromPack,
                         },
                     );

@@ -39,8 +39,9 @@ export function addDefaultTools(defaultTools) {
         messages,
         options: {
             ...options,
-            // Only add defaults if no tools were passed by user
-            tools: options.tools?.length ? options.tools : defaultTools,
+            // Only add defaults if user hasn't explicitly passed tools (even empty array)
+            // Check for undefined/null, not just length, to respect user's intent to disable tools
+            tools: options.tools !== undefined ? options.tools : defaultTools,
         },
     });
 }

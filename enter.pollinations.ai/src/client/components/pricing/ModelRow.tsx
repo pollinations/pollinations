@@ -4,6 +4,7 @@ import {
   hasReasoning,
   hasVision,
   hasAudioInput,
+  hasAudioOutput,
   hasSearch,
   hasCodeExecution,
   getModelDisplayName,
@@ -31,6 +32,7 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
   const showReasoning = hasReasoning(model.name);
   const showVision = hasVision(model.name);
   const showAudioInput = hasAudioInput(model.name);
+  const showAudioOutput = hasAudioOutput(model.name);
   const showSearch = hasSearch(model.name);
   const showCodeExecution = hasCodeExecution(model.name);
 
@@ -64,7 +66,12 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
           )}
           {showAudioInput && (
             <Tooltip text="Audio input">
-              <span className="text-base">👂</span>
+              <span className="text-base">🎙️</span>
+            </Tooltip>
+          )}
+          {showAudioOutput && (
+            <Tooltip text="Audio output">
+              <span className="text-base">🔊</span>
             </Tooltip>
           )}
           {showReasoning && (

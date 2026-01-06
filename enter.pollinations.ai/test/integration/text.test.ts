@@ -1166,6 +1166,46 @@ test(
     },
 );
 
+// Gemini JSON response with tools fix (Issues #6834, #6876)
+// Tests that response_format works with Gemini models (tools are stripped when JSON mode is requested)
+test(
+    "Gemini should accept response_format: json_object without code_execution conflict",
+    { timeout: 60000 },
+    async ({ apiKey, mocks }) => {
+        await mocks.enable("polar", "tinybird", "vcr");
+        const response = await SELF.fetch(
+            `http://localhost:3000/api/generate/v1/chat/completions`,
+            {
+                method: "POST",
+                headers: {
+                    "content-type": "application/json",
+                    "authorization": `Bearer ${apiKey}`,
+                },
+                body: JSON.stringify({
+                    model: "gemini",
+                    messages: [
+                        {
+                            role: "user",
+                            content:
+                                "What is 2+2? Return as JSON with key 'answer'.",
+                        },
+                    ],
+                    response_format: { type: "json_object" },
+                    seed: testSeed(),
+                }),
+            },
+        );
+        // Should succeed - tools are stripped when response_format is set
+        expect(response.status).toBe(200);
+        const data = await response.json();
+        const content = (data as any).choices[0].message.content;
+        expect(content).toBeTruthy();
+        // Should be valid JSON
+        const parsed = JSON.parse(content);
+        expect(parsed.answer).toBeDefined();
+    },
+);
+
 // Gemini code_execution content_blocks test (Issue #6830)
 test(
     "POST /v1/chat/completions should return content_blocks with image_url from Gemini code_execution",

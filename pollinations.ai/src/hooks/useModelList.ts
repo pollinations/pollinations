@@ -7,6 +7,7 @@ const TEXT_MODELS_URL = `${API_BASE}/text/models`;
 export interface Model {
     id: string;
     name: string;
+    description?: string;
     type: "image" | "text";
     hasImageInput: boolean;
     hasAudioOutput: boolean;
@@ -48,6 +49,7 @@ export function useModelList(apiKey: string): UseModelListReturn {
             | {
                   id?: string;
                   name?: string;
+                  description?: string;
                   input_modalities?: string[];
                   output_modalities?: string[];
               }
@@ -61,6 +63,7 @@ export function useModelList(apiKey: string): UseModelListReturn {
             return {
                 id: modelId,
                 name: modelId,
+                description: obj.description,
                 type,
                 hasImageInput: obj.input_modalities?.includes("image") || false,
                 hasAudioOutput:

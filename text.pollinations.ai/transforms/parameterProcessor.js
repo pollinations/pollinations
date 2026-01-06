@@ -63,6 +63,15 @@ export function processParameters(messages, options) {
     if (isReasoningOrGpt5Model) {
         log(`Forcing temperature=1 for reasoning/GPT-5 model: ${model}`);
         updatedOptions.temperature = 1;
+
+        // GPT-5 series and reasoning models don't support the 'stop' parameter
+        // Azure returns 400: "Unsupported parameter: 'stop' is not supported with this model."
+        if (updatedOptions.stop !== undefined) {
+            log(
+                `Removing unsupported 'stop' parameter for reasoning/GPT-5 model: ${model}`,
+            );
+            delete updatedOptions.stop;
+        }
     }
 
     return { messages, options: updatedOptions };

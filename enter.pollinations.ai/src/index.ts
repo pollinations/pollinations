@@ -5,12 +5,14 @@ import { createAuth } from "./auth.ts";
 import { handleError } from "./error.ts";
 import { processEvents } from "./events.ts";
 import { polarRoutes } from "./routes/polar.ts";
+import { nowpaymentsRoutes } from "./routes/nowpayments.ts";
 import { proxyRoutes } from "./routes/proxy.ts";
 import { tiersRoutes } from "./routes/tiers.ts";
 import { usageRoutes } from "./routes/usage.ts";
 import { createDocsRoutes } from "./routes/docs.ts";
 import { apiKeysRoutes } from "./routes/api-keys.ts";
 import { webhooksRoutes } from "./routes/webhooks.ts";
+import { webhooksCryptoRoutes } from "./routes/webhooks-crypto.ts";
 import { adminRoutes } from "./routes/admin.ts";
 import { requestId } from "hono/request-id";
 import { logger } from "./middleware/logger.ts";
@@ -25,10 +27,12 @@ const authRoutes = new Hono<Env>().on(["GET", "POST"], "*", async (c) => {
 export const api = new Hono<Env>()
     .route("/auth", authRoutes)
     .route("/polar", polarRoutes)
+    .route("/nowpayments", nowpaymentsRoutes)
     .route("/tiers", tiersRoutes)
     .route("/api-keys", apiKeysRoutes)
     .route("/usage", usageRoutes)
     .route("/webhooks", webhooksRoutes)
+    .route("/webhooks", webhooksCryptoRoutes)
     .route("/admin", adminRoutes)
     .route("/generate", proxyRoutes);
 

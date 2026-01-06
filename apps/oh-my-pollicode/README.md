@@ -1,17 +1,17 @@
-# 🌸 Pollicode
+# 🌸 Oh My Pollicode
 
 Pre-configured [OpenCode](https://opencode.ai) + [oh-my-opencode](https://github.com/code-yeongyu/oh-my-opencode) with Pollinations AI models for optimal multi-agent workflows.
 
 ## Quick Install
 
 ```bash
-npx pollicode
+npx oh-my-pollicode
 ```
 
 Or clone and run:
 ```bash
 git clone https://github.com/pollinations/pollinations.git
-cd pollinations/apps/pollicode
+cd pollinations/apps/oh-my-pollicode
 node install.js
 ```
 

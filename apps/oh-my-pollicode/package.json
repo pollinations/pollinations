@@ -1,10 +1,10 @@
 {
-  "name": "pollicode",
+  "name": "oh-my-pollicode",
   "version": "1.0.0",
   "description": "Pre-configured OpenCode + oh-my-opencode with Pollinations AI models",
   "type": "module",
   "bin": {
-    "pollicode": "./install.js"
+    "oh-my-pollicode": "./install.js"
   },
   "scripts": {
     "start": "node install.js"

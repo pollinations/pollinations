@@ -60,6 +60,16 @@ export const isPersona = (modelName: string): boolean => {
     return service?.persona === true;
 };
 
+/**
+ * Check if a model is "new" (added within the last 14 days)
+ */
+export const isNewModel = (modelName: string): boolean => {
+    const service = getServiceDefinition(modelName as ServiceId);
+    if (!service?.cost?.[0]?.date) return false;
+    const fourteenDaysAgo = Date.now() - 14 * 24 * 60 * 60 * 1000;
+    return service.cost[0].date > fourteenDaysAgo;
+};
+
 export const getTextModelId = (modelName: string): string | undefined => {
     const service = getServiceDefinition(modelName as ServiceId);
     return service?.modelId as string | undefined;

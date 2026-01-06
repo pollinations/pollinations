@@ -8,6 +8,7 @@ import { pipe } from "./transforms/pipe.js";
 import { createGeminiToolsTransform } from "./transforms/createGeminiToolsTransform.ts";
 import { createGeminiThinkingTransform } from "./transforms/createGeminiThinkingTransform.ts";
 import { sanitizeToolSchemas } from "./transforms/sanitizeToolSchemas.js";
+import { removeToolsForJsonResponse } from "./transforms/removeToolsForJsonResponse.ts";
 
 // Import persona prompts
 import midijourneyPrompt from "./personas/midijourney.js";
@@ -94,6 +95,7 @@ const models: ModelDefinition[] = [
             createSystemPromptTransform(BASE_PROMPTS.conversational),
             sanitizeToolSchemas(),
             createGeminiToolsTransform(["code_execution"]),
+            removeToolsForJsonResponse,
             createGeminiThinkingTransform("v3-flash"),
         ),
     },
@@ -147,6 +149,7 @@ const models: ModelDefinition[] = [
             createSystemPromptTransform(BASE_PROMPTS.conversational),
             sanitizeToolSchemas(),
             createGeminiToolsTransform(["code_execution"]),
+            removeToolsForJsonResponse,
             createGeminiThinkingTransform("v3-pro"),
         ),
     },

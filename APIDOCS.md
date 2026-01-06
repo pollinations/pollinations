@@ -1,2244 +1,273 @@
-# pollinations.ai API
+# 🌸 Pollinations.ai API Documentation
 
-- **OpenAPI Version:** `3.1.0`
-- **API Version:** `0.3.0`
+**Base URL:** `https://gen.pollinations.ai`
 
-Documentation for `gen.pollinations.ai` - the pollinations.ai API gateway.
+## 🔐 Authentication
 
-[📝 Edit docs](https://github.com/pollinations/pollinations/edit/master/enter.pollinations.ai/src/routes/docs.ts)
+All requests to the API require authentication via HTTP Headers.
 
-## Quick Start
+1.  **Get an API Key:** Visit [enter.pollinations.ai](https://enter.pollinations.ai) to generate your key.
+2.  **Key Types:**
+    *   **`pk_...` (Publishable Key):** Safe for client-side code. Rate-limited by IP address.
+    *   **`sk_...` (Secret Key):** Server-side only. No rate limits. Consumes Pollen balance.
 
-Get your API key at <https://enter.pollinations.ai>
+**Required Headers:**
+```http
+Authorization: Bearer YOUR_API_KEY
+Content-Type: application/json
+```
 
-### Image Generation
+---
 
+## 1. Universal Chat Endpoint
+**Endpoint:** `POST /v1/chat/completions`
+
+This single OpenAI-compatible endpoint handles:
+*   **Text Generation** (Chat, Coding, Reasoning)
+*   **Vision** (Image understanding)
+*   **Audio** (Text-to-Speech & Speech-to-Speech)
+*   **Tool Use** (Web Search, Code Execution)
+
+### A. Request Body Parameters
+
+| Parameter | Type | Required | Description |
+| :--- | :--- | :--- | :--- |
+| `model` | string | **Yes** | The Model ID (see list below). |
+| `messages` | array | **Yes** | List of message objects: `[{ "role": "user", "content": "..." }]`. |
+| `tools` | array | No | specific tool definitions (e.g., Google Search). |
+| `stream` | boolean | No | If `true`, streams the response via Server-Sent Events (SSE). |
+| `temperature` | float | No | Controls randomness (`0.0` = strict, `2.0` = creative). Default: `1.0`. |
+| `max_tokens` | integer | No | Maximum number of tokens to generate. |
+| `seed` | integer | No | Integer for reproducible results. |
+| `modalities` | array | No | Required for audio output: `["text", "audio"]`. |
+| `audio` | object | No | Configuration for voice generation (see Text-to-Speech section). |
+
+### B. Text Models List
+*   `openai`
+*   `openai-large`
+*   `openai-fast`
+*   `openai-audio`
+*   `qwen-coder`
+*   `mistral`
+*   `gemini`
+*   `gemini-large`
+*   `gemini-fast`
+*   `gemini-search`
+*   `deepseek`
+*   `grok`
+*   `chickytutor`
+*   `claude`
+*   `claude-large`
+*   `claude-fast`
+*   `perplexity-reasoning`
+*   `kimi-k2-thinking`
+*   `nova-micro`
+
+---
+
+### C. Use Case Examples
+
+#### 1. Text-to-Text (Basic Chat)
 ```bash
-curl 'https://gen.pollinations.ai/image/a%20cat?model=flux' \
-  -H 'Authorization: Bearer YOUR_API_KEY'
-```
-
-### Text Generation
-
-```bash
-curl 'https://gen.pollinations.ai/v1/chat/completions' \
-  -H 'Authorization: Bearer YOUR_API_KEY' \
-  -H 'Content-Type: application/json' \
-  -d '{"model": "openai", "messages": [{"role": "user", "content": "Hello"}]}'
-```
-
-### Vision (Image Input)
-
-```bash
-curl 'https://gen.pollinations.ai/v1/chat/completions' \
-  -H 'Authorization: Bearer YOUR_API_KEY' \
-  -H 'Content-Type: application/json' \
-  -d '{"model": "openai", "messages": [{"role": "user", "content": [{"type": "text", "text": "Describe this image"}, {"type": "image_url", "image_url": {"url": "https://example.com/image.jpg"}}]}]}'
-```
-
-**Gemini Tools:** `gemini`, `gemini-fast`, `gemini-large` have `code_execution` enabled by default. `gemini-search` has `google_search` enabled. Pass your own `tools` array to override (e.g., `[{"type": "function", "function": {"name": "google_search"}}]`).
-
-### Simple Text Endpoint
-
-```bash
-curl 'https://gen.pollinations.ai/text/hello?key=YOUR_API_KEY'
-```
-
-### Streaming
-
-```bash
-curl 'https://gen.pollinations.ai/v1/chat/completions' \
-  -H 'Authorization: Bearer YOUR_API_KEY' \
-  -H 'Content-Type: application/json' \
-  -d '{"model": "openai", "messages": [{"role": "user", "content": "Write a poem"}], "stream": true}' \
-  --no-buffer
-```
-
-### Model Discovery
-
-**Always check available models before testing:**
-
-- **Image models:** [/image/models](https://gen.pollinations.ai/image/models)
-- **Text models:** [/v1/models](https://gen.pollinations.ai/v1/models)
-
-## Authentication
-
-**Two key types:**
-
-- **Publishable Keys (`pk_`):** Client-side safe, IP rate-limited (1 pollen/hour per IP+key)
-- **Secret Keys (`sk_`):** Server-side only, no rate limits, can spend Pollen
-
-**Auth methods:**
-
-1. Header: `Authorization: Bearer YOUR_API_KEY`
-2. Query param: `?key=YOUR_API_KEY`
-
-## Servers
-
-- **URL:** `https://gen.pollinations.ai`
-
-## Operations
-
-### GET /v1/models
-
-- **Method:** `GET`
-- **Path:** `/v1/models`
-- **Tags:** gen.pollinations.ai
-
-Get available text models (OpenAI-compatible). If an API key with model restrictions is provided, only allowed models are returned.
-
-#### Responses
-
-##### Status: 200 Success
-
-###### Content-Type: application/json
-
-- **`data` (required)**
-
-  `array`
-
-  **Items:**
-
-  - **`created` (required)**
-
-    `number`
-
-  - **`id` (required)**
-
-    `string`
-
-  - **`object` (required)**
-
-    `string`
-
-- **`object` (required)**
-
-  `string`
-
-**Example:**
-
-```json
-{
-  "object": "list",
-  "data": [
-    {
-      "id": "",
-      "object": "model",
-      "created": 1
-    }
-  ]
-}
-```
-
-##### Status: 500 Oh snap, something went wrong on our end. We're on it!
-
-###### Content-Type: application/json
-
-- **`error` (required)**
-
-  `object`
-
-  - **`code` (required)**
-
-    `string`
-
-  - **`details` (required)**
-
-    `object`
-
-    - **`name` (required)**
-
-      `string`
-
-    - **`stack`**
-
-      `string`
-
-  - **`message` (required)**
-
-    `object`
-
-  - **`timestamp` (required)**
-
-    `string`
-
-  - **`cause`**
-
-    `object`
-
-  - **`requestId`**
-
-    `string`
-
-- **`status` (required)**
-
-  `number`
-
-- **`success` (required)**
-
-  `boolean`
-
-**Example:**
-
-```json
-{
-  "status": 500,
-  "success": false,
-  "error": {
-    "code": "INTERNAL_ERROR",
-    "message": "Oh snap, something went wrong on our end. We're on it!",
-    "timestamp": "",
-    "details": {
-      "name": "",
-      "stack": ""
-    },
-    "requestId": "",
-    "cause": null
-  }
-}
-```
-
-### GET /image/models
-
-- **Method:** `GET`
-- **Path:** `/image/models`
-- **Tags:** gen.pollinations.ai
-
-Get a list of available image generation models with pricing, capabilities, and metadata. If an API key with model restrictions is provided, only allowed models are returned.
-
-#### Responses
-
-##### Status: 200 Success
-
-###### Content-Type: application/json
-
-**Array of:**
-
-- **`aliases` (required)**
-
-  `array`
-
-  **Items:**
-
-  `string`
-
-- **`name` (required)**
-
-  `string`
-
-- **`pricing` (required)**
-
-  `object`
-
-- **`context_window`**
-
-  `number`
-
-- **`description`**
-
-  `string`
-
-- **`input_modalities`**
-
-  `array`
-
-  **Items:**
-
-  `string`
-
-- **`is_specialized`**
-
-  `boolean`
-
-- **`output_modalities`**
-
-  `array`
-
-  **Items:**
-
-  `string`
-
-- **`reasoning`**
-
-  `boolean`
-
-- **`tools`**
-
-  `boolean`
-
-- **`voices`**
-
-  `array`
-
-  **Items:**
-
-  `string`
-
-**Example:**
-
-```json
-[
-  {
-    "name": "",
-    "aliases": [
-      ""
-    ],
-    "pricing": {
-      "propertyName*": 1,
-      "currency": "pollen"
-    },
-    "description": "",
-    "input_modalities": [
-      ""
-    ],
-    "output_modalities": [
-      ""
-    ],
-    "tools": true,
-    "reasoning": true,
-    "context_window": 1,
-    "voices": [
-      ""
-    ],
-    "is_specialized": true
-  }
-]
-```
-
-##### Status: 500 Oh snap, something went wrong on our end. We're on it!
-
-###### Content-Type: application/json
-
-- **`error` (required)**
-
-  `object`
-
-  - **`code` (required)**
-
-    `string`
-
-  - **`details` (required)**
-
-    `object`
-
-    - **`name` (required)**
-
-      `string`
-
-    - **`stack`**
-
-      `string`
-
-  - **`message` (required)**
-
-    `object`
-
-  - **`timestamp` (required)**
-
-    `string`
-
-  - **`cause`**
-
-    `object`
-
-  - **`requestId`**
-
-    `string`
-
-- **`status` (required)**
-
-  `number`
-
-- **`success` (required)**
-
-  `boolean`
-
-**Example:**
-
-```json
-{
-  "status": 500,
-  "success": false,
-  "error": {
-    "code": "INTERNAL_ERROR",
-    "message": "Oh snap, something went wrong on our end. We're on it!",
-    "timestamp": "",
-    "details": {
-      "name": "",
-      "stack": ""
-    },
-    "requestId": "",
-    "cause": null
-  }
-}
-```
-
-### GET /text/models
-
-- **Method:** `GET`
-- **Path:** `/text/models`
-- **Tags:** gen.pollinations.ai
-
-Get a list of available text generation models with pricing, capabilities, and metadata. If an API key with model restrictions is provided, only allowed models are returned.
-
-#### Responses
-
-##### Status: 200 Success
-
-###### Content-Type: application/json
-
-**Array of:**
-
-- **`aliases` (required)**
-
-  `array`
-
-  **Items:**
-
-  `string`
-
-- **`name` (required)**
-
-  `string`
-
-- **`pricing` (required)**
-
-  `object`
-
-- **`context_window`**
-
-  `number`
-
-- **`description`**
-
-  `string`
-
-- **`input_modalities`**
-
-  `array`
-
-  **Items:**
-
-  `string`
-
-- **`is_specialized`**
-
-  `boolean`
-
-- **`output_modalities`**
-
-  `array`
-
-  **Items:**
-
-  `string`
-
-- **`reasoning`**
-
-  `boolean`
-
-- **`tools`**
-
-  `boolean`
-
-- **`voices`**
-
-  `array`
-
-  **Items:**
-
-  `string`
-
-**Example:**
-
-```json
-[
-  {
-    "name": "",
-    "aliases": [
-      ""
-    ],
-    "pricing": {
-      "propertyName*": 1,
-      "currency": "pollen"
-    },
-    "description": "",
-    "input_modalities": [
-      ""
-    ],
-    "output_modalities": [
-      ""
-    ],
-    "tools": true,
-    "reasoning": true,
-    "context_window": 1,
-    "voices": [
-      ""
-    ],
-    "is_specialized": true
-  }
-]
-```
-
-##### Status: 500 Oh snap, something went wrong on our end. We're on it!
-
-###### Content-Type: application/json
-
-- **`error` (required)**
-
-  `object`
-
-  - **`code` (required)**
-
-    `string`
-
-  - **`details` (required)**
-
-    `object`
-
-    - **`name` (required)**
-
-      `string`
-
-    - **`stack`**
-
-      `string`
-
-  - **`message` (required)**
-
-    `object`
-
-  - **`timestamp` (required)**
-
-    `string`
-
-  - **`cause`**
-
-    `object`
-
-  - **`requestId`**
-
-    `string`
-
-- **`status` (required)**
-
-  `number`
-
-- **`success` (required)**
-
-  `boolean`
-
-**Example:**
-
-```json
-{
-  "status": 500,
-  "success": false,
-  "error": {
-    "code": "INTERNAL_ERROR",
-    "message": "Oh snap, something went wrong on our end. We're on it!",
-    "timestamp": "",
-    "details": {
-      "name": "",
-      "stack": ""
-    },
-    "requestId": "",
-    "cause": null
-  }
-}
-```
-
-### POST /v1/chat/completions
-
-- **Method:** `POST`
-- **Path:** `/v1/chat/completions`
-- **Tags:** gen.pollinations.ai
-
-OpenAI-compatible chat completions endpoint.
-
-**Legacy endpoint:** `/openai` (deprecated, use `/v1/chat/completions` instead)
-
-**Authentication (Secret Keys Only):**
-
-Include your API key in the `Authorization` header as a Bearer token:
-
-`Authorization: Bearer YOUR_API_KEY`
-
-API keys can be created from your dashboard at enter.pollinations.ai. Secret keys provide the best rate limits and can spend Pollen.
-
-#### Request Body
-
-##### Content-Type: application/json
-
-- **`messages` (required)**
-
-  `array`
-
-  **Items:**
-
-  **Any of:**
-
-  - **`content` (required)**
-
-    `object`
-
-  - **`role` (required)**
-
-    `string`
-
-  - **`cache_control`**
-
-    `object`
-
-    - **`type` (required)**
-
-      `string`, possible values: `"ephemeral"`
-
-  - **`name`**
-
-    `string`
-
-  * **`content` (required)**
-
-    `object`
-
-  * **`role` (required)**
-
-    `string`
-
-  * **`cache_control`**
-
-    `object`
-
-    - **`type` (required)**
-
-      `string`, possible values: `"ephemeral"`
-
-  * **`name`**
-
-    `string`
-
-  - **`content` (required)**
-
-    `object`
-
-  - **`role` (required)**
-
-    `string`
-
-  - **`name`**
-
-    `string`
-
-  * **`role` (required)**
-
-    `string`
-
-  * **`cache_control`**
-
-    `object`
-
-    - **`type` (required)**
-
-      `string`, possible values: `"ephemeral"`
-
-  * **`content`**
-
-    `object`
-
-  * **`function_call`**
-
-    `object`
-
-  * **`name`**
-
-    `string`
-
-  * **`tool_calls`**
-
-    `array`
-
-    **Items:**
-
-    - **`function` (required)**
-
-      `object`
-
-      - **`arguments` (required)**
-
-        `string`
-
-      - **`name` (required)**
-
-        `string`
-
-    - **`id` (required)**
-
-      `string`
-
-    - **`type` (required)**
-
-      `string`
-
-  - **`content` (required)**
-
-    `object`
-
-  - **`role` (required)**
-
-    `string`
-
-  - **`tool_call_id` (required)**
-
-    `string`
-
-  - **`cache_control`**
-
-    `object`
-
-    - **`type` (required)**
-
-      `string`, possible values: `"ephemeral"`
-
-  * **`content` (required)**
-
-    `object`
-
-  * **`name` (required)**
-
-    `string`
-
-  * **`role` (required)**
-
-    `string`
-
-- **`audio`**
-
-  `object`
-
-  - **`format` (required)**
-
-    `string`, possible values: `"wav", "mp3", "flac", "opus", "pcm16"`
-
-  - **`voice` (required)**
-
-    `string`, possible values: `"alloy", "echo", "fable", "onyx", "nova", "shimmer", "coral", "verse", "ballad", "ash", "sage", "amuch", "dan"`
-
-- **`frequency_penalty`**
-
-  `object`, default: `0`
-
-- **`function_call`**
-
-  `object`
-
-- **`functions`**
-
-  `array`
-
-  **Items:**
-
-  - **`name` (required)**
-
-    `string`
-
-  - **`description`**
-
-    `string`
-
-  - **`parameters`**
-
-    `object`
-
-- **`logit_bias`**
-
-  `object`, default: `null`
-
-- **`logprobs`**
-
-  `object`, default: `false`
-
-- **`max_tokens`**
-
-  `object`
-
-- **`modalities`**
-
-  `array`
-
-  **Items:**
-
-  `string`, possible values: `"text", "audio"`
-
-- **`model`**
-
-  `string`, default: `"openai"`
-
-- **`parallel_tool_calls`**
-
-  `boolean`, default: `true`
-
-- **`presence_penalty`**
-
-  `object`, default: `0`
-
-- **`reasoning_effort`**
-
-  `string`, possible values: `"none", "minimal", "low", "medium", "high", "xhigh"`
-
-- **`repetition_penalty`**
-
-  `object`
-
-- **`response_format`**
-
-  `object`
-
-- **`seed`**
-
-  `object`
-
-- **`stop`**
-
-  `object`
-
-- **`stream`**
-
-  `object`, default: `false`
-
-- **`stream_options`**
-
-  `object`
-
-- **`temperature`**
-
-  `object`, default: `1`
-
-- **`thinking`**
-
-  `object`
-
-- **`thinking_budget`**
-
-  `integer`
-
-- **`tool_choice`**
-
-  `object`
-
-- **`tools`**
-
-  `array`
-
-  **Items:**
-
-  **Any of:**
-
-  - **`function` (required)**
-
-    `object`
-
-    - **`name` (required)**
-
-      `string`
-
-    - **`description`**
-
-      `string`
-
-    - **`parameters`**
-
-      `object`
-
-    - **`strict`**
-
-      `object`, default: `false`
-
-  - **`type` (required)**
-
-    `string`
-
-  * **`type` (required)**
-
-    `string`, possible values: `"code_execution", "google_search", "google_maps", "url_context", "computer_use", "file_search"`
-
-- **`top_logprobs`**
-
-  `object`
-
-- **`top_p`**
-
-  `object`, default: `1`
-
-- **`user`**
-
-  `string`
-
-**Example:**
-
-```json
-{
-  "messages": [
-    {
-      "content": "",
-      "role": "system",
-      "name": "",
-      "cache_control": {
-        "type": "ephemeral"
-      }
-    }
-  ],
-  "model": "openai",
-  "modalities": [
-    "text"
-  ],
-  "audio": {
-    "voice": "alloy",
-    "format": "wav"
-  },
-  "frequency_penalty": 0,
-  "repetition_penalty": 0,
-  "logit_bias": null,
-  "logprobs": false,
-  "top_logprobs": 0,
-  "max_tokens": 0,
-  "presence_penalty": 0,
-  "response_format": {
-    "type": "text"
-  },
-  "seed": -1,
-  "stop": "",
-  "stream": false,
-  "stream_options": {
-    "include_usage": true
-  },
-  "thinking": {
-    "type": "disabled",
-    "budget_tokens": 1
-  },
-  "reasoning_effort": "none",
-  "thinking_budget": 0,
-  "temperature": 1,
-  "top_p": 1,
-  "tools": [
-    {
-      "type": "function",
-      "function": {
-        "description": "",
-        "name": "",
-        "parameters": {
-          "propertyName*": "anything"
-        },
-        "strict": false
-      }
-    }
-  ],
-  "tool_choice": "none",
-  "parallel_tool_calls": true,
-  "user": "",
-  "function_call": "none",
-  "functions": [
-    {
-      "description": "",
-      "name": "",
-      "parameters": {
-        "propertyName*": "anything"
-      }
-    }
-  ]
-}
-```
-
-#### Responses
-
-##### Status: 200 Success
-
-###### Content-Type: application/json
-
-- **`choices` (required)**
-
-  `array`
-
-  **Items:**
-
-  - **`content_filter_results`**
-
-    `object`
-
-  - **`finish_reason`**
-
-    `object`
-
-  - **`index`**
-
-    `integer`
-
-  - **`logprobs`**
-
-    `object`
-
-  - **`message`**
-
-    `object`
-
-    - **`role` (required)**
-
-      `string`
-
-    - **`audio`**
-
-      `object`
-
-    - **`content`**
-
-      `object`
-
-    - **`content_blocks`**
-
-      `object`
-
-    - **`function_call`**
-
-      `object`
-
-    - **`reasoning_content`**
-
-      `object`
-
-    - **`tool_calls`**
-
-      `object`
-
-- **`created` (required)**
-
-  `integer`
-
-- **`id` (required)**
-
-  `string`
-
-- **`model` (required)**
-
-  `string`
-
-- **`object` (required)**
-
-  `string`
-
-- **`usage` (required)**
-
-  `object`
-
-  - **`completion_tokens` (required)**
-
-    `integer`
-
-  - **`prompt_tokens` (required)**
-
-    `integer`
-
-  - **`total_tokens` (required)**
-
-    `integer`
-
-  - **`completion_tokens_details`**
-
-    `object`
-
-  - **`prompt_tokens_details`**
-
-    `object`
-
-- **`citations`**
-
-  `array`
-
-  **Items:**
-
-  `string`
-
-- **`prompt_filter_results`**
-
-  `object`
-
-- **`system_fingerprint`**
-
-  `object`
-
-- **`user_tier`**
-
-  `string`, possible values: `"anonymous", "seed", "flower", "nectar"`
-
-**Example:**
-
-```json
-{
-  "id": "",
-  "choices": [
-    {
-      "finish_reason": "",
-      "index": 0,
-      "message": {
-        "content": "",
-        "tool_calls": [
-          {
-            "id": "",
-            "type": "function",
-            "function": {
-              "name": "",
-              "arguments": ""
-            }
-          }
-        ],
-        "role": "assistant",
-        "function_call": {
-          "arguments": "",
-          "name": ""
-        },
-        "content_blocks": [
-          {
-            "type": "text",
-            "text": "",
-            "cache_control": {
-              "type": "ephemeral"
-            }
-          }
-        ],
-        "audio": {
-          "transcript": "",
-          "data": "",
-          "id": "",
-          "expires_at": -9007199254740991
-        },
-        "reasoning_content": ""
-      },
-      "logprobs": {
-        "content": [
-          {
-            "token": "",
-            "logprob": 1,
-            "bytes": [
-              "[Max Depth Exceeded]"
-            ],
-            "top_logprobs": [
-              {
-                "token": "[Max Depth Exceeded]",
-                "logprob": "[Max Depth Exceeded]",
-                "bytes": "[Max Depth Exceeded]"
-              }
-            ]
-          }
-        ]
-      },
-      "content_filter_results": {
-        "hate": {
-          "filtered": true,
-          "severity": "safe"
-        },
-        "self_harm": {
-          "filtered": true,
-          "severity": "safe"
-        },
-        "sexual": {
-          "filtered": true,
-          "severity": "safe"
-        },
-        "violence": {
-          "filtered": true,
-          "severity": "safe"
-        },
-        "jailbreak": {
-          "filtered": true,
-          "detected": true
-        },
-        "protected_material_text": {
-          "filtered": true,
-          "detected": true
-        },
-        "protected_material_code": {
-          "filtered": true,
-          "detected": true
-        }
-      }
-    }
-  ],
-  "prompt_filter_results": [
-    {
-      "prompt_index": 0,
-      "content_filter_results": {
-        "hate": {
-          "filtered": true,
-          "severity": "safe"
-        },
-        "self_harm": {
-          "filtered": true,
-          "severity": "safe"
-        },
-        "sexual": {
-          "filtered": true,
-          "severity": "safe"
-        },
-        "violence": {
-          "filtered": true,
-          "severity": "safe"
-        },
-        "jailbreak": {
-          "filtered": true,
-          "detected": true
-        },
-        "protected_material_text": {
-          "filtered": true,
-          "detected": true
-        },
-        "protected_material_code": {
-          "filtered": true,
-          "detected": true
-        }
-      }
-    }
-  ],
-  "created": -9007199254740991,
-  "model": "",
-  "system_fingerprint": "",
-  "object": "chat.completion",
-  "usage": {
-    "completion_tokens": 0,
-    "completion_tokens_details": {
-      "accepted_prediction_tokens": 0,
-      "audio_tokens": 0,
-      "reasoning_tokens": 0,
-      "rejected_prediction_tokens": 0
-    },
-    "prompt_tokens": 0,
-    "prompt_tokens_details": {
-      "audio_tokens": 0,
-      "cached_tokens": 0
-    },
-    "total_tokens": 0
-  },
-  "user_tier": "anonymous",
-  "citations": [
-    ""
-  ]
-}
-```
-
-##### Status: 400 Something was wrong with the input data, check the details for more info.
-
-###### Content-Type: application/json
-
-- **`error` (required)**
-
-  `object`
-
-  - **`code` (required)**
-
-    `string`
-
-  - **`details` (required)**
-
-    `object`
-
-    - **`fieldErrors` (required)**
-
-      `object`
-
-    - **`formErrors` (required)**
-
-      `array`
-
-      **Items:**
-
-      `string`
-
-    - **`name` (required)**
-
-      `string`
-
-    - **`stack`**
-
-      `string`
-
-  - **`message` (required)**
-
-    `object`
-
-  - **`timestamp` (required)**
-
-    `string`
-
-  - **`cause`**
-
-    `object`
-
-  - **`requestId`**
-
-    `string`
-
-- **`status` (required)**
-
-  `number`
-
-- **`success` (required)**
-
-  `boolean`
-
-**Example:**
-
-```json
-{
-  "status": 400,
-  "success": false,
-  "error": {
-    "code": "BAD_REQUEST",
-    "message": "Something was wrong with the input data, check the details for more info.",
-    "timestamp": "",
-    "details": {
-      "name": "",
-      "stack": "",
-      "formErrors": [
-        ""
-      ],
-      "fieldErrors": {
-        "propertyName*": [
-          ""
-        ]
-      }
-    },
-    "requestId": "",
-    "cause": null
-  }
-}
-```
-
-##### Status: 401 You need to authenticate by providing a session cookie or Authorization header (Bearer token).
-
-###### Content-Type: application/json
-
-- **`error` (required)**
-
-  `object`
-
-  - **`code` (required)**
-
-    `string`
-
-  - **`details` (required)**
-
-    `object`
-
-    - **`name` (required)**
-
-      `string`
-
-    - **`stack`**
-
-      `string`
-
-  - **`message` (required)**
-
-    `object`
-
-  - **`timestamp` (required)**
-
-    `string`
-
-  - **`cause`**
-
-    `object`
-
-  - **`requestId`**
-
-    `string`
-
-- **`status` (required)**
-
-  `number`
-
-- **`success` (required)**
-
-  `boolean`
-
-**Example:**
-
-```json
-{
-  "status": 401,
-  "success": false,
-  "error": {
-    "code": "UNAUTHORIZED",
-    "message": "You need to authenticate by providing a session cookie or Authorization header (Bearer token).",
-    "timestamp": "",
-    "details": {
-      "name": "",
-      "stack": ""
-    },
-    "requestId": "",
-    "cause": null
-  }
-}
-```
-
-##### Status: 500 Oh snap, something went wrong on our end. We're on it!
-
-###### Content-Type: application/json
-
-- **`error` (required)**
-
-  `object`
-
-  - **`code` (required)**
-
-    `string`
-
-  - **`details` (required)**
-
-    `object`
-
-    - **`name` (required)**
-
-      `string`
-
-    - **`stack`**
-
-      `string`
-
-  - **`message` (required)**
-
-    `object`
-
-  - **`timestamp` (required)**
-
-    `string`
-
-  - **`cause`**
-
-    `object`
-
-  - **`requestId`**
-
-    `string`
-
-- **`status` (required)**
-
-  `number`
-
-- **`success` (required)**
-
-  `boolean`
-
-**Example:**
-
-```json
-{
-  "status": 500,
-  "success": false,
-  "error": {
-    "code": "INTERNAL_ERROR",
-    "message": "Oh snap, something went wrong on our end. We're on it!",
-    "timestamp": "",
-    "details": {
-      "name": "",
-      "stack": ""
-    },
-    "requestId": "",
-    "cause": null
-  }
-}
-```
-
-### GET /text/{prompt}
-
-- **Method:** `GET`
-- **Path:** `/text/{prompt}`
-- **Tags:** gen.pollinations.ai
-
-Generates text from text prompts.
-
-**Authentication:**
-
-Include your API key either:
-
-- In the `Authorization` header as a Bearer token: `Authorization: Bearer YOUR_API_KEY`
-- As a query parameter: `?key=YOUR_API_KEY`
-
-API keys can be created from your dashboard at enter.pollinations.ai.
-
-#### Responses
-
-##### Status: 200 Generated text response
-
-###### Content-Type: text/plain
-
-`string`
-
-**Example:**
-
-```json
-true
-```
-
-##### Status: 400 Something was wrong with the input data, check the details for more info.
-
-###### Content-Type: application/json
-
-- **`error` (required)**
-
-  `object`
-
-  - **`code` (required)**
-
-    `string`
-
-  - **`details` (required)**
-
-    `object`
-
-    - **`fieldErrors` (required)**
-
-      `object`
-
-    - **`formErrors` (required)**
-
-      `array`
-
-      **Items:**
-
-      `string`
-
-    - **`name` (required)**
-
-      `string`
-
-    - **`stack`**
-
-      `string`
-
-  - **`message` (required)**
-
-    `object`
-
-  - **`timestamp` (required)**
-
-    `string`
-
-  - **`cause`**
-
-    `object`
-
-  - **`requestId`**
-
-    `string`
-
-- **`status` (required)**
-
-  `number`
-
-- **`success` (required)**
-
-  `boolean`
-
-**Example:**
-
-```json
-{
-  "status": 400,
-  "success": false,
-  "error": {
-    "code": "BAD_REQUEST",
-    "message": "Something was wrong with the input data, check the details for more info.",
-    "timestamp": "",
-    "details": {
-      "name": "",
-      "stack": "",
-      "formErrors": [
-        ""
-      ],
-      "fieldErrors": {
-        "propertyName*": [
-          ""
-        ]
-      }
-    },
-    "requestId": "",
-    "cause": null
-  }
-}
-```
-
-##### Status: 401 You need to authenticate by providing a session cookie or Authorization header (Bearer token).
-
-###### Content-Type: application/json
-
-- **`error` (required)**
-
-  `object`
-
-  - **`code` (required)**
-
-    `string`
-
-  - **`details` (required)**
-
-    `object`
-
-    - **`name` (required)**
-
-      `string`
-
-    - **`stack`**
-
-      `string`
-
-  - **`message` (required)**
-
-    `object`
-
-  - **`timestamp` (required)**
-
-    `string`
-
-  - **`cause`**
-
-    `object`
-
-  - **`requestId`**
-
-    `string`
-
-- **`status` (required)**
-
-  `number`
-
-- **`success` (required)**
-
-  `boolean`
-
-**Example:**
-
-```json
-{
-  "status": 401,
-  "success": false,
-  "error": {
-    "code": "UNAUTHORIZED",
-    "message": "You need to authenticate by providing a session cookie or Authorization header (Bearer token).",
-    "timestamp": "",
-    "details": {
-      "name": "",
-      "stack": ""
-    },
-    "requestId": "",
-    "cause": null
-  }
-}
-```
-
-##### Status: 500 Oh snap, something went wrong on our end. We're on it!
-
-###### Content-Type: application/json
-
-- **`error` (required)**
-
-  `object`
-
-  - **`code` (required)**
-
-    `string`
-
-  - **`details` (required)**
-
-    `object`
-
-    - **`name` (required)**
-
-      `string`
-
-    - **`stack`**
-
-      `string`
-
-  - **`message` (required)**
-
-    `object`
-
-  - **`timestamp` (required)**
-
-    `string`
-
-  - **`cause`**
-
-    `object`
-
-  - **`requestId`**
-
-    `string`
-
-- **`status` (required)**
-
-  `number`
-
-- **`success` (required)**
-
-  `boolean`
-
-**Example:**
-
-```json
-{
-  "status": 500,
-  "success": false,
-  "error": {
-    "code": "INTERNAL_ERROR",
-    "message": "Oh snap, something went wrong on our end. We're on it!",
-    "timestamp": "",
-    "details": {
-      "name": "",
-      "stack": ""
-    },
-    "requestId": "",
-    "cause": null
-  }
-}
-```
-
-### GET /image/{prompt}
-
-- **Method:** `GET`
-- **Path:** `/image/{prompt}`
-- **Tags:** gen.pollinations.ai
-
-Generate an image or video from a text prompt.
-
-**Image Models:** `flux` (default), `turbo`, `gptimage`, `kontext`, `seedream`, `nanobanana`, `nanobanana-pro`
-
-**Video Models:** `veo`, `seedance`
-
-- `veo`: Text-to-video only (4-8 seconds)
-- `seedance`: Text-to-video and image-to-video (2-10 seconds)
-
-**Authentication:**
-
-Include your API key either:
-
-- In the `Authorization` header as a Bearer token: `Authorization: Bearer YOUR_API_KEY`
-- As a query parameter: `?key=YOUR_API_KEY`
-
-API keys can be created from your dashboard at enter.pollinations.ai.
-
-#### Responses
-
-##### Status: 200 Success - Returns the generated image or video
-
-###### Content-Type: image/jpeg
-
-`string`, format: `binary`
-
-**Example:**
-
-```json
-{}
-```
-
-###### Content-Type: image/png
-
-`string`, format: `binary`
-
-**Example:**
-
-```json
-{}
-```
-
-###### Content-Type: video/mp4
-
-`string`, format: `binary`
-
-**Example:**
-
-```json
-{}
-```
-
-##### Status: 400 Something was wrong with the input data, check the details for more info.
-
-###### Content-Type: application/json
-
-- **`error` (required)**
-
-  `object`
-
-  - **`code` (required)**
-
-    `string`
-
-  - **`details` (required)**
-
-    `object`
-
-    - **`fieldErrors` (required)**
-
-      `object`
-
-    - **`formErrors` (required)**
-
-      `array`
-
-      **Items:**
-
-      `string`
-
-    - **`name` (required)**
-
-      `string`
-
-    - **`stack`**
-
-      `string`
-
-  - **`message` (required)**
-
-    `object`
-
-  - **`timestamp` (required)**
-
-    `string`
-
-  - **`cause`**
-
-    `object`
-
-  - **`requestId`**
-
-    `string`
-
-- **`status` (required)**
-
-  `number`
-
-- **`success` (required)**
-
-  `boolean`
-
-**Example:**
-
-```json
-{
-  "status": 400,
-  "success": false,
-  "error": {
-    "code": "BAD_REQUEST",
-    "message": "Something was wrong with the input data, check the details for more info.",
-    "timestamp": "",
-    "details": {
-      "name": "",
-      "stack": "",
-      "formErrors": [
-        ""
-      ],
-      "fieldErrors": {
-        "propertyName*": [
-          ""
-        ]
-      }
-    },
-    "requestId": "",
-    "cause": null
-  }
-}
-```
-
-##### Status: 401 You need to authenticate by providing a session cookie or Authorization header (Bearer token).
-
-###### Content-Type: application/json
-
-- **`error` (required)**
-
-  `object`
-
-  - **`code` (required)**
-
-    `string`
-
-  - **`details` (required)**
-
-    `object`
-
-    - **`name` (required)**
-
-      `string`
-
-    - **`stack`**
-
-      `string`
-
-  - **`message` (required)**
-
-    `object`
-
-  - **`timestamp` (required)**
-
-    `string`
-
-  - **`cause`**
-
-    `object`
-
-  - **`requestId`**
-
-    `string`
-
-- **`status` (required)**
-
-  `number`
-
-- **`success` (required)**
-
-  `boolean`
-
-**Example:**
-
-```json
-{
-  "status": 401,
-  "success": false,
-  "error": {
-    "code": "UNAUTHORIZED",
-    "message": "You need to authenticate by providing a session cookie or Authorization header (Bearer token).",
-    "timestamp": "",
-    "details": {
-      "name": "",
-      "stack": ""
-    },
-    "requestId": "",
-    "cause": null
-  }
-}
-```
-
-##### Status: 500 Oh snap, something went wrong on our end. We're on it!
-
-###### Content-Type: application/json
-
-- **`error` (required)**
-
-  `object`
-
-  - **`code` (required)**
-
-    `string`
-
-  - **`details` (required)**
-
-    `object`
-
-    - **`name` (required)**
-
-      `string`
-
-    - **`stack`**
-
-      `string`
-
-  - **`message` (required)**
-
-    `object`
-
-  - **`timestamp` (required)**
-
-    `string`
-
-  - **`cause`**
-
-    `object`
-
-  - **`requestId`**
-
-    `string`
-
-- **`status` (required)**
-
-  `number`
-
-- **`success` (required)**
-
-  `boolean`
-
-**Example:**
-
-```json
-{
-  "status": 500,
-  "success": false,
-  "error": {
-    "code": "INTERNAL_ERROR",
-    "message": "Oh snap, something went wrong on our end. We're on it!",
-    "timestamp": "",
-    "details": {
-      "name": "",
-      "stack": ""
-    },
-    "requestId": "",
-    "cause": null
-  }
-}
-```
-
-## Schemas
-
-### ErrorDetails
-
-- **Type:**`object`
-
-* **`name` (required)**
-
-  `string`
-
-* **`stack`**
-
-  `string`
-
-**Example:**
-
-```json
-{
-  "name": "",
-  "stack": ""
-}
-```
-
-### CacheControl
-
-- **Type:**`object`
-
-* **`type` (required)**
-
-  `string`, possible values: `"ephemeral"`
-
-**Example:**
-
-```json
-{
-  "type": "ephemeral"
-}
-```
-
-### ContentFilterSeverity
-
-- **Type:**`string`
-
-**Example:**
-
-### ContentFilterResult
-
-- **Type:**`object`
-
-* **`hate`**
-
-  `object`
-
-  - **`filtered` (required)**
-
-    `boolean`
-
-  - **`severity` (required)**
-
-    `string`, possible values: `"safe", "low", "medium", "high"`
-
-* **`jailbreak`**
-
-  `object`
-
-  - **`detected` (required)**
-
-    `boolean`
-
-  - **`filtered` (required)**
-
-    `boolean`
-
-* **`protected_material_code`**
-
-  `object`
-
-  - **`detected` (required)**
-
-    `boolean`
-
-  - **`filtered` (required)**
-
-    `boolean`
-
-* **`protected_material_text`**
-
-  `object`
-
-  - **`detected` (required)**
-
-    `boolean`
-
-  - **`filtered` (required)**
-
-    `boolean`
-
-* **`self_harm`**
-
-  `object`
-
-  - **`filtered` (required)**
-
-    `boolean`
-
-  - **`severity` (required)**
-
-    `string`, possible values: `"safe", "low", "medium", "high"`
-
-* **`sexual`**
-
-  `object`
-
-  - **`filtered` (required)**
-
-    `boolean`
-
-  - **`severity` (required)**
-
-    `string`, possible values: `"safe", "low", "medium", "high"`
-
-* **`violence`**
-
-  `object`
-
-  - **`filtered` (required)**
-
-    `boolean`
-
-  - **`severity` (required)**
-
-    `string`, possible values: `"safe", "low", "medium", "high"`
-
-**Example:**
-
-```json
-{
-  "hate": {
-    "filtered": true,
-    "severity": "safe"
-  },
-  "self_harm": {
-    "filtered": true,
-    "severity": "safe"
-  },
-  "sexual": {
-    "filtered": true,
-    "severity": "safe"
-  },
-  "violence": {
-    "filtered": true,
-    "severity": "safe"
-  },
-  "jailbreak": {
-    "filtered": true,
-    "detected": true
-  },
-  "protected_material_text": {
-    "filtered": true,
-    "detected": true
-  },
-  "protected_material_code": {
-    "filtered": true,
-    "detected": true
-  }
-}
-```
-
-### CompletionUsage
-
-- **Type:**`object`
-
-* **`completion_tokens` (required)**
-
-  `integer`
-
-* **`prompt_tokens` (required)**
-
-  `integer`
-
-* **`total_tokens` (required)**
-
-  `integer`
-
-* **`completion_tokens_details`**
-
-  `object`
-
-* **`prompt_tokens_details`**
-
-  `object`
-
-**Example:**
-
-```json
-{
-  "completion_tokens": 0,
-  "completion_tokens_details": {
-    "accepted_prediction_tokens": 0,
-    "audio_tokens": 0,
-    "reasoning_tokens": 0,
-    "rejected_prediction_tokens": 0
-  },
-  "prompt_tokens": 0,
-  "prompt_tokens_details": {
-    "audio_tokens": 0,
-    "cached_tokens": 0
-  },
-  "total_tokens": 0
-}
-```
-
-### ValidationErrorDetails
-
-- **Type:**`object`
-
-* **`fieldErrors` (required)**
-
-  `object`
-
-* **`formErrors` (required)**
-
-  `array`
-
-  **Items:**
-
-  `string`
-
-* **`name` (required)**
-
-  `string`
-
-* **`stack`**
-
-  `string`
-
-**Example:**
-
-```json
-{
-  "name": "",
-  "stack": "",
-  "formErrors": [
-    ""
-  ],
-  "fieldErrors": {
-    "propertyName*": [
-      ""
+curl -X POST "https://gen.pollinations.ai/v1/chat/completions" \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "openai",
+    "messages": [
+      { "role": "system", "content": "You are a stoic philosopher." },
+      { "role": "user", "content": "Give me advice on patience." }
     ]
-  }
-}
+  }'
 ```
 
-### MessageContentPart
+#### 2. Gemini Tools: Enabling Google Search
+You can force any Gemini model to use Google Search by passing the specific tool definition.
 
-- **Type:**
+```bash
+curl -X POST "https://gen.pollinations.ai/v1/chat/completions" \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "gemini",
+    "tools": [
+      {
+        "type": "function",
+        "function": {
+          "name": "google_search"
+        }
+      }
+    ],
+    "messages": [
+      { "role": "user", "content": "What is the latest score of the NBA finals?" }
+    ]
+  }'
+```
+*Note: `gemini` and `gemini-large` also have Python code execution enabled by default for math/logic problems.*
 
-**Example:**
+#### 3. Vision (Text-to-Text with Image Input)
+Send an image URL along with text for analysis.
+
+```bash
+curl -X POST "https://gen.pollinations.ai/v1/chat/completions" \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "openai",
+    "messages": [
+      {
+        "role": "user",
+        "content": [
+          { "type": "text", "text": "Extract the text from this image." },
+          { "type": "image_url", "image_url": { "url": "https://example.com/receipt.jpg" } }
+        ]
+      }
+    ]
+  }'
+```
+
+#### 4. Text-to-Speech (Audio Output)
+Generate spoken audio.
+
+```bash
+curl -X POST "https://gen.pollinations.ai/v1/chat/completions" \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "openai-audio",
+    "modalities": ["text", "audio"],
+    "audio": {
+      "voice": "alloy",
+      "format": "mp3"
+    },
+    "messages": [
+      { "role": "user", "content": "Welcome to our application!" }
+    ]
+  }'
+```
+*   **Voices:** `alloy`, `echo`, `fable`, `onyx`, `nova`, `shimmer`, `coral`, `verse`, `ballad`.
+*   **Formats:** `wav`, `mp3`, `flac`, `opus`, `pcm16`.
+
+#### 5. Speech-to-Speech (Audio Input & Output)
+Send audio (Base64 encoded) and get audio back.
+
+```bash
+curl -X POST "https://gen.pollinations.ai/v1/chat/completions" \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "openai-audio",
+    "modalities": ["text", "audio"],
+    "messages": [
+      {
+        "role": "user",
+        "content": [
+          { 
+            "type": "input_audio", 
+            "input_audio": { 
+              "data": "BASE64_ENCODED_STRING...", 
+              "format": "wav" 
+            } 
+          }
+        ]
+      }
+    ]
+  }'
+```
+
+---
+
+## 2. Image & Video Generation Endpoint
+**Endpoint:** `GET /image/{prompt}`
+
+This endpoint generates media based on URL query parameters.
+
+### A. Supported Models
+
+**Image Models:**
+*   `flux`
+*   `zimage`
+*   `gptimage`
+*   `gptimage-large`
+*   `nanobanana`
+*   `nanobanana-pro`
+*   `seedream`
+*   `seedream-pro`
+*   `turbo`
+*   `kontext`
+
+**Video Models:**
+*   `veo` (Google DeepMind)
+*   `seedance`
+*   `seedance-pro`
+
+### B. Universal Parameters (Query Strings)
+
+| Parameter | Type | Default | Description |
+| :--- | :--- | :--- | :--- |
+| `model` | string | `flux` | The model ID from the list above. |
+| `width` | int | `1024` | Output width in pixels. |
+| `height` | int | `1024` | Output height in pixels. |
+| `seed` | int | `0` | Seed for reproducibility. `-1` = Random. |
+| `nologo` | boolean | `false` | `true` removes the watermark. |
+| `private` | boolean | `false` | `true` prevents the image from appearing in the public feed. |
+| `enhance` | boolean | `false` | `true` uses an LLM to rewrite/enrich your prompt. |
+| `safe` | boolean | `false` | `true` enables strict NSFW filtering. |
+| `negative_prompt`| string | - | What to exclude (e.g., "blurry, dark"). |
+| `image` | string | - | Reference image URL(s). Comma-separated for multiple. |
+
+---
+
+### C. Use Case Examples
+
+#### 1. Text-to-Image (Txt2Img)
+```bash
+curl "https://gen.pollinations.ai/image/A%20cyberpunk%20samurai?model=flux&width=1280&height=720&enhance=true&nologo=true" \
+  -H "Authorization: Bearer YOUR_API_KEY"
+```
+
+#### 2. Image-to-Image (Img2Img)
+Modify an existing image.
+```bash
+curl "https://gen.pollinations.ai/image/Make%20it%20made%20of%20lego?model=flux&image=https://example.com/photo.jpg" \
+  -H "Authorization: Bearer YOUR_API_KEY"
+```
+
+#### 3. Text-to-Video (Txt2Video)
+*   **Veo Duration:** 4, 6, or 8 seconds.
+*   **Seedance Duration:** 2 to 10 seconds.
+
+```bash
+curl "https://gen.pollinations.ai/image/A%20drone%20flying%20over%20mountains?model=veo&duration=8&audio=true" \
+  -H "Authorization: Bearer YOUR_API_KEY"
+```
+*Note: `audio=true` works specifically with `veo` to generate sound effects.*
+
+#### 4. Image-to-Video (Animation)
+Animate a single static image.
+```bash
+curl "https://gen.pollinations.ai/image/Make%20the%20waves%20move?model=seedance&image=https://example.com/ocean.jpg&duration=5" \
+  -H "Authorization: Bearer YOUR_API_KEY"
+```
+
+#### 5. Veo Special: Interpolation (First & Last Frame)
+Generate a video that morphs from a start frame to an end frame. Provide two URLs separated by a comma (or pipe `|`).
+
+```bash
+curl "https://gen.pollinations.ai/image/Morph?model=veo&image=https://site.com/start.jpg,https://site.com/end.jpg&duration=8" \
+  -H "Authorization: Bearer YOUR_API_KEY"
+```
+
+---
+
+## 3. Error Codes & Reasons
+
+The API returns standard HTTP status codes indicating success or failure.
+
+| Status | Error Code | Reason |
+| :--- | :--- | :--- |
+| **400** | `BAD_REQUEST` | **Invalid Parameters:** <br>- Width/Height too large (max usually 2048).<br>- Missing `prompt`.<br>- Invalid `model` name.<br>- Malformed JSON in POST body. |
+| **401** | `UNAUTHORIZED` | **Authentication Failed:**<br>- Missing `Authorization` header.<br>- Invalid API Key.<br>- Key has been revoked. |
+| **429** | `TOO_MANY_REQUESTS`| **Rate Limit:**<br>- Using a Publishable Key (`pk_`) and exceeded IP limits.<br>- **Solution:** Upgrade to a Secret Key (`sk_`) or wait. |
+| **500** | `INTERNAL_ERROR` | **Provider Error:**<br>- The underlying AI provider (OpenAI, Google, etc.) is experiencing downtime.<br>- The model failed to generate the specific request. |
+| **500** | `CONTENT_FILTER` | **Safety Violation:**<br>- The prompt or input image was flagged by safety filters (NSFW, violence, hate speech). |

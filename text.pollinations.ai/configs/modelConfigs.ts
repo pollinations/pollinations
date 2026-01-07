@@ -114,7 +114,7 @@ export const portkeyConfig: PortkeyConfigMap = {
         "vertex-project-id": process.env.GOOGLE_PROJECT_ID,
         "vertex-region": "europe-west1",
         "vertex-model-id": "anthropic.claude-opus-4-5@20251101",
-        "strict-openai-compliance": "false",
+        "strict-open-ai-compliance": "true",
     }),
     "claude-sonnet-4-5-vertex": () => ({
         provider: "vertex-ai",
@@ -122,7 +122,7 @@ export const portkeyConfig: PortkeyConfigMap = {
         "vertex-project-id": process.env.GOOGLE_PROJECT_ID,
         "vertex-region": "europe-west1",
         "vertex-model-id": "anthropic.claude-sonnet-4-5@20250929",
-        "strict-openai-compliance": "false",
+        "strict-open-ai-compliance": "true",
     }),
     "amazon.nova-micro-v1:0": () =>
         createBedrockLambdaModelConfig({

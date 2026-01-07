@@ -6,13 +6,13 @@ import { IMAGE_SERVICES } from "@shared/registry/image.ts";
 import { TEXT_SERVICES } from "@shared/registry/text.ts";
 
 // Get all model aliases (values we want to hide from docs)
-const IMAGE_ALIASES = new Set(
+const IMAGE_ALIASES: Set<string> = new Set(
     Object.values(IMAGE_SERVICES).flatMap((service) => service.aliases),
 );
-const TEXT_ALIASES = new Set(
+const TEXT_ALIASES: Set<string> = new Set(
     Object.values(TEXT_SERVICES).flatMap((service) => service.aliases),
 );
-const ALL_ALIASES = new Set([...IMAGE_ALIASES, ...TEXT_ALIASES]);
+const ALL_ALIASES: Set<string> = new Set([...IMAGE_ALIASES, ...TEXT_ALIASES]);
 
 // Recursively filter aliases from enum arrays in OpenAPI schema
 function filterModelAliasesFromSchema(obj: unknown): unknown {

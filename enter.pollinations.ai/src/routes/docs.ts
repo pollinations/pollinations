@@ -14,33 +14,19 @@ const TEXT_ALIASES: Set<string> = new Set(
 );
 const ALL_ALIASES: Set<string> = new Set([...IMAGE_ALIASES, ...TEXT_ALIASES]);
 
-// Recursively filter aliases from enum arrays in OpenAPI schema
-function filterModelAliasesFromSchema(obj: unknown): unknown {
-    if (obj === null || obj === undefined) return obj;
-    if (Array.isArray(obj)) {
-        return obj.map(filterModelAliasesFromSchema);
-    }
-    if (typeof obj === "object") {
-        const record = obj as Record<string, unknown>;
-        // Check if this is an enum schema with model values
-        if (
-            Array.isArray(record.enum) &&
-            record.enum.some((v) => ALL_ALIASES.has(v as string))
-        ) {
-            // Filter out aliases, keep only primary service IDs
-            return {
-                ...record,
-                enum: record.enum.filter((v) => !ALL_ALIASES.has(v as string)),
-            };
-        }
-        // Recurse into nested objects
-        const result: Record<string, unknown> = {};
-        for (const [key, value] of Object.entries(record)) {
-            result[key] = filterModelAliasesFromSchema(value);
-        }
-        return result;
-    }
-    return obj;
+// Filter model aliases from enum arrays in schema
+function filterAliases(
+    schema: Record<string, unknown>,
+): Record<string, unknown> {
+    return JSON.parse(
+        JSON.stringify(schema, (key, value) => {
+            if (key === "enum" && Array.isArray(value)) {
+                const filtered = value.filter((v) => !ALL_ALIASES.has(v));
+                return filtered.length !== value.length ? filtered : value;
+            }
+            return value;
+        }),
+    );
 }
 
 // Transform OpenAPI schema for gen.pollinations.ai:
@@ -60,10 +46,10 @@ function transformOpenAPISchema(
     }
 
     // Filter aliases from the entire schema
-    return filterModelAliasesFromSchema({
+    return filterAliases({
         ...schema,
         paths: newPaths,
-    }) as Record<string, unknown>;
+    });
 }
 
 export const createDocsRoutes = (apiRouter: Hono<Env>) => {

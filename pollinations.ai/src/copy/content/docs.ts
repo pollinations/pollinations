@@ -107,11 +107,7 @@ export const DOCS_PAGE = {
 
     // Shared example section
     usageExampleTitle: "Usage",
-    usageExampleCode: "https://gen.pollinations.ai/image/prompt?key=YOUR_KEY",
     getYourKeyLabel: "Get Your Key",
-    usageExamplesLabel: "Usage Examples",
-    serverSideDescription: "Authorization header (Recommended)",
-    clientSideDescription: "Query parameter (for pk_ keys)",
 
     // Call to Action
     ctaLabel: "Ready to build?",

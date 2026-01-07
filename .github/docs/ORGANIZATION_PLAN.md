@@ -18,6 +18,9 @@ Internal development work: features, refactors, infrastructure.
 | DEV-FEATURE  | New functionality request                        |
 | DEV-QUEST    | Community task - One off Pollen reward if merged |
 | DEV-TRACKING | Meta-issue tracking other items                  |
+| DEV-DOCS     | Documentation - dev docs, API docs, READMEs      |
+| DEV-INFRA    | Infrastructure - CI/CD, deployments, monitoring  |
+| DEV-CHORE    | Maintenance - dependency updates, cleanup        |
 | DEV-VOTING   | Community vote on a proposal                     |
 | DEV-PR       | PR for dev project                               |
 

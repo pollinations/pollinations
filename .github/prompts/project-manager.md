@@ -26,10 +26,14 @@ Classify this GitHub issue/PR. Return JSON only.
 - `DEV-FEATURE`: New functionality or enhancement
 - `DEV-QUEST`: Research, investigation, or exploration task
 - `DEV-TRACKING`: Meta issue tracking multiple items or milestones
+- `DEV-DOCS`: Documentation work - dev docs, API docs, READMEs, guides
+- `DEV-INFRA`: Infrastructure - CI/CD, deployments, DevOps, monitoring, secrets
+- `DEV-CHORE`: Maintenance tasks - dependency updates, cleanup, migrations
 
 ### support
 
 **TYPE (pick exactly 1):**
+
 - `.BUG`: User reports something not working as expected
 - `.OUTAGE`: Service is down or severely degraded
 - `.QUESTION`: How-to, usage questions, general inquiries
@@ -38,6 +42,7 @@ Classify this GitHub issue/PR. Return JSON only.
 - `.INTEGRATION`: Help with integrating Pollinations API/services
 
 **SERVICE (pick 1 or more based on what's affected):**
+
 - `IMAGE`: Image generation API
 - `TEXT`: Text/chat completion API
 - `AUDIO`: Audio/TTS API

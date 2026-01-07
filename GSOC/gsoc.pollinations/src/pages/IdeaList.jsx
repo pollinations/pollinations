@@ -180,21 +180,3 @@ export default function IdeaList() {
     </div>
   )
 }
-              <span className={`difficulty difficulty-${project.difficulty.toLowerCase()}`}>
-                {project.difficulty}
-              </span>
-            </div>
-            <p className="project-org">{project.organization}</p>
-            <p className="project-description">{project.description}</p>
-            <div className="project-topics">
-              {project.topics.map((topic, idx) => (
-                <span key={idx} className="topic-tag">{topic}</span>
-              ))}
-            </div>
-            <button className="btn btn-secondary">Learn More</button>
-          </div>
-        ))}
-      </div>
-    </div>
-  )
-}

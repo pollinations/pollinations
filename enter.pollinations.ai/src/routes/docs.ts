@@ -2,10 +2,50 @@ import { Hono } from "hono";
 import { Scalar } from "@scalar/hono-api-reference";
 import { openAPIRouteHandler } from "hono-openapi";
 import type { Env } from "@/env.ts";
+import { IMAGE_SERVICES } from "@shared/registry/image.ts";
+import { TEXT_SERVICES } from "@shared/registry/text.ts";
+
+// Get all model aliases (values we want to hide from docs)
+const IMAGE_ALIASES = new Set(
+    Object.values(IMAGE_SERVICES).flatMap((service) => service.aliases),
+);
+const TEXT_ALIASES = new Set(
+    Object.values(TEXT_SERVICES).flatMap((service) => service.aliases),
+);
+const ALL_ALIASES = new Set([...IMAGE_ALIASES, ...TEXT_ALIASES]);
+
+// Recursively filter aliases from enum arrays in OpenAPI schema
+function filterModelAliasesFromSchema(obj: unknown): unknown {
+    if (obj === null || obj === undefined) return obj;
+    if (Array.isArray(obj)) {
+        return obj.map(filterModelAliasesFromSchema);
+    }
+    if (typeof obj === "object") {
+        const record = obj as Record<string, unknown>;
+        // Check if this is an enum schema with model values
+        if (
+            Array.isArray(record.enum) &&
+            record.enum.some((v) => ALL_ALIASES.has(v as string))
+        ) {
+            // Filter out aliases, keep only primary service IDs
+            return {
+                ...record,
+                enum: record.enum.filter((v) => !ALL_ALIASES.has(v as string)),
+            };
+        }
+        // Recurse into nested objects
+        const result: Record<string, unknown> = {};
+        for (const [key, value] of Object.entries(record)) {
+            result[key] = filterModelAliasesFromSchema(value);
+        }
+        return result;
+    }
+    return obj;
+}
 
 // Transform OpenAPI schema for gen.pollinations.ai:
 // 1. Remove /generate/ prefix from paths
-// 2. Add x-tagGroups for Scalar sidebar organization
+// 2. Filter out model aliases from enums (show only primary model names)
 function transformOpenAPISchema(
     schema: Record<string, unknown>,
 ): Record<string, unknown> {
@@ -19,10 +59,11 @@ function transformOpenAPISchema(
         newPaths[cleanPath] = value;
     }
 
-    return {
+    // Filter aliases from the entire schema
+    return filterModelAliasesFromSchema({
         ...schema,
         paths: newPaths,
-    };
+    }) as Record<string, unknown>;
 }
 
 export const createDocsRoutes = (apiRouter: Hono<Env>) => {

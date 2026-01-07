@@ -51,8 +51,8 @@ def synthesize():
         instructions = body.get("instructions")
         response_format = body.get("response_format", "wav").lower()
         speed = body.get("speed", 0.5)  
-        exaggeration = body.get("exaggeration", 0.0) 
-        cfg_weight = body.get("cfg_weight", 7.0)  
+        exaggeration = 0.7
+        cfg_weight = 0.3
         
         if response_format not in ["wav", "mp3", "aac", "flac", "opus", "pcm"]:
             return jsonify({"error": f"Unsupported response_format: {response_format}. Supported: wav, mp3, aac, flac, opus, pcm"}), 400

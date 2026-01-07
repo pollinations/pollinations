@@ -64,7 +64,6 @@ async def generate_tts(text: str, requestID: str, model, language_id: str = "en"
                     language_id=language_id,
                     top_p=0.95,
                     temperature=0.8 + (exaggeration * 0.2),
-                    top_k=1000,
                     repetition_penalty=1.2,
                     audio_prompt_path=clone_path
                 )

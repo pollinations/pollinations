@@ -11,7 +11,6 @@ import torchaudio
 import io 
 import numpy as np
 import time
-from intent import getContentRefined
 
 try:
     set_start_method('spawn', force=True)
@@ -55,14 +54,8 @@ async def generate_tts(text: str, requestID: str, system: Optional[str] = None, 
         clone_path = VOICE_BASE64_MAP.get("alloy")
         print(f"[{requestID}] No voice specified, using default: alloy")
     
-    intention_detection = await getContentRefined(
-            f"This is the prompt and {text} ",
-            system
-        )
-        
-    intention = intention_detection.get("intent")
-    content = intention_detection.get("content")
-    print(f"[{requestID}] Intent: {intention}, Generated content: {content[:100]}...")
+    content = text
+    print(f"[{requestID}] Generated content: {content[:100]}...")
     max_retries = 3
     for attempt in range(max_retries):
         try:

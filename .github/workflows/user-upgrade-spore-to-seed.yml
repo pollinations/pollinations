@@ -15,12 +15,33 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
       - name: Fetch spore users
         id: fetch
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          POLAR_ACCESS_TOKEN: ${{ secrets.POLAR_ACCESS_TOKEN }}
         run: |
-          # TODO: Implement API call to get spore users
-          # Output JSON array of GitHub usernames
-          echo "users=[]" >> $GITHUB_OUTPUT
+          npm install -g wrangler
+          cd enter.pollinations.ai
+          npm install
+          
+          OUTPUT=$(npx tsx scripts/tier-update-user.ts fetch-tier \
+            --tier spore \
+            --env production 2>&1) || true
+          
+          echo "$OUTPUT"
+          
+          # Extract JSON array of usernames from output
+          USERS=$(echo "$OUTPUT" | jq -r '.users // []' 2>/dev/null || echo '[]')
+          
+          echo "users=$USERS" >> $GITHUB_OUTPUT
+          echo "Found $(echo "$USERS" | jq 'length') spore users"
 
   # Step 2: Validate users
   validate-users:
@@ -53,7 +74,7 @@ jobs:
           import os
           import sys
           sys.path.insert(0, '.github/scripts')
-          from user_validate_github_seed import validate_users
+          from user_validate_github_profile import validate_users
 
           async def main():
               users = json.loads(os.environ.get('SPORE_USERS', '[]'))
@@ -101,9 +122,88 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
       - name: Upgrade users to Seed
+        id: upgrade
         env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          POLAR_ACCESS_TOKEN: ${{ secrets.POLAR_ACCESS_TOKEN }}
           APPROVED_USERS: ${{ needs.validate-users.outputs.approved_users }}
         run: |
-          # TODO: Implement API call to upgrade users
-          echo "Users to upgrade: $APPROVED_USERS"
+          npm install -g wrangler
+          cd enter.pollinations.ai
+          npm install
+          
+          RESULTS="[]"
+          
+          for row in $(echo "$APPROVED_USERS" | jq -c '.[]'); do
+            USERNAME="$row"
+            
+            echo "🌱 Upgrading $USERNAME to seed tier..."
+            OUTPUT=$(npx tsx scripts/tier-update-user.ts update-tier \
+              --githubUsername "$USERNAME" \
+              --tier seed \
+              --env production 2>&1) || true
+            
+            echo "$OUTPUT"
+            
+            # Check if user already at higher tier (skip silently)
+            if echo "$OUTPUT" | grep -q "SKIP_UPGRADE=true"; then
+              echo "✅ User $USERNAME already at seed tier or higher - skipping"
+              RESULTS=$(echo "$RESULTS" | jq --arg user "$USERNAME" \
+                '. + [{"user": $user, "success": "skipped"}]')
+            elif echo "$OUTPUT" | grep -q "Tier update complete"; then
+              # Verify the tier was actually set correctly in both D1 and Polar
+              echo "🔍 Verifying tier upgrade for $USERNAME..."
+              VERIFY_OUTPUT=$(npx tsx scripts/tier-update-user.ts verify-tier \
+                --githubUsername "$USERNAME" \
+                --tier seed \
+                --env production 2>&1) || true
+              
+              echo "$VERIFY_OUTPUT"
+              
+              if echo "$VERIFY_OUTPUT" | grep -q "VERIFIED=true"; then
+                echo "✅ Tier verified for $USERNAME"
+                RESULTS=$(echo "$RESULTS" | jq --arg user "$USERNAME" \
+                  '. + [{"user": $user, "success": true}]')
+              else
+                echo "⚠️ Tier verification failed for $USERNAME"
+                RESULTS=$(echo "$RESULTS" | jq --arg user "$USERNAME" \
+                  '. + [{"user": $user, "success": "unverified"}]')
+              fi
+            else
+              RESULTS=$(echo "$RESULTS" | jq --arg user "$USERNAME" \
+                '. + [{"user": $user, "success": false}]')
+            fi
+          done
+          
+          echo "results<<EOF" >> $GITHUB_OUTPUT
+          echo "$RESULTS" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      - name: Report upgrade results
+        if: steps.upgrade.outputs.results != '[]' && steps.upgrade.outputs.results != ''
+        run: |
+          RESULTS='${{ steps.upgrade.outputs.results }}'
+          
+          echo "📊 Upgrade Results:"
+          echo "=================="
+          
+          APPROVED=$(echo "$RESULTS" | jq '[.[] | select(.success == true)] | length')
+          SKIPPED=$(echo "$RESULTS" | jq '[.[] | select(.success == "skipped")] | length')
+          UNVERIFIED=$(echo "$RESULTS" | jq '[.[] | select(.success == "unverified")] | length')
+          FAILED=$(echo "$RESULTS" | jq '[.[] | select(.success == false)] | length')
+          
+          echo "✅ Upgraded: $APPROVED"
+          echo "⏭️  Skipped: $SKIPPED"
+          echo "⚠️  Unverified: $UNVERIFIED"
+          echo "❌ Failed: $FAILED"
+          
+          echo ""
+          echo "Details:"
+          echo "$RESULTS" | jq -r '.[] | "  - \(.user): \(.success)"'

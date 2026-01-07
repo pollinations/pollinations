@@ -15,29 +15,24 @@ from dataclasses import dataclass, field
 GITHUB_TOKEN = os.environ.get("GITHUB_TOKEN")
 GITHUB_GRAPHQL = "https://api.github.com/graphql"
 
-# Batch settings
 BATCH_SIZE = 50
 MAX_CONCURRENT_BATCHES = 5
 
-# Retry settings
 MAX_RETRIES = 5
-INITIAL_BACKOFF = 1  # seconds
-MAX_BACKOFF = 60  # seconds
+INITIAL_BACKOFF = 1
+MAX_BACKOFF = 60
 BACKOFF_MULTIPLIER = 2
 
-# Hard requirements (must pass ALL)
 MIN_ACCOUNT_AGE_DAYS = 60
 MIN_PUBLIC_REPOS = 1
 MIN_COMMITS = 10
 
-# Approval threshold
 APPROVE_SCORE = 50
 
 
 @dataclass
 class UserScore:
     username: str
-    # Raw data
     account_age_days: int = 0
     public_repos: int = 0
     total_commits: int = 0
@@ -52,17 +47,14 @@ class UserScore:
     has_avatar: bool = False
     has_recent_activity: bool = False
     contributed_repos: int = 0
-    # Scoring
     score: int = 0
     score_breakdown: dict = field(default_factory=dict)
     red_flags: list = field(default_factory=list)
-    # Result
     approved: bool = False
     reason: str = ""
 
 
 def build_batch_query(usernames: list[str]) -> str:
-    """Build a batched GraphQL query for multiple users."""
     user_fragments = []
     for i, username in enumerate(usernames):
         safe_username = username.replace('"', '\\"').replace("\\", "\\\\")
@@ -106,14 +98,12 @@ def build_batch_query(usernames: list[str]) -> str:
 
 
 def calculate_score(user_data: dict, username: str) -> UserScore:
-    """Calculate legitimacy score for a user."""
     result = UserScore(username=username)
 
     if not user_data:
         result.reason = "User not found"
         return result
 
-    # Extract raw data
     created_at = datetime.fromisoformat(user_data["createdAt"].replace("Z", "+00:00"))
     result.account_age_days = (datetime.now(timezone.utc) - created_at).days
     result.public_repos = user_data["repositories"]["totalCount"]
@@ -132,7 +122,6 @@ def calculate_score(user_data: dict, username: str) -> UserScore:
     result.has_recent_activity = contributions["hasAnyContributions"]
     result.contributed_repos = user_data["repositoriesContributedTo"]["totalCount"]
 
-    # Check hard requirements
     hard_failures = []
     if result.account_age_days < MIN_ACCOUNT_AGE_DAYS:
         hard_failures.append(f"Account too new ({result.account_age_days} < {MIN_ACCOUNT_AGE_DAYS} days)")
@@ -146,10 +135,8 @@ def calculate_score(user_data: dict, username: str) -> UserScore:
         result.reason = "DENY: " + "; ".join(hard_failures)
         return result
 
-    # Calculate score
     breakdown = {}
 
-    # Account age (max 25)
     if result.account_age_days >= 730:
         breakdown["account_age"] = 25
     elif result.account_age_days >= 365:
@@ -161,7 +148,6 @@ def calculate_score(user_data: dict, username: str) -> UserScore:
     else:
         breakdown["account_age"] = 5
 
-    # Profile (max 15)
     profile_score = 0
     if result.has_bio:
         profile_score += 5
@@ -175,7 +161,6 @@ def calculate_score(user_data: dict, username: str) -> UserScore:
         profile_score += 2
     breakdown["profile"] = min(profile_score, 15)
 
-    # Commits (max 20)
     if result.total_commits >= 200:
         breakdown["commits"] = 20
     elif result.total_commits >= 51:
@@ -185,7 +170,6 @@ def calculate_score(user_data: dict, username: str) -> UserScore:
     else:
         breakdown["commits"] = 5
 
-    # Contributions (max 25)
     contrib_score = 0
     if result.total_prs > 0:
         contrib_score += 10
@@ -197,29 +181,23 @@ def calculate_score(user_data: dict, username: str) -> UserScore:
         contrib_score += 5
     breakdown["contributions"] = min(contrib_score, 25)
 
-    # Recent activity (max 10)
     breakdown["recent_activity"] = 10 if result.has_recent_activity else 0
 
-    # Red flags
     red_flags = []
     total_activity = result.total_commits + result.total_prs + result.total_issues
 
-    # Zero social connections on older account
     if result.followers == 0 and result.following == 0 and result.account_age_days >= 90:
         red_flags.append("No social connections")
         breakdown["red_flag_isolated"] = -15
 
-    # Empty profile
     if not result.has_bio and not result.has_website and not result.has_company:
         red_flags.append("Empty profile")
         breakdown["red_flag_empty_profile"] = -15
 
-    # Suspicious follower ratio
     if result.followers > 100 and total_activity < 10:
         red_flags.append("Suspicious follower ratio")
         breakdown["red_flag_follower_ratio"] = -15
 
-    # Dormant old account
     if result.account_age_days > 365 and not result.has_recent_activity:
         red_flags.append("Dormant account")
         breakdown["red_flag_dormant"] = -10
@@ -228,7 +206,6 @@ def calculate_score(user_data: dict, username: str) -> UserScore:
     result.score = max(0, sum(breakdown.values()))
     result.score_breakdown = breakdown
 
-    # Final decision
     if result.score >= APPROVE_SCORE:
         result.approved = True
         result.reason = f"APPROVED: Score {result.score}"
@@ -246,7 +223,6 @@ async def validate_batch(
     session: aiohttp.ClientSession,
     usernames: list[str]
 ) -> tuple[list[UserScore], dict]:
-    """Validate a batch of users with exponential backoff."""
     query = build_batch_query(usernames)
     payload = {"query": query}
 
@@ -310,7 +286,6 @@ async def validate_batch(
 
 
 async def validate_users(usernames: list[str]) -> list[UserScore]:
-    """Validate multiple users with batched GraphQL queries."""
     if not usernames:
         return []
 

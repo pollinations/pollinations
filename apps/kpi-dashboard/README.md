@@ -59,10 +59,6 @@ npm run dev
 npm run deploy  # Deploys to kpi.myceli.ai
 ```
 
-## Authentication
-
-**Production:** Protected via Cloudflare Access (configure in CF dashboard for `kpi.myceli.ai`)
-
 ## Secrets Management
 
 Secrets are SOPS-encrypted in `secrets/env.json`. To update:
@@ -77,6 +73,5 @@ sops secrets/env.json  # Edit encrypted file
 - [x] Create Tinybird pipes for weekly aggregations
 - [x] Add D1 API endpoints for registration/activation metrics
 - [x] Integrate Polar API for real revenue data
-- [ ] Configure Cloudflare Access for production auth
 - [ ] Track GitHub star history over time
 - [ ] Real activation tracking (D1 + Tinybird cross-reference)

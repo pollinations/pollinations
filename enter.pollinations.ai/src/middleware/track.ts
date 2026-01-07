@@ -267,7 +267,10 @@ export const track = (eventType: EventType) =>
                     const packBalance = currentUser[0]?.packBalance ?? 0;
 
                     // Decrement tier first, then pack
-                    const fromTier = Math.min(priceToDeduct, Math.max(0, tierBalance));
+                    const fromTier = Math.min(
+                        priceToDeduct,
+                        Math.max(0, tierBalance),
+                    );
                     const fromPack = priceToDeduct - fromTier;
 
                     await db
@@ -577,8 +580,17 @@ async function extractStreamRequested(request: HonoRequest): Promise<boolean> {
         return z.safeParse(z.coerce.boolean(), stream).data || false;
     }
     if (request.method === "POST") {
-        const stream = (await request.json()).stream;
-        return z.safeParse(z.coerce.boolean(), stream).data || false;
+        const contentType = request.header("content-type") || "";
+        // Skip JSON parsing for multipart requests (e.g., audio transcription)
+        if (contentType.includes("multipart/form-data")) {
+            return false;
+        }
+        try {
+            const stream = (await request.json()).stream;
+            return z.safeParse(z.coerce.boolean(), stream).data || false;
+        } catch {
+            return false;
+        }
     }
     return false;
 }

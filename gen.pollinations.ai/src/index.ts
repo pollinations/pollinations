@@ -24,14 +24,30 @@ function fixNestedImageUrls(rawUrl: string): string {
     const imageMatch = rawUrl.match(/([?&])(image=)(https?:\/\/)/i);
     if (!imageMatch || imageMatch.index === undefined) return rawUrl;
 
-    const nestedUrlStart = imageMatch.index + imageMatch[1].length + imageMatch[2].length;
+    const nestedUrlStart =
+        imageMatch.index + imageMatch[1].length + imageMatch[2].length;
 
     // Known top-level params for image generation
     // Keep in sync with: enter.pollinations.ai/src/schemas/image.ts
     const topLevelParams = new Set([
-        'model', 'width', 'height', 'seed', 'enhance', 'negative_prompt',
-        'private', 'nologo', 'nofeed', 'safe', 'quality', 'transparent',
-        'guidance_scale', 'duration', 'aspectratio', 'audio', 'key', 'image'
+        "model",
+        "width",
+        "height",
+        "seed",
+        "enhance",
+        "negative_prompt",
+        "private",
+        "nologo",
+        "nofeed",
+        "safe",
+        "quality",
+        "transparent",
+        "guidance_scale",
+        "duration",
+        "aspectratio",
+        "audio",
+        "key",
+        "image",
     ]);
 
     // Find params BEFORE image= (definitely outer)
@@ -42,18 +58,18 @@ function fixNestedImageUrls(rawUrl: string): string {
     }
 
     const afterNestedUrlStart = rawUrl.slice(nestedUrlStart);
-    const nestedQueryIdx = afterNestedUrlStart.indexOf('?');
+    const nestedQueryIdx = afterNestedUrlStart.indexOf("?");
     let nestedUrlEnd = afterNestedUrlStart.length;
 
     if (nestedQueryIdx !== -1) {
         // Nested URL has query string - find where outer params start
         const queryPart = afterNestedUrlStart.slice(nestedQueryIdx + 1);
-        const params = queryPart.split('&');
+        const params = queryPart.split("&");
         const seenInNested = new Set<string>();
         let offset = nestedQueryIdx + 1;
 
         for (const param of params) {
-            const name = param.split('=')[0].toLowerCase();
+            const name = param.split("=")[0].toLowerCase();
 
             // Cut at: duplicate param OR param that was before image=
             if (seenInNested.has(name) || outerParamsBefore.has(name)) {
@@ -67,7 +83,11 @@ function fixNestedImageUrls(rawUrl: string): string {
     } else {
         // No ? in nested URL - first known top-level param after it is outer
         const paramMatch = afterNestedUrlStart.match(/&([^=&]+)=/);
-        if (paramMatch && paramMatch.index !== undefined && topLevelParams.has(paramMatch[1].toLowerCase())) {
+        if (
+            paramMatch &&
+            paramMatch.index !== undefined &&
+            topLevelParams.has(paramMatch[1].toLowerCase())
+        ) {
             nestedUrlEnd = paramMatch.index;
         }
     }
@@ -75,7 +95,11 @@ function fixNestedImageUrls(rawUrl: string): string {
     const nestedUrl = afterNestedUrlStart.slice(0, nestedUrlEnd);
     const afterNested = afterNestedUrlStart.slice(nestedUrlEnd);
 
-    return rawUrl.slice(0, nestedUrlStart) + encodeURIComponent(nestedUrl) + afterNested;
+    return (
+        rawUrl.slice(0, nestedUrlStart) +
+        encodeURIComponent(nestedUrl) +
+        afterNested
+    );
 }
 
 export default {
@@ -98,6 +122,12 @@ export default {
         // Don't rewrite /api/* paths - they're already in the correct format
         if (path.startsWith("/api/")) {
             return env.ENTER.fetch(request);
+        }
+
+        // Audio transcription/translation - forward to enter service
+        if (path.startsWith("/v1/audio/")) {
+            url.pathname = "/api/generate" + path;
+            return env.ENTER.fetch(new Request(url, request));
         }
 
         // Normalize OpenAI-compatible endpoints that clients may mangle

@@ -468,6 +468,51 @@ export const proxyRoutes = new Hono<Env>()
 
             return response;
         },
+    )
+    .post(
+        "/v1/audio/transcriptions",
+        // Simplified: No resolveModel/track - whisper is the only model, just auth + proxy
+        async (c) => {
+            const log = c.get("log").getChild("transcription");
+            await c.var.auth.requireAuthorization();
+
+            // OVHcloud Whisper - thin proxy, forward request directly
+            const response = await fetch(
+                "https://oai.endpoints.kepler.ai.cloud.ovh.net/v1/audio/transcriptions",
+                {
+                    method: "POST",
+                    headers: {
+                        Authorization: `Bearer ${c.env.OVHCLOUD_API_KEY}`,
+                        "Content-Type":
+                            c.req.header("Content-Type") ||
+                            "multipart/form-data",
+                    },
+                    body: c.req.raw.body,
+                    // @ts-expect-error - duplex required for streaming request bodies
+                    duplex: "half",
+                },
+            );
+
+            if (!response.ok) {
+                const responseText = await response.text();
+                log.warn("Transcription error {status}: {body}", {
+                    status: response.status,
+                    body: responseText,
+                });
+                throw new UpstreamError(
+                    response.status as ContentfulStatusCode,
+                    {
+                        message:
+                            responseText ||
+                            getDefaultErrorMessage(response.status),
+                    },
+                );
+            }
+
+            return new Response(response.body, {
+                headers: Object.fromEntries(response.headers),
+            });
+        },
     );
 
 function proxyHeaders(c: Context): Record<string, string> {

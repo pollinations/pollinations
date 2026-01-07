@@ -25,7 +25,7 @@ def normalize_text(text: str, remove_punctuation: bool = False) -> str:
     
     return text
 
-async def generate_tts(text: str, requestID: str, model, language_id: str = "en", system: Optional[str] = None, voice: Optional[str] = "alloy", speed: float = 0.5, exaggeration: float = 0.0, cfg_weight: float = 7.0, normalize: bool = False) -> tuple:
+async def generate_tts(text: str, requestID: str, model, language_id: str = "en",  voice: Optional[str] = "alloy", speed: float = 0.5, exaggeration: float = 0.0, cfg_weight: float = 7.0, normalize: bool = False) -> tuple:
     clone_path = None
     if normalize:
         text = normalize_text(text, remove_punctuation=False)
@@ -130,10 +130,9 @@ if __name__ == "__main__":
         
         text = "Verbatim: Scientific progress often arrives quietly, reshaping daily life not through spectacle but through accumulation—small, precise improvements that compound until the world behaves differently than it did before."
         requestID = "request123"
-        system = None
         voice = "alloy"
         
-        audio_bytes, audio_sample = await generate_tts(text, requestID, model, system, voice)
+        audio_bytes, audio_sample = await generate_tts(text, requestID, model, voice)
         audio_tensor = torch.from_numpy(np.frombuffer(audio_bytes, dtype=np.int16)).unsqueeze(0)
         torchaudio.save(f"audio.wav", audio_tensor, audio_sample)
         torchaudio.save(f"genAudio/audio.wav", audio_tensor, audio_sample)

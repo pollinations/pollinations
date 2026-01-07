@@ -98,7 +98,6 @@ def synthesize():
         
         voice = body.get("voice", "alloy")
         language_id = body.get("language_id", "en")
-        instructions = body.get("instructions")
         response_format = body.get("response_format", "wav").lower()
         speed = body.get("speed", 0.5)  
         exaggeration = body.get("exaggeration", 0.0)
@@ -137,7 +136,6 @@ def synthesize():
                 requestID=request_id,
                 model=tts_model,
                 language_id=language_id,
-                system=instructions,
                 voice=voice,
                 speed=speed,
                 exaggeration=exaggeration,

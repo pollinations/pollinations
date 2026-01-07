@@ -55,7 +55,6 @@ Generate speech from text with customizable voice, language, and expression para
 | `speed` | float | `0.5` | Playback speed: 0.0 (slow) to 1.0 (fast) → 0.5x to 1.5x |
 | `exaggeration` | float | `0.0` | Speech dramatization: 0.0+ (use 0.7+ for dramatic effect) |
 | `cfg_weight` | float | `7.0` | Style guidance: 0.1+ (lower=expressive, higher=neutral) |
-| `instructions` | string | `null` | System prompt for tone/style guidance |
 | `normalize` | boolean | `false` | Full text normalization (removes punctuation if true) |
 
 #### Response

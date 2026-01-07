@@ -86,7 +86,7 @@ export const portkeyConfig: PortkeyConfigMap = {
         }),
 
     // ============================================================================
-    // AWS Bedrock - claude-fast, claude, claude-large, chickytutor, nova-micro
+    // AWS Bedrock - claude-fast, claude, claude-large, chickytutor, nova-fast
     // ============================================================================
     "us.anthropic.claude-3-5-haiku-20241022-v1:0": () =>
         createBedrockLambdaModelConfig({

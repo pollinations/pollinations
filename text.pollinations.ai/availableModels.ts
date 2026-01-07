@@ -154,7 +154,7 @@ const models: ModelDefinition[] = [
         ),
     },
     {
-        name: "nova-micro",
+        name: "nova-fast",
         config: portkeyConfig["amazon.nova-micro-v1:0"],
         transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
     },

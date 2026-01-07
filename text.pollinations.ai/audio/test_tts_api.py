@@ -55,7 +55,7 @@ def test_multilingual():
     test_cases = [
         {
             "name": "English",
-            "text": "Hello, this is a test of the multilingual text to speech API.",
+            "text": "Hello!! this is a test of the multilingual text to speech API.",
             "language_id": "en"
         },
         {
@@ -77,7 +77,7 @@ def test_multilingual():
             "name": "Japanese",
             "text": "こんにちは、これは多言語テキスト音声合成APIのテストです。",
             "language_id": "ja"
-        },
+        }
     ]
     
     results = []
@@ -87,7 +87,7 @@ def test_multilingual():
         payload = {
             "input": test_case["text"],
             "language_id": test_case["language_id"],
-            "voice": "ash"
+            "voice": "alloy"
         }
         
         try:

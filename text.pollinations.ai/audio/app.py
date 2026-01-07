@@ -23,7 +23,6 @@ BASE62 = string.digits + string.ascii_letters
 app = Flask(__name__)
 CORS(app)
 
-# Load multilingual TTS model on startup
 logger.info("Loading ChatterboxMultilingualTTS model...")
 tts_model = ChatterboxMultilingualTTS.from_pretrained(device=device, cache_dir=cache_dir)
 logger.info("Multilingual TTS model loaded successfully")
@@ -54,8 +53,8 @@ def synthesize():
         speed = body.get("speed", 0.5)  
         exaggeration = body.get("exaggeration", 0.0)
         cfg_weight = body.get("cfg_weight", 7.0)
+        normalize = body.get("normalize", False)  
         
-        # Supported languages
         supported_languages = ["ar", "da", "de", "el", "en", "es", "fi", "fr", "he", "hi", "it", "ja", "ko", "ms", "nl", "no", "pl", "pt", "ru", "sv", "sw", "tr", "zh"]
         if language_id not in supported_languages:
             return jsonify({"error": f"Unsupported language_id: {language_id}. Supported: {', '.join(supported_languages)}"}), 400
@@ -72,7 +71,7 @@ def synthesize():
             return jsonify({"error": "cfg_weight must be >= 0.1. Lower values (0.3) for more expressive, higher (7.0+) for neutral"}), 400
         
         request_id = str(uuid4())[:12]
-        logger.info(f"[{request_id}] TTS request: text={text[:50]}..., language={language_id}, voice={voice}, format={response_format}, speed={speed:.2f}, exaggeration={exaggeration:.2f}, cfg_weight={cfg_weight:.2f}")
+        logger.info(f"[{request_id}] TTS request: text={text[:50]}..., language={language_id}, voice={voice}, format={response_format}, normalize={normalize}")
         
         try:
             audio_bytes, sample_rate = asyncio.run(generate_tts(
@@ -84,7 +83,8 @@ def synthesize():
                 voice=voice,
                 speed=speed,
                 exaggeration=exaggeration,
-                cfg_weight=cfg_weight
+                cfg_weight=cfg_weight,
+                normalize=normalize
             ))
         except Exception as e:
             logger.error(f"[{request_id}] Synthesis error: {e}")

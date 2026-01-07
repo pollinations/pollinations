@@ -8,9 +8,30 @@ import torch
 import torchaudio
 import io 
 import numpy as np
+import re
 
-async def generate_tts(text: str, requestID: str, model, language_id: str = "en", system: Optional[str] = None, voice: Optional[str] = "alloy", speed: float = 0.5, exaggeration: float = 0.0, cfg_weight: float = 7.0) -> tuple:
+def normalize_text(text: str, remove_punctuation: bool = False) -> str:
+    text = text.strip()
+    text = re.sub(r'\s+([.,!?;:])', r'\1', text)  
+    text = re.sub(r'([.,!?;:])\s*([.,!?;:])', r'\1 \2', text)  
+    if remove_punctuation:
+        # Remove all punctuation but keep spaces
+        text = re.sub(r'[.,!?;:\'""-]', '', text)
+        # Clean up multiple spaces
+        text = re.sub(r'\s+', ' ', text)
+    else:
+        # Keep punctuation but clean up multiple spaces
+        text = re.sub(r'\s+', ' ', text)
+    
+    return text
+
+async def generate_tts(text: str, requestID: str, model, language_id: str = "en", system: Optional[str] = None, voice: Optional[str] = "alloy", speed: float = 0.5, exaggeration: float = 0.0, cfg_weight: float = 7.0, normalize: bool = False) -> tuple:
     clone_path = None
+    if normalize:
+        text = normalize_text(text, remove_punctuation=False)
+        print(f"[{requestID}] Text normalized (punctuation preserved)")
+    else:
+        text = normalize_text(text, remove_punctuation=False)
     
     if voice and VOICE_BASE64_MAP.get(voice):
         clone_path = VOICE_BASE64_MAP.get(voice)
@@ -42,8 +63,8 @@ async def generate_tts(text: str, requestID: str, model, language_id: str = "en"
                 wav = model.generate(
                     text=content,
                     language_id=language_id,
-                    top_p=0.95,
-                    temperature=0.8 + (exaggeration * 0.2),
+                    top_p=0.9,
+                    temperature=0.6 + (exaggeration * 0.2),
                     repetition_penalty=1.2,
                     audio_prompt_path=clone_path
                 )
@@ -53,6 +74,22 @@ async def generate_tts(text: str, requestID: str, model, language_id: str = "en"
             
             if wav is None:
                 raise RuntimeError("Audio generation failed - GPU out of memory or other error")
+
+            # Validate output - check if audio is too short (possible incomplete synthesis)
+            if isinstance(wav, torch.Tensor):
+                audio_duration = wav.shape[-1] / model.sr
+            elif isinstance(wav, np.ndarray):
+                audio_duration = wav.shape[-1] / model.sr if wav.ndim > 1 else len(wav) / model.sr
+            else:
+                audio_duration = len(wav) / model.sr
+            
+            # Estimate minimum expected duration (rough: ~0.5 sec per 10 characters)
+            min_expected_duration = len(content) / 20.0
+            
+            if audio_duration < min_expected_duration * 0.5 and attempt < max_retries - 1:
+                print(f"[{requestID}] Warning: Audio seems incomplete ({audio_duration:.2f}s < {min_expected_duration:.2f}s expected). Retrying...")
+                await asyncio.sleep(1)
+                continue
 
             if isinstance(wav, torch.Tensor):
                 audio_tensor = wav

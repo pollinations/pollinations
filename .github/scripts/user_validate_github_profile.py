@@ -12,26 +12,32 @@ import os
 from datetime import datetime, timezone
 from dataclasses import dataclass, field
 
+# GitHub API configuration
 GITHUB_TOKEN = os.environ.get("GITHUB_TOKEN")
 GITHUB_GRAPHQL = "https://api.github.com/graphql"
 
+# Batch processing settings (50 users per request, 5 concurrent batches)
 BATCH_SIZE = 50
 MAX_CONCURRENT_BATCHES = 5
 
+# Retry configuration with exponential backoff
 MAX_RETRIES = 5
 INITIAL_BACKOFF = 1
 MAX_BACKOFF = 60
 BACKOFF_MULTIPLIER = 2
 
+# Hard requirements - users failing these are auto-denied
 MIN_ACCOUNT_AGE_DAYS = 60
 MIN_PUBLIC_REPOS = 1
 MIN_COMMITS = 10
 
+# Score threshold for approval
 APPROVE_SCORE = 50
 
 
 @dataclass
 class UserScore:
+    """Scoring result for a single GitHub user."""
     username: str
     account_age_days: int = 0
     public_repos: int = 0
@@ -48,15 +54,22 @@ class UserScore:
     has_recent_activity: bool = False
     contributed_repos: int = 0
     score: int = 0
-    score_breakdown: dict = field(default_factory=dict)
-    red_flags: list = field(default_factory=list)
+    score_breakdown: dict = field(default_factory=dict)  # Detailed point breakdown
+    red_flags: list = field(default_factory=list)  # Suspicious patterns detected
     approved: bool = False
     reason: str = ""
 
 
 def build_batch_query(usernames: list[str]) -> str:
+    """
+    Build a single GraphQL query to fetch data for multiple users.
+    
+    Each user becomes a separate query alias (u0, u1, etc.) to fetch in one request.
+    Includes data needed for scoring: account age, repos, commits, profile completeness, etc.
+    """
     user_fragments = []
     for i, username in enumerate(usernames):
+        # Escape quotes to prevent GraphQL injection
         safe_username = username.replace('"', '\\"').replace("\\", "\\\\")
         user_fragments.append(f'''
     u{i}: user(login: "{safe_username}") {{
@@ -98,12 +111,24 @@ def build_batch_query(usernames: list[str]) -> str:
 
 
 def calculate_score(user_data: dict, username: str) -> UserScore:
+    """
+    Calculate approval score for a user based on their GitHub profile.
+    
+    Process:
+    1. Extract raw data from GitHub API response
+    2. Check hard requirements (if failed, auto-deny)
+    3. Calculate score from profile completeness and activity
+    4. Detect red flags (suspicious patterns)
+    5. Return final decision
+    """
     result = UserScore(username=username)
 
+    # Handle user not found
     if not user_data:
         result.reason = "User not found"
         return result
 
+    # Extract and calculate basic metrics
     created_at = datetime.fromisoformat(user_data["createdAt"].replace("Z", "+00:00"))
     result.account_age_days = (datetime.now(timezone.utc) - created_at).days
     result.public_repos = user_data["repositories"]["totalCount"]
@@ -113,8 +138,10 @@ def calculate_score(user_data: dict, username: str) -> UserScore:
     result.has_website = bool(user_data.get("websiteUrl"))
     result.has_company = bool(user_data.get("company"))
     result.has_location = bool(user_data.get("location"))
+    # Avatar check: exclude default Gravatar avatars
     result.has_avatar = bool(user_data.get("avatarUrl")) and "gravatar" not in user_data.get("avatarUrl", "")
 
+    # Extract contribution data
     contributions = user_data["contributionsCollection"]
     result.total_commits = contributions["totalCommitContributions"]
     result.total_prs = contributions["totalPullRequestContributions"]
@@ -122,6 +149,7 @@ def calculate_score(user_data: dict, username: str) -> UserScore:
     result.has_recent_activity = contributions["hasAnyContributions"]
     result.contributed_repos = user_data["repositoriesContributedTo"]["totalCount"]
 
+    # Check hard requirements - any failure = auto-deny
     hard_failures = []
     if result.account_age_days < MIN_ACCOUNT_AGE_DAYS:
         hard_failures.append(f"Account too new ({result.account_age_days} < {MIN_ACCOUNT_AGE_DAYS} days)")
@@ -135,8 +163,10 @@ def calculate_score(user_data: dict, username: str) -> UserScore:
         result.reason = "DENY: " + "; ".join(hard_failures)
         return result
 
+    # Score calculation - points for different categories
     breakdown = {}
 
+    # Account age: older accounts score higher (2+ years = max points)
     if result.account_age_days >= 730:
         breakdown["account_age"] = 25
     elif result.account_age_days >= 365:
@@ -148,6 +178,7 @@ def calculate_score(user_data: dict, username: str) -> UserScore:
     else:
         breakdown["account_age"] = 5
 
+    # Profile completeness: cap at 15 points
     profile_score = 0
     if result.has_bio:
         profile_score += 5
@@ -161,6 +192,7 @@ def calculate_score(user_data: dict, username: str) -> UserScore:
         profile_score += 2
     breakdown["profile"] = min(profile_score, 15)
 
+    # Commit history: more commits = more points (max 20)
     if result.total_commits >= 200:
         breakdown["commits"] = 20
     elif result.total_commits >= 51:
@@ -170,6 +202,7 @@ def calculate_score(user_data: dict, username: str) -> UserScore:
     else:
         breakdown["commits"] = 5
 
+    # Contribution diversity: PRs, issues, multi-repo contributions
     contrib_score = 0
     if result.total_prs > 0:
         contrib_score += 10
@@ -181,23 +214,29 @@ def calculate_score(user_data: dict, username: str) -> UserScore:
         contrib_score += 5
     breakdown["contributions"] = min(contrib_score, 25)
 
+    # Recent activity: bonus if user contributed recently
     breakdown["recent_activity"] = 10 if result.has_recent_activity else 0
 
+    # Red flag detection - deduct points for suspicious patterns
     red_flags = []
     total_activity = result.total_commits + result.total_prs + result.total_issues
 
+    # Isolated account: no followers/following after 3+ months
     if result.followers == 0 and result.following == 0 and result.account_age_days >= 90:
         red_flags.append("No social connections")
         breakdown["red_flag_isolated"] = -15
 
+    # Empty profile: no bio, website, or company info
     if not result.has_bio and not result.has_website and not result.has_company:
         red_flags.append("Empty profile")
         breakdown["red_flag_empty_profile"] = -15
 
+    # Fake followers: many followers but minimal actual contributions
     if result.followers > 100 and total_activity < 10:
         red_flags.append("Suspicious follower ratio")
         breakdown["red_flag_follower_ratio"] = -15
 
+    # Dormant account: old account with no recent activity
     if result.account_age_days > 365 and not result.has_recent_activity:
         red_flags.append("Dormant account")
         breakdown["red_flag_dormant"] = -10
@@ -206,6 +245,7 @@ def calculate_score(user_data: dict, username: str) -> UserScore:
     result.score = max(0, sum(breakdown.values()))
     result.score_breakdown = breakdown
 
+    # Final decision
     if result.score >= APPROVE_SCORE:
         result.approved = True
         result.reason = f"APPROVED: Score {result.score}"
@@ -223,6 +263,16 @@ async def validate_batch(
     session: aiohttp.ClientSession,
     usernames: list[str]
 ) -> tuple[list[UserScore], dict]:
+    """
+    Fetch GitHub data for a batch of users and calculate scores.
+    
+    Handles GitHub rate limiting with exponential backoff:
+    - 403/429: Rate limited, wait and retry
+    - 5xx: Server error, wait and retry
+    - GraphQL errors: Check if rate limit related
+    
+    Returns: (list of UserScore results, rate limit info)
+    """
     query = build_batch_query(usernames)
     payload = {"query": query}
 
@@ -232,6 +282,7 @@ async def validate_batch(
     for attempt in range(MAX_RETRIES):
         try:
             async with session.post(GITHUB_GRAPHQL, json=payload) as resp:
+                # HTTP 403: Rate limited
                 if resp.status == 403:
                     retry_after = resp.headers.get("Retry-After")
                     wait_time = int(retry_after) if retry_after else min(backoff, MAX_BACKOFF)
@@ -240,6 +291,7 @@ async def validate_batch(
                     backoff *= BACKOFF_MULTIPLIER
                     continue
 
+                # HTTP 429: Rate limited (too many requests)
                 if resp.status == 429:
                     retry_after = resp.headers.get("Retry-After", str(backoff))
                     wait_time = int(retry_after)
@@ -248,17 +300,20 @@ async def validate_batch(
                     backoff *= BACKOFF_MULTIPLIER
                     continue
 
+                # 5xx: Server error - retry with backoff
                 if resp.status >= 500:
                     print(f"Server error ({resp.status}). Waiting {backoff}s... [{attempt + 1}/{MAX_RETRIES}]")
                     await asyncio.sleep(backoff)
                     backoff *= BACKOFF_MULTIPLIER
                     continue
 
+                # Unexpected HTTP error
                 if resp.status != 200:
                     return [UserScore(username=u, reason=f"API error ({resp.status})") for u in usernames], {}
 
                 data = await resp.json()
 
+                # Check for GraphQL errors
                 if "errors" in data:
                     error_msg = data["errors"][0].get("message", "Unknown error")
                     if "rate limit" in error_msg.lower():
@@ -268,6 +323,7 @@ async def validate_batch(
                         continue
                     return [UserScore(username=u, reason=f"GraphQL error: {error_msg}") for u in usernames], {}
 
+                # Parse results: each alias (u0, u1, etc.) maps to a user
                 results = []
                 for i, username in enumerate(usernames):
                     user_data = data.get("data", {}).get(f"u{i}")
@@ -282,10 +338,20 @@ async def validate_batch(
             await asyncio.sleep(backoff)
             backoff *= BACKOFF_MULTIPLIER
 
+    # All retries exhausted
     return [UserScore(username=u, reason=f"Max retries exceeded: {last_error or 'Unknown'}") for u in usernames], {}
 
 
 async def validate_users(usernames: list[str]) -> list[UserScore]:
+    """
+    Validate multiple users in parallel batches.
+    
+    Process:
+    1. Split usernames into batches (50 per batch)
+    2. Process up to 5 batches concurrently
+    3. Monitor rate limit and pause if dropping below 100 remaining
+    4. Return all scores in original order
+    """
     if not usernames:
         return []
 
@@ -294,16 +360,19 @@ async def validate_users(usernames: list[str]) -> list[UserScore]:
         "Content-Type": "application/json",
     }
 
+    # Split into batches
     batches = [usernames[i:i + BATCH_SIZE] for i in range(0, len(usernames), BATCH_SIZE)]
     semaphore = asyncio.Semaphore(MAX_CONCURRENT_BATCHES)
     all_results = []
 
     async def process_batch(session, batch, batch_num):
+        """Process a single batch with concurrency limit."""
         async with semaphore:
             results, rate_limit = await validate_batch(session, batch)
             remaining = rate_limit.get("remaining", "?")
             print(f"Batch {batch_num + 1}/{len(batches)} done. Rate limit: {remaining}")
 
+            # Pause if rate limit is running low (< 100 remaining)
             if isinstance(remaining, int) and remaining < 100:
                 reset_at = rate_limit.get("resetAt")
                 if reset_at:
@@ -314,6 +383,7 @@ async def validate_users(usernames: list[str]) -> list[UserScore]:
                         await asyncio.sleep(wait_seconds + 1)
             return results
 
+    # Fetch all batches concurrently
     async with aiohttp.ClientSession(headers=headers) as session:
         tasks = [process_batch(session, batch, i) for i, batch in enumerate(batches)]
         batch_results = await asyncio.gather(*tasks)

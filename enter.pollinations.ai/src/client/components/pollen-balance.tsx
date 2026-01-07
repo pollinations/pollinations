@@ -3,17 +3,20 @@ import type { FC } from "react";
 type PollenBalanceProps = {
     tierBalance: number;
     packBalance: number;
+    cryptoBalance: number;
 };
 
 export const PollenBalance: FC<PollenBalanceProps> = ({
     tierBalance,
     packBalance,
+    cryptoBalance,
 }) => {
-    const totalPollen = Math.max(0, tierBalance + packBalance);
+    const paidBalance = packBalance + cryptoBalance;
+    const totalPollen = Math.max(0, tierBalance + paidBalance);
     const freePercentage =
         totalPollen > 0 ? (tierBalance / totalPollen) * 100 : 0;
-    const packPercentage =
-        totalPollen > 0 ? (packBalance / totalPollen) * 100 : 0;
+    const paidPercentage =
+        totalPollen > 0 ? (paidBalance / totalPollen) * 100 : 0;
 
     return (
         <div className="bg-violet-50/30 rounded-2xl p-4 sm:p-8 border border-violet-300">
@@ -27,16 +30,16 @@ export const PollenBalance: FC<PollenBalanceProps> = ({
                     {/* Gauge with download button */}
                     <div className="flex items-center gap-2 w-full max-w-[540px]">
                         <div className="relative flex-1 h-8 bg-gray-200 rounded-full overflow-hidden border border-purple-400">
-                            {/* Pack Pollen - Soft purple for paid */}
+                            {/* Paid Pollen - Soft purple for paid (pack + crypto) */}
                             <div
                                 className="absolute inset-y-0 left-0 bg-purple-200 transition-all duration-500 ease-out"
-                                style={{ width: `${packPercentage}%` }}
+                                style={{ width: `${paidPercentage}%` }}
                             >
-                                {/* Pack label inside */}
-                                {packPercentage > 15 && (
+                                {/* Paid label inside */}
+                                {paidPercentage > 15 && (
                                     <div className="absolute inset-0 flex items-center justify-center">
                                         <span className="text-purple-900 font-bold text-sm">
-                                            💎 {packBalance.toFixed(1)}
+                                            💎 {paidBalance.toFixed(1)}
                                         </span>
                                     </div>
                                 )}
@@ -45,7 +48,7 @@ export const PollenBalance: FC<PollenBalanceProps> = ({
                             <div
                                 className="absolute inset-y-0 bg-teal-200 transition-all duration-500 ease-out"
                                 style={{
-                                    left: `${packPercentage}%`,
+                                    left: `${paidPercentage}%`,
                                     width: `${freePercentage}%`,
                                 }}
                             >

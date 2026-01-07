@@ -3,3 +3,10 @@ GITHUB_CLIENT_SECRET=your_github_client_secret
 JWT_SECRET=your_jwt_secret_at_least_32_chars
 REDIRECT_URI=http://localhost:8787/callback
 ADMIN_API_KEY=your_secure_admin_api_key_here
+
+# NOWPayments Crypto Payments (https://nowpayments.io)
+# Get keys from: https://account.nowpayments.io (production) or https://account-sandbox.nowpayments.io (sandbox)
+NOWPAYMENTS_API_KEY=your_nowpayments_api_key
+NOWPAYMENTS_IPN_SECRET=your_nowpayments_ipn_secret
+# Set to "sandbox" for testing, "production" for live payments
+NOWPAYMENTS_ENV=sandbox

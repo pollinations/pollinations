@@ -5,12 +5,10 @@ import { LoggerVariables } from "@/middleware/logger.ts";
 import type { AuthVariables } from "@/middleware/auth.ts";
 import { CustomerState } from "@polar-sh/sdk/models/components/customerstate.js";
 import { HTTPException } from "hono/http-exception";
-import { z } from "zod";
 import { CustomerMeter } from "@polar-sh/sdk/models/components/customermeter.js";
-import { getPendingSpend } from "@/events.ts";
 import { drizzle } from "drizzle-orm/d1";
-import { event } from "@/db/schema/event.ts";
-import { and, eq, gte, sql } from "drizzle-orm";
+import { user as userTable } from "@/db/schema/better-auth.ts";
+import { eq } from "drizzle-orm";
 
 type BalanceCheckResult = {
     selectedMeterId: string;
@@ -26,6 +24,9 @@ export type PolarVariables = {
             userId: string,
             message?: string,
         ) => Promise<void>;
+        getBalance: (
+            userId: string,
+        ) => Promise<{ tierBalance: number; packBalance: number }>;
         balanceCheckResult?: BalanceCheckResult;
     };
 };
@@ -45,10 +46,18 @@ export const polar = createMiddleware<PolarEnv>(async (c, next) => {
 
     const getCustomerState = cached(
         async (userId: string): Promise<CustomerState> => {
+            log.info("[POLAR API] getCustomerState for user {userId}", {
+                userId,
+            });
             try {
-                return await client.customers.getStateExternal({
+                const result = await client.customers.getStateExternal({
                     externalId: userId,
                 });
+                log.info(
+                    "[POLAR API] getCustomerState SUCCESS for user {userId}",
+                    { userId },
+                );
+                return result;
             } catch (error) {
                 throw new Error("Failed to get customer state.", {
                     cause: error,
@@ -57,7 +66,7 @@ export const polar = createMiddleware<PolarEnv>(async (c, next) => {
         },
         {
             log,
-            ttl: 300, // 5 minutes - safe with local pending spend tracking
+            ttl: 300, // 5 minutes - only used for subscription/tier lookups, not balance checks
             kv: c.env.KV,
             keyGenerator: (userId) => `polar:customer:state:${userId}`,
         },
@@ -65,14 +74,34 @@ export const polar = createMiddleware<PolarEnv>(async (c, next) => {
 
     const getCustomerMeters = cached(
         async (userId: string): Promise<CustomerMeter[]> => {
+            log.info("[POLAR API] getCustomerMeters for user {userId}", {
+                userId,
+            });
             try {
                 const response = await client.customerMeters.list({
                     externalCustomerId: userId,
                     limit: 100,
                 });
-                console.log(response.result.items);
+                log.info(
+                    "[POLAR API] getCustomerMeters SUCCESS - {count} meters for user {userId}",
+                    {
+                        count: response.result.items.length,
+                        userId,
+                    },
+                );
                 return response.result.items;
             } catch (error) {
+                log.error(
+                    "Failed to get customer meters for user {userId}: {error}",
+                    {
+                        userId,
+                        error:
+                            error instanceof Error
+                                ? error.message
+                                : String(error),
+                        cause: error instanceof Error ? error.cause : undefined,
+                    },
+                );
                 throw new Error("Failed to get customer meters.", {
                     cause: error,
                 });
@@ -80,76 +109,130 @@ export const polar = createMiddleware<PolarEnv>(async (c, next) => {
         },
         {
             log,
-            ttl: 300, // 5 minutes - safe with local pending spend tracking
+            ttl: 120, // 2 minutes - local D1 balance is source of truth, this is only for lazy init
             kv: c.env.KV,
             keyGenerator: (userId) => `polar:customer:meters:${userId}`,
         },
     );
 
-    const getAdjustedSimplifiedMeters = async (userId: string) => {
-        const customerMeters = await getCustomerMeters(userId);
-        const activeMeters = getSimplifiedMatchingMeters(customerMeters);
-        const sortedMeters = sortMetersByDescendingPriority(activeMeters);
-        const pendingSpend = await getPendingSpend(drizzle(c.env.DB), userId);
+    // Get balance with lazy init from Polar if not set
+    const getBalance = async (
+        userId: string,
+    ): Promise<{ tierBalance: number; packBalance: number }> => {
+        const db = drizzle(c.env.DB);
+        const users = await db
+            .select({
+                tierBalance: userTable.tierBalance,
+                packBalance: userTable.packBalance,
+            })
+            .from(userTable)
+            .where(eq(userTable.id, userId))
+            .limit(1);
 
-        const { adjustedMeters } = sortedMeters.reduce(
-            (acc, meter) => {
-                const deduction = Math.min(meter.balance, acc.remainingSpend);
-                acc.remainingSpend -= deduction;
-                acc.adjustedMeters.push({
-                    ...meter,
-                    balance: meter.balance - deduction,
-                });
-                return acc;
-            },
-            {
-                remainingSpend: pendingSpend,
-                adjustedMeters: [] as typeof sortedMeters,
-            },
-        );
-    };
+        let tierBalance = users[0]?.tierBalance;
+        let packBalance = users[0]?.packBalance;
 
-    const requirePositiveBalance = async (userId: string, message?: string) => {
-        const customerMeters = await getCustomerMeters(userId);
-        const activeMeters = getSimplifiedMatchingMeters(customerMeters);
-        const sortedMeters = sortMetersByDescendingPriority(activeMeters);
+        // Lazy init: check Polar if either balance is null OR both are zero
+        // This handles: new users (both null), users with only tier set (pack null),
+        // and users who got 0 written before fix
+        const hasNullBalance = tierBalance == null || packBalance == null;
+        const hasBothZero = tierBalance === 0 && packBalance === 0;
+        const needsInit = hasNullBalance || hasBothZero;
 
-        // Get recent local spend to account for Polar processing delay
-        const pendingSpend = await getPendingSpend(drizzle(c.env.DB), userId);
+        if (needsInit) {
+            log.info(
+                "Checking Polar balances for user {userId} (D1: tier={tierBalance}, pack={packBalance})",
+                { userId, tierBalance, packBalance },
+            );
+            const customerMeters = await getCustomerMeters(userId);
+            const tierMeter = customerMeters.find((m) =>
+                m.meter.name.toLowerCase().includes("tier"),
+            );
+            const packMeter = customerMeters.find((m) =>
+                m.meter.name.toLowerCase().includes("pack"),
+            );
+            const polarTier = tierMeter?.balance ?? 0;
+            const polarPack = packMeter?.balance ?? 0;
 
-        if (pendingSpend > 0) {
-            log.debug("Pending spend from D1: {pendingSpend}", {
-                pendingSpend,
-            });
-        }
-
-        // Adjust meter balances by subtracting recent spend.
-        // Note: We deduct from highest-priority meters first, which may not match
-        // actual meter usage. This is intentionally conservative - it may briefly
-        // over-restrict, but prevents negative balances. Accuracy restores when
-        // Polar syncs and cache refreshes.
-        let remainingSpend = pendingSpend;
-        const adjustedMeters = sortedMeters.map((meter) => {
-            const deduction = Math.min(meter.balance, remainingSpend);
-            remainingSpend -= deduction;
-            return {
-                ...meter,
-                balance: meter.balance - deduction,
-            };
-        });
-
-        for (const meter of adjustedMeters) {
-            if (meter.balance > 0) {
-                c.var.polar.balanceCheckResult = {
-                    selectedMeterId: meter.meterId,
-                    selectedMeterSlug: meter.metadata.slug,
-                    meters: adjustedMeters,
-                };
-                return;
+            // Only update D1 if Polar has positive balance
+            // Don't write 0 to D1 for new users (NULL) - let webhooks handle initial grant
+            if (polarTier + polarPack > 0) {
+                tierBalance = polarTier;
+                packBalance = polarPack;
+                await db
+                    .update(userTable)
+                    .set({ tierBalance, packBalance })
+                    .where(eq(userTable.id, userId));
+                log.info(
+                    "Synced balances from Polar for user {userId}: tier={tierBalance}, pack={packBalance}",
+                    { userId, tierBalance, packBalance },
+                );
+            } else if (hasNullBalance) {
+                // User has NULL balance(s) but Polar also has 0 - keep NULL, let webhooks handle initial grant
+                log.debug(
+                    "User {userId} has no Polar balance yet, keeping D1 as-is",
+                    { userId },
+                );
+            } else if (hasBothZero) {
+                // User has 0/0 in D1 and Polar also has 0 - genuine zero balance
+                log.debug(
+                    "User {userId} has zero balance in both D1 and Polar",
+                    { userId },
+                );
             }
         }
 
-        // no meter with positive balance was found
+        return { tierBalance: tierBalance ?? 0, packBalance: packBalance ?? 0 };
+    };
+
+    const requirePositiveBalance = async (userId: string, message?: string) => {
+        let balances: { tierBalance: number; packBalance: number };
+        try {
+            balances = await getBalance(userId);
+        } catch (error) {
+            log.error("Failed to get balance for user {userId}", {
+                userId,
+                error: error instanceof Error ? error.message : String(error),
+            });
+            throw new HTTPException(503, {
+                message: "Unable to verify balance. Please try again shortly.",
+            });
+        }
+
+        const totalBalance = balances.tierBalance + balances.packBalance;
+
+        log.debug(
+            "Local pollen balance for user {userId}: tier={tierBalance}, pack={packBalance}, total={totalBalance}",
+            {
+                userId,
+                tierBalance: balances.tierBalance,
+                packBalance: balances.packBalance,
+                totalBalance,
+            },
+        );
+
+        if (totalBalance > 0) {
+            // Set a simplified balance result for tracking
+            c.var.polar.balanceCheckResult = {
+                selectedMeterId: "local",
+                selectedMeterSlug: "local:combined",
+                meters: [
+                    {
+                        meterId: "local:tier",
+                        balance: balances.tierBalance,
+                        metadata: { slug: "local:tier", priority: 0 },
+                    },
+                    {
+                        meterId: "local:pack",
+                        balance: balances.packBalance,
+                        metadata: { slug: "local:pack", priority: 1 },
+                    },
+                ],
+            };
+            return;
+        }
+
+        // no positive balance
         throw new HTTPException(403, {
             message: message || "Your pollen balance is too low.",
         });
@@ -159,46 +242,14 @@ export const polar = createMiddleware<PolarEnv>(async (c, next) => {
         client,
         getCustomerState,
         requirePositiveBalance,
+        getBalance,
     });
 
     await next();
 });
 
-const MeterMetadataSchema = z.object({
-    slug: z.string(),
-    priority: z.number(),
-});
-
-type MeterMetadata = z.infer<typeof MeterMetadataSchema>;
-
 type SimplifiedCustomerMeter = {
     meterId: string;
     balance: number;
-    metadata: MeterMetadata;
+    metadata: { slug: string; priority: number };
 };
-
-function getSimplifiedMatchingMeters(
-    customerMeters: CustomerMeter[],
-): SimplifiedCustomerMeter[] {
-    return customerMeters.flatMap((customerMeter) => {
-        const metadata = MeterMetadataSchema.safeParse(
-            customerMeter.meter?.metadata,
-        ).data;
-        if (!metadata) return [];
-        return [
-            {
-                meterId: customerMeter.meter.id,
-                balance: customerMeter.balance,
-                metadata,
-            },
-        ];
-    });
-}
-
-function sortMetersByDescendingPriority(
-    simplifiedMeters: SimplifiedCustomerMeter[],
-): SimplifiedCustomerMeter[] {
-    return simplifiedMeters.sort(
-        (a, b) => b.metadata.priority - a.metadata.priority,
-    );
-}

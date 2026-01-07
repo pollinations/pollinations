@@ -381,7 +381,7 @@ RESPONSE:`;
         // Use different prefix for Ko-fi (direct support) vs sponsors
         const prefix =
             affiliateId === "kofi"
-                ? "**Support Pollinations.AI:**"
+                ? "**Support pollinations.ai:**"
                 : "**Sponsor:**";
         adText = `\n\n---\n\n${prefix}\n${adTextSource}`;
         log(`Generated standard ad for ${affiliate.name} (${affiliateId})`);

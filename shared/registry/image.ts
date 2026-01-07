@@ -1,26 +1,12 @@
 import { COST_START_DATE, perMillion } from "./price-helpers";
 import type { ServiceDefinition } from "./registry";
 
-export const DEFAULT_IMAGE_MODEL = "flux" as const;
+export const DEFAULT_IMAGE_MODEL = "zimage" as const;
 
 export type ImageServiceId = keyof typeof IMAGE_SERVICES;
 export type ImageModelId = (typeof IMAGE_SERVICES)[ImageServiceId]["modelId"];
 
 export const IMAGE_SERVICES = {
-    "flux": {
-        aliases: [],
-        modelId: "flux", // Provider returns this - used for cost lookup
-        provider: "io.net",
-        cost: [
-            {
-                date: COST_START_DATE,
-                completionImageTokens: 0.00012, // $0.0088¢ per image (GPU cluster cost - September avg)
-            },
-        ],
-        description: "Flux - Fast and high-quality image generation",
-        inputModalities: ["text"],
-        outputModalities: ["image"],
-    },
     "kontext": {
         aliases: [],
         modelId: "kontext",
@@ -31,7 +17,7 @@ export const IMAGE_SERVICES = {
                 completionImageTokens: 0.04, // $0.04 per image (Azure pricing)
             },
         ],
-        description: "Kontext - Context-aware image generation",
+        description: "FLUX.1 Kontext - In-context editing & generation",
         inputModalities: ["text", "image"],
         outputModalities: ["image"],
     },
@@ -45,7 +31,7 @@ export const IMAGE_SERVICES = {
                 completionImageTokens: 0.0003,
             },
         ],
-        description: "Turbo - Ultra-fast image generation",
+        description: "SDXL Turbo - Single-step real-time generation",
         inputModalities: ["text"],
         outputModalities: ["image"],
     },
@@ -152,20 +138,34 @@ export const IMAGE_SERVICES = {
         inputModalities: ["text", "image"],
         outputModalities: ["image"],
     },
-    "zimage": {
-        aliases: ["z-image", "z-image-turbo"],
-        modelId: "zimage",
-        provider: "aws",
+    "flux": {
+        aliases: [],
+        modelId: "flux",
+        provider: "io.net",
         cost: [
-            // Z-Image-Turbo (6B params, 9 steps)
-            // AWS (L40S), ~0.9s for 512x512, ~3.5s for 1024x1024
+            // Flux Schnell (nunchaku-quantized) on io.net RTX 4090 cluster
             {
                 date: COST_START_DATE,
                 completionImageTokens: 0.0002, // ~$0.0002 per image (GPU cost estimate)
             },
         ],
-        description:
-            "Z-Image-Turbo - Fast 6B parameter image generation (alpha)",
+        description: "Flux Schnell - Fast high-quality image generation",
+        inputModalities: ["text"],
+        outputModalities: ["image"],
+    },
+    "zimage": {
+        aliases: ["z-image", "z-image-turbo"],
+        modelId: "zimage",
+        provider: "io.net",
+        cost: [
+            // Z-Image-Turbo (6B params, 9 steps) with SPAN 2x upscaling
+            // IO.net cluster (10x RTX 4090), ~1s for 768x768, ~2s for 1536x1536
+            {
+                date: COST_START_DATE,
+                completionImageTokens: 0.0002, // ~$0.0002 per image (GPU cost estimate)
+            },
+        ],
+        description: "Z-Image Turbo - Fast 6B Flux with 2x upscaling",
         inputModalities: ["text"],
         outputModalities: ["image"],
     },

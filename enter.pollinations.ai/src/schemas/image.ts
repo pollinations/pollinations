@@ -1,18 +1,25 @@
-import { IMAGE_SERVICES } from "@shared/registry/image.ts";
+import { IMAGE_SERVICES, DEFAULT_IMAGE_MODEL } from "@shared/registry/image.ts";
 import { z } from "zod";
 
 const QUALITIES = ["low", "medium", "high", "hd"] as const;
-const MAX_SEED_VALUE = 1844674407370955;
+// Maximum seed value - use INT32_MAX for compatibility with strict providers like Vertex AI
+const MAX_SEED_VALUE = 2147483647; // INT32_MAX (2^31 - 1)
+
+// Build list of valid model names: service IDs + all aliases
+const VALID_IMAGE_MODELS = [
+    ...Object.keys(IMAGE_SERVICES),
+    ...Object.values(IMAGE_SERVICES).flatMap((service) => service.aliases),
+] as const;
 
 export const GenerateImageRequestQueryParamsSchema = z.object({
     // Image model params
     model: z
-        .literal(Object.keys(IMAGE_SERVICES))
+        .literal(VALID_IMAGE_MODELS)
         .optional()
-        .default("flux")
+        .default(DEFAULT_IMAGE_MODEL)
         .meta({
             description:
-                "AI model. Image: flux, turbo, gptimage, kontext, seedream, seedream-pro, nanobanana. Video: veo, seedance, seedance-pro",
+                "AI model. Image: flux, zimage, turbo, gptimage, kontext, seedream, seedream-pro, nanobanana. Video: veo, seedance, seedance-pro",
         }),
     width: z.coerce
         .number()
@@ -31,11 +38,14 @@ export const GenerateImageRequestQueryParamsSchema = z.object({
     seed: z.coerce
         .number()
         .int()
-        .min(0)
+        .min(-1)
         .max(MAX_SEED_VALUE)
         .optional()
-        .default(42)
-        .meta({ description: "Random seed for reproducible results" }),
+        .default(0)
+        .meta({
+            description:
+                "Random seed for reproducible results. Use -1 for random.",
+        }),
     enhance: z.coerce
         .boolean()
         .optional()

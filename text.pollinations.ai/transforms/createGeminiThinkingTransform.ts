@@ -45,20 +45,17 @@ export function createGeminiThinkingTransform(
 
             if (isDisabled) {
                 // User wants to disable thinking - use Portkey-compatible format
+                // Portkey docs: { "type": "enabled", "budget_tokens": 0 } disables thinking
+                // This works for both Gemini 2.5 and Gemini 3 models
                 switch (modelType) {
-                    case "v3-flash":
-                        // Gemini 3 Flash: Use reasoning_effort="none" (maps to MINIMAL)
-                        // Note: MINIMAL still requires thought signatures
-                        updatedOptions.reasoning_effort = "none";
-                        break;
                     case "v3-pro":
                         // Gemini 3 Pro: Can't fully disable, use "low" for minimal thinking
                         updatedOptions.reasoning_effort = "low";
                         break;
+                    case "v3-flash":
                     case "v2.5":
                     default:
-                        // Gemini 2.5: Use thinking object with budget_tokens: 0
-                        // Portkey docs: { "type": "enabled", "budget_tokens": 0 } disables thinking
+                        // Gemini 2.5 and 3 Flash: Use thinking object with budget_tokens: 0
                         updatedOptions.thinking = {
                             type: "enabled",
                             budget_tokens: 0,

@@ -80,12 +80,12 @@ const models: ModelDefinition[] = [
     },
     {
         name: "claude",
-        config: portkeyConfig["us.anthropic.claude-sonnet-4-5-20250929-v1:0"],
+        config: portkeyConfig["claude-sonnet-4-5-vertex"],
         transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
     },
     {
         name: "claude-large",
-        config: portkeyConfig["global.anthropic.claude-opus-4-5-20251101-v1:0"],
+        config: portkeyConfig["claude-opus-4-5-vertex"],
         transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
     },
     {

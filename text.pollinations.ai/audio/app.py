@@ -3,7 +3,6 @@ import torchaudio
 from flask import Flask, request, jsonify, Response
 from flask_cors import CORS
 from loguru import logger
-from chatterbox.tts_turbo import ChatterboxTurboTTS
 from chatterbox.mtl_tts import ChatterboxMultilingualTTS
 from tts import generate_tts
 import asyncio
@@ -24,11 +23,10 @@ BASE62 = string.digits + string.ascii_letters
 app = Flask(__name__)
 CORS(app)
 
-# Load TTS model on startup
-logger.info("Loading ChatterboxTurboTTS model...")
-tts_model = ChatterboxTurboTTS.from_pretrained(device=device, cache_dir=cache_dir)
-# tts_model = ChatterboxMultilingualTTS.from_pretrained(device=device, cache_dir=cache_dir)
-logger.info("Model loaded successfully")
+# Load multilingual TTS model on startup
+logger.info("Loading ChatterboxMultilingualTTS model...")
+tts_model = ChatterboxMultilingualTTS.from_pretrained(device=device, cache_dir=cache_dir)
+logger.info("Multilingual TTS model loaded successfully")
 
 @app.route("/", methods=["GET"])
 def health_check():
@@ -50,15 +48,17 @@ def synthesize():
             return jsonify({"error": "Missing required 'input' field (text to synthesize)"}), 400
         
         voice = body.get("voice", "alloy")
+        language_id = body.get("language_id", "en")
         instructions = body.get("instructions")
         response_format = body.get("response_format", "wav").lower()
         speed = body.get("speed", 0.5)  
-        language_id = body.get("language_id", "en")
-        exaggeration = 0.7
-        cfg_weight = 0.3
+        exaggeration = body.get("exaggeration", 0.0)
+        cfg_weight = body.get("cfg_weight", 7.0)
         
-        if language_id not in ["ar", "da", "de", "el", "en", "es", "fi", "fr", "he", "hi", "it", "ja", "ko", "ms", "nl", "no", "pl", "pt", "ru", "sv", "sw", "tr", "zh"]:
-            return jsonify({"error": f"Unsupported language_id: {language_id}. Supported: ar, da, de, el, en, es, fi, fr, he, hi, it, ja, ko, ms, nl, no, pl, pt, ru, sv, sw, tr, zh"}), 400
+        # Supported languages
+        supported_languages = ["ar", "da", "de", "el", "en", "es", "fi", "fr", "he", "hi", "it", "ja", "ko", "ms", "nl", "no", "pl", "pt", "ru", "sv", "sw", "tr", "zh"]
+        if language_id not in supported_languages:
+            return jsonify({"error": f"Unsupported language_id: {language_id}. Supported: {', '.join(supported_languages)}"}), 400
         if response_format not in ["wav", "mp3", "aac", "flac", "opus", "pcm"]:
             return jsonify({"error": f"Unsupported response_format: {response_format}. Supported: wav, mp3, aac, flac, opus, pcm"}), 400
         
@@ -72,13 +72,14 @@ def synthesize():
             return jsonify({"error": "cfg_weight must be >= 0.1. Lower values (0.3) for more expressive, higher (7.0+) for neutral"}), 400
         
         request_id = str(uuid4())[:12]
-        logger.info(f"[{request_id}] TTS request: text={text[:50]}..., voice={voice}, format={response_format}, speed={speed:.2f}, exaggeration={exaggeration:.2f}, cfg_weight={cfg_weight:.2f}")
+        logger.info(f"[{request_id}] TTS request: text={text[:50]}..., language={language_id}, voice={voice}, format={response_format}, speed={speed:.2f}, exaggeration={exaggeration:.2f}, cfg_weight={cfg_weight:.2f}")
         
         try:
             audio_bytes, sample_rate = asyncio.run(generate_tts(
                 text=text,
                 requestID=request_id,
                 model=tts_model,
+                language_id=language_id,
                 system=instructions,
                 voice=voice,
                 speed=speed,

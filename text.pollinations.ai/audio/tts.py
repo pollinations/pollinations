@@ -8,8 +8,28 @@ import torch
 import torchaudio
 import io 
 import numpy as np
-from chatterbox.mtl_tts import ChatterboxMultilingualTTS
-async def generate_tts(text: str, requestID: str, model, system: Optional[str] = None, voice: Optional[str] = "alloy", speed: float = 0.5, exaggeration: float = 0.0, cfg_weight: float = 7.0) -> tuple:
+
+async def generate_tts(text: str, requestID: str, model, language_id: str = "en", system: Optional[str] = None, voice: Optional[str] = "alloy", speed: float = 0.5, exaggeration: float = 0.0, cfg_weight: float = 7.0) -> tuple:
+    """
+    Generate multilingual TTS audio with expressive/dramatic speech options.
+    
+    Args:
+        text: Text to synthesize
+        requestID: Request ID for logging
+        model: ChatterboxMultilingualTTS model instance
+        language_id: Language code (ar, da, de, el, en, es, fi, fr, he, hi, it, ja, ko, ms, nl, no, pl, pt, ru, sv, sw, tr, zh)
+        system: System prompt (unused currently, for future use)
+        voice: Voice name or file path
+        speed: Speech speed (0.0 = slow, 0.5 = normal, 1.0 = fast). Normalized 0-1.0
+        exaggeration: Expressiveness level (0.0 = neutral, 0.7+ = dramatic). Default 0.0
+        cfg_weight: Classifier-free guidance weight (lower = more expressive, default ~7.0, try 0.3 for dramatic)
+    
+    Returns:
+        Tuple of (audio_bytes, sample_rate)
+    
+    Raises:
+        RuntimeError: If synthesis fails
+    """
     clone_path = None
     
     if voice and VOICE_BASE64_MAP.get(voice):
@@ -32,15 +52,16 @@ async def generate_tts(text: str, requestID: str, model, system: Optional[str] =
     
     content = text
     print(f"[{requestID}] Generated content: {content[:100]}...")
-    print(f"[{requestID}] Expressive parameters - speed: {speed:.2f} (0-1.0), exaggeration: {exaggeration:.2f}, cfg_weight: {cfg_weight:.2f}")
+    print(f"[{requestID}] Language: {language_id}, Expressive parameters - speed: {speed:.2f} (0-1.0), exaggeration: {exaggeration:.2f}, cfg_weight: {cfg_weight:.2f}")
     
     max_retries = 3
     for attempt in range(max_retries):
         try:
-            print(f"[{requestID}] Generating TTS audio with voice: {voice} (attempt {attempt + 1}/{max_retries})")
+            print(f"[{requestID}] Generating TTS audio with voice: {voice}, language: {language_id} (attempt {attempt + 1}/{max_retries})")
             try:
                 wav = model.generate(
                     text=content,
+                    language_id=language_id,
                     top_p=0.95,
                     temperature=0.8 + (exaggeration * 0.2),
                     top_k=1000,
@@ -87,6 +108,7 @@ async def generate_tts(text: str, requestID: str, model, system: Optional[str] =
     
 if __name__ == "__main__":
     async def main():
+        from chatterbox.mtl_tts import ChatterboxMultilingualTTS
         device = "cuda" if torch.cuda.is_available() else "cpu"
         model = ChatterboxMultilingualTTS.from_pretrained(device=device, cache_dir="model_cache")
         

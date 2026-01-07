@@ -469,9 +469,11 @@ export const TEXT_SERVICES = {
         modelId: "whisper-large-v3",
         provider: "ovhcloud",
         cost: [
+            // OVH Whisper: €0.00004083/sec ≈ $0.0000445/sec
+            // We bill by "audio seconds" - each second is counted directly
             {
                 date: COST_START_DATE,
-                promptAudioTokens: perMillion(4.5),
+                promptAudioSeconds: 0.0000445,
             },
         ],
         description:

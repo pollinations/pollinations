@@ -18,6 +18,7 @@ export type UsageType =
     | "promptTextTokens"
     | "promptCachedTokens"
     | "promptAudioTokens"
+    | "promptAudioSeconds"
     | "promptImageTokens"
     | "completionTextTokens"
     | "completionReasoningTokens"

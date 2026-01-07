@@ -51,9 +51,12 @@ def synthesize():
         instructions = body.get("instructions")
         response_format = body.get("response_format", "wav").lower()
         speed = body.get("speed", 0.5)  
+        language_id = body.get("language_id", "en")
         exaggeration = 0.7
         cfg_weight = 0.3
         
+        if language_id not in ["ar", "da", "de", "el", "en", "es", "fi", "fr", "he", "hi", "it", "ja", "ko", "ms", "nl", "no", "pl", "pt", "ru", "sv", "sw", "tr", "zh"]:
+            return jsonify({"error": f"Unsupported language_id: {language_id}. Supported: ar, da, de, el, en, es, fi, fr, he, hi, it, ja, ko, ms, nl, no, pl, pt, ru, sv, sw, tr, zh"}), 400
         if response_format not in ["wav", "mp3", "aac", "flac", "opus", "pcm"]:
             return jsonify({"error": f"Unsupported response_format: {response_format}. Supported: wav, mp3, aac, flac, opus, pcm"}), 400
         

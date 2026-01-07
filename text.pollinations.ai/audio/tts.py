@@ -8,8 +8,9 @@ import torch
 import torchaudio
 import io 
 import numpy as np
+from chatterbox.mtl_tts import ChatterboxMultilingualTTS
 
-async def generate_tts(text: str, requestID: str, model, system: Optional[str] = None, voice: Optional[str] = "alloy", speed: float = 0.5, exaggeration: float = 0.0, cfg_weight: float = 7.0) -> tuple:
+async def generate_tts(text: str, requestID: str, model, system: Optional[str] = None, voice: Optional[str] = "alloy", speed: float = 0.5, language_id: Optional[str] = "en", exaggeration: float = 0.0, cfg_weight: float = 7.0) -> tuple:
     clone_path = None
     
     if voice and VOICE_BASE64_MAP.get(voice):
@@ -45,7 +46,8 @@ async def generate_tts(text: str, requestID: str, model, system: Optional[str] =
                     temperature=0.8 + (exaggeration * 0.2),
                     top_k=1000,
                     repetition_penalty=1.2,
-                    audio_prompt_path=clone_path
+                    audio_prompt_path=clone_path,
+                    language_id=language_id,
                 )
                 sample_rate = model.sr
             except Exception as syn_error:
@@ -87,10 +89,8 @@ async def generate_tts(text: str, requestID: str, model, system: Optional[str] =
     
 if __name__ == "__main__":
     async def main():
-        from chatterbox.tts_turbo import ChatterboxTurboTTS
-        
         device = "cuda" if torch.cuda.is_available() else "cpu"
-        model = ChatterboxTurboTTS.from_pretrained(device=device, cache_dir="model_cache")
+        model = ChatterboxMultilingualTTS.from_pretrained(device=device, cache_dir="model_cache")
         
         text = "Verbatim: Scientific progress often arrives quietly, reshaping daily life not through spectacle but through accumulation—small, precise improvements that compound until the world behaves differently than it did before."
         requestID = "request123"

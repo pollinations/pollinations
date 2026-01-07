@@ -7,6 +7,7 @@ export const USAGE_TYPE_HEADERS: Record<UsageType, string> = {
     promptTextTokens: "x-usage-prompt-text-tokens",
     promptCachedTokens: "x-usage-prompt-cached-tokens",
     promptAudioTokens: "x-usage-prompt-audio-tokens",
+    promptAudioSeconds: "x-usage-prompt-audio-seconds",
     promptImageTokens: "x-usage-prompt-image-tokens",
     completionTextTokens: "x-usage-completion-text-tokens",
     completionReasoningTokens: "x-usage-completion-reasoning-tokens",
@@ -142,5 +143,15 @@ export function createVideoTokenUsage(completionVideoTokens: number): Usage {
 export function createAudioTokenUsage(completionAudioTokens: number): Usage {
     return {
         completionAudioTokens,
+    };
+}
+
+/**
+ * Helper for audio transcription (Whisper): create Usage with audio seconds
+ * Used for duration-based billing (e.g., OVH Whisper at $0.0000445/sec)
+ */
+export function createAudioSecondsUsage(promptAudioSeconds: number): Usage {
+    return {
+        promptAudioSeconds,
     };
 }

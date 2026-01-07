@@ -296,8 +296,8 @@ export const TEXT_SERVICES = {
     },
     "claude": {
         aliases: ["claude-sonnet-4.5", "claude-sonnet"],
-        modelId: "us.anthropic.claude-sonnet-4-5-20250929-v1:0",
-        provider: "aws",
+        modelId: "anthropic.claude-sonnet-4-5@20250929",
+        provider: "google",
         cost: [
             {
                 date: COST_START_DATE,
@@ -313,8 +313,8 @@ export const TEXT_SERVICES = {
     },
     "claude-large": {
         aliases: ["claude-opus-4.5", "claude-opus"],
-        modelId: "global.anthropic.claude-opus-4-5-20251101-v1:0",
-        provider: "aws",
+        modelId: "anthropic.claude-opus-4-5@20251101",
+        provider: "google",
         cost: [
             {
                 date: COST_START_DATE,

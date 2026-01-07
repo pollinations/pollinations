@@ -68,6 +68,7 @@ declare namespace Cloudflare {
         STRIPE_SECRET_KEY: string;
         STRIPE_WEBHOOK_SECRET: string;
         TINYBIRD_STRIPE_INGEST_TOKEN: string;
+        OVHCLOUD_API_KEY: string;
         POLLEN_RATE_LIMITER: DurableObjectNamespace /* PollenRateLimiter from pollinations-enter */;
         IMAGE_BUCKET: R2Bucket;
         TEXT_BUCKET: R2Bucket;

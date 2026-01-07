@@ -45,25 +45,38 @@ Weekly KPI dashboard for pollinations.ai — the AI platform by Myceli.AI.
 ```bash
 cd apps/kpi-dashboard
 npm install
-cp .env.example .env
-# Edit .env with your API tokens
+
+# Load secrets (requires SOPS + age key)
+./scripts/load-secrets.sh
+
+# Run locally
 npm run dev
 ```
 
-## Environment Variables
+## Deployment
 
+```bash
+npm run deploy  # Deploys to kpi.myceli.ai
 ```
-VITE_TINYBIRD_API=https://api.tinybird.co
-VITE_TINYBIRD_TOKEN=your_tinybird_token
-VITE_ENTER_API=https://enter.pollinations.ai
-VITE_POLAR_API=https://api.polar.sh
-VITE_POLAR_TOKEN=your_polar_token
+
+## Authentication
+
+**Production:** Protected via Cloudflare Access (configure in CF dashboard for `kpi.myceli.ai`)
+
+## Secrets Management
+
+Secrets are SOPS-encrypted in `secrets/env.json`. To update:
+
+```bash
+sops secrets/env.json  # Edit encrypted file
+./scripts/load-secrets.sh  # Decrypt to .dev.vars for local dev
 ```
 
 ## TODO
 
-- [ ] Create Tinybird pipes for weekly aggregations
-- [ ] Add D1 API endpoints for registration/activation metrics
-- [ ] Integrate Polar API for real revenue data
-- [ ] Add auth protection (admin-only)
+- [x] Create Tinybird pipes for weekly aggregations
+- [x] Add D1 API endpoints for registration/activation metrics
+- [x] Integrate Polar API for real revenue data
+- [ ] Configure Cloudflare Access for production auth
 - [ ] Track GitHub star history over time
+- [ ] Real activation tracking (D1 + Tinybird cross-reference)

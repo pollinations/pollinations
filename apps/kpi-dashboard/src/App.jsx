@@ -58,13 +58,6 @@ export default function App() {
           getWeeklyRevenue(12),
         ]);
 
-        console.log("GitHub:", github);
-        console.log("D1 Registrations:", d1Registrations);
-        console.log("Tinybird WAU:", tinybirdWAU);
-        console.log("Tinybird Usage:", tinybirdUsage);
-        console.log("Tinybird Retention:", tinybirdRetention);
-        console.log("Polar Revenue:", polarRevenue);
-
         // Check for missing data
         const missing = [];
         if (!d1Registrations) missing.push("D1 (registrations)");

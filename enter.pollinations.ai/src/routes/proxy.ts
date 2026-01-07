@@ -36,7 +36,12 @@ import {
     getImageModelsInfo,
     getTextModelsInfo,
 } from "@shared/registry/model-info.ts";
+import {
+    createAudioSecondsUsage,
+    buildUsageHeaders,
+} from "@shared/registry/usage-headers.ts";
 import { createFactory } from "hono/factory";
+import type { Logger } from "@logtape/logtape";
 
 const factory = createFactory<Env>();
 
@@ -468,6 +473,75 @@ export const proxyRoutes = new Hono<Env>()
 
             return response;
         },
+    )
+    .post(
+        "/v1/audio/transcriptions",
+        resolveModel("generate.text"),
+        track("generate.text"),
+        async (c) => {
+            const log = c.get("log").getChild("transcription");
+            await c.var.auth.requireAuthorization();
+            await checkBalance(c.var);
+
+            // OVHcloud Whisper - thin proxy, forward request directly
+            const response = await fetch(
+                "https://oai.endpoints.kepler.ai.cloud.ovh.net/v1/audio/transcriptions",
+                {
+                    method: "POST",
+                    headers: {
+                        Authorization: `Bearer ${c.env.OVHCLOUD_API_KEY}`,
+                        "Content-Type":
+                            c.req.header("Content-Type") ||
+                            "multipart/form-data",
+                    },
+                    body: c.req.raw.body,
+                    // @ts-expect-error - duplex required for streaming request bodies
+                    duplex: "half",
+                },
+            );
+
+            if (!response.ok) {
+                const responseText = await response.text();
+                log.warn("Transcription error {status}: {body}", {
+                    status: response.status,
+                    body: responseText,
+                });
+                throw new UpstreamError(
+                    response.status as ContentfulStatusCode,
+                    {
+                        message:
+                            responseText ||
+                            getDefaultErrorMessage(response.status),
+                    },
+                );
+            }
+
+            // Extract duration from response body and build usage headers
+            const responseBody = await response.text();
+            const usageHeaders = extractWhisperUsageHeaders(
+                responseBody,
+                c.var.model.resolved,
+                log,
+            );
+
+            // Override response tracking with usage headers
+            const trackedResponse = new Response(responseBody, {
+                status: response.status,
+                headers: {
+                    ...Object.fromEntries(response.headers),
+                    ...usageHeaders,
+                },
+            });
+            c.var.track.overrideResponseTracking(trackedResponse);
+
+            // Return response with usage headers
+            return new Response(responseBody, {
+                headers: {
+                    ...Object.fromEntries(response.headers),
+                    ...usageHeaders,
+                },
+            });
+        },
     );
 
 function proxyHeaders(c: Context): Record<string, string> {
@@ -562,6 +636,31 @@ export function contentFilterResultsToHeaders(
     return Object.fromEntries(
         Object.entries(headers).filter(([_, value]) => value !== undefined),
     ) as Record<string, string>;
+}
+
+/**
+ * Extract usage from Whisper response body and build tracking headers
+ * OVH returns: {"usage": {"type": "duration", "duration": 21.0}, ...}
+ */
+function extractWhisperUsageHeaders(
+    responseBody: string,
+    modelUsed: string,
+    log: Logger,
+): Record<string, string> {
+    try {
+        const json = JSON.parse(responseBody);
+        if (json.usage?.duration) {
+            const usage = createAudioSecondsUsage(json.usage.duration);
+            log.debug("Whisper usage: {duration}s", {
+                duration: json.usage.duration,
+            });
+            return buildUsageHeaders(modelUsed, usage);
+        }
+    } catch {
+        log.warn("Failed to parse whisper response for usage");
+    }
+    // Return minimal headers if parsing fails
+    return { "x-model-used": modelUsed };
 }
 
 async function checkBalance({ auth, polar }: AuthVariables & PolarVariables) {

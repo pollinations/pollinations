@@ -464,4 +464,23 @@ export const TEXT_SERVICES = {
         contextWindow: 200000,
         isSpecialized: false,
     },
+    "whisper": {
+        aliases: ["whisper-1", "whisper-large-v3"],
+        modelId: "whisper-large-v3",
+        provider: "ovhcloud",
+        cost: [
+            // OVH Whisper: €0.00004083/sec ≈ $0.0000445/sec
+            // We bill by "audio seconds" - each second is counted directly
+            {
+                date: COST_START_DATE,
+                promptAudioSeconds: 0.0000445,
+            },
+        ],
+        description:
+            "Whisper Large V3 - Speech to Text Transcription (OVHcloud)",
+        inputModalities: ["audio"],
+        outputModalities: ["text"],
+        tools: false,
+        isSpecialized: false,
+    },
 } as const satisfies Record<string, ServiceDefinition<string>>;

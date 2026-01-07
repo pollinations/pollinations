@@ -9,137 +9,119 @@ import { Heading, Label } from "../ui/typography";
  * Displays API key types and usage examples for the Docs page
  */
 export function AuthCard() {
-    // Get translated copy
-    const { copy } = usePageCopy(DOCS_PAGE);
+  const { copy } = usePageCopy(DOCS_PAGE);
 
-    return (
-        <div>
-            <Heading variant="section" spacing="comfortable">
-                {copy.authenticationTitle}
-            </Heading>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {/* Left: Key Types + Get Your Key */}
-                <div className="space-y-4">
-                    <div>
-                        <Label spacing="comfortable">
-                            {copy.keyTypesLabel}
-                        </Label>
-                        <div className="space-y-3">
-                            {/* Publishable Key */}
-                            <div className="bg-surface-card p-4">
-                                <div className="flex items-start gap-3">
-                                    <span className="font-mono text-lg font-black text-text-highlight">
-                                        pk_
-                                    </span>
-                                    <div>
-                                        <p className="font-headline text-xs font-black text-text-body-main uppercase mb-2">
-                                            {copy.publishableLabel}
-                                        </p>
-                                        <ul className="text-xs text-text-body-secondary space-y-1">
-                                            <li>{copy.publishableFeature1}</li>
-                                            <li>{copy.publishableFeature2}</li>
-                                            <li className="text-text-brand font-bold">
-                                                {copy.publishableFeature3}
-                                            </li>
-                                        </ul>
-                                    </div>
-                                </div>
-                            </div>
+  return (
+    <div>
+      <Heading variant="section" spacing="comfortable">
+        {copy.authenticationTitle}
+      </Heading>
 
-                            {/* Secret Key */}
-                            <div className="bg-surface-card p-4">
-                                <div className="flex items-start gap-3">
-                                    <span className="font-mono text-lg font-black text-text-brand">
-                                        sk_
-                                    </span>
-                                    <div>
-                                        <p className="font-headline text-xs font-black text-text-body-main uppercase mb-2">
-                                            {copy.secretLabel}
-                                        </p>
-                                        <ul className="text-xs text-text-body-secondary space-y-1">
-                                            <li>{copy.secretFeature1}</li>
-                                            <li>{copy.secretFeature2}</li>
-                                            <li>{copy.secretFeature3}</li>
-                                        </ul>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+      {/* Intro */}
+      <p className="text-sm text-text-body-secondary mb-6">{copy.authIntro}</p>
 
-                    <a
-                        href="https://enter.pollinations.ai"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-block bg-button-primary-bg border-r-4 border-b-4 border-border-highlight shadow-shadow-highlight-md px-6 py-4 hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-shadow-highlight-sm transition-all"
-                    >
-                        <p className="font-headline text-xs font-black uppercase tracking-wider text-text-on-color mb-2">
-                            {copy.getYourKeyLabel}
-                        </p>
-                        <div className="flex items-center gap-2">
-                            <p className="font-mono text-sm font-black text-text-on-color/70">
-                                enter.pollinations.ai
-                            </p>
-                            <ExternalLinkIcon className="w-4 h-4 text-text-on-color/70" />
-                        </div>
-                    </a>
-                </div>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Publishable Key Section */}
+        <div className="bg-surface-card p-5 flex flex-col">
+          <div className="flex items-center gap-3 mb-3">
+            <span className="font-mono text-xl font-black text-text-highlight">
+              pk_
+            </span>
+            <span className="font-headline text-sm font-black text-text-body-main uppercase">
+              {copy.publishableLabel}
+            </span>
+          </div>
 
-                {/* Right: Usage Examples */}
-                <div>
-                    <Label spacing="comfortable">
-                        {copy.usageExamplesLabel}
-                    </Label>
+          <ul className="text-xs text-text-body-secondary space-y-1 flex-grow">
+            <li>{copy.publishableFeature1}</li>
+            <li>{copy.publishableFeature2}</li>
+          </ul>
 
-                    {/* Header Method */}
-                    <div className="mb-4">
-                        <p className="font-body text-xs text-text-body-secondary mb-2">
-                            {copy.serverSideDescription}
-                        </p>
-                        <div className="font-mono text-xs bg-button-primary-bg text-text-on-color p-4 border-r-4 border-b-4 border-border-main">
-                            <div className="text-text-on-color/50">
-                                {"// Example with fetch"}
-                            </div>
-                            <div className="mt-2">{"fetch(url, {"}</div>
-                            <div className="pl-4">{"  headers: {"}</div>
-                            <div className="pl-8">
-                                <span className="text-text-on-color/80">
-                                    {'"Authorization"'}
-                                </span>
-                                :{" "}
-                                <span className="text-text-on-color">
-                                    {'"Bearer sk_..."'}
-                                </span>
-                            </div>
-                            <div className="pl-4">{"  }"}</div>
-                            <div className="pl-4">{"});"}</div>
-                        </div>
-                    </div>
-
-                    {/* Query Method */}
-                    <div>
-                        <p className="font-body text-xs text-text-body-secondary mb-2">
-                            {copy.clientSideDescription}
-                        </p>
-                        <div className="font-mono text-xs bg-button-primary-bg text-text-on-color p-4 border-r-4 border-b-4 border-border-main">
-                            <div className="text-text-on-color/50">
-                                {"// Add to URL"}
-                            </div>
-                            <div className="mt-2">
-                                {`https://${COPY_CONSTANTS.apiBaseUrl}/...`}
-                            </div>
-                            <div className="pl-4">
-                                <span className="text-text-on-color/80">
-                                    {"?key="}
-                                </span>
-                                <span className="text-text-on-color">
-                                    {"YOUR_KEY"}
-                                </span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
+          {/* Beta Warning */}
+          <div className="mt-4 bg-yellow/10 border-l-2 border-yellow px-3 py-2">
+            <p className="text-xs text-yellow">{copy.publishableBetaWarning}</p>
+          </div>
         </div>
-    );
+
+        {/* Secret Key Section */}
+        <div className="bg-surface-card p-5 flex flex-col">
+          <div className="flex items-center gap-3 mb-3">
+            <span className="font-mono text-xl font-black text-text-brand">
+              sk_
+            </span>
+            <span className="font-headline text-sm font-black text-text-body-main uppercase">
+              {copy.secretLabel}
+            </span>
+          </div>
+
+          <ul className="text-xs text-text-body-secondary space-y-1 flex-grow">
+            <li>{copy.secretFeature1}</li>
+            <li>{copy.secretFeature2}</li>
+          </ul>
+
+          {/* Security Warning */}
+          <div className="mt-4 bg-pink/10 border-l-2 border-pink px-3 py-2">
+            <p className="text-xs text-pink">{copy.secretWarning}</p>
+          </div>
+        </div>
+      </div>
+
+      {/* Shared Usage Example */}
+      <div className="mt-6">
+        <Label spacing="tight">{copy.usageExampleTitle}</Label>
+        <div className="font-mono text-xs bg-button-primary-bg text-text-on-color p-4 border-r-4 border-b-4 border-border-main">
+          <span className="text-text-on-color/80">{"https://"}</span>
+          <span className="text-text-on-color">
+            {COPY_CONSTANTS.apiBaseUrl}
+          </span>
+          <span className="text-text-on-color/80">{"/image/prompt"}</span>
+          <span className="text-text-on-color/80">{"?key="}</span>
+          <span className="text-text-highlight">{"YOUR_KEY"}</span>
+        </div>
+      </div>
+
+      {/* Model Scoping Highlight */}
+      <div className="mt-6 flex items-start gap-3 bg-gradient-to-r from-surface-card to-transparent border-l-4 border-text-highlight p-3">
+        <span className="font-headline text-sm font-black text-text-highlight whitespace-nowrap">
+          {copy.modelScopingLabel}
+        </span>
+        <span className="text-xs text-text-body-secondary">
+          {copy.modelScopingDescription}
+        </span>
+      </div>
+
+      {/* Call to Action */}
+      <div className="mt-6 flex flex-wrap items-center justify-between gap-4 bg-button-primary-bg/10 p-4">
+        <div>
+          <p className="font-headline text-sm font-black text-text-brand">
+            {copy.ctaLabel}
+          </p>
+        </div>
+        <div className="flex flex-wrap gap-3">
+          <a
+            href="https://enter.pollinations.ai"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-2 bg-button-primary-bg border-r-4 border-b-4 border-border-highlight shadow-shadow-highlight-md px-5 py-2 hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-shadow-highlight-sm transition-all"
+          >
+            <span className="font-headline text-xs font-black uppercase tracking-wider text-text-on-color">
+              {copy.getYourKeyLabel}
+            </span>
+            <ExternalLinkIcon className="w-3 h-3 text-text-on-color/70" />
+          </a>
+          <a
+            href="/APIDOCS.md"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-2 bg-surface-card border-r-4 border-b-4 border-border-main px-5 py-2 hover:translate-x-[2px] hover:translate-y-[2px] transition-all"
+          >
+            <span className="font-headline text-xs font-black uppercase tracking-wider text-text-body-main">
+              {copy.ctaDocsLabel}
+            </span>
+            <ExternalLinkIcon className="w-3 h-3 text-text-body-secondary" />
+          </a>
+        </div>
+      </div>
+    </div>
+  );
 }

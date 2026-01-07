@@ -4,21 +4,22 @@
 
 ## 🆕 Recent Apps
 
-| Name | Description | Author |
-|------|-------------|--------|
-| [ChatPUA](https://apps.apple.com/au/app/chatpua/id6753729837) | AI roleplay chat for PUA training with avatars, GIFs, groups & scenes | @Libre-Connect |
-| [Player or AI [Roblox]](https://www.roblox.com/games/95217169945642/Player-or-AI) | 2-min mystery chats—deduce if your partner is human or AI. | @YoussefElsafi |
-| [Filmirror](https://filmirror.vercel.app/) | Enter a film title to get similar movie picks with reasons & confidence. | @LumsBot |
-| [Pollinations VisionAI](https://superheroghost.github.io/VisionAI/) | Public AI image generator UI for Pollinations models; supports API keys | @Superheroghost |
-| [Donjon.studio](https://donjon.studio/) | AI-generated interactive adventures with evolving stories and images | @PassepartoutFR |
-| [Insight Engine](https://erbharatmalhotra.github.io/insight-engine/) | Experimental frontend app that turns a single idea into refined text insights and AI-generated visuals | @ErBharatMalhotra |
-| [IDPhotoGen](https://id-photo-gen.thangoffer91.workers.dev) | Create professional ID photos in 30 seconds with AI | @thangoffer91 |
-| [AquaMind](https://aquamind.app) | AI-powered aquarium management and fish care assistant | @aquamind |
-| [Word Wagon](https://wordwagon.app) | AI-powered vocabulary learning app with spaced repetition | @wordwagon |
-| [nusanexus](https://nusanexus.com) | AI-powered chat platform for Indonesian users | @nusanexus |
-| [Nuvole AI Lite](https://nuvoleai.com) | Lightweight AI chat app with clean UI and fast responses | @nuvoleai |
+| Name                                                                              | Description                                                                                            | Author            |
+| --------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------ | ----------------- |
+| [ChatPUA](https://apps.apple.com/au/app/chatpua/id6753729837)                     | AI roleplay chat for PUA training with avatars, GIFs, groups & scenes                                  | @Libre-Connect    |
+| [Player or AI [Roblox]](https://www.roblox.com/games/95217169945642/Player-or-AI) | 2-min mystery chats—deduce if your partner is human or AI.                                             | @YoussefElsafi    |
+| [Filmirror](https://filmirror.vercel.app/)                                        | Enter a film title to get similar movie picks with reasons & confidence.                               | @LumsBot          |
+| [Pollinations VisionAI](https://superheroghost.github.io/VisionAI/)               | Public AI image generator UI for Pollinations models; supports API keys                                | @Superheroghost   |
+| [Donjon.studio](https://donjon.studio/)                                           | AI-generated interactive adventures with evolving stories and images                                   | @PassepartoutFR   |
+| [Insight Engine](https://erbharatmalhotra.github.io/insight-engine/)              | Experimental frontend app that turns a single idea into refined text insights and AI-generated visuals | @ErBharatMalhotra |
+| [IDPhotoGen](https://id-photo-gen.thangoffer91.workers.dev)                       | Create professional ID photos in 30 seconds with AI                                                    | @thangoffer91     |
+| [AquaMind](https://aquamind.app)                                                  | AI-powered aquarium management and fish care assistant                                                 | @aquamind         |
+| [Word Wagon](https://wordwagon.app)                                               | AI-powered vocabulary learning app with spaced repetition                                              | @wordwagon        |
+| [nusanexus](https://nusanexus.com)                                                | AI-powered chat platform for Indonesian users                                                          | @nusanexus        |
+| [Nuvole AI Lite](https://nuvoleai.com)                                            | Lightweight AI chat app with clean UI and fast responses                                               | @nuvoleai         |
 
 [View all apps →](apps/APPS.md)
+
 ## 🚀 New Unified API — Now Live
 
 We've launched **https://gen.pollinations.ai** — a single endpoint for all your AI generation needs: text, images, audio, video — all in one place.
@@ -44,6 +45,7 @@ We've launched **https://gen.pollinations.ai** — a single endpoint for all you
 - **2025-12-29** – **📱 New Community Apps** Try IDPhotoGen (ID photos), PromptPi (prompt engineering), and Nuvole AI Lite (iOS shortcut).
 - **2025-12-29** – **🚀 New Model: gptimage-large** Access GPT Image 1.5 for high-fidelity generations via the API. [API Docs](https://enter.pollinations.ai/api/docs)
 - **2025-12-29** – **🤖 DeepSeek V3.2** Upgraded to the latest DeepSeek V3.2 for smarter, faster chat responses. [Try it](https://hello.pollinations.ai)
+
 ---
 
 [![pollinations.ai Logo](https://pollinations.ai/p/3D_wireframe_blueprint_of_the_conceptual_isometric_world_of_Pollinations_AI_a_surreal_hyperrealistic_digital_garden_Elements_emerge_partially_from_all_sides?width=3000&height=1000&seed=-1)](https://pollinations.ai/p/3D_wireframe_blueprint_of_the_conceptual_isometric_world_of_Pollinations_AI_a_surreal_hyperrealistic_digital_garden_Elements_emerge_partially_from_all_sides?width=3000&height=1000&seed=-1)
@@ -134,6 +136,42 @@ AI assistants can:
 - List available models, voices, and capabilities
 
 For more advanced usage, check out our [API documentation](APIDOCS.md).
+
+## 🔐 Authentication
+
+Get your API key at [enter.pollinations.ai](https://enter.pollinations.ai)
+
+### Key Types
+
+| Key             | Prefix | Use Case                       | Rate Limits              | Status  |
+| --------------- | ------ | ------------------------------ | ------------------------ | ------- |
+| **Publishable** | `pk_`  | Client-side, demos, prototypes | 1 pollen/hour per IP+key | ⚠️ Beta |
+| **Secret**      | `sk_`  | Server-side only               | No rate limits           | Stable  |
+
+> ⚠️ **Publishable keys:** Turnstile protection coming soon. Not recommended for production yet.
+
+> ⚠️ **Never expose `sk_` keys** in client-side code, git repos, or public URLs
+
+### Model Restrictions
+
+Each API key can be scoped to specific models. When creating a key at [enter.pollinations.ai](https://enter.pollinations.ai), you can:
+
+- **Allow all models** — key works with any available model
+- **Restrict to specific models** — select exactly which models the key can access (e.g., only `flux` and `openai`, or just `gptimage-large`)
+
+### Usage
+
+```bash
+curl 'https://gen.pollinations.ai/image/a%20cat?key=YOUR_KEY'
+```
+
+**Environment variable (best practice):**
+
+```bash
+export POLLINATIONS_API_KEY=sk_...
+```
+
+See [full API docs](APIDOCS.md) for detailed authentication information.
 
 ## 🖥️ How to Use
 

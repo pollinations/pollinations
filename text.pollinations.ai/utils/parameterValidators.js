@@ -27,6 +27,21 @@ export const validateInt = (value) => {
     return parsed;
 };
 
+// Maximum seed value - use INT32_MAX for compatibility with strict providers like Vertex AI
+const MAX_SEED_VALUE = 2147483647; // INT32_MAX (2^31 - 1)
+
+/**
+ * Processes seed value, converting -1 to a random seed (parity with image generation)
+ * @param {*} value - Value to validate
+ * @returns {number|undefined} Processed seed or undefined
+ */
+export const processSeed = (value) => {
+    const seed = validateInt(value);
+    if (seed === undefined) return undefined;
+    // seed=-1 means "random" - generate a random seed
+    return seed === -1 ? Math.floor(Math.random() * MAX_SEED_VALUE) : seed;
+};
+
 /**
  * Validates boolean values including string representations
  * @param {*} value - Value to validate
@@ -112,7 +127,7 @@ export const validateTextGenerationParams = (data) => {
         presence_penalty: validateFloat(data.presence_penalty),
         frequency_penalty: validateFloat(data.frequency_penalty),
         repetition_penalty: validateFloat(data.repetition_penalty),
-        seed: validateInt(data.seed),
+        seed: processSeed(data.seed),
         stream: validateBoolean(data.stream),
         private: validateBoolean(data.private),
         model: validateString(data.model), // No default - gateway must provide valid model

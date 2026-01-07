@@ -7,12 +7,14 @@ import { validator } from "../middleware/validator.ts";
 import type { Env } from "../env.ts";
 import { describeRoute } from "hono-openapi";
 import { drizzle } from "drizzle-orm/d1";
+import { eq } from "drizzle-orm";
 import {
     getPackProductMapCached,
     PackProductSlug,
     packProductSlugs,
 } from "@/utils/polar.ts";
 import { getPendingSpend } from "@/events.ts";
+import { user as userTable } from "@/db/schema/better-auth.ts";
 
 const productParamSchema = z.enum(packProductSlugs.map(productSlugToUrlParam));
 
@@ -82,6 +84,34 @@ export const polarRoutes = new Hono<Env>()
                 user.id,
             );
             return c.json({ pendingSpend });
+        },
+    )
+    .get(
+        "/customer/d1-balance",
+        describeRoute({
+            tags: ["Auth"],
+            description:
+                "Get the local D1 pollen balance for the current user (with lazy init from Polar).",
+            hide: ({ c }) => c?.env.ENVIRONMENT !== "development",
+        }),
+        async (c) => {
+            const user = c.var.auth.requireUser();
+            // Use getBalance which includes lazy init from Polar if not set
+            const { tierBalance, packBalance } = await c.var.polar.getBalance(user.id);
+            const db = drizzle(c.env.DB);
+            const users = await db
+                .select({ lastTierGrant: userTable.lastTierGrant })
+                .from(userTable)
+                .where(eq(userTable.id, user.id))
+                .limit(1);
+            const lastTierGrant = users[0]?.lastTierGrant ?? null;
+            
+            return c.json({
+                tierBalance,
+                packBalance,
+                totalBalance: tierBalance + packBalance,
+                lastTierGrant,
+            });
         },
     )
     .get(

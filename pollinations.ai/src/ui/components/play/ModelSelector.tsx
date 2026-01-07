@@ -104,6 +104,7 @@ export const ModelSelector = memo(function ModelSelector({
                                 data-active={isActive}
                                 data-type={modelType}
                                 disabled={!isAllowed}
+                                title={m.description || m.id}
                                 className={`border-2 ${borderColorClass} ${
                                     !isAllowed
                                         ? "opacity-40 cursor-not-allowed grayscale"

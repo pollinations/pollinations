@@ -1,0 +1,119 @@
+{
+  "request": {
+    "url": "http://ec2-3-80-56-235.compute-1.amazonaws.com:16385/openai",
+    "method": "POST",
+    "body": {
+      "type": "json",
+      "data": {
+        "model": "glm",
+        "messages": [
+          {
+            "role": "user",
+            "content": "What is 5 + 3? You must use the calculator tool to compute this."
+          }
+        ],
+        "tools": [
+          {
+            "type": "function",
+            "function": {
+              "name": "calculator",
+              "description": "Perform basic arithmetic operations",
+              "parameters": {
+                "type": "object",
+                "properties": {
+                  "operation": {
+                    "type": "string",
+                    "enum": [
+                      "add",
+                      "subtract",
+                      "multiply",
+                      "divide"
+                    ],
+                    "description": "The arithmetic operation to perform"
+                  },
+                  "a": {
+                    "type": "number",
+                    "description": "First operand"
+                  },
+                  "b": {
+                    "type": "number",
+                    "description": "Second operand"
+                  }
+                },
+                "required": [
+                  "operation",
+                  "a",
+                  "b"
+                ]
+              }
+            }
+          }
+        ],
+        "tool_choice": "required",
+        "seed": 42
+      }
+    },
+    "params": {}
+  },
+  "response": {
+    "status": 200,
+    "statusText": "OK",
+    "headers": {
+      "access-control-allow-origin": "*",
+      "connection": "keep-alive",
+      "content-length": "746",
+      "content-type": "application/json; charset=utf-8",
+      "date": "Wed, 07 Jan 2026 04:13:55 GMT",
+      "etag": "W/\"2ea-YeDfpddWJBoLKvKez0zp6OK3O+Q\"",
+      "keep-alive": "timeout=5",
+      "x-model-used": "accounts/fireworks/models/glm-4p7",
+      "x-powered-by": "Express",
+      "x-usage-completion-text-tokens": "65",
+      "x-usage-prompt-cached-tokens": "3",
+      "x-usage-prompt-text-tokens": "481",
+      "x-usage-total-tokens": "549"
+    },
+    "body": {
+      "type": "json",
+      "data": {
+        "id": "pllns_041f9922241c81069ec89eb8c8cd2a1c",
+        "object": "chat.completion",
+        "created": 1767759235,
+        "model": "accounts/fireworks/models/glm-4p7",
+        "choices": [
+          {
+            "index": 0,
+            "message": {
+              "role": "assistant",
+              "content": "",
+              "reasoning_content": "The user wants me to compute 5 + 3 using the calculator tool. I need to use the calculator function with:\n- operation: \"add\"\n- a: 5\n- b: 3",
+              "tool_calls": [
+                {
+                  "index": 0,
+                  "id": "chatcmpl-tool-960d0104cb846658",
+                  "type": "function",
+                  "function": {
+                    "name": "calculator",
+                    "arguments": "{\"operation\": \"add\", \"a\": 5, \"b\": 3}"
+                  },
+                  "name": null
+                }
+              ]
+            },
+            "finish_reason": "tool_calls",
+            "token_ids": null
+          }
+        ],
+        "usage": {
+          "prompt_tokens": 484,
+          "total_tokens": 549,
+          "completion_tokens": 65,
+          "prompt_tokens_details": {
+            "cached_tokens": 3
+          }
+        },
+        "prompt_token_ids": null
+      }
+    }
+  }
+}

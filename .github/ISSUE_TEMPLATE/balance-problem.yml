@@ -1,0 +1,21 @@
+name: Balance Problem
+description: Pollen not showing after purchase
+title: "Balance: "
+labels: ["SUPPORT-BALANCE"]
+body:
+  - type: input
+    id: email
+    attributes:
+      label: Email
+      description: The email you used to sign up
+      placeholder: "your@email.com"
+    validations:
+      required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: What happened?
+      placeholder: "e.g., Bought 20 pollen 30 min ago, still shows 0"
+    validations:
+      required: true

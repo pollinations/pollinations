@@ -19,6 +19,7 @@ RUN apt-get update && apt-get install -y \
     python3-pip \
     git \
     wget \
+    curl \
     && rm -rf /var/lib/apt/lists/*
 
 # Set up Python alternatives
@@ -49,9 +50,13 @@ RUN pip install -r requirements.txt
 
 # Clone and build nunchaku from source for RTX 4090 (SM 8.9)
 # This takes 10-15 minutes during build
+# Force SM targets since Docker build doesn't have GPU access
+ENV TORCH_CUDA_ARCH_LIST="8.9"
+ENV NUNCHAKU_INSTALL_SM="89"
 RUN git clone --recursive https://github.com/mit-han-lab/nunchaku.git /tmp/nunchaku && \
     cd /tmp/nunchaku && \
-    TORCH_CUDA_ARCH_LIST="8.9" pip install -e . && \
+    pip install ninja && \
+    pip install --no-build-isolation -e . && \
     rm -rf /tmp/nunchaku/.git
 
 # Copy application code
@@ -59,10 +64,10 @@ COPY server.py .
 COPY safety_checker/ ./safety_checker/
 
 # Expose port
-EXPOSE 8000
+EXPOSE 8765
 
 # Environment variables (can be overridden at runtime)
-ENV PORT=8000
+ENV PORT=8765
 ENV CUDA_VISIBLE_DEVICES=0
 
 # Health check

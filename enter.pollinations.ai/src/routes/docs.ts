@@ -29,8 +29,8 @@ export const createDocsRoutes = (apiRouter: Hono<Env>) => {
     return new Hono<Env>()
         .get("/", (c, next) =>
             Scalar<Env>({
-                pageTitle: "Pollinations.AI API Reference",
-                title: "Pollinations.AI API Reference",
+                pageTitle: "pollinations.ai API Reference",
+                title: "pollinations.ai API Reference",
                 theme: "saturn",
                 sources: [
                     { url: "/api/docs/open-api/generate-schema", title: "API" },
@@ -60,10 +60,10 @@ export const createDocsRoutes = (apiRouter: Hono<Env>) => {
                 documentation: {
                     servers: [{ url: "https://gen.pollinations.ai" }],
                     info: {
-                        title: "Pollinations.AI API",
+                        title: "pollinations.ai API",
                         version: "0.3.0",
                         description: [
-                            "Documentation for `gen.pollinations.ai` - the Pollinations.AI API gateway.",
+                            "Documentation for `gen.pollinations.ai` - the pollinations.ai API gateway.",
                             "",
                             "[📝 Edit docs](https://github.com/pollinations/pollinations/edit/master/enter.pollinations.ai/src/routes/docs.ts)",
                             "",
@@ -93,7 +93,7 @@ export const createDocsRoutes = (apiRouter: Hono<Env>) => {
                             '  -d \'{"model": "openai", "messages": [{"role": "user", "content": [{"type": "text", "text": "Describe this image"}, {"type": "image_url", "image_url": {"url": "https://example.com/image.jpg"}}]}]}\'',
                             "```",
                             "",
-                            "**Note:** `gemini` model has `code_execution`, `google_search`, `url_context` tools enabled by default. Pass your own `tools` array to override.",
+                            "**Gemini Tools:** `gemini`, `gemini-large` have `code_execution` enabled (can generate images/plots). `gemini-search` has `google_search` enabled. Responses may include `content_blocks` with `image_url`, `text`, or `thinking` types.",
                             "",
                             "### Simple Text Endpoint",
                             "```bash",

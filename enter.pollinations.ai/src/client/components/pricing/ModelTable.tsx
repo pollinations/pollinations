@@ -9,6 +9,12 @@ type ModelTableProps = {
     type: "text" | "image" | "video";
 };
 
+type UnifiedModelTableProps = {
+    imageModels: ModelPrice[];
+    videoModels: ModelPrice[];
+    textModels: ModelPrice[];
+};
+
 // Helper to convert per pollen string to numeric value for sorting
 const getPerPollenNumeric = (perPollen: string): number => {
     if (perPollen === "—") return -1;
@@ -27,20 +33,131 @@ const getPerPollenNumeric = (perPollen: string): number => {
     return parseFloat(cleaned) || -1;
 };
 
-export const ModelTable: FC<ModelTableProps> = ({ models, type }) => {
-    // Sort by per pollen value (descending - higher counts first)
-    const sortedModels = [...models].sort((a, b) => {
+const sortModels = (models: ModelPrice[]) => {
+    return [...models].sort((a, b) => {
         const aPerPollen = calculatePerPollen(a);
         const bPerPollen = calculatePerPollen(b);
-
         const aValue = getPerPollenNumeric(aPerPollen);
         const bValue = getPerPollenNumeric(bPerPollen);
-
-        // Sort descending (higher values first)
         return bValue - aValue;
     });
+};
 
-    // For text models, separate personas
+type SectionHeaderProps = {
+    label: string;
+    type: "text" | "image" | "video";
+    isFirst?: boolean;
+};
+
+const SectionHeader: FC<SectionHeaderProps> = ({
+    label,
+    type,
+    isFirst = false,
+}) => (
+    <tr>
+        <td
+            className={`text-left ${isFirst ? "pt-0" : "pt-6"} pb-1 px-2 text-sm font-bold text-pink-500 align-top`}
+        >
+            <div className="flex items-center gap-2">
+                {label}
+                {type === "video" && (
+                    <>
+                        <span className="text-[10px] text-purple-600 bg-purple-100 px-1.5 py-0.5 rounded-full font-medium">
+                            alpha 🧪
+                        </span>
+                        <span className="relative inline-flex items-center group/alpha">
+                            <span className="flex items-center justify-center w-3.5 h-3.5 rounded-full bg-pink-100 border border-pink-300 text-pink-500 hover:bg-pink-200 hover:border-pink-400 transition-colors text-[10px] font-bold cursor-pointer">
+                                i
+                            </span>
+                            <span className="invisible group-hover/alpha:visible absolute left-0 top-full mt-1 px-3 py-2 bg-gradient-to-r from-pink-50 to-purple-50 text-gray-800 text-xs rounded-lg shadow-lg border border-pink-200 whitespace-nowrap z-50 pointer-events-none">
+                                API endpoints and parameters may change
+                            </span>
+                        </span>
+                    </>
+                )}
+            </div>
+        </td>
+        <td className="text-center text-sm font-bold text-pink-500 pt-0 pb-1 px-2 whitespace-nowrap w-[120px] align-top">
+            <div>1 pollen ≈</div>
+            <div className="text-xs font-normal text-pink-400 opacity-70 italic">
+                {type === "text"
+                    ? "responses"
+                    : type === "image"
+                      ? "images"
+                      : "videos"}
+            </div>
+        </td>
+        <td className="text-center text-sm font-bold text-pink-500 pt-0 pb-1 px-2 whitespace-nowrap w-[190px] align-top">
+            <div>Input</div>
+            <div className="text-xs font-normal text-pink-400 opacity-70 italic">
+                pollen
+            </div>
+        </td>
+        <td className="text-center text-sm font-bold text-pink-500 pt-0 pb-1 px-2 whitespace-nowrap w-[120px] align-top">
+            <div>Output</div>
+            <div className="text-xs font-normal text-pink-400 opacity-70 italic">
+                pollen
+            </div>
+        </td>
+    </tr>
+);
+
+export const UnifiedModelTable: FC<UnifiedModelTableProps> = ({
+    imageModels,
+    videoModels,
+    textModels,
+}) => {
+    const sortedImageModels = sortModels(imageModels);
+    const sortedVideoModels = sortModels(videoModels);
+    const sortedTextModels = sortModels(textModels);
+
+    const regularTextModels = sortedTextModels.filter(
+        (m) => !isPersona(m.name),
+    );
+    const personaModels = sortedTextModels.filter((m) => isPersona(m.name));
+
+    return (
+        <table className="w-full min-w-[700px]">
+            <tbody>
+                {/* Image Section */}
+                <SectionHeader label="Image" type="image" isFirst />
+                {sortedImageModels.map((model) => (
+                    <ModelRow key={model.name} model={model} />
+                ))}
+
+                {/* Video Section */}
+                <SectionHeader label="Video" type="video" />
+                {sortedVideoModels.map((model) => (
+                    <ModelRow key={model.name} model={model} />
+                ))}
+
+                {/* Text Section */}
+                <SectionHeader label="Text" type="text" />
+                {regularTextModels.map((model) => (
+                    <ModelRow key={model.name} model={model} />
+                ))}
+                {personaModels.length > 0 && (
+                    <>
+                        <tr>
+                            <td colSpan={4} className="pt-4 pb-1 px-2">
+                                <div className="text-xs font-semibold text-pink-500 opacity-60">
+                                    Persona
+                                </div>
+                            </td>
+                        </tr>
+                        {personaModels.map((model) => (
+                            <ModelRow key={model.name} model={model} />
+                        ))}
+                    </>
+                )}
+            </tbody>
+        </table>
+    );
+};
+
+export const ModelTable: FC<ModelTableProps> = ({ models, type }) => {
+    const sortedModels = sortModels(models);
+
     const regularModels =
         type === "text"
             ? sortedModels.filter((m) => !isPersona(m.name))
@@ -52,10 +169,10 @@ export const ModelTable: FC<ModelTableProps> = ({ models, type }) => {
         type === "text" ? "Text" : type === "image" ? "Image" : "Video";
 
     return (
-        <table className="table-fixed w-full min-w-[700px]">
+        <table className="w-full min-w-[700px]">
             <thead>
                 <tr>
-                    <th className="text-left pt-0 pb-1 px-2 whitespace-nowrap w-[220px] text-sm font-bold text-pink-500 align-top">
+                    <th className="text-left pt-0 pb-1 px-2 text-sm font-bold text-pink-500 align-top">
                         <div className="flex items-center gap-2">
                             {tableLabel}
                             {type === "video" && (
@@ -83,7 +200,7 @@ export const ModelTable: FC<ModelTableProps> = ({ models, type }) => {
                                 ? "responses"
                                 : type === "image"
                                   ? "images"
-                                  : "seconds"}
+                                  : "videos"}
                         </div>
                     </th>
                     <th className="text-center text-sm font-bold text-pink-500 pt-0 pb-1 px-2 whitespace-nowrap w-[190px] align-top">
@@ -92,7 +209,7 @@ export const ModelTable: FC<ModelTableProps> = ({ models, type }) => {
                             pollen
                         </div>
                     </th>
-                    <th className="text-center text-sm font-bold text-pink-500 pt-0 pb-1 px-2 whitespace-nowrap align-top">
+                    <th className="text-center text-sm font-bold text-pink-500 pt-0 pb-1 px-2 whitespace-nowrap w-[120px] align-top">
                         <div>Output</div>
                         <div className="text-xs font-normal text-pink-400 opacity-70 italic">
                             pollen

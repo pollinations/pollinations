@@ -277,7 +277,7 @@ main() {
     echo -e "${GREEN}"
     echo "╔═══════════════════════════════════════════════════════════╗"
     echo "║           Flux Schnell Server Setup Script                ║"
-    echo "║                   Pollinations.AI                         ║"
+    echo "║                   pollinations.ai                         ║"
     echo "╚═══════════════════════════════════════════════════════════╝"
     echo -e "${NC}"
     

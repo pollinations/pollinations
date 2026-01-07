@@ -4,9 +4,11 @@ import {
     hasReasoning,
     hasVision,
     hasAudioInput,
+    hasAudioOutput,
     hasSearch,
     hasCodeExecution,
-    getModelDescription,
+    getModelDisplayName,
+    isNewModel,
 } from "./model-info.ts";
 import { calculatePerPollen } from "./calculations.ts";
 import { PriceBadge } from "./PriceBadge.tsx";
@@ -17,89 +19,42 @@ type ModelRowProps = {
 };
 
 export const ModelRow: FC<ModelRowProps> = ({ model }) => {
-    const modelDescription = getModelDescription(model.name);
+    const modelDisplayName = getModelDisplayName(model.name);
     const genPerPollen = calculatePerPollen(model);
-    const [showTooltip, setShowTooltip] = useState(false);
-    const handleMouseEnter = () => setShowTooltip(true);
-    const handleMouseLeave = () => setShowTooltip(false);
-    const handleClick = (e: React.MouseEvent) => {
-        e.stopPropagation();
-        setShowTooltip((prev) => !prev);
+    const [copied, setCopied] = useState(false);
+
+    const copyModelName = async () => {
+        await navigator.clipboard.writeText(model.name);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 1500);
     };
 
     // Get model capabilities
     const showReasoning = hasReasoning(model.name);
     const showVision = hasVision(model.name);
     const showAudioInput = hasAudioInput(model.name);
+    const showAudioOutput = hasAudioOutput(model.name);
     const showSearch = hasSearch(model.name);
     const showCodeExecution = hasCodeExecution(model.name);
-
-    // Show info icon if we have a description to display, or if it's a video model (for alpha notice)
-    const isVideoModel = model.type === "video";
-    const hasDescription = modelDescription && modelDescription !== model.name;
-
-    // Determine pricing type for image models
-    const isImageModel = model.type === "image";
-    const hasFlatPricing = isImageModel && model.perImagePrice;
-    const hasTokenPricing =
-        isImageModel &&
-        !model.perImagePrice &&
-        (model.promptTextPrice || model.completionTextPrice);
-
-    // Build pricing note for image models
-    const pricingNote = hasFlatPricing
-        ? "Flat rate per image (any resolution)"
-        : hasTokenPricing
-          ? "Token-based pricing (varies with prompt)"
-          : "";
-
-    const showDescriptionInfo =
-        hasDescription || isVideoModel || (isImageModel && pricingNote);
-
-    // Build tooltip content
-    const alphaNotice = "Alpha – API may change";
-    const baseContent = isVideoModel
-        ? hasDescription
-            ? `${modelDescription}. ${alphaNotice}`
-            : alphaNotice
-        : modelDescription;
-
-    // Combine description with pricing note
-    const tooltipContent =
-        baseContent && pricingNote
-            ? `${baseContent}. ${pricingNote}`
-            : baseContent || pricingNote;
+    const showNew = isNewModel(model.name);
 
     return (
         <tr className="border-b border-gray-200">
-            <td className="py-2 px-2 text-sm font-mono text-gray-700 whitespace-nowrap relative group">
+            <td className="py-2 px-2 text-sm text-gray-700 whitespace-nowrap relative group">
                 <div className="flex items-center gap-2">
-                    {model.name}
-                    {showDescriptionInfo && (
+                    <div className="flex flex-col">
+                        <span className="font-medium">
+                            {modelDisplayName || model.name}
+                        </span>
                         <button
                             type="button"
-                            className="relative inline-flex items-center"
-                            onClick={handleClick}
-                            onMouseEnter={handleMouseEnter}
-                            onMouseLeave={handleMouseLeave}
-                            onKeyDown={(e) => {
-                                if (e.key === "Enter" || e.key === " ") {
-                                    e.preventDefault();
-                                    setShowTooltip((prev) => !prev);
-                                }
-                            }}
-                            aria-label="Show model information"
+                            onClick={copyModelName}
+                            className="text-xs text-gray-500 font-mono hover:text-gray-700 cursor-pointer text-left"
+                            title="Click to copy"
                         >
-                            <span className="flex items-center justify-center w-3.5 h-3.5 rounded-full bg-pink-100 border border-pink-300 text-pink-500 hover:bg-pink-200 hover:border-pink-400 transition-colors text-[10px] font-bold cursor-pointer">
-                                i
-                            </span>
-                            <span
-                                className={`${showTooltip ? "visible" : "invisible"} absolute left-0 top-full mt-1 px-3 py-2 bg-gradient-to-r from-pink-50 to-purple-50 text-gray-800 text-xs rounded-lg shadow-lg border border-pink-200 whitespace-nowrap z-50 pointer-events-none`}
-                            >
-                                {tooltipContent}
-                            </span>
+                            {copied ? "✓ copied" : model.name}
                         </button>
-                    )}
+                    </div>
                     {showVision && (
                         <Tooltip
                             text={
@@ -113,7 +68,12 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
                     )}
                     {showAudioInput && (
                         <Tooltip text="Audio input">
-                            <span className="text-base">👂</span>
+                            <span className="text-base">🎙️</span>
+                        </Tooltip>
+                    )}
+                    {showAudioOutput && (
+                        <Tooltip text="Audio output">
+                            <span className="text-base">🔊</span>
                         </Tooltip>
                     )}
                     {showReasoning && (
@@ -130,6 +90,11 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
                         <Tooltip text="Code execution">
                             <span className="text-base">💻</span>
                         </Tooltip>
+                    )}
+                    {showNew && (
+                        <span className="text-[10px] text-green-600 bg-green-100 px-1.5 py-0.5 rounded-full font-medium">
+                            NEW
+                        </span>
                     )}
                 </div>
             </td>

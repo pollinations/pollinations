@@ -72,15 +72,12 @@ export function PlayGenerator({
 
     const isImageModel = imageModels.some((m) => m.id === selectedModel);
 
-    // Check if current model has audio output
-    const isAudioModel = [...imageModels, ...textModels].some(
-        (m) => m.id === selectedModel && m.hasAudioOutput,
-    );
-
-    // Check if current model supports image input modality
+    // Get current model data once and derive all flags from it
     const currentModelData = [...imageModels, ...textModels].find(
         (m) => m.id === selectedModel,
     );
+    const isAudioModel = currentModelData?.hasAudioOutput || false;
+    const isVideoModel = currentModelData?.hasVideoOutput || false;
     const supportsImageInput = currentModelData?.hasImageInput || false;
 
     const addImageUrl = () => {
@@ -439,12 +436,26 @@ export function PlayGenerator({
             {result && !error && (
                 <div className={isImageModel ? "" : "bg-input-background p-6"}>
                     {isImageModel ? (
-                        <img
-                            src={result}
-                            alt="Generated"
-                            className="w-full h-auto"
-                            onLoad={() => setIsLoading(false)}
-                        />
+                        isVideoModel ? (
+                            <video
+                                src={result}
+                                controls
+                                autoPlay
+                                loop
+                                muted
+                                className="w-full h-auto"
+                                onLoadedData={() => setIsLoading(false)}
+                            >
+                                <track kind="captions" />
+                            </video>
+                        ) : (
+                            <img
+                                src={result}
+                                alt="Generated"
+                                className="w-full h-auto"
+                                onLoad={() => setIsLoading(false)}
+                            />
+                        )
                     ) : (
                         <div className="font-body text-text-body-main whitespace-pre-wrap">
                             {result}

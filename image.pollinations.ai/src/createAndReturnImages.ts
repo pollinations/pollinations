@@ -152,13 +152,13 @@ async function fetchFromTurboServer(params: object) {
 }
 
 /**
- * Calls the ComfyUI API to generate images.
+ * Calls self-hosted image generation servers (flux, zimage, turbo pools).
  * @param {string} prompt - The prompt for image generation.
  * @param {Object} safeParams - The parameters for image generation.
  * @param {number} concurrentRequests - The number of concurrent requests.
  * @returns {Promise<Array>} - The generated images.
  */
-export const callComfyUI = async (
+export const callSelfHostedServer = async (
     prompt: string,
     safeParams: ImageParams,
     concurrentRequests: number,
@@ -306,7 +306,7 @@ export const callComfyUI = async (
             },
         };
     } catch (e) {
-        logError("Error in callComfyUI:", e);
+        logError("Error in callSelfHostedServer:", e);
         throw e;
     }
 };
@@ -347,7 +347,7 @@ async function callCloudflareModel(
         prompt: truncatedPrompt,
         width: width,
         height: height,
-        seed: safeParams.seed || Math.floor(Math.random() * 1000000),
+        seed: safeParams.seed,
         ...additionalParams,
     };
 
@@ -1152,11 +1152,19 @@ const generateImage = async (
             "Processing",
             "Using registered servers",
         );
-        return await callComfyUI(prompt, safeParams, concurrentRequests);
+        return await callSelfHostedServer(
+            prompt,
+            safeParams,
+            concurrentRequests,
+        );
     }
 
     try {
-        return await callComfyUI(prompt, safeParams, concurrentRequests);
+        return await callSelfHostedServer(
+            prompt,
+            safeParams,
+            concurrentRequests,
+        );
     } catch (_error) {
         // Cloudflare Flux fallback disabled
         throw _error;

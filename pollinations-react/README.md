@@ -1,10 +1,10 @@
-# 🌸 Pollinations Generative React Hooks 🌸
+# 🌸 pollinations.ai Generative React Hooks 🌸
 
-A simple way to generate images, text and markdown using the Pollinations API in your React projects.
+A simple way to generate images, text, audio and markdown using the Pollinations API in your React projects.
 
 ## 🚀 Quick Start
 
-For interactive example code and documentation, visit [Pollinations React Hooks](https://react-hooks.pollinations.ai).
+For interactive example code and documentation, visit [pollinations.ai React Hooks](https://react-hooks.pollinations.ai).
 
 Install the package:
 
@@ -20,12 +20,12 @@ The usePollinationsText hook allows you to generate text from Pollinations' API 
     import { usePollinationsText } from '@pollinations/react';
 
     const HaikuComponent = () => {
-      const text = usePollinationsText('Write a short haiku about Pollinations.AI', { 
+      const text = usePollinationsText('Write a short haiku about pollinations.ai', {
         seed: 42,
         model: 'mistral',
         systemPrompt: 'You are a poetic AI assistant.'
       });
-      
+
       return (
         <div>
           {text ? <p>{text}</p> : <p>Loading...</p>}
@@ -37,7 +37,7 @@ The usePollinationsText hook allows you to generate text from Pollinations' API 
 
 #### Options
 
-- `seed` (number, default: -1): The seed for random text generation. If -1, a random seed will be used.
+- `seed` (number, default: 42): Seed for reproducible generation. Use the same seed to get identical results.
 - `model` (string, default: 'openai'): The model to use for text generation. Options: 'openai', 'mistral'.
 - `systemPrompt` (string, optional): A system prompt to set the behavior of the AI.
 
@@ -100,7 +100,7 @@ The usePollinationsImage hook allows you to generate image URLs from Pollination
 - `width` (number, default: 1024): The width of the generated image.
 - `height` (number, default: 1024): The height of the generated image.
 - `model` (string, default: 'flux'): The model to use for image generation.
-- `seed` (number, default: -1): The seed for random image generation. If -1, a random seed will be used.
+- `seed` (number, default: 42): Seed for reproducible generation. Use the same seed to get identical results.
 - `nologo` (boolean, default: true): Whether to generate the image without a logo.
 - `enhance` (boolean, default: false): Whether to enhance the generated image.
 
@@ -115,8 +115,8 @@ The usePollinationsChat hook allows you to generate chat responses from Pollinat
       const [input, setInput] = useState('');
       const { sendUserMessage, messages } = usePollinationsChat([
         { role: "system", content: "You are a helpful assistant" }
-      ], { 
-        seed: 42, 
+      ], {
+        seed: 42,
         jsonMode: false,
         model: 'mistral'
       });
@@ -185,4 +185,4 @@ This project is licensed under the MIT License. See the LICENSE file for details
 
 ---
 
-Made with ❤️ by the Pollinations.AI team
+Made with ❤️ by the pollinations.ai team

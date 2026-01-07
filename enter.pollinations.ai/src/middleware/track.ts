@@ -32,6 +32,8 @@ import {
     usageToEventParams,
 } from "@/db/schema/event.ts";
 import { drizzle } from "drizzle-orm/d1";
+import { eq, sql } from "drizzle-orm";
+import { user as userTable } from "@/db/schema/better-auth.ts";
 import { HonoRequest } from "hono";
 import type {
     ApiKeyType,
@@ -240,6 +242,51 @@ export const track = (eventType: EventType) =>
                 } else {
                     // No pending event was inserted, store a new event
                     await storeEvents(db, c.var.log, [finalEvent]);
+                }
+
+                // Decrement local pollen balance after billable requests
+                // Strategy: decrement from tier_balance first, then pack_balance
+                if (
+                    responseTracking.isBilledUsage &&
+                    responseTracking.price?.totalPrice &&
+                    userTracking.userId
+                ) {
+                    const priceToDeduct = responseTracking.price.totalPrice;
+
+                    // Get current balances to determine how to split the deduction
+                    const currentUser = await db
+                        .select({
+                            tierBalance: userTable.tierBalance,
+                            packBalance: userTable.packBalance,
+                        })
+                        .from(userTable)
+                        .where(eq(userTable.id, userTracking.userId))
+                        .limit(1);
+
+                    const tierBalance = currentUser[0]?.tierBalance ?? 0;
+                    const packBalance = currentUser[0]?.packBalance ?? 0;
+
+                    // Decrement tier first, then pack
+                    const fromTier = Math.min(priceToDeduct, Math.max(0, tierBalance));
+                    const fromPack = priceToDeduct - fromTier;
+
+                    await db
+                        .update(userTable)
+                        .set({
+                            tierBalance: sql`${userTable.tierBalance} - ${fromTier}`,
+                            packBalance: sql`${userTable.packBalance} - ${fromPack}`,
+                        })
+                        .where(eq(userTable.id, userTracking.userId));
+
+                    log.debug(
+                        "Decremented {price} pollen from user {userId} (tier: -{fromTier}, pack: -{fromPack})",
+                        {
+                            price: priceToDeduct,
+                            userId: userTracking.userId,
+                            fromTier,
+                            fromPack,
+                        },
+                    );
                 }
 
                 // process events immediately in development/testing

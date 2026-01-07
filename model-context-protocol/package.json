@@ -31,7 +31,7 @@
         "stdio",
         "openai-compatible"
     ],
-    "author": "Pollinations.AI",
+    "author": "pollinations.ai",
     "license": "MIT",
     "dependencies": {
         "@modelcontextprotocol/sdk": "^1.25.1",

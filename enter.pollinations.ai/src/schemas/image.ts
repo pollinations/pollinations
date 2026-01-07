@@ -5,11 +5,9 @@ const QUALITIES = ["low", "medium", "high", "hd"] as const;
 // Maximum seed value - use INT32_MAX for compatibility with strict providers like Vertex AI
 const MAX_SEED_VALUE = 2147483647; // INT32_MAX (2^31 - 1)
 
-// Build list of valid model names: service IDs + all aliases
-const VALID_IMAGE_MODELS = [
-    ...Object.keys(IMAGE_SERVICES),
-    ...Object.values(IMAGE_SERVICES).flatMap((service) => service.aliases),
-] as const;
+// Build list of valid model names for docs: service IDs only (aliases hidden)
+// Note: Aliases are still accepted at runtime via backend model resolution
+const VALID_IMAGE_MODELS = Object.keys(IMAGE_SERVICES) as readonly string[];
 
 export const GenerateImageRequestQueryParamsSchema = z.object({
     // Image model params

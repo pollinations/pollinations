@@ -159,6 +159,7 @@ export default function Home() {
             Browse Projects Now
           </Link>
         </div>
+      </section>
     </div>
   )
 }

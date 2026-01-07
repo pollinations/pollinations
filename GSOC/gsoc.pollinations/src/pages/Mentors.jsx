@@ -208,36 +208,32 @@ export default function MentorList() {
     </div>
   )
 }
-      bio: 'Making the internet safer, one project at a time.'
-    },
-  ]
+  
+  // return (
+  //   <div className="mentors">
+  //     <div className="mentors-header">
+  //       <h1>Meet Our Mentors</h1>
+  //       <p>Learn from industry experts and experienced open-source contributors</p>
+  //     </div>
 
-  return (
-    <div className="mentors">
-      <div className="mentors-header">
-        <h1>Meet Our Mentors</h1>
-        <p>Learn from industry experts and experienced open-source contributors</p>
-      </div>
-
-      <div className="mentors-grid">
-        {mentors.map((mentor) => (
-          <div key={mentor.id} className="mentor-card">
-            <div className="mentor-avatar">
-              <div className="avatar-placeholder">{mentor.name.charAt(0)}</div>
-            </div>
-            <h3>{mentor.name}</h3>
-            <p className="mentor-role">{mentor.role}</p>
-            <p className="mentor-org">{mentor.organization}</p>
-            <p className="mentor-bio">{mentor.bio}</p>
-            <div className="mentor-expertise">
-              {mentor.expertise.map((skill, idx) => (
-                <span key={idx} className="expertise-tag">{skill}</span>
-              ))}
-            </div>
-            <button className="btn btn-secondary btn-small">Contact</button>
-          </div>
-        ))}
-      </div>
-    </div>
-  )
-}
+  //     <div className="mentors-grid">
+  //       {mentors.map((mentor) => (
+  //         <div key={mentor.id} className="mentor-card">
+  //           <div className="mentor-avatar">
+  //             <div className="avatar-placeholder">{mentor.name.charAt(0)}</div>
+  //           </div>
+  //           <h3>{mentor.name}</h3>
+  //           <p className="mentor-role">{mentor.role}</p>
+  //           <p className="mentor-org">{mentor.organization}</p>
+  //           <p className="mentor-bio">{mentor.bio}</p>
+  //           <div className="mentor-expertise">
+  //             {mentor.expertise.map((skill, idx) => (
+  //               <span key={idx} className="expertise-tag">{skill}</span>
+  //             ))}
+  //           </div>
+  //           <button className="btn btn-secondary btn-small">Contact</button>
+  //         </div>
+  //       ))}
+  //     </div>
+  //   </div>
+  // )

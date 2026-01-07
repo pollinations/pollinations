@@ -23,45 +23,40 @@
     "headers": {
       "access-control-allow-origin": "*",
       "connection": "keep-alive",
-      "content-length": "434",
+      "content-length": "379",
       "content-type": "application/json; charset=utf-8",
-      "date": "Tue, 23 Dec 2025 13:55:00 GMT",
-      "etag": "W/\"1b2-KqNUgpOx31UhKzryjDbEmISlskU\"",
+      "date": "Wed, 07 Jan 2026 04:24:02 GMT",
+      "etag": "W/\"17b-9YJu/LkP8kMD19Sz0KEvFrpLSIM\"",
       "keep-alive": "timeout=5",
-      "x-model-used": "global.anthropic.claude-opus-4-5-20251101-v1:0",
+      "x-model-used": "claude-opus-4-5-20251101",
       "x-powered-by": "Express",
-      "x-usage-completion-text-tokens": "4",
+      "x-usage-completion-text-tokens": "5",
       "x-usage-prompt-text-tokens": "289",
-      "x-usage-total-tokens": "293"
+      "x-usage-total-tokens": "294"
     },
     "body": {
       "type": "json",
       "data": {
-        "id": "pllns_4fb014529df4df6fdfa2762af04b8421",
+        "id": "pllns_a6e0a5d2a9b3ca7370d149dd8dd3db1e",
         "object": "chat.completion",
-        "created": 1766498100,
-        "model": "global.anthropic.claude-opus-4-5-20251101-v1:0",
-        "provider": "bedrock",
+        "created": 1767759842,
+        "model": "claude-opus-4-5-20251101",
+        "provider": "vertex-ai",
         "choices": [
           {
-            "index": 0,
             "message": {
               "role": "assistant",
-              "content": "Yes",
-              "content_blocks": [
-                {
-                  "type": "text",
-                  "text": "Yes"
-                }
-              ]
+              "content": "Yes."
             },
-            "finish_reason": "end_turn"
+            "index": 0,
+            "logprobs": null,
+            "finish_reason": "stop"
           }
         ],
         "usage": {
           "prompt_tokens": 289,
-          "completion_tokens": 4,
-          "total_tokens": 293,
+          "completion_tokens": 5,
+          "total_tokens": 294,
           "prompt_tokens_details": {
             "cached_tokens": 0
           }

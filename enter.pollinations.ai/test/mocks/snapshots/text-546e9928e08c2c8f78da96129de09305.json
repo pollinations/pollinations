@@ -1,11 +1,11 @@
 {
   "request": {
-    "url": "http://localhost:16385/openai",
+    "url": "http://ec2-3-80-56-235.compute-1.amazonaws.com:16385/openai",
     "method": "POST",
     "body": {
       "type": "json",
       "data": {
-        "model": "claude-fast",
+        "model": "minimax",
         "messages": [
           {
             "role": "user",
@@ -61,54 +61,58 @@
     "headers": {
       "access-control-allow-origin": "*",
       "connection": "keep-alive",
-      "content-length": "563",
+      "content-length": "1760",
       "content-type": "application/json; charset=utf-8",
-      "date": "Sat, 20 Dec 2025 15:41:46 GMT",
-      "etag": "W/\"233-HIv5mkm4l4rLes1wO86iCeUcwEE\"",
+      "date": "Wed, 07 Jan 2026 04:13:58 GMT",
+      "etag": "W/\"6e0-MyfWrRcrvDa8GzegnP2gSIlfyVg\"",
       "keep-alive": "timeout=5",
-      "x-model-used": "us.anthropic.claude-haiku-4-5-20251001-v1:0",
+      "x-model-used": "accounts/fireworks/models/minimax-m2p1",
       "x-powered-by": "Express",
-      "x-usage-completion-text-tokens": "70",
-      "x-usage-prompt-text-tokens": "1003",
-      "x-usage-total-tokens": "1073"
+      "x-usage-completion-text-tokens": "317",
+      "x-usage-prompt-cached-tokens": "238",
+      "x-usage-prompt-text-tokens": "241",
+      "x-usage-total-tokens": "796"
     },
     "body": {
       "type": "json",
       "data": {
-        "id": "pllns_b29d226fa48bd0c61ce1a946b6e042d9",
+        "id": "pllns_abd4aa65a25d2051452859fe4e36a87b",
         "object": "chat.completion",
-        "created": 1766245306,
-        "model": "us.anthropic.claude-haiku-4-5-20251001-v1:0",
-        "provider": "bedrock",
+        "created": 1767759237,
+        "model": "accounts/fireworks/models/minimax-m2p1",
         "choices": [
           {
             "index": 0,
             "message": {
               "role": "assistant",
               "content": "",
-              "content_blocks": [],
+              "reasoning_content": "The user is asking me to calculate 5 + 3, and they've specifically requested that I use the calculator tool to do this. This is a straightforward request where I need to use the calculator function.\n\nLooking at the available tools, I have access to a calculator tool that can perform basic arithmetic operations. The tool requires three parameters:\n1. \"operation\" - which should be one of: \"add\", \"subtract\", \"multiply\", or \"divide\"\n2. \"a\" - the first operand (which would be 5 in this case)\n3. \"b\" - the second operand (which would be 3 in this case)\n\nSince the user wants me to add 5 and 3, I need to:\n- Set the operation parameter to \"add\"\n- Set the first number (a) to 5\n- Set the second number (b) to 3\n\nI'll format my response using the required XML tags for tool calls, which means I need to include the tool name \"calculator\" and provide the arguments as a JSON object with the operation type and the two numbers.\n\nThe format should be:\n```\n{\"operation\": \"add\", \"a\": 5, \"b\": 3}\n```\n\nThis will call the calculator tool to perform the addition operation, and it should return the result which is 8.",
               "tool_calls": [
                 {
-                  "id": "tooluse_t2RTzOfZQV6_A1SqqJyKcQ",
+                  "index": 0,
+                  "id": "chatcmpl-tool-932777fbc2b529e5",
                   "type": "function",
                   "function": {
                     "name": "calculator",
-                    "arguments": "{\"operation\":\"add\",\"a\":5,\"b\":3}"
-                  }
+                    "arguments": "{\"operation\": \"add\", \"a\": 5, \"b\": 3}"
+                  },
+                  "name": null
                 }
               ]
             },
-            "finish_reason": "tool_use"
+            "finish_reason": "tool_calls",
+            "token_ids": null
           }
         ],
         "usage": {
-          "prompt_tokens": 1003,
-          "completion_tokens": 70,
-          "total_tokens": 1073,
+          "prompt_tokens": 479,
+          "total_tokens": 796,
+          "completion_tokens": 317,
           "prompt_tokens_details": {
-            "cached_tokens": 0
+            "cached_tokens": 238
           }
-        }
+        },
+        "prompt_token_ids": null
       }
     }
   }

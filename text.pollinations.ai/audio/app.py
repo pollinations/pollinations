@@ -4,12 +4,10 @@ from flask import Flask, request, jsonify, Response
 from flask_cors import CORS
 from loguru import logger
 from chatterbox.tts_turbo import ChatterboxTurboTTS
-from voiceMap import VOICE_BASE64_MAP
 from tts import generate_tts
 import asyncio
 import io
 import numpy as np
-import hashlib
 import string
 from uuid import uuid4
 from pydub import AudioSegment
@@ -54,30 +52,24 @@ def synthesize():
     try:
         body = request.get_json(force=True)
         
-        # Validate required fields
         text = body.get("input")
         if not text or not isinstance(text, str) or not text.strip():
             return jsonify({"error": "Missing required 'input' field (text to synthesize)"}), 400
         
-        # Optional fields with defaults
         voice = body.get("voice", "alloy")
-        instructions = body.get("instructions")  # System prompt/tone
+        instructions = body.get("instructions")
         response_format = body.get("response_format", "wav").lower()
         speed = body.get("speed", 1.0)
         
-        # Validate response format
         if response_format not in ["wav", "mp3", "aac", "flac", "opus", "pcm"]:
             return jsonify({"error": f"Unsupported response_format: {response_format}. Supported: wav, mp3, aac, flac, opus, pcm"}), 400
         
-        # Validate speed
         if not isinstance(speed, (int, float)) or speed < 0.25 or speed > 4.0:
             return jsonify({"error": "Speed must be between 0.25 and 4.0"}), 400
         
-        # Generate request ID
         request_id = str(uuid4())[:12]
         logger.info(f"[{request_id}] TTS request: text={text[:50]}..., voice={voice}, format={response_format}, speed={speed}")
         
-        # Generate audio
         audio_bytes, sample_rate = asyncio.run(generate_tts(
             text=text,
             requestID=request_id,
@@ -88,11 +80,9 @@ def synthesize():
         if audio_bytes is None:
             return jsonify({"error": "Audio generation failed - GPU out of memory"}), 503
         
-        # Handle speed adjustment if not default
         if speed != 1.0:
             logger.info(f"[{request_id}] Adjusting speed to {speed}x")
             audio_tensor = torch.from_numpy(np.frombuffer(audio_bytes, dtype=np.int16)).unsqueeze(0).float()
-            # Resample to apply speed effect
             resampler = torchaudio.transforms.Resample(sample_rate, int(sample_rate * speed))
             audio_resampled = resampler(audio_tensor)
             buffer = io.BytesIO()
@@ -100,7 +90,6 @@ def synthesize():
             audio_bytes = buffer.getvalue()
             sample_rate = int(sample_rate * speed)
         
-        # Convert to requested format if not wav
         if response_format != "wav":
             logger.info(f"[{request_id}] Converting to {response_format}")
             audio = AudioSegment.from_wav(io.BytesIO(audio_bytes))
@@ -120,7 +109,6 @@ def synthesize():
         
         logger.info(f"[{request_id}] Audio generated: {len(audio_bytes)} bytes")
         
-        # Return audio
         mime_types = {
             "wav": "audio/wav",
             "mp3": "audio/mpeg",

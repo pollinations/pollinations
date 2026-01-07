@@ -104,6 +104,26 @@ export const portkeyConfig: PortkeyConfigMap = {
         createBedrockNativeConfig({
             model: "global.anthropic.claude-opus-4-5-20251101-v1:0",
         }),
+
+    // ============================================================================
+    // Google Vertex AI - Claude models (alternative to Bedrock)
+    // ============================================================================
+    "claude-opus-4-5-vertex": () => ({
+        provider: "vertex-ai",
+        authKey: googleCloudAuth.getAccessToken,
+        "vertex-project-id": process.env.GOOGLE_PROJECT_ID,
+        "vertex-region": "europe-west1",
+        "vertex-model-id": "anthropic.claude-opus-4-5@20251101",
+        "strict-openai-compliance": "false",
+    }),
+    "claude-sonnet-4-5-vertex": () => ({
+        provider: "vertex-ai",
+        authKey: googleCloudAuth.getAccessToken,
+        "vertex-project-id": process.env.GOOGLE_PROJECT_ID,
+        "vertex-region": "europe-west1",
+        "vertex-model-id": "anthropic.claude-sonnet-4-5@20250929",
+        "strict-openai-compliance": "false",
+    }),
     "amazon.nova-micro-v1:0": () =>
         createBedrockLambdaModelConfig({
             model: "amazon.nova-micro-v1:0",

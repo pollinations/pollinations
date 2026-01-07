@@ -115,6 +115,7 @@ export const portkeyConfig: PortkeyConfigMap = {
         "vertex-region": "europe-west1",
         "vertex-model-id": "anthropic.claude-opus-4-5@20251101",
         "strict-open-ai-compliance": "true",
+        defaultOptions: { max_tokens: 64000 },
     }),
     "claude-sonnet-4-5-vertex": () => ({
         provider: "vertex-ai",
@@ -123,6 +124,7 @@ export const portkeyConfig: PortkeyConfigMap = {
         "vertex-region": "europe-west1",
         "vertex-model-id": "anthropic.claude-sonnet-4-5@20250929",
         "strict-open-ai-compliance": "true",
+        defaultOptions: { max_tokens: 64000 },
     }),
     "amazon.nova-micro-v1:0": () =>
         createBedrockLambdaModelConfig({

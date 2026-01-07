@@ -6,7 +6,7 @@ A production-ready Text-to-Speech API with multilingual support, voice cloning, 
 ## Architecture
 
 ```mermaid
-graph TD
+graph LR
     A[Client Request] -->|audio prompt| B[app.py]
     B -->|load voice config| C[voiceMap.py]
     B -->|validate voice| D[process_voice_parameter]

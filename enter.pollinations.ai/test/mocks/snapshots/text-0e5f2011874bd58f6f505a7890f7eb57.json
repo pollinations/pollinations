@@ -5,29 +5,11 @@
     "body": {
       "type": "json",
       "data": {
-        "model": "claude-large",
+        "model": "glm",
         "messages": [
           {
             "role": "user",
             "content": "What is 5 + 3? You must use the calculator tool to compute this."
-          },
-          {
-            "role": "assistant",
-            "tool_calls": [
-              {
-                "id": "tooluse_rx5nfqdBQcW5JpbuGYI25w",
-                "type": "function",
-                "function": {
-                  "name": "calculator",
-                  "arguments": "{\"operation\":\"add\",\"a\":5,\"b\":3}"
-                }
-              }
-            ]
-          },
-          {
-            "role": "tool",
-            "tool_call_id": "tooluse_rx5nfqdBQcW5JpbuGYI25w",
-            "content": "{\"result\":8}"
           }
         ],
         "tools": [
@@ -67,8 +49,8 @@
             }
           }
         ],
-        "seed": 42,
-        "max_tokens": 4096
+        "tool_choice": "required",
+        "seed": 42
       }
     },
     "params": {}
@@ -79,49 +61,58 @@
     "headers": {
       "access-control-allow-origin": "*",
       "connection": "keep-alive",
-      "content-length": "449",
+      "content-length": "746",
       "content-type": "application/json; charset=utf-8",
-      "date": "Tue, 23 Dec 2025 13:56:53 GMT",
-      "etag": "W/\"1c1-Ub/szJ5T0Sc0y+RPSIOkiof/0Lc\"",
+      "date": "Wed, 07 Jan 2026 04:13:55 GMT",
+      "etag": "W/\"2ea-YeDfpddWJBoLKvKez0zp6OK3O+Q\"",
       "keep-alive": "timeout=5",
-      "x-model-used": "global.anthropic.claude-opus-4-5-20251101-v1:0",
+      "x-model-used": "accounts/fireworks/models/glm-4p7",
       "x-powered-by": "Express",
-      "x-usage-completion-text-tokens": "12",
-      "x-usage-prompt-text-tokens": "1013",
-      "x-usage-total-tokens": "1025"
+      "x-usage-completion-text-tokens": "65",
+      "x-usage-prompt-cached-tokens": "3",
+      "x-usage-prompt-text-tokens": "481",
+      "x-usage-total-tokens": "549"
     },
     "body": {
       "type": "json",
       "data": {
-        "id": "pllns_d64dd99dbf82fb503ba113aa799ebf9b",
+        "id": "pllns_041f9922241c81069ec89eb8c8cd2a1c",
         "object": "chat.completion",
-        "created": 1766498213,
-        "model": "global.anthropic.claude-opus-4-5-20251101-v1:0",
-        "provider": "bedrock",
+        "created": 1767759235,
+        "model": "accounts/fireworks/models/glm-4p7",
         "choices": [
           {
             "index": 0,
             "message": {
               "role": "assistant",
-              "content": "5 + 3 = 8",
-              "content_blocks": [
+              "content": "",
+              "reasoning_content": "The user wants me to compute 5 + 3 using the calculator tool. I need to use the calculator function with:\n- operation: \"add\"\n- a: 5\n- b: 3",
+              "tool_calls": [
                 {
-                  "type": "text",
-                  "text": "5 + 3 = 8"
+                  "index": 0,
+                  "id": "chatcmpl-tool-960d0104cb846658",
+                  "type": "function",
+                  "function": {
+                    "name": "calculator",
+                    "arguments": "{\"operation\": \"add\", \"a\": 5, \"b\": 3}"
+                  },
+                  "name": null
                 }
               ]
             },
-            "finish_reason": "end_turn"
+            "finish_reason": "tool_calls",
+            "token_ids": null
           }
         ],
         "usage": {
-          "prompt_tokens": 1013,
-          "completion_tokens": 12,
-          "total_tokens": 1025,
+          "prompt_tokens": 484,
+          "total_tokens": 549,
+          "completion_tokens": 65,
           "prompt_tokens_details": {
-            "cached_tokens": 0
+            "cached_tokens": 3
           }
-        }
+        },
+        "prompt_token_ids": null
       }
     }
   }

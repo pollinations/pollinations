@@ -1,6 +1,6 @@
 {
   "request": {
-    "url": "http://localhost:16385/openai",
+    "url": "http://ec2-3-80-56-235.compute-1.amazonaws.com:16385/openai",
     "method": "POST",
     "body": {
       "type": "json",
@@ -15,7 +15,7 @@
             "role": "assistant",
             "tool_calls": [
               {
-                "id": "tooluse_t2RTzOfZQV6_A1SqqJyKcQ",
+                "id": "tooluse_tUq00Z4-QB6xoL-GrPWgwg",
                 "type": "function",
                 "function": {
                   "name": "calculator",
@@ -26,7 +26,7 @@
           },
           {
             "role": "tool",
-            "tool_call_id": "tooluse_t2RTzOfZQV6_A1SqqJyKcQ",
+            "tool_call_id": "tooluse_tUq00Z4-QB6xoL-GrPWgwg",
             "content": "{\"result\":8}"
           }
         ],
@@ -79,23 +79,23 @@
     "headers": {
       "access-control-allow-origin": "*",
       "connection": "keep-alive",
-      "content-length": "446",
+      "content-length": "454",
       "content-type": "application/json; charset=utf-8",
-      "date": "Sat, 20 Dec 2025 15:41:47 GMT",
-      "etag": "W/\"1be-oDcW/qaj/myFwUplPSWuWzWkKU4\"",
+      "date": "Wed, 07 Jan 2026 04:25:11 GMT",
+      "etag": "W/\"1c6-FVUdWgyw6xpwDsPI0oM/KZGtaos\"",
       "keep-alive": "timeout=5",
       "x-model-used": "us.anthropic.claude-haiku-4-5-20251001-v1:0",
       "x-powered-by": "Express",
-      "x-usage-completion-text-tokens": "12",
+      "x-usage-completion-text-tokens": "13",
       "x-usage-prompt-text-tokens": "1013",
-      "x-usage-total-tokens": "1025"
+      "x-usage-total-tokens": "1026"
     },
     "body": {
       "type": "json",
       "data": {
-        "id": "pllns_f4704787a2f9490b2c5907b36eced8a7",
+        "id": "pllns_066c28829dead1db23b52295ea3158ee",
         "object": "chat.completion",
-        "created": 1766245307,
+        "created": 1767759911,
         "model": "us.anthropic.claude-haiku-4-5-20251001-v1:0",
         "provider": "bedrock",
         "choices": [
@@ -103,11 +103,11 @@
             "index": 0,
             "message": {
               "role": "assistant",
-              "content": "5 + 3 = 8",
+              "content": "5 + 3 = **8**",
               "content_blocks": [
                 {
                   "type": "text",
-                  "text": "5 + 3 = 8"
+                  "text": "5 + 3 = **8**"
                 }
               ]
             },
@@ -116,8 +116,8 @@
         ],
         "usage": {
           "prompt_tokens": 1013,
-          "completion_tokens": 12,
-          "total_tokens": 1025,
+          "completion_tokens": 13,
+          "total_tokens": 1026,
           "prompt_tokens_details": {
             "cached_tokens": 0
           }

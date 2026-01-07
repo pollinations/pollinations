@@ -1,0 +1,69 @@
+{
+  "request": {
+    "url": "http://ec2-3-80-56-235.compute-1.amazonaws.com:16385/openai",
+    "method": "POST",
+    "body": {
+      "type": "json",
+      "data": {
+        "model": "glm",
+        "messages": [
+          {
+            "role": "user",
+            "content": "Is Berlin the capital of Germany? Reply yes or no."
+          }
+        ],
+        "seed": 42
+      }
+    },
+    "params": {}
+  },
+  "response": {
+    "status": 200,
+    "statusText": "OK",
+    "headers": {
+      "access-control-allow-origin": "*",
+      "connection": "keep-alive",
+      "content-length": "2673",
+      "content-type": "application/json; charset=utf-8",
+      "date": "Wed, 07 Jan 2026 04:12:49 GMT",
+      "etag": "W/\"a71-FvUIMczGeuMximccY/oQ2vbB9+E\"",
+      "keep-alive": "timeout=5",
+      "x-model-used": "accounts/fireworks/models/glm-4p7",
+      "x-powered-by": "Express",
+      "x-usage-completion-text-tokens": "504",
+      "x-usage-prompt-cached-tokens": "3",
+      "x-usage-prompt-text-tokens": "262",
+      "x-usage-total-tokens": "769"
+    },
+    "body": {
+      "type": "json",
+      "data": {
+        "id": "pllns_690c8eefbe442a74adc671ae66b24984",
+        "object": "chat.completion",
+        "created": 1767759166,
+        "model": "accounts/fireworks/models/glm-4p7",
+        "choices": [
+          {
+            "index": 0,
+            "message": {
+              "role": "assistant",
+              "content": "Yes.",
+              "reasoning_content": "1.  **Analyze the Request:**\n    *   Question: \"Is Berlin the capital of Germany?\"\n    *   Constraint: \"Reply yes or no.\"\n    *   Persona instructions: Be companionable, confident, switch tones, understand intent (chit-chat vs. problem-solving), avoid templated language, no lecturing, no moral superiority phrases.\n\n2.  **Determine the Answer:**\n    *   Fact check: Berlin is indeed the capital and largest city of Germany.\n    *   Answer: Yes.\n\n3.  **Apply Constraints vs. Persona:**\n    *   The user explicitly asked: \"Reply yes or no.\"\n    *   The persona instructions say: \"Always avoid templated language.\" and \"don't try to be overly helpful...\".\n    *   However, usually, when a user gives a strict format constraint (\"Reply yes or no\"), following that constraint is the primary way to be a helpful and accurate assistant. Adding conversational filler (\"Yes, it sure is!\") violates the \"Reply yes or no\" instruction.\n    *   *Self-Correction/Refinement:* The persona says \"respond to the best of your ability\" and \"understand user intent\". The intent here is a quick verification with a strict output format.\n    *   However, looking at the persona's specific constraint about *never* using lectures and being companionable, if I just say \"Yes\", is that violating the \"companionable\" instruction? Usually, constraints override general persona instructions when they conflict directly (like \"Be brief\"). But the prompt says \"Reply yes or no.\"\n    *   Let's look at the prompt again: \"Reply yes or no.\"\n\n4.  **Final Decision:**\n    *   The user gave a specific formatting command.\n    *   Simple adherence to the command is the most accurate fulfillment of the request.\n\n5.  **Drafting the response:**\n    *   Yes.\n\n    *Wait, let me double check if I should add anything.* If I say just \"Yes\", I am answering the question correctly. If I say \"Yes, Berlin is the capital of Germany,\" I am technically violating the \"Reply yes or no\" instruction (as I added information), though likely acceptable in casual contexts. But usually, \"Reply yes or no\" acts as a regex-like constraint.\n\n    Let's stick to the strictest interpretation to respect the user's direct command.\n\n    Response: Yes."
+            },
+            "finish_reason": "stop",
+            "token_ids": null
+          }
+        ],
+        "usage": {
+          "prompt_tokens": 265,
+          "total_tokens": 769,
+          "completion_tokens": 504,
+          "prompt_tokens_details": {
+            "cached_tokens": 3
+          }
+        },
+        "prompt_token_ids": null
+      }
+    }
+  }
+}

@@ -296,7 +296,7 @@ export const TEXT_SERVICES = {
     },
     "claude": {
         aliases: ["claude-sonnet-4.5", "claude-sonnet"],
-        modelId: "anthropic.claude-sonnet-4-5@20250929",
+        modelId: "claude-sonnet-4-5-20250929",
         provider: "google",
         cost: [
             {
@@ -313,7 +313,7 @@ export const TEXT_SERVICES = {
     },
     "claude-large": {
         aliases: ["claude-opus-4.5", "claude-opus"],
-        modelId: "anthropic.claude-opus-4-5@20251101",
+        modelId: "claude-opus-4-5-20251101",
         provider: "google",
         cost: [
             {

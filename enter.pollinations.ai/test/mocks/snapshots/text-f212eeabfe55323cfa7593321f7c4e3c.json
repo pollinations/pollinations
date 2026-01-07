@@ -1,11 +1,11 @@
 {
   "request": {
-    "url": "http://localhost:16385/openai",
+    "url": "http://ec2-3-80-56-235.compute-1.amazonaws.com:16385/openai",
     "method": "POST",
     "body": {
       "type": "json",
       "data": {
-        "model": "claude-large",
+        "model": "minimax",
         "messages": [
           {
             "role": "user",
@@ -15,18 +15,20 @@
             "role": "assistant",
             "tool_calls": [
               {
-                "id": "tooluse_QgtS5zNASZaCkbceQ62WSg",
+                "index": 0,
+                "id": "chatcmpl-tool-932777fbc2b529e5",
                 "type": "function",
                 "function": {
                   "name": "calculator",
-                  "arguments": "{\"operation\":\"add\",\"a\":5,\"b\":3}"
-                }
+                  "arguments": "{\"operation\": \"add\", \"a\": 5, \"b\": 3}"
+                },
+                "name": null
               }
             ]
           },
           {
             "role": "tool",
-            "tool_call_id": "tooluse_QgtS5zNASZaCkbceQ62WSg",
+            "tool_call_id": "chatcmpl-tool-932777fbc2b529e5",
             "content": "{\"result\":8}"
           }
         ],
@@ -79,49 +81,46 @@
     "headers": {
       "access-control-allow-origin": "*",
       "connection": "keep-alive",
-      "content-length": "451",
+      "content-length": "572",
       "content-type": "application/json; charset=utf-8",
-      "date": "Sat, 20 Dec 2025 15:41:56 GMT",
-      "etag": "W/\"1c3-1DQLsTpA6ereWL5k0qDkGnuThGM\"",
+      "date": "Wed, 07 Jan 2026 04:13:59 GMT",
+      "etag": "W/\"23c-1k3uobZVqniOU2cny3617ix2mfQ\"",
       "keep-alive": "timeout=5",
-      "x-model-used": "global.anthropic.claude-opus-4-5-20251101-v1:0",
+      "x-model-used": "accounts/fireworks/models/minimax-m2p1",
       "x-powered-by": "Express",
-      "x-usage-completion-text-tokens": "13",
-      "x-usage-prompt-text-tokens": "1013",
-      "x-usage-total-tokens": "1026"
+      "x-usage-completion-text-tokens": "43",
+      "x-usage-prompt-cached-tokens": "476",
+      "x-usage-prompt-text-tokens": "65",
+      "x-usage-total-tokens": "584"
     },
     "body": {
       "type": "json",
       "data": {
-        "id": "pllns_9dfb498db1602bdc8d49a1028d10606a",
+        "id": "pllns_27483642264710850c1a2baf1d2aa397",
         "object": "chat.completion",
-        "created": 1766245316,
-        "model": "global.anthropic.claude-opus-4-5-20251101-v1:0",
-        "provider": "bedrock",
+        "created": 1767759239,
+        "model": "accounts/fireworks/models/minimax-m2p1",
         "choices": [
           {
             "index": 0,
             "message": {
               "role": "assistant",
-              "content": "5 + 3 = 8.",
-              "content_blocks": [
-                {
-                  "type": "text",
-                  "text": "5 + 3 = 8."
-                }
-              ]
+              "content": "5 + 3 = 8",
+              "reasoning_content": "The calculator has returned 8 as the result of 5 + 3. This is correct math. I should just give the user the straightforward answer they requested."
             },
-            "finish_reason": "end_turn"
+            "finish_reason": "stop",
+            "token_ids": null
           }
         ],
         "usage": {
-          "prompt_tokens": 1013,
-          "completion_tokens": 13,
-          "total_tokens": 1026,
+          "prompt_tokens": 541,
+          "total_tokens": 584,
+          "completion_tokens": 43,
           "prompt_tokens_details": {
-            "cached_tokens": 0
+            "cached_tokens": 476
           }
-        }
+        },
+        "prompt_token_ids": null
       }
     }
   }

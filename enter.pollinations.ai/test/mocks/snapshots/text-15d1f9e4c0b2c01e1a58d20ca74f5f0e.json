@@ -1,0 +1,69 @@
+{
+  "request": {
+    "url": "http://ec2-3-80-56-235.compute-1.amazonaws.com:16385/openai",
+    "method": "POST",
+    "body": {
+      "type": "json",
+      "data": {
+        "model": "minimax",
+        "messages": [
+          {
+            "role": "user",
+            "content": "Is Berlin the capital of Germany? Reply yes or no."
+          }
+        ],
+        "seed": 42
+      }
+    },
+    "params": {}
+  },
+  "response": {
+    "status": 200,
+    "statusText": "OK",
+    "headers": {
+      "access-control-allow-origin": "*",
+      "connection": "keep-alive",
+      "content-length": "702",
+      "content-type": "application/json; charset=utf-8",
+      "date": "Wed, 07 Jan 2026 04:12:50 GMT",
+      "etag": "W/\"2be-LSqDURoFRn+obqJ+S8P+lNHQmo8\"",
+      "keep-alive": "timeout=5",
+      "x-model-used": "accounts/fireworks/models/minimax-m2p1",
+      "x-powered-by": "Express",
+      "x-usage-completion-text-tokens": "61",
+      "x-usage-prompt-cached-tokens": "244",
+      "x-usage-prompt-text-tokens": "19",
+      "x-usage-total-tokens": "324"
+    },
+    "body": {
+      "type": "json",
+      "data": {
+        "id": "pllns_ca538eb2ea021899ca97fecc162874d8",
+        "object": "chat.completion",
+        "created": 1767759170,
+        "model": "accounts/fireworks/models/minimax-m2p1",
+        "choices": [
+          {
+            "index": 0,
+            "message": {
+              "role": "assistant",
+              "content": "Yes",
+              "reasoning_content": "The user is asking a straightforward factual question: \"Is Berlin the capital of Germany? Reply yes or no.\"\n\nThis is a simple question with a clear factual answer. Berlin is indeed the capital of Germany. Since they specifically asked for \"yes or no,\" I should just give that."
+            },
+            "finish_reason": "stop",
+            "token_ids": null
+          }
+        ],
+        "usage": {
+          "prompt_tokens": 263,
+          "total_tokens": 324,
+          "completion_tokens": 61,
+          "prompt_tokens_details": {
+            "cached_tokens": 244
+          }
+        },
+        "prompt_token_ids": null
+      }
+    }
+  }
+}

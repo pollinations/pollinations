@@ -19,7 +19,6 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  # Job 1: Parse issue and validate user registration
   app-parse-issue:
     if: |
       github.event_name != 'pull_request_target' &&
@@ -394,7 +393,6 @@ jobs:
             echo "valid=false" >> $GITHUB_OUTPUT
           fi
 
-  # Job 2: Create PR with app entry
   app-create-pr:
     needs: app-parse-issue
     if: needs.app-parse-issue.outputs.valid == 'true'
@@ -513,47 +511,43 @@ jobs:
           EXISTING_PR=$(gh pr list --head "$BRANCH" --json number -q '.[0].number')
           if [ -z "$EXISTING_PR" ]; then
             # Build PR body with app details using heredoc for clean formatting
-            PR_BODY="## 🆕 New App: $PROJECT_NAME
+           PR_BODY="## App Details
+          - **Category:** \`$CATEGORY\`
+          - **URL:** $URL
+          - **Description:** $SHORT_DESC"
 
-| Field | Value |
-|-------|-------|
-| **Category** | \`$CATEGORY\` |
-| **URL** | $URL |
-| **Description** | $SHORT_DESC |"
+                [ -n "$REPO" ] && PR_BODY="$PR_BODY
+          - **Repo:** $REPO"
+                [ -n "$DISCORD" ] && PR_BODY="$PR_BODY
+          - **Discord:** $DISCORD"
+                [ -n "$LANGUAGE" ] && PR_BODY="$PR_BODY
+          - **Language:** \`$LANGUAGE\`"
+                [ -n "$OTHER" ] && PR_BODY="$PR_BODY
+          - **Other Contact:** $OTHER"   
+                      
+                      SIMILARITY="${{ needs.app-parse-issue.outputs.similarity_score }}"
+                      SIMILARITY_REASON="${{ needs.app-parse-issue.outputs.similarity_reason }}"
+                      if [ -n "$SIMILARITY" ] && [ "$SIMILARITY" != "null" ] && [ "$SIMILARITY" != "0" ]; then
+                        PR_BODY="$PR_BODY
 
-            [ -n "$REPO" ] && PR_BODY="$PR_BODY
-| **Repo** | $REPO |"
-            [ -n "$DISCORD" ] && PR_BODY="$PR_BODY
-| **Discord** | $DISCORD |"
-            [ -n "$LANGUAGE" ] && PR_BODY="$PR_BODY
-| **Language** | \`$LANGUAGE\` |"
-            [ -n "$OTHER" ] && PR_BODY="$PR_BODY
-| **Other Contact** | $OTHER |"
-            
-            # Add similarity report if applicable
-            SIMILARITY="${{ needs.app-parse-issue.outputs.similarity_score }}"
-            SIMILARITY_REASON="${{ needs.app-parse-issue.outputs.similarity_reason }}"
-            if [ -n "$SIMILARITY" ] && [ "$SIMILARITY" != "null" ] && [ "$SIMILARITY" != "0" ]; then
-              PR_BODY="$PR_BODY
+          ---
 
----
+          ⚠️ **Similarity Report:** ${SIMILARITY}% similar to previous submission(s) from @$ISSUE_AUTHOR"
+                        if [ -n "$SIMILARITY_REASON" ] && [ "$SIMILARITY_REASON" != "null" ]; then
+                          PR_BODY="$PR_BODY
+          > $SIMILARITY_REASON"
+                        fi
+                        PR_BODY="$PR_BODY
 
-⚠️ **Similarity Report:** ${SIMILARITY}% similar to previous submission(s) from @$ISSUE_AUTHOR"
-              if [ -n "$SIMILARITY_REASON" ] && [ "$SIMILARITY_REASON" != "null" ]; then
-                PR_BODY="$PR_BODY
-> $SIMILARITY_REASON"
-              fi
-              PR_BODY="$PR_BODY
+          *Maintainer: Review if this is legitimate iteration or rebranding.*"
+                      fi
+                      
+                      PR_BODY="$PR_BODY
 
-*Maintainer: Review if this is legitimate iteration or rebranding.*"
-            fi
-            
-            PR_BODY="$PR_BODY
+          ---
 
----
-
-Co-authored-by: $ISSUE_AUTHOR <${ISSUE_AUTHOR_ID}+${ISSUE_AUTHOR}@users.noreply.github.com>
-Fixes #$ISSUE_NUMBER"
+            Co-authored-by: $ISSUE_AUTHOR <${ISSUE_AUTHOR_ID}+${ISSUE_AUTHOR}@users.noreply.github.com>
+            Fixes 
 
             gh pr create --title "Add $PROJECT_NAME to $CATEGORY" \
               --body "$PR_BODY" \
@@ -587,7 +581,7 @@ Fixes #$ISSUE_NUMBER"
               body: `🎉 Thanks @${{ needs.app-parse-issue.outputs.issue_author }}! PR created to add **${{ needs.app-parse-issue.outputs.name }}** to **${{ needs.app-parse-issue.outputs.category }}**.\n\nA maintainer will review shortly. Issue closes automatically when PR merges.`
             });
 
-  # Job 3: Handle PR merge/close outcomes
+  
   app-handle-outcome:
     if: github.event_name == 'pull_request_target' && github.event.action == 'closed'
     runs-on: ubuntu-latest
@@ -610,8 +604,8 @@ Fixes #$ISSUE_NUMBER"
               return;
             }
             
-            // Extract issue number from PR body (Fixes #123)
-            const issueMatch = pr.body?.match(/Fixes #(\d+)/i);
+            
+            const issueMatch = pr.body?.match(/Fixes 
             if (!issueMatch) {
               console.log('No linked issue found in PR body');
               return;

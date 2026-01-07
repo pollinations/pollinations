@@ -59,36 +59,49 @@ def synthesize():
         voice = body.get("voice", "alloy")
         instructions = body.get("instructions")
         response_format = body.get("response_format", "wav").lower()
-        speed = body.get("speed", 1.0)
+        speed = body.get("speed", 0.5)  
+        exaggeration = body.get("exaggeration", 0.0) 
+        cfg_weight = body.get("cfg_weight", 7.0)  
         
         if response_format not in ["wav", "mp3", "aac", "flac", "opus", "pcm"]:
             return jsonify({"error": f"Unsupported response_format: {response_format}. Supported: wav, mp3, aac, flac, opus, pcm"}), 400
         
-        if not isinstance(speed, (int, float)) or speed < 0.25 or speed > 4.0:
-            return jsonify({"error": "Speed must be between 0.25 and 4.0"}), 400
+        if not isinstance(speed, (int, float)) or speed < 0.0 or speed > 1.0:
+            return jsonify({"error": "Speed must be between 0.0 (slow) and 1.0 (fast). Default: 0.5 (normal)"}), 400
+        
+        if not isinstance(exaggeration, (int, float)) or exaggeration < 0.0:
+            return jsonify({"error": "Exaggeration must be >= 0.0. Use 0.7+ for dramatic speech"}), 400
+        
+        if not isinstance(cfg_weight, (int, float)) or cfg_weight < 0.1:
+            return jsonify({"error": "cfg_weight must be >= 0.1. Lower values (0.3) for more expressive, higher (7.0+) for neutral"}), 400
         
         request_id = str(uuid4())[:12]
-        logger.info(f"[{request_id}] TTS request: text={text[:50]}..., voice={voice}, format={response_format}, speed={speed}")
+        logger.info(f"[{request_id}] TTS request: text={text[:50]}..., voice={voice}, format={response_format}, speed={speed:.2f}, exaggeration={exaggeration:.2f}, cfg_weight={cfg_weight:.2f}")
         
         audio_bytes, sample_rate = asyncio.run(generate_tts(
             text=text,
             requestID=request_id,
             system=instructions,
-            voice=voice
+            voice=voice,
+            speed=speed,
+            exaggeration=exaggeration,
+            cfg_weight=cfg_weight
         ))
         
         if audio_bytes is None:
             return jsonify({"error": "Audio generation failed - GPU out of memory"}), 503
         
-        if speed != 1.0:
-            logger.info(f"[{request_id}] Adjusting speed to {speed}x")
+        if speed != 0.5:  
+            speed_factor = 0.5 + speed  
+            logger.info(f"[{request_id}] Adjusting speed: normalized {speed:.2f} -> factor {speed_factor:.2f}x")
             audio_tensor = torch.from_numpy(np.frombuffer(audio_bytes, dtype=np.int16)).unsqueeze(0).float()
-            resampler = torchaudio.transforms.Resample(sample_rate, int(sample_rate * speed))
+            new_sample_rate = int(sample_rate * speed_factor)
+            resampler = torchaudio.transforms.Resample(sample_rate, new_sample_rate)
             audio_resampled = resampler(audio_tensor)
             buffer = io.BytesIO()
-            torchaudio.save(buffer, audio_resampled, int(sample_rate * speed), format="wav")
+            torchaudio.save(buffer, audio_resampled, new_sample_rate, format="wav")
             audio_bytes = buffer.getvalue()
-            sample_rate = int(sample_rate * speed)
+            sample_rate = new_sample_rate
         
         if response_format != "wav":
             logger.info(f"[{request_id}] Converting to {response_format}")

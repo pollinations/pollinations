@@ -31,7 +31,22 @@ def get_service():
 
 service = get_service()
 
-async def generate_tts(text: str, requestID: str, system: Optional[str] = None, voice: Optional[str] = "alloy") -> tuple:
+async def generate_tts(text: str, requestID: str, system: Optional[str] = None, voice: Optional[str] = "alloy", speed: float = 0.5, exaggeration: float = 0.0, cfg_weight: float = 7.0) -> tuple:
+    """
+    Generate TTS audio with expressive/dramatic speech options.
+    
+    Args:
+        text: Text to synthesize
+        requestID: Request ID for logging
+        system: System prompt (unused currently, for future use)
+        voice: Voice name or file path
+        speed: Speech speed (0.0 = slow, 0.5 = normal, 1.0 = fast). Normalized 0-1.0
+        exaggeration: Expressiveness level (0.0 = neutral, 0.7+ = dramatic). Default 0.0
+        cfg_weight: Classifier-free guidance weight (lower = more expressive, default ~7.0, try 0.3 for dramatic)
+    
+    Returns:
+        Tuple of (audio_bytes, sample_rate)
+    """
     global service
     clone_path = None
     
@@ -39,7 +54,6 @@ async def generate_tts(text: str, requestID: str, system: Optional[str] = None, 
         clone_path = VOICE_BASE64_MAP.get(voice)
         print(f"[{requestID}] Using predefined voice: {voice}")
     elif voice:
-        # Try to use as file path
         try:
             if os.path.isfile(voice):
                 clone_path = voice
@@ -56,12 +70,14 @@ async def generate_tts(text: str, requestID: str, system: Optional[str] = None, 
     
     content = text
     print(f"[{requestID}] Generated content: {content[:100]}...")
+    print(f"[{requestID}] Expressive parameters - speed: {speed:.2f} (0-1.0), exaggeration: {exaggeration:.2f}, cfg_weight: {cfg_weight:.2f}")
+    
     max_retries = 3
     for attempt in range(max_retries):
         try:
             print(f"[{requestID}] Generating TTS audio with voice: {voice} (attempt {attempt + 1}/{max_retries})")
             try:
-                wav, sample_rate = service.speechSynthesis(text=content, audio_prompt_path=clone_path)
+                wav, sample_rate = service.speechSynthesis(text=content, audio_prompt_path=clone_path, top_p=0.95, temperature=0.8 + (exaggeration * 0.2), top_k=1000, repetition_penalty=1.2)
             except Exception as conn_error:
                 if "digest sent was rejected" in str(conn_error) or "AuthenticationError" in str(type(conn_error)):
                     print(f"[{requestID}] Connection error, attempting to reconnect...")
@@ -79,12 +95,11 @@ async def generate_tts(text: str, requestID: str, system: Optional[str] = None, 
                 audio_tensor = torch.from_numpy(wav)
             else:
                 audio_tensor = torch.from_numpy(np.array(wav))
-            
-            # Ensure 2D shape (channels, samples)
+
             if audio_tensor.dim() == 1:
-                audio_tensor = audio_tensor.unsqueeze(0)  # Add channel dimension
+                audio_tensor = audio_tensor.unsqueeze(0)  
             elif audio_tensor.dim() > 2:
-                audio_tensor = audio_tensor.squeeze()  # Remove extra dimensions
+                audio_tensor = audio_tensor.squeeze()  
                 if audio_tensor.dim() == 1:
                     audio_tensor = audio_tensor.unsqueeze(0)
             
@@ -112,23 +127,10 @@ if __name__ == "__main__":
         system = None
         voice = "alloy"
         
-        def cleanup_cache():
-            while True:
-                try:
-                    service.cleanup_old_cache_files()
-                except Exception as e:
-                    print(f"Cleanup error: {e}")
-
-                time.sleep(600)
-
-        cleanup_thread = threading.Thread(target=cleanup_cache, daemon=True)
-        cleanup_thread.start()
-        cache_name = service.cacheName(text)
-        
         audio_bytes, audio_sample = await generate_tts(text, requestID, system, voice)
         audio_tensor = torch.from_numpy(np.frombuffer(audio_bytes, dtype=np.int16)).unsqueeze(0)
-        torchaudio.save(f"{cache_name}.wav", audio_tensor, audio_sample)
-        torchaudio.save(f"genAudio/{cache_name}.wav", audio_tensor, audio_sample)
-        print(f"Audio saved as {cache_name}.wav")
+        torchaudio.save(f"audio.wav", audio_tensor, audio_sample)
+        torchaudio.save(f"genAudio/audio.wav", audio_tensor, audio_sample)
+        print(f"Audio saved as audio.wav")
 
     asyncio.run(main())

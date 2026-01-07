@@ -23,19 +23,10 @@ BASE62 = string.digits + string.ascii_letters
 app = Flask(__name__)
 CORS(app)
 
-def base62_encode(num: int) -> str:
-    if num == 0:
-        return BASE62[0]
-    digits = []
-    base = len(BASE62)
-    while num:
-        num, rem = divmod(num, base)
-        digits.append(BASE62[rem])
-    return ''.join(reversed(digits))
-
-def load_model():
-    serve_engine = ChatterboxTurboTTS.from_pretrained(device=device, cache_dir=cache_dir)
-    return serve_engine
+# Load TTS model on startup
+logger.info("Loading ChatterboxTurboTTS model...")
+tts_model = ChatterboxTurboTTS.from_pretrained(device=device, cache_dir=cache_dir)
+logger.info("Model loaded successfully")
 
 @app.route("/", methods=["GET"])
 def health_check():
@@ -78,15 +69,22 @@ def synthesize():
         request_id = str(uuid4())[:12]
         logger.info(f"[{request_id}] TTS request: text={text[:50]}..., voice={voice}, format={response_format}, speed={speed:.2f}, exaggeration={exaggeration:.2f}, cfg_weight={cfg_weight:.2f}")
         
-        audio_bytes, sample_rate = asyncio.run(generate_tts(
-            text=text,
-            requestID=request_id,
-            system=instructions,
-            voice=voice,
-            speed=speed,
-            exaggeration=exaggeration,
-            cfg_weight=cfg_weight
-        ))
+        try:
+            audio_bytes, sample_rate = asyncio.run(generate_tts(
+                text=text,
+                requestID=request_id,
+                model=tts_model,
+                system=instructions,
+                voice=voice,
+                speed=speed,
+                exaggeration=exaggeration,
+                cfg_weight=cfg_weight
+            ))
+        except Exception as e:
+            logger.error(f"[{request_id}] Synthesis error: {e}")
+            return jsonify({
+                "error": f"Audio synthesis failed: {str(e)}"
+            }), 503
         
         if audio_bytes is None:
             return jsonify({"error": "Audio generation failed - GPU out of memory"}), 503

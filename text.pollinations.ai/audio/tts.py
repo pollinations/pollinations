@@ -1,8 +1,6 @@
 from voiceMap import VOICE_BASE64_MAP
 import asyncio
 from typing import Optional
-from multiprocessing.managers import BaseManager
-from multiprocessing import set_start_method
 import os
 import threading
 import time
@@ -10,34 +8,15 @@ import torch
 import torchaudio
 import io 
 import numpy as np
-import time
 
-try:
-    set_start_method('spawn', force=True)
-except RuntimeError:
-    pass
-
-class ModelManager(BaseManager): pass
-ModelManager.register("Service")
-
-def get_service():
-    try:
-        manager = ModelManager(address=("localhost", 6000), authkey=b"secret")
-        manager.connect()
-        return manager.Service()
-    except Exception as e:
-        print(f"Failed to connect to ModelManager: {e}")
-        raise
-
-service = get_service()
-
-async def generate_tts(text: str, requestID: str, system: Optional[str] = None, voice: Optional[str] = "alloy", speed: float = 0.5, exaggeration: float = 0.0, cfg_weight: float = 7.0) -> tuple:
+async def generate_tts(text: str, requestID: str, model, system: Optional[str] = None, voice: Optional[str] = "alloy", speed: float = 0.5, exaggeration: float = 0.0, cfg_weight: float = 7.0) -> tuple:
     """
     Generate TTS audio with expressive/dramatic speech options.
     
     Args:
         text: Text to synthesize
         requestID: Request ID for logging
+        model: ChatterboxTurboTTS model instance
         system: System prompt (unused currently, for future use)
         voice: Voice name or file path
         speed: Speech speed (0.0 = slow, 0.5 = normal, 1.0 = fast). Normalized 0-1.0
@@ -46,8 +25,10 @@ async def generate_tts(text: str, requestID: str, system: Optional[str] = None, 
     
     Returns:
         Tuple of (audio_bytes, sample_rate)
+    
+    Raises:
+        RuntimeError: If synthesis fails
     """
-    global service
     clone_path = None
     
     if voice and VOICE_BASE64_MAP.get(voice):
@@ -77,14 +58,17 @@ async def generate_tts(text: str, requestID: str, system: Optional[str] = None, 
         try:
             print(f"[{requestID}] Generating TTS audio with voice: {voice} (attempt {attempt + 1}/{max_retries})")
             try:
-                wav, sample_rate = service.speechSynthesis(text=content, audio_prompt_path=clone_path, top_p=0.95, temperature=0.8 + (exaggeration * 0.2), top_k=1000, repetition_penalty=1.2)
-            except Exception as conn_error:
-                if "digest sent was rejected" in str(conn_error) or "AuthenticationError" in str(type(conn_error)):
-                    print(f"[{requestID}] Connection error, attempting to reconnect...")
-                    service = get_service()
-                    wav, sample_rate = service.speechSynthesis(text=content, audio_prompt_path=clone_path)
-                else:
-                    raise
+                wav = model.generate(
+                    text=content,
+                    top_p=0.95,
+                    temperature=0.8 + (exaggeration * 0.2),
+                    top_k=1000,
+                    repetition_penalty=1.2,
+                    audio_prompt_path=clone_path
+                )
+                sample_rate = model.sr
+            except Exception as syn_error:
+                raise
             
             if wav is None:
                 raise RuntimeError("Audio generation failed - GPU out of memory or other error")
@@ -122,12 +106,17 @@ async def generate_tts(text: str, requestID: str, system: Optional[str] = None, 
     
 if __name__ == "__main__":
     async def main():
+        from chatterbox.tts_turbo import ChatterboxTurboTTS
+        
+        device = "cuda" if torch.cuda.is_available() else "cpu"
+        model = ChatterboxTurboTTS.from_pretrained(device=device, cache_dir="model_cache")
+        
         text = "Verbatim: Scientific progress often arrives quietly, reshaping daily life not through spectacle but through accumulation—small, precise improvements that compound until the world behaves differently than it did before."
         requestID = "request123"
         system = None
         voice = "alloy"
         
-        audio_bytes, audio_sample = await generate_tts(text, requestID, system, voice)
+        audio_bytes, audio_sample = await generate_tts(text, requestID, model, system, voice)
         audio_tensor = torch.from_numpy(np.frombuffer(audio_bytes, dtype=np.int16)).unsqueeze(0)
         torchaudio.save(f"audio.wav", audio_tensor, audio_sample)
         torchaudio.save(f"genAudio/audio.wav", audio_tensor, audio_sample)

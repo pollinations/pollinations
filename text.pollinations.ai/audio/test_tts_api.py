@@ -13,7 +13,8 @@ def test_tts():
         "voice": "alloy",
         "response_format": "mp3",
         "instructions": "Speak with warmth and enthusiasm",
-        "speed": 0.7
+        "speed": 0.7,
+        "language_id": "hi"
     }
     
     response = requests.post(f"{BASE_URL}/synthesize", json=payload, timeout=30)

@@ -3,7 +3,7 @@ import torchaudio
 from flask import Flask, request, jsonify, Response
 from flask_cors import CORS
 from loguru import logger
-from chatterbox.tts_turbo import ChatterboxTurboTTS
+from chatterbox.mtl_tts import ChatterboxMultilingualTTS
 from tts import generate_tts
 import asyncio
 import io
@@ -25,7 +25,7 @@ CORS(app)
 
 # Load TTS model on startup
 logger.info("Loading ChatterboxTurboTTS model...")
-tts_model = ChatterboxTurboTTS.from_pretrained(device=device, cache_dir=cache_dir)
+tts_model = ChatterboxMultilingualTTS.from_pretrained(device=device, cache_dir=cache_dir)
 logger.info("Model loaded successfully")
 
 @app.route("/", methods=["GET"])

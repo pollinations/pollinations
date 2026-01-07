@@ -464,20 +464,4 @@ export const TEXT_SERVICES = {
         contextWindow: 200000,
         isSpecialized: false,
     },
-    "whisper": {
-        aliases: ["whisper-1"],
-        modelId: "whisper-1",
-        provider: "openai",
-        cost: [
-            {
-                date: COST_START_DATE,
-                promptAudioTokens: perMillion(6),
-            },
-        ],
-        description: "OpenAI Whisper - Speech to Text Transcription",
-        inputModalities: ["audio"],
-        outputModalities: ["text"],
-        tools: false,
-        isSpecialized: false,
-    },
 } as const satisfies Record<string, ServiceDefinition<string>>;

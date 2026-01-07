@@ -1,15 +1,33 @@
 {
   "request": {
-    "url": "http://localhost:16385/openai",
+    "url": "http://ec2-3-80-56-235.compute-1.amazonaws.com:16385/openai",
     "method": "POST",
     "body": {
       "type": "json",
       "data": {
-        "model": "claude-large",
+        "model": "chickytutor",
         "messages": [
           {
             "role": "user",
             "content": "What is 5 + 3? You must use the calculator tool to compute this."
+          },
+          {
+            "role": "assistant",
+            "tool_calls": [
+              {
+                "id": "tooluse_CkmDo5dVQjGG1Ovox3QU3A",
+                "type": "function",
+                "function": {
+                  "name": "calculator",
+                  "arguments": "{\"operation\": \"add\", \"a\": 5, \"b\": 3}"
+                }
+              }
+            ]
+          },
+          {
+            "role": "tool",
+            "tool_call_id": "tooluse_CkmDo5dVQjGG1Ovox3QU3A",
+            "content": "{\"result\":8}"
           }
         ],
         "tools": [
@@ -49,8 +67,8 @@
             }
           }
         ],
-        "tool_choice": "required",
-        "seed": 42
+        "seed": 42,
+        "max_tokens": 4096
       }
     },
     "params": {}
@@ -61,53 +79,40 @@
     "headers": {
       "access-control-allow-origin": "*",
       "connection": "keep-alive",
-      "content-length": "566",
+      "content-length": "442",
       "content-type": "application/json; charset=utf-8",
-      "date": "Sat, 20 Dec 2025 15:41:54 GMT",
-      "etag": "W/\"236-4Em4Rn0qmih3s92M9kNYdMZgwpQ\"",
+      "date": "Wed, 07 Jan 2026 04:25:07 GMT",
+      "etag": "W/\"1ba-d7umfqoX8rPgio30Yx14OM1du9w\"",
       "keep-alive": "timeout=5",
-      "x-model-used": "global.anthropic.claude-opus-4-5-20251101-v1:0",
+      "x-model-used": "us.anthropic.claude-3-5-haiku-20241022-v1:0",
       "x-powered-by": "Express",
-      "x-usage-completion-text-tokens": "70",
-      "x-usage-prompt-text-tokens": "1003",
-      "x-usage-total-tokens": "1073"
+      "x-usage-completion-text-tokens": "30",
+      "x-usage-prompt-text-tokens": "4194",
+      "x-usage-total-tokens": "4224"
     },
     "body": {
       "type": "json",
       "data": {
-        "id": "pllns_c7b207ea868ed2435fba3a3f1e273e22",
-        "object": "chat.completion",
-        "created": 1766245314,
-        "model": "global.anthropic.claude-opus-4-5-20251101-v1:0",
-        "provider": "bedrock",
+        "id": "pllns_8b22c594c5853bffd4eb7a4870daea73",
+        "created": 1767759907,
+        "model": "us.anthropic.claude-3-5-haiku-20241022-v1:0",
+        "system_fingerprint": "fp",
         "choices": [
           {
             "index": 0,
+            "finish_reason": "stop",
+            "logprobs": null,
             "message": {
               "role": "assistant",
-              "content": "",
-              "content_blocks": [],
-              "tool_calls": [
-                {
-                  "id": "tooluse_QgtS5zNASZaCkbceQ62WSg",
-                  "type": "function",
-                  "function": {
-                    "name": "calculator",
-                    "arguments": "{\"operation\":\"add\",\"a\":5,\"b\":3}"
-                  }
-                }
-              ]
-            },
-            "finish_reason": "tool_use"
+              "content": "The result of 5 + 3 is 8. I used the calculator tool to compute this addition for you."
+            }
           }
         ],
+        "object": "chat.completion",
         "usage": {
-          "prompt_tokens": 1003,
-          "completion_tokens": 70,
-          "total_tokens": 1073,
-          "prompt_tokens_details": {
-            "cached_tokens": 0
-          }
+          "prompt_tokens": 4194,
+          "completion_tokens": 30,
+          "total_tokens": 4224
         }
       }
     }

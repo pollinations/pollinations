@@ -5,7 +5,7 @@
     "body": {
       "type": "json",
       "data": {
-        "model": "chickytutor",
+        "model": "claude-large",
         "messages": [
           {
             "role": "user",
@@ -15,18 +15,18 @@
             "role": "assistant",
             "tool_calls": [
               {
-                "id": "tooluse_NrFwWO3hSJ6Lmb7XD1YDcg",
+                "id": "toolu_vrtx_01UkFX1ak8nNhJUwP4w8kexR",
                 "type": "function",
                 "function": {
                   "name": "calculator",
-                  "arguments": "{\"operation\": \"add\", \"a\": 5, \"b\": 3}"
+                  "arguments": "{\"operation\":\"add\",\"a\":5,\"b\":3}"
                 }
               }
             ]
           },
           {
             "role": "tool",
-            "tool_call_id": "tooluse_NrFwWO3hSJ6Lmb7XD1YDcg",
+            "tool_call_id": "toolu_vrtx_01UkFX1ak8nNhJUwP4w8kexR",
             "content": "{\"result\":8}"
           }
         ],
@@ -79,40 +79,43 @@
     "headers": {
       "access-control-allow-origin": "*",
       "connection": "keep-alive",
-      "content-length": "444",
+      "content-length": "387",
       "content-type": "application/json; charset=utf-8",
-      "date": "Tue, 23 Dec 2025 13:56:39 GMT",
-      "etag": "W/\"1bc-iQ+lcZufwCp/xuiOy4zr/eeaNxU\"",
+      "date": "Wed, 07 Jan 2026 04:25:20 GMT",
+      "etag": "W/\"183-vXTG84JKH2fEw9gUPQX4m/z95dw\"",
       "keep-alive": "timeout=5",
-      "x-model-used": "us.anthropic.claude-3-5-haiku-20241022-v1:0",
+      "x-model-used": "claude-opus-4-5-20251101",
       "x-powered-by": "Express",
-      "x-usage-completion-text-tokens": "29",
-      "x-usage-prompt-text-tokens": "4194",
-      "x-usage-total-tokens": "4223"
+      "x-usage-completion-text-tokens": "12",
+      "x-usage-prompt-text-tokens": "1034",
+      "x-usage-total-tokens": "1046"
     },
     "body": {
       "type": "json",
       "data": {
-        "id": "pllns_2f1bc30131f641b10ffc1317218b30be",
-        "created": 1766498199,
-        "model": "us.anthropic.claude-3-5-haiku-20241022-v1:0",
-        "system_fingerprint": "fp",
+        "id": "pllns_a1403a3c1bcf3995ce0b18343ea6dc0e",
+        "object": "chat.completion",
+        "created": 1767759920,
+        "model": "claude-opus-4-5-20251101",
+        "provider": "vertex-ai",
         "choices": [
           {
-            "index": 0,
-            "finish_reason": "stop",
-            "logprobs": null,
             "message": {
               "role": "assistant",
-              "content": "The result of 5 + 3 is 8, which I calculated using the calculator tool as you requested."
-            }
+              "content": "5 + 3 = 8"
+            },
+            "index": 0,
+            "logprobs": null,
+            "finish_reason": "stop"
           }
         ],
-        "object": "chat.completion",
         "usage": {
-          "prompt_tokens": 4194,
-          "completion_tokens": 29,
-          "total_tokens": 4223
+          "prompt_tokens": 1034,
+          "completion_tokens": 12,
+          "total_tokens": 1046,
+          "prompt_tokens_details": {
+            "cached_tokens": 0
+          }
         }
       }
     }

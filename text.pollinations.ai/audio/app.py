@@ -5,6 +5,7 @@ from flask_cors import CORS
 from loguru import logger
 from chatterbox.mtl_tts import ChatterboxMultilingualTTS
 from tts import generate_tts
+from voiceMap import VOICE_BASE64_MAP
 import asyncio
 import io
 import numpy as np
@@ -35,12 +36,16 @@ logger.info("Multilingual TTS model loaded successfully")
 TEMP_AUDIO_DIR = tempfile.mkdtemp(prefix="tts_ref_")
 logger.info(f"Temp audio directory: {TEMP_AUDIO_DIR}")
 
-def process_reference_audio(audio_b64: str, requestID: str) -> str:
+def process_voice_parameter(voice: str, requestID: str) -> str:
+    if voice in VOICE_BASE64_MAP:
+        logger.info(f"[{requestID}] Using preset voice: {voice}")
+        return VOICE_BASE64_MAP[voice]
     try:
-        audio_bytes = base64.b64decode(audio_b64)
-        logger.info(f"[{requestID}] Decoded reference audio: {len(audio_bytes)} bytes")
+        audio_bytes = base64.b64decode(voice)
+        logger.info(f"[{requestID}] Decoded voice audio: {len(audio_bytes)} bytes")
     except Exception as e:
-        raise ValueError(f"Invalid base64 encoding: {e}")
+        available_voices = list(VOICE_BASE64_MAP.keys())
+        raise ValueError(f"Invalid voice parameter. Expected preset voice name or base64 WAV. Available voices: {', '.join(available_voices)}")
     
     try:
         wav_buffer = io.BytesIO(audio_bytes)
@@ -51,44 +56,39 @@ def process_reference_audio(audio_b64: str, requestID: str) -> str:
             sample_width = wav_file.getsampwidth()
             
             duration = n_frames / float(framerate)
-            logger.info(f"[{requestID}] Reference audio: {duration:.2f}s, {n_channels} ch, {framerate}Hz")
+            logger.info(f"[{requestID}] Voice audio: {duration:.2f}s, {n_channels} ch, {framerate}Hz")
             if duration < 5:
-                raise ValueError(f"Reference audio must be at least 5 seconds (got {duration:.2f}s)")
+                raise ValueError(f"Voice audio must be at least 5 seconds (got {duration:.2f}s)")
             if duration > 8:
-                logger.info(f"[{requestID}] Trimming reference audio from {duration:.2f}s to 8s")
+                logger.info(f"[{requestID}] Trimming voice audio from {duration:.2f}s to 8s")
                 frames_to_read = int(framerate * 8)
                 wav_file.rewind()
                 audio_frames = wav_file.readframes(frames_to_read)
             else:
                 audio_frames = wav_file.readframes(n_frames)
         
-        temp_path = os.path.join(TEMP_AUDIO_DIR, f"ref_{requestID}.wav")
+        temp_path = os.path.join(TEMP_AUDIO_DIR, f"voice_{requestID}.wav")
         with wave.open(temp_path, 'wb') as out_wav:
             out_wav.setnchannels(n_channels)
             out_wav.setsampwidth(sample_width)
             out_wav.setframerate(framerate)
             out_wav.writeframes(audio_frames)
         
-        logger.info(f"[{requestID}] Reference audio saved: {temp_path}")
+        logger.info(f"[{requestID}] Voice audio saved: {temp_path}")
         return temp_path
         
     except wave.Error as e:
-        raise ValueError(f"Invalid WAV file: {e}")
+        available_voices = list(VOICE_BASE64_MAP.keys())
+        raise ValueError(f"Invalid WAV file: {e}. Or use a preset voice: {', '.join(available_voices)}")
     except Exception as e:
-        raise ValueError(f"Error processing reference audio: {e}")
+        available_voices = list(VOICE_BASE64_MAP.keys())
+        raise ValueError(f"Error processing voice audio: {e}. Available voices: {', '.join(available_voices)}")
 
-@app.route("/", methods=["GET"])
-def health_check():
-    return jsonify({
-        "status": "healthy",
-        "endpoints": {
-            "POST": "/synthesize"
-        },
-        "message": "TTS API ready! 🎤"
-    })
 
 @app.route("/synthesize", methods=["POST"])
 def synthesize():
+    voice_audio_path = None
+    
     try:
         body = request.get_json(force=True)
         
@@ -104,22 +104,15 @@ def synthesize():
         exaggeration = body.get("exaggeration", 0.0)
         cfg_weight = body.get("cfg_weight", 7.0)
         normalize = body.get("normalize", False)
-        reference_audio_b64 = body.get("reference_audio")  # Base64 encoded WAV
         
-        # Create request ID early for reference audio processing
+       
         request_id = str(uuid4())[:12]
         
-        # Process reference audio if provided
-        reference_audio_path = None
-        if reference_audio_b64:
-            try:
-                reference_audio_path = process_reference_audio(reference_audio_b64, request_id)
-            except ValueError as e:
-                return jsonify({"error": f"Invalid reference audio: {str(e)}"}), 400
-        
-        # Use reference audio as voice if provided, otherwise use voice parameter
-        if reference_audio_path:
-            voice = reference_audio_path
+       
+        try:
+            voice = process_voice_parameter(voice, request_id)
+        except ValueError as e:
+            return jsonify({"error": f"Invalid voice: {str(e)}"}), 400
         
         supported_languages = ["ar", "da", "de", "el", "en", "es", "fi", "fr", "he", "hi", "it", "ja", "ko", "ms", "nl", "no", "pl", "pt", "ru", "sv", "sw", "tr", "zh"]
         if language_id not in supported_languages:
@@ -136,7 +129,7 @@ def synthesize():
         if not isinstance(cfg_weight, (int, float)) or cfg_weight < 0.1:
             return jsonify({"error": "cfg_weight must be >= 0.1. Lower values (0.3) for more expressive, higher (7.0+) for neutral"}), 400
         
-        logger.info(f"[{request_id}] TTS request: text={text[:50]}..., language={language_id}, voice={'reference_audio' if reference_audio_path else voice}, format={response_format}, normalize={normalize}")
+        logger.info(f"[{request_id}] TTS request: text={text[:50]}..., language={language_id}, voice={voice}, format={response_format}, normalize={normalize}")
         
         try:
             audio_bytes, sample_rate = asyncio.run(generate_tts(
@@ -213,6 +206,26 @@ def synthesize():
     except Exception as e:
         logger.error(f"TTS error: {traceback.format_exc()}")
         return jsonify({"error": str(e)}), 500
+    
+    finally:
+        # Cleanup temporary voice audio file if it's a temp file (not a preset)
+        if voice_audio_path and voice_audio_path.startswith(TEMP_AUDIO_DIR) and os.path.exists(voice_audio_path):
+            try:
+                os.remove(voice_audio_path)
+                logger.info(f"Cleaned up temporary voice audio: {voice_audio_path}")
+            except Exception as e:
+                logger.warning(f"Failed to cleanup temporary audio: {e}")
+
+
+@app.route("/", methods=["GET"])
+def health_check():
+    return jsonify({
+        "status": "healthy",
+        "endpoints": {
+            "POST": "/synthesize"
+        },
+        "message": "TTS API ready! 🎤"
+    })
 
 @app.route("/health", methods=["GET"])
 def health():

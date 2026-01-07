@@ -3,15 +3,13 @@ import type { FC } from "react";
 type PollenBalanceProps = {
     tierBalance: number;
     packBalance: number;
-    cryptoBalance: number;
 };
 
 export const PollenBalance: FC<PollenBalanceProps> = ({
     tierBalance,
     packBalance,
-    cryptoBalance,
 }) => {
-    const paidBalance = packBalance + cryptoBalance;
+    const paidBalance = packBalance;
     const totalPollen = Math.max(0, tierBalance + paidBalance);
     const freePercentage =
         totalPollen > 0 ? (tierBalance / totalPollen) * 100 : 0;

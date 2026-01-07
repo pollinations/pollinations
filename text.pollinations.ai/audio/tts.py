@@ -10,25 +10,6 @@ import io
 import numpy as np
 
 async def generate_tts(text: str, requestID: str, model, system: Optional[str] = None, voice: Optional[str] = "alloy", speed: float = 0.5, exaggeration: float = 0.0, cfg_weight: float = 7.0) -> tuple:
-    """
-    Generate TTS audio with expressive/dramatic speech options.
-    
-    Args:
-        text: Text to synthesize
-        requestID: Request ID for logging
-        model: ChatterboxTurboTTS model instance
-        system: System prompt (unused currently, for future use)
-        voice: Voice name or file path
-        speed: Speech speed (0.0 = slow, 0.5 = normal, 1.0 = fast). Normalized 0-1.0
-        exaggeration: Expressiveness level (0.0 = neutral, 0.7+ = dramatic). Default 0.0
-        cfg_weight: Classifier-free guidance weight (lower = more expressive, default ~7.0, try 0.3 for dramatic)
-    
-    Returns:
-        Tuple of (audio_bytes, sample_rate)
-    
-    Raises:
-        RuntimeError: If synthesis fails
-    """
     clone_path = None
     
     if voice and VOICE_BASE64_MAP.get(voice):

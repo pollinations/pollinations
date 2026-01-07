@@ -9,10 +9,11 @@ RESULTS_DIR.mkdir(exist_ok=True)
 def test_tts():
     start_time = time.time()
     payload = {
-        "input": "This is a test combining voice, speed, format, and expressive parameters!",
+        "input": "Oh shoot, I can't believe how amazing this new text to speech model is! The expressiveness and clarity are just outstanding. I'm so excited to use it in my projects and share it with everyone I know. This is a game changer for sure!",
         "voice": "alloy",
         "response_format": "mp3",
-        "instructions": "Speak with warmth and enthusiasm"
+        "instructions": "Speak with warmth and enthusiasm",
+        "speed": 0.7
     }
     
     response = requests.post(f"{BASE_URL}/synthesize", json=payload, timeout=30)

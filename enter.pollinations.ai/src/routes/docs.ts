@@ -4,62 +4,14 @@ import { openAPIRouteHandler } from "hono-openapi";
 import type { Env } from "@/env.ts";
 import { IMAGE_SERVICES } from "@shared/registry/image.ts";
 import { TEXT_SERVICES } from "@shared/registry/text.ts";
+// @ts-ignore - raw import
+import BYOP_MD from "../../legal/BRING_YOUR_OWN_POLLEN.md?raw";
 
-// BYOP documentation - imported at build time
-const BYOP_DOCS = `
-## Bring Your Own Pollen (BYOP) 🌸
-
-Users pay for their own AI usage. You pay $0. Ship apps without API costs ✨
-
-### The Flow
-
-1. User taps "Connect with Pollinations"
-2. They sign in → get a temp API key
-3. Their pollen, your app
-
-### Why?
-
-- **$0 costs** — 1 user or 1000, same price: free
-- **No key drama** — auth flow handles it
-- **Self-regulating** — everyone pays for their own usage
-- **Frontend only** — no backend needed
-
-### URLs
-
-Say your app is at \`https://myapp.com\`
-
-**You redirect user to:**
-\`\`\`
-https://enter.pollinations.ai/authorize?redirect_url=https://myapp.com
-\`\`\`
-
-**We redirect back with key:**
-\`\`\`
-https://myapp.com#api_key=sk_abc123xyz
-\`\`\`
-
-> [!tip]
-> Key is in the \`#\` fragment so it never hits server logs 🔒
-
-### Code
-
-\`\`\`javascript
-// 1. Send user to auth
-window.location.href = \`https://enter.pollinations.ai/authorize?redirect_url=\${encodeURIComponent(location.href)}\`;
-
-// 2. Grab key from URL after redirect
-const apiKey = new URLSearchParams(location.hash.slice(1)).get('api_key');
-
-// 3. Use their pollen
-fetch('https://gen.pollinations.ai/v1/chat/completions', {
-  method: 'POST',
-  headers: { 'Authorization': \`Bearer \${apiKey}\`, 'Content-Type': 'application/json' },
-  body: JSON.stringify({ model: 'openai', messages: [{ role: 'user', content: 'yo' }] })
-});
-\`\`\`
-
-Keys expire in 30 days · revoke anytime from dashboard
-`;
+// Strip the H1 title and image (not needed in API docs), convert H2 to H3
+const BYOP_DOCS = BYOP_MD.replace(/^# .+\n\n/, "") // Remove H1 title
+    .replace(/!\[.*?\]\(.*?\)\n\n/g, "") // Remove images
+    .replace(/^## /gm, "### ") // H2 → H3
+    .replace(/^# /gm, "## "); // H1 → H2
 
 // Get all model aliases (values we want to hide from docs)
 const IMAGE_ALIASES: Set<string> = new Set(

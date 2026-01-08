@@ -407,8 +407,8 @@ export const TEXT_SERVICES = {
         codeExecution: false, // Disabled - was breaking gemini-large
         isSpecialized: false,
     },
-    "nova-micro": {
-        aliases: ["amazon-nova-micro", "nova"],
+    "nova-fast": {
+        aliases: ["amazon-nova-micro", "nova", "nova-micro"],
         modelId: "amazon.nova-micro-v1:0",
         provider: "aws",
         cost: [

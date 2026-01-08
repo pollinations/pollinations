@@ -9,6 +9,7 @@
 [![License](https://img.shields.io/github/license/pollinations/pollinations?style=flat-square)](https://github.com/pollinations/pollinations/blob/main/LICENSE)
 [![Discord](https://img.shields.io/discord/885844321461485618?style=flat-square&logo=discord&label=Discord&color=5865F2)](https://discord.gg/pollinations-ai-885844321461485618)
 [![npm](https://img.shields.io/npm/v/@pollinations/react?style=flat-square&logo=npm&label=React%20Hooks)](https://www.npmjs.com/package/@pollinations/react)
+![Readme Badge](https://img.shields.io/badge/pollinations.ai-ORIGINALS-8a2be2?style=flat-square&logo=data:image/svg+xml,%3Csvg%20xmlns%3D%22http://www.w3.org/2000svg%22%20viewBox%3D%220%200%20124%20124%22%3E%3Ccircle%20cx%3D%2262%22%20cy%3D%2262%22%20r%3D%2262%22%20fill%3D%22%23ffffff%22/%3E%3C/svg%3E&logoColor=white&labelColor=6a0dad)
 
 [Website](https://pollinations.ai) · [Dashboard](https://enter.pollinations.ai) · [API Docs](https://github.com/pollinations/pollinations/blob/main/APIDOCS.md) · [Discord](https://discord.gg/pollinations-ai-885844321461485618)
 

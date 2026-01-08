@@ -63,10 +63,6 @@ curl 'https://gen.pollinations.ai/v1/chat/completions' \
 
 - **[pollinations](https://github.com/pollinations/pollinations)** — Main repo: API backends, web frontend, React hooks, MCP server
 
-### Community Hub
-
-- **[hive](https://github.com/pollinations/hive)** — Collection of community-built projects and integrations
-
 ### Integrations
 
 - **[@pollinations/react](https://www.npmjs.com/package/@pollinations/react)** — React hooks for easy frontend integration

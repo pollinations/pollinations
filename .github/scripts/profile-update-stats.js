@@ -13,6 +13,8 @@ const PROFILE_README = join(__dirname, "..", "profile", "README.md");
 const ORG = "pollinations";
 const MAIN_REPO = "pollinations";
 
+const TIMEOUT_MS = 30000;
+
 async function fetchGitHubAPI(endpoint) {
     const token = process.env.GITHUB_TOKEN;
     const headers = {
@@ -23,19 +25,27 @@ async function fetchGitHubAPI(endpoint) {
         headers["Authorization"] = `Bearer ${token}`;
     }
 
-    const response = await fetch(`https://api.github.com${endpoint}`, {
-        headers,
-    });
-    if (!response.ok) {
-        throw new Error(
-            `GitHub API error: ${response.status} ${response.statusText}`,
-        );
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), TIMEOUT_MS);
+
+    try {
+        const response = await fetch(`https://api.github.com${endpoint}`, {
+            headers,
+            signal: controller.signal,
+        });
+        if (!response.ok) {
+            throw new Error(
+                `GitHub API error: ${response.status} ${response.statusText}`,
+            );
+        }
+        return { data: await response.json(), headers: response.headers };
+    } finally {
+        clearTimeout(timeout);
     }
-    return response.json();
 }
 
 async function getRepoStats() {
-    const repo = await fetchGitHubAPI(`/repos/${ORG}/${MAIN_REPO}`);
+    const { data: repo } = await fetchGitHubAPI(`/repos/${ORG}/${MAIN_REPO}`);
     return {
         stars: repo.stargazers_count,
         forks: repo.forks_count,
@@ -44,10 +54,29 @@ async function getRepoStats() {
 }
 
 async function getContributorCount() {
-    const allContributors = await fetchGitHubAPI(
-        `/repos/${ORG}/${MAIN_REPO}/contributors?per_page=100&anon=true`,
-    );
-    return Array.isArray(allContributors) ? allContributors.length : 0;
+    let total = 0;
+    let page = 1;
+    const perPage = 100;
+
+    while (true) {
+        const { data, headers } = await fetchGitHubAPI(
+            `/repos/${ORG}/${MAIN_REPO}/contributors?per_page=${perPage}&page=${page}&anon=true`,
+        );
+
+        if (!Array.isArray(data) || data.length === 0) break;
+
+        total += data.length;
+
+        // Check if there are more pages via Link header
+        const linkHeader = headers.get("link");
+        if (!linkHeader || !linkHeader.includes('rel="next"')) break;
+
+        page++;
+        // Safety limit to prevent infinite loops
+        if (page > 50) break;
+    }
+
+    return total;
 }
 
 async function getRecentActivity() {
@@ -56,13 +85,13 @@ async function getRecentActivity() {
     const since = thirtyDaysAgo.toISOString();
 
     // Get recent commits
-    const commits = await fetchGitHubAPI(
+    const { data: commits } = await fetchGitHubAPI(
         `/repos/${ORG}/${MAIN_REPO}/commits?since=${since}&per_page=100`,
     );
     const commitCount = Array.isArray(commits) ? commits.length : 0;
 
     // Get merged PRs (closed PRs that were merged)
-    const prs = await fetchGitHubAPI(
+    const { data: prs } = await fetchGitHubAPI(
         `/repos/${ORG}/${MAIN_REPO}/pulls?state=closed&sort=updated&direction=desc&per_page=50`,
     );
     const mergedPRs = Array.isArray(prs)

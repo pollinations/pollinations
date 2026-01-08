@@ -18,15 +18,18 @@
 
 ## 🚀 Quick Start
 
+> Get your API key at [enter.pollinations.ai](https://enter.pollinations.ai)
+
 ```bash
 # Generate an image
-curl 'https://gen.pollinations.ai/image/a%20beautiful%20sunset' -o image.jpg
+curl 'https://gen.pollinations.ai/image/a%20cat?key=YOUR_API_KEY' -o image.jpg
 
 # Generate text
-curl 'https://gen.pollinations.ai/text/Hello%20world'
+curl 'https://gen.pollinations.ai/text/Hello?key=YOUR_API_KEY'
 
 # OpenAI-compatible endpoint
 curl 'https://gen.pollinations.ai/v1/chat/completions' \
+  -H 'Authorization: Bearer YOUR_API_KEY' \
   -H 'Content-Type: application/json' \
   -d '{"model": "openai", "messages": [{"role": "user", "content": "Hello"}]}'
 ```

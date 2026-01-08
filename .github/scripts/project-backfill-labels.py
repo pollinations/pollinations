@@ -20,6 +20,7 @@ import sys
 import os
 import time
 import json
+import re
 import requests
 import importlib.util
 
@@ -43,6 +44,7 @@ read_prompt_file = pm.read_prompt_file
 normalize_labels = pm.normalize_labels
 graphql_request = pm.graphql_request
 set_project_field = pm.set_project_field
+set_date_field = pm.set_date_field
 
 POLLINATIONS_API = "https://gen.pollinations.ai/v1/chat/completions"
 POLLINATIONS_TOKEN = os.getenv("POLLINATIONS_TOKEN")
@@ -227,33 +229,6 @@ Body: {(body or "")[:2000]}
     return {}
 
 
-def set_date_field(project_id: str, item_id: str, field_id: str, date_value: str):
-    """Set a date field on a project item."""
-    mutation = """
-    mutation($projectId: ID!, $itemId: ID!, $fieldId: ID!, $date: Date!) {
-        updateProjectV2ItemFieldValue(input: {
-            projectId: $projectId,
-            itemId: $itemId,
-            fieldId: $fieldId,
-            value: { date: $date }
-        }) {
-            projectV2Item { id }
-        }
-    }
-    """
-    # Extract just the date part (YYYY-MM-DD) from ISO timestamp
-    date_only = date_value[:10] if date_value else None
-    if not date_only:
-        return
-    data = graphql_request(mutation, {
-        "projectId": project_id,
-        "itemId": item_id,
-        "fieldId": field_id,
-        "date": date_only,
-    })
-    return data.get("updateProjectV2ItemFieldValue", {}).get("projectV2Item", {}).get("id")
-
-
 def add_labels(issue_number: int, labels: list, dry_run: bool):
     """Add labels to an issue."""
     if not labels:
@@ -277,7 +252,6 @@ def add_labels(issue_number: int, labels: list, dry_run: bool):
 
 def get_real_author(author: str, body: str) -> str:
     """Extract real author from Discord UID if issue was created by bot."""
-    import re
     if author and "pollinations-ai" in author.lower():
         uid_match = re.search(r'\(UID:\s*`?(\d+)`?\)', body or "")
         if uid_match:

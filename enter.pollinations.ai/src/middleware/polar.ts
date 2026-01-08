@@ -212,10 +212,13 @@ export const polar = createMiddleware<PolarEnv>(async (c, next) => {
         );
 
         if (totalBalance > 0) {
-            // Set a simplified balance result for tracking
+            // Set balance result for tracking - tier is used first, then pack
+            const willUseTier = balances.tierBalance > 0;
             c.var.polar.balanceCheckResult = {
-                selectedMeterId: "local",
-                selectedMeterSlug: "local:combined",
+                selectedMeterId: willUseTier ? "local:tier" : "local:pack",
+                selectedMeterSlug: willUseTier
+                    ? "v1:meter:tier"
+                    : "v1:meter:pack",
                 meters: [
                     {
                         meterId: "local:tier",

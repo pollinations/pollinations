@@ -60,15 +60,16 @@ We've launched **https://gen.pollinations.ai** — a single endpoint for all you
 
 ## 🌟 Introduction
 
-[pollinations.ai](https://pollinations.ai) is an open-source generative AI platform based in Berlin, powering 500+ community projects with accessible text and image generation APIs. We build in the open and keep AI accessible to everyone—thanks to our amazing supporters.
+[pollinations.ai](https://pollinations.ai) is an open-source generative AI platform based in Berlin, powering 500+ community projects with accessible text, image, video, and audio generation APIs. We build in the open and keep AI accessible to everyone—thanks to our amazing supporters.
 
 ## 🚀 Key Features
 
 - 🔓 **100% Open Source** — code, decisions, roadmap all public
 - 🤝 **Community-Built** — 500+ projects already using our APIs
-- 🌱 **Earn Daily Pollen** — contribute and get free credits, no credit card needed
-- 🖼️ **Embed like any normal image or text**
-- 🎵 **Audio generation:** Text-to-speech and speech-to-text capabilities
+- 🌱 **Pollen Tiers** — earn daily credits by contributing (tiers in beta)
+- 🖼️ **Image Generation** — Flux, GPT Image, Seedream, Kontext
+- 🎬 **Video Generation** — Seedance, Veo (alpha)
+- 🎵 **Audio** — Text-to-speech and speech-to-text
 - 🎣 **_Easy-to-use React hooks_** ([React Hooks Examples](https://react-hooks.pollinations.ai/))
 
 <a href="https://star-history.com/#pollinations/pollinations&Date">

@@ -33,14 +33,15 @@ curl 'https://gen.pollinations.ai/v1/chat/completions' \
 
 ## ✨ What We Offer
 
-| Feature                 | Description                                                |
-| ----------------------- | ---------------------------------------------------------- |
-| 🖼️ **Image Generation** | Flux, GPT Image, Seedream, and more                        |
-| 💬 **Text Generation**  | GPT-5, Claude, Gemini, DeepSeek, Qwen                      |
-| 🎵 **Audio**            | Text-to-speech with multiple voices                        |
-| 🌱 **Pollen System**    | Earn daily credits by contributing — no credit card needed |
-| 🤖 **MCP Server**       | AI assistants like Claude can generate directly            |
-| 💯 **100% Open Source** | Code, roadmap, conversations — all public                  |
+| Feature                 | Description                                        |
+| ----------------------- | -------------------------------------------------- |
+| 🖼️ **Image Generation** | Flux, GPT Image, Seedream, Kontext, and more       |
+| 🎬 **Video Generation** | Seedance, Veo — text-to-video (alpha)              |
+| 💬 **Text Generation**  | GPT-5, Claude, Gemini, DeepSeek, Grok, Perplexity  |
+| 🎵 **Audio**            | Text-to-speech with multiple voices                |
+| 🌱 **Pollen Tiers**     | Earn daily credits by contributing — tiers in beta |
+| 🤖 **MCP Server**       | AI assistants like Claude can generate directly    |
+| 💯 **100% Open Source** | Code, roadmap, conversations — all public          |
 
 ## 📊 Community Stats
 
@@ -74,16 +75,16 @@ curl 'https://gen.pollinations.ai/v1/chat/completions' \
 ## 🏗️ Architecture
 
 ```
-┌─────────────────────────────────────────────────────────────┐
-│                     gen.pollinations.ai                      │
-│                    (Unified API Gateway)                     │
-└─────────────────────┬───────────────────┬───────────────────┘
-                      │                   │
-        ┌─────────────▼─────────┐ ┌───────▼─────────────┐
-        │   Image Generation    │ │   Text Generation   │
-        │  Flux, GPT Image,     │ │  GPT-5, Claude,     │
-        │  Seedream             │ │  Gemini, DeepSeek   │
-        └───────────────────────┘ └─────────────────────┘
+┌─────────────────────────────────────────────────────────────────┐
+│                     gen.pollinations.ai                       │
+│                    (Unified API Gateway)                      │
+└──────────┬────────────┬────────────┬────────────┬────────────┘
+           │            │            │            │
+     ┌─────▼─────┐┌────▼───────┐┌────▼───────┐┌────▼───────┐
+     │   Image   ││    Video    ││    Text     ││    Audio    │
+     │ Flux, GPT ││  Seedance,  ││ GPT-5,Claude││   Voices    │
+     │ Seedream  ││    Veo     ││Gemini,Grok ││   TTS/STT   │
+     └───────────┘└────────────┘└────────────┘└────────────┘
 ```
 
 ## 🤝 Get Involved

@@ -9,9 +9,9 @@ import About from './pages/About'
 function App() {
   return (
     <BrowserRouter>
-      <div className="flex flex-col min-h-screen bg-white">
+      <div className="flex flex-col h-full w-full  min-h-screen">
         <Navigation />
-        <main className="flex-grow">
+        <main className="grow">
           <Routes>
             <Route path="/" element={<LandingPage />} />
             <Route path="/mentors" element={<MentorList />} />

@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom'
 import { useState } from 'react'
 import { ChevronDown, Search, X } from 'lucide-react'
+import '../styles/navigation.css'
 
 export default function Navigation() {
   const [yearDropdown, setYearDropdown] = useState(false)
@@ -17,8 +18,10 @@ export default function Navigation() {
   ]
 
   return (
-    <div className="navigation h-[50px] w-full rounded-[20px] bg-transparent mx-auto flex items-center justify-center mt-[25px] relative">
-      <div className="w-[70%] h-full bg-amber-200 mx-auto rounded-[10px]"></div>  
+    <div className="h-[65px]  w-full rounded-[20px] bg-transparent mx-auto flex items-center justify-center mt-8 absolute top-10">
+      <div className="navigation w-[70%] h-full bg-white-200 mx-auto rounded-[10px] shadow-xl">
+        
+        </div>  
     </div>
   )
 }

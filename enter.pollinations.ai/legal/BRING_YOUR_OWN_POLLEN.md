@@ -15,6 +15,8 @@ Users pay for their own AI usage. You pay $0. Ship apps without API costs fr fr 
 - **Self-regulating** — everyone pays for their own usage
 - **Frontend only** — no backend needed
 
+![Authorize Screen](./authorize-screen.png)
+
 ## URLs
 
 Say your app is at `https://myapp.com`
@@ -30,10 +32,6 @@ https://myapp.com#api_key=sk_abc123xyz
 ```
 
 > Key is in the `#` fragment so it never hits server logs 🔒
-
-**What users see:**
-
-![Authorize Screen](./authorize-screen.png)
 
 ## Code
 

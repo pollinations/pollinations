@@ -21,17 +21,17 @@ Users pay for their own AI usage. You pay $0. Ship apps without API costs fr fr 
 
 Say your app is at `https://myapp.com`
 
-**You redirect user to:**
+**Auth link:**
 ```
 https://enter.pollinations.ai/authorize?redirect_url=https://myapp.com
 ```
 
-**We redirect back with key:**
+**Redirect back:**
 ```
 https://myapp.com#api_key=sk_abc123xyz
 ```
 
-> Key is in the `#` fragment so it never hits server logs 🔒
+> Key is in the `#` fragment — never hits server logs 🔒
 
 ## Code
 

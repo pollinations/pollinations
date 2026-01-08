@@ -1,11 +1,15 @@
 import { Link } from 'react-router-dom'
 import { useState } from 'react'
+import { ChevronDown, Search, X } from 'lucide-react'
 
 export default function Navigation() {
-  const [isOpen, setIsOpen] = useState(false)
+  const [yearDropdown, setYearDropdown] = useState(false)
+  const [searchOpen, setSearchOpen] = useState(false)
+
+  const years = ['2026', '2025', '2024', '2023']
+  const currentYear = '2026'
 
   const navItems = [
-    { name: 'Home', path: '/' },
     { name: 'Projects', path: '/projects' },
     { name: 'Ideas', path: '/ideas' },
     { name: 'Mentors', path: '/mentors' },
@@ -13,68 +17,94 @@ export default function Navigation() {
   ]
 
   return (
-    <nav className='fixed top-0 w-full flex justify-center  z-50 bg-linear-to-r from-slate-900 via-slate-800 to-slate-900 border-b border-slate-700/50 shadow-lg'>
+    <nav className="fixed top-4 left-1/2 transform -translate-x-1/2 w-[95%] max-w-6xl z-50">
+      <div className="bg-white rounded-lg shadow-lg border border-gray-200 px-6 py-3 flex items-center justify-between">
+        
+        {/* Logo */}
+        <Link to="/" className="text-2xl font-bold text-orange-600 shrink-0">
+          🐝
+        </Link>
 
-      <div className='w-[90%] max-auto'>
-        <div className='flex flex-row justify-between items-center h-16  px-13 box-border'>
-
-          <Link to='/' className='flex items-center gap-5 group hover:opacity-80 transition-opacity ml-8'>
-            <div className='relative'>
-              <img 
-                src='/vite.svg' 
-                alt='Vite Logo' 
-                className='h-10 w-10 drop-shadow-lg group-hover:scale-110 transition-transform'
-              />
-              <div className='absolute inset-0 bg-linear-to-r from-blue-500 to-purple-500 opacity-0 group-hover:opacity-20 rounded-lg blur transition-opacity'></div>
-            </div>
-            <div className='flex flex-col'>
-              <span className='text-xl font-bold bg-linear-to-r from-blue-400 via-purple-400 to-pink-400 bg-clip-text text-transparent'>
-                Pollinations
-              </span>
-              <span className='text-xs text-slate-400'>GSOC 2026</span>
-            </div>
-          </Link>
-
-          <div className='flex items-center gap-8'>
-            <div className='hidden md:flex gap-6'>
-              {navItems.map((item) => (
-                <Link
-                  key={item.name}
-                  to={item.path}
-                  className='relative text-slate-100! hover:text-white! transition-colors text-sm font-medium group'
+        {/* Year Dropdown */}
+        <div className="relative ml-6">
+          <button
+            onClick={() => setYearDropdown(!yearDropdown)}
+            className="flex items-center gap-2 px-3 py-2 text-gray-700 hover:bg-gray-100 rounded transition-colors text-sm"
+          >
+            v{currentYear}
+            <ChevronDown size={16} />
+          </button>
+          {yearDropdown && (
+            <div className="absolute top-full mt-2 left-0 bg-white border border-gray-200 rounded-lg shadow-lg w-32">
+              {years.map((year) => (
+                <button
+                  key={year}
+                  onClick={() => setYearDropdown(false)}
+                  className="block w-full text-left px-4 py-2 hover:bg-gray-100 text-sm first:rounded-t-lg last:rounded-b-lg"
                 >
-                  {item.name}
-                  <div className='absolute bottom-0 left-0 w-0 h-0.5 bg-linear-to-r from-blue-400 to-purple-400 group-hover:w-full transition-all duration-300'></div>
-                </Link>
+                  v{year}
+                </button>
               ))}
             </div>
-
-            {/* Mobile Menu Button */}
-            <button
-              onClick={() => setIsOpen(!isOpen)}
-              className='md:hidden p-2 rounded-lg hover:bg-slate-700 transition-colors'
-            >
-              <svg className='w-6 h-6 text-slate-200!' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
-                <path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2} d='M4 6h16M4 12h16M4 18h16' />
-              </svg>
-            </button>
-          </div>
+          )}
         </div>
 
-        {isOpen && (
-          <div className='md:hidden mt-4 pb-4 border-t border-slate-700/50 pt-4 flex flex-col gap-3'>
-            {navItems.map((item) => (
-              <Link
-                key={item.name}
-                to={item.path}
-                className='text-slate-100! hover:text-white! px-4 py-2 rounded-lg hover:bg-slate-700/50 transition-colors text-sm'
-                onClick={() => setIsOpen(false)}
+        {/* Nav Items */}
+        <div className="hidden md:flex items-center gap-8 flex-1 ml-8">
+          {navItems.map((item) => (
+            <Link
+              key={item.path}
+              to={item.path}
+              className="text-gray-700 hover:text-gray-900 text-sm font-medium transition-colors"
+            >
+              {item.name}
+            </Link>
+          ))}
+        </div>
+
+        {/* Search Bar */}
+        <div className="flex-1 flex justify-end gap-4">
+          <div className="relative hidden sm:block">
+            {!searchOpen && (
+              <button
+                onClick={() => setSearchOpen(true)}
+                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
               >
-                {item.name}
-              </Link>
-            ))}
+                <Search size={18} className="text-gray-700" />
+              </button>
+            )}
+            {searchOpen && (
+              <div className="absolute right-0 top-1/2 -translate-y-1/2 flex items-center bg-gray-100 rounded-lg px-3 py-2 gap-2">
+                <input
+                  type="text"
+                  placeholder="Quick search..."
+                  className="bg-transparent outline-none text-sm w-32 text-gray-700 placeholder-gray-500"
+                  autoFocus
+                  onBlur={() => setSearchOpen(false)}
+                />
+                <button
+                  onClick={() => setSearchOpen(false)}
+                  className="p-1 hover:bg-gray-200 rounded"
+                >
+                  <X size={16} className="text-gray-500" />
+                </button>
+              </div>
+            )}
           </div>
-        )}
+
+          {/* Right Icons */}
+          <div className="flex items-center gap-3">
+            <button className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
+              <span className="text-gray-700">⌘K</span>
+            </button>
+            <a href="#" className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
+              <span className="text-xl">𝕏</span>
+            </a>
+            <a href="#" className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
+              <span className="text-xl">⚙️</span>
+            </a>
+          </div>
+        </div>
       </div>
     </nav>
   )

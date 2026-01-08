@@ -2,7 +2,7 @@ name: App Review Submission
 
 on:
   issues:
-    types: [opened, edited, reopened]
+    types: [opened]
   issue_comment:
     types: [created]
   pull_request_target:
@@ -19,7 +19,7 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  # Job 1: Parse issue and validate user registration
+  
   app-parse-issue:
     if: |
       github.event_name != 'pull_request_target' &&
@@ -394,7 +394,7 @@ jobs:
             echo "valid=false" >> $GITHUB_OUTPUT
           fi
 
-  # Job 2: Create PR with app entry
+  
   app-create-pr:
     needs: app-parse-issue
     if: needs.app-parse-issue.outputs.valid == 'true'
@@ -481,26 +481,34 @@ jobs:
           SLUG=$(echo "$PROJECT_NAME" | tr '[:upper:]' '[:lower:]' | tr ' ' '-' | tr -cd 'a-z0-9-')
           BRANCH="auto/app-${ISSUE_NUMBER}-${SLUG}"
           git checkout -b "$BRANCH"
-          
+
           URL=$(echo "$PROJECT_JSON" | jq -r '.url // "-"')
           REPO=$(echo "$PROJECT_JSON" | jq -r '.repo // empty')
           DISCORD=$(echo "$PROJECT_JSON" | jq -r '.discord // empty')
           OTHER=$(echo "$PROJECT_JSON" | jq -r '.other // empty')
           LANGUAGE=$(echo "$PROJECT_JSON" | jq -r '.language // empty')
           TODAY=$(date +%Y-%m-%d)
-          
+
           STARS_DISPLAY=""
           if [ -n "$STARS" ] && [ "$STARS" != "0" ] && [ "$STARS" != "null" ]; then
-            [ "$STARS" -ge 1000 ] && STARS_DISPLAY="⭐$((STARS / 1000))k" || STARS_DISPLAY="⭐$STARS"
+            if [ "$STARS" -ge 1000 ]; then
+              STARS_DISPLAY="⭐$((STARS / 1000))k"
+            else
+              STARS_DISPLAY="⭐$STARS"
+            fi
           fi
-          
-          [ "$URL" != "-" ] && NAME_DISPLAY="[$PROJECT_NAME]($URL)" || NAME_DISPLAY="$PROJECT_NAME"
-          
+
+          if [ "$URL" != "-" ]; then
+            NAME_DISPLAY="[$PROJECT_NAME]($URL)"
+          else
+            NAME_DISPLAY="$PROJECT_NAME"
+          fi
+
           # Format: Emoji | Name | Description | Language | Category | GitHub | Repo | Stars | Discord | Other | Submitted
           export NEW_ROW="| $EMOJI | $NAME_DISPLAY | $SHORT_DESC | $LANGUAGE | $CATEGORY | @$ISSUE_AUTHOR | $REPO | $STARS_DISPLAY | $DISCORD | $OTHER | $TODAY |"
           node .github/scripts/app-prepend-row.js
           node .github/scripts/app-update-readme.js
-          
+
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add -A
@@ -509,73 +517,88 @@ jobs:
           Co-authored-by: $ISSUE_AUTHOR <${ISSUE_AUTHOR_ID}+${ISSUE_AUTHOR}@users.noreply.github.com>
           Fixes #$ISSUE_NUMBER"
           git push origin "$BRANCH" --force-with-lease
-          
+
           EXISTING_PR=$(gh pr list --head "$BRANCH" --json number -q '.[0].number')
           if [ -z "$EXISTING_PR" ]; then
-            # Build PR body with app details using heredoc for clean formatting
             PR_BODY="## 🆕 New App: $PROJECT_NAME
 
-| Field | Value |
-|-------|-------|
-| **Category** | \`$CATEGORY\` |
-| **URL** | $URL |
-| **Description** | $SHORT_DESC |"
+          - **Category:** \`$CATEGORY\`
+          - **URL:** $URL
+          - **Description:** $SHORT_DESC"
 
             [ -n "$REPO" ] && PR_BODY="$PR_BODY
-| **Repo** | $REPO |"
+          - **Repo:** $REPO"
             [ -n "$DISCORD" ] && PR_BODY="$PR_BODY
-| **Discord** | $DISCORD |"
+          - **Discord:** $DISCORD"
             [ -n "$LANGUAGE" ] && PR_BODY="$PR_BODY
-| **Language** | \`$LANGUAGE\` |"
+          - **Language:** \`$LANGUAGE\`"
             [ -n "$OTHER" ] && PR_BODY="$PR_BODY
-| **Other Contact** | $OTHER |"
-            
-            # Add similarity report if applicable
+          - **Other Contact:** $OTHER"
+
             SIMILARITY="${{ needs.app-parse-issue.outputs.similarity_score }}"
             SIMILARITY_REASON="${{ needs.app-parse-issue.outputs.similarity_reason }}"
             if [ -n "$SIMILARITY" ] && [ "$SIMILARITY" != "null" ] && [ "$SIMILARITY" != "0" ]; then
               PR_BODY="$PR_BODY
 
----
+          ---
 
-⚠️ **Similarity Report:** ${SIMILARITY}% similar to previous submission(s) from @$ISSUE_AUTHOR"
+          ⚠️ **Similarity Report:** ${SIMILARITY}% similar to previous submission(s) from @$ISSUE_AUTHOR"
               if [ -n "$SIMILARITY_REASON" ] && [ "$SIMILARITY_REASON" != "null" ]; then
                 PR_BODY="$PR_BODY
-> $SIMILARITY_REASON"
+          > $SIMILARITY_REASON"
               fi
               PR_BODY="$PR_BODY
 
-*Maintainer: Review if this is legitimate iteration or rebranding.*"
+          *Maintainer: Review if this is legitimate iteration or rebranding.*"
             fi
-            
+
             PR_BODY="$PR_BODY
 
----
+          ---
 
-Co-authored-by: $ISSUE_AUTHOR <${ISSUE_AUTHOR_ID}+${ISSUE_AUTHOR}@users.noreply.github.com>
-Fixes #$ISSUE_NUMBER"
+          Co-authored-by: $ISSUE_AUTHOR <${ISSUE_AUTHOR_ID}+${ISSUE_AUTHOR}@users.noreply.github.com>
+          Fixes #$ISSUE_NUMBER"
 
-            gh pr create --title "Add $PROJECT_NAME to $CATEGORY" \
+            gh pr create \
+              --title "Add $PROJECT_NAME to $CATEGORY" \
               --body "$PR_BODY" \
               --label "TIER-APP-REVIEW-PR" \
-              --base main --head "$BRANCH"
+              --base main \
+              --head "$BRANCH"
           fi
 
       - name: Update issue label to REVIEW
         uses: actions/github-script@v7
         with:
           script: |
-            // Remove TIER-APP or TIER-APP-INCOMPLETE, add TIER-APP-REVIEW
-            const issue = await github.rest.issues.get({ owner: context.repo.owner, repo: context.repo.repo, issue_number: ${{ needs.app-parse-issue.outputs.issue_number }} });
-            const oldLabels = issue.data.labels.map(l => l.name).filter(n => n.startsWith('TIER-APP'));
+            const issue = await github.rest.issues.get({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: ${{ needs.app-parse-issue.outputs.issue_number }}
+            });
+
+            const oldLabels = issue.data.labels
+              .map(l => l.name)
+              .filter(n => n.startsWith('TIER-APP'));
+
             for (const label of oldLabels) {
-              try { await github.rest.issues.removeLabel({ owner: context.repo.owner, repo: context.repo.repo, issue_number: ${{ needs.app-parse-issue.outputs.issue_number }}, name: label }); } catch (e) {}
+              try {
+                await github.rest.issues.removeLabel({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: ${{ needs.app-parse-issue.outputs.issue_number }},
+                  name: label
+                });
+              } catch (e) {}
             }
+
             await github.rest.issues.addLabels({
-              owner: context.repo.owner, repo: context.repo.repo,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
               issue_number: ${{ needs.app-parse-issue.outputs.issue_number }},
               labels: ['TIER-APP-REVIEW']
             });
+
 
       - name: Comment on issue
         uses: actions/github-script@v7
@@ -587,9 +610,11 @@ Fixes #$ISSUE_NUMBER"
               body: `🎉 Thanks @${{ needs.app-parse-issue.outputs.issue_author }}! PR created to add **${{ needs.app-parse-issue.outputs.name }}** to **${{ needs.app-parse-issue.outputs.category }}**.\n\nA maintainer will review shortly. Issue closes automatically when PR merges.`
             });
 
-  # Job 3: Handle PR merge/close outcomes
   app-handle-outcome:
-    if: github.event_name == 'pull_request_target' && github.event.action == 'closed'
+    if: |
+      github.event_name == 'pull_request_target' &&
+      github.event.action == 'closed' &&
+      contains(github.event.pull_request.labels.*.name, 'TIER-APP-REVIEW-PR')
     runs-on: ubuntu-latest
     permissions:
       contents: read

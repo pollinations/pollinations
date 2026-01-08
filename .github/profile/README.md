@@ -112,12 +112,18 @@ curl 'https://gen.pollinations.ai/v1/chat/completions' \
 ## 🌍 Supported By
 
 <p align="center">
+  <a href="https://www.perplexity.ai/">Perplexity AI</a> · 
   <a href="https://aws.amazon.com/">AWS</a> · 
+  <a href="https://io.net/">io.net</a> · 
+  <a href="https://www.byteplus.com/">BytePlus</a> · 
   <a href="https://cloud.google.com/">Google Cloud</a> · 
   <a href="https://www.nvidia.com/en-us/deep-learning-ai/startups/">NVIDIA Inception</a> · 
   <a href="https://azure.microsoft.com/">Azure</a> · 
   <a href="https://www.cloudflare.com/">Cloudflare</a> · 
-  <a href="https://www.scaleway.com/">Scaleway</a>
+  <a href="https://www.scaleway.com/">Scaleway</a> · 
+  <a href="https://modal.com/">Modal</a> · 
+  <a href="https://api.navy/">NavyAI</a> · 
+  <a href="https://nebius.com/">Nebius</a>
 </p>
 
 ---

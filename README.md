@@ -1,5 +1,15 @@
 <div align="center">
   <img src="shared/assets/logo-text.svg" alt="pollinations.ai" width="100%"/>
+  
+  <p><strong>Open-source AI for people who make things.</strong></p>
+
+[![Stars](https://img.shields.io/github/stars/pollinations/pollinations?style=flat-square&logo=github)](https://github.com/pollinations/pollinations)
+[![License](https://img.shields.io/github/license/pollinations/pollinations?style=flat-square)](LICENSE)
+[![Discord](https://img.shields.io/discord/885844321461485618?style=flat-square&logo=discord&label=Discord&color=5865F2)](https://discord.gg/pollinations-ai-885844321461485618)
+[![npm](https://img.shields.io/npm/v/@pollinations/react?style=flat-square&logo=npm)](https://www.npmjs.com/package/@pollinations/react)
+
+[Website](https://pollinations.ai) · [Dashboard](https://enter.pollinations.ai) · [API Docs](APIDOCS.md) · [Discord](https://discord.gg/pollinations-ai-885844321461485618)
+
 </div>
 
 ## 🆕 Recent Apps
@@ -39,12 +49,10 @@ We've launched **https://gen.pollinations.ai** — a single endpoint for all you
 - **2026-01-05** – **🚀 Qwen3-Coder** New `Qwen3-Coder-30B` model available for advanced code generation tasks.
 - **2026-01-05** – **🎨 Flux Returns** The popular `flux` model is back as a standalone option for image generation.
 - **2026-01-05** – **✨ High-Res Upscaling** Generate images larger than 1280x1280 using the new integrated SPAN 2x upscaler.
-- **2025-12-29** – **🚀 New Model: GPT Image Large** Access GPT Image 1.5 via the `gptimage-large` model ID for high-fidelity generations.
-- **2025-12-29** – **🤖 DeepSeek V3.2** Upgraded to the latest DeepSeek V3.2 model with reduced pricing and improved performance.
+- **2025-12-29** – **🚀 New Model: GPT Image Large** Access GPT Image 1.5 via the `gptimage-large` model ID for high-fidelity generations. [API Docs](https://enter.pollinations.ai/api/docs)
+- **2025-12-29** – **🤖 DeepSeek V3.2** Upgraded to the latest DeepSeek V3.2 for smarter, faster chat responses. [Try it](https://hello.pollinations.ai)
 - **2025-12-29** – **🎨 Image-to-Image Upgrades** Now supports multiple input images (pipe-separated) and automatic resizing for better results.
 - **2025-12-29** – **📱 New Community Apps** Try IDPhotoGen (ID photos), PromptPi (prompt engineering), and Nuvole AI Lite (iOS shortcut).
-- **2025-12-29** – **🚀 New Model: gptimage-large** Access GPT Image 1.5 for high-fidelity generations via the API. [API Docs](https://enter.pollinations.ai/api/docs)
-- **2025-12-29** – **🤖 DeepSeek V3.2** Upgraded to the latest DeepSeek V3.2 for smarter, faster chat responses. [Try it](https://hello.pollinations.ai)
 
 ---
 
@@ -58,10 +66,9 @@ We've launched **https://gen.pollinations.ai** — a single endpoint for all you
 
 - 🔓 **100% Open Source** — code, decisions, roadmap all public
 - 🤝 **Community-Built** — 500+ projects already using our APIs
-- 🔒 **Privacy-Respecting** — no accounts needed to get started
+- 🌱 **Earn Daily Pollen** — contribute and get free credits, no credit card needed
 - 🖼️ **Embed like any normal image or text**
 - 🎵 **Audio generation:** Text-to-speech and speech-to-text capabilities
-- 🌱 **Supporter-Funded** — daily Pollen keeps AI accessible for everyone
 - 🎣 **_Easy-to-use React hooks_** ([React Hooks Examples](https://react-hooks.pollinations.ai/))
 
 <a href="https://star-history.com/#pollinations/pollinations&Date">
@@ -294,7 +301,7 @@ We're constantly exploring new ways to push the boundaries of AI-driven content 
 
 pollinations.ai envisions a future where AI technology is:
 
-- **Open & Accessible**: We believe AI should be available to everyone, not locked behind paywalls or restricted access
+- **Open & Accessible**: We believe AI should be available to everyone — earn daily Pollen by contributing, no credit card required
 
 - **Transparent & Ethical**: Our open-source approach ensures transparency in how our models work and behave
 
@@ -358,6 +365,16 @@ pollinations.ai is proud to be supported by:
 - [Cloudflare](https://developers.cloudflare.com/workers-ai/): Put the connectivity cloud to work for you.
 - [Scaleway](https://www.scaleway.com/): Europe's empowering cloud provider
 - [Modal](https://modal.com/): High-performance AI infrastructure
+
+## 💚 Support Us
+
+- ☕ **[Ko-fi](https://ko-fi.com/pollinationsai)** — One-time donations
+- 💖 **[GitHub Sponsors](https://github.com/sponsors/pollinations)** — Monthly support
+- 🌐 **[Open Collective](https://opencollective.com/pollinationsai)** — Transparent funding
+
+## 📣 Stay Connected
+
+[𝕏 Twitter](https://twitter.com/pollinations_ai) · [Instagram](https://instagram.com/pollinations_ai) · [LinkedIn](https://www.linkedin.com/company/pollinations-ai) · [Facebook](https://facebook.com/pollinations) · [Reddit](https://www.reddit.com/r/pollinations_ai/) · [YouTube](https://www.youtube.com/c/pollinations)
 
 ## 📜 License
 

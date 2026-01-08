@@ -17,7 +17,7 @@ Users pay for their own AI usage. You pay $0. Ship apps without API costs ✨
 2. They sign in → get a temp API key
 3. Their pollen, your app
 
-### Why BYOP?
+### Why?
 
 - **$0 costs** — 1 user or 1000, same price: free
 - **No key drama** — auth flow handles it

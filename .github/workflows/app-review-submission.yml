@@ -611,7 +611,10 @@ jobs:
             });
 
   app-handle-outcome:
-    if: github.event_name == 'pull_request_target' && github.event.action == 'closed'
+    if: |
+      github.event_name == 'pull_request_target' &&
+      github.event.action == 'closed' &&
+      contains(github.event.pull_request.labels.*.name, 'TIER-APP-REVIEW-PR')
     runs-on: ubuntu-latest
     permissions:
       contents: read

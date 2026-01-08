@@ -149,6 +149,9 @@ flowchart TD
 | `DEV-FEATURE`  | New functionality request                        | `project-manager.py` |
 | `DEV-QUEST`    | Community task - One off Pollen reward if merged | `project-manager.py` |
 | `DEV-TRACKING` | Meta-issue tracking other items                  | `project-manager.py` |
+| `DEV-DOCS`     | Documentation - dev docs, API docs, READMEs      | `project-manager.py` |
+| `DEV-INFRA`    | Infrastructure - CI/CD, deployments, monitoring  | `project-manager.py` |
+| `DEV-CHORE`    | Maintenance - dependency updates, cleanup        | `project-manager.py` |
 | `DEV-VOTING`   | Community vote on a proposal                     | Manual               |
 
 ### Support Labels

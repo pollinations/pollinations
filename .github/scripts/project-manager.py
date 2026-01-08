@@ -1,6 +1,7 @@
 import sys
 import os
 import json
+import re
 import requests
 import time
 from typing import Optional
@@ -27,9 +28,19 @@ ISSUE_TITLE = ITEM_DATA.get("title", "")
 ISSUE_BODY = ITEM_DATA.get("body", "") or ""
 ISSUE_AUTHOR = ITEM_DATA.get("user", {}).get("login", "")
 ISSUE_NODE_ID = ITEM_DATA.get("node_id", "")
+ISSUE_CREATED_AT = ITEM_DATA.get("created_at", "")
 GITHUB_API = "https://api.github.com"
 GITHUB_GRAPHQL = "https://api.github.com/graphql"
 POLLINATIONS_API = "https://gen.pollinations.ai/v1/chat/completions"
+
+# Validate required tokens at startup
+if not GITHUB_TOKEN:
+    print("GITHUB_TOKEN environment variable not set")
+    sys.exit(1)
+if not POLLINATIONS_TOKEN:
+    print("POLLINATIONS_TOKEN environment variable not set")
+    sys.exit(1)
+
 GITHUB_HEADERS = {
     "Authorization": f"Bearer {GITHUB_TOKEN}",
     "Accept": "application/vnd.github+json",
@@ -51,6 +62,7 @@ CONFIG = {
             "id": "PVT_kwDOBS76fs4AwCAM",
             "name": "Dev",
             "internal_only": True,
+            "opened_field_id": "PVTF_lADOBS76fs4AwCAMzg7fXzc",
         },
         "support": {
             "id": "PVT_kwDOBS76fs4BLr1H",
@@ -83,62 +95,41 @@ CONFIG = {
         "Circuit-Overtime",
         "Itachi-1824"
     ],
-    "discord_to_github": {
-        "elliot8701": "ElliotEtag",
-        "elixpo.asm": "Circuit-Overtime",
-        "elixpo": "Circuit-Overtime",
-        "_dr_misterio_": "Itachi-1824",
-        "thomash": "voodoohop",
-        "eulervoid": "eulervoid",
+    "discord_uid_to_github": {
+        "304378879705874432": "voodoohop",
+        "884468469452656732": "ElliotEtag",
+        "1085433243102347354": "eulervoid",
+        "859708931478388767": "Itachi-1824",
+        "738661669332320287": "Circuit-Overtime",
     },
 }
 
 def get_real_author() -> str:
-    """Extract real author from Discord bot issues or return GitHub author."""
-    # If author is the Discord bot, try to extract real author from body
     if ISSUE_AUTHOR and "pollinations-ai" in ISSUE_AUTHOR.lower():
-        import re
-        # Look for "Author: username" pattern in issue body
-        match = re.search(r'\*\*Author:\*\*\s*`?([\w._-]+)`?|Author:\s*`?([\w._-]+)`?', ISSUE_BODY, re.IGNORECASE)
-        if match:
-            discord_user = match.group(1) or match.group(2)
-            log_debug(f"Extracted Discord author: {discord_user}")
-            # Map to GitHub username if known
-            github_user = CONFIG["discord_to_github"].get(discord_user.lower())
+        uid_match = re.search(r'\(UID:\s*`?(\d+)`?\)', ISSUE_BODY)
+        if uid_match:
+            discord_uid = uid_match.group(1)
+            log_debug(f"Extracted Discord UID: {discord_uid}")
+            github_user = CONFIG["discord_uid_to_github"].get(discord_uid)
             if github_user:
-                log_debug(f"Mapped Discord user {discord_user} to GitHub user {github_user}")
+                log_debug(f"Mapped Discord UID {discord_uid} to GitHub user {github_user}")
                 return github_user
-            log_debug(f"No GitHub mapping for Discord user {discord_user}")
-            return discord_user
+            log_debug(f"No GitHub mapping for Discord UID {discord_uid}")
     return ISSUE_AUTHOR
 
 
 def is_org_member(username: str) -> bool:
     if not username:
         return False
-    if username.lower() in [m.lower() for m in CONFIG["org_members"]]:
-        log_debug(f"Found {username} in org_members list")
-        return True
-    try:
-        r = requests.get(
-            f"{GITHUB_API}/orgs/{REPO_OWNER}/members/{username}",
-            headers=GITHUB_HEADERS,
-            timeout=10,
-        )
-        is_member = r.status_code == 204
-        log_debug(f"Checked {username} org membership: {is_member}")
-        return is_member
-    except requests.RequestException as e:
-        log_error(f"Failed to check org membership for {username}: {e}")
-        return False
+    is_member = username.lower() in [m.lower() for m in CONFIG["org_members"]]
+    log_debug(f"Checked {username} org membership: {is_member}")
+    return is_member
 
 def get_script_dir() -> str:
-    """Get the directory where this script is located."""
     return os.path.dirname(os.path.abspath(__file__))
 
 
 def read_prompt_file() -> str:
-    """Read the AI prompt from prompts/project-manager.md."""
     prompt_path = os.path.join(get_script_dir(), "..", "prompts", "project-manager.md")
     try:
         with open(prompt_path, "r") as f:
@@ -148,16 +139,17 @@ def read_prompt_file() -> str:
         return ""
 
 
-# Valid labels per project (kept in sync with prompts/project-manager.md)
 VALID_LABELS = {
-    "dev": {"DEV-BUG", "DEV-FEATURE", "DEV-QUEST", "DEV-TRACKING"},
+    "dev": {"DEV-BUG", "DEV-FEATURE", "DEV-QUEST", "DEV-TRACKING", "DEV-DOCS", "DEV-INFRA", "DEV-CHORE"},
     "support": {
-        # TYPE labels (exactly 1, blue) - dot prefix for sorting
         ".BUG", ".OUTAGE", ".QUESTION", ".REQUEST", ".DOCS", ".INTEGRATION",
-        # SERVICE labels (1 or more, violet)
         "IMAGE", "TEXT", "AUDIO", "VIDEO", "API", "WEB", "CREDITS", "BILLING", "ACCOUNT",
     },
     "news": set()
+}
+
+PROTECTED_LABELS = {
+    "dev": {"DEV-TRACKING", "DEV-VOTING", "DEV-QUEST"},
 }
 
 
@@ -171,12 +163,10 @@ def normalize_labels(project: str, labels: list) -> list:
     incoming = [l.upper() for l in labels]
     
     if project == "dev":
-        # Dev: pick ONE label
         label = next((l for l in incoming if l in valid_labels), None)
         return [label] if label else []
     
     if project == "support":
-        # Support: allow multiple labels (TYPE + SVC)
         return [l for l in incoming if l in valid_labels]
     
     return []
@@ -191,10 +181,7 @@ def get_fallback_classification(_: bool) -> dict:
     }
 
 
-
-
 def classify_with_ai(is_internal: bool) -> dict:
-    # Read prompt from prompts/project-manager.md
     base_prompt = read_prompt_file()
     
     system_prompt = f"""{base_prompt}
@@ -234,8 +221,30 @@ Body: {ISSUE_BODY[:2000]}
                 log_error(f"AI HTTP {r.status_code}: {r.text}")
                 time.sleep(2 ** attempt)
                 continue
-
-            content = r.json()["choices"][0]["message"]["content"]
+            try:
+                resp_json = r.json()
+                if not isinstance(resp_json, dict) or "choices" not in resp_json:
+                    log_error(f"AI response missing 'choices' key: {resp_json}")
+                    time.sleep(2 ** attempt)
+                    continue
+                if not resp_json["choices"] or not isinstance(resp_json["choices"][0], dict):
+                    log_error(f"AI response 'choices' is empty or malformed")
+                    time.sleep(2 ** attempt)
+                    continue
+                if "message" not in resp_json["choices"][0]:
+                    log_error(f"AI response missing 'message' in choice: {resp_json['choices'][0]}")
+                    time.sleep(2 ** attempt)
+                    continue
+                if "content" not in resp_json["choices"][0]["message"]:
+                    log_error(f"AI response missing 'content' in message")
+                    time.sleep(2 ** attempt)
+                    continue
+                content = resp_json["choices"][0]["message"]["content"]
+            except (KeyError, TypeError, IndexError) as e:
+                log_error(f"AI response structure error: {e}")
+                time.sleep(2 ** attempt)
+                continue
+            
             log_debug(f"AI raw response: {content}")
 
             raw = json.loads(content)
@@ -248,7 +257,6 @@ Body: {ISSUE_BODY[:2000]}
                 return get_fallback_classification(is_internal)
             
             priority = raw.get("priority")
-            # Priority only valid for support project
             if project == "support":
                 valid_priorities = {"Urgent", "High", "Medium", "Low"}
                 if priority not in valid_priorities:
@@ -356,6 +364,34 @@ def set_project_field(project_id: str, item_id: str, field_id: str, option_id: s
         log_error(f"Failed to set project field: field_id={field_id}")
 
 
+def set_date_field(project_id: str, item_id: str, field_id: str, date_value: str):
+    mutation = """
+    mutation($projectId: ID!, $itemId: ID!, $fieldId: ID!, $date: Date!) {
+        updateProjectV2ItemFieldValue(input: {
+            projectId: $projectId,
+            itemId: $itemId,
+            fieldId: $fieldId,
+            value: { date: $date }
+        }) {
+            projectV2Item { id }
+        }
+    }
+    """
+    date_only = date_value[:10] if date_value else None
+    if not date_only:
+        return
+    data = graphql_request(mutation, {
+        "projectId": project_id,
+        "itemId": item_id,
+        "fieldId": field_id,
+        "date": date_only,
+    })
+    if data.get("updateProjectV2ItemFieldValue"):
+        log_debug(f"Set date field: field_id={field_id}, date={date_only}")
+    else:
+        log_error(f"Failed to set date field: field_id={field_id}")
+
+
 def add_labels(labels: list):
     if not labels:
         log_debug("No labels to add")
@@ -376,7 +412,6 @@ def add_labels(labels: list):
 
 
 def assign_issue(assignee: str):
-    """Assign the issue to a GitHub user."""
     if not assignee:
         return
     try:
@@ -394,11 +429,9 @@ def assign_issue(assignee: str):
         log_error(f"Exception assigning issue: {e}")
 
 
-
 def get_existing_labels() -> list:
     labels = ITEM_DATA.get("labels", [])
     return [l.get("name", "").upper() for l in labels if isinstance(l, dict)]
-
 
 
 def main():
@@ -421,7 +454,6 @@ def main():
             log_error("Tier project not configured")
             return
     
-    # Skip AI if NEWS label is present - route directly to News project
     if "NEWS" in existing_labels:
         log_debug("Found NEWS label, routing to News project (skipping AI)")
         project = CONFIG["projects"].get("news")
@@ -438,13 +470,11 @@ def main():
     is_internal = is_org_member(real_author)
     log_debug(f"Author {ISSUE_AUTHOR} (real: {real_author}) is internal: {is_internal}")
     
-    # Auto-assign Discord-created issues to the real author if they're internal
     if real_author != ISSUE_AUTHOR and is_internal:
         assign_issue(real_author)
     
     classification = classify_with_ai(is_internal)
     
-    # Check if AI detected app submission
     if classification.get("is_app_submission"):
         log_debug("AI detected app submission, routing to Tier project")
         project = CONFIG["projects"].get("tier")
@@ -483,7 +513,6 @@ def main():
     if not item_id:
         return
     
-    # Only set priority for support project
     if project_key == "support":
         priority_option = project.get("priority_options", {}).get(priority)
         if priority_option and project.get("priority_field_id"):
@@ -493,7 +522,19 @@ def main():
                 project["priority_field_id"],
                 priority_option,
             )
-    add_labels(labels)
+    if project.get("opened_field_id") and ISSUE_CREATED_AT:
+        set_date_field(
+            project["id"],
+            item_id,
+            project["opened_field_id"],
+            ISSUE_CREATED_AT,
+        )
+    
+    protected = PROTECTED_LABELS.get(project_key, set())
+    if protected & set(existing_labels):
+        log_debug(f"Issue has protected labels {protected & set(existing_labels)}, skipping label update")
+    else:
+        add_labels(labels)
 
 if __name__ == "__main__":
     main()

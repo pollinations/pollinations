@@ -20,6 +20,7 @@ import sys
 import os
 import time
 import json
+import re
 import requests
 import importlib.util
 
@@ -31,6 +32,7 @@ spec.loader.exec_module(pm)
 
 CONFIG = pm.CONFIG
 VALID_LABELS = pm.VALID_LABELS
+PROTECTED_LABELS = pm.PROTECTED_LABELS
 GITHUB_API = pm.GITHUB_API
 GITHUB_GRAPHQL = pm.GITHUB_GRAPHQL
 GITHUB_HEADERS = pm.GITHUB_HEADERS
@@ -42,13 +44,14 @@ read_prompt_file = pm.read_prompt_file
 normalize_labels = pm.normalize_labels
 graphql_request = pm.graphql_request
 set_project_field = pm.set_project_field
+set_date_field = pm.set_date_field
 
 POLLINATIONS_API = "https://gen.pollinations.ai/v1/chat/completions"
 POLLINATIONS_TOKEN = os.getenv("POLLINATIONS_TOKEN")
 
 
-def get_project_issues(project_id: str) -> list:
-    """Fetch all open issues in a project with their project item IDs."""
+def get_project_issues(project_id: str, include_prs: bool = False) -> list:
+    """Fetch all open issues (and optionally PRs) in a project with their project item IDs."""
     query = """
     query($projectId: ID!, $cursor: String) {
         node(id: $projectId) {
@@ -59,6 +62,20 @@ def get_project_issues(project_id: str) -> list:
                         id
                         content {
                             ... on Issue {
+                                __typename
+                                id
+                                number
+                                title
+                                body
+                                state
+                                createdAt
+                                author { login }
+                                labels(first: 20) {
+                                    nodes { name }
+                                }
+                            }
+                            ... on PullRequest {
+                                __typename
                                 id
                                 number
                                 title
@@ -78,7 +95,7 @@ def get_project_issues(project_id: str) -> list:
     }
     """
     
-    all_issues = []
+    all_items = []
     cursor = None
     
     while True:
@@ -88,16 +105,20 @@ def get_project_issues(project_id: str) -> list:
         
         for item in items.get("nodes", []):
             content = item.get("content")
-            if content and content.get("state") == "OPEN":
-                content["_item_id"] = item.get("id")  # Store project item ID
-                all_issues.append(content)
+            if not content or content.get("state") != "OPEN":
+                continue
+            typename = content.get("__typename")
+            if typename == "Issue" or (include_prs and typename == "PullRequest"):
+                content["_item_id"] = item.get("id")
+                content["_is_pr"] = typename == "PullRequest"
+                all_items.append(content)
         
         page_info = items.get("pageInfo", {})
         if not page_info.get("hasNextPage"):
             break
         cursor = page_info.get("endCursor")
     
-    return all_issues
+    return all_items
 
 
 def remove_project_labels(issue_number: int, project_key: str, dry_run: bool) -> list:
@@ -208,33 +229,6 @@ Body: {(body or "")[:2000]}
     return {}
 
 
-def set_date_field(project_id: str, item_id: str, field_id: str, date_value: str):
-    """Set a date field on a project item."""
-    mutation = """
-    mutation($projectId: ID!, $itemId: ID!, $fieldId: ID!, $date: Date!) {
-        updateProjectV2ItemFieldValue(input: {
-            projectId: $projectId,
-            itemId: $itemId,
-            fieldId: $fieldId,
-            value: { date: $date }
-        }) {
-            projectV2Item { id }
-        }
-    }
-    """
-    # Extract just the date part (YYYY-MM-DD) from ISO timestamp
-    date_only = date_value[:10] if date_value else None
-    if not date_only:
-        return
-    data = graphql_request(mutation, {
-        "projectId": project_id,
-        "itemId": item_id,
-        "fieldId": field_id,
-        "date": date_only,
-    })
-    return data.get("updateProjectV2ItemFieldValue", {}).get("projectV2Item", {}).get("id")
-
-
 def add_labels(issue_number: int, labels: list, dry_run: bool):
     """Add labels to an issue."""
     if not labels:
@@ -256,17 +250,24 @@ def add_labels(issue_number: int, labels: list, dry_run: bool):
         log_error(f"Failed to add labels to #{issue_number}: {r.status_code}")
 
 
+def get_real_author(author: str, body: str) -> str:
+    """Extract real author from Discord UID if issue was created by bot."""
+    if author and "pollinations-ai" in author.lower():
+        uid_match = re.search(r'\(UID:\s*`?(\d+)`?\)', body or "")
+        if uid_match:
+            discord_uid = uid_match.group(1)
+            github_user = CONFIG.get("discord_uid_to_github", {}).get(discord_uid)
+            if github_user:
+                log_debug(f"Mapped Discord UID {discord_uid} to GitHub user {github_user}")
+                return github_user
+    return author
+
+
 def is_org_member(username: str) -> bool:
     """Check if user is an org member."""
     org_members = CONFIG.get("org_members", [])
-    if username in org_members:
+    if username.lower() in [m.lower() for m in org_members]:
         return True
-    
-    # Check discord mapping
-    discord_map = CONFIG.get("discord_to_github", {})
-    if username in discord_map.values():
-        return True
-    
     return False
 
 
@@ -276,6 +277,8 @@ def main():
                         help="Project to process")
     parser.add_argument("--dry-run", action="store_true", help="Preview without applying")
     parser.add_argument("--with-priority", action="store_true", help="Also update priority (support only)")
+    parser.add_argument("--prs-only", action="store_true", help="Process only PRs, not issues")
+    parser.add_argument("--include-prs", action="store_true", help="Include PRs along with issues")
     args = parser.parse_args()
     
     project_key = args.project
@@ -285,11 +288,17 @@ def main():
         log_error(f"Unknown project: {project_key}")
         sys.exit(1)
     
-    log_debug(f"Fetching open issues from {project['name']} project...")
-    issues = get_project_issues(project["id"])
-    log_debug(f"Found {len(issues)} open issues")
+    include_prs = args.include_prs or args.prs_only
+    log_debug(f"Fetching open items from {project['name']} project (include_prs={include_prs})...")
+    items = get_project_issues(project["id"], include_prs=include_prs)
     
-    for issue in issues:
+    if args.prs_only:
+        items = [i for i in items if i.get("_is_pr")]
+        log_debug(f"Found {len(items)} open PRs")
+    else:
+        log_debug(f"Found {len(items)} open items")
+    
+    for issue in items:
         issue_number = issue["number"]
         title = issue["title"]
         body = issue.get("body", "") or ""
@@ -297,37 +306,51 @@ def main():
         
         log_debug(f"\n--- Processing #{issue_number}: {title[:50]}...")
         
-        # Remove existing project labels
-        remove_project_labels(issue_number, project_key, args.dry_run)
+        # Get current labels and check for protected labels
+        r = requests.get(
+            f"{GITHUB_API}/repos/{REPO_OWNER}/{REPO_NAME}/issues/{issue_number}/labels",
+            headers=GITHUB_HEADERS,
+            timeout=10,
+        )
+        current_labels = [l["name"].upper() for l in r.json()] if r.status_code == 200 else []
+        protected = PROTECTED_LABELS.get(project_key, set())
+        has_protected = protected & set(current_labels)
         
-        # Classify
-        is_internal = is_org_member(author)
-        classification = classify_issue(title, body, author, is_internal)
-        
-        if not classification:
-            log_error(f"Failed to classify #{issue_number}")
-            continue
-        
-        # Normalize and add labels
-        labels = normalize_labels(project_key, classification.get("labels", []))
-        add_labels(issue_number, labels, args.dry_run)
-        
-        # Update priority (support only, if requested)
-        if args.with_priority and project_key == "support":
-            priority = classification.get("priority")
-            priority_option = project.get("priority_options", {}).get(priority)
-            item_id = issue.get("_item_id")
-            if priority_option and project.get("priority_field_id") and item_id:
-                if args.dry_run:
-                    log_debug(f"[DRY-RUN] Would set priority to {priority} for #{issue_number}")
-                else:
-                    set_project_field(
-                        project["id"],
-                        item_id,
-                        project["priority_field_id"],
-                        priority_option
-                    )
-                    log_debug(f"Set priority to {priority} for #{issue_number}")
+        if has_protected:
+            log_debug(f"Issue has protected labels {has_protected}, skipping label update")
+        else:
+            # Remove existing project labels
+            remove_project_labels(issue_number, project_key, args.dry_run)
+            
+            # Classify - resolve real author from Discord UID if bot-created
+            real_author = get_real_author(author, body)
+            is_internal = is_org_member(real_author)
+            log_debug(f"Author: {author} -> Real: {real_author}, Internal: {is_internal}")
+            classification = classify_issue(title, body, real_author, is_internal)
+            
+            if not classification:
+                log_error(f"Failed to classify #{issue_number}")
+            else:
+                # Normalize and add labels
+                labels = normalize_labels(project_key, classification.get("labels", []))
+                add_labels(issue_number, labels, args.dry_run)
+                
+                # Update priority (support only, if requested)
+                if args.with_priority and project_key == "support":
+                    priority = classification.get("priority")
+                    priority_option = project.get("priority_options", {}).get(priority)
+                    item_id = issue.get("_item_id")
+                    if priority_option and project.get("priority_field_id") and item_id:
+                        if args.dry_run:
+                            log_debug(f"[DRY-RUN] Would set priority to {priority} for #{issue_number}")
+                        else:
+                            set_project_field(
+                                project["id"],
+                                item_id,
+                                project["priority_field_id"],
+                                priority_option
+                            )
+                            log_debug(f"Set priority to {priority} for #{issue_number}")
         
         # Set Opened date field
         item_id = issue.get("_item_id")
@@ -343,7 +366,7 @@ def main():
         # Rate limit
         time.sleep(1)
     
-    log_debug(f"\nDone! Processed {len(issues)} issues.")
+    log_debug(f"\nDone! Processed {len(items)} items.")
 
 
 if __name__ == "__main__":

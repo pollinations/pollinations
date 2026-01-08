@@ -1,15 +1,16 @@
-import { Link } from 'react-router-dom'
+import { useEffect } from 'react'
 
 export default function Home() {
-  
+  useEffect(() => {
+    document.title = "GSOC Pollinations"
+  }, [])
 
   return (
-    document.title = "GSOC Pollinations",
     <section className="flex flex-col items-center justify-center px-6 pt-28 pb-32 text-center bg-white">
       
       {/* Figma Sync Badge */}
       <div className="mb-10 flex items-center gap-3 rounded-full border border-neutral-200 bg-neutral-50 px-5 py-2 text-sm text-neutral-600 shadow-sm">
-        <span className="flex h-4 w-4 items-center justify-center rounded bg-gradient-to-tr from-pink-500 to-orange-400" />
+        <span className="flex h-4 w-4 items-center justify-center rounded bg-linear-to-tr from-pink-500 to-orange-400" />
         <span>Up-to-date Figma file synced with code library!</span>
         <span className="ml-1 text-neutral-400">Preview →</span>
       </div>

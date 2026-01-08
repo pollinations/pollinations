@@ -5,6 +5,7 @@ import { createAuth } from "./auth.ts";
 import { handleError } from "./error.ts";
 import { processEvents } from "./events.ts";
 import { polarRoutes } from "./routes/polar.ts";
+import { stripeRoutes } from "./routes/stripe.ts";
 import { proxyRoutes } from "./routes/proxy.ts";
 import { tiersRoutes } from "./routes/tiers.ts";
 import { usageRoutes } from "./routes/usage.ts";
@@ -25,6 +26,7 @@ const authRoutes = new Hono<Env>().on(["GET", "POST"], "*", async (c) => {
 export const api = new Hono<Env>()
     .route("/auth", authRoutes)
     .route("/polar", polarRoutes)
+    .route("/stripe", stripeRoutes)
     .route("/tiers", tiersRoutes)
     .route("/api-keys", apiKeysRoutes)
     .route("/usage", usageRoutes)

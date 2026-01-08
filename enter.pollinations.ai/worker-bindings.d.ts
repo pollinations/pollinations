@@ -60,6 +60,8 @@ declare namespace Cloudflare {
         PLN_ENTER_TOKEN: string;
         POLAR_ACCESS_TOKEN: string;
         POLAR_WEBHOOK_SECRET: string;
+        STRIPE_SECRET_KEY: string;
+        STRIPE_WEBHOOK_SECRET: string;
         TINYBIRD_INGEST_TOKEN: string;
         TINYBIRD_READ_TOKEN: string;
         POLLEN_RATE_LIMITER: DurableObjectNamespace /* PollenRateLimiter from pollinations-enter */;
@@ -101,6 +103,8 @@ declare namespace NodeJS {
                 | "PLN_ENTER_TOKEN"
                 | "POLAR_ACCESS_TOKEN"
                 | "POLAR_WEBHOOK_SECRET"
+                | "STRIPE_SECRET_KEY"
+                | "STRIPE_WEBHOOK_SECRET"
                 | "TINYBIRD_INGEST_TOKEN"
                 | "TINYBIRD_READ_TOKEN"
             >

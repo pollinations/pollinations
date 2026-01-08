@@ -6,7 +6,7 @@ export default function Home() {
   }, [])
 
   return (
-    <section className="flex flex-col items-center justify-center px-6 pt-28 pb-32 text-center bg-white">
+    <section className="flex flex-col items-center justify-center px-6 pt-28 pb-32 text-center">
       
       {/* Figma Sync Badge */}
       <div className="mb-10 flex items-center gap-3 rounded-full border border-neutral-200 bg-neutral-50 px-5 py-2 text-sm text-neutral-600 shadow-sm">
@@ -45,12 +45,12 @@ export default function Home() {
       {/* Tech Row */}
       <div className="mt-10 flex items-center gap-6 text-neutral-500">
         <div className="flex items-center gap-2">
-          <ReactIcon />
+          <span className="text-lg">⚛️</span>
           <span>Built for React</span>
         </div>
         <span className="text-neutral-300">•</span>
         <div className="flex items-center gap-2">
-          <TailwindIcon />
+          <span className="text-lg">🎨</span>
           <span>Styled with TailwindCSS</span>
         </div>
       </div>

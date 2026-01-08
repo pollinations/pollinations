@@ -2,7 +2,7 @@ name: App Review Submission
 
 on:
   issues:
-    types: [opened, edited, reopened]
+    types: [opened]
   issue_comment:
     types: [created]
   pull_request_target:

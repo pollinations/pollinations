@@ -5,7 +5,6 @@ import {
     createScalewayModelConfig,
     createBedrockLambdaModelConfig,
     createBedrockNativeConfig,
-    createMyceliDeepSeekV32Config,
     createMyceliGrok4FastConfig,
     createPerplexityModelConfig,
     createOVHcloudModelConfig,
@@ -47,7 +46,13 @@ export const portkeyConfig: PortkeyConfigMap = {
         ),
         "max-completion-tokens": 2048,
     }),
-    "myceli-deepseek-v3.2": () => createMyceliDeepSeekV32Config(),
+    "deepseek-v3.2-maas": () => ({
+        provider: "openai",
+        authKey: googleCloudAuth.getAccessToken,
+        "custom-host": `https://aiplatform.googleapis.com/v1/projects/${process.env.GOOGLE_PROJECT_ID}/locations/global/endpoints/openapi`,
+        "strict-openai-compliance": "false",
+        model: "deepseek-ai/deepseek-v3.2-maas",
+    }),
     "myceli-grok-4-fast": () => createMyceliGrok4FastConfig(),
 
     // ============================================================================

@@ -16,6 +16,8 @@ export type ModelPrice = {
     // Video pricing
     perSecondPrice?: string;
     perTokenPrice?: string; // For token-based video models like seedance
+    // Real usage data from Tinybird (rolling 7-day average)
+    realAvgCost?: number;
 };
 
 export type Modalities = {

@@ -62,6 +62,14 @@ CONFIG = {
             "id": "PVT_kwDOBS76fs4AwCAM",
             "name": "Dev",
             "internal_only": True,
+            "opened_field_id": "PVTF_lADOBS76fs4AwCAMzg7fXzc",
+            "priority_field_id": "PVTSSF_lADOBS76fs4AwCAMzg2DKDk",
+            "priority_options": {
+                "Urgent": "0f53228f",
+                "High": "dc7fa85f",
+                "Medium": "15fd4fac",
+                "Low": "7495a981",
+            },
         },
         "support": {
             "id": "PVT_kwDOBS76fs4BLr1H",
@@ -139,12 +147,16 @@ def read_prompt_file() -> str:
 
 
 VALID_LABELS = {
-    "dev": {"DEV-BUG", "DEV-FEATURE", "DEV-QUEST", "DEV-TRACKING"},
+    "dev": {"DEV-BUG", "DEV-FEATURE", "DEV-QUEST", "DEV-TRACKING", "DEV-DOCS", "DEV-INFRA", "DEV-CHORE"},
     "support": {
         ".BUG", ".OUTAGE", ".QUESTION", ".REQUEST", ".DOCS", ".INTEGRATION",
         "IMAGE", "TEXT", "AUDIO", "VIDEO", "API", "WEB", "CREDITS", "BILLING", "ACCOUNT",
     },
     "news": set()
+}
+
+PROTECTED_LABELS = {
+    "dev": {"DEV-TRACKING", "DEV-VOTING", "DEV-QUEST"},
 }
 
 
@@ -517,14 +529,19 @@ def main():
                 project["priority_field_id"],
                 priority_option,
             )
-        if project.get("opened_field_id") and ISSUE_CREATED_AT:
-            set_date_field(
-                project["id"],
-                item_id,
-                project["opened_field_id"],
-                ISSUE_CREATED_AT,
-            )
-    add_labels(labels)
+    if project.get("opened_field_id") and ISSUE_CREATED_AT:
+        set_date_field(
+            project["id"],
+            item_id,
+            project["opened_field_id"],
+            ISSUE_CREATED_AT,
+        )
+    
+    protected = PROTECTED_LABELS.get(project_key, set())
+    if protected & set(existing_labels):
+        log_debug(f"Issue has protected labels {protected & set(existing_labels)}, skipping label update")
+    else:
+        add_labels(labels)
 
 if __name__ == "__main__":
     main()

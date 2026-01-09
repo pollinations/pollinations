@@ -185,8 +185,7 @@ export const createDocsRoutes = (apiRouter: Hono<Env>) => {
                                 "Generate text, images, and videos using AI models",
                         },
                         {
-                            name: "Bring Your Own Pollen (BYOP)",
-                            "x-displayName": "BYOP 🌸",
+                            name: "Bring Your Own Pollen 🌸",
                             description: BYOP_DOCS,
                         },
                     ],

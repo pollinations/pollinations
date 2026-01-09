@@ -26,7 +26,7 @@ const shortLocale = {
     shortFormatDistance[token].replace("{{count}}", String(count)),
 };
 import type { FC } from "react";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { cn } from "@/util.ts";
 import { Button } from "../components/button.tsx";
 import { Fragment } from "react";
@@ -36,6 +36,21 @@ import {
   animals,
 } from "unique-names-generator";
 import { ModelPermissions } from "./model-permissions.tsx";
+import { TEXT_SERVICES } from "@shared/registry/text.ts";
+import { IMAGE_SERVICES } from "@shared/registry/image.ts";
+
+// Helper to get official name for a model ID
+const getModelDisplayName = (modelId: string): string => {
+    const textService = TEXT_SERVICES[modelId as keyof typeof TEXT_SERVICES];
+    if (textService) {
+        return textService.description?.split(" - ")[0] || modelId;
+    }
+    const imageService = IMAGE_SERVICES[modelId as keyof typeof IMAGE_SERVICES];
+    if (imageService) {
+        return imageService.description?.split(" - ")[0] || modelId;
+    }
+    return modelId;
+};
 
 type ApiKey = {
   id: string;
@@ -135,23 +150,41 @@ const ModelsBadge: FC<{
   permissions: { [key: string]: string[] } | null;
 }> = ({ permissions }) => {
   const [showTooltip, setShowTooltip] = useState(false);
+  const [tooltipPos, setTooltipPos] = useState({ top: 0, left: 0 });
+  const buttonRef = useRef<HTMLButtonElement>(null);
   const models = permissions?.models ?? null;
   const isAllModels = models === null;
   const modelCount = models?.length ?? 0;
 
+  const updateTooltipPosition = () => {
+    if (buttonRef.current) {
+      const rect = buttonRef.current.getBoundingClientRect();
+      setTooltipPos({
+        top: rect.bottom + 8,
+        left: rect.right,
+      });
+    }
+  };
+
   return (
     <button
+      ref={buttonRef}
       type="button"
       className="relative inline-flex items-center"
       onClick={(e) => {
         e.stopPropagation();
+        updateTooltipPosition();
         setShowTooltip((prev) => !prev);
       }}
-      onMouseEnter={() => setShowTooltip(true)}
+      onMouseEnter={() => {
+        updateTooltipPosition();
+        setShowTooltip(true);
+      }}
       onMouseLeave={() => setShowTooltip(false)}
       onKeyDown={(e) => {
         if (e.key === "Enter" || e.key === " ") {
           e.preventDefault();
+          updateTooltipPosition();
           setShowTooltip((prev) => !prev);
         }
       }}
@@ -167,19 +200,33 @@ const ModelsBadge: FC<{
       >
         {isAllModels ? "All" : modelCount}
       </span>
-      <span
-        className={`${showTooltip ? "visible" : "invisible"} absolute right-0 top-full mt-1 px-3 py-2 bg-gradient-to-r from-pink-50 to-purple-50 text-gray-800 text-xs rounded-lg shadow-lg border border-pink-200 z-50 pointer-events-none whitespace-normal`}
-      >
-        {isAllModels ? (
-          "Access to all models"
-        ) : modelCount === 0 ? (
-          "No models allowed"
-        ) : (
-          <span className="font-mono text-[10px] leading-relaxed">
-            {models?.join(", ")}
-          </span>
-        )}
-      </span>
+      {showTooltip && (
+        <div
+          className="fixed z-[9999] px-3 py-2 bg-gradient-to-r from-pink-50 to-purple-50 text-gray-800 text-xs rounded-lg shadow-lg border border-pink-200 pointer-events-none sm:right-auto"
+          style={{
+            top: tooltipPos.top,
+            // Mobile: center horizontally, Desktop: right-aligned
+            ...(window.innerWidth < 640
+              ? { left: "50%", transform: "translateX(-50%)" }
+              : { right: window.innerWidth - tooltipPos.left }),
+          }}
+        >
+          {isAllModels ? (
+            "Access to all models"
+          ) : modelCount === 0 ? (
+            "No models allowed"
+          ) : (
+            <div className="flex flex-col gap-1">
+              {models?.map((modelId) => (
+                <div key={modelId} className="text-left whitespace-nowrap">
+                  <span>{getModelDisplayName(modelId)}</span>
+                  <span className="font-mono opacity-70"> - {modelId}</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
     </button>
   );
 };
@@ -212,10 +259,9 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
           </div>
         </div>
         {apiKeys.length ? (
-          <div className="bg-blue-50/30 rounded-2xl p-6 border border-blue-300 overflow-hidden">
+          <div className="bg-blue-50/30 rounded-2xl p-6 border border-blue-300">
             <div
               className="overflow-x-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
-              style={{ overflowY: "clip" }}
             >
               <div className="grid grid-cols-[auto_auto_auto_auto_auto_auto_auto] gap-x-3 gap-y-2 text-sm min-w-max">
                 <span className="font-bold text-pink-400 text-sm">Type</span>
@@ -515,7 +561,7 @@ const CreateKeyForm: FC<{
         </div>
       </fieldset>
 
-      <Field.Root>
+      <Field.Root className="pt-2">
         <Field.Label className="block text-sm font-medium mb-1">
           {createdKey ? "Your API Key" : "Name (*)"}
         </Field.Label>

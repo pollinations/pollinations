@@ -2,8 +2,6 @@
 
 ## Issue & PR Labeling
 
-- **issue-label-external.yml** - Adds `inbox:github` to external issues. Skips if `inbox:discord` or `app:*` labels exist.
-- **pr-label-external.yml** - Checks user tier in D1: flower+ gets `pr:external`, others get `tier:review`. Skips internal users and bots.
 - **pr-assign-author.yml** - Assigns the PR creator to the PR when opened.
 
 ## AI Agents
@@ -13,7 +11,7 @@
 
 ## Project Management
 
-- **project-manager.yml** - AI-powered auto-kanban. Classifies issues/PRs and routes to Dev/Support/News projects with priority.
+- **project-manager.yml** - AI-powered auto-kanban. Classifies issues/PRs and routes to Dev/Support/News/Tier projects with priority.
 - **issue-close-discarded.yml** - Auto-closes issues marked "Discarded" in project (hourly).
 - **pr-update-project-status.yml** - Updates PR status in project (In Progress/In Review/Done/Discarded).
 
@@ -26,13 +24,15 @@ Routes issues and PRs to the appropriate project board using AI classification:
 | Dev     | 20  | Internal only | Features, refactors, infrastructure |
 | Support | 21  | Everyone      | User help, bugs, API questions      |
 | News    | 22  | Everyone      | Releases, announcements             |
+| Tier    | 23  | External      | App submissions, code contributions |
 
 **Features:**
 
+- **TIER-\* bypass**: Items with `TIER-*` labels skip AI classification and route directly to Tier project
 - AI classification via `gen.pollinations.ai` with retry + random seed
 - Sets Priority field (Urgent/High/Medium/Low) in project
 - Sets Status field (Backlog/Review/Todo)
-- Adds labels (BUG, FEATURE, SUPPORT, EXTERNAL, etc.)
+- Adds labels (DEV-_ for dev, SUPPORT-_ for support, none for news)
 - Enforces internal-only rule for Dev project
 - Fallback classification if AI fails
 
@@ -43,7 +43,10 @@ Routes issues and PRs to the appropriate project board using AI classification:
 ```mermaid
 %%{init: {'theme': 'dark'}}%%
 flowchart TD
-    A[Issue/PR Opened] --> B{Check Author}
+    A[Issue/PR Opened] --> AA{Has TIER-* label?}
+    AA -->|Yes| AB[Add to Tier #23]
+    AB --> AC[Done - skip AI]
+    AA -->|No| B{Check Author}
     B --> C[is_org_member?]
     C -->|Config list| D{In list?}
     C -->|API fallback| E{/orgs/members/}
@@ -79,34 +82,15 @@ flowchart TD
     U --> V
 ```
 
-### Issue Triage
+### PR Assignment
 
 ```mermaid
 %%{init: {'theme': 'dark'}}%%
 flowchart TD
-    A[Issue opened on GitHub] --> B[issue-label-external.yml]
-    B --> C[inbox:github]
-
-    D[Issue from Discord bot] --> E[issue-create-from-discord.yml]
-    E --> F[inbox:discord]
-```
-
-### PR Triage
-
-```mermaid
-%%{init: {'theme': 'dark'}}%%
-flowchart TD
-    A[PR opened] --> B{Author check}
-    B -->|External| C[pr-label-external.yml]
-    C --> D{Check D1 tier}
-    D -->|flower+| E[pr:external label]
-    D -->|seed/none| F[tier:review label]
-    B -->|Internal/Bot| G[No label]
-
-    A --> H[pr-assign-author.yml]
-    H --> I[Author assigned]
-    I --> J[project-manager.yml]
-    J --> K[Routed to Dev/Support/News]
+    A[PR opened] --> B[pr-assign-author.yml]
+    B --> C[Author assigned]
+    C --> D[project-manager.yml]
+    D --> E[Routed to Dev/Support/News/Tier]
 ```
 
 ### AI Assistant (Polly)
@@ -139,3 +123,66 @@ flowchart TD
 
 - Context: 900k tokens, Max output: 65k tokens
 - Skips: lock files, minified, assets, source maps
+
+---
+
+## Label System
+
+### Tier Labels (App Submissions)
+
+| Label                 | Purpose                           | Applied by                  |
+| --------------------- | --------------------------------- | --------------------------- |
+| `TIER-APP`            | New app submission                | Issue template              |
+| `TIER-APP-INCOMPLETE` | Needs user action (info/register) | `app-review-submission.yml` |
+| `TIER-APP-REVIEW`     | Issue awaiting maintainer review  | `app-review-submission.yml` |
+| `TIER-APP-REVIEW-PR`  | PR awaiting maintainer review     | `app-review-submission.yml` |
+| `TIER-APP-COMPLETE`   | Approved and merged               | `app-upgrade-tier.yml`      |
+| `TIER-APP-REJECTED`   | Submission rejected               | `app-review-submission.yml` |
+
+**Code Contributions** _(future)_: `TIER-CODE`, `TIER-CODE-REVIEW-PR`, `TIER-CODE-COMPLETE`, `TIER-CODE-REJECTED` planned.
+
+### Dev Labels
+
+| Label          | Purpose                                          | Applied by           |
+| -------------- | ------------------------------------------------ | -------------------- |
+| `DEV-BUG`      | Something is broken                              | `project-manager.py` |
+| `DEV-FEATURE`  | New functionality request                        | `project-manager.py` |
+| `DEV-QUEST`    | Community task - One off Pollen reward if merged | `project-manager.py` |
+| `DEV-TRACKING` | Meta-issue tracking other items                  | `project-manager.py` |
+| `DEV-DOCS`     | Documentation - dev docs, API docs, READMEs      | `project-manager.py` |
+| `DEV-INFRA`    | Infrastructure - CI/CD, deployments, monitoring  | `project-manager.py` |
+| `DEV-CHORE`    | Maintenance - dependency updates, cleanup        | `project-manager.py` |
+| `DEV-VOTING`   | Community vote on a proposal                     | Manual               |
+
+### Support Labels
+
+**TYPE (pick exactly 1):**
+
+| Label          | Purpose             | Applied by           |
+| -------------- | ------------------- | -------------------- |
+| `.BUG`         | Something broken    | `project-manager.py` |
+| `.OUTAGE`      | Service down        | `project-manager.py` |
+| `.QUESTION`    | How-to/usage        | `project-manager.py` |
+| `.REQUEST`     | Feature request     | `project-manager.py` |
+| `.DOCS`        | Documentation issue | `project-manager.py` |
+| `.INTEGRATION` | SDK/API integration | `project-manager.py` |
+
+**SERVICE (pick 1 or more):**
+
+| Label     | Purpose               | Applied by           |
+| --------- | --------------------- | -------------------- |
+| `IMAGE`   | Image generation      | `project-manager.py` |
+| `TEXT`    | Text/chat completion  | `project-manager.py` |
+| `AUDIO`   | Audio/TTS             | `project-manager.py` |
+| `VIDEO`   | Video generation      | `project-manager.py` |
+| `API`     | API/SDK general       | `project-manager.py` |
+| `WEB`     | Website/dashboard     | `project-manager.py` |
+| `CREDITS` | Pollen balance issues | `project-manager.py` |
+| `BILLING` | Payment/credit card   | `project-manager.py` |
+| `ACCOUNT` | Account/login/auth    | `project-manager.py` |
+
+### News Labels
+
+| Label  | Purpose                | Applied by                 |
+| ------ | ---------------------- | -------------------------- |
+| `NEWS` | News/social content PR | News & Instagram workflows |

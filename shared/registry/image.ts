@@ -17,7 +17,7 @@ export const IMAGE_SERVICES = {
                 completionImageTokens: 0.04, // $0.04 per image (Azure pricing)
             },
         ],
-        description: "Kontext - Context-aware image generation",
+        description: "FLUX.1 Kontext - In-context editing & generation",
         inputModalities: ["text", "image"],
         outputModalities: ["image"],
     },
@@ -31,7 +31,7 @@ export const IMAGE_SERVICES = {
                 completionImageTokens: 0.0003,
             },
         ],
-        description: "Turbo - Ultra-fast image generation",
+        description: "SDXL Turbo - Single-step real-time generation",
         inputModalities: ["text"],
         outputModalities: ["image"],
     },
@@ -138,8 +138,23 @@ export const IMAGE_SERVICES = {
         inputModalities: ["text", "image"],
         outputModalities: ["image"],
     },
+    "flux": {
+        aliases: [],
+        modelId: "flux",
+        provider: "io.net",
+        cost: [
+            // Flux Schnell (nunchaku-quantized) on io.net RTX 4090 cluster
+            {
+                date: COST_START_DATE,
+                completionImageTokens: 0.0002, // ~$0.0002 per image (GPU cost estimate)
+            },
+        ],
+        description: "Flux Schnell - Fast high-quality image generation",
+        inputModalities: ["text"],
+        outputModalities: ["image"],
+    },
     "zimage": {
-        aliases: ["z-image", "z-image-turbo", "flux"],
+        aliases: ["z-image", "z-image-turbo"],
         modelId: "zimage",
         provider: "io.net",
         cost: [
@@ -150,8 +165,7 @@ export const IMAGE_SERVICES = {
                 completionImageTokens: 0.0002, // ~$0.0002 per image (GPU cost estimate)
             },
         ],
-        description:
-            "Z-Image - Fast 6B parameter image generation with SPAN 2x upscaling",
+        description: "Z-Image Turbo - Fast 6B Flux with 2x upscaling",
         inputModalities: ["text"],
         outputModalities: ["image"],
     },

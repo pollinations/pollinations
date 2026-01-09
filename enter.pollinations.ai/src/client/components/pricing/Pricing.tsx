@@ -1,6 +1,6 @@
 import type { FC } from "react";
 import { getModelPrices } from "./data.ts";
-import { ModelTable } from "./ModelTable.tsx";
+import { UnifiedModelTable } from "./ModelTable.tsx";
 import { Button } from "../button.tsx";
 
 export const Pricing: FC = () => {
@@ -31,11 +31,11 @@ export const Pricing: FC = () => {
           className="overflow-x-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
           style={{ overflowY: "clip" }}
         >
-          <div className="space-y-8">
-            <ModelTable models={imageModels} type="image" />
-            <ModelTable models={videoModels} type="video" />
-            <ModelTable models={textModels} type="text" />
-          </div>
+          <UnifiedModelTable
+            imageModels={imageModels}
+            videoModels={videoModels}
+            textModels={textModels}
+          />
         </div>
 
         <div className="pt-4 space-y-3">
@@ -46,9 +46,11 @@ export const Pricing: FC = () => {
               </div>
               <div className="space-y-1 text-gray-600">
                 <div>👁️ vision</div>
-                <div>👂 audio input</div>
+                <div>🎙️ audio input</div>
+                <div>🔊 audio output</div>
                 <div>🧠 reasoning</div>
                 <div>🔍 search</div>
+                <div>💻 code execution</div>
               </div>
             </div>
             <div className="bg-white/50 rounded-lg p-4 border border-amber-200">

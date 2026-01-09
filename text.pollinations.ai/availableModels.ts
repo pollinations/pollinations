@@ -8,6 +8,7 @@ import { pipe } from "./transforms/pipe.js";
 import { createGeminiToolsTransform } from "./transforms/createGeminiToolsTransform.ts";
 import { createGeminiThinkingTransform } from "./transforms/createGeminiThinkingTransform.ts";
 import { sanitizeToolSchemas } from "./transforms/sanitizeToolSchemas.js";
+import { removeToolsForJsonResponse } from "./transforms/removeToolsForJsonResponse.ts";
 
 // Import persona prompts
 import midijourneyPrompt from "./personas/midijourney.js";
@@ -50,7 +51,7 @@ const models: ModelDefinition[] = [
     },
     {
         name: "qwen-coder",
-        config: portkeyConfig["qwen2.5-coder-32b-instruct"],
+        config: portkeyConfig["qwen3-coder-30b-a3b-instruct"],
         transform: createSystemPromptTransform(BASE_PROMPTS.coding),
     },
     {
@@ -79,12 +80,12 @@ const models: ModelDefinition[] = [
     },
     {
         name: "claude",
-        config: portkeyConfig["us.anthropic.claude-sonnet-4-5-20250929-v1:0"],
+        config: portkeyConfig["claude-sonnet-4-5-vertex"],
         transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
     },
     {
         name: "claude-large",
-        config: portkeyConfig["global.anthropic.claude-opus-4-5-20251101-v1:0"],
+        config: portkeyConfig["claude-opus-4-5-vertex"],
         transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
     },
     {
@@ -93,7 +94,8 @@ const models: ModelDefinition[] = [
         transform: pipe(
             createSystemPromptTransform(BASE_PROMPTS.conversational),
             sanitizeToolSchemas(),
-            createGeminiToolsTransform(["code_execution", "url_context"]),
+            createGeminiToolsTransform(["code_execution"]),
+            removeToolsForJsonResponse,
             createGeminiThinkingTransform("v3-flash"),
         ),
     },
@@ -103,7 +105,6 @@ const models: ModelDefinition[] = [
         transform: pipe(
             createSystemPromptTransform(BASE_PROMPTS.conversational),
             sanitizeToolSchemas(),
-            createGeminiToolsTransform(["code_execution", "url_context"]),
             createGeminiThinkingTransform("v2.5"),
         ),
     },
@@ -147,13 +148,24 @@ const models: ModelDefinition[] = [
         transform: pipe(
             createSystemPromptTransform(BASE_PROMPTS.conversational),
             sanitizeToolSchemas(),
-            createGeminiToolsTransform(["code_execution", "url_context"]),
+            createGeminiToolsTransform(["code_execution"]),
+            removeToolsForJsonResponse,
             createGeminiThinkingTransform("v3-pro"),
         ),
     },
     {
-        name: "nova-micro",
+        name: "nova-fast",
         config: portkeyConfig["amazon.nova-micro-v1:0"],
+        transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
+    },
+    {
+        name: "glm",
+        config: portkeyConfig["accounts/fireworks/models/glm-4p7"],
+        transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
+    },
+    {
+        name: "minimax",
+        config: portkeyConfig["accounts/fireworks/models/minimax-m2p1"],
         transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
     },
 ];

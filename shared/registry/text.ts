@@ -81,17 +81,17 @@ export const TEXT_SERVICES = {
         isSpecialized: false,
     },
     "qwen-coder": {
-        aliases: ["qwen2.5-coder-32b-instruct"],
+        aliases: ["qwen3-coder", "qwen3-coder-30b-a3b-instruct"],
         modelId: "qwen3-coder-30b-a3b-instruct",
-        provider: "scaleway",
+        provider: "ovhcloud",
         cost: [
             {
-                date: COST_START_DATE,
-                promptTextTokens: perMillion(0.9),
-                completionTextTokens: perMillion(0.9),
+                date: new Date("2026-01-05").getTime(),
+                promptTextTokens: perMillion(0.06),
+                completionTextTokens: perMillion(0.22),
             },
         ],
-        description: "Qwen 2.5 Coder 32B - Specialized for Code Generation",
+        description: "Qwen3 Coder 30B - Specialized for Code Generation",
         inputModalities: ["text"],
         outputModalities: ["text"],
         tools: true,
@@ -296,8 +296,8 @@ export const TEXT_SERVICES = {
     },
     "claude": {
         aliases: ["claude-sonnet-4.5", "claude-sonnet"],
-        modelId: "us.anthropic.claude-sonnet-4-5-20250929-v1:0",
-        provider: "aws",
+        modelId: "claude-sonnet-4-5-20250929",
+        provider: "google",
         cost: [
             {
                 date: COST_START_DATE,
@@ -313,8 +313,8 @@ export const TEXT_SERVICES = {
     },
     "claude-large": {
         aliases: ["claude-opus-4.5", "claude-opus"],
-        modelId: "global.anthropic.claude-opus-4-5-20251101-v1:0",
-        provider: "aws",
+        modelId: "claude-opus-4-5-20251101",
+        provider: "google",
         cost: [
             {
                 date: COST_START_DATE,
@@ -347,14 +347,14 @@ export const TEXT_SERVICES = {
         isSpecialized: false,
     },
     "perplexity-reasoning": {
-        aliases: ["sonar-reasoning"],
-        modelId: "sonar-reasoning",
+        aliases: ["sonar-reasoning", "sonar-reasoning-pro"],
+        modelId: "sonar-reasoning-pro",
         provider: "perplexity",
         cost: [
             {
                 date: COST_START_DATE,
-                promptTextTokens: perMillion(1.0),
-                completionTextTokens: perMillion(5.0),
+                promptTextTokens: perMillion(2.0),
+                completionTextTokens: perMillion(8.0),
             },
         ],
         description:
@@ -407,8 +407,8 @@ export const TEXT_SERVICES = {
         codeExecution: false, // Disabled - was breaking gemini-large
         isSpecialized: false,
     },
-    "nova-micro": {
-        aliases: ["amazon-nova-micro", "nova"],
+    "nova-fast": {
+        aliases: ["amazon-nova-micro", "nova", "nova-micro"],
         modelId: "amazon.nova-micro-v1:0",
         provider: "aws",
         cost: [
@@ -422,6 +422,46 @@ export const TEXT_SERVICES = {
         inputModalities: ["text"],
         outputModalities: ["text"],
         tools: true,
+        isSpecialized: false,
+    },
+    "glm": {
+        aliases: ["glm-4.7", "glm-4p7"],
+        modelId: "accounts/fireworks/models/glm-4p7",
+        provider: "fireworks",
+        cost: [
+            {
+                date: new Date("2026-01-05").getTime(),
+                promptTextTokens: perMillion(0.6),
+                promptCachedTokens: perMillion(0.3),
+                completionTextTokens: perMillion(2.2),
+            },
+        ],
+        description: "Z.ai GLM-4.7 - Coding, Reasoning & Agentic Workflows",
+        inputModalities: ["text"],
+        outputModalities: ["text"],
+        tools: true,
+        reasoning: true,
+        contextWindow: 198000,
+        isSpecialized: false,
+    },
+    "minimax": {
+        aliases: ["minimax-m2.1", "minimax-m2p1"],
+        modelId: "accounts/fireworks/models/minimax-m2p1",
+        provider: "fireworks",
+        cost: [
+            {
+                date: new Date("2026-01-05").getTime(),
+                promptTextTokens: perMillion(0.3),
+                promptCachedTokens: perMillion(0.15),
+                completionTextTokens: perMillion(1.2),
+            },
+        ],
+        description: "MiniMax M2.1 - Multi-Language & Agent Workflows",
+        inputModalities: ["text"],
+        outputModalities: ["text"],
+        tools: true,
+        reasoning: true,
+        contextWindow: 200000,
         isSpecialized: false,
     },
 } as const satisfies Record<string, ServiceDefinition<string>>;

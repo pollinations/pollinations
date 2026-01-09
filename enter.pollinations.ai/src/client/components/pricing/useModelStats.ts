@@ -1,11 +1,9 @@
 /**
- * Hook to fetch real-time model statistics from Tinybird
+ * Hook to fetch real-time model statistics
+ * Uses the backend /api/model-stats endpoint which caches Tinybird data server-side (6h TTL)
  */
 
 import { useState, useEffect } from "react";
-
-const TINYBIRD_MODEL_STATS_URL =
-    "https://api.europe-west2.gcp.tinybird.co/v0/pipes/public_model_stats.json?token=p.eyJ1IjogImFjYTYzZjc5LThjNTYtNDhlNC05NWJjLWEyYmFjMTY0NmJkMyIsICJpZCI6ICJiYzdkOTY4YS0wZmM1LTRmY2MtYWViNi0zZDQ0MWIwMGFlZjQiLCAiaG9zdCI6ICJnY3AtZXVyb3BlLXdlc3QyIn0.fhyEk0_6wt5a2RnM5tu4n_6nUfFdgN_YBMxg8VPv-Dw";
 
 export type ModelStats = Record<
     string,
@@ -34,9 +32,9 @@ export function useModelStats(): {
 
         async function fetchStats() {
             try {
-                const response = await fetch(TINYBIRD_MODEL_STATS_URL);
+                const response = await fetch("/api/model-stats");
                 if (!response.ok) {
-                    throw new Error(`Tinybird API error: ${response.status}`);
+                    throw new Error(`API error: ${response.status}`);
                 }
 
                 const data: TinybirdResponse = await response.json();

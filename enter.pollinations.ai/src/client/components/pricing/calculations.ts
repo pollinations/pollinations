@@ -2,6 +2,7 @@
  * Pollen calculation utilities
  */
 
+import millify from "millify";
 import type { ModelPrice } from "./types.ts";
 import { hasReasoning, hasVision } from "./model-info.ts";
 
@@ -47,30 +48,11 @@ const MODEL_IMAGE_TOKENS: Record<string, number> = {
     "nanobanana": 1290, // 1290 tokens (Vertex AI Gemini actual usage)
 };
 
-/** Format large numbers with K/M abbreviations */
-function formatLargeNumber(num: number): string {
-    // Less aggressive rounding for smaller numbers
-    let rounded: number;
-    if (num < 50) {
-        // Round to nearest 5 for numbers under 50
-        rounded = Math.round(num / 5) * 5;
-    } else {
-        // Round to nearest 10 for larger numbers
-        rounded = Math.round(num / 10) * 10;
-    }
-
-    if (rounded >= 1_000_000) {
-        const millions = rounded / 1_000_000;
-        return `${millions.toFixed(millions >= 10 ? 0 : 1)}M`;
-    }
-
-    if (rounded >= 1_000) {
-        const thousands = rounded / 1_000;
-        return `${thousands.toFixed(thousands >= 10 ? 0 : 1)}K`;
-    }
-
-    return `${rounded}`;
-}
+/** Format number with K/M abbreviations, minimum 1 */
+const formatCount = (num: number): string => {
+    const value = Math.max(1, Math.round(num));
+    return value >= 1000 ? millify(value, { precision: 1 }) : String(value);
+};
 
 /**
  * Calculate "Per Pollen" value for a model.
@@ -86,7 +68,7 @@ export const calculatePerPollen = (model: ModelPrice): string => {
     // Use real avg cost when available (preferred over theoretical calculations)
     if (model.realAvgCost && model.realAvgCost > 0) {
         const unitsPerPollen = 1 / model.realAvgCost;
-        return formatLargeNumber(unitsPerPollen);
+        return formatCount(unitsPerPollen);
     }
 
     // ========================================================================
@@ -128,7 +110,7 @@ export const calculatePerPollen = (model: ModelPrice): string => {
         if (costPerRequest === 0) return "—";
 
         const requestsPerPollen = 1 / costPerRequest;
-        return formatLargeNumber(requestsPerPollen);
+        return formatCount(requestsPerPollen);
     }
 
     // ========================================================================
@@ -146,7 +128,7 @@ export const calculatePerPollen = (model: ModelPrice): string => {
             const costPerVideo =
                 (tokenPrice * SEEDANCE_TOKENS_2S_720P) / 1_000_000;
             const videosPerPollen = 1 / costPerVideo;
-            return formatLargeNumber(videosPerPollen);
+            return formatCount(videosPerPollen);
         }
 
         // Second-based video pricing (e.g., veo)
@@ -170,7 +152,7 @@ export const calculatePerPollen = (model: ModelPrice): string => {
             if (costPerImage === 0) return "—";
 
             const imagesPerPollen = 1 / costPerImage;
-            return formatLargeNumber(imagesPerPollen);
+            return formatCount(imagesPerPollen);
         }
 
         // Case 2: Per-token pricing (e.g., gptimage, nanobanana)
@@ -185,7 +167,7 @@ export const calculatePerPollen = (model: ModelPrice): string => {
             if (costPerImage === 0) return "—";
 
             const imagesPerPollen = 1 / costPerImage;
-            return formatLargeNumber(imagesPerPollen);
+            return formatCount(imagesPerPollen);
         }
     }
 

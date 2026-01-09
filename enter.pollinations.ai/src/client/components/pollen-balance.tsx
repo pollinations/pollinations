@@ -111,6 +111,17 @@ export const PollenBalance: FC<PollenBalanceProps> = ({
                         Still missing?
                     </a>
                 </p>
+                <p className="text-sm font-medium text-violet-900 mt-2">
+                    💳 Want to pay with a different method?{" "}
+                    <a
+                        href="https://github.com/pollinations/pollinations/issues/4826"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="underline hover:text-violet-700"
+                    >
+                        Please vote
+                    </a>
+                </p>
             </div>
         </div>
     );

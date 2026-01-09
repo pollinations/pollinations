@@ -32,8 +32,11 @@ import {
     usageToEventParams,
 } from "@/db/schema/event.ts";
 import { drizzle } from "drizzle-orm/d1";
-import { eq, sql } from "drizzle-orm";
-import { user as userTable } from "@/db/schema/better-auth.ts";
+import { and, eq, sql } from "drizzle-orm";
+import {
+    user as userTable,
+    apikey as apikeyTable,
+} from "@/db/schema/better-auth.ts";
 import { HonoRequest } from "hono";
 import type {
     ApiKeyType,
@@ -267,7 +270,10 @@ export const track = (eventType: EventType) =>
                     const packBalance = currentUser[0]?.packBalance ?? 0;
 
                     // Decrement tier first, then pack
-                    const fromTier = Math.min(priceToDeduct, Math.max(0, tierBalance));
+                    const fromTier = Math.min(
+                        priceToDeduct,
+                        Math.max(0, tierBalance),
+                    );
                     const fromPack = priceToDeduct - fromTier;
 
                     await db
@@ -285,6 +291,44 @@ export const track = (eventType: EventType) =>
                             userId: userTracking.userId,
                             fromTier,
                             fromPack,
+                        },
+                    );
+                }
+
+                // Decrement per-key pollen budget after billable requests
+                // Only deduct if key has a budget set (metadata.pollenBudget is not null)
+                const apiKeyId = c.var.auth?.apiKey?.id;
+                if (
+                    responseTracking.isBilledUsage &&
+                    responseTracking.price?.totalPrice &&
+                    apiKeyId
+                ) {
+                    const priceToDeduct = responseTracking.price.totalPrice;
+
+                    // Use SQLite JSON functions to atomically decrement pollenBudget
+                    // Only updates if pollenBudget exists and is a number
+                    await db
+                        .update(apikeyTable)
+                        .set({
+                            metadata: sql`json_set(
+                                ${apikeyTable.metadata},
+                                '$.pollenBudget',
+                                json_extract(${apikeyTable.metadata}, '$.pollenBudget') - ${priceToDeduct}
+                            )`,
+                        })
+                        .where(
+                            and(
+                                eq(apikeyTable.id, apiKeyId),
+                                sql`json_extract(${apikeyTable.metadata}, '$.pollenBudget') IS NOT NULL`,
+                                sql`json_type(json_extract(${apikeyTable.metadata}, '$.pollenBudget')) = 'real' OR json_type(json_extract(${apikeyTable.metadata}, '$.pollenBudget')) = 'integer'`,
+                            ),
+                        );
+
+                    log.debug(
+                        "Decremented {price} pollen from API key {keyId} budget",
+                        {
+                            price: priceToDeduct,
+                            keyId: apiKeyId,
                         },
                     );
                 }

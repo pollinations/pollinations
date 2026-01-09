@@ -1,1 +1,31 @@
-/* App styles - all styling is now handled by Tailwind CSS */
+
+body {
+  background: linear-gradient(120deg, #1e0c42, #431d5a, #23114a);
+  color: #fff;
+  margin: 0;
+  font-family: 'Inter', sans-serif;
+  min-height: 100vh;
+}
+
+.glass-card {
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+}
+
+.neumorphic-button {
+  border-radius: 50px;
+  background: #2a104f;
+  box-shadow: 10px 10px 20px #1a0a30, -10px -10px 20px #3a1a6e;
+  color: #a996c5;
+  border: none;
+  outline: none;
+  transition: all 0.2s ease-in-out;
+}
+
+.neumorphic-button:hover {
+  box-shadow: 5px 5px 10px #1a0a30, -5px -5px 10px #3a1a6e;
+  color: #cbbde2;
+}

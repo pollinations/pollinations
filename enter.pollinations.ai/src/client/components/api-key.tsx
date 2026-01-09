@@ -26,7 +26,7 @@ const shortLocale = {
     shortFormatDistance[token].replace("{{count}}", String(count)),
 };
 import type { FC } from "react";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { cn } from "@/util.ts";
 import { Button } from "../components/button.tsx";
 import { Fragment } from "react";
@@ -36,21 +36,7 @@ import {
   animals,
 } from "unique-names-generator";
 import { ModelPermissions } from "./model-permissions.tsx";
-import { TEXT_SERVICES } from "@shared/registry/text.ts";
-import { IMAGE_SERVICES } from "@shared/registry/image.ts";
-
-// Helper to get official name for a model ID
-const getModelDisplayName = (modelId: string): string => {
-    const textService = TEXT_SERVICES[modelId as keyof typeof TEXT_SERVICES];
-    if (textService) {
-        return textService.description?.split(" - ")[0] || modelId;
-    }
-    const imageService = IMAGE_SERVICES[modelId as keyof typeof IMAGE_SERVICES];
-    if (imageService) {
-        return imageService.description?.split(" - ")[0] || modelId;
-    }
-    return modelId;
-};
+import { getModelDisplayName } from "./model-utils.ts";
 
 type ApiKey = {
   id: string;
@@ -146,6 +132,29 @@ const ExpirationBadge: FC<{ expiresAt: Date | null | undefined }> = ({
   return <span className="text-xs text-gray-600">{timeLeft}</span>;
 };
 
+const TooltipContent: FC<{
+  isAllModels: boolean;
+  modelCount: number;
+  models: string[] | null;
+}> = ({ isAllModels, modelCount, models }) => (
+  <>
+    {isAllModels ? (
+      "Access to all models"
+    ) : modelCount === 0 ? (
+      "No models allowed"
+    ) : (
+      <div className="flex flex-col gap-1">
+        {models?.map((modelId) => (
+          <div key={modelId} className="text-left whitespace-nowrap">
+            <span>{getModelDisplayName(modelId)}</span>
+            <span className="font-mono opacity-70"> - {modelId}</span>
+          </div>
+        ))}
+      </div>
+    )}
+  </>
+);
+
 const ModelsBadge: FC<{
   permissions: { [key: string]: string[] } | null;
 }> = ({ permissions }) => {
@@ -156,7 +165,7 @@ const ModelsBadge: FC<{
   const isAllModels = models === null;
   const modelCount = models?.length ?? 0;
 
-  const updateTooltipPosition = () => {
+  const updateTooltipPosition = useCallback(() => {
     if (buttonRef.current) {
       const rect = buttonRef.current.getBoundingClientRect();
       setTooltipPos({
@@ -164,7 +173,15 @@ const ModelsBadge: FC<{
         left: rect.right,
       });
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    if (!showTooltip) return;
+    
+    const handleResize = () => updateTooltipPosition();
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, [showTooltip, updateTooltipPosition]);
 
   return (
     <button
@@ -201,31 +218,22 @@ const ModelsBadge: FC<{
         {isAllModels ? "All" : modelCount}
       </span>
       {showTooltip && (
-        <div
-          className="fixed z-[9999] px-3 py-2 bg-gradient-to-r from-pink-50 to-purple-50 text-gray-800 text-xs rounded-lg shadow-lg border border-pink-200 pointer-events-none sm:right-auto"
-          style={{
-            top: tooltipPos.top,
-            // Mobile: center horizontally, Desktop: right-aligned
-            ...(window.innerWidth < 640
-              ? { left: "50%", transform: "translateX(-50%)" }
-              : { right: window.innerWidth - tooltipPos.left }),
-          }}
-        >
-          {isAllModels ? (
-            "Access to all models"
-          ) : modelCount === 0 ? (
-            "No models allowed"
-          ) : (
-            <div className="flex flex-col gap-1">
-              {models?.map((modelId) => (
-                <div key={modelId} className="text-left whitespace-nowrap">
-                  <span>{getModelDisplayName(modelId)}</span>
-                  <span className="font-mono opacity-70"> - {modelId}</span>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
+        <>
+          {/* Mobile: centered */}
+          <div
+            className="fixed z-[9999] px-3 py-2 bg-gradient-to-r from-pink-50 to-purple-50 text-gray-800 text-xs rounded-lg shadow-lg border border-pink-200 pointer-events-none left-1/2 -translate-x-1/2 sm:hidden"
+            style={{ top: tooltipPos.top }}
+          >
+            <TooltipContent isAllModels={isAllModels} modelCount={modelCount} models={models} />
+          </div>
+          {/* Desktop: right-aligned */}
+          <div
+            className="fixed z-[9999] px-3 py-2 bg-gradient-to-r from-pink-50 to-purple-50 text-gray-800 text-xs rounded-lg shadow-lg border border-pink-200 pointer-events-none hidden sm:block"
+            style={{ top: tooltipPos.top, right: `calc(100vw - ${tooltipPos.left}px)` }}
+          >
+            <TooltipContent isAllModels={isAllModels} modelCount={modelCount} models={models} />
+          </div>
+        </>
       )}
     </button>
   );

@@ -27,7 +27,9 @@ export const PollenBudgetInput: FC<PollenBudgetInputProps> = ({
                 </Field.Label>
             )}
             <div className="flex items-center gap-2">
-                <input
+                <Field.Input
+                    id="pollen-budget-input"
+                    name="pollen-budget"
                     type="number"
                     min="0"
                     step="0.01"

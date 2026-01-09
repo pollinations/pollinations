@@ -2,32 +2,37 @@ import { type FC, useState } from "react";
 import { cn } from "@/util.ts";
 import { TEXT_SERVICES } from "@shared/registry/text.ts";
 import { IMAGE_SERVICES } from "@shared/registry/image.ts";
+import { getModelDisplayName } from "./model-utils.ts";
 
 // Build model lists from the shared registry (same source as pricing table)
-const textModels = Object.entries(TEXT_SERVICES).map(([id, config]) => ({
-    id,
-    label: config.description?.split(" - ")[0] || id,
-}));
+const textModels = Object.keys(TEXT_SERVICES)
+    .map((id) => ({
+        id,
+        label: getModelDisplayName(id),
+    }))
+    .sort((a, b) => a.label.localeCompare(b.label));
 
 // Image models - filter by outputModalities
 const imageModels = Object.entries(IMAGE_SERVICES)
     .filter(([_, config]) =>
         (config.outputModalities as readonly string[]).includes("image"),
     )
-    .map(([id, config]) => ({
+    .map(([id]) => ({
         id,
-        label: config.description?.split(" - ")[0] || id,
-    }));
+        label: getModelDisplayName(id),
+    }))
+    .sort((a, b) => a.label.localeCompare(b.label));
 
 // Video models - filter by outputModalities
 const videoModels = Object.entries(IMAGE_SERVICES)
     .filter(([_, config]) =>
         (config.outputModalities as readonly string[]).includes("video"),
     )
-    .map(([id, config]) => ({
+    .map(([id]) => ({
         id,
-        label: config.description?.split(" - ")[0] || id,
-    }));
+        label: getModelDisplayName(id),
+    }))
+    .sort((a, b) => a.label.localeCompare(b.label));
 
 type ModelPermissionsProps = {
     /** Selected model IDs. null = all models allowed, [] = restricted but none selected */
@@ -159,11 +164,12 @@ export const ModelPermissions: FC<ModelPermissionsProps> = ({
                         <div className="text-xs font-semibold text-gray-500 tracking-wide mb-1">
                             Text
                         </div>
-                        <div className="flex flex-wrap gap-1.5">
+                        <div className="flex flex-col gap-1">
                             {textModels.map((model) => (
                                 <ModelChip
                                     key={model.id}
-                                    label={model.label}
+                                    apiName={model.id}
+                                    officialName={model.label}
                                     selected={isModelSelected(model.id)}
                                     onClick={() => toggleModel(model.id)}
                                     disabled={disabled}
@@ -177,11 +183,12 @@ export const ModelPermissions: FC<ModelPermissionsProps> = ({
                         <div className="text-xs font-semibold text-gray-500 tracking-wide mb-1">
                             Image
                         </div>
-                        <div className="flex flex-wrap gap-1.5">
+                        <div className="flex flex-col gap-1">
                             {imageModels.map((model) => (
                                 <ModelChip
                                     key={model.id}
-                                    label={model.label}
+                                    apiName={model.id}
+                                    officialName={model.label}
                                     selected={isModelSelected(model.id)}
                                     onClick={() => toggleModel(model.id)}
                                     disabled={disabled}
@@ -195,11 +202,12 @@ export const ModelPermissions: FC<ModelPermissionsProps> = ({
                         <div className="text-xs font-semibold text-gray-500 tracking-wide mb-1">
                             Video
                         </div>
-                        <div className="flex flex-wrap gap-1.5">
+                        <div className="flex flex-col gap-1">
                             {videoModels.map((model) => (
                                 <ModelChip
                                     key={model.id}
-                                    label={model.label}
+                                    apiName={model.id}
+                                    officialName={model.label}
                                     selected={isModelSelected(model.id)}
                                     onClick={() => toggleModel(model.id)}
                                     disabled={disabled}
@@ -214,17 +222,18 @@ export const ModelPermissions: FC<ModelPermissionsProps> = ({
 };
 
 const ModelChip: FC<{
-    label: string;
+    apiName: string;
+    officialName: string;
     selected: boolean;
     onClick: () => void;
     disabled?: boolean;
-}> = ({ label, selected, onClick, disabled }) => (
+}> = ({ apiName, officialName, selected, onClick, disabled }) => (
     <button
         type="button"
         onClick={onClick}
         disabled={disabled}
         className={cn(
-            "px-2.5 py-1 rounded-full text-xs font-medium transition-all",
+            "px-2.5 py-1 rounded-lg text-xs transition-all text-left",
             selected
                 ? "bg-blue-100 text-blue-700 border border-blue-300"
                 : "bg-gray-100 text-gray-500 border border-gray-200",
@@ -233,7 +242,7 @@ const ModelChip: FC<{
         )}
     >
         {selected && "✓ "}
-        {label}
+        {officialName} <span className="font-mono opacity-70">- {apiName}</span>
     </button>
 );
 

@@ -129,7 +129,7 @@ export function AuthCard() {
                         <ExternalLinkIcon className="w-3 h-3 text-text-body-secondary" />
                     </a>
                     <a
-                        href="https://enter.pollinations.ai/api/docs#tag/Bring-Your-Own-Pollen-🌸"
+                        href="https://github.com/pollinations/pollinations/blob/main/BRING_YOUR_OWN_POLLEN.md"
                         target="_blank"
                         rel="noopener noreferrer"
                         className="inline-flex items-center gap-2 bg-surface-card border-r-4 border-b-4 border-border-main px-5 py-2 hover:translate-x-[2px] hover:translate-y-[2px] transition-all"

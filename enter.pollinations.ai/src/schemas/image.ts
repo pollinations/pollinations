@@ -115,11 +115,13 @@ export const GenerateImageRequestQueryParamsSchema = z.object({
         .meta({ description: "Generate with transparent background" }),
     guidance_scale: z.coerce
         .number()
+        .nonnegative()
+        .max(20)
         .optional()
-        .meta({ description: "How closely to follow the prompt (1-20)" }),
+        .meta({ description: "How closely to follow the prompt (0-20)" }),
 
     // Video-specific params (for veo/seedance models)
-    duration: z.coerce.number().int().optional().meta({
+    duration: z.coerce.number().int().min(1).max(10).optional().meta({
         description:
             "Video duration in seconds. veo: 4, 6, or 8. seedance: 2-10",
     }),

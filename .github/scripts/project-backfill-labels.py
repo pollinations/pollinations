@@ -29,6 +29,13 @@ Options:
     --include-prs    Include PRs along with issues
     --prs-only       Process only PRs, not issues
 
+Priority Inference (dev project):
+    When AI returns no priority, infers from label type:
+    - DEV-BUG → High
+    - DEV-FEATURE → Medium
+    - DEV-TRACKING → Medium
+    - Other → Low
+
 Environment:
     GITHUB_TOKEN        GitHub token with repo/project access
     POLLINATIONS_TOKEN  pollinations.ai API key for classification
@@ -308,14 +315,6 @@ def get_real_author(author: str, body: str) -> str:
     return author
 
 
-def is_org_member(username: str) -> bool:
-    """Check if user is an org member."""
-    org_members = CONFIG.get("org_members", [])
-    if username.lower() in [m.lower() for m in org_members]:
-        return True
-    return False
-
-
 def main():
     parser = argparse.ArgumentParser(description="Backfill labels for project issues")
     parser.add_argument("--project", required=True, choices=["dev", "support", "news", "tier"],
@@ -382,7 +381,7 @@ def main():
             
             # Classify - resolve real author from Discord UID if bot-created
             real_author = get_real_author(author, body)
-            is_internal = is_org_member(real_author)
+            is_internal = pm.is_org_member(real_author)
             log_debug(f"Author: {author} -> Real: {real_author}, Internal: {is_internal}")
             classification = classify_issue(title, body, real_author, is_internal)
             
@@ -397,10 +396,10 @@ def main():
             log_debug(f"Labels already exist for #{issue_number}, skipping (--only-missing)")
         
         # Priority processing (needs classification)
-        if needs_priority and not current_priority:
+        if needs_priority:
             if not classification:
                 real_author = get_real_author(author, body)
-                is_internal = is_org_member(real_author)
+                is_internal = pm.is_org_member(real_author)
                 classification = classify_issue(title, body, real_author, is_internal)
             
             if classification:

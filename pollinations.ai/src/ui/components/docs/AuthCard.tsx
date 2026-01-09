@@ -99,7 +99,12 @@ export function AuthCard() {
             </div>
 
             {/* BYOP Highlight */}
-            <div className="mt-4 flex items-start gap-3 bg-gradient-to-r from-surface-card to-transparent border-l-4 border-pink p-3">
+            <a
+                href="https://github.com/pollinations/pollinations/blob/main/BRING_YOUR_OWN_POLLEN.md"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="mt-4 flex items-start gap-3 bg-gradient-to-r from-surface-card to-transparent border-l-4 border-pink p-3 hover:from-pink/10 transition-all"
+            >
                 <span className="font-headline text-sm font-black text-pink whitespace-nowrap">
                     BYOP 🌸
                 </span>
@@ -107,7 +112,7 @@ export function AuthCard() {
                     Building an app? Let users pay for their own AI usage — you
                     pay $0. No backend needed, just a simple auth flow.
                 </span>
-            </div>
+            </a>
 
             {/* Call to Action */}
             <div className="mt-6 flex flex-wrap items-center justify-between gap-4 bg-button-primary-bg/10 p-4">

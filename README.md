@@ -14,22 +14,20 @@
 
 ## 🆕 Recent Apps
 
-| Name                                                                              | Description                                                                                            | Author            |
-| --------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------ | ----------------- |
-| [ChatPUA](https://apps.apple.com/au/app/chatpua/id6753729837)                     | AI roleplay chat for PUA training with avatars, GIFs, groups & scenes                                  | @Libre-Connect    |
-| [Player or AI [Roblox]](https://www.roblox.com/games/95217169945642/Player-or-AI) | 2-min mystery chats—deduce if your partner is human or AI.                                             | @YoussefElsafi    |
-| [Filmirror](https://filmirror.vercel.app/)                                        | Enter a film title to get similar movie picks with reasons & confidence.                               | @LumsBot          |
-| [Pollinations VisionAI](https://superheroghost.github.io/VisionAI/)               | Public AI image generator UI for Pollinations models; supports API keys                                | @Superheroghost   |
-| [Donjon.studio](https://donjon.studio/)                                           | AI-generated interactive adventures with evolving stories and images                                   | @PassepartoutFR   |
-| [Insight Engine](https://erbharatmalhotra.github.io/insight-engine/)              | Experimental frontend app that turns a single idea into refined text insights and AI-generated visuals | @ErBharatMalhotra |
-| [IDPhotoGen](https://id-photo-gen.thangoffer91.workers.dev)                       | Create professional ID photos in 30 seconds with AI                                                    | @thangoffer91     |
-| [AquaMind](https://aquamind.app)                                                  | AI-powered aquarium management and fish care assistant                                                 | @aquamind         |
-| [Word Wagon](https://wordwagon.app)                                               | AI-powered vocabulary learning app with spaced repetition                                              | @wordwagon        |
-| [nusanexus](https://nusanexus.com)                                                | AI-powered chat platform for Indonesian users                                                          | @nusanexus        |
-| [Nuvole AI Lite](https://nuvoleai.com)                                            | Lightweight AI chat app with clean UI and fast responses                                               | @nuvoleai         |
+| Name | Description | Author |
+|------|-------------|--------|
+| [Onyx - The AI Storyboard Engine.](https://onyx-noir-storyboarder-qzfn3h1fe-eneryut.vercel.app/) | Dark AI storyboard engine turning scripts into noir visual sequences | @eneryu |
+| [Pollinations VisionAI](https://superheroghost.github.io/VisionAI/) | Public AI image generator UI for Pollinations models; supports API keys | @Superheroghost |
+| [Donjon.studio](https://donjon.studio/) | AI-generated interactive adventures with evolving stories and images | @PassepartoutFR |
+| [Insight Engine](https://erbharatmalhotra.github.io/insight-engine/) | Experimental frontend app that turns a single idea into refined text insights and AI-generated visuals | @ErBharatMalhotra |
+| [IDPhotoGen](https://id-photo-gen.thangoffer91.workers.dev) | Create professional ID photos in 30 seconds with AI | @thangoffer91 |
+| [AquaMind](https://aquamind.app) | AI-powered aquarium management and fish care assistant | @aquamind |
+| [Word Wagon](https://wordwagon.app) | AI-powered vocabulary learning app with spaced repetition | @wordwagon |
+| [nusanexus](https://nusanexus.com) | AI-powered chat platform for Indonesian users | @nusanexus |
+| [Nuvole AI Lite](https://nuvoleai.com) | Lightweight AI chat app with clean UI and fast responses | @nuvoleai |
+| [BCA Nepal](https://play.google.com/store/apps/details/BCA_Nepal_BCA_Notes_Course?id=com.bcanepal&hl=en_IN) | BCA Nepal: Notes, courses, AI chat & PDF AI tools for smarter study | @sushilbalami |
 
 [View all apps →](apps/APPS.md)
-
 ## 🚀 New Unified API — Now Live
 
 We've launched **https://gen.pollinations.ai** — a single endpoint for all your AI generation needs: text, images, audio, video — all in one place.

@@ -100,6 +100,8 @@ export const ModelPermissions: FC<ModelPermissionsProps> = ({
                 )}
             >
                 <input
+                    id="allow-all-models"
+                    name="allow-all-models"
                     type="checkbox"
                     checked={isUnrestricted}
                     onChange={toggleRestrictionMode}

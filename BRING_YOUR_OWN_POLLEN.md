@@ -15,7 +15,7 @@ Users pay for their own AI usage. You pay $0. Ship apps without API costs.
 - **Self-regulating** — everyone pays for their own usage
 - **Frontend only** — no backend needed
 
-![Authorize Screen](https://raw.githubusercontent.com/pollinations/pollinations/main/authorize-screen.png)
+![Authorize Screen](https://raw.githubusercontent.com/pollinations/pollinations/main/enter.pollinations.ai/public/authorize-screen.png)
 
 ## URLs
 

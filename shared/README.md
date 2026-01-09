@@ -23,7 +23,6 @@ Model definitions and pricing for all Pollinations services:
 
 - **assets/** - Shared logo SVGs
 - **pwa-assets/** - PWA icon generation utility (has its own package.json)
-- **test/** - Registry tests
 
 ## Usage
 

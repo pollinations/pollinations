@@ -1,8 +1,7 @@
-import { COPY_CONSTANTS } from "../../../copy/constants";
 import { DOCS_PAGE } from "../../../copy/content/docs";
 import { usePageCopy } from "../../../hooks/usePageCopy";
 import { ExternalLinkIcon } from "../../assets/ExternalLinkIcon";
-import { Heading, Label } from "../ui/typography";
+import { Heading } from "../ui/typography";
 
 /**
  * Authentication Card Component
@@ -69,22 +68,6 @@ export function AuthCard() {
                             {copy.secretWarning}
                         </p>
                     </div>
-                </div>
-            </div>
-
-            {/* Shared Usage Example */}
-            <div className="mt-6">
-                <Label spacing="tight">{copy.usageExampleTitle}</Label>
-                <div className="font-mono text-xs bg-button-primary-bg text-text-on-color p-4 border-r-4 border-b-4 border-border-main">
-                    <span className="text-text-on-color/80">{"https://"}</span>
-                    <span className="text-text-on-color">
-                        {COPY_CONSTANTS.apiBaseUrl}
-                    </span>
-                    <span className="text-text-on-color/80">
-                        {"/image/prompt"}
-                    </span>
-                    <span className="text-text-on-color/80">{"?key="}</span>
-                    <span className="text-text-highlight">{"YOUR_KEY"}</span>
                 </div>
             </div>
 

@@ -16,7 +16,8 @@ import { describeRoute } from "hono-openapi";
 const UpdateApiKeySchema = z.object({
     // null = unrestricted (all models), [] or [...models] = restricted
     allowedModels: z.array(z.string()).nullable().optional(),
-    // Future: add more fields like name, description, enabled as needed
+    // null = unlimited, number = pollen budget cap
+    pollenBudget: z.number().nullable().optional(),
 });
 
 /**
@@ -42,7 +43,7 @@ export const apiKeysRoutes = new Hono<Env>()
             const user = c.var.auth.requireUser();
             const authClient = c.var.auth.client;
             const { id } = c.req.param();
-            const { allowedModels } = c.req.valid("json");
+            const { allowedModels, pollenBudget } = c.req.valid("json");
 
             // Verify ownership before updating
             const db = drizzle(c.env.DB, { schema });
@@ -67,13 +68,29 @@ export const apiKeysRoutes = new Hono<Env>()
                       ? { models: allowedModels }
                       : undefined;
 
-            // Use better-auth's server API to update permissions
-            // userId is required for server-side calls to bypass auth checks
+            // Merge pollenBudget into existing metadata
+            // null = remove budget (unlimited), number = set budget
+            // metadata is stored as JSON string in DB, parse it
+            const existingMetadata: Record<string, unknown> =
+                typeof existingKey.metadata === "string"
+                    ? JSON.parse(existingKey.metadata)
+                    : existingKey.metadata || {};
+            const newMetadata =
+                pollenBudget !== undefined
+                    ? {
+                          ...existingMetadata,
+                          pollenBudget:
+                              pollenBudget === null ? undefined : pollenBudget,
+                      }
+                    : undefined;
+
+            // Use better-auth's server API to update permissions and metadata
             const updatedKey = await authClient.api.updateApiKey({
                 body: {
                     keyId: id,
                     userId: user.id,
                     permissions,
+                    ...(newMetadata !== undefined && { metadata: newMetadata }),
                 },
             });
 
@@ -81,6 +98,7 @@ export const apiKeysRoutes = new Hono<Env>()
                 id: updatedKey.id,
                 name: updatedKey.name,
                 permissions: updatedKey.permissions,
+                metadata: updatedKey.metadata,
             });
         },
     );

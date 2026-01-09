@@ -4,6 +4,11 @@ import { openAPIRouteHandler } from "hono-openapi";
 import type { Env } from "@/env.ts";
 import { IMAGE_SERVICES } from "@shared/registry/image.ts";
 import { TEXT_SERVICES } from "@shared/registry/text.ts";
+// @ts-ignore - raw import
+import BYOP_MD from "../../../BRING_YOUR_OWN_POLLEN.md?raw";
+
+// Use markdown as-is (just trim whitespace)
+const BYOP_DOCS = BYOP_MD.trim();
 
 // Get all model aliases (values we want to hide from docs)
 const IMAGE_ALIASES: Set<string> = new Set(
@@ -169,12 +174,16 @@ export const createDocsRoutes = (apiRouter: Hono<Env>) => {
                             bearerAuth: [],
                         },
                     ],
-                    // Single tag for all generation endpoints
+                    // Tags for sidebar navigation
                     tags: [
                         {
                             name: "gen.pollinations.ai",
                             description:
                                 "Generate text, images, and videos using AI models",
+                        },
+                        {
+                            name: "Bring Your Own Pollen 🌸",
+                            description: BYOP_DOCS,
                         },
                     ],
                 },

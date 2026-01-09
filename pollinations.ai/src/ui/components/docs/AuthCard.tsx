@@ -88,8 +88,18 @@ export function AuthCard() {
                 </div>
             </div>
 
+            {/* Model Scoping Highlight */}
+            <div className="mt-6 flex items-start gap-3 bg-gradient-to-r from-surface-card to-transparent border-l-4 border-text-highlight p-3">
+                <span className="font-headline text-sm font-black text-text-highlight whitespace-nowrap">
+                    {copy.modelScopingLabel}
+                </span>
+                <span className="text-xs text-text-body-secondary">
+                    {copy.modelScopingDescription}
+                </span>
+            </div>
+
             {/* BYOP Highlight */}
-            <div className="mt-6 flex items-start gap-3 bg-gradient-to-r from-surface-card to-transparent border-l-4 border-pink p-3">
+            <div className="mt-4 flex items-start gap-3 bg-gradient-to-r from-surface-card to-transparent border-l-4 border-pink p-3">
                 <span className="font-headline text-xs font-black text-pink uppercase tracking-wider whitespace-nowrap">
                     NEW
                 </span>
@@ -104,16 +114,6 @@ export function AuthCard() {
                 <span className="text-xs text-text-body-secondary">
                     Building an app? Let users pay for their own AI usage — you
                     pay $0. No backend needed.
-                </span>
-            </div>
-
-            {/* Model Scoping Highlight */}
-            <div className="mt-4 flex items-start gap-3 bg-gradient-to-r from-surface-card to-transparent border-l-4 border-text-highlight p-3">
-                <span className="font-headline text-sm font-black text-text-highlight whitespace-nowrap">
-                    {copy.modelScopingLabel}
-                </span>
-                <span className="text-xs text-text-body-secondary">
-                    {copy.modelScopingDescription}
                 </span>
             </div>
 

@@ -35,7 +35,7 @@ npm --version
 
 ```bash
 # Clone and navigate to the app
-cd micro.pollinations.ai
+cd apps/micro
 
 # Install dependencies
 npm install
@@ -373,7 +373,7 @@ npm start
 
 ```typescript
 import express from 'express';
-import { createMicroServiceWrapper } from './micro.pollinations.ai/src/wrapper.js';
+import { createMicroServiceWrapper } from './apps/micro/src/wrapper.js';
 
 const app = express();
 const emailService = createMicroServiceWrapper({
@@ -395,7 +395,7 @@ app.post('/send-welcome', async (req, res) => {
 
 ```typescript
 // pages/api/send-email.js
-import { createMicroServiceWrapper } from '../../../micro.pollinations.ai/src/wrapper.js';
+import { createMicroServiceWrapper } from '../../../apps/micro/src/wrapper.js';
 
 const emailService = createMicroServiceWrapper({
   provider: 'resend',

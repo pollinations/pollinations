@@ -29,6 +29,7 @@ interface NowPaymentsIpnPayload {
     price_currency: string;
     pay_amount: number;
     actually_paid: number;
+    actually_paid_fiat?: number; // Fiat equivalent of actually_paid
     pay_currency: string;
     order_id: string;
     order_description: string;
@@ -135,12 +136,24 @@ export const webhooksCryptoRoutes = new Hono<Env>().post(
             paymentId: payload.payment_id,
             status: payload.payment_status,
             orderId: payload.order_id,
+            priceAmount: payload.price_amount,
+            actuallyPaidFiat: payload.actually_paid_fiat,
         });
 
-        // Only process finished payments
-        if (payload.payment_status !== "finished") {
-            log.debug("Ignoring non-finished payment status: {status}", {
+        // Accept finished payments OR partially_paid when fiat value is sufficient
+        // partially_paid occurs when crypto amount is slightly less due to network fees,
+        // but the fiat equivalent may still meet or exceed the price
+        const isFinished = payload.payment_status === "finished";
+        const isPartiallyPaidButSufficient =
+            payload.payment_status === "partially_paid" &&
+            payload.actually_paid_fiat !== undefined &&
+            payload.actually_paid_fiat >= payload.price_amount * 0.99; // Allow 1% tolerance
+
+        if (!isFinished && !isPartiallyPaidButSufficient) {
+            log.debug("Ignoring payment status: {status}", {
                 status: payload.payment_status,
+                actuallyPaidFiat: payload.actually_paid_fiat,
+                priceAmount: payload.price_amount,
             });
             return c.json({ received: true, processed: false });
         }
@@ -170,12 +183,15 @@ export const webhooksCryptoRoutes = new Hono<Env>().post(
             .where(eq(userTable.id, userId));
 
         log.info(
-            "[CRYPTO_CREDIT] crypto: user={userId} +{pollen} pack={pack} paymentId={paymentId}",
+            "[CRYPTO_CREDIT] crypto: user={userId} +{pollen} pack={pack} paymentId={paymentId} status={status}",
             {
                 userId,
                 pollen: pollenAmount,
                 pack,
                 paymentId: payload.payment_id,
+                status: payload.payment_status,
+                actuallyPaidFiat: payload.actually_paid_fiat,
+                priceAmount: payload.price_amount,
             },
         );
 

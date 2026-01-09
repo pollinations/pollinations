@@ -433,10 +433,10 @@ const CreateKeyForm: FC<{
 
   return (
     <form onSubmit={onSubmit} className="space-y-4">
-      <Field.Root>
-        <Field.Label className="block text-sm font-medium mb-2">
+      <fieldset className="border-0 p-0 m-0">
+        <legend className="block text-sm font-medium mb-2">
           Key Type (*)
-        </Field.Label>
+        </legend>
         <div className="space-y-2">
           <label
             className={cn(
@@ -513,7 +513,7 @@ const CreateKeyForm: FC<{
             </div>
           </label>
         </div>
-      </Field.Root>
+      </fieldset>
 
       <Field.Root>
         <Field.Label className="block text-sm font-medium mb-1">

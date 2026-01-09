@@ -1,9 +1,13 @@
-"""
-GitHub user validation for Seed tier eligibility.
-Checks if a user looks legit (not an alt/abuse account).
-Uses batched GraphQL for max speed - 50 users per call.
+"""GitHub user validation for Seed tier eligibility.
+Phase 1: Simple points-based validation.
 
-V1: Simple approve/deny based on hard requirements + score threshold.
+Formula:
+  - GitHub account age: 1 pt/month (max 6)
+  - Commits (any repo): 0.1 pt each (max 1)
+  - Public repos: 0.5 pt each (max 1)
+  - Threshold: >= 7 pts
+
+Fully automatic - no red flags, no manual review.
 """
 
 import asyncio
@@ -26,13 +30,18 @@ INITIAL_BACKOFF = 1
 MAX_BACKOFF = 60
 BACKOFF_MULTIPLIER = 2
 
-# Hard requirements - users failing these are auto-denied
-MIN_ACCOUNT_AGE_DAYS = 60
-MIN_PUBLIC_REPOS = 1
-MIN_COMMITS = 10
+# Points formula configuration
+POINTS_PER_MONTH = 1.0
+MAX_AGE_POINTS = 6.0
 
-# Score threshold for approval
-APPROVE_SCORE = 50
+POINTS_PER_COMMIT = 0.1
+MAX_COMMIT_POINTS = 1.0
+
+POINTS_PER_REPO = 0.5
+MAX_REPO_POINTS = 1.0
+
+# Threshold for approval (max possible = 8 pts)
+APPROVE_THRESHOLD = 7.0
 
 
 @dataclass
@@ -42,20 +51,8 @@ class UserScore:
     account_age_days: int = 0
     public_repos: int = 0
     total_commits: int = 0
-    total_prs: int = 0
-    total_issues: int = 0
-    followers: int = 0
-    following: int = 0
-    has_bio: bool = False
-    has_website: bool = False
-    has_company: bool = False
-    has_location: bool = False
-    has_avatar: bool = False
-    has_recent_activity: bool = False
-    contributed_repos: int = 0
-    score: int = 0
-    score_breakdown: dict = field(default_factory=dict)  # Detailed point breakdown
-    red_flags: list = field(default_factory=list)  # Suspicious patterns detected
+    score: float = 0.0
+    score_breakdown: dict = field(default_factory=dict)
     approved: bool = False
     reason: str = ""
 
@@ -63,40 +60,20 @@ class UserScore:
 def build_batch_query(usernames: list[str]) -> str:
     """
     Build a single GraphQL query to fetch data for multiple users.
-    
-    Each user becomes a separate query alias (u0, u1, etc.) to fetch in one request.
-    Includes data needed for scoring: account age, repos, commits, profile completeness, etc.
+    Only fetches the 3 metrics we need: account age, commits, public repos.
     """
     user_fragments = []
     for i, username in enumerate(usernames):
-        # Escape quotes to prevent GraphQL injection
         safe_username = username.replace('"', '\\"').replace("\\", "\\\\")
         user_fragments.append(f'''
     u{i}: user(login: "{safe_username}") {{
         login
         createdAt
-        bio
-        websiteUrl
-        company
-        location
-        avatarUrl
-        followers {{
-            totalCount
-        }}
-        following {{
-            totalCount
-        }}
         repositories(privacy: PUBLIC, isFork: false) {{
             totalCount
         }}
         contributionsCollection {{
             totalCommitContributions
-            totalPullRequestContributions
-            totalIssueContributions
-            hasAnyContributions
-        }}
-        repositoriesContributedTo(privacy: PUBLIC, contributionTypes: [COMMIT, PULL_REQUEST]) {{
-            totalCount
         }}
     }}''')
 
@@ -112,149 +89,49 @@ def build_batch_query(usernames: list[str]) -> str:
 
 def calculate_score(user_data: dict, username: str) -> UserScore:
     """
-    Calculate approval score for a user based on their GitHub profile.
+    Calculate approval score using simple points formula.
     
-    Process:
-    1. Extract raw data from GitHub API response
-    2. Check hard requirements (if failed, auto-deny)
-    3. Calculate score from profile completeness and activity
-    4. Detect red flags (suspicious patterns)
-    5. Return final decision
+    Formula:
+      - Account age: 1 pt/month (max 6)
+      - Commits: 0.1 pt each (max 1)
+      - Public repos: 0.5 pt each (max 1)
+      - Threshold: >= 7 pts
     """
     result = UserScore(username=username)
 
-    # Handle user not found
     if not user_data:
         result.reason = "User not found"
         return result
 
-    # Extract and calculate basic metrics
+    # Extract metrics
     created_at = datetime.fromisoformat(user_data["createdAt"].replace("Z", "+00:00"))
     result.account_age_days = (datetime.now(timezone.utc) - created_at).days
     result.public_repos = user_data["repositories"]["totalCount"]
-    result.followers = user_data["followers"]["totalCount"]
-    result.following = user_data["following"]["totalCount"]
-    result.has_bio = bool(user_data.get("bio"))
-    result.has_website = bool(user_data.get("websiteUrl"))
-    result.has_company = bool(user_data.get("company"))
-    result.has_location = bool(user_data.get("location"))
-    # Avatar check: exclude default Gravatar avatars
-    result.has_avatar = bool(user_data.get("avatarUrl")) and "gravatar" not in user_data.get("avatarUrl", "")
+    result.total_commits = user_data["contributionsCollection"]["totalCommitContributions"]
 
-    # Extract contribution data
-    contributions = user_data["contributionsCollection"]
-    result.total_commits = contributions["totalCommitContributions"]
-    result.total_prs = contributions["totalPullRequestContributions"]
-    result.total_issues = contributions["totalIssueContributions"]
-    result.has_recent_activity = contributions["hasAnyContributions"]
-    result.contributed_repos = user_data["repositoriesContributedTo"]["totalCount"]
-
-    # Check hard requirements - any failure = auto-deny
-    hard_failures = []
-    if result.account_age_days < MIN_ACCOUNT_AGE_DAYS:
-        hard_failures.append(f"Account too new ({result.account_age_days} < {MIN_ACCOUNT_AGE_DAYS} days)")
-    if result.public_repos < MIN_PUBLIC_REPOS:
-        hard_failures.append(f"No public repos")
-    if result.total_commits < MIN_COMMITS:
-        hard_failures.append(f"Not enough commits ({result.total_commits} < {MIN_COMMITS})")
-
-    if hard_failures:
-        result.approved = False
-        result.reason = "DENY: " + "; ".join(hard_failures)
-        return result
-
-    # Score calculation - points for different categories
+    # Calculate points
     breakdown = {}
+    
+    # Account age: 1 pt/month, max 6
+    age_months = result.account_age_days / 30.0
+    breakdown["age"] = min(age_months * POINTS_PER_MONTH, MAX_AGE_POINTS)
+    
+    # Commits: 0.1 pt each, max 1
+    breakdown["commits"] = min(result.total_commits * POINTS_PER_COMMIT, MAX_COMMIT_POINTS)
+    
+    # Public repos: 0.5 pt each, max 1
+    breakdown["repos"] = min(result.public_repos * POINTS_PER_REPO, MAX_REPO_POINTS)
 
-    # Account age: older accounts score higher (2+ years = max points)
-    if result.account_age_days >= 730:
-        breakdown["account_age"] = 25
-    elif result.account_age_days >= 365:
-        breakdown["account_age"] = 20
-    elif result.account_age_days >= 180:
-        breakdown["account_age"] = 15
-    elif result.account_age_days >= 90:
-        breakdown["account_age"] = 10
-    else:
-        breakdown["account_age"] = 5
-
-    # Profile completeness: cap at 15 points
-    profile_score = 0
-    if result.has_bio:
-        profile_score += 5
-    if result.has_avatar:
-        profile_score += 2
-    if result.has_website:
-        profile_score += 3
-    if result.has_company:
-        profile_score += 3
-    if result.has_location:
-        profile_score += 2
-    breakdown["profile"] = min(profile_score, 15)
-
-    # Commit history: more commits = more points (max 20)
-    if result.total_commits >= 200:
-        breakdown["commits"] = 20
-    elif result.total_commits >= 51:
-        breakdown["commits"] = 15
-    elif result.total_commits >= 11:
-        breakdown["commits"] = 10
-    else:
-        breakdown["commits"] = 5
-
-    # Contribution diversity: PRs, issues, multi-repo contributions
-    contrib_score = 0
-    if result.total_prs > 0:
-        contrib_score += 10
-    if result.total_issues > 0:
-        contrib_score += 5
-    if result.contributed_repos >= 5:
-        contrib_score += 10
-    elif result.contributed_repos >= 2:
-        contrib_score += 5
-    breakdown["contributions"] = min(contrib_score, 25)
-
-    # Recent activity: bonus if user contributed recently
-    breakdown["recent_activity"] = 10 if result.has_recent_activity else 0
-
-    # Red flag detection - deduct points for suspicious patterns
-    red_flags = []
-    total_activity = result.total_commits + result.total_prs + result.total_issues
-
-    # Isolated account: no followers/following after 3+ months
-    if result.followers == 0 and result.following == 0 and result.account_age_days >= 90:
-        red_flags.append("No social connections")
-        breakdown["red_flag_isolated"] = -15
-
-    # Empty profile: no bio, website, or company info
-    if not result.has_bio and not result.has_website and not result.has_company:
-        red_flags.append("Empty profile")
-        breakdown["red_flag_empty_profile"] = -15
-
-    # Fake followers: many followers but minimal actual contributions
-    if result.followers > 100 and total_activity < 10:
-        red_flags.append("Suspicious follower ratio")
-        breakdown["red_flag_follower_ratio"] = -15
-
-    # Dormant account: old account with no recent activity
-    if result.account_age_days > 365 and not result.has_recent_activity:
-        red_flags.append("Dormant account")
-        breakdown["red_flag_dormant"] = -10
-
-    result.red_flags = red_flags
-    result.score = max(0, sum(breakdown.values()))
+    result.score = sum(breakdown.values())
     result.score_breakdown = breakdown
 
-    # Final decision
-    if result.score >= APPROVE_SCORE:
+    # Decision
+    if result.score >= APPROVE_THRESHOLD:
         result.approved = True
-        result.reason = f"APPROVED: Score {result.score}"
+        result.reason = f"APPROVED: {result.score:.1f} pts"
     else:
         result.approved = False
-        result.reason = f"DENY: Score {result.score} < {APPROVE_SCORE}"
-
-    if red_flags:
-        result.reason += f" | Flags: {', '.join(red_flags)}"
+        result.reason = f"DENY: {result.score:.1f} < {APPROVE_THRESHOLD} pts"
 
     return result
 

@@ -54,4 +54,4 @@ Keys expire in 30 days · revoke anytime from dashboard
 
 ---
 
-*h/t [Puter.js](https://docs.puter.com/user-pays-model/) for pioneering this*
+[📝 Edit this doc](https://github.com/pollinations/pollinations/edit/main/enter.pollinations.ai/legal/BRING_YOUR_OWN_POLLEN.md) · *h/t [Puter.js](https://docs.puter.com/user-pays-model/) for pioneering this*

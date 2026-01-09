@@ -3,7 +3,7 @@
  */
 
 import type { ModelPrice } from "./types.ts";
-import { getModalities, hasReasoning, hasVision } from "./model-info.ts";
+import { hasReasoning, hasVision } from "./model-info.ts";
 
 // ============================================================================
 // WORKLOAD PROFILES
@@ -47,16 +47,6 @@ const MODEL_IMAGE_TOKENS: Record<string, number> = {
     "nanobanana": 1290, // 1290 tokens (Vertex AI Gemini actual usage)
 };
 
-/**
- * Audio pricing per minute (OpenAI realtime API rates)
- * Fixed per-minute costs, not token-based
- * Source: https://platform.openai.com/docs/guides/realtime
- */
-const AUDIO_COST_PER_MIN = {
-    input: 0.06, // USD per minute of input audio
-    output: 0.24, // USD per minute of output audio (TTS)
-};
-
 /** Format large numbers with K/M abbreviations */
 function formatLargeNumber(num: number): string {
     // Less aggressive rounding for smaller numbers
@@ -87,24 +77,15 @@ function formatLargeNumber(num: number): string {
  * Uses real average cost from Tinybird when available (rolling 7-day average),
  * falls back to theoretical workload profiles for new/low-usage models.
  *
- * Returns human-readable capacity (requests per pollen):
- * - Text models: "500" (responses)
- * - Image models: "50" (images)
- * - Audio models: "150" (requests)
- * - Video models: "5" (generations)
+ * Returns human-readable capacity (requests per pollen)
  */
 export const calculatePerPollen = (model: ModelPrice): string => {
-    const modalities = getModalities(model.name);
-    const primaryOutput = modalities.output[0];
-
     // ========================================================================
     // REAL USAGE DATA (from Tinybird - rolling 7-day average)
     // ========================================================================
     // Use real avg cost when available (preferred over theoretical calculations)
     if (model.realAvgCost && model.realAvgCost > 0) {
         const unitsPerPollen = 1 / model.realAvgCost;
-
-        // All models: format as count (requests per pollen)
         return formatLargeNumber(unitsPerPollen);
     }
 
@@ -116,7 +97,7 @@ export const calculatePerPollen = (model: ModelPrice): string => {
     // ========================================================================
     // TEXT MODELS
     // ========================================================================
-    if (model.type === "text" && primaryOutput === "text") {
+    if (model.type === "text") {
         const inputPrice = parseFloat(model.promptTextPrice || "0");
         const outputPrice = parseFloat(model.completionTextPrice || "0");
 
@@ -146,16 +127,6 @@ export const calculatePerPollen = (model: ModelPrice): string => {
 
         if (costPerRequest === 0) return "—";
 
-        const requestsPerPollen = 1 / costPerRequest;
-        return formatLargeNumber(requestsPerPollen);
-    }
-
-    // ========================================================================
-    // AUDIO MODELS (TTS/Realtime) - fallback to theoretical
-    // ========================================================================
-    if (model.type === "text" && primaryOutput === "audio") {
-        // Use per-minute pricing, convert to requests per pollen
-        const costPerRequest = AUDIO_COST_PER_MIN.output; // Assume ~1 min avg per request
         const requestsPerPollen = 1 / costPerRequest;
         return formatLargeNumber(requestsPerPollen);
     }

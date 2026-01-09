@@ -17,4 +17,10 @@ TINYBIRD_INGEST_TOKEN=your_tinybird_ingest_token
 TESTING_REFERRER=optional_testing_referrer
 PLN_ENTER_TOKEN=optional_pln_enter_token
 
+# NOWPayments Crypto Payments (https://nowpayments.io)
+# Get keys from: https://account.nowpayments.io (production) or https://account-sandbox.nowpayments.io (sandbox)
+NOWPAYMENTS_API_KEY=your_nowpayments_api_key
+NOWPAYMENTS_IPN_SECRET=your_nowpayments_ipn_secret
+NOWPAYMENTS_ENV=sandbox
+
 # Tip: Run `sops decrypt secrets/dev.vars.json > .dev.vars` to get all secrets

@@ -2,12 +2,13 @@ import { type FC, useState } from "react";
 import { cn } from "@/util.ts";
 import { TEXT_SERVICES } from "@shared/registry/text.ts";
 import { IMAGE_SERVICES } from "@shared/registry/image.ts";
+import { getModelDisplayName } from "./model-utils.ts";
 
 // Build model lists from the shared registry (same source as pricing table)
-const textModels = Object.entries(TEXT_SERVICES)
-    .map(([id, config]) => ({
+const textModels = Object.keys(TEXT_SERVICES)
+    .map((id) => ({
         id,
-        label: config.description?.split(" - ")[0] || id,
+        label: getModelDisplayName(id),
     }))
     .sort((a, b) => a.label.localeCompare(b.label));
 
@@ -16,9 +17,9 @@ const imageModels = Object.entries(IMAGE_SERVICES)
     .filter(([_, config]) =>
         (config.outputModalities as readonly string[]).includes("image"),
     )
-    .map(([id, config]) => ({
+    .map(([id]) => ({
         id,
-        label: config.description?.split(" - ")[0] || id,
+        label: getModelDisplayName(id),
     }))
     .sort((a, b) => a.label.localeCompare(b.label));
 
@@ -27,9 +28,9 @@ const videoModels = Object.entries(IMAGE_SERVICES)
     .filter(([_, config]) =>
         (config.outputModalities as readonly string[]).includes("video"),
     )
-    .map(([id, config]) => ({
+    .map(([id]) => ({
         id,
-        label: config.description?.split(" - ")[0] || id,
+        label: getModelDisplayName(id),
     }))
     .sort((a, b) => a.label.localeCompare(b.label));
 

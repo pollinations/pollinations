@@ -7,11 +7,11 @@ import { TEXT_SERVICES } from "@shared/registry/text.ts";
 // @ts-ignore - raw import
 import BYOP_MD from "../../legal/BRING_YOUR_OWN_POLLEN.md?raw";
 
-// Strip the H1 title and image (not needed in API docs), convert H2 to H3
+// Strip the H1 title, image, and h/t footer for tag description
 const BYOP_DOCS = BYOP_MD.replace(/^# .+\n\n/, "") // Remove H1 title
     .replace(/!\[.*?\]\(.*?\)\n\n/g, "") // Remove images
-    .replace(/^## /gm, "### ") // H2 → H3
-    .replace(/^# /gm, "## "); // H1 → H2
+    .replace(/---\n\n\*h\/t.*$/s, "") // Remove footer
+    .trim();
 
 // Get all model aliases (values we want to hide from docs)
 const IMAGE_ALIASES: Set<string> = new Set(
@@ -159,8 +159,6 @@ export const createDocsRoutes = (apiRouter: Hono<Env>) => {
                             "**Auth methods:**",
                             "1. Header: `Authorization: Bearer YOUR_API_KEY`",
                             "2. Query param: `?key=YOUR_API_KEY`",
-                            "",
-                            BYOP_DOCS,
                         ].join("\n"),
                     },
                     components: {
@@ -179,12 +177,17 @@ export const createDocsRoutes = (apiRouter: Hono<Env>) => {
                             bearerAuth: [],
                         },
                     ],
-                    // Single tag for all generation endpoints
+                    // Tags for sidebar navigation
                     tags: [
                         {
                             name: "gen.pollinations.ai",
                             description:
                                 "Generate text, images, and videos using AI models",
+                        },
+                        {
+                            name: "Bring Your Own Pollen (BYOP)",
+                            "x-displayName": "BYOP 🌸",
+                            description: BYOP_DOCS,
                         },
                     ],
                 },

@@ -140,20 +140,14 @@ export const webhooksCryptoRoutes = new Hono<Env>().post(
             actuallyPaidFiat: payload.actually_paid_fiat,
         });
 
-        // Accept finished payments OR partially_paid when fiat value is sufficient
-        // partially_paid occurs when crypto amount is slightly less due to network fees,
-        // but the fiat equivalent may still meet or exceed the price
-        const isFinished = payload.payment_status === "finished";
-        const isPartiallyPaidButSufficient =
-            payload.payment_status === "partially_paid" &&
-            payload.actually_paid_fiat !== undefined &&
-            payload.actually_paid_fiat >= payload.price_amount * 0.99; // Allow 1% tolerance
-
-        if (!isFinished && !isPartiallyPaidButSufficient) {
+        // Accept finished or partially_paid payments
+        // partially_paid occurs when crypto amount is slightly less due to network fees
+        if (
+            payload.payment_status !== "finished" &&
+            payload.payment_status !== "partially_paid"
+        ) {
             log.debug("Ignoring payment status: {status}", {
                 status: payload.payment_status,
-                actuallyPaidFiat: payload.actually_paid_fiat,
-                priceAmount: payload.price_amount,
             });
             return c.json({ received: true, processed: false });
         }

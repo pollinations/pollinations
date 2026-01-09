@@ -5,6 +5,7 @@ import { ArrowForward } from '@mui/icons-material';
 
 const HomePage = () => {
   return (
+    document.title = "Pollinations GSOC 2026",
     <Box sx={{ padding: '4rem 2rem' }}>
       <Grid container spacing={4} justifyContent="center">
         {/* Main Hero Section */}

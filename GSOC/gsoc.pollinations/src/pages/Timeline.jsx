@@ -7,6 +7,7 @@ const TimelinePage = () => {
   const currentPhaseIndex = gsocTimeline.findIndex(phase => new Date(phase.endDate) > today);
 
   return (
+    document.title = "Timeline - GSOC 2026",
     <Box sx={{ padding: '4rem 2rem' }}>
       <Typography variant='h2' align='center' gutterBottom sx={{ marginBottom: '3rem' }}>
         Google Summer of Code Timeline

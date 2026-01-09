@@ -3,6 +3,7 @@ import { Box, Typography, Paper } from '@mui/material';
 
 const AboutPage = () => {
   return (
+    document.title = "About - gsoc.pollinations",
     <Box sx={{ padding: '4rem 2rem', textAlign: 'center' }}>
       <Paper className='glass-card' sx={{ padding: '4rem 2rem' }}>
         <Typography variant='h2' gutterBottom>

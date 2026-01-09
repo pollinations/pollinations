@@ -11,6 +11,7 @@ const ProjectsPage = () => {
   };
 
   return (
+    document.title = "Projects - gsoc.pollinations",
     <Box sx={{ padding: '4rem 0' }}>
       <Typography variant='h2' align='center' gutterBottom sx={{ marginBottom: '3rem' }}>
         Projects

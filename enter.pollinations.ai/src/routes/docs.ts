@@ -2,10 +2,41 @@ import { Hono } from "hono";
 import { Scalar } from "@scalar/hono-api-reference";
 import { openAPIRouteHandler } from "hono-openapi";
 import type { Env } from "@/env.ts";
+import { IMAGE_SERVICES } from "@shared/registry/image.ts";
+import { TEXT_SERVICES } from "@shared/registry/text.ts";
+// @ts-ignore - raw import
+import BYOP_MD from "../../../BRING_YOUR_OWN_POLLEN.md?raw";
+
+// Use markdown as-is (just trim whitespace)
+const BYOP_DOCS = BYOP_MD.trim();
+
+// Get all model aliases (values we want to hide from docs)
+const IMAGE_ALIASES: Set<string> = new Set(
+    Object.values(IMAGE_SERVICES).flatMap((service) => service.aliases),
+);
+const TEXT_ALIASES: Set<string> = new Set(
+    Object.values(TEXT_SERVICES).flatMap((service) => service.aliases),
+);
+const ALL_ALIASES: Set<string> = new Set([...IMAGE_ALIASES, ...TEXT_ALIASES]);
+
+// Filter model aliases from enum arrays in schema
+function filterAliases(
+    schema: Record<string, unknown>,
+): Record<string, unknown> {
+    return JSON.parse(
+        JSON.stringify(schema, (key, value) => {
+            if (key === "enum" && Array.isArray(value)) {
+                const filtered = value.filter((v) => !ALL_ALIASES.has(v));
+                return filtered.length !== value.length ? filtered : value;
+            }
+            return value;
+        }),
+    );
+}
 
 // Transform OpenAPI schema for gen.pollinations.ai:
 // 1. Remove /generate/ prefix from paths
-// 2. Add x-tagGroups for Scalar sidebar organization
+// 2. Filter out model aliases from enums (show only primary model names)
 function transformOpenAPISchema(
     schema: Record<string, unknown>,
 ): Record<string, unknown> {
@@ -19,10 +50,11 @@ function transformOpenAPISchema(
         newPaths[cleanPath] = value;
     }
 
-    return {
+    // Filter aliases from the entire schema
+    return filterAliases({
         ...schema,
         paths: newPaths,
-    };
+    });
 }
 
 export const createDocsRoutes = (apiRouter: Hono<Env>) => {
@@ -142,12 +174,16 @@ export const createDocsRoutes = (apiRouter: Hono<Env>) => {
                             bearerAuth: [],
                         },
                     ],
-                    // Single tag for all generation endpoints
+                    // Tags for sidebar navigation
                     tags: [
                         {
                             name: "gen.pollinations.ai",
                             description:
                                 "Generate text, images, and videos using AI models",
+                        },
+                        {
+                            name: "Bring Your Own Pollen 🌸",
+                            description: BYOP_DOCS,
                         },
                     ],
                 },

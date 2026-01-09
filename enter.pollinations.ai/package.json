@@ -47,6 +47,7 @@
         "hono": "^4.10.6",
         "hono-openapi": "^1.1.1",
         "hono-rate-limiter": "^0.4.2",
+        "millify": "^6.1.0",
         "nanoid": "^5.1.6",
         "neverthrow": "^8.2.0",
         "react": "^19.2.0",

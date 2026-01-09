@@ -108,7 +108,7 @@ Explore voices at [OpenAI.fm](https://www.openai.fm/).
 
 ### MCP Server for AI Assistants
 
-Our MCP (Model Context Protocol) server enables AI assistants like Claude to generate images and audio directly. [Learn more](./model-context-protocol/README.md)
+Our MCP (Model Context Protocol) server enables AI assistants like Claude to generate images and audio directly. [Learn more](./sdk/model-context-protocol/README.md)
 
 #### Configuration
 
@@ -259,7 +259,7 @@ We offer React hooks for easy integration. Example usage:
 
     export default AIGeneratedContent;
 
-Check out our [Pollinations React Hooks](./pollinations-react/README.md) for more details.
+Check out our [Pollinations React Hooks](./sdk/pollinations-react/README.md) for more details.
 
 ## Architecture
 
@@ -338,11 +338,11 @@ Our codebase is organized into several key folders, each serving a specific purp
 
 - [`image.pollinations.ai/`](./image.pollinations.ai/): Backend service for image generation and caching with Cloudflare Workers and R2 storage.
 
-- [`pollinations-react/`](./pollinations-react/): React component library for Pollinations.ai.
+- [`sdk/pollinations-react/`](./sdk/pollinations-react/): React component library for Pollinations.ai.
 
 - [`text.pollinations.ai/`](./text.pollinations.ai/): Backend service for text generation.
 
-- [`model-context-protocol/`](./model-context-protocol/): Model Context Protocol (MCP) server for AI assistants like Claude to generate images directly.
+- [`sdk/model-context-protocol/`](./sdk/model-context-protocol/): Model Context Protocol (MCP) server for AI assistants like Claude to generate images directly.
 
 This structure encompasses the frontend website, backend services for image and text generation, and integrations like the Discord bot and MCP server, providing a comprehensive framework for the pollinations.ai platform.
 

@@ -98,6 +98,17 @@ export function AuthCard() {
                 </span>
             </div>
 
+            {/* BYOP Highlight */}
+            <div className="mt-4 flex items-start gap-3 bg-gradient-to-r from-surface-card to-transparent border-l-4 border-pink p-3">
+                <span className="font-headline text-sm font-black text-pink whitespace-nowrap">
+                    BYOP 🌸
+                </span>
+                <span className="text-xs text-text-body-secondary">
+                    Building an app? Let users pay for their own AI usage — you
+                    pay $0. No backend needed, just a simple auth flow.
+                </span>
+            </div>
+
             {/* Call to Action */}
             <div className="mt-6 flex flex-wrap items-center justify-between gap-4 bg-button-primary-bg/10 p-4">
                 <div>

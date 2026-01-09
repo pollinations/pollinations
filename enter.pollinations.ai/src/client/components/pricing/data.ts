@@ -11,8 +11,9 @@ import {
     formatPricePerImage,
 } from "./formatters.ts";
 import type { ModelPrice } from "./types.ts";
+import type { ModelStats } from "./useModelStats.ts";
 
-export const getModelPrices = (): ModelPrice[] => {
+export const getModelPrices = (modelStats?: ModelStats): ModelPrice[] => {
     const prices: ModelPrice[] = [];
 
     // Add text models
@@ -117,6 +118,16 @@ export const getModelPrices = (): ModelPrice[] => {
                     formatPricePerImage,
                 ),
             });
+        }
+    }
+
+    // Merge real usage stats if available
+    if (modelStats) {
+        for (const price of prices) {
+            const stats = modelStats[price.name];
+            if (stats?.avgCost) {
+                price.realAvgCost = stats.avgCost;
+            }
         }
     }
 

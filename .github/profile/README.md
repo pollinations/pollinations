@@ -74,17 +74,21 @@ curl 'https://gen.pollinations.ai/v1/chat/completions' \
 
 ## 🏗️ Architecture
 
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                     gen.pollinations.ai                       │
-│                    (Unified API Gateway)                      │
-└──────────┬────────────┬────────────┬────────────┬────────────┘
-           │            │            │            │
-     ┌─────▼─────┐┌────▼───────┐┌────▼───────┐┌────▼───────┐
-     │   Image   ││    Video    ││    Text     ││    Audio    │
-     │ Flux, GPT ││  Seedance,  ││ GPT-5,Claude││   Voices    │
-     │ Seedream  ││    Veo     ││Gemini,Grok ││   TTS/STT   │
-     └───────────┘└────────────┘└────────────┘└────────────┘
+```mermaid
+flowchart TB
+    A["🌸 gen.pollinations.ai<br/><i>Unified API Gateway</i>"]
+
+      A --> I["🖼️ Image<br/>(<i>Flux, GPT Image, Seedream</i>)"]
+      A --> V["🎬 Video<br/>(<i>Seedance, Veo</i>)"]
+      A --> T["💬 Text<br/>(<i>GPT-5, Claude, Gemini, Grok</i>)"]
+      A --> AU["🎵 Audio<br/>(<i>TTS, STT, Voices</i>)"]
+
+      style A fill:#fce7f3,stroke:#be185d,color:#831843,stroke-width:2px
+      style I fill:#dbeafe,stroke:#3b82f6,color:#1e3a8a
+      style V fill:#fef3c7,stroke:#f59e0b,color:#92400e
+      style T fill:#d1fae5,stroke:#10b981,color:#065f46
+      style AU fill:#ede9fe,stroke:#8b5cf6,color:#5b21b6
+      linkStyle default stroke:#94a3b8,stroke-width:3px
 ```
 
 ## 🤝 Get Involved

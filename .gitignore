@@ -343,3 +343,8 @@ debugsession_*/
 
 # Claude skills mutable data (sensitive/local)
 .claude/skills/*/data/
+
+# Vim swap files
+*.swp
+*.swo
+*~

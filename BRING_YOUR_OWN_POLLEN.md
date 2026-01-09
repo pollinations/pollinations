@@ -15,7 +15,7 @@ Users pay for their own AI usage. You pay $0. Ship apps without API costs fr fr 
 - **Self-regulating** — everyone pays for their own usage
 - **Frontend only** — no backend needed
 
-![Authorize Screen](https://raw.githubusercontent.com/pollinations/pollinations/main/enter.pollinations.ai/legal/authorize-screen.png)
+![Authorize Screen](https://raw.githubusercontent.com/pollinations/pollinations/main/authorize-screen.png)
 
 ## URLs
 
@@ -54,4 +54,4 @@ Keys expire in 30 days · revoke anytime from dashboard
 
 ---
 
-[📝 Edit this doc](https://github.com/pollinations/pollinations/edit/main/enter.pollinations.ai/legal/BRING_YOUR_OWN_POLLEN.md) · *h/t [Puter.js](https://docs.puter.com/user-pays-model/) for pioneering this*
+[📝 Edit this doc](https://github.com/pollinations/pollinations/edit/main/BRING_YOUR_OWN_POLLEN.md) · *h/t [Puter.js](https://docs.puter.com/user-pays-model/) for pioneering this*

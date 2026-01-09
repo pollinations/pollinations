@@ -5,7 +5,7 @@ import type { Env } from "@/env.ts";
 import { IMAGE_SERVICES } from "@shared/registry/image.ts";
 import { TEXT_SERVICES } from "@shared/registry/text.ts";
 // @ts-ignore - raw import
-import BYOP_MD from "../../legal/BRING_YOUR_OWN_POLLEN.md?raw";
+import BYOP_MD from "../../../BRING_YOUR_OWN_POLLEN.md?raw";
 
 // Use markdown as-is (just trim whitespace)
 const BYOP_DOCS = BYOP_MD.trim();

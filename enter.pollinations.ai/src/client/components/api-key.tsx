@@ -129,10 +129,10 @@ const LimitsBadge: FC<{
     if (hasBudget) {
         const budgetStr =
             pollenBudget <= 0
-                ? "0🌸"
+                ? "0"
                 : pollenBudget < 1
-                  ? `${pollenBudget.toFixed(2)}🌸`
-                  : `${Math.floor(pollenBudget)}🌸`;
+                  ? pollenBudget.toFixed(2)
+                  : `${Math.floor(pollenBudget)}`;
         parts.push(budgetStr);
     }
 

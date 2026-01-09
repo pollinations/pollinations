@@ -29,12 +29,9 @@ Options:
     --include-prs    Include PRs along with issues
     --prs-only       Process only PRs, not issues
 
-Priority Inference (dev project):
-    When AI returns no priority, infers from label type:
-    - DEV-BUG → High
-    - DEV-FEATURE → Medium
-    - DEV-TRACKING → Medium
-    - Other → Low
+Notes:
+    Priority is determined by AI based on issue content.
+    Labels like DEV-TRACKING, DEV-QUEST, DEV-VOTING don't need priority.
 
 Environment:
     GITHUB_TOKEN        GitHub token with repo/project access
@@ -404,17 +401,6 @@ def main():
             
             if classification:
                 priority = classification.get("priority")
-                # For dev project, infer priority from label if AI returns null
-                if not priority and project_key == "dev":
-                    dev_labels = classification.get("labels", [])
-                    if "DEV-BUG" in dev_labels:
-                        priority = "High"
-                    elif "DEV-FEATURE" in dev_labels:
-                        priority = "Medium"
-                    elif "DEV-TRACKING" in dev_labels:
-                        priority = "Medium"
-                    else:
-                        priority = "Low"
                 priority_option = project.get("priority_options", {}).get(priority)
                 item_id = issue.get("_item_id")
                 if priority_option and project.get("priority_field_id") and item_id:

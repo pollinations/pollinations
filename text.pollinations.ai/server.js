@@ -10,8 +10,6 @@ import { Transform } from "stream";
 import { availableModels } from "./availableModels.js";
 import { generateTextPortkey } from "./generateTextPortkey.js";
 import { setupFeedEndpoint, sendToFeedListeners } from "./feed.js";
-import { processRequestForAds } from "./ads/initRequestFilter.js";
-import { createStreamingAdWrapper } from "./ads/streamingAdWrapper.js";
 import { getRequestData } from "./requestUtils.js";
 
 // Import shared utilities
@@ -246,35 +244,6 @@ async function handleRequest(req, res, requestData) {
                 errorObj.status || 500,
             );
             return;
-        }
-
-        // Process referral links if there's content in the response
-        if (completion.choices?.[0]?.message?.content) {
-            // Check if this is an audio response - if so, skip content processing
-            const isAudioResponse =
-                completion.choices?.[0]?.message?.audio !== undefined;
-
-            // Skip ad processing for JSON mode responses
-            if (!isAudioResponse && !requestData.jsonMode) {
-                try {
-                    const content = completion.choices[0].message.content;
-
-                    // Then process regular referral links
-                    const adString = await processRequestForAds(
-                        req,
-                        content,
-                        requestData.messages,
-                    );
-
-                    // If an ad was generated, append it to the content
-                    if (adString) {
-                        completion.choices[0].message.content =
-                            content + "\n\n" + adString;
-                    }
-                } catch (error) {
-                    errorLog("Error processing content:", error);
-                }
-            }
         }
 
         const responseText = completion.stream
@@ -800,62 +769,17 @@ async function sendAsOpenAIStream(res, completion, req = null) {
     if (responseStream) {
         log("Attempting to proxy stream to client");
 
-        // Get messages from the request data
-        // For GET requests, messages will be in the request path
-        // For POST requests, messages will be in the request body
-        const messages = req
-            ? // Try to get messages from different sources
-              (req.body && req.body.messages) ||
-              (req.requestData && req.requestData.messages) ||
-              (completion.requestData && completion.requestData.messages) ||
-              []
-            : [];
+        // Pipe stream directly to response
+        responseStream.pipe(res);
 
-        // Get jsonMode from request data
-        const jsonMode = completion.requestData?.jsonMode || false;
-
-        // Check if we have messages and should process the stream for ads
-        if (req && messages.length > 0 && !jsonMode) {
-            log("Processing stream for ads with", messages.length, "messages");
-
-            // Create a wrapped stream that will add ads at the end
-            const wrappedStream = await createStreamingAdWrapper(
-                responseStream,
-                req,
-                messages,
-            );
-
-            // Pipe through usage capture to add trailers
-            wrappedStream.pipe(res);
-
-            // Handle client disconnect
-            if (req)
-                req.on("close", () => {
-                    log("Client disconnected");
-                    if (wrappedStream.destroy) {
-                        wrappedStream.destroy();
-                    }
-                    if (responseStream.destroy) {
-                        responseStream.destroy();
-                    }
-                });
-        } else {
-            // If no messages, no request object, or JSON mode, just pipe the stream directly
-            log(
-                "Skipping ad processing for stream" +
-                    (jsonMode ? " (JSON mode)" : ""),
-            );
-            responseStream.pipe(res);
-
-            // Handle client disconnect
-            if (req)
-                req.on("close", () => {
-                    log("Client disconnected");
-                    if (responseStream.destroy) {
-                        responseStream.destroy();
-                    }
-                });
-        }
+        // Handle client disconnect
+        if (req)
+            req.on("close", () => {
+                log("Client disconnected");
+                if (responseStream.destroy) {
+                    responseStream.destroy();
+                }
+            });
 
         return;
     }

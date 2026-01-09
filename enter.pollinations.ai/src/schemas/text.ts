@@ -28,11 +28,6 @@ export const GenerateTextRequestQueryParamsSchema = z.object({
         .optional()
         .default(false)
         .meta({ description: "Stream response in real-time chunks" }),
-    private: z.coerce
-        .boolean()
-        .optional()
-        .default(false)
-        .meta({ description: "Hide from public feeds" }),
 });
 
 export type GenerateTextRequestQueryParams = z.infer<

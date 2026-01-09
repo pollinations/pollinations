@@ -187,12 +187,12 @@ export const TEXT_SERVICES = {
     },
     "deepseek": {
         aliases: ["deepseek-v3", "deepseek-reasoning"],
-        modelId: "deepseek-v3.2",
-        provider: "azure",
+        modelId: "deepseek-ai/deepseek-v3.2-maas",
+        provider: "google",
         cost: [
             {
                 date: COST_START_DATE,
-                promptTextTokens: perMillion(0.58),
+                promptTextTokens: perMillion(0.56),
                 completionTextTokens: perMillion(1.68),
             },
         ],

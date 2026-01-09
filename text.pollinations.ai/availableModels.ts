@@ -61,7 +61,7 @@ const models: ModelDefinition[] = [
     },
     {
         name: "deepseek",
-        config: portkeyConfig["myceli-deepseek-v3.2"],
+        config: portkeyConfig["deepseek-v3.2-maas"],
         transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
     },
     {

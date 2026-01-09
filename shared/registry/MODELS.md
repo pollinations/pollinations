@@ -8,7 +8,7 @@ Maps each public model to its provider/account. Last updated: **Dec 2025**
 | --------------------- | ------ | ----- | ----- | ------------------------------------------------------------------------------------------------------------------- |
 | Azure (Myceli)        | 5      | 1     | -     | `openai`, `openai-large`, `openai-audio`, `deepseek`, `grok`, `kontext`                                             |
 | Azure-2 (PointsFlyer) | 2      | 1     | -     | `openai-fast`, `midijourney`, `gptimage`                                                                            |
-| AWS                   | 3      | -     | -     | `claude-fast`, `chickytutor`, `nova-micro`                                                                          |
+| AWS                   | 3      | -     | -     | `claude-fast`, `chickytutor`, `nova-fast`                                                                           |
 | Google                | 7      | 2     | 1     | `gemini`, `gemini-fast`, `gemini-large`, `gemini-search`, `kimi-k2-thinking`, `claude`, `claude-large`, `nanobanana`, `nanobanana-pro`, `veo` |
 | Scaleway              | 2      | 1     | -     | `qwen-coder`, `mistral`, `turbo`                                                                                    |
 | Perplexity            | 2      | -     | -     | `perplexity-fast`, `perplexity-reasoning`                                                                           |
@@ -43,7 +43,7 @@ Maps each public model to its provider/account. Last updated: **Dec 2025**
 | -------------- | ------- | ------------------------------------------------ | ------- | ----- |
 | `claude-fast`  | text    | `us.anthropic.claude-haiku-4-5-20251001-v1:0`    | `AWS_*` | API   |
 | `chickytutor`  | text    | `us.anthropic.claude-3-5-haiku-20241022-v1:0`    | `AWS_*` | API   |
-| `nova-micro`   | text    | `amazon.nova-micro-v1:0`                         | `AWS_*` | API   |
+| `nova-fast`    | text    | `amazon.nova-micro-v1:0`                         | `AWS_*` | API   |
 
 ## Google (Vertex AI)
 

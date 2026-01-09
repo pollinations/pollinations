@@ -231,6 +231,10 @@ export function TextGenCard() {
                 <span className="bg-indicator-text px-1 font-black text-text-inverse">
                     {selectedModel}
                 </span>
+                <span className="text-text-caption">&key=</span>
+                <span className="bg-indicator-text px-1 font-black text-text-inverse">
+                    YOUR_KEY
+                </span>
                 {params.size > 0 && (
                     <>
                         {Array.from(params).map((param) => (

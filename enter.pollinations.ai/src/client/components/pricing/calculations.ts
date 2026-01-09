@@ -82,29 +82,16 @@ function formatLargeNumber(num: number): string {
     return `${rounded}`;
 }
 
-/** Format minutes as friendly duration (e.g., 148.3 → "2.5 hours") */
-function formatDuration(minutes: number): string {
-    if (minutes >= 60) {
-        const hours = minutes / 60;
-        // Round to nearest 0.5 hours
-        const roundedHours = Math.round(hours * 2) / 2;
-        return `${roundedHours} hours`;
-    }
-    // Under 60 minutes: round to nearest 5 minutes
-    const roundedMins = Math.round(minutes / 5) * 5;
-    return `${roundedMins} min`;
-}
-
 /**
  * Calculate "Per Pollen" value for a model.
  * Uses real average cost from Tinybird when available (rolling 7-day average),
  * falls back to theoretical workload profiles for new/low-usage models.
  *
- * Returns human-readable capacity:
+ * Returns human-readable capacity (requests per pollen):
  * - Text models: "500" (responses)
  * - Image models: "50" (images)
- * - Audio models: "25.3 min" (minutes of audio)
- * - Video models: "6.7" (seconds of video)
+ * - Audio models: "150" (requests)
+ * - Video models: "5" (generations)
  */
 export const calculatePerPollen = (model: ModelPrice): string => {
     const modalities = getModalities(model.name);
@@ -117,17 +104,7 @@ export const calculatePerPollen = (model: ModelPrice): string => {
     if (model.realAvgCost && model.realAvgCost > 0) {
         const unitsPerPollen = 1 / model.realAvgCost;
 
-        // Video models: show as seconds, rounded to whole numbers
-        if (model.type === "video" && model.perSecondPrice) {
-            return Math.round(unitsPerPollen).toString();
-        }
-
-        // Audio models: show as hours/minutes with friendly rounding
-        if (model.type === "text" && primaryOutput === "audio") {
-            return formatDuration(unitsPerPollen);
-        }
-
-        // All other models: format as count
+        // All models: format as count (requests per pollen)
         return formatLargeNumber(unitsPerPollen);
     }
 
@@ -174,12 +151,13 @@ export const calculatePerPollen = (model: ModelPrice): string => {
     }
 
     // ========================================================================
-    // AUDIO MODELS (TTS/Realtime)
+    // AUDIO MODELS (TTS/Realtime) - fallback to theoretical
     // ========================================================================
     if (model.type === "text" && primaryOutput === "audio") {
-        // Use per-minute pricing directly
-        const minutesPerPollen = 1 / AUDIO_COST_PER_MIN.output;
-        return formatDuration(minutesPerPollen);
+        // Use per-minute pricing, convert to requests per pollen
+        const costPerRequest = AUDIO_COST_PER_MIN.output; // Assume ~1 min avg per request
+        const requestsPerPollen = 1 / costPerRequest;
+        return formatLargeNumber(requestsPerPollen);
     }
 
     // ========================================================================

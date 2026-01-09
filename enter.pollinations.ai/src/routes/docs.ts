@@ -7,10 +7,8 @@ import { TEXT_SERVICES } from "@shared/registry/text.ts";
 // @ts-ignore - raw import
 import BYOP_MD from "../../legal/BRING_YOUR_OWN_POLLEN.md?raw";
 
-// Strip the H1 title and image for tag description, keep footer with edit link
-const BYOP_DOCS = BYOP_MD.replace(/^# .+\n\n/, "") // Remove H1 title
-    .replace(/!\[.*?\]\(.*?\)\n\n/g, "") // Remove images
-    .trim();
+// Use markdown as-is (just trim whitespace)
+const BYOP_DOCS = BYOP_MD.trim();
 
 // Get all model aliases (values we want to hide from docs)
 const IMAGE_ALIASES: Set<string> = new Set(

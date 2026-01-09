@@ -4,10 +4,8 @@ This directory contains shared utilities used across Pollinations services.
 
 ## Files
 
-- **env-loader.js** - Centralized environment variable loading (shared/.env + local/.env)
 - **extractFromRequest.js** - Token extraction, IP detection, and request parsing utilities
 - **utils.ts** - Generic utility functions (`omit`, `safeRound`)
-- **.env** - Shared environment variables for all services
 
 ## Registry (`registry/`)
 

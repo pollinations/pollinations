@@ -50,8 +50,10 @@ const MODEL_IMAGE_TOKENS: Record<string, number> = {
 
 /** Format number with K/M abbreviations, minimum 1 */
 const formatCount = (num: number): string => {
-    const value = Math.max(1, Math.round(num));
-    return value >= 1000 ? millify(value, { precision: 1 }) : String(value);
+    if (num < 1) return "1";
+    if (num >= 1000) return millify(num, { precision: 1 });
+    if (num < 10) return (Math.round(num * 10) / 10).toString(); // 1.2, 5.7
+    return Math.round(num).toString(); // 10, 500
 };
 
 /**

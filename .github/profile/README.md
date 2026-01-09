@@ -78,16 +78,16 @@ curl 'https://gen.pollinations.ai/v1/chat/completions' \
 flowchart TB
     A["gen.pollinations.ai<br/>(Unified API Gateway)"]
 
-    A --> I["Image<br/>Flux · GPT · Seedream"]
-    A --> V["Video<br/>Seedance · Veo"]
-    A --> T["Text<br/>GPT-5 · Claude · Gemini · Grok"]
-    A --> AU["Audio<br/>Voices · TTS/STT"]
+      A --> I["Image<br/>Flux · GPT · Seedream"]
+      A --> V["Video<br/>Seedance · Veo"]
+      A --> T["Text<br/>GPT-5 · Claude · Gemini · Grok"]
+      A --> AU["Audio<br/>Voices · TTS/STT"]
 
-    style A fill:#ffc,stroke:#888,color:#000
-    style I fill:#1f2937,stroke:#4b5563,color:#fff
-    style V fill:#1f2937,stroke:#4b5563,color:#fff
-    style T fill:#1f2937,stroke:#4b5563,color:#fff
-    style AU fill:#1f2937,stroke:#4b5563,color:#fff
+      style A fill:#e0f2fe,stroke:#0369a1,color:#003366
+      style I fill:#0c4a6e,stroke:#0369a1,color:#fff
+      style V fill:#0c4a6e,stroke:#0369a1,color:#fff
+      style T fill:#0c4a6e,stroke:#0369a1,color:#fff
+      style AU fill:#0c4a6e,stroke:#0369a1,color:#fff
 ```
 
 ## 🤝 Get Involved

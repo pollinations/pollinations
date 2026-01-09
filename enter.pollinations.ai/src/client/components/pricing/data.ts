@@ -11,8 +11,9 @@ import {
     formatPricePerImage,
 } from "./formatters.ts";
 import type { ModelPrice } from "./types.ts";
+import type { ModelStats } from "./useModelStats.ts";
 
-export const getModelPrices = (): ModelPrice[] => {
+export const getModelPrices = (modelStats?: ModelStats): ModelPrice[] => {
     const prices: ModelPrice[] = [];
 
     // Add text models
@@ -117,6 +118,35 @@ export const getModelPrices = (): ModelPrice[] => {
                     formatPricePerImage,
                 ),
             });
+        }
+    }
+
+    // Merge real usage stats if available
+    // Note: Tinybird tracks the model name users send in requests,
+    // which may be an alias rather than the primary name in the registry
+    const MODEL_ALIASES: Record<string, string[]> = {
+        "nova-fast": ["nova-micro", "nova", "amazon-nova-micro"],
+    };
+
+    if (modelStats) {
+        for (const price of prices) {
+            // Try primary name first
+            let stats = modelStats[price.name];
+
+            // If not found, try aliases
+            if (!stats?.avgCost) {
+                const aliases = MODEL_ALIASES[price.name];
+                if (aliases) {
+                    for (const alias of aliases) {
+                        stats = modelStats[alias];
+                        if (stats?.avgCost) break;
+                    }
+                }
+            }
+
+            if (stats?.avgCost) {
+                price.realAvgCost = stats.avgCost;
+            }
         }
     }
 

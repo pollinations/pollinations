@@ -1,25 +1,33 @@
 <div align="center">
   <img src="shared/assets/logo-text.svg" alt="pollinations.ai" width="100%"/>
+  
+  <p><strong>Open-source AI for people who make things.</strong></p>
+
+[![Stars](https://img.shields.io/github/stars/pollinations/pollinations?style=flat-square&logo=github)](https://github.com/pollinations/pollinations)
+[![License](https://img.shields.io/github/license/pollinations/pollinations?style=flat-square)](LICENSE)
+[![Discord](https://img.shields.io/discord/885844321461485618?style=flat-square&logo=discord&label=Discord&color=5865F2)](https://discord.gg/pollinations-ai-885844321461485618)
+[![npm](https://img.shields.io/npm/v/@pollinations/react?style=flat-square&logo=npm)](https://www.npmjs.com/package/@pollinations/react)
+
+[Website](https://pollinations.ai) · [Dashboard](https://enter.pollinations.ai) · [API Docs](APIDOCS.md) · [Discord](https://discord.gg/pollinations-ai-885844321461485618)
+
 </div>
 
 ## 🆕 Recent Apps
 
-| Name                                                                              | Description                                                                                            | Author            |
-| --------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------ | ----------------- |
-| [ChatPUA](https://apps.apple.com/au/app/chatpua/id6753729837)                     | AI roleplay chat for PUA training with avatars, GIFs, groups & scenes                                  | @Libre-Connect    |
-| [Player or AI [Roblox]](https://www.roblox.com/games/95217169945642/Player-or-AI) | 2-min mystery chats—deduce if your partner is human or AI.                                             | @YoussefElsafi    |
-| [Filmirror](https://filmirror.vercel.app/)                                        | Enter a film title to get similar movie picks with reasons & confidence.                               | @LumsBot          |
-| [Pollinations VisionAI](https://superheroghost.github.io/VisionAI/)               | Public AI image generator UI for Pollinations models; supports API keys                                | @Superheroghost   |
-| [Donjon.studio](https://donjon.studio/)                                           | AI-generated interactive adventures with evolving stories and images                                   | @PassepartoutFR   |
-| [Insight Engine](https://erbharatmalhotra.github.io/insight-engine/)              | Experimental frontend app that turns a single idea into refined text insights and AI-generated visuals | @ErBharatMalhotra |
-| [IDPhotoGen](https://id-photo-gen.thangoffer91.workers.dev)                       | Create professional ID photos in 30 seconds with AI                                                    | @thangoffer91     |
-| [AquaMind](https://aquamind.app)                                                  | AI-powered aquarium management and fish care assistant                                                 | @aquamind         |
-| [Word Wagon](https://wordwagon.app)                                               | AI-powered vocabulary learning app with spaced repetition                                              | @wordwagon        |
-| [nusanexus](https://nusanexus.com)                                                | AI-powered chat platform for Indonesian users                                                          | @nusanexus        |
-| [Nuvole AI Lite](https://nuvoleai.com)                                            | Lightweight AI chat app with clean UI and fast responses                                               | @nuvoleai         |
+| Name | Description | Author |
+|------|-------------|--------|
+| [Onyx - The AI Storyboard Engine.](https://onyx-noir-storyboarder-qzfn3h1fe-eneryut.vercel.app/) | Dark AI storyboard engine turning scripts into noir visual sequences | @eneryu |
+| [Pollinations VisionAI](https://superheroghost.github.io/VisionAI/) | Public AI image generator UI for Pollinations models; supports API keys | @Superheroghost |
+| [Donjon.studio](https://donjon.studio/) | AI-generated interactive adventures with evolving stories and images | @PassepartoutFR |
+| [Insight Engine](https://erbharatmalhotra.github.io/insight-engine/) | Experimental frontend app that turns a single idea into refined text insights and AI-generated visuals | @ErBharatMalhotra |
+| [IDPhotoGen](https://id-photo-gen.thangoffer91.workers.dev) | Create professional ID photos in 30 seconds with AI | @thangoffer91 |
+| [AquaMind](https://aquamind.app) | AI-powered aquarium management and fish care assistant | @aquamind |
+| [Word Wagon](https://wordwagon.app) | AI-powered vocabulary learning app with spaced repetition | @wordwagon |
+| [nusanexus](https://nusanexus.com) | AI-powered chat platform for Indonesian users | @nusanexus |
+| [Nuvole AI Lite](https://nuvoleai.com) | Lightweight AI chat app with clean UI and fast responses | @nuvoleai |
+| [BCA Nepal](https://play.google.com/store/apps/details/BCA_Nepal_BCA_Notes_Course?id=com.bcanepal&hl=en_IN) | BCA Nepal: Notes, courses, AI chat & PDF AI tools for smarter study | @sushilbalami |
 
 [View all apps →](apps/APPS.md)
-
 ## 🚀 New Unified API — Now Live
 
 We've launched **https://gen.pollinations.ai** — a single endpoint for all your AI generation needs: text, images, audio, video — all in one place.
@@ -39,12 +47,10 @@ We've launched **https://gen.pollinations.ai** — a single endpoint for all you
 - **2026-01-05** – **🚀 Qwen3-Coder** New `Qwen3-Coder-30B` model available for advanced code generation tasks.
 - **2026-01-05** – **🎨 Flux Returns** The popular `flux` model is back as a standalone option for image generation.
 - **2026-01-05** – **✨ High-Res Upscaling** Generate images larger than 1280x1280 using the new integrated SPAN 2x upscaler.
-- **2025-12-29** – **🚀 New Model: GPT Image Large** Access GPT Image 1.5 via the `gptimage-large` model ID for high-fidelity generations.
-- **2025-12-29** – **🤖 DeepSeek V3.2** Upgraded to the latest DeepSeek V3.2 model with reduced pricing and improved performance.
+- **2025-12-29** – **🚀 New Model: GPT Image Large** Access GPT Image 1.5 via the `gptimage-large` model ID for high-fidelity generations. [API Docs](https://enter.pollinations.ai/api/docs)
+- **2025-12-29** – **🤖 DeepSeek V3.2** Upgraded to the latest DeepSeek V3.2 for smarter, faster chat responses. [Try it](https://hello.pollinations.ai)
 - **2025-12-29** – **🎨 Image-to-Image Upgrades** Now supports multiple input images (pipe-separated) and automatic resizing for better results.
 - **2025-12-29** – **📱 New Community Apps** Try IDPhotoGen (ID photos), PromptPi (prompt engineering), and Nuvole AI Lite (iOS shortcut).
-- **2025-12-29** – **🚀 New Model: gptimage-large** Access GPT Image 1.5 for high-fidelity generations via the API. [API Docs](https://enter.pollinations.ai/api/docs)
-- **2025-12-29** – **🤖 DeepSeek V3.2** Upgraded to the latest DeepSeek V3.2 for smarter, faster chat responses. [Try it](https://hello.pollinations.ai)
 
 ---
 
@@ -52,16 +58,16 @@ We've launched **https://gen.pollinations.ai** — a single endpoint for all you
 
 ## 🌟 Introduction
 
-[pollinations.ai](https://pollinations.ai) is an open-source generative AI platform based in Berlin, powering 500+ community projects with accessible text and image generation APIs. We build in the open and keep AI accessible to everyone—thanks to our amazing supporters.
+[pollinations.ai](https://pollinations.ai) is an open-source generative AI platform based in Berlin, powering 500+ community projects with accessible text, image, video, and audio generation APIs. We build in the open and keep AI accessible to everyone—thanks to our amazing supporters.
 
 ## 🚀 Key Features
 
 - 🔓 **100% Open Source** — code, decisions, roadmap all public
 - 🤝 **Community-Built** — 500+ projects already using our APIs
-- 🔒 **Privacy-Respecting** — no accounts needed to get started
-- 🖼️ **Embed like any normal image or text**
-- 🎵 **Audio generation:** Text-to-speech and speech-to-text capabilities
-- 🌱 **Supporter-Funded** — daily Pollen keeps AI accessible for everyone
+- 🌱 **Pollen Tiers** — earn daily credits by contributing (tiers in beta)
+- 🖼️ **Image Generation** — Flux, GPT Image, Seedream, Kontext
+- 🎬 **Video Generation** — Seedance, Veo (alpha)
+- 🎵 **Audio** — Text-to-speech and speech-to-text
 - 🎣 **_Easy-to-use React hooks_** ([React Hooks Examples](https://react-hooks.pollinations.ai/))
 
 <a href="https://star-history.com/#pollinations/pollinations&Date">
@@ -294,7 +300,7 @@ We're constantly exploring new ways to push the boundaries of AI-driven content 
 
 pollinations.ai envisions a future where AI technology is:
 
-- **Open & Accessible**: We believe AI should be available to everyone, not locked behind paywalls or restricted access
+- **Open & Accessible**: We believe AI should be available to everyone — earn daily Pollen by contributing, no credit card required
 
 - **Transparent & Ethical**: Our open-source approach ensures transparency in how our models work and behave
 
@@ -348,16 +354,28 @@ pollinations.ai is proud to be supported by:
 
 [![Supported Companies](https://pollinations.ai/p/Logos_of_AWS_Activate,_Google_Cloud_for_Startups,_NVIDIA_Inception,_Azure,_Cloudflare,_Scaleway,_and_Modal_arranged_in_a_2_rows_and_4_columns_grid?width=400&height=200&nologo=true&seed=-1)](https://pollinations.ai/p/Logos_of_AWS_Activate,_Google_Cloud_for_Startups,_NVIDIA_Inception,_Azure,_Cloudflare,_Scaleway,_and_Modal_arranged_in_a_2_rows_and_4_columns_grid?width=400&height=200&nologo=true&seed=-1)
 
-- [Portkey AI Gateway](https://github.com/Portkey-AI/gateway): AI Gateway for LLM routing and fallbacks
+- [Perplexity AI](https://www.perplexity.ai/): AI-powered search and conversational answer engine
+- [AWS Activate](https://aws.amazon.com/): GPU Cloud Credits
 - [io.net](https://io.net/): Decentralized GPU network for AI compute
 - [BytePlus](https://www.byteplus.com/): Official ByteDance cloud services and AI solutions
-- [AWS Activate](https://aws.amazon.com/): GPU Cloud Credits
 - [Google Cloud for Startups](https://cloud.google.com/): GPU Cloud Credits
 - [NVIDIA Inception](https://www.nvidia.com/en-us/deep-learning-ai/startups/): AI startup support
 - [Azure (MS for Startups)](https://azure.microsoft.com/): OpenAI credits
 - [Cloudflare](https://developers.cloudflare.com/workers-ai/): Put the connectivity cloud to work for you.
 - [Scaleway](https://www.scaleway.com/): Europe's empowering cloud provider
 - [Modal](https://modal.com/): High-performance AI infrastructure
+- [NavyAI](https://api.navy/): AI API provider for OpenAI o3 and Gemini models
+- [Nebius](https://nebius.com/): AI-optimized cloud infrastructure with NVIDIA GPU clusters
+
+## 💚 Support Us
+
+- ☕ **[Ko-fi](https://ko-fi.com/pollinationsai)** — One-time donations
+- 💖 **[GitHub Sponsors](https://github.com/sponsors/pollinations)** — Monthly support
+- 🌐 **[Open Collective](https://opencollective.com/pollinationsai)** — Transparent funding
+
+## 📣 Stay Connected
+
+[𝕏 Twitter](https://twitter.com/pollinations_ai) · [Instagram](https://instagram.com/pollinations_ai) · [LinkedIn](https://www.linkedin.com/company/pollinations-ai) · [Facebook](https://facebook.com/pollinations) · [Reddit](https://www.reddit.com/r/pollinations_ai/) · [YouTube](https://www.youtube.com/c/pollinations)
 
 ## 📜 License
 

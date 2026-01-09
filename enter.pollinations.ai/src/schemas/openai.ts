@@ -4,7 +4,14 @@ import { z } from "zod";
 import {
     DEFAULT_TEXT_MODEL,
     AUDIO_VOICES,
+    TEXT_SERVICES,
 } from "../../../shared/registry/text.ts";
+
+// Build list of valid model names: service IDs + all aliases
+const VALID_TEXT_MODELS = [
+    ...Object.keys(TEXT_SERVICES),
+    ...Object.values(TEXT_SERVICES).flatMap((service) => service.aliases),
+] as const;
 
 const FunctionParametersSchema = z.record(z.string(), z.any());
 
@@ -272,7 +279,14 @@ const ThinkingSchema = z
 
 export const CreateChatCompletionRequestSchema = z.object({
     messages: z.array(ChatCompletionRequestMessageSchema),
-    model: z.string().optional().default(DEFAULT_TEXT_MODEL),
+    model: z
+        .literal(VALID_TEXT_MODELS)
+        .optional()
+        .default(DEFAULT_TEXT_MODEL)
+        .meta({
+            description:
+                "AI model for text generation. See /v1/models for full list.",
+        }),
     modalities: z.array(z.enum(["text", "audio"])).optional(),
     audio: z
         .object({

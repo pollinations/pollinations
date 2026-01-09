@@ -1,11 +1,11 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom';
 import { AppBar, Toolbar, Button, createTheme, ThemeProvider, Box } from '@mui/material';
-import HomePage from './pages/HomePage';
-import ProjectsPage from './pages/ProjectsPage';
-import MentorsPage from './pages/MentorsPage';
-import AboutPage from './pages/AboutPage';
-import TimelinePage from './pages/TimelinePage';
+import Home from './pages/Home';
+import Projects from './pages/Projects';
+import Mentors from './pages/Mentors';
+import About from './pages/About';
+import Timeline from './pages/Timeline';
 import './App.css'; // Import the new stylesheet
 
 const darkTheme = createTheme({
@@ -48,11 +48,11 @@ function App() {
         </AppBar>
         <Box sx={{ marginTop: '2rem' }}>
           <Routes>
-            <Route path='/' element={<HomePage />} />
-            <Route path='/projects' element={<ProjectsPage />} />
-            <Route path='/mentors' element={<MentorsPage />} />
-            <Route path='/timeline' element={<TimelinePage />} />
-            <Route path='/about' element={<AboutPage />} />
+            <Route path='/' element={<Home />} />
+            <Route path='/projects' element={<Projects />} />
+            <Route path='/mentors' element={<Mentors />} />
+            <Route path='/timeline' element={<Timeline />} />
+            <Route path='/about' element={<About />} />
           </Routes>
         </Box>
       </Router>

@@ -7,6 +7,7 @@ import type { FC } from "react";
 import { getModelPrices } from "./data.ts";
 import { calculatePerPollen } from "./calculations.ts";
 import type { ModelPrice } from "./types.ts";
+import { useModelStats, type ModelStats } from "./useModelStats.ts";
 
 type ExampleModel = {
   name: string;
@@ -20,12 +21,14 @@ const getUnit = (model: ModelPrice): string => {
   return "chats";
 };
 
-const getExamples = (): {
+const getExamples = (
+  stats: ModelStats
+): {
   video: ExampleModel[];
   image: ExampleModel[];
   text: ExampleModel[];
 } => {
-  const allModels = getModelPrices();
+  const allModels = getModelPrices(stats);
 
   const pickTwo = (
     models: ModelPrice[],
@@ -99,7 +102,8 @@ const CategorySection: FC<{
 };
 
 export const PollenExamples: FC = () => {
-  const examples = getExamples();
+  const { stats } = useModelStats();
+  const examples = getExamples(stats);
 
   return (
     <div className="mt-4 bg-green-50/50 rounded-xl p-4 border border-green-200 space-y-4">

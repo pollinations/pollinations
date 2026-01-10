@@ -42,7 +42,9 @@
     "llm",
     "stable-diffusion",
     "text-to-image",
-    "text-to-video"
+    "text-to-video",
+    "image-to-image",
+    "img2img"
   ],
   "author": "pollinations.ai <hello@pollinations.ai>",
   "contributors": [{

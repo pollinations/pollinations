@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import mentors from '../data/mentors.json';
+import mentors from '../info/mentors.json';
 import { Card, CardContent, Typography, Grid, Chip, Box, Collapse, IconButton, Avatar } from '@mui/material';
 import { ExpandMore as ExpandMoreIcon } from '@mui/icons-material';
 

@@ -1,6 +1,6 @@
 import React from 'react';
 import { Box, Typography, Stepper, Step, StepLabel, StepContent } from '@mui/material';
-import gsocTimeline from '../data/timeline.json';
+import gsocTimeline from '../info/timeline.json';
 
 const TimelinePage = () => {
   const today = new Date();

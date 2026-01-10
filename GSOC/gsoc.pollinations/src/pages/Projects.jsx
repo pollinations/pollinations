@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import projects from '../data/projects.json';
+import projects from '../info/projects.json';
 import { Card, CardContent, Typography, Grid, Chip, Box, Collapse, IconButton } from '@mui/material';
 import { ExpandMore as ExpandMoreIcon } from '@mui/icons-material';
 

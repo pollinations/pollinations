@@ -21,14 +21,23 @@ declare module "@pollinations/react" {
         apiKey: string;
     }
 
+    export type ImageModel = string;
+    export type ImageQuality = "low" | "medium" | "high" | "hd";
     export interface ImageOptions {
-        width?: number;
-        height?: number;
-        seed?: number;
-        model?: string;
-        nologo?: boolean;
-        enhance?: boolean;
-        apiKey: string;
+    model?: ImageModel;
+    width?: number;
+    height?: number;
+    seed?: number;
+    enhance?: boolean;
+    negativePrompt?: string;
+    private?: boolean;
+    nologo?: boolean;
+    nofeed?: boolean;
+    safe?: boolean;
+    quality?: ImageQuality;
+    referenceImage?: string | string[];
+    transparent?: boolean;
+    guidanceScale?: number;
     }
 
     export interface ChatOptions {

@@ -8,15 +8,6 @@ import type {
     Message,
 } from "./types.js";
 import { Pollinations } from "./client.js";
-declare const Buffer: {
-    from(
-        data: ArrayBuffer | Uint8Array | string,
-        encoding?: string,
-    ): { toString(encoding?: string): string };
-};
-declare const process: {
-    versions?: { node?: string };
-};
 
 export interface ImageResponseExt extends ImageResponse {
     /** Save image to file (Node.js only) */
@@ -68,33 +59,36 @@ export type ProgressStatus = "starting" | "generating" | "complete";
 
 /** Convert ArrayBuffer to base64 */
 function arrayBufferToBase64(buffer: ArrayBuffer): string {
-    // Check for Node.js Buffer more reliably
-    if (typeof Buffer !== "undefined" && typeof Buffer.from === "function") {
-        // Node.js
-        return Buffer.from(buffer).toString("base64");
-    } else {
-        // Browser
-        const bytes = new Uint8Array(buffer);
-        let binary = "";
-        for (let i = 0; i < bytes.byteLength; i++) {
-            binary += String.fromCharCode(bytes[i]);
+    try {
+        const g = globalThis as Record<string, unknown>;
+        if (typeof g.Buffer === "function") {
+            const NodeBuffer = g.Buffer as typeof Buffer;
+            return NodeBuffer.from(buffer).toString("base64");
         }
-        return btoa(binary);
+    } catch {
+        // Fall through to browser implementation
     }
+    // Browser
+    const bytes = new Uint8Array(buffer);
+    let binary = "";
+    for (let i = 0; i < bytes.byteLength; i++) {
+        binary += String.fromCharCode(bytes[i]);
+    }
+    return btoa(binary);
 }
 
 /** Check if running in Node.js environment */
 function isNodeEnvironment(): boolean {
     try {
-        // More reliable check for Node.js: verify process object structure
-        return (
-            typeof process !== "undefined" &&
-            typeof process.versions === "object" &&
-            typeof process.versions.node === "string"
-        );
+        const g = globalThis as Record<string, unknown>;
+        if (g.process && typeof g.process === "object") {
+            const proc = g.process as { versions?: { node?: string } };
+            return typeof proc.versions?.node === "string";
+        }
     } catch {
         return false;
     }
+    return false;
 }
 
 /** Save buffer to file (Node.js only) */
@@ -113,7 +107,9 @@ async function saveBufferToFile(
     const fs = await import(/* @vite-ignore */ fsModule).then(
         (m) => m.promises,
     );
-    await fs.writeFile(path, Buffer.from(buffer));
+    const g = globalThis as Record<string, unknown>;
+    const NodeBuffer = g.Buffer as typeof Buffer;
+    await fs.writeFile(path, NodeBuffer.from(buffer));
 }
 
 /** Wrap image response with helper methods */

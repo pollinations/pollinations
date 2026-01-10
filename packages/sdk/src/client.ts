@@ -18,11 +18,6 @@ import { PollinationsError } from "./types.js";
 const DEFAULT_BASE_URL = "https://gen.pollinations.ai";
 const DEFAULT_MAX_RETRIES = 3;
 const MAX_INT32 = 2147483647;
-declare const process: {
-    env?: Record<string, string | undefined>;
-    versions?: { node?: string };
-};
-
 // Default timeouts in milliseconds
 const DEFAULT_TIMEOUT = 300_000; // 5min for text/chat
 const DEFAULT_IMAGE_TIMEOUT = 600_000; // 10min for images
@@ -36,13 +31,22 @@ const DEFAULT_RETRY_AFTER = 60;
 
 // Helper to get env var (works in Node.js, Deno, Bun, and edge runtimes)
 function getEnvVar(name: string): string | undefined {
-    if (typeof process !== "undefined" && process.env) {
-        return process.env[name];
-    }
-    // @ts-expect-error - Deno global
-    if (typeof Deno !== "undefined") {
-        // @ts-expect-error - Deno global
-        return Deno.env.get(name);
+    try {
+        const g = globalThis as Record<string, unknown>;
+        if (g.process && typeof g.process === "object") {
+            const proc = g.process as {
+                env?: Record<string, string | undefined>;
+            };
+            if (proc.env) return proc.env[name];
+        }
+        if (g.Deno && typeof g.Deno === "object") {
+            const deno = g.Deno as {
+                env?: { get?: (k: string) => string | undefined };
+            };
+            if (deno.env?.get) return deno.env.get(name);
+        }
+    } catch {
+        return undefined;
     }
     return undefined;
 }

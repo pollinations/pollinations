@@ -7,8 +7,8 @@ export const APP_CONFIGS = {
     enter: {
         name: "enter.pollinations.ai",
         outputDir: "enter.pollinations.ai/public",
-        sourceSvg: "../assets/logo.svg",
-        ogSourceSvg: "../assets/logo-text.svg",
+        sourceSvg: "../../assets/logo.svg",
+        ogSourceSvg: "../../assets/logo-text.svg",
         themeColor: "#D1FAE4",
         backgroundColor: "#110518",
         iconBackground: "transparent",
@@ -22,8 +22,8 @@ export const APP_CONFIGS = {
     pollinations: {
         name: "pollinations.ai",
         outputDir: "pollinations.ai/public",
-        sourceSvg: "../assets/logo.svg",
-        ogSourceSvg: "../assets/logo-text.svg",
+        sourceSvg: "../../assets/logo.svg",
+        ogSourceSvg: "../../assets/logo-text.svg",
         themeColor: "#F9FF7B",
         backgroundColor: "#110518",
         iconBackground: "transparent",
@@ -35,13 +35,11 @@ export const APP_CONFIGS = {
         },
     },
 
-
-
     hello: {
         name: "hello.pollinations.ai",
         outputDir: "hello.pollinations.ai/public",
-        sourceSvg: "../assets/logo.svg",
-        ogSourceSvg: "../assets/logo-text.svg",
+        sourceSvg: "../../assets/logo.svg",
+        ogSourceSvg: "../../assets/logo-text.svg",
         themeColor: "#C7D4D6",
         backgroundColor: "#110518",
         iconBackground: "transparent",

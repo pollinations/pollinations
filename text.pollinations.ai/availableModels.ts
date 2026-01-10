@@ -138,7 +138,7 @@ const models: ModelDefinition[] = [
         transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
     },
     {
-        name: "kimi-k2-thinking",
+        name: "kimi",
         config: portkeyConfig["kimi-k2-thinking-maas"],
         transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
     },

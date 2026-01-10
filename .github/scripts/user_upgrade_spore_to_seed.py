@@ -13,7 +13,7 @@ Environment variables:
     GITHUB_TOKEN           - Required for GitHub API
     CLOUDFLARE_API_TOKEN   - Required for wrangler D1 access
     CLOUDFLARE_ACCOUNT_ID  - Required for wrangler D1 access
-    POLAR_ACCESS_TOKEN     - Optional, for Polar subscription updates
+    POLAR_ACCESS_TOKEN     - Required for Polar subscription updates
 """
 
 import argparse

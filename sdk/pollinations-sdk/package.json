@@ -1,7 +1,7 @@
 {
   "name": "@pollinations/sdk",
   "version": "4.0.1",
-  "description": "Official Node.js SDK for Pollinations AI - Generate images, videos, audio, and text with ease",
+  "description": "Official Node Package for Pollinations AI - Generate images, videos, audio, and text with ease",
   "type": "module",
   "main": "./dist/index.js",
   "module": "./dist/index.js",
@@ -65,7 +65,7 @@
   "repository": {
     "type": "git",
     "url": "https://github.com/pollinations/pollinations",
-    "directory": "SDK/NPM"
+    "directory": "SDK/pollinations-sdk"
   },
   "homepage": "https://pollinations.ai",
   "bugs": {

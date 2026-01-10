@@ -45,7 +45,7 @@ app.post("/upload", async (c) => {
     try {
         if (requestContentType.includes("multipart/form-data")) {
             const formData = await c.req.formData();
-            const file = formData.get("file");
+            const file : any = formData.get("file");
 
             if (!file || !(file instanceof File)) {
                 return c.json(

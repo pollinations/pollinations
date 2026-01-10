@@ -1,188 +1,179 @@
-# 🌸 pollinations.ai Generative React Hooks 🌸
+# @pollinations/react
 
-A simple way to generate images, text, audio and markdown using the Pollinations API in your React projects.
+React hooks for [Pollinations AI](https://pollinations.ai) — Generate images, text & chat with one import.
 
-## 🚀 Quick Start
+[![npm version](https://img.shields.io/npm/v/@pollinations/react.svg)](https://www.npmjs.com/package/@pollinations/react)
+[![license](https://img.shields.io/npm/l/@pollinations/react.svg)](https://github.com/pollinations/pollinations/blob/main/LICENSE)
 
-For interactive example code and documentation, visit [pollinations.ai React Hooks](https://react-hooks.pollinations.ai).
+## Installation
 
-Install the package:
+```bash
+npm install @pollinations/react
+```
 
-    npm install @pollinations/react
+## Quick Start
 
-## 🛠️ Hooks
+```tsx
+import {
+    usePollinationsText,
+    usePollinationsImage,
+    usePollinationsChat,
+    usePollinationsModels,
+} from "@pollinations/react";
 
-### usePollinationsText
+function App() {
+    const { data: text, isLoading: textLoading } = usePollinationsText(
+        "Write a haiku about AI",
+        { apiKey: "pk_..." }
+    );
+    const {
+        data: imageUrl,
+        isLoading: imageLoading,
+        error: imageError,
+    } = usePollinationsImage("A beautiful sunset", { apiKey: "pk_..." });
+    const {
+        sendMessage,
+        messages,
+        isLoading: chatLoading,
+    } = usePollinationsChat([{ role: "system", content: "You are helpful" }]);
+    const { models, isLoading: modelsLoading } = usePollinationsModels("text");
 
-The usePollinationsText hook allows you to generate text from Pollinations' API and use it directly in your React components.
-
-    import React from 'react';
-    import { usePollinationsText } from '@pollinations/react';
-
-    const HaikuComponent = () => {
-      const text = usePollinationsText('Write a short haiku about pollinations.ai', {
-        seed: 42,
-        model: 'mistral',
-        systemPrompt: 'You are a poetic AI assistant.'
-      });
-
-      return (
+    return (
         <div>
-          {text ? <p>{text}</p> : <p>Loading...</p>}
+            <h2>Text</h2>
+            {textLoading ? <p>Loading...</p> : <p>{text}</p>}
+
+            <h2>Image</h2>
+            {imageLoading ? (
+                <p>Generating image...</p>
+            ) : (
+                <img src={imageUrl} alt="Generated" />
+            )}
+
+            <h2>Chat</h2>
+            <button onClick={() => sendMessage("Hello!")}>Send Hello</button>
+            <ul>
+                {messages.map((msg, i) => (
+                    <li key={i}>
+                        <b>{msg.role}:</b> {msg.content}
+                    </li>
+                ))}
+            </ul>
+
+            <h2>Models</h2>
+            {modelsLoading ? (
+                <p>Loading models...</p>
+            ) : (
+                <pre>{JSON.stringify(models, null, 2)}</pre>
+            )}
         </div>
-      );
-    };
+    );
+}
+```
 
-    export default HaikuComponent;
+## Hooks
 
-#### Options
+### `usePollinationsText`
 
-- `seed` (number, default: 42): Seed for reproducible generation. Use the same seed to get identical results.
-- `model` (string, default: 'openai'): The model to use for text generation. Options: 'openai', 'mistral'.
-- `systemPrompt` (string, optional): A system prompt to set the behavior of the AI.
+Generate text using AI models.
 
-### usePollinationsAudio
+```tsx
+const { data, isLoading, error } = usePollinationsText(prompt, {
+    model: "openai", // default
+    seed: 42, // for reproducibility
+    systemPrompt: "...", // optional system prompt
+    jsonMode: false, // parse response as JSON
+    apiKey: "pk_...", // optional API key
+});
+```
 
-The usePollinationsAudio hook allows you to generate text-to-speech audio URLs from Pollinations' API.
+-   `data`: string | object (if `jsonMode` is true)
+-   `isLoading`: boolean
+-   `error`: Error | null
 
-    import React from 'react';
-    import { usePollinationsAudio } from '@pollinations/react';
+### `usePollinationsImage`
 
-    const SpeechComponent = () => {
-      const audioUrl = usePollinationsAudio('Hello, welcome to Pollinations!', {
-        voice: 'nova',
-        seed: 42
-      });
+Generate image URLs.
 
-      return (
-        <div>
-          {audioUrl ? <audio controls src={audioUrl} /> : <p>Loading...</p>}
-        </div>
-      );
-    };
+```tsx
+const { data, isLoading, error } = usePollinationsImage(prompt, {
+    model: "flux", // default
+    width: 1024,
+    height: 1024,
+    seed: 42,
+    nologo: true,
+    enhance: false,
+    apiKey: "pk_...", // required
+});
+```
 
-    export default SpeechComponent;
+-   `data`: string (blob URL) or null
+-   `isLoading`: boolean
+-   `error`: Error | null
 
-#### Options
+### `usePollinationsChat`
 
-- `voice` (string, default: 'nova'): The voice to use. Options: 'alloy', 'echo', 'fable', 'onyx', 'nova', 'shimmer'.
-- `model` (string, default: 'openai-audio'): The model to use for audio generation.
-- `seed` (number, default: 42): The seed for consistent audio generation.
+Multi-turn chat conversations.
 
-### usePollinationsImage
+```tsx
+const { sendMessage, messages, isLoading, error, reset } = usePollinationsChat(
+    [
+        { role: "system", content: "You are helpful" },
+        // ...other initial messages
+    ],
+    {
+        model: "openai", // default
+        apiKey: "pk_...",
+    }
+);
 
-The usePollinationsImage hook allows you to generate image URLs from Pollinations' API and use them directly in your React components.
+// Send a message
+sendMessage("Hello!");
 
-    import React from 'react';
-    import { usePollinationsImage } from '@pollinations/react';
+// Reset conversation
+reset();
+```
 
-    const SunsetImageComponent = () => {
-      const imageUrl = usePollinationsImage('A beautiful sunset over the ocean', {
-        width: 800,
-        height: 600,
-        seed: 42,
-        model: 'flux',
-        nologo: true,
-        enhance: false
-      });
+-   `messages`: Array of `{ role: string, content: string }`
+-   `sendMessage`: (message: string) => void
+-   `isLoading`: boolean
+-   `error`: Error | null
+-   `reset`: () => void
 
-      return (
-        <div>
-          {imageUrl ? <img src={imageUrl} alt="Generated sunset" /> : <p>Loading...</p>}
-        </div>
-      );
-    };
+### `usePollinationsModels`
 
-    export default SunsetImageComponent;
+Fetch available models.
 
-#### Options
+```tsx
+const { models, isLoading, error } = usePollinationsModels("text"); // or "image"
+```
 
-- `width` (number, default: 1024): The width of the generated image.
-- `height` (number, default: 1024): The height of the generated image.
-- `model` (string, default: 'flux'): The model to use for image generation.
-- `seed` (number, default: 42): Seed for reproducible generation. Use the same seed to get identical results.
-- `nologo` (boolean, default: true): Whether to generate the image without a logo.
-- `enhance` (boolean, default: false): Whether to enhance the generated image.
+-   `models`: Array of model objects
+-   `isLoading`: boolean
+-   `error`: Error | null
 
-### usePollinationsChat
+## Authentication
 
-The usePollinationsChat hook allows you to generate chat responses from Pollinations' API and use them directly in your React components.
+Get your API key at [enter.pollinations.ai](https://enter.pollinations.ai).
 
-    import React, { useState } from 'react';
-    import { usePollinationsChat } from '@pollinations/react';
+| Key Type        | Prefix   | Use Case                         |
+| --------------- | -------- | -------------------------------- |
+| **Publishable** | `pk_...` | Client-side, rate limited        |
+| **Secret**      | `sk_...` | Server-side only, no rate limits |
 
-    const ChatComponent = () => {
-      const [input, setInput] = useState('');
-      const { sendUserMessage, messages } = usePollinationsChat([
-        { role: "system", content: "You are a helpful assistant" }
-      ], {
-        seed: 42,
-        jsonMode: false,
-        model: 'mistral'
-      });
+All hooks use `gen.pollinations.ai` endpoints with the following patterns:
+- **Text**: `GET /text/{prompt}` with query parameters (seed, model, json_mode, system_prompt)
+- **Chat**: `POST /v1/chat/completions` with message array
+- **Image**: `GET /image/{prompt}` with query parameters (width, height, seed, model, nologo, enhance)
+- **Models**: `GET /text/models` or `GET /image/models`
 
-      const handleSend = () => {
-        sendUserMessage(input);
-        setInput('');
-      };
+## Links
 
-      return (
-        <div>
-          <div>
-            {messages.map((msg, index) => (
-              <p key={index}><strong>{msg.role}:</strong> {msg.content}</p>
-            ))}
-          </div>
-          <input value={input} onChange={(e) => setInput(e.target.value)} />
-          <button onClick={handleSend}>Send</button>
-        </div>
-      );
-    };
+-   [Pollinations.ai](https://pollinations.ai)
+-   [API Docs](https://enter.pollinations.ai/api/docs)
+-   [Discord](https://discord.gg/pollinations)
+-   [GitHub](https://github.com/pollinations/pollinations)
 
-    export default ChatComponent;
+## License
 
-#### Options
-
-- `seed` (number, default: 42): The seed for random text generation.
-- `jsonMode` (boolean, default: false): Whether to parse the response as JSON.
-- `model` (string, default: 'openai'): The model to use for text generation. Options: 'openai', 'mistral'.
-
-### Markdown Example
-
-Here's an example of how to use the `usePollinationsText` hook to generate and render markdown content:
-
-    import React from 'react';
-    import { usePollinationsText } from '@pollinations/react';
-    import ReactMarkdown from 'react-markdown';
-
-    const MarkdownExample = () => {
-      const markdownContent = usePollinationsText('Create a guide on pollination techniques', {
-        seed: 42,
-        model: 'openai',
-        systemPrompt: 'You are a technical writer specializing in biology. Responding always in Markdown format.'
-      });
-
-      return (
-        <div>
-          {markdownContent ? (
-            <ReactMarkdown>{markdownContent}</ReactMarkdown>
-          ) : (
-            <p>Loading markdown content...</p>
-          )}
-        </div>
-      );
-    };
-
-    export default MarkdownExample;
-
-Note: This example uses `react-markdown` to render the markdown content. You'll need to install it separately:
-
-    npm install react-markdown
-
-## 📜 License
-
-This project is licensed under the MIT License. See the LICENSE file for details.
-
----
-
-Made with ❤️ by the pollinations.ai team
+MIT [Pollinations.AI](https://pollinations.ai)

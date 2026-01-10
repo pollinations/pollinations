@@ -53,7 +53,7 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
           </div>
           {showVision && (
             <Tooltip
-              text={
+              content={
                 model.type === "image"
                   ? "Vision (image-to-image)"
                   : "Vision input"
@@ -63,22 +63,22 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
             </Tooltip>
           )}
           {showAudioInput && (
-            <Tooltip text="Audio input">
+            <Tooltip content="Audio input">
               <span className="text-base">👂</span>
             </Tooltip>
           )}
           {showReasoning && (
-            <Tooltip text="Reasoning">
+            <Tooltip content="Reasoning">
               <span className="text-base">🧠</span>
             </Tooltip>
           )}
           {showSearch && (
-            <Tooltip text="Web search">
+            <Tooltip content="Web search">
               <span className="text-base">🔍</span>
             </Tooltip>
           )}
           {showCodeExecution && (
-            <Tooltip text="Code execution">
+            <Tooltip content="Code execution">
               <span className="text-base">💻</span>
             </Tooltip>
           )}

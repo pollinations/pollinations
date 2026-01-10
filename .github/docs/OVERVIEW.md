@@ -76,7 +76,6 @@ Most workflows use **Polly Bot** (GitHub App) for authentication instead of pers
 .github/
 ├── docs/               # This documentation
 ├── scripts/            # Python/JS scripts called by workflows
-│   └── reddit_workflow/  # Devvit Reddit bot (self-hosted)
 ├── workflows/          # GitHub Actions YAML files
 └── ISSUE_TEMPLATE/     # Issue templates
 ```

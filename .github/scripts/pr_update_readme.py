@@ -6,7 +6,7 @@ import requests
 from datetime import datetime, timezone
 
 GITHUB_API_BASE = "https://api.github.com"
-HIGHLIGHTS_PATH = "NEWS/transformed/highlights.md"
+HIGHLIGHTS_PATH = "social/news/transformed/highlights.md"
 README_PATH = "README.md"
 MAX_README_ENTRIES = 10
 

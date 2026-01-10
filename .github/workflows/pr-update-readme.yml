@@ -4,7 +4,7 @@ on:
   pull_request:
     types: [closed]
     paths:
-      - 'NEWS/transformed/highlights.md'
+      - 'social/news/transformed/highlights.md'
   workflow_dispatch:
 
 jobs:

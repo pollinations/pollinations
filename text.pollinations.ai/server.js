@@ -6,7 +6,6 @@ import debug from "debug";
 import { promises as fs } from "fs";
 import path from "path";
 import dotenv from "dotenv";
-import { Transform } from "stream";
 import { availableModels } from "./availableModels.js";
 import { generateTextPortkey } from "./generateTextPortkey.js";
 import { setupFeedEndpoint, sendToFeedListeners } from "./feed.js";
@@ -692,52 +691,6 @@ app.post("/v1/chat/completions", async (req, res) => {
         sendErrorResponse(res, req, error, requestParams);
     }
 });
-
-/**
- * Create a transform stream that captures usage data from SSE chunks
- * and adds HTTP trailers at the end (GitHub issue #4638)
- */
-function createUsageCaptureTransform(res) {
-    let finalUsage = null;
-    let finalModel = null;
-
-    return new Transform({
-        objectMode: true,
-        transform(chunk, _encoding, callback) {
-            const chunkStr = chunk.toString();
-
-            // Try to extract usage from chunks
-            try {
-                const dataMatches = chunkStr.match(/data: (.*?)(?:\n\n|$)/g);
-                if (dataMatches) {
-                    for (const match of dataMatches) {
-                        const dataContent = match.replace(/^data: /, "").trim();
-                        if (dataContent && dataContent !== "[DONE]") {
-                            const data = JSON.parse(dataContent);
-                            if (data.usage) {
-                                finalUsage = data.usage;
-                            }
-                            if (data.model) {
-                                finalModel = data.model;
-                            }
-                        }
-                    }
-                }
-            } catch (err) {
-                // Ignore parse errors
-            }
-
-            // Pass through unchanged
-            this.push(chunk);
-            callback();
-        },
-        flush(callback) {
-            // Removed trailers as they were causing issues
-            // TODO: Check if this function is still needed at all
-            callback();
-        },
-    });
-}
 
 async function sendAsOpenAIStream(res, completion, req = null) {
     log("sendAsOpenAIStream called with completion type:", typeof completion);

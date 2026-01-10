@@ -1,113 +1,104 @@
-import { useState, useEffect, useRef, useMemo, useCallback } from "react";
-import memoize from "lodash.memoize";
+import { useState, useEffect, useRef, useCallback } from "react";
 
-/**
- * Custom hook to generate text using the Pollinations API.
- *
- * This hook encapsulates the logic for making a POST request to the Pollinations text generation API,
- * handling memoization, and cleaning the received markdown data.
- *
- * @param {string} prompt - The user's input prompt for text generation.
- * @param {Object} options - Configuration options for text generation.
- * @param {number} [options.seed=42] - Seed for deterministic text generation.
- * @param {string} [options.systemPrompt] - Optional system prompt to guide the text generation.
- * @param {boolean} [options.jsonMode=false] - Whether to parse the response as JSON.
- * @param {boolean} [options.loadNull=false] - Whether to reset the text state to null before fetching new data.
- * @returns {Object} - An object containing the generated text and loading state.
- */
 const usePollinationsText = (prompt, options = {}) => {
-    // Destructure options with default values
     const {
         seed = 42,
-        systemPrompt,
-        model,
-        jsonMode = false,
-        loadNull = false,
+        system,
+        model = "openai",
+        json = false,
+        temperature,
+        stream = false,
+        private: isPrivate = false,
+        apiKey,
     } = options;
 
-    // State to hold the generated text
-    const [text, setText] = useState(null);
+    const [data, setData] = useState(null);
+    const [isLoading, setIsLoading] = useState(false);
+    const [error, setError] = useState(null);
+    const abortControllerRef = useRef(null);
 
-    // Ref to track the current fetch request
-    const currentFetchRef = useRef(Promise.resolve());
+    const fetchText = useCallback(async () => {
+        if (!prompt || prompt.trim() === "") return;
 
-    // Memoized request body
-    const requestBody = useMemo(() => {
-        const messages = systemPrompt
-            ? [{ role: "system", content: systemPrompt }]
-            : [];
-        messages.push({ role: "user", content: prompt });
-        return { messages, seed, model, jsonMode };
-    }, [prompt, systemPrompt, seed, model, jsonMode]);
-
-    // Memoized fetch function
-    const fetchText = useCallback(() => {
-        currentFetchRef.current = currentFetchRef.current
-            .then(() => memoizedFetchPollinationsText(requestBody))
-            .then((cleanedData) => {
-                setText(cleanedData);
-            })
-            .catch((error) => {
-                console.error("Error in usePollinationsText:", error);
-                setText(
-                    `An error occurred while generating text: ${error.message}. Please try again.`,
-                );
-            });
-    }, [requestBody]);
-
-    // Effect to fetch or retrieve memoized text
-    useEffect(() => {
-        if (prompt === null) return;
-        if (loadNull) setText(null);
-        fetchText();
-    }, [fetchText, loadNull, prompt]);
-
-    return text;
-};
-
-/**
- * Function to fetch text from the Pollinations API.
- *
- * @param {Object} requestBody - The request body for the API call.
- * @returns {Promise<string|Object>} - A promise that resolves to the cleaned text data or parsed JSON.
- */
-const fetchPollinationsText = async (requestBody) => {
-    try {
-        const response = await fetch("https://text.pollinations.ai/", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(requestBody),
-        });
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
+        if (typeof seed !== "number" || seed < 0 || seed > 4294967295) {
+            setError("Seed must be a 32-bit unsigned integer (0-4294967295)");
+            return;
         }
-        const data = await response.text();
-        return requestBody.jsonMode ? JSON.parse(data) : cleanMarkdown(data);
-    } catch (error) {
-        console.error("Error fetching text from Pollinations API:", error);
-        throw error;
-    }
-};
 
-// Memoized version of fetchPollinationsText
-const memoizedFetchPollinationsText = memoize(
-    fetchPollinationsText,
-    JSON.stringify,
-);
+        if (abortControllerRef.current) {
+            abortControllerRef.current.abort();
+        }
+        abortControllerRef.current = new AbortController();
 
-/**
- * Helper function to clean markdown data.
- *
- * This function extracts text between triple backticks, which is typically
- * used to denote code blocks in markdown. If no such block is found,
- * it returns the original data.
- *
- * @param {string} data - The markdown data to clean.
- * @returns {string} - The cleaned text data.
- */
-const cleanMarkdown = (data) => {
-    const match = data.match(/```([\s\S]*?)```/);
-    return match ? match[1] : data;
+        setIsLoading(true);
+        setError(null);
+
+        try {
+            if (!apiKey) {
+                throw new Error("API key is required");
+            }
+
+            if (!/^(pk_|sk_)/.test(apiKey)) {
+                console.warn("API key format may be invalid");
+            }
+
+            const params = new URLSearchParams();
+            params.set("seed", seed.toString());
+            params.set("model", model);
+            if (json) params.set("json", "true");
+            if (system) params.set("system", system);
+            if (temperature !== undefined) params.set("temperature", temperature.toString());
+            if (stream) params.set("stream", "true");
+            if (isPrivate) params.set("private", "true");
+
+            const headers = {
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${apiKey}`,
+            };
+
+            const response = await fetch(
+                `https://gen.pollinations.ai/text/${encodeURIComponent(prompt)}?${params.toString()}`,
+                {
+                    headers,
+                    signal: abortControllerRef.current.signal,
+                },
+            );
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            const text = await response.text();
+            let result = text;
+            if (json) {
+                try {
+                    result = JSON.parse(text);
+                } catch (parseErr) {
+                    throw new Error(
+                        `Failed to parse JSON response: ${parseErr.message}`,
+                    );
+                }
+            }
+            setData(result);
+            setIsLoading(false);
+        } catch (err) {
+            if (err.name === "AbortError") return;
+            console.error("Error in usePollinationsText:", err);
+            setError(err.message);
+            setIsLoading(false);
+        }
+    }, [prompt, seed, model, system, json, temperature, stream, isPrivate, apiKey]);
+
+    useEffect(() => {
+        fetchText();
+        return () => {
+            if (abortControllerRef.current) {
+                abortControllerRef.current.abort();
+            }
+        };
+    }, [fetchText]);
+
+    return { data, isLoading, error };
 };
 
 export default usePollinationsText;

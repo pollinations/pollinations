@@ -4,6 +4,11 @@ on:
   schedule:
     - cron: '0 0 * * *'
   workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Dry run (fetch and validate only, no upgrades)'
+        type: boolean
+        default: false
 
 jobs:
   upgrade-spore-to-seed:
@@ -53,7 +58,12 @@ jobs:
             exit 0
           fi
           
-          # Upgrade approved users
+          # Upgrade approved users (skip if dry run)
+          if [ "${{ inputs.dry_run }}" = "true" ]; then
+            echo "🔍 DRY RUN - would upgrade: $(echo "$APPROVED" | jq -r '.[]' | tr '\n' ' ')"
+            exit 0
+          fi
+          
           for user in $(echo "$APPROVED" | jq -r '.[]'); do
             echo "🌱 Upgrading $user..."
             npx tsx scripts/tier-update-user.ts update-tier --githubUsername "$user" --tier seed --env production \

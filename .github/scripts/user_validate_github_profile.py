@@ -12,8 +12,11 @@ Fully automatic - no red flags, no manual review.
 
 import json
 import os
+import time
 import urllib.request
 from datetime import datetime, timezone
+
+from tqdm import tqdm
 
 GITHUB_TOKEN = os.environ.get("GITHUB_TOKEN")
 GITHUB_GRAPHQL = "https://api.github.com/graphql"
@@ -87,7 +90,11 @@ def validate_users(usernames: list[str]) -> list[dict]:
         return []
 
     results = []
-    for i in range(0, len(usernames), BATCH_SIZE):
+    batches = range(0, len(usernames), BATCH_SIZE)
+    
+    for i in tqdm(batches, desc="Validating", unit="batch"):
         batch = usernames[i:i + BATCH_SIZE]
         results.extend(fetch_batch(batch))
+        time.sleep(2)  # Avoid GitHub secondary rate limit (2000 pts/min)
+        
     return results

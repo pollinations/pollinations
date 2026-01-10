@@ -22,52 +22,14 @@ jobs:
         with:
           python-version: "3.11"
 
-      - name: Fetch, validate, and upgrade
+      - name: Install dependencies
+        run: cd enter.pollinations.ai && npm install
+
+      - name: Run upgrade script
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           POLAR_ACCESS_TOKEN: ${{ secrets.POLAR_ACCESS_TOKEN }}
         run: |
-          cd enter.pollinations.ai
-          npm install
-          
-          # Fetch spore users directly from D1
-          USERS=$(wrangler d1 execute production-pollinations-enter-db --remote \
-            --command "SELECT github_username FROM user WHERE tier = 'spore' AND github_username IS NOT NULL" \
-            --json 2>/dev/null | jq '[.[0].results[].github_username]')
-          echo "Found $(echo "$USERS" | jq 'length') spore users"
-          
-          if [ "$USERS" = "[]" ]; then
-            echo "No spore users to process"
-            exit 0
-          fi
-          
-          # Validate users via Python
-          APPROVED=$(echo "$USERS" | python3 -c "
-          import json, sys
-          sys.path.insert(0, '../.github/scripts')
-          from user_validate_github_profile import validate_users
-          users = json.load(sys.stdin)
-          results = validate_users(users)
-          approved = [r['username'] for r in results if r['approved']]
-          print(f'{len(approved)}/{len(users)} approved', file=sys.stderr)
-          print(json.dumps(approved))
-          ")
-          
-          if [ "$APPROVED" = "[]" ]; then
-            echo "No users approved for upgrade"
-            exit 0
-          fi
-          
-          # Upgrade approved users (skip if dry run)
-          if [ "${{ inputs.dry_run }}" = "true" ]; then
-            echo "🔍 DRY RUN - would upgrade: $(echo "$APPROVED" | jq -r '.[]' | tr '\n' ' ')"
-            exit 0
-          fi
-          
-          for user in $(echo "$APPROVED" | jq -r '.[]'); do
-            echo "🌱 Upgrading $user..."
-            npx tsx scripts/tier-update-user.ts update-tier --githubUsername "$user" --tier seed --env production \
-              && echo "✅ $user" || echo "❌ $user"
-          done
+          python .github/scripts/user_upgrade_spore_to_seed.py ${{ inputs.dry_run && '--dry-run' || '' }}

@@ -366,8 +366,8 @@ export const TEXT_SERVICES = {
         search: true,
         isSpecialized: false,
     },
-    "kimi-k2-thinking": {
-        aliases: ["kimi-k2", "kimi-thinking"],
+    "kimi": {
+        aliases: ["kimi-k2", "kimi-reasoning", "kimi-k2-thinking"],
         modelId: "moonshotai/kimi-k2-thinking-maas",
         provider: "google",
         cost: [

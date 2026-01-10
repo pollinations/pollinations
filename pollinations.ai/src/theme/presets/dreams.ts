@@ -115,7 +115,7 @@ export const CrazyDreamsCopy = {
         "We're crafting a haven where developers, creators, and AI enthusiasts collaborate and bloom together.",
     "COMMUNITY_PAGE.newsTitle.text": "What's New",
     "COMMUNITY_PAGE.newsFilePath":
-        "https://raw.githubusercontent.com/pollinations/pollinations/production/NEWS/transformed/highlights.md",
+        "https://raw.githubusercontent.com/pollinations/pollinations/production/social/news/transformed/highlights.md",
     "COMMUNITY_PAGE.discordTitle.text": "Discord",
     "COMMUNITY_PAGE.discordSubtitle.text":
         "Join our sunlit community for chats and support.",

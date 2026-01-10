@@ -19,10 +19,6 @@ Model definitions and pricing for all Pollinations services:
 - **price-helpers.ts** - Pricing utility functions
 - **types.ts** - Shared TypeScript types
 
-## Other Directories
-
-- **assets/** - Shared logo SVGs
-- **pwa-assets/** - PWA icon generation utility (has its own package.json)
 
 ## Usage
 

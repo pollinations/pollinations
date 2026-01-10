@@ -6,7 +6,6 @@
 [![Stars](https://img.shields.io/github/stars/pollinations/pollinations?style=flat-square&logo=github)](https://github.com/pollinations/pollinations)
 [![License](https://img.shields.io/github/license/pollinations/pollinations?style=flat-square)](LICENSE)
 [![Discord](https://img.shields.io/discord/885844321461485618?style=flat-square&logo=discord&label=Discord&color=5865F2)](https://discord.gg/pollinations-ai-885844321461485618)
-[![npm](https://img.shields.io/npm/v/@pollinations/react?style=flat-square&logo=npm)](https://www.npmjs.com/package/@pollinations/react)
 
 [Website](https://pollinations.ai) · [Dashboard](https://enter.pollinations.ai) · [API Docs](APIDOCS.md) · [Discord](https://discord.gg/pollinations-ai-885844321461485618)
 
@@ -108,7 +107,7 @@ Explore voices at [OpenAI.fm](https://www.openai.fm/).
 
 ### MCP Server for AI Assistants
 
-Our MCP (Model Context Protocol) server enables AI assistants like Claude to generate images and audio directly. [Learn more](./sdk/model-context-protocol/README.md)
+Our MCP (Model Context Protocol) server enables AI assistants like Claude to generate images and audio directly. [Learn more](./packages/mcp/README.md)
 
 #### Configuration
 
@@ -232,34 +231,9 @@ curl 'https://gen.pollinations.ai/v1/chat/completions' \
 
 ## 🛠️ Integration
 
-### React Hooks
+### SDK
 
-We offer React hooks for easy integration. Example usage:
-
-    import React from 'react';
-    import { usePollinationsImage, usePollinationsText } from '@pollinations/react';
-    import ReactMarkdown from 'react-markdown';
-
-    const AIGeneratedContent = () => {
-      const imageUrl = usePollinationsImage("Beautiful landscape of Paris with Eiffel Tower", { width: 800, height: 600, seed: 42 });
-      const markdown = usePollinationsText("Write a brief travel guide for Paris, including top attractions and local cuisine in markdown", { seed: 42 });
-
-      return (
-        <div>
-          <h2>AI-Generated Travel Guide</h2>
-          <img src={imageUrl} alt="AI Generated" />
-          {markdown ? (
-            <ReactMarkdown>{markdown}</ReactMarkdown>
-          ) : (
-            <p>Loading markdown content...</p>
-          )}
-        </div>
-      );
-    };
-
-    export default AIGeneratedContent;
-
-Check out our [Pollinations React Hooks](./sdk/pollinations-react/README.md) for more details.
+Check out our [Pollinations SDK](./packages/sdk/README.md) for Node.js, browser, and React integration.
 
 ## Architecture
 
@@ -338,11 +312,11 @@ Our codebase is organized into several key folders, each serving a specific purp
 
 - [`image.pollinations.ai/`](./image.pollinations.ai/): Backend service for image generation and caching with Cloudflare Workers and R2 storage.
 
-- [`sdk/pollinations-react/`](./sdk/pollinations-react/): React component library for Pollinations.ai.
+- [`packages/sdk/`](./packages/sdk/): SDK and React component library for Pollinations.ai.
 
 - [`text.pollinations.ai/`](./text.pollinations.ai/): Backend service for text generation.
 
-- [`sdk/model-context-protocol/`](./sdk/model-context-protocol/): Model Context Protocol (MCP) server for AI assistants like Claude to generate images directly.
+- [`packages/mcp/`](./packages/mcp/): Model Context Protocol (MCP) server for AI assistants like Claude to generate images directly.
 
 This structure encompasses the frontend website, backend services for image and text generation, and integrations like the Discord bot and MCP server, providing a comprehensive framework for the pollinations.ai platform.
 

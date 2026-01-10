@@ -21,6 +21,7 @@ export { Pollinations } from "./client.js";
 // Helper functions
 export {
     configure,
+    resetClient,
     imageUrl,
     generateImage,
     videoUrl,

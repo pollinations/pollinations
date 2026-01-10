@@ -20,52 +20,51 @@ export const generateHTML = () => `<!DOCTYPE html>
     <div class="container">
         <h1 class="emoji-title">
             <span class="brand">
-                <img src="https://raw.githubusercontent.com/pollinations/pollinations/refs/heads/master/assets/logo.svg" alt="pollinations.ai" class="title-logo" />
-                Pollinations.AI
+                <img src="https://raw.githubusercontent.com/pollinations/pollinations/refs/heads/master/assets/logo.svg" alt="pollinations.ai" class="title-logo" style="filter: invert(1);" />
+                <span style="font-weight: normal; font-size: inherit;">pollinations.ai</span>
             </span>
             <span class="auth-title">🐝 Auth 🌸</span>
         </h1>
         
-        <!-- Migration Notice -->
-        <div id="intro-text" style="margin-top: 20px; padding: 28px; background: linear-gradient(135deg, #fef9e7 0%, #fff8e1 100%); border: 3px solid #f59e0b; border-radius: 16px; box-shadow: 0 4px 20px rgba(245, 158, 11, 0.15);">
+        <!-- Deprecation Notice -->
+        <div id="intro-text" style="margin-top: 20px; padding: 28px; background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%); border: 3px solid #dc2626; border-radius: 16px; box-shadow: 0 4px 20px rgba(220, 38, 38, 0.15);">
             
             <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 16px;">
-                <span style="font-size: 2rem;">⚠️</span>
-                <h2 style="margin: 0; color: #d97706; font-size: 1.5em; font-weight: 700;">
-                    Please Migrate — Retiring January 2026
+                <span style="font-size: 2rem;">🚫</span>
+                <h2 style="margin: 0; color: #dc2626; font-size: 1.5em; font-weight: 700;">
+                    This Service Has Been Deprecated
                 </h2>
             </div>
             
             <p style="margin: 0 0 16px 0; color: #1f2937; font-size: 1.05em; line-height: 1.6;">
-                This legacy service is being <strong>retired in January 2026</strong>. Please migrate your apps to <strong>enter.pollinations.ai</strong>.
+                <strong>Login and token management have been disabled.</strong> This legacy authentication service is no longer accepting new registrations or logins.
             </p>
             
-            <p style="margin: 0 0 12px 0; color: #374151; font-size: 1em; line-height: 1.6;">
-                The new platform offers:
-            </p>
-            
-            <ul style="margin: 0 0 16px 0; padding-left: 24px; color: #374151; font-size: 1em; line-height: 1.8;">
-                <li>New models & improved reliability</li>
-                <li>Updated dashboard & API keys</li>
-                <li>Pollen wallet & sponsorship tiers</li>
-            </ul>
-            
-            <p style="margin: 0 0 20px 0; color: #4b5563; font-size: 0.95em; line-height: 1.6;">
-                Your existing tokens continue to work for now. We'll announce any changes in advance — but please migrate soon to avoid disruption.
-            </p>
+            <div style="margin: 16px 0; padding: 16px; background: rgba(255,255,255,0.7); border-radius: 8px;">
+                <p style="margin: 0 0 8px 0; color: #374151; font-size: 1em; font-weight: 600;">
+                    ✅ What still works:
+                </p>
+                <ul style="margin: 0 0 16px 0; padding-left: 24px; color: #374151; font-size: 1em; line-height: 1.8;">
+                    <li><strong>Anonymous API calls</strong> — No authentication required</li>
+                </ul>
+                
+                <p style="margin: 0 0 8px 0; color: #374151; font-size: 1em; font-weight: 600;">
+                    🔄 For tokens & registered users:
+                </p>
+                <ul style="margin: 0; padding-left: 24px; color: #374151; font-size: 1em; line-height: 1.8;">
+                    <li>All token-based authentication has moved to <strong>enter.pollinations.ai</strong></li>
+                    <li>User accounts & API keys are now managed there</li>
+                </ul>
+            </div>
             
             <a href="https://enter.pollinations.ai" target="_blank" style="display: inline-block; background: linear-gradient(135deg, #10b981, #059669); color: white; padding: 14px 36px; border-radius: 30px; text-decoration: none; font-weight: bold; font-size: 1.1em; box-shadow: 0 6px 20px rgba(16, 185, 129, 0.35);">
-                → Migrate Now
+                → Go to enter.pollinations.ai
             </a>
-            
-            <p style="margin: 20px 0 0 0; color: #6b7280; font-size: 0.9em; font-style: italic;">
-                Login below to view your existing tokens and domains.
-            </p>
         </div>
 
-        <!-- 🔐 Authentication -->
-        <div id="auth-section" style="margin-top: 40px; display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
-            <button id="auth-button" onclick="startAuth()">Login with GitHub</button>
+        <!-- 🔐 Authentication (Disabled) -->
+        <div id="auth-section" style="margin-top: 40px; display:none;">
+            <button id="auth-button" onclick="startAuth()" disabled style="display:none;">Login with GitHub</button>
             <button id="logout-button" onclick="logout()" class="hidden">Logout</button>
             <div id="badge-container" class="hidden"></div>
         </div>
@@ -243,7 +242,7 @@ export const generateHTML = () => `<!DOCTYPE html>
     </div>
 
     <footer style="text-align: center; padding: 20px; margin-top: 40px; font-size: 14px; opacity: 0.8;">
-        <p>Need help? Check out our <a href="https://github.com/pollinations/pollinations/blob/master/APIDOCS.md" target="_blank" style="color: var(--color-primary);">API Documentation</a> 📚</p>
+        <p><a href="https://github.com/pollinations/pollinations/blob/master/APIDOCS.md" target="_blank" style="color: var(--color-primary);">Legacy API Documentation</a> 📚 (anonymous calls only)</p>
     </footer>
 
     ${JS}

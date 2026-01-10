@@ -2,6 +2,16 @@
 
 All notable changes to `@pollinations/react` will be documented in this file.
 
+
+## [3.0.2] - 2026-01-10
+
+### Improved
+-   Enhanced error handling for network issues and invalid responses across all hooks
+-  Added video generation support with `usePollinationsVideo` hook:
+    - `GET /video/{prompt}` with query parameters
+    - Supports options: model, seed, duration, fps, dimensions
+- Updated the index.d.ts file to include type definitions for `usePollinationsVideo`
+
 ## [3.0.1] - 2025-12-24
 
 ### Fixed

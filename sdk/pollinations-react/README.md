@@ -1,6 +1,6 @@
 # @pollinations/react
 
-React hooks for [Pollinations AI](https://pollinations.ai) — Generate images, text & chat with one import.
+React hooks for [Pollinations AI](https://pollinations.ai) — Generate images, text, video & chat with one import.
 
 [![npm version](https://img.shields.io/npm/v/@pollinations/react.svg)](https://www.npmjs.com/package/@pollinations/react)
 [![license](https://img.shields.io/npm/l/@pollinations/react.svg)](https://github.com/pollinations/pollinations/blob/main/LICENSE)
@@ -17,6 +17,7 @@ npm install @pollinations/react
 import {
     usePollinationsText,
     usePollinationsImage,
+    usePollinationsVideo,
     usePollinationsChat,
     usePollinationsModels,
 } from "@pollinations/react";
@@ -31,6 +32,15 @@ function App() {
         isLoading: imageLoading,
         error: imageError,
     } = usePollinationsImage("A beautiful sunset", { apiKey: "pk_..." });
+    const {
+        data: videoUrl,
+        isLoading: videoLoading,
+        error: videoError,
+    } = usePollinationsVideo("A cat walking in rain", {
+        model: "veo",
+        duration: 4,
+        apiKey: "pk_...",
+    });
     const {
         sendMessage,
         messages,
@@ -48,6 +58,13 @@ function App() {
                 <p>Generating image...</p>
             ) : (
                 <img src={imageUrl} alt="Generated" />
+            )}
+
+            <h2>Video</h2>
+            {videoLoading ? (
+                <p>Generating video...</p>
+            ) : (
+                <video src={videoUrl} controls />
             )}
 
             <h2>Chat</h2>
@@ -82,12 +99,12 @@ const { data, isLoading, error } = usePollinationsText(prompt, {
     model: "openai", // default
     seed: 42, // for reproducibility
     systemPrompt: "...", // optional system prompt
-    jsonMode: false, // parse response as JSON
+    json: false, // parse response as JSON
     apiKey: "pk_...", // optional API key
 });
 ```
 
--   `data`: string | object (if `jsonMode` is true)
+-   `data`: string | object (if `json` is true)
 -   `isLoading`: boolean
 -   `error`: Error | null
 
@@ -103,6 +120,26 @@ const { data, isLoading, error } = usePollinationsImage(prompt, {
     seed: 42,
     nologo: true,
     enhance: false,
+    apiKey: "pk_...", // required
+});
+```
+
+-   `data`: string (blob URL) or null
+-   `isLoading`: boolean
+-   `error`: Error | null
+
+### `usePollinationsVideo`
+
+Generate videos.
+
+```tsx
+const { data, isLoading, error } = usePollinationsVideo(prompt, {
+    model: "veo", // or "seedance", "seedance-pro"
+    duration: 4, // 1-10 seconds (veo: 4, 6, 8)
+    aspectRatio: "16:9", // or "9:16"
+    seed: 42,
+    audio: false, // veo only
+    nologo: true,
     apiKey: "pk_...", // required
 });
 ```
@@ -145,7 +182,7 @@ reset();
 Fetch available models.
 
 ```tsx
-const { models, isLoading, error } = usePollinationsModels("text"); // or "image"
+const { models, isLoading, error } = usePollinationsModels("text"); // or "image" or "video"
 ```
 
 -   `models`: Array of model objects
@@ -162,10 +199,11 @@ Get your API key at [enter.pollinations.ai](https://enter.pollinations.ai).
 | **Secret**      | `sk_...` | Server-side only, no rate limits |
 
 All hooks use `gen.pollinations.ai` endpoints with the following patterns:
-- **Text**: `GET /text/{prompt}` with query parameters (seed, model, json_mode, system_prompt)
+- **Text**: `GET /text/{prompt}` with query parameters (seed, model, json, system_prompt)
 - **Chat**: `POST /v1/chat/completions` with message array
 - **Image**: `GET /image/{prompt}` with query parameters (width, height, seed, model, nologo, enhance)
-- **Models**: `GET /text/models` or `GET /image/models`
+- **Video**: `GET /video/{prompt}` with query parameters (model, duration, aspectRatio, seed, audio, nologo)
+- **Models**: `GET /text/models`, `GET /image/models`, or `GET /video/models`
 
 ## Links
 
@@ -177,3 +215,4 @@ All hooks use `gen.pollinations.ai` endpoints with the following patterns:
 ## License
 
 MIT [Pollinations.AI](https://pollinations.ai)
+

@@ -138,7 +138,6 @@ const url = await imageUrl('a sunset');
 | `enhance` | boolean | `false` | AI prompt enhancement |
 | `negativePrompt` | string | - | What to avoid in the image |
 | `nologo` | boolean | `false` | Remove watermark |
-| `nofeed` | boolean | `false` | Don't show in public feed |
 | `private` | boolean | `false` | Keep generation private |
 | `safe` | boolean | `false` | Safety filter |
 | `quality` | string | `'medium'` | `'low'`, `'medium'`, `'high'`, `'hd'` |
@@ -305,50 +304,6 @@ const imageModels = await getImageModels();
 console.log(textModels.map(m => m.name));
 ```
 
-## Real-time Feed
-
-Subscribe to live generation events from the Pollinations network:
-
-```javascript
-import { subscribeToImageFeed, subscribeToTextFeed } from '@pollinations/sdk';
-
-// Image/video feed (callback style)
-const imageFeed = subscribeToImageFeed((event) => {
-  console.log('New image:', event.prompt);
-  console.log('URL:', event.imageURL);
-  console.log('Model:', event.model);
-}, {
-  pastResults: 20, // get last 20 images on connect
-});
-
-// Text feed
-const textFeed = subscribeToTextFeed((event) => {
-  console.log('Model:', event.parameters.model);
-  console.log('Response:', event.response);
-});
-
-// Stop the feeds
-imageFeed.close();
-textFeed.close();
-```
-
-### Async Iterator Style
-
-```javascript
-import { imageFeed, textFeed } from '@pollinations/sdk';
-
-// Process images as they come (with last 10 on connect)
-for await (const event of imageFeed({ pastResults: 10 })) {
-  console.log('New:', event.prompt, event.imageURL);
-  if (shouldStop) break;
-}
-
-// Process text generations
-for await (const event of textFeed()) {
-  console.log('Response:', event.response);
-}
-```
-
 ## Error Handling
 
 ```javascript
@@ -409,10 +364,6 @@ import type {
 | `getTextModels()` | List text models |
 | `getImageModels()` | List image models |
 | `getModels()` | List all models |
-| `subscribeToImageFeed(callback)` | Real-time image/video feed |
-| `subscribeToTextFeed(callback)` | Real-time text feed |
-| `imageFeed()` | Async iterator for images |
-| `textFeed()` | Async iterator for text |
 | `configure({ apiKey })` | Set global config |
 
 ## Troubleshooting

@@ -512,59 +512,6 @@ export interface PollinationsErrorDetails {
     cause?: unknown;
 }
 
-// ============================================================================
-// Feed Types
-// ============================================================================
-
-/** Image feed event data */
-export interface ImageFeedEvent {
-    /** URL of the generated image */
-    imageURL: string;
-    /** The prompt used */
-    prompt: string;
-    /** Model used for generation */
-    model: string;
-    /** Generation status */
-    status: "end_generating" | string;
-    /** Whether prompt was AI enhanced */
-    wasPimped: boolean;
-    /** Source referrer */
-    referrer?: string;
-    /** Number of concurrent requests */
-    concurrentRequests?: number;
-    /** Timing information */
-    timingInfo?: Array<{ step: string; duration: number }>;
-}
-
-/** Text feed event data */
-export interface TextFeedEvent {
-    /** The generated text response */
-    response: string;
-    /** Generation parameters */
-    parameters: {
-        /** Model used */
-        model: string;
-        /** Input messages */
-        messages?: Message[];
-        /** Source referrer */
-        referrer?: string;
-        /** Prompt token count */
-        prompt_tokens?: number;
-        /** Completion token count */
-        completion_tokens?: number;
-        /** Total token count */
-        total_tokens?: number;
-    };
-}
-
-/** Options for feed subscription */
-export interface FeedOptions {
-    /** Password for authenticated access (optional) */
-    password?: string;
-    /** Number of past results to receive on connect (image feed only, default: 20) */
-    pastResults?: number;
-}
-
 /** Pollinations SDK Error */
 export class PollinationsError extends Error {
     code: string;

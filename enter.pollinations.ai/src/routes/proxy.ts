@@ -6,6 +6,7 @@ import { polar, PolarVariables } from "@/middleware/polar.ts";
 import type { Env } from "../env.ts";
 import { track, type TrackEnv } from "@/middleware/track.ts";
 import { resolveModel } from "@/middleware/model.ts";
+import type { ServiceId } from "@shared/registry/registry.ts";
 import { frontendKeyRateLimit } from "@/middleware/rate-limit-durable.ts";
 import { imageCache } from "@/middleware/image-cache.ts";
 import { textCache } from "@/middleware/text-cache.ts";
@@ -475,6 +476,14 @@ export const proxyRoutes = new Hono<Env>()
         auth({ allowApiKey: true, allowSessionCookie: false }),
         polar,
         frontendKeyRateLimit,
+        // Hardcode model to cohere-rerank for billing (the body.model is the Cohere model name)
+        async (c, next) => {
+            c.set("model", {
+                requested: "cohere-rerank",
+                resolved: "cohere-rerank" as ServiceId,
+            });
+            await next();
+        },
         track("generate.text"),
         async (c) => {
             const log = c.get("log").getChild("rerank");
@@ -497,16 +506,12 @@ export const proxyRoutes = new Hono<Env>()
                 docCount: documents.length,
             });
 
-            // Proxy to Cohere via Portkey gateway
-            const portkeyUrl =
-                c.env.PORTKEY_GATEWAY_URL ||
-                "https://rubeus.thomash-efd.workers.dev";
-            const response = await fetch(`${portkeyUrl}/rerank`, {
+            // Direct proxy to Cohere API (Portkey doesn't support /rerank yet)
+            const response = await fetch("https://api.cohere.com/v1/rerank", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
                     Authorization: `Bearer ${c.env.COHERE_API_KEY}`,
-                    "x-portkey-provider": "cohere",
                 },
                 body: JSON.stringify({
                     model: model || "rerank-v3.5",

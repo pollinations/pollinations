@@ -1,0 +1,64 @@
+{
+  "name": "@pollinations/sdk",
+  "version": "1.0.0",
+  "description": "Official Node.js SDK for Pollinations AI - Generate images, videos, audio, and text with ease",
+  "type": "module",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "browser": "./dist/index.browser.min.js",
+  "unpkg": "./dist/index.browser.min.js",
+  "jsdelivr": "./dist/index.browser.min.js",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "browser": "./dist/index.browser.min.js",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "prepublishOnly": "npm run build",
+    "typecheck": "tsc --noEmit"
+  },
+  "keywords": [
+    "pollinations",
+    "ai",
+    "image-generation",
+    "text-generation",
+    "video-generation",
+    "audio-generation",
+    "generative-ai",
+    "flux",
+    "openai",
+    "gemini",
+    "llm",
+    "stable-diffusion",
+    "text-to-image",
+    "text-to-video"
+  ],
+  "author": "Itachi-1824 <itachi@myceli.ai>",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/pollinations/pollinations",
+    "directory": "SDK/NPM"
+  },
+  "homepage": "https://pollinations.ai",
+  "bugs": {
+    "url": "https://github.com/pollinations/pollinations/issues"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.10.0",
+    "tsup": "^8.0.0",
+    "typescript": "^5.3.0"
+  }
+}

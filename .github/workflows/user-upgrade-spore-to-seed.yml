@@ -32,8 +32,10 @@ jobs:
           cd enter.pollinations.ai
           npm install
           
-          # Fetch spore users
-          USERS=$(npx tsx scripts/tier-update-user.ts fetch-tier --tier spore --env production 2>&1 | jq -r '.users // []' 2>/dev/null || echo '[]')
+          # Fetch spore users directly from D1
+          USERS=$(wrangler d1 execute production-pollinations-enter-db --remote \
+            --command "SELECT github_username FROM user WHERE tier = 'spore' AND github_username IS NOT NULL" \
+            --json 2>/dev/null | jq '[.[0].results[].github_username]')
           echo "Found $(echo "$USERS" | jq 'length') spore users"
           
           if [ "$USERS" = "[]" ]; then

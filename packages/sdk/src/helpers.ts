@@ -18,37 +18,44 @@
  * ```
  */
 
-import { Pollinations } from './client.js';
+import { Pollinations } from "./client.js";
 import type {
-  ImageGenerateOptions,
-  VideoGenerateOptions,
-  TextGenerateOptions,
-  ChatOptions,
-  AudioGenerateOptions,
-  Message,
-  ModelInfo,
-} from './types.js';
+    ImageGenerateOptions,
+    VideoGenerateOptions,
+    TextGenerateOptions,
+    ChatOptions,
+    AudioGenerateOptions,
+    Message,
+    ModelInfo,
+} from "./types.js";
 import {
-  wrapImageResponse,
-  wrapVideoResponse,
-  wrapChatResponse,
-  Conversation,
-  type ImageResponseExt,
-  type VideoResponseExt,
-  type ChatResponseExt,
-} from './extras.js';
+    wrapImageResponse,
+    wrapVideoResponse,
+    wrapChatResponse,
+    Conversation,
+    type ImageResponseExt,
+    type VideoResponseExt,
+    type ChatResponseExt,
+} from "./extras.js";
 
 // Default client instance
 let defaultClient: Pollinations | null = null;
 
 function getClient(apiKey?: string): Pollinations {
-  if (apiKey) {
-    return new Pollinations({ apiKey });
-  }
-  if (!defaultClient) {
-    defaultClient = new Pollinations();
-  }
-  return defaultClient;
+    if (apiKey) {
+        return new Pollinations({ apiKey });
+    }
+    if (!defaultClient) {
+        defaultClient = new Pollinations();
+    }
+    return defaultClient;
+}
+
+/**
+ * Reset the default client (useful for testing)
+ */
+export function resetClient(): void {
+    defaultClient = null;
 }
 
 /**
@@ -60,8 +67,11 @@ function getClient(apiKey?: string): Pollinations {
  * configure({ apiKey: 'your-api-key' });
  * ```
  */
-export function configure(options: { apiKey?: string; baseUrl?: string }): void {
-  defaultClient = new Pollinations(options);
+export function configure(options: {
+    apiKey?: string;
+    baseUrl?: string;
+}): void {
+    defaultClient = new Pollinations(options);
 }
 
 // ============================================================================
@@ -69,13 +79,13 @@ export function configure(options: { apiKey?: string; baseUrl?: string }): void 
 // ============================================================================
 
 interface WithN {
-  /** Number of outputs to generate (default: 1). Each gets a random seed. */
-  n?: number;
+    /** Number of outputs to generate (default: 1). Each gets a random seed. */
+    n?: number;
 }
 
 interface WithRaw {
-  /** Return full API response instead of just the text (default: false) */
-  raw?: boolean;
+    /** Return full API response instead of just the text (default: false) */
+    raw?: boolean;
 }
 
 type ImageOptionsWithN = ImageGenerateOptions & WithN;
@@ -96,8 +106,11 @@ type AudioOptionsWithN = AudioGenerateOptions & WithN;
  * // <img src={url} /> - no API key exposed!
  * ```
  */
-export async function imageUrl(prompt: string, options?: ImageGenerateOptions): Promise<string> {
-  return getClient().imageUrl(prompt, options);
+export async function imageUrl(
+    prompt: string,
+    options?: ImageGenerateOptions,
+): Promise<string> {
+    return getClient().imageUrl(prompt, options);
 }
 
 /**
@@ -115,24 +128,24 @@ export async function imageUrl(prompt: string, options?: ImageGenerateOptions): 
  * ```
  */
 export async function generateImage(
-  prompt: string,
-  options?: ImageOptionsWithN
+    prompt: string,
+    options?: ImageOptionsWithN,
 ): Promise<ImageResponseExt | ImageResponseExt[]> {
-  const { n = 1, ...imageOptions } = options || {};
-  const client = getClient();
+    const { n = 1, ...imageOptions } = options || {};
+    const client = getClient();
 
-  if (n === 1) {
-    const response = await client.image(prompt, imageOptions);
-    return wrapImageResponse(response);
-  }
+    if (n === 1) {
+        const response = await client.image(prompt, imageOptions);
+        return wrapImageResponse(response);
+    }
 
-  // Multiple: run in parallel with random seeds
-  const results = await Promise.all(
-    Array.from({ length: n }, () =>
-      client.image(prompt, { ...imageOptions, seed: -1 })
-    )
-  );
-  return results.map(wrapImageResponse);
+    // Multiple: run in parallel with random seeds
+    const results = await Promise.all(
+        Array.from({ length: n }, () =>
+            client.image(prompt, { ...imageOptions, seed: -1 }),
+        ),
+    );
+    return results.map(wrapImageResponse);
 }
 
 // ============================================================================
@@ -147,8 +160,11 @@ export async function generateImage(
  * const url = await videoUrl('A bird flying', { model: 'veo', duration: 4 });
  * ```
  */
-export async function videoUrl(prompt: string, options?: VideoGenerateOptions): Promise<string> {
-  return getClient().videoUrl(prompt, options);
+export async function videoUrl(
+    prompt: string,
+    options?: VideoGenerateOptions,
+): Promise<string> {
+    return getClient().videoUrl(prompt, options);
 }
 
 /**
@@ -165,23 +181,23 @@ export async function videoUrl(prompt: string, options?: VideoGenerateOptions): 
  * ```
  */
 export async function generateVideo(
-  prompt: string,
-  options?: VideoOptionsWithN
+    prompt: string,
+    options?: VideoOptionsWithN,
 ): Promise<VideoResponseExt | VideoResponseExt[]> {
-  const { n = 1, ...videoOptions } = options || {};
-  const client = getClient();
+    const { n = 1, ...videoOptions } = options || {};
+    const client = getClient();
 
-  if (n === 1) {
-    const response = await client.video(prompt, videoOptions);
-    return wrapVideoResponse(response);
-  }
+    if (n === 1) {
+        const response = await client.video(prompt, videoOptions);
+        return wrapVideoResponse(response);
+    }
 
-  const results = await Promise.all(
-    Array.from({ length: n }, () =>
-      client.video(prompt, { ...videoOptions, seed: -1 })
-    )
-  );
-  return results.map(wrapVideoResponse);
+    const results = await Promise.all(
+        Array.from({ length: n }, () =>
+            client.video(prompt, { ...videoOptions, seed: -1 }),
+        ),
+    );
+    return results.map(wrapVideoResponse);
 }
 
 // ============================================================================
@@ -205,42 +221,42 @@ export async function generateVideo(
  * ```
  */
 export async function generateText(
-  prompt: string,
-  options?: TextOptionsWithN
+    prompt: string,
+    options?: TextOptionsWithN,
 ): Promise<string | string[] | ChatResponseExt | ChatResponseExt[]> {
-  const { n = 1, raw = false, ...textOptions } = options || {};
-  const client = getClient();
+    const { n = 1, raw = false, ...textOptions } = options || {};
+    const client = getClient();
 
-  if (n === 1) {
-    if (raw) {
-      const response = await client.chat(
-        [{ role: 'user', content: prompt }],
-        { ...textOptions }
-      );
-      return wrapChatResponse(response);
+    if (n === 1) {
+        if (raw) {
+            const response = await client.chat(
+                [{ role: "user", content: prompt }],
+                { ...textOptions },
+            );
+            return wrapChatResponse(response);
+        }
+        return client.text(prompt, textOptions);
     }
-    return client.text(prompt, textOptions);
-  }
 
-  // Multiple: run in parallel with random seeds
-  if (raw) {
+    // Multiple: run in parallel with random seeds
+    if (raw) {
+        const results = await Promise.all(
+            Array.from({ length: n }, () =>
+                client.chat([{ role: "user", content: prompt }], {
+                    ...textOptions,
+                    seed: -1,
+                }),
+            ),
+        );
+        return results.map(wrapChatResponse);
+    }
+
     const results = await Promise.all(
-      Array.from({ length: n }, () =>
-        client.chat(
-          [{ role: 'user', content: prompt }],
-          { ...textOptions, seed: -1 }
-        )
-      )
+        Array.from({ length: n }, () =>
+            client.text(prompt, { ...textOptions, seed: -1 }),
+        ),
     );
-    return results.map(wrapChatResponse);
-  }
-
-  const results = await Promise.all(
-    Array.from({ length: n }, () =>
-      client.text(prompt, { ...textOptions, seed: -1 })
-    )
-  );
-  return results;
+    return results;
 }
 
 /**
@@ -254,10 +270,10 @@ export async function generateText(
  * ```
  */
 export async function* generateTextStream(
-  prompt: string,
-  options?: Omit<TextGenerateOptions, 'stream'>
+    prompt: string,
+    options?: Omit<TextGenerateOptions, "stream">,
 ): AsyncGenerator<string> {
-  yield* getClient().textStream(prompt, options);
+    yield* getClient().textStream(prompt, options);
 }
 
 // ============================================================================
@@ -278,23 +294,23 @@ export async function* generateTextStream(
  * ```
  */
 export async function chat(
-  messages: Message[],
-  options?: ChatOptions & WithN
+    messages: Message[],
+    options?: ChatOptions & WithN,
 ): Promise<ChatResponseExt | ChatResponseExt[]> {
-  const { n = 1, ...chatOptions } = options || {};
-  const client = getClient();
+    const { n = 1, ...chatOptions } = options || {};
+    const client = getClient();
 
-  if (n === 1) {
-    const response = await client.chat(messages, chatOptions);
-    return wrapChatResponse(response);
-  }
+    if (n === 1) {
+        const response = await client.chat(messages, chatOptions);
+        return wrapChatResponse(response);
+    }
 
-  const results = await Promise.all(
-    Array.from({ length: n }, () =>
-      client.chat(messages, { ...chatOptions, seed: -1 })
-    )
-  );
-  return results.map(wrapChatResponse);
+    const results = await Promise.all(
+        Array.from({ length: n }, () =>
+            client.chat(messages, { ...chatOptions, seed: -1 }),
+        ),
+    );
+    return results.map(wrapChatResponse);
 }
 
 /**
@@ -309,10 +325,10 @@ export async function chat(
  * ```
  */
 export async function* chatStream(
-  messages: Message[],
-  options?: Omit<ChatOptions, 'stream'>
-): AsyncGenerator<import('./types.js').ChatStreamChunk> {
-  yield* getClient().chatStream(messages, options);
+    messages: Message[],
+    options?: Omit<ChatOptions, "stream">,
+): AsyncGenerator<import("./types.js").ChatStreamChunk> {
+    yield* getClient().chatStream(messages, options);
 }
 
 /**
@@ -326,7 +342,7 @@ export async function* chatStream(
  * ```
  */
 export function conversation(options?: ChatOptions): Conversation {
-  return new Conversation(options, getClient());
+    return new Conversation(options, getClient());
 }
 
 // ============================================================================
@@ -335,10 +351,10 @@ export function conversation(options?: ChatOptions): Conversation {
 
 /** Audio response type */
 export interface AudioResponseExt {
-  transcript: string;
-  data: string;
-  id: string;
-  expiresAt: number;
+    transcript: string;
+    data: string;
+    id: string;
+    expiresAt: number;
 }
 
 /**
@@ -354,22 +370,22 @@ export interface AudioResponseExt {
  * ```
  */
 export async function generateAudio(
-  text: string,
-  options?: AudioOptionsWithN
+    text: string,
+    options?: AudioOptionsWithN,
 ): Promise<AudioResponseExt | AudioResponseExt[]> {
-  const { n = 1, ...audioOptions } = options || {};
-  const client = getClient();
+    const { n = 1, ...audioOptions } = options || {};
+    const client = getClient();
 
-  if (n === 1) {
-    return client.audio(text, audioOptions);
-  }
+    if (n === 1) {
+        return client.audio(text, audioOptions);
+    }
 
-  const results = await Promise.all(
-    Array.from({ length: n }, () =>
-      client.audio(text, { ...audioOptions, seed: -1 })
-    )
-  );
-  return results;
+    const results = await Promise.all(
+        Array.from({ length: n }, () =>
+            client.audio(text, { ...audioOptions, seed: -1 }),
+        ),
+    );
+    return results;
 }
 
 // ============================================================================
@@ -380,19 +396,19 @@ export async function generateAudio(
  * Get available text models
  */
 export async function getTextModels(): Promise<ModelInfo[]> {
-  return getClient().textModels();
+    return getClient().textModels();
 }
 
 /**
  * Get available image models
  */
 export async function getImageModels(): Promise<ModelInfo[]> {
-  return getClient().imageModels();
+    return getClient().imageModels();
 }
 
 /**
  * Get all available models
  */
 export async function getModels(): Promise<ModelInfo[]> {
-  return getClient().models();
+    return getClient().models();
 }

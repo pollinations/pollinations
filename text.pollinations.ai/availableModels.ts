@@ -188,7 +188,7 @@ export function findModelByName(modelName: string) {
 
     // Try resolving via registry (handles aliases)
     try {
-        const resolvedServiceId = resolveServiceId(modelName, "generate.text");
+        const resolvedServiceId = resolveServiceId(modelName);
         return (
             availableModels.find((model) => model.name === resolvedServiceId) ||
             null

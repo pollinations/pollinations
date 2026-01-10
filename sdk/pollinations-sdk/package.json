@@ -42,7 +42,20 @@
     "text-to-image",
     "text-to-video"
   ],
-  "author": "Itachi-1824 <itachi@myceli.ai>",
+  "authors": [
+    {
+      "name": "Itachi-1824",
+      "email": "itachi@myceli.ai"
+    },
+    {
+      "name": "Circuit-Overtime",
+      "email": "ayushman@myceli.ai"
+    },
+    {
+      "name": "ElliotEtag",
+      "email": "elliot@myceli.ai"
+    }
+  ],
   "license": "MIT",
   "repository": {
     "type": "git",

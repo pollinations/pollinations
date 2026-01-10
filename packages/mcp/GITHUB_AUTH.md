@@ -63,7 +63,7 @@ The system follows the "thin proxy" design principle and integrates seamlessly w
    - After authentication, the user receives a session ID
 
 2. User manages whitelisted domains (referrers) through MCP tools
-   - By default, text.pollinations.ai and image.pollinations.ai are whitelisted
+   - By default, gen.pollinations.ai is whitelisted
    - User can add or remove domains using the MCP tools
 
 3. When accessing from an authorized referrer:

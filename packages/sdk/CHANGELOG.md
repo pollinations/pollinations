@@ -6,8 +6,10 @@ All notable changes to `@pollinations/sdk` will be documented in this file.
 
 ### Changed
 - Removed React hooks (will be re-added in future release)
+- Removed feed subscriptions (used deprecated endpoints)
 - Reorganized package to `packages/sdk` directory structure
 - Simplified build configuration
+- All endpoints now use gen.pollinations.ai
 
 ## [3.0.3] - 2026-01-10
 

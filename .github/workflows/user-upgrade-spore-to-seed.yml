@@ -59,9 +59,6 @@ jobs:
         with:
           python-version: '3.11'
 
-      - name: Install dependencies
-        run: pip install aiohttp
-
       - name: Validate users
         id: validate
         env:
@@ -69,48 +66,23 @@ jobs:
           SPORE_USERS: ${{ needs.fetch-spore-users.outputs.users }}
         run: |
           python -c "
-          import asyncio
-          import json
-          import os
-          import sys
+          import json, os, sys
           sys.path.insert(0, '.github/scripts')
           from user_validate_github_profile import validate_users
 
-          async def main():
-              users = json.loads(os.environ.get('SPORE_USERS', '[]'))
-              if not users:
-                  print('No users to validate')
-                  with open(os.environ['GITHUB_OUTPUT'], 'a') as f:
-                      f.write('approved_users=[]\n')
-                  return
-
-              print(f'Validating {len(users)} users...')
-              print('=' * 50)
-
-              results = await validate_users(users)
-
-              approved = [r for r in results if r.approved]
-              denied = [r for r in results if not r.approved]
-
-              print(f'APPROVED ({len(approved)}):')
-              print('-' * 50)
-              for r in approved:
-                  print(f'  ✓ {r.username}: {r.reason}')
-
-              print()
-              print(f'DENIED ({len(denied)}):')
-              print('-' * 50)
-              for r in denied:
-                  print(f'  ✗ {r.username}: {r.reason}')
-
-              print()
-              print('=' * 50)
-              print(f'TOTAL: {len(approved)} approved, {len(denied)} denied')
-
+          users = json.loads(os.environ.get('SPORE_USERS', '[]'))
+          if not users:
+              print('No users to validate')
               with open(os.environ['GITHUB_OUTPUT'], 'a') as f:
-                  f.write(f'approved_users={json.dumps([r.username for r in approved])}\n')
+                  f.write('approved_users=[]\n')
+              exit(0)
 
-          asyncio.run(main())
+          results = validate_users(users)
+          approved = [r['username'] for r in results if r['approved']]
+          print(f'{len(approved)}/{len(users)} approved')
+
+          with open(os.environ['GITHUB_OUTPUT'], 'a') as f:
+              f.write(f'approved_users={json.dumps(approved)}\n')
           "
 
   # Step 3: Upgrade approved users
@@ -128,7 +100,6 @@ jobs:
           node-version: "20"
 
       - name: Upgrade users to Seed
-        id: upgrade
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
@@ -139,71 +110,10 @@ jobs:
           cd enter.pollinations.ai
           npm install
           
-          RESULTS="[]"
-          
-          for row in $(echo "$APPROVED_USERS" | jq -c '.[]'); do
-            USERNAME="$row"
-            
-            echo "🌱 Upgrading $USERNAME to seed tier..."
-            OUTPUT=$(npx tsx scripts/tier-update-user.ts update-tier \
-              --githubUsername "$USERNAME" \
+          for row in $(echo "$APPROVED_USERS" | jq -r '.[]'); do
+            echo "🌱 Upgrading $row to seed tier..."
+            npx tsx scripts/tier-update-user.ts update-tier \
+              --githubUsername "$row" \
               --tier seed \
-              --env production 2>&1) || true
-            
-            echo "$OUTPUT"
-            
-            # Check if user already at higher tier (skip silently)
-            if echo "$OUTPUT" | grep -q "SKIP_UPGRADE=true"; then
-              echo "✅ User $USERNAME already at seed tier or higher - skipping"
-              RESULTS=$(echo "$RESULTS" | jq --arg user "$USERNAME" \
-                '. + [{"user": $user, "success": "skipped"}]')
-            elif echo "$OUTPUT" | grep -q "Tier update complete"; then
-              # Verify the tier was actually set correctly in both D1 and Polar
-              echo "🔍 Verifying tier upgrade for $USERNAME..."
-              VERIFY_OUTPUT=$(npx tsx scripts/tier-update-user.ts verify-tier \
-                --githubUsername "$USERNAME" \
-                --tier seed \
-                --env production 2>&1) || true
-              
-              echo "$VERIFY_OUTPUT"
-              
-              if echo "$VERIFY_OUTPUT" | grep -q "VERIFIED=true"; then
-                echo "✅ Tier verified for $USERNAME"
-                RESULTS=$(echo "$RESULTS" | jq --arg user "$USERNAME" \
-                  '. + [{"user": $user, "success": true}]')
-              else
-                echo "⚠️ Tier verification failed for $USERNAME"
-                RESULTS=$(echo "$RESULTS" | jq --arg user "$USERNAME" \
-                  '. + [{"user": $user, "success": "unverified"}]')
-              fi
-            else
-              RESULTS=$(echo "$RESULTS" | jq --arg user "$USERNAME" \
-                '. + [{"user": $user, "success": false}]')
-            fi
+              --env production && echo "✅ $row upgraded" || echo "❌ $row failed"
           done
-          
-          echo "results<<EOF" >> $GITHUB_OUTPUT
-          echo "$RESULTS" >> $GITHUB_OUTPUT
-          echo "EOF" >> $GITHUB_OUTPUT
-
-      - name: Report upgrade results
-        if: steps.upgrade.outputs.results != '[]' && steps.upgrade.outputs.results != ''
-        run: |
-          RESULTS='${{ steps.upgrade.outputs.results }}'
-          
-          echo "📊 Upgrade Results:"
-          echo "=================="
-          
-          APPROVED=$(echo "$RESULTS" | jq '[.[] | select(.success == true)] | length')
-          SKIPPED=$(echo "$RESULTS" | jq '[.[] | select(.success == "skipped")] | length')
-          UNVERIFIED=$(echo "$RESULTS" | jq '[.[] | select(.success == "unverified")] | length')
-          FAILED=$(echo "$RESULTS" | jq '[.[] | select(.success == false)] | length')
-          
-          echo "✅ Upgraded: $APPROVED"
-          echo "⏭️  Skipped: $SKIPPED"
-          echo "⚠️  Unverified: $UNVERIFIED"
-          echo "❌ Failed: $FAILED"
-          
-          echo ""
-          echo "Details:"
-          echo "$RESULTS" | jq -r '.[] | "  - \(.user): \(.success)"'

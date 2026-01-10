@@ -469,7 +469,7 @@ export const proxyRoutes = new Hono<Env>()
             return response;
         },
     )
-    // Cohere Rerank endpoint - semantic document ranking via AWS Bedrock
+    // Cohere Rerank endpoint - semantic document ranking via Cohere API directly
     .post(
         "/v1/rerank",
         auth({ allowApiKey: true, allowSessionCookie: false }),
@@ -497,18 +497,15 @@ export const proxyRoutes = new Hono<Env>()
                 docCount: documents.length,
             });
 
-            // Forward to text service which will handle Bedrock routing
-            const textServiceUrl =
-                c.env.TEXT_SERVICE_URL || "https://text.pollinations.ai";
-            const response = await fetch(`${textServiceUrl}/v1/rerank`, {
+            // Cohere Rerank API - thin proxy, forward request directly
+            const response = await fetch("https://api.cohere.com/v1/rerank", {
                 method: "POST",
                 headers: {
+                    Authorization: `Bearer ${c.env.COHERE_API_KEY}`,
                     "Content-Type": "application/json",
-                    "x-enter-token": c.env.PLN_ENTER_TOKEN,
-                    "x-request-id": c.get("requestId"),
                 },
                 body: JSON.stringify({
-                    model: model || "cohere.rerank-v3-5:0",
+                    model: model || "rerank-v3.5",
                     query,
                     documents,
                     top_n,
@@ -533,7 +530,10 @@ export const proxyRoutes = new Hono<Env>()
             }
 
             return new Response(response.body, {
-                headers: Object.fromEntries(response.headers),
+                headers: {
+                    ...Object.fromEntries(response.headers),
+                    "x-model-used": model || "rerank-v3.5",
+                },
             });
         },
     );

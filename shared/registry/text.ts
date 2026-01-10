@@ -466,8 +466,8 @@ export const TEXT_SERVICES = {
     },
     "cohere-rerank": {
         aliases: ["rerank", "rerank-3.5"],
-        modelId: "cohere.rerank-v3-5:0",
-        provider: "aws",
+        modelId: "rerank-v3.5",
+        provider: "cohere",
         cost: [
             {
                 date: COST_START_DATE,
@@ -476,7 +476,7 @@ export const TEXT_SERVICES = {
                 promptTextTokens: perMillion(1000), // ~$0.001 per search unit
             },
         ],
-        description: "Cohere Rerank 3.5 - Semantic Document Ranking (Bedrock)",
+        description: "Cohere Rerank 3.5 - Semantic Document Ranking",
         inputModalities: ["text"],
         outputModalities: ["text"],
         tools: false,

@@ -3,16 +3,20 @@ main = "src/index.ts"
 compatibility_date = "2024-11-01"
 compatibility_flags = ["nodejs_compat"]
 
-[dev]
-port = 8790
+# Local development server
+[env.development]
+name = "pollinations-media-dev"
 
-# R2 bucket for media storage
-[[r2_buckets]]
+[env.development.vars]
+MAX_FILE_SIZE = "10485760"  # 10MB in bytes
+
+[[env.development.r2_buckets]]
 binding = "MEDIA_BUCKET"
-bucket_name = "pollinations-media"
+bucket_name = "pollinations-media-dev"
 
 # Production environment
 [env.production]
+name = "pollinations-media-prod"
 
 [[env.production.routes]]
 pattern = "media.pollinations.ai"
@@ -25,3 +29,12 @@ bucket_name = "pollinations-media"
 
 [vars]
 MAX_FILE_SIZE = "10485760"  # 10MB in bytes
+
+[[r2_buckets]]
+binding = "MEDIA_BUCKET"
+bucket_name = "pollinations-media"
+
+# Dev server settings
+[dev]
+port = 8790
+local_protocol = "http"

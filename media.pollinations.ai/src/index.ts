@@ -1,12 +1,3 @@
-/**
- * media.pollinations.ai - Content-addressed media upload service
- *
- * Upload media files (images/audio/video) and get back a content-addressed URL.
- * Uses SHA-256 hashing for deduplication - identical files return the same URL.
- *
- * Following the "thin proxy" design principle - minimal code, maximum utility.
- */
-
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 
@@ -17,7 +8,6 @@ interface Env {
 
 const app = new Hono<{ Bindings: Env }>();
 
-// Enable CORS for browser uploads
 app.use(
     "*",
     cors({
@@ -28,7 +18,6 @@ app.use(
     }),
 );
 
-// Health check
 app.get("/", (c) => {
     return c.json({
         service: "media.pollinations.ai",
@@ -44,10 +33,6 @@ app.get("/", (c) => {
     });
 });
 
-/**
- * Upload endpoint - accepts multipart/form-data or raw binary
- * Returns content-addressed hash URL
- */
 app.post("/upload", async (c) => {
     const maxSize = parseInt(c.env.MAX_FILE_SIZE || "10485760");
 
@@ -59,7 +44,6 @@ app.post("/upload", async (c) => {
 
     try {
         if (requestContentType.includes("multipart/form-data")) {
-            // Handle multipart/form-data
             const formData = await c.req.formData();
             const file = formData.get("file");
 
@@ -84,8 +68,54 @@ app.post("/upload", async (c) => {
             fileBuffer = await file.arrayBuffer();
             contentType = file.type || detectContentType(file.name);
             fileName = file.name;
+        } else if (requestContentType.includes("application/json")) {
+            try {
+                const body = await c.req.json<{
+                    data: string;
+                    contentType?: string;
+                    name?: string;
+                }>();
+
+                if (!body.data) {
+                    return c.json(
+                        { error: "Missing 'data' field in JSON body" },
+                        400,
+                    );
+                }
+
+                const base64Data = body.data.includes(",")
+                    ? body.data.split(",")[1]
+                    : body.data;
+
+                const binaryString = atob(base64Data);
+                const bytes = new Uint8Array(binaryString.length);
+                for (let i = 0; i < binaryString.length; i++) {
+                    bytes[i] = binaryString.charCodeAt(i);
+                }
+                fileBuffer = bytes.buffer;
+
+                if (fileBuffer.byteLength > maxSize) {
+                    return c.json(
+                        {
+                            error: `File too large. Max size: ${maxSize / 1024 / 1024}MB`,
+                        },
+                        413,
+                    );
+                }
+
+                if (fileBuffer.byteLength === 0) {
+                    return c.json({ error: "Empty file" }, 400);
+                }
+
+                contentType = body.contentType || "application/octet-stream";
+                fileName = body.name;
+            } catch (parseError) {
+                return c.json(
+                    { error: "Invalid JSON or base64 data" },
+                    400,
+                );
+            }
         } else {
-            // Handle raw binary upload
             fileBuffer = await c.req.arrayBuffer();
 
             if (fileBuffer.byteLength > maxSize) {
@@ -104,7 +134,6 @@ app.post("/upload", async (c) => {
             contentType = requestContentType || "application/octet-stream";
         }
 
-        // Validate content type
         if (!isValidMediaType(contentType)) {
             return c.json(
                 {
@@ -115,13 +144,10 @@ app.post("/upload", async (c) => {
             );
         }
 
-        // Generate SHA-256 hash of content
         const hash = await generateHash(fileBuffer);
 
-        // Check if already exists (deduplication)
         const existing = await c.env.MEDIA_BUCKET.head(hash);
         if (existing) {
-            // File already exists, return existing URL
             return c.json({
                 id: hash,
                 url: `https://media.pollinations.ai/${hash}`,
@@ -131,7 +157,6 @@ app.post("/upload", async (c) => {
             });
         }
 
-        // Store in R2 with content-type metadata
         await c.env.MEDIA_BUCKET.put(hash, fileBuffer, {
             httpMetadata: {
                 contentType,
@@ -156,13 +181,9 @@ app.post("/upload", async (c) => {
     }
 });
 
-/**
- * Retrieve endpoint - serves media by hash
- */
 app.get("/:hash", async (c) => {
     const hash = c.req.param("hash");
 
-    // Validate hash format (SHA-256 = 64 hex chars)
     if (!/^[a-f0-9]{64}$/i.test(hash)) {
         return c.json({ error: "Invalid hash format" }, 400);
     }
@@ -174,7 +195,6 @@ app.get("/:hash", async (c) => {
             return c.json({ error: "Not found" }, 404);
         }
 
-        // Set response headers
         const headers = new Headers();
         headers.set(
             "Content-Type",
@@ -195,10 +215,6 @@ app.get("/:hash", async (c) => {
     }
 });
 
-/**
- * Metadata endpoint - get info about a file without downloading
- * Using app.on() for HEAD method since app.head() may not be available in all Hono versions
- */
 app.on("HEAD", "/:hash", async (c) => {
     const hash = c.req.param("hash");
 
@@ -232,30 +248,20 @@ app.on("HEAD", "/:hash", async (c) => {
     }
 });
 
-/**
- * Generate SHA-256 hash of content
- */
 async function generateHash(buffer: ArrayBuffer): Promise<string> {
     const hashBuffer = await crypto.subtle.digest("SHA-256", buffer);
     const hashArray = Array.from(new Uint8Array(hashBuffer));
     return hashArray.map((b) => b.toString(16).padStart(2, "0")).join("");
 }
 
-/**
- * Check if content type is a valid media type
- */
 function isValidMediaType(contentType: string): boolean {
     const validPrefixes = ["image/", "audio/", "video/"];
     return validPrefixes.some((prefix) => contentType.startsWith(prefix));
 }
 
-/**
- * Detect content type from file extension
- */
 function detectContentType(filename: string): string {
     const ext = filename.split(".").pop()?.toLowerCase();
     const mimeTypes: Record<string, string> = {
-        // Images
         jpg: "image/jpeg",
         jpeg: "image/jpeg",
         png: "image/png",
@@ -264,14 +270,12 @@ function detectContentType(filename: string): string {
         svg: "image/svg+xml",
         bmp: "image/bmp",
         ico: "image/x-icon",
-        // Audio
         mp3: "audio/mpeg",
         wav: "audio/wav",
         ogg: "audio/ogg",
         m4a: "audio/mp4",
         flac: "audio/flac",
         aac: "audio/aac",
-        // Video
         mp4: "video/mp4",
         webm: "video/webm",
         mov: "video/quicktime",

@@ -20,6 +20,20 @@ Upload media files (images/audio/video) and get back a content-addressed URL to 
 curl -X POST https://media.pollinations.ai/upload \
   -F "file=@image.jpg"
 
+# Raw binary
+curl -X POST https://media.pollinations.ai/upload \
+  -H "Content-Type: image/jpeg" \
+  --data-binary "@image.jpg"
+
+# Base64 JSON
+curl -X POST https://media.pollinations.ai/upload \
+  -H "Content-Type: application/json" \
+  -d '{
+    "data": "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==",
+    "contentType": "image/png",
+    "name": "image.png"
+  }'
+
 # Returns:
 # {
 #   "id": "a3f2b1c4d5e6f7...",
@@ -52,7 +66,15 @@ Upload a media file.
 
 **Request:**
 - `Content-Type: multipart/form-data` with `file` field
-- Or raw binary with appropriate `Content-Type` header
+- Or raw binary with appropriate `Content-Type` header (e.g., `image/jpeg`)
+- Or JSON with `Content-Type: application/json`:
+  ```json
+  {
+    "data": "base64-encoded-file-data",
+    "contentType": "image/jpeg",
+    "name": "image.jpg"
+  }
+  ```
 
 **Response:**
 ```json
@@ -66,7 +88,7 @@ Upload a media file.
 ```
 
 **Errors:**
-- `400` - No file provided or empty file
+- `400` - No file provided, empty file, or invalid JSON/base64
 - `413` - File too large (max 10MB)
 - `415` - Invalid file type (must be image/*, audio/*, or video/*)
 

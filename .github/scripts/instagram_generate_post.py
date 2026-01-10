@@ -710,7 +710,7 @@ def create_post_pr(strategy: Dict, images: List[bytes], image_urls: List[str], p
     }
 
     # Create directories and JSON file
-    json_path = f"NEWS/transformed/instagram/posts/{today}.json"
+    json_path = f"social/news/transformed/instagram/posts/{today}.json"
     json_content = json.dumps(post_data, indent=2, ensure_ascii=False)
     json_encoded = base64.b64encode(json_content.encode()).decode()
 

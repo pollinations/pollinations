@@ -60,9 +60,9 @@ pollinations/
 ├── image.pollinations.ai/     # Image generation backend service
 ├── text.pollinations.ai/      # Text generation backend service
 ├── pollinations.ai/           # Main React frontend application
-├── sdk/                       # SDKs and integrations
-│   ├── pollinations-react/    # React component library
-│   └── model-context-protocol/ # MCP server for AI assistant integration
+├── packages/                  # Publishable npm packages
+│   ├── sdk/                   # @pollinations/sdk - Client library with React hooks
+│   └── mcp/                   # @pollinations/model-context-protocol - MCP server
 ├── enter.pollinations.ai/     # Centralized auth gateway (ACTIVE)
 └── operations/                # Documentation and operations
 ```
@@ -80,12 +80,12 @@ All API requests go through `gen.pollinations.ai`, which routes to the `enter.po
 
 ## Model Context Protocol (MCP)
 
-The `sdk/model-context-protocol/` directory contains a Model Context Protocol server that allows AI agents to directly generate images, text, and audio using the pollinations.ai API.
+The `packages/mcp/` directory contains a Model Context Protocol server that allows AI agents to directly generate images, text, and audio using the pollinations.ai API.
 
 For detailed implementation notes, design principles, and troubleshooting, see:
 
-- `sdk/model-context-protocol/README.md` - Installation and usage
-- `sdk/model-context-protocol/AGENTS.md` - Implementation guidelines and debugging
+- `packages/mcp/README.md` - Installation and usage
+- `packages/mcp/AGENTS.md` - Implementation guidelines and debugging
 
 ## API Quick Reference
 
@@ -157,8 +157,8 @@ curl 'https://gen.pollinations.ai/text/{prompt}?key=YOUR_API_KEY'
    - Frontend changes should be in pollinations.ai/
    - Image generation in image.pollinations.ai/
    - Text generation in text.pollinations.ai/
-   - React components in sdk/pollinations-react/
-   - AI assistant integrations in sdk/model-context-protocol/
+   - SDK and React components in packages/sdk/
+   - AI assistant integrations in packages/mcp/
 
 6. Security:
    - Never expose API keys or secrets

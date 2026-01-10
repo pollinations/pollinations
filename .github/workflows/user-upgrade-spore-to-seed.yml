@@ -71,12 +71,6 @@ jobs:
           from user_validate_github_profile import validate_users
 
           users = json.loads(os.environ.get('SPORE_USERS', '[]'))
-          if not users:
-              print('No users to validate')
-              with open(os.environ['GITHUB_OUTPUT'], 'a') as f:
-                  f.write('approved_users=[]\n')
-              exit(0)
-
           results = validate_users(users)
           approved = [r['username'] for r in results if r['approved']]
           print(f'{len(approved)}/{len(users)} approved')

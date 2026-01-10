@@ -42,26 +42,20 @@ export {
     type ImageResponseExt,
     type VideoResponseExt,
     type ChatResponseExt,
-
     // Batch generation (multiple different prompts)
     generateImages,
     generateVideos,
-
     // Conversation class
     Conversation,
-
     // Browser helpers
     showImage,
     displayImage,
-
     // Token estimation
     estimateTokens,
     estimateMessageTokens,
-
     // Progress tracking
     generateImageWithProgress,
     type AwaitOptions,
-
     // Response wrappers (for advanced use)
     wrapImageResponse,
     wrapVideoResponse,
@@ -73,18 +67,15 @@ export type {
     // Config
     PollinationsConfig,
     RequestOptions,
-
     // Image
     ImageModel,
     ImageQuality,
     ImageGenerateOptions,
     ImageResponse,
-
     // Video
     VideoModel,
     VideoGenerateOptions,
     VideoResponse,
-
     // Text
     TextModel,
     MessageRole,
@@ -109,17 +100,14 @@ export type {
     ChatChoice,
     ChatResponse,
     ChatStreamChunk,
-
     // Audio
     AudioVoice,
     AudioFormat,
     AudioGenerateOptions,
     AudioResponse,
-
     // Models
     ModelTier,
     ModelInfo,
-
     // Errors
     PollinationsErrorDetails,
 } from "./types.js";

@@ -47,8 +47,7 @@
     "text-to-image",
     "text-to-video"
   ],
-  "authors": [
-    {
+  "authors": [{
       "name": "Itachi-1824",
       "email": "itachi@myceli.ai"
     },
@@ -65,7 +64,7 @@
   "repository": {
     "type": "git",
     "url": "https://github.com/pollinations/pollinations",
-    "directory": "SDK/pollinations-sdk"
+    "directory": "packages/sdk"
   },
   "homepage": "https://pollinations.ai",
   "bugs": {

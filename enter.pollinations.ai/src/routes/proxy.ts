@@ -468,6 +468,74 @@ export const proxyRoutes = new Hono<Env>()
 
             return response;
         },
+    )
+    // Cohere Rerank endpoint - semantic document ranking via AWS Bedrock
+    .post(
+        "/v1/rerank",
+        auth({ allowApiKey: true, allowSessionCookie: false }),
+        polar,
+        frontendKeyRateLimit,
+        track("generate.text"),
+        async (c) => {
+            const log = c.get("log").getChild("rerank");
+            await c.var.auth.requireAuthorization();
+            await checkBalance(c.var);
+
+            // Parse request body for Cohere rerank format
+            const requestBody = await c.req.json();
+            const { query, documents, model, top_n, return_documents } =
+                requestBody;
+
+            if (!query || !documents || !Array.isArray(documents)) {
+                throw new HTTPException(400, {
+                    message:
+                        "Invalid request: 'query' and 'documents' array are required",
+                });
+            }
+
+            log.debug("Rerank request: {docCount} documents", {
+                docCount: documents.length,
+            });
+
+            // Forward to text service which will handle Bedrock routing
+            const textServiceUrl =
+                c.env.TEXT_SERVICE_URL || "https://text.pollinations.ai";
+            const response = await fetch(`${textServiceUrl}/v1/rerank`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "x-enter-token": c.env.PLN_ENTER_TOKEN,
+                    "x-request-id": c.get("requestId"),
+                },
+                body: JSON.stringify({
+                    model: model || "cohere.rerank-v3-5:0",
+                    query,
+                    documents,
+                    top_n,
+                    return_documents,
+                }),
+            });
+
+            if (!response.ok) {
+                const responseText = await response.text();
+                log.warn("Rerank error {status}: {body}", {
+                    status: response.status,
+                    body: responseText,
+                });
+                throw new UpstreamError(
+                    response.status as ContentfulStatusCode,
+                    {
+                        message:
+                            responseText ||
+                            getDefaultErrorMessage(response.status),
+                    },
+                );
+            }
+
+            return new Response(response.body, {
+                headers: Object.fromEntries(response.headers),
+            });
+        },
     );
 
 function proxyHeaders(c: Context): Record<string, string> {

@@ -464,4 +464,22 @@ export const TEXT_SERVICES = {
         contextWindow: 200000,
         isSpecialized: false,
     },
+    "cohere-rerank": {
+        aliases: ["rerank", "rerank-3.5"],
+        modelId: "cohere.rerank-v3-5:0",
+        provider: "aws",
+        cost: [
+            {
+                date: COST_START_DATE,
+                // Bedrock Cohere Rerank: $1.00 per 1,000 search units
+                // A search unit = 1 query + up to 100 documents
+                promptTextTokens: perMillion(1000), // ~$0.001 per search unit
+            },
+        ],
+        description: "Cohere Rerank 3.5 - Semantic Document Ranking (Bedrock)",
+        inputModalities: ["text"],
+        outputModalities: ["text"],
+        tools: false,
+        isSpecialized: false,
+    },
 } as const satisfies Record<string, ServiceDefinition<string>>;

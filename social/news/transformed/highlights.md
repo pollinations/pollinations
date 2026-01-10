@@ -1,3 +1,7 @@
+- **2026-01-05** – **🤖 Gemini Tools** Added `code_execution`, `google_search`, and `url_context` capabilities to Gemini models.
+- **2026-01-05** – **🚀 Qwen3-Coder** New `Qwen3-Coder-30B-A3B-Instruct` model available for advanced code generation.
+- **2026-01-05** – **🎨 High-Res Images** Integrated SPAN 2x upscaler to support generating images larger than 1280x1280.
+- **2026-01-05** – **🎵 React Audio Hook** New `usePollinationsAudio` hook for easy text-to-speech integration. [Docs](https://react-hooks.pollinations.ai)
 - **2026-01-05** – **🤖 Gemini Agent Tools** Enable `google_search`, `code_execution`, and `url_context` on Gemini models. [API Docs](https://enter.pollinations.ai/api/docs)
 - **2026-01-05** – **🚀 Qwen3-Coder** New `Qwen3-Coder-30B` model available for advanced code generation tasks.
 - **2026-01-05** – **🎨 Flux Returns** The popular `flux` model is back as a standalone option for image generation.

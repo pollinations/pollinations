@@ -31,7 +31,7 @@ Routes issues and PRs to the appropriate project board using AI classification:
 - **TIER-\* bypass**: Items with `TIER-*` labels skip AI classification and route directly to Tier project
 - AI classification via `gen.pollinations.ai` with retry + random seed
 - Sets Priority field (Urgent/High/Medium/Low) in project
-- Sets Status field (Backlog/Review/Todo)
+- Sets Status field (Backlog/In Progress/Review/Todo/Done/Discarded)
 - Adds labels (DEV-_ for dev, SUPPORT-_ for support, none for news)
 - Enforces internal-only rule for Dev project
 - Fallback classification if AI fails

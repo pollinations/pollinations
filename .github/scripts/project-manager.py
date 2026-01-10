@@ -63,6 +63,13 @@ CONFIG = {
             "name": "Dev",
             "internal_only": True,
             "opened_field_id": "PVTF_lADOBS76fs4AwCAMzg7fXzc",
+            "priority_field_id": "PVTSSF_lADOBS76fs4AwCAMzg2DKDk",
+            "priority_options": {
+                "Urgent": "0f53228f",
+                "High": "dc7fa85f",
+                "Medium": "15fd4fac",
+                "Low": "7495a981",
+            },
         },
         "support": {
             "id": "PVT_kwDOBS76fs4BLr1H",

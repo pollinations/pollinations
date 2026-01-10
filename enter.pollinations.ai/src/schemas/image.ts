@@ -56,21 +56,6 @@ export const GenerateImageRequestQueryParamsSchema = z.object({
         .optional()
         .default("worst quality, blurry")
         .meta({ description: "What to avoid in the generated image" }),
-    private: z.coerce
-        .boolean()
-        .optional()
-        .default(false)
-        .meta({ description: "Hide image from public feeds" }),
-    nologo: z.coerce
-        .boolean()
-        .optional()
-        .default(false)
-        .meta({ description: "Remove Pollinations watermark" }),
-    nofeed: z.coerce
-        .boolean()
-        .optional()
-        .default(false)
-        .meta({ description: "Don't add to public feed" }),
     safe: z.coerce
         .boolean()
         .optional()
@@ -80,19 +65,19 @@ export const GenerateImageRequestQueryParamsSchema = z.object({
         .literal(QUALITIES)
         .optional()
         .default("medium")
-        .meta({ description: "Image quality level" }),
+        .meta({ description: "Image quality level (gptimage only)" }),
     image: z
         .string()
         .transform((value: string) => {
-            if (!value) return [];
+            if (!value) return undefined;
             // Support both pipe (|) and comma (,) separators
             // Prefer pipe separator if present, otherwise use comma
             return value.includes("|") ? value.split("|") : value.split(",");
         })
         .optional()
-        .default([])
         .refine(
             (urls) =>
+                !urls ||
                 urls.every(
                     (url) =>
                         !url ||
@@ -108,25 +93,18 @@ export const GenerateImageRequestQueryParamsSchema = z.object({
             description:
                 "Reference image URL(s). Comma/pipe separated for multiple. For veo: image[0]=first frame, image[1]=last frame (interpolation)",
         }),
-    transparent: z.coerce
-        .boolean()
-        .optional()
-        .default(false)
-        .meta({ description: "Generate with transparent background" }),
-    guidance_scale: z.coerce
-        .number()
-        .optional()
-        .meta({ description: "How closely to follow the prompt (1-20)" }),
-
-    // Video-specific params (for veo/seedance models)
-    duration: z.coerce.number().int().optional().meta({
-        description:
-            "Video duration in seconds. veo: 4, 6, or 8. seedance: 2-10",
+    transparent: z.coerce.boolean().optional().default(false).meta({
+        description: "Generate with transparent background (gptimage only)",
     }),
-    aspectRatio: z
-        .string()
-        .optional()
-        .meta({ description: "Video aspect ratio: 16:9 or 9:16" }),
+
+    // Video-specific params
+    duration: z.coerce.number().int().min(1).max(10).optional().meta({
+        description:
+            "Video duration in seconds (video models only). veo: 4, 6, or 8. seedance: 2-10",
+    }),
+    aspectRatio: z.string().optional().meta({
+        description: "Video aspect ratio: 16:9 or 9:16 (veo, seedance)",
+    }),
     audio: z.coerce
         .boolean()
         .optional()
